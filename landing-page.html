@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Influencer Butler - The all-in-one command center for Amazon Influencers. Manage brand deals, automate affiliate links, and track commissions.">
+    <meta name="keywords" content="Amazon Influencer, Affiliate Marketing, CRM, Automation, Content Management">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Influencer Butler - All-in-One Platform for Amazon Influencers">
+    <meta property="og:description" content="Manage brand deals, automate affiliate links, track commissions, and grow your influence — all from one powerful dashboard.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://influencerbutler.com/og-image.png">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#1e1b4b">
+    <title>Influencer Butler - All-in-One Platform for Amazon Influencers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --accent: #f59e0b;
+            --accent-dark: #d97706;
+            --dark-bg: #0f172a;
+            --dark-secondary: #1e293b;
+            --dark-tertiary: #334155;
+            --light-bg: #ffffff;
+            --light-text: #f1f5f9;
+            --dark-text: #0f172a;
+            --border: #e2e8f0;
+            --border-dark: #475569;
+            --success: #10b981;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--dark-text);
+            background-color: var(--light-bg);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* HEADER & NAVIGATION */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .logo:hover {
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: var(--dark-text);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
+
+        .nav-menu a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-accent:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 5px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: var(--dark-text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            margin-top: 80px;
+            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #000000 100%);
+            position: relative;
+            overflow: hidden;
+            padding: 80px 2rem;
+            color: var(--light-text);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(0deg, transparent 24%, rgba(99, 102, 241, 0.03) 25%, rgba(99, 102, 241, 0.03) 26%, transparent 27%, transparent 74%, rgba(99, 102, 241, 0.03) 75%, rgba(99, 102, 241, 0.03) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(99, 102, 241, 0.03) 25%, rgba(99, 102, 241, 0.03) 26%, transparent 27%, transparent 74%, rgba(99, 102, 241, 0.03) 75%, rgba(99, 102, 241, 0.03) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .hero-badge::before {
+            content: '✓';
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 1s ease 0.2s both;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            color: rgba(241, 245, 249, 0.85);
+            margin-bottom: 2.5rem;
+            animation: fadeInDown 1s ease 0.4s both;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease 0.6s both;
+            flex-wrap: wrap;
+        }
+
+        .hero-mockup {
+            position: relative;
+            margin-top: 2rem;
+            animation: fadeInUp 1s ease 0.8s both;
+        }
+
+        .mockup-container {
+            background: linear-gradient(135deg, #1a1625 0%, #0d0a1a 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .mockup-browser {
+            background: #0f0f1e;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .mockup-header {
+            background: #1a1a2e;
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .mockup-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .mockup-dot:nth-child(1) { background: #ff5f56; }
+        .mockup-dot:nth-child(2) { background: #ffbd2e; }
+        .mockup-dot:nth-child(3) { background: #27c93f; }
+
+        .mockup-content {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: rgba(241, 245, 249, 0.6);
+            font-size: 1rem;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+        }
+
+        /* SOCIAL PROOF */
+        .social-proof {
+            padding: 3rem 2rem;
+            background: var(--light-bg);
+            border-bottom: 1px solid var(--border);
+            animation: fadeIn 1s ease;
+        }
+
+        .social-proof-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .social-proof-text {
+            font-weight: 600;
+            color: var(--dark-text);
+            font-size: 1.1rem;
+        }
+
+        .social-proof-logos {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .proof-logo {
+            font-size: 0.85rem;
+            color: var(--dark-tertiary);
+            font-weight: 600;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .proof-logo:hover {
+            opacity: 1;
+        }
+
+        /* PROBLEM SECTION */
+        .problems {
+            padding: 6rem 2rem;
+            background: var(--light-bg);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--dark-text);
+        }
+
+        .section-header p {
+            font-size: 1.125rem;
+            color: var(--dark-tertiary);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .problems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .problem-card {
+            padding: 2rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .problem-card:nth-child(1) { animation-delay: 0.1s; }
+        .problem-card:nth-child(2) { animation-delay: 0.2s; }
+        .problem-card:nth-child(3) { animation-delay: 0.3s; }
+        .problem-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .problem-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .problem-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--dark-text);
+        }
+
+        .problem-card p {
+            color: var(--dark-tertiary);
+            font-size: 1rem;
+        }
+
+        /* FEATURES SECTION */
+        .features {
+            padding: 6rem 2rem;
+            background: var(--light-bg);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            background: var(--light-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-card:nth-child(5) { animation-delay: 0.5s; }
+        .feature-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+            transform: translateY(-6px);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(245, 158, 11, 0.02) 100%);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--dark-text);
+        }
+
+        .feature-card p {
+            color: var(--dark-tertiary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* HOW IT WORKS */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .step {
+            text-align: center;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .step:nth-child(1) { animation-delay: 0.1s; }
+        .step:nth-child(2) { animation-delay: 0.2s; }
+        .step:nth-child(3) { animation-delay: 0.3s; }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .step h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--dark-text);
+        }
+
+        .step p {
+            color: var(--dark-tertiary);
+            font-size: 1rem;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* PRICING SECTION */
+        .pricing {
+            padding: 6rem 2rem;
+            background: var(--light-bg);
+        }
+
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: var(--border);
+            border-radius: 100px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: left 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 31px;
+        }
+
+        .discount-badge {
+            background: var(--accent);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .price-card {
+            padding: 2.5rem;
+            border: 1.5px solid var(--border);
+            border-radius: 1rem;
+            background: var(--light-bg);
+            transition: all 0.3s ease;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .price-card:nth-child(1) { animation-delay: 0.1s; }
+        .price-card:nth-child(2) { animation-delay: 0.2s; }
+        .price-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .price-card.popular {
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+            transform: scale(1.05);
+        }
+
+        .price-card:hover:not(.popular) {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .price-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(245, 158, 11, 0.02) 100%);
+            border-radius: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .price-card:hover::before:not(.popular) {
+            opacity: 1;
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .price-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--dark-text);
+        }
+
+        .price-card .price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .price-card .price-period {
+            color: var(--dark-tertiary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .price-card ul {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .price-card li {
+            padding: 0.75rem 0;
+            color: var(--dark-text);
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .price-card li::before {
+            content: '✓';
+            color: var(--success);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .price-card .btn {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* TESTIMONIALS */
+        .testimonials {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            padding: 2rem;
+            background: var(--light-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .testimonial-card:nth-child(1) { animation-delay: 0.1s; }
+        .testimonial-card:nth-child(2) { animation-delay: 0.2s; }
+        .testimonial-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .testimonial-card:hover {
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .testimonial-stars {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .star {
+            color: var(--accent);;
+            font-size: 1rem;
+        }
+
+        .testimonial-card p {
+            color: var(--dark-text);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .avatar-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .avatar-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .avatar-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        .author-info h4 {
+            font-weight: 700;
+            color: var(--dark-text);
+            font-size: 0.95rem;
+        }
+
+        .author-info p {
+            color: var(--dark-tertiary);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 6rem 2rem;
+            background: var(--light-bg);
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            margin-bottom: 1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .faq-item:nth-child(1) { animation-delay: 0.05s; }
+        .faq-item:nth-child(2) { animation-delay: 0.1s; }
+        .faq-item:nth-child(3) { animation-delay: 0.15s; }
+        .faq-item:nth-child(4) { animation-delay: 0.2s; }
+        .faq-item:nth-child(5) { animation-delay: 0.25s; }
+        .faq-item:nth-child(6) { animation-delay: 0.3s; }
+
+        .faq-item.active {
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light-bg);
+            transition: all 0.3s ease;
+        }
+
+        .faq-item.active .faq-question {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(245, 158, 11, 0.02) 100%);
+        }
+
+        .faq-question:hover {
+            background: #f9fafb;
+        }
+
+        .faq-question h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin: 0;
+        }
+
+        .faq-toggle {
+            font-size: 1.25rem;
+            color: var(--primary);
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 1.5rem;
+            color: var(--dark-tertiary);
+            background: #fafbfc;
+            border-top: 1px solid var(--border);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        /* CTA SECTION */
+        .cta {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #000000 100%);
+            color: var(--light-text);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .email-form input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(241, 245, 249, 0.3);
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .email-form input::placeholder {
+            color: rgba(241, 245, 249, 0.5);
+        }
+
+        .email-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .cta-subtext {
+            font-size: 0.85rem;
+            color: rgba(241, 245, 249, 0.7);
+        }
+
+        /* FOOTER */
+        footer {
+            padding: 3rem 2rem;
+            background: #000000;
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+            color: rgba(241, 245, 249, 0.7);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            color: var(--light-text);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            display: block;
+            color: rgba(241, 245, 249, 0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--accent);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(99, 102, 241, 0.2);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .social-icon:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* SCROLL ANIMATIONS */
+        .scroll-animate {
+            opacity: 0;
+        }
+
+        .scroll-animate.visible {
+            opacity: 1;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                right: 0;
+                flex-direction: column;
+                background: white;
+                border-bottom: 1px solid var(--border);
+                padding: 1rem;
+                gap: 0;
+                z-index: 999;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-menu a {
+                padding: 0.75rem 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+            }
+
+            .hero-cta .btn {
+                width: 100%;
+            }
+
+            .section-header h2 {
+                font-size: 1.875rem;
+            }
+
+            .features-grid,
+            .pricing-cards,
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .price-card.popular {
+                transform: scale(1);
+            }
+
+            .social-proof-content {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .email-form {
+                flex-direction: column;
+            }
+
+            .email-form input,
+            .email-form .btn {
+                width: 100%;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 3rem 1rem;
+                margin-top: 60px;
+            }
+
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .step-number {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+
+            .cta h2 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVIGATION -->
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">
+                <span class="logo-icon">🎩</span>
+                <span>Influencer Butler</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#testimonials">Testimonials</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#cta" class="btn btn-primary">Start Free Trial</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <div class="hero-badge">Verified Amazon Partner</div>
+            <h1>The All-in-One Command Center for Amazon Influencers</h1>
+            <p>Manage brand deals, automate affiliate links, track commissions, and grow your influence — all from one powerful dashboard. Built by influencers, for influencers.</p>
+            <div class="hero-cta">
+                <button class="btn btn-accent" onclick="scrollToSection('cta')">Start Free Trial</button>
+                <button class="btn btn-secondary" onclick="alert('Demo video coming soon!')">Watch Demo</button>
+            </div>
+            <div class="hero-mockup">
+                <div class="mockup-container">
+                    <div class="mockup-browser">
+                        <div class="mockup-header">
+                            <div class="mockup-dot"></div>
+                            <div class="mockup-dot"></div>
+                            <div class="mockup-dot"></div>
+                        </div>
+                        <div class="mockup-content">[Dashboard Screenshot]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SOCIAL PROOF -->
+    <section class="social-proof">
+        <div class="social-proof-content">
+            <div class="social-proof-text">✨ Trusted by 500+ Amazon Influencers</div>
+            <div class="social-proof-logos">
+                <div class="proof-logo">As seen on YouTube</div>
+                <div class="proof-logo">TikTok Creators</div>
+                <div class="proof-logo">Amazon Verified</div>
+                <div class="proof-logo">Trusted Reviews</div>
+                <div class="proof-logo">Creator Network</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROBLEMS SECTION -->
+    <section class="problems" id="problems">
+        <div class="container">
+            <div class="section-header">
+                <h2>Stop Juggling 10 Tools to Run Your Business</h2>
+                <p>Influencers waste countless hours managing spreadsheets, missing deadlines, and losing track of earnings.</p>
+            </div>
+            <div class="problems-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">📊</div>
+                    <h3>Spreadsheets Everywhere</h3>
+                    <p>Data scattered across multiple Excel files, Google Sheets, and notes. No single source of truth.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">📅</div>
+                    <h3>Missing Brand Deal Deadlines</h3>
+                    <p>Coordinating with brands, tracking deliverables, and managing timelines is a nightmare.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">💰</div>
+                    <h3>Losing Affiliate Commissions</h3>
+                    <p>Manually creating links, tracking clicks, and reconciling earnings across platforms takes forever.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">⏰</div>
+                    <h3>Hours Wasted on Manual Tasks</h3>
+                    <p>Tagging content, organizing files, and updating dashboards should be automated, not manual.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything You Need to Scale</h2>
+                <p>All the tools a professional influencer business needs, in one unified platform.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Brand Deal CRM</h3>
+                    <p>Track every outreach, negotiation, contract, and payment. Never miss a follow-up or deadline again.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Smart Affiliate Links</h3>
+                    <p>Auto-generate, customize, and manage deep links across all platforms. Works perfectly with Amazon.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💸</div>
+                    <h3>Commission Tracker</h3>
+                    <p>Real-time earnings dashboard across YouTube, TikTok, Instagram, and Amazon. Complete visibility.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Content Calendar</h3>
+                    <p>Plan, schedule, and coordinate content across all platforms. Never miss a key date or collaboration.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Automation Suite</h3>
+                    <p>Auto-post, auto-tag, auto-organize content. Our desktop automation tool saves hours every week.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Analytics Dashboard</h3>
+                    <p>See what's working, what's not, and where your growth opportunities are. Data-driven decisions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-it-works" id="how">
+        <div class="container">
+            <div class="section-header">
+                <h2>Get Started in Minutes</h2>
+                <p>A simple three-step setup process.</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Connect Your Accounts</h3>
+                    <p>Link Amazon, YouTube, TikTok, Instagram, and other platforms securely. Takes 2 minutes.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Set Your Preferences</h3>
+                    <p>Configure automation rules, templates, and notification preferences for your workflow.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Watch It Work</h3>
+                    <p>Butler handles the busywork while you focus on creating amazing content.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING SECTION -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2>Simple, Transparent Pricing</h2>
+                <p>Scale at your own pace. No hidden fees, no surprises.</p>
+            </div>
+            <div class="pricing-toggle" style="justify-content: center;">
+                <span style="color: var(--primary); font-weight: 600;">Choose Monthly or Annual — Both include a 7-day free trial</span>
+            </div>
+            <div class="pricing-cards">
+                <div class="price-card">
+                    <h3>Starter</h3>
+                    <div class="price"><span id="price1">Free</span></div>
+                    <div class="price-period">forever</div>
+                    <ul>
+                        <li>Basic CRM</li>
+                        <li>50 Affiliate Links</li>
+                        <li>Manual Tracking</li>
+                        <li>Community Access</li>
+                    </ul>
+                    <button class="btn btn-secondary">Get Started</button>
+                </div>
+                <div class="price-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <h3>Pro Monthly</h3>
+                    <div class="price"><span id="price2">$19.99</span><span style="font-size: 0.5em;"> /mo</span></div>
+                    <div class="price-period" id="period2">7-day free trial included</div>
+                    <ul>
+                        <li>Unlimited Affiliate Links</li>
+                        <li>Full Automation Suite</li>
+                        <li>Analytics Dashboard</li>
+                        <li>Priority Support</li>
+                        <li>Content Calendar</li>
+                        <li>License Key Included</li>
+                    </ul>
+                    <a href="https://influencerbutler.lemonsqueezy.com/checkout/buy/a2010e7b-d3f1-4ac2-b36f-32d289fa7e04" class="btn btn-accent" style="display:block;text-align:center;text-decoration:none;">Start 7-Day Free Trial</a>
+                    <p style="text-align: center; font-size: 0.85rem; color: var(--dark-tertiary); margin-top: 1rem;">Cancel anytime. No risk.</p>
+                </div>
+                <div class="price-card">
+                    <div class="popular-badge" style="background: var(--success); color: white;">Save 25%</div>
+                    <h3>Pro Annual</h3>
+                    <div class="price"><span id="price3">$179.99</span><span style="font-size: 0.5em;"> /yr</span></div>
+                    <div class="price-period" id="period3">Just $15/mo — 7-day free trial</div>
+                    <ul>
+                        <li>Everything in Monthly</li>
+                        <li>Save $59.89 per year</li>
+                        <li>Priority Feature Requests</li>
+                        <li>Early Access to New Features</li>
+                        <li>Dedicated Support</li>
+                        <li>License Key Included</li>
+                    </ul>
+                    <a href="https://influencerbutler.lemonsqueezy.com/checkout/buy/927d48b9-edef-4f2a-822b-f88005b0733c" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;">Start 7-Day Free Trial</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2>Loved by Creators</h2>
+                <p>See what influencers are saying about Influencer Butler.</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <p>"Influencer Butler cut my admin time in half. I went from managing 5 spreadsheets to one beautiful dashboard. My earnings tracking is now real-time and accurate."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar avatar-1">JM</div>
+                        <div class="author-info">
+                            <h4>Jessica Martinez</h4>
+                            <p>Beauty & Lifestyle Creator</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <p>"The automation features are a game-changer. My affiliate links are auto-generated, tracked, and organized. I've never been more organized as a creator."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar avatar-2">RC</div>
+                        <div class="author-info">
+                            <h4>Ryan Chen</h4>
+                            <p>Tech & Product Reviewer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <p>"Finally, a tool that understands what Amazon influencers actually need. The CRM made it easy to manage brand partnerships. My revenue has grown 40% since using Butler."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar avatar-3">SK</div>
+                        <div class="author-info">
+                            <h4>Sarah Kim</h4>
+                            <p>Fashion Influencer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <h2>Frequently Asked Questions</h2>
+                <p>Everything you need to know about Influencer Butler.</p>
+            </div>
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What is Influencer Butler?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Influencer Butler is an all-in-one command center designed specifically for Amazon Influencers. It combines CRM for brand deals, affiliate link management, desktop automation, and advanced analytics into one unified platform. We're built by influencers who understand your pain points.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Is this an Amazon-approved tool?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes! Influencer Butler is a Verified Amazon Partner. We've been audited and approved by Amazon to work with the Influencer Program. Your account security and data are protected under Amazon's partnership standards.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How is this different from JoyLink or Cha-Ching?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        While JoyLink and Cha-Ching focus on individual features, Influencer Butler is a complete ecosystem. Our desktop automation tool is industry-leading, our CRM is more powerful, and we offer true multi-platform support with real-time earnings tracking across YouTube, TikTok, Instagram, and Amazon.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Can I try it for free?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely! The Starter plan is completely free forever with basic CRM and 50 affiliate links. The Pro plan comes with a 14-day free trial — no credit card required. Cancel anytime if it's not right for you.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What platforms does it support?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We support Amazon Influencer Program, YouTube, TikTok, Instagram, Twitter/X, and custom integrations via API on the Business plan. We're constantly adding new platform integrations based on creator feedback.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How do I cancel?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        You can cancel your subscription anytime from your account settings with one click. No questions asked, no cancellation fees. If you have feedback, we'd love to hear it before you go!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="cta" id="cta">
+        <div class="cta-content">
+            <h2>Ready to 10x Your Influencer Business?</h2>
+            <div class="email-form">
+                <input type="email" placeholder="Enter your email" id="emailInput" required>
+                <button class="btn btn-accent" onclick="handleEmailSignup()">Start Free Trial</button>
+            </div>
+            <p class="cta-subtext">No credit card required. 14-day free trial on Pro plan. Cancel anytime.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h4>🎩 Influencer Butler</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">The all-in-one platform for Amazon Influencers. Built by creators, for creators.</p>
+                <div class="footer-socials">
+                    <a href="#" class="social-icon" title="Twitter">𝕏</a>
+                    <a href="#" class="social-icon" title="Instagram">📷</a>
+                    <a href="#" class="social-icon" title="YouTube">▶️</a>
+                    <a href="#" class="social-icon" title="TikTok">♪</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#how">How It Works</a>
+                <a href="#testimonials">Testimonials</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="#">About Us</a>
+                <a href="#">Blog</a>
+                <a href="#">Careers</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Cookie Policy</a>
+                <a href="#">Security</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Influencer Butler. All rights reserved.</p>
+            <p>Verified Amazon Partner ✓</p>
+        </div>
+    </footer>
+
+    <script>
+        // HEADER SCROLL EFFECT
+        const header = document.querySelector('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // MOBILE MENU
+        const hamburger = document.querySelector('.hamburger');
+        const navMenu = document.querySelector('.nav-menu');
+
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        // Close menu when link is clicked
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navMenu.classList.remove('active');
+            });
+        });
+
+        // Pricing buttons already link directly to LemonSqueezy checkout
+
+        // FAQ ACCORDION
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                // Close other items
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                // Toggle current item
+                item.classList.toggle('active');
+            });
+        });
+
+        // EMAIL SIGNUP
+        function handleEmailSignup() {
+            const emailInput = document.getElementById('emailInput');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            // Simulate signup
+            alert('Welcome to Influencer Butler! Check your email for next steps.');
+            emailInput.value = '';
+        }
+
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // SCROLL TO SECTION
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // INTERSECTION OBSERVER FOR SCROLL ANIMATIONS
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        // Observe all animated sections
+        document.querySelectorAll('.problem-card, .feature-card, .price-card, .testimonial-card, .faq-item, .step').forEach(el => {
+            observer.observe(el);
+        });
+
+        // ALLOW ENTER KEY IN EMAIL INPUT
+        document.getElementById('emailInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleEmailSignup();
+            }
+        });
+    </script>
+</body>
+</html>

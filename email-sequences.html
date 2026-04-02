@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer Butler - Email Sequences</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e0e7ff 100%);
+            padding: 40px 20px;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #6366f1 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 60px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 40px;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 2em;
+            color: #6366f1;
+            margin-bottom: 30px;
+            font-weight: 700;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #f59e0b;
+            display: inline-block;
+        }
+
+        .email-card {
+            background: #f9fafb;
+            border-left: 5px solid #6366f1;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .email-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.1);
+        }
+
+        .email-number {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .email-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .subject-lines {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .subject-label {
+            font-weight: 600;
+            color: #6366f1;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .subject-line {
+            margin: 8px 0;
+            padding: 8px 0;
+            color: #374151;
+            font-size: 0.95em;
+        }
+
+        .subject-variant {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .timing {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .email-preview {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .preview-from {
+            font-weight: 600;
+            color: #6366f1;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .email-body {
+            line-height: 1.6;
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .cta-section {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1 0%, #6366f1 100%);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin: 10px 0;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .cta-button.secondary {
+            background: #f59e0b;
+        }
+
+        .cta-button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .email-closing {
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        .feature-highlight {
+            background: #f0fdf4;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        .feature-highlight strong {
+            color: #f59e0b;
+        }
+
+        .newsletter-section {
+            background: #f9fafb;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .newsletter-section h3 {
+            color: #6366f1;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .newsletter-content {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .section-intro {
+            color: #6b7280;
+            margin-bottom: 25px;
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+
+        .pricing-mention {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 0.95em;
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Influencer Butler</h1>
+            <p>Email Sequences & Templates</p>
+            <p style="font-size: 0.95em; margin-top: 15px; opacity: 0.9;">All-in-One Tool for Amazon Influencers</p>
+        </div>
+
+        <div class="content">
+
+            <!-- WELCOME SEQUENCE -->
+            <div class="section">
+                <h2 class="section-title">Welcome Sequence</h2>
+                <p class="section-intro">This 5-email sequence is sent to new signups over 10 days. Designed to create quick wins, showcase key features, build confidence, and convert to paid plans.</p>
+
+                <!-- Email 1 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">1</span>
+                        <span class="email-title">Welcome & Quick Win</span>
+                    </div>
+
+                    <div class="timing">⏱️ Immediately after signup</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">Welcome to Influencer Butler! 🎉 Your free dashboard is ready</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">3 ways to earn more from your Amazon partnerships</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>Hey there!</p>
+                            <p style="margin-top: 12px;">Welcome to Influencer Butler. I built this because managing affiliate links, tracking brand deals, and keeping up with analytics used to eat up hours of my week.</p>
+                            <p style="margin-top: 12px;">Here's what's live right now:</p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Dashboard with your key stats</li>
+                                <li>Affiliate link manager (organize everything in one place)</li>
+                                <li>Brand deal tracker</li>
+                            </ul>
+                            <p style="margin-top: 12px;">Start by adding your first affiliate link. Takes 2 minutes and you'll see why this saves so much time.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>Quick Win:</strong> Import your first 5 affiliate links to unlock an advanced analytics preview.
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Go to Dashboard</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Questions? Just reply to this email. I read every message.</p>
+                            <p style="margin-top: 8px;">Excited to have you on board,<br>Liz<br>Founder, Influencer Butler</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 2 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">2</span>
+                        <span class="email-title">Feature Spotlight - Brand Deal CRM</span>
+                    </div>
+
+                    <div class="timing">⏱️ Day 2 at 10 AM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">The #1 thing I wish I'd tracked earlier (Brand Deal CRM)</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">Never miss a brand deal deadline again</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>Quick question: How many brand deals are you tracking right now?</p>
+                            <p style="margin-top: 12px;">I used to juggle them in my email, Notion, and a Google Sheet. It was chaos—and I missed deadlines.</p>
+                            <p style="margin-top: 12px;">That's why the Brand Deal CRM is my favorite feature. Every negotiation, deadline, and payment in one place. You see exactly which brands are most profitable, which ones deliver on time, and where to focus next.</p>
+                            <p style="margin-top: 12px;">Pro users get automated reminders before deliverables are due. Game changer when you're juggling multiple partnerships.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>Pro Tip:</strong> Log your last 3 brand deals in the CRM. You'll immediately see patterns in your most profitable partnerships.
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Explore Brand Deal CRM</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Liz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 3 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">3</span>
+                        <span class="email-title">Social Proof & Success Story</span>
+                    </div>
+
+                    <div class="timing">⏱️ Day 4 at 2 PM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">Sarah increased her affiliate earnings by 34% in 6 weeks</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">See how other Amazon influencers are using Influencer Butler</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>One of our beta testers, Sarah, shared something cool.</p>
+                            <p style="margin-top: 12px;">After organizing her 200+ affiliate links in our manager and setting up the analytics dashboard, she realized 40% of her links were underperforming. She cut them and doubled down on top performers.</p>
+                            <p style="margin-top: 12px;">Six weeks later: 34% increase in affiliate earnings from the same audience. No growth hacking, just smarter decisions based on data.</p>
+                            <p style="margin-top: 12px;">This is exactly what I wanted to build. Real tools for real creators who want to earn more from their influence.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>What you can do today:</strong> Pull your top 10 performing links and compare them to your bottom 10. You might be surprised.
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">View Your Analytics</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Liz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 4 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">4</span>
+                        <span class="email-title">Pro Upgrade Pitch</span>
+                    </div>
+
+                    <div class="timing">⏱️ Day 7 at 11 AM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">What's different about Influencer Butler Pro</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">Level up: automation + insights that pay for itself</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>The free plan is solid. But if you're serious about scaling, Pro changes the game.</p>
+                            <p style="margin-top: 12px;">Here's what you unlock:</p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li><strong>Smart automation</strong> - Auto-generate links and update tracking at scale</li>
+                                <li><strong>Deadline reminders</strong> - Never miss a brand deal commitment</li>
+                                <li><strong>Advanced analytics</strong> - See exactly which audiences buy (vs just click)</li>
+                                <li><strong>1-on-1 onboarding</strong> - I help you set it up right</li>
+                            </ul>
+                            <p style="margin-top: 12px;">At $19/month, most creators make this back with just one optimized brand deal.</p>
+                        </div>
+
+                        <div class="pricing-mention">
+                            <strong>Pro Plan:</strong> $19/month • Money-back guarantee if you don't love it after 30 days
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Upgrade to Pro</button>
+                            <div style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">or explore Business ($49/month for agencies & large teams)</div>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Liz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email 5 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">5</span>
+                        <span class="email-title">Last Chance / Urgency</span>
+                    </div>
+
+                    <div class="timing">⏱️ Day 10 at 3 PM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">Quick check: Have you tried the brand deal tracker yet?</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">3 things you're still missing (and how to fix it)</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>I noticed you haven't added any brand deals to your tracker yet (totally cool if you're still exploring!).</p>
+                            <p style="margin-top: 12px;">Before you go, here's what you might be missing:</p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Seeing exactly which brands are most profitable</li>
+                                <li>Tracking payment timelines to spot slow payers</li>
+                                <li>Automating follow-up reminders (Pro feature)</li>
+                            </ul>
+                            <p style="margin-top: 12px;">Even if you're not upgrading right now, add a few past deals. You'll get insights that matter.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>Stuck?</strong> Reply with any questions. I'm here to help you get set up.
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Add Your First Brand Deal</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Liz</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAUNCH ANNOUNCEMENT SEQUENCE -->
+            <div class="section">
+                <h2 class="section-title">Launch Announcement Sequence</h2>
+                <p class="section-intro">Reach out to existing contacts, Amazon influencer communities, and waitlist members. These three emails create momentum and convert early adopters.</p>
+
+                <!-- Launch Email 1 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">1</span>
+                        <span class="email-title">Coming Soon / Waitlist</span>
+                    </div>
+
+                    <div class="timing">⏱️ 2 weeks before launch</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">I'm launching something for Amazon influencers (and it's free)</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">Are you managing affiliate links the hard way?</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>Hey!</p>
+                            <p style="margin-top: 12px;">I've been building something I wish existed when I was managing 300+ Amazon affiliate links, juggling brand deals, and trying to make sense of my analytics.</p>
+                            <p style="margin-top: 12px;">It's called Influencer Butler. A free, all-in-one platform for Amazon creators to manage links, track deals, and grow earnings.</p>
+                            <p style="margin-top: 12px;">Launching next month. Early adopters get lifetime access to premium features.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>Verified Amazon Partner</strong> • Built by an Amazon influencer, for Amazon influencers
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Join the Waitlist</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Can't wait to show you what we've built.</p>
+                            <p style="margin-top: 8px;">Liz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Launch Email 2 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">2</span>
+                        <span class="email-title">Launch Day</span>
+                    </div>
+
+                    <div class="timing">⏱️ Launch day at 10 AM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">It's live: Influencer Butler is here</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">Join 500+ creators already organizing their Amazon business</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>We're live.</p>
+                            <p style="margin-top: 12px;">Influencer Butler is officially open. After months of building and testing with creators like you, it's time.</p>
+                            <p style="margin-top: 12px;">Start free today. No credit card. No nonsense. Just a tool that does what creators actually need.</p>
+                            <p style="margin-top: 12px;">Plus: For the next 14 days, early signups get lifetime Pro access at half price ($9.50/month forever). That offer expires on Day 14.</p>
+                        </div>
+
+                        <div class="feature-highlight">
+                            <strong>What's Included:</strong> CRM • Affiliate link manager • Analytics • Automation • Brand deal tracker
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button">Sign Up Free</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Questions? I'm here. Just reply.</p>
+                            <p style="margin-top: 8px;">Liz</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Launch Email 3 -->
+                <div class="email-card">
+                    <div>
+                        <span class="email-number">3</span>
+                        <span class="email-title">Early Bird Ending</span>
+                    </div>
+
+                    <div class="timing">⏱️ Day 12 at 2 PM</div>
+
+                    <div class="subject-lines">
+                        <div class="subject-label">Primary Subject Line</div>
+                        <div class="subject-line">48 hours left: Lock in lifetime Pro pricing</div>
+                        <div class="subject-label" style="margin-top: 12px;">A/B Variant</div>
+                        <div class="subject-line subject-variant">Last chance at $9.50/month Pro access (forever)</div>
+                    </div>
+
+                    <div class="email-preview">
+                        <div class="preview-from">From: Liz @ Influencer Butler</div>
+
+                        <div class="email-body">
+                            <p>Reminder: The early bird pricing ends in 48 hours.</p>
+                            <p style="margin-top: 12px;">If you've been thinking about upgrading, now's the time. Lock in $9.50/month Pro access for life. After Thursday, it goes to $19/month.</p>
+                            <p style="margin-top: 12px;">What you're getting: unlimited automations, deadline reminders, advanced analytics, and direct support.</p>
+                            <p style="margin-top: 12px;">This price locks in permanently. Even when Pro features expand (and they will), your rate stays the same.</p>
+                        </div>
+
+                        <div class="pricing-mention">
+                            <strong>Early Bird Price:</strong> $9.50/month (forever) • Offer expires Thursday at midnight
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="cta-button secondary">Upgrade to Pro Now</button>
+                        </div>
+
+                        <div class="email-closing">
+                            <p>Thanks for being part of this from day one.</p>
+                            <p style="margin-top: 8px;">Liz</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEWSLETTER TEMPLATE -->
+            <div class="section">
+                <h2 class="section-title">Monthly Newsletter Template</h2>
+                <p class="section-intro">A recurring newsletter sent on the 15th of each month to active users and subscribers. Builds community, educates, and keeps the product top-of-mind.</p>
+
+                <div class="email-preview" style="border: 2px solid #f59e0b; background: #fffbf0;">
+                    <div class="preview-from">Subject: [Month] Influencer Butler Newsletter: New Features + Tips</div>
+
+                    <div class="email-body" style="margin-top: 20px;">
+                        <p style="font-weight: 600; font-size: 1.1em;">Hi [Name],</p>
+                        <p style="margin-top: 15px;">Here's what happened in Influencer Butler this month:</p>
+                    </div>
+
+                    <!-- Section 1: New Feature -->
+                    <div class="newsletter-section">
+                        <h3>🚀 New Feature This Month</h3>
+                        <div class="newsletter-content">
+                            <p><strong>[Feature Name]</strong> is now live.</p>
+                            <p style="margin-top: 10px;">What it does: [1-2 sentence explanation of benefit]</p>
+                            <p style="margin-top: 10px;">Why we built it: [Real problem it solves for creators]</p>
+                            <p style="margin-top: 10px;"><a href="#" style="color: #6366f1; text-decoration: none; font-weight: 600;">See what's new →</a></p>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Tip -->
+                    <div class="newsletter-section">
+                        <h3>💡 Tip of the Month</h3>
+                        <div class="newsletter-content">
+                            <p><strong>[Actionable Tip Title]</strong></p>
+                            <p style="margin-top: 10px;">[2-3 sentences about a creator strategy, workflow hack, or earnings optimization tip]</p>
+                            <p style="margin-top: 12px;">
+                                <span class="badge">Pro users</span>
+                                <span class="badge">Automation</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Community Highlight -->
+                    <div class="newsletter-section">
+                        <h3>👥 Community Spotlight</h3>
+                        <div class="newsletter-content">
+                            <p><strong>[Creator Name]'s Success Story</strong></p>
+                            <p style="margin-top: 10px;">[Brief story about how they're using Influencer Butler to solve a problem or achieve results]</p>
+                            <p style="margin-top: 10px;"><em>"[One powerful quote from the creator]"</em></p>
+                            <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">Want to be featured? Reply to this email and tell us your story.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Coming Soon -->
+                    <div class="newsletter-section">
+                        <h3>🔮 Coming Next</h3>
+                        <div class="newsletter-content">
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li><strong>[Feature Name]</strong> - [One-line description]</li>
+                                <li><strong>[Feature Name]</strong> - [One-line description]</li>
+                                <li><strong>[Feature Name]</strong> - [One-line description]</li>
+                            </ul>
+                            <p style="margin-top: 12px; color: #6b7280;">Voting on next features coming soon! Upgrade to Pro to vote on the roadmap.</p>
+                        </div>
+                    </div>
+
+                    <!-- Section 5: CTA -->
+                    <div style="background: linear-gradient(135deg, #f0f4ff 0%, #fef3c7 100%); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                        <p style="color: #1f2937; margin-bottom: 12px;"><strong>Still on the free plan?</strong></p>
+                        <p style="color: #6b7280; font-size: 0.95em; margin-bottom: 15px;">Pro users get automation, deadline reminders, and advanced analytics.</p>
+                        <button class="cta-button">Upgrade to Pro ($19/month)</button>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="email-closing" style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px;">
+                        <p style="margin-bottom: 10px;">Questions, feedback, or ideas?</p>
+                        <p>Reply to this email or visit our <a href="#" style="color: #6366f1; text-decoration: none;">help center</a>.</p>
+                        <p style="margin-top: 15px;">See you next month,<br><strong>Liz</strong><br><em>Founder, Influencer Butler</em></p>
+                        <p style="margin-top: 15px; font-size: 0.85em; color: #9ca3af;">[Unsubscribe] • [Manage Preferences] • [Follow us: Twitter | Instagram | LinkedIn]</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <p><strong>Influencer Butler</strong> — Email Sequences & Templates</p>
+            <p style="margin-top: 10px; opacity: 0.8;">All-in-one tool for Amazon influencers | Verified Amazon Partner</p>
+            <p style="margin-top: 15px; opacity: 0.7; font-size: 0.85em;">Free • $19 Pro • $49 Business</p>
+        </div>
+    </div>
+</body>
+</html>
