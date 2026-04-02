@@ -1,0 +1,110 @@
+/* ================================================================
+   Legal Pages - Additional styles for privacy, eula, terms
+   ================================================================ */
+
+.legal-page {
+  padding: 7rem 0 4rem;
+  background: var(--bg);
+}
+
+.legal-container {
+  max-width: 800px;
+}
+
+.legal-page h1 {
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-updated {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 2rem;
+}
+
+.legal-notice {
+  background: var(--brand-50);
+  border: 1px solid var(--brand-200);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.legal-notice p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.legal-notice p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-page h2 {
+  font-size: 1.25rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-page p {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  margin-bottom: 0.75rem;
+}
+
+.legal-page ul,
+.legal-page ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.legal-page ul {
+  list-style: disc;
+}
+
+.legal-page ol {
+  list-style-type: lower-alpha;
+}
+
+.legal-page li {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  margin-bottom: 0.35rem;
+}
+
+.legal-page a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.legal-page a:hover {
+  color: var(--brand-700);
+}
+
+.legal-caps {
+  font-size: 0.82rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.legal-page address {
+  font-style: normal;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .legal-page { padding: 5.5rem 0 3rem; }
+  .legal-page h1 { font-size: 1.75rem; }
+  .legal-page h2 { font-size: 1.1rem; }
+}
