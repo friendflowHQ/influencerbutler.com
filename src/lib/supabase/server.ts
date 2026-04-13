@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -15,7 +16,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, options as Partial<ResponseCookie> | undefined);
             });
           } catch {
             // Called from a Server Component; ignore if setting cookies isn't allowed.
