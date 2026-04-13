@@ -1230,6 +1230,7 @@
                 <li><a href="#pricing">Pricing</a></li>
                 <li><a href="#testimonials">Testimonials</a></li>
                 <li><a href="#faq">FAQ</a></li>
+                <li><a href="/login" id="auth-nav-link">Login</a></li>
                 <li><a href="#cta" class="btn btn-primary">Start Free Trial</a></li>
             </ul>
             <div class="hamburger">
@@ -1680,6 +1681,7 @@
                 <a href="#">Blog</a>
                 <a href="#">Careers</a>
                 <a href="#">Contact</a>
+                <a href="/dashboard">My Account</a>
             </div>
             <div class="footer-section">
                 <h4>Legal</h4>
@@ -1696,6 +1698,22 @@
     </footer>
 
     <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+
+            if (!authNavLink) {
+                return;
+            }
+
+            const hasSupabaseAuthCookie = document.cookie
+                .split(';')
+                .map((entry) => entry.trim())
+                .some((entry) => /^sb-[^=]+-auth-token=/.test(entry));
+
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+
         // HEADER SCROLL EFFECT
         const header = document.querySelector('header');
         window.addEventListener('scroll', () => {

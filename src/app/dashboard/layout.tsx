@@ -49,7 +49,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-      <Sidebar email={email} profileName={profileName} />
+      <Sidebar email={email} profileName={profileName} websiteHref="/" />
       <main className="flex-1 px-4 pb-10 pt-20 lg:px-10 lg:py-10">{children}</main>
     </div>
   );
