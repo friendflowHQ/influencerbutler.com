@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 type SidebarProps = {
   email: string;
   profileName?: string | null;
+  websiteHref?: string;
 };
 
 const navItems = [
@@ -17,7 +18,7 @@ const navItems = [
   { href: "/dashboard/affiliate", label: "Affiliate" },
 ];
 
-export default function Sidebar({ email, profileName }: SidebarProps) {
+export default function Sidebar({ email, profileName, websiteHref = "/" }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -101,6 +102,14 @@ export default function Sidebar({ email, profileName }: SidebarProps) {
             );
           })}
         </nav>
+
+        <Link
+          href={websiteHref}
+          onClick={() => setIsMobileOpen(false)}
+          className="mt-4 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+        >
+          Back to Website
+        </Link>
 
         <button
           type="button"

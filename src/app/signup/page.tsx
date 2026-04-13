@@ -26,12 +26,16 @@ export default function SignupPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    const redirectToCheckoutIfNeeded = () => {
+    const redirectAfterConfirmationIfNeeded = () => {
       const selectedPlan = localStorage.getItem("selectedPlan");
+      localStorage.removeItem("selectedPlan");
+
       if (selectedPlan === "monthly" || selectedPlan === "annual") {
-        localStorage.removeItem("selectedPlan");
         router.push(`/dashboard?checkout=${selectedPlan}`);
+        return;
       }
+
+      router.push("/dashboard");
     };
 
     const checkForAuthenticatedUser = async () => {
@@ -40,7 +44,7 @@ export default function SignupPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        redirectToCheckoutIfNeeded();
+        redirectAfterConfirmationIfNeeded();
       }
     };
 

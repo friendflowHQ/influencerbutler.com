@@ -37,6 +37,7 @@
                 <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
                 <li><a href="#pricing" class="nav-link">Pricing</a></li>
                 <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
             </ul>
             <a href="#pricing" class="btn btn-primary nav-cta">Start Free Trial</a>
             <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
@@ -44,6 +45,24 @@
             </button>
         </nav>
     </header>
+
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+
+            if (!authNavLink) {
+                return;
+            }
+
+            const hasSupabaseAuthCookie = document.cookie
+                .split(';')
+                .map((entry) => entry.trim())
+                .some((entry) => /^sb-[^=]+-auth-token=/.test(entry));
+
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
 
     <main>
         <!-- ===================== HERO ===================== -->
@@ -54,7 +73,7 @@
                     <h1>Automate Your Entire Influencer Business</h1>
                     <p class="hero-sub">Brand outreach, commission harvesting, deal posting, content management, and more, all from one powerful desktop app.</p>
                     <div class="hero-ctas">
-                        <a href="#pricing" class="btn btn-primary btn-lg">Start Free Trial</a>
+                        <a href="/signup" class="btn btn-primary btn-lg">Start Free Trial</a>
                         <a href="#features" class="btn btn-outline btn-lg">See All Features</a>
                     </div>
                     <div class="hero-stats">
@@ -1018,6 +1037,7 @@
             <div class="footer-links">
                 <h4>Support</h4>
                 <a href="mailto:hello@influencerbutler.com">Contact Us</a>
+                <a href="/dashboard">My Account</a>
             </div>
         </div>
         <div class="container footer-bottom">
