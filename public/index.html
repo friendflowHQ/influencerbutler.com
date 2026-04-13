@@ -716,7 +716,7 @@
                             <li><span class="pf-check">&#10003;</span> Earnings Intelligence</li>
                             <li><span class="pf-check">&#10003;</span> Community Access</li>
                         </ul>
-                        <a href="#checkout" class="btn btn-outline btn-block">Download Free</a>
+                        <a href="/signup" class="btn btn-outline btn-block">Download Free</a>
                     </div>
 
                     <!-- PRO MONTHLY -->
@@ -741,7 +741,7 @@
                             <li><span class="pf-check">&#10003;</span> Analytics Dashboard</li>
                             <li><span class="pf-check">&#10003;</span> Priority Support</li>
                         </ul>
-                        <a class="btn btn-primary btn-block" href="#checkout">Start Free Trial</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-variant-id="MONTHLY_PLACEHOLDER">Start Free Trial</a>
                     </div>
 
                     <!-- PRO ANNUAL -->
@@ -763,10 +763,84 @@
                             <li><span class="pf-check">&#10003;</span> Early Access to New Features</li>
                             <li><span class="pf-check">&#10003;</span> Dedicated Support</li>
                         </ul>
-                        <a class="btn btn-primary btn-block" href="#checkout">Start Free Trial</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-variant-id="ANNUAL_PLACEHOLDER">Start Free Trial</a>
                     </div>
                 </div>
                 <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:1.5rem;">By proceeding, you agree to our <a href="legal/terms.html" style="color:var(--brand);text-decoration:underline;">Terms of Service</a> and <a href="legal/eula.html" style="color:var(--brand);text-decoration:underline;">EULA</a>.</p>
+                <script>
+                    (function () {
+                        const checkoutButtons = document.querySelectorAll('.checkout-btn');
+
+                        const hasSupabaseCookie = () =>
+                            document.cookie
+                                .split(';')
+                                .map((entry) => entry.trim())
+                                .some((entry) => entry.startsWith('sb-'));
+
+                        const isLoggedIn = async () => {
+                            try {
+                                const response = await fetch('/api/auth/session', { credentials: 'include' });
+                                if (response.ok) {
+                                    return true;
+                                }
+                            } catch (error) {
+                                console.warn('Session probe failed, falling back to cookies.', error);
+                            }
+
+                            return hasSupabaseCookie();
+                        };
+
+                        const getPlanForVariant = (variantId) =>
+                            variantId === 'ANNUAL_PLACEHOLDER' ? 'annual' : 'monthly';
+
+                        checkoutButtons.forEach((button) => {
+                            button.addEventListener('click', async (event) => {
+                                event.preventDefault();
+                                const variantId = button.getAttribute('data-variant-id');
+
+                                if (!variantId) {
+                                    return;
+                                }
+
+                                const loggedIn = await isLoggedIn();
+
+                                if (!loggedIn) {
+                                    window.location.href = `/signup?plan=${getPlanForVariant(variantId)}`;
+                                    return;
+                                }
+
+                                try {
+                                    const response = await fetch('/api/checkout', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ variantId }),
+                                    });
+
+                                    if (!response.ok) {
+                                        throw new Error('Checkout session request failed');
+                                    }
+
+                                    const payload = await response.json();
+                                    const checkoutUrl = payload.checkoutUrl;
+
+                                    if (!checkoutUrl) {
+                                        throw new Error('Missing checkout URL');
+                                    }
+
+                                    if (window.LemonSqueezy?.Url?.Open) {
+                                        window.LemonSqueezy.Url.Open(checkoutUrl);
+                                    } else {
+                                        window.location.href = checkoutUrl;
+                                    }
+                                } catch (error) {
+                                    console.error('Unable to open checkout', error);
+                                }
+                            });
+                        });
+                    })();
+                </script>
             </div>
         </section>
 

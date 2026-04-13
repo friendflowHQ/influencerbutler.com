@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -15,10 +17,40 @@ export default function SignupPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const plan = params.get("plan");
+
     if (plan === "monthly" || plan === "annual") {
       localStorage.setItem("selectedPlan", plan);
     }
   }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const redirectToCheckoutIfNeeded = () => {
+      const selectedPlan = localStorage.getItem("selectedPlan");
+      if (selectedPlan === "monthly" || selectedPlan === "annual") {
+        localStorage.removeItem("selectedPlan");
+        router.push(`/dashboard?checkout=${selectedPlan}`);
+      }
+    };
+
+    const checkForAuthenticatedUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        redirectToCheckoutIfNeeded();
+      }
+    };
+
+    void checkForAuthenticatedUser();
+    const intervalId = window.setInterval(() => {
+      void checkForAuthenticatedUser();
+    }, 2000);
+
+    return () => window.clearInterval(intervalId);
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
