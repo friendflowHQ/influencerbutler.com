@@ -1,4 +1,73 @@
+"use client";
+
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+
+declare global {
+  interface Window {
+    LemonSqueezy?: {
+      Url?: {
+        Open?: (url: string) => void;
+      };
+    };
+  }
+}
+
+const variantIdByPlan: Record<string, string | undefined> = {
+  monthly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID,
+  annual: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_VARIANT_ID,
+};
+
 export default function DashboardOverviewPage() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const checkoutPlan = searchParams.get("checkout");
+
+    if (!checkoutPlan || !(checkoutPlan in variantIdByPlan)) {
+      return;
+    }
+
+    const variantId = variantIdByPlan[checkoutPlan];
+
+    if (!variantId) {
+      console.error(`Missing variant id for checkout plan: ${checkoutPlan}`);
+      return;
+    }
+
+    const startCheckout = async () => {
+      try {
+        const response = await fetch("/api/checkout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ variantId }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create checkout session");
+        }
+
+        const { checkoutUrl } = (await response.json()) as { checkoutUrl?: string };
+
+        if (!checkoutUrl) {
+          throw new Error("Missing checkout URL");
+        }
+
+        if (window.LemonSqueezy?.Url?.Open) {
+          window.LemonSqueezy.Url.Open(checkoutUrl);
+        } else {
+          window.location.href = checkoutUrl;
+        }
+      } catch (error) {
+        console.error("Unable to launch checkout", error);
+      }
+    };
+
+    void startCheckout();
+  }, [searchParams]);
+
   return (
     <section className="space-y-6">
       <div>
