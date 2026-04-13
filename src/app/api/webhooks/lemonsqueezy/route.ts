@@ -17,13 +17,27 @@ type LsWebhookPayload = {
   };
 };
 
-type SupabaseServiceClient = ReturnType<typeof createServerClient>;
+type QueryResult = Promise<{ data: Record<string, unknown> | null }>;
+
+type SupabaseServiceClient = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => QueryResult;
+      };
+    };
+    upsert: (payload: Record<string, unknown>, options?: { onConflict: string }) => Promise<unknown>;
+    update: (payload: Record<string, unknown>) => {
+      eq: (column: string, value: string) => Promise<unknown> & { is: (column: string, value: null) => Promise<unknown> };
+    };
+  };
+};
 
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-async function findUserIdBySubscription(supabase: any, lsSubscriptionId: string) {
+async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubscriptionId: string) {
   const { data } = await supabase
     .from("subscriptions")
     .select("user_id")
@@ -31,6 +45,11 @@ async function findUserIdBySubscription(supabase: any, lsSubscriptionId: string)
     .maybeSingle();
 
   return getString(data?.user_id);
+}
+
+async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
+  const { data } = await supabase.from(table).select("id").eq(column, value).maybeSingle();
+  return Boolean(data);
 }
 
 export async function POST(request: Request) {
@@ -46,7 +65,7 @@ export async function POST(request: Request) {
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     console.error("Missing Supabase service-role configuration for webhook processing");
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ error: "Webhook configuration error" }, { status: 500 });
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -58,62 +77,61 @@ export async function POST(request: Request) {
         // no-op for stateless webhook endpoint
       },
     },
-  }) as any;
+  }) as unknown as SupabaseServiceClient;
+
+  let payload: LsWebhookPayload;
 
   try {
-    const payload = JSON.parse(rawBody) as LsWebhookPayload;
+    payload = JSON.parse(rawBody) as LsWebhookPayload;
+  } catch (error) {
+    console.error("Invalid Lemon Squeezy webhook payload", error);
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
 
-    const eventName = payload.meta?.event_name;
-    const attrs = payload.data?.attributes ?? {};
-    const recordId = getString(payload.data?.id);
-    const directUserId = getString(payload.meta?.custom_data?.supabase_user_id);
+  const eventName = payload.meta?.event_name;
+  const attrs = payload.data?.attributes ?? {};
+  const recordId = getString(payload.data?.id);
+  const directUserId = getString(payload.meta?.custom_data?.supabase_user_id);
 
-    switch (eventName) {
-      case "order_created": {
-        if (!recordId || !directUserId) {
-          break;
-        }
-
-        await supabase.from("orders").upsert(
-          {
-            ls_order_id: recordId,
-            user_id: directUserId,
-            status: getString(attrs.status),
-            total: attrs.total ?? null,
-            currency: getString(attrs.currency),
-          },
-          { onConflict: "ls_order_id" },
-        );
-
-        const lsCustomerId = getString(attrs.customer_id);
-
-        if (lsCustomerId) {
-          await supabase
-            .from("profiles")
-            .update({ ls_customer_id: lsCustomerId })
-            .eq("id", directUserId)
-            .is("ls_customer_id", null);
-        }
-
-        break;
+  const handlers: Record<string, () => Promise<void>> = {
+    order_created: async () => {
+      if (!recordId || !directUserId) {
+        return;
       }
 
-      case "subscription_created": {
-        if (!recordId || !directUserId) {
-          break;
-        }
+      await recordExists(supabase, "orders", "ls_order_id", recordId);
 
-        const { data: existing } = await supabase
-          .from("subscriptions")
-          .select("id")
-          .eq("ls_subscription_id", recordId)
-          .maybeSingle();
+      await supabase.from("orders").upsert(
+        {
+          ls_order_id: recordId,
+          user_id: directUserId,
+          status: getString(attrs.status),
+          total: attrs.total ?? null,
+          currency: getString(attrs.currency),
+        },
+        { onConflict: "ls_order_id" },
+      );
 
-        if (existing) {
-          break;
-        }
+      const lsCustomerId = getString(attrs.customer_id);
 
-        await supabase.from("subscriptions").insert({
+      if (lsCustomerId) {
+        await supabase
+          .from("profiles")
+          .update({ ls_customer_id: lsCustomerId })
+          .eq("id", directUserId)
+          .is("ls_customer_id", null);
+      }
+    },
+
+    subscription_created: async () => {
+      if (!recordId || !directUserId) {
+        return;
+      }
+
+      await recordExists(supabase, "subscriptions", "ls_subscription_id", recordId);
+
+      await supabase.from("subscriptions").upsert(
+        {
           ls_subscription_id: recordId,
           user_id: directUserId,
           status: getString(attrs.status),
@@ -121,164 +139,156 @@ export async function POST(request: Request) {
           ls_product_id: attrs.product_id ?? null,
           ls_variant_id: attrs.variant_id ?? null,
           renews_at: attrs.renews_at ?? null,
-        });
+        },
+        { onConflict: "ls_subscription_id" },
+      );
+    },
 
-        break;
+    subscription_updated: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "subscription_updated": {
-        if (!recordId) {
-          break;
-        }
+      await supabase
+        .from("subscriptions")
+        .update({
+          status: getString(attrs.status),
+          renews_at: attrs.renews_at ?? null,
+          ends_at: attrs.ends_at ?? null,
+        })
+        .eq("ls_subscription_id", recordId);
+    },
 
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: getString(attrs.status),
-            renews_at: attrs.renews_at ?? null,
-            ends_at: attrs.ends_at ?? null,
-          })
-          .eq("ls_subscription_id", recordId);
-
-        break;
+    subscription_cancelled: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "subscription_cancelled": {
-        if (!recordId) {
-          break;
-        }
+      await supabase
+        .from("subscriptions")
+        .update({
+          status: "cancelled",
+          ends_at: attrs.ends_at ?? attrs.cancelled_at ?? null,
+        })
+        .eq("ls_subscription_id", recordId);
+    },
 
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "cancelled",
-            ends_at: attrs.ends_at ?? attrs.cancelled_at ?? null,
-          })
-          .eq("ls_subscription_id", recordId);
-
-        break;
+    subscription_paused: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "subscription_paused":
-      case "subscription_resumed": {
-        if (!recordId) {
-          break;
-        }
+      await supabase
+        .from("subscriptions")
+        .update({ status: "paused" })
+        .eq("ls_subscription_id", recordId);
+    },
 
-        await supabase
-          .from("subscriptions")
-          .update({ status: eventName === "subscription_paused" ? "paused" : "active" })
-          .eq("ls_subscription_id", recordId);
-
-        break;
+    subscription_resumed: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "subscription_payment_success": {
-        const renewalOrderId = getString(attrs.order_id) ?? recordId;
+      await supabase
+        .from("subscriptions")
+        .update({ status: "active" })
+        .eq("ls_subscription_id", recordId);
+    },
 
-        if (!renewalOrderId) {
-          break;
-        }
+    subscription_payment_success: async () => {
+      const renewalOrderId = getString(attrs.order_id) ?? recordId;
 
-        const lsSubscriptionId = getString(attrs.subscription_id);
-        const userId =
-          directUserId ||
-          (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
+      if (!renewalOrderId) {
+        return;
+      }
 
-        if (!userId) {
-          break;
-        }
+      const lsSubscriptionId = getString(attrs.subscription_id);
+      const userId =
+        directUserId ||
+        (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
 
-        const { data: existing } = await supabase
-          .from("orders")
-          .select("id")
-          .eq("ls_order_id", renewalOrderId)
-          .maybeSingle();
+      if (!userId) {
+        return;
+      }
 
-        if (existing) {
-          break;
-        }
+      await recordExists(supabase, "orders", "ls_order_id", renewalOrderId);
 
-        await supabase.from("orders").insert({
+      await supabase.from("orders").upsert(
+        {
           ls_order_id: renewalOrderId,
           user_id: userId,
           status: getString(attrs.status) ?? "paid",
           total: attrs.total ?? null,
           currency: getString(attrs.currency),
-        });
+        },
+        { onConflict: "ls_order_id" },
+      );
+    },
 
-        break;
+    subscription_payment_failed: async () => {
+      const lsSubscriptionId = getString(attrs.subscription_id) ?? recordId;
+
+      if (!lsSubscriptionId) {
+        return;
       }
 
-      case "subscription_payment_failed": {
-        const lsSubscriptionId = getString(attrs.subscription_id) ?? recordId;
+      await supabase
+        .from("subscriptions")
+        .update({ status: "past_due" })
+        .eq("ls_subscription_id", lsSubscriptionId);
+    },
 
-        if (!lsSubscriptionId) {
-          break;
-        }
-
-        await supabase
-          .from("subscriptions")
-          .update({ status: "past_due" })
-          .eq("ls_subscription_id", lsSubscriptionId);
-
-        break;
+    license_key_created: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "license_key_created": {
-        if (!recordId) {
-          break;
-        }
+      const lsSubscriptionId = getString(attrs.subscription_id);
+      const userId =
+        directUserId ||
+        (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
 
-        const lsSubscriptionId = getString(attrs.subscription_id);
-        const userId =
-          directUserId ||
-          (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
+      if (!userId) {
+        return;
+      }
 
-        if (!userId) {
-          break;
-        }
+      await recordExists(supabase, "license_keys", "ls_license_key_id", recordId);
 
-        const { data: existing } = await supabase
-          .from("license_keys")
-          .select("id")
-          .eq("ls_license_key_id", recordId)
-          .maybeSingle();
-
-        if (existing) {
-          break;
-        }
-
-        await supabase.from("license_keys").insert({
+      await supabase.from("license_keys").upsert(
+        {
           ls_license_key_id: recordId,
           user_id: userId,
           key: getString(attrs.key),
           status: getString(attrs.status),
           activation_limit: attrs.activation_limit ?? null,
           ls_subscription_id: lsSubscriptionId,
-        });
+        },
+        { onConflict: "ls_license_key_id" },
+      );
+    },
 
-        break;
+    license_key_updated: async () => {
+      if (!recordId) {
+        return;
       }
 
-      case "license_key_updated": {
-        if (!recordId) {
-          break;
-        }
+      await supabase
+        .from("license_keys")
+        .update({ status: getString(attrs.status) })
+        .eq("ls_license_key_id", recordId);
+    },
+  };
 
-        await supabase
-          .from("license_keys")
-          .update({ status: getString(attrs.status) })
-          .eq("ls_license_key_id", recordId);
+  const handler = eventName ? handlers[eventName] : undefined;
 
-        break;
-      }
+  if (!handler) {
+    return NextResponse.json({ received: true });
+  }
 
-      default:
-        break;
-    }
+  try {
+    await handler();
   } catch (error) {
-    console.error("Lemon Squeezy webhook processing error", error);
+    console.error(`Lemon Squeezy webhook event handling failed for ${eventName}`, error);
   }
 
   return NextResponse.json({ received: true });
