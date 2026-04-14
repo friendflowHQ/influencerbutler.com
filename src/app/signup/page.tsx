@@ -65,7 +65,7 @@ export default function SignupPage() {
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/api/auth/callback`;
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -83,10 +83,10 @@ export default function SignupPage() {
       return;
     }
 
-    // If email confirmation is disabled, the user is immediately authenticated.
-    // Check for a session and redirect to dashboard directly.
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    // If email confirmation is disabled, signUp returns a session directly.
+    // Redirect to dashboard instead of showing "check your email".
+    const session = (data as Record<string, unknown>)?.session;
+    if (session) {
       const selectedPlan = localStorage.getItem("selectedPlan");
       localStorage.removeItem("selectedPlan");
       if (selectedPlan === "monthly" || selectedPlan === "annual") {
