@@ -63,78 +63,41 @@ export default function SignupPage() {
     setMessage(null);
     setLoading(true);
 
-    try {
-      const signupResponse = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          fullName,
-        }),
-      });
+    const supabase = createClient();
 
-      const signupPayload = (await signupResponse.json()) as { error?: string };
+    // Sign up directly via client-side Supabase SDK.
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
 
-      if (!signupResponse.ok) {
-        const canUseClientFallback = signupPayload.error?.includes("Unable to connect to Supabase from server");
-        if (!canUseClientFallback) {
-          setLoading(false);
-          setError(signupPayload.error ?? "Unable to create account right now.");
-          return;
-        }
-
-        const supabase = createClient();
-        const { error: fallbackError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
-            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-          },
-        });
-
-        if (fallbackError) {
-          setLoading(false);
-          setError(fallbackError.message);
-          return;
-        }
-      }
-    } catch {
+    if (signUpError) {
       setLoading(false);
-      setError("Unable to reach signup service. Please try again.");
+      setError(signUpError.message);
       return;
     }
 
     // Try signing in immediately — works when email confirmation is disabled.
-    try {
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      setLoading(false);
+    setLoading(false);
 
-      if (!signInError) {
-        const selectedPlan = localStorage.getItem("selectedPlan");
-        localStorage.removeItem("selectedPlan");
-        if (selectedPlan === "monthly" || selectedPlan === "annual") {
-          window.location.href = `/dashboard?checkout=${selectedPlan}`;
-        } else {
-          window.location.href = "/dashboard";
-        }
-        return;
+    if (!signInError) {
+      const selectedPlan = localStorage.getItem("selectedPlan");
+      localStorage.removeItem("selectedPlan");
+      if (selectedPlan === "monthly" || selectedPlan === "annual") {
+        window.location.href = `/dashboard?checkout=${selectedPlan}`;
+      } else {
+        window.location.href = "/dashboard";
       }
-
-      console.error("Post-signup sign-in failed:", signInError.message);
-    } catch (err) {
-      console.error("Post-signup sign-in error:", err);
-      setLoading(false);
+      return;
     }
 
     // Sign-in failed — email confirmation is likely required.
