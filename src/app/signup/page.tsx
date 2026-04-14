@@ -63,54 +63,34 @@ export default function SignupPage() {
     setMessage(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const resolvedSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const resolvedSupabaseOrigin = (() => {
-      try {
-        return resolvedSupabaseUrl ? new URL(resolvedSupabaseUrl).origin : "missing";
-      } catch {
-        return "invalid";
-      }
-    })();
-    console.info("[signup] Supabase diagnostics", {
-      supabaseUrl: resolvedSupabaseUrl || "missing",
-      supabaseOrigin: resolvedSupabaseOrigin,
-    });
-    const redirectTo = `${window.location.origin}/api/auth/callback`;
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
+    try {
+      const signupResponse = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        emailRedirectTo: redirectTo,
-      },
-    });
-
-    if (signUpError) {
-      console.error("[signup] Supabase signUp failed", {
-        message: signUpError.message,
-        name: signUpError.name,
-        status: signUpError.status ?? "unknown",
-        code: signUpError.code ?? "unknown",
-        details: signUpError,
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+        }),
       });
+
+      const signupPayload = (await signupResponse.json()) as { error?: string };
+
+      if (!signupResponse.ok) {
+        setLoading(false);
+        setError(signupPayload.error ?? "Unable to create account right now.");
+        return;
+      }
+    } catch {
       setLoading(false);
-      setError(
-        [
-          signUpError.message,
-          signUpError.code ? `code=${signUpError.code}` : null,
-          signUpError.status ? `status=${String(signUpError.status)}` : null,
-        ]
-          .filter(Boolean)
-          .join(" | "),
-      );
+      setError("Unable to reach signup service. Please try again.");
       return;
     }
 
     // Try signing in immediately — works when email confirmation is disabled.
+    const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
