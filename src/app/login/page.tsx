@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -37,6 +38,20 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-sm p-8">
+        <div className="mb-6 flex items-center gap-3">
+          <Image
+            src="/assets/influencer-butler-logo.png"
+            alt="Influencer Butler logo"
+            width={48}
+            height={48}
+            className="rounded-lg"
+            priority
+          />
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Influencer Butler</p>
+            <p className="text-xs text-slate-500">Welcome back to your command center</p>
+          </div>
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
         <p className="mt-2 text-sm text-slate-600">Log in to manage your campaigns.</p>
 
