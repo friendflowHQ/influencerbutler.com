@@ -4,6 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Influencer Butler",
   description: "Influencer campaign automation platform",
+  icons: {
+    icon: "/assets/influencer-butler-logo.png",
+    shortcut: "/assets/influencer-butler-logo.png",
+    apple: "/assets/influencer-butler-logo.png",
+  },
 };
 
 export const viewport: Viewport = {
