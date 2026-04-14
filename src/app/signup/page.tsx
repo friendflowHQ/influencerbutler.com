@@ -111,23 +111,30 @@ export default function SignupPage() {
     }
 
     // Try signing in immediately — works when email confirmation is disabled.
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (!signInError) {
-      const selectedPlan = localStorage.getItem("selectedPlan");
-      localStorage.removeItem("selectedPlan");
-      if (selectedPlan === "monthly" || selectedPlan === "annual") {
-        window.location.href = `/dashboard?checkout=${selectedPlan}`;
-      } else {
-        window.location.href = "/dashboard";
+      if (!signInError) {
+        const selectedPlan = localStorage.getItem("selectedPlan");
+        localStorage.removeItem("selectedPlan");
+        if (selectedPlan === "monthly" || selectedPlan === "annual") {
+          window.location.href = `/dashboard?checkout=${selectedPlan}`;
+        } else {
+          window.location.href = "/dashboard";
+        }
+        return;
       }
-      return;
+
+      console.error("Post-signup sign-in failed:", signInError.message);
+    } catch (err) {
+      console.error("Post-signup sign-in error:", err);
+      setLoading(false);
     }
 
     // Sign-in failed — email confirmation is likely required.
