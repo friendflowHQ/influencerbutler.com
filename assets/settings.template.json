@@ -1,0 +1,26 @@
+{
+  "workspaceId": "actionqueue",
+  "followUpWaitMs": 900000,
+  "presets": [
+    {
+      "id": "due-today",
+      "name": "Due Today",
+      "filter": {
+        "dueBefore": "endOfDay"
+      }
+    },
+    {
+      "id": "high-priority",
+      "name": "High Priority",
+      "filter": {
+        "priority": ["high", "urgent"]
+      }
+    }
+  ],
+  "skipBrands": [
+    "_example_brand_slug"
+  ],
+  "skipTitleKeywords": [
+    "_example_keyword"
+  ]
+}
