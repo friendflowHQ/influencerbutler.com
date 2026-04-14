@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 type SignupPayload = {
   email?: string;
@@ -9,6 +10,8 @@ type SignupPayload = {
 
 export async function POST(request: Request) {
   try {
+    getSupabaseEnv();
+
     const body = (await request.json()) as SignupPayload;
     const email = body.email?.trim();
     const password = body.password;
@@ -33,7 +36,12 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      const message =
+        error.message.toLowerCase() === "fetch failed"
+          ? "Unable to connect to Supabase from server. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in production."
+          : error.message;
+
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -41,6 +49,17 @@ export async function POST(request: Request) {
       requiresEmailConfirmation: !data.session,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Missing Supabase environment variables.") {
+      return NextResponse.json(
+        { error: "Supabase is not configured on the server. Please contact support." },
+        { status: 500 },
+      );
+    }
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid signup request payload." }, { status: 400 });
+    }
+
     console.error("Signup route error", error);
     return NextResponse.json({ error: "Unable to create account right now." }, { status: 500 });
   }

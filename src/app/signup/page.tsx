@@ -63,23 +63,29 @@ export default function SignupPage() {
     setMessage(null);
     setLoading(true);
 
-    const signupResponse = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        fullName,
-      }),
-    });
+    try {
+      const signupResponse = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+        }),
+      });
 
-    const signupPayload = (await signupResponse.json()) as { error?: string };
+      const signupPayload = (await signupResponse.json()) as { error?: string };
 
-    if (!signupResponse.ok) {
+      if (!signupResponse.ok) {
+        setLoading(false);
+        setError(signupPayload.error ?? "Unable to create account right now.");
+        return;
+      }
+    } catch {
       setLoading(false);
-      setError(signupPayload.error ?? "Unable to create account right now.");
+      setError("Unable to reach signup service. Please try again.");
       return;
     }
 
