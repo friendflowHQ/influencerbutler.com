@@ -94,9 +94,9 @@ export default function SignupPage() {
       const selectedPlan = localStorage.getItem("selectedPlan");
       localStorage.removeItem("selectedPlan");
       if (selectedPlan === "monthly" || selectedPlan === "annual") {
-        router.push(`/dashboard?checkout=${selectedPlan}`);
+        window.location.href = `/dashboard?checkout=${selectedPlan}`;
       } else {
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
       return;
     }
