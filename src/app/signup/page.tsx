@@ -79,9 +79,30 @@ export default function SignupPage() {
       const signupPayload = (await signupResponse.json()) as { error?: string };
 
       if (!signupResponse.ok) {
-        setLoading(false);
-        setError(signupPayload.error ?? "Unable to create account right now.");
-        return;
+        const canUseClientFallback = signupPayload.error?.includes("Unable to connect to Supabase from server");
+        if (!canUseClientFallback) {
+          setLoading(false);
+          setError(signupPayload.error ?? "Unable to create account right now.");
+          return;
+        }
+
+        const supabase = createClient();
+        const { error: fallbackError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          },
+        });
+
+        if (fallbackError) {
+          setLoading(false);
+          setError(fallbackError.message);
+          return;
+        }
       }
     } catch {
       setLoading(false);
