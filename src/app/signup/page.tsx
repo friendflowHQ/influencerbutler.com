@@ -83,6 +83,20 @@ export default function SignupPage() {
       return;
     }
 
+    // If email confirmation is disabled, the user is immediately authenticated.
+    // Check for a session and redirect to dashboard directly.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const selectedPlan = localStorage.getItem("selectedPlan");
+      localStorage.removeItem("selectedPlan");
+      if (selectedPlan === "monthly" || selectedPlan === "annual") {
+        router.push(`/dashboard?checkout=${selectedPlan}`);
+      } else {
+        router.push("/dashboard");
+      }
+      return;
+    }
+
     setMessage("Check your email to confirm");
   };
 
