@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -70,8 +71,18 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
         ].join(" ")}
       >
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Influencer Butler</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/assets/influencer-butler-logo.png"
+                alt="Influencer Butler logo"
+                width={26}
+                height={26}
+                className="rounded"
+                priority
+              />
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Influencer Butler</p>
+            </div>
             <p className="mt-2 text-sm font-semibold text-slate-900 truncate">{userDisplay}</p>
             {profileName ? <p className="text-xs text-slate-500 truncate">{email}</p> : null}
           </div>
