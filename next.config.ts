@@ -1,12 +1,35 @@
 import type { NextConfig } from "next";
 
+const resolvedSupabaseOrigin = (() => {
+  const configuredSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!configuredSupabaseUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(configuredSupabaseUrl).origin;
+  } catch {
+    return null;
+  }
+})();
+
+const connectSrc = ["'self'", "https://*.supabase.co", "https://api.lemonsqueezy.com"];
+if (resolvedSupabaseOrigin) {
+  connectSrc.push(resolvedSupabaseOrigin);
+}
+
+const imgSrc = ["'self'", "data:", "https://*.supabase.co", "https://assets.lemonsqueezy.com"];
+if (resolvedSupabaseOrigin) {
+  imgSrc.push(resolvedSupabaseOrigin);
+}
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: https://*.supabase.co https://assets.lemonsqueezy.com",
-  "connect-src 'self' https://*.supabase.co https://api.lemonsqueezy.com",
+  `img-src ${imgSrc.join(" ")}`,
+  `connect-src ${connectSrc.join(" ")}`,
   "frame-src 'self' https://*.lemonsqueezy.com",
   "object-src 'none'",
   "base-uri 'self'",
