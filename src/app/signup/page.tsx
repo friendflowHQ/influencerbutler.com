@@ -76,17 +76,21 @@ export default function SignupPage() {
       },
     });
 
-    setLoading(false);
-
     if (signUpError) {
+      setLoading(false);
       setError(signUpError.message);
       return;
     }
 
-    // If email confirmation is disabled, signUp returns a session directly.
-    // Redirect to dashboard instead of showing "check your email".
-    const session = (data as Record<string, unknown>)?.session;
-    if (session) {
+    // Try signing in immediately — works when email confirmation is disabled.
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (!signInError) {
       const selectedPlan = localStorage.getItem("selectedPlan");
       localStorage.removeItem("selectedPlan");
       if (selectedPlan === "monthly" || selectedPlan === "annual") {
@@ -97,6 +101,7 @@ export default function SignupPage() {
       return;
     }
 
+    // Sign-in failed — email confirmation is likely required.
     setMessage("Check your email to confirm");
   };
 
