@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
 
 type SidebarProps = {
   email: string;
@@ -24,6 +25,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { setHelpOpen } = useKeyboardShortcutsContext();
 
   const userDisplay = useMemo(() => {
     if (profileName && profileName.trim().length > 0) return profileName;
@@ -114,9 +116,18 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
 
         <button
           type="button"
+          onClick={() => setHelpOpen(true)}
+          className="mt-6 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+        >
+          <kbd className="inline-flex min-w-[1.25rem] items-center justify-center rounded border border-slate-300 bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-500">?</kbd>
+          Keyboard shortcuts
+        </button>
+
+        <button
+          type="button"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="mt-6 rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316] disabled:opacity-60"
+          className="mt-2 rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316] disabled:opacity-60"
         >
           {isLoggingOut ? "Logging out..." : "Logout"}
         </button>

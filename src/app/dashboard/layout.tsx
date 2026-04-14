@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
+import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
+import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRecord = {
@@ -49,8 +51,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-      <Sidebar email={email} profileName={profileName} websiteHref="/" />
-      <main className="flex-1 px-4 pb-10 pt-20 lg:px-10 lg:py-10">{children}</main>
+      <KeyboardShortcutsProvider>
+        <Sidebar email={email} profileName={profileName} websiteHref="/" />
+        <main className="flex-1 px-4 pb-10 pt-20 lg:px-10 lg:py-10">{children}</main>
+        <ShortcutHelpOverlay />
+      </KeyboardShortcutsProvider>
     </div>
   );
 }

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Read(//c/Users/Raindeer/OneDrive/Documents/GitHub/influencerbutler.com/src/**)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pushd \"C:/Users/Raindeer/OneDrive/Documents/GitHub/influencerbutler.com\")",
+      "Bash(npx next:*)"
     ]
   }
 }
