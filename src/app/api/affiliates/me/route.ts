@@ -6,7 +6,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type SupabaseLike = {
-  auth: { getUser: () => Promise<{ data: { user: { id: string } | null } }> };
+  auth: {
+    getSession: () => Promise<{
+      data: { session: { user?: { id?: string } } | null };
+    }>;
+  };
   from: (table: string) => {
     select: (cols: string) => {
       eq: (col: string, value: string) => {
@@ -18,9 +22,17 @@ type SupabaseLike = {
 
 export async function GET() {
   const supabase = (await createClient()) as unknown as SupabaseLike;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // Cookie-local auth read to avoid transient Vercel -> Supabase fetch issues.
+  let user: { id: string } | null = null;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user?.id) user = { id: session.user.id };
+  } catch (error) {
+    console.error("api/affiliates/me: auth.getSession threw", error);
+  }
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

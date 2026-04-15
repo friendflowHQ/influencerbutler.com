@@ -4,15 +4,33 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PortalLogoutButton from "./PortalLogoutButton";
 
+type SessionUser = { id?: string };
+
+type SupabaseLike = {
+  auth: {
+    getSession: () => Promise<{ data: { session: { user?: SessionUser } | null } }>;
+  };
+};
+
 export default async function AffiliatePortalLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getSession() is cookie-local and doesn't make a network call to Supabase,
+  // so a transient Vercel -> Supabase fetch failure can't falsely redirect a
+  // signed-in affiliate back to /login. Middleware already gated the path.
+  const supabase = (await createClient()) as unknown as SupabaseLike;
 
-  if (!user) {
+  let userId: string | null = null;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    userId = session?.user?.id ?? null;
+  } catch (error) {
+    console.error("affiliate portal layout: auth.getSession threw", error);
+  }
+
+  if (!userId) {
     redirect("/login?next=/affiliates/portal");
   }
 

@@ -18,7 +18,11 @@ type ApplicationRow = {
 };
 
 type SupabaseLike = {
-  auth: { getUser: () => Promise<{ data: { user: { id: string; email?: string | null } | null } }> };
+  auth: {
+    getSession: () => Promise<{
+      data: { session: { user?: { id?: string; email?: string | null } } | null };
+    }>;
+  };
   from: (table: string) => {
     select: (cols: string) => {
       eq: (col: string, value: string) => {
@@ -41,14 +45,24 @@ function formatDate(iso: string | null | undefined): string {
 
 export default async function AffiliatePortalPage() {
   const supabase = (await createClient()) as unknown as SupabaseLike;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
+  // Cookie-local session read — the layout already gated this page, this is
+  // just to get the user id + email without a network round-trip.
+  let sessionUser: { id?: string; email?: string | null } | null = null;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    sessionUser = session?.user ?? null;
+  } catch (error) {
+    console.error("affiliate portal page: auth.getSession threw", error);
+  }
+
+  if (!sessionUser?.id) {
     // Layout already redirects, but keep the guard.
     return null;
   }
+  const user = { id: sessionUser.id, email: sessionUser.email ?? null };
 
   const { data: profileData } = await supabase
     .from("profiles")

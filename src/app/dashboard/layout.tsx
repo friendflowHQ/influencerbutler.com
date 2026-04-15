@@ -10,9 +10,22 @@ type ProfileRecord = {
   email?: string | null;
 };
 
-type AuthUser = {
-  id: string;
+type SessionUser = {
+  id?: string;
   email?: string | null;
+};
+
+type SupabaseLike = {
+  auth: {
+    getSession: () => Promise<{ data: { session: { user?: SessionUser } | null } }>;
+  };
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => Promise<{ data: ProfileRecord | null }>;
+      };
+    };
+  };
 };
 
 export default async function DashboardLayout({
@@ -20,34 +33,39 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  // Use getSession() (cookie-local, no network call) instead of getUser()
+  // so a transient Supabase fetch failure from the Vercel runtime doesn't
+  // bounce an authenticated user back to /login. Middleware already
+  // verified the presence of the auth cookie.
+  const supabase = (await createClient()) as unknown as SupabaseLike;
 
-  const user = authUser as AuthUser | null;
-
-  if (!user) {
-    redirect("/login");
+  let sessionUser: SessionUser | null = null;
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    sessionUser = session?.user ?? null;
+  } catch (error) {
+    console.error("dashboard layout: auth.getSession threw", error);
   }
 
-  const profileQueryClient = supabase as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: string) => {
-          maybeSingle: () => Promise<{ data: ProfileRecord | null }>;
-        };
-      };
-    };
-  };
+  if (!sessionUser?.id) {
+    redirect("/login?next=/dashboard");
+  }
 
-  const { data: profile } = await profileQueryClient
-    .from("profiles")
-    .select("full_name,email")
-    .eq("id", user.id)
-    .maybeSingle();
+  let profile: ProfileRecord | null = null;
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name,email")
+      .eq("id", sessionUser.id)
+      .maybeSingle();
+    profile = data;
+  } catch (error) {
+    console.error("dashboard layout: profile fetch failed", error);
+  }
 
-  const email = user.email ?? profile?.email ?? "Account";
+  const email = sessionUser.email ?? profile?.email ?? "Account";
   const profileName = profile?.full_name ?? null;
 
   return (
