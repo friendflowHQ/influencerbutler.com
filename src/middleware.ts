@@ -6,8 +6,9 @@ export function middleware(request: NextRequest) {
   // Check for Supabase auth cookies to determine if user is logged in.
   // We check for cookies rather than calling Supabase server-side because
   // Vercel edge functions have DNS resolution issues with Supabase.
+  // Matches sb-<ref>-auth-token and chunked variants like sb-<ref>-auth-token.0
   const hasAuthCookie = request.cookies.getAll().some(
-    (cookie) => cookie.name.startsWith("sb-") && cookie.name.endsWith("-auth-token"),
+    (cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name),
   );
 
   const pathname = request.nextUrl.pathname;
