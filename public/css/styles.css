@@ -805,6 +805,89 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .final-cta-buttons { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
 
 /* ================================================================
+   AFFILIATE BAND
+   ================================================================ */
+.affiliate-band {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-top: 1px solid #fed7aa;
+  border-bottom: 1px solid #fed7aa;
+}
+.affiliate-band-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 3rem;
+  align-items: center;
+}
+.affiliate-band-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--brand);
+  margin: 0 0 0.75rem;
+}
+.affiliate-band h2 {
+  font-size: 2.25rem;
+  line-height: 1.15;
+  color: var(--text);
+  margin: 0 0 1rem;
+}
+.affiliate-band-pitch {
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin: 0 0 1.25rem;
+  max-width: 48ch;
+}
+.affiliate-band-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.affiliate-band-points li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.affiliate-band-points li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--brand);
+  font-weight: 700;
+}
+.affiliate-band-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.affiliate-band-actions .btn {
+  width: 100%;
+  text-align: center;
+}
+.affiliate-band-secondary {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--brand);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.affiliate-band-secondary:hover { color: var(--brand-600); }
+
+@media (max-width: 768px) {
+  .affiliate-band-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .affiliate-band h2 { font-size: 1.75rem; }
+  .affiliate-band-actions { align-items: stretch; }
+}
+
+/* ================================================================
    FOOTER
    ================================================================ */
 footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(--border); }
