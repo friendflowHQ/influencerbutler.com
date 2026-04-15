@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type SocialHandles = {
   instagram: string;
@@ -12,6 +13,41 @@ type SocialHandles = {
   x: string;
   amazonStorefront: string;
 };
+
+type SupabaseBrowserClient = {
+  auth: {
+    signUp: (args: {
+      email: string;
+      password: string;
+      options?: { data?: Record<string, unknown>; emailRedirectTo?: string };
+    }) => Promise<{
+      data: { user: { id: string } | null };
+      error: { message: string } | null;
+    }>;
+    signInWithPassword: (args: {
+      email: string;
+      password: string;
+    }) => Promise<{
+      data: { user: { id: string } | null };
+      error: { message: string } | null;
+    }>;
+  };
+  from: (table: string) => {
+    upsert: (
+      payload: Record<string, unknown>,
+      options?: { onConflict: string },
+    ) => Promise<{ error: { message: string } | null }>;
+  };
+};
+
+function sanitizeSocials(input: SocialHandles): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input)) {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) out[key] = trimmed.slice(0, 200);
+  }
+  return out;
+}
 
 export default function AffiliateApplyPage() {
   const router = useRouter();
@@ -53,40 +89,81 @@ export default function AffiliateApplyPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/affiliates/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-          website,
-          audienceSize,
-          niche,
-          promotionStrategy,
-          agreedToTerms,
-          socialHandles: socials,
-        }),
+      const supabase = createClient() as unknown as SupabaseBrowserClient;
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // 1) Create the Supabase account (client-side — Vercel serverless has
+      //    intermittent DNS issues reaching Supabase from the server).
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+        },
       });
 
-      const data = (await response.json()) as {
-        ok?: boolean;
-        error?: string;
-        requiresEmailConfirmation?: boolean;
-      };
-
-      if (!response.ok || !data.ok) {
+      if (signUpError) {
         setLoading(false);
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(signUpError.message);
         return;
       }
 
-      const qs = data.requiresEmailConfirmation ? "?confirm=1" : "";
+      const userId = signUpData.user?.id ?? null;
+
+      // 2) Try to sign in immediately — works when email confirmation is off.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      const requiresEmailConfirmation = Boolean(signInError);
+
+      // 3) Save the application row. RLS allows auth.uid() = user_id, so this
+      //    only works once signed in. If email confirmation is required we
+      //    still complete the flow (user can confirm and return later).
+      if (!requiresEmailConfirmation && userId) {
+        const { error: upsertError } = await supabase
+          .from("affiliate_applications")
+          .upsert(
+            {
+              user_id: userId,
+              email: normalizedEmail,
+              full_name: fullName,
+              website: website.trim() || null,
+              social_handles: sanitizeSocials(socials),
+              audience_size: audienceSize.trim() || null,
+              niche: niche.trim() || null,
+              promotion_strategy: promotionStrategy.trim(),
+              agreed_to_terms: true,
+              status: "pending",
+            },
+            { onConflict: "user_id" },
+          );
+
+        if (upsertError) {
+          setLoading(false);
+          setError(
+            `Account created, but we couldn't save your application: ${upsertError.message}. Please log in and retry.`,
+          );
+          return;
+        }
+
+        // 4) Fire-and-forget admin email notification.
+        void fetch("/api/affiliates/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, fullName, email: normalizedEmail }),
+        }).catch(() => undefined);
+      }
+
+      const qs = requiresEmailConfirmation ? "?confirm=1" : "";
       router.push(`/affiliates/apply/thanks${qs}`);
     } catch (err) {
       console.error("Affiliate apply failed", err);
       setLoading(false);
-      setError("Network error. Please try again.");
+      const message = err instanceof Error ? err.message : "Network error. Please try again.";
+      setError(message);
     }
   };
 
