@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { lsApi } from "@/lib/lemonsqueezy";
-import { createClient } from "@/lib/supabase/server";
 
 type CheckoutRequestBody = {
   variantId?: string;
-};
-
-type AuthUser = {
-  id: string;
-  email?: string | null;
+  email?: string;
+  userId?: string;
 };
 
 type LsCheckoutResponse = {
@@ -21,21 +17,14 @@ type LsCheckoutResponse = {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-
-    const user = authUser as AuthUser | null;
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { variantId } = (await request.json()) as CheckoutRequestBody;
+    const { variantId, email, userId } = (await request.json()) as CheckoutRequestBody;
 
     if (!variantId) {
       return NextResponse.json({ error: "Missing variantId" }, { status: 400 });
+    }
+
+    if (!email || !userId) {
+      return NextResponse.json({ error: "Missing user info" }, { status: 400 });
     }
 
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
@@ -52,9 +41,9 @@ export async function POST(request: Request) {
           type: "checkouts",
           attributes: {
             checkout_data: {
-              email: user.email,
+              email,
               custom: {
-                supabase_user_id: user.id,
+                supabase_user_id: userId,
               },
             },
           },
