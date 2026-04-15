@@ -222,6 +222,64 @@ export async function fetchLsAffiliateReferrals(
   }
 }
 
+export type LsCreateAffiliateInput = {
+  email: string;
+  name: string;
+  storeId: string;
+};
+
+/**
+ * Creates a new affiliate in Lemon Squeezy and returns their ID.
+ * Returns null + logs on failure.
+ */
+export async function lsCreateAffiliate(
+  input: LsCreateAffiliateInput,
+): Promise<{ id: string; shareDomain: string | null } | null> {
+  try {
+    const response = await lsApi(`/affiliates`, {
+      method: "POST",
+      body: JSON.stringify({
+        data: {
+          type: "affiliates",
+          attributes: {
+            email: input.email,
+            name: input.name,
+          },
+          relationships: {
+            store: {
+              data: { type: "stores", id: input.storeId },
+            },
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("LS affiliate create failed", {
+        status: response.status,
+        body: text.slice(0, 500),
+      });
+      return null;
+    }
+
+    const payload = (await response.json()) as {
+      data?: { id?: string; attributes?: { share_domain?: string | null } };
+    };
+
+    const id = payload.data?.id;
+    if (!id) return null;
+
+    return {
+      id,
+      shareDomain: payload.data?.attributes?.share_domain ?? null,
+    };
+  } catch (error) {
+    console.error("LS affiliate create threw", error);
+    return null;
+  }
+}
+
 export function buildShareLink(shareDomain: string | null, lsAffiliateId: string): string {
   if (!shareDomain) {
     return `https://influencerbutler.com/?aff=${encodeURIComponent(lsAffiliateId)}`;

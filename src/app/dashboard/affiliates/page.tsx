@@ -54,6 +54,11 @@ export default function AffiliatesPage() {
         }
 
         // Step 2: Fetch profile + application directly from Supabase (client-side works).
+        // Match application on user_id OR email — a returning applicant whose
+        // account was recreated (e.g. via email confirmation) may have an
+        // application row whose user_id no longer matches auth.uid(), but the
+        // email still does. RLS covers both cases.
+        const userEmail = (user.email ?? "").toLowerCase();
         const [profileResult, applicationResult] = await Promise.all([
           supabase
             .from("profiles")
@@ -63,7 +68,13 @@ export default function AffiliatesPage() {
           supabase
             .from("affiliate_applications")
             .select("status,full_name,email,created_at")
-            .eq("user_id", user.id)
+            .or(
+              userEmail
+                ? `user_id.eq.${user.id},email.eq.${userEmail}`
+                : `user_id.eq.${user.id}`,
+            )
+            .order("created_at", { ascending: false })
+            .limit(1)
             .maybeSingle(),
         ]);
 
