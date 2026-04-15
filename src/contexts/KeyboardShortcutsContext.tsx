@@ -78,13 +78,6 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
         category: "Navigation",
       },
       {
-        key: "c",
-        chord: "g",
-        handler: () => router.push("/dashboard/console"),
-        description: "Go to Console",
-        category: "Navigation",
-      },
-      {
         key: "s",
         chord: "g",
         handler: () => router.push("/dashboard/subscription"),

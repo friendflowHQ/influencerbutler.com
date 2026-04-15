@@ -21,9 +21,33 @@ export type AffiliateSummary = {
 export type AffiliatePortalState =
   | { state: "none"; application: null }
   | { state: "pending"; application: AffiliateApplication | null }
-  | { state: "active"; affiliate: AffiliateSummary; lsAffiliateId: string }
-  | { state: "disabled"; affiliate: AffiliateSummary; lsAffiliateId: string }
+  | {
+      state: "active";
+      affiliate: AffiliateSummary;
+      referrals: AffiliateReferralStats | null;
+      lsAffiliateId: string;
+    }
+  | {
+      state: "disabled";
+      affiliate: AffiliateSummary;
+      referrals: AffiliateReferralStats | null;
+      lsAffiliateId: string;
+    }
   | { state: "error"; message: string };
+
+export type AffiliateDailyEarning = {
+  date: string; // ISO date, YYYY-MM-DD
+  earningsCents: number;
+};
+
+export type AffiliateReferralStats = {
+  totalReferrals: number;
+  activeReferrals: number;
+  cancelledReferrals: number;
+  conversionRate: number | null; // 0..1 or null when clicks unknown
+  totalClicks: number | null;
+  dailyEarnings: AffiliateDailyEarning[]; // last 90 days, oldest→newest
+};
 
 type LsAffiliateAttributes = {
   status?: string;
@@ -79,6 +103,123 @@ export function formatUsdFromCents(cents: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(dollars);
+}
+
+type LsReferralAttributes = {
+  created_at?: string;
+  status?: string;
+  commission_amount?: number; // cents
+  amount?: number;
+  subtotal?: number;
+  cancelled_at?: string | null;
+  refunded_at?: string | null;
+  is_refunded?: boolean;
+};
+
+type LsIncluded = {
+  type?: string;
+  attributes?: LsReferralAttributes;
+};
+
+type LsAffiliateWithIncluded = {
+  data?: { attributes?: LsAffiliateAttributes & { clicks?: number } };
+  included?: LsIncluded[];
+};
+
+function isCancelledStatus(status: string | undefined, attrs: LsReferralAttributes): boolean {
+  if (attrs.cancelled_at) return true;
+  if (attrs.refunded_at) return true;
+  if (attrs.is_refunded) return true;
+  if (!status) return false;
+  const s = status.toLowerCase();
+  return s === "cancelled" || s === "canceled" || s === "refunded" || s === "expired";
+}
+
+function toIsoDate(ts: string | undefined): string | null {
+  if (!ts) return null;
+  try {
+    return new Date(ts).toISOString().slice(0, 10);
+  } catch {
+    return null;
+  }
+}
+
+function buildDailyEarnings(
+  referrals: LsIncluded[],
+  days: number = 90,
+): AffiliateDailyEarning[] {
+  const bucket = new Map<string, number>();
+  // Seed with zeros for each of the last `days` days so the sparkline has a
+  // continuous axis even on quiet days.
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    bucket.set(d.toISOString().slice(0, 10), 0);
+  }
+
+  for (const inc of referrals) {
+    const attrs = inc.attributes ?? {};
+    const dateKey = toIsoDate(attrs.created_at ?? undefined);
+    if (!dateKey || !bucket.has(dateKey)) continue;
+    const cents = Number(attrs.commission_amount ?? 0);
+    if (Number.isFinite(cents) && cents > 0) {
+      bucket.set(dateKey, (bucket.get(dateKey) ?? 0) + cents);
+    }
+  }
+
+  return Array.from(bucket.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([date, earningsCents]) => ({ date, earningsCents }));
+}
+
+export async function fetchLsAffiliateReferrals(
+  lsAffiliateId: string,
+): Promise<AffiliateReferralStats | null> {
+  try {
+    const response = await lsApi(
+      `/affiliates/${encodeURIComponent(lsAffiliateId)}?include=affiliate-referrals`,
+    );
+    if (!response.ok) {
+      console.error("LS affiliate referrals fetch failed", response.status);
+      return null;
+    }
+    const payload = (await response.json()) as LsAffiliateWithIncluded;
+    const included = Array.isArray(payload.included) ? payload.included : [];
+    const referrals = included.filter((item) => {
+      if (!item.type) return false;
+      const t = item.type.toLowerCase();
+      return t === "affiliate-referrals" || t === "referrals";
+    });
+
+    let totalReferrals = 0;
+    let cancelledReferrals = 0;
+    for (const ref of referrals) {
+      totalReferrals += 1;
+      if (isCancelledStatus(ref.attributes?.status, ref.attributes ?? {})) {
+        cancelledReferrals += 1;
+      }
+    }
+    const activeReferrals = Math.max(0, totalReferrals - cancelledReferrals);
+
+    const clicksRaw = payload.data?.attributes?.clicks;
+    const totalClicks = typeof clicksRaw === "number" && Number.isFinite(clicksRaw) ? clicksRaw : null;
+    const conversionRate =
+      totalClicks && totalClicks > 0 ? totalReferrals / totalClicks : null;
+
+    return {
+      totalReferrals,
+      activeReferrals,
+      cancelledReferrals,
+      conversionRate,
+      totalClicks,
+      dailyEarnings: buildDailyEarnings(referrals, 90),
+    };
+  } catch (error) {
+    console.error("LS affiliate referrals fetch threw", error);
+    return null;
+  }
 }
 
 export function buildShareLink(shareDomain: string | null, lsAffiliateId: string): string {

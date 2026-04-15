@@ -28,7 +28,7 @@ export default function AffiliatesLandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              href="/login?next=/affiliates/portal"
+              href="/login?next=/dashboard/affiliates"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
               Affiliate login
@@ -70,7 +70,7 @@ export default function AffiliatesLandingPage() {
               Apply in 2 minutes →
             </Link>
             <Link
-              href="/login?next=/affiliates/portal"
+              href="/login?next=/dashboard/affiliates"
               className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
             >
               Affiliate login
@@ -246,7 +246,7 @@ export default function AffiliatesLandingPage() {
             Apply in 2 minutes →
           </Link>
           <Link
-            href="/login?next=/affiliates/portal"
+            href="/login?next=/dashboard/affiliates"
             className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
           >
             Already approved? Log in
@@ -254,19 +254,46 @@ export default function AffiliatesLandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-6 py-8 text-sm text-slate-500 sm:flex-row sm:justify-between">
-          <p>© {new Date().getFullYear()} The Social Media Posse LLC. All rights reserved.</p>
-          <p>
-            Powered by{" "}
-            <a
-              href="https://www.lemonsqueezy.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-slate-700 hover:text-[#f97316]"
-            >
-              Lemon Squeezy
-            </a>
+      <footer className="border-t border-slate-200 bg-[#fafafa] pt-14 pb-8">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div>
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/assets/influencer-butler-logo.png"
+                alt="Influencer Butler logo"
+                width={36}
+                height={36}
+                className="rounded"
+              />
+              <span className="text-sm font-semibold tracking-tight">Influencer Butler</span>
+            </Link>
+            <p className="mt-3 max-w-[260px] text-sm text-slate-500">
+              The all-in-one command center for Amazon Influencers.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Product</h4>
+            <a href="/#features" className="text-sm text-slate-500 transition hover:text-[#f97316]">Features</a>
+            <a href="/#pricing" className="text-sm text-slate-500 transition hover:text-[#f97316]">Pricing</a>
+            <a href="/#how-it-works" className="text-sm text-slate-500 transition hover:text-[#f97316]">How It Works</a>
+            <a href="/#faq" className="text-sm text-slate-500 transition hover:text-[#f97316]">FAQ</a>
+            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates — Earn 35%</Link>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>
+            <a href="/legal/privacy.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Privacy Policy</a>
+            <a href="/legal/eula.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">EULA</a>
+            <a href="/legal/terms.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Terms of Service</a>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
+            <a href="mailto:hello@influencerbutler.com" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</a>
+            <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
+          </div>
+        </div>
+        <div className="mx-auto mt-10 max-w-6xl border-t border-slate-200 px-6 pt-6">
+          <p className="text-center text-xs text-slate-500">
+            © {new Date().getFullYear()} The Social Media Posse LLC. All rights reserved.
           </p>
         </div>
       </footer>

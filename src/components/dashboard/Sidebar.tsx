@@ -15,9 +15,9 @@ type SidebarProps = {
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/console", label: "Console" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
+  { href: "/dashboard/affiliates", label: "Affiliates" },
 ];
 
 export default function Sidebar({ email, profileName, websiteHref = "/" }: SidebarProps) {

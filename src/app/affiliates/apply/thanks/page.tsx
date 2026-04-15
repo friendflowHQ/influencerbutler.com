@@ -45,7 +45,7 @@ export default async function AffiliateThanksPage({ searchParams }: ThanksPagePr
               <span>
                 Once approved, log in at{" "}
                 <Link
-                  href="/login?next=/affiliates/portal"
+                  href="/login?next=/dashboard/affiliates"
                   className="font-medium text-[#f97316] hover:text-[#ea580c]"
                 >
                   /login
@@ -61,10 +61,10 @@ export default async function AffiliateThanksPage({ searchParams }: ThanksPagePr
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/affiliates/portal"
+              href="/dashboard/affiliates"
               className="rounded-xl bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
             >
-              Go to affiliate portal
+              Go to your dashboard
             </Link>
             <Link
               href="/"

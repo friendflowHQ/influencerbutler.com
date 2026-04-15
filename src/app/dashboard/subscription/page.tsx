@@ -186,7 +186,7 @@ export default function SubscriptionPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Start your free trial</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Unlock all 20+ automation tools with a 7-day free trial. Cancel anytime.
+            Unlock all 20+ automation tools with a 3-day free trial. Cancel anytime.
           </p>
         </section>
 
@@ -207,7 +207,7 @@ export default function SubscriptionPage() {
               "Commission harvesting",
               "Priority email support",
             ]}
-            cta={checkoutLoading === "monthly" ? "Starting…" : "Start 7-day free trial"}
+            cta={checkoutLoading === "monthly" ? "Starting…" : "Start 3-day free trial"}
             disabled={checkoutLoading !== null}
             onSelect={() => handleStartCheckout(MONTHLY_VARIANT_ID, "monthly")}
           />
@@ -222,7 +222,7 @@ export default function SubscriptionPage() {
               "Priority onboarding",
               "Early access to new tools",
             ]}
-            cta={checkoutLoading === "annual" ? "Starting…" : "Start 7-day free trial"}
+            cta={checkoutLoading === "annual" ? "Starting…" : "Start 3-day free trial"}
             disabled={checkoutLoading !== null}
             featured
             onSelect={() => handleStartCheckout(ANNUAL_VARIANT_ID, "annual")}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,6 +16,9 @@ type SocialHandles = {
 
 type SupabaseBrowserClient = {
   auth: {
+    getUser: () => Promise<{
+      data: { user: { id: string; email?: string | null } | null };
+    }>;
     signUp: (args: {
       email: string;
       password: string;
@@ -51,6 +54,29 @@ function sanitizeSocials(input: SocialHandles): Record<string, string> {
 
 export default function AffiliateApplyPage() {
   const router = useRouter();
+
+  // Signed-in users get the inline dashboard form — no need to create another
+  // account. Send them to the consolidated affiliate dashboard.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient() as unknown as SupabaseBrowserClient;
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!cancelled && user) {
+          router.replace("/dashboard/affiliates");
+        }
+      } catch {
+        // Ignore — treat as signed-out and let them use the public form.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -361,7 +387,7 @@ export default function AffiliateApplyPage() {
             <p className="text-center text-sm text-slate-500">
               Already approved?{" "}
               <Link
-                href="/login?next=/affiliates/portal"
+                href="/login?next=/dashboard/affiliates"
                 className="font-medium text-[#f97316] hover:text-[#ea580c]"
               >
                 Log in
