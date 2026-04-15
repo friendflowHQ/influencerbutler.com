@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
+import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 
 export default async function DashboardLayout({
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
             />
             <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Influencer Butler</span>
           </div>
+          <AffiliateUpsellBanner />
           {children}
         </main>
         <ShortcutHelpOverlay />

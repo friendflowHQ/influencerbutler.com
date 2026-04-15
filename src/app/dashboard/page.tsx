@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
 
 declare global {
   interface Window {
@@ -13,25 +14,15 @@ declare global {
   }
 }
 
-const variantIdByPlan: Record<string, string | undefined> = {
-  monthly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID,
-  annual: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_VARIANT_ID,
-};
-
 export default function DashboardOverviewPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const checkoutPlan = searchParams.get("checkout");
+    const promoCode = searchParams.get("code")?.trim() || undefined;
 
-    if (!checkoutPlan || !(checkoutPlan in variantIdByPlan)) {
-      return;
-    }
-
-    const variantId = variantIdByPlan[checkoutPlan];
-
-    if (!variantId) {
-      console.error(`Missing variant id for checkout plan: ${checkoutPlan}`);
+    if (checkoutPlan !== "monthly" && checkoutPlan !== "annual") {
       return;
     }
 
@@ -42,7 +33,7 @@ export default function DashboardOverviewPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ variantId }),
+          body: JSON.stringify({ plan: checkoutPlan, code: promoCode }),
         });
 
         if (!response.ok) {
@@ -81,10 +72,7 @@ export default function DashboardOverviewPage() {
           <p className="mt-2 text-lg font-semibold text-slate-900">No active subscription</p>
         </article>
 
-        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">License Key</h2>
-          <p className="mt-2 text-lg font-semibold text-slate-900">No license key</p>
-        </article>
+        <LicenseKeyDisplay variant="card" />
       </div>
 
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -92,6 +80,7 @@ export default function DashboardOverviewPage() {
         <p className="mt-1 text-sm text-slate-600">Get started by choosing your next step.</p>
         <button
           type="button"
+          onClick={() => router.push("/dashboard/subscription")}
           className="mt-4 rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
         >
           Upgrade Plan

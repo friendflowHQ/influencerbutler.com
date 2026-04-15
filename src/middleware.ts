@@ -17,9 +17,11 @@ export function middleware(request: NextRequest) {
   );
 
   if (isProtected && !hasAuthCookie) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", pathname);
+    // Preserve the full path + query so things like ?code=JOHN (affiliate
+    // share link) survive the login round-trip.
+    const nextTarget = `${pathname}${request.nextUrl.search}`;
+    const redirectUrl = new URL("/login", request.nextUrl.origin);
+    redirectUrl.searchParams.set("next", nextTarget);
     return NextResponse.redirect(redirectUrl);
   }
 

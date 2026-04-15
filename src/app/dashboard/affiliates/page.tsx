@@ -18,12 +18,14 @@ type MeResponse =
       affiliate: AffiliateSummary;
       referrals: AffiliateReferralStats | null;
       lsAffiliateId: string;
+      brandedCode?: string | null;
     }
   | { state: "error"; message: string };
 
 type ProfileRow = {
   is_affiliate?: boolean | null;
   ls_affiliate_id?: string | null;
+  affiliate_code?: string | null;
 };
 
 type ApplicationRow = {
@@ -62,7 +64,7 @@ export default function AffiliatesPage() {
         const [profileResult, applicationResult] = await Promise.all([
           supabase
             .from("profiles")
-            .select("is_affiliate,ls_affiliate_id")
+            .select("is_affiliate,ls_affiliate_id,affiliate_code")
             .eq("id", user.id)
             .maybeSingle(),
           supabase
@@ -111,7 +113,18 @@ export default function AffiliatesPage() {
         }
 
         const json = (await res.json()) as MeResponse;
-        if (!cancelled) setData(json);
+        if (!cancelled) {
+          // Merge the branded code from the profile query into the active/disabled state.
+          if (json.state === "active" || json.state === "disabled") {
+            const brandedCode =
+              typeof profile?.affiliate_code === "string" && profile.affiliate_code.length > 0
+                ? profile.affiliate_code
+                : null;
+            setData({ ...json, brandedCode });
+          } else {
+            setData(json);
+          }
+        }
       } catch (err) {
         console.error("affiliates page load failed", err);
         if (!cancelled) setLoadError("Network error. Please refresh to try again.");
@@ -186,6 +199,7 @@ export default function AffiliatesPage() {
       referrals={data.referrals}
       lsAffiliateId={data.lsAffiliateId}
       displayName={data.affiliate.userEmail ?? "there"}
+      brandedCode={data.brandedCode ?? null}
     />
   );
 }

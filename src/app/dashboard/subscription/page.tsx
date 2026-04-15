@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import CancelFunnel from "@/components/dashboard/CancelFunnel";
+import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
 
 declare global {
   interface Window {
@@ -16,35 +19,32 @@ declare global {
 type Subscription = {
   id: string;
   ls_subscription_id: string;
+  ls_variant_id: string | number | null;
   status: string;
   plan_name: string | null;
   renews_at: string | null;
   ends_at: string | null;
 };
 
-type LicenseKey = {
-  id: string;
-  key: string;
-  status: string;
-  activation_limit: number | null;
-  activations_count: number | null;
-};
-
-const MONTHLY_VARIANT_ID = process.env.NEXT_PUBLIC_LEMONSQUEEZY_MONTHLY_VARIANT_ID || "";
-const ANNUAL_VARIANT_ID = process.env.NEXT_PUBLIC_LEMONSQUEEZY_ANNUAL_VARIANT_ID || "";
-
 export default function SubscriptionPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [licenseKey, setLicenseKey] = useState<LicenseKey | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [hasLicenseKey, setHasLicenseKey] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [keyRevealed, setKeyRevealed] = useState(false);
+  const [showCancelFunnel, setShowCancelFunnel] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState<string>("");
+  const [promoCodeOpen, setPromoCodeOpen] = useState(false);
+
+  // Prefill the promo code from ?code=X (affiliate pre-filled share links).
+  useEffect(() => {
+    const fromQuery = searchParams.get("code");
+    if (fromQuery && fromQuery.trim().length > 0) {
+      setPromoCode(fromQuery.trim().toUpperCase());
+      setPromoCodeOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,13 +59,10 @@ export default function SubscriptionPage() {
           return;
         }
 
-        setUserEmail(user.email ?? null);
-        setUserId(user.id);
-
         // Fetch subscription (most recent active one)
         const { data: subs } = await supabase
           .from("subscriptions")
-          .select("id,ls_subscription_id,status,plan_name,renews_at,ends_at")
+          .select("id,ls_subscription_id,ls_variant_id,status,plan_name,renews_at,ends_at")
           .eq("user_id", user.id)
           .in("status", ["active", "on_trial", "past_due", "cancelled"])
           .order("created_at", { ascending: false })
@@ -77,12 +74,12 @@ export default function SubscriptionPage() {
         if (sub) {
           const { data: keys } = await supabase
             .from("license_keys")
-            .select("id,key,status,activation_limit,activations_count")
+            .select("id")
             .eq("subscription_id", sub.id)
             .limit(1);
 
           if (keys && keys.length > 0) {
-            setLicenseKey(keys[0] as LicenseKey);
+            setHasLicenseKey(true);
           }
         }
       } catch (err) {
@@ -96,23 +93,26 @@ export default function SubscriptionPage() {
     void loadData();
   }, []);
 
-  const handleStartCheckout = async (variantId: string, plan: string) => {
-    if (!userId || !userEmail) {
-      setError("Please log in to start your subscription.");
-      return;
-    }
-
+  const handleStartCheckout = async (plan: "monthly" | "annual") => {
     setCheckoutLoading(plan);
     setError(null);
 
     try {
+      const codeToSend = promoCode.trim();
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId, email: userEmail, userId }),
+        body: JSON.stringify({
+          plan,
+          code: codeToSend.length > 0 ? codeToSend : undefined,
+        }),
       });
 
       const payload = (await response.json()) as { checkoutUrl?: string; error?: string };
+
+      if (response.status === 401) {
+        throw new Error("Please log in to start your subscription.");
+      }
 
       if (!response.ok || !payload.checkoutUrl) {
         throw new Error(payload.error || "Could not start checkout");
@@ -128,45 +128,6 @@ export default function SubscriptionPage() {
       setError(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setCheckoutLoading(null);
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!subscription) return;
-    setCancelLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
-      });
-
-      const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error || "Could not cancel subscription");
-      }
-
-      // Refresh the page to show updated status
-      window.location.reload();
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Cancellation failed");
-      setCancelLoading(false);
-      setShowCancelConfirm(false);
-    }
-  };
-
-  const handleCopyKey = async () => {
-    if (!licenseKey) return;
-    try {
-      await navigator.clipboard.writeText(licenseKey.key);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("Failed to copy to clipboard");
     }
   };
 
@@ -196,6 +157,13 @@ export default function SubscriptionPage() {
           </div>
         ) : null}
 
+        <PromoCodeField
+          value={promoCode}
+          onChange={setPromoCode}
+          open={promoCodeOpen}
+          onToggle={() => setPromoCodeOpen((v) => !v)}
+        />
+
         <div className="grid gap-6 md:grid-cols-2">
           <PricingCard
             name="Pro Monthly"
@@ -209,7 +177,7 @@ export default function SubscriptionPage() {
             ]}
             cta={checkoutLoading === "monthly" ? "Starting…" : "Start 3-day free trial"}
             disabled={checkoutLoading !== null}
-            onSelect={() => handleStartCheckout(MONTHLY_VARIANT_ID, "monthly")}
+            onSelect={() => handleStartCheckout("monthly")}
           />
           <PricingCard
             name="Pro Annual"
@@ -218,14 +186,13 @@ export default function SubscriptionPage() {
             highlight="Save 25%"
             features={[
               "Everything in Pro Monthly",
-              "2 months free",
               "Priority onboarding",
               "Early access to new tools",
             ]}
             cta={checkoutLoading === "annual" ? "Starting…" : "Start 3-day free trial"}
             disabled={checkoutLoading !== null}
             featured
-            onSelect={() => handleStartCheckout(ANNUAL_VARIANT_ID, "annual")}
+            onSelect={() => handleStartCheckout("annual")}
           />
         </div>
       </div>
@@ -247,10 +214,6 @@ export default function SubscriptionPage() {
         month: "long",
         day: "numeric",
       })
-    : null;
-
-  const maskedKey = licenseKey?.key
-    ? `${licenseKey.key.slice(0, 8)}${"•".repeat(Math.max(0, licenseKey.key.length - 8))}`
     : null;
 
   return (
@@ -277,38 +240,7 @@ export default function SubscriptionPage() {
         </div>
       </section>
 
-      {licenseKey ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold tracking-tight">License key</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Use this key to activate the Influencer Butler desktop app.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <code className="flex-1 min-w-0 break-all rounded-lg bg-slate-50 px-4 py-3 font-mono text-sm text-slate-900">
-              {keyRevealed ? licenseKey.key : maskedKey}
-            </code>
-            <button
-              type="button"
-              onClick={() => setKeyRevealed((prev) => !prev)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {keyRevealed ? "Hide" : "Reveal"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyKey}
-              className="rounded-lg bg-[#f97316] px-3 py-2 text-sm font-medium text-white hover:bg-[#ea580c]"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
-          </div>
-          {licenseKey.activation_limit !== null ? (
-            <p className="mt-3 text-xs text-slate-500">
-              Activations: {licenseKey.activations_count ?? 0} of {licenseKey.activation_limit}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
+      {hasLicenseKey ? <LicenseKeyDisplay variant="panel" /> : null}
 
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -322,40 +254,34 @@ export default function SubscriptionPage() {
           <p className="mt-1 text-sm text-slate-600">
             You&apos;ll keep access until the end of your current billing period.
           </p>
-          {!showCancelConfirm ? (
-            <button
-              type="button"
-              onClick={() => setShowCancelConfirm(true)}
-              className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-            >
-              Cancel subscription
-            </button>
-          ) : (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-              <p className="text-sm text-red-900">
-                Are you sure? This will cancel your subscription at the end of the current period.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  disabled={cancelLoading}
-                  onClick={handleCancelSubscription}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                >
-                  {cancelLoading ? "Cancelling…" : "Yes, cancel"}
-                </button>
-                <button
-                  type="button"
-                  disabled={cancelLoading}
-                  onClick={() => setShowCancelConfirm(false)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                >
-                  Keep subscription
-                </button>
-              </div>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowCancelFunnel(true)}
+            className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+          >
+            Cancel subscription
+          </button>
         </section>
+      ) : null}
+
+      {showCancelFunnel ? (
+        <CancelFunnel
+          subscriptionId={subscription.ls_subscription_id}
+          variantId={
+            subscription.ls_variant_id != null
+              ? String(subscription.ls_variant_id)
+              : null
+          }
+          renewsAt={subscription.renews_at}
+          onClose={() => setShowCancelFunnel(false)}
+          onCancelled={() => {
+            // Leave the terminal screen visible; user closes it when done, then reload.
+            setTimeout(() => window.location.reload(), 1500);
+          }}
+          onOfferAccepted={() => {
+            setTimeout(() => window.location.reload(), 1500);
+          }}
+        />
       ) : null}
     </div>
   );
@@ -431,6 +357,74 @@ function PricingCard({
         {cta}
       </button>
     </div>
+  );
+}
+
+type PromoCodeFieldProps = {
+  value: string;
+  onChange: (v: string) => void;
+  open: boolean;
+  onToggle: () => void;
+};
+
+function PromoCodeField({ value, onChange, open, onToggle }: PromoCodeFieldProps) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <span className="text-sm font-medium text-slate-700">
+          {value ? (
+            <>
+              Promo code: <span className="font-mono font-semibold text-slate-900">{value}</span>
+            </>
+          ) : (
+            "Have a promo code?"
+          )}
+        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open ? (
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            value={value}
+            onChange={(e) => onChange(e.target.value.toUpperCase())}
+            placeholder="e.g. JOHN"
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase tracking-wider text-slate-900 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
+          />
+          {value ? (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="mt-2 text-xs text-slate-500">
+        {value
+          ? "Your discount will be applied at checkout."
+          : "Enter a creator's code for a discount on your first month."}
+      </p>
+    </section>
   );
 }
 

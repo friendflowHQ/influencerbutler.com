@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ShareLinkCard from "@/app/affiliates/portal/ShareLinkCard";
 import EarningsSparkline from "./EarningsSparkline";
 import {
@@ -15,6 +15,7 @@ type Props = {
   referrals: AffiliateReferralStats | null;
   lsAffiliateId: string;
   displayName: string;
+  brandedCode?: string | null;
 };
 
 const MILESTONES: { label: string; threshold: number }[] = [
@@ -46,9 +47,13 @@ export default function AffiliateDashboard({
   referrals,
   lsAffiliateId,
   displayName,
+  brandedCode,
 }: Props) {
   const isActive = summary.status === "active";
   const shareLink = buildShareLink(summary.shareDomain, lsAffiliateId);
+  const brandedShareLink = brandedCode
+    ? `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(brandedCode)}`
+    : null;
 
   const milestone = useMemo(() => {
     const earned = summary.totalEarningsCents;
@@ -127,6 +132,10 @@ export default function AffiliateDashboard({
         />
       </section>
 
+      {isActive && brandedCode && brandedShareLink ? (
+        <BrandedCodeCard code={brandedCode} shareLink={brandedShareLink} />
+      ) : null}
+
       {isActive ? <ShareLinkCard shareLink={shareLink} shareDomain={summary.shareDomain} /> : null}
 
       {referrals && referrals.dailyEarnings.length > 0 ? (
@@ -182,6 +191,80 @@ export default function AffiliateDashboard({
         .
       </div>
     </div>
+  );
+}
+
+function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string }) {
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const copy = async (text: string, which: "code" | "link") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (which === "code") {
+        setCopiedCode(true);
+        window.setTimeout(() => setCopiedCode(false), 2000);
+      } else {
+        setCopiedLink(true);
+        window.setTimeout(() => setCopiedLink(false), 2000);
+      }
+    } catch (error) {
+      console.error("Clipboard copy failed", error);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+        Your branded promo code
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        Share this code for <strong>15% off</strong> your audience&apos;s first month — you&apos;re
+        credited 35% recurring commission when they check out from our site.
+      </p>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-1 items-center gap-3 rounded-lg border border-indigo-300 bg-white px-4 py-3">
+          <span className="font-mono text-xl font-bold tracking-widest text-indigo-900">
+            {code}
+          </span>
+          <button
+            type="button"
+            onClick={() => copy(code, "code")}
+            className="ml-auto text-xs font-medium text-indigo-700 hover:text-indigo-900"
+          >
+            {copiedCode ? "Copied!" : "Copy code"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Pre-filled share link (easiest thing to post)
+        </p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            readOnly
+            value={shareLink}
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+          />
+          <button
+            type="button"
+            onClick={() => copy(shareLink, "link")}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+          >
+            {copiedLink ? "Copied!" : "Copy link"}
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">
+          When customers use this link, the code is auto-applied and you&apos;re credited
+          automatically. When they type just the code at checkout on our site, you&apos;re still
+          credited.
+        </p>
+      </div>
+    </section>
   );
 }
 
