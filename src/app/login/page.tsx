@@ -3,15 +3,27 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+
+const ALLOWED_NEXT_PREFIXES = ["/dashboard", "/affiliates/portal"];
+
+function resolveNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/")) return "/dashboard";
+  if (raw.startsWith("//")) return "/dashboard";
+  const ok = ALLOWED_NEXT_PREFIXES.some(
+    (p) => raw === p || raw.startsWith(`${p}/`) || raw.startsWith(`${p}?`),
+  );
+  return ok ? raw : "/dashboard";
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,7 +44,8 @@ export default function LoginPage() {
     }
 
     // Hard redirect so the middleware sees the fresh session cookies.
-    window.location.href = "/dashboard";
+    const next = resolveNext(searchParams.get("next"));
+    window.location.href = next;
   };
 
   return (

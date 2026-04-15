@@ -18,7 +18,6 @@ const navItems = [
   { href: "/dashboard/console", label: "Console" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
-  { href: "/dashboard/affiliate", label: "Affiliate" },
 ];
 
 export default function Sidebar({ email, profileName, websiteHref = "/" }: SidebarProps) {

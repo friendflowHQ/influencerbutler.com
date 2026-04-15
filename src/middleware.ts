@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal"];
+
 export function middleware(request: NextRequest) {
   // Check for Supabase auth cookies to determine if user is logged in.
   // We check for cookies rather than calling Supabase server-side because
@@ -8,10 +10,15 @@ export function middleware(request: NextRequest) {
     (cookie) => cookie.name.startsWith("sb-") && cookie.name.endsWith("-auth-token"),
   );
 
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !hasAuthCookie) {
+  const pathname = request.nextUrl.pathname;
+  const isProtected = PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+  if (isProtected && !hasAuthCookie) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
+    redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -19,5 +26,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/affiliates/portal/:path*"],
 };
