@@ -214,10 +214,15 @@ export async function approveAffiliate(params: {
     }
   }
 
-  // 3) Upsert the profile. We only write fields we actually have values for
-  //    so we don't null out ls_affiliate_id if the webhook set it earlier.
+  // 3) Upsert the profile. We include email so the INSERT path works when the
+  //    user doesn't have a profile row yet (profiles.email is NOT NULL). For
+  //    existing rows, email will be overwritten with the application's email —
+  //    harmless since it should match what they signed up with.
+  //    We don't write ls_affiliate_id so we don't null out any value the
+  //    webhook may have set earlier.
   const profilePayload: Record<string, unknown> = {
     id: userId,
+    email: application.email,
     is_affiliate: true,
   };
   if (brandedCode) profilePayload.affiliate_code = brandedCode;
