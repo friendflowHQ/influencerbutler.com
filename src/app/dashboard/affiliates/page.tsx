@@ -14,6 +14,10 @@ type MeResponse =
       application: { status?: string; full_name?: string; email?: string; created_at?: string } | null;
     }
   | {
+      state: "ls-signup";
+      brandedCode: string | null;
+    }
+  | {
       state: "active" | "disabled";
       affiliate: AffiliateSummary;
       referrals: AffiliateReferralStats | null;
@@ -88,13 +92,26 @@ export default function AffiliatesPage() {
             ? profile.ls_affiliate_id
             : null;
 
-        // Step 3: If no LS affiliate ID, return pending or none state.
+        // Step 3: No LS affiliate ID yet. Three sub-states:
+        //   - Approved on our side but waiting for LS portal signup → "ls-signup"
+        //   - Applied but not yet approved → "pending"
+        //   - Never applied → "none"
         if (!lsAffiliateId) {
           if (!cancelled) {
-            setData({
-              state: application ? "pending" : "none",
-              application: application ?? null,
-            } as MeResponse);
+            if (profile?.is_affiliate === true) {
+              setData({
+                state: "ls-signup",
+                brandedCode:
+                  typeof profile?.affiliate_code === "string" && profile.affiliate_code.length > 0
+                    ? profile.affiliate_code
+                    : null,
+              });
+            } else {
+              setData({
+                state: application ? "pending" : "none",
+                application: application ?? null,
+              } as MeResponse);
+            }
           }
           return;
         }
@@ -166,6 +183,10 @@ export default function AffiliatesPage() {
         displayName={data.application?.full_name ?? null}
       />
     );
+  }
+
+  if (data.state === "ls-signup") {
+    return <LsSignupPending brandedCode={data.brandedCode} />;
   }
 
   if (data.state === "error") {
@@ -255,6 +276,137 @@ function PendingState({
           </li>
         </ol>
       </section>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+        Questions? Email{" "}
+        <Link
+          href="mailto:hello@influencerbutler.com"
+          className="font-medium text-[#f97316] hover:text-[#ea580c]"
+        >
+          hello@influencerbutler.com
+        </Link>
+        .
+      </div>
+    </div>
+  );
+}
+
+function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
+  const [copied, setCopied] = useState(false);
+  const signupUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_AFFILIATE_SIGNUP_URL ?? "";
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Clipboard copy failed", error);
+    }
+  };
+
+  const brandedShareLink = brandedCode
+    ? `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(brandedCode)}`
+    : null;
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          Affiliate program
+        </p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+          You&apos;re in — one last step.
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Activate your tracked referral link by completing a 30-second signup on Lemon Squeezy.
+          Once they confirm you, your full affiliate dashboard unlocks automatically.
+        </p>
+      </header>
+
+      <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">
+          Step 1 — Finalize on Lemon Squeezy
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          Sign up using the <strong>same email</strong> you used to apply here, so we can match your
+          account. You&apos;ll come right back.
+        </p>
+        {signupUrl ? (
+          <a
+            href={signupUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+          >
+            Complete signup on Lemon Squeezy →
+          </a>
+        ) : (
+          <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Signup URL not configured. Reach out to{" "}
+            <a
+              href="mailto:hello@influencerbutler.com"
+              className="font-medium underline underline-offset-2"
+            >
+              hello@influencerbutler.com
+            </a>{" "}
+            to get your tracked link activated.
+          </p>
+        )}
+        <p className="mt-3 text-xs text-slate-500">
+          Your tracked link will appear here automatically once Lemon Squeezy confirms you. Just
+          refresh this page after completing signup.
+        </p>
+      </section>
+
+      {brandedCode ? (
+        <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+            Step 2 — Start promoting today
+          </p>
+          <p className="mt-2 text-sm text-slate-700">
+            You can share your branded <strong>15%-off code</strong> right now — no waiting. When
+            customers use it, you earn 35% recurring commission.
+          </p>
+
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-indigo-300 bg-white px-4 py-3">
+            <span className="font-mono text-xl font-bold tracking-widest text-indigo-900">
+              {brandedCode}
+            </span>
+            <button
+              type="button"
+              onClick={() => copy(brandedCode)}
+              className="ml-auto text-xs font-medium text-indigo-700 hover:text-indigo-900"
+            >
+              {copied ? "Copied!" : "Copy code"}
+            </button>
+          </div>
+
+          {brandedShareLink ? (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Pre-filled share link
+              </p>
+              <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  readOnly
+                  value={brandedShareLink}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => copy(brandedShareLink)}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                >
+                  Copy link
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions? Email{" "}

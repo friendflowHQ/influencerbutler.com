@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/admin";
-import { lsCreateAffiliate, buildShareLink } from "@/lib/affiliates";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
 
 const BRANDED_CODE_PERCENT_OFF = 15;
@@ -40,8 +39,7 @@ export type ApproveActor = "admin" | "auto-cron";
 export type ApproveResult =
   | {
       ok: true;
-      lsAffiliateId: string;
-      shareLink: string;
+      lsAffiliateId: string | null;
       emailSent: boolean;
       brandedCode: string | null;
       brandedShareLink: string | null;
@@ -51,43 +49,53 @@ export type ApproveResult =
 async function sendApprovalEmail(params: {
   to: string;
   name: string;
-  shareLink: string;
   brandedCode: string | null;
   brandedShareLink: string | null;
+  lsSignupUrl: string | null;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return false;
 
+  const firstName = params.name.split(" ")[0] || "there";
   const lines: string[] = [
-    `Hi ${params.name.split(" ")[0] || "there"},`,
+    `Hi ${firstName},`,
     ``,
-    `Great news — you've been approved as an Influencer Butler affiliate.`,
-    ``,
-    `Your unique referral link:`,
-    params.shareLink,
-    ``,
-    `You'll earn 35% recurring commission on every paid subscription — for the life of each referral.`,
+    `Great news — you've been approved as an Influencer Butler affiliate. Two things to do:`,
     ``,
   ];
 
-  if (params.brandedCode && params.brandedShareLink) {
+  if (params.brandedCode) {
     lines.push(
-      `Your branded 15%-off code (share this with your audience):`,
-      params.brandedCode,
+      `1) Your 15%-off code for your audience:`,
+      `   ${params.brandedCode}`,
       ``,
-      `Pre-filled share link (code + tracking baked in — this is the easiest thing to share):`,
-      params.brandedShareLink,
+      `   Share this code anywhere. When customers use it, you get 35% recurring commission for the life of their subscription.`,
       ``,
-      `Important: when someone types your code during checkout here, you're credited automatically — as long as they start from a link on our site (the pre-filled link above is bulletproof).`,
+    );
+    if (params.brandedShareLink) {
+      lines.push(
+        `   Pre-filled share link (code already applied — easiest thing to post):`,
+        `   ${params.brandedShareLink}`,
+        ``,
+      );
+    }
+  }
+
+  if (params.lsSignupUrl) {
+    lines.push(
+      `2) One-time setup — activate your tracked referral link:`,
+      `   ${params.lsSignupUrl}`,
+      ``,
+      `   Sign up using THIS email (${params.to}) so we can match your account. Takes 30 seconds. Your tracked link will appear on your dashboard as soon as Lemon Squeezy confirms you.`,
       ``,
     );
   }
 
   lines.push(
-    `See your live stats, copy your link, and track earnings in your dashboard:`,
+    `Your affiliate dashboard:`,
     `https://www.influencerbutler.com/dashboard/affiliates`,
     ``,
-    `Questions? Reply to this email.`,
+    `Questions? Just reply to this email.`,
     ``,
     `— The Influencer Butler team`,
   );
@@ -119,8 +127,17 @@ function buildBrandedShareLink(code: string): string {
 
 /**
  * Shared affiliate approval flow used by both the admin endpoint and the
- * auto-approval cron. Idempotent — if the profile already has an
- * ls_affiliate_id we don't create a duplicate Lemon Squeezy affiliate.
+ * auto-approval cron.
+ *
+ * Important: we do NOT programmatically create the Lemon Squeezy affiliate
+ * record — LS deprecated POST /v1/affiliates. The user finishes their setup
+ * by signing up at LS's hosted affiliate portal (link in the approval email).
+ * When LS activates them, the `affiliate_activated` webhook handler fills in
+ * `profiles.ls_affiliate_id` — see src/app/api/webhooks/lemonsqueezy/route.ts.
+ *
+ * Idempotent: re-running for the same user doesn't create duplicate branded
+ * codes or re-stamp reviewed_at (we skip code generation if profile already
+ * has one).
  */
 export async function approveAffiliate(params: {
   userId: string;
@@ -156,7 +173,7 @@ export async function approveAffiliate(params: {
     return { ok: false, status: 404, error: "No application for that user" };
   }
 
-  // 2) If profile already has an ls_affiliate_id, skip creating a duplicate.
+  // 2) Read any existing profile fields so we can skip redundant work.
   const { data: profileData } = await supabase
     .from("profiles")
     .select("id,ls_affiliate_id,affiliate_code,ls_affiliate_discount_id")
@@ -164,28 +181,10 @@ export async function approveAffiliate(params: {
     .maybeSingle();
   const profile = profileData as unknown as ProfileRow | null;
 
-  let lsAffiliateId: string | null =
+  const existingLsAffiliateId: string | null =
     typeof profile?.ls_affiliate_id === "string" && profile.ls_affiliate_id.length > 0
       ? profile.ls_affiliate_id
       : null;
-  let shareDomain: string | null = null;
-
-  if (!lsAffiliateId) {
-    const created = await lsCreateAffiliate({
-      email: application.email,
-      name: application.full_name,
-      storeId,
-    });
-    if (!created) {
-      return {
-        ok: false,
-        status: 502,
-        error: "Lemon Squeezy affiliate creation failed — check server logs",
-      };
-    }
-    lsAffiliateId = created.id;
-    shareDomain = created.shareDomain;
-  }
 
   // 2b) Generate a branded 15%-off code for this affiliate (JOHN, JOHN2, ...).
   //     Skip if the profile already has one from a prior approval attempt.
@@ -211,15 +210,15 @@ export async function approveAffiliate(params: {
       brandedDiscountId = generated.discountId;
     } else {
       console.error("approve: branded code generation failed", { userId });
-      // Non-fatal — affiliate still has their tracked URL.
+      // Non-fatal — the user can still complete LS portal signup and earn commissions via the tracked link.
     }
   }
 
-  // 3) Upsert the profile with the new affiliate ID + branded code.
+  // 3) Upsert the profile. We only write fields we actually have values for
+  //    so we don't null out ls_affiliate_id if the webhook set it earlier.
   const profilePayload: Record<string, unknown> = {
     id: userId,
     is_affiliate: true,
-    ls_affiliate_id: lsAffiliateId,
   };
   if (brandedCode) profilePayload.affiliate_code = brandedCode;
   if (brandedDiscountId) profilePayload.ls_affiliate_discount_id = brandedDiscountId;
@@ -255,20 +254,19 @@ export async function approveAffiliate(params: {
   }
 
   // 5) Fire-and-forget approval email.
-  const shareLink = buildShareLink(shareDomain, lsAffiliateId);
   const brandedShareLink = brandedCode ? buildBrandedShareLink(brandedCode) : null;
+  const lsSignupUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_AFFILIATE_SIGNUP_URL ?? null;
   const emailSent = await sendApprovalEmail({
     to: application.email,
     name: application.full_name,
-    shareLink,
     brandedCode,
     brandedShareLink,
+    lsSignupUrl,
   });
 
   return {
     ok: true,
-    lsAffiliateId,
-    shareLink,
+    lsAffiliateId: existingLsAffiliateId,
     emailSent,
     brandedCode,
     brandedShareLink,

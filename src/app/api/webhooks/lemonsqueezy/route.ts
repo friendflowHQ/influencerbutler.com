@@ -25,6 +25,9 @@ type SupabaseServiceClient = {
       eq: (column: string, value: string) => {
         maybeSingle: () => QueryResult;
       };
+      ilike: (column: string, pattern: string) => {
+        maybeSingle: () => QueryResult;
+      };
     };
     upsert: (payload: Record<string, unknown>, options?: { onConflict: string }) => Promise<unknown>;
     update: (payload: Record<string, unknown>) => {
@@ -236,6 +239,46 @@ export async function POST(request: Request) {
         .from("subscriptions")
         .update({ status: "past_due" })
         .eq("ls_subscription_id", lsSubscriptionId);
+    },
+
+    affiliate_activated: async () => {
+      // LS fires this when a merchant (or auto-approval) activates an affiliate
+      // on their hosted portal. We match the affiliate back to our user by
+      // email (they signed up on LS with the same email they used on our
+      // application form) and persist the new LS affiliate ID.
+      if (!recordId) return;
+
+      const rawEmail =
+        getString(attrs.user_email) ??
+        getString((attrs as Record<string, unknown>).email);
+      if (!rawEmail) {
+        console.error("affiliate_activated: no email in webhook payload");
+        return;
+      }
+      const email = rawEmail.toLowerCase();
+
+      // Case-insensitive match: our applications table stores email as the
+      // user typed it; LS tends to lowercase. Use ilike to be safe.
+      const { data: appData } = await supabase
+        .from("affiliate_applications")
+        .select("user_id")
+        .ilike("email", email)
+        .maybeSingle();
+
+      const userId = getString(appData?.user_id);
+      if (!userId) {
+        console.warn("affiliate_activated: no matching application for email", email);
+        return;
+      }
+
+      await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          is_affiliate: true,
+          ls_affiliate_id: recordId,
+        },
+        { onConflict: "id" },
+      );
     },
 
     license_key_created: async () => {

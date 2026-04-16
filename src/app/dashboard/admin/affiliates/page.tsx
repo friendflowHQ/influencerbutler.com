@@ -83,7 +83,7 @@ export default function AdminAffiliatesPage() {
   const onApprove = async (app: PendingApplication) => {
     if (
       !window.confirm(
-        `Approve ${app.full_name} (${app.email})?\n\nThis creates an affiliate in Lemon Squeezy, sets their ls_affiliate_id, and emails them their link.`,
+        `Approve ${app.full_name} (${app.email})?\n\nThis approves the application, creates their branded discount code in Lemon Squeezy, and emails them with instructions to finalize setup at LS's affiliate portal.`,
       )
     ) {
       return;
@@ -97,20 +97,23 @@ export default function AdminAffiliatesPage() {
       });
       const json = (await res.json()) as {
         error?: string;
-        lsAffiliateId?: string;
-        shareLink?: string;
+        lsAffiliateId?: string | null;
         emailSent?: boolean;
+        brandedCode?: string | null;
       };
       if (!res.ok) {
         setRow(app.user_id, { kind: "error", message: json.error ?? `Failed (${res.status})` });
         return;
       }
-      setRow(app.user_id, {
-        kind: "success",
-        message: `Approved. LS ID ${json.lsAffiliateId}. ${
-          json.emailSent ? "Email sent." : "Email not sent (Resend not configured)."
-        }`,
-      });
+      const parts: string[] = ["Approved."];
+      if (json.brandedCode) parts.push(`Code: ${json.brandedCode}.`);
+      if (json.lsAffiliateId) {
+        parts.push(`LS ID ${json.lsAffiliateId}.`);
+      } else {
+        parts.push("Awaiting their LS portal signup.");
+      }
+      parts.push(json.emailSent ? "Email sent." : "Email not sent (Resend not configured).");
+      setRow(app.user_id, { kind: "success", message: parts.join(" ") });
       // Refresh list so the approved row disappears.
       setTimeout(() => {
         void load();
