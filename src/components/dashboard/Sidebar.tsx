@@ -3,9 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
+
+const DOWNLOAD_URL = "https://dl.influencerbutler.com";
 
 type SidebarProps = {
   email: string;
@@ -25,7 +27,43 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [hasLicenseKey, setHasLicenseKey] = useState(false);
   const { setHelpOpen } = useKeyboardShortcutsContext();
+
+  useEffect(() => {
+    const supabase = createClient();
+    const checkLicense = async () => {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData.user;
+        if (!user) return;
+
+        const { data: subs } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("user_id", user.id)
+          .in("status", ["active", "on_trial", "past_due", "cancelled"])
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const sub = subs && subs.length > 0 ? (subs[0] as { id: string }) : null;
+        if (!sub) return;
+
+        const { data: keys } = await supabase
+          .from("license_keys")
+          .select("id")
+          .eq("subscription_id", sub.id)
+          .limit(1);
+
+        if (keys && keys.length > 0) {
+          setHasLicenseKey(true);
+        }
+      } catch {
+        // ignore — download link just won't show
+      }
+    };
+    void checkLicense();
+  }, []);
 
   const userDisplay = useMemo(() => {
     if (profileName && profileName.trim().length > 0) return profileName;
@@ -115,6 +153,19 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             );
           })}
         </nav>
+
+        {hasLicenseKey ? (
+          <a
+            href={DOWNLOAD_URL}
+            onClick={() => setIsMobileOpen(false)}
+            className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-[#f97316] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+            </svg>
+            Download app
+          </a>
+        ) : null}
 
         <Link
           href={websiteHref}
