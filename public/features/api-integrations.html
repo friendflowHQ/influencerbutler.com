@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!-- TODO: user review. Copy drafted from the homepage card blurb. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="API Integrations connect Influencer Butler to Archer, Levanta, Amazon Creators API, GeniusLink, URLGenius, Linktw.in, and more.">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="API Integrations &mdash; Everything plugs into Butler | Influencer Butler">
+    <meta property="og:description" content="Connect the services you already use. Butler slots them into your existing workflow.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f97316">
+    <title>API Integrations &mdash; Everything plugs into Butler | Influencer Butler</title>
+    <link rel="icon" type="image/png" href="/assets/influencer-butler-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header id="site-header">
+        <nav class="container">
+            <a href="/" class="logo" aria-label="Influencer Butler home">
+                <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" class="logo-img" width="40" height="40">
+                <span class="logo-text">Influencer Butler</span>
+            </a>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/#features" class="nav-link">Features</a></li>
+                <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="/#pricing" class="nav-link">Pricing</a></li>
+                <li><a href="/#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
+            </ul>
+            <a href="/#pricing" class="btn btn-primary nav-cta">Start Free Trial</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+            if (!authNavLink) return;
+            const hasSupabaseAuthCookie = document.cookie.split(';').map((e) => e.trim()).some((e) => /^sb-[^=]+-auth-token=/.test(e));
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <main class="feature-detail">
+        <div class="container">
+            <section class="feature-hero anim-up">
+                <div class="feature-hero-copy">
+                    <a href="/#features" class="feature-back-link">&larr; All tools</a>
+                    <div class="feature-hero-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#f97316" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#f97316" stroke-width="2" stroke-linecap="round"/></svg>
+                    </div>
+                    <h1>API Integrations</h1>
+                    <p class="feature-tagline">Connect the services you already use &mdash; Butler slots them into your existing workflow.</p>
+                    <div class="feature-hero-cta">
+                        <a class="btn btn-primary btn-lg" href="/signup">Start free</a>
+                        <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
+                    </div>
+                </div>
+                <div class="feature-hero-image">
+                    <!--
+                      ASSET NEEDED: Screenshot of the settings / integrations
+                      panel with a vertical list of connectors (Archer,
+                      Levanta, Amazon Creators API, GeniusLink, URLGenius,
+                      Linktw.in, Logie) each showing a "Connected" status
+                      pill and a small test button. 16:9.
+                      DROP IN: <img src="/assets/features/api-integrations-hero.png" alt="Settings panel with connected integrations">
+                    -->
+                    <div class="feature-image-placeholder">
+                        <span class="placeholder-caption">Screenshot: settings panel with connected integrations</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="feature-box anim-up">
+                <h2>What&rsquo;s in the box</h2>
+                <ul class="feature-box-list">
+                    <li>Archer Affiliates</li>
+                    <li>Levanta</li>
+                    <li>Amazon Creators API</li>
+                    <li>GeniusLink</li>
+                    <li>URLGenius</li>
+                    <li>Linktw.in</li>
+                    <li>Logie</li>
+                    <li>More added regularly</li>
+                </ul>
+            </section>
+
+            <section class="feature-proof anim-up">
+                <div class="proof-item">API keys saved locally</div>
+                <div class="proof-item">Works across tools</div>
+                <div class="proof-item">One-click test</div>
+                <div class="proof-item">Regular updates</div>
+            </section>
+
+            <section class="feature-cta anim-up">
+                <h2>Ready to connect everything you already use?</h2>
+                <div class="feature-cta-row">
+                    <a class="btn btn-primary btn-lg" href="/signup">Start free</a>
+                    <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
+                </div>
+                <a href="/#features" class="feature-back-link feature-back-bottom">&larr; Back to all tools</a>
+            </section>
+        </div>
+    </main>
+
+    <section class="affiliate-band">
+        <div class="container affiliate-band-inner">
+            <div class="affiliate-band-copy">
+                <p class="affiliate-band-eyebrow">Partner Program</p>
+                <h2>Earn 35% recurring. Forever.</h2>
+                <p class="affiliate-band-pitch">Love Influencer Butler? Get paid to share it. Every subscription you refer pays you 35% every month for as long as they stay subscribed. 30-day cookie, last-click attribution, monthly payouts via Lemon Squeezy.</p>
+                <ul class="affiliate-band-points">
+                    <li>35% recurring commission</li>
+                    <li>30-day referral cookie</li>
+                    <li>No caps &mdash; earn forever</li>
+                </ul>
+            </div>
+            <div class="affiliate-band-actions">
+                <a href="/affiliates/apply" class="btn btn-primary btn-lg">Sign up &amp; start earning &rarr;</a>
+                <a href="/affiliates" class="affiliate-band-secondary">Learn about the program</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo">
+                    <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" width="36" height="36">
+                    <span class="logo-text">Influencer Butler</span>
+                </a>
+                <p>The all-in-one command center for Amazon Influencers.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/#faq">FAQ</a>
+                <a href="/affiliates">Affiliates &mdash; Earn 35%</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="/legal/privacy.html">Privacy Policy</a>
+                <a href="/legal/eula.html">EULA</a>
+                <a href="/legal/terms.html">Terms of Service</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="mailto:hello@influencerbutler.com">Contact Us</a>
+                <a href="/dashboard">My Account</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 The Social Media Posse LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

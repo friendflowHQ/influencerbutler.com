@@ -1,0 +1,4 @@
+# Drop feature screenshots / GIFs here.
+# Detail pages under public/features/*.html reference these as
+# /assets/features/{slug}-hero.png etc. See the HTML comments
+# inside each page's image placeholder for what to capture.

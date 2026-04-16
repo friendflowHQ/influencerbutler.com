@@ -89,8 +89,8 @@ export default function BillingPage() {
   }, []);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">Billing History</h1>
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Billing History</h1>
       <p className="mt-2 text-sm text-slate-600">
         Invoices for your subscription, pulled directly from Lemon Squeezy.
       </p>

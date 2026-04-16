@@ -196,9 +196,9 @@ export default function AffiliatesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
             Affiliate dashboard
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Hi there.</h1>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Hi there.</h1>
         </header>
-        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-800 shadow-sm">
+        <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-6 text-sm text-amber-800 shadow-sm">
           We couldn&apos;t load your affiliate stats right now. Please try again in a minute — or reach
           out to{" "}
           <a
@@ -242,12 +242,12 @@ function PendingState({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
           Affiliate program
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           {displayName ? `Thanks, ${displayName}.` : "Thanks for applying."}
         </h1>
       </header>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
         <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-800">
           <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
           Application pending
@@ -315,7 +315,7 @@ function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
           Affiliate program
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           You&apos;re in — one last step.
         </h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -324,7 +324,7 @@ function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
         </p>
       </header>
 
-      <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-4 sm:p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">
           Step 1 — Finalize on Lemon Squeezy
         </p>
@@ -360,7 +360,7 @@ function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
       </section>
 
       {brandedCode ? (
-        <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-4 sm:p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
             Step 2 — Start promoting today
           </p>
@@ -369,8 +369,8 @@ function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
             customers use it, you earn 35% recurring commission.
           </p>
 
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-indigo-300 bg-white px-4 py-3">
-            <span className="font-mono text-xl font-bold tracking-widest text-indigo-900">
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-indigo-300 bg-white px-3 sm:px-4 py-3">
+            <span className="font-mono text-lg sm:text-xl font-bold tracking-widest text-indigo-900 break-all">
               {brandedCode}
             </span>
             <button

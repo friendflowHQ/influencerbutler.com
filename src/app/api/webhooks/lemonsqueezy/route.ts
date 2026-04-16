@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
+import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 
 export const runtime = "nodejs";
 
@@ -53,6 +54,83 @@ async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubsc
 async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
   const { data } = await supabase.from(table).select("id").eq(column, value).maybeSingle();
   return Boolean(data);
+}
+
+function readPercent(envVar: string, fallback: number): number {
+  const raw = process.env[envVar];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 100) return fallback;
+  return parsed;
+}
+
+/**
+ * Mints two per-user LS discount codes when a trial subscription starts:
+ *   - monthly first-month discount, restricted to monthly variant
+ *   - annual-switch discount, restricted to annual variant
+ * Both expire 1 day after trial_ends_at. Failures are logged and return null
+ * so the cron retries on the next tick (it detects null code columns).
+ */
+async function mintTrialDiscounts(input: {
+  trialEndsAt: string | null;
+  userId: string;
+}): Promise<{
+  trial_discount_code_monthly: string | null;
+  trial_discount_code_annual: string | null;
+  ls_discount_id_monthly: string | null;
+  ls_discount_id_annual: string | null;
+} | null> {
+  const storeId = process.env.LEMONSQUEEZY_STORE_ID;
+  const monthlyVariant = process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
+  const annualVariant = process.env.LEMONSQUEEZY_VARIANT_ANNUAL;
+  if (!storeId) {
+    console.error("mintTrialDiscounts: LEMONSQUEEZY_STORE_ID not set");
+    return null;
+  }
+
+  const monthlyPercent = readPercent("TRIAL_DISCOUNT_MONTHLY_PERCENT", 20);
+  const annualPercent = readPercent("TRIAL_DISCOUNT_ANNUAL_PERCENT", 30);
+
+  let expiresAt: string | null = null;
+  if (input.trialEndsAt) {
+    const end = new Date(input.trialEndsAt);
+    if (Number.isFinite(end.getTime())) {
+      expiresAt = new Date(end.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    }
+  }
+
+  const monthly = monthlyVariant
+    ? await createUniqueDiscount({
+        storeId,
+        percentOff: monthlyPercent,
+        namePrefix: "TRIAL",
+        expiresAt,
+        variantIds: [monthlyVariant],
+        name: `Trial welcome ${monthlyPercent}% (monthly, user ${input.userId.slice(0, 8)})`,
+      })
+    : null;
+
+  const annual = annualVariant
+    ? await createUniqueDiscount({
+        storeId,
+        percentOff: annualPercent,
+        namePrefix: "ANNUAL",
+        expiresAt,
+        variantIds: [annualVariant],
+        name: `Trial annual-switch ${annualPercent}% (user ${input.userId.slice(0, 8)})`,
+      })
+    : null;
+
+  if (!monthly && !annual) {
+    return null;
+  }
+
+  return {
+    trial_discount_code_monthly: monthly?.code ?? null,
+    trial_discount_code_annual: annual?.code ?? null,
+    ls_discount_id_monthly: monthly?.discountId ?? null,
+    ls_discount_id_annual: annual?.discountId ?? null,
+  };
 }
 
 export async function POST(request: Request) {
@@ -133,18 +211,35 @@ export async function POST(request: Request) {
 
       await recordExists(supabase, "subscriptions", "ls_subscription_id", recordId);
 
-      await supabase.from("subscriptions").upsert(
-        {
-          ls_subscription_id: recordId,
-          user_id: directUserId,
-          status: getString(attrs.status),
-          plan_name: getString(attrs.product_name) ?? getString(attrs.variant_name),
-          ls_product_id: attrs.product_id ?? null,
-          ls_variant_id: attrs.variant_id ?? null,
-          renews_at: attrs.renews_at ?? null,
-        },
-        { onConflict: "ls_subscription_id" },
-      );
+      const status = getString(attrs.status);
+      const isTrial = status === "on_trial";
+      const trialEndsAt = getString(attrs.trial_ends_at);
+
+      const basePayload: Record<string, unknown> = {
+        ls_subscription_id: recordId,
+        user_id: directUserId,
+        status,
+        plan_name: getString(attrs.product_name) ?? getString(attrs.variant_name),
+        ls_product_id: attrs.product_id ?? null,
+        ls_variant_id: attrs.variant_id ?? null,
+        renews_at: attrs.renews_at ?? null,
+      };
+
+      if (isTrial) {
+        basePayload.trial_started_at = new Date().toISOString();
+
+        const trialDiscounts = await mintTrialDiscounts({
+          trialEndsAt,
+          userId: directUserId,
+        });
+        if (trialDiscounts) {
+          Object.assign(basePayload, trialDiscounts);
+        }
+      }
+
+      await supabase.from("subscriptions").upsert(basePayload, {
+        onConflict: "ls_subscription_id",
+      });
     },
 
     subscription_updated: async () => {

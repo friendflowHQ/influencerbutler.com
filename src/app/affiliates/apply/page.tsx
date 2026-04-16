@@ -194,8 +194,8 @@ export default function AffiliateApplyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 py-12">
-      <div className="mx-auto max-w-3xl px-6">
+    <main className="min-h-screen bg-slate-50 py-8 sm:py-12">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <Link
           href="/affiliates"
           className="text-sm font-medium text-slate-500 hover:text-[#f97316]"
@@ -203,7 +203,7 @@ export default function AffiliateApplyPage() {
           ← Back to affiliate program
         </Link>
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 lg:p-10">
           <div className="flex items-center gap-3">
             <Image
               src="/assets/influencer-butler-logo.png"
@@ -220,7 +220,7 @@ export default function AffiliateApplyPage() {
               <p className="text-sm text-slate-500">Apply in about 2 minutes.</p>
             </div>
           </div>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight">Let&apos;s get you earning 35%.</h1>
+          <h1 className="mt-6 text-2xl sm:text-3xl font-semibold tracking-tight">Let&apos;s get you earning 35%.</h1>
           <p className="mt-2 text-sm text-slate-600">
             We review applications weekly and approve creators whose audience actually benefits from Influencer
             Butler. You&apos;ll get a confirmation email either way.

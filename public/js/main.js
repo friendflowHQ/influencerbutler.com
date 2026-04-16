@@ -97,7 +97,9 @@
       var target = document.querySelector(id);
       if (!target) return;
       e.preventDefault();
-      var top = target.getBoundingClientRect().top + window.pageYOffset - 80;
+      var headerEl = document.getElementById("site-header");
+      var offset = headerEl ? headerEl.getBoundingClientRect().height + 12 : 80;
+      var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
       window.scrollTo({ top: top, behavior: "smooth" });
     });
   });

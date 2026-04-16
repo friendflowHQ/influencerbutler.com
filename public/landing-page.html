@@ -1111,6 +1111,22 @@
         }
 
         /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            nav {
+                padding: 1rem 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.75rem;
+            }
+
+            .features-grid,
+            .pricing-cards,
+            .testimonials-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .nav-menu {
                 display: none;
@@ -1137,6 +1153,20 @@
 
             .hamburger {
                 display: flex;
+            }
+
+            nav {
+                padding: 0.875rem 1rem;
+            }
+
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .hero {
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
 
             .hero h1 {
@@ -1188,6 +1218,41 @@
                 justify-content: center;
                 text-align: center;
             }
+
+            /* Hide decorative absolutely-positioned elements on mobile
+               so they can't overflow the viewport. */
+            .hero-decoration,
+            .floating-shape,
+            .bg-decoration,
+            .decorative-circle,
+            .gradient-blob,
+            .hero-orb {
+                display: none !important;
+            }
+
+            /* Ensure any remaining absolutely-positioned flourishes
+               can't push horizontal scroll. */
+            body {
+                overflow-x: hidden;
+            }
+
+            .feature-icon,
+            .feature-card .icon,
+            .testimonial-avatar {
+                flex-shrink: 0;
+            }
+
+            section {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            img,
+            svg,
+            video {
+                max-width: 100%;
+                height: auto;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1200,8 +1265,16 @@
                 font-size: 1.75rem;
             }
 
+            .hero p {
+                font-size: 0.95rem;
+            }
+
             .container {
                 padding: 0 1rem;
+            }
+
+            .section-header h2 {
+                font-size: 1.5rem;
             }
 
             .step-number {
@@ -1212,6 +1285,16 @@
 
             .cta h2 {
                 font-size: 1.75rem;
+            }
+
+            .feature-card,
+            .price-card,
+            .testimonial-card {
+                padding: 1.25rem;
+            }
+
+            .btn {
+                width: 100%;
             }
         }
     </style>
@@ -1407,7 +1490,7 @@
                 <div class="price-card popular">
                     <div class="popular-badge">Most Popular</div>
                     <h3>Pro Monthly</h3>
-                    <div class="price"><span id="price2">$19.99</span><span style="font-size: 0.5em;"> /mo</span></div>
+                    <div class="price"><span id="price2">$29</span><span style="font-size: 0.5em;"> /mo</span></div>
                     <div class="price-period" id="period2">3-day free trial included</div>
                     <ul>
                         <li>Unlimited Affiliate Links</li>
@@ -1423,11 +1506,11 @@
                 <div class="price-card">
                     <div class="popular-badge" style="background: var(--success); color: white;">Save 25%</div>
                     <h3>Pro Annual</h3>
-                    <div class="price"><span id="price3">$179.99</span><span style="font-size: 0.5em;"> /yr</span></div>
-                    <div class="price-period" id="period3">Just $15/mo — 3-day free trial</div>
+                    <div class="price"><span id="price3">$261</span><span style="font-size: 0.5em;"> /yr</span></div>
+                    <div class="price-period" id="period3">Just $21.75/mo — 3-day free trial</div>
                     <ul>
                         <li>Everything in Monthly</li>
-                        <li>Save $59.89 per year</li>
+                        <li>Save $87 per year</li>
                         <li>Priority Feature Requests</li>
                         <li>Early Access to New Features</li>
                         <li>Dedicated Support</li>
@@ -1447,19 +1530,6 @@
                             .map((entry) => entry.trim())
                             .some((entry) => entry.startsWith('sb-'));
 
-                    const isLoggedIn = async () => {
-                        try {
-                            const response = await fetch('/api/auth/session', { credentials: 'include' });
-                            if (response.ok) {
-                                return true;
-                            }
-                        } catch (error) {
-                            console.warn('Session probe failed, falling back to cookies.', error);
-                        }
-
-                        return hasSupabaseCookie();
-                    };
-
                     checkoutButtons.forEach((button) => {
                         button.addEventListener('click', async (event) => {
                             event.preventDefault();
@@ -1469,9 +1539,7 @@
                                 return;
                             }
 
-                            const loggedIn = await isLoggedIn();
-
-                            if (!loggedIn) {
+                            if (!hasSupabaseCookie()) {
                                 window.location.href = `/signup?plan=${plan}`;
                                 return;
                             }

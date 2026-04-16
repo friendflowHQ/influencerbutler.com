@@ -22,6 +22,7 @@ const nextConfig: NextConfig = {
       { source: "/", destination: "/index.html" },
       { source: "/landing", destination: "/landing-page.html" },
       { source: "/email-sequences", destination: "/email-sequences.html" },
+      { source: "/features/:slug", destination: "/features/:slug.html" },
     ];
   },
   async headers() {

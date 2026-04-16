@@ -16,17 +16,37 @@ type LsCheckoutResponse = {
   };
 };
 
-function resolveVariantId(plan: string | undefined, fallback: string | undefined): string | null {
+type VariantResolution =
+  | { ok: true; variantId: string }
+  | { ok: false; reason: "missing-input" | "missing-env"; envVar?: string };
+
+function resolveVariantId(plan: string | undefined, fallback: string | undefined): VariantResolution {
   if (plan === "monthly") {
-    return process.env.LEMONSQUEEZY_VARIANT_MONTHLY || null;
+    const id = process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
+    if (!id) return { ok: false, reason: "missing-env", envVar: "LEMONSQUEEZY_VARIANT_MONTHLY" };
+    return { ok: true, variantId: id };
   }
   if (plan === "annual") {
-    return process.env.LEMONSQUEEZY_VARIANT_ANNUAL || null;
+    const id = process.env.LEMONSQUEEZY_VARIANT_ANNUAL;
+    if (!id) return { ok: false, reason: "missing-env", envVar: "LEMONSQUEEZY_VARIANT_ANNUAL" };
+    return { ok: true, variantId: id };
   }
   if (fallback) {
-    return fallback;
+    return { ok: true, variantId: fallback };
   }
-  return null;
+  return { ok: false, reason: "missing-input" };
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 type ProfileLookupClient = {
@@ -104,16 +124,21 @@ export async function POST(request: Request) {
       code: rawCode,
     } = (await request.json()) as CheckoutRequestBody;
 
-    const variantId = resolveVariantId(plan, variantIdFromBody);
+    const variantResolution = resolveVariantId(plan, variantIdFromBody);
 
-    if (!variantId) {
+    if (!variantResolution.ok) {
+      if (variantResolution.reason === "missing-env") {
+        console.error("checkout: missing variant env var", { envVar: variantResolution.envVar, plan });
+        return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+      }
       return NextResponse.json({ error: "Missing plan or variantId" }, { status: 400 });
     }
+    const { variantId } = variantResolution;
 
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
 
     if (!storeId) {
-      console.error("Missing Lemon Squeezy store configuration");
+      console.error("checkout: missing LEMONSQUEEZY_STORE_ID env var");
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 
@@ -128,8 +153,13 @@ export async function POST(request: Request) {
     const userId = userData.user.id;
 
     // Resolve optional affiliate code — tolerate missing/invalid without erroring.
+    // Bounded to 3s so a Supabase hiccup can't cascade into a Vercel function timeout.
     const code = typeof rawCode === "string" ? rawCode.trim() : "";
-    const affiliate = code.length > 0 ? await lookupAffiliateByCode(code) : null;
+    const affiliate =
+      code.length > 0 ? await withTimeout(lookupAffiliateByCode(code), 3000, null) : null;
+
+    const siteUrl =
+      process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
     const checkoutAttributes: Record<string, unknown> = {
       checkout_data: {
@@ -138,6 +168,9 @@ export async function POST(request: Request) {
         custom: {
           supabase_user_id: userId,
         },
+      },
+      product_options: {
+        redirect_url: `${siteUrl.replace(/\/$/, "")}/welcome`,
       },
     };
 
@@ -165,17 +198,37 @@ export async function POST(request: Request) {
       }),
     });
 
-    const payload = (await lsResponse.json()) as LsCheckoutResponse;
+    // Read body as text first so we can log it on failure; JSON-parse on success path.
+    const rawBody = await lsResponse.text();
 
     if (!lsResponse.ok) {
-      console.error("Lemon Squeezy checkout creation failed", { status: lsResponse.status });
+      console.error("Lemon Squeezy checkout creation failed", {
+        status: lsResponse.status,
+        statusText: lsResponse.statusText,
+        bodyPreview: rawBody.slice(0, 500),
+        variantId,
+      });
       return NextResponse.json({ error: "Failed to create checkout session" }, { status: 502 });
+    }
+
+    let payload: LsCheckoutResponse;
+    try {
+      payload = JSON.parse(rawBody) as LsCheckoutResponse;
+    } catch (parseError) {
+      console.error("Lemon Squeezy response was not valid JSON", {
+        status: lsResponse.status,
+        bodyPreview: rawBody.slice(0, 500),
+        parseError: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      return NextResponse.json({ error: "Invalid checkout response" }, { status: 502 });
     }
 
     const rawCheckoutUrl = payload.data?.attributes?.url;
 
     if (!rawCheckoutUrl) {
-      console.error("Checkout URL missing from Lemon Squeezy response");
+      console.error("Checkout URL missing from Lemon Squeezy response", {
+        bodyPreview: rawBody.slice(0, 500),
+      });
       return NextResponse.json({ error: "Invalid checkout response" }, { status: 502 });
     }
 

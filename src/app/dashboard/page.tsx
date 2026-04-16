@@ -62,12 +62,12 @@ export default function DashboardOverviewPage() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Overview</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
         <p className="mt-1 text-sm text-slate-600">Welcome to your Influencer Butler dashboard.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">Subscription Status</h2>
           <p className="mt-2 text-lg font-semibold text-slate-900">No active subscription</p>
         </article>
@@ -75,13 +75,13 @@ export default function DashboardOverviewPage() {
         <LicenseKeyDisplay variant="card" />
       </div>
 
-      <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Quick Actions</h2>
         <p className="mt-1 text-sm text-slate-600">Get started by choosing your next step.</p>
         <button
           type="button"
           onClick={() => router.push("/dashboard/subscription")}
-          className="mt-4 rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
+          className="mt-4 w-full sm:w-auto rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
         >
           Upgrade Plan
         </button>

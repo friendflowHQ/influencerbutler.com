@@ -103,8 +103,8 @@ function LoginFormFallback() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
-      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-sm p-8">
+    <main className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-4 sm:p-6">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-sm p-6 sm:p-8">
         <div className="mb-6 flex items-center gap-3">
           <Image
             src="/assets/influencer-butler-logo.png"

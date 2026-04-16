@@ -216,17 +216,17 @@ export default function AdminAffiliatesPage() {
             return (
               <li
                 key={app.id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-semibold text-slate-900">{app.full_name}</p>
-                    <p className="text-sm text-slate-600">{app.email}</p>
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold text-slate-900 break-words">{app.full_name}</p>
+                    <p className="text-sm text-slate-600 break-all">{app.email}</p>
                     <p className="mt-1 text-xs text-slate-400">
                       Submitted {formatDate(app.created_at)} · user_id {app.user_id.slice(0, 8)}…
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => onReject(app)}

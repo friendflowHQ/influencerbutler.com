@@ -70,21 +70,55 @@ export type CreateUniqueDiscountInput = {
   storeId: string;
   percentOff: number;
   namePrefix?: string;
+  /** ISO timestamp passed to LS as `expires_at`. */
+  expiresAt?: string | null;
+  /** If provided, LS restricts the code to these variant IDs only. */
+  variantIds?: string[];
+  /** Override the human-readable `name` attribute shown in the LS dashboard. */
+  name?: string;
 };
 
 /**
  * Creates a single-use, percent-off discount in Lemon Squeezy and returns
- * the generated code. Used for the 5-day affiliate conversion tier where
- * each affiliate gets their own code so links can't be re-shared.
+ * the generated code + LS record id. Used for the 5-day affiliate conversion
+ * tier and the free-trial funnel, where each user gets their own code so
+ * links can't be re-shared.
  *
  * Returns null + logs on failure.
  */
 export async function createUniqueDiscount(
   input: CreateUniqueDiscountInput,
-): Promise<{ code: string } | null> {
+): Promise<{ code: string; discountId: string } | null> {
   const prefix = input.namePrefix ?? "AFF";
   const suffix = randomBytes(4).toString("hex").toUpperCase();
   const code = `${prefix}-${suffix}`;
+  const displayName = input.name ?? `Discount ${input.percentOff}% (${code})`;
+
+  const attributes: Record<string, unknown> = {
+    name: displayName,
+    code,
+    amount: input.percentOff,
+    amount_type: "percent",
+    duration: "once",
+    is_limited_redemptions: true,
+    max_redemptions: 1,
+  };
+
+  if (input.expiresAt) {
+    attributes.expires_at = input.expiresAt;
+  }
+
+  const relationships: Record<string, unknown> = {
+    store: {
+      data: { type: "stores", id: input.storeId },
+    },
+  };
+
+  if (input.variantIds && input.variantIds.length > 0) {
+    relationships.variants = {
+      data: input.variantIds.map((id) => ({ type: "variants", id })),
+    };
+  }
 
   try {
     const response = await lsApi(`/discounts`, {
@@ -92,20 +126,8 @@ export async function createUniqueDiscount(
       body: JSON.stringify({
         data: {
           type: "discounts",
-          attributes: {
-            name: `Affiliate conversion ${input.percentOff}% (${code})`,
-            code,
-            amount: input.percentOff,
-            amount_type: "percent",
-            duration: "once",
-            is_limited_redemptions: true,
-            max_redemptions: 1,
-          },
-          relationships: {
-            store: {
-              data: { type: "stores", id: input.storeId },
-            },
-          },
+          attributes,
+          relationships,
         },
       }),
     });
@@ -119,7 +141,14 @@ export async function createUniqueDiscount(
       return null;
     }
 
-    return { code };
+    const payload = (await response.json()) as { data?: { id?: string } };
+    const discountId = payload.data?.id;
+    if (!discountId) {
+      console.error("LS unique discount create returned no id", { code });
+      return null;
+    }
+
+    return { code, discountId };
   } catch (error) {
     console.error("LS discount create threw", error);
     return null;

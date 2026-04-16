@@ -58,24 +58,36 @@ async function sendApprovalEmail(params: {
 
   const firstName = params.name.split(" ")[0] || "there";
   const lines: string[] = [
-    `Hi ${firstName},`,
+    `Dear ${firstName},`,
     ``,
-    `Great news — you've been approved as an Influencer Butler affiliate. Two things to do:`,
+    ``,
+    `It is my privilege to inform you that your application has been approved. You are now, officially, an Influencer Butler affiliate — welcome.`,
+    ``,
+    ``,
+    `Two small matters await your attention.`,
+    ``,
     ``,
   ];
 
   if (params.brandedCode) {
     lines.push(
-      `1) Your 15%-off code for your audience:`,
-      `   ${params.brandedCode}`,
+      `I. Your personal 15%-off code`,
       ``,
-      `   Share this code anywhere. When customers use it, you get 35% recurring commission for the life of their subscription.`,
+      ``,
+      `    ${params.brandedCode}`,
+      ``,
+      ``,
+      `Kindly share this code wherever you please. Each customer who redeems it shall earn you a 35% recurring commission for the full duration of their subscription.`,
+      ``,
       ``,
     );
     if (params.brandedShareLink) {
       lines.push(
-        `   Pre-filled share link (code already applied — easiest thing to post):`,
-        `   ${params.brandedShareLink}`,
+        `For your convenience, a pre-filled share link (the code is already applied):`,
+        ``,
+        ``,
+        `    ${params.brandedShareLink}`,
+        ``,
         ``,
       );
     }
@@ -83,21 +95,33 @@ async function sendApprovalEmail(params: {
 
   if (params.lsSignupUrl) {
     lines.push(
-      `2) One-time setup — activate your tracked referral link:`,
-      `   ${params.lsSignupUrl}`,
+      `II. A brief one-time setup`,
       ``,
-      `   Sign up using THIS email (${params.to}) so we can match your account. Takes 30 seconds. Your tracked link will appear on your dashboard as soon as Lemon Squeezy confirms you.`,
+      ``,
+      `Please activate your tracked referral link here:`,
+      ``,
+      ``,
+      `    ${params.lsSignupUrl}`,
+      ``,
+      ``,
+      `Do be sure to register using this very email address (${params.to}) so I may pair your account correctly. The affair takes but thirty seconds, and your tracked link shall appear on your dashboard the moment Lemon Squeezy confirms you.`,
+      ``,
       ``,
     );
   }
 
   lines.push(
-    `Your affiliate dashboard:`,
-    `https://www.influencerbutler.com/dashboard/affiliates`,
+    `Your affiliate dashboard awaits you at:`,
     ``,
-    `Questions? Just reply to this email.`,
     ``,
-    `— The Influencer Butler team`,
+    `    https://www.influencerbutler.com/dashboard/affiliates`,
+    ``,
+    ``,
+    `Should you require anything further, do write to hello@influencerbutler.com and I shall attend to you promptly.`,
+    ``,
+    ``,
+    `At your service,`,
+    `The Influencer Butler`,
   );
 
   try {
@@ -110,7 +134,7 @@ async function sendApprovalEmail(params: {
       body: JSON.stringify({
         from: "Influencer Butler <affiliates@influencerbutler.com>",
         to: [params.to],
-        subject: "You're in — your Influencer Butler affiliate account is live",
+        subject: "At your service — your Influencer Butler affiliate account stands ready",
         text: lines.join("\n"),
       }),
     });
