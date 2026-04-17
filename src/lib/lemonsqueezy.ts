@@ -19,3 +19,27 @@ export async function lsApi(path: string, options: RequestInit = {}) {
     },
   });
 }
+
+export type VariantResolution =
+  | { ok: true; variantId: string }
+  | { ok: false; reason: "missing-input" | "missing-env"; envVar?: string };
+
+export function resolveVariantId(
+  plan: string | undefined,
+  fallback: string | undefined,
+): VariantResolution {
+  if (plan === "monthly") {
+    const id = process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
+    if (!id) return { ok: false, reason: "missing-env", envVar: "LEMONSQUEEZY_VARIANT_MONTHLY" };
+    return { ok: true, variantId: id };
+  }
+  if (plan === "annual") {
+    const id = process.env.LEMONSQUEEZY_VARIANT_ANNUAL;
+    if (!id) return { ok: false, reason: "missing-env", envVar: "LEMONSQUEEZY_VARIANT_ANNUAL" };
+    return { ok: true, variantId: id };
+  }
+  if (fallback) {
+    return { ok: true, variantId: fallback };
+  }
+  return { ok: false, reason: "missing-input" };
+}

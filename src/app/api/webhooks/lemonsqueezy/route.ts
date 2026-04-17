@@ -35,10 +35,173 @@ type SupabaseServiceClient = {
       eq: (column: string, value: string) => Promise<unknown> & { is: (column: string, value: null) => Promise<unknown> };
     };
   };
+  auth: {
+    admin: {
+      createUser: (attrs: {
+        email: string;
+        email_confirm?: boolean;
+        user_metadata?: Record<string, unknown>;
+      }) => Promise<{
+        data: { user: { id: string; email?: string | null } | null };
+        error: { message?: string; status?: number } | null;
+      }>;
+      generateLink: (attrs: {
+        type: "magiclink" | "recovery" | "invite";
+        email: string;
+        options?: { redirectTo?: string };
+      }) => Promise<{
+        data: { properties?: { action_link?: string } | null } | null;
+        error: { message?: string } | null;
+      }>;
+    };
+  };
 };
 
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+type ProfileLookup = { id?: string | null; email?: string | null };
+
+async function findUserIdByEmail(
+  supabase: SupabaseServiceClient,
+  email: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id,email")
+    .ilike("email", email)
+    .maybeSingle();
+  const row = data as unknown as ProfileLookup | null;
+  return getString(row?.id);
+}
+
+async function sendWelcomeMagicLink(params: {
+  to: string;
+  actionLink: string;
+}): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("sendWelcomeMagicLink: RESEND_API_KEY not set — magic link email skipped");
+    return false;
+  }
+
+  const body = [
+    `Welcome to Influencer Butler — your payment is confirmed.`,
+    ``,
+    `Click the link below to finish setting up your account and download the desktop app:`,
+    ``,
+    `    ${params.actionLink}`,
+    ``,
+    `This link signs you in automatically. Once you're in, you can set a password from account settings if you'd like.`,
+    ``,
+    `Questions? Reply to this email and a real human will answer.`,
+    ``,
+    `— The Influencer Butler team`,
+  ].join("\n");
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Influencer Butler <hello@influencerbutler.com>",
+        to: [params.to],
+        subject: "Your Influencer Butler sign-in link",
+        text: body,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("sendWelcomeMagicLink: Resend send failed", {
+        status: res.status,
+        body: text.slice(0, 500),
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("sendWelcomeMagicLink: fetch threw", error);
+    return false;
+  }
+}
+
+/**
+ * Returns the Supabase user id for the given email, creating the auth user and
+ * a matching profiles row if neither exists yet. If a new user is created,
+ * sends a welcome magic-link email (payment-first flow — the LS checkout is
+ * the user's first interaction, so we provision account + login link on the
+ * order_created webhook).
+ *
+ * Idempotent: subsequent calls for the same email short-circuit to the
+ * existing user id and do NOT resend the magic link.
+ */
+async function ensureUserForEmail(
+  supabase: SupabaseServiceClient,
+  email: string,
+  options: { lsCustomerId?: string | null } = {},
+): Promise<string | null> {
+  const normalized = email.trim();
+  if (!normalized) return null;
+
+  const existing = await findUserIdByEmail(supabase, normalized);
+  if (existing) {
+    // Opportunistically backfill ls_customer_id on the existing profile.
+    if (options.lsCustomerId) {
+      await supabase
+        .from("profiles")
+        .update({ ls_customer_id: options.lsCustomerId })
+        .eq("id", existing);
+    }
+    return existing;
+  }
+
+  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+    email: normalized,
+    email_confirm: true,
+    user_metadata: { created_via: "ls_checkout" },
+  });
+
+  if (createError || !createData.user?.id) {
+    // Race: a concurrent webhook might have already created the user. Re-check.
+    const refetched = await findUserIdByEmail(supabase, normalized);
+    if (refetched) return refetched;
+    console.error("ensureUserForEmail: createUser failed", createError);
+    return null;
+  }
+
+  const userId = createData.user.id;
+
+  const profilePayload: Record<string, unknown> = {
+    id: userId,
+    email: normalized,
+  };
+  if (options.lsCustomerId) {
+    profilePayload.ls_customer_id = options.lsCustomerId;
+  }
+
+  await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+
+  // Generate and send the welcome magic link.
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: "magiclink",
+    email: normalized,
+    options: { redirectTo: `${siteUrl.replace(/\/$/, "")}/welcome` },
+  });
+
+  const actionLink = linkData?.properties?.action_link ?? null;
+  if (linkError || !actionLink) {
+    console.error("ensureUserForEmail: generateLink failed", linkError);
+  } else {
+    await sendWelcomeMagicLink({ to: normalized, actionLink });
+  }
+
+  return userId;
 }
 
 async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubscriptionId: string) {
@@ -176,7 +339,23 @@ export async function POST(request: Request) {
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
-      if (!recordId || !directUserId) {
+      if (!recordId) {
+        return;
+      }
+
+      const lsCustomerId = getString(attrs.customer_id);
+      const orderEmail = getString(attrs.user_email);
+
+      // Payment-first flow: when the CTA used the guest checkout, there is no
+      // supabase_user_id in custom_data. Provision the user from the order's
+      // email and send a magic-link welcome email on first provisioning.
+      const userId =
+        directUserId ??
+        (orderEmail ? await ensureUserForEmail(supabase, orderEmail, { lsCustomerId }) : null);
+      if (!userId) {
+        console.error("order_created: no user context (no supabase_user_id, no user_email)", {
+          recordId,
+        });
         return;
       }
 
@@ -185,7 +364,7 @@ export async function POST(request: Request) {
       await supabase.from("orders").upsert(
         {
           ls_order_id: recordId,
-          user_id: directUserId,
+          user_id: userId,
           status: getString(attrs.status),
           total: attrs.total ?? null,
           currency: getString(attrs.currency),
@@ -193,19 +372,28 @@ export async function POST(request: Request) {
         { onConflict: "ls_order_id" },
       );
 
-      const lsCustomerId = getString(attrs.customer_id);
-
       if (lsCustomerId) {
         await supabase
           .from("profiles")
           .update({ ls_customer_id: lsCustomerId })
-          .eq("id", directUserId)
+          .eq("id", userId)
           .is("ls_customer_id", null);
       }
     },
 
     subscription_created: async () => {
-      if (!recordId || !directUserId) {
+      if (!recordId) {
+        return;
+      }
+
+      // subscription_created can arrive before order_created in rare ordering
+      // scenarios. Fall back to email-based provisioning if custom_data didn't
+      // carry supabase_user_id (guest checkout path).
+      const subEmail = getString(attrs.user_email);
+      const userId =
+        directUserId ?? (subEmail ? await ensureUserForEmail(supabase, subEmail) : null);
+      if (!userId) {
+        console.error("subscription_created: no user context", { recordId });
         return;
       }
 
@@ -217,7 +405,7 @@ export async function POST(request: Request) {
 
       const basePayload: Record<string, unknown> = {
         ls_subscription_id: recordId,
-        user_id: directUserId,
+        user_id: userId,
         status,
         plan_name: getString(attrs.product_name) ?? getString(attrs.variant_name),
         ls_product_id: attrs.product_id ?? null,
@@ -230,7 +418,7 @@ export async function POST(request: Request) {
 
         const trialDiscounts = await mintTrialDiscounts({
           trialEndsAt,
-          userId: directUserId,
+          userId,
         });
         if (trialDiscounts) {
           Object.assign(basePayload, trialDiscounts);

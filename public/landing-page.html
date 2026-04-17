@@ -1485,7 +1485,7 @@
                         <li>Manual Tracking</li>
                         <li>Community Access</li>
                     </ul>
-                    <a class="btn btn-secondary" href="/signup" style="display:block;text-align:center;text-decoration:none;">Download Free</a>
+                    <a class="btn btn-secondary" href="#pricing" style="display:block;text-align:center;text-decoration:none;">Download Free</a>
                 </div>
                 <div class="price-card popular">
                     <div class="popular-badge">Most Popular</div>
@@ -1540,7 +1540,8 @@
                             }
 
                             if (!hasSupabaseCookie()) {
-                                window.location.href = `/signup?plan=${plan}`;
+                                // Payment-first guest flow — 302 to Lemon Squeezy via our server route.
+                                window.location.href = `/api/checkout/guest?plan=${plan}`;
                                 return;
                             }
 
@@ -1840,9 +1841,9 @@
                 return;
             }
 
-            // Simulate signup
-            alert('Welcome to Influencer Butler! Check your email for next steps.');
+            // Jump to pricing so they pick a plan — LS collects email + card on checkout.
             emailInput.value = '';
+            scrollToSection('pricing');
         }
 
         function isValidEmail(email) {

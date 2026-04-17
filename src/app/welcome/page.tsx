@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import WelcomePollClient from "./WelcomePollClient";
+import WelcomeCheckInboxClient from "./WelcomeCheckInboxClient";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,11 @@ export default async function WelcomeDispatcherPage() {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {
-    redirect("/login?next=/welcome");
+    // Payment-first flow: guest checkouts complete on LS without an active
+    // Supabase session. The webhook provisions the account and emails a magic
+    // link; this page just tells them to check their inbox and polls for the
+    // session to appear once they click the link.
+    return <WelcomeCheckInboxClient />;
   }
 
   const { data: subs } = await supabase
