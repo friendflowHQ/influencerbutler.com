@@ -99,10 +99,14 @@ export async function GET(request: Request) {
         variantId,
       });
       // Stash a slug of the LS body into the redirect so we can see the real
-      // reason without needing Vercel log access. Alphanumeric + dash,
-      // truncated at 400 chars to fit comfortably in the URL.
-      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 400);
-      return errorRedirect(request, `ls-${lsResponse.status}-${slug}`);
+      // reason without needing Vercel log access. Also echo the store+variant
+      // IDs we actually sent, so we can tell whether the deploy picked up the
+      // latest env vars.
+      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 300);
+      return errorRedirect(
+        request,
+        `ls-${lsResponse.status}-store${storeId}-var${variantId}-${slug}`,
+      );
     }
 
     let payload: LsCheckoutResponse;
