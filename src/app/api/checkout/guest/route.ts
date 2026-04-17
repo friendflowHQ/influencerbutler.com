@@ -98,10 +98,10 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         variantId,
       });
-      // Stash a short slug of the LS body into the redirect so we can see the
-      // real reason without needing Vercel log access. Alphanumeric only,
-      // truncated to 80 chars.
-      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 80);
+      // Stash a slug of the LS body into the redirect so we can see the real
+      // reason without needing Vercel log access. Alphanumeric + dash,
+      // truncated at 400 chars to fit comfortably in the URL.
+      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 400);
       return errorRedirect(request, `ls-${lsResponse.status}-${slug}`);
     }
 
