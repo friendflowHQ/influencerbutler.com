@@ -58,14 +58,18 @@ export async function GET(request: Request) {
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
+    // Omit checkout_data entirely when there's nothing to put in it. An empty
+    // {} object was rejected by LS in production with 404 (though local LS
+    // tenants accepted it). Only include the key if we have an affiliate code
+    // to pass through.
     const checkoutAttributes: Record<string, unknown> = {
-      checkout_data: {
-        discount_code: affiliate ? affiliate.code : undefined,
-      },
       product_options: {
         redirect_url: `${siteUrl.replace(/\/$/, "")}/welcome`,
       },
     };
+    if (affiliate) {
+      checkoutAttributes.checkout_data = { discount_code: affiliate.code };
+    }
 
     const lsResponse = await lsApi("/checkouts", {
       method: "POST",
@@ -94,7 +98,11 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         variantId,
       });
-      return errorRedirect(request, `ls-${lsResponse.status}`);
+      // Stash a short slug of the LS body into the redirect so we can see the
+      // real reason without needing Vercel log access. Alphanumeric only,
+      // truncated to 80 chars.
+      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 80);
+      return errorRedirect(request, `ls-${lsResponse.status}-${slug}`);
     }
 
     let payload: LsCheckoutResponse;
