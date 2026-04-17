@@ -98,15 +98,7 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         variantId,
       });
-      // Stash a slug of the LS body into the redirect so we can see the real
-      // reason without needing Vercel log access. Also echo the store+variant
-      // IDs we actually sent, so we can tell whether the deploy picked up the
-      // latest env vars.
-      const slug = rawBody.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 300);
-      return errorRedirect(
-        request,
-        `ls-${lsResponse.status}-store${storeId}-var${variantId}-${slug}`,
-      );
+      return errorRedirect(request, `ls-${lsResponse.status}`);
     }
 
     let payload: LsCheckoutResponse;
