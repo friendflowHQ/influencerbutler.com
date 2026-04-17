@@ -845,9 +845,6 @@
                         };
 
                         const withEmbedParam = (url) => {
-                            // LS overlay mode requires ?embed=1 on the checkout URL;
-                            // without it, lemon.js renders the checkout full-width
-                            // instead of as a modal with a backdrop.
                             try {
                                 const u = new URL(url);
                                 u.searchParams.set('embed', '1');
@@ -858,10 +855,27 @@
                         };
 
                         const openCheckout = (url) => {
+                            const embedUrl = withEmbedParam(url);
+                            // Lemon.js attaches to clicks on anchors with the
+                            // "lemonsqueezy-button" class and opens them as a
+                            // centered modal overlay (not a full-page iframe).
+                            // Synthesizing the documented markup is more reliable
+                            // than calling the imperative Url.Open() API, which
+                            // renders the checkout full-width in some cases.
                             if (window.LemonSqueezy?.Url?.Open) {
-                                window.LemonSqueezy.Url.Open(withEmbedParam(url));
+                                const a = document.createElement('a');
+                                a.href = embedUrl;
+                                a.className = 'lemonsqueezy-button';
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                try {
+                                    a.click();
+                                } finally {
+                                    // Detach after the click handler runs so lemon.js
+                                    // keeps its internal references.
+                                    setTimeout(() => a.remove(), 0);
+                                }
                             } else {
-                                // lemon.js hasn't loaded yet — navigate full page instead.
                                 window.location.href = url;
                             }
                         };

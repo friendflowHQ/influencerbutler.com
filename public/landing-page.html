@@ -1538,7 +1538,6 @@
                     };
 
                     const withEmbedParam = (url) => {
-                        // LS overlay mode requires ?embed=1 on the checkout URL.
                         try {
                             const u = new URL(url);
                             u.searchParams.set('embed', '1');
@@ -1549,8 +1548,22 @@
                     };
 
                     const openCheckout = (url) => {
+                        const embedUrl = withEmbedParam(url);
+                        // Lemon.js attaches to clicks on anchors with the
+                        // "lemonsqueezy-button" class and opens them as a modal
+                        // overlay. Synthesizing that markup is more reliable than
+                        // calling the imperative Url.Open() API.
                         if (window.LemonSqueezy?.Url?.Open) {
-                            window.LemonSqueezy.Url.Open(withEmbedParam(url));
+                            const a = document.createElement('a');
+                            a.href = embedUrl;
+                            a.className = 'lemonsqueezy-button';
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            try {
+                                a.click();
+                            } finally {
+                                setTimeout(() => a.remove(), 0);
+                            }
                         } else {
                             window.location.href = url;
                         }
