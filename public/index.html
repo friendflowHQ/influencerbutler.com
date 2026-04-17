@@ -844,9 +844,22 @@
                             window.location.href = `/api/checkout/guest?plan=${plan}`;
                         };
 
+                        const withEmbedParam = (url) => {
+                            // LS overlay mode requires ?embed=1 on the checkout URL;
+                            // without it, lemon.js renders the checkout full-width
+                            // instead of as a modal with a backdrop.
+                            try {
+                                const u = new URL(url);
+                                u.searchParams.set('embed', '1');
+                                return u.toString();
+                            } catch {
+                                return url + (url.includes('?') ? '&' : '?') + 'embed=1';
+                            }
+                        };
+
                         const openCheckout = (url) => {
                             if (window.LemonSqueezy?.Url?.Open) {
-                                window.LemonSqueezy.Url.Open(url);
+                                window.LemonSqueezy.Url.Open(withEmbedParam(url));
                             } else {
                                 // lemon.js hasn't loaded yet — navigate full page instead.
                                 window.location.href = url;
