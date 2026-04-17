@@ -10,7 +10,21 @@ type LsCheckoutResponse = {
   };
 };
 
-function errorRedirect(request: Request, code: string): NextResponse {
+/**
+ * Marketing pages that load lemon.js call this route with
+ * `Accept: application/json` so they can open the LS overlay instead of
+ * navigating. Plain <a href> clicks (or JS-disabled browsers) get the 302
+ * fallback — same URL, different response shape based on the Accept header.
+ */
+function wantsJson(request: Request): boolean {
+  const accept = request.headers.get("accept") ?? "";
+  return accept.includes("application/json");
+}
+
+function errorResponse(request: Request, code: string): NextResponse {
+  if (wantsJson(request)) {
+    return NextResponse.json({ error: code }, { status: 502 });
+  }
   const target = new URL("/", request.url);
   target.hash = `pricing?checkout_error=${code}`;
   return NextResponse.redirect(target);
@@ -19,10 +33,9 @@ function errorRedirect(request: Request, code: string): NextResponse {
 /**
  * Payment-first guest checkout. Unauthenticated visitors hitting a marketing
  * CTA land here; we mint an LS checkout session (no email pre-fill, no
- * supabase_user_id) and 302 the browser to LS. Account provisioning happens
- * later, from the LS webhook when the order completes.
- *
- * Using GET + 302 so plain <a href> tags on static HTML pages work without JS.
+ * supabase_user_id) and either 302 the browser to LS or return the URL as
+ * JSON (for the overlay modal). Account provisioning happens later, from the
+ * LS webhook when the order completes.
  */
 export async function GET(request: Request) {
   try {
@@ -39,16 +52,16 @@ export async function GET(request: Request) {
           envVar: variantResolution.envVar,
           plan,
         });
-        return errorRedirect(request, `missing-env-${variantResolution.envVar}`);
+        return errorResponse(request, `missing-env-${variantResolution.envVar}`);
       }
-      return errorRedirect(request, "bad-plan");
+      return errorResponse(request, "bad-plan");
     }
     const { variantId } = variantResolution;
 
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
     if (!storeId) {
       console.error("guest checkout: missing LEMONSQUEEZY_STORE_ID env var");
-      return errorRedirect(request, "missing-store-id");
+      return errorResponse(request, "missing-store-id");
     }
 
     const code = rawCode.trim();
@@ -98,7 +111,7 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         variantId,
       });
-      return errorRedirect(request, `ls-${lsResponse.status}`);
+      return errorResponse(request, `ls-${lsResponse.status}`);
     }
 
     let payload: LsCheckoutResponse;
@@ -110,7 +123,7 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         parseError: parseError instanceof Error ? parseError.message : String(parseError),
       });
-      return errorRedirect(request, "bad-json");
+      return errorResponse(request, "bad-json");
     }
 
     const rawCheckoutUrl = payload.data?.attributes?.url;
@@ -118,21 +131,24 @@ export async function GET(request: Request) {
       console.error("Guest checkout URL missing from LS response", {
         bodyPreview: rawBody.slice(0, 500),
       });
-      return errorRedirect(request, "no-url");
+      return errorResponse(request, "no-url");
     }
 
     const checkoutUrl = affiliate
       ? appendAffRef(rawCheckoutUrl, affiliate.lsAffiliateId)
       : rawCheckoutUrl;
 
+    if (wantsJson(request)) {
+      return NextResponse.json({ checkoutUrl });
+    }
     return NextResponse.redirect(checkoutUrl, { status: 302 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Guest checkout API error", error);
     // Common: lsApi throws "Missing LEMONSQUEEZY_API_KEY" if that env is unset.
     if (message.includes("LEMONSQUEEZY_API_KEY")) {
-      return errorRedirect(request, "missing-api-key");
+      return errorResponse(request, "missing-api-key");
     }
-    return errorRedirect(request, "unhandled");
+    return errorResponse(request, "unhandled");
   }
 }

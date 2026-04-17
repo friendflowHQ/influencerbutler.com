@@ -1537,6 +1537,24 @@
                         window.location.href = `/api/checkout/guest?plan=${plan}`;
                     };
 
+                    const openCheckout = (url) => {
+                        if (window.LemonSqueezy?.Url?.Open) {
+                            window.LemonSqueezy.Url.Open(url);
+                        } else {
+                            window.location.href = url;
+                        }
+                    };
+
+                    const openGuestCheckoutOverlay = async (plan) => {
+                        const response = await fetch(`/api/checkout/guest?plan=${plan}`, {
+                            headers: { Accept: 'application/json' },
+                        });
+                        if (!response.ok) throw new Error(`guest checkout ${response.status}`);
+                        const { checkoutUrl } = await response.json();
+                        if (!checkoutUrl) throw new Error('missing checkoutUrl');
+                        openCheckout(checkoutUrl);
+                    };
+
                     checkoutButtons.forEach((button) => {
                         button.addEventListener('click', async (event) => {
                             event.preventDefault();
@@ -1547,7 +1565,12 @@
                             }
 
                             if (!hasSupabaseAuthCookie()) {
-                                redirectToGuestCheckout(plan);
+                                try {
+                                    await openGuestCheckoutOverlay(plan);
+                                } catch (error) {
+                                    console.error('Guest overlay failed, falling back to full page', error);
+                                    redirectToGuestCheckout(plan);
+                                }
                                 return;
                             }
 
@@ -1560,9 +1583,12 @@
                                     body: JSON.stringify({ plan }),
                                 });
 
-                                // Stale/expired session cookie — fall back to guest route.
                                 if (response.status === 401) {
-                                    redirectToGuestCheckout(plan);
+                                    try {
+                                        await openGuestCheckoutOverlay(plan);
+                                    } catch (e) {
+                                        redirectToGuestCheckout(plan);
+                                    }
                                     return;
                                 }
 
@@ -1577,11 +1603,7 @@
                                     throw new Error('Missing checkout URL');
                                 }
 
-                                if (window.LemonSqueezy?.Url?.Open) {
-                                    window.LemonSqueezy.Url.Open(checkoutUrl);
-                                } else {
-                                    window.location.href = checkoutUrl;
-                                }
+                                openCheckout(checkoutUrl);
                             } catch (error) {
                                 console.error('Unable to open checkout, falling back to guest flow', error);
                                 redirectToGuestCheckout(plan);
