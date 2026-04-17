@@ -1524,11 +1524,18 @@
                 (function () {
                     const checkoutButtons = document.querySelectorAll('.checkout-btn');
 
-                    const hasSupabaseCookie = () =>
+                    // Match the auth-token cookie specifically — other sb-* cookies
+                    // (PKCE verifiers etc.) exist for anonymous visitors too, and a
+                    // present-but-expired session would 401 the authed endpoint.
+                    const hasSupabaseAuthCookie = () =>
                         document.cookie
                             .split(';')
                             .map((entry) => entry.trim())
-                            .some((entry) => entry.startsWith('sb-'));
+                            .some((entry) => /^sb-[^=]+-auth-token=/.test(entry));
+
+                    const redirectToGuestCheckout = (plan) => {
+                        window.location.href = `/api/checkout/guest?plan=${plan}`;
+                    };
 
                     checkoutButtons.forEach((button) => {
                         button.addEventListener('click', async (event) => {
@@ -1539,9 +1546,8 @@
                                 return;
                             }
 
-                            if (!hasSupabaseCookie()) {
-                                // Payment-first guest flow — 302 to Lemon Squeezy via our server route.
-                                window.location.href = `/api/checkout/guest?plan=${plan}`;
+                            if (!hasSupabaseAuthCookie()) {
+                                redirectToGuestCheckout(plan);
                                 return;
                             }
 
@@ -1553,6 +1559,12 @@
                                     },
                                     body: JSON.stringify({ plan }),
                                 });
+
+                                // Stale/expired session cookie — fall back to guest route.
+                                if (response.status === 401) {
+                                    redirectToGuestCheckout(plan);
+                                    return;
+                                }
 
                                 if (!response.ok) {
                                     throw new Error('Checkout session request failed');
@@ -1571,7 +1583,8 @@
                                     window.location.href = checkoutUrl;
                                 }
                             } catch (error) {
-                                console.error('Unable to open checkout', error);
+                                console.error('Unable to open checkout, falling back to guest flow', error);
+                                redirectToGuestCheckout(plan);
                             }
                         });
                     });
