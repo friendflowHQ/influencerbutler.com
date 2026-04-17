@@ -10,6 +10,12 @@ type LsCheckoutResponse = {
   };
 };
 
+function errorRedirect(request: Request, code: string): NextResponse {
+  const target = new URL("/", request.url);
+  target.hash = `pricing?checkout_error=${code}`;
+  return NextResponse.redirect(target);
+}
+
 /**
  * Payment-first guest checkout. Unauthenticated visitors hitting a marketing
  * CTA land here; we mint an LS checkout session (no email pre-fill, no
@@ -33,16 +39,16 @@ export async function GET(request: Request) {
           envVar: variantResolution.envVar,
           plan,
         });
-        return NextResponse.redirect(new URL("/#pricing", request.url));
+        return errorRedirect(request, `missing-env-${variantResolution.envVar}`);
       }
-      return NextResponse.redirect(new URL("/#pricing", request.url));
+      return errorRedirect(request, "bad-plan");
     }
     const { variantId } = variantResolution;
 
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
     if (!storeId) {
       console.error("guest checkout: missing LEMONSQUEEZY_STORE_ID env var");
-      return NextResponse.redirect(new URL("/#pricing", request.url));
+      return errorRedirect(request, "missing-store-id");
     }
 
     const code = rawCode.trim();
@@ -88,7 +94,7 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         variantId,
       });
-      return NextResponse.redirect(new URL("/#pricing", request.url));
+      return errorRedirect(request, `ls-${lsResponse.status}`);
     }
 
     let payload: LsCheckoutResponse;
@@ -100,7 +106,7 @@ export async function GET(request: Request) {
         bodyPreview: rawBody.slice(0, 500),
         parseError: parseError instanceof Error ? parseError.message : String(parseError),
       });
-      return NextResponse.redirect(new URL("/#pricing", request.url));
+      return errorRedirect(request, "bad-json");
     }
 
     const rawCheckoutUrl = payload.data?.attributes?.url;
@@ -108,7 +114,7 @@ export async function GET(request: Request) {
       console.error("Guest checkout URL missing from LS response", {
         bodyPreview: rawBody.slice(0, 500),
       });
-      return NextResponse.redirect(new URL("/#pricing", request.url));
+      return errorRedirect(request, "no-url");
     }
 
     const checkoutUrl = affiliate
@@ -117,7 +123,12 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(checkoutUrl, { status: 302 });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("Guest checkout API error", error);
-    return NextResponse.redirect(new URL("/#pricing", request.url));
+    // Common: lsApi throws "Missing LEMONSQUEEZY_API_KEY" if that env is unset.
+    if (message.includes("LEMONSQUEEZY_API_KEY")) {
+      return errorRedirect(request, "missing-api-key");
+    }
+    return errorRedirect(request, "unhandled");
   }
 }
