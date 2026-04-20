@@ -20,6 +20,8 @@ type LsWebhookPayload = {
 
 type QueryResult = Promise<{ data: Record<string, unknown> | null }>;
 
+type WriteResult = { error: { message?: string; code?: string; details?: string } | null };
+
 type SupabaseServiceClient = {
   from: (table: string) => {
     select: (columns: string) => {
@@ -30,9 +32,14 @@ type SupabaseServiceClient = {
         maybeSingle: () => QueryResult;
       };
     };
-    upsert: (payload: Record<string, unknown>, options?: { onConflict: string }) => Promise<unknown>;
+    upsert: (
+      payload: Record<string, unknown>,
+      options?: { onConflict: string },
+    ) => Promise<WriteResult>;
     update: (payload: Record<string, unknown>) => {
-      eq: (column: string, value: string) => Promise<unknown> & { is: (column: string, value: null) => Promise<unknown> };
+      eq: (column: string, value: string) => Promise<WriteResult> & {
+        is: (column: string, value: null) => Promise<WriteResult>;
+      };
     };
   };
   auth: {
@@ -63,6 +70,22 @@ type SupabaseServiceClient = {
 
 function getString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/**
+ * Awaits a Supabase mutation and throws on error with the DB-reported reason.
+ * Silent write failures were masking RLS/FK/column-missing issues that made
+ * webhooks look like they succeeded while no rows landed.
+ */
+async function assertWrite(
+  label: string,
+  promise: Promise<WriteResult>,
+): Promise<void> {
+  const { error } = await promise;
+  if (error) {
+    const parts = [error.code, error.message, error.details].filter(Boolean).join(" | ");
+    throw new Error(`${label} failed: ${parts || "unknown"}`);
+  }
 }
 
 type ProfileLookup = { id?: string | null; email?: string | null };
@@ -173,10 +196,13 @@ async function sendWelcomeMagicLinkIfFresh(
 
   const sent = await sendWelcomeMagicLink({ to: email, actionLink });
   if (sent) {
-    await supabase
-      .from("profiles")
-      .update({ welcome_email_sent_at: new Date().toISOString() })
-      .eq("id", userId);
+    await assertWrite(
+      "profiles.update(welcome_email_sent_at)",
+      supabase
+        .from("profiles")
+        .update({ welcome_email_sent_at: new Date().toISOString() })
+        .eq("id", userId),
+    );
   }
 }
 
@@ -201,10 +227,13 @@ async function ensureUserForEmail(
   if (userId) {
     // Opportunistically backfill ls_customer_id on the existing profile.
     if (options.lsCustomerId) {
-      await supabase
-        .from("profiles")
-        .update({ ls_customer_id: options.lsCustomerId })
-        .eq("id", userId);
+      await assertWrite(
+        "profiles.update(ls_customer_id) on existing",
+        supabase
+          .from("profiles")
+          .update({ ls_customer_id: options.lsCustomerId })
+          .eq("id", userId),
+      );
     }
   } else {
     const { data: createData, error: createError } = await supabase.auth.admin.createUser({
@@ -231,7 +260,10 @@ async function ensureUserForEmail(
       // Create the missing profile row for the orphan auth user.
       const profilePayload: Record<string, unknown> = { id: userId, email: normalized };
       if (options.lsCustomerId) profilePayload.ls_customer_id = options.lsCustomerId;
-      await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+      await assertWrite(
+        "profiles.upsert(orphan-auth-user)",
+        supabase.from("profiles").upsert(profilePayload, { onConflict: "id" }),
+      );
     } else {
       userId = createData.user.id;
 
@@ -242,7 +274,10 @@ async function ensureUserForEmail(
       if (options.lsCustomerId) {
         profilePayload.ls_customer_id = options.lsCustomerId;
       }
-      await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+      await assertWrite(
+        "profiles.upsert(new-user)",
+        supabase.from("profiles").upsert(profilePayload, { onConflict: "id" }),
+      );
     }
   }
 
@@ -430,23 +465,29 @@ export async function POST(request: Request) {
 
       await recordExists(supabase, "orders", "ls_order_id", recordId);
 
-      await supabase.from("orders").upsert(
-        {
-          ls_order_id: recordId,
-          user_id: userId,
-          status: getString(attrs.status),
-          total: attrs.total ?? null,
-          currency: getString(attrs.currency),
-        },
-        { onConflict: "ls_order_id" },
+      await assertWrite(
+        "orders.upsert(order_created)",
+        supabase.from("orders").upsert(
+          {
+            ls_order_id: recordId,
+            user_id: userId,
+            status: getString(attrs.status),
+            total: attrs.total ?? null,
+            currency: getString(attrs.currency),
+          },
+          { onConflict: "ls_order_id" },
+        ),
       );
 
       if (lsCustomerId) {
-        await supabase
-          .from("profiles")
-          .update({ ls_customer_id: lsCustomerId })
-          .eq("id", userId)
-          .is("ls_customer_id", null);
+        await assertWrite(
+          "profiles.update(ls_customer_id null-guard)",
+          supabase
+            .from("profiles")
+            .update({ ls_customer_id: lsCustomerId })
+            .eq("id", userId)
+            .is("ls_customer_id", null),
+        );
       }
     },
 
@@ -495,68 +536,68 @@ export async function POST(request: Request) {
         }
       }
 
-      await supabase.from("subscriptions").upsert(basePayload, {
-        onConflict: "ls_subscription_id",
-      });
+      await assertWrite(
+        "subscriptions.upsert(subscription_created)",
+        supabase.from("subscriptions").upsert(basePayload, {
+          onConflict: "ls_subscription_id",
+        }),
+      );
     },
 
     subscription_updated: async () => {
-      if (!recordId) {
-        return;
-      }
-
-      await supabase
-        .from("subscriptions")
-        .update({
-          status: getString(attrs.status),
-          renews_at: attrs.renews_at ?? null,
-          ends_at: attrs.ends_at ?? null,
-        })
-        .eq("ls_subscription_id", recordId);
+      if (!recordId) return;
+      await assertWrite(
+        "subscriptions.update(subscription_updated)",
+        supabase
+          .from("subscriptions")
+          .update({
+            status: getString(attrs.status),
+            renews_at: attrs.renews_at ?? null,
+            ends_at: attrs.ends_at ?? null,
+          })
+          .eq("ls_subscription_id", recordId),
+      );
     },
 
     subscription_cancelled: async () => {
-      if (!recordId) {
-        return;
-      }
-
-      await supabase
-        .from("subscriptions")
-        .update({
-          status: "cancelled",
-          ends_at: attrs.ends_at ?? attrs.cancelled_at ?? null,
-        })
-        .eq("ls_subscription_id", recordId);
+      if (!recordId) return;
+      await assertWrite(
+        "subscriptions.update(subscription_cancelled)",
+        supabase
+          .from("subscriptions")
+          .update({
+            status: "cancelled",
+            ends_at: attrs.ends_at ?? attrs.cancelled_at ?? null,
+          })
+          .eq("ls_subscription_id", recordId),
+      );
     },
 
     subscription_paused: async () => {
-      if (!recordId) {
-        return;
-      }
-
-      await supabase
-        .from("subscriptions")
-        .update({ status: "paused" })
-        .eq("ls_subscription_id", recordId);
+      if (!recordId) return;
+      await assertWrite(
+        "subscriptions.update(subscription_paused)",
+        supabase
+          .from("subscriptions")
+          .update({ status: "paused" })
+          .eq("ls_subscription_id", recordId),
+      );
     },
 
     subscription_resumed: async () => {
-      if (!recordId) {
-        return;
-      }
-
-      await supabase
-        .from("subscriptions")
-        .update({ status: "active" })
-        .eq("ls_subscription_id", recordId);
+      if (!recordId) return;
+      await assertWrite(
+        "subscriptions.update(subscription_resumed)",
+        supabase
+          .from("subscriptions")
+          .update({ status: "active" })
+          .eq("ls_subscription_id", recordId),
+      );
     },
 
     subscription_payment_success: async () => {
       const renewalOrderId = getString(attrs.order_id) ?? recordId;
-
-      if (!renewalOrderId) {
-        return;
-      }
+      if (!renewalOrderId) return;
 
       const lsSubscriptionId = getString(attrs.subscription_id);
       const userId =
@@ -564,41 +605,41 @@ export async function POST(request: Request) {
         (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
 
       if (!userId) {
-        return;
+        throw new Error(
+          `subscription_payment_success: no user context for sub=${lsSubscriptionId ?? "null"}`,
+        );
       }
 
       await recordExists(supabase, "orders", "ls_order_id", renewalOrderId);
 
-      await supabase.from("orders").upsert(
-        {
-          ls_order_id: renewalOrderId,
-          user_id: userId,
-          status: getString(attrs.status) ?? "paid",
-          total: attrs.total ?? null,
-          currency: getString(attrs.currency),
-        },
-        { onConflict: "ls_order_id" },
+      await assertWrite(
+        "orders.upsert(subscription_payment_success)",
+        supabase.from("orders").upsert(
+          {
+            ls_order_id: renewalOrderId,
+            user_id: userId,
+            status: getString(attrs.status) ?? "paid",
+            total: attrs.total ?? null,
+            currency: getString(attrs.currency),
+          },
+          { onConflict: "ls_order_id" },
+        ),
       );
     },
 
     subscription_payment_failed: async () => {
       const lsSubscriptionId = getString(attrs.subscription_id) ?? recordId;
-
-      if (!lsSubscriptionId) {
-        return;
-      }
-
-      await supabase
-        .from("subscriptions")
-        .update({ status: "past_due" })
-        .eq("ls_subscription_id", lsSubscriptionId);
+      if (!lsSubscriptionId) return;
+      await assertWrite(
+        "subscriptions.update(subscription_payment_failed)",
+        supabase
+          .from("subscriptions")
+          .update({ status: "past_due" })
+          .eq("ls_subscription_id", lsSubscriptionId),
+      );
     },
 
     affiliate_activated: async () => {
-      // LS fires this when a merchant (or auto-approval) activates an affiliate
-      // on their hosted portal. We match the affiliate back to our user by
-      // email (they signed up on LS with the same email they used on our
-      // application form) and persist the new LS affiliate ID.
       if (!recordId) return;
 
       const rawEmail =
@@ -610,8 +651,6 @@ export async function POST(request: Request) {
       }
       const email = rawEmail.toLowerCase();
 
-      // Case-insensitive match: our applications table stores email as the
-      // user typed it; LS tends to lowercase. Use ilike to be safe.
       const { data: appData } = await supabase
         .from("affiliate_applications")
         .select("user_id")
@@ -624,20 +663,21 @@ export async function POST(request: Request) {
         return;
       }
 
-      await supabase.from("profiles").upsert(
-        {
-          id: userId,
-          is_affiliate: true,
-          ls_affiliate_id: recordId,
-        },
-        { onConflict: "id" },
+      await assertWrite(
+        "profiles.upsert(affiliate_activated)",
+        supabase.from("profiles").upsert(
+          {
+            id: userId,
+            is_affiliate: true,
+            ls_affiliate_id: recordId,
+          },
+          { onConflict: "id" },
+        ),
       );
     },
 
     license_key_created: async () => {
-      if (!recordId) {
-        return;
-      }
+      if (!recordId) return;
 
       const lsSubscriptionId = getString(attrs.subscription_id);
       const userId =
@@ -645,33 +685,38 @@ export async function POST(request: Request) {
         (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
 
       if (!userId) {
-        return;
+        throw new Error(
+          `license_key_created: no user context for sub=${lsSubscriptionId ?? "null"}`,
+        );
       }
 
       await recordExists(supabase, "license_keys", "ls_license_key_id", recordId);
 
-      await supabase.from("license_keys").upsert(
-        {
-          ls_license_key_id: recordId,
-          user_id: userId,
-          key: getString(attrs.key),
-          status: getString(attrs.status),
-          activation_limit: attrs.activation_limit ?? null,
-          ls_subscription_id: lsSubscriptionId,
-        },
-        { onConflict: "ls_license_key_id" },
+      await assertWrite(
+        "license_keys.upsert(license_key_created)",
+        supabase.from("license_keys").upsert(
+          {
+            ls_license_key_id: recordId,
+            user_id: userId,
+            key: getString(attrs.key),
+            status: getString(attrs.status),
+            activation_limit: attrs.activation_limit ?? null,
+            ls_subscription_id: lsSubscriptionId,
+          },
+          { onConflict: "ls_license_key_id" },
+        ),
       );
     },
 
     license_key_updated: async () => {
-      if (!recordId) {
-        return;
-      }
-
-      await supabase
-        .from("license_keys")
-        .update({ status: getString(attrs.status) })
-        .eq("ls_license_key_id", recordId);
+      if (!recordId) return;
+      await assertWrite(
+        "license_keys.update(license_key_updated)",
+        supabase
+          .from("license_keys")
+          .update({ status: getString(attrs.status) })
+          .eq("ls_license_key_id", recordId),
+      );
     },
   };
 
