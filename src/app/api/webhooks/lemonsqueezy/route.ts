@@ -53,6 +53,10 @@ type SupabaseServiceClient = {
         data: { properties?: { action_link?: string } | null } | null;
         error: { message?: string } | null;
       }>;
+      listUsers: (params?: { page?: number; perPage?: number }) => Promise<{
+        data: { users: { id: string; email?: string | null }[] } | null;
+        error: { message?: string } | null;
+      }>;
     };
   };
 };
@@ -130,14 +134,59 @@ async function sendWelcomeMagicLink(params: {
 }
 
 /**
+ * Sends the welcome magic-link email unless we've already sent one to this
+ * profile in the last 10 minutes (avoids dup sends when LS retries a webhook
+ * or order_created + subscription_created both resolve the same guest user).
+ */
+async function sendWelcomeMagicLinkIfFresh(
+  supabase: SupabaseServiceClient,
+  userId: string,
+  email: string,
+): Promise<void> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("welcome_email_sent_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const lastSent = getString((profile as { welcome_email_sent_at?: string | null } | null)?.welcome_email_sent_at);
+  if (lastSent) {
+    const sentAtMs = new Date(lastSent).getTime();
+    if (Number.isFinite(sentAtMs) && Date.now() - sentAtMs < 10 * 60 * 1000) {
+      return;
+    }
+  }
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo: `${siteUrl.replace(/\/$/, "")}/welcome` },
+  });
+
+  const actionLink = linkData?.properties?.action_link ?? null;
+  if (linkError || !actionLink) {
+    console.error("sendWelcomeMagicLinkIfFresh: generateLink failed", linkError);
+    return;
+  }
+
+  const sent = await sendWelcomeMagicLink({ to: email, actionLink });
+  if (sent) {
+    await supabase
+      .from("profiles")
+      .update({ welcome_email_sent_at: new Date().toISOString() })
+      .eq("id", userId);
+  }
+}
+
+/**
  * Returns the Supabase user id for the given email, creating the auth user and
- * a matching profiles row if neither exists yet. If a new user is created,
- * sends a welcome magic-link email (payment-first flow — the LS checkout is
- * the user's first interaction, so we provision account + login link on the
- * order_created webhook).
- *
- * Idempotent: subsequent calls for the same email short-circuit to the
- * existing user id and do NOT resend the magic link.
+ * a matching profiles row if neither exists yet. Always sends a welcome
+ * magic-link email (payment-first flow — the LS checkout is the user's only
+ * interaction, so every guest order needs a sign-in link regardless of whether
+ * a profile row pre-existed from an affiliate application, earlier signup
+ * attempt, etc.). Dup sends are guarded by profiles.welcome_email_sent_at.
  */
 async function ensureUserForEmail(
   supabase: SupabaseServiceClient,
@@ -147,61 +196,82 @@ async function ensureUserForEmail(
   const normalized = email.trim();
   if (!normalized) return null;
 
-  const existing = await findUserIdByEmail(supabase, normalized);
-  if (existing) {
+  let userId = await findUserIdByEmail(supabase, normalized);
+
+  if (userId) {
     // Opportunistically backfill ls_customer_id on the existing profile.
     if (options.lsCustomerId) {
       await supabase
         .from("profiles")
         .update({ ls_customer_id: options.lsCustomerId })
-        .eq("id", existing);
+        .eq("id", userId);
     }
-    return existing;
-  }
-
-  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
-    email: normalized,
-    email_confirm: true,
-    user_metadata: { created_via: "ls_checkout" },
-  });
-
-  if (createError || !createData.user?.id) {
-    // Race: a concurrent webhook might have already created the user. Re-check.
-    const refetched = await findUserIdByEmail(supabase, normalized);
-    if (refetched) return refetched;
-    console.error("ensureUserForEmail: createUser failed", createError);
-    return null;
-  }
-
-  const userId = createData.user.id;
-
-  const profilePayload: Record<string, unknown> = {
-    id: userId,
-    email: normalized,
-  };
-  if (options.lsCustomerId) {
-    profilePayload.ls_customer_id = options.lsCustomerId;
-  }
-
-  await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
-
-  // Generate and send the welcome magic link.
-  const siteUrl =
-    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
-  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-    type: "magiclink",
-    email: normalized,
-    options: { redirectTo: `${siteUrl.replace(/\/$/, "")}/welcome` },
-  });
-
-  const actionLink = linkData?.properties?.action_link ?? null;
-  if (linkError || !actionLink) {
-    console.error("ensureUserForEmail: generateLink failed", linkError);
   } else {
-    await sendWelcomeMagicLink({ to: normalized, actionLink });
+    const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+      email: normalized,
+      email_confirm: true,
+      user_metadata: { created_via: "ls_checkout" },
+    });
+
+    if (createError || !createData.user?.id) {
+      // Could be a race (concurrent webhook), OR an auth.users row exists from
+      // a previous attempt but no profiles row was written. Look up the auth
+      // user by email and backfill the profile row so downstream handlers
+      // (subscription_created, license_key_created, etc.) can find them.
+      userId = await findUserIdByEmail(supabase, normalized);
+      if (!userId) {
+        userId = await findAuthUserIdByEmail(supabase, normalized);
+      }
+      if (!userId) {
+        const errMsg = createError?.message ?? "unknown";
+        throw new Error(
+          `ensureUserForEmail: createUser failed (${errMsg}) and no existing profile/auth user found for ${normalized}`,
+        );
+      }
+      // Create the missing profile row for the orphan auth user.
+      const profilePayload: Record<string, unknown> = { id: userId, email: normalized };
+      if (options.lsCustomerId) profilePayload.ls_customer_id = options.lsCustomerId;
+      await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+    } else {
+      userId = createData.user.id;
+
+      const profilePayload: Record<string, unknown> = {
+        id: userId,
+        email: normalized,
+      };
+      if (options.lsCustomerId) {
+        profilePayload.ls_customer_id = options.lsCustomerId;
+      }
+      await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+    }
   }
+
+  await sendWelcomeMagicLinkIfFresh(supabase, userId, normalized);
 
   return userId;
+}
+
+/**
+ * Fallback lookup: find a Supabase auth user by email when no profile row
+ * exists. Uses paginated listUsers — fine for accounts under a few thousand
+ * users. Returns the first matching user id or null.
+ */
+async function findAuthUserIdByEmail(
+  supabase: SupabaseServiceClient,
+  email: string,
+): Promise<string | null> {
+  const target = email.toLowerCase();
+  const list = supabase.auth.admin.listUsers;
+  if (typeof list !== "function") return null;
+  try {
+    const { data, error } = await list({ page: 1, perPage: 200 });
+    if (error || !data?.users) return null;
+    const match = data.users.find((u) => (u.email ?? "").toLowerCase() === target);
+    return match?.id ?? null;
+  } catch (err) {
+    console.error("findAuthUserIdByEmail: listUsers threw", err);
+    return null;
+  }
 }
 
 async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubscriptionId: string) {
@@ -340,7 +410,7 @@ export async function POST(request: Request) {
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
       if (!recordId) {
-        return;
+        throw new Error("order_created: missing data.id (recordId)");
       }
 
       const lsCustomerId = getString(attrs.customer_id);
@@ -353,10 +423,9 @@ export async function POST(request: Request) {
         directUserId ??
         (orderEmail ? await ensureUserForEmail(supabase, orderEmail, { lsCustomerId }) : null);
       if (!userId) {
-        console.error("order_created: no user context (no supabase_user_id, no user_email)", {
-          recordId,
-        });
-        return;
+        throw new Error(
+          `order_created: no user context — directUserId=${directUserId ?? "null"}, orderEmail=${orderEmail ?? "null"}, lsCustomerId=${lsCustomerId ?? "null"}`,
+        );
       }
 
       await recordExists(supabase, "orders", "ls_order_id", recordId);
@@ -383,7 +452,7 @@ export async function POST(request: Request) {
 
     subscription_created: async () => {
       if (!recordId) {
-        return;
+        throw new Error("subscription_created: missing data.id (recordId)");
       }
 
       // subscription_created can arrive before order_created in rare ordering
@@ -393,8 +462,9 @@ export async function POST(request: Request) {
       const userId =
         directUserId ?? (subEmail ? await ensureUserForEmail(supabase, subEmail) : null);
       if (!userId) {
-        console.error("subscription_created: no user context", { recordId });
-        return;
+        throw new Error(
+          `subscription_created: no user context — directUserId=${directUserId ?? "null"}, subEmail=${subEmail ?? "null"}`,
+        );
       }
 
       await recordExists(supabase, "subscriptions", "ls_subscription_id", recordId);
@@ -608,14 +678,25 @@ export async function POST(request: Request) {
   const handler = eventName ? handlers[eventName] : undefined;
 
   if (!handler) {
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true, note: `no handler for ${eventName ?? "missing event_name"}` });
   }
 
+  // Echo handler errors back into the 200 response body so they surface in the
+  // LS "Recent deliveries" UI — we can't tail Vercel logs from every context,
+  // and silently returning {received:true} meant 6 consecutive webhooks could
+  // fail while LS showed green checkmarks. Still returns 200 so LS doesn't
+  // retry-loop; if the fix needs a re-run, use LS's "Resend" button manually.
   try {
     await handler();
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined;
     console.error(`Lemon Squeezy webhook event handling failed for ${eventName}`, error);
+    return NextResponse.json({
+      received: true,
+      handler_error: { event: eventName, message, stack },
+    });
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, event: eventName });
 }
