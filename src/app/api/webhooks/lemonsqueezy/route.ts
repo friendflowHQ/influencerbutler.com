@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
@@ -278,6 +278,16 @@ async function ensureUserForEmail(
         "profiles.upsert(new-user)",
         supabase.from("profiles").upsert(profilePayload, { onConflict: "id" }),
       );
+
+      // Read-back verification: RLS misconfig can make upserts return
+      // {data:[], error:null} without actually inserting the row, which
+      // then causes FK violations on downstream orders/subscriptions.
+      const readBack = await findUserIdByEmail(supabase, normalized);
+      if (!readBack) {
+        throw new Error(
+          `profiles.upsert(new-user) reported success but row is not queryable — suspect RLS filter on profiles for id=${userId}, email=${normalized}. Check SUPABASE_SERVICE_ROLE_KEY and RLS policies.`,
+        );
+      }
     }
   }
 
@@ -417,15 +427,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Webhook configuration error" }, { status: 500 });
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseServiceRoleKey, {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      setAll() {
-        // no-op for stateless webhook endpoint
-      },
-    },
+  // Use the canonical supabase-js admin client rather than @supabase/ssr's
+  // createServerClient. SSR's client is tuned for cookie-bound user auth and
+  // doesn't always route writes as the service_role JWT claim — so RLS can
+  // silently filter inserts (returns data: [], error: null, no row written).
+  // supabase-js with autoRefreshToken/persistSession off reliably bypasses RLS.
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   }) as unknown as SupabaseServiceClient;
 
   let payload: LsWebhookPayload;
