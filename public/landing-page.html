@@ -859,6 +859,7 @@
         .faq-item:nth-child(4) { animation-delay: 0.2s; }
         .faq-item:nth-child(5) { animation-delay: 0.25s; }
         .faq-item:nth-child(6) { animation-delay: 0.3s; }
+        .faq-item:nth-child(7) { animation-delay: 0.35s; }
 
         .faq-item.active {
             border-color: var(--primary);
@@ -1299,6 +1300,40 @@
         }
     </style>
     <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+    <style>
+        /* Override lemon.js's full-viewport iframe to render as a modal. */
+        body.lemonsqueezy-open { overflow: hidden; }
+        body.lemonsqueezy-open::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(17, 17, 17, 0.6);
+            z-index: 2147483645;
+            pointer-events: none;
+        }
+        body.lemonsqueezy-open > iframe[allow="payment"] {
+            width: min(560px, 94vw) !important;
+            max-width: 100vw !important;
+            height: min(820px, 92vh) !important;
+            max-height: 100vh !important;
+            top: 4vh !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
+            overflow: hidden !important;
+        }
+        @media (max-width: 640px) {
+            body.lemonsqueezy-open > iframe[allow="payment"] {
+                width: 100vw !important;
+                height: 100vh !important;
+                top: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- NAVIGATION -->
@@ -1548,22 +1583,13 @@
                     };
 
                     const openCheckout = (url) => {
-                        const embedUrl = withEmbedParam(url);
-                        // Lemon.js attaches to clicks on anchors with the
-                        // "lemonsqueezy-button" class and opens them as a modal
-                        // overlay. Synthesizing that markup is more reliable than
-                        // calling the imperative Url.Open() API.
+                        // Programmatic clicks on a dynamically-added
+                        // .lemonsqueezy-button anchor are ignored by lemon.js
+                        // (event.isTrusted is false). Url.Open() is the only way
+                        // to trigger the overlay from JS; the checkout stays on
+                        // our domain inside an LS-managed iframe.
                         if (window.LemonSqueezy?.Url?.Open) {
-                            const a = document.createElement('a');
-                            a.href = embedUrl;
-                            a.className = 'lemonsqueezy-button';
-                            a.style.display = 'none';
-                            document.body.appendChild(a);
-                            try {
-                                a.click();
-                            } finally {
-                                setTimeout(() => a.remove(), 0);
-                            }
+                            window.LemonSqueezy.Url.Open(withEmbedParam(url));
                         } else {
                             window.location.href = url;
                         }
@@ -1753,6 +1779,15 @@
                     </div>
                     <div class="faq-answer">
                         We support Amazon Influencer Program, YouTube, TikTok, Instagram, Twitter/X, and custom integrations via API on the Business plan. We're constantly adding new platform integrations based on creator feedback.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What do I need on my computer to run it smoothly?</h3>
+                        <span class="faq-toggle">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Influencer Butler runs on any modern Windows 10/11 or Mac computer from the last few years. For the best experience we recommend at least <strong>8 GB of RAM</strong> (16 GB if you plan to run several workspaces at once) and around <strong>5 GB of free disk space</strong>. A steady broadband connection helps too, since the app works in the background while you do other things. One tip: install it on your regular drive — not inside a OneDrive, iCloud, or Dropbox folder — so cloud sync doesn't interfere with updates.
                     </div>
                 </div>
                 <div class="faq-item">
