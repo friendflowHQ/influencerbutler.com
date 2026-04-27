@@ -120,7 +120,7 @@ export default function LoginPage() {
           </div>
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="mt-2 text-sm text-slate-600">Log in to manage your campaigns.</p>
+        <p className="mt-2 text-sm text-slate-600">Log in to manage your account.</p>
 
         <Suspense fallback={<LoginFormFallback />}>
           <LoginForm />

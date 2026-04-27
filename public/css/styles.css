@@ -1175,6 +1175,32 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   font-weight: 700;
 }
 
+/* Result / inbox payoff */
+.feature-result {
+  padding: 3rem 0;
+  border-top: 1px solid var(--border);
+}
+.feature-result h2 { margin-bottom: 1rem; }
+.feature-result-copy {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 720px;
+  margin-bottom: 2rem;
+}
+.feature-result-image {
+  display: flex;
+  justify-content: center;
+}
+.feature-result-image img {
+  max-width: 420px;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
 /* Proof strip */
 .feature-proof {
   display: flex;
