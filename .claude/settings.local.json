@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/landing)",
+      "Bash(curl -s -o /dev/null -w \"GET /  -> %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"GET /features/cc-check  -> %{http_code}\\\\n\" http://localhost:3000/features/cc-check)",
+      "Bash(curl -s -o /dev/null -w \"GET /features/amazon-butler  -> %{http_code}\\\\n\" http://localhost:3000/features/amazon-butler)",
+      "Bash(curl -s -o /dev/null -w \"GET /features/feedback  -> %{http_code}\\\\n\" http://localhost:3000/features/feedback)",
+      "Bash(curl -s -o /dev/null -w \"GET /features/retag-butler  -> %{http_code}\\\\n\" http://localhost:3000/features/retag-butler)",
+      "Bash(sed 's/^/youtube QR copy: /')",
+      "Read(//tmp/**)",
+      "Bash(sed 's/^/collab auto-ingest copy: /')",
+      "Bash(sed 's/^/storefront inventory copy: /')",
+      "Bash(npx eslint *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(curl -sS -I 'http://localhost:3000/api/checkout/guest?plan=monthly')"
+    ]
+  }
+}
