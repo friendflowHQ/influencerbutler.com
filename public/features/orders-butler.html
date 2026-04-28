@@ -55,7 +55,7 @@
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#f97316" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#f97316" stroke-width="2" stroke-linecap="round"/></svg>
                     </div>
                     <h1>Orders Butler</h1>
-                    <p class="feature-tagline">Grabs every order you&rsquo;ve placed, ready for content planning and spreadsheet work.</p>
+                    <p class="feature-tagline">Grabs every order you&rsquo;ve placed back to 2013, with offers-v2 marketplace pricing parsed in &mdash; ready for content planning and spreadsheet work.</p>
                     <div class="feature-hero-cta">
                         <a class="btn btn-primary btn-lg" href="/#pricing">Start free</a>
                         <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
@@ -89,10 +89,14 @@
             <section class="feature-box anim-up">
                 <h2>What&rsquo;s in the box</h2>
                 <ul class="feature-box-list">
-                    <li>Full order history back to 2013</li>
-                    <li>ASIN-level detail on every order</li>
+                    <li>Full order history back to 2013, with offers-v2 marketplace pricing parsed in</li>
+                    <li>ASIN-level detail on every order &mdash; plus cross-marketplace parent-ASIN lookup (US, CA, UK, AU)</li>
                     <li>One-click CSV export</li>
                     <li>Breakeven product tracker</li>
+                    <li>5-tab parallel detail fetching with parallelized Creator API batches</li>
+                    <li>Adaptive worker pool &mdash; auto-shrinks on year-fetch errors so a slow year can&rsquo;t kill the whole run</li>
+                    <li>Persistent order-key store &mdash; never re-pulls an order you already harvested</li>
+                    <li>Heartbeat-based idle detection (no more wall-clock kill at 30 min)</li>
                     <li>Mapping from purchases to your content</li>
                     <li>Safe &mdash; runs locally, nothing leaves your machine</li>
                 </ul>
@@ -100,9 +104,9 @@
 
             <section class="feature-proof anim-up">
                 <div class="proof-item">Back to 2013</div>
-                <div class="proof-item">CSV export</div>
-                <div class="proof-item">One-click harvest</div>
-                <div class="proof-item">Runs locally</div>
+                <div class="proof-item">5-tab parallel</div>
+                <div class="proof-item">Adaptive workers</div>
+                <div class="proof-item">Cross-marketplace</div>
             </section>
 
             <section class="feature-cta anim-up">
