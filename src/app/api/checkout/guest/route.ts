@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
 import { appendAffRef, lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
+import {
+  WELCOME_TOKEN_COOKIE,
+  WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  generateWelcomeToken,
+} from "@/lib/welcome-token";
 
 type LsCheckoutResponse = {
   data?: {
@@ -28,6 +33,28 @@ function errorResponse(request: Request, code: string): NextResponse {
   const target = new URL("/", request.url);
   target.hash = `pricing?checkout_error=${code}`;
   return NextResponse.redirect(target);
+}
+
+/**
+ * Sets the welcome-token cookie on the response. Used so the /welcome page
+ * can identify the buyer post-redirect without requiring auth (see
+ * src/lib/welcome-token.ts for the full flow).
+ *
+ * HttpOnly + SameSite=Lax + Secure-in-prod: the cookie survives the LS
+ * round-trip (Lax allows top-level navigations back to our domain), but JS
+ * on our pages can't read it — only /api/welcome/license can exchange it for
+ * license data.
+ */
+function attachWelcomeTokenCookie(response: NextResponse, token: string): void {
+  response.cookies.set({
+    name: WELCOME_TOKEN_COOKIE,
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  });
 }
 
 /**
@@ -71,18 +98,24 @@ export async function GET(request: Request) {
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
-    // Omit checkout_data entirely when there's nothing to put in it. An empty
-    // {} object was rejected by LS in production with 404 (though local LS
-    // tenants accepted it). Only include the key if we have an affiliate code
-    // to pass through.
+    // Welcome-token: per-purchase UUID we set as a cookie + pass through LS
+    // as custom_data so the /welcome page can identify the buyer without auth.
+    // See src/lib/welcome-token.ts.
+    const welcomeToken = generateWelcomeToken();
+
+    const checkoutData: Record<string, unknown> = {
+      custom: { welcome_token: welcomeToken },
+    };
+    if (affiliate) {
+      checkoutData.discount_code = affiliate.code;
+    }
+
     const checkoutAttributes: Record<string, unknown> = {
+      checkout_data: checkoutData,
       product_options: {
         redirect_url: `${siteUrl.replace(/\/$/, "")}/welcome`,
       },
     };
-    if (affiliate) {
-      checkoutAttributes.checkout_data = { discount_code: affiliate.code };
-    }
 
     const lsResponse = await lsApi("/checkouts", {
       method: "POST",
@@ -139,9 +172,13 @@ export async function GET(request: Request) {
       : rawCheckoutUrl;
 
     if (wantsJson(request)) {
-      return NextResponse.json({ checkoutUrl });
+      const jsonResponse = NextResponse.json({ checkoutUrl });
+      attachWelcomeTokenCookie(jsonResponse, welcomeToken);
+      return jsonResponse;
     }
-    return NextResponse.redirect(checkoutUrl, { status: 302 });
+    const redirectResponse = NextResponse.redirect(checkoutUrl, { status: 302 });
+    attachWelcomeTokenCookie(redirectResponse, welcomeToken);
+    return redirectResponse;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Guest checkout API error", error);

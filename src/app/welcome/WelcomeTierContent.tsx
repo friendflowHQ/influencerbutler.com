@@ -41,6 +41,16 @@ export default function WelcomeTierContent({ tier }: Props) {
         <LicenseKeyDisplay variant="panel" />
       </div>
 
+      <aside className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-5">
+        <p className="text-sm font-semibold text-amber-900">
+          Save your license key somewhere safe
+        </p>
+        <p className="mt-1 text-sm text-amber-800">
+          Store it in your password manager or a notes app. You&apos;ll need it any time
+          you reinstall the desktop app or activate it on a new computer.
+        </p>
+      </aside>
+
       <div className="mt-10">
         <h2 className="text-lg font-semibold tracking-tight text-slate-900">What to expect</h2>
         <ol className="mt-4 space-y-3">

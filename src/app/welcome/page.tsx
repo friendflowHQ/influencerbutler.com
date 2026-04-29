@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { WELCOME_TOKEN_COOKIE } from "@/lib/welcome-token";
 import WelcomePollClient from "./WelcomePollClient";
 import WelcomeCheckInboxClient from "./WelcomeCheckInboxClient";
+import WelcomeGuestClient from "./WelcomeGuestClient";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +19,18 @@ export default async function WelcomeDispatcherPage() {
 
   if (userError || !userData.user) {
     // Payment-first flow: guest checkouts complete on LS without an active
-    // Supabase session. The webhook provisions the account and emails a magic
-    // link; this page just tells them to check their inbox and polls for the
-    // session to appear once they click the link.
+    // Supabase session. If we set the welcome_token cookie before the LS
+    // redirect (see /api/checkout/guest), we can show the buyer their license
+    // key + download CTA immediately without making them click a magic-link
+    // email first. The link still goes out in the background so they can
+    // sign in to the dashboard later.
+    const cookieStore = await cookies();
+    const hasWelcomeToken = Boolean(cookieStore.get(WELCOME_TOKEN_COOKIE)?.value);
+    if (hasWelcomeToken) {
+      return <WelcomeGuestClient />;
+    }
+    // No token (e.g. opened /welcome directly, or cookie expired) — fall back
+    // to the legacy "check your inbox" screen with magic-link polling.
     return <WelcomeCheckInboxClient />;
   }
 

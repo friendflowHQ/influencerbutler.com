@@ -10,6 +10,7 @@ type LsWebhookPayload = {
     event_name?: string;
     custom_data?: {
       supabase_user_id?: string;
+      welcome_token?: string;
     };
   };
   data?: {
@@ -449,6 +450,11 @@ export async function POST(request: Request) {
   const attrs = payload.data?.attributes ?? {};
   const recordId = getString(payload.data?.id);
   const directUserId = getString(payload.meta?.custom_data?.supabase_user_id);
+  // Per-purchase identifier set as a cookie before LS checkout. Stored on
+  // orders.welcome_token so /api/welcome/license can return the right license
+  // key to the buyer on the thank-you page without requiring auth.
+  // See src/lib/welcome-token.ts.
+  const welcomeToken = getString(payload.meta?.custom_data?.welcome_token);
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
@@ -482,6 +488,10 @@ export async function POST(request: Request) {
             status: getString(attrs.status),
             total: attrs.total ?? null,
             currency: getString(attrs.currency),
+            // Only include welcome_token if this delivery actually carries one
+            // (manual LS dashboard checkouts won't), so we don't blank out a
+            // previously-stamped token on a re-delivery.
+            ...(welcomeToken ? { welcome_token: welcomeToken } : {}),
           },
           { onConflict: "ls_order_id" },
         ),
