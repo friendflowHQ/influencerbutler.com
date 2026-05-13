@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-skills.dev/schema/skill/v0.2.0.json",
+  "name": "pricing-tiers",
+  "version": "0.2.0",
+  "title": "Get Influencer Butler pricing tiers",
+  "description": "Returns the public pricing tiers (free, monthly, annual) with feature highlights.",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "auth": "none",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "invoke": {
+    "method": "POST",
+    "url": "https://www.influencerbutler.com/api/skills/pricing-tiers/invoke",
+    "auth": "none"
+  },
+  "mcpEquivalent": "get_pricing"
+}

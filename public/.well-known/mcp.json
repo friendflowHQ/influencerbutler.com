@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "2025-03-26",
+  "name": "Influencer Butler",
+  "version": "0.1.0",
+  "description": "MCP server for Influencer Butler — features catalog, pricing, affiliate link creation, and earnings summary for influencer creators.",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "transport": {
+    "type": "streamable-http",
+    "url": "https://www.influencerbutler.com/api/mcp"
+  },
+  "auth": {
+    "type": "bearer",
+    "tokenIssuanceUrl": "https://www.influencerbutler.com/dashboard/api-keys",
+    "tokenFormat": "ib_pat_<random>"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": false,
+    "prompts": false
+  },
+  "tools": [
+    {
+      "name": "list_features",
+      "description": "List all Influencer Butler product features with slugs, titles and descriptions.",
+      "auth": "none"
+    },
+    {
+      "name": "get_pricing",
+      "description": "Return the public pricing tiers (free, monthly, annual).",
+      "auth": "none"
+    },
+    {
+      "name": "create_affiliate_link",
+      "description": "Create a branded affiliate referral code for the authenticated influencer.",
+      "auth": "bearer"
+    },
+    {
+      "name": "get_earnings_summary",
+      "description": "Return the authenticated user's recent affiliate earnings summary.",
+      "auth": "bearer"
+    }
+  ]
+}

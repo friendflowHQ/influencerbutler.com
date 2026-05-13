@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
+import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
 import { WELCOME_COPY, DESKTOP_APP_DOWNLOAD_URL, type WelcomeTier } from "@/lib/welcome-copy";
 
 type Props = {
@@ -36,6 +37,8 @@ export default function WelcomeTierContent({ tier }: Props) {
           Go to dashboard
         </Link>
       </div>
+
+      <WindowsSmartScreenGuide />
 
       <div className="mt-10">
         <LicenseKeyDisplay variant="panel" />

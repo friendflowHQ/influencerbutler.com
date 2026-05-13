@@ -1,0 +1,87 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://www.influencerbutler.com/api",
+      "service-desc": [
+        {
+          "href": "https://www.influencerbutler.com/.well-known/openapi.json",
+          "type": "application/openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.influencerbutler.com/features/api-integrations",
+          "type": "text/html"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://www.influencerbutler.com/api/health",
+          "type": "application/json"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://www.influencerbutler.com/.well-known/oauth-protected-resource",
+          "type": "application/json"
+        }
+      ]
+    },
+    {
+      "anchor": "https://www.influencerbutler.com/api/mcp",
+      "service-desc": [
+        {
+          "href": "https://www.influencerbutler.com/.well-known/mcp.json",
+          "type": "application/json"
+        },
+        {
+          "href": "https://www.influencerbutler.com/.well-known/mcp/server-card.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.influencerbutler.com/dashboard/api-keys",
+          "type": "text/html"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://www.influencerbutler.com/api/health",
+          "type": "application/json"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://www.influencerbutler.com/.well-known/oauth-protected-resource",
+          "type": "application/json"
+        }
+      ]
+    },
+    {
+      "anchor": "https://www.influencerbutler.com/api/skills",
+      "service-desc": [
+        {
+          "href": "https://www.influencerbutler.com/.well-known/agent-skills.json",
+          "type": "application/json"
+        },
+        {
+          "href": "https://www.influencerbutler.com/.well-known/agent-skills/index.json",
+          "type": "application/json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://www.influencerbutler.com/dashboard/api-keys",
+          "type": "text/html"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://www.influencerbutler.com/api/health",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+# Influencer Butler — robots.txt
+# Default crawl rules for all bots
+# Cloudflare Content-Signal: declares content usage preferences for AI crawlers
+# search=yes: indexing for search results is allowed
+# ai-input=yes: use as input/grounding for AI answers is allowed
+# ai-train=no: training generative models on this content is not allowed
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+# AI / LLM crawlers (per-bot rules)
+User-agent: GPTBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: ChatGPT-User
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: OAI-SearchBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: ClaudeBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: Claude-Web
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: anthropic-ai
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: Google-Extended
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: PerplexityBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: cohere-ai
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: FacebookBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: Bytespider
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+User-agent: CCBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /affiliates/portal
+Disallow: /welcome
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://www.influencerbutler.com/sitemap.xml

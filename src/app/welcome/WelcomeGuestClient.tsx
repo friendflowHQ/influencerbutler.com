@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
 import { DESKTOP_APP_DOWNLOAD_URL } from "@/lib/welcome-copy";
 
 type LicenseStatus =
@@ -154,6 +155,8 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
           Go to dashboard
         </Link>
       </div>
+
+      <WindowsSmartScreenGuide />
 
       <div className="mt-10">
         <LicenseKeyPanel

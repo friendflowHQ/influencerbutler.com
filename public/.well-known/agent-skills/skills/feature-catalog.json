@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-skills.dev/schema/skill/v0.2.0.json",
+  "name": "feature-catalog",
+  "version": "0.2.0",
+  "title": "List Influencer Butler features",
+  "description": "Returns the complete catalog of Influencer Butler product features with slugs, titles and descriptions.",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "auth": "none",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "invoke": {
+    "method": "POST",
+    "url": "https://www.influencerbutler.com/api/skills/feature-catalog/invoke",
+    "auth": "none"
+  },
+  "mcpEquivalent": "list_features"
+}

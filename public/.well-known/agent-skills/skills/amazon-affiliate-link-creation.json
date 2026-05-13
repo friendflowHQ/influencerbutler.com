@@ -1,0 +1,29 @@
+{
+  "$schema": "https://agent-skills.dev/schema/skill/v0.2.0.json",
+  "name": "amazon-affiliate-link-creation",
+  "version": "0.2.0",
+  "title": "Create Amazon affiliate link",
+  "description": "Generate a branded affiliate code for the authenticated influencer.",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "auth": "bearer",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "firstName": {
+        "type": "string",
+        "description": "First name to base the affiliate code on."
+      }
+    },
+    "required": ["firstName"],
+    "additionalProperties": false
+  },
+  "invoke": {
+    "method": "POST",
+    "url": "https://www.influencerbutler.com/api/skills/amazon-affiliate-link-creation/invoke",
+    "auth": "bearer"
+  },
+  "mcpEquivalent": "create_affiliate_link"
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/2025-03-26/server-card.json",
+  "specVersion": "sep-1649",
+  "protocolVersion": "2025-03-26",
+  "serverInfo": {
+    "name": "Influencer Butler",
+    "version": "0.1.0",
+    "title": "Influencer Butler MCP",
+    "description": "MCP server for Influencer Butler — features catalog, public pricing, affiliate link creation, and earnings summary for influencer creators.",
+    "homepage": "https://www.influencerbutler.com",
+    "documentation": "https://www.influencerbutler.com/.well-known/mcp.json",
+    "icon": "https://www.influencerbutler.com/favicon.ico",
+    "publisher": {
+      "name": "Influencer Butler",
+      "url": "https://www.influencerbutler.com",
+      "contact": "support@influencerbutler.com"
+    },
+    "license": "Proprietary",
+    "termsOfService": "https://www.influencerbutler.com/legal/terms",
+    "privacyPolicy": "https://www.influencerbutler.com/legal/privacy"
+  },
+  "transport": {
+    "type": "streamable-http",
+    "url": "https://www.influencerbutler.com/api/mcp",
+    "methods": ["GET", "POST", "OPTIONS"]
+  },
+  "endpoints": [
+    {
+      "type": "streamable-http",
+      "url": "https://www.influencerbutler.com/api/mcp"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "scheme": "Bearer",
+    "tokenFormat": "ib_pat_<random>",
+    "tokenIssuanceUrl": "https://www.influencerbutler.com/dashboard/api-keys",
+    "protectedResourceMetadata": "https://www.influencerbutler.com/.well-known/oauth-protected-resource",
+    "publicTools": ["list_features", "get_pricing"]
+  },
+  "capabilities": {
+    "tools": { "listChanged": false },
+    "resources": false,
+    "prompts": false,
+    "logging": false,
+    "experimental": {}
+  },
+  "tools": [
+    {
+      "name": "list_features",
+      "description": "List all Influencer Butler product features with slugs, titles and descriptions.",
+      "authRequired": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_pricing",
+      "description": "Return the public pricing tiers (free, monthly, annual) with feature highlights.",
+      "authRequired": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_affiliate_link",
+      "description": "Create a branded affiliate referral code for the authenticated influencer.",
+      "authRequired": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "First name to base the affiliate code on (uppercased, alphanumeric only)."
+          }
+        },
+        "required": ["firstName"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_earnings_summary",
+      "description": "Return the authenticated user's recent affiliate earnings summary from Lemon Squeezy.",
+      "authRequired": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  ],
+  "discovery": {
+    "wellKnown": "https://www.influencerbutler.com/.well-known/mcp.json",
+    "apiCatalog": "https://www.influencerbutler.com/.well-known/api-catalog",
+    "agentSkills": "https://www.influencerbutler.com/.well-known/agent-skills.json"
+  },
+  "links": [
+    { "rel": "service-desc", "href": "https://www.influencerbutler.com/.well-known/mcp.json", "type": "application/json" },
+    { "rel": "service-meta", "href": "https://www.influencerbutler.com/.well-known/oauth-protected-resource", "type": "application/json" },
+    { "rel": "describedby", "href": "https://www.influencerbutler.com/.well-known/agent-skills.json", "type": "application/json" },
+    { "rel": "api-catalog", "href": "https://www.influencerbutler.com/.well-known/api-catalog", "type": "application/linkset+json" }
+  ]
+}

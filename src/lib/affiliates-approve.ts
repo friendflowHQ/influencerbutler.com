@@ -93,22 +93,39 @@ async function sendApprovalEmail(params: {
     }
   }
 
+  lines.push(
+    `II. A brief one-time setup`,
+    ``,
+    ``,
+    `To activate your tracked referral link, please choose the path that fits you. Either way, take care to use this very email address (${params.to}) so I may pair your account correctly.`,
+    ``,
+    ``,
+    `  Path A — if you are already an Influencer Butler customer (or hold any Lemon Squeezy account):`,
+    ``,
+    `    1. Sign in at https://app.lemonsqueezy.com using ${params.to}.`,
+    `    2. Open the user menu in the top-right and select "Affiliate Hub".`,
+    `    3. Find the Influencer Butler programme and apply.`,
+    ``,
+    ``,
+  );
+
   if (params.lsSignupUrl) {
     lines.push(
-      `II. A brief one-time setup`,
+      `  Path B — if you have no Lemon Squeezy account yet:`,
       ``,
-      ``,
-      `Please activate your tracked referral link here:`,
-      ``,
+      `    Register here, and your tracked link will appear on your dashboard the moment Lemon Squeezy confirms you:`,
       ``,
       `    ${params.lsSignupUrl}`,
       ``,
       ``,
-      `Do be sure to register using this very email address (${params.to}) so I may pair your account correctly. The affair takes but thirty seconds, and your tracked link shall appear on your dashboard the moment Lemon Squeezy confirms you.`,
-      ``,
-      ``,
     );
   }
+
+  lines.push(
+    `Should either step show "already an affiliate" or any other error, do reply to this email and I shall sort it out personally.`,
+    ``,
+    ``,
+  );
 
   lines.push(
     `Your affiliate dashboard awaits you at:`,

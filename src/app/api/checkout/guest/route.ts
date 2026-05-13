@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
 import { appendAffRef, lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
 import {
@@ -6,6 +7,7 @@ import {
   WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS,
   generateWelcomeToken,
 } from "@/lib/welcome-token";
+import { readPromoTier, resolvePromoCode, writePromoCookies } from "@/lib/promo";
 
 type LsCheckoutResponse = {
   data?: {
@@ -95,6 +97,13 @@ export async function GET(request: Request) {
     const affiliate =
       code.length > 0 ? await withTimeout(lookupAffiliateByCode(code), 3000, null) : null;
 
+    // One discount per purchase: affiliate code wins if present, otherwise
+    // fall back to the cookie-tiered WELCOME promo. The pricing page UI
+    // surfaces this rule so it's not surprising.
+    const cookieStore = await cookies();
+    const promoTier = readPromoTier(cookieStore);
+    const promoCode = affiliate ? null : resolvePromoCode(promoTier);
+
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
@@ -108,6 +117,8 @@ export async function GET(request: Request) {
     };
     if (affiliate) {
       checkoutData.discount_code = affiliate.code;
+    } else if (promoCode) {
+      checkoutData.discount_code = promoCode;
     }
 
     const checkoutAttributes: Record<string, unknown> = {
@@ -174,10 +185,12 @@ export async function GET(request: Request) {
     if (wantsJson(request)) {
       const jsonResponse = NextResponse.json({ checkoutUrl });
       attachWelcomeTokenCookie(jsonResponse, welcomeToken);
+      writePromoCookies(jsonResponse, cookieStore);
       return jsonResponse;
     }
     const redirectResponse = NextResponse.redirect(checkoutUrl, { status: 302 });
     attachWelcomeTokenCookie(redirectResponse, welcomeToken);
+    writePromoCookies(redirectResponse, cookieStore);
     return redirectResponse;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

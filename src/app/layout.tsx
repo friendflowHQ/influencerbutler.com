@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,8 +30,21 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
           rel="stylesheet"
         />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-S1TC1QLYNN');`}
+        </Script>
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
+        {children}
+        <Script src="/js/webmcp.js" strategy="afterInteractive" />
+      </body>
     </html>
   );
 }

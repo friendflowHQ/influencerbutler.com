@@ -1,0 +1,38 @@
+{
+  "$schema": "https://agent-skills.dev/schema/discovery/v0.2.0.json",
+  "schemaVersion": "0.2.0",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "skills": [
+    {
+      "name": "feature-catalog",
+      "type": "http-tool",
+      "description": "Returns the complete catalog of Influencer Butler product features with slugs, titles and descriptions.",
+      "url": "https://www.influencerbutler.com/.well-known/agent-skills/skills/feature-catalog.json",
+      "sha256": "6c3d3e0f9ece993be7428c6a6e0417321ada9d45fdd64fce66c844e623f526cc"
+    },
+    {
+      "name": "pricing-tiers",
+      "type": "http-tool",
+      "description": "Returns the public pricing tiers (free, monthly, annual) with feature highlights.",
+      "url": "https://www.influencerbutler.com/.well-known/agent-skills/skills/pricing-tiers.json",
+      "sha256": "d3a0f836393353da2f58318db63a5233b9d24aff8a3243059188ac7ea87fc7c3"
+    },
+    {
+      "name": "amazon-affiliate-link-creation",
+      "type": "http-tool",
+      "description": "Generate a branded affiliate code for the authenticated influencer.",
+      "url": "https://www.influencerbutler.com/.well-known/agent-skills/skills/amazon-affiliate-link-creation.json",
+      "sha256": "6f59d2bd014b295e66793de938de2640a42db09fc28cab207e18be56a1e090ab"
+    },
+    {
+      "name": "earnings-summary",
+      "type": "http-tool",
+      "description": "Return the authenticated user's recent affiliate earnings summary.",
+      "url": "https://www.influencerbutler.com/.well-known/agent-skills/skills/earnings-summary.json",
+      "sha256": "5e9c4378fc8f7c5fbbffe4b35c48758f5ba7182a8dfcc7432186c4606f6914b4"
+    }
+  ]
+}

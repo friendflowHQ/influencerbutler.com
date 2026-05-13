@@ -1,0 +1,10 @@
+{
+  "resource": "https://www.influencerbutler.com",
+  "authorization_servers": [
+    "https://khutiiojhafblabtixpp.supabase.co/auth/v1"
+  ],
+  "scopes_supported": ["openid", "email", "profile"],
+  "bearer_methods_supported": ["header"],
+  "resource_documentation": "https://www.influencerbutler.com/.well-known/api-catalog",
+  "resource_signing_alg_values_supported": ["RS256", "ES256"]
+}

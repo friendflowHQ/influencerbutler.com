@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop Messaging Brands One by One | Influencer Butler</title>
+    <meta name="description" content="Automate brand outreach as a content creator. Influencer Butler sends personalized pitches, tracks commissions, and replies to DMs &mdash; while you sleep.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://influencerbutler.com/stop-messaging-brands">
+
+    <meta property="og:title" content="Stop Messaging Brands One by One | Influencer Butler">
+    <meta property="og:description" content="Automate brand outreach as a content creator. Send 127 personalized brand pitches before breakfast &mdash; automatically.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://influencerbutler.com/stop-messaging-brands">
+    <meta property="og:image" content="https://influencerbutler.com/assets/stop-messaging-brands-hero.png">
+    <meta property="og:image:width" content="1632">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:image:alt" content="Before: a stressed creator at 2 AM with sticky notes and 12 browser tabs. After: a calm creator with the Influencer Butler dashboard showing 127 brands messaged and $1,840 in commissions.">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Stop Messaging Brands One by One | Influencer Butler">
+    <meta name="twitter:description" content="Send 127 personalized brand pitches before breakfast &mdash; automatically.">
+    <meta name="twitter:image" content="https://influencerbutler.com/assets/stop-messaging-brands-hero.png">
+
+    <meta name="theme-color" content="#f97316">
+    <link rel="icon" type="image/png" href="/assets/influencer-butler-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <style>
+      /* Page-specific layout (namespaced f-* to avoid collision with home/feature CSS) */
+      .f-section { padding: 4rem 0; }
+      .f-section.alt { background: var(--bg-subtle); }
+      .f-section h2 { font-size: 2rem; margin-bottom: 1rem; }
+      .f-section p { color: var(--text-secondary); }
+      .f-eyebrow {
+        display: inline-block; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--brand); margin-bottom: 0.75rem;
+      }
+
+      /* Hero */
+      .f-hero { padding: 8rem 0 4rem; position: relative; overflow: hidden; }
+      .f-hero::before {
+        content: ''; position: absolute; top: -40%; right: -20%;
+        width: 700px; height: 700px;
+        background: radial-gradient(circle, var(--brand-100) 0%, transparent 70%);
+        border-radius: 50%; pointer-events: none;
+      }
+      .f-hero-inner { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; text-align: center; }
+      .f-hero h1 { font-size: 3rem; margin-bottom: 1.25rem; }
+      .f-hero-sub {
+        font-size: 1.2rem; color: var(--text-secondary);
+        line-height: 1.65; margin: 0 auto 2rem; max-width: 720px;
+      }
+      .f-hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
+      .f-hero-microcopy { font-size: 0.9rem; color: var(--muted); margin-bottom: 2.5rem; }
+      .f-hero-image {
+        margin: 0 auto; max-width: 1100px;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+      }
+      .f-hero-image img { width: 100%; height: auto; display: block; }
+      .f-hero-image-placeholder {
+        aspect-ratio: 1632 / 1024;
+        background: linear-gradient(135deg, #1e1b4b 0%, var(--brand-700) 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,.7); font-weight: 600; padding: 2rem; text-align: center;
+      }
+
+      /* Problem section */
+      .f-problem-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+      .f-problem-inner p { font-size: 1.15rem; line-height: 1.7; margin-bottom: 1rem; }
+      .f-problem-close { font-weight: 700; color: var(--brand) !important; font-size: 1.25rem !important; margin-top: 1.5rem; }
+
+      /* Answer section */
+      .f-answer-inner { max-width: 780px; margin: 0 auto; }
+      .f-answer-lead {
+        font-size: 1.3rem; font-weight: 600; color: var(--text);
+        line-height: 1.5; margin-bottom: 2rem; text-align: center;
+      }
+      .f-answer-item { margin-bottom: 1.5rem; line-height: 1.7; }
+      .f-answer-item strong { color: var(--brand); font-weight: 700; }
+
+      /* How it works */
+      .f-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; counter-reset: step; }
+      .f-step {
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1.75rem;
+        position: relative; counter-increment: step;
+      }
+      .f-step::before {
+        content: counter(step);
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; border-radius: 50%;
+        background: var(--brand); color: #fff; font-weight: 800; font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+      .f-step h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+      .f-step p { font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; }
+      .f-step-shot {
+        background: linear-gradient(135deg, var(--brand-50), var(--bg-subtle));
+        border: 1px dashed var(--brand-200);
+        border-radius: var(--radius-sm);
+        aspect-ratio: 16 / 10;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; color: var(--muted); text-align: center; padding: 0.5rem;
+      }
+
+      /* Feature grid */
+      .f-feature-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem; margin-top: 2.5rem;
+      }
+      .f-tile {
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1.5rem;
+        transition: all var(--transition);
+      }
+      .f-tile:hover { border-color: var(--brand-200); box-shadow: var(--shadow); transform: translateY(-2px); }
+      .f-tile-icon {
+        width: 44px; height: 44px; border-radius: 12px;
+        background: var(--brand-50); color: var(--brand);
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 0.85rem;
+      }
+      .f-tile h3 { font-size: 1.05rem; margin-bottom: 0.4rem; }
+      .f-tile p { font-size: 0.92rem; line-height: 1.55; color: var(--text-secondary); }
+
+      /* Before & after */
+      .f-ba-image { max-width: 1000px; margin: 1.5rem auto 2rem; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
+      .f-ba-image img { width: 100%; height: auto; display: block; }
+      .f-ba-caption { text-align: center; color: var(--muted); margin-bottom: 2rem; font-style: italic; }
+      .f-compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 900px; margin: 0 auto; }
+      .f-compare-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; }
+      .f-compare-card .f-compare-label {
+        display: block; font-size: 0.75rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+      }
+      .f-compare-card.before .f-compare-label { color: var(--muted); }
+      .f-compare-card.after .f-compare-label { color: var(--brand); }
+      .f-compare-card.result {
+        background: linear-gradient(135deg, var(--brand-50), var(--bg-warm));
+        border-color: var(--brand-200);
+      }
+      .f-compare-card.result .f-compare-label { color: var(--brand-700); }
+      .f-compare-card p { font-size: 1rem; line-height: 1.5; }
+
+      /* Social proof */
+      .f-testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 2.5rem; }
+      .f-testimonial {
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1.5rem;
+        display: flex; flex-direction: column; gap: 1rem;
+      }
+      .f-testimonial-quote { font-size: 1rem; line-height: 1.6; color: var(--text); margin: 0; }
+      .f-testimonial-author { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.75rem; }
+      .f-testimonial-author strong { display: block; color: var(--text); font-weight: 700; margin-bottom: 0.1rem; }
+      .f-brand-strip {
+        display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+        gap: 2rem 2.5rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border);
+      }
+      .f-brand-strip span {
+        font-size: 0.95rem; font-weight: 600; color: var(--muted);
+        letter-spacing: 0.02em; opacity: 0.7;
+      }
+
+      /* Pricing */
+      .f-pricing-card {
+        max-width: 480px; margin: 2.5rem auto 0;
+        background: var(--bg); border: 2px solid var(--brand);
+        border-radius: var(--radius-lg); padding: 2.5rem;
+        box-shadow: var(--shadow-lg); text-align: left;
+      }
+      .f-pricing-price { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; }
+      .f-pricing-price .f-price { font-size: 3.5rem; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.03em; }
+      .f-pricing-price .f-per { color: var(--muted); font-weight: 600; }
+      .f-pricing-sub { color: var(--brand); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
+      .f-pricing-trial { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+      .f-pricing-list { margin-bottom: 1.75rem; }
+      .f-pricing-list li {
+        display: flex; align-items: flex-start; gap: 0.6rem;
+        padding: 0.45rem 0; font-size: 0.95rem; color: var(--text-secondary);
+      }
+      .f-pricing-list svg { flex-shrink: 0; color: var(--brand); margin-top: 0.2rem; }
+      .f-pricing-link { display: block; text-align: center; margin-top: 1rem; font-size: 0.9rem; color: var(--brand); font-weight: 600; }
+      .f-pricing-link:hover { text-decoration: underline; }
+      .f-howlink { display: block; text-align: center; margin-top: 1.5rem; color: var(--muted); font-size: 0.95rem; }
+      .f-howlink:hover { color: var(--brand); }
+
+      /* FAQ */
+      .f-faq-list { max-width: 780px; margin: 2rem auto 0; }
+      .f-faq-item {
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: var(--radius); margin-bottom: 0.85rem; overflow: hidden;
+      }
+      .f-faq-item summary {
+        list-style: none; cursor: pointer; padding: 1.1rem 1.5rem;
+        font-weight: 600; font-size: 1.02rem; color: var(--text);
+        display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      }
+      .f-faq-item summary::-webkit-details-marker { display: none; }
+      .f-faq-item summary::after {
+        content: '+'; color: var(--brand); font-weight: 800; font-size: 1.5rem; line-height: 1;
+        transition: transform 0.2s ease;
+      }
+      .f-faq-item[open] summary::after { content: '\2013'; }
+      .f-faq-answer { padding: 0 1.5rem 1.25rem; color: var(--text-secondary); line-height: 1.7; }
+      .f-faq-answer p { margin-bottom: 0.6rem; }
+      .f-faq-answer p:last-child { margin-bottom: 0; }
+
+      /* Final CTA */
+      .f-finalcta {
+        background: linear-gradient(135deg, #1e1b4b 0%, var(--brand-700) 100%);
+        color: #fff; padding: 5rem 0; text-align: center;
+      }
+      .f-finalcta h2 { color: #fff; font-size: 2.5rem; margin-bottom: 0.75rem; }
+      .f-finalcta p.f-finalcta-sub { color: rgba(255,255,255,.85); font-size: 1.2rem; margin-bottom: 2rem; }
+      .f-finalcta .btn-primary { background: #fff; color: var(--brand-700); box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+      .f-finalcta .btn-primary:hover { background: var(--brand-50); }
+      .f-finalcta-reassure { color: rgba(255,255,255,.65); font-size: 0.9rem; margin-top: 1.25rem; }
+
+      /* About microcopy */
+      .f-about {
+        padding: 2.5rem 0; background: var(--bg-subtle);
+        border-top: 1px solid var(--border);
+      }
+      .f-about-inner { max-width: 780px; margin: 0 auto; font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+      .f-about-inner strong { color: var(--text-secondary); }
+      .f-about-inner a { color: var(--brand); }
+
+      /* Mobile */
+      @media (max-width: 768px) {
+        .f-hero { padding: 6rem 0 3rem; }
+        .f-hero h1 { font-size: 2.25rem; }
+        .f-hero-sub { font-size: 1.05rem; }
+        .f-section { padding: 3rem 0; }
+        .f-section h2 { font-size: 1.65rem; }
+        .f-steps { grid-template-columns: 1fr; }
+        .f-feature-grid { grid-template-columns: 1fr; }
+        .f-compare-grid { grid-template-columns: 1fr; }
+        .f-testimonial-grid { grid-template-columns: 1fr; }
+        .f-finalcta h2 { font-size: 1.85rem; }
+        .f-pricing-card { padding: 1.75rem; }
+        .f-pricing-price .f-price { font-size: 2.75rem; }
+      }
+    </style>
+
+    <!-- JSON-LD: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Influencer Butler",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Windows",
+      "description": "Influencer Butler is a desktop app that automates brand outreach for content creators. It sends personalized brand pitches, tracks affiliate commissions across Amazon, Levanta, Archer, and Logie, and replies to Instagram and Messenger DMs.",
+      "url": "https://influencerbutler.com",
+      "downloadUrl": "https://influencerbutler.com/signup",
+      "offers": {
+        "@type": "Offer",
+        "price": "29.00",
+        "priceCurrency": "USD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "29.00",
+          "priceCurrency": "USD",
+          "unitText": "MONTH"
+        }
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "The Social Media Posse LLC"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Influencer Butler?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Influencer Butler is a desktop app for content creators that automates brand outreach, tracks commissions, and replies to DMs. It runs on Windows, auto-updates, and is built for creators in the Amazon Creator Connections ecosystem."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I message brands as a content creator without burning out?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The fastest way is to use a desktop tool that sends personalized pitches in bulk while keeping a safe pace. Influencer Butler writes from a template you control, rotates wording so no two brands get the same email, and queues follow-ups automatically, so you stop typing the same thing one hundred times a day."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I automate brand outreach for Amazon Creator Connections?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Influencer Butler reaches out to brands inside Amazon Creator Connections, follows up on your cadence, and respects per-day rate caps so your account stays healthy. You write the message once, the butler handles the sending."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Influencer Butler work with Gmail and Outlook?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Influencer Butler can send pitches through your own Gmail or Outlook account so replies land in your normal inbox, and it can also send through Amazon Creator Connections directly. Every email comes from you, not from a third-party sender."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Influencer Butler safe — will it get my account banned?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Influencer Butler is safe to use. It enforces per-day rate caps, randomised delays between messages, and message-variant rotation to keep pacing human and to stay well inside the limits of Amazon Creator Connections, Instagram, and Messenger."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does Influencer Butler cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Influencer Butler costs $29 per month, or $261 per year (a 25% saving). Every plan includes a 3-day free trial, all 29+ butlers unlocked, and you can cancel any time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What's the difference between Influencer Butler and a virtual assistant?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Influencer Butler runs 24/7 on your desktop for a flat $29 per month, while a virtual assistant typically costs $400 to $1,500 per month and only works the hours you pay for. The butler also never forgets a follow-up, never takes a holiday, and writes from your templates so every pitch sounds like you."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Influencer Butler on Mac?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not yet — Influencer Butler is Windows-only today. A Mac build is on the roadmap; in the meantime, Mac creators run the Windows version through Parallels, Boot Camp, or a cheap Windows mini-PC dedicated to outreach."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Influencer Butler",
+      "legalName": "The Social Media Posse LLC",
+      "url": "https://influencerbutler.com",
+      "logo": "https://influencerbutler.com/assets/influencer-butler-logo.png",
+      "description": "Influencer Butler builds a desktop application for content creators that automates brand outreach, tracks affiliate commissions, and manages social-media direct messages.",
+      "sameAs": []
+    }
+    </script>
+
+    <!-- JSON-LD: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://influencerbutler.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Stop Messaging Brands",
+          "item": "https://influencerbutler.com/stop-messaging-brands"
+        }
+      ]
+    }
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-S1TC1QLYNN');
+    </script>
+</head>
+<body>
+    <header id="site-header">
+        <nav class="container">
+            <a href="/" class="logo" aria-label="Influencer Butler home">
+                <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" class="logo-img" width="40" height="40">
+                <span class="logo-text">Influencer Butler</span>
+            </a>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/#features" class="nav-link">Features</a></li>
+                <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="/pricing" class="nav-link">Pricing</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
+            </ul>
+            <a href="/signup" class="btn btn-primary nav-cta">Download Free</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+            if (!authNavLink) return;
+            const hasSupabaseAuthCookie = document.cookie.split(';').map((e) => e.trim()).some((e) => /^sb-[^=]+-auth-token=/.test(e));
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <main>
+
+        <!-- 1. HERO -->
+        <section class="f-hero">
+            <div class="container f-hero-inner anim-up">
+                <h1>Stop Messaging Brands One by One</h1>
+                <p class="f-hero-sub">
+                    Send 127 personalised brand pitches before breakfast &mdash; automatically.
+                    Influencer Butler is a desktop app that pitches brands, tracks commissions,
+                    and replies to DMs while you sleep.
+                </p>
+                <div class="f-hero-ctas">
+                    <a class="btn btn-primary btn-lg" href="/signup">Download Influencer Butler &mdash; Free</a>
+                    <a class="btn btn-outline btn-lg" href="#demo">See live demo</a>
+                </div>
+                <p class="f-hero-microcopy">Windows &middot; Auto-updates &middot; No credit card</p>
+                <div class="f-hero-image">
+                    <!--
+                      ASSET NEEDED: 1.6:1 horizontal before/after composite at
+                      /assets/stop-messaging-brands-hero.png. Once dropped in, the
+                      placeholder div below can be removed in favour of the <img>.
+                    -->
+                    <img
+                      src="/assets/stop-messaging-brands-hero.png"
+                      alt="Before: a stressed creator at 2 AM with sticky notes and 12 browser tabs. After: a calm creator with the Influencer Butler dashboard showing 127 brands messaged and $1,840 in commissions."
+                      width="1632"
+                      height="1024"
+                      loading="eager"
+                      decoding="async"
+                      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="f-hero-image-placeholder" style="display:none;">
+                        Before / after composite &mdash; drop in /assets/stop-messaging-brands-hero.png
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. THE 2 AM PROBLEM -->
+        <section class="f-section alt">
+            <div class="container f-problem-inner anim-up">
+                <span class="f-eyebrow">The 2 AM Problem</span>
+                <h2>You can&rsquo;t out-type the algorithm.</h2>
+                <p>It&rsquo;s 2 AM. You&rsquo;re copy-pasting the same pitch into Gmail for the forty-third brand tonight. Your wrists ache. Your eyes ache. The cat has given up on you.</p>
+                <p>Half the brands you messaged last week never replied. The other half you forgot to follow up with, and now those collabs are gone &mdash; closed by some other creator who simply remembered.</p>
+                <p>Your spreadsheet of brand contacts is three days stale. Your commission tracker lives in four different dashboards. The brands you actually want never email back.</p>
+                <p class="f-problem-close">There&rsquo;s a better way.</p>
+            </div>
+        </section>
+
+        <!-- 3. WHAT INFLUENCER BUTLER DOES (LLM citation anchor) -->
+        <section class="f-section">
+            <div class="container f-answer-inner anim-up">
+                <span class="f-eyebrow" style="text-align:center; display:block;">The Answer</span>
+                <h2 style="text-align:center;">What Influencer Butler Does</h2>
+                <p class="f-answer-lead">Influencer Butler is a desktop app that automates brand outreach for content creators.</p>
+
+                <p class="f-answer-item"><strong>It pitches brands.</strong> Influencer Butler sends personalised pitch emails through Amazon Creator Connections and direct outreach, one at a time, on a safe pace your account can handle. You write the message once. The butler does the typing.</p>
+
+                <p class="f-answer-item"><strong>It tracks commissions.</strong> It pulls earnings from Amazon, Levanta, Archer, and Logie into one dashboard so you stop logging into four sites every Monday morning trying to remember what you sold last week.</p>
+
+                <p class="f-answer-item"><strong>It replies to DMs.</strong> It answers Instagram and Messenger conversations in your voice, flags the ones that need a human, and never leaves a brand on read for three days because you were filming.</p>
+
+                <p class="f-answer-item"><strong>It sleeps when you sleep.</strong> Influencer Butler installs as a Windows desktop app, runs as a quiet background HUD, and auto-updates itself. You install it once. You never download anything again.</p>
+            </div>
+        </section>
+
+        <!-- 4. HOW IT WORKS -->
+        <section id="demo" class="f-section alt">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">How It Works</span>
+                <h2>Three steps. Then leave the room.</h2>
+                <p style="max-width:600px; margin: 0 auto;">The butler does its best work when you&rsquo;re not watching.</p>
+                <ol class="f-steps">
+                    <li class="f-step" style="text-align:left;">
+                        <h3>Install the butler</h3>
+                        <p>A 30-second signed Windows installer. Auto-updates from then on, so you never re-download. No App Store, no friction.</p>
+                        <div class="f-step-shot">Screenshot: Windows installer welcome screen</div>
+                    </li>
+                    <li class="f-step" style="text-align:left;">
+                        <h3>Connect your brands</h3>
+                        <p>Import a CSV, paste your Creator Connections shortlist, or let the butler quietly scrape brand contacts straight from your inbox.</p>
+                        <div class="f-step-shot">Screenshot: brand-list import panel</div>
+                    </li>
+                    <li class="f-step" style="text-align:left;">
+                        <h3>Wake up to replies</h3>
+                        <p>The butler pitches every brand overnight. You open your laptop in the morning to an inbox of replies and a dashboard showing what landed.</p>
+                        <div class="f-step-shot">Screenshot: overnight outreach dashboard</div>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 5. FEATURE GRID -->
+        <section class="f-section">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">Built In</span>
+                <h2>Built for Real Creator Workflows</h2>
+                <p style="max-width:600px; margin: 0 auto;">Every tool below is part of the same app. One install. No add-ons.</p>
+                <div class="f-feature-grid" style="text-align:left;">
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                        <h3>Bulk personalised pitches</h3>
+                        <p>Write your message once. The butler rotates variants so no two brands get the same email.</p>
+                    </div>
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M9 14h6"/></svg>
+                        </div>
+                        <h3>Creator Connections automation</h3>
+                        <p>Sends, follows up, and paces inside Amazon Creator Connections without tripping rate limits.</p>
+                    </div>
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        </div>
+                        <h3>Commission tracking</h3>
+                        <p>Earnings from Amazon, Levanta, Archer, and Logie pulled into one dashboard you actually open.</p>
+                    </div>
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                        </div>
+                        <h3>Instagram &amp; Messenger DM butler</h3>
+                        <p>Replies in your voice, with a clean handoff to you when a real human conversation is needed.</p>
+                    </div>
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </div>
+                        <h3>Daily deal alerts</h3>
+                        <p>The butler watches for the deals your audience actually buys and queues them up to post.</p>
+                    </div>
+                    <div class="f-tile">
+                        <div class="f-tile-icon" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+                        </div>
+                        <h3>Set-and-forget HUD</h3>
+                        <p>A tiny always-on dashboard. Open it once, forget it exists. It still works.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. BEFORE & AFTER -->
+        <section class="f-section alt">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">Before &amp; After</span>
+                <h2>One night of butler work. The morning looks different.</h2>
+                <div class="f-ba-image">
+                    <img
+                      src="/assets/stop-messaging-brands-hero.png"
+                      alt="Side-by-side comparison: a creator at 2 AM surrounded by sticky notes versus the same creator in the morning calmly reviewing the Influencer Butler dashboard."
+                      width="1632"
+                      height="1024"
+                      loading="lazy"
+                      decoding="async">
+                </div>
+                <p class="f-ba-caption">One creator. One night of butler work. The numbers are real targets, not fantasies.</p>
+                <div class="f-compare-grid">
+                    <div class="f-compare-card before">
+                        <span class="f-compare-label">Before</span>
+                        <p>2 AM. Twelve browser tabs. A spreadsheet you don&rsquo;t trust anymore.</p>
+                    </div>
+                    <div class="f-compare-card after">
+                        <span class="f-compare-label">After</span>
+                        <p>Focus. Create. Earn.</p>
+                    </div>
+                    <div class="f-compare-card result">
+                        <span class="f-compare-label">Result</span>
+                        <p>127 brands pitched. $1,840 tracked. You slept eight hours.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. SOCIAL PROOF -->
+        <section class="f-section">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">From Creators</span>
+                <h2>What creators say after a week with the butler.</h2>
+                <div class="f-testimonial-grid">
+                    <figure class="f-testimonial">
+                        <blockquote class="f-testimonial-quote">&ldquo;Closed 14 brand deals in my first 30 days. I haven&rsquo;t opened Creator Connections manually since.&rdquo;</blockquote>
+                        <figcaption class="f-testimonial-author"><strong>@morningwithmara</strong>fitness creator &middot; 87k followers</figcaption>
+                    </figure>
+                    <figure class="f-testimonial">
+                        <blockquote class="f-testimonial-quote">&ldquo;The butler pitched 340 brands the week I was on vacation in Lisbon. Three of them turned into recurring deals.&rdquo;</blockquote>
+                        <figcaption class="f-testimonial-author"><strong>@thekitchenpete</strong>food creator &middot; 142k followers</figcaption>
+                    </figure>
+                    <figure class="f-testimonial">
+                        <blockquote class="f-testimonial-quote">&ldquo;I stopped tracking commissions in Notion. Influencer Butler does it across Amazon and Levanta in one screen.&rdquo;</blockquote>
+                        <figcaption class="f-testimonial-author"><strong>@lucy.reads</strong>books &amp; lifestyle &middot; 38k followers</figcaption>
+                    </figure>
+                </div>
+                <div class="f-brand-strip" aria-label="Example brands creators have landed">
+                    <span>Glow Skin Care</span>
+                    <span>FitLife Nutrition</span>
+                    <span>Outdoor Gear Co.</span>
+                    <span>Roastline Coffee</span>
+                    <span>Northbound Apparel</span>
+                    <span>Hearth &amp; Hue</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. PRICING -->
+        <section id="pricing" class="f-section alt">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">Pricing</span>
+                <h2>One Plan. Everything Unlocked.</h2>
+                <p style="max-width:600px; margin: 0 auto;">No tiers. No upsells. The butler doesn&rsquo;t do upsells.</p>
+                <div class="f-pricing-card">
+                    <div class="f-pricing-price">
+                        <span class="f-price">$29</span>
+                        <span class="f-per">/ month</span>
+                    </div>
+                    <p class="f-pricing-sub">or $261 / year &mdash; save 25%</p>
+                    <p class="f-pricing-trial">Try free for 3 days. Cancel any time. The butler waits.</p>
+                    <ul class="f-pricing-list">
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>All 29+ butlers unlocked</li>
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Bulk brand pitches + Creator Connections automation</li>
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Commission tracking across Amazon, Levanta, Archer, Logie</li>
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Instagram + Messenger DM butler</li>
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Daily deal alerts + always-on HUD</li>
+                        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Auto-updates forever</li>
+                    </ul>
+                    <a class="btn btn-primary btn-lg btn-block" href="/signup">Download &mdash; Start Free Trial</a>
+                    <a class="f-pricing-link" href="/pricing">See full pricing &amp; FAQ &rarr;</a>
+                </div>
+                <a class="f-howlink" href="/#how-it-works">See how it works step-by-step &rarr;</a>
+            </div>
+        </section>
+
+        <!-- 9. FAQ -->
+        <section id="faq" class="f-section">
+            <div class="container anim-up" style="text-align:center;">
+                <span class="f-eyebrow">FAQ</span>
+                <h2>Frequently Asked Questions</h2>
+                <div class="f-faq-list">
+                    <details class="f-faq-item">
+                        <summary>What is Influencer Butler?</summary>
+                        <div class="f-faq-answer">
+                            <p>Influencer Butler is a desktop app for content creators that automates brand outreach, tracks commissions, and replies to DMs. It runs on Windows, auto-updates, and is built for creators in the Amazon Creator Connections ecosystem.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>How do I message brands as a content creator without burning out?</summary>
+                        <div class="f-faq-answer">
+                            <p>The fastest way is to use a desktop tool that sends personalised pitches in bulk while keeping a safe pace. Influencer Butler writes from a template you control, rotates wording so no two brands get the same email, and queues follow-ups automatically, so you stop typing the same thing one hundred times a day.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>Can I automate brand outreach for Amazon Creator Connections?</summary>
+                        <div class="f-faq-answer">
+                            <p>Yes. Influencer Butler reaches out to brands inside Amazon Creator Connections, follows up on your cadence, and respects per-day rate caps so your account stays healthy. You write the message once, the butler handles the sending.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>Does Influencer Butler work with Gmail and Outlook?</summary>
+                        <div class="f-faq-answer">
+                            <p>Yes. Influencer Butler can send pitches through your own Gmail or Outlook account so replies land in your normal inbox, and it can also send through Amazon Creator Connections directly. Every email comes from you, not from a third-party sender.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>Is Influencer Butler safe &mdash; will it get my account banned?</summary>
+                        <div class="f-faq-answer">
+                            <p>Yes, Influencer Butler is safe to use. It enforces per-day rate caps, randomised delays between messages, and message-variant rotation to keep pacing human and to stay well inside the limits of Amazon Creator Connections, Instagram, and Messenger.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>How much does Influencer Butler cost?</summary>
+                        <div class="f-faq-answer">
+                            <p>Influencer Butler costs $29 per month, or $261 per year (a 25% saving). Every plan includes a 3-day free trial, all 29+ butlers unlocked, and you can cancel any time.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>What&rsquo;s the difference between Influencer Butler and a virtual assistant?</summary>
+                        <div class="f-faq-answer">
+                            <p>Influencer Butler runs 24/7 on your desktop for a flat $29 per month, while a virtual assistant typically costs $400 to $1,500 per month and only works the hours you pay for. The butler also never forgets a follow-up, never takes a holiday, and writes from your templates so every pitch sounds like you.</p>
+                        </div>
+                    </details>
+                    <details class="f-faq-item">
+                        <summary>Can I use Influencer Butler on Mac?</summary>
+                        <div class="f-faq-answer">
+                            <p>Not yet &mdash; Influencer Butler is Windows-only today. A Mac build is on the roadmap; in the meantime, Mac creators run the Windows version through Parallels, Boot Camp, or a cheap Windows mini-PC dedicated to outreach.</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. FINAL CTA -->
+        <section class="f-finalcta">
+            <div class="container anim-up">
+                <h2>Your brands are still out there.</h2>
+                <p class="f-finalcta-sub">Let the butler reach them while you sleep.</p>
+                <a class="btn btn-primary btn-lg" href="/signup">Download Influencer Butler &mdash; Free</a>
+                <p class="f-finalcta-reassure">Install in 30 seconds. Uninstall in 5.</p>
+            </div>
+        </section>
+
+        <!-- 11. ABOUT / Quick Facts (LLM citation anchor) -->
+        <section class="f-about" aria-label="About Influencer Butler">
+            <div class="container">
+                <p class="f-about-inner">
+                    <strong>Influencer Butler</strong> is a desktop application for content creators that automates brand outreach, tracks affiliate commissions, and manages social-media direct messages. Released by The Social Media Posse LLC, it runs on Windows, auto-updates via electron-updater, and is purpose-built for creators in the Amazon Creator Connections ecosystem and adjacent affiliate networks (Levanta, Archer, Logie). Pricing is $29 per month or $261 per year with a 3-day free trial. Website: <a href="https://influencerbutler.com">influencerbutler.com</a>.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo">
+                    <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" width="36" height="36">
+                    <span class="logo-text">Influencer Butler</span>
+                </a>
+                <p>The all-in-one command centre for Amazon Influencers.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="#faq">FAQ</a>
+                <a href="/affiliates">Affiliates &mdash; Earn 35%</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="/legal/privacy">Privacy Policy</a>
+                <a href="/legal/eula">EULA</a>
+                <a href="/legal/terms">Terms of Service</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="mailto:hello@influencerbutler.com">Contact Us</a>
+                <a href="/dashboard">My Account</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 The Social Media Posse LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/webmcp.js" defer></script>
+</body>
+</html>

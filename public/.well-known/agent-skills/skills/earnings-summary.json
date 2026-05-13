@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-skills.dev/schema/skill/v0.2.0.json",
+  "name": "earnings-summary",
+  "version": "0.2.0",
+  "title": "Get affiliate earnings summary",
+  "description": "Return the authenticated user's recent affiliate earnings summary.",
+  "publisher": {
+    "name": "Influencer Butler",
+    "url": "https://www.influencerbutler.com"
+  },
+  "auth": "bearer",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "invoke": {
+    "method": "POST",
+    "url": "https://www.influencerbutler.com/api/skills/earnings-summary/invoke",
+    "auth": "bearer"
+  },
+  "mcpEquivalent": "get_earnings_summary"
+}

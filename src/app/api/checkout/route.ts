@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
 import { appendAffRef, lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
+import { readPromoTier, resolvePromoCode, writePromoCookies } from "@/lib/promo";
 
 type CheckoutRequestBody = {
   plan?: string;
@@ -59,13 +61,20 @@ export async function POST(request: Request) {
     const affiliate =
       code.length > 0 ? await withTimeout(lookupAffiliateByCode(code), 3000, null) : null;
 
+    // One discount per purchase: affiliate code wins if present, otherwise
+    // fall back to the cookie-tiered WELCOME promo.
+    const cookieStore = await cookies();
+    const promoTier = readPromoTier(cookieStore);
+    const promoCode = affiliate ? null : resolvePromoCode(promoTier);
+    const discountCode = affiliate ? affiliate.code : promoCode ?? undefined;
+
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
     const checkoutAttributes: Record<string, unknown> = {
       checkout_data: {
         email,
-        discount_code: affiliate ? affiliate.code : undefined,
+        discount_code: discountCode,
         custom: {
           supabase_user_id: userId,
         },
@@ -137,10 +146,12 @@ export async function POST(request: Request) {
       ? appendAffRef(rawCheckoutUrl, affiliate.lsAffiliateId)
       : rawCheckoutUrl;
 
-    return NextResponse.json({
+    const jsonResponse = NextResponse.json({
       checkoutUrl,
-      discountApplied: affiliate ? affiliate.code : null,
+      discountApplied: discountCode ?? null,
     });
+    writePromoCookies(jsonResponse, cookieStore);
+    return jsonResponse;
   } catch (error) {
     console.error("Checkout API error", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

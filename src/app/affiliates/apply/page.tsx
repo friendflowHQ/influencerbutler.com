@@ -384,6 +384,12 @@ export default function AffiliateApplyPage() {
               {loading ? "Submitting..." : "Submit application"}
             </button>
 
+            <p className="text-center text-xs text-slate-500">
+              After approval you&apos;ll finish setup in Lemon Squeezy. If you&apos;ve ever bought
+              Influencer Butler, look for <span className="font-medium">Affiliate Hub</span> in your
+              Lemon Squeezy user menu — not the public signup form.
+            </p>
+
             <p className="text-center text-sm text-slate-500">
               Already approved?{" "}
               <Link

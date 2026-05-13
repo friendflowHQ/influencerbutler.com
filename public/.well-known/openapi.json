@@ -1,0 +1,273 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Influencer Butler Public API",
+    "version": "0.1.0",
+    "description": "Public HTTP endpoints exposed by influencerbutler.com. Authenticated routes use Supabase session cookies; programmatic agent access uses bearer tokens issued from /dashboard/api-keys.",
+    "contact": {
+      "name": "Influencer Butler",
+      "url": "https://www.influencerbutler.com"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://www.influencerbutler.com/legal/terms"
+    }
+  },
+  "servers": [
+    { "url": "https://www.influencerbutler.com", "description": "Production" }
+  ],
+  "tags": [
+    { "name": "auth", "description": "Account signup and OAuth callback" },
+    { "name": "billing", "description": "Subscription, checkout and billing history" },
+    { "name": "affiliates", "description": "Affiliate program endpoints" },
+    { "name": "agents", "description": "MCP server and agent skills" },
+    { "name": "system", "description": "Health and discovery" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "supabaseSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb-access-token",
+        "description": "Supabase session cookie set after login."
+      },
+      "bearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "ib_pat_<random>",
+        "description": "Personal access token issued at /dashboard/api-keys."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        },
+        "required": ["error"]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "service": { "type": "string" },
+          "time": { "type": "string", "format": "date-time" }
+        },
+        "required": ["status", "service", "time"]
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Service liveness probe",
+        "description": "Returns 200 OK with a JSON status payload when the service is reachable.",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Health" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Create a new Influencer Butler account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "fullName"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 },
+                  "fullName": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Signup succeeded; verification email sent." },
+          "400": {
+            "description": "Missing or invalid fields",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/checkout/guest": {
+      "post": {
+        "tags": ["billing"],
+        "summary": "Begin a Lemon Squeezy guest checkout session",
+        "responses": {
+          "200": { "description": "Returns a hosted checkout URL." },
+          "400": { "description": "Invalid checkout payload." }
+        }
+      }
+    },
+    "/api/welcome/license": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "Fetch the license key tied to the most recent guest order",
+        "description": "Reads the welcome token cookie set after checkout and returns the matching license key.",
+        "responses": {
+          "200": { "description": "License key returned." },
+          "401": { "description": "Welcome token missing or expired." },
+          "404": { "description": "No license key found for this order." }
+        }
+      }
+    },
+    "/api/me/subscription": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "Get the authenticated user's subscription",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Subscription summary." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/billing/history": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "List the authenticated user's billing history",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Array of historical invoices." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/subscription/cancel": {
+      "post": {
+        "tags": ["billing"],
+        "summary": "Cancel the authenticated user's subscription",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Cancellation scheduled." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/subscription/retention-offer": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "Get the retention offer eligible for this account",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Retention offer payload." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/subscription/variant-price": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "Resolve the price for a Lemon Squeezy variant",
+        "responses": {
+          "200": { "description": "Variant price metadata." }
+        }
+      }
+    },
+    "/api/affiliates/me": {
+      "get": {
+        "tags": ["affiliates"],
+        "summary": "Get the authenticated user's affiliate profile",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Affiliate profile." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/dashboard/affiliate-offer": {
+      "get": {
+        "tags": ["affiliates"],
+        "summary": "Get the affiliate offer assigned to the authenticated user",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Affiliate offer." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    },
+    "/api/pricing-public": {
+      "get": {
+        "tags": ["billing"],
+        "summary": "Public pricing tiers",
+        "responses": {
+          "200": { "description": "Array of pricing tiers." }
+        }
+      }
+    },
+    "/api/mcp": {
+      "post": {
+        "tags": ["agents"],
+        "summary": "Streamable HTTP MCP transport endpoint",
+        "description": "Implements the Model Context Protocol streamable-http transport. Tool catalog is published at /.well-known/mcp.json.",
+        "security": [{ "bearerToken": [] }],
+        "responses": {
+          "200": { "description": "MCP response stream." },
+          "401": { "description": "Missing or invalid bearer token." }
+        }
+      }
+    },
+    "/api/skills/{id}/invoke": {
+      "post": {
+        "tags": ["agents"],
+        "summary": "Invoke an agent skill by id",
+        "description": "Skill catalog is published at /.well-known/agent-skills.json. Anonymous skills require no auth; user-scoped skills require a bearer token.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Skill id (e.g. feature-catalog, pricing-tiers, amazon-affiliate-link-creation, earnings-summary)."
+          }
+        ],
+        "security": [{}, { "bearerToken": [] }],
+        "responses": {
+          "200": { "description": "Skill output." },
+          "400": { "description": "Invalid input." },
+          "401": { "description": "Bearer token required for this skill." },
+          "404": { "description": "Unknown skill id." }
+        }
+      }
+    },
+    "/api/mcp-keys": {
+      "get": {
+        "tags": ["agents"],
+        "summary": "List the authenticated user's personal access tokens",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Array of token metadata (no secret values)." },
+          "401": { "description": "Not authenticated." }
+        }
+      },
+      "post": {
+        "tags": ["agents"],
+        "summary": "Issue a new personal access token",
+        "security": [{ "supabaseSession": [] }],
+        "responses": {
+          "200": { "description": "Token returned once; record it immediately." },
+          "401": { "description": "Not authenticated." }
+        }
+      }
+    }
+  }
+}
