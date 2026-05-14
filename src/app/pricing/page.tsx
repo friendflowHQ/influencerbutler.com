@@ -14,6 +14,7 @@ import {
 } from "@/lib/promo";
 import PricingCardsClient from "./PricingCardsClient";
 import PricingFaq from "./PricingFaq";
+import PricingFeatures from "./PricingFeatures";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,7 @@ export default async function PricingPage({
             <span className="text-sm font-semibold tracking-tight">Influencer Butler</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
-            <Link href="/landing" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="#features" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
               Features
             </Link>
             <Link
@@ -143,6 +144,8 @@ export default async function PricingPage({
       </section>
 
       <Guarantee />
+
+      <PricingFeatures />
 
       <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">

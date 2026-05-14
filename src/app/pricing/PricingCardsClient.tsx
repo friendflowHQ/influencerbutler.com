@@ -182,7 +182,6 @@ export default function PricingCardsClient({
           discountTag={
             buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
           }
-          trialLabel="3-day free trial included"
           features={FEATURES_MONTHLY}
           cta="Start free trial"
           loading={loadingPlan === "monthly"}
@@ -201,7 +200,6 @@ export default function PricingCardsClient({
           }
           saveBadge="Save 25%"
           effectiveLabel={`That's just ${formatMoney((annualAfter ?? prices.annual) / 12)}/month`}
-          trialLabel="3-day free trial included"
           features={FEATURES_ANNUAL}
           cta="Start free trial"
           loading={loadingPlan === "annual"}
