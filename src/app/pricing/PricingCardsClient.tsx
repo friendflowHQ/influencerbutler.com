@@ -160,7 +160,7 @@ export default function PricingCardsClient({
           desc="Full Pro access, $0 for 3 days"
           priceLabel="$0"
           periodLabel="/ 3 days"
-          trialLabel="Then $29/month — cancel anytime"
+          trialLabel={`Then ${formatMoney(monthlyAfter ?? prices.monthly)}/month — cancel anytime`}
           discountTag={
             buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
           }
@@ -200,7 +200,7 @@ export default function PricingCardsClient({
             buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
           }
           saveBadge="Save 25%"
-          effectiveLabel="That's just $21.75/month"
+          effectiveLabel={`That's just ${formatMoney((annualAfter ?? prices.annual) / 12)}/month`}
           trialLabel="3-day free trial included"
           features={FEATURES_ANNUAL}
           cta="Start free trial"

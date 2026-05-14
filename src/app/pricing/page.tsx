@@ -21,6 +21,16 @@ export const metadata = {
   title: "Pricing — Influencer Butler",
   description:
     "Pick your plan. All 29+ butlers included. Cancel anytime. Special discount for first-time visitors.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
 
 const PRICES = {

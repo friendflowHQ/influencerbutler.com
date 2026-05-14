@@ -13,6 +13,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 # AI / LLM crawlers (per-bot rules)
 User-agent: GPTBot
@@ -24,6 +25,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: ChatGPT-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -34,6 +36,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: OAI-SearchBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -44,6 +47,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: ClaudeBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -54,6 +58,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: Claude-Web
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -64,6 +69,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: anthropic-ai
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -74,6 +80,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: Google-Extended
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -84,6 +91,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: PerplexityBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -94,6 +102,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: cohere-ai
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -104,6 +113,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: FacebookBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -114,6 +124,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: Bytespider
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -124,6 +135,7 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 User-agent: CCBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -134,5 +146,6 @@ Disallow: /affiliates/portal
 Disallow: /welcome
 Disallow: /login
 Disallow: /signup
+Disallow: /pricing
 
 Sitemap: https://www.influencerbutler.com/sitemap.xml
