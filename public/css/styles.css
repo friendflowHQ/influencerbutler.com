@@ -1012,6 +1012,14 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   border-color: var(--brand);
 }
 
+/* Beta badge — same default tone, given an explicit modifier so callers can
+   tune it later without touching every card. */
+.feature-badge--beta {
+  background: var(--brand-50);
+  color: var(--brand-700);
+  border-color: var(--brand-200);
+}
+
 /* ================================================================
    CAPABILITY HIGHLIGHT (CC Check feature promo above the grid)
    ================================================================ */
@@ -1258,4 +1266,91 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   .feature-box-list { grid-template-columns: 1fr; }
   .feature-hero-copy h1 { font-size: 1.85rem; }
   .feature-tagline { font-size: 1.05rem; }
+}
+
+/* ================================================================
+   VOICEOVER BUTLER CAROUSEL (vob-)
+   ================================================================ */
+.vob-carousel {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-subtle);
+}
+.vob-carousel__track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.vob-carousel__track::-webkit-scrollbar { display: none; }
+.vob-slide {
+  flex: 0 0 100%;
+  margin: 0;
+  scroll-snap-align: center;
+}
+.vob-slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.vob-carousel__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,0.9);
+  color: var(--brand-700);
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.vob-carousel__nav--prev { left: 0.75rem; }
+.vob-carousel__nav--next { right: 0.75rem; }
+.vob-carousel__nav:hover { background: #fff; }
+.vob-carousel__nav:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.vob-carousel__dots {
+  position: absolute;
+  left: 0; right: 0; bottom: 0.6rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.vob-carousel__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: rgba(255,255,255,0.6);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.vob-carousel__dot.is-active {
+  background: var(--brand);
+  transform: scale(1.25);
+}
+.vob-carousel__dot:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }

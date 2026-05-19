@@ -70,15 +70,25 @@
                     </div>
                 </div>
                 <div class="feature-hero-image">
-                    <!--
-                      ASSET NEEDED: Screenshot of the Voiceover Butler script
-                      generator with tone/niche/audience presets on the left
-                      and a generated script on the right with the disclosure
-                      line highlighted. 16:9.
-                      DROP IN: <img src="/assets/features/voiceover-butler-hero.png" alt="AI voiceover script with tone presets and disclosure highlighted">
-                    -->
-                    <div class="feature-image-placeholder">
-                        <span class="placeholder-caption">Screenshot: tone presets + generated script with disclosure</span>
+                    <div class="vob-carousel" role="region" aria-roledescription="carousel" aria-label="Voiceover Butler screenshots" data-vob-carousel>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--prev" aria-label="Previous slide">&larr;</button>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--next" aria-label="Next slide">&rarr;</button>
+                        <div class="vob-carousel__track" data-vob-track tabindex="0">
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="1 of 3">
+                                <img src="/assets/features/voiceover-butler-1.png" alt="Voiceover Butler &mdash; paste an ASIN, describe what&rsquo;s in the video, and load brand guidelines" loading="lazy" width="1920" height="1140">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="2 of 3">
+                                <img src="/assets/features/voiceover-butler-2.png" alt="Voiceover Butler &mdash; script options panel with length, video type, opening hook, pacing, and FTC disclosure" loading="lazy" width="1920" height="1140">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="3 of 3">
+                                <img src="/assets/features/voiceover-butler-3.png" alt="Voiceover Butler &mdash; Jobs table with a completed FTC-compliant script ready to use" loading="lazy" width="1920" height="1140">
+                            </figure>
+                        </div>
+                        <div class="vob-carousel__dots" role="tablist" aria-label="Carousel pagination">
+                            <button type="button" class="vob-carousel__dot is-active" data-vob-dot="0" aria-label="Slide 1"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="1" aria-label="Slide 2"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="2" aria-label="Slide 3"></button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -109,16 +119,22 @@
                     <li>Tone + niche + audience profile (write once, reuse forever)</li>
                     <li>ChatGPT-powered script generation in your voice</li>
                     <li>Honest paid-sample disclosure auto-inserted at the right beat</li>
+                    <li><strong>Amazon Video Shorts</strong> compliance gate &mdash; scripts checked against Shorts policy before they ship</li>
+                    <li><strong>Amazon Live Shoppable</strong> compliance gate &mdash; same guardrails tuned for live streams</li>
+                    <li>Product detail fetched via Amazon&rsquo;s Creators API, with an automatic DP-scrape fallback if the API isn&rsquo;t configured</li>
                     <li>Brand denylist as an extra brand-safety guard</li>
                     <li>85% similarity dedup so you don&rsquo;t repeat yourself across scripts</li>
                     <li>Reusable tone preset library</li>
+                    <li>Upload your brand&rsquo;s style guidelines as a file &mdash; Butler reads them and conforms every script</li>
                 </ul>
             </section>
 
             <section class="feature-proof anim-up">
                 <div class="proof-item">AI scripts</div>
                 <div class="proof-item">FTC-safe</div>
-                <div class="proof-item">Brand-safe</div>
+                <div class="proof-item">Shorts compliance</div>
+                <div class="proof-item">Live Shoppable compliance</div>
+                <div class="proof-item">DP-scrape fallback</div>
                 <div class="proof-item">Dedup</div>
             </section>
 
@@ -188,5 +204,43 @@
 
     <script src="/js/main.js"></script>
   <script src="/js/webmcp.js" defer></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-vob-carousel]');
+      if (!root) return;
+      var track = root.querySelector('[data-vob-track]');
+      var slides = Array.prototype.slice.call(root.querySelectorAll('.vob-slide'));
+      var dots = Array.prototype.slice.call(root.querySelectorAll('[data-vob-dot]'));
+      var prevBtn = root.querySelector('.vob-carousel__nav--prev');
+      var nextBtn = root.querySelector('.vob-carousel__nav--next');
+      if (!track || slides.length === 0) return;
+      function activeIndex() {
+        var w = track.clientWidth;
+        if (!w) return 0;
+        return Math.round(track.scrollLeft / w);
+      }
+      function go(i) {
+        var n = slides.length;
+        var idx = ((i % n) + n) % n;
+        slides[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(activeIndex() - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(activeIndex() + 1); });
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () { go(parseInt(dot.dataset.vobDot, 10) || 0); });
+      });
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.intersectionRatio < 0.6) return;
+            var idx = slides.indexOf(entry.target);
+            if (idx < 0) return;
+            dots.forEach(function (d, i) { d.classList.toggle('is-active', i === idx); });
+          });
+        }, { root: track, threshold: [0.6] });
+        slides.forEach(function (s) { io.observe(s); });
+      }
+    })();
+  </script>
   </body>
 </html>

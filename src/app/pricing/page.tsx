@@ -147,7 +147,7 @@ export default async function PricingPage({
 
       <PricingFeatures />
 
-      <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+      <section id="faq" className="scroll-mt-24 mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Frequently asked
         </h2>
@@ -156,23 +156,74 @@ export default async function PricingPage({
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6">
-          <span>© {new Date().getFullYear()} Influencer Butler</span>
-          <div className="flex items-center gap-4">
-            <Link href="/legal/privacy" className="hover:text-[#f97316]">
-              Privacy
+      <SiteFooter />
+    </main>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="border-t border-slate-200 bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="col-span-2 sm:col-span-1">
+            <Link href="/" className="flex items-center gap-2 text-slate-900">
+              <Image
+                src="/assets/influencer-butler-logo.png"
+                alt="Influencer Butler"
+                width={36}
+                height={36}
+                className="rounded"
+              />
+              <span className="text-sm font-semibold tracking-tight">
+                Influencer Butler
+              </span>
             </Link>
-            <Link href="/legal/terms" className="hover:text-[#f97316]">
-              Terms
-            </Link>
-            <Link href="/legal/eula" className="hover:text-[#f97316]">
-              EULA
-            </Link>
+            <p className="mt-3 text-sm text-slate-600">
+              The all-in-one command center for Amazon Influencers.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-900">
+              Product
+            </h4>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              <li><Link href="#features" className="hover:text-[#f97316]">Features</Link></li>
+              <li><Link href="/pricing" className="hover:text-[#f97316]">Pricing</Link></li>
+              <li><Link href="/#how-it-works" className="hover:text-[#f97316]">How It Works</Link></li>
+              <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
+              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates — Earn 35%</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-900">
+              Legal
+            </h4>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              <li><Link href="/legal/privacy" className="hover:text-[#f97316]">Privacy Policy</Link></li>
+              <li><Link href="/legal/eula" className="hover:text-[#f97316]">EULA</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-[#f97316]">Terms of Service</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-900">
+              Support
+            </h4>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              <li><a href="mailto:hello@influencerbutler.com" className="hover:text-[#f97316]">Contact Us</a></li>
+              <li><Link href="/dashboard" className="hover:text-[#f97316]">My Account</Link></li>
+            </ul>
           </div>
         </div>
-      </footer>
-    </main>
+
+        <div className="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} The Social Media Posse LLC. All rights reserved.
+        </div>
+      </div>
+    </footer>
   );
 }
 
