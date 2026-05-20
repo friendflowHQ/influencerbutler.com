@@ -145,6 +145,57 @@ export default async function PricingPage({
 
       <Guarantee />
 
+      <section id="addons" className="scroll-mt-24 mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#f97316]">
+            Add-ons
+          </p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Run more than one niche?
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+            Stack the Daily Deals Workspace add-on for each extra niche.
+            Independent filters, schedules, queues, and tallies per workspace.
+          </p>
+        </div>
+
+        <article className="mx-auto mt-8 max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="px-6 py-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Daily Deals Workspace
+                </h3>
+                <p className="text-sm text-slate-600">
+                  One additional Daily Deals Butler workspace per subscription.
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-slate-900">$24.99</div>
+                <div className="text-xs text-slate-500">/ month</div>
+              </div>
+            </div>
+            <p className="mt-3 text-xs italic text-slate-500">
+              No promo codes or affiliate codes apply to add-ons.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="/daily-deals-workspace"
+                className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
+              >
+                Learn more →
+              </Link>
+              <Link
+                href="/daily-deals-workspace#buy"
+                className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+              >
+                Buy — $24.99/mo
+              </Link>
+            </div>
+          </div>
+        </article>
+      </section>
+
       <PricingFeatures />
 
       <section id="faq" className="scroll-mt-24 mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">

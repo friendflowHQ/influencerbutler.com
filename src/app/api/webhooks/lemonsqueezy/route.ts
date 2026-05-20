@@ -548,7 +548,18 @@ export async function POST(request: Request) {
         renews_at: attrs.renews_at ?? null,
       };
 
-      if (isTrial) {
+      // Phase F (2026-05-20): never mint trial discounts on add-on
+      // subscriptions. The Daily Deals Workspace add-on has no trial and
+      // accepts no promo or affiliate codes — feeding it through
+      // mintTrialDiscounts would create LS discount records that
+      // technically apply (per LS, when no variantIds scope is set),
+      // contradicting belt 3 of the promo-exclusion contract.
+      const isAddonSubscription =
+        attrs.variant_id != null
+        && process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON != null
+        && String(attrs.variant_id) === String(process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON);
+
+      if (isTrial && !isAddonSubscription) {
         basePayload.trial_started_at = new Date().toISOString();
 
         const trialDiscounts = await mintTrialDiscounts({
