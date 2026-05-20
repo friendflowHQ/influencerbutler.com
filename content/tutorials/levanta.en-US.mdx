@@ -1,0 +1,76 @@
+---
+title: Levanta Butler — automate outreach + email extraction across the Levanta brand network
+summary: Two-tab workspace that pitches Levanta-approved brands on autopilot and harvests brand contact emails during runs so you build a reusable brand list.
+category: Partnerships
+---
+
+## What Levanta Butler does
+
+Levanta is a brand network that connects creators with brands paying for influencer marketing. Levanta Butler automates two sides of working it:
+
+1. **Message Brands** — send pitches to the brands Levanta has approved you for. Template with `{brandName}`, `{campaignName}`, `{daysSinceMessage}`, `{address}` placeholders.
+2. **Email Extractor** — while messaging, simultaneously harvest the brand's contact email so you build a reusable contact list. Useful for follow-up outside Levanta later (or for brands that drop off the platform).
+
+The two tabs share state — when you run Message Brands, the email extractor runs alongside without extra setup.
+
+## Before you start
+
+- **A Levanta account** with approved status. Levanta gates outreach behind approval; if you're not approved, the workspace can render but Run does nothing.
+- **A signed-in Levanta session** in Chrome — Levanta Butler uses your existing session.
+- **At least one default message template** drafted in the Message Brands tab.
+
+## Setup: the message template
+
+The Default Message field is where most of your work goes. Use these placeholders:
+
+- `{brandName}` — the brand you're pitching.
+- `{campaignName}` — Levanta's name for the active campaign (helpful for context).
+- `{daysSinceMessage}` — how many days since you last messaged this brand. Useful in follow-ups.
+- `{address}` — your shipping address, if the brand asked for one in their brief.
+
+Keep the default short and personable. Levanta's UI doesn't reward novels.
+
+**Follow-up Message** (optional) — a second template sent after a delay you set (default 7 days). Lets you turn one-shot outreach into a sequence without manual queueing.
+
+## Running your first outreach pass
+
+1. Open **Levanta Butler** in the left nav (expand the Levanta parent toggle), then click **Message Brands**.
+2. Confirm your default message in the Default Message card.
+3. In **Filters**, add keywords or brand names to target. The chip-editor lets you add multiple. Add a **Skip keywords** list too — brands matching anything in skip don't get messaged.
+4. Click **Run**.
+
+A Chrome window opens. Levanta Butler walks each approved brand matching your keyword filters, opens the message thread, and posts the templated message. The **Current Brand** card shows real-time progress. The email extractor runs alongside automatically.
+
+## The Email Extractor tab
+
+Switch to **Email Extractor** to see the contacts harvested during runs. Each row has:
+
+- Brand name + campaign name.
+- The email (when visible in Levanta's UI).
+- Source tag (which campaign or message thread it came from).
+- A "sent outreach" checkbox so you can mark which contacts you've already reached out to externally.
+
+You don't need to run Email Extractor separately — it piggybacks on Message Brands. But you do come here to *read* what was collected.
+
+## Tuning over time
+
+- **Default Message + Follow-up Message** — short, conversational, name-checks the brand's product. Avoid scripted-sounding language; Levanta's review team flags formulaic outreach.
+- **Keyword filters** — start narrow (your niche), widen carefully. Broad filters message everyone, which dilutes signal and burns your daily cap.
+- **Skip keywords** — useful for excluding brand categories you don't want to work with (e.g. "vape", "gambling", "supplement").
+- **Follow-up delay** — defaults to 7 days. 10-14 days reads better as a polite reminder; <5 days reads pushy.
+
+## Where the data goes
+
+Per-run outreach logs live in `{userData}/InfluencerButler/workspaces/preseed/data/levanta/`. The email extractor's harvest is a separate JSONL file in the same folder.
+
+## Common gotchas
+
+- **"Levanta session expired"** — sign in via the spawned Chrome window, click Resume.
+- **"Brand not approved"** banner mid-run — you don't have approval for this campaign. Levanta Butler skips and moves on; nothing to do.
+- **Daily cap reached** — Levanta enforces per-creator usage limits. The expandable "Usage limit details" tooltip in the topbar explains your current cap and reset time.
+- **Email Extractor empty** — Levanta hides emails until you've messaged at least once. Run Message Brands first, then check the Email Extractor tab.
+
+## Related
+
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) — the unified CRM that can import Levanta brands alongside Amazon CC brands.
+- [Goldmine Butler tutorial](/help/tutorials/goldminebutler) — find brands worth pitching even before Levanta approves you for them.

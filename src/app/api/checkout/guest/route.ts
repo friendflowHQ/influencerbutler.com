@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
-import { appendAffRef, lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
+import { appendAffRef } from "@/lib/affiliate-lookup";
 import {
   WELCOME_TOKEN_COOKIE,
   WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS,
   generateWelcomeToken,
 } from "@/lib/welcome-token";
-import { readPromoTier, resolvePromoCode, writePromoCookies } from "@/lib/promo";
+import {
+  readAffiliateSourceCookie,
+  readPromoTier,
+  writeAffiliateSourceCookieIfMissing,
+  writePromoCookies,
+} from "@/lib/promo";
+import { resolveCheckoutDiscount, type Plan } from "@/lib/promo-resolver";
 
 type LsCheckoutResponse = {
   data?: {
@@ -16,6 +22,18 @@ type LsCheckoutResponse = {
     };
   };
 };
+
+// Mirrors PRICES in src/app/pricing/page.tsx. Cents so the resolver math
+// stays integer-clean. Keep in sync if pricing changes.
+const PLAN_PRICING: Record<"monthly" | "annual", Plan> = {
+  monthly: { priceCents: 2900, interval: "month" },
+  annual: { priceCents: 26100, interval: "year" },
+};
+
+function planMetaFor(plan: string | undefined | null): Plan | null {
+  if (plan === "monthly" || plan === "annual") return PLAN_PRICING[plan];
+  return null;
+}
 
 /**
  * Marketing pages that load lemon.js call this route with
@@ -65,6 +83,10 @@ function attachWelcomeTokenCookie(response: NextResponse, token: string): void {
  * supabase_user_id) and either 302 the browser to LS or return the URL as
  * JSON (for the overlay modal). Account provisioning happens later, from the
  * LS webhook when the order completes.
+ *
+ * Discount resolution mirrors /api/checkout (auth): the best-value code wins
+ * the discount slot while a URL/cookie-sourced affiliate still gets credit
+ * via aff_ref. See src/lib/promo-resolver.ts.
  */
 export async function GET(request: Request) {
   try {
@@ -72,6 +94,7 @@ export async function GET(request: Request) {
     const plan = url.searchParams.get("plan") ?? undefined;
     const variantIdFromQuery = url.searchParams.get("variantId") ?? undefined;
     const rawCode = url.searchParams.get("code") ?? "";
+    const rawAffiliateSource = url.searchParams.get("affiliateSource") ?? "";
 
     const variantResolution = resolveVariantId(plan ?? undefined, variantIdFromQuery ?? undefined);
 
@@ -93,16 +116,24 @@ export async function GET(request: Request) {
       return errorResponse(request, "missing-store-id");
     }
 
-    const code = rawCode.trim();
-    const affiliate =
-      code.length > 0 ? await withTimeout(lookupAffiliateByCode(code), 3000, null) : null;
-
-    // One discount per purchase: affiliate code wins if present, otherwise
-    // fall back to the cookie-tiered WELCOME promo. The pricing page UI
-    // surfaces this rule so it's not surprising.
     const cookieStore = await cookies();
-    const promoTier = readPromoTier(cookieStore);
-    const promoCode = affiliate ? null : resolvePromoCode(promoTier);
+    const cookieTier = readPromoTier(cookieStore);
+    const typedCode = rawCode.trim();
+    const urlCode =
+      (rawAffiliateSource.trim().length > 0 ? rawAffiliateSource.trim() : null) ??
+      readAffiliateSourceCookie(cookieStore);
+
+    const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
+
+    const resolved = await resolveCheckoutDiscount({
+      typedCode: typedCode.length > 0 ? typedCode : null,
+      urlCode,
+      cookieTier,
+      plan: planMeta,
+      storeId,
+    });
+
+    const discountCode = resolved.winner?.code;
 
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -115,10 +146,8 @@ export async function GET(request: Request) {
     const checkoutData: Record<string, unknown> = {
       custom: { welcome_token: welcomeToken },
     };
-    if (affiliate) {
-      checkoutData.discount_code = affiliate.code;
-    } else if (promoCode) {
-      checkoutData.discount_code = promoCode;
+    if (discountCode) {
+      checkoutData.discount_code = discountCode;
     }
 
     const checkoutAttributes: Record<string, unknown> = {
@@ -178,19 +207,26 @@ export async function GET(request: Request) {
       return errorResponse(request, "no-url");
     }
 
-    const checkoutUrl = affiliate
-      ? appendAffRef(rawCheckoutUrl, affiliate.lsAffiliateId)
+    const checkoutUrl = resolved.attribution
+      ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
       : rawCheckoutUrl;
 
     if (wantsJson(request)) {
-      const jsonResponse = NextResponse.json({ checkoutUrl });
+      const jsonResponse = NextResponse.json({
+        checkoutUrl,
+        discountApplied: discountCode ?? null,
+        savingsCents: resolved.winner?.savedCents ?? 0,
+        attributionCode: resolved.attribution?.sourceCode ?? null,
+      });
       attachWelcomeTokenCookie(jsonResponse, welcomeToken);
       writePromoCookies(jsonResponse, cookieStore);
+      writeAffiliateSourceCookieIfMissing(jsonResponse, cookieStore, urlCode);
       return jsonResponse;
     }
     const redirectResponse = NextResponse.redirect(checkoutUrl, { status: 302 });
     attachWelcomeTokenCookie(redirectResponse, welcomeToken);
     writePromoCookies(redirectResponse, cookieStore);
+    writeAffiliateSourceCookieIfMissing(redirectResponse, cookieStore, urlCode);
     return redirectResponse;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

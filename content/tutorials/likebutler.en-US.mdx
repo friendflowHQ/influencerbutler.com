@@ -1,0 +1,60 @@
+---
+title: Like Butler — auto-like Amazon Creator storefronts you want to stay visible to
+summary: Paste storefront links, set a like cap and delay, and Like Butler keeps you top-of-mind with brands by liking their CC storefront content on a cadence.
+category: Amazon
+---
+
+## What Like Butler does
+
+Like Butler likes content on other creators' or brands' Amazon storefronts on a schedule. The point isn't engagement gaming — it's staying on a brand's "recent activity" feed so when they're picking who to message about a new campaign, your name shows up. It's the lowest-cost outreach signal that costs almost no time.
+
+You paste 1-5 storefront URLs, set a max likes per run, and Like Butler walks each one and likes whatever is fresh.
+
+## Before you start
+
+- **A signed-in Amazon session** in Chrome — Like Butler uses your existing session.
+- **One or more storefront URLs** — brand storefronts or fellow-creator storefronts. The URLs that look like `https://www.amazon.com/shop/somename`.
+
+## Running your first pass
+
+1. Open **Like Butler** under Amazon Butler.
+2. In **Storefront links**, paste your first storefront URL. Click **Add another storefront link** to add more.
+3. In **Run settings**:
+   - **Max likes** — start at the default 10. This is per-storefront-per-run, not total.
+   - **Delay between likes** — pick **Normal** (8s). Avoid Fast (3s) until you've watched a few runs go cleanly.
+   - **Scan scope** — leave at "recent" for the first run. "All" walks deeper into a storefront and takes longer.
+4. Click **Start Like Butler**.
+
+A Chrome window opens, navigates to each storefront, scrolls, and clicks like on eligible content (posts, videos, photos — toggleable in **Content types**). The **Watch it run** checkbox is on by default so you can see what's happening.
+
+## Tuning over time
+
+- **maxLikes** — 10 per storefront per run is conservative. If you run 5 storefronts, that's 50 likes total per run, which is well under any sensible rate-limit threshold.
+- **delaySeconds** — keep this at 8s minimum. Faster than 3s and Amazon starts to throttle.
+- **cooldownDays** — defaults to 7. Like Butler won't re-like the same content within this window, which keeps the "recent activity" signal real rather than spammy.
+- **checkAll** — when on, Like Butler scans every storefront on every run. Turn off and it picks a subset round-robin, useful if you have 20+ storefronts and want each run to be quick.
+
+## Scheduling
+
+Like Butler has a built-in scheduler:
+
+1. In **Scheduler**, pick a start time and a repeat interval (e.g. every 12 hours).
+2. Click **Enable Schedule**.
+
+While scheduled, the run-settings inputs lock. Click **Stop Schedule** before editing them again. Once a day is plenty — twice a day is the most you should consider.
+
+## Where the data goes
+
+Per-storefront like history lives in the preseed cache. The KPI tiles at the top show **Total** (lifetime likes) and **This run** counters; **Reset total** + **Reset run** chips clear them independently.
+
+## Common gotchas
+
+- **"Amazon login required"** — your session expired. Open the Chrome window Like Butler spawned, sign in, and click Resume.
+- **"No likeable content found"** — usually means cooldownDays still excludes everything on that storefront. Wait for the cooldown to lapse or lower it.
+- **Scheduler appears stuck** — check that the scheduler isn't actively running; if it's mid-run, the settings panel is locked. Stop the schedule, edit, restart.
+- **Likes don't register on Amazon** — your storefront URL is wrong (404s) or the page requires sign-in that your session no longer has. Re-open the URL in Chrome manually to verify.
+
+## Related
+
+- [Goldmine Butler tutorial](/help/tutorials/goldminebutler) — finds storefronts worth liking by scanning for #ad / #partner content.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — for syncing your *own* storefront, not others'.

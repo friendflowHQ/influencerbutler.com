@@ -1,0 +1,75 @@
+---
+title: Instagram Goldmine — discover the brands paying creators in your niche on Instagram
+summary: Research-only crawler: seed with Instagram usernames, walk the suggested-accounts graph, and harvest posts tagged #ad / paid-partnership to identify which brands are actively sponsoring.
+category: Instagram
+---
+
+## What Instagram Goldmine does
+
+Goldmine Butler does this for Amazon storefronts. Instagram Goldmine does the same job for Instagram: find brands already paying creators in your niche, so you know who to pitch.
+
+You seed it with 3-10 Instagram usernames of creators whose audience overlaps yours. Goldmine walks Instagram's "suggested for you" graph from each seed, identifies similar creators, and harvests posts on their profiles tagged with `#ad`, `#partner`, paid-partnership disclosures, or explicit brand mentions. The output is a list of brand-name + post + creator combinations you can pitch from.
+
+**This workspace is read-only.** No DMs sent, no follows, no engagement. Pure research.
+
+## Before you start
+
+- **A signed-in Instagram account** in Chrome.
+- **3-10 Instagram seed usernames** of creators in your niche. The @ is optional; profile URLs (`https://instagram.com/handle`) also work.
+- An hour or so the first time you run it on a fresh niche — discovery + scanning is slower than the rest of the Instagram stack because it walks the graph.
+
+## Running your first discovery
+
+1. Open **Instagram Goldmine** under Instagram Butler.
+2. In **Seed usernames**, paste 3-10 starter profiles. Be selective — these are the seeds Instagram is asked to suggest similar creators from. A bad seed produces noisy output.
+3. In **Filters**:
+   - **Min followers** — default 50,000. Filters out spam accounts and very-small creators. Drop to 10K if you're after micro-influencer collabs.
+   - **Min post views** — default 10,000. Filters out low-engagement posts.
+   - **Min comment count** — default 25. Helps surface genuinely-engaged posts vs vanity-metric ones.
+   - **Max posts per profile** — default 30. Caps how deep Goldmine reads into each creator's feed.
+   - **Max suggested per seed** — default 25. How many similar-creators to pull per seed.
+   - **Max total profiles** — default 100. Hard ceiling so the run doesn't sprawl.
+4. **Run mode** — `seeds-and-suggested` (default) scans the seeds + their suggested graph. `seeds-only` skips the graph for tighter control.
+5. **Reels first** — leave on. Reels carry sponsorship signal more consistently than feed posts.
+6. Click **Start Discovery**.
+
+A Chrome window opens. Goldmine walks each seed, pulls Instagram's suggested-accounts graph, visits each suggested creator, and scans their recent posts for disclosure tags. The **Posts** table fills in real-time.
+
+## Working the results
+
+Every qualifying post becomes a row with:
+
+- **Brand name** — extracted from the post caption (when the brand is `@mentioned` or named).
+- **Creator handle** — who posted it.
+- **Post URL** — click to open in browser.
+- **Disclosure type** — `#ad`, `#partner`, `paid-partnership`, `mention`.
+- **Engagement** — views, likes, comments.
+
+What to do with the list:
+
+- **Filter by brand** to see which brands appear most often — those are the busiest sponsors in your niche.
+- **Export CSV** to feed into Pitch Butler or a spreadsheet for outreach planning.
+- **Open the post URL** to read the actual caption — useful for crafting your pitch ("I saw your campaign with @creator and have a similar audience").
+
+## Tuning over time
+
+- **Seed quality** — the single biggest factor. Two perfectly-matched seeds outperform ten loose ones. Refresh seeds when output gets stale.
+- **Min followers + min views** — raise if the output feels too noisy with low-quality creators. Lower if you're after micro-influencer-tier collabs.
+- **safeMode** — when on, Goldmine uses longer pacing and more random delays. Useful if Instagram has flagged your account recently. Costs 2-3× run time.
+
+## Where the data goes
+
+Discovered posts and the per-seed graph are cached in the preseed cache. Subsequent runs deduplicate against history so you don't re-scan the same profile.
+
+## Common gotchas
+
+- **Manual sign-in mid-run** — Instagram rate-limits the suggested-accounts graph heavily for non-verified accounts. If it prompts for verification, solve in the spawned Chrome window and Goldmine resumes.
+- **No brands extracted from captions** — the brand wasn't `@mentioned` or named in plain text (might be in the image only). Open the post URL to verify.
+- **Same creator appears repeatedly** — multiple seeds suggested them. Deduplication works on posts, not creators, so this is expected if the creator is doing many sponsorships.
+- **Run is very slow** — Instagram's suggested-graph is rate-limited per-profile. There's no way to speed past it; let it run.
+
+## Related
+
+- [Goldmine Butler tutorial](/help/tutorials/goldminebutler) — same idea for Amazon Creator storefronts.
+- [Instagram Butler tutorial](/help/tutorials/instagram) — pitch the brands Instagram Goldmine surfaces.
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) — track them in the unified CRM.

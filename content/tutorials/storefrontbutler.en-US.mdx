@@ -1,0 +1,53 @@
+---
+title: Storefront Butler — sync every piece of your Amazon storefront
+summary: Pull photos, videos, idea lists, and media collections from your Amazon storefront into one searchable feed enriched with Creators API data.
+category: Amazon
+---
+
+## What Storefront Butler does
+
+Storefront Butler walks your entire Amazon Creator storefront — every shoppable video, photo post, idea list, and media collection — and stores the result in a single spreadsheet-ready feed. It then enriches each row with Creators API data (titles, prices, commission rates, parent ASINs) so downstream workspaces have one consistent source of truth.
+
+Lots of other workspaces depend on what Storefront Butler produces. **Video Butler** queues from this catalog. **Retag Butler** scans it for out-of-stock ASINs. **Benable Butler** lists from it. If Storefront Butler is empty or stale, those downstream tools have nothing to work with.
+
+## Before you start
+
+You need:
+
+1. **Your Amazon Creator storefront URL** — the public `https://www.amazon.com/shop/yourname` link. Storefront Butler auto-fills it from **Settings → Storefront Scan** if you've configured it there.
+2. **A signed-in Amazon session in Chrome** — Storefront Butler opens a Chrome window and uses your existing session. There's no separate login.
+3. **Creators API key** in **API Integrations** (recommended, not strictly required). Without it, enrichment is skipped and you only get raw URLs + ASINs.
+
+## Running your first sync
+
+1. Open **Storefront Butler** in the left nav (under Amazon Butler).
+2. Confirm the **Storefront URL** field shows your storefront. Edit it if you want a one-off override.
+3. Leave **Content types to sync** at the default (photo, video, idea-list, media-list) — you can narrow later.
+4. Click **Run**.
+
+A Chrome window opens and walks each content section. Progress shows in the **Content totals** card: Videos, Photos, Idea lists, Media lists. A full storefront sync typically takes 10–20 minutes depending on volume — flip **Watch it run** on if you want to see the browser scroll through.
+
+## Tuning over time
+
+A few knobs you'll likely touch after the first run:
+
+- **maxItemsByType** in settings caps how many items are pulled per category. Useful if you have 500+ photos but only care about the latest 100.
+- **createDeepLinks** + **deepLinkProvider** route every product URL through your configured affiliate provider (PostTap, Linktw.in, Geniuslink, etc.) on the way into the feed.
+- **flagUnavailableForRetag** stays on by default — when Storefront Butler sees an out-of-stock ASIN, it tags the row so Retag Butler can swap it later.
+- **pricingScheduler** re-runs the price/commission refresh on a cadence (default 12h) without re-walking the whole storefront.
+
+## Where the data goes
+
+Rows land in your preseed workspace cache. Downstream workspaces read directly from there — you don't need to export anything manually. If you want a spreadsheet copy, the table view supports **Export CSV** from the row toolbar.
+
+## Common gotchas
+
+- **"Storefront URL is empty"** — set it in this workspace or in **Settings → Storefront Scan**. The Settings copy is the default for every workspace that needs your storefront.
+- **Sync looks frozen on a single section** — Amazon throttled. Storefront Butler retries with backoff; give it a minute before clicking Stop.
+- **Enrichment rows missing prices** — usually means your Creators API key is missing or expired. Open **API Integrations** and re-verify.
+
+## Related
+
+- [Video Butler tutorial](/help/tutorials/video-butler) — what consumes the synced videos.
+- [Retag Butler tutorial](/help/tutorials/retag-butler) — finds replacements for the rows Storefront Butler flagged unavailable.
+- [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) — schedules the catalog refreshes that pair with this sync.

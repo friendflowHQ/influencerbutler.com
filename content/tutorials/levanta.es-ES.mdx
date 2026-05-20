@@ -1,0 +1,76 @@
+---
+title: Levanta Butler — automatiza el contacto + extracción de emails en la red de marcas Levanta
+summary: Espacio de dos pestañas que envía pitches a marcas aprobadas por Levanta en piloto automático y recoge emails de contacto durante las ejecuciones para construir una lista reutilizable.
+category: Partnerships
+---
+
+## Qué hace Levanta Butler
+
+Levanta es una red de marcas que conecta a creadores con marcas que pagan por marketing de influencia. Levanta Butler automatiza dos lados de operar ahí:
+
+1. **Message Brands** — envía pitches a las marcas para las que Levanta te ha aprobado. Plantilla con `{brandName}`, `{campaignName}`, `{daysSinceMessage}`, `{address}`.
+2. **Email Extractor** — mientras envías mensajes, recoge a la vez el email de contacto de la marca para que construyas una lista de contactos reutilizable. Útil para seguimiento fuera de Levanta más adelante (o para marcas que abandonan la plataforma).
+
+Las dos pestañas comparten estado — cuando ejecutas Message Brands, el extractor de email corre al lado sin configuración extra.
+
+## Antes de empezar
+
+- **Una cuenta de Levanta** con estado aprobado. Levanta bloquea el contacto detrás de la aprobación; si no estás aprobada, el espacio se renderiza pero Ejecutar no hace nada.
+- **Una sesión activa de Levanta** en Chrome — Levanta Butler usa tu sesión existente.
+- **Al menos una plantilla de mensaje por defecto** redactada en la pestaña Message Brands.
+
+## Setup: la plantilla de mensaje
+
+El campo Default Message es donde va la mayor parte de tu trabajo. Usa estos marcadores:
+
+- `{brandName}` — la marca a la que estás haciendo pitch.
+- `{campaignName}` — el nombre que Levanta le da a la campaña activa (útil para contexto).
+- `{daysSinceMessage}` — cuántos días desde que mensajeaste a esta marca por última vez. Útil en seguimientos.
+- `{address}` — tu dirección de envío, si la marca la pidió en su brief.
+
+Mantén el default corto y cercano. La UI de Levanta no premia las novelas.
+
+**Follow-up Message** (opcional) — una segunda plantilla que se envía tras un retraso que tú fijas (por defecto 7 días). Convierte un contacto único en una secuencia sin colas manuales.
+
+## Tu primera ejecución de contacto
+
+1. Abre **Levanta Butler** en el menú lateral (expande el toggle padre de Levanta), después pulsa **Message Brands**.
+2. Confirma tu mensaje por defecto en la tarjeta Default Message.
+3. En **Filtros**, añade palabras clave o nombres de marca a objetivo. El chip-editor te deja añadir varios. Añade también una lista **Skip keywords** — las marcas que coincidan con cualquier término en skip no reciben mensaje.
+4. Pulsa **Ejecutar**.
+
+Se abre una ventana de Chrome. Levanta Butler recorre cada marca aprobada que coincide con tus filtros de keywords, abre el hilo de mensajes y publica el mensaje de la plantilla. La tarjeta **Current Brand** muestra el progreso en tiempo real. El extractor de email corre al lado automáticamente.
+
+## La pestaña Email Extractor
+
+Cambia a **Email Extractor** para ver los contactos recogidos durante las ejecuciones. Cada fila tiene:
+
+- Nombre de marca + nombre de campaña.
+- El email (cuando es visible en la UI de Levanta).
+- Etiqueta de origen (de qué campaña o hilo viene).
+- Un checkbox "sent outreach" para marcar a qué contactos ya has escrito por fuera.
+
+No necesitas ejecutar Email Extractor por separado — va a caballo de Message Brands. Pero sí vienes aquí para *leer* lo recogido.
+
+## Ajustes con el tiempo
+
+- **Default Message + Follow-up Message** — cortos, conversacionales, mencionan el producto de la marca. Evita lenguaje que suene a guion; el equipo de revisión de Levanta marca el contacto formulario.
+- **Filtros de keywords** — empieza estrecho (tu nicho), amplía con cuidado. Los filtros amplios mandan mensajes a todo el mundo, lo que diluye la señal y quema tu cap diario.
+- **Skip keywords** — útil para excluir categorías de marca con las que no quieres trabajar (p. ej. "vape", "juego", "suplemento").
+- **Retraso de follow-up** — por defecto 7 días. 10-14 días se lee mejor como recordatorio educado; <5 días se lee como presión.
+
+## Dónde van los datos
+
+Los logs de contacto por ejecución viven en `{userData}/InfluencerButler/workspaces/preseed/data/levanta/`. La recolección del extractor de email es un JSONL separado en la misma carpeta.
+
+## Tropiezos comunes
+
+- **"Sesión de Levanta expirada"** — inicia sesión en la ventana de Chrome abierta, pulsa Reanudar.
+- **Banner "Marca no aprobada"** a mitad de ejecución — no tienes aprobación para esta campaña. Levanta Butler la salta y sigue; nada que hacer.
+- **Cap diario alcanzado** — Levanta impone límites de uso por creador. El tooltip expandible "Detalles de límite de uso" en la barra superior explica tu cap actual y la hora de reset.
+- **Email Extractor vacío** — Levanta esconde los emails hasta que has enviado al menos un mensaje. Ejecuta Message Brands primero y luego revisa Email Extractor.
+
+## Relacionado
+
+- [Tutorial de Pitch Butler](/help/tutorials/pitchbutler) — el CRM unificado que puede importar marcas de Levanta junto a marcas de Amazon CC.
+- [Tutorial de Goldmine Butler](/help/tutorials/goldminebutler) — encuentra marcas a las que merece la pena hacer pitch incluso antes de que Levanta te apruebe para ellas.

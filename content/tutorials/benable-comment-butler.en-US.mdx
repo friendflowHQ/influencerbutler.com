@@ -1,0 +1,77 @@
+---
+title: Benable Comment Butler — AI-written comments on Benable collections
+summary: Drop short, friendly, product-specific comments on Benable list items — AI-written from Amazon product details, with a canned fallback if the model fails.
+category: Partnerships
+---
+
+## What Benable Comment Butler does
+
+Liking a Benable collection is the lowest-cost engagement signal. Commenting is the next step up — a short, on-topic comment lands you in a creator's notifications with more weight than a like. Benable Comment Butler writes AI-generated comments tailored to each product (pulled from Amazon's product details) and posts them on the Benable items in your queue.
+
+If the AI fails for any reason (rate-limited, weird product), Butler falls back to a pre-written canned phrase from your list rather than skipping. You always get a comment posted, never an empty pass.
+
+## Before you start
+
+- **A signed-in Benable session** in Chrome.
+- **OpenAI API key** in **API Integrations** — generates the per-product comments.
+- **1-10 Benable storefront URLs** of creators you want to comment on.
+- **At least 3-5 canned fallback phrases** in the canned-phrases textarea (e.g. "Love this pick!", "Adding to my list", "This is exactly what I needed").
+
+## The three modes
+
+Like Benable Butler, this workspace has three escalating modes:
+
+- **Dry run (default)** — writes the comments but doesn't post. Outputs them in the run log so you can review tone before going live.
+- **Preview** — generates a comment plan you can scan top-to-bottom before committing.
+- **Live** — actually posts comments via your Benable session.
+
+Start with Dry run. Read 20-30 of the generated comments. If the tone feels right, switch to Live.
+
+## Running your first pass
+
+1. Open **Comment Butler** under Amazon Butler → Benable Butler (nested).
+2. In **Storefronts**, paste 1-10 profile URLs. One per line.
+3. In **Mode**, leave on Dry run for the first pass.
+4. In **Canned phrases**, add 5-10 fallback comments. Keep them generic enough to fit any product (e.g. "Such a smart pick", "Adding to my cart now", "Love the curation here").
+5. In **Caps & pacing**:
+   - **Per run** — start at 10. This is total comments across all profiles for the run.
+   - **Delay between comments** — 15-30 seconds. Comments are higher-friction than likes; you need longer pacing to avoid rate-limits.
+   - **Jitter** — random ±2 second variation to look human.
+6. In **Tone**, pick a tone descriptor (e.g. "friendly + brief", "enthusiastic", "thoughtful"). The model uses this to style every comment.
+7. Click **Start**.
+
+## What gets commented on
+
+Two options under **What to comment on**:
+
+- **Amazon-posted products only** — comments only on items that link to Amazon (most common, most relevant for affiliate creators).
+- **All list items** — comments on everything in each collection, including non-Amazon items.
+
+Default is Amazon-only. Switch to All only if you want broader reach.
+
+## Discover mode
+
+The **Discover** toggle expands the workspace beyond just your listed storefronts. When on, Butler crawls trending Benable categories and adds matching profiles to the comment queue automatically. Useful for finding new creators in your niche; turn off when you want tight control over who you're engaging with.
+
+## Tuning over time
+
+- **Per-run cap** — 10 is conservative. Above 30 per run risks looking spammy in Benable's moderation eyes. Per-day cap (separate field) is the harder ceiling — keep below 50 per day even on an established account.
+- **Every Nth item** — only comment on every Nth item within a collection. Keeps your comments from carpet-bombing one creator and looking inorganic.
+- **Tone descriptor** — sharper tones produce sharper comments. "Friendly + brief, addresses the product specifically, no exclamation points" outperforms just "friendly".
+- **Canned phrase quality** — the canned fallbacks fire when AI fails. Bad fallbacks make you look bad. Spend 10 minutes drafting 10 strong ones.
+
+## Where the data goes
+
+Per-comment history (target profile + item + comment text + timestamp + AI-or-canned flag) is stored in the preseed cache. The KPI tiles show **Total** + **This run** counters.
+
+## Common gotchas
+
+- **"OpenAI key missing"** — set it in API Integrations. Comment Butler can fall back to canned phrases, but it's strongly preferable to generate fresh comments.
+- **Comments fail to post (UI returned an error)** — Benable changed selectors. Comment Butler displays "Selectors not yet wired" until the runtime inspection is rerun; the workspace's banner shows this if it happens.
+- **Every comment is canned** — your OpenAI key is invalid or rate-limited. Check API Integrations.
+- **Comments feel generic** — sharpen the Tone field and add product-specific context. The AI uses Amazon's product description + your tone; if either is weak, the output is weak.
+
+## Related
+
+- [Benable Like Butler tutorial](/help/tutorials/benable-like-butler) — pair with Comment Butler for full engagement coverage.
+- [Benable Butler tutorial](/help/tutorials/benable-butler) — publish your own collections.

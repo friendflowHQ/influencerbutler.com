@@ -675,16 +675,86 @@ export async function POST(request: Request) {
       }
       const email = rawEmail.toLowerCase();
 
+      // Resolve the user via the affiliate application first (the funnel path),
+      // then fall back to profiles.email (direct-LS signup with an existing
+      // Influencer Butler account), and finally to auth.users (existing auth
+      // user with no profile row yet). If all three miss, the affiliate signed
+      // up at LS without ever touching our site — create a stub user + minimal
+      // application row so they're not orphaned. This is the silent-failure
+      // class that left 3 approvals un-upserted for a month.
+      let userId: string | null = null;
+
       const { data: appData } = await supabase
         .from("affiliate_applications")
         .select("user_id")
         .ilike("email", email)
         .maybeSingle();
+      userId = getString(appData?.user_id);
 
-      const userId = getString(appData?.user_id);
       if (!userId) {
-        console.warn("affiliate_activated: no matching application for email", email);
-        return;
+        userId = await findUserIdByEmail(supabase, email);
+        if (userId) {
+          console.info(
+            "affiliate_activated: matched via profiles.email fallback (no application row)",
+            { email, userId },
+          );
+        }
+      }
+
+      if (!userId) {
+        try {
+          const { data: listData } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 200,
+          });
+          const authUser = listData?.users?.find(
+            (u) => (u.email ?? "").toLowerCase() === email,
+          );
+          userId = getString(authUser?.id);
+          if (userId) {
+            console.info(
+              "affiliate_activated: matched via auth.users fallback (no profile or application row)",
+              { email, userId },
+            );
+          }
+        } catch (err) {
+          console.error("affiliate_activated: auth.users lookup threw", err);
+        }
+      }
+
+      if (!userId) {
+        console.warn(
+          "affiliate_activated: no matching account anywhere — provisioning stub user",
+          { email },
+        );
+        userId = await ensureUserForEmail(supabase, email);
+        if (!userId) {
+          console.error(
+            "affiliate_activated: stub provisioning failed; affiliate is orphaned",
+            { email, recordId },
+          );
+          return;
+        }
+        // Drop a minimal application row so the dashboard's email-based lookup
+        // (src/app/dashboard/affiliates/page.tsx) can find them.
+        await assertWrite(
+          "affiliate_applications.upsert(direct-ls-stub)",
+          supabase.from("affiliate_applications").upsert(
+            {
+              user_id: userId,
+              email,
+              full_name: email.split("@")[0] ?? "Affiliate",
+              promotion_strategy:
+                "Direct Lemon Squeezy affiliate signup (no apply form submitted).",
+              agreed_to_terms: true,
+              status: "approved",
+              auto_approved: true,
+              admin_notes: "Stub row — direct LS signup, bypassed our funnel.",
+              reviewed_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          ),
+        );
       }
 
       await assertWrite(

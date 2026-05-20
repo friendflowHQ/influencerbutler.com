@@ -1,0 +1,79 @@
+---
+title: Pitch Butler — un seul CRM pour tous les pipelines de marques que vous travaillez
+summary: Registre unifié des marques que vous prospectez, pitchez ou négociez — importé depuis Creator Connections, Levanta et l'extracteur Instagram au même endroit.
+category: Partnerships
+---
+
+## Ce que fait Pitch Butler
+
+Si vous gérez la prise de contact à travers Amazon Creator Connections, Levanta et les DM Instagram, votre pipeline de marques vit dans cinq endroits différents — la boîte de réception de chaque plateforme, plus ce que vous avez griffonné dans une feuille de calcul. Pitch Butler est l'espace qui les rassemble dans un seul CRM.
+
+Chaque marque devient une carte. La carte se déplace entre les étapes : **Prospect → Pitched → Replied → Negotiating → Closed**. Vous journalisez chaque interaction, mettez en file des messages de relance et cherchez/filtrez sur tout le pipeline.
+
+Pitch Butler n'*envoie* pas la prise de contact lui-même (c'est le rôle d'Amazon Butler, Levanta Butler et Messenger Butler) — il suit le pipeline pour que rien ne passe entre les mailles.
+
+## Avant de commencer
+
+Il vous faut au moins une source de marques peuplée. Pitch Butler importe depuis :
+
+1. **Amazon Creator Connections** — marques avec lesquelles vous avez interagi via CC. Nécessite l'ID de boutique CC dans la barre du haut.
+2. **Levanta** — marques avec lesquelles vous avez travaillé sur Levanta. Nécessite un compte Levanta.
+3. **Emails Instagram** — emails de contact de marques extraits de vos DM (via l'espace Instagram Email Collection).
+
+Vous n'avez pas besoin des trois — démarrez avec celle qui a le plus de marques. Vous pourrez ajouter les autres ensuite.
+
+## Importer vos premières marques
+
+1. Ouvrez **Pitch Butler** dans la navigation.
+2. Cliquez sur **Import CC brands** (le point de départ le plus courant). Une fenêtre Chrome s'ouvre, parcourt votre tableau CC et récupère chaque marque avec laquelle vous avez interagi — taguée automatiquement avec le statut courant de la campagne, la date du dernier message, et tout taux de commission visible.
+3. Ou cliquez sur **Import Levanta emails** pour le côté Levanta. Même flux.
+4. Les marques apparaissent en cartes dans la grille principale. Chaque carte montre nom, source, étape courante et date du dernier contact.
+
+Le premier import est le plus lent car il parcourt tout votre historique. Les suivants sont incrémentaux.
+
+## Travailler la carte d'une marque
+
+Cliquez sur n'importe quelle carte pour ouvrir sa vue détaillée :
+
+- **Sélecteur d'étape** — Prospect → Pitched → Replied → Negotiating → Closed. Faites glisser pour déplacer ; l'horodatage s'enregistre automatiquement.
+- **Journal d'interactions** — chaque interaction que vous journalisez (ou qu'un import a captée) apparaît en ligne horodatée. Vous pouvez ajouter des notes par interaction.
+- **Mettre un message en file** — rédige un message dans votre modèle par défaut. Pitch Butler n'auto-envoie pas (vous utiliseriez un autre espace pour ça) mais suit "en file" comme un touchpoint pour que vous n'oubliiez pas.
+- **Tags** — étiquettes libres que vous appliquez aux marques. Utile pour filtrer (par ex. "lead chaud", "saisonnier", "printemps 2026").
+
+## Filtrage et recherche
+
+La barre de filtres en haut permet de découper la liste par :
+
+- **Source** (CC / Levanta / Instagram / manuel).
+- **Étape** (une des cinq).
+- **Tag** (n'importe quel tag personnalisé appliqué).
+- **Fenêtre de dernier contact** (dans les X derniers jours).
+- **Recherche libre** sur nom de marque, notes et contenu de tags.
+
+Flux utiles :
+
+- "Toutes les marques taguées 'lead chaud' non touchées depuis 7+ jours" → à qui faire un suivi cette semaine.
+- "Source = CC, Étape = Replied" → qui répond réellement depuis votre prise de contact CC.
+- "Source = Levanta, Étape = Negotiating" → deals actifs à fermer.
+
+## Réglages dans la durée
+
+- **Cadence de re-import** — une fois par semaine suffit. Les imports sont incrémentaux et ne ramassent que les marques nouvelles ou les nouveaux touchpoints depuis la dernière synchro.
+- **Tags** — investissez 5 minutes pour créer un petit vocabulaire de tags (3-5) qui mappe sur votre flux. Plus que ça devient du bruit.
+- **Notes par interaction** — courtes, factuelles. "A demandé les tarifs" ou "Envoyé des échantillons le 12 juin" se lit mieux dans un an que "Bon appel !".
+
+## Où vont les données
+
+Pitch Butler stocke dans le cache preseed. Les sauvegardes se font automatiquement avec le flux de backup de paramètres du reste de l'app.
+
+## Pièges courants
+
+- **"Import CC brands" ne voit rien** — votre ID de boutique CC n'est pas dans la barre du haut. Configurez-le et ré-importez.
+- **Cartes de marque en double après un import Levanta** — Pitch Butler dédoublonne par nom de marque ; si Levanta et CC listent une marque avec une orthographe légèrement différente ("Acme Co" vs "Acme Co."), elles apparaîtront en deux cartes. Fusionnez à la main (drag-to-merge dans la vue carte).
+- **L'import d'emails Instagram ne montre pas de nom de marque** — les emails Instagram n'exposent parfois pas le nom de marque dans le fil de DM. Modifiez la carte et ajoutez-le manuellement.
+
+## Relié
+
+- [Tutoriel Amazon Butler](/help/tutorials/amazonbutler) — envoie la vraie prise de contact CC que Pitch Butler suit.
+- [Tutoriel Levanta Butler](/help/tutorials/levanta) — envoie la prise de contact Levanta + extrait les emails que Pitch Butler importe.
+- [Tutoriel Goldmine Butler](/help/tutorials/goldminebutler) — fait remonter de NOUVELLES marques à ajouter à Pitch Butler avec lesquelles vous n'avez pas encore interagi.

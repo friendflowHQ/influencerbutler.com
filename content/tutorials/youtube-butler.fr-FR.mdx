@@ -1,0 +1,82 @@
+---
+title: YouTube Butler — uploadez les vidéos de votre boutique Amazon vers YouTube avec liens d'affiliation
+summary: Cross-postez vos vidéos achetables Amazon sur YouTube avec liens d'affiliation en description ou commentaire épinglé, détection Shorts automatique incluse.
+category: Amazon
+---
+
+## Ce que fait YouTube Butler
+
+YouTube Butler prend les vidéos de votre boutique Amazon (synchronisées par Storefront Butler) et les upload sur votre chaîne YouTube en vidéos classiques ou en Shorts. Chaque upload obtient :
+
+- Un titre et une description que vous contrôlez via un modèle.
+- Des liens Amazon avec votre tag d'affiliation dans la description ou en commentaire épinglé.
+- Une détection automatique du format YouTube Shorts (vertical, ≤60 secondes) vs paysage.
+- Une image de code QR optionnelle à utiliser en overlay produit.
+
+L'objectif est de transformer votre catalogue de boutique Amazon en un fil de contenu YouTube sans ré-éditer chaque clip.
+
+## Avant de commencer
+
+- **Une chaîne YouTube** — perso ou marque, les deux marchent.
+- **Storefront Butler a synchronisé vos vidéos au moins une fois** — YouTube Butler lit depuis cet inventaire.
+- **Un token OAuth** pour votre chaîne YouTube. Le **Setup Wizard** vous guide en 5 étapes ; c'est ponctuel.
+- **Votre tag d'affiliation Amazon** dans Paramètres → Amazon, pour que les liens soient bien taggés.
+
+## Configuration initiale
+
+L'espace s'ouvre sur l'onglet **Setup Wizard**. Passez-le une fois :
+
+1. Cliquez sur **Démarrer la configuration**.
+2. Étape 1 : confirmez votre tag d'affiliation Amazon.
+3. Étape 2 : collez l'URL de votre chaîne YouTube.
+4. Étape 3 : connectez-vous à YouTube (une fenêtre Chrome s'ouvre — connectez-vous normalement et accordez les scopes demandés).
+5. Étape 4 : choisissez où vont les liens d'affiliation — **description** (par défaut) ou **commentaire épinglé**. Le commentaire épinglé contourne la suppression de liens par YouTube dans les descriptions pour les nouvelles chaînes.
+6. Étape 5 : vérifiez avec un upload de test (YouTube Butler upload une courte vidéo test et la supprime immédiatement pour confirmer que votre token marche).
+
+Vous ne le faites qu'une fois. Au succès, l'onglet du wizard affiche une bannière verte "Setup complete".
+
+## Votre premier lot
+
+1. Passez à l'onglet **Inventory** — chaque vidéo de Storefront Butler apparaît ici avec une case à cocher.
+2. Cochez les vidéos à uploader. Démarrez avec 5-10 pour le premier lot.
+3. Passez à **Settings** et vérifiez :
+   - **Modèle de titre** — utilise `{title}`, `{asin}`, `{price}`.
+   - **Modèle de description** — mêmes marqueurs plus `{deeplink}` pour le lien d'affiliation.
+   - **Tags** — séparés par virgule ; YouTube s'en sert pour la découvrabilité.
+4. Cliquez sur **Upload Queued**.
+
+YouTube Butler parcourt la file avec des délais intégrés contre le rate-limit. L'onglet **Upload Log** diffuse chaque résultat. Un lot de 10 prend généralement 15-25 minutes selon la taille des fichiers.
+
+## Règles de rate-limit YouTube
+
+Les nouvelles chaînes (moins de 30 jours, moins de ~50 abonnés) sont rate-limitées agressivement. YouTube Butler a des délais intégrés prudents pour cette raison — **ne les désactivez pas**. Quelques ordres de grandeur :
+
+- **Première semaine** : 3-5 uploads/jour.
+- **Semaines 2-4** : 10-15/jour.
+- **Après 30 jours** : 20-30/jour est tenable ; 50/jour attire l'attention.
+
+Restez à ≤15 uploads par session même sur les chaînes plus anciennes ; YouTube tolère mieux les lots qu'un goutte-à-goutte continu si vous mettez en file la nuit et laissez les délais faire le travail.
+
+## Le détecteur Shorts automatique
+
+Les vidéos verticales (plus hautes que larges) ET ≤60 secondes sont uploadées en Shorts automatiquement. Les Shorts ont un fil différent dans l'algo YouTube, donc ça compte — vous ne taguez rien à la main.
+
+## Codes QR produit
+
+L'onglet **Product QR** génère un QR code par ASIN que vous pouvez superposer sur une vidéo avant upload. Utile pour du contenu achetable où les viewers scannent au lieu de cliquer.
+
+## Où vont les données
+
+Le statut d'upload par vidéo vit dans le panneau Upload Log (filtrable par statut, recherche, marketplace, etc.). Les IDs de vidéos uploadées sont stockés en local pour que YouTube Butler n'upload jamais deux fois.
+
+## Pièges courants
+
+- **"Token OAuth expiré"** — relancez le Setup Wizard. Les tokens durent environ un an.
+- **Uploads bloqués sur "Processing" chez YouTube** — c'est la file d'encodage YouTube, pas Butler. Les nouvelles vidéos restent souvent 10-30 minutes en "Processing" ; rien à faire.
+- **Le commentaire épinglé n'a pas été posté** — votre compte YouTube doit être propriétaire de la chaîne, pas gestionnaire. Les comptes gestionnaires ne peuvent pas épingler de commentaires.
+- **Un lot de 30 uploads s'arrête net** — vous avez atteint le plafond quotidien YouTube. Attendez 24 heures.
+
+## Relié
+
+- [Tutoriel Video Butler](/help/tutorials/video-butler) — l'espace pour re-uploader sur Amazon lui-même ; complète bien YouTube Butler pour le multi-plateforme.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — source de l'inventaire vidéo.

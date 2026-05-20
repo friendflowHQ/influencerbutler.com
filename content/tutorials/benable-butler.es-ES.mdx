@@ -1,0 +1,65 @@
+---
+title: Benable Butler — colecciones de Amazon construidas por IA publicadas en Benable (beta)
+summary: Escribe una palabra clave de nicho, elige un marketplace y Benable Butler investiga Amazon, elige los ASIN que encajan, redacta la colección y la publica en tu cuenta de Benable.
+category: Partnerships
+---
+
+> **Espacio en beta.** Benable Butler se está lanzando a usuarios tempranos y puede mostrar bugs en casos límite. Usa **Dry run** o **Preview** antes de pulsar Publicar hasta que hayas visto al espacio manejar tu nicho con limpieza unas cuantas veces. Reporta cualquier cosa rara desde el espacio de Feedback.
+
+## Qué hace Benable Butler
+
+Benable es una plataforma de "listas comprables" donde los creadores publican colecciones curadas de productos. Construir una colección de Benable a mano es un proceso largo: investigar productos en un nicho → elegir ASIN que encajan → escribir títulos + descripciones → publicar en Benable, lista por lista. Benable Butler ejecuta todo ese pipeline desde una única palabra clave.
+
+La salida es una colección completa de Benable: cabecera, sub-listas, productos bajo cada lista, todo con copy escrito por IA que encaja con el nicho y el marketplace.
+
+## Antes de empezar
+
+- **Una cuenta de Benable** con tu enlace de referido guardado en **API Integrations**.
+- **Clave de API de OpenAI** en API Integrations — el modelo que elige productos y escribe el copy.
+- **Tag de afiliado de Amazon** para el marketplace al que apuntas (amazon.com, amazon.co.uk, amazon.ca, etc.).
+- **La primera Publicación** también necesita que inicies sesión en Benable en la ventana de Chrome que Butler abre — un sign-in manual una vez y tu sesión persiste para ejecuciones futuras.
+
+## Los tres modos (lee esto primero)
+
+Benable Butler tiene tres botones que parecen similares pero hacen cosas muy diferentes:
+
+- **Dry run** — corre sólo el pipeline OpenAI + Amazon. Sin navegador, sin publicar. Imprime sólo en consola un resumen de lo que Butler *construiría*. Tokens gratuitos de OpenAI; tarda ~1 minuto.
+- **Preview** — lo mismo que Dry run más escribe un informe JSON + HTML que puedes abrir en tu navegador. Te deja ver la estructura completa de la colección antes de comprometerte. Recomendado para tu primera ejecución en cualquier nicho.
+- **Publish** — realmente crea la colección en Benable vía Puppeteer (automatización de navegador). Usa tu sesión guardada de Benable. Tarda 5-15 minutos según el tamaño de la colección.
+
+**Regla de la primera ejecución**: Dry run una vez → Preview una vez → revisar el informe HTML → sólo entonces Publish.
+
+## Tu primera colección
+
+1. Abre **Benable Butler** dentro de Amazon Butler.
+2. En **What should we publish?**, escribe una palabra clave de nicho (p. ej. "cocina minimalista", "equipo de correr para principiantes", "almacenamiento para piso pequeño"). Los nichos específicos rinden más que los amplios.
+3. Elige un **Marketplace** (amazon.com es el predeterminado).
+4. Confirma que tu **handle de Benable** se rellena correctamente. Edítalo si está mal.
+5. Pulsa **Dry run**. Revisa la salida en consola — ¿Butler entiende tu nicho?
+6. Si sí, pulsa **Preview**. Abre el informe HTML generado cuando termine. Recorre cada lista y producto. Rechaza lo que no encaje.
+7. Si la vista previa se ve bien, pulsa **Publish**.
+
+Publish abre una ventana de Chrome. En la primera ejecución, inicias sesión en Benable a mano; las ejecuciones siguientes reutilizan la sesión.
+
+## Ajustes con el tiempo
+
+- **Palabra clave de nicho** — el botón más grande de todos. "Gadgets de cocina" es demasiado amplio → Butler devuelve 50 productos aleatorios. "Herramientas compactas de cocina para apartamentos estudio" es del tamaño correcto → Butler devuelve una colección coherente.
+- **Priority CC / SPCC** en ajustes — activado, Butler prioriza productos con campañas activas de Creator Connections u ofertas de Sponsored Products en tu nicho. Útil para monetización; apágalo si quieres pura curación sin importar la comisión.
+- **Tamaño de colección** — Butler decide automáticamente el número de listas y elementos por lista según el nicho. Nichos estrechos consiguen 3-4 listas de 5-7 elementos; nichos amplios consiguen 6-8 listas.
+
+## Dónde van los datos
+
+Las colecciones generadas se registran por ejecución en la caché preseed (JSON + informe HTML). El lado de Benable — la colección publicada — vive en tu cuenta de Benable.
+
+## Tropiezos comunes
+
+- **"Falta la clave de OpenAI"** — configúrala en API Integrations.
+- **"Se requiere iniciar sesión en Benable"** durante Publish — primera configuración o sesión caducada. Inicia sesión vía la ventana de Chrome abierta, pulsa Reanudar.
+- **La colección publicada tiene menos elementos que la vista previa** — Benable rechaza ASIN no disponibles en el marketplace elegido. El log de publicación muestra cuáles se omitieron.
+- **Nicho demasiado estrecho** — si Dry run devuelve <5 ASIN candidatos, tu nicho es demasiado ajustado. Amplía un escalón.
+
+## Relacionado
+
+- [Tutorial de Benable Like Butler](/help/tutorials/benable-like-butler) — da like a colecciones de Benable de otros creadores; espacio compañero.
+- [Tutorial de Benable Comment Butler](/help/tutorials/benable-comment-butler) — comenta colecciones de Benable.
+- [Tutorial de API Integrations](/help/tutorials/api-integrations) — donde configuras las credenciales de OpenAI + Benable que Benable Butler necesita.

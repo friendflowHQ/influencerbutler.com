@@ -1,0 +1,66 @@
+---
+title: Instagram Close Friends Butler — auto-add new followers to your Close Friends list
+summary: Automate adding new Instagram followers to your Close Friends list with strict per-hour and per-day rate limits, run-day restrictions, and a do-not-add list.
+category: Instagram
+---
+
+## What Close Friends Butler does
+
+Instagram's Close Friends feature lets you publish Stories visible only to a curated list. For creators, that list is where exclusive offers, behind-the-scenes content, and high-conversion content lives. The problem: adding new followers to Close Friends manually is tedious — Instagram makes you scroll-and-tap one at a time.
+
+Close Friends Butler automates the "add new followers to Close Friends" step. It walks your follower list, adds anyone not already on Close Friends (skipping your do-not-add list), and respects strict rate caps so Instagram doesn't flag the account.
+
+## Before you start
+
+- **A signed-in Instagram session** in Chrome.
+- A clear answer to: *who do you want on Close Friends?* The default is "everyone who follows you," but you might want to restrict to people who've engaged in some way. Butler doesn't gate this — you do, via the do-not-add list.
+
+## Why the rate caps matter
+
+Instagram heavily rate-limits the "add to close friends" action. Three separate caps apply, and Butler stops at the **lowest active** one:
+
+- **perHour** — default 20. Don't raise above 30 even on established accounts.
+- **perDay** — default 200. Don't raise above 300.
+- **total** — default 1000. The lifetime cap for the run config; useful as a brake on long-running schedules.
+
+These caps are conservative on purpose. If you breach Instagram's invisible threshold, your account gets action-blocked from Close Friends for 24-72 hours.
+
+## Running your first pass
+
+1. Open **Instagram Close Friends Butler** under Instagram Butler (parent toggle).
+2. In **Run settings**:
+   - **Per run** — 25 (default). Stop the run after this many adds, even if other caps allow more.
+   - **Per hour** — 20 (default). Hard ceiling per rolling hour.
+   - **Min/Max delay** — 7-15 seconds between adds. Random jitter within this range, looks more human than a fixed delay.
+3. (Optional) In **Restrict by day**, set which weekdays the run is allowed to fire. Useful for a "weekday mornings only" cadence.
+4. Click **Run**.
+
+A Chrome window opens. Butler walks your follower list, opens each profile (or uses the bulk-list UI when available), and adds non-Close-Friends accounts. The **Adds/hr** badge in the topbar shows real-time pacing.
+
+## The do-not-add list
+
+Some followers shouldn't be on Close Friends — competitors, brands you don't want privy to behind-the-scenes content, people who only follow to spam. The **do-not-add list** (a textarea of usernames, one per line) skips them on every run.
+
+There's also a **history table** at the bottom listing every account Butler has added to Close Friends with a timestamp. **Export CSV** dumps it for backup; **Restore deleted** recovers anything removed by mistake; **Delete all** wipes the local history (does NOT remove them from Close Friends on Instagram).
+
+## Tuning over time
+
+- **autoHarvestFollowers** stays on by default — Butler re-walks your follower list each run rather than relying on a cached list. Adds a few seconds but keeps the list current.
+- **Per-run cap** — raise to 50 once you've watched a week of clean runs at 25. Don't go above 75 even on established accounts.
+- **Delay range** — 7-15s is safe. 5-10s is the floor; below 5s, Instagram throttles aggressively.
+- **Restrict by day** — useful for accounts where the algorithm rewards consistent activity windows.
+
+## Where the data goes
+
+Close Friends history (handle + timestamp) lives in the preseed cache. CSV export is one-click from the history toolbar.
+
+## Common gotchas
+
+- **"Action blocked"** banner — you exceeded Instagram's invisible cap. Butler stops automatically. Wait 24-72 hours before resuming, and lower the per-hour cap a notch.
+- **Butler skips an account that's eligible** — they might already be on Close Friends. Butler checks the membership flag before adding.
+- **History shows adds but Instagram says they're not on Close Friends** — Instagram's UI sometimes lags behind the actual list state. Refresh your Close Friends page on Instagram directly to confirm.
+
+## Related
+
+- [Instagram Butler tutorial](/help/tutorials/instagram) — the DM outreach side of the Instagram stack.
+- [Instagram Goldmine tutorial](/help/tutorials/instagram-goldmine) — research who to engage with on Instagram.

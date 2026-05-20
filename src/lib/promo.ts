@@ -7,10 +7,16 @@
 // analytics / banner copy; the server never trusts it (readPromoTier ignores
 // its value and only checks ib_pv presence).
 //
-// Stacking with affiliate codes is intentionally NOT supported. Callers
-// (checkout routes, pricing page) apply the affiliate code if one was supplied
-// and skip the WELCOME branch entirely. Surface "one discount per purchase"
-// in any UI that exposes both paths.
+// Multi-code resolution: WELCOME, URL ?code=, and typed promo are all
+// candidates evaluated by src/lib/promo-resolver.ts — the highest-$-saved
+// wins the discount slot. Affiliate attribution (aff_ref on the LS checkout)
+// is tracked independently of which code's discount won, so an affiliate
+// who refers a user via ?code= still gets paid even when WELCOME30 beats
+// their personal code on dollar value.
+//
+// The ib_aff_src cookie is set first-touch when a ?code= arrives on /pricing
+// or /dashboard/subscription, and carries the affiliate code across the
+// session so the checkout route can include it in resolution.
 
 import { randomUUID } from "node:crypto";
 import type { NextResponse } from "next/server";
@@ -21,6 +27,8 @@ type CookieReader = {
 
 export const VISITOR_COOKIE = "ib_pv";
 export const PROMO_COOKIE = "ib_promo";
+export const AFFILIATE_SOURCE_COOKIE = "ib_aff_src";
+export const AFFILIATE_SOURCE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export const WELCOME_FIRST_CODE = "WELCOME30";
 export const WELCOME_RETURNING_CODE = "WELCOME15";
@@ -85,4 +93,47 @@ export function writePromoCookies(
   });
 
   return tier;
+}
+
+/**
+ * Reads the first-touch affiliate-source code from the ib_aff_src cookie,
+ * or null if not set. Always uppercased for consistency with the resolver's
+ * dedupe key.
+ */
+export function readAffiliateSourceCookie(cookieStore: CookieReader): string | null {
+  const raw = cookieStore.get(AFFILIATE_SOURCE_COOKIE)?.value;
+  if (!raw) return null;
+  const normalized = raw.trim().toUpperCase();
+  if (normalized.length === 0) return null;
+  return normalized;
+}
+
+/**
+ * Writes the affiliate-source cookie ONLY if not already present (first-touch
+ * wins). The 30-day TTL covers the typical "click affiliate link → take a few
+ * days to decide → check out" pattern without being so long it shadows a
+ * legitimate later affiliate referral.
+ *
+ * Pass a non-empty code on first touch, or `null` to leave the existing cookie
+ * untouched.
+ */
+export function writeAffiliateSourceCookieIfMissing(
+  response: NextResponse,
+  cookieStore: CookieReader,
+  code: string | null | undefined,
+): void {
+  if (!code) return;
+  const normalized = code.trim().toUpperCase();
+  if (normalized.length === 0) return;
+  if (cookieStore.get(AFFILIATE_SOURCE_COOKIE)?.value) return;
+
+  response.cookies.set({
+    name: AFFILIATE_SOURCE_COOKIE,
+    value: normalized,
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: AFFILIATE_SOURCE_MAX_AGE_SECONDS,
+  });
 }

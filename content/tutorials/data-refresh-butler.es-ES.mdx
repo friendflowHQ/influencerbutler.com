@@ -1,0 +1,68 @@
+---
+title: Data Refresh Butler — programa cuándo se actualizan los catálogos CC y SPCC
+summary: Un solo sitio para controlar con qué frecuencia se vuelven a descargar el catálogo de campañas Creator Connections y el catálogo de comisiones SPCC.
+category: Amazon
+---
+
+## Qué hace Data Refresh Butler
+
+Data Refresh Butler es el programador de los dos catálogos de Amazon de los que depende todo lo demás:
+
+- El **catálogo de campañas Creator Connections (CC)** — todas las campañas activas visibles para tu tienda.
+- El **catálogo SPCC** — tasas de comisión de Sponsored Products for Creators.
+
+Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence y Daily Deals leen de aquí. Si están desactualizados, esos espacios toman decisiones con datos viejos. Data Refresh Butler es donde defines la cadencia.
+
+No tiene un ejecutor propio — sólo configura y dispara los runners del workspace **cc-check** según la planificación que elijas.
+
+## Antes de empezar
+
+- **ID de tienda CC** configurado en la barra superior — sin él, cc-check no tiene contra qué descargar.
+- Opcional: una **clave de Creators API** en **API Integrations** para la parte SPCC. La parte CC no necesita la API.
+
+## Configuración inicial (la ruta fácil)
+
+La configuración por defecto acopla las actualizaciones a la cadencia de búsqueda de Daily Deals: CC + SPCC se vuelven a descargar **1 hora antes de cada búsqueda de Daily Deals programada**. Si usas Daily Deals, esta es la configuración correcta — no toques nada más.
+
+1. Abre **Data Refresh Butler** dentro de Amazon Butler.
+2. Confirma que el chip de acoplamiento cerca de arriba dice: *"Se actualiza 1 h antes de cada búsqueda programada de Daily Deals."*
+3. Listo.
+
+## Cadencia manual (si no usas Daily Deals)
+
+Si Daily Deals no se ejecuta con un horario, pulsa **Desvincular** en el chip de acoplamiento y configura una cadencia manual:
+
+1. En **Programa de actualización**, elige un preajuste — **6 horas** es el predeterminado y suele bastar. Los preajustes 1h/3h son agresivos y rara vez necesarios.
+2. **Actualizar a esta hora** te permite anclar la cadencia a una hora del reloj (p. ej. siempre a las 6 AM).
+3. En **Actualizar el catálogo si tiene más de**, deja 12 h como ventana de frescura. Esto omite una redescarga costosa de 5 minutos si el catálogo en caché aún es reciente.
+
+## Separar las cadencias de CC y SPCC (avanzado)
+
+Las tasas de comisión (SPCC) cambian más a menudo que los listados de campañas (CC), por lo que puedes actualizar SPCC más rápido que CC. Activa **Avanzado — dividir SPCC con una cadencia más rápida**:
+
+- **Creator Connections (completo)**: 24 h es suficiente para la mayoría de usuarios.
+- **Sólo comisiones SPCC**: 1 h o 3 h si vigilas los márgenes de cerca; 6 h en caso contrario.
+
+La división es opcional — sin ella, ambos se actualizan con la misma cadencia.
+
+## Ejecución bajo demanda
+
+La tarjeta **Estado actual** muestra la última y la próxima actualización para cada catálogo, más tres botones:
+
+- **Ejecutar ahora** bajo CC — actualiza sólo el catálogo CC.
+- **Ejecutar ahora** bajo SPCC — actualiza sólo el catálogo SPCC.
+- **Actualizar ambos** — ejecuta ambos en secuencia.
+
+Útil antes de una búsqueda manual de Daily Deals o antes de revisar las candidatas de Daily Commission Butler.
+
+## Tropiezos comunes
+
+- **"Actualización fallida: sin tienda"** — configura primero tu ID de tienda CC en la barra superior.
+- **El chip de acoplamiento no aparece** — Daily Deals no tiene un horario activo, así que no hay nada a lo que acoplarse. Establece un horario de Daily Deals primero, o usa la cadencia manual.
+- **El catálogo sigue vacío tras una actualización** — normalmente significa que el runner subyacente de cc-check se encontró con un aviso de inicio de sesión de Amazon. Abre cc-check, inicia sesión y vuelve a ejecutar.
+
+## Relacionado
+
+- [Tutorial de CC Check](/help/tutorials/cc-check) — el runner que este espacio programa.
+- [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) — el principal consumidor de un catálogo CC fresco.
+- [Tutorial de Daily Deals](/help/tutorials/daily-deals) — la fuente de acoplamiento por defecto.

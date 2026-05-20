@@ -1,0 +1,70 @@
+---
+title: Collab Butler — Kanban tracker for every brand collaboration in flight
+summary: One board for every collab — pitched, in-production, posted, paid — with drag-to-update stages, filters, exports, and per-card payout + deadline detail.
+category: Partnerships
+---
+
+## What Collab Butler does
+
+Once you're working with brands at any scale, you need somewhere to track each deal that isn't your inbox. Collab Butler is that — a Kanban-style board where each card represents one brand collaboration and moves through stages as the deal progresses.
+
+It's distinct from **Pitch Butler** (which tracks pre-deal pipeline: prospect → pitched → replied → negotiating → closed). Collab Butler picks up *after* the deal closes: post-production, posted, paid, completed. Together the two cover the full lifecycle.
+
+## Before you start
+
+Nothing required — Collab Butler doesn't import or automate anything. It's a pure tracking workspace. You add cards manually as deals come in.
+
+Optional: an **Export JSON** habit. There's a **Delete All** button and it's literal and irreversible. Export before any big clean-up.
+
+## Adding your first collab
+
+1. Open **Collab Butler** in the left nav.
+2. Click **New Collab**. A new card appears.
+3. Fill in:
+   - **Brand name** — required.
+   - **Stage** — picks from a default set (Pitched, In Production, Posted, Awaiting Payment, Paid, Completed). You can rename stages globally in settings.
+   - **Deadline** — date the content is due. Used for filtering "what's due this week."
+   - **Payout** — the agreed fee (one-off or per-deliverable).
+   - **Notes** — free-form. Stash the brand contact's email, the brief, links to draft content here.
+4. Drag **workflow tags** from the right-side tag shelf onto the card to layer in content-type signal: "Reel posted", "Story posted", "Awaiting approval", etc. Tags are visual modifiers on top of the stage; you can have multiple per card.
+
+## Filtering and views
+
+The top filter bar slices the board by:
+
+- **Stage** — show only cards in one stage. Useful for "what's posted but not paid yet" or "what's pitched but not started."
+- **Brand** — show only cards for one brand (if you've done multiple deals with them).
+- **Tag** — show only cards with a specific workflow tag.
+- **Free-text search** — across brand name + notes.
+- **Deadline window** — within X days. Useful for weekly planning.
+
+## Exporting
+
+Two formats:
+
+- **Export JSON** — the full structured backup. Use this before any clean-up; the file can be re-imported via the same workspace later.
+- **Export CSV** — a flattened version for taxes, accounting, agent reports. Each row is one collab with stage, payout, deadline, paid status.
+
+JSON exports are zero-loss. CSV exports flatten the workflow tags into a comma-separated cell.
+
+## Tuning over time
+
+- **Stage list** — the default stages cover most workflows. Customize in settings if your process differs (e.g. add "UGC delivered" between Posted and Paid).
+- **Workflow tags** — same idea. Default shelf is a sensible starter set; add your own (e.g. "Edit due", "Brand reviewing").
+- **Per-card payout** — be consistent on currency and pre/post-tax. Collab Butler doesn't validate; the totals in exports rely on you being clean.
+
+## Where the data goes
+
+Collab cards live in the preseed cache. The full board state syncs into the app's regular backup flow.
+
+## Common gotchas
+
+- **Delete All actually deletes** — JSON export first. If you've already hit it without an export, the previous app-level backup might have a copy in `{userData}/InfluencerButler/backups/` — check before assuming the data is gone.
+- **Drag-to-stage doesn't fire** — make sure you're dropping the card on the stage column header, not the cards stacked under it.
+- **CSV export missing fields** — CSV flattens nested structures. Use JSON if you need the full record.
+- **Two collabs with the same brand** — Collab Butler doesn't dedupe; one brand can have multiple cards (one per deal). Use the brand filter to see them side-by-side.
+
+## Related
+
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) — the *pre-deal* CRM. Pitch Butler tracks deals that haven't closed yet; Collab Butler picks them up after they have.
+- [Content Butler tutorial](/help/tutorials/content-butler) — production calendar for the content each collab requires.

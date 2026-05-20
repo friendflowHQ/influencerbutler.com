@@ -1,0 +1,74 @@
+---
+title: Voiceover Butler — FTC-compliant voiceover scripts from ASINs
+summary: Generate Amazon-Shorts-compliant voiceover scripts for any ASIN, with built-in validation against Amazon's video rules and the FTC's disclosure requirements.
+category: Amazon
+---
+
+## What Voiceover Butler does
+
+Voiceover Butler writes voiceover scripts for Amazon Shoppable and Live Shoppable videos. You paste ASINs, pick the script parameters (length, video type, opening hook, pacing, disclosure), and it pulls product details from the Creators API and produces scripts that match — vetted against both Amazon's video guidelines and FTC disclosure rules before they're handed back to you.
+
+The point is to skip the "write 30 scripts manually" step. Most creators using shoppable videos burn an hour a day on scripts; this brings it down to minutes.
+
+## Before you start
+
+- **Creators API key** in **API Integrations** — Voiceover Butler reads product titles, prices, and feature bullets from the API to write accurate scripts.
+- **OpenAI API key** in API Integrations — the model that produces the scripts. Without it, no generation happens.
+- A general sense of your creator voice: tone (e.g. "punchy + practical"), niche (e.g. "kitchen gadgets for small apartments"), audience (e.g. "renters under 30"). You'll seed these once in **Creator profile & defaults** and every script adapts to them.
+
+## First-time setup
+
+1. Open **Voiceover Butler** in the left nav.
+2. In **Creator profile & defaults**, fill in:
+   - **Tone** — 1-3 words describing your delivery (e.g. "warm + chatty").
+   - **Niche** — your content category in 5-10 words.
+   - **Audience** — who you're talking to.
+   - **Default FTC disclosure** — pick the disclosure style that matches your normal posts. "Paid partnership" if you frequently do sponsored; "Affiliate" for storefront content. Voiceover Butler bakes the right phrase into every script.
+3. **Default opening hook** (optional) — if you have a signature opener, paste it here. Every script will start with this exact line. Leave blank to let the model write a hook per script.
+
+This is one-time setup. After that, generating a script is fast.
+
+## Generating your first script
+
+1. In **Add products**, paste 1-5 ASINs.
+2. Per ASIN, pick:
+   - **Length** — 15s (Shorts-fit), 30s (mid), 60s (Live Shoppable max).
+   - **Video type** — Shoppable (Shorts/Stories) or Live Shoppable. The validator is stricter for Shoppable.
+   - **Hook** — leave on default or override per-ASIN.
+   - **Pacing** — "snappy" / "natural" / "deliberate". The validator rejects scripts whose word count doesn't match the length × pacing budget.
+   - **Disclosure** — override the default if this specific product needs different treatment.
+   - **Angle** (optional) — a one-line nudge for what to emphasize (e.g. "lean into the one-rinse cleanup").
+3. Click **Generate**.
+
+The script appears below the input, with two validation badges: **Amazon Shoppable rules** and **FTC**. Both must be green for the script to be usable as-is.
+
+## What the validator catches
+
+The validator runs every script against:
+
+- **Amazon Shoppable / Creator Ads rules**: no restricted subjects (firearms, tobacco, vape, cannabis, prescription drugs, gambling), no superlative health claims, no comparative pricing claims.
+- **FTC disclosure rules**: every script must have the disclosure phrase placed clearly and early. "Clear and conspicuous" is the bar.
+- **Length × pacing budget**: 15s = ~38-50 words at normal pace; 30s = ~80-95; 60s = ~165-180. Scripts outside the budget get rejected.
+
+If validation fails, Voiceover Butler shows you which rule tripped and offers to re-generate.
+
+## Tuning over time
+
+- **Tone + niche** in the creator profile do most of the work. If scripts feel generic, sharpen these.
+- **Per-ASIN angle** matters more than people expect. "Show the before/after on tough stains" produces a different script than "highlight the one-rinse cleanup" for the same product.
+- **Default disclosure** — if you're switching between sponsored and affiliate content, set per-ASIN; if you're always one or the other, the profile default is fine.
+
+## Where the scripts go
+
+Generated scripts are saved per-ASIN in the preseed cache. The script panel has **Copy** and **Export** buttons so you can pull them into your recording tool.
+
+## Common gotchas
+
+- **"OpenAI key missing"** — set it in API Integrations.
+- **Validator keeps failing** — usually the disclosure isn't strong enough or the pacing budget is being blown. Re-generate (the model is non-deterministic, often succeeds second try) or shorten the angle.
+- **Scripts feel off-brand** — sharpen the Tone field. "Warm + practical, no jargon, addresses the viewer directly" produces tighter results than "friendly".
+
+## Related
+
+- [Video Butler tutorial](/help/tutorials/video-butler) — re-upload Amazon storefront videos; pair with Voiceover Butler scripts for new content.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — source of the ASINs you'd paste into Voiceover Butler.

@@ -91,14 +91,25 @@ export default function PricingCardsClient({
   const touchedRef = useRef(false);
 
   // On mount, persist the visitor + promo cookies so server-side reads on the
-  // next request are consistent with what we rendered.
+  // next request are consistent with what we rendered. Also record the URL
+  // ?code= as the first-touch affiliate source — the checkout route needs
+  // this to credit the affiliate even if the user later types a different
+  // code in the promo input.
   useEffect(() => {
     if (touchedRef.current) return;
     touchedRef.current = true;
-    fetch("/api/promo/touch", { method: "POST" }).catch(() => {
+    const body =
+      initialCode && initialCode.length > 0
+        ? JSON.stringify({ affiliateSource: initialCode })
+        : undefined;
+    fetch("/api/promo/touch", {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body,
+    }).catch(() => {
       // Non-fatal; the checkout APIs also write the cookies on POST.
     });
-  }, []);
+  }, [initialCode]);
 
   const buyingDiscount = affiliateCode
     ? null
@@ -118,7 +129,11 @@ export default function PricingCardsClient({
         const response = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, code: codeParam }),
+          body: JSON.stringify({
+            plan,
+            code: codeParam,
+            affiliateSource: initialCode ?? undefined,
+          }),
         });
         if (response.status !== 401 && response.ok) {
           const payload = (await response.json()) as { checkoutUrl?: string };
@@ -130,7 +145,11 @@ export default function PricingCardsClient({
         // 401 or missing url — fall through to guest flow.
       }
 
-      const guestUrl = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}`;
+      const affiliateParam =
+        initialCode && initialCode.length > 0
+          ? `&affiliateSource=${encodeURIComponent(initialCode)}`
+          : "";
+      const guestUrl = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}${affiliateParam}`;
       const guestResponse = await fetch(guestUrl, { headers: { Accept: "application/json" } });
       if (guestResponse.ok) {
         const { checkoutUrl } = (await guestResponse.json()) as { checkoutUrl?: string };
@@ -144,7 +163,11 @@ export default function PricingCardsClient({
     } catch (error) {
       console.error("Pricing checkout failed", error);
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
-      window.location.href = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}`;
+      const affiliateParam =
+        initialCode && initialCode.length > 0
+          ? `&affiliateSource=${encodeURIComponent(initialCode)}`
+          : "";
+      window.location.href = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}${affiliateParam}`;
     } finally {
       setLoadingPlan(null);
     }

@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { COUNTRIES } from "@/lib/countries";
 
 type SocialHandles = {
   instagram: string;
@@ -51,6 +53,7 @@ export default function AffiliateApplyInline() {
   const [audienceSize, setAudienceSize] = useState("");
   const [niche, setNiche] = useState("");
   const [promotionStrategy, setPromotionStrategy] = useState("");
+  const [country, setCountry] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [socials, setSocials] = useState<SocialHandles>({
     instagram: "",
@@ -109,7 +112,11 @@ export default function AffiliateApplyInline() {
       return;
     }
     if (!agreedToTerms) {
-      setError("Please agree to the affiliate program terms.");
+      setError("Please agree to the Affiliate Program Terms.");
+      return;
+    }
+    if (!country) {
+      setError("Please select your country so Lemon Squeezy can route the right tax form to you.");
       return;
     }
     if (promotionStrategy.trim().length < 30) {
@@ -135,6 +142,7 @@ export default function AffiliateApplyInline() {
             audience_size: audienceSize.trim() || null,
             niche: niche.trim() || null,
             promotion_strategy: promotionStrategy.trim(),
+            country: country || null,
             agreed_to_terms: true,
             status: "pending",
           },
@@ -273,6 +281,31 @@ export default function AffiliateApplyInline() {
 
           <fieldset className="space-y-4">
             <legend className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+              Where you&apos;re based
+            </legend>
+            <Field
+              label="Country"
+              required
+              hint="Lemon Squeezy uses this to collect the right tax form (W-9 for US, W-8BEN otherwise) when you finish setup."
+            >
+              <select
+                required
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Select a country</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </fieldset>
+
+          <fieldset className="space-y-4">
+            <legend className="text-sm font-semibold uppercase tracking-wider text-slate-500">
               Promotion plan
             </legend>
             <Field
@@ -298,8 +331,17 @@ export default function AffiliateApplyInline() {
               className="mt-1 h-4 w-4 accent-[#f97316]"
             />
             <span>
-              I agree to promote Influencer Butler honestly, not bid on branded keywords, not run
-              incentivized or misleading promotions, and to follow the affiliate terms.
+              I agree to the{" "}
+              <Link
+                href="/legal/affiliate-terms"
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-[#f97316] hover:text-[#ea580c] underline underline-offset-2"
+              >
+                Affiliate Program Terms
+              </Link>{" "}
+              and understand that Lemon Squeezy collects my tax forms (W-9 or W-8BEN) and handles
+              all payouts to me directly.
             </span>
           </label>
 

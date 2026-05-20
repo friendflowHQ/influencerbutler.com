@@ -128,6 +128,24 @@ async function sendApprovalEmail(params: {
   );
 
   lines.push(
+    `III. Tax forms and payouts`,
+    ``,
+    ``,
+    `Lemon Squeezy attends to both. During the brief setup above, they shall request the relevant tax form from you — a W-9 if you reside in the United States, a W-8BEN (or W-8BEN-E for entities) if you reside elsewhere. Should you be a United States affiliate earning six hundred dollars or more in a calendar year, Lemon Squeezy themselves shall furnish your 1099-NEC; Influencer Butler does not issue tax forms.`,
+    ``,
+    ``,
+    `Payouts likewise issue directly from Lemon Squeezy — monthly, on the first of each month, with a ten-dollar minimum balance, by PayPal or such other method as you nominate within your Lemon Squeezy portal. Influencer Butler stands entirely outside the payment chain. For any matter concerning payment timing, method, or tax documentation, the proper address is Lemon Squeezy support.`,
+    ``,
+    ``,
+    `For the full affiliate programme terms — including conduct expectations, FTC disclosure obligations, and termination provisions — please consult:`,
+    ``,
+    ``,
+    `    https://www.influencerbutler.com/legal/affiliate-terms`,
+    ``,
+    ``,
+  );
+
+  lines.push(
     `Your affiliate dashboard awaits you at:`,
     ``,
     ``,

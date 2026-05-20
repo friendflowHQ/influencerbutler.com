@@ -58,6 +58,9 @@ const nextConfig: NextConfig = {
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
       { source: "/legal/eula", destination: "/legal/eula.html" },
+      { source: "/legal/refund", destination: "/legal/refund.html" },
+      { source: "/legal/cookies", destination: "/legal/cookies.html" },
+      { source: "/legal/affiliate-terms", destination: "/legal/affiliate-terms.html" },
     ];
   },
   async redirects() {

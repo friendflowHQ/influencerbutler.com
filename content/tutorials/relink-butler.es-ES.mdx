@@ -1,0 +1,59 @@
+---
+title: Relink Butler — cambia proveedores de enlaces de afiliado en contenido publicado (beta)
+summary: Reescribe los enlaces de afiliado de tus posts ya publicados de Daily Deals, YouTube, Pinterest y Benable sin re-editar cada publicación a mano.
+category: Amazon
+---
+
+> **Espacio en beta.** Relink Butler se está lanzando a usuarios tempranos y puede comportarse de forma inesperada en casos límite. Previsualiza cada cambio antes de aplicarlo y reporta bugs desde el espacio de Feedback si algo parece raro.
+
+## Qué hace Relink Butler
+
+Si has cambiado tu configuración de afiliados — por ejemplo de tags crudos de Amazon a Geniuslink para internacional, o de un acortador a otro — cada post existente sigue pasando por el proveedor viejo. Relink Butler escanea tu contenido publicado, encuentra los enlaces viejos y los reescribe usando tu nuevo proveedor, sin que tengas que re-editar cada publicación.
+
+Soporta cuatro modos:
+
+- **Cambio de host** — cambia el host del enlace (p. ej. `amzn.to` → `geni.us`) manteniendo el ASIN.
+- **Retag** — actualiza tags de afiliado en línea (raro; normalmente para cambios de tag por región).
+- **Remint provider** — cambia el proveedor de afiliado completo, regenerando cada enlace por el nuevo.
+- **Find-replace** — sustitución manual a nivel de cadena. Úsalo cuando los otros modos no encajan.
+
+El objetivo es el mismo en cada modo: dejar el contenido publicado igual, cambiar hacia dónde enruta el enlace.
+
+## Antes de empezar
+
+- **El nuevo proveedor de afiliados configurado** en **API Integrations**. Lo que sea a lo que vayas a cambiar tiene que estar listo antes; Relink Butler enruta los enlaces nuevos por ahí.
+- **Al menos un ámbito de contenido** con datos:
+  - **Posts de Daily Deals** en el historial de publicaciones de `daily-deals/`.
+  - **Vídeos de YouTube** subidos vía YouTube Butler.
+  - **Pins de Pinterest** publicados vía Pinterest Butler (cuando esté disponible).
+  - **Listas de Benable** publicadas vía Benable Butler.
+
+Si no has usado el workspace correspondiente, ese ámbito no tiene nada que Relink Butler pueda recorrer.
+
+## Tu primer cambio
+
+1. Abre **Relink Butler** dentro de Amazon Butler.
+2. En **Modo**, elige el tipo de swap. **Remint provider** es lo más común — úsalo al cambiar de proveedor.
+3. En **Ámbito**, marca qué superficies de contenido reescribir. Daily Deals está activado por defecto; marca otras según necesites.
+4. **Previsualizar reescrituras** — Relink Butler recorre cada ámbito, encuentra cada enlace de afiliado y te muestra un diff lado a lado: enlace viejo vs propuesto, por fila.
+5. Revisa el diff. Desmarca cualquier cosa que se vea mal.
+6. Pulsa **Aplicar aprobados** para confirmar el cambio.
+
+Los swaps de Daily Deals + Pinterest pasan dentro de la app (sólo actualizan bases de datos locales). Los swaps de YouTube + Benable necesitan sesiones de Chrome porque tienen que editar contenido publicado remoto — Relink Butler abre Chrome igual que otros espacios.
+
+## Lo que Relink Butler NO hace
+
+- **No borra el enlace viejo.** El historial de publicación mantiene ambos — el nuevo reemplazo corre al lado. Esto coincide con la filosofía de Retag Butler: preservar el historial, enrutar hacia adelante.
+- **No toca enlaces de Amazon crudos que publicaste manualmente fuera de InfluencerButler.** Sólo se rastrea contenido publicado a través de uno de nuestros ámbitos.
+- **No arregla productos muertos.** Si un ASIN subyacente está muerto, el enlace sigue enrutando por el nuevo proveedor pero aterriza en un 404. Usa **Retag Butler** para el reemplazo de ASIN muerto.
+
+## Tropiezos comunes
+
+- **La vista previa está vacía** — normalmente significa que el ámbito está vacío. Verifica que Daily Deals (o el ámbito que sea) tenga historial de publicación primero.
+- **"Nuevo proveedor no configurado"** — termina la configuración en API Integrations antes de ejecutar. El modo Remint necesita la clave de API del nuevo proveedor para generar enlaces de reemplazo.
+- **Los swaps de YouTube van lentos** — YouTube sólo permite ~10 ediciones/hora sin rate-limiting. Relink Butler lo respeta; deja que la ejecución se tome su tiempo.
+
+## Relacionado
+
+- [Tutorial de Retag Butler](/help/tutorials/retag-butler) — para swaps de *producto* (reemplazo de ASIN muerto), no swaps de proveedor de afiliado.
+- [Tutorial de API Integrations](/help/tutorials/api-integrations) — donde configuras el nuevo proveedor antes de ejecutar Relink Butler.

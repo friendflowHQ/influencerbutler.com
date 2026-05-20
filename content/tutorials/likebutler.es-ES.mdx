@@ -1,0 +1,60 @@
+---
+title: Like Butler — da likes automáticos a las tiendas de Amazon Creator que te interesan
+summary: Pega enlaces de tiendas, fija un tope de likes y un retardo, y Like Butler te mantiene visible para las marcas dándole like a su contenido de la tienda CC con una cadencia.
+category: Amazon
+---
+
+## Qué hace Like Butler
+
+Like Butler da like al contenido de las tiendas de Amazon de otros creadores o marcas según un horario. El objetivo no es inflar engagement — es seguir apareciendo en el feed de "actividad reciente" de una marca para que cuando elijan a quién contactar para una nueva campaña, tu nombre salga. Es la señal de contacto más barata en tiempo.
+
+Pegas 1-5 URLs de tiendas, fijas un máximo de likes por ejecución y Like Butler recorre cada una y da like a lo que sea reciente.
+
+## Antes de empezar
+
+- **Una sesión activa en Amazon** en Chrome — Like Butler usa tu sesión existente.
+- **Una o más URLs de tienda** — tiendas de marcas o de otros creadores. URLs del tipo `https://www.amazon.com/shop/algunnombre`.
+
+## Tu primera ejecución
+
+1. Abre **Like Butler** dentro de Amazon Butler.
+2. En **Enlaces de tienda**, pega tu primera URL. Pulsa **Añadir otro enlace de tienda** para añadir más.
+3. En **Ajustes de ejecución**:
+   - **Máximo de likes** — empieza con el valor por defecto, 10. Es por tienda y por ejecución, no el total.
+   - **Retardo entre likes** — elige **Normal** (8s). Evita Rápido (3s) hasta que hayas visto varias ejecuciones limpias.
+   - **Alcance del escaneo** — déjalo en "recent" para la primera ejecución. "All" baja más profundo en la tienda y tarda más.
+4. Pulsa **Iniciar Like Butler**.
+
+Se abre una ventana de Chrome, navega a cada tienda, hace scroll y pulsa like en el contenido elegible (posts, vídeos, fotos — alternable en **Tipos de contenido**). El checkbox **Watch it run** está activo por defecto para que veas qué pasa.
+
+## Ajustes con el tiempo
+
+- **maxLikes** — 10 por tienda por ejecución es conservador. Si ejecutas 5 tiendas, son 50 likes por ejecución en total, muy por debajo de cualquier umbral razonable de límite.
+- **delaySeconds** — mantenlo en 8 s como mínimo. Más rápido que 3 s y Amazon empieza a frenarte.
+- **cooldownDays** — por defecto 7. Like Butler no volverá a darle like al mismo contenido dentro de ese plazo, lo que mantiene la señal "actividad reciente" real en vez de spam.
+- **checkAll** — activado, Like Butler escanea cada tienda en cada ejecución. Desactivado, elige un subconjunto rotatorio, útil si tienes 20+ tiendas y quieres ejecuciones rápidas.
+
+## Programación
+
+Like Butler tiene un programador integrado:
+
+1. En **Scheduler**, elige hora de inicio y un intervalo de repetición (p. ej. cada 12 horas).
+2. Pulsa **Activar programación**.
+
+Mientras está programado, los campos de ajustes se bloquean. Pulsa **Detener programación** antes de editarlos de nuevo. Una vez al día es suficiente — dos veces al día es lo máximo que deberías considerar.
+
+## Dónde van los datos
+
+El historial de likes por tienda se guarda en la caché preseed. Los KPI de arriba muestran **Total** (likes históricos) y contadores **Esta ejecución**; los botones **Reset total** + **Reset run** los limpian de forma independiente.
+
+## Tropiezos comunes
+
+- **"Se requiere iniciar sesión en Amazon"** — tu sesión caducó. Abre la ventana de Chrome que Like Butler creó, inicia sesión y pulsa Reanudar.
+- **"No se encontró contenido al que dar like"** — normalmente cooldownDays sigue excluyendo todo en esa tienda. Espera a que caduque el cooldown o bájalo.
+- **El programador parece atascado** — comprueba que no esté ejecutándose; si está a mitad de ejecución, el panel de ajustes está bloqueado. Detén la programación, edita, reanúdala.
+- **Los likes no se registran en Amazon** — tu URL es incorrecta (404) o la página requiere una sesión que ya no tienes. Abre la URL en Chrome manualmente para verificar.
+
+## Relacionado
+
+- [Tutorial de Goldmine Butler](/help/tutorials/goldminebutler) — encuentra tiendas a las que merece la pena dar like escaneando contenido #ad / #partner.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — para sincronizar tu *propia* tienda, no las ajenas.

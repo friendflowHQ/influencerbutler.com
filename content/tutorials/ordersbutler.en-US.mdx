@@ -1,0 +1,41 @@
+---
+title: Orders Butler — sync your real Amazon order history
+summary: Pull your purchase + commission history straight from Amazon so the rest of the app has accurate ASIN signal.
+category: Amazon
+---
+
+## What Orders Butler does
+
+Orders Butler is the upstream data feed for almost every Amazon-side workspace. It logs into Amazon in your existing Chrome session, walks your order history page by page, and stores the result in a local database. Downstream:
+
+- **Amazon Butler** uses it to find brands you sell.
+- **Daily Commission Butler** uses it to match accepted campaigns to actual sales.
+- **Earnings Intelligence** uses it to compute lifetime tallies.
+
+If Orders Butler is stale, every Amazon workspace is making decisions on stale data.
+
+## First sync
+
+1. Open **Orders Butler** in the left nav.
+2. Pick a **lookback window** — start with **90 days** for a fresh install. The first sync is the slowest because there's no incremental cursor yet.
+3. Click **Sync now**.
+
+The runner opens a Chrome window, logs in (if needed), and walks the orders pages. A 90-day backfill on a normal account takes 2–4 minutes.
+
+## Ongoing syncs
+
+After the first sync, Orders Butler tracks the most recent order it saw and only fetches newer ones on subsequent runs. Set it to **run daily** in the Schedule card — it'll add new orders incrementally in a few seconds.
+
+## Where the data lives
+
+Pulled rows live in `{userData}/InfluencerButler/workspaces/preseed/data/orders/*.json`. You never need to touch these files directly, but they're inspectable if something looks wrong.
+
+## Gotchas
+
+- **"Login required" banner stays up** — Amazon asked for re-auth. Open the Chrome window the runner spawned, sign in, and click **Resume**.
+- **Sync looks frozen on "Page 47"** — Amazon throttled the request. Orders Butler retries automatically with backoff; give it 1–2 minutes before clicking Stop.
+- **Missing recent orders** — the most recent 24h sometimes don't appear in Amazon's UI until they ship. That's an Amazon-side delay, not a Butler bug.
+
+## Related
+
+- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) — the main consumer of fresh order data.

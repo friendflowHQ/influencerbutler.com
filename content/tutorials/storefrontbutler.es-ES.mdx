@@ -1,0 +1,53 @@
+---
+title: Storefront Butler — sincroniza cada pieza de tu tienda de Amazon
+summary: Reúne fotos, vídeos, listas de ideas y colecciones de medios de tu tienda de Amazon en un único feed buscable enriquecido con datos de la Creators API.
+category: Amazon
+---
+
+## Qué hace Storefront Butler
+
+Storefront Butler recorre toda tu tienda de Amazon Creator — cada vídeo comprable, publicación con foto, lista de ideas y colección de medios — y guarda el resultado en un único feed listo para hoja de cálculo. Después enriquece cada fila con datos de la Creators API (títulos, precios, tasas de comisión, ASIN padre) para que los espacios de trabajo descendentes tengan una sola fuente de verdad.
+
+Muchos otros espacios dependen de lo que Storefront Butler produce. **Video Butler** se nutre de este catálogo. **Retag Butler** lo escanea buscando ASIN agotados. **Benable Butler** crea listas a partir de él. Si Storefront Butler está vacío o desactualizado, esas herramientas no tienen con qué trabajar.
+
+## Antes de empezar
+
+Necesitas:
+
+1. **La URL de tu tienda de Amazon Creator** — el enlace público `https://www.amazon.com/shop/tunombre`. Storefront Butler la rellena automáticamente desde **Ajustes → Escaneo de tienda** si la has configurado allí.
+2. **Una sesión activa en Amazon dentro de Chrome** — Storefront Butler abre una ventana de Chrome y usa tu sesión existente. No hay inicio de sesión aparte.
+3. **Clave de Creators API** en **API Integrations** (recomendada, no estrictamente obligatoria). Sin ella, se omite el enriquecimiento y sólo obtienes URLs + ASIN sin procesar.
+
+## Tu primera sincronización
+
+1. Abre **Storefront Butler** en el menú lateral (dentro de Amazon Butler).
+2. Verifica que el campo **URL de tienda** muestra tu tienda. Edítalo si quieres usar otro por una vez.
+3. Deja **Tipos de contenido a sincronizar** en su valor por defecto (foto, vídeo, lista de ideas, lista de medios) — puedes acotarlo más tarde.
+4. Pulsa **Iniciar**.
+
+Se abre una ventana de Chrome que recorre cada sección de contenido. El progreso aparece en la tarjeta **Totales de contenido**: Vídeos, Fotos, Listas de ideas, Listas de medios. Una sincronización completa suele tardar 10–20 minutos según el volumen — activa **Watch it run** si quieres ver cómo el navegador hace scroll.
+
+## Ajustes con el tiempo
+
+Algunos controles que querrás tocar tras la primera ejecución:
+
+- **maxItemsByType** en los ajustes limita cuántos elementos se traen por categoría. Útil si tienes más de 500 fotos pero sólo te interesan las 100 más recientes.
+- **createDeepLinks** + **deepLinkProvider** enrutan cada URL de producto por tu proveedor de afiliados (PostTap, Linktw.in, Geniuslink, etc.) al entrar al feed.
+- **flagUnavailableForRetag** está activado por defecto — cuando Storefront Butler encuentra un ASIN agotado, marca la fila para que Retag Butler pueda sustituirlo después.
+- **pricingScheduler** vuelve a ejecutar la actualización de precios/comisiones en una cadencia (12 h por defecto) sin recorrer toda la tienda de nuevo.
+
+## Dónde van los datos
+
+Las filas se guardan en la caché del espacio de trabajo preseed. Los espacios descendentes leen directamente desde ahí — no tienes que exportar nada manualmente. Si quieres una copia en hoja de cálculo, la vista de tabla incluye **Exportar CSV** en la barra de herramientas de la fila.
+
+## Tropiezos comunes
+
+- **"La URL de tienda está vacía"** — configúrala en este espacio o en **Ajustes → Escaneo de tienda**. La copia de Ajustes es el valor por defecto para todos los espacios que necesitan tu tienda.
+- **La sincronización parece congelada en una sección** — Amazon está limitando peticiones. Storefront Butler reintenta con backoff; dale un minuto antes de pulsar Detener.
+- **Filas enriquecidas sin precios** — normalmente significa que tu clave de Creators API falta o ha caducado. Abre **API Integrations** y vuelve a verificarla.
+
+## Relacionado
+
+- [Tutorial de Video Butler](/help/tutorials/video-butler) — qué consume los vídeos sincronizados.
+- [Tutorial de Retag Butler](/help/tutorials/retag-butler) — encuentra reemplazos para las filas que Storefront Butler marcó como agotadas.
+- [Tutorial de Data Refresh Butler](/help/tutorials/data-refresh-butler) — programa las actualizaciones de catálogo que acompañan esta sincronización.

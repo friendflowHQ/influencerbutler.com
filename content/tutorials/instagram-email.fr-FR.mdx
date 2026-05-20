@@ -1,0 +1,73 @@
+---
+title: Instagram Email Collection — récoltez les emails de marques cachés dans vos DM Instagram
+summary: Scannez votre historique de DM Instagram pour récupérer les adresses email que les marques ont partagées en conversation, et exportez-les vers une liste de contacts réutilisable.
+category: Instagram
+---
+
+## Ce que fait Instagram Email Collection
+
+Les marques partagent régulièrement leur email de pitch en DM Instagram — "envoie ton media kit à brandname@..." ou "continuons par marketing@brand.com." Ces emails sont précieux : c'est une ligne directe avec le contact marque qui a vu votre travail, hors de la portée algorithmique d'Instagram.
+
+Mais les retrouver plus tard signifie faire défiler des centaines de DM à la main. Instagram Email Collection scanne votre historique de DM, extrait les adresses email et les dépose dans un tableau avec le fil d'origine + un toggle "outreach envoyé" pour que vous suiviez qui vous avez contacté depuis la liste.
+
+## Avant de commencer
+
+- **Un compte Instagram connecté** dans Chrome.
+- Un peu d'historique de DM sur lequel travailler. Si vous n'avez jamais reçu de DM avec adresses email, cet espace n'a rien à récolter.
+
+## Votre premier scan
+
+1. Ouvrez **Instagram Email Collection** sous Instagram Butler.
+2. **Max de fils à scanner** — 50 par défaut. C'est le nombre de fils de DM (les plus récents d'abord) que Butler parcourt par run. Démarrez à 50 pour tester, montez à 200-500 une fois que vous avez vu ça marcher.
+3. **Incremental** — laissez activé. Le mode incrémental ne scanne que les fils plus récents que le dernier run, donc les runs suivants sont rapides. Désactivez-le seulement pour le premier backfill complet.
+4. **Historique complet des messages** (optionnel) — activé, Butler parcourt chaque fil jusqu'au tout premier message plutôt que de s'arrêter aux récents. Plus lent mais exhaustif. À utiliser une fois sur le premier backfill, puis à désactiver.
+5. Cliquez sur **Lancer**.
+
+Une fenêtre Chrome s'ouvre. Butler parcourt votre boîte de DM, ouvre chaque fil, scanne les adresses email avec une regex robuste et ajoute les correspondances au tableau de résultats. Le premier run sur une boîte chargée prend 5-15 minutes ; les runs incrémentaux sont de 30 secondes.
+
+## Travailler les résultats
+
+Le tableau de résultats a une ligne par email trouvé :
+
+- **Email** — l'adresse.
+- **From thread** — le handle Instagram dont le DM contenait l'email. Cliquez pour ouvrir le fil sur Instagram.
+- **Snippet** — quelques mots de contexte autour de l'email pour vous rappeler pourquoi il a été partagé.
+- Toggle **Sent** — flag si vous avez contacté cet email à l'extérieur. Utile pour ne pas faire de double envoi.
+
+Boutons du toolbar du haut :
+
+- **Sélectionner visibles** + **Effacer la sélection** — choisissez des lignes pour des actions en masse.
+- **Marquer comme envoyé** — bascule le toggle Sent sur chaque ligne sélectionnée.
+- **Exporter CSV** — dump la liste filtrée dans un tableur pour usage hors Butler.
+
+## Planification
+
+Le planificateur lance Email Collection à une cadence pour que les nouveaux emails remontent au fil des DM :
+
+1. Cliquez sur **Activer la planification**.
+2. Choisissez un intervalle (24h par défaut).
+
+Pendant que la planification est active, les paramètres se verrouillent. Cliquez sur **Arrêter la planification** avant de modifier. Quotidien suffit — les DM Instagram ne s'accumulent pas assez vite pour nécessiter plus rapide.
+
+## Réglages dans la durée
+
+- **maxThreads** — 50 va bien pour des scans incrémentaux quotidiens. Montez à 500 pour le premier backfill complet, puis redescendez à 50.
+- **Incremental** — laissez activé après le premier run. Économise 90 %+ du temps d'exécution.
+- **Historique complet** — activez-le une fois pour le premier backfill, puis désactivez à jamais (l'incrémental gère les mises à jour).
+
+## Où vont les données
+
+Les emails récoltés vivent dans le cache preseed. L'export CSV depuis le toolbar vous donne une copie portable si vous voulez nourrir la liste dans un outil d'email externe.
+
+## Pièges courants
+
+- **Aucun email trouvé malgré beaucoup de DM** — beaucoup de DM de marque partagent les emails seulement dans des PDF ou des images. Butler ne fait pas d'OCR — il ne trouve que des patterns d'email en texte clair.
+- **La planification paraît bloquée** — les paramètres se verrouillent pendant une planification active. Cliquez sur Arrêter la planification, modifiez, réactivez.
+- **Le même email apparaît deux fois depuis des fils différents** — c'est attendu ; la marque vous a contacté depuis deux comptes différents. Utilisez le toggle Sent pour suivre une seule.
+- **Invite de connexion en plein run** — résolvez dans la fenêtre Chrome ouverte, cliquez sur Reprendre.
+
+## Relié
+
+- [Tutoriel Instagram Butler](/help/tutorials/instagram) — espace de DM outreach qui complète celui-ci.
+- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) — importe ces emails dans le CRM marques unifié.
+- [Tutoriel Messenger Butler](/help/tutorials/messengerbutler) — gère les conversations en cours sur Instagram.

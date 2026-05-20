@@ -1,0 +1,74 @@
+---
+title: Voiceover Butler — guiones de voz en off cumpliendo la FTC desde ASIN
+summary: Genera guiones de voz en off compatibles con Amazon Shorts para cualquier ASIN, con validación integrada contra las reglas de vídeo de Amazon y los requisitos de divulgación de la FTC.
+category: Amazon
+---
+
+## Qué hace Voiceover Butler
+
+Voiceover Butler escribe guiones de voz en off para vídeos Shoppable y Live Shoppable de Amazon. Pegas ASIN, eliges los parámetros del guion (duración, tipo de vídeo, gancho de apertura, ritmo, divulgación), y el sistema saca los detalles del producto de la Creators API y produce guiones que encajan — validados contra las pautas de vídeo de Amazon y las reglas de divulgación de la FTC antes de devolvértelos.
+
+El objetivo es saltarte el paso "escribir 30 guiones a mano". La mayoría de creadores que hacen vídeos comprables queman una hora al día en guiones; esto lo baja a minutos.
+
+## Antes de empezar
+
+- **Clave de Creators API** en **API Integrations** — Voiceover Butler lee títulos de producto, precios y viñetas de características desde la API para escribir guiones precisos.
+- **Clave de API de OpenAI** en API Integrations — el modelo que produce los guiones. Sin ella, no hay generación.
+- Una idea general de tu voz creadora: tono (p. ej. "punzante + práctica"), nicho (p. ej. "gadgets de cocina para pisos pequeños"), audiencia (p. ej. "inquilinos menores de 30"). Las sembrarás una vez en **Perfil de creador y valores por defecto** y cada guion se adapta a ellas.
+
+## Configuración inicial
+
+1. Abre **Voiceover Butler** en el menú lateral.
+2. En **Perfil de creador y valores por defecto**, rellena:
+   - **Tono** — 1-3 palabras que describan tu entrega (p. ej. "cálida + conversacional").
+   - **Nicho** — tu categoría de contenido en 5-10 palabras.
+   - **Audiencia** — con quién hablas.
+   - **Divulgación FTC por defecto** — elige el estilo de divulgación que encaje con tus publicaciones normales. "Asociación pagada" si haces mucho patrocinio; "Afiliado" para contenido de tienda. Voiceover Butler incorpora la frase correcta en cada guion.
+3. **Gancho de apertura por defecto** (opcional) — si tienes un apertura característica, pégala aquí. Cada guion empezará con esa línea exacta. Déjalo en blanco para que el modelo escriba un gancho por guion.
+
+Esto es de una vez. Después, generar un guion es rápido.
+
+## Generar tu primer guion
+
+1. En **Añadir productos**, pega 1-5 ASIN.
+2. Por cada ASIN, elige:
+   - **Duración** — 15s (encaja en Shorts), 30s (intermedio), 60s (máximo Live Shoppable).
+   - **Tipo de vídeo** — Shoppable (Shorts/Stories) o Live Shoppable. El validador es más estricto con Shoppable.
+   - **Gancho** — deja el predeterminado o sobreescribe por ASIN.
+   - **Ritmo** — "ágil" / "natural" / "pausado". El validador rechaza guiones cuya cuenta de palabras no encaja con el presupuesto duración × ritmo.
+   - **Divulgación** — sobreescribe la predeterminada si este producto necesita un trato distinto.
+   - **Ángulo** (opcional) — una línea con qué enfatizar (p. ej. "destaca la limpieza en un enjuague").
+3. Pulsa **Generar**.
+
+El guion aparece bajo la entrada, con dos badges de validación: **Reglas Shoppable de Amazon** y **FTC**. Ambos tienen que estar en verde para que el guion sea utilizable tal cual.
+
+## Qué pilla el validador
+
+El validador corre cada guion contra:
+
+- **Reglas Shoppable / Creator Ads de Amazon**: nada de temas restringidos (armas de fuego, tabaco, vapeo, cannabis, fármacos con receta, juego), nada de afirmaciones superlativas sobre salud, nada de comparaciones de precio.
+- **Reglas de divulgación FTC**: cada guion debe tener la frase de divulgación colocada de forma clara y temprana. "Clara y visible" es el listón.
+- **Presupuesto duración × ritmo**: 15s = ~38-50 palabras a ritmo normal; 30s = ~80-95; 60s = ~165-180. Guiones fuera del presupuesto se rechazan.
+
+Si la validación falla, Voiceover Butler te muestra qué regla saltó y se ofrece a regenerar.
+
+## Ajustes con el tiempo
+
+- **Tono + nicho** en el perfil del creador hacen la mayor parte del trabajo. Si los guiones se sienten genéricos, afina estos.
+- **Ángulo por ASIN** importa más de lo que la gente espera. "Muestra el antes/después en manchas duras" produce un guion distinto a "destaca la limpieza en un enjuague" para el mismo producto.
+- **Divulgación por defecto** — si alternas patrocinado y afiliado, configúrala por ASIN; si siempre es lo mismo, el valor por defecto del perfil basta.
+
+## Dónde van los guiones
+
+Los guiones generados se guardan por ASIN en la caché preseed. El panel del guion tiene botones **Copiar** y **Exportar** para que los lleves a tu herramienta de grabación.
+
+## Tropiezos comunes
+
+- **"Falta la clave de OpenAI"** — configúrala en API Integrations.
+- **El validador no para de fallar** — normalmente la divulgación no es bastante fuerte o se está pasando el presupuesto de ritmo. Regenera (el modelo es no-determinista y suele acertar al segundo intento) o acorta el ángulo.
+- **Los guiones se sienten fuera de marca** — afina el campo Tono. "Cálida + práctica, sin jerga, dirigiéndose al espectador" produce resultados más afilados que "amable".
+
+## Relacionado
+
+- [Tutorial de Video Butler](/help/tutorials/video-butler) — re-sube vídeos de la tienda de Amazon; combínalo con guiones de Voiceover Butler para contenido nuevo.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — fuente de los ASIN que pegarías en Voiceover Butler.

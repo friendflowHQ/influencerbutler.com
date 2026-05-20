@@ -1,0 +1,63 @@
+---
+title: Daily Deals Butler — recoge ofertas de Amazon y publícalas en automático
+summary: Automatización de extremo a extremo: filtra ofertas por precio + descuento + comisión, crea tu plantilla de post, elige destinos sociales y deja que el programador haga el resto.
+category: Amazon
+---
+
+## Qué hace Daily Deals Butler
+
+Daily Deals Butler es la automatización más completa de InfluencerButler. Ejecuta un pipeline entero en un solo espacio:
+
+1. **Recolección** — trae ofertas activas de Amazon que coinciden con tus filtros (% de descuento, mínimo de comisión, rango de precio, palabras clave, marca).
+2. **Construir el post** — envuelve cada oferta en tu plantilla con hashtags, enlaces de afiliado e imágenes generadas por IA opcionales.
+3. **Programación** — publica en tus destinos sociales conectados (Instagram, grupos + páginas de Facebook, Telegram, Reddit, Benable) en la cadencia por plataforma que indiques.
+
+Lo configuras una vez y sigue funcionando — la mayoría de usuarios sólo vuelven aquí para afinar filtros o añadir un nuevo destino social.
+
+## Antes de empezar
+
+- **Tag de afiliado de Amazon** configurado (Ajustes → Amazon).
+- **ID de tienda CC** en la barra superior (para que los datos de comisión sean precisos).
+- **Al menos un destino social** conectado en la pestaña Social Destinations. Telegram es el más sencillo para empezar — el token del bot se pega una sola vez.
+- **Data Refresh Butler** activo (o acoplado por defecto) — Daily Deals lee los catálogos que Data Refresh Butler mantiene.
+
+## Tu primera recolección
+
+El espacio se abre con una barra de chips con 10 pestañas. El flujo de configuración las sigue de izquierda a derecha:
+
+1. **Deal Filters** — empieza con los valores por defecto: descuento ≥30 %, todas las categorías, cualquier tasa de comisión. Pulsa **Buscar ofertas**. Confirma que ves resultados antes de apretar filtros.
+2. **Build Your Post** — la plantilla de post usa marcadores como `{title}`, `{price}`, `{discount}`, `{deeplink}`. Edítala y pulsa **Vista previa** para ver cómo se renderiza una oferta real.
+3. **Social Destinations** — conecta al menos uno. Cada plataforma tiene su subflujo (token del bot de Telegram, selector de página de Facebook, sesión de Instagram) — el espacio te guía en cada uno.
+4. **Scheduler** — activa **Post scheduler** y elige una cadencia. Los valores por defecto son conservadores: grupos cada 1 h, páginas cada 2 h, Telegram cada 15 min, Reddit/Instagram apagados.
+5. Pulsa **Ejecutar ahora** en Harvest para hacer una ronda de búsqueda y publicación de extremo a extremo antes de activar la planificación.
+
+## Preajustes de filtros
+
+El **preajuste activo** (por defecto llamado `default`) guarda tu configuración de filtros. Puedes tener varios preajustes para distintos nichos — por ejemplo, uno para "tecnología por menos de 50 €" y otro para "decoración por menos de 100 €" — y alternarlos desde la pestaña Overview. Los clones (un complemento de pago) dan a cada clon su propio almacén de preajustes para correr varios nichos en paralelo sin tener que cambiar de preajuste.
+
+## Ajustes con el tiempo
+
+- **percentOffMin** en el preajuste — empieza en 30 %, súbelo a 40-50 % cuando tengas claro qué umbral de descuento engancha a tu audiencia.
+- **trackingDays** — cuántos días una oferta permanece en el historial "rastreado" antes de poder volver a publicarse. Por defecto 14.
+- **excludeLastMonth** — activado, no vuelve a publicar ofertas posteadas en los últimos 30 días. Mantiene tu feed fresco.
+- **Cadencias perDestination** — Telegram tolera mucho más volumen que Instagram. No apliques la cadencia de 15 min de Telegram a Instagram o te limitarán.
+
+## Dónde van los datos
+
+Las ofertas recolectadas viven en la caché preseed; el historial de publicaciones en `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. La pestaña Console Log transmite cada intento de publicación y su resultado.
+
+## Tropiezos comunes
+
+- **"Ninguna oferta coincide con tus filtros"** — normalmente una combinación de filtros demasiado estrecha. Quita uno a uno hasta que vuelvan a aparecer resultados.
+- **Las publicaciones a Telegram fallan en silencio** — token del bot revocado o permisos del chat cambiados. Vuelve a pegar el token en Social Destinations.
+- **Las publicaciones de Instagram acaban en solicitudes de mensaje, no en bandeja** — no es un problema de Daily Deals; es el propio enrutamiento de Instagram para cuentas que no sigues.
+- **El programador parece detenido** — revisa el banner de estado en la pestaña Scheduler. El runner se detiene solo si detecta credenciales malas y reporta el motivo allí.
+
+## Clones (de pago)
+
+Daily Deals admite clones a 24,99 €/mes cada uno — cada clon es un espacio completamente independiente con sus propios filtros, destinos e historial. Usa clones si gestionas activamente más de un nicho; en caso contrario, los preajustes en un único espacio cubren la mayoría de casos.
+
+## Relacionado
+
+- [Tutorial de Data Refresh Butler](/help/tutorials/data-refresh-butler) — mantiene actualizados los catálogos que Daily Deals lee.
+- [Tutorial de Black Friday Butler](/help/tutorials/black-friday) — el mismo tipo de automatización, en versión por tiempo limitado.

@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
-import { appendAffRef, lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
+import { appendAffRef } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
-import { readPromoTier, resolvePromoCode, writePromoCookies } from "@/lib/promo";
+import {
+  readAffiliateSourceCookie,
+  readPromoTier,
+  writeAffiliateSourceCookieIfMissing,
+  writePromoCookies,
+} from "@/lib/promo";
+import { resolveCheckoutDiscount, type Plan } from "@/lib/promo-resolver";
 
 type CheckoutRequestBody = {
   plan?: string;
   variantId?: string;
   code?: string;
+  /**
+   * Set by the pricing / subscription pages on first ?code= visit so we can
+   * still credit the affiliate even if the user overwrites the promo input.
+   * Falls back to the ib_aff_src cookie when not supplied.
+   */
+  affiliateSource?: string;
 };
 
 type LsCheckoutResponse = {
@@ -19,12 +31,25 @@ type LsCheckoutResponse = {
   };
 };
 
+// Mirrors PRICES in src/app/pricing/page.tsx. Cents so the resolver math
+// stays integer-clean. Keep in sync if pricing changes.
+const PLAN_PRICING: Record<"monthly" | "annual", Plan> = {
+  monthly: { priceCents: 2900, interval: "month" },
+  annual: { priceCents: 26100, interval: "year" },
+};
+
+function planMetaFor(plan: string | undefined): Plan | null {
+  if (plan === "monthly" || plan === "annual") return PLAN_PRICING[plan];
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const {
       plan,
       variantId: variantIdFromBody,
       code: rawCode,
+      affiliateSource: rawAffiliateSource,
     } = (await request.json()) as CheckoutRequestBody;
 
     const variantResolution = resolveVariantId(plan, variantIdFromBody);
@@ -55,18 +80,28 @@ export async function POST(request: Request) {
     const email = userData.user.email;
     const userId = userData.user.id;
 
-    // Resolve optional affiliate code — tolerate missing/invalid without erroring.
-    // Bounded to 3s so a Supabase hiccup can't cascade into a Vercel function timeout.
-    const code = typeof rawCode === "string" ? rawCode.trim() : "";
-    const affiliate =
-      code.length > 0 ? await withTimeout(lookupAffiliateByCode(code), 3000, null) : null;
-
-    // One discount per purchase: affiliate code wins if present, otherwise
-    // fall back to the cookie-tiered WELCOME promo.
     const cookieStore = await cookies();
-    const promoTier = readPromoTier(cookieStore);
-    const promoCode = affiliate ? null : resolvePromoCode(promoTier);
-    const discountCode = affiliate ? affiliate.code : promoCode ?? undefined;
+    const cookieTier = readPromoTier(cookieStore);
+    const typedCode = typeof rawCode === "string" ? rawCode.trim() : "";
+    const urlCode =
+      (typeof rawAffiliateSource === "string" && rawAffiliateSource.trim().length > 0
+        ? rawAffiliateSource.trim()
+        : null) ?? readAffiliateSourceCookie(cookieStore);
+
+    // Best-code wins discount, first-touch affiliate gets aff_ref (independent).
+    // The plan metadata (price + interval) is required to compute lifetime $ value
+    // across candidates; we treat unknown plans like a 1-cycle no-op horizon.
+    const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
+
+    const resolved = await resolveCheckoutDiscount({
+      typedCode: typedCode.length > 0 ? typedCode : null,
+      urlCode,
+      cookieTier,
+      plan: planMeta,
+      storeId,
+    });
+
+    const discountCode = resolved.winner?.code;
 
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -142,15 +177,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid checkout response" }, { status: 502 });
     }
 
-    const checkoutUrl = affiliate
-      ? appendAffRef(rawCheckoutUrl, affiliate.lsAffiliateId)
+    const checkoutUrl = resolved.attribution
+      ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
       : rawCheckoutUrl;
 
     const jsonResponse = NextResponse.json({
       checkoutUrl,
       discountApplied: discountCode ?? null,
+      savingsCents: resolved.winner?.savedCents ?? 0,
+      attributionCode: resolved.attribution?.sourceCode ?? null,
     });
     writePromoCookies(jsonResponse, cookieStore);
+    writeAffiliateSourceCookieIfMissing(jsonResponse, cookieStore, urlCode);
     return jsonResponse;
   } catch (error) {
     console.error("Checkout API error", error);

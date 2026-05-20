@@ -1,0 +1,75 @@
+---
+title: Instagram Goldmine — découvrez les marques qui payent des créateurs de votre niche sur Instagram
+summary: Crawler en lecture seule : semez avec des noms d'utilisateur Instagram, parcourez le graphe des comptes suggérés et récoltez les posts tagués #ad / partenariat payé pour identifier quelles marques sponsorisent activement.
+category: Instagram
+---
+
+## Ce que fait Instagram Goldmine
+
+Goldmine Butler fait ça pour les boutiques Amazon. Instagram Goldmine fait le même travail pour Instagram : trouver les marques qui payent déjà des créateurs dans votre niche, pour que vous sachiez qui pitcher.
+
+Vous le semez avec 3-10 noms d'utilisateur Instagram de créateurs dont l'audience recoupe la vôtre. Goldmine parcourt le graphe "suggéré pour vous" d'Instagram depuis chaque semence, identifie des créateurs similaires et récolte les posts sur leurs profils tagués `#ad`, `#partner`, divulgations de partenariat payant ou mentions de marque explicites. La sortie est une liste de combinaisons marque + post + créateur depuis laquelle vous pouvez pitcher.
+
+**Cet espace est en lecture seule.** Pas de DM envoyés, pas de follow, pas d'engagement. Pure recherche.
+
+## Avant de commencer
+
+- **Un compte Instagram connecté** dans Chrome.
+- **3-10 noms d'utilisateur Instagram semence** de créateurs dans votre niche. Le @ est optionnel ; les URLs de profil (`https://instagram.com/handle`) marchent aussi.
+- Une heure environ la première fois que vous le lancez sur une niche fraîche — découverte + scan est plus lent que le reste de la pile Instagram parce qu'il parcourt le graphe.
+
+## Votre première découverte
+
+1. Ouvrez **Instagram Goldmine** sous Instagram Butler.
+2. Dans **Seed usernames**, collez 3-10 profils de départ. Soyez sélectif — ce sont les semences à partir desquelles on demande à Instagram de suggérer des créateurs similaires. Une mauvaise semence produit une sortie bruitée.
+3. Dans **Filtres** :
+   - **Min abonnés** — 50 000 par défaut. Filtre les comptes spam et les très petits créateurs. Baissez à 10K si vous visez des collabs micro-influenceur.
+   - **Min vues de post** — 10 000 par défaut. Filtre les posts à faible engagement.
+   - **Min nombre de commentaires** — 25 par défaut. Aide à faire remonter les posts vraiment engagés vs ceux à métriques-vanité.
+   - **Max posts par profil** — 30 par défaut. Plafonne la profondeur de lecture dans le feed de chaque créateur.
+   - **Max suggérés par semence** — 25 par défaut. Combien de créateurs similaires tirés par semence.
+   - **Max profils totaux** — 100 par défaut. Plafond dur pour que le run ne s'étale pas.
+4. **Mode d'exécution** — `seeds-and-suggested` (défaut) scanne les semences + leur graphe de suggérés. `seeds-only` saute le graphe pour un contrôle plus serré.
+5. **Reels d'abord** — laissez activé. Les Reels portent le signal de sponsorisation plus consistamment que les posts de feed.
+6. Cliquez sur **Start Discovery**.
+
+Une fenêtre Chrome s'ouvre. Goldmine parcourt chaque semence, tire le graphe de comptes suggérés d'Instagram, visite chaque créateur suggéré et scanne ses posts récents pour les tags de divulgation. Le tableau **Posts** se remplit en temps réel.
+
+## Travailler les résultats
+
+Chaque post qui qualifie devient une ligne avec :
+
+- **Nom de marque** — extrait du caption du post (quand la marque est `@mentionnée` ou nommée).
+- **Handle du créateur** — qui l'a posté.
+- **URL du post** — cliquez pour ouvrir dans le navigateur.
+- **Type de divulgation** — `#ad`, `#partner`, `paid-partnership`, `mention`.
+- **Engagement** — vues, likes, commentaires.
+
+Que faire de la liste :
+
+- **Filtrez par marque** pour voir quelles marques apparaissent le plus souvent — ce sont les sponsors les plus actifs de votre niche.
+- **Exportez en CSV** pour nourrir Pitch Butler ou un tableur pour planifier la prise de contact.
+- **Ouvrez l'URL du post** pour lire le vrai caption — utile pour préparer votre pitch ("j'ai vu votre campagne avec @creator et j'ai une audience similaire").
+
+## Réglages dans la durée
+
+- **Qualité de la semence** — le facteur le plus important. Deux semences parfaitement matchées surperforment dix lâches. Rafraîchissez les semences quand la sortie devient datée.
+- **Min abonnés + min vues** — montez si la sortie paraît bruitée avec des créateurs de faible qualité. Baissez si vous visez des collabs niveau micro-influenceur.
+- **safeMode** — activé, Goldmine utilise un rythme plus long et des délais plus aléatoires. Utile si Instagram a signalé votre compte récemment. Coûte 2-3× le temps d'exécution.
+
+## Où vont les données
+
+Les posts découverts et le graphe par semence sont cachés dans le cache preseed. Les runs suivants dédoublonnent contre l'historique pour ne pas re-scanner le même profil.
+
+## Pièges courants
+
+- **Invite de connexion en plein run** — Instagram rate-limite fortement le graphe de comptes suggérés pour les comptes non vérifiés. S'il demande une vérification, résolvez dans la fenêtre Chrome lancée et Goldmine reprend.
+- **Aucune marque extraite des captions** — la marque n'était pas `@mentionnée` ni nommée en texte clair (peut-être seulement dans l'image). Ouvrez l'URL du post pour vérifier.
+- **Le même créateur apparaît plusieurs fois** — plusieurs semences l'ont suggéré. La déduplication marche sur les posts, pas les créateurs, donc c'est attendu si le créateur fait beaucoup de sponsorings.
+- **Le run est très lent** — le graphe de suggérés d'Instagram est rate-limité par profil. Pas moyen d'accélérer ; laissez tourner.
+
+## Relié
+
+- [Tutoriel Goldmine Butler](/help/tutorials/goldminebutler) — la même idée pour les boutiques Amazon Creator.
+- [Tutoriel Instagram Butler](/help/tutorials/instagram) — pitchez les marques qu'Instagram Goldmine fait remonter.
+- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) — suivez-les dans le CRM unifié.

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ShareLinkCard from "@/app/affiliates/portal/ShareLinkCard";
 import EarningsSparkline from "./EarningsSparkline";
+import SocialShareButtons from "./SocialShareButtons";
 import {
   formatUsdFromCents,
   buildShareLink,
@@ -101,6 +102,18 @@ export default function AffiliateDashboard({
         </div>
       ) : null}
 
+      {isActive && brandedCode && brandedShareLink ? (
+        <BrandedCodeCard code={brandedCode} shareLink={brandedShareLink} />
+      ) : null}
+
+      {isActive ? (
+        <ShareLinkCard
+          shareLink={shareLink}
+          shareDomain={summary.shareDomain}
+          shareMessage="I've been using Influencer Butler — automation for Amazon Influencers. Worth a look:"
+        />
+      ) : null}
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total earned"
@@ -131,12 +144,6 @@ export default function AffiliateDashboard({
           }
         />
       </section>
-
-      {isActive && brandedCode && brandedShareLink ? (
-        <BrandedCodeCard code={brandedCode} shareLink={brandedShareLink} />
-      ) : null}
-
-      {isActive ? <ShareLinkCard shareLink={shareLink} shareDomain={summary.shareDomain} /> : null}
 
       {referrals && referrals.dailyEarnings.length > 0 ? (
         <EarningsSparkline data={referrals.dailyEarnings} />
@@ -213,25 +220,31 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
     }
   };
 
+  const shareMessage = `Use my code ${code} for 15% off Influencer Butler — automation for Amazon Influencers that's actually worth it.`;
+
   return (
-    <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
-        Your branded promo code
-      </p>
-      <p className="mt-1 text-sm text-slate-600">
-        Share this code for <strong>15% off</strong> your audience&apos;s first month — you&apos;re
-        credited 35% recurring commission when they check out from our site.
-      </p>
+    <section className="rounded-2xl border-2 border-[#f97316]/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-6 shadow-md">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#f97316]">
+            ★ Your branded promo code — the hook
+          </p>
+          <p className="mt-1 text-sm text-slate-700">
+            Share this code for <strong>15% off</strong> your audience&apos;s first month — you earn
+            <strong> 35% recurring commission</strong> for life.
+          </p>
+        </div>
+      </div>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-3 rounded-lg border border-indigo-300 bg-white px-4 py-3">
-          <span className="font-mono text-xl font-bold tracking-widest text-indigo-900">
+        <div className="flex flex-1 items-center gap-3 rounded-lg border-2 border-[#f97316]/50 bg-white px-4 py-3 shadow-sm">
+          <span className="font-mono text-2xl font-bold tracking-widest text-slate-900">
             {code}
           </span>
           <button
             type="button"
             onClick={() => copy(code, "code")}
-            className="ml-auto text-xs font-medium text-indigo-700 hover:text-indigo-900"
+            className="ml-auto rounded-md bg-[#f97316] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
           >
             {copiedCode ? "Copied!" : "Copy code"}
           </button>
@@ -240,7 +253,7 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
 
       <div className="mt-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Pre-filled share link (easiest thing to post)
+          Pre-filled share link (the code auto-applies at checkout)
         </p>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
           <input
@@ -248,12 +261,12 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
             readOnly
             value={shareLink}
             onClick={(e) => (e.target as HTMLInputElement).select()}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20"
           />
           <button
             type="button"
             onClick={() => copy(shareLink, "link")}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
           >
             {copiedLink ? "Copied!" : "Copy link"}
           </button>
@@ -263,6 +276,7 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
           automatically. When they type just the code at checkout on our site, you&apos;re still
           credited.
         </p>
+        <SocialShareButtons link={shareLink} message={shareMessage} label="Share in one click" />
       </div>
     </section>
   );

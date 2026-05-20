@@ -12,14 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/legal.css">
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-S1TC1QLYNN');
-  </script>
+  <script src="/js/consent.js" defer></script>
 </head>
 <body>
 
@@ -46,98 +39,141 @@
         <article class="legal-page">
             <div class="container legal-container">
                 <h1>Privacy Policy</h1>
-                <p class="legal-updated">Last Updated: April 2, 2026</p>
+                <p class="legal-updated">Last Updated: May 20, 2026</p>
 
                 <div class="legal-notice">
-                    <p><strong>PLEASE READ CAREFULLY.</strong> By clicking the "Agree" button, you confirm that you have read, understood, and agree to be bound by this Privacy Policy on behalf of yourself and, if applicable, the organization you represent, and that you have the authority to bind that organization. If you do not agree, click "Decline" (or do not click "Agree") and do not use the Software.</p>
+                    <p><strong>PLEASE READ CAREFULLY.</strong> This Privacy Policy describes how <strong>The Social Media Posse LLC</strong> ("Company," "we," "us," or "our") collects, uses, discloses, and safeguards personal data when you use the <strong>Influencer Butler</strong> desktop application, the <code>influencerbutler.com</code> website, the Cloudflare-hosted licensing / authentication / feedback Workers, and any related features (collectively, the "Software"). This Privacy Policy is incorporated by reference into our <a href="eula.html">End-User License Agreement (EULA)</a> and our <a href="terms.html">Terms of Service</a>. By installing or using the Software, you consent to the practices described here. If you do not agree, do not install or use the Software.</p>
                 </div>
 
-                <h2>1) Scope</h2>
-                <p>This Privacy Policy describes how Influencer Butler ("Company," "we," "us," or "our") collects, uses, discloses, and safeguards personal data when you use our software, services, websites, and related features (collectively, the "Software").</p>
-
-                <h2>2) Information We Collect</h2>
-                <p>We may collect the following categories of information:</p>
+                <h2>1) Who we are</h2>
                 <ul>
-                    <li><strong>Account Information:</strong> Name, email address, username, password, and account preferences.</li>
-                    <li><strong>Usage Data:</strong> Log data, device identifiers, IP address, browser type, operating system, app version, and interaction data.</li>
-                    <li><strong>Customer Content:</strong> Data you upload or provide while using the Software.</li>
-                    <li><strong>Support Communications:</strong> Information you provide when contacting support or participating in surveys.</li>
-                    <li><strong>Payment Information:</strong> Billing details and transaction history (processed by payment processors; we do not store full payment card numbers).</li>
-                    <li><strong>Diagnostic Data:</strong> If you enable optional error email alerts, sanitized error logs (with credentials and secrets removed) may be transmitted via your configured SMTP provider to an email address you specify.</li>
+                    <li><strong>Controller:</strong> The Social Media Posse LLC</li>
+                    <li><strong>Mailing address:</strong> 3556 S 5600 W #1-478, Salt Lake City, UT 84120, United States</li>
+                    <li><strong>Privacy contact:</strong> <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a></li>
+                    <li><strong>General contact:</strong> <a href="mailto:hello@influencerbutler.com">hello@influencerbutler.com</a></li>
                 </ul>
+                <p>We are a small US-based independent software vendor. The Software is a desktop application that runs on your computer; the supporting cloud endpoints we operate are minimal in scope (licensing, transactional email, feedback) and are described below.</p>
 
-                <h2>3) How We Use Information</h2>
-                <p>We use information to:</p>
+                <h2>2) What we collect, and where it goes</h2>
+                <p>We organize our data practices by <strong>destination</strong>, because most of what the Software touches never leaves your device. The three categories below are exhaustive — if it isn't listed here, the Software does not collect it.</p>
+
+                <h3>2.1 Local-only — never leaves your device</h3>
+                <p>The following data is processed entirely on the device on which you run the Software and is never transmitted to us or to any third party unless <strong>you</strong> explicitly export, share, or sync it:</p>
                 <ul>
-                    <li>Provide, operate, maintain, and improve the Software.</li>
-                    <li>Authenticate users and secure accounts.</li>
-                    <li>Personalize and enhance user experience.</li>
-                    <li>Process payments and manage subscriptions.</li>
-                    <li>Communicate with you about updates, security alerts, and support.</li>
-                    <li>Comply with legal obligations and enforce our agreements.</li>
+                    <li>Workspace settings, templates, brand lists, message drafts, and campaign keywords.</li>
+                    <li>Screenshots, generated images, and any media you author inside the Software.</li>
+                    <li>Browser session cookies for the third-party platforms you automate (Amazon, Instagram, YouTube, TikTok, Reddit, Telegram, Levanta, Archer, Logie). These are isolated per-site Chromium profiles stored under your operating-system user-data directory.</li>
+                    <li>Your AI provider API keys (OpenAI, Ideogram, FAL AI, etc.), stored in an AES-256-GCM-encrypted credential store under the same user-data directory.</li>
+                    <li>Diagnostic logs, telemetry traces, and engine state files.</li>
                 </ul>
+                <p>If you choose to export a <code>.ibworkspace</code> bundle, copy log files manually, or sync your user-data directory through OneDrive / iCloud / Dropbox / Google Drive, that data leaves the local-only scope. From that point forward, the terms of the service you use to move or store the data apply, and Company has no visibility into or control over it.</p>
 
-                <h2>4) Legal Bases for Processing (If Applicable)</h2>
-                <p>Where required by law, we process personal data based on one or more of the following legal bases: contract performance, legitimate interests, consent, and compliance with legal obligations.</p>
-
-                <h2>5) Sharing and Disclosure</h2>
-                <p>We may share information with:</p>
+                <h3>2.2 Sent to our servers (Cloudflare Workers, R2)</h3>
+                <p>We operate three Cloudflare Workers that handle a small, well-defined set of data flows:</p>
                 <ul>
-                    <li><strong>Service Providers:</strong> Vendors who perform services on our behalf (e.g., hosting, analytics, payment processing).</li>
-                    <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets.</li>
-                    <li><strong>Legal Compliance:</strong> To comply with laws, regulations, or lawful requests, or to protect rights and safety.</li>
-                    <li><strong>With Your Direction:</strong> When you authorize us to share data.</li>
+                    <li><strong>Email address</strong> → licensing Worker: magic-link sign-in, license lookup, transactional email (lawful basis under GDPR Art. 6: contract performance).</li>
+                    <li><strong>License key</strong> → licensing Worker: tier enforcement, seat counts (contract performance).</li>
+                    <li><strong>Device fingerprint</strong> (OS ID, hardware-bound machine ID, install salt) → licensing Worker: per-device activation, anti-piracy, suspicious-login alerts (legitimate interest in license enforcement and account-security alerting).</li>
+                    <li><strong>License usage counters</strong> (message-send counts, tier-gated feature usage) → licensing Worker: tier-cap enforcement, billing reconciliation (contract performance).</li>
+                    <li><strong>Feedback, feature requests, community Q&amp;A submissions</strong> → feedback Worker: product improvement, public Q&amp;A on the website (consent — you actively submit).</li>
+                    <li><strong>Outbound deep-link rewrites and post-tap analytics</strong> → links Worker: affiliate link resolution (legitimate interest).</li>
+                    <li><strong>Update-feed requests</strong> for <code>latest.yml</code> and <code>.exe</code> blobs → Cloudflare R2 (<code>dl.influencerbutler.com</code>): auto-update delivery (contract performance).</li>
                 </ul>
+                <p>We do <strong>not</strong> receive: the contents of your messages to third-party platforms, your platform credentials, your AI provider API keys, the contents of your workspace bundles, your screenshots, or any cookies beyond the magic-link auth cookie issued by our own Worker.</p>
 
-                <h2>6) Data Retention</h2>
-                <p>We retain personal data for as long as necessary to provide the Software, fulfill the purposes described in this policy, and comply with legal obligations. We may anonymize or aggregate data for longer retention.</p>
-
-                <h2>7) Security</h2>
-                <p>We implement reasonable administrative, technical, and physical safeguards designed to protect personal data. No security measures are perfect, and we cannot guarantee absolute security.</p>
-
-                <h2>8) Your Choices and Rights</h2>
-                <p>Depending on your location, you may have rights to access, correct, delete, or restrict processing of your personal data, or to object to certain processing. You may also withdraw consent where applicable. To exercise your rights, contact us using the information below.</p>
-
-                <h3>8a) EU/EEA Residents (GDPR)</h3>
-                <p>If you are located in the European Union or European Economic Area, you have the following rights under the General Data Protection Regulation:</p>
+                <h3>2.3 Sent to third-party processors acting on our behalf</h3>
+                <p>We contract with the following sub-processors. Each acts under written agreement and processes only the data needed to deliver its part of the Software.</p>
                 <ul>
-                    <li><strong>Right of Access:</strong> Request a copy of the personal data we hold about you.</li>
-                    <li><strong>Right to Rectification:</strong> Request correction of inaccurate or incomplete personal data.</li>
-                    <li><strong>Right to Erasure ("Right to Be Forgotten"):</strong> Request deletion of your personal data when it is no longer necessary for the purposes for which it was collected, or when you withdraw consent.</li>
-                    <li><strong>Right to Restriction of Processing:</strong> Request that we limit our processing of your personal data in certain circumstances.</li>
-                    <li><strong>Right to Data Portability:</strong> Request your personal data in a structured, commonly used, machine-readable format.</li>
-                    <li><strong>Right to Object:</strong> Object to processing based on legitimate interests or for direct marketing purposes.</li>
-                    <li><strong>Right to Withdraw Consent:</strong> Where processing is based on consent, you may withdraw consent at any time without affecting the lawfulness of prior processing.</li>
-                    <li><strong>Right to Lodge a Complaint:</strong> You have the right to lodge a complaint with a supervisory authority in the EU/EEA member state where you reside or work, or where the alleged infringement occurred.</li>
+                    <li><strong>LemonSqueezy, Inc.</strong> — payment processing, subscription management, customer-portal hosting. Receives your billing details and transaction history. We do <strong>not</strong> receive or store full payment-card numbers. Their privacy practices: <a href="https://www.lemonsqueezy.com/privacy" target="_blank" rel="noopener">lemonsqueezy.com/privacy</a>.</li>
+                    <li><strong>Resend (Bounce, Inc.)</strong> — transactional email delivery. Receives your email address and the message body of magic-link emails, new-device login alerts, onboarding messages, and per-Butler issue notifications. Their privacy practices: <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">resend.com/legal/privacy-policy</a>.</li>
+                    <li><strong>Cloudflare, Inc.</strong> — infrastructure for the licensing / feedback / links Workers and for <code>dl.influencerbutler.com</code> (CDN + R2 object storage). Processes request metadata (IP address, user-agent, request headers) for transport-layer security and abuse mitigation. Their privacy practices: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy</a>.</li>
+                    <li><strong>AI providers you enable</strong> (OpenAI, Ideogram, FAL AI, and any others you add) — when you enable an AI feature and supply your own API key, the Software calls that provider directly from your device under your account. Company has no visibility into or contractual relationship with the provider on your behalf; the provider's privacy policy applies to whatever you send.</li>
+                    <li><strong>Google LLC (Google Analytics 4 / gtag.js)</strong> — only on the <code>influencerbutler.com</code> website, and only with your prior consent via the cookie banner. Receives standard GA4 event data (page views, referrer, anonymized IP). The desktop application does not contain Google Analytics or any comparable third-party analytics library.</li>
                 </ul>
-                <p>To exercise any of these rights, contact us at <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a>. We will respond to verified requests within 30 days.</p>
+                <p>We do not sell or "share" (as defined by CCPA/CPRA) your personal data to any third party for cross-context behavioral advertising, and we do not use your data to train AI models.</p>
 
-                <h3>8b) California Residents (CCPA/CPRA)</h3>
-                <p>If you are a California resident, the California Consumer Privacy Act (as amended by the CPRA) provides you with the following rights:</p>
+                <h2>3) Cookies and analytics on the website</h2>
+                <p>The <code>influencerbutler.com</code> marketing website uses Google Analytics 4 (<code>gtag.js</code>, measurement ID <code>G-S1TC1QLYNN</code>) to understand aggregate visitor traffic. GA4 sets cookies including <code>_ga</code> and <code>_ga_&lt;id&gt;</code> with a 14-month default retention.</p>
+                <p>We use <strong>Google Consent Mode v2</strong> with all consent signals defaulted to <code>denied</code>. Before you make a choice on the cookie banner, gtag.js sends pinged "consent denied" beacons that do not store identifying cookies. After you choose:</p>
                 <ul>
-                    <li><strong>Right to Know:</strong> You may request that we disclose the categories and specific pieces of personal information we have collected about you, the categories of sources, the business purposes for collection, and the categories of third parties with whom we share it.</li>
-                    <li><strong>Right to Delete:</strong> You may request deletion of your personal information, subject to certain exceptions.</li>
-                    <li><strong>Right to Correct:</strong> You may request correction of inaccurate personal information.</li>
-                    <li><strong>Right to Opt-Out of Sale/Sharing:</strong> We do not sell or share your personal information for cross-context behavioral advertising. If this changes, we will provide an opt-out mechanism.</li>
-                    <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your CCPA rights.</li>
+                    <li><strong>Accept all</strong> — <code>analytics_storage</code> is set to <code>granted</code>; standard GA4 cookies are set; aggregate analytics flow.</li>
+                    <li><strong>Reject non-essential</strong> — the default-denied state persists; no analytics cookies are written.</li>
                 </ul>
-                <p>To submit a request, contact us at <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a>. We will verify your identity before fulfilling your request and respond within 45 days.</p>
+                <p>You can change your choice at any time from <a href="cookies.html">the cookie policy page</a> or by clearing <code>localStorage.ibConsent</code> in your browser. The desktop application does not load gtag.js or any other website-style analytics script.</p>
 
-                <h2>9) International Transfers</h2>
-                <p>Your information may be transferred to, stored, and processed in countries other than your own. We take steps to protect data transfers consistent with applicable law.</p>
-
-                <h2>10) Children's Privacy</h2>
-                <p>The Software is not directed to children under the age of 13 (or other age as required by local law). We do not knowingly collect personal data from children.</p>
-
-                <h2>11) Updates to This Policy</h2>
-                <p>We may update this Privacy Policy from time to time. We will revise the "Last Updated" date and, if required, provide additional notice.</p>
-
-                <h2>12) Contact Us</h2>
-                <p>If you have questions or requests regarding this Privacy Policy, contact us at:</p>
+                <h2>4) How we use information</h2>
+                <p>We use the data described in §2 to:</p>
                 <ul>
-                    <li><strong>Email:</strong> <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a></li>
-                    <li><strong>Address:</strong> The Social Media Posse LLC, 3556 S 5600 W #1-478, Salt Lake City, UT 84120, United States</li>
+                    <li>Provide, operate, maintain, and update the Software.</li>
+                    <li>Authenticate you and enforce per-device seat counts.</li>
+                    <li>Process your subscription and issue / renew your license.</li>
+                    <li>Send you transactional email (sign-in links, new-device alerts, onboarding, issue notifications).</li>
+                    <li>Respond to support requests and incorporate your feedback into product decisions.</li>
+                    <li>Comply with legal obligations and enforce our agreements (including chargeback defense and anti-piracy).</li>
                 </ul>
+                <p>We do not use your data for advertising, profile-building, or model training.</p>
+
+                <h2>5) GDPR / EEA / UK rights</h2>
+                <p>If you are located in the European Economic Area, the United Kingdom, or Switzerland, you have the following rights with respect to your personal data:</p>
+                <ul>
+                    <li><strong>Access</strong> — request a copy of the personal data we hold about you.</li>
+                    <li><strong>Rectification</strong> — correct inaccurate or incomplete data.</li>
+                    <li><strong>Erasure ("right to be forgotten")</strong> — request deletion, subject to our retention obligations under §7.</li>
+                    <li><strong>Restriction</strong> — pause our processing while we investigate a dispute.</li>
+                    <li><strong>Portability</strong> — receive your data in a machine-readable format.</li>
+                    <li><strong>Objection</strong> — object to processing based on legitimate interest.</li>
+                    <li><strong>Withdraw consent</strong> — for processing that relies on consent (analytics, feedback submissions), at any time.</li>
+                    <li><strong>Lodge a complaint</strong> with your local supervisory authority.</li>
+                </ul>
+                <p>To exercise any of these rights, email <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a> from the address associated with your license. We will respond within 30 days (extendable by 60 days for complex requests, with notice). Lawful bases for processing under GDPR Article 6 are listed inline in §2.2.</p>
+
+                <h2>6) CCPA / CPRA rights (California residents)</h2>
+                <p>If you are a California resident, you have the following rights:</p>
+                <ul>
+                    <li><strong>Right to know</strong> what categories of personal information we collect, the sources, the business purposes, and the third parties with whom we share it (the answer is in §2).</li>
+                    <li><strong>Right to delete</strong> your personal information, subject to the retention exceptions in §7.</li>
+                    <li><strong>Right to correct</strong> inaccurate personal information.</li>
+                    <li><strong>Right to opt out of sale or sharing</strong> — we do <strong>not</strong> sell or share your personal information for cross-context behavioral advertising. There is nothing to opt out of, but we will honor Global Privacy Control (GPC) signals on the website as a "Do Not Sell or Share" request.</li>
+                    <li><strong>Right to non-discrimination</strong> — we will not deny service, charge different prices, or provide a different level of service because you exercised a CCPA right.</li>
+                </ul>
+                <p>To exercise these rights, email <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a>. We will verify your identity by confirming control of the email address associated with your license.</p>
+
+                <h2>7) Data retention</h2>
+                <ul>
+                    <li><strong>License records</strong> (email, license key, tier): life of the account + 24 months.</li>
+                    <li><strong>Device-activation logs</strong> (fingerprint + timestamp): 90 days, then aggregated into anonymized counts.</li>
+                    <li><strong>Transactional email metadata</strong> (Resend logs): 30 days.</li>
+                    <li><strong>Feedback / feature-request / Q&amp;A submissions</strong>: indefinite (these inform product roadmap); displayed Q&amp;A becomes part of the public knowledge base unless you request removal.</li>
+                    <li><strong>Website analytics</strong> (Google Analytics 4): 14 months (GA4 default).</li>
+                    <li><strong>Secure-store contents</strong> (API keys, cookies, etc.): never transmitted; persist on your device until you uninstall the Software or delete the user-data directory.</li>
+                    <li><strong>Crash and diagnostic logs</strong> (local): 30 days rolling, locally only.</li>
+                </ul>
+                <p>After the retention period, records are either deleted or irreversibly anonymized.</p>
+
+                <h2>8) Security</h2>
+                <p>We protect personal data with reasonable administrative, technical, and physical safeguards, including AES-256-GCM encryption for credentials stored on your device, TLS 1.2+ for all traffic between the desktop application and our Cloudflare Workers, code-signed installers and signature-verified auto-updates, tight file permissions on the secure-store directory, and least-privilege Worker bindings.</p>
+                <p>No system is perfectly secure. If we become aware of a security incident materially affecting your personal data, we will notify you without undue delay and at the latest within 72 hours, consistent with GDPR Article 33 and applicable state breach-notification laws.</p>
+
+                <h2>9) International transfers</h2>
+                <p>Personal data we collect is processed in the <strong>United States</strong> (LemonSqueezy, Resend, our Cloudflare account home region) and in <strong>Cloudflare's global edge network</strong>, which may process request metadata in any region where Cloudflare operates.</p>
+                <p>If you are located in the European Economic Area, the United Kingdom, or Switzerland, transfers of your personal data outside those regions are protected by the <strong>Standard Contractual Clauses (SCCs)</strong> adopted by the European Commission, which are included in our data-processing agreements with LemonSqueezy, Resend, and Cloudflare.</p>
+
+                <h2>10) Children</h2>
+                <p>The Software is a business productivity tool intended for adults operating as content creators or small-business owners. It is not directed to children under 16 (or under 13 in the United States), and we do not knowingly collect personal data from children. If you believe a child has provided us personal data, email <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a> and we will delete it.</p>
+
+                <h2>11) Changes to this Policy</h2>
+                <p>We may update this Privacy Policy as the Software evolves. When we make a material change, we will revise the "Last Updated" date and bump the <code>PRIVACY_VERSION</code> constant in the desktop application, which causes the next launch to display a re-acceptance prompt asking you to agree to the updated policy. For non-material changes (typos, formatting, address updates), we may post the change without a re-acceptance prompt.</p>
+
+                <h2>12) Contact</h2>
+                <p>For privacy questions, requests, or complaints:</p>
+                <address>
+                    <strong>The Social Media Posse LLC</strong><br>
+                    Attn: Privacy<br>
+                    3556 S 5600 W #1-478<br>
+                    Salt Lake City, UT 84120<br>
+                    United States<br>
+                    <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a>
+                </address>
             </div>
         </article>
     </main>
@@ -163,6 +199,8 @@
                 <a href="privacy.html">Privacy Policy</a>
                 <a href="eula.html">EULA</a>
                 <a href="terms.html">Terms of Service</a>
+                <a href="refund.html">Refund Policy</a>
+                <a href="affiliate-terms.html">Affiliate Terms</a>
             </div>
             <div class="footer-links">
                 <h4>Support</h4>

@@ -1,0 +1,80 @@
+---
+title: Instagram Butler — DM brand collaborations directly on Instagram
+summary: Send first-touch outreach DMs to brands and creators on Instagram using rotating templates, follower-count filters, and a do-not-message list.
+category: Instagram
+---
+
+## What Instagram Butler does
+
+Instagram Butler is the Instagram-side version of Amazon Butler: it sends first-touch DMs to targets you've identified, using rotating message templates, with the same set of safety rails (per-target cooldowns, skip-lists, follower-count filters). It's the workspace you use when you want to pitch brands on Instagram directly rather than wait for them to find you.
+
+It pairs naturally with **Messenger Butler** (which handles in-progress conversations) and **Instagram Goldmine** (which discovers people worth messaging). Instagram Butler is specifically the *first contact* step.
+
+## Before you start
+
+- **A signed-in Instagram account** in Chrome. Instagram Butler uses your existing session.
+- **Your Amazon storefront URL** in the topbar — used in templates via `{storefrontUrl}`.
+- **A target source** — either manually pasted handles, follower lists from your account, or imports from Instagram Goldmine.
+
+## Setup: the message template
+
+Open the **Initial messages** card. This is where your first-touch DMs live. Two key rules:
+
+1. **Write 3-5 variations** of your opener. Instagram detects identical-DM patterns and rate-limits accounts that send them. Variations like "Hey! Saw your post about X, would love to collab" / "Hi! Your content on Y caught my eye, would love to chat" rotate per-target.
+2. **Use placeholders** — `{storefrontUrl}` substitutes your storefront link; `{address}` and `{mediakit}` pull from your saved profile values. Keep variations short — first DMs that read like a pitch get ignored.
+
+Set **initialMessageMode** to `random` (the default) so Butler picks a variation per-target rather than always using the first.
+
+## Choosing targets
+
+The **Target mode** dropdown picks who Instagram Butler messages:
+
+- **new-followers** — your most recent followers. Useful for converting new follows into actual conversations.
+- **manual-handles** — a list you paste manually. Use this when you've curated a target list (e.g. from Instagram Goldmine).
+- **suggested-from-graph** — Instagram's "suggested for you" graph, walked from a seed username.
+
+Most starting users pick **new-followers** + **manual-handles** for the first few weeks until they find their rhythm.
+
+## Filters that matter
+
+- **followersLimitMin / followersLimitMax** — skip accounts outside this range. Useful for staying on micro-influencers (e.g. 1K-50K) and avoiding both spam accounts and unreachable mega-accounts.
+- **skipBrandsRaw** — newline-separated brand names to never message. Useful for excluding direct competitors or brands you've already worked with.
+- **skipTitleRaw** — newline-separated keywords. If a target's bio or recent post titles contain any of these, skip. Helps avoid wrong-niche targets.
+- **excludeAlreadyMessaged** — leave on. Prevents Butler from re-messaging the same handle.
+
+## Running your first outreach pass
+
+1. Open **Instagram Butler** in the left nav (under Instagram Butler parent toggle).
+2. Confirm your message variations in **Initial messages**.
+3. Pick a target mode and confirm filters.
+4. Set a conservative **daily cap** (start at 15-25 DMs/day on a new account).
+5. Click **Run**.
+
+A Chrome window opens. Butler walks each target, opens their profile, opens DMs, and sends one of your message variations. Pacing is built in — typical pace is 2-5 minutes per DM with random jitter.
+
+## Instagram's rate-limit rules
+
+Instagram is the strictest platform Butler interacts with:
+
+- **First 30 days** on a new account: 15-25 DMs/day max.
+- **Established accounts**: 40-60 DMs/day sustainable.
+- **More than 80/day** is flagged territory — accounts get DM-locked for 24-72 hours.
+
+Butler's defaults (jitter, cooldowns, pacing) are tuned for safety — don't override them aggressively.
+
+## Where the data goes
+
+Per-DM outreach history is logged in the preseed cache. Once a DM is sent, the recipient handle moves into the do-not-message list automatically (assuming `excludeAlreadyMessaged` is on).
+
+## Common gotchas
+
+- **"Instagram action blocked"** banner — you sent too many DMs too fast. Butler stops and waits. Wait 24-48 hours before resuming, and lower your daily cap.
+- **First DM sent to message requests, not inbox** — Instagram routes DMs from non-followers to "Requests" rather than inbox. Out of Butler's control.
+- **Templates feel scripted** — even rotating 5 variations gets old at scale. Refresh your variations every 2-3 weeks.
+- **Manual sign-in mid-run** — Instagram occasionally requires verification. Solve it in the Chrome window Butler spawned, click Resume.
+
+## Related
+
+- [Messenger Butler tutorial](/help/tutorials/messengerbutler) — handles ongoing conversations Instagram Butler kicks off.
+- [Instagram Goldmine tutorial](/help/tutorials/instagram-goldmine) — discovers creators in your niche to feed into Instagram Butler.
+- [Instagram Email Collection tutorial](/help/tutorials/instagram-email) — harvests emails from your DM history.

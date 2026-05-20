@@ -1,0 +1,74 @@
+---
+title: Voiceover Butler — scripts de voix off conformes FTC à partir d'ASIN
+summary: Générez des scripts de voix off conformes Amazon Shorts pour n'importe quel ASIN, avec validation intégrée contre les règles vidéo Amazon et les obligations de divulgation FTC.
+category: Amazon
+---
+
+## Ce que fait Voiceover Butler
+
+Voiceover Butler écrit des scripts de voix off pour les vidéos Amazon Shoppable et Live Shoppable. Vous collez des ASIN, choisissez les paramètres du script (durée, type de vidéo, accroche d'ouverture, rythme, divulgation), et il tire les détails produit de la Creators API et produit des scripts qui collent — validés contre les directives vidéo d'Amazon et les règles de divulgation FTC avant de vous être rendus.
+
+L'objectif est de zapper l'étape "écrire 30 scripts à la main". La plupart des créateurs qui font des vidéos achetables brûlent une heure par jour sur les scripts ; cela passe à quelques minutes.
+
+## Avant de commencer
+
+- **Clé Creators API** dans **API Integrations** — Voiceover Butler lit titres produit, prix et puces de fonctionnalités via l'API pour écrire des scripts justes.
+- **Clé d'API OpenAI** dans API Integrations — le modèle qui produit les scripts. Sans elle, pas de génération.
+- Une idée générale de votre voix de créateur : ton (par ex. "punchy + pratique"), niche (par ex. "gadgets de cuisine pour petits appartements"), audience (par ex. "locataires de moins de 30 ans"). Vous les semez une fois dans **Profil de créateur et valeurs par défaut** et chaque script s'y adapte.
+
+## Configuration initiale
+
+1. Ouvrez **Voiceover Butler** dans la navigation.
+2. Dans **Profil de créateur et valeurs par défaut**, remplissez :
+   - **Ton** — 1-3 mots décrivant votre livraison (par ex. "chaleureux + conversationnel").
+   - **Niche** — votre catégorie de contenu en 5-10 mots.
+   - **Audience** — à qui vous parlez.
+   - **Divulgation FTC par défaut** — choisissez le style qui correspond à vos posts habituels. "Partenariat payant" si vous faites souvent du sponsorisé ; "Affilié" pour le contenu boutique. Voiceover Butler intègre la bonne formule dans chaque script.
+3. **Accroche d'ouverture par défaut** (optionnelle) — si vous avez une accroche signature, collez-la ici. Chaque script commencera par cette ligne exacte. Laissez vide pour que le modèle écrive une accroche par script.
+
+C'est ponctuel. Après, générer un script va vite.
+
+## Générer votre premier script
+
+1. Dans **Ajouter des produits**, collez 1-5 ASIN.
+2. Par ASIN, choisissez :
+   - **Durée** — 15s (Shorts), 30s (intermédiaire), 60s (max Live Shoppable).
+   - **Type de vidéo** — Shoppable (Shorts/Stories) ou Live Shoppable. Le validateur est plus strict pour Shoppable.
+   - **Accroche** — laissez le défaut ou écrasez par ASIN.
+   - **Rythme** — "vif" / "naturel" / "posé". Le validateur rejette les scripts dont le nombre de mots ne colle pas au budget durée × rythme.
+   - **Divulgation** — écrasez le défaut si ce produit précis a besoin d'un traitement différent.
+   - **Angle** (optionnel) — une phrase pour orienter (par ex. "insiste sur le rinçage en un passage").
+3. Cliquez sur **Générer**.
+
+Le script apparaît sous la saisie, avec deux badges de validation : **Règles Shoppable Amazon** et **FTC**. Les deux doivent être verts pour que le script soit utilisable tel quel.
+
+## Ce que le validateur attrape
+
+Le validateur passe chaque script contre :
+
+- **Règles Shoppable / Creator Ads d'Amazon** : aucun sujet restreint (armes à feu, tabac, vape, cannabis, médicaments sur ordonnance, jeux d'argent), pas d'allégations superlatives santé, pas de comparaisons de prix.
+- **Règles de divulgation FTC** : chaque script doit avoir la formule de divulgation placée clairement et tôt. "Claire et visible" est la barre.
+- **Budget durée × rythme** : 15s = ~38-50 mots à allure normale ; 30s = ~80-95 ; 60s = ~165-180. Les scripts hors budget sont rejetés.
+
+Si la validation échoue, Voiceover Butler vous montre quelle règle a sauté et propose de régénérer.
+
+## Réglages dans la durée
+
+- **Ton + niche** dans le profil créateur font l'essentiel du travail. Si les scripts paraissent génériques, affinez-les.
+- **Angle par ASIN** compte plus qu'on ne le pense. "Montre l'avant/après sur les taches tenaces" produit un script différent de "souligne le rinçage en un passage" pour le même produit.
+- **Divulgation par défaut** — si vous alternez sponsorisé et affilié, réglez par ASIN ; si vous êtes toujours dans l'un ou l'autre, le défaut du profil suffit.
+
+## Où vont les scripts
+
+Les scripts générés sont sauvegardés par ASIN dans le cache preseed. Le panneau du script a des boutons **Copier** et **Exporter** pour les amener dans votre outil d'enregistrement.
+
+## Pièges courants
+
+- **"Clé OpenAI manquante"** — configurez-la dans API Integrations.
+- **Le validateur n'arrête pas d'échouer** — généralement la divulgation n'est pas assez forte ou le budget de rythme explose. Régénérez (le modèle n'est pas déterministe, marche souvent au second essai) ou raccourcissez l'angle.
+- **Les scripts sonnent hors marque** — affinez le champ Ton. "Chaleureuse + pratique, sans jargon, s'adresse au viewer directement" produit des résultats plus nets que "amicale".
+
+## Relié
+
+- [Tutoriel Video Butler](/help/tutorials/video-butler) — re-upload des vidéos boutique Amazon ; combinez avec les scripts Voiceover Butler pour du nouveau contenu.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — source des ASIN que vous colleriez dans Voiceover Butler.

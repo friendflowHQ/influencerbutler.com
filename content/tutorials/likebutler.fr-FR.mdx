@@ -1,0 +1,60 @@
+---
+title: Like Butler — likez automatiquement les boutiques Amazon Creator qui comptent
+summary: Collez des liens de boutique, fixez un plafond de likes et un délai, et Like Butler vous garde visible auprès des marques en likant leur contenu de boutique CC à une cadence.
+category: Amazon
+---
+
+## Ce que fait Like Butler
+
+Like Butler like le contenu des boutiques Amazon d'autres créateurs ou marques selon un planning. L'objectif n'est pas de gonfler l'engagement — c'est de rester dans le fil d'"activité récente" d'une marque, pour qu'au moment où elle choisit qui contacter pour une nouvelle campagne, votre nom apparaisse. C'est le signal de prise de contact le moins coûteux en temps.
+
+Vous collez 1-5 URLs de boutiques, fixez un max de likes par exécution, et Like Butler parcourt chacune en likant ce qui est frais.
+
+## Avant de commencer
+
+- **Une session Amazon active** dans Chrome — Like Butler utilise votre session existante.
+- **Une ou plusieurs URLs de boutique** — boutiques de marques ou d'autres créateurs. Le format `https://www.amazon.com/shop/unnom`.
+
+## Votre première passe
+
+1. Ouvrez **Like Butler** sous Amazon Butler.
+2. Dans **Liens de boutique**, collez votre première URL. Cliquez sur **Ajouter un autre lien** pour en ajouter d'autres.
+3. Dans **Paramètres d'exécution** :
+   - **Max likes** — démarrez à 10 (la valeur par défaut). C'est par boutique par exécution, pas un total.
+   - **Délai entre likes** — choisissez **Normal** (8 s). Évitez Rapide (3 s) tant que vous n'avez pas vu plusieurs runs propres.
+   - **Portée du scan** — laissez sur "recent" pour la première exécution. "All" descend plus profond dans une boutique et prend plus longtemps.
+4. Cliquez sur **Démarrer Like Butler**.
+
+Une fenêtre Chrome s'ouvre, va sur chaque boutique, fait défiler et clique sur "like" sur le contenu éligible (posts, vidéos, photos — bascules dans **Types de contenu**). La case **Watch it run** est cochée par défaut pour que vous voyiez ce qui se passe.
+
+## Réglages dans la durée
+
+- **maxLikes** — 10 par boutique par exécution est prudent. Avec 5 boutiques, ça fait 50 likes par exécution au total, bien en dessous de tout seuil raisonnable de rate-limit.
+- **delaySeconds** — gardez 8 s minimum. Plus rapide que 3 s, Amazon commence à freiner.
+- **cooldownDays** — 7 par défaut. Like Butler ne re-likera pas le même contenu dans cette fenêtre, ce qui garde le signal "activité récente" réel plutôt que spammy.
+- **checkAll** — activé, Like Butler scanne chaque boutique à chaque exécution. Désactivé, il prend un sous-ensemble en rotation, utile si vous avez 20+ boutiques et voulez des exécutions rapides.
+
+## Planification
+
+Like Butler a un planificateur intégré :
+
+1. Dans **Scheduler**, choisissez une heure de début et un intervalle de répétition (par ex. toutes les 12 heures).
+2. Cliquez sur **Activer la planification**.
+
+Pendant qu'il est planifié, les champs de paramètres se verrouillent. Cliquez sur **Arrêter la planification** avant de les modifier à nouveau. Une fois par jour suffit — deux fois par jour est le maximum à envisager.
+
+## Où vont les données
+
+L'historique de likes par boutique vit dans le cache preseed. Les KPI en haut affichent **Total** (likes cumulés) et les compteurs **Cette exécution** ; les boutons **Reset total** + **Reset run** les remettent à zéro indépendamment.
+
+## Pièges courants
+
+- **"Connexion Amazon requise"** — votre session a expiré. Ouvrez la fenêtre Chrome lancée par Like Butler, connectez-vous, cliquez sur Reprendre.
+- **"Aucun contenu à liker trouvé"** — généralement cooldownDays exclut encore tout sur cette boutique. Attendez l'expiration ou baissez-le.
+- **Le planificateur semble bloqué** — vérifiez qu'il n'est pas en cours ; s'il est en plein run, le panneau de paramètres est verrouillé. Arrêtez la planification, modifiez, relancez.
+- **Les likes ne s'enregistrent pas chez Amazon** — votre URL est incorrecte (404) ou la page exige une connexion que votre session n'a plus. Réouvrez l'URL dans Chrome manuellement pour vérifier.
+
+## Relié
+
+- [Tutoriel Goldmine Butler](/help/tutorials/goldminebutler) — trouve les boutiques qui valent la peine d'être likées en scannant le contenu #ad / #partner.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — pour synchroniser votre *propre* boutique, pas celles des autres.

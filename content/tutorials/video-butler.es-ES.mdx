@@ -1,0 +1,63 @@
+---
+title: Video Butler — vuelve a subir tus vídeos de la tienda de Amazon con metadatos nuevos
+summary: Convierte, re-codifica y vuelve a subir tus vídeos de tienda existentes con títulos, descripciones y etiquetas actualizadas — sin grabar nada nuevo.
+category: Amazon
+---
+
+## Qué hace Video Butler
+
+Video Butler es lo más parecido en InfluencerButler a un "empujón gratis de engagement". Coge los vídeos comprables que ya tienes en tu tienda de Amazon Creator y los vuelve a subir con metadatos frescos — títulos nuevos, descripciones nuevas, enlaces de afiliado nuevos, overlays de marca de agua/subtítulos opcionales. El algoritmo de Amazon trata una re-subida como un post nuevo, así que un vídeo de 6 meses puede tener una segunda vida sin necesidad de filmar nada.
+
+También sirve para **podar vídeos de bajo rendimiento** (el motor incluye un paso "visitas por debajo del umbral = borrar") y para **recuperar vídeos borrados** si quitaste algo por error.
+
+## Antes de empezar
+
+- **Storefront Butler ha sincronizado tus vídeos al menos una vez** — Video Butler lee desde ese catálogo.
+- **Sesión de Creator Hub iniciada** en Chrome.
+- **FFmpeg preparado** — sucede automático al instalar la app. Si ves "ffmpeg not found", ejecuta `npm run stage:ffmpeg` desde la raíz del repo.
+- Opcional: una imagen de marca de agua y/o una fuente para subtítulos, si quieres overlays.
+
+## Tu primera conversión + re-subida
+
+1. Abre **Video Butler** dentro de Amazon Butler.
+2. En la tarjeta **Filtros y opciones**:
+   - **Duración mínima / máxima** — déjalas abiertas para la primera ejecución.
+   - **Omitir vídeos con visitas ≥** — por defecto 1000. Esto deja intocables tus vídeos que mejor rinden. Los que están *por debajo* son elegibles para re-subida.
+   - **Ventana de tiempo** — por defecto los últimos 30 días. Revisa qué entra antes de comprometerte.
+3. **Convertir** — elige `none` para una re-subida pura, o `vertical` / `square` / `horizontal` para re-codificar la forma. `none` es más rápido.
+4. **Modo de ejecución** — `post-keep` (recomendado) re-sube y conserva ambas versiones un día; `post-delete` reemplaza el original al momento. Empieza con `post-keep` para verificar que la nueva subida luce bien antes de soltar la vieja.
+5. Pulsa **Ejecutar**.
+
+Se abre una ventana de Chrome, descarga cada vídeo elegible de tu tienda, hace la conversión (si la hay) y lo vuelve a publicar vía Creator Hub con los metadatos nuevos.
+
+## Ajustes con el tiempo
+
+- **skipViewsAtLeast** — el control más importante. Súbelo para proteger más vídeos de buen rendimiento; bájalo para ser más agresivo refrescando contenido viejo.
+- **deleteOriginal / deleteBeforeReupload** — con ambos apagados, los originales se quedan. La sección "Limpieza" permite borrarlos por lotes después de verificar las re-subidas.
+- **joinMode + joinClip** — pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
+- **Overlays de subtítulos / marca de agua** — hay un panel aparte; sobreviven a la re-codificación.
+
+## El paso "Podar vídeos de bajo rendimiento"
+
+Distinto de la re-subida: escanea tu tienda, aplica tus reglas de filtro (mínimo de visitas, ventana de edad) y produce una **lista de candidatos a borrar**. Revisas y apruebas antes de que se borre nada. Útil para podar vídeos que rindieron por debajo del objetivo y que tiran la media hacia abajo.
+
+## Flujo "Recientemente borrados"
+
+El panel inferior lista los vídeos que has borrado (dentro de la ventana de recuperación de Amazon) con un botón **Recargar seleccionados**. Si una pasada de borrado quitó de más, puedes recuperarlos desde aquí — no hace falta volver a editar desde cero.
+
+## Dónde van los datos
+
+Los logs por ejecución aterrizan en la fila video-butler del panel Video Log. Los ficheros de vídeo originales se descargan a un directorio temporal durante la conversión y se limpian tras cada ejecución.
+
+## Tropiezos comunes
+
+- **"FFmpeg no encontrado"** — ejecuta `npm run stage:ffmpeg` desde la raíz del repo y reinicia la app.
+- **"Sesión de Creator Hub expirada"** — vuelve a iniciar sesión en la ventana de Chrome que Video Butler abrió, pulsa Reanudar.
+- **La re-subida tiene la miniatura mal** — Amazon escoge una miniatura del primer fotograma por defecto. Para fijarla, usa el panel **Marca de agua / fuente de miniatura** para superponer un fotograma estático.
+- **Una re-subida obtiene menos visitas que el original** — el algoritmo de Amazon a veces despriotiza contenido que reconoce como re-post. Prueba un cambio significativo de metadatos (título nuevo, gancho nuevo) en vez de un refresco cosmético.
+
+## Relacionado
+
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — qué alimenta el catálogo de Video Butler.
+- [Tutorial de YouTube Butler](/help/tutorials/youtube-butler) — para cross-postear estos vídeos a YouTube.
+- [Tutorial de Voiceover Butler](/help/tutorials/voiceover-butler) — genera guiones cumpliendo la FTC que puedes meter en vídeos nuevos.

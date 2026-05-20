@@ -8,7 +8,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const publicDir = path.join(repoRoot, "public");
 const sitemapPath = path.join(publicDir, "sitemap.xml");
+const tutorialsManifest = path.join(repoRoot, "content", "tutorials", "_index.json");
 const SITE_ORIGIN = "https://www.influencerbutler.com";
+const TUTORIAL_DEFAULTS = { priority: "0.6", changefreq: "monthly" };
+const HELP_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
 
 // Mirrors the rewrite rules in next.config.ts. Add new public pages here.
 const ROOT_PAGES = {
@@ -64,6 +67,36 @@ async function main() {
       changefreq: meta.changefreq,
       priority: meta.priority,
     });
+  }
+
+  // Help routes — landing + community + per-tutorial detail pages.
+  try {
+    const manifestRaw = await readFile(tutorialsManifest, "utf8");
+    const manifest = JSON.parse(manifestRaw);
+    const today = fmtDate(new Date());
+    entries.push({
+      loc: `${SITE_ORIGIN}/help`,
+      lastmod: today,
+      changefreq: HELP_DEFAULTS.changefreq,
+      priority: HELP_DEFAULTS.priority,
+    });
+    entries.push({
+      loc: `${SITE_ORIGIN}/help/community`,
+      lastmod: today,
+      changefreq: HELP_DEFAULTS.changefreq,
+      priority: HELP_DEFAULTS.priority,
+    });
+    for (const entry of manifest.tutorials || []) {
+      if (!entry?.id) continue;
+      entries.push({
+        loc: `${SITE_ORIGIN}/help/tutorials/${entry.id}`,
+        lastmod: today,
+        changefreq: TUTORIAL_DEFAULTS.changefreq,
+        priority: TUTORIAL_DEFAULTS.priority,
+      });
+    }
+  } catch (err) {
+    console.warn(`generate-sitemap: tutorials manifest skipped — ${err?.message || err}`);
   }
 
   entries.sort((a, b) => a.loc.localeCompare(b.loc));

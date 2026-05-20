@@ -36,13 +36,28 @@ export default function SubscriptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [promoCodeOpen, setPromoCodeOpen] = useState(false);
+  // First-touch affiliate code from ?code= — preserved across edits to the
+  // promo input so the affiliate still gets aff_ref credit even if the user
+  // types a better promo over it.
+  const [affiliateSource, setAffiliateSource] = useState<string | null>(null);
 
   // Prefill the promo code from ?code=X (affiliate pre-filled share links).
   useEffect(() => {
     const fromQuery = searchParams.get("code");
     if (fromQuery && fromQuery.trim().length > 0) {
-      setPromoCode(fromQuery.trim().toUpperCase());
+      const normalized = fromQuery.trim().toUpperCase();
+      setPromoCode(normalized);
       setPromoCodeOpen(true);
+      setAffiliateSource(normalized);
+      // Persist as the ib_aff_src cookie so the checkout API can read it
+      // even if the user later clears or overwrites the promo input.
+      fetch("/api/promo/touch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ affiliateSource: normalized }),
+      }).catch(() => {
+        // Non-fatal — checkout will fall back to body param or cookie.
+      });
     }
   }, [searchParams]);
 
@@ -105,6 +120,7 @@ export default function SubscriptionPage() {
         body: JSON.stringify({
           plan,
           code: codeToSend.length > 0 ? codeToSend : undefined,
+          affiliateSource: affiliateSource ?? undefined,
         }),
       });
 

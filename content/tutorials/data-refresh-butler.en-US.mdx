@@ -1,0 +1,68 @@
+---
+title: Data Refresh Butler — schedule when CC & SPCC catalogs refresh
+summary: One place to control how often the Creator Connections campaign catalog and SPCC commission catalog get re-downloaded.
+category: Amazon
+---
+
+## What Data Refresh Butler does
+
+Data Refresh Butler is the scheduler for the two Amazon catalogs that everything else depends on:
+
+- The **Creator Connections (CC) campaign catalog** — every active campaign visible to your storefront.
+- The **SPCC catalog** — Sponsored Products for Creators commission rates.
+
+Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence, and Daily Deals all read from these. If they're stale, those workspaces make decisions on old data. Data Refresh Butler is where you set the cadence.
+
+It has no runner of its own — it just configures and triggers the **cc-check** workspace's runners on the schedule you pick.
+
+## Before you start
+
+- **CC Storefront ID** set in the topbar — without it, cc-check has nothing to download against.
+- Optionally: a **Creators API key** in **API Integrations** for the SPCC half. The CC half doesn't need the API.
+
+## First-run setup (the easy path)
+
+The default setup couples refreshes to your Daily Deals search cadence: CC + SPCC re-download **1 hour before each scheduled Daily Deals search**. If you run Daily Deals, this is the right setup — you don't touch anything else.
+
+1. Open **Data Refresh Butler** under Amazon Butler.
+2. Confirm the coupling chip near the top reads: *"Refreshes 1h before each scheduled Daily Deals search."*
+3. Done.
+
+## Manual cadence (if you don't use Daily Deals)
+
+If Daily Deals isn't running on a schedule, click **Break link** on the coupling chip and set a manual cadence:
+
+1. In **Refresh schedule**, pick a preset — **6 hours** is the default and is plenty for most users. The 1h/3h presets are aggressive and rarely needed.
+2. **Refresh at this time** lets you anchor the cadence to a clock time (e.g. always at 6 AM).
+3. In **Refresh catalogue if older than**, leave 12h as the freshness window. This skips a costly 5-minute redownload if the cached catalog is still recent enough.
+
+## Splitting CC and SPCC cadences (advanced)
+
+Commission rates (SPCC) change more often than campaign listings (CC), so you can refresh SPCC faster than CC. Toggle **Advanced — split SPCC refresh onto a faster cadence**:
+
+- **Creator Connections (full)**: 24h is fine for most users.
+- **SPCC commissions only**: 1h or 3h if you watch margins closely; 6h otherwise.
+
+The split is opt-in — without it, both refresh on the same cadence.
+
+## Running on demand
+
+The **Current status** card shows the last and next refresh times for each catalog, plus three action buttons:
+
+- **Run now** under CC — refreshes just the CC catalog.
+- **Run now** under SPCC — refreshes just the SPCC catalog.
+- **Refresh both** — runs both in sequence.
+
+Useful before a manual Daily Deals search or before reviewing Daily Commission Butler candidates.
+
+## Common gotchas
+
+- **"Refresh failed: no storefront"** — set your CC Storefront ID in the topbar first.
+- **The coupling chip is missing** — Daily Deals doesn't have an active schedule, so there's nothing to couple to. Set a Daily Deals schedule first, or use manual cadence.
+- **Catalog stays empty after a refresh** — usually means the underlying cc-check runner hit an Amazon sign-in prompt. Open cc-check, sign in, and rerun.
+
+## Related
+
+- [CC Check tutorial](/help/tutorials/cc-check) — the runner this workspace schedules.
+- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) — the main consumer of a fresh CC catalog.
+- [Daily Deals tutorial](/help/tutorials/daily-deals) — the default coupling source.

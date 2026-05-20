@@ -13,11 +13,19 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "When do I get paid?",
-    a: "Payouts are processed monthly through Lemon Squeezy once you hit the minimum payout threshold. Lemon Squeezy supports PayPal and other common payout methods depending on your country.",
+    a: "Monthly, on the 1st of each month, paid directly by Lemon Squeezy once your unpaid balance is at least $10. If you're under $10 it rolls to next month. Payout method (PayPal, Wise, bank, etc.) is set in your Lemon Squeezy portal at app.lemonsqueezy.com. Influencer Butler is not part of the payment chain — payout questions go to Lemon Squeezy support.",
+  },
+  {
+    q: "How do taxes work?",
+    a: "Lemon Squeezy collects a W-9 (if you're in the US) or W-8BEN / W-8BEN-E (if you're outside the US) when you finish signup at their affiliate portal. If you're a US affiliate earning $600 or more in a calendar year, Lemon Squeezy issues your 1099-NEC. Non-US affiliates may have US tax withholding applied per your country's treaty rate — the rate is set by which W-8 form you submit. None of this lives in your Influencer Butler dashboard; your tax info is in your LS portal.",
+  },
+  {
+    q: "What if my referral cancels or refunds?",
+    a: "You earn for as long as they pay. The moment they cancel, no more commissions accrue on that customer — but every commission you already earned stays yours. Refunds during Lemon Squeezy's clawback window reduce your unpaid balance accordingly.",
   },
   {
     q: "How do I promote Influencer Butler?",
-    a: "Anywhere your audience hangs out — YouTube reviews, newsletters, podcasts, social posts, courses, or 1:1 recommendations. The only things we don't allow are trademark bidding on paid search, fake coupon sites, and incentivized traffic.",
+    a: "Anywhere your audience hangs out — YouTube reviews, newsletters, podcasts, social posts, courses, or 1:1 recommendations. The only things we don't allow are trademark bidding on paid search, fake coupon sites, and incentivized traffic. Per FTC rules, please disclose the affiliate relationship in your posts (e.g. \"#ad\" or \"affiliate link\").",
   },
   {
     q: "Can I stack with other promo codes?",

@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "inject:webmcp": "node scripts/inject-webmcp.mjs",
     "inject:gtag": "node scripts/inject-gtag.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs"
@@ -28,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }

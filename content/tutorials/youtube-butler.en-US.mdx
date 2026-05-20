@@ -1,0 +1,82 @@
+---
+title: YouTube Butler — upload Amazon storefront videos to YouTube with affiliate links
+summary: Cross-post your shoppable Amazon videos to YouTube with affiliate links in the description or pinned comment, including automatic Shorts detection.
+category: Amazon
+---
+
+## What YouTube Butler does
+
+YouTube Butler takes the videos from your Amazon storefront (synced by Storefront Butler) and uploads them to your YouTube channel as either regular videos or Shorts. Each upload gets:
+
+- A title and description you control via a template.
+- Affiliate-tagged Amazon links in the description or pinned comment.
+- Automatic detection of YouTube Shorts format (vertical, ≤60 seconds) vs regular landscape.
+- A QR code image option for product-overlay use.
+
+The point is to turn your Amazon storefront catalog into a YouTube content feed without re-editing each clip.
+
+## Before you start
+
+- **A YouTube channel** — personal or brand channel both work.
+- **Storefront Butler has synced your videos at least once** — YouTube Butler reads from that inventory.
+- **An OAuth token** for your YouTube channel. The **Setup Wizard** walks you through it in 5 steps; it's a one-time setup.
+- **Your Amazon affiliate tag** in Settings → Amazon, so links in descriptions are tagged correctly.
+
+## First-time setup
+
+The workspace opens to the **Setup Wizard** tab. Run it once:
+
+1. Click **Start setup**.
+2. Step 1: confirm your Amazon affiliate tag.
+3. Step 2: paste your YouTube channel URL.
+4. Step 3: sign in to YouTube (a Chrome window opens — sign in normally and grant the requested scopes).
+5. Step 4: pick where affiliate links go — **description** (default) or **pinned comment**. Pinned comment dodges YouTube's link-suppression in descriptions for newer channels.
+6. Step 5: verify a test upload (YouTube Butler uploads one short test video and immediately deletes it to confirm your token works).
+
+You only do this once. After it succeeds, the wizard tab shows a green "Setup complete" banner.
+
+## Uploading your first batch
+
+1. Switch to the **Inventory** tab — every video from Storefront Butler shows here with a checkbox.
+2. Tick the videos you want to upload. Start with 5-10 for the first batch.
+3. Switch to **Settings** and confirm:
+   - **Title template** — uses `{title}`, `{asin}`, `{price}` placeholders.
+   - **Description template** — same placeholders plus `{deeplink}` for the affiliate link.
+   - **Tags** — comma-separated; YouTube uses these for discoverability.
+4. Click **Upload Queued**.
+
+YouTube Butler runs through the queue with built-in rate-limit delays. The **Upload Log** tab streams each result. A batch of 10 typically takes 15-25 minutes depending on file size.
+
+## YouTube rate-limit rules
+
+New YouTube channels (under 30 days, under ~50 subscribers) are rate-limited aggressively. YouTube Butler has conservative built-in delays for this reason — **don't disable them**. Some rules of thumb:
+
+- **First week**: 3-5 uploads/day.
+- **Weeks 2-4**: 10-15/day.
+- **After 30 days**: 20-30/day is sustainable; 50/day starts to attract attention.
+
+Stick to ≤15 uploads per session even on older channels; YouTube tolerates batches better than a steady drip if you queue overnight and let the delays do the work.
+
+## The Shorts auto-detector
+
+Videos that are vertical (taller than wide) AND ≤60 seconds get uploaded as Shorts automatically. Shorts get a different feed in YouTube's algorithm, so this matters — you don't manually flag anything.
+
+## Product QR codes
+
+The **Product QR** tab generates a QR code per ASIN that you can overlay on a video before uploading. Useful for shoppable content where viewers can scan instead of clicking through.
+
+## Where the data goes
+
+Per-video upload status lives in the Upload Log panel (filterable by status, search, marketplace, etc.). Uploaded video IDs are stored locally so YouTube Butler won't re-upload anything twice.
+
+## Common gotchas
+
+- **"OAuth token expired"** — re-run the Setup Wizard. Tokens last about a year.
+- **Uploads stuck in "Processing" on YouTube** — that's YouTube's encoding queue, not Butler. New videos often sit in "Processing" 10-30 minutes; nothing you can do.
+- **Pinned comment didn't post** — your YouTube account needs to be the channel owner, not a manager. Manager accounts can't pin comments.
+- **A batch of 30 uploads abruptly stops** — you hit YouTube's daily upload cap. Wait 24 hours.
+
+## Related
+
+- [Video Butler tutorial](/help/tutorials/video-butler) — the workspace for re-uploading to Amazon itself; pairs well with YouTube Butler for cross-platform.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — sources the video inventory.
