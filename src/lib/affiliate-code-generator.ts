@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/admin";
 import { createBrandedDiscount } from "@/lib/lemonsqueezy-discounts";
+import { getDiscountableVariantIds } from "@/lib/lemonsqueezy";
 
 type GenInput = {
   firstName: string;
@@ -81,6 +82,12 @@ export async function generateAndCreateAffiliateCode(input: GenInput): Promise<G
       storeId: input.storeId,
       code: candidate,
       percentOff: input.percentOff,
+      // Phase F belt 3: scope every affiliate discount to the discountable
+      // (i.e. non-add-on) variants only. The Daily Deals Workspace add-on
+      // variant is intentionally absent from getDiscountableVariantIds(),
+      // so even if a checkout-route code path forgets the isAddon guard,
+      // LS refuses the code at the add-on variant.
+      variantIds: getDiscountableVariantIds(),
     });
 
     if (result.ok) {

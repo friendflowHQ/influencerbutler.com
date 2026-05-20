@@ -5,6 +5,17 @@ export type CreateBrandedDiscountInput = {
   storeId: string;
   code: string;
   percentOff: number;
+  /**
+   * Phase F (2026-05-20): LS variant IDs the discount should be scoped to.
+   * The Daily Deals Workspace add-on variant MUST be absent from this list
+   * — that's belt 3 of the triple-belt promo-exclusion contract. Callers
+   * should pass getDiscountableVariantIds() from lemonsqueezy.ts.
+   *
+   * When omitted, LS applies the discount to ALL variants (the unsafe
+   * default). createBrandedDiscount now requires it explicitly to force
+   * the caller to think about scope.
+   */
+  variantIds?: string[];
 };
 
 export type CreateBrandedDiscountResult =
@@ -16,11 +27,22 @@ export type CreateBrandedDiscountResult =
  * On duplicate code (422 from LS) returns `{ ok: false, conflict: true }` so
  * the caller can try a numbered variant. No redemption cap — this is meant
  * to be shared broadly by the affiliate.
+ *
+ * Scoped to `variantIds` if provided so the discount never lands on add-on
+ * SKUs (Phase F promo-exclusion contract).
  */
 export async function createBrandedDiscount(
   input: CreateBrandedDiscountInput,
 ): Promise<CreateBrandedDiscountResult> {
   try {
+    const relationships: Record<string, unknown> = {
+      store: { data: { type: "stores", id: input.storeId } },
+    };
+    if (input.variantIds && input.variantIds.length > 0) {
+      relationships.variants = {
+        data: input.variantIds.map((id) => ({ type: "variants", id })),
+      };
+    }
     const response = await lsApi(`/discounts`, {
       method: "POST",
       body: JSON.stringify({
@@ -33,9 +55,7 @@ export async function createBrandedDiscount(
             amount_type: "percent",
             duration: "once",
           },
-          relationships: {
-            store: { data: { type: "stores", id: input.storeId } },
-          },
+          relationships,
         },
       }),
     });

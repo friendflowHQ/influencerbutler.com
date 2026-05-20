@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
+import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
 import { appendAffRef } from "@/lib/affiliate-lookup";
 import {
   WELCOME_TOKEN_COOKIE,
@@ -110,6 +110,12 @@ export async function GET(request: Request) {
     }
     const { variantId } = variantResolution;
 
+    // Phase F belt 2: Daily Deals Workspace add-on never accepts promo or
+    // affiliate codes. Compute the flag once and short-circuit every
+    // discount path below. Belt 1 lives in /api/checkout/route.ts; belt
+    // 3 lives in src/lib/lemonsqueezy-discounts.ts variantIds scope.
+    const isAddon = isAddonVariant(variantId);
+
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
     if (!storeId) {
       console.error("guest checkout: missing LEMONSQUEEZY_STORE_ID env var");
@@ -125,13 +131,15 @@ export async function GET(request: Request) {
 
     const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
 
-    const resolved = await resolveCheckoutDiscount({
-      typedCode: typedCode.length > 0 ? typedCode : null,
-      urlCode,
-      cookieTier,
-      plan: planMeta,
-      storeId,
-    });
+    const resolved: Awaited<ReturnType<typeof resolveCheckoutDiscount>> = isAddon
+      ? { winner: null, attribution: null, candidates: [] }
+      : await resolveCheckoutDiscount({
+          typedCode: typedCode.length > 0 ? typedCode : null,
+          urlCode,
+          cookieTier,
+          plan: planMeta,
+          storeId,
+        });
 
     const discountCode = resolved.winner?.code;
 
@@ -207,7 +215,8 @@ export async function GET(request: Request) {
       return errorResponse(request, "no-url");
     }
 
-    const checkoutUrl = resolved.attribution
+    // Belt 2 cont.: add-on checkouts never get an aff_ref query param either.
+    const checkoutUrl = !isAddon && resolved.attribution
       ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
       : rawCheckoutUrl;
 

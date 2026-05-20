@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
+import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
 import { appendAffRef } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -63,6 +63,12 @@ export async function POST(request: Request) {
     }
     const { variantId } = variantResolution;
 
+    // Phase F belt 1: Daily Deals Workspace add-on never accepts promo or
+    // affiliate codes. Compute the flag once and short-circuit every
+    // discount path below. Belt 2 lives in /api/checkout/guest/route.ts;
+    // belt 3 lives in src/lib/lemonsqueezy-discounts.ts variantIds scope.
+    const isAddon = isAddonVariant(variantId);
+
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
 
     if (!storeId) {
@@ -88,18 +94,24 @@ export async function POST(request: Request) {
         ? rawAffiliateSource.trim()
         : null) ?? readAffiliateSourceCookie(cookieStore);
 
+    // Belt 1: when the variant is an add-on, skip the entire resolver call
+    // so no discount or attribution can attach to the checkout. The
+    // appendAffRef path below also has its own isAddon guard.
+    //
     // Best-code wins discount, first-touch affiliate gets aff_ref (independent).
     // The plan metadata (price + interval) is required to compute lifetime $ value
     // across candidates; we treat unknown plans like a 1-cycle no-op horizon.
     const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
 
-    const resolved = await resolveCheckoutDiscount({
-      typedCode: typedCode.length > 0 ? typedCode : null,
-      urlCode,
-      cookieTier,
-      plan: planMeta,
-      storeId,
-    });
+    const resolved: Awaited<ReturnType<typeof resolveCheckoutDiscount>> = isAddon
+      ? { winner: null, attribution: null, candidates: [] }
+      : await resolveCheckoutDiscount({
+          typedCode: typedCode.length > 0 ? typedCode : null,
+          urlCode,
+          cookieTier,
+          plan: planMeta,
+          storeId,
+        });
 
     const discountCode = resolved.winner?.code;
 
@@ -177,7 +189,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid checkout response" }, { status: 502 });
     }
 
-    const checkoutUrl = resolved.attribution
+    // Belt 1 cont.: add-on checkouts never get an aff_ref query param either,
+    // so the affiliate doesn't earn commission on the add-on SKU.
+    const checkoutUrl = !isAddon && resolved.attribution
       ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
       : rawCheckoutUrl;
 
