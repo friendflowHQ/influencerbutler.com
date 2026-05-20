@@ -159,7 +159,7 @@ export default function AffiliateDashboard({
         <MotivationCard
           title="Active subscribers"
           value={referrals ? referrals.activeReferrals.toString() : "—"}
-          body="Every active subscriber pays you 35% of their plan every month — forever."
+          body="Every active subscriber pays you 30% of their plan every month — for the first 12 months they stay subscribed."
         />
         <MotivationCard
           title="Conversion rate"
@@ -180,8 +180,8 @@ export default function AffiliateDashboard({
         <InfoRow label="Member since" value={formatDate(summary.createdAt)} />
         <InfoRow
           label="Commission rate"
-          value="35% recurring"
-          hint="For the life of every subscription"
+          value="30% recurring"
+          hint="For the first 12 months of every referred subscription"
         />
         <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
         <InfoRow label="Payout processor" value="Lemon Squeezy" hint="Paid monthly" />
@@ -231,7 +231,7 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
           </p>
           <p className="mt-1 text-sm text-slate-700">
             Share this code for <strong>15% off</strong> your audience&apos;s first month — you earn
-            <strong> 35% recurring commission</strong> for life.
+            <strong> 30% recurring commission for 12 months</strong> per referred customer.
           </p>
         </div>
       </div>

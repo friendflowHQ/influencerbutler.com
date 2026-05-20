@@ -55,7 +55,7 @@ export default async function AffiliateThanksPage({ searchParams }: ThanksPagePr
             </li>
             <li className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
               <span className="mt-0.5 font-semibold text-[#f97316]">3.</span>
-              <span>Share your link, and start earning 35% recurring commission.</span>
+              <span>Share your link, and start earning 30% recurring commission (for the first 12 months of each referral).</span>
             </li>
           </ol>
 

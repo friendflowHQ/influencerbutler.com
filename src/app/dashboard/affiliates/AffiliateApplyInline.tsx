@@ -177,7 +177,7 @@ export default function AffiliateApplyInline() {
           Affiliate program
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-          Earn 35% recurring — for life.
+          Earn 30% recurring — 12 months per referral.
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           Tell us a bit about your audience and how you&apos;d promote Influencer Butler. Applications are
@@ -370,8 +370,8 @@ export default function AffiliateApplyInline() {
         />
         <Step
           n={3}
-          title="Earn forever"
-          body="Your unique link appears here. Earn 35% on every monthly payment — for life."
+          title="Earn for 12 months per referral"
+          body="Your unique link appears here. Earn 30% on every monthly payment for the first 12 months of each referred subscription."
         />
       </ol>
     </div>

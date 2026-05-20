@@ -86,17 +86,23 @@ SELECT id FROM auth.users WHERE email = '<applicant_email>';
 
 ## Commission structure
 
-- 35% recurring commission on every subscription payment.
+- **30% recurring commission** on every subscription payment.
+- **Capped at 12 months per referred customer** — accrual stops once a customer has been a paying subscriber for 12 consecutive months. Configure this in LS → Affiliates → Settings → commission duration.
 - 30-day referral cookie.
 - Last-click attribution.
+- **No discount stacking**: customers can apply either an Affiliate code OR a site-wide welcome code (WELCOME15 / WELCOME30) at checkout, not both. The promo-resolver enforces this in `src/lib/promo-resolver.ts` — when an Affiliate-tracked candidate is present, welcome-cookie candidates are dropped before discount ranking.
 - Payouts managed by Lemon Squeezy.
 
 If you change these in LS, update the copy in:
 
 - `src/app/affiliates/page.tsx`
-- `src/app/affiliates/EarningsCalculator.tsx` (`COMMISSION_RATE`, `AVG_PLAN_PRICE`)
+- `src/app/affiliates/EarningsCalculator.tsx` (`COMMISSION_RATE`, `AVG_PLAN_PRICE`, `COMMISSION_DURATION_MONTHS`)
 - `src/app/affiliates/FaqAccordion.tsx`
-- `src/app/dashboard/affiliates/AffiliateDashboard.tsx` (InfoRow values + approval email copy in `src/app/api/affiliates/approve/route.ts`)
+- `src/lib/affiliates-approve.ts` (approval email copy)
+- `src/lib/conversion-emails.ts` (1h/3d/5d conversion email copy)
+- `src/lib/welcome-copy.ts` (annual-tier callout)
+- `public/legal/affiliate-terms.html` (Section 3 Commission Structure)
+- `src/app/dashboard/affiliates/AffiliateDashboard.tsx` (InfoRow values)
 
 ## API endpoints (reference)
 

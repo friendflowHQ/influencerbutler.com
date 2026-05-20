@@ -4,9 +4,9 @@ import EarningsCalculator from "./EarningsCalculator";
 import FaqAccordion from "./FaqAccordion";
 
 export const metadata = {
-  title: "Affiliate Program — Earn 35% Recurring | Influencer Butler",
+  title: "Affiliate Program — Earn 30% Recurring for 12 Months | Influencer Butler",
   description:
-    "Promote Influencer Butler and earn 35% recurring commission on every subscription, for as long as your referrals stay subscribed. 30-day cookie, last-click attribution.",
+    "Promote Influencer Butler and earn 30% recurring commission on every subscription for the first 12 months. 30-day cookie, last-click attribution, monthly payouts.",
 };
 
 export default function AffiliatesLandingPage() {
@@ -56,11 +56,11 @@ export default function AffiliatesLandingPage() {
             <span className="bg-gradient-to-r from-[#f97316] to-amber-500 bg-clip-text text-transparent">
               Influencer Butler.
             </span>
-            <br className="hidden sm:block" /> 35% recurring. Forever.
+            <br className="hidden sm:block" /> 30% recurring. 12 months per referral.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-600">
-            Every subscription you refer pays you <strong>35% every month</strong> for as long as they stay a
-            customer. No caps. No expiring tiers. Real creators making real recurring income.
+            Every subscription you refer pays you <strong>30% every month for the first 12 months</strong>.
+            No per-affiliate caps. Real creators making real recurring income.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
@@ -79,9 +79,9 @@ export default function AffiliatesLandingPage() {
 
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
-              { k: "35%", v: "Recurring commission" },
+              { k: "30%", v: "Recurring commission" },
+              { k: "12 mo", v: "Per referred customer" },
               { k: "30-day", v: "Referral cookie" },
-              { k: "Last-click", v: "Attribution" },
               { k: "Monthly", v: "Payouts" },
             ].map((stat) => (
               <div key={stat.k} className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
@@ -103,8 +103,8 @@ export default function AffiliatesLandingPage() {
             </h2>
           </div>
           <p className="max-w-md text-sm text-slate-600">
-            Drag the slider to see estimated monthly and yearly commissions — assumes an average plan price of
-            $49/month, paid continuously while referrals remain subscribed.
+            Drag the slider to see estimated monthly and 12-month commissions — assumes an average plan price of
+            $39/month, paid for the first 12 months of each referred subscription.
           </p>
         </div>
         <div className="mt-8">
@@ -137,7 +137,7 @@ export default function AffiliatesLandingPage() {
                 step: "03",
                 title: "Earn recurring",
                 body:
-                  "Every subscription you refer pays you 35% every month. Payouts go out monthly via Lemon Squeezy.",
+                  "Every subscription you refer pays you 30% every month for the first 12 months. Payouts go out monthly via Lemon Squeezy.",
               },
             ].map((s) => (
               <article
@@ -162,9 +162,9 @@ export default function AffiliatesLandingPage() {
           </h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             <div>
-              <p className="text-5xl font-black tracking-tight">35%</p>
+              <p className="text-5xl font-black tracking-tight">30%</p>
               <p className="mt-2 text-sm text-white/90">
-                Recurring commission on every subscription — for as long as the customer stays subscribed.
+                Recurring commission on every subscription — for the first 12 months they pay.
               </p>
             </div>
             <div>
@@ -174,9 +174,9 @@ export default function AffiliatesLandingPage() {
               </p>
             </div>
             <div>
-              <p className="text-5xl font-black tracking-tight">∞</p>
+              <p className="text-5xl font-black tracking-tight">12</p>
               <p className="mt-2 text-sm text-white/90">
-                No commission caps. No tier drops. Last-click attribution — the last referrer gets the sale.
+                Months of recurring commission per referred customer. Last-click attribution — the last referrer gets the sale.
               </p>
             </div>
           </div>
@@ -277,7 +277,7 @@ export default function AffiliatesLandingPage() {
             <a href="/#pricing" className="text-sm text-slate-500 transition hover:text-[#f97316]">Pricing</a>
             <a href="/#how-it-works" className="text-sm text-slate-500 transition hover:text-[#f97316]">How It Works</a>
             <a href="/#faq" className="text-sm text-slate-500 transition hover:text-[#f97316]">FAQ</a>
-            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates — Earn 35%</Link>
+            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates — Earn 30%</Link>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>

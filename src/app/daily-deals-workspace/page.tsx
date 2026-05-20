@@ -356,7 +356,7 @@ function SiteFooter() {
               </li>
               <li>
                 <Link href="/affiliates" className="hover:text-[#f97316]">
-                  Affiliates — Earn 35%
+                  Affiliates — Earn 30%
                 </Link>
               </li>
             </ul>

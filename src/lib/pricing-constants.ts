@@ -8,9 +8,9 @@
 
 // Per-plan price in cents (used by promo-resolver math).
 export const PRICE_CENTS = {
-  solo: { monthly: 2900, annual: 26100 },
-  team: { monthly: 6900, annual: 61900 },
-  agency: { monthly: 14900, annual: 133900 },
+  solo: { monthly: 3900, annual: 39000 },
+  team: { monthly: 12900, annual: 129000 },
+  agency: { monthly: 29900, annual: 299000 },
 } as const;
 
 // Per-tier seat count (mirrors LS product activation_limit setting).

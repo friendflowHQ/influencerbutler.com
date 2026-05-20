@@ -213,7 +213,7 @@ export default function PricingCardsClient({
 
         <PlanCard
           name="Pro Annual"
-          desc="Best value — save 25% vs monthly"
+          desc="Best value — save 17% vs monthly"
           priceLabel={formatMoney(prices.annual)}
           periodLabel="/ year"
           originalPriceLabel={annualAfter !== null ? formatMoney(prices.annual) : undefined}
@@ -221,7 +221,7 @@ export default function PricingCardsClient({
           discountTag={
             buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
           }
-          saveBadge="Save 25%"
+          saveBadge="Save 17%"
           effectiveLabel={`That's just ${formatMoney((annualAfter ?? prices.annual) / 12)}/month`}
           features={FEATURES_ANNUAL}
           cta="Start free trial"

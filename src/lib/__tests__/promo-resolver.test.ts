@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
+  applyStackingRules,
   computeSavedCents,
   pickWinner,
   resolveAttribution,
@@ -239,9 +240,9 @@ describe("resolveCheckoutDiscount (integration)", () => {
     affMock.mockReset();
   });
 
-  it("PRIMARY: WELCOME30 wins discount but URL affiliate still gets aff_ref", async () => {
+  it("PRIMARY (XOR): URL affiliate suppresses WELCOME30 even though WELCOME would save more", async () => {
     // ALICE = 10% off once → 26100 * 0.10 = 2610 cents
-    // WELCOME30 = 30% off once → 26100 * 0.30 = 7830 cents (wins)
+    // WELCOME30 = 30% off once → 26100 * 0.30 = 7830 cents (would win on $; dropped by XOR)
     fetchMock.mockImplementation(async (code: string) => {
       if (code === "ALICE")
         return ls({ code: "ALICE", amount: 10, amountType: "percent", duration: "once" });
@@ -261,9 +262,13 @@ describe("resolveCheckoutDiscount (integration)", () => {
       storeId: "store-1",
     });
 
-    expect(result.winner?.code).toBe("WELCOME30");
+    // XOR rule: with an affiliate candidate present, WELCOME30 is dropped before
+    // pickWinner. ALICE wins both the discount and the attribution.
+    expect(result.winner?.code).toBe("ALICE");
     expect(result.attribution?.lsAffiliateId).toBe("ls_alice");
     expect(result.attribution?.source).toBe("url-code");
+    // And the welcome candidate must not survive into the candidates list.
+    expect(result.candidates.find((c) => c.source === "welcome-cookie")).toBeUndefined();
   });
 
   it("bogus typed code is silently dropped", async () => {
@@ -299,10 +304,10 @@ describe("resolveCheckoutDiscount (integration)", () => {
     expect(result.candidates[0]?.source).toBe("url-code");
   });
 
-  it("affiliate code with 0% still wins attribution while losing discount", async () => {
+  it("tiny affiliate discount still wins under XOR (welcome is suppressed)", async () => {
     fetchMock.mockImplementation(async (code: string) => {
       if (code === "ALICE")
-        // Treat as a defensive case — a published 1-cent fixed discount.
+        // Defensive case — a published 1-cent fixed discount on an affiliate code.
         return ls({ code: "ALICE", amount: 1, amountType: "fixed", duration: "once" });
       return null;
     });
@@ -320,8 +325,8 @@ describe("resolveCheckoutDiscount (integration)", () => {
       storeId: "store-1",
     });
 
-    // WELCOME30 (870c) beats ALICE (1c)
-    expect(result.winner?.code).toBe("WELCOME30");
+    // Under XOR, WELCOME30 is dropped → ALICE is the only candidate left.
+    expect(result.winner?.code).toBe("ALICE");
     expect(result.attribution?.lsAffiliateId).toBe("ls_alice");
   });
 
@@ -353,6 +358,60 @@ describe("resolveCheckoutDiscount (integration)", () => {
     // ALICE: 580 * 12 = 6960. WELCOME30: 870. ALICE wins.
     expect(result.winner?.code).toBe("ALICE");
     expect(result.attribution?.lsAffiliateId).toBe("ls_alice");
+  });
+});
+
+describe("applyStackingRules (affiliate XOR welcome)", () => {
+  it("keeps welcome candidate when no affiliate is present", () => {
+    const cands = [
+      candidate({ code: "WELCOME30", source: "welcome-cookie" }),
+      candidate({ code: "TYPED10", source: "typed", isAffiliate: false }),
+    ];
+    expect(applyStackingRules(cands)).toEqual(cands);
+  });
+
+  it("drops welcome-cookie candidate when a URL affiliate is present", () => {
+    const cands = [
+      candidate({
+        code: "ALICE",
+        source: "url-code",
+        isAffiliate: true,
+        lsAffiliateId: "ls_alice",
+      }),
+      candidate({ code: "WELCOME30", source: "welcome-cookie" }),
+    ];
+    const out = applyStackingRules(cands);
+    expect(out.map((c) => c.code)).toEqual(["ALICE"]);
+  });
+
+  it("drops welcome-cookie candidate when a typed affiliate is present", () => {
+    const cands = [
+      candidate({ code: "WELCOME30", source: "welcome-cookie" }),
+      candidate({
+        code: "BOB",
+        source: "typed",
+        isAffiliate: true,
+        lsAffiliateId: "ls_bob",
+      }),
+    ];
+    const out = applyStackingRules(cands);
+    expect(out.map((c) => c.code)).toEqual(["BOB"]);
+  });
+
+  it("keeps everything when only welcome-cookie candidates exist", () => {
+    const cands = [candidate({ code: "WELCOME15", source: "welcome-cookie" })];
+    expect(applyStackingRules(cands)).toEqual(cands);
+  });
+
+  it("does NOT drop welcome based on a non-affiliate typed/url code", () => {
+    // A marketing campaign code from a URL is not an affiliate. It shouldn't
+    // trigger the XOR suppression.
+    const cands = [
+      candidate({ code: "MARKETING", source: "url-code", isAffiliate: false }),
+      candidate({ code: "WELCOME30", source: "welcome-cookie" }),
+    ];
+    const out = applyStackingRules(cands);
+    expect(out.map((c) => c.code).sort()).toEqual(["MARKETING", "WELCOME30"]);
   });
 });
 

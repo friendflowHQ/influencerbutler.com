@@ -35,8 +35,8 @@ export const metadata = {
 };
 
 const PRICES = {
-  monthly: 29,
-  annual: 261,
+  monthly: 39,
+  annual: 390,
 };
 
 type SearchParams = Promise<{ code?: string; from?: string }>;
@@ -244,7 +244,7 @@ function SiteFooter() {
               <li><Link href="/pricing" className="hover:text-[#f97316]">Pricing</Link></li>
               <li><Link href="/#how-it-works" className="hover:text-[#f97316]">How It Works</Link></li>
               <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
-              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates — Earn 35%</Link></li>
+              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates — Earn 30%</Link></li>
             </ul>
           </div>
 

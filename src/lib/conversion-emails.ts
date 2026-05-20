@@ -14,7 +14,7 @@ const COPY: Record<ConversionTier, TierCopy> = {
       "Since you're now part of the Influencer Butler affiliate program, we'd love to have you on the inside as a customer too.",
     offerLine: "Use code {CODE} at checkout for 20% off your first month.",
     finalSell:
-      "Knowing the product firsthand makes your referrals way more convincing — and you keep 35% recurring on everyone you bring in.",
+      "Knowing the product firsthand makes your referrals way more convincing — and you keep 30% recurring on everyone you bring in, for the first 12 months of each subscription.",
   },
   "3d": {
     subject: "Still on the fence? Here's 30% off your first month",
@@ -22,7 +22,7 @@ const COPY: Record<ConversionTier, TierCopy> = {
       "Quick nudge — if you've been thinking about spinning up Influencer Butler for your own creator accounts, we bumped your welcome offer.",
     offerLine: "Use code {CODE} at checkout for 30% off your first month.",
     finalSell:
-      "Using the product makes every pitch to your audience land harder. And 35% commission on each referral stacks fast.",
+      "Using the product makes every pitch to your audience land harder. And 30% commission on each referral — paid for the first 12 months — stacks fast.",
   },
   "5d": {
     subject: "Final offer — 50% off your first month (one-time code)",

@@ -1,15 +1,22 @@
 /**
- * Summary: Picks the best promo code for a checkout and preserves first-touch
- * affiliate attribution even when a non-affiliate code wins the discount.
+ * Summary: Picks the best promo code for a checkout under the affiliate-XOR-welcome
+ * stacking rule, and preserves first-touch affiliate attribution.
  * Dependencies: ./lemonsqueezy-discount-lookup, ./affiliate-lookup, ./promo.
  *
  * The math (see computeSavedCents) compares codes by the total dollar amount
  * the user would save across a 24-month horizon — so 20% off forever beats
  * 30% off once on an annual plan, but loses to 50% off the first year.
  *
+ * Stacking rule (applyStackingRules): a customer may apply either an
+ * Affiliate-tracked code (URL/typed) OR a site-wide welcome-cookie code,
+ * not both. When any Affiliate candidate is present, welcome-cookie
+ * candidates are dropped from the discount ranking before pickWinner runs —
+ * so the affiliate's discount actually applies and they keep attribution.
+ *
  * Attribution is decoupled from discount: a URL-sourced affiliate code that
- * loses the discount comparison still wins the LS aff_ref slot, so the
- * affiliate earns their commission.
+ * loses the discount comparison against a typed affiliate code still wins
+ * the LS aff_ref slot via first-touch priority, so the affiliate earns
+ * their commission.
  */
 
 import { fetchDiscountByCode, type LsDiscount } from "./lemonsqueezy-discount-lookup";
@@ -236,6 +243,28 @@ export function resolveAttribution(candidates: CandidateCode[]): Attribution | n
   return null;
 }
 
+/**
+ * Affiliate-XOR-welcome stacking rule. A customer may apply either an
+ * Affiliate-tracked code or a site-wide welcome-cookie code, not both.
+ *
+ * When any non-welcome-cookie candidate has `isAffiliate=true`, we drop
+ * welcome-cookie candidates from the ranking so the Affiliate code wins
+ * the discount comparison (and retains attribution). Without this filter,
+ * WELCOME30/WELCOME15 silently undercuts the affiliate's branded code on
+ * "best of 24-month NPV" ranking, paying the affiliate commission on a
+ * site-wide discount that we'd also otherwise pay — double leakage.
+ *
+ * Mirrored in customer-facing copy: see "No discount stacking" in
+ * public/legal/affiliate-terms.html Section 3(e).
+ */
+export function applyStackingRules(candidates: CandidateCode[]): CandidateCode[] {
+  const hasAffiliate = candidates.some(
+    (c) => c.isAffiliate && c.source !== "welcome-cookie",
+  );
+  if (!hasAffiliate) return candidates;
+  return candidates.filter((c) => c.source !== "welcome-cookie");
+}
+
 export type ResolveInput = {
   typedCode: string | null | undefined;
   urlCode: string | null | undefined;
@@ -261,7 +290,8 @@ export async function resolveCheckoutDiscount(input: ResolveInput): Promise<Reso
     { source: "welcome-cookie", code: welcomeCode },
   ];
 
-  const candidates = await gatherCandidates(raw, input.plan, input.storeId);
+  const allCandidates = await gatherCandidates(raw, input.plan, input.storeId);
+  const candidates = applyStackingRules(allCandidates);
   const sortedCandidates = [...candidates].sort((a, b) => b.savedCents - a.savedCents);
 
   return {

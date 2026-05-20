@@ -272,7 +272,7 @@ function PendingState({
           </li>
           <li className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
             <span className="mt-0.5 font-semibold text-[#f97316]">3.</span>
-            <span>Share your link and start earning 35% every month — forever.</span>
+            <span>Share your link and start earning 30% every month — for the first 12 months of each referred subscription.</span>
           </li>
         </ol>
       </section>
@@ -366,7 +366,7 @@ function LsSignupPending({ brandedCode }: { brandedCode: string | null }) {
           </p>
           <p className="mt-2 text-sm text-slate-700">
             You can share your branded <strong>15%-off code</strong> right now — no waiting. When
-            customers use it, you earn 35% recurring commission.
+            customers use it, you earn 30% recurring commission for the first 12 months they stay subscribed.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-indigo-300 bg-white px-3 sm:px-4 py-3">

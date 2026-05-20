@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 
-const AVG_PLAN_PRICE = 49;
-const COMMISSION_RATE = 0.35;
+const AVG_PLAN_PRICE = 39;
+const COMMISSION_RATE = 0.30;
+// Affiliate commissions cap at this many months per referred customer.
+const COMMISSION_DURATION_MONTHS = 12;
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -17,7 +19,7 @@ export default function EarningsCalculator() {
   const [referrals, setReferrals] = useState(25);
 
   const monthly = referrals * AVG_PLAN_PRICE * COMMISSION_RATE;
-  const yearly = monthly * 12;
+  const yearly = monthly * COMMISSION_DURATION_MONTHS;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -45,7 +47,8 @@ export default function EarningsCalculator() {
           </div>
           <p className="mt-6 text-xs text-slate-500">
             Estimates assume an average plan price of {formatCurrency(AVG_PLAN_PRICE)}/month and a{" "}
-            {(COMMISSION_RATE * 100).toFixed(0)}% recurring commission. Actual earnings depend on plan mix and
+            {(COMMISSION_RATE * 100).toFixed(0)}% recurring commission, paid for the first{" "}
+            {COMMISSION_DURATION_MONTHS} months of each subscription. Actual earnings depend on plan mix and
             retention.
           </p>
         </div>
@@ -60,14 +63,14 @@ export default function EarningsCalculator() {
           </div>
           <div className="border-t border-orange-100 pt-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              After a full year
+              Total over 12 months per referral
             </p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
               {formatCurrency(yearly)}
             </p>
           </div>
           <p className="text-xs text-slate-500">
-            As long as your referrals keep their subscription, you keep earning — month after month.
+            You earn 30% recurring on each referred subscription for the first 12 months they stay subscribed.
           </p>
         </div>
       </div>

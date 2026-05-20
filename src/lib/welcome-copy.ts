@@ -43,7 +43,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     ],
     callout: {
       title: "Prefer to lock in the best price now?",
-      body: "Switching to the annual plan at any time during your trial saves you ~25% vs. paying monthly.",
+      body: "Switching to the annual plan at any time during your trial saves you ~17% vs. paying monthly.",
       ctaLabel: "See annual pricing",
       ctaHref: "/dashboard/subscription",
     },
@@ -68,7 +68,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
     ],
     callout: {
-      title: "Switch to annual and save ~25%",
+      title: "Switch to annual and save ~17%",
       body: "Thinking long-term? Upgrade to the annual plan anytime from your billing page.",
       ctaLabel: "View billing options",
       ctaHref: "/dashboard/subscription",
@@ -78,7 +78,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     eyebrow: "You're in — Pro Annual",
     headline: "Welcome aboard — and nice move on annual.",
     subhead:
-      "You saved ~25% vs. monthly. Install the app, activate your key, and you're locked in for the year.",
+      "You saved ~17% vs. monthly. Install the app, activate your key, and you're locked in for the year.",
     steps: [
       {
         title: "Download the desktop app",
@@ -90,11 +90,11 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Invite a teammate or refer a friend",
-        body: "Your Pro Annual plan includes affiliate benefits — earn 35% recurring on anyone you refer.",
+        body: "Your Pro Annual plan includes affiliate benefits — earn 30% recurring (for 12 months) on anyone you refer.",
       },
     ],
     callout: {
-      title: "Earn 35% recurring by referring other creators",
+      title: "Earn 30% recurring (12 months per referral) by referring other creators",
       body: "Apply to the affiliate program and share your personal discount code with your network.",
       ctaLabel: "Open affiliate dashboard",
       ctaHref: "/dashboard/affiliates",

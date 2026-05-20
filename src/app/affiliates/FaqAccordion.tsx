@@ -5,7 +5,7 @@ import { useState } from "react";
 const FAQS: { q: string; a: string }[] = [
   {
     q: "How much do affiliates earn?",
-    a: "You earn 35% of every subscription payment your referrals make — month after month — for as long as they stay subscribed. There are no caps, no tier drops, and no expiring commissions.",
+    a: "You earn 30% of every subscription payment your referrals make — month after month — for the first 12 months they stay subscribed. There are no per-affiliate earning caps and no tier drops; the only cap is the 12-month commission window per referred customer.",
   },
   {
     q: "How long does the referral cookie last?",
@@ -21,7 +21,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What if my referral cancels or refunds?",
-    a: "You earn for as long as they pay. The moment they cancel, no more commissions accrue on that customer — but every commission you already earned stays yours. Refunds during Lemon Squeezy's clawback window reduce your unpaid balance accordingly.",
+    a: "You earn for the first 12 months they pay. The moment they cancel — or once they hit the 12-month mark, whichever comes first — no more commissions accrue on that customer, but every commission you already earned stays yours. Refunds during Lemon Squeezy's clawback window reduce your unpaid balance accordingly.",
   },
   {
     q: "How do I promote Influencer Butler?",
@@ -29,7 +29,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I stack with other promo codes?",
-    a: "Yes. Coupon codes and referral tracking work together. If your referral uses a valid coupon at checkout, the commission is still attributed to you.",
+    a: "No. A customer can use either your affiliate code OR a site-wide welcome discount at checkout — not both. If they arrive through your affiliate link, your code's discount applies and the welcome discount is suppressed so you still earn the commission. Lemon-Squeezy-side referral attribution is preserved either way.",
   },
   {
     q: "Who reviews applications?",

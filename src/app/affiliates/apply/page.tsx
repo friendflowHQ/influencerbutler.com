@@ -227,7 +227,7 @@ export default function AffiliateApplyPage() {
               <p className="text-sm text-slate-500">Apply in about 2 minutes.</p>
             </div>
           </div>
-          <h1 className="mt-6 text-2xl sm:text-3xl font-semibold tracking-tight">Let&apos;s get you earning 35%.</h1>
+          <h1 className="mt-6 text-2xl sm:text-3xl font-semibold tracking-tight">Let&apos;s get you earning 30%.</h1>
           <p className="mt-2 text-sm text-slate-600">
             We review applications weekly and approve creators whose audience actually benefits from Influencer
             Butler. You&apos;ll get a confirmation email either way.

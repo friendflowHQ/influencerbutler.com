@@ -77,7 +77,7 @@ async function sendApprovalEmail(params: {
       `    ${params.brandedCode}`,
       ``,
       ``,
-      `Kindly share this code wherever you please. Each customer who redeems it shall earn you a 35% recurring commission for the full duration of their subscription.`,
+      `Kindly share this code wherever you please. Each customer who redeems it shall earn you a 30% recurring commission for the first twelve months of their subscription.`,
       ``,
       ``,
     );
