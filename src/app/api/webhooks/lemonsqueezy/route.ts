@@ -1,9 +1,15 @@
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 
 export const runtime = "nodejs";
+
+function sha256Hex(value: string | null): string | null {
+  if (!value) return null;
+  return createHash("sha256").update(value).digest("hex");
+}
 
 type LsWebhookPayload = {
   meta?: {
@@ -710,13 +716,15 @@ export async function POST(request: Request) {
 
       await recordExists(supabase, "license_keys", "ls_license_key_id", recordId);
 
+      const licenseKeyString = getString(attrs.key);
       await assertWrite(
         "license_keys.upsert(license_key_created)",
         supabase.from("license_keys").upsert(
           {
             ls_license_key_id: recordId,
             user_id: userId,
-            key: getString(attrs.key),
+            key: licenseKeyString,
+            key_hash: sha256Hex(licenseKeyString),
             status: getString(attrs.status),
             activation_limit: attrs.activation_limit ?? null,
             ls_subscription_id: lsSubscriptionId,

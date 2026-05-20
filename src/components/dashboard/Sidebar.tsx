@@ -17,6 +17,7 @@ type SidebarProps = {
 
 const navItems = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/affiliates", label: "Affiliates" },
@@ -28,6 +29,8 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [hasLicenseKey, setHasLicenseKey] = useState(false);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const { setHelpOpen } = useKeyboardShortcutsContext();
 
   useEffect(() => {
@@ -38,6 +41,12 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
         const user = userData.user;
         if (!user) return;
 
+        const profilePromise = supabase
+          .from("profiles")
+          .select("display_name,avatar_url,avatar_updated_at")
+          .eq("id", user.id)
+          .maybeSingle();
+
         const { data: subs } = await supabase
           .from("subscriptions")
           .select("id")
@@ -47,28 +56,49 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
           .limit(1);
 
         const sub = subs && subs.length > 0 ? (subs[0] as { id: string }) : null;
-        if (!sub) return;
+        if (sub) {
+          const { data: keys } = await supabase
+            .from("license_keys")
+            .select("id")
+            .eq("subscription_id", sub.id)
+            .limit(1);
+          if (keys && keys.length > 0) {
+            setHasLicenseKey(true);
+          }
+        }
 
-        const { data: keys } = await supabase
-          .from("license_keys")
-          .select("id")
-          .eq("subscription_id", sub.id)
-          .limit(1);
-
-        if (keys && keys.length > 0) {
-          setHasLicenseKey(true);
+        const { data: profile } = await profilePromise;
+        if (profile) {
+          const row = profile as {
+            display_name?: string | null;
+            avatar_url?: string | null;
+            avatar_updated_at?: string | null;
+          };
+          if (row.display_name && row.display_name.trim().length > 0) {
+            setProfileDisplayName(row.display_name);
+          }
+          if (row.avatar_url) {
+            const v = row.avatar_updated_at
+              ? encodeURIComponent(row.avatar_updated_at)
+              : Date.now().toString();
+            const sep = row.avatar_url.includes("?") ? "&" : "?";
+            setProfileAvatarUrl(`${row.avatar_url}${sep}v=${v}`);
+          }
         }
       } catch {
-        // ignore — download link just won't show
+        // ignore — download link / avatar just won't show
       }
     };
     void checkLicense();
   }, []);
 
   const userDisplay = useMemo(() => {
+    if (profileDisplayName && profileDisplayName.trim().length > 0) return profileDisplayName;
     if (profileName && profileName.trim().length > 0) return profileName;
     return email;
-  }, [profileName, email]);
+  }, [profileDisplayName, profileName, email]);
+
+  const showSecondaryEmail = Boolean(profileDisplayName || profileName);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -120,8 +150,20 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
               />
               <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Influencer Butler</p>
             </div>
-            <p className="mt-2 text-sm font-semibold text-slate-900 truncate">{userDisplay}</p>
-            {profileName ? <p className="text-xs text-slate-500 truncate">{email}</p> : null}
+            <div className="mt-2 flex items-center gap-2">
+              <div className="h-8 w-8 flex-none overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                {profileAvatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={profileAvatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-400">
+                    {(userDisplay || "?").trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm font-semibold text-slate-900 truncate">{userDisplay}</p>
+            </div>
+            {showSecondaryEmail ? <p className="mt-1 text-xs text-slate-500 truncate">{email}</p> : null}
           </div>
           <button
             type="button"
