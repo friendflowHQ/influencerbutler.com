@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { loadManifest } from "@/lib/tutorials";
 import { createClient } from "@/lib/supabase/server";
+import { resolveCommunityAuthors } from "@/lib/community-authors";
+import AuthorChip from "@/components/community/AuthorChip";
 
 export const metadata = {
-  title: "Community Q&A — Influencer Butler",
+  title: "Community Q&A - Influencer Butler",
   description: "Questions from Influencer Butler users and answers from the community.",
 };
 
@@ -17,6 +19,8 @@ type ApiQuestion = {
   upvotes: number;
   answerCount: number;
   createdAt: number;
+  authorId: string | null;
+  authorEmail: string | null;
 };
 
 type QuestionRow = {
@@ -27,6 +31,8 @@ type QuestionRow = {
   upvotes: number | null;
   answer_count: number | null;
   created_at: string;
+  author_id: string | null;
+  author_email: string | null;
 };
 
 type Filterable = {
@@ -46,7 +52,9 @@ async function fetchQuestions(workspace?: string): Promise<ApiQuestion[]> {
     const supabase = (await createClient()) as unknown as ListClient;
     let query: Filterable = supabase
       .from("community_questions")
-      .select("id, workspace_id, title, body, upvotes, answer_count, created_at")
+      .select(
+        "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id, author_email",
+      )
       .eq("status", "approved");
 
     if (workspace) {
@@ -68,6 +76,8 @@ async function fetchQuestions(workspace?: string): Promise<ApiQuestion[]> {
       upvotes: row.upvotes ?? 0,
       answerCount: row.answer_count ?? 0,
       createdAt: new Date(row.created_at).getTime(),
+      authorId: row.author_id ?? null,
+      authorEmail: row.author_email ?? null,
     }));
   } catch (err) {
     console.error("fetchQuestions failed", err);
@@ -90,6 +100,8 @@ export default async function CommunityPage({
     manifest.tutorials.map((entry) => [entry.id, entry.title]),
   );
   titlesById.set("other", "Other");
+
+  const authors = await resolveCommunityAuthors(questions.map((q) => q.authorId));
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -154,7 +166,7 @@ export default async function CommunityPage({
         <ul className="mt-8 space-y-3">
           {questions.length === 0 ? (
             <li className="rounded border border-dashed border-slate-300 p-8 text-center text-slate-500">
-              No questions yet — be the first to{" "}
+              No questions yet - be the first to{" "}
               <Link href="/help/community/ask" className="text-orange-600 underline">
                 ask one
               </Link>
@@ -174,7 +186,12 @@ export default async function CommunityPage({
                   {question.body ? (
                     <p className="mt-2 line-clamp-3 text-sm text-slate-600">{question.body}</p>
                   ) : null}
-                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                    <AuthorChip
+                      author={question.authorId ? authors.get(question.authorId) : null}
+                      fallbackEmail={question.authorEmail}
+                      size="sm"
+                    />
                     <span>{question.upvotes} upvotes</span>
                     <span>{question.answerCount} answers</span>
                   </div>
