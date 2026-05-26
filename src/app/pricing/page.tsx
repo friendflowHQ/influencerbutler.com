@@ -118,6 +118,16 @@ export default async function PricingPage({
             All 29+ tools, unlimited messages, and priority support. Cancel anytime — no questions
             asked.
           </p>
+          <div className="mt-5 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-900">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              <span>
+                <strong className="font-semibold">Two butlers stay free forever:</strong>{" "}
+                Like Butler &amp; Benable Like Butler work on every account — even after trial
+                expiry or cancellation.
+              </span>
+            </span>
+          </div>
         </div>
 
         <div className="mt-10 sm:mt-12">

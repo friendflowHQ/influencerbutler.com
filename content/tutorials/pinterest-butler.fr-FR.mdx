@@ -1,0 +1,47 @@
+---
+title: Pinterest Butler — génération et planification de pins Pinterest (bientôt)
+summary: Espace planifié qui générera des pins depuis les Amazon Idea Lists, priorisera par campagnes CC actives, rendra des modèles adaptés à la niche, écrira du copy SEO et planifiera les publications.
+category: Other
+---
+
+> **Espace en roadmap.** Pinterest Butler est échafaudé dans le dashboard mais pas encore fonctionnel. Le bouton de navigation est visible pour que vous voyiez ce qui arrive ; l'espace rend un panneau "bientôt disponible" plutôt qu'une UI fonctionnelle. N'attendez pas de comportement production pour l'instant.
+
+## Ce que fera Pinterest Butler
+
+Quand il sortira, Pinterest Butler sera l'équivalent Pinterest de Daily Deals Butler — un pipeline de contenu de bout en bout pour le côté Pinterest :
+
+1. **Sourcer des produits** — lire depuis vos Amazon Idea Lists (listes curatées que vous avez construites sur Amazon) et depuis le catalogue de Storefront Butler.
+2. **Prioriser** — classer les produits selon le statut de campagne active de Creator Connections. Les produits que vous pouvez réellement monétiser passent avant le contenu catalogue générique.
+3. **Générer des pins** — produire des images de pin depuis des modèles adaptés à la niche. Les modèles respectent la catégorie (food, mode, maison, fitness) et adaptent polices, couleurs et layout par catégorie.
+4. **Écrire du copy SEO** — titre + description du pin optimisés pour l'algo de recherche de Pinterest, avec URLs taguées d'affiliation.
+5. **Planifier** — publier à une cadence qui respecte les rate-limits de Pinterest, avec jitter intégré et distribution par tableau.
+
+Autrement dit : le pipeline complet de "j'ai un catalogue produit" à "les pins atterrissent sur Pinterest avec des liens d'affiliation" sans que vous touchiez l'UI de Pinterest.
+
+## Pourquoi c'est en roadmap et pas en live
+
+Les pièces scoring + planification d'InfluencerButler sont assez génériques pour alimenter Pinterest — elles tournent déjà pour Daily Deals, Benable Butler et la pile Instagram. Ce qui manque :
+
+- **Un flux OAuth Pinterest** dans API Integrations.
+- **Un module de génération de pins** (le rendu visuel de modèles est plus impliqué que pour les plateformes texte).
+- **Un module poster** qui pilote l'API Pinterest ou contrôle l'UI web via Puppeteer.
+
+C'est faisable ; juste pas encore construit. Que Pinterest Butler sorte signifie que les trois existent.
+
+## Ce que vous pouvez faire aujourd'hui
+
+Rien dans Pinterest Butler lui-même. En attendant :
+
+- **Utilisez Daily Deals Butler** comme l'équivalent existant le plus proche sur d'autres plateformes aujourd'hui. Ses patterns de modèle-de-post + planificateur sont ce sur quoi Pinterest Butler se calquera.
+- **Curatez vos données source Pinterest** — gardez les Amazon Idea Lists en bon état. Plus cette source est propre, mieux les premiers runs de Pinterest Butler rendront quand il sortira.
+- **Configurez le profil de votre compte Pinterest** — si vous n'avez pas encore de compte créateur, montez-en un maintenant. Le flux OAuth qu'utilisera Pinterest Butler requiert des permissions niveau créateur.
+
+## Suivre le rollout
+
+Le bouton de navigation de l'espace passera d'un panneau "bientôt disponible" à une UI fonctionnelle quand Pinterest Butler sortira. Surveillez les notes de version de l'app (Paramètres → À propos → Notes de version) ou le fil communauté de Help & Tutorials pour l'annonce.
+
+## Relié
+
+- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) — l'équivalent existant le plus proche pour l'instant. Pinterest Butler suivra ce pattern.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — une des sources de données planifiées pour Pinterest Butler.
+- [Tutoriel API Integrations](/help/tutorials/api-integrations) — où atterrira l'OAuth Pinterest une fois câblé.

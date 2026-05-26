@@ -1,0 +1,81 @@
+---
+title: Ads Goldmine — faites remonter les ASIN à forte valeur via signaux de densité d'annonces + sponsoring
+summary: Notez les ASIN de votre catalogue sur quatre niveaux de signal — Lightning Deals, Creator Connections, offres SPCC, densité de recherche par marque — pour trouver quels produits mettre en avant.
+category: Other
+---
+
+> **Passe 1 — UI seulement.** Le moteur de scoring et la vue catalogue en lecture seule arrivent aujourd'hui. Un runner dédié qui déclenche les rafraîchissements sur planning est sur la roadmap. Pour l'instant, vous cliquez **Refresh Now** manuellement quand vous voulez des scores frais.
+
+## Ce que fait Ads Goldmine
+
+La plupart du temps, la question n'est pas "quels produits existent ?" — c'est "lesquels des produits auxquels j'ai accès *valent* la peine d'être mis en avant maintenant ?". Ads Goldmine répond à ça. Il note chaque ASIN de votre catalogue sur quatre signaux :
+
+- **Tier 1 : Signaux deal** (via Creators API) — Lightning Deals, deals exclusifs Prime, % réclamé. La fraîcheur de ces signaux est le meilleur indicateur "postez ça maintenant".
+- **Tier 2 : Creator Connections + SPCC** — lu en direct depuis les catalogues que cc-check récolte. Les ASIN avec campagne active ou avec offre sponsorisée scorent plus haut.
+- **Tier 4 : Densité de recherche par marque** — combien de slots sponsorisés une marque possède dans les résultats de recherche de sa catégorie. Les marques qui achètent de l'espace pub à l'échelle sont des cibles de pitch riches en signal.
+- **Tier 4 PDP probe** — pour les marques les mieux classées, parcourt la page de détail produit pour compter les URLs de brand-store et les slots de carrousel sponsorisé.
+
+La sortie est un tableau d'ASIN triable et filtrable avec un score composite 0-100.
+
+## Avant de commencer
+
+- **ID de boutique CC** dans la barre du haut.
+- **Clé Creators API** dans API Integrations — requise pour les signaux Tier 1. Sans elle, Tier 1 est sauté et vos scores reposent uniquement sur Tier 2 + 4.
+- **cc-check a tourné récemment** — Ads Goldmine lit depuis les catalogues CC/SPCC que cc-check maintient.
+
+## Votre premier rafraîchissement
+
+1. Ouvrez **Ads Goldmine** sous Amazon Butler.
+2. Cliquez sur **Refresh Now**.
+
+Le rafraîchissement exécute les quatre tiers dans l'ordre :
+
+1. Sonde deals Tier 1 Creators-API (TTL 6h — ne re-tourne pas dans les 6 heures si déjà frais ; sautée entièrement sans clé Creators API).
+2. Sonde recherche-marque Tier 4 (30 marques par session, TTL 7 jours).
+3. Sonde PDP Tier 4 (marques les mieux classées, TTL 14 jours — compte URLs brand-store + carrousels sponsorisés).
+4. Tier 2 (CC + SPCC) se lit en direct sans runner — pas de sonde nécessaire.
+
+Un premier rafraîchissement sur un catalogue frais prend 5-15 minutes. Les suivants vont de minutes à secondes parce que les TTL gardent la plupart des données chaudes.
+
+## Travailler les résultats
+
+Le tableau de résultats :
+
+- **Score** (0-100) — composite sur tous les tiers. Filtrable via le slider **Min score**.
+- **ASIN + titre produit** — le produit.
+- **Marque** — cliquable, ouvre un filtre par marque.
+- **Détail par tier** — des colonnes montrent quels tiers ont contribué au score (vous voyez d'un coup d'œil si un score haut vient des deals, de CC, ou de la densité de recherche).
+- **Dernière actu** — quand chaque signal a été sondé la dernière fois. Les signaux plus anciens reçoivent un style estompé.
+
+Que faire des ASIN à score haut :
+
+- **Les planifier dans Daily Deals Butler** pour publication si le score est tiré par Tier 1 (urgence deal).
+- **Pitcher la marque via Pitch Butler** si le score est tiré par Tier 4 (la marque dépense en ads — elle a aussi du budget influenceur).
+- **Les mettre en avant dans Video Butler / scripts Voiceover Butler** pour n'importe quel ASIN à score haut.
+
+## La boucle de feedback
+
+Une fois que vous avez ≥5 ASIN tagués avec ≥3 lignes de commission chacun, Ads Goldmine calcule aussi une colonne **lift de conversion** qui montre comment chaque ASIN noté a performé face à vos vraies données d'earnings. C'est le signal le plus important de l'espace — il vous dit si l'algo de scoring colle à votre performance réelle. Affinez à partir de là.
+
+## Réglages dans la durée
+
+- **Cadence de rafraîchissement** — une fois par semaine suffit pour la plupart des utilisateurs. Les deals Tier 1 ont 6h de fraîcheur, Tier 4 a 7-14 jours ; les rafraîchissements hebdo gardent tout dans sa fenêtre.
+- **Filtre Min score** — démarrez à 50 pour ne voir que les lignes "qui méritent votre attention". Descendez à 30 si vous voulez un pool plus large à évaluer.
+- **Interprétation de la boucle de feedback** — si les ASIN à score haut ne convertissent *pas*, les poids de votre scoring sur Tier 1 vs Tier 4 ont besoin de réglage. Regardez sur quel tier s'appuient les lignes score-haut-conversion-basse.
+
+## Où vont les données
+
+Les scores par ASIN + les caches de signal par tier vivent dans `{userData}/InfluencerButler/workspaces/preseed/cache/ads-goldmine/`. Les TTL plafonnent la croissance des fichiers.
+
+## Pièges courants
+
+- **"Pas encore de données"** — vous n'avez pas cliqué Refresh Now. La Passe 1 n'a pas d'auto-rafraîchissement — ça arrive.
+- **La colonne Tier 1 est vide** — clé Creators API manquante dans API Integrations. Ajoutez-la et re-rafraîchissez.
+- **La colonne lift de conversion affiche "—"** — vous avez moins de 5 ASIN tagués ou moins de 3 lignes de commission par ASIN. Earnings Intelligence enclenche le calcul de lift une fois que vous franchissez ces seuils.
+- **Les scores paraissent uniformes** — le catalogue est peut-être trop petit pour que l'algo différencie bien. L'algo marche le mieux sur des catalogues de 50+ ASIN.
+
+## Relié
+
+- [Tutoriel cc-check](/help/tutorials/cc-check) — garde frais les catalogues CC + SPCC depuis lesquels Ads Goldmine lit.
+- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) — l'espace où vous agissez sur les ASIN à Tier 1 haut.
+- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) — l'espace où vous agissez sur les marques à Tier 4 haut.

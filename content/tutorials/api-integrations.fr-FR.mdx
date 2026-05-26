@@ -1,0 +1,82 @@
+---
+title: API Integrations — stockez en un seul endroit chaque clé d'API que Butler utilise
+summary: Panneau central pour connecter Amazon Creators API, Levanta, Archer, Logie, fournisseurs de deeplinks, OpenAI, YouTube et plus — avec test-au-démarrage et contrôles de routage d'affiliation.
+category: Other
+---
+
+## Ce que fait API Integrations
+
+Beaucoup d'espaces dans InfluencerButler parlent à des API externes : la Creators API d'Amazon pour les métadonnées produit, OpenAI pour la génération de contenu, YouTube pour les uploads, Levanta/Archer/Logie/Geniuslink/Linktw.in pour le routage d'affiliation, etc. Au lieu de demander chaque clé dans chaque espace, API Integrations est le panneau unique où vous les collez une fois et elles sont disponibles partout.
+
+Il gère aussi le **routage d'affiliation** — la logique qui décide via quel fournisseur le lien se génère pour un produit donné, en optimisant pour le taux de commission le plus haut quand plusieurs fournisseurs couvrent le même ASIN.
+
+## Avant de commencer
+
+Rien d'obligatoire — mais chaque intégration est indépendante, vous pouvez donc les ajouter une par une au fur et à mesure que vous connectez de nouveaux espaces. Premières intégrations habituelles :
+
+- **Amazon Creators API** — nécessaire à Storefront Butler, Daily Commission Butler, Voiceover Butler, tout ce qui lit les détails produit.
+- **OpenAI** — nécessaire à AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
+- **Votre fournisseur de deeplinks** — nécessaire dès que vous voulez des liens d'affiliation raccourcis/trackés plutôt que des URLs Amazon brutes.
+
+## Ajouter une intégration
+
+Le panneau est organisé par section. Chaque section a :
+
+- Un **champ pour coller la clé** — où vous mettez l'identifiant.
+- Un bouton **Test Connection** — déclenche une requête en lecture seule contre l'API du fournisseur pour vérifier la clé.
+- Un **badge de statut** — vert quand vérifié, rouge quand invalide, gris quand pas testé.
+
+Pour ajouter : ouvrez la section, collez la clé, cliquez sur Test Connection. Si c'est vert, c'est fait — chaque espace qui utilise ce fournisseur prendra automatiquement la clé.
+
+La liste complète des fournisseurs :
+
+- **Amazon Creators API** — source principale de données produit.
+- **Amazon Associates** — votre tag d'affiliation (un par marketplace).
+- **OpenAI** — génération de contenu.
+- **YouTube OAuth** — uploads + commentaires.
+- **Pinterest OAuth** — uploads (quand Pinterest Butler sortira).
+- **Levanta** — réseau de marques.
+- **Archer** — réseau d'affiliation.
+- **Logie** — réseau d'affiliation.
+- **Benable** — lien d'affiliation.
+- **Fournisseurs de deeplinks** : PostTap, Linktw.in, URLGenius, Geniuslink, self-hosted. Choisissez-en un comme principal.
+
+## Routage d'affiliation
+
+La section du bas du panneau : **Choisir le fournisseur avec la plus haute commission pour chaque produit**. Quand ce toggle est activé :
+
+1. Chaque lien produit généré n'importe où dans l'app route via cette logique.
+2. La logique consulte chaque fournisseur connecté pour son taux de commission sur cet ASIN précis.
+3. Le lien est généré via celui qui paye le plus.
+
+Sous le toggle se trouve une grille de cases à cocher des fournisseurs participant au routage — décochez un fournisseur pour l'exclure même connecté (utile si vous avez connecté un fournisseur pour test mais ne voulez pas encore l'utiliser en production).
+
+Les liens d'attribution Levanta / Archer / Logie sont un cas particulier : ils routent via le **fournisseur de deeplinks** que vous avez défini comme principal, indépendamment des toggles de routage. C'est parce que leur mécanisme d'attribution est indépendant de l'hôte du lien.
+
+## Test au démarrage
+
+Un toggle dans l'en-tête du panneau : **Tester toutes les intégrations au démarrage de l'app**. Activé, chaque fournisseur connecté reçoit un Test Connection au lancement et les badges se mettent à jour.
+
+**Recommandé désactivé après les premiers lancements.** Ça ajoute 30-60 secondes au démarrage et la plupart des utilisateurs n'ont besoin de savoir qu'une intégration a cassé que quand un espace échoue — pas préventivement à chaque lancement.
+
+## Réglages dans la durée
+
+- **N'ajoutez pas de fournisseurs dont vous n'avez pas besoin.** Chaque fournisseur connecté est une chose de plus qui peut casser et une clé d'API de plus à faire tourner. Ajoutez au besoin.
+- **Renouvelez les clés chaque année.** La plupart des API vous permettent de générer une nouvelle clé avec l'ancienne encore valide pendant une période de grâce. Générez la nouvelle, collez ici, testez, puis révoquez l'ancienne.
+- **Le toggle de routage d'affiliation se rentabilise en une semaine.** Si vous êtes connecté à plusieurs fournisseurs, l'avoir activé est presque toujours un gain net de commission.
+
+## Où vont les données
+
+Les clés d'API sont stockées chiffrées dans `{userData}/InfluencerButler/secure-store/`. Le store est AES-256-GCM avec une clé dérivée de votre machine — les clés ne sont pas portables entre machines sans les ressaisir.
+
+## Pièges courants
+
+- **Test Connection échoue sur un setup qui marchait** — le fournisseur a fait tourner, révoqué ou rate-limité la clé. La barre du haut affiche un badge "API Health" quand ça arrive. Réémettez la clé depuis le tableau de bord du fournisseur, collez ici, retestez.
+- **La clé OpenAI testée verte mais la génération échoue** — différents produits OpenAI utilisent différentes limites. Une clé valide pour completions peut buter sur un souci de billing/quota sur un modèle spécifique. Vérifiez l'onglet billing du tableau de bord OpenAI.
+- **L'OAuth YouTube expire de façon inattendue** — Google renouvelle les tokens OAuth environ chaque année. Relancez le Setup Wizard de YouTube Butler pour rafraîchir.
+- **Le routage d'affiliation a choisi le mauvais fournisseur** — généralement le mauvais fournisseur était coché. Ouvrez la section routage et vérifiez les cases à cocher des fournisseurs participants.
+
+## Relié
+
+- Chaque espace côté Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lit depuis ici.
+- [Tutoriel Relink Butler](/help/tutorials/relink-butler) — utilise la config de routage d'affiliation pour savoir vers quoi changer les liens publiés.

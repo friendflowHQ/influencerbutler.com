@@ -1,0 +1,82 @@
+---
+title: API Integrations — guarda en un solo sitio cada clave de API que Butler usa
+summary: Panel central para conectar Amazon Creators API, Levanta, Archer, Logie, proveedores de deeplinks, OpenAI, YouTube y más — con test-al-arrancar y controles de enrutamiento de afiliados.
+category: Other
+---
+
+## Qué hace API Integrations
+
+Muchos espacios en InfluencerButler hablan con APIs externas: la Creators API de Amazon para metadatos de producto, OpenAI para generación de contenido, YouTube para subidas, Levanta/Archer/Logie/Geniuslink/Linktw.in para enrutamiento de afiliados, etc. En vez de pedir cada clave dentro de cada espacio, API Integrations es el panel único donde las pegas una vez y quedan disponibles en todas partes.
+
+También maneja el **enrutamiento de afiliados** — la lógica que decide por qué proveedor se genera el enlace para cualquier producto, optimizando para la tasa de comisión más alta cuando varios proveedores cubren el mismo ASIN.
+
+## Antes de empezar
+
+Nada obligatorio — pero cada integración es independiente, así que las puedes añadir una a una a medida que conectas espacios nuevos. Integraciones habituales para empezar:
+
+- **Amazon Creators API** — la necesitan Storefront Butler, Daily Commission Butler, Voiceover Butler, todo lo que lee detalles de producto.
+- **OpenAI** — la necesitan AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
+- **Tu proveedor de deeplinks** — la necesitas en cuanto quieras enlaces de afiliado acortados/trackeados en vez de URLs crudas de Amazon.
+
+## Añadir una integración
+
+El panel está organizado por sección. Cada sección tiene:
+
+- Un **campo para pegar la clave** — donde metes la credencial.
+- Un botón **Test Connection** — dispara una petición de sólo lectura contra la API del proveedor para verificar la clave.
+- Un **badge de estado** — verde cuando se verifica, rojo si es inválida, gris si no se ha probado.
+
+Para añadir: abre la sección, pega la clave, pulsa Test Connection. Si está verde, listo — cada espacio que use este proveedor cogerá la clave automáticamente.
+
+Lista completa de proveedores:
+
+- **Amazon Creators API** — fuente principal de datos de producto.
+- **Amazon Associates** — tu tag de afiliado (uno por marketplace).
+- **OpenAI** — generación de contenido.
+- **YouTube OAuth** — subidas + comentarios.
+- **Pinterest OAuth** — subidas (cuando Pinterest Butler salga).
+- **Levanta** — red de marcas.
+- **Archer** — red de afiliados.
+- **Logie** — red de afiliados.
+- **Benable** — enlace de referido.
+- **Proveedores de deeplinks**: PostTap, Linktw.in, URLGenius, Geniuslink, self-hosted. Elige uno como principal.
+
+## Enrutamiento de afiliados
+
+La sección inferior del panel: **Elige el proveedor con la mayor comisión para cada producto**. Cuando este toggle está activado:
+
+1. Cada enlace de producto generado en cualquier sitio de la app se enruta por esta lógica.
+2. La lógica consulta a cada proveedor conectado por su tasa de comisión para ese ASIN concreto.
+3. El enlace se genera por el que más pague.
+
+Debajo del toggle hay una rejilla de checkboxes de qué proveedores participan en el enrutamiento — desmarca uno para excluirlo aunque esté conectado (útil si has conectado un proveedor para pruebas pero aún no quieres usarlo en producción).
+
+Los enlaces de atribución de Levanta / Archer / Logie son un caso especial: se enrutan por el **proveedor de deeplinks** que tengas como principal, sin importar los toggles de enrutamiento. Eso es porque su mecanismo de atribución es independiente del host del enlace.
+
+## Test al arrancar
+
+Un toggle en la cabecera del panel: **Probar todas las integraciones al arrancar la app**. Activado, cada proveedor conectado recibe un Test Connection al arrancar y los badges se actualizan.
+
+**Recomendado desactivado después de los primeros arranques.** Añade 30-60 segundos al arranque y la mayoría de usuarios sólo necesita saber que una integración rompió cuando un espacio falla — no preventivamente en cada arranque.
+
+## Ajustes con el tiempo
+
+- **No añadas proveedores que no necesites.** Cada proveedor conectado es una cosa más que puede romperse y una clave más que rotar. Añade según haga falta.
+- **Rota las claves anualmente.** La mayoría de APIs te dejan generar una clave fresca con la vieja aún válida un periodo de gracia. Genera la nueva, pega aquí, prueba, luego revoca la vieja.
+- **El toggle de enrutamiento de afiliados se paga solo en una semana.** Si estás conectado a varios proveedores, tenerlo activado casi siempre supone una ganancia neta de comisión.
+
+## Dónde van los datos
+
+Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-store/`. El almacén es AES-256-GCM con una clave derivada de tu máquina — las claves no son portables entre máquinas sin volverlas a introducir.
+
+## Tropiezos comunes
+
+- **Test Connection falla en un setup que antes funcionaba** — el proveedor rotó, revocó o rate-limitó la clave. La barra superior muestra un badge "API Health" cuando esto pasa. Vuelve a emitir la clave en el dashboard del proveedor, pega aquí, re-prueba.
+- **La clave de OpenAI da verde pero la generación falla** — distintos productos de OpenAI usan distintos límites. Una clave válida para completions puede chocar con un problema de billing/quota en un modelo específico. Revisa la pestaña de billing del dashboard de OpenAI.
+- **El OAuth de YouTube caduca inesperadamente** — Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
+- **El enrutamiento de afiliados eligió el proveedor equivocado** — normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.
+
+## Relacionado
+
+- Cada espacio del lado Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lee desde aquí.
+- [Tutorial de Relink Butler](/help/tutorials/relink-butler) — usa la config de enrutamiento de afiliados para saber a qué cambiar los enlaces publicados.

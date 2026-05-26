@@ -1020,6 +1020,14 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   border-color: var(--brand-200);
 }
 
+/* Free-forever badge — emerald so it visually pops next to the orange/brand
+   tones used by Core/Popular/Pro/Flagship. Signals "no license required". */
+.feature-badge--free {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
 /* ================================================================
    CAPABILITY HIGHLIGHT (CC Check feature promo above the grid)
    ================================================================ */
@@ -1076,7 +1084,28 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   font-size: 1.2rem;
   color: var(--text-secondary);
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+.feature-free-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.feature-free-pill .dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #10b981;
 }
 .feature-hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
 .feature-hero-image { min-width: 0; }

@@ -200,6 +200,54 @@
       "summary": "Research-only crawler: seed with Instagram usernames, walk the suggested-accounts graph, and harvest posts tagged #ad / paid-partnership.",
       "order": 240,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "api-integrations",
+      "title": "API Integrations — store every API key Butler uses in one place",
+      "category": "Other",
+      "summary": "Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more.",
+      "order": 300,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "actionqueue",
+      "title": "Action Queue — one inbox for every butler that needs your decision",
+      "category": "Other",
+      "summary": "When any workspace hits a fork — approve a message, pick between options, accept a campaign — the decision lands here instead of blocking the run.",
+      "order": 310,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "content-butler",
+      "title": "Content Butler — drag-and-drop calendar for what to film next",
+      "category": "Other",
+      "summary": "Schedule the products you want to shoot on a Monthly / Weekly / Daily calendar. Drag from Orders Butler or add manually, tag by content type.",
+      "order": 320,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "black-friday",
+      "title": "Black Friday Butler — never miss a time-limited Amazon deal on your storefront",
+      "category": "Other",
+      "summary": "Monitor your Amazon storefront on a cadence and log every Black-Friday-flagged or time-limited deal with timestamps.",
+      "order": 330,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "ads-goldmine-butler",
+      "title": "Ads Goldmine — surface high-value ASINs by ad + sponsor density signals",
+      "category": "Other",
+      "summary": "Score the ASINs in your catalog across four signal tiers — Lightning Deals, Creator Connections, SPCC offers, brand-search density.",
+      "order": 340,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "pinterest-butler",
+      "title": "Pinterest Butler — Pinterest pin generation + scheduling (coming soon)",
+      "category": "Other",
+      "summary": "Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, write SEO copy, and schedule posts.",
+      "order": 999,
+      "locales": ["en-US", "es-ES", "fr-FR"]
     }
   ]
 }

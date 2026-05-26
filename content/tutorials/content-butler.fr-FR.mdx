@@ -1,0 +1,64 @@
+---
+title: Content Butler — calendrier drag-and-drop pour quoi filmer ensuite
+summary: Planifiez les produits à filmer sur un calendrier Mensuel / Hebdomadaire / Quotidien. Faites glisser depuis Orders Butler ou ajoutez manuellement, taguez par type de contenu, et ne perdez plus le fil.
+category: Other
+---
+
+## Ce que fait Content Butler
+
+La plupart des créateurs ont un backlog de produits qu'ils ont marqués pour filmer mais aucun système de *quand* le faire. Content Butler est la couche de planification : un calendrier Mensuel/Hebdo/Quotidien où chaque entrée est un produit (ASIN + titre + notes) garé sur un jour précis. Faites glisser des produits depuis une barre latérale sur une date et ils apparaissent sur le calendrier ; cliquez sur n'importe quelle entrée pour modifier ou supprimer.
+
+Il tire des produits d'**Orders Butler** automatiquement (tout ce que vous avez acheté est candidat) et vous pouvez aussi ajouter des produits manuellement pour ce qui n'est pas passé par votre historique d'achats.
+
+## Avant de commencer
+
+- (Optionnel) **Orders Butler synchronisé** — vous donne une barre latérale produits peuplée à partir de laquelle glisser.
+- Sinon, rien — Content Butler marche entièrement à la main si vous préférez.
+
+## Trois vues
+
+Le toggle de vue en haut bascule entre trois cadences :
+
+- **Mensuelle** (défaut) — grille de mois complet. La meilleure pour "à quoi ressemble le mois ?". Chaque cellule de jour tient 3-5 entrées avant d'afficher un "+N more" en débordement.
+- **Hebdo** — bande de 7 jours. La meilleure pour "qu'est-ce que je tourne cette semaine ?". Plus serrée que la mensuelle, avec plus de place par jour.
+- **Quotidienne** — vue profonde d'un jour unique. La meilleure quand vous avez plusieurs tournages par jour et voulez voir les notes complètes de chaque entrée.
+
+Utilisez Mensuelle pour planifier, Hebdo pour vous engager, Quotidienne pour exécuter.
+
+## Ajouter des produits
+
+Deux chemins :
+
+1. **Glisser depuis la barre latérale** — le panneau droit liste vos produits Orders Butler. Utilisez la recherche pour filtrer par ASIN ou titre, faites glisser une carte de produit sur un jour du calendrier. Elle se cale sur la date.
+2. **Quick-add via le formulaire** — tapez titre + ASIN + notes à la main. Utile pour les produits achetés hors Amazon, des échantillons, ou ce que vous avez vu sur les boutiques de concurrents.
+
+Chaque entrée sur le calendrier affiche le titre produit (tronqué) + un chip de tag. Cliquez sur l'entrée pour ouvrir un popover avec les notes complètes, l'ASIN et des boutons modifier/supprimer.
+
+## Tags
+
+L'**étagère de tags** à droite a des tags de workflow draggables : "Reel", "Set photo", "Story", "Live", "Voix off uniquement", etc. Faites glisser un tag sur une entrée pour ajouter des métadonnées de type de contenu. Chaque entrée peut avoir plusieurs tags.
+
+Les tags pilotent aussi le **filtrage** — la barre de filtres du calendrier permet de n'afficher que les entrées avec des tags précis. Utile pour "quels reels je fais ce mois-ci ?" ou "quels créneaux voix-off-uniquement j'ai en file ?".
+
+## Réglages dans la durée
+
+- **Vocabulaire de tags** — gardez-le petit (5-8 tags max). L'étagère est éditable dans les paramètres ; résistez à la tentation de sur-catégoriser.
+- **Cadence du quick-add** — bloquez 15 minutes par semaine pour peupler le calendrier de la semaine à venir. N'essayez pas de planifier un mois d'avance d'un coup ; ce calendrier change toujours.
+- **Champ notes** — court, factuel. "Montrer avant/après sur le plan de travail" se lit mieux que des notes vagues et aspirationnelles.
+
+## Où vont les données
+
+L'état du calendrier vit dans le cache preseed. Il est inclus dans le flux de backup de l'app, donc une restauration le ramène tel quel.
+
+## Pièges courants
+
+- **Le drag ne tombe pas** — assurez-vous de déposer à l'intérieur de la cellule du jour, pas dans l'espace entre cellules. La vue mensuelle a des cellules plus fines que l'hebdo ; si les drops ne s'enregistrent pas, essayez la vue hebdo pour la même plage.
+- **La barre latérale est vide** — Orders Butler n'a pas encore synchronisé. Lancez Orders Butler une fois et rafraîchissez Content Butler.
+- **Delete All est irréversible** — il y a un prompt "Êtes-vous sûr", mais pas d'annulation ensuite. Exportez via le backup app-niveau avant tout gros nettoyage.
+- **Le calendrier ne reflète pas un produit récemment ajouté à Orders Butler** — Content Butler cache la liste de la barre latérale. Cliquez sur le bouton effacer de la recherche pour forcer un rafraîchissement.
+
+## Relié
+
+- [Tutoriel Orders Butler](/help/tutorials/ordersbutler) — peuple la barre latérale draggable.
+- [Tutoriel Collab Butler](/help/tutorials/collab-butler) — pour suivre les *tournages payés par les marques* (Content Butler suit tous les tournages indépendamment de la monétisation).
+- [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) — génère des scripts pour les produits de votre calendrier.

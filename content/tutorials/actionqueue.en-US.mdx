@@ -1,0 +1,68 @@
+---
+title: Action Queue — one inbox for every butler that needs your decision
+summary: When any workspace hits a fork — approve a message, pick between options, accept a campaign — the decision lands in Action Queue rather than blocking the run.
+category: Other
+---
+
+## What Action Queue does
+
+Most workspaces in InfluencerButler run autonomously most of the time. But occasionally a butler hits a decision it can't make on its own: should it accept this campaign with an unusual commission rate? Use this AI-generated message variation, or fall back to canned? Which of two replacement ASINs is the right fit?
+
+Instead of stopping the whole run, the workspace queues the decision in Action Queue and keeps going. You come back later, clear the queue, and Butler picks up where you left off on the items you decided on.
+
+The point: never lose run momentum to a decision you weren't ready to make.
+
+## Before you start
+
+Nothing. Action Queue is consumed by other workspaces — it has no setup of its own. You'll see items appear in the queue as your runs surface decisions.
+
+## When items appear
+
+Common sources of queued items:
+
+- **Daily Commission Butler** — campaigns whose commission rate is unusually high or low (worth a manual look before auto-accepting).
+- **Retag Butler** — replacement ASIN candidates that scored above your minimum-similarity threshold but below your auto-tag threshold.
+- **Voiceover Butler** — scripts that failed validation on the first generation and need your call on whether to regenerate, edit, or skip.
+- **Messenger Butler / Instagram Butler** — message variations that the AI flagged as borderline.
+- **Pitch Butler** — duplicate-brand detections that need a manual merge decision.
+
+Workspaces that route through Action Queue are explicit about it — their docs note the routing.
+
+## Working the queue
+
+Open **Action Queue** in the left nav. The queue is a list of cards, each with:
+
+- **Source workspace** — which butler queued the item.
+- **Decision needed** — a one-line description ("Accept campaign at 12% commission?", "Tag replacement ASIN above 65% similarity?").
+- **Context** — the data backing the decision (brand name, ASIN, message preview, etc.).
+- **Three buttons**:
+  - **Approve** — go ahead with the proposed action.
+  - **Reject** — don't do it; the source workspace marks the item as skipped.
+  - **Defer** — leave it in the queue for a later decision. Useful if you need to research before deciding.
+
+There's no auto-approve. Action Queue is intentionally manual — if you wanted autonomous, the source workspace's auto-mode would have handled it.
+
+## Tuning over time
+
+The Action Queue itself has nothing to tune. The volume of items is controlled by the *source workspaces*:
+
+- **Too many items?** Tighten the source workspace's auto-thresholds. E.g. raise Retag Butler's auto-tag threshold from 70% to 80% — fewer items fall through to manual review.
+- **Too few items?** Loosen those same thresholds. The source workspace is making more autonomous decisions than you want.
+
+If you're regularly approving 90%+ of items, the source workspace's auto-mode is too cautious — relax its threshold. If you're regularly rejecting 50%+, it's too aggressive — tighten.
+
+## Where the data goes
+
+Queued items live in the preseed cache. Approved/rejected decisions are logged so the source workspaces can pick up the result on their next run.
+
+## Common gotchas
+
+- **Items accumulate over weeks** — Action Queue doesn't auto-clear stale items. Spend 5 minutes a week reviewing or use **Defer** liberally so the queue doesn't bloat.
+- **Source workspace ran but didn't pick up your approval** — the workspace only re-reads the queue on its next scheduled run. Trigger Run Now if you want immediate action on a decision.
+- **No items appearing even though a butler is running** — that butler doesn't route through Action Queue. Not all workspaces do; most decisions are fully autonomous.
+
+## Related
+
+- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) — common source of queued items.
+- [Retag Butler tutorial](/help/tutorials/retag-butler) — another common source, especially when running in Review mode.
+- [Voiceover Butler tutorial](/help/tutorials/voiceover-butler) — queues failed validations for your call.
