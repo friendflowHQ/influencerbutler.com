@@ -9,13 +9,20 @@ import {
   WELCOME_RETURNING_CODE,
   type PromoTier,
 } from "@/lib/promo";
-
-type Prices = { monthly: number; annual: number };
+import {
+  PRICE_CENTS,
+  TIER_NAME,
+  TIER_TAGLINE,
+  TIER_FEATURES,
+  annualSavingsPct,
+  planStringFor,
+  type Tier,
+  type Interval,
+} from "@/lib/pricing-constants";
 
 type Props = {
   tier: PromoTier;
   affiliateCode: string | null;
-  prices: Prices;
   signedIn: boolean;
   initialCode: string | null;
 };
@@ -24,34 +31,17 @@ type LemonSqueezyWindow = Window & {
   LemonSqueezy?: { Url?: { Open?: (url: string) => void } };
 };
 
-const FEATURES_FREE = [
-  "Full Pro access for 3 days",
-  "Unlimited CC Brand Messages",
-  "Unlimited Instagram DMs",
-  "All 29+ tools unlocked",
-  "Cancel anytime before day 3",
-];
+const TIER_ORDER: readonly Tier[] = ["solo", "team", "agency"] as const;
 
-const FEATURES_MONTHLY = [
-  "Unlimited CC Brand Messages",
-  "Unlimited Instagram DMs",
-  "Unlimited Automation Actions",
-  "All 29+ tools unlocked",
-  "Deep link & affiliate integrations",
-  "Analytics dashboard",
-  "Priority support",
-];
+function formatMoney(cents: number): string {
+  return formatMoneyFromDollars(cents / 100);
+}
 
-const FEATURES_ANNUAL = [
-  "Everything in Monthly",
-  "Priority feature requests",
-  "Early access to new butlers",
-  "Dedicated support",
-];
-
-function formatMoney(value: number): string {
-  if (Number.isInteger(value)) return `$${value}`;
-  return `$${value.toFixed(2)}`;
+function formatMoneyFromDollars(value: number): string {
+  const opts: Intl.NumberFormatOptions = Number.isInteger(value)
+    ? { maximumFractionDigits: 0 }
+    : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  return `$${value.toLocaleString("en-US", opts)}`;
 }
 
 function hasAuthCookie(): boolean {
@@ -81,20 +71,15 @@ function openCheckout(url: string): void {
 }
 
 export default function PricingCardsClient({
-  tier,
+  tier: promoTier,
   affiliateCode,
-  prices,
   signedIn,
   initialCode,
 }: Props) {
-  const [loadingPlan, setLoadingPlan] = useState<"monthly" | "annual" | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [billing, setBilling] = useState<Interval>("annual");
   const touchedRef = useRef(false);
 
-  // On mount, persist the visitor + promo cookies so server-side reads on the
-  // next request are consistent with what we rendered. Also record the URL
-  // ?code= as the first-touch affiliate source — the checkout route needs
-  // this to credit the affiliate even if the user later types a different
-  // code in the promo input.
   useEffect(() => {
     if (touchedRef.current) return;
     touchedRef.current = true;
@@ -113,14 +98,12 @@ export default function PricingCardsClient({
 
   const buyingDiscount = affiliateCode
     ? null
-    : { code: tier === "first" ? WELCOME_FIRST_CODE : WELCOME_RETURNING_CODE, pct: tier === "first" ? DISCOUNT_PCT_FIRST : DISCOUNT_PCT_RETURNING };
+    : {
+        code: promoTier === "first" ? WELCOME_FIRST_CODE : WELCOME_RETURNING_CODE,
+        pct: promoTier === "first" ? DISCOUNT_PCT_FIRST : DISCOUNT_PCT_RETURNING,
+      };
 
-  const monthlyAfter = buyingDiscount
-    ? prices.monthly * (1 - buyingDiscount.pct / 100)
-    : null;
-  const annualAfter = buyingDiscount ? prices.annual * (1 - buyingDiscount.pct / 100) : null;
-
-  async function handleCheckout(plan: "monthly" | "annual"): Promise<void> {
+  async function handleCheckout(plan: string): Promise<void> {
     setLoadingPlan(plan);
     try {
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
@@ -142,7 +125,7 @@ export default function PricingCardsClient({
             return;
           }
         }
-        // 401 or missing url — fall through to guest flow.
+        // 401 or missing url - fall through to guest flow.
       }
 
       const affiliateParam =
@@ -158,7 +141,6 @@ export default function PricingCardsClient({
           return;
         }
       }
-      // Hard fallback: navigate to the guest endpoint which 302s to LS.
       window.location.href = guestUrl;
     } catch (error) {
       console.error("Pricing checkout failed", error);
@@ -177,57 +159,51 @@ export default function PricingCardsClient({
     <>
       <Script src="https://assets.lemonsqueezy.com/lemon.js" strategy="afterInteractive" />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <PlanCard
-          name="Free trial"
-          desc="Full Pro access, $0 for 3 days"
-          priceLabel="$0"
-          periodLabel="/ 3 days"
-          trialLabel={`Then ${formatMoney(monthlyAfter ?? prices.monthly)}/month — cancel anytime`}
-          discountTag={
-            buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
-          }
-          features={FEATURES_FREE}
-          cta="Start free trial"
-          loading={loadingPlan === "monthly"}
-          onClickPrimary={() => handleCheckout("monthly")}
-        />
+      <BillingToggle value={billing} onChange={setBilling} />
 
-        <PlanCard
-          featured
-          badge="Most popular"
-          name="Pro Monthly"
-          desc="Full power, flexible billing"
-          priceLabel={formatMoney(prices.monthly)}
-          periodLabel="/ month"
-          originalPriceLabel={monthlyAfter !== null ? formatMoney(prices.monthly) : undefined}
-          discountedPriceLabel={monthlyAfter !== null ? formatMoney(monthlyAfter) : undefined}
-          discountTag={
-            buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
-          }
-          features={FEATURES_MONTHLY}
-          cta="Start free trial"
-          loading={loadingPlan === "monthly"}
-          onClickPrimary={() => handleCheckout("monthly")}
-        />
+      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {TIER_ORDER.map((tier) => {
+          const cents = PRICE_CENTS[tier][billing];
+          const plan = planStringFor(tier, billing);
+          const pricePerCycle = formatMoney(cents);
+          const monthlyEquivalent =
+            billing === "annual" ? formatMoneyFromDollars(cents / 100 / 12) : null;
+          const discountedCents = buyingDiscount
+            ? Math.round(cents * (1 - buyingDiscount.pct / 100))
+            : null;
 
-        <PlanCard
-          name="Pro Annual"
-          desc="Best value — save 17% vs monthly"
-          priceLabel={formatMoney(prices.annual)}
-          periodLabel="/ year"
-          originalPriceLabel={annualAfter !== null ? formatMoney(prices.annual) : undefined}
-          discountedPriceLabel={annualAfter !== null ? formatMoney(annualAfter) : undefined}
-          discountTag={
-            buyingDiscount ? `${buyingDiscount.code} — ${buyingDiscount.pct}% off first payment` : null
-          }
-          saveBadge="Save 17%"
-          effectiveLabel={`That's just ${formatMoney((annualAfter ?? prices.annual) / 12)}/month`}
-          features={FEATURES_ANNUAL}
-          cta="Start free trial"
-          loading={loadingPlan === "annual"}
-          onClickPrimary={() => handleCheckout("annual")}
-        />
+          return (
+            <PlanCard
+              key={tier}
+              featured={tier === "solo"}
+              badge={tier === "solo" ? "Most popular" : undefined}
+              saveBadge={
+                billing === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
+              }
+              name={TIER_NAME[tier]}
+              desc={TIER_TAGLINE[tier]}
+              priceLabel={pricePerCycle}
+              periodLabel={billing === "monthly" ? "/ month" : "/ year"}
+              originalPriceLabel={discountedCents !== null ? pricePerCycle : undefined}
+              discountedPriceLabel={
+                discountedCents !== null ? formatMoney(discountedCents) : undefined
+              }
+              discountTag={
+                buyingDiscount
+                  ? `${buyingDiscount.code} - ${buyingDiscount.pct}% off first payment`
+                  : null
+              }
+              effectiveLabel={
+                monthlyEquivalent ? `That's just ${monthlyEquivalent}/month` : undefined
+              }
+              trialLabel="3-day free trial included - cancel before day 3 to avoid charges."
+              features={[...TIER_FEATURES[tier]]}
+              cta="Start free trial"
+              loading={loadingPlan === plan}
+              onClickPrimary={() => handleCheckout(plan)}
+            />
+          );
+        })}
       </div>
     </>
   );
@@ -376,5 +352,71 @@ function PlanCard(props: PlanCardProps) {
         )}
       </div>
     </div>
+  );
+}
+
+type BillingToggleProps = {
+  value: Interval;
+  onChange: (next: Interval) => void;
+};
+
+function BillingToggle({ value, onChange }: BillingToggleProps) {
+  return (
+    <div className="flex items-center justify-center">
+      <div
+        role="tablist"
+        aria-label="Billing cadence"
+        className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm"
+      >
+        <ToggleButton
+          active={value === "monthly"}
+          onClick={() => onChange("monthly")}
+          label="Monthly"
+        />
+        <ToggleButton
+          active={value === "annual"}
+          onClick={() => onChange("annual")}
+          label="Annual"
+          badge="Save 17%"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ToggleButton({
+  active,
+  onClick,
+  label,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  badge?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+        active
+          ? "bg-[#f97316] text-white shadow-sm"
+          : "text-slate-600 hover:text-slate-900"
+      }`}
+    >
+      {label}
+      {badge ? (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            active ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+          }`}
+        >
+          {badge}
+        </span>
+      ) : null}
+    </button>
   );
 }

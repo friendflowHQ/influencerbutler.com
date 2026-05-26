@@ -20,7 +20,7 @@ export const SEAT_LIMIT = {
   agency: 25,
 } as const;
 
-// Daily Deals Workspace add-on — flat $24.99/month, no promo codes apply.
+// Daily Deals Workspace add-on - flat $24.99/month, no promo codes apply.
 export const DAILY_DEALS_ADDON_PRICE_USD = 24.99;
 export const DAILY_DEALS_ADDON_PRICE_CENTS = 2499;
 export const ADDON_PLAN_DAILY_DEALS = "daily-deals-addon" as const;
@@ -33,8 +33,17 @@ export function annualSavingsCents(tier: keyof typeof PRICE_CENTS): number {
   return tierPrices.monthly * 12 - tierPrices.annual;
 }
 
+// Annual discount expressed as a whole-number percent (e.g. 17 for "Save
+// 17%"). All current tiers happen to land on the same 17%, but compute
+// it per-tier so the badges stay correct if a future tier diverges.
+export function annualSavingsPct(tier: keyof typeof PRICE_CENTS): number {
+  const tierPrices = PRICE_CENTS[tier];
+  const fullYear = tierPrices.monthly * 12;
+  return Math.round(((fullYear - tierPrices.annual) / fullYear) * 100);
+}
+
 // Per-tier label used in the marketing copy. Solo intentionally says
-// "1 device" to underline the upgrade pressure — if the customer wants
+// "1 device" to underline the upgrade pressure - if the customer wants
 // a 2nd device, they upgrade to Team.
 export const SEAT_COPY = {
   solo: "1 device",
@@ -44,3 +53,124 @@ export const SEAT_COPY = {
 
 export type Tier = keyof typeof PRICE_CENTS;
 export type Interval = "monthly" | "annual";
+
+// Display copy for the tier picker. Co-located with PRICE_CENTS so a
+// price change can't ship without thinking about the user-facing copy.
+export const TIER_NAME: Record<Tier, string> = {
+  solo: "Pro Solo",
+  team: "Pro Team",
+  agency: "Pro Agency",
+};
+
+export const TIER_TAGLINE: Record<Tier, string> = {
+  solo: "Full power, 1 device",
+  team: "For creator teams - up to 10 devices",
+  agency: "For agencies - up to 25 devices",
+};
+
+// Marketing feature lists per tier. The dashboard subscription page and
+// the public /pricing page both render these verbatim.
+export const TIER_FEATURES: Record<Tier, readonly string[]> = {
+  solo: [
+    "All 29+ automation tools",
+    "Unlimited CC brand messages",
+    "Unlimited Instagram DMs",
+    "Commission harvesting",
+    "Deep link & affiliate integrations",
+    "1 activated device",
+  ],
+  team: [
+    "Everything in Pro Solo",
+    "Up to 10 activated devices",
+    "Shared seat pool for your team",
+    "Priority email support",
+  ],
+  agency: [
+    "Everything in Pro Team",
+    "Up to 25 activated devices",
+    "Priority feature requests",
+    "Dedicated support",
+    "Early access to new butlers",
+  ],
+} as const;
+
+// Plan-string canonical form used by /api/checkout + /api/checkout/guest
+// and the dashboard/public pricing UIs. Legacy "monthly"/"annual" strings
+// (no tier prefix) resolve to Solo so existing checkout links keep working.
+export type PlanString =
+  | "monthly"
+  | "annual"
+  | "solo-monthly"
+  | "solo-annual"
+  | "team-monthly"
+  | "team-annual"
+  | "agency-monthly"
+  | "agency-annual"
+  | typeof ADDON_PLAN_DAILY_DEALS;
+
+const TIER_BY_PLAN: Record<string, Tier | "addon"> = {
+  monthly: "solo",
+  annual: "solo",
+  "solo-monthly": "solo",
+  "solo-annual": "solo",
+  "team-monthly": "team",
+  "team-annual": "team",
+  "agency-monthly": "agency",
+  "agency-annual": "agency",
+  [ADDON_PLAN_DAILY_DEALS]: "addon",
+};
+
+const CADENCE_BY_PLAN: Record<string, Interval | null> = {
+  monthly: "monthly",
+  annual: "annual",
+  "solo-monthly": "monthly",
+  "solo-annual": "annual",
+  "team-monthly": "monthly",
+  "team-annual": "annual",
+  "agency-monthly": "monthly",
+  "agency-annual": "annual",
+  [ADDON_PLAN_DAILY_DEALS]: null,
+};
+
+const INTERVAL_BY_CADENCE: Record<Interval, "month" | "year"> = {
+  monthly: "month",
+  annual: "year",
+};
+
+export function planStringFor(tier: Tier, interval: Interval): PlanString {
+  // Solo keeps the bare "monthly"/"annual" strings for backwards-compat
+  // with checkout links + LS env-var aliases. Team/Agency are explicit.
+  if (tier === "solo") return interval === "monthly" ? "monthly" : "annual";
+  return `${tier}-${interval}` as PlanString;
+}
+
+export function tierForPlan(plan: string | undefined | null): Tier | null {
+  if (!plan) return null;
+  const t = TIER_BY_PLAN[plan];
+  return t && t !== "addon" ? t : null;
+}
+
+/**
+ * Resolves a plan string ("monthly" | "team-annual" | "daily-deals-addon"
+ * | ...) to the price/interval pair the promo resolver expects. Returns
+ * null for unknown plans so callers can fall back to a zero-priced
+ * placeholder (matches the previous behaviour of the route handlers).
+ *
+ * Shared between /api/checkout and /api/checkout/guest so the savings
+ * math can't drift between authed and guest flows.
+ */
+export function planMetaFor(
+  plan: string | undefined | null,
+): { priceCents: number; interval: "month" | "year" } | null {
+  if (!plan) return null;
+  if (plan === ADDON_PLAN_DAILY_DEALS) {
+    return { priceCents: DAILY_DEALS_ADDON_PRICE_CENTS, interval: "month" };
+  }
+  const tier = tierForPlan(plan);
+  const cadence = CADENCE_BY_PLAN[plan];
+  if (!tier || !cadence) return null;
+  return {
+    priceCents: PRICE_CENTS[tier][cadence],
+    interval: INTERVAL_BY_CADENCE[cadence],
+  };
+}

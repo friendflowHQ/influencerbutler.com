@@ -5,6 +5,26 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
 import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
+import {
+  PRICE_CENTS,
+  TIER_NAME,
+  TIER_TAGLINE,
+  TIER_FEATURES,
+  annualSavingsPct,
+  planStringFor,
+  type Tier,
+  type Interval,
+} from "@/lib/pricing-constants";
+
+const TIER_ORDER: readonly Tier[] = ["solo", "team", "agency"] as const;
+
+function formatPrice(cents: number): string {
+  const dollars = cents / 100;
+  const opts: Intl.NumberFormatOptions = Number.isInteger(dollars)
+    ? { maximumFractionDigits: 0 }
+    : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  return `$${dollars.toLocaleString("en-US", opts)}`;
+}
 
 declare global {
   interface Window {
@@ -36,7 +56,8 @@ export default function SubscriptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [promoCodeOpen, setPromoCodeOpen] = useState(false);
-  // First-touch affiliate code from ?code= — preserved across edits to the
+  const [billingCadence, setBillingCadence] = useState<Interval>("annual");
+  // First-touch affiliate code from ?code= - preserved across edits to the
   // promo input so the affiliate still gets aff_ref credit even if the user
   // types a better promo over it.
   const [affiliateSource, setAffiliateSource] = useState<string | null>(null);
@@ -49,14 +70,21 @@ export default function SubscriptionPage() {
       setPromoCode(normalized);
       setPromoCodeOpen(true);
       setAffiliateSource(normalized);
+      const sourceParam = searchParams.get("s");
+      const referrer = typeof document !== "undefined" ? document.referrer : "";
       // Persist as the ib_aff_src cookie so the checkout API can read it
       // even if the user later clears or overwrites the promo input.
+      // Source + referrer feed the per-affiliate click analytics dashboard.
       fetch("/api/promo/touch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ affiliateSource: normalized }),
+        body: JSON.stringify({
+          affiliateSource: normalized,
+          source: sourceParam ?? undefined,
+          referrer: referrer || undefined,
+        }),
       }).catch(() => {
-        // Non-fatal — checkout will fall back to body param or cookie.
+        // Non-fatal - checkout will fall back to body param or cookie.
       });
     }
   }, [searchParams]);
@@ -108,7 +136,8 @@ export default function SubscriptionPage() {
     void loadData();
   }, []);
 
-  const handleStartCheckout = async (plan: "monthly" | "annual") => {
+  const handleStartCheckout = async (tier: Tier) => {
+    const plan = planStringFor(tier, billingCadence);
     setCheckoutLoading(plan);
     setError(null);
 
@@ -163,7 +192,7 @@ export default function SubscriptionPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Start your free trial</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Unlock all 20+ automation tools with a 3-day free trial. Cancel anytime.
+            Unlock all 29+ automation tools with a 3-day free trial. Cancel anytime.
           </p>
         </section>
 
@@ -180,36 +209,31 @@ export default function SubscriptionPage() {
           onToggle={() => setPromoCodeOpen((v) => !v)}
         />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <PricingCard
-            name="Pro Monthly"
-            price="$19.99"
-            period="/month"
-            features={[
-              "All 20+ automation tools",
-              "Unlimited brand outreach",
-              "Commission harvesting",
-              "Priority email support",
-            ]}
-            cta={checkoutLoading === "monthly" ? "Starting…" : "Start 3-day free trial"}
-            disabled={checkoutLoading !== null}
-            onSelect={() => handleStartCheckout("monthly")}
-          />
-          <PricingCard
-            name="Pro Annual"
-            price="$179.99"
-            period="/year"
-            highlight="Save 25%"
-            features={[
-              "Everything in Pro Monthly",
-              "Priority onboarding",
-              "Early access to new tools",
-            ]}
-            cta={checkoutLoading === "annual" ? "Starting…" : "Start 3-day free trial"}
-            disabled={checkoutLoading !== null}
-            featured
-            onSelect={() => handleStartCheckout("annual")}
-          />
+        <BillingToggle value={billingCadence} onChange={setBillingCadence} />
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {TIER_ORDER.map((tier) => {
+            const cents = PRICE_CENTS[tier][billingCadence];
+            const plan = planStringFor(tier, billingCadence);
+            const isLoading = checkoutLoading === plan;
+            return (
+              <PricingCard
+                key={tier}
+                name={TIER_NAME[tier]}
+                tagline={TIER_TAGLINE[tier]}
+                price={formatPrice(cents)}
+                period={billingCadence === "monthly" ? "/month" : "/year"}
+                highlight={
+                  billingCadence === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
+                }
+                features={[...TIER_FEATURES[tier]]}
+                cta={isLoading ? "Starting…" : "Start 3-day free trial"}
+                disabled={checkoutLoading !== null}
+                featured={tier === "solo"}
+                onSelect={() => handleStartCheckout(tier)}
+              />
+            );
+          })}
         </div>
       </div>
     );
@@ -305,6 +329,7 @@ export default function SubscriptionPage() {
 
 type PricingCardProps = {
   name: string;
+  tagline?: string;
   price: string;
   period: string;
   highlight?: string;
@@ -317,6 +342,7 @@ type PricingCardProps = {
 
 function PricingCard({
   name,
+  tagline,
   price,
   period,
   highlight,
@@ -328,11 +354,11 @@ function PricingCard({
 }: PricingCardProps) {
   return (
     <div
-      className={`rounded-2xl border bg-white p-6 shadow-sm ${
+      className={`flex flex-col rounded-2xl border bg-white p-6 shadow-sm ${
         featured ? "border-[#f97316] ring-2 ring-[#f97316]/20" : "border-slate-200"
       }`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-semibold tracking-tight">{name}</h3>
         {highlight ? (
           <span className="rounded-full bg-[#f97316]/10 px-2.5 py-1 text-xs font-semibold text-[#ea580c]">
@@ -340,11 +366,12 @@ function PricingCard({
           </span>
         ) : null}
       </div>
+      {tagline ? <p className="mt-1 text-xs text-slate-500">{tagline}</p> : null}
       <div className="mt-4 flex items-baseline gap-1">
         <span className="text-3xl font-bold tracking-tight">{price}</span>
         <span className="text-sm text-slate-500">{period}</span>
       </div>
-      <ul className="mt-5 space-y-2 text-sm text-slate-600">
+      <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-600">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2">
             <svg
@@ -373,6 +400,72 @@ function PricingCard({
         {cta}
       </button>
     </div>
+  );
+}
+
+type BillingToggleProps = {
+  value: Interval;
+  onChange: (next: Interval) => void;
+};
+
+function BillingToggle({ value, onChange }: BillingToggleProps) {
+  return (
+    <div className="flex items-center justify-center">
+      <div
+        role="tablist"
+        aria-label="Billing cadence"
+        className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm"
+      >
+        <ToggleButton
+          active={value === "monthly"}
+          onClick={() => onChange("monthly")}
+          label="Monthly"
+        />
+        <ToggleButton
+          active={value === "annual"}
+          onClick={() => onChange("annual")}
+          label="Annual"
+          badge="Save 17%"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ToggleButton({
+  active,
+  onClick,
+  label,
+  badge,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  badge?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+        active
+          ? "bg-[#f97316] text-white shadow-sm"
+          : "text-slate-600 hover:text-slate-900"
+      }`}
+    >
+      {label}
+      {badge ? (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            active ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+          }`}
+        >
+          {badge}
+        </span>
+      ) : null}
+    </button>
   );
 }
 

@@ -13,7 +13,8 @@ import {
   writeAffiliateSourceCookieIfMissing,
   writePromoCookies,
 } from "@/lib/promo";
-import { resolveCheckoutDiscount, type Plan } from "@/lib/promo-resolver";
+import { resolveCheckoutDiscount } from "@/lib/promo-resolver";
+import { planMetaFor } from "@/lib/pricing-constants";
 
 type LsCheckoutResponse = {
   data?: {
@@ -23,23 +24,11 @@ type LsCheckoutResponse = {
   };
 };
 
-// Mirrors PRICES in src/app/pricing/page.tsx. Cents so the resolver math
-// stays integer-clean. Keep in sync if pricing changes.
-const PLAN_PRICING: Record<"monthly" | "annual", Plan> = {
-  monthly: { priceCents: 2900, interval: "month" },
-  annual: { priceCents: 26100, interval: "year" },
-};
-
-function planMetaFor(plan: string | undefined | null): Plan | null {
-  if (plan === "monthly" || plan === "annual") return PLAN_PRICING[plan];
-  return null;
-}
-
 /**
  * Marketing pages that load lemon.js call this route with
  * `Accept: application/json` so they can open the LS overlay instead of
  * navigating. Plain <a href> clicks (or JS-disabled browsers) get the 302
- * fallback — same URL, different response shape based on the Accept header.
+ * fallback - same URL, different response shape based on the Accept header.
  */
 function wantsJson(request: Request): boolean {
   const accept = request.headers.get("accept") ?? "";
@@ -62,7 +51,7 @@ function errorResponse(request: Request, code: string): NextResponse {
  *
  * HttpOnly + SameSite=Lax + Secure-in-prod: the cookie survives the LS
  * round-trip (Lax allows top-level navigations back to our domain), but JS
- * on our pages can't read it — only /api/welcome/license can exchange it for
+ * on our pages can't read it - only /api/welcome/license can exchange it for
  * license data.
  */
 function attachWelcomeTokenCookie(response: NextResponse, token: string): void {

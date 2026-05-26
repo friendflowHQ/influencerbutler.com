@@ -9,7 +9,8 @@ import {
   writeAffiliateSourceCookieIfMissing,
   writePromoCookies,
 } from "@/lib/promo";
-import { resolveCheckoutDiscount, type Plan } from "@/lib/promo-resolver";
+import { resolveCheckoutDiscount } from "@/lib/promo-resolver";
+import { planMetaFor } from "@/lib/pricing-constants";
 
 type CheckoutRequestBody = {
   plan?: string;
@@ -30,18 +31,6 @@ type LsCheckoutResponse = {
     };
   };
 };
-
-// Mirrors PRICES in src/app/pricing/page.tsx. Cents so the resolver math
-// stays integer-clean. Keep in sync if pricing changes.
-const PLAN_PRICING: Record<"monthly" | "annual", Plan> = {
-  monthly: { priceCents: 2900, interval: "month" },
-  annual: { priceCents: 26100, interval: "year" },
-};
-
-function planMetaFor(plan: string | undefined): Plan | null {
-  if (plan === "monthly" || plan === "annual") return PLAN_PRICING[plan];
-  return null;
-}
 
 export async function POST(request: Request) {
   try {

@@ -19,7 +19,7 @@ import PricingFeatures from "./PricingFeatures";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Pricing — Influencer Butler",
+  title: "Pricing - Influencer Butler",
   description:
     "Pick your plan. All 29+ butlers included. Cancel anytime. Special discount for first-time visitors.",
   robots: {
@@ -34,11 +34,6 @@ export const metadata = {
   },
 };
 
-const PRICES = {
-  monthly: 39,
-  annual: 390,
-};
-
 type SearchParams = Promise<{ code?: string; from?: string }>;
 
 export default async function PricingPage({
@@ -49,7 +44,7 @@ export default async function PricingPage({
   const params = await searchParams;
   const cookieStore = await cookies();
 
-  // Redirect users with an active/on_trial subscription — they shouldn't see
+  // Redirect users with an active/on_trial subscription - they shouldn't see
   // first-payment discount UI. Mirrors src/app/welcome/page.tsx auth check.
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -115,7 +110,7 @@ export default async function PricingPage({
             Upgrade and unlock every butler
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            All 29+ tools, unlimited messages, and priority support. Cancel anytime — no questions
+            All 29+ tools, unlimited messages, and priority support. Cancel anytime - no questions
             asked.
           </p>
           <div className="mt-5 flex justify-center">
@@ -123,7 +118,7 @@ export default async function PricingPage({
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               <span>
                 <strong className="font-semibold">Two butlers stay free forever:</strong>{" "}
-                Like Butler &amp; Benable Like Butler work on every account — even after trial
+                Like Butler &amp; Benable Like Butler work on every account - even after trial
                 expiry or cancellation.
               </span>
             </span>
@@ -134,7 +129,6 @@ export default async function PricingPage({
           <PricingCardsClient
             tier={tier}
             affiliateCode={affiliate?.code ?? null}
-            prices={PRICES}
             signedIn={signedIn}
             initialCode={rawCode || null}
           />
@@ -199,7 +193,7 @@ export default async function PricingPage({
                 href="/daily-deals-workspace#buy"
                 className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
               >
-                Buy — $24.99/mo
+                Buy - $24.99/mo
               </Link>
             </div>
           </div>
@@ -254,7 +248,7 @@ function SiteFooter() {
               <li><Link href="/pricing" className="hover:text-[#f97316]">Pricing</Link></li>
               <li><Link href="/#how-it-works" className="hover:text-[#f97316]">How It Works</Link></li>
               <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
-              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates — Earn 30%</Link></li>
+              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates - Earn 30%</Link></li>
             </ul>
           </div>
 
@@ -314,8 +308,8 @@ function PromoBanner({
   const pct = tier === "first" ? DISCOUNT_PCT_FIRST : DISCOUNT_PCT_RETURNING;
   const headline =
     tier === "first"
-      ? `Welcome — ${pct}% off your first payment today.`
-      : `Welcome back — ${pct}% off your first payment.`;
+      ? `Welcome - ${pct}% off your first payment today.`
+      : `Welcome back - ${pct}% off your first payment.`;
 
   return (
     <div
@@ -362,7 +356,7 @@ function Guarantee() {
         </svg>
         <p className="max-w-xl text-sm text-slate-700 sm:text-base">
           <strong className="font-semibold text-slate-900">3-day free trial</strong> on every paid plan.
-          Cancel anytime from your dashboard — no support ticket required.
+          Cancel anytime from your dashboard - no support ticket required.
         </p>
       </div>
     </section>
