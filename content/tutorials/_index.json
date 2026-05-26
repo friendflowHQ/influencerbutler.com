@@ -34,6 +34,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "pricecrashbutler",
+      "title": "Pricecrash Butler — catch Amazon pricing errors fast",
+      "category": "Amazon",
+      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Daily Deals Butler as drafts or auto-scheduled posts.",
+      "order": 45,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "storefrontbutler",
       "title": "Storefront Butler — sync every piece of your Amazon storefront",
       "category": "Amazon",
