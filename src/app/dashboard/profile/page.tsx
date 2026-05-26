@@ -14,8 +14,57 @@ type ProfileRow = {
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const USERNAME_RE = /^[a-zA-Z0-9_-]{3,32}$/;
-const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_GIF_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_RASTER_MAX_BYTES = 10 * 1024 * 1024;
 const AVATAR_ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const AVATAR_TARGET_MAX_DIM = 512;
+const AVATAR_WEBP_QUALITY = 0.85;
+
+async function resizeAvatarFile(file: File): Promise<File> {
+  if (file.type === "image/gif") return file;
+
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not decode that image."));
+      el.src = url;
+    });
+
+    const { naturalWidth: w, naturalHeight: h } = img;
+    if (!w || !h) throw new Error("Could not read image dimensions.");
+    const scale = Math.min(1, AVATAR_TARGET_MAX_DIM / Math.max(w, h));
+    const outW = Math.max(1, Math.round(w * scale));
+    const outH = Math.max(1, Math.round(h * scale));
+
+    const canvas =
+      typeof OffscreenCanvas !== "undefined"
+        ? new OffscreenCanvas(outW, outH)
+        : Object.assign(document.createElement("canvas"), { width: outW, height: outH });
+    const ctx = (canvas as HTMLCanvasElement | OffscreenCanvas).getContext("2d") as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D
+      | null;
+    if (!ctx) throw new Error("Canvas not available in this browser.");
+    ctx.drawImage(img, 0, 0, outW, outH);
+
+    const blob: Blob | null = await (canvas instanceof OffscreenCanvas
+      ? canvas.convertToBlob({ type: "image/webp", quality: AVATAR_WEBP_QUALITY })
+      : new Promise<Blob | null>((resolve) =>
+          (canvas as HTMLCanvasElement).toBlob(
+            (b) => resolve(b),
+            "image/webp",
+            AVATAR_WEBP_QUALITY,
+          ),
+        ));
+    if (!blob) throw new Error("Could not re-encode image.");
+
+    return new File([blob], "avatar.webp", { type: "image/webp" });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -163,17 +212,27 @@ export default function ProfilePage() {
       setAvatarError("Choose a PNG, JPEG, WEBP, or GIF.");
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setAvatarError("Image must be under 2 MB.");
+    if (file.type === "image/gif") {
+      if (file.size > AVATAR_GIF_MAX_BYTES) {
+        setAvatarError("Animated GIF must be under 2 MB.");
+        return;
+      }
+    } else if (file.size > AVATAR_RASTER_MAX_BYTES) {
+      setAvatarError("Image must be under 10 MB.");
       return;
     }
     setAvatarUploading(true);
     try {
-      const ext = file.name.includes(".") ? file.name.split(".").pop() : "png";
+      const uploadFile = await resizeAvatarFile(file);
+      const ext = uploadFile.type === "image/webp" ? "webp" : "gif";
       const path = `${userId}/avatar.${ext}`;
       const { error: uploadErr } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "0" });
+        .upload(path, uploadFile, {
+          upsert: true,
+          contentType: uploadFile.type,
+          cacheControl: "0",
+        });
       if (uploadErr) throw uploadErr;
       const { data: publicData } = supabase.storage.from("avatars").getPublicUrl(path);
       const now = new Date().toISOString();
@@ -315,7 +374,9 @@ export default function ProfilePage() {
                 }}
               />
             </label>
-            <p className="mt-1 text-xs text-slate-500">PNG, JPG, WEBP, or GIF. 2 MB max.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              PNG, JPG, or WEBP up to 10 MB — we resize automatically. Animated GIF up to 2 MB.
+            </p>
             {avatarError ? (
               <p className="mt-1 text-xs text-red-600">{avatarError}</p>
             ) : null}

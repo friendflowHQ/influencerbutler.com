@@ -58,31 +58,37 @@ export default async function TutorialPage({
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-6xl gap-10 px-6 py-12 lg:grid-cols-[1fr_240px]">
-        <article className="prose prose-slate max-w-none">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
+      <section className="mx-auto grid max-w-6xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <article>
+          <Link
+            href="/help"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-600"
+          >
+            ← Help
+          </Link>
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-600">
             {category}
           </p>
-          <h1>{title}</h1>
-          {summary ? <p className="lead">{summary}</p> : null}
+          <h1 className="help-article-title">{title}</h1>
+          {summary ? <p className="help-article-lead">{summary}</p> : null}
           <div
             className="help-tutorial-body"
             dangerouslySetInnerHTML={{ __html: tutorial.html }}
           />
         </article>
 
-        <aside className="space-y-6 border-l border-slate-200 pl-6 lg:sticky lg:top-6 lg:self-start">
+        <aside className="space-y-8 lg:sticky lg:top-8 lg:self-start lg:border-l lg:border-slate-200 lg:pl-8">
           {siblings.length ? (
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 More in {category}
               </h2>
-              <ul className="mt-3 space-y-2 text-sm">
+              <ul className="mt-4 space-y-3 text-sm leading-snug">
                 {siblings.map((entry) => (
                   <li key={entry.id}>
                     <Link
                       href={`/help/tutorials/${entry.id}`}
-                      className="text-slate-700 hover:text-orange-600"
+                      className="block text-slate-700 hover:text-orange-600"
                     >
                       {entry.title}
                     </Link>
@@ -91,7 +97,7 @@ export default async function TutorialPage({
               </ul>
             </div>
           ) : null}
-          <div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
               Need more help?
             </h2>
@@ -100,7 +106,7 @@ export default async function TutorialPage({
             </p>
             <Link
               href={`/help/community?workspace=${encodeURIComponent(slug)}`}
-              className="mt-3 inline-block rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700"
+              className="mt-4 inline-block rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700"
             >
               Open community Q&amp;A
             </Link>
