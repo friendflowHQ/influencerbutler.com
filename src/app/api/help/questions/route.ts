@@ -1,66 +1,107 @@
 /**
- * /api/help/questions — thin proxy in front of the in-tree feedback Worker's
- * /questions endpoint. GET is anonymous (forwards query params).
- * POST is bearer-gated by the Worker; the website does not own auth, so
- * we forward the Authorization header verbatim when present.
+ * /api/help/questions — community Q&A storage. POST inserts a pending
+ * question into the community_questions Supabase table; moderation
+ * happens via /dashboard/admin/community. Auth is enforced via the
+ * Supabase session cookie (no Authorization header needed).
+ *
+ * The listing page reads from Supabase directly, so there is no GET
+ * handler here.
  */
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DEFAULT_WORKER_BASE = "https://influencerbutler-feedback.thesocialmediaposse.workers.dev";
+const TITLE_MAX = 200;
+const BODY_MAX = 8000;
+const WORKSPACE_MAX = 80;
 
-function workerBase(): string {
-  return (process.env.FEEDBACK_WORKER_URL || DEFAULT_WORKER_BASE).replace(/\/+$/, "");
-}
+type AuthClient = {
+  auth: {
+    getUser: () => Promise<{
+      data: { user: { id?: string; email?: string | null } | null };
+      error: unknown;
+    }>;
+  };
+  from: (table: string) => {
+    insert: (
+      payload: Record<string, unknown>,
+    ) => {
+      select: (cols: string) => {
+        single: () => Promise<{
+          data: { id: string } | null;
+          error: { message?: string } | null;
+        }>;
+      };
+    };
+  };
+};
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const target = `${workerBase()}/questions${url.search || ""}`;
-  try {
-    const res = await fetch(target, {
-      method: "GET",
-      headers: { accept: "application/json" },
-      // Worker sets its own cache headers; we just forward.
-      cache: "no-store",
-    });
-    const body = await res.text();
-    return new NextResponse(body, {
-      status: res.status,
-      headers: { "content-type": res.headers.get("content-type") || "application/json" },
-    });
-  } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: (err as Error)?.message || "Worker unreachable" },
-      { status: 502 },
-    );
-  }
-}
+type PostBody = {
+  workspaceId?: string;
+  title?: string;
+  body?: string;
+};
 
 export async function POST(request: Request) {
-  const target = `${workerBase()}/questions`;
-  const body = await request.text();
+  let payload: PostBody;
   try {
-    const res = await fetch(target, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(request.headers.get("authorization")
-          ? { authorization: request.headers.get("authorization")! }
-          : {}),
-      },
-      body,
-    });
-    const text = await res.text();
-    return new NextResponse(text, {
-      status: res.status,
-      headers: { "content-type": res.headers.get("content-type") || "application/json" },
-    });
-  } catch (err) {
+    payload = (await request.json()) as PostBody;
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const workspaceId = (payload.workspaceId ?? "").trim();
+  const title = (payload.title ?? "").trim();
+  const body = (payload.body ?? "").trim();
+
+  if (!workspaceId || workspaceId.length > WORKSPACE_MAX) {
+    return NextResponse.json({ ok: false, error: "Pick a workspace." }, { status: 400 });
+  }
+  if (!title || title.length > TITLE_MAX) {
     return NextResponse.json(
-      { ok: false, error: (err as Error)?.message || "Worker unreachable" },
-      { status: 502 },
+      { ok: false, error: `Title is required (max ${TITLE_MAX} chars).` },
+      { status: 400 },
     );
   }
+  if (body.length > BODY_MAX) {
+    return NextResponse.json(
+      { ok: false, error: `Details too long (max ${BODY_MAX} chars).` },
+      { status: 400 },
+    );
+  }
+
+  const supabase = (await createClient()) as unknown as AuthClient;
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user?.id) {
+    return NextResponse.json(
+      { ok: false, error: "Sign in required to post." },
+      { status: 401 },
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("community_questions")
+    .insert({
+      workspace_id: workspaceId,
+      title,
+      body: body || null,
+      status: "pending",
+      author_id: userData.user.id,
+      author_email: userData.user.email ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    console.error("community_questions insert failed", error);
+    return NextResponse.json(
+      { ok: false, error: "Could not post question." },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ ok: true, id: data.id });
 }

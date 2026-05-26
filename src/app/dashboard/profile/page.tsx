@@ -23,31 +23,30 @@ const AVATAR_WEBP_QUALITY = 0.85;
 async function resizeAvatarFile(file: File): Promise<File> {
   if (file.type === "image/gif") return file;
 
-  const url = URL.createObjectURL(file);
+  let bitmap: ImageBitmap;
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Could not decode that image."));
-      el.src = url;
-    });
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("Could not decode that image.");
+  }
 
-    const { naturalWidth: w, naturalHeight: h } = img;
+  try {
+    const { width: w, height: h } = bitmap;
     if (!w || !h) throw new Error("Could not read image dimensions.");
     const scale = Math.min(1, AVATAR_TARGET_MAX_DIM / Math.max(w, h));
     const outW = Math.max(1, Math.round(w * scale));
     const outH = Math.max(1, Math.round(h * scale));
 
-    const canvas =
-      typeof OffscreenCanvas !== "undefined"
-        ? new OffscreenCanvas(outW, outH)
-        : Object.assign(document.createElement("canvas"), { width: outW, height: outH });
-    const ctx = (canvas as HTMLCanvasElement | OffscreenCanvas).getContext("2d") as
+    const useOffscreen = typeof OffscreenCanvas !== "undefined";
+    const canvas: OffscreenCanvas | HTMLCanvasElement = useOffscreen
+      ? new OffscreenCanvas(outW, outH)
+      : Object.assign(document.createElement("canvas"), { width: outW, height: outH });
+    const ctx = canvas.getContext("2d") as
       | CanvasRenderingContext2D
       | OffscreenCanvasRenderingContext2D
       | null;
     if (!ctx) throw new Error("Canvas not available in this browser.");
-    ctx.drawImage(img, 0, 0, outW, outH);
+    ctx.drawImage(bitmap, 0, 0, outW, outH);
 
     const blob: Blob | null = await (canvas instanceof OffscreenCanvas
       ? canvas.convertToBlob({ type: "image/webp", quality: AVATAR_WEBP_QUALITY })
@@ -62,7 +61,7 @@ async function resizeAvatarFile(file: File): Promise<File> {
 
     return new File([blob], "avatar.webp", { type: "image/webp" });
   } finally {
-    URL.revokeObjectURL(url);
+    bitmap.close();
   }
 }
 

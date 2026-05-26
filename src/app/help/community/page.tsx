@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loadManifest } from "@/lib/tutorials";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Community Q&A — Influencer Butler",
@@ -18,21 +19,58 @@ type ApiQuestion = {
   createdAt: number;
 };
 
+type QuestionRow = {
+  id: string;
+  workspace_id: string;
+  title: string;
+  body: string | null;
+  upvotes: number | null;
+  answer_count: number | null;
+  created_at: string;
+};
+
+type Filterable = {
+  eq: (col: string, value: string) => Filterable;
+  order: (col: string, opts: { ascending: boolean }) => Filterable;
+  limit: (n: number) => Promise<{ data: QuestionRow[] | null; error: unknown }>;
+};
+
+type ListClient = {
+  from: (table: string) => {
+    select: (cols: string) => Filterable;
+  };
+};
+
 async function fetchQuestions(workspace?: string): Promise<ApiQuestion[]> {
-  const base =
-    process.env.FEEDBACK_WORKER_URL ||
-    "https://influencerbutler-feedback.thesocialmediaposse.workers.dev";
-  const url = new URL(`${base.replace(/\/+$/, "")}/questions`);
-  url.searchParams.set("sort", "top");
-  url.searchParams.set("limit", "50");
-  if (workspace) url.searchParams.set("workspace", workspace);
   try {
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) return [];
-    const json = (await res.json()) as { ok?: boolean; questions?: ApiQuestion[] };
-    if (!json.ok) return [];
-    return Array.isArray(json.questions) ? json.questions : [];
-  } catch {
+    const supabase = (await createClient()) as unknown as ListClient;
+    let query: Filterable = supabase
+      .from("community_questions")
+      .select("id, workspace_id, title, body, upvotes, answer_count, created_at")
+      .eq("status", "approved");
+
+    if (workspace) {
+      query = query.eq("workspace_id", workspace);
+    }
+
+    const { data, error } = await query
+      .order("upvotes", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error || !data) return [];
+
+    return data.map((row) => ({
+      id: row.id,
+      workspaceId: row.workspace_id,
+      title: row.title,
+      body: row.body ?? "",
+      upvotes: row.upvotes ?? 0,
+      answerCount: row.answer_count ?? 0,
+      createdAt: new Date(row.created_at).getTime(),
+    }));
+  } catch (err) {
+    console.error("fetchQuestions failed", err);
     return [];
   }
 }

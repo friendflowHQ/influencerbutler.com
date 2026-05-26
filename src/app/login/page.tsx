@@ -6,7 +6,11 @@ import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const ALLOWED_NEXT_PREFIXES = ["/dashboard", "/affiliates/portal"];
+const ALLOWED_NEXT_PREFIXES = [
+  "/dashboard",
+  "/affiliates/portal",
+  "/help/community",
+];
 
 function resolveNext(raw: string | null): string {
   if (!raw) return "/dashboard";
