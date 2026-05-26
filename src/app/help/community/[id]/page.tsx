@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadManifest } from "@/lib/tutorials";
 import { createClient } from "@/lib/supabase/server";
+import { resolveCommunityAuthors } from "@/lib/community-authors";
+import AuthorChip from "@/components/community/AuthorChip";
 import UpvoteButton from "./UpvoteButton";
 import AnswerForm from "./AnswerForm";
 
@@ -15,12 +17,14 @@ type QuestionRow = {
   upvotes: number | null;
   answer_count: number | null;
   created_at: string;
+  author_id: string | null;
   author_email: string | null;
 };
 
 type AnswerRow = {
   id: string;
   body: string;
+  author_id: string | null;
   author_email: string | null;
   created_at: string;
 };
@@ -68,7 +72,7 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
-    return { title: "Question — Influencer Butler" };
+    return { title: "Question - Influencer Butler" };
   }
   try {
     const supabase = (await createClient()) as unknown as DetailClient;
@@ -86,11 +90,11 @@ export async function generateMetadata({
       .single();
     return {
       title: data?.title
-        ? `${data.title} — Community Q&A`
-        : "Question — Influencer Butler",
+        ? `${data.title} - Community Q&A`
+        : "Question - Influencer Butler",
     };
   } catch {
-    return { title: "Question — Influencer Butler" };
+    return { title: "Question - Influencer Butler" };
   }
 }
 
@@ -109,7 +113,7 @@ export default async function QuestionDetailPage({
   const questionPromise = (supabase
     .from("community_questions")
     .select(
-      "id, workspace_id, title, body, upvotes, answer_count, created_at, author_email",
+      "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id, author_email",
     ) as unknown as {
     eq: (c: string, v: string) => {
       eq: (c: string, v: string) => {
@@ -123,7 +127,7 @@ export default async function QuestionDetailPage({
 
   const answersPromise = (supabase
     .from("community_answers")
-    .select("id, body, author_email, created_at") as unknown as {
+    .select("id, body, author_id, author_email, created_at") as unknown as {
     eq: (c: string, v: string) => {
       eq: (c: string, v: string) => {
         order: (
@@ -182,6 +186,11 @@ export default async function QuestionDetailPage({
   );
   titlesById.set("other", "Other");
 
+  const authors = await resolveCommunityAuthors([
+    question.author_id,
+    ...(answers ?? []).map((a) => a.author_id),
+  ]);
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -217,10 +226,14 @@ export default async function QuestionDetailPage({
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
             {question.title}
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            Asked {formatDate(question.created_at)}
-            {question.author_email ? ` · ${question.author_email}` : null}
-          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+            <AuthorChip
+              author={question.author_id ? authors.get(question.author_id) : null}
+              fallbackEmail={question.author_email}
+              size="sm"
+            />
+            <span className="text-slate-400">asked {formatDate(question.created_at)}</span>
+          </div>
           {question.body ? (
             <p className="mt-4 whitespace-pre-wrap text-sm text-slate-700">
               {question.body}
@@ -253,10 +266,15 @@ export default async function QuestionDetailPage({
                 key={answer.id}
                 className="rounded-lg border border-slate-200 bg-white p-5"
               >
-                <p className="text-xs text-slate-500">
-                  {answer.author_email ?? "Anonymous"} · {formatDate(answer.created_at)}
-                </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <AuthorChip
+                    author={answer.author_id ? authors.get(answer.author_id) : null}
+                    fallbackEmail={answer.author_email}
+                    size="sm"
+                  />
+                  <span className="text-slate-400">{formatDate(answer.created_at)}</span>
+                </div>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-slate-800">
                   {answer.body}
                 </p>
               </li>
