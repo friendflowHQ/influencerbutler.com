@@ -20,19 +20,49 @@ const AVATAR_ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/gif
 const AVATAR_TARGET_MAX_DIM = 512;
 const AVATAR_WEBP_QUALITY = 0.85;
 
+type DecodedSource =
+  | { kind: "bitmap"; bitmap: ImageBitmap; width: number; height: number }
+  | { kind: "image"; image: HTMLImageElement; width: number; height: number; revoke: () => void };
+
+async function decodeAvatar(file: File): Promise<DecodedSource> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    if (bitmap.width && bitmap.height) {
+      return { kind: "bitmap", bitmap, width: bitmap.width, height: bitmap.height };
+    }
+    bitmap.close();
+  } catch (err) {
+    console.warn("createImageBitmap failed, falling back to <img>", err);
+  }
+
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Image element decode failed."));
+      el.src = url;
+    });
+    const w = image.naturalWidth;
+    const h = image.naturalHeight;
+    if (!w || !h) {
+      URL.revokeObjectURL(url);
+      throw new Error("Could not read image dimensions.");
+    }
+    return { kind: "image", image, width: w, height: h, revoke: () => URL.revokeObjectURL(url) };
+  } catch (err) {
+    URL.revokeObjectURL(url);
+    console.error("avatar decode failed", err);
+    throw new Error("Could not decode that image. Try saving it again as PNG or JPEG.");
+  }
+}
+
 async function resizeAvatarFile(file: File): Promise<File> {
   if (file.type === "image/gif") return file;
 
-  let bitmap: ImageBitmap;
+  const decoded = await decodeAvatar(file);
   try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    throw new Error("Could not decode that image.");
-  }
-
-  try {
-    const { width: w, height: h } = bitmap;
-    if (!w || !h) throw new Error("Could not read image dimensions.");
+    const { width: w, height: h } = decoded;
     const scale = Math.min(1, AVATAR_TARGET_MAX_DIM / Math.max(w, h));
     const outW = Math.max(1, Math.round(w * scale));
     const outH = Math.max(1, Math.round(h * scale));
@@ -46,7 +76,8 @@ async function resizeAvatarFile(file: File): Promise<File> {
       | OffscreenCanvasRenderingContext2D
       | null;
     if (!ctx) throw new Error("Canvas not available in this browser.");
-    ctx.drawImage(bitmap, 0, 0, outW, outH);
+    const source = decoded.kind === "bitmap" ? decoded.bitmap : decoded.image;
+    ctx.drawImage(source, 0, 0, outW, outH);
 
     const blob: Blob | null = await (canvas instanceof OffscreenCanvas
       ? canvas.convertToBlob({ type: "image/webp", quality: AVATAR_WEBP_QUALITY })
@@ -61,7 +92,8 @@ async function resizeAvatarFile(file: File): Promise<File> {
 
     return new File([blob], "avatar.webp", { type: "image/webp" });
   } finally {
-    bitmap.close();
+    if (decoded.kind === "bitmap") decoded.bitmap.close();
+    else decoded.revoke();
   }
 }
 
