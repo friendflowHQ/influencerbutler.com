@@ -162,21 +162,23 @@ export default async function CommunityPage({
             </li>
           ) : (
             questions.map((question) => (
-              <li
-                key={question.id}
-                className="rounded-lg border border-slate-200 bg-white p-5 transition hover:border-orange-500"
-              >
-                <p className="text-xs uppercase tracking-widest text-slate-500">
-                  {titlesById.get(question.workspaceId) || question.workspaceId}
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-900">{question.title}</h2>
-                {question.body ? (
-                  <p className="mt-2 line-clamp-3 text-sm text-slate-600">{question.body}</p>
-                ) : null}
-                <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
-                  <span>{question.upvotes} upvotes</span>
-                  <span>{question.answerCount} answers</span>
-                </div>
+              <li key={question.id}>
+                <Link
+                  href={`/help/community/${question.id}`}
+                  className="block rounded-lg border border-slate-200 bg-white p-5 transition hover:border-orange-500"
+                >
+                  <p className="text-xs uppercase tracking-widest text-slate-500">
+                    {titlesById.get(question.workspaceId) || question.workspaceId}
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-slate-900">{question.title}</h2>
+                  {question.body ? (
+                    <p className="mt-2 line-clamp-3 text-sm text-slate-600">{question.body}</p>
+                  ) : null}
+                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                    <span>{question.upvotes} upvotes</span>
+                    <span>{question.answerCount} answers</span>
+                  </div>
+                </Link>
               </li>
             ))
           )}
