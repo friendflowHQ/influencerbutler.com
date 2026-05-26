@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Prime Day Butler surfaces July 1&ndash;17 Prime Day deals you can post about, including content you already made and products you already own.">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Prime Day Butler &mdash; Win Prime Day without the scramble | Influencer Butler">
+    <meta property="og:description" content="July 1&ndash;17. Storefront content reuse, owned-product lookahead, fresh Creators-API deal discovery &mdash; all in one table you can post from.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f97316">
+    <title>Prime Day Butler &mdash; Win Prime Day without the scramble | Influencer Butler</title>
+    <link rel="icon" type="image/png" href="/assets/influencer-butler-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/consent.js" defer></script>
+</head>
+<body>
+    <header id="site-header">
+        <nav class="container">
+            <a href="/" class="logo" aria-label="Influencer Butler home">
+                <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" class="logo-img" width="40" height="40">
+                <span class="logo-text">Influencer Butler</span>
+            </a>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/#features" class="nav-link">Features</a></li>
+                <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="/#pricing" class="nav-link">Pricing</a></li>
+                <li><a href="/#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
+            </ul>
+            <a href="/#pricing" class="btn btn-primary nav-cta">Start Free Trial</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+            if (!authNavLink) return;
+            const hasSupabaseAuthCookie = document.cookie.split(';').map((e) => e.trim()).some((e) => /^sb-[^=]+-auth-token=/.test(e));
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <main class="feature-detail">
+        <div class="container">
+            <section class="feature-hero anim-up">
+                <div class="feature-hero-copy">
+                    <a href="/#features" class="feature-back-link">&larr; All tools</a>
+                    <div class="feature-hero-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M3 7h18l-2 12H5L3 7z" stroke="#f97316" stroke-width="2" stroke-linejoin="round"/><path d="M8 7V5a4 4 0 018 0v2" stroke="#f97316" stroke-width="2" stroke-linecap="round"/><path d="M9 12h6" stroke="#f97316" stroke-width="2" stroke-linecap="round"/></svg>
+                    </div>
+                    <h1>Prime Day Butler</h1>
+                    <p class="feature-tagline">July 1&ndash;17. Surface Prime Day deals you can actually post about &mdash; including content you already made and products you already own.</p>
+                    <div class="feature-hero-cta">
+                        <a class="btn btn-primary btn-lg" href="/#pricing">Start free</a>
+                        <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
+                    </div>
+                </div>
+                <div class="feature-hero-image">
+                    <!--
+                      ASSET NEEDED: Screenshot of the Prime Day Butler table
+                      showing source pills (Storefront / Owned / Fresh), %-off,
+                      sale prices, CC/SPCC badges, and per-row "Add to Daily
+                      Deals" buttons. 16:9.
+                      DROP IN: <img src="/assets/features/prime-day-butler-hero.png" alt="Prime Day Butler table with source pills, %-off, CC badges, and Add to Daily Deals buttons">
+                    -->
+                    <div class="feature-image-placeholder">
+                        <span class="placeholder-caption">Screenshot: Prime Day table with source pills, %-off, CC badges, and Add to Daily Deals buttons</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="feature-compare anim-up">
+                <div class="compare-col compare-without">
+                    <span class="compare-label">Without this</span>
+                    <p>Prime Day hits July 1 and your content calendar is empty. You scramble between Amazon, your storefront, your camera roll, and the Creators API trying to remember which products you&rsquo;ve already covered and which deals are still worth chasing.</p>
+                </div>
+                <div class="compare-col compare-with">
+                    <span class="compare-label">With Butler</span>
+                    <p>One table. Every Prime Day deal that matches an ASIN you&rsquo;ve already posted about, every deal on a product you already own, and every fresh discovery from your keyword filters &mdash; with CC/SPCC opportunity flags and one-click handoff to Daily Deals Butler.</p>
+                </div>
+            </section>
+
+            <section class="feature-saves anim-up">
+                <h2>How it saves you time, money, and headaches</h2>
+                <ul class="feature-saves-list">
+                    <li>Reuse content you&rsquo;ve already made &mdash; matched to every ASIN that&rsquo;s on a Prime Day deal.</li>
+                    <li>See products you already own that are about to drop in price, so you can shoot content NOW before everyone else does.</li>
+                    <li>Discover fresh deals by keyword + filter (min % off, max price, deal type) &mdash; not just whatever Amazon shows on the front page.</li>
+                    <li>Every row pre-checked for Creator Connections and SPCC opportunities, on both the ASIN and its parent ASIN.</li>
+                    <li>One click to queue any deal into Daily Deals Butler &mdash; no copy-paste, no re-typing prices, no missed posts.</li>
+                    <li>Auto-unlocks July 1 with a banner + toast nudge. Auto-locks July 17 so it doesn&rsquo;t clutter the rest of the year.</li>
+                </ul>
+            </section>
+
+            <section class="feature-box anim-up">
+                <h2>What&rsquo;s in the box</h2>
+                <ul class="feature-box-list">
+                    <li>Storefront content reuse &mdash; joins your Storefront Butler harvest with current Prime Day deals</li>
+                    <li>Owned-product lookahead &mdash; cross-references your Amazon order history to flag products you have on hand</li>
+                    <li>Fresh deal discovery via Creators API search + filters (keyword, min % off, max price, deal type)</li>
+                    <li>CC + SPCC opportunity flags on every row &mdash; both ASIN and parent ASIN</li>
+                    <li>Existing-posts counter so you don&rsquo;t double-post the same product</li>
+                    <li>Sortable, filterable table styled like Orders Butler &mdash; export to CSV anytime</li>
+                    <li>One-click handoff to Daily Deals Butler&rsquo;s scheduler &mdash; no parallel queue to manage</li>
+                    <li>Seasonal banner + first-launch toast, dismissable, re-enable from Settings</li>
+                </ul>
+            </section>
+
+            <section class="feature-proof anim-up">
+                <div class="proof-item">Seasonal &mdash; Jul 1&ndash;17</div>
+                <div class="proof-item">Content reuse</div>
+                <div class="proof-item">Owned-product radar</div>
+                <div class="proof-item">CC + SPCC pre-checked</div>
+            </section>
+
+            <section class="feature-cta anim-up">
+                <h2>Ready to stop scrambling every Prime Day?</h2>
+                <div class="feature-cta-row">
+                    <a class="btn btn-primary btn-lg" href="/#pricing">Start free</a>
+                    <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
+                </div>
+                <a href="/#features" class="feature-back-link feature-back-bottom">&larr; Back to all tools</a>
+            </section>
+        </div>
+    </main>
+
+    <section class="affiliate-band">
+        <div class="container affiliate-band-inner">
+            <div class="affiliate-band-copy">
+                <p class="affiliate-band-eyebrow">Partner Program</p>
+                <h2>Earn 30% recurring. 12 months per referral.</h2>
+                <p class="affiliate-band-pitch">Love Influencer Butler? Get paid to share it. Every subscription you refer pays you 30% every month for the first 12 months they're subscribed. 30-day cookie, last-click attribution, monthly payouts via Lemon Squeezy.</p>
+                <ul class="affiliate-band-points">
+                    <li>30% recurring commission (12 mo per referral)</li>
+                    <li>30-day referral cookie</li>
+                    <li>No caps &mdash; earn forever</li>
+                </ul>
+            </div>
+            <div class="affiliate-band-actions">
+                <a href="/affiliates/apply" class="btn btn-primary btn-lg">Sign up &amp; start earning &rarr;</a>
+                <a href="/affiliates" class="affiliate-band-secondary">Learn about the program</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo">
+                    <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" width="36" height="36">
+                    <span class="logo-text">Influencer Butler</span>
+                </a>
+                <p>The all-in-one command center for Amazon Influencers.</p>
+                <p class="footer-langs">Available in English, Spanish, and French.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/#faq">FAQ</a>
+                <a href="/affiliates">Affiliates &mdash; Earn 30%</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="/legal/privacy.html">Privacy Policy</a>
+                <a href="/legal/eula.html">EULA</a>
+                <a href="/legal/terms.html">Terms of Service</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="mailto:hello@influencerbutler.com">Contact Us</a>
+                <a href="/dashboard">My Account</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 The Social Media Posse LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+  <script src="/js/webmcp.js" defer></script>
+  </body>
+</html>
