@@ -1,5 +1,5 @@
 /**
- * /api/help/questions/[id]/upvote — toggle the current user's upvote on a
+ * /api/help/questions/[id]/upvote - toggle the current user's upvote on a
  * question. POST flips state: if no row exists in community_question_upvotes
  * for (question_id, user_id), insert one; otherwise delete it. A trigger
  * keeps community_questions.upvotes in sync.
@@ -10,6 +10,18 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type Result<T> = { data: T | null; error: { message?: string } | null };
+
+// Shape returned after .select(...).eq(col, value). Supports both the
+// 2-eq chain (used to check whether the user has already upvoted) and
+// the 1-eq chain (used to read the denormalized upvote count).
+type ChainAfterFirstEq = {
+  eq: (col: string, value: string) => {
+    maybeSingle: () => Promise<Result<Record<string, unknown>>>;
+  };
+  single: () => Promise<Result<{ upvotes: number | null }>>;
+};
+
 type UpvoteClient = {
   auth: {
     getUser: () => Promise<{
@@ -19,14 +31,7 @@ type UpvoteClient = {
   };
   from: (table: string) => {
     select: (cols: string) => {
-      eq: (col: string, value: string) => {
-        eq: (col: string, value: string) => {
-          maybeSingle: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: { message?: string } | null;
-          }>;
-        };
-      };
+      eq: (col: string, value: string) => ChainAfterFirstEq;
     };
     insert: (
       payload: Record<string, unknown>,
@@ -34,19 +39,6 @@ type UpvoteClient = {
     delete: () => {
       eq: (col: string, value: string) => {
         eq: (col: string, value: string) => Promise<{
-          error: { message?: string } | null;
-        }>;
-      };
-    };
-  };
-};
-
-type CountClient = {
-  from: (table: string) => {
-    select: (cols: string) => {
-      eq: (col: string, value: string) => {
-        single: () => Promise<{
-          data: { upvotes: number | null } | null;
           error: { message?: string } | null;
         }>;
       };
@@ -63,7 +55,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Bad question id" }, { status: 400 });
   }
 
-  const supabase = (await createClient()) as unknown as UpvoteClient & CountClient;
+  const supabase = (await createClient()) as unknown as UpvoteClient;
 
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user?.id) {
