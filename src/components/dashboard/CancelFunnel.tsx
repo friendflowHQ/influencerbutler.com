@@ -63,7 +63,11 @@ const REASONS: ReasonOption[] = [
 type Step = 1 | 2 | 3 | 4 | 5;
 type Terminal = "cancelled" | "offer_accepted";
 
-const TOTAL_STEPS = 5;
+// Step 4 (retention discount offer) is intentionally skipped in the user flow:
+// active paying subscribers should not be shown competing promo discounts. The
+// Step4Offer component and /api/subscription/retention-offer route are kept in
+// place so the offer can be re-wired later without re-implementing it.
+const TOTAL_STEPS = 4;
 
 function formatDate(value: string | null): string {
   if (!value) return "the end of your current period";
@@ -210,7 +214,10 @@ export default function CancelFunnel({
 
   if (!mounted) return null;
 
-  const progressValue = terminal ? TOTAL_STEPS : step;
+  // Internal step state still uses the original 1-5 numbering so the dead
+  // Step4Offer branch can be re-wired without renumbering. Visually, step 5
+  // (final confirm) maps to position 4 of 4.
+  const progressValue = terminal ? TOTAL_STEPS : step === 5 ? 4 : step;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -293,7 +300,7 @@ export default function CancelFunnel({
             <Step3Address
               reason={reason}
               onBack={() => setStep(2)}
-              onContinue={() => setStep(4)}
+              onContinue={() => setStep(5)}
               onKeep={onClose}
             />
           ) : step === 4 ? (
@@ -312,7 +319,7 @@ export default function CancelFunnel({
               renewsAt={renewsAt}
               actionLoading={actionLoading}
               actionError={actionError}
-              onBack={() => setStep(4)}
+              onBack={() => setStep(3)}
               onKeep={onClose}
               onConfirm={handleConfirmCancel}
             />
