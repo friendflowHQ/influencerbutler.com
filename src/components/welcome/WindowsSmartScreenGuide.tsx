@@ -7,7 +7,7 @@
  * before the user clicks Download and walks them through both prompts so
  * non-technical buyers don't bail.
  *
- * Pure server component — the native <details> element handles open/close, so
+ * Pure server component - the native <details> element handles open/close, so
  * it imports cleanly into both the server-rendered tier page and the
  * "use client" guest-checkout page.
  */
@@ -26,13 +26,13 @@ export default function WindowsSmartScreenGuide() {
       <div className="mt-5 space-y-6 text-sm text-slate-700">
         <p>
           Windows will ask you to confirm before installing. That&apos;s normal for
-          newer apps — here&apos;s exactly what you&apos;ll see and where to click.
+          newer apps - here&apos;s exactly what you&apos;ll see and where to click.
         </p>
 
         <Step
           number={1}
           aspectClass="aspect-[16/7]"
-          placeholderLabel="TODO: screenshot — browser download bar (click ▼ → Keep anyway)"
+          placeholderLabel="TODO: screenshot - browser download bar (click ▼ → Keep anyway)"
         >
           <p className="font-semibold text-slate-900">
             In your browser&apos;s download bar, click the &ldquo;▼&rdquo; next to
@@ -48,7 +48,7 @@ export default function WindowsSmartScreenGuide() {
         <Step
           number={2}
           aspectClass="aspect-[16/10]"
-          placeholderLabel="TODO: screenshot — Windows protected your PC (More info → Run anyway)"
+          placeholderLabel="TODO: screenshot - Windows protected your PC (More info → Run anyway)"
         >
           <p className="font-semibold text-slate-900">
             When you run the installer, Windows shows &ldquo;Windows protected
@@ -65,7 +65,7 @@ export default function WindowsSmartScreenGuide() {
           <p className="font-semibold text-slate-900">Why does this happen?</p>
           <p className="mt-1 text-slate-600">
             Microsoft requires brand-new apps to accumulate thousands of
-            downloads before they&apos;re auto-trusted by SmartScreen — even when
+            downloads before they&apos;re auto-trusted by SmartScreen - even when
             they&apos;re properly signed. Influencer Butler is signed by{" "}
             <strong className="text-slate-900">THE SOCIAL MEDIA POSSE LLC</strong>{" "}
             (you&apos;ll see this name in the prompt). That signature confirms the
@@ -77,7 +77,7 @@ export default function WindowsSmartScreenGuide() {
           <TrustItem>
             Publisher in the prompt should read{" "}
             <strong className="text-slate-900">THE SOCIAL MEDIA POSSE LLC</strong>
-            {" "}— if it doesn&apos;t match, don&apos;t install. Re-download from
+            {" "}- if it doesn&apos;t match, don&apos;t install. Re-download from
             influencerbutler.com.
           </TrustItem>
           <TrustItem>
@@ -85,7 +85,7 @@ export default function WindowsSmartScreenGuide() {
             issued by SSL.com.
           </TrustItem>
           <TrustItem>
-            After the first install, future updates apply silently — you&apos;ll
+            After the first install, future updates apply silently - you&apos;ll
             only see this prompt once.
           </TrustItem>
         </ul>
@@ -109,7 +109,7 @@ function Step(props: {
         </span>
         <div className="min-w-0">{children}</div>
       </div>
-      {/* Placeholder block — swap for <img src="/assets/screenshots/smartscreen/..."> once real annotated screenshots are added (see README in that folder). */}
+      {/* Placeholder block - swap for <img src="/assets/screenshots/smartscreen/..."> once real annotated screenshots are added (see README in that folder). */}
       <figure
         className={`flex ${aspectClass} w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-100 px-4 text-center text-xs text-slate-500`}
       >

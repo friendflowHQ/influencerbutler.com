@@ -47,8 +47,8 @@ async function isCodeTakenLocally(client: LookupClient, code: string): Promise<b
 
 /**
  * Generates a branded discount code for an affiliate, preferring their first
- * name (uppercased, alphanumeric only). On collision — either locally in our
- * DB or in Lemon Squeezy — appends an incrementing number: JOHN → JOHN2 →
+ * name (uppercased, alphanumeric only). On collision - either locally in our
+ * DB or in Lemon Squeezy - appends an incrementing number: JOHN → JOHN2 →
  * JOHN3 → ... up to JOHN99. Falls back to AFF + random hex if the sanitized
  * first name is too short.
  *
@@ -95,7 +95,7 @@ export async function generateAndCreateAffiliateCode(input: GenInput): Promise<G
     }
 
     if (!result.conflict) {
-      // Non-conflict error (network, auth, etc.) — stop burning retries.
+      // Non-conflict error (network, auth, etc.) - stop burning retries.
       return null;
     }
     // conflict → try next candidate

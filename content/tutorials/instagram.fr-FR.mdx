@@ -1,5 +1,5 @@
 ---
-title: Instagram Butler — DM de collaboration directement sur Instagram
+title: Instagram Butler: DM de collaboration directement sur Instagram
 summary: Envoyez des DM de premier contact à des marques et créateurs sur Instagram avec des modèles rotatifs, des filtres par nombre d'abonnés et une liste do-not-message.
 category: Instagram
 ---
@@ -13,15 +13,15 @@ Il se marie naturellement avec **Messenger Butler** (qui gère les conversations
 ## Avant de commencer
 
 - **Un compte Instagram connecté** dans Chrome. Instagram Butler utilise votre session existante.
-- **L'URL de votre boutique Amazon** dans la barre du haut — utilisée dans les modèles via `{storefrontUrl}`.
-- **Une source de cibles** — handles collés à la main, listes d'abonnés de votre compte, ou imports depuis Instagram Goldmine.
+- **L'URL de votre boutique Amazon** dans la barre du haut - utilisée dans les modèles via `{storefrontUrl}`.
+- **Une source de cibles**: handles collés à la main, listes d'abonnés de votre compte, ou imports depuis Instagram Goldmine.
 
 ## Setup : le modèle de message
 
 Ouvrez la carte **Messages initiaux**. C'est là que vivent vos DM de premier contact. Deux règles clés :
 
 1. **Écrivez 3-5 variantes** de votre accroche. Instagram détecte les patterns de DM identiques et rate-limite les comptes qui les envoient. Des variantes comme "Salut ! J'ai vu ton post sur X, j'adorerais collaborer" / "Hello ! Ton contenu sur Y a attiré mon attention, on pourrait discuter ?" tournent par cible.
-2. **Utilisez les marqueurs** — `{storefrontUrl}` substitue votre lien boutique ; `{address}` et `{mediakit}` tirent depuis les valeurs sauvegardées de votre profil. Gardez les variantes courtes — les premiers DM qui se lisent comme un pitch sont ignorés.
+2. **Utilisez les marqueurs**: `{storefrontUrl}` substitue votre lien boutique ; `{address}` et `{mediakit}` tirent depuis les valeurs sauvegardées de votre profil. Gardez les variantes courtes - les premiers DM qui se lisent comme un pitch sont ignorés.
 
 Mettez **initialMessageMode** sur `random` (défaut) pour que Butler choisisse une variante par cible plutôt que de toujours utiliser la première.
 
@@ -29,18 +29,18 @@ Mettez **initialMessageMode** sur `random` (défaut) pour que Butler choisisse u
 
 Le menu déroulant **Mode de cibles** décide à qui Instagram Butler envoie un message :
 
-- **new-followers** — vos abonnés les plus récents. Utile pour convertir les nouveaux abonnements en vraies conversations.
-- **manual-handles** — une liste que vous collez à la main. À utiliser quand vous avez curaté une liste cible (par ex. depuis Instagram Goldmine).
-- **suggested-from-graph** — le graphe "suggéré pour vous" d'Instagram, parcouru depuis un compte semence.
+- **new-followers**: vos abonnés les plus récents. Utile pour convertir les nouveaux abonnements en vraies conversations.
+- **manual-handles**: une liste que vous collez à la main. À utiliser quand vous avez curaté une liste cible (par ex. depuis Instagram Goldmine).
+- **suggested-from-graph**: le graphe "suggéré pour vous" d'Instagram, parcouru depuis un compte semence.
 
 La plupart des utilisateurs au démarrage prennent **new-followers** + **manual-handles** les premières semaines jusqu'à trouver leur rythme.
 
 ## Filtres qui comptent
 
-- **followersLimitMin / followersLimitMax** — passez les comptes hors de cette plage. Utile pour rester sur les micro-influenceurs (par ex. 1K-50K) et éviter à la fois les comptes spam et les méga-comptes injoignables.
-- **skipBrandsRaw** — noms de marque séparés par retour à la ligne à ne jamais contacter. Utile pour exclure les concurrents directs ou les marques avec lesquelles vous avez déjà travaillé.
-- **skipTitleRaw** — mots-clés séparés par retour à la ligne. Si la bio ou les titres de posts récents d'une cible contiennent l'un d'eux, on passe. Aide à éviter les cibles hors niche.
-- **excludeAlreadyMessaged** — laissez activé. Empêche Butler de re-contacter le même handle.
+- **followersLimitMin / followersLimitMax**: passez les comptes hors de cette plage. Utile pour rester sur les micro-influenceurs (par ex. 1K-50K) et éviter à la fois les comptes spam et les méga-comptes injoignables.
+- **skipBrandsRaw**: noms de marque séparés par retour à la ligne à ne jamais contacter. Utile pour exclure les concurrents directs ou les marques avec lesquelles vous avez déjà travaillé.
+- **skipTitleRaw**: mots-clés séparés par retour à la ligne. Si la bio ou les titres de posts récents d'une cible contiennent l'un d'eux, on passe. Aide à éviter les cibles hors niche.
+- **excludeAlreadyMessaged**: laissez activé. Empêche Butler de re-contacter le même handle.
 
 ## Votre première passe de prise de contact
 
@@ -50,7 +50,7 @@ La plupart des utilisateurs au démarrage prennent **new-followers** + **manual-
 4. Mettez un **cap quotidien** prudent (démarrez à 15-25 DM/jour sur un compte nouveau).
 5. Cliquez sur **Lancer**.
 
-Une fenêtre Chrome s'ouvre. Butler parcourt chaque cible, ouvre son profil, ouvre les DM et envoie une de vos variantes. Le rythme est intégré — typiquement 2-5 minutes par DM avec jitter aléatoire.
+Une fenêtre Chrome s'ouvre. Butler parcourt chaque cible, ouvre son profil, ouvre les DM et envoie une de vos variantes. Le rythme est intégré - typiquement 2-5 minutes par DM avec jitter aléatoire.
 
 ## Règles de rate-limit d'Instagram
 
@@ -58,9 +58,9 @@ Instagram est la plateforme la plus stricte avec laquelle Butler interagit :
 
 - **30 premiers jours** sur un compte nouveau : 15-25 DM/jour max.
 - **Comptes établis** : 40-60 DM/jour tenables.
-- **Plus de 80/jour** est en zone signalée — les comptes sont DM-bloqués pendant 24-72 heures.
+- **Plus de 80/jour** est en zone signalée - les comptes sont DM-bloqués pendant 24-72 heures.
 
-Les valeurs par défaut de Butler (jitter, cooldowns, rythme) sont calibrées pour la sécurité — n'écrasez pas agressivement.
+Les valeurs par défaut de Butler (jitter, cooldowns, rythme) sont calibrées pour la sécurité - n'écrasez pas agressivement.
 
 ## Où vont les données
 
@@ -68,13 +68,13 @@ L'historique de DM par run est journalisé dans le cache preseed. Une fois un DM
 
 ## Pièges courants
 
-- **Bannière "Action bloquée par Instagram"** — vous avez envoyé trop de DM trop vite. Butler s'arrête et attend. Patientez 24-48 heures avant de reprendre, et baissez votre cap quotidien.
-- **Le premier DM arrive dans les demandes de message, pas dans la boîte de réception** — Instagram route les DM des non-abonnés vers "Demandes" plutôt que la boîte. Hors du contrôle de Butler.
-- **Les modèles paraissent scriptés** — même en faisant tourner 5 variantes, ça devient daté à l'échelle. Rafraîchissez vos variantes toutes les 2-3 semaines.
-- **Connexion manuelle en plein run** — Instagram demande parfois une vérification. Résolvez-la dans la fenêtre Chrome lancée, cliquez sur Reprendre.
+- **Bannière "Action bloquée par Instagram"**: vous avez envoyé trop de DM trop vite. Butler s'arrête et attend. Patientez 24-48 heures avant de reprendre, et baissez votre cap quotidien.
+- **Le premier DM arrive dans les demandes de message, pas dans la boîte de réception**: Instagram route les DM des non-abonnés vers "Demandes" plutôt que la boîte. Hors du contrôle de Butler.
+- **Les modèles paraissent scriptés**: même en faisant tourner 5 variantes, ça devient daté à l'échelle. Rafraîchissez vos variantes toutes les 2-3 semaines.
+- **Connexion manuelle en plein run**: Instagram demande parfois une vérification. Résolvez-la dans la fenêtre Chrome lancée, cliquez sur Reprendre.
 
 ## Relié
 
-- [Tutoriel Messenger Butler](/help/tutorials/messengerbutler) — gère les conversations en cours qu'Instagram Butler initie.
-- [Tutoriel Instagram Goldmine](/help/tutorials/instagram-goldmine) — découvre des créateurs de votre niche à alimenter Instagram Butler.
-- [Tutoriel Instagram Email Collection](/help/tutorials/instagram-email) — récolte les emails de votre historique de DM.
+- [Tutoriel Messenger Butler](/help/tutorials/messengerbutler) - gère les conversations en cours qu'Instagram Butler initie.
+- [Tutoriel Instagram Goldmine](/help/tutorials/instagram-goldmine) - découvre des créateurs de votre niche à alimenter Instagram Butler.
+- [Tutoriel Instagram Email Collection](/help/tutorials/instagram-email) - récolte les emails de votre historique de DM.

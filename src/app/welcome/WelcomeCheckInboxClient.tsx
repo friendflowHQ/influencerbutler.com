@@ -10,13 +10,13 @@ type Props = {
 
 /**
  * Shown by the /welcome dispatcher when a guest-checkout user lands back from
- * Lemon Squeezy without an authenticated session (expected — their account is
+ * Lemon Squeezy without an authenticated session (expected - their account is
  * created by the order_created webhook which also emails them a magic link).
  *
  * This page:
  *   1. Confirms payment received
  *   2. Tells them to check their inbox for the sign-in link
- *   3. Polls Supabase for a session every 2s — the moment their magic link
+ *   3. Polls Supabase for a session every 2s - the moment their magic link
  *      lands them back here authed, the server component will dispatch to the
  *      correct tier page.
  */
@@ -66,14 +66,14 @@ export default function WelcomeCheckInboxClient({ intervalMs = 2000 }: Props) {
         </svg>
       </div>
       <h1 className="mt-6 text-2xl font-semibold tracking-tight text-slate-900">
-        Payment received — check your inbox
+        Payment received - check your inbox
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm text-slate-600">
         We just emailed you a secure sign-in link. Click it to finish setup and
         download the desktop app.
       </p>
       <p className="mt-4 text-xs text-slate-400">
-        Don&apos;t see it? Check spam, or wait a moment — it arrives within seconds.
+        Don&apos;t see it? Check spam, or wait a moment - it arrives within seconds.
       </p>
       <p className="mt-2 text-xs text-slate-400">{Math.round(elapsed)}s elapsed</p>
     </section>

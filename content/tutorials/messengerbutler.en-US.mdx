@@ -1,22 +1,22 @@
 ---
-title: Messenger Butler — Instagram DMs to creators you discover
+title: Messenger Butler: Instagram DMs to creators you discover
 summary: Send personalized opening DMs to the creators you've added to Instagram Butler's queue.
 category: Instagram
 ---
 
 ## What Messenger Butler does
 
-Messenger Butler is the outreach arm of the Instagram stack. Instagram Butler discovers creators that fit your niche; Messenger Butler reaches out to them. The two are split deliberately — discovery is read-only, outreach is write-side, and you can tune them independently.
+Messenger Butler is the outreach arm of the Instagram stack. Instagram Butler discovers creators that fit your niche; Messenger Butler reaches out to them. The two are split deliberately - discovery is read-only, outreach is write-side, and you can tune them independently.
 
 ## Prerequisites
 
 - **Instagram Butler** has populated the queue with at least one creator. Discovery has to run first.
-- You're signed in to Instagram in the Chrome window Butler spawns. There is no separate auth flow — Butler uses your existing session.
+- You're signed in to Instagram in the Chrome window Butler spawns. There is no separate auth flow - Butler uses your existing session.
 
 ## First run
 
 1. Open **Messenger Butler** in the left nav.
-2. In **Message templates**, pick a template (or write one). Use the `{handle}` and `{followers}` placeholders for personalization — they're substituted per-creator at send time.
+2. In **Message templates**, pick a template (or write one). Use the `{handle}` and `{followers}` placeholders for personalization - they're substituted per-creator at send time.
 3. Set the **Daily DM cap** conservatively for the first day: 10 DMs is a good starting point.
 4. Click **Start Messenger Butler**.
 
@@ -24,17 +24,17 @@ The runner pauses between sends with jitter to look human. You'll see each send 
 
 ## Tuning safely
 
-Instagram is aggressive about DM volume — pushing too hard gets your account flagged. Some rules of thumb:
+Instagram is aggressive about DM volume - pushing too hard gets your account flagged. Some rules of thumb:
 
 - **Stay under 50 DMs/day on a fresh account.** Older, more active accounts can push 80–100.
-- **Vary message templates** — Instagram detects identical-text DMs. Keep three or four templates rotating.
-- **Watch the topbar API Health badge.** If it turns yellow, slow down — that means Butler detected rate-limiting signals.
+- **Vary message templates**: Instagram detects identical-text DMs. Keep three or four templates rotating.
+- **Watch the topbar API Health badge.** If it turns yellow, slow down - that means Butler detected rate-limiting signals.
 
 ## Common gotchas
 
-- **"Send button is greyed out"** — usually means Instagram is showing a verification prompt. Open the Chrome window Butler spawned, complete the prompt, and resume.
-- **Messages going to message requests instead of inbox** — that's an Instagram-side decision based on whether the creator follows you. Not something Butler can fix.
+- **"Send button is greyed out"**: usually means Instagram is showing a verification prompt. Open the Chrome window Butler spawned, complete the prompt, and resume.
+- **Messages going to message requests instead of inbox**: that's an Instagram-side decision based on whether the creator follows you. Not something Butler can fix.
 
 ## Related
 
-- [Instagram Butler tutorial](/help/tutorials/instagram) — populating the queue.
+- [Instagram Butler tutorial](/help/tutorials/instagram) - populating the queue.

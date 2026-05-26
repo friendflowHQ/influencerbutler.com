@@ -56,7 +56,7 @@ function sanitizeSocials(input: SocialHandles): Record<string, string> {
 export default function AffiliateApplyPage() {
   const router = useRouter();
 
-  // Signed-in users get the inline dashboard form — no need to create another
+  // Signed-in users get the inline dashboard form - no need to create another
   // account. Send them to the consolidated affiliate dashboard.
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +70,7 @@ export default function AffiliateApplyPage() {
           router.replace("/dashboard/affiliates");
         }
       } catch {
-        // Ignore — treat as signed-out and let them use the public form.
+        // Ignore - treat as signed-out and let them use the public form.
       }
     })();
     return () => {
@@ -124,7 +124,7 @@ export default function AffiliateApplyPage() {
       const supabase = createClient() as unknown as SupabaseBrowserClient;
       const normalizedEmail = email.trim().toLowerCase();
 
-      // 1) Create the Supabase account (client-side — Vercel serverless has
+      // 1) Create the Supabase account (client-side - Vercel serverless has
       //    intermittent DNS issues reaching Supabase from the server).
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: normalizedEmail,
@@ -143,7 +143,7 @@ export default function AffiliateApplyPage() {
 
       const userId = signUpData.user?.id ?? null;
 
-      // 2) Try to sign in immediately — works when email confirmation is off.
+      // 2) Try to sign in immediately - works when email confirmation is off.
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -377,7 +377,7 @@ export default function AffiliateApplyPage() {
               <Field
                 label="How do you plan to promote Influencer Butler?"
                 required
-                hint="A few sentences is plenty — share what your audience looks like and how you plan to talk about us."
+                hint="A few sentences is plenty - share what your audience looks like and how you plan to talk about us."
               >
                 <textarea
                   required
@@ -428,7 +428,7 @@ export default function AffiliateApplyPage() {
             <p className="text-center text-xs text-slate-500">
               After approval you&apos;ll finish setup in Lemon Squeezy. If you&apos;ve ever bought
               Influencer Butler, look for <span className="font-medium">Affiliate Hub</span> in your
-              Lemon Squeezy user menu — not the public signup form.
+              Lemon Squeezy user menu - not the public signup form.
             </p>
 
             <p className="text-center text-sm text-slate-500">

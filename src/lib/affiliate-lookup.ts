@@ -40,7 +40,7 @@ export async function lookupAffiliateByCode(
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
     console.error(
-      "affiliate-lookup: SUPABASE_SERVICE_ROLE_KEY not set — cannot look up branded codes",
+      "affiliate-lookup: SUPABASE_SERVICE_ROLE_KEY not set - cannot look up branded codes",
     );
     return null;
   }

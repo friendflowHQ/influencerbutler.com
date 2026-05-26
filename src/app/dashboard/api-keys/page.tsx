@@ -106,7 +106,7 @@ export default function ApiKeysPage() {
 
         {newToken ? (
           <div className="mt-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm">
-            <p className="font-semibold text-emerald-900">New token — copy it now, you won&apos;t see it again:</p>
+            <p className="font-semibold text-emerald-900">New token - copy it now, you won&apos;t see it again:</p>
             <code className="mt-2 block break-all rounded bg-white px-2 py-1 font-mono text-xs text-emerald-900">
               {newToken}
             </code>

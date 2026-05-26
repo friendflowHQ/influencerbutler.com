@@ -7,11 +7,11 @@ import BuyAddonButton from "./BuyAddonButton";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Daily Deals Workspace Add-on — $24.99/mo · Influencer Butler",
+  title: "Daily Deals Workspace Add-on - $24.99/mo · Influencer Butler",
   description:
-    "Add a second Daily Deals Butler workspace for a different niche. Own filters, schedules, and queues — managed alongside your main workspace. No promo or affiliate codes apply.",
+    "Add a second Daily Deals Butler workspace for a different niche. Own filters, schedules, and queues - managed alongside your main workspace. No promo or affiliate codes apply.",
   openGraph: {
-    title: "Daily Deals Workspace Add-on — $24.99/mo",
+    title: "Daily Deals Workspace Add-on - $24.99/mo",
     description:
       "Add a second Daily Deals Butler workspace for a different niche.",
     type: "website",
@@ -20,8 +20,8 @@ export const metadata = {
 
 export default async function DailyDealsWorkspacePage() {
   // Detect sign-in for the header CTA + the BuyAddonButton routing
-  // (auth flow vs. guest flow). The add-on doesn't require auth — guest
-  // purchases work fine — but signed-in customers get their existing
+  // (auth flow vs. guest flow). The add-on doesn't require auth - guest
+  // purchases work fine - but signed-in customers get their existing
   // licence credited automatically.
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -70,7 +70,7 @@ export default async function DailyDealsWorkspacePage() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
             Run a separate Daily Deals Butler workspace for each niche you
-            promote — Gardening, Sports, Cooking, whatever. Own filters,
+            promote - Gardening, Sports, Cooking, whatever. Own filters,
             schedules, post queues, and tallies. Stacks cleanly with your
             Pro plan, no extra setup.
           </p>
@@ -110,7 +110,7 @@ export default async function DailyDealsWorkspacePage() {
               <p className="mt-2 text-sm text-slate-600">
                 Your Cooking workspace posts at 10am ET. Your Sports workspace
                 fires every game-day Saturday. Independent schedulers per
-                clone — they don&apos;t step on each other.
+                clone - they don&apos;t step on each other.
               </p>
             </article>
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -142,7 +142,7 @@ export default async function DailyDealsWorkspacePage() {
               <h3 className="text-base font-semibold text-slate-900">Buy the add-on</h3>
               <p className="mt-1 text-sm text-slate-600">
                 Subscribe to Daily Deals Workspace for $24.99/month. You get
-                one new workspace per subscription — buy more anytime you need
+                one new workspace per subscription - buy more anytime you need
                 another niche.
               </p>
             </div>
@@ -159,7 +159,7 @@ export default async function DailyDealsWorkspacePage() {
                 Next time you sign in, the new workspace is already credited.
                 Open Daily Deals Butler in the nav and click{" "}
                 <span className="font-mono text-[13px]">+ Add Workspace</span>.
-                Name it whatever you want — &ldquo;Gardening&rdquo;,
+                Name it whatever you want - &ldquo;Gardening&rdquo;,
                 &ldquo;Sports&rdquo;, &ldquo;Cooking&rdquo;.
               </p>
             </div>
@@ -222,7 +222,7 @@ export default async function DailyDealsWorkspacePage() {
                   <span className="text-[#f97316]" aria-hidden>
                     ✓
                   </span>
-                  Stackable — buy as many add-ons as you have niches
+                  Stackable - buy as many add-ons as you have niches
                 </li>
                 <li className="flex gap-2">
                   <span className="text-[#f97316]" aria-hidden>
@@ -278,7 +278,7 @@ export default async function DailyDealsWorkspacePage() {
               Can I get a discount on this add-on?
             </dt>
             <dd className="mt-2 text-sm text-slate-600">
-              No — and this is enforced at three different layers in our
+              No - and this is enforced at three different layers in our
               checkout pipeline. Promo codes and affiliate codes apply to the
               Pro subscription only.
             </dd>
@@ -356,7 +356,7 @@ function SiteFooter() {
               </li>
               <li>
                 <Link href="/affiliates" className="hover:text-[#f97316]">
-                  Affiliates — Earn 30%
+                  Affiliates - Earn 30%
                 </Link>
               </li>
             </ul>

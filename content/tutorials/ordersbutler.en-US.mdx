@@ -1,5 +1,5 @@
 ---
-title: Orders Butler — sync your real Amazon order history
+title: Orders Butler: sync your real Amazon order history
 summary: Pull your purchase + commission history straight from Amazon so the rest of the app has accurate ASIN signal.
 category: Amazon
 ---
@@ -17,14 +17,14 @@ If Orders Butler is stale, every Amazon workspace is making decisions on stale d
 ## First sync
 
 1. Open **Orders Butler** in the left nav.
-2. Pick a **lookback window** — start with **90 days** for a fresh install. The first sync is the slowest because there's no incremental cursor yet.
+2. Pick a **lookback window** - start with **90 days** for a fresh install. The first sync is the slowest because there's no incremental cursor yet.
 3. Click **Sync now**.
 
 The runner opens a Chrome window, logs in (if needed), and walks the orders pages. A 90-day backfill on a normal account takes 2–4 minutes.
 
 ## Ongoing syncs
 
-After the first sync, Orders Butler tracks the most recent order it saw and only fetches newer ones on subsequent runs. Set it to **run daily** in the Schedule card — it'll add new orders incrementally in a few seconds.
+After the first sync, Orders Butler tracks the most recent order it saw and only fetches newer ones on subsequent runs. Set it to **run daily** in the Schedule card - it'll add new orders incrementally in a few seconds.
 
 ## Where the data lives
 
@@ -32,10 +32,10 @@ Pulled rows live in `{userData}/InfluencerButler/workspaces/preseed/data/orders/
 
 ## Gotchas
 
-- **"Login required" banner stays up** — Amazon asked for re-auth. Open the Chrome window the runner spawned, sign in, and click **Resume**.
-- **Sync looks frozen on "Page 47"** — Amazon throttled the request. Orders Butler retries automatically with backoff; give it 1–2 minutes before clicking Stop.
-- **Missing recent orders** — the most recent 24h sometimes don't appear in Amazon's UI until they ship. That's an Amazon-side delay, not a Butler bug.
+- **"Login required" banner stays up**: Amazon asked for re-auth. Open the Chrome window the runner spawned, sign in, and click **Resume**.
+- **Sync looks frozen on "Page 47"**: Amazon throttled the request. Orders Butler retries automatically with backoff; give it 1–2 minutes before clicking Stop.
+- **Missing recent orders**: the most recent 24h sometimes don't appear in Amazon's UI until they ship. That's an Amazon-side delay, not a Butler bug.
 
 ## Related
 
-- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) — the main consumer of fresh order data.
+- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of fresh order data.

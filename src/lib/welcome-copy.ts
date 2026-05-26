@@ -34,7 +34,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Connect your first account",
-        body: "Sign in with the creator account you want to automate — it only takes a minute.",
+        body: "Sign in with the creator account you want to automate - it only takes a minute.",
       },
       {
         title: "Watch for a 20% discount code",
@@ -49,7 +49,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     },
   },
   monthly: {
-    eyebrow: "You're in — Pro Monthly",
+    eyebrow: "You're in - Pro Monthly",
     headline: "Thanks for subscribing!",
     subhead:
       "Your Pro Monthly plan is active. Install the app with the license key below and you're set.",
@@ -75,8 +75,8 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     },
   },
   annual: {
-    eyebrow: "You're in — Pro Annual",
-    headline: "Welcome aboard — and nice move on annual.",
+    eyebrow: "You're in - Pro Annual",
+    headline: "Welcome aboard - and nice move on annual.",
     subhead:
       "You saved ~17% vs. monthly. Install the app, activate your key, and you're locked in for the year.",
     steps: [
@@ -90,7 +90,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Invite a teammate or refer a friend",
-        body: "Your Pro Annual plan includes affiliate benefits — earn 30% recurring (for 12 months) on anyone you refer.",
+        body: "Your Pro Annual plan includes affiliate benefits - earn 30% recurring (for 12 months) on anyone you refer.",
       },
     ],
     callout: {

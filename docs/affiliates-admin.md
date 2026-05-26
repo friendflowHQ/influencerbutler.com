@@ -1,6 +1,6 @@
-# Affiliate program — admin guide
+# Affiliate program: admin guide
 
-This doc covers running the Influencer Butler affiliate program. The system has three moving parts: our Supabase tables, the Lemon Squeezy affiliate feature, and the consolidated dashboard at `/dashboard/affiliates`. Approval is automated — one click in the admin page creates the Lemon Squeezy record, links it to the user, and emails them.
+This doc covers running the Influencer Butler affiliate program. The system has three moving parts: our Supabase tables, the Lemon Squeezy affiliate feature, and the consolidated dashboard at `/dashboard/affiliates`. Approval is automated - one click in the admin page creates the Lemon Squeezy record, links it to the user, and emails them.
 
 ## Environment variables
 
@@ -9,8 +9,8 @@ Add to your production environment (and `.env.local` for local dev):
 ```
 # Existing
 LEMONSQUEEZY_API_KEY=<shared with subscriptions>
-RESEND_API_KEY=<optional — needed for admin + approval emails>
-ADMIN_NOTIFICATION_EMAIL=<optional — recipient for new application emails>
+RESEND_API_KEY=<optional - needed for admin + approval emails>
+ADMIN_NOTIFICATION_EMAIL=<optional - recipient for new application emails>
 SUPABASE_SERVICE_ROLE_KEY=<required for admin endpoints>
 
 # New (required for approval automation)
@@ -29,8 +29,8 @@ NEXT_PUBLIC_LEMONSQUEEZY_AFFILIATE_SIGNUP_URL=https://influencerbutler.lemonsque
 
 Run these migrations once in the Supabase SQL editor:
 
-1. `supabase/migrations/20260415_affiliates.sql` — adds `is_affiliate` / `ls_affiliate_id` columns to `profiles` and creates `affiliate_applications` with RLS.
-2. `supabase/migrations/20260416_affiliate_applications_email_rls.sql` — extends the SELECT policy so users can read their own application by email too (handles the edge case where an applicant's `user_id` changed after email confirmation).
+1. `supabase/migrations/20260415_affiliates.sql` - adds `is_affiliate` / `ls_affiliate_id` columns to `profiles` and creates `affiliate_applications` with RLS.
+2. `supabase/migrations/20260416_affiliate_applications_email_rls.sql` - extends the SELECT policy so users can read their own application by email too (handles the edge case where an applicant's `user_id` changed after email confirmation).
 
 ## Review + approval flow
 
@@ -56,7 +56,7 @@ On next reload of `/dashboard/affiliates` the applicant sees the full affiliate 
 ### To reject (automated)
 
 1. On `/dashboard/admin/affiliates`, click **Reject** on the applicant's row.
-2. Optionally add a reason when prompted — it's stored in `admin_notes`.
+2. Optionally add a reason when prompted - it's stored in `admin_notes`.
 
 Rejection only updates the application row; the user's Supabase account stays intact. Email them out-of-band if you'd like to explain.
 
@@ -87,10 +87,10 @@ SELECT id FROM auth.users WHERE email = '<applicant_email>';
 ## Commission structure
 
 - **30% recurring commission** on every subscription payment.
-- **Capped at 12 months per referred customer** — accrual stops once a customer has been a paying subscriber for 12 consecutive months. Configure this in LS → Affiliates → Settings → commission duration.
+- **Capped at 12 months per referred customer**: accrual stops once a customer has been a paying subscriber for 12 consecutive months. Configure this in LS → Affiliates → Settings → commission duration.
 - 30-day referral cookie.
 - Last-click attribution.
-- **No discount stacking**: customers can apply either an Affiliate code OR a site-wide welcome code (WELCOME15 / WELCOME30) at checkout, not both. The promo-resolver enforces this in `src/lib/promo-resolver.ts` — when an Affiliate-tracked candidate is present, welcome-cookie candidates are dropped before discount ranking.
+- **No discount stacking**: customers can apply either an Affiliate code OR a site-wide welcome code (WELCOME15 / WELCOME30) at checkout, not both. The promo-resolver enforces this in `src/lib/promo-resolver.ts` - when an Affiliate-tracked candidate is present, welcome-cookie candidates are dropped before discount ranking.
 - Payouts managed by Lemon Squeezy.
 
 If you change these in LS, update the copy in:
@@ -108,17 +108,17 @@ If you change these in LS, update the copy in:
 
 All admin endpoints require `ADMIN_EMAILS` + `SUPABASE_SERVICE_ROLE_KEY` to be configured and a logged-in session whose email is in the allowlist.
 
-- `GET  /api/affiliates/admin-list` — returns all pending applications.
-- `POST /api/affiliates/approve` — body `{ userId }`. Creates LS affiliate, updates Supabase, sends email.
-- `POST /api/affiliates/reject`  — body `{ userId, reason? }`. Marks application rejected.
-- `GET  /api/affiliates/me`       — current user's own affiliate state (public, gated by auth).
-- `POST /api/affiliates/me`       — body `{ lsAffiliateId }`. Fetches LS stats for a signed-in user's own affiliate ID.
+- `GET  /api/affiliates/admin-list` - returns all pending applications.
+- `POST /api/affiliates/approve` - body `{ userId }`. Creates LS affiliate, updates Supabase, sends email.
+- `POST /api/affiliates/reject`  - body `{ userId, reason? }`. Marks application rejected.
+- `GET  /api/affiliates/me`       - current user's own affiliate state (public, gated by auth).
+- `POST /api/affiliates/me`       - body `{ lsAffiliateId }`. Fetches LS stats for a signed-in user's own affiliate ID.
 
 ## Troubleshooting
 
-- **Dashboard shows "couldn't load stats"** — the LS API call failed. Verify `LEMONSQUEEZY_API_KEY` is valid and the `ls_affiliate_id` in the user's profile matches a real record in LS.
-- **Dashboard stays on "Application under review"** — the user's `profiles.ls_affiliate_id` is still null. Approve via `/dashboard/admin/affiliates` or run the manual SQL above.
-- **Admin page shows "Forbidden"** — add your email to `ADMIN_EMAILS` (comma-separated, case-insensitive) and redeploy.
-- **Approve button returns `LEMONSQUEEZY_STORE_ID env var is not set`** — add it (see Environment variables above).
-- **Approve button returns 502** — Lemon Squeezy rejected the create call. Check server logs for the LS response body.
-- **User never gets to sign in** — Supabase may require email confirmation. The apply page shows a "Check your email to confirm" message when that happens.
+- **Dashboard shows "couldn't load stats"**: the LS API call failed. Verify `LEMONSQUEEZY_API_KEY` is valid and the `ls_affiliate_id` in the user's profile matches a real record in LS.
+- **Dashboard stays on "Application under review"**: the user's `profiles.ls_affiliate_id` is still null. Approve via `/dashboard/admin/affiliates` or run the manual SQL above.
+- **Admin page shows "Forbidden"**: add your email to `ADMIN_EMAILS` (comma-separated, case-insensitive) and redeploy.
+- **Approve button returns `LEMONSQUEEZY_STORE_ID env var is not set`**: add it (see Environment variables above).
+- **Approve button returns 502**: Lemon Squeezy rejected the create call. Check server logs for the LS response body.
+- **User never gets to sign in**: Supabase may require email confirmation. The apply page shows a "Check your email to confirm" message when that happens.

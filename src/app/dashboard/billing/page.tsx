@@ -138,7 +138,7 @@ export default function BillingPage() {
                   <td className="py-3 pr-4 text-slate-600">
                     {invoice.cardBrand && invoice.cardLastFour
                       ? `${invoice.cardBrand.toUpperCase()} •••• ${invoice.cardLastFour}`
-                      : "—"}
+                      : "-"}
                   </td>
                   <td className="py-3 pr-4">
                     <StatusBadge status={invoice.status} label={invoice.statusLabel} />
@@ -158,7 +158,7 @@ export default function BillingPage() {
                         View
                       </a>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-slate-400">-</span>
                     )}
                   </td>
                 </tr>
@@ -191,9 +191,9 @@ function StatusBadge({ status, label }: { status: string | null; label: string |
 }
 
 function formatDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -216,7 +216,7 @@ function formatBillingReason(reason: string | null): string {
 }
 
 function formatAmount(totalCents: number | null, currency: string | null): string {
-  if (totalCents == null) return "—";
+  if (totalCents == null) return "-";
   const amount = totalCents / 100;
   try {
     return new Intl.NumberFormat("en-US", {

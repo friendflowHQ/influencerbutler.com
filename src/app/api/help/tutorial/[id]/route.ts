@@ -1,5 +1,5 @@
 /**
- * GET /api/help/tutorial/[id]?locale=en-US — returns the rendered HTML +
+ * GET /api/help/tutorial/[id]?locale=en-US - returns the rendered HTML +
  * frontmatter for a single tutorial. Falls back to en-US when the
  * requested locale is missing.
  */

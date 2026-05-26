@@ -1,5 +1,5 @@
 /**
- * /api/profiles/by-license — bearer-gated batch lookup used by the
+ * /api/profiles/by-license - bearer-gated batch lookup used by the
  * feedback Worker to enrich community Q&A authors with display name +
  * username + avatar. Uses the service-role Supabase client so RLS
  * doesn't hide profiles from anonymous callers.

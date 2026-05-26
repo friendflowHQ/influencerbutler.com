@@ -39,7 +39,7 @@ type Props = {
 /**
  * Buy CTA for the Daily Deals Workspace add-on. Hardcodes
  * `plan: "daily-deals-addon"` and intentionally NEVER passes `code` or
- * `affiliateSource` — the add-on does not accept promo or affiliate
+ * `affiliateSource` - the add-on does not accept promo or affiliate
  * codes. The triple-belt promo-exclusion contract in the checkout
  * routes + LS-side variant scoping enforces this even if we somehow
  * leaked a code into the request.
@@ -97,7 +97,7 @@ export default function BuyAddonButton({ signedIn, label, className }: Props) {
           "inline-flex items-center justify-center rounded-lg bg-[#f97316] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f97316] disabled:cursor-progress disabled:opacity-70"
         }
       >
-        {loading ? "Opening checkout…" : label ?? "Buy — $24.99/month"}
+        {loading ? "Opening checkout…" : label ?? "Buy - $24.99/month"}
       </button>
     </>
   );

@@ -10,7 +10,7 @@ type NotifyBody = {
 };
 
 export async function POST(request: Request) {
-  // Best-effort admin email. Non-critical — the application row is already
+  // Best-effort admin email. Non-critical - the application row is already
   // saved by the client before this endpoint is called.
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.ADMIN_NOTIFICATION_EMAIL;
@@ -42,9 +42,9 @@ export async function POST(request: Request) {
         text: [
           `New affiliate application submitted.`,
           ``,
-          `Name: ${body.fullName ?? "—"}`,
-          `Email: ${body.email ?? "—"}`,
-          `User ID: ${body.userId ?? "—"}`,
+          `Name: ${body.fullName ?? "-"}`,
+          `Email: ${body.email ?? "-"}`,
+          `User ID: ${body.userId ?? "-"}`,
           ``,
           `Full details: Supabase affiliate_applications table.`,
         ].join("\n"),

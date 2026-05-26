@@ -1,12 +1,12 @@
 ---
-title: Instagram Email Collection — recoge los emails de marcas escondidos en tus DMs de Instagram
+title: Instagram Email Collection: recoge los emails de marcas escondidos en tus DMs de Instagram
 summary: Escanea tu historial de DMs de Instagram en busca de direcciones de email que las marcas han compartido en conversación y expórtalos a una lista de contactos reutilizable.
 category: Instagram
 ---
 
 ## Qué hace Instagram Email Collection
 
-Las marcas suelen compartir su email de pitch en DMs de Instagram — "envía tu media kit a brandname@..." o "continuemos esto en marketing@brand.com." Esos emails son valiosos: son una línea directa con el contacto de la marca que vio tu trabajo, fuera del alcance algorítmico de Instagram.
+Las marcas suelen compartir su email de pitch en DMs de Instagram - "envía tu media kit a brandname@..." o "continuemos esto en marketing@brand.com." Esos emails son valiosos: son una línea directa con el contacto de la marca que vio tu trabajo, fuera del alcance algorítmico de Instagram.
 
 Pero encontrarlos después significa hacer scroll a mano por cientos de DMs. Instagram Email Collection escanea tu historial de DMs, extrae direcciones de email y las vuelca en una tabla con el hilo de origen + un toggle "outreach enviado" para que rastrees a quiénes ya has contactado desde la lista.
 
@@ -18,9 +18,9 @@ Pero encontrarlos después significa hacer scroll a mano por cientos de DMs. Ins
 ## Tu primer escaneo
 
 1. Abre **Instagram Email Collection** dentro de Instagram Butler.
-2. **Máximo de hilos a escanear** — por defecto 50. Es cuántos hilos de DM (los más recientes primero) Butler recorre por ejecución. Empieza con 50 para probar y sube a 200-500 cuando hayas visto que funciona.
-3. **Incremental** — déjalo activado. El modo incremental sólo escanea hilos más nuevos que la última ejecución, así las siguientes son rápidas. Desactívalo sólo para el primer backfill completo.
-4. **Historial completo de mensajes** (opcional) — activado, Butler recorre cada hilo hasta el primer mensaje en vez de parar en los recientes. Más lento pero exhaustivo. Úsalo una vez en el primer backfill y luego apágalo.
+2. **Máximo de hilos a escanear**: por defecto 50. Es cuántos hilos de DM (los más recientes primero) Butler recorre por ejecución. Empieza con 50 para probar y sube a 200-500 cuando hayas visto que funciona.
+3. **Incremental**: déjalo activado. El modo incremental sólo escanea hilos más nuevos que la última ejecución, así las siguientes son rápidas. Desactívalo sólo para el primer backfill completo.
+4. **Historial completo de mensajes** (opcional) - activado, Butler recorre cada hilo hasta el primer mensaje en vez de parar en los recientes. Más lento pero exhaustivo. Úsalo una vez en el primer backfill y luego apágalo.
 5. Pulsa **Ejecutar**.
 
 Se abre una ventana de Chrome. Butler recorre tu bandeja de DMs, abre cada hilo, escanea direcciones de email usando una regex robusta y añade coincidencias a la tabla de resultados. La primera ejecución sobre una bandeja con muchos DMs tarda 5-15 minutos; las ejecuciones incrementales son de 30 segundos.
@@ -29,16 +29,16 @@ Se abre una ventana de Chrome. Butler recorre tu bandeja de DMs, abre cada hilo,
 
 La tabla de resultados tiene una fila por email encontrado:
 
-- **Email** — la dirección.
-- **From thread** — el handle de Instagram cuyo DM contenía el email. Pulsa para abrir el hilo en Instagram.
-- **Snippet** — unas palabras de contexto alrededor del email para que recuerdes por qué se compartió.
-- Toggle **Sent** — marca si ya has contactado a este email por fuera. Útil para no doblar envíos.
+- **Email**: la dirección.
+- **From thread**: el handle de Instagram cuyo DM contenía el email. Pulsa para abrir el hilo en Instagram.
+- **Snippet**: unas palabras de contexto alrededor del email para que recuerdes por qué se compartió.
+- Toggle **Sent** - marca si ya has contactado a este email por fuera. Útil para no doblar envíos.
 
 Botones del toolbar superior:
 
-- **Seleccionar visibles** + **Limpiar selección** — elige filas para acciones masivas.
-- **Marcar como enviado** — voltea el toggle Sent en cada fila seleccionada.
-- **Exportar CSV** — vuelca la lista filtrada a una hoja de cálculo para usar fuera de Butler.
+- **Seleccionar visibles** + **Limpiar selección** - elige filas para acciones masivas.
+- **Marcar como enviado**: voltea el toggle Sent en cada fila seleccionada.
+- **Exportar CSV**: vuelca la lista filtrada a una hoja de cálculo para usar fuera de Butler.
 
 ## Programación
 
@@ -47,13 +47,13 @@ El programador ejecuta Email Collection con una cadencia para que los emails nue
 1. Pulsa **Activar programación**.
 2. Elige un intervalo (24h por defecto).
 
-Mientras la programación está activa, los ajustes se bloquean. Pulsa **Detener programación** antes de editar. Diario es suficiente — los DMs de Instagram no se acumulan tan rápido como para necesitar algo más frecuente.
+Mientras la programación está activa, los ajustes se bloquean. Pulsa **Detener programación** antes de editar. Diario es suficiente - los DMs de Instagram no se acumulan tan rápido como para necesitar algo más frecuente.
 
 ## Ajustes con el tiempo
 
-- **maxThreads** — 50 está bien para escaneos incrementales diarios. Sube a 500 para el primer backfill completo y luego baja a 50.
-- **Incremental** — déjalo activado después de la primera ejecución. Ahorra 90 %+ del tiempo de ejecución.
-- **Historial completo** — actívalo una vez para el primer backfill, luego apágalo para siempre (el incremental maneja las actualizaciones).
+- **maxThreads**: 50 está bien para escaneos incrementales diarios. Sube a 500 para el primer backfill completo y luego baja a 50.
+- **Incremental**: déjalo activado después de la primera ejecución. Ahorra 90 %+ del tiempo de ejecución.
+- **Historial completo**: actívalo una vez para el primer backfill, luego apágalo para siempre (el incremental maneja las actualizaciones).
 
 ## Dónde van los datos
 
@@ -61,13 +61,13 @@ Los emails recolectados viven en la caché preseed. La exportación CSV desde el
 
 ## Tropiezos comunes
 
-- **No se encuentran emails a pesar de muchos DMs** — muchos DMs de marca comparten emails sólo en PDFs o imágenes. Butler no hace OCR — sólo encuentra patrones de email en el texto plano del mensaje.
-- **La programación parece atascada** — los ajustes se bloquean durante una programación activa. Pulsa Detener programación, edita, vuelve a activarla.
-- **El mismo email aparece dos veces desde hilos distintos** — es esperable; la marca te escribió desde dos cuentas distintas. Usa el toggle Sent para rastrear sólo una de ellas.
-- **Pide iniciar sesión a mitad de ejecución** — resuélvelo en la ventana de Chrome abierta, pulsa Reanudar.
+- **No se encuentran emails a pesar de muchos DMs**: muchos DMs de marca comparten emails sólo en PDFs o imágenes. Butler no hace OCR - sólo encuentra patrones de email en el texto plano del mensaje.
+- **La programación parece atascada**: los ajustes se bloquean durante una programación activa. Pulsa Detener programación, edita, vuelve a activarla.
+- **El mismo email aparece dos veces desde hilos distintos**: es esperable; la marca te escribió desde dos cuentas distintas. Usa el toggle Sent para rastrear sólo una de ellas.
+- **Pide iniciar sesión a mitad de ejecución**: resuélvelo en la ventana de Chrome abierta, pulsa Reanudar.
 
 ## Relacionado
 
-- [Tutorial de Instagram Butler](/help/tutorials/instagram) — espacio de DM outreach que complementa éste.
-- [Tutorial de Pitch Butler](/help/tutorials/pitchbutler) — importa estos emails al CRM unificado de marcas.
-- [Tutorial de Messenger Butler](/help/tutorials/messengerbutler) — gestiona conversaciones en marcha en Instagram.
+- [Tutorial de Instagram Butler](/help/tutorials/instagram) - espacio de DM outreach que complementa éste.
+- [Tutorial de Pitch Butler](/help/tutorials/pitchbutler) - importa estos emails al CRM unificado de marcas.
+- [Tutorial de Messenger Butler](/help/tutorials/messengerbutler) - gestiona conversaciones en marcha en Instagram.

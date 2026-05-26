@@ -16,10 +16,10 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const tutorial = await loadTutorial(slug);
-  if (!tutorial) return { title: "Tutorial not found — Influencer Butler" };
+  if (!tutorial) return { title: "Tutorial not found - Influencer Butler" };
   const title = (tutorial.frontmatter.title as string) || tutorial.id;
   return {
-    title: `${title} — Influencer Butler`,
+    title: `${title} - Influencer Butler`,
     description: (tutorial.frontmatter.summary as string) || "",
   };
 }
@@ -44,7 +44,7 @@ export default async function TutorialPage({
     <main className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
             ← Influencer Butler
           </Link>
           <nav className="flex items-center gap-4 text-sm">

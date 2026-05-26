@@ -406,7 +406,7 @@ export default function ProfilePage() {
               />
             </label>
             <p className="mt-1 text-xs text-slate-500">
-              PNG, JPG, or WEBP up to 10 MB — we resize automatically. Animated GIF up to 2 MB.
+              PNG, JPG, or WEBP up to 10 MB - we resize automatically. Animated GIF up to 2 MB.
             </p>
             {avatarError ? (
               <p className="mt-1 text-xs text-red-600">{avatarError}</p>
@@ -467,7 +467,7 @@ export default function ProfilePage() {
         <h2 className="text-lg font-semibold text-slate-900">Email</h2>
         <p className="mt-1 text-sm text-slate-600">
           Used to sign in to this dashboard. <strong>Heads up:</strong> changing this does not change
-          the email tied to your Lemon Squeezy receipt or your desktop-app magic-link recipient —
+          the email tied to your Lemon Squeezy receipt or your desktop-app magic-link recipient -
           you&apos;ll need to update those separately if you want them to match.
         </p>
         <form className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleEmailChange}>
@@ -492,7 +492,7 @@ export default function ProfilePage() {
         </form>
         {emailConfirmationPending ? (
           <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Check your new inbox — Supabase sent a confirmation link. Your email won&apos;t change
+            Check your new inbox - Supabase sent a confirmation link. Your email won&apos;t change
             until you click it.
           </p>
         ) : emailStatus === "error" ? (
@@ -503,7 +503,7 @@ export default function ProfilePage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Password</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Pick a new password — at least 8 characters.
+          Pick a new password - at least 8 characters.
         </p>
         <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={handlePasswordChange}>
           <input

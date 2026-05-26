@@ -1,49 +1,49 @@
 ---
-title: Pricecrash Butler — catch Amazon pricing errors fast
+title: Pricecrash Butler: catch Amazon pricing errors fast
 summary: Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Daily Deals Butler as drafts or auto-scheduled posts.
 category: Amazon
 ---
 
 ## What Pricecrash Butler does
 
-Sellers sometimes forget a decimal point. Catalog teams sometimes miss a flag. When they do, a $400 vacuum shows up at $4, a $2,000 lens at $20, a $89 air fryer at $0.89 — and a smart creator can post the deal before Amazon's automated guards or a human cleanup pull it down.
+Sellers sometimes forget a decimal point. Catalog teams sometimes miss a flag. When they do, a $400 vacuum shows up at $4, a $2,000 lens at $20, a $89 air fryer at $0.89 - and a smart creator can post the deal before Amazon's automated guards or a human cleanup pull it down.
 
 Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Daily Deals Butler** as either:
 
 - a **draft** in the Search tab (you approve before it posts), or
 - an **auto-scheduled post** that goes out on the next auto-fire tick.
 
-The threshold is yours — 99% is the default because that's where real pricing errors live, but you can dial it down to 75–85% to widen the net for clearance, overstock, and outlet pricing.
+The threshold is yours - 99% is the default because that's where real pricing errors live, but you can dial it down to 75–85% to widen the net for clearance, overstock, and outlet pricing.
 
 ## First run
 
 1. Open **Pricecrash Butler** in the left nav (it lives under Orders Butler in the Amazon group).
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
 3. Decide what should happen when a deal is found:
-   - **Draft for review** — safer; sits in Daily Deals → Search until you approve it.
-   - **Auto-schedule** — fastest; drops straight into Daily Deals → Schedule.
-   - **No hand-off** — just log it in the panel; you act manually.
+   - **Draft for review**: safer; sits in Daily Deals → Search until you approve it.
+   - **Auto-schedule**: fastest; drops straight into Daily Deals → Schedule.
+   - **No hand-off**: just log it in the panel; you act manually.
 4. Click **Run**. The runner will sweep your selected categories with a small bait-keyword set (clearance / open box / closeout / overstock by default) and report hits in the table at the bottom of the panel.
 
 ## Recurring scans
 
-Below the run-settings card is the **Auto-scan schedule** row. Pick a preset — `1h`, `3h`, `6h`, `12h`, or `24h` — and flip the **Run automatically** switch. The runner will fire on that cadence even when the panel is closed.
+Below the run-settings card is the **Auto-scan schedule** row. Pick a preset - `1h`, `3h`, `6h`, `12h`, or `24h` - and flip the **Run automatically** switch. The runner will fire on that cadence even when the panel is closed.
 
-The 6h default is a deliberate compromise: frequent enough to catch a glitch before the seller fixes it, infrequent enough to stay polite to the Amazon Creators API rate limit (which is shared across every Butler that talks to PA-API — Daily Commission, CC Check, Daily Deals, Storefront, Levanta, and now Pricecrash).
+The 6h default is a deliberate compromise: frequent enough to catch a glitch before the seller fixes it, infrequent enough to stay polite to the Amazon Creators API rate limit (which is shared across every Butler that talks to PA-API - Daily Commission, CC Check, Daily Deals, Storefront, Levanta, and now Pricecrash).
 
 ## How "99%" actually works
 
 The Amazon Creators API `SearchItems` endpoint does not expose a "minimum discount" server-side filter. Pricecrash Butler works around that by:
 
-1. Iterating each selected category with `sortBy: Price:LowToHigh` — the cheapest 10 items per page bubble up first, exactly where pricing errors hide.
+1. Iterating each selected category with `sortBy: Price:LowToHigh` - the cheapest 10 items per page bubble up first, exactly where pricing errors hide.
 2. Parsing the offer block on every result for `savingsPercent` (already computed by Amazon).
 3. Discarding everything below your threshold and deduplicating by ASIN within the run.
 
-True 99%-off matches are rare on purpose — Amazon's automated guards remove flagrant errors from search results within minutes. Realistic catch rate at the 99% default is 0–2 deals/month over a typical scan footprint. Dial the threshold down to 75–85% if you'd rather treat the workspace as a general "steep discount" radar.
+True 99%-off matches are rare on purpose - Amazon's automated guards remove flagrant errors from search results within minutes. Realistic catch rate at the 99% default is 0–2 deals/month over a typical scan footprint. Dial the threshold down to 75–85% if you'd rather treat the workspace as a general "steep discount" radar.
 
 ## Bait keywords
 
-The bait-keyword textarea controls what the runner searches for in each category. By default the runner uses **clearance, open box, closeout, overstock, warehouse deal** — these surface unlisted-removed-mispriced inventory better than empty-keyword browses (which the Creators API doesn't even allow).
+The bait-keyword textarea controls what the runner searches for in each category. By default the runner uses **clearance, open box, closeout, overstock, warehouse deal** - these surface unlisted-removed-mispriced inventory better than empty-keyword browses (which the Creators API doesn't even allow).
 
 Paste your own list (comma- or newline-separated) to bias the sweep toward specific brand stems or product types. Empty = use defaults.
 
@@ -51,23 +51,23 @@ Paste your own list (comma- or newline-separated) to bias the sweep toward speci
 
 Each found deal is written into Daily Deals' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. From there:
 
-- **Draft mode** — the post lands with `status: "draft"`. Open Daily Deals → Search, review, set destinations, hit Publish.
-- **Auto-schedule mode** — the post lands with `status: "scheduled"` and `scheduledAt: now`. The Daily Deals auto-fire daemon picks it up on the next tick (default 30s) and publishes to every enabled destination.
+- **Draft mode**: the post lands with `status: "draft"`. Open Daily Deals → Search, review, set destinations, hit Publish.
+- **Auto-schedule mode**: the post lands with `status: "scheduled"` and `scheduledAt: now`. The Daily Deals auto-fire daemon picks it up on the next tick (default 30s) and publishes to every enabled destination.
 
-The mode is **per-scan** — flip the radio between scheduled runs without re-opening Daily Deals.
+The mode is **per-scan** - flip the radio between scheduled runs without re-opening Daily Deals.
 
 ## Topbar tally
 
-While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** counters credit the run time at your configured hourly rate — same accounting Orders Butler and Daily Commission Butler use.
+While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** counters credit the run time at your configured hourly rate - same accounting Orders Butler and Daily Commission Butler use.
 
 ## Gotchas
 
-- **"Creators API not configured" in the log** — open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Daily Deals Butler.
-- **`429 RequestThrottled`** — too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per (category, keyword) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
-- **Empty runs at 99%** — expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
-- **Posts not appearing in Daily Deals** — confirm Daily Deals Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
+- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Daily Deals Butler.
+- **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per (category, keyword) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
+- **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
+- **Posts not appearing in Daily Deals**: confirm Daily Deals Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
 
 ## Related
 
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) — the publishing engine that takes Pricecrash's catches the last mile.
-- [Orders Butler tutorial](/help/tutorials/ordersbutler) — the upstream order-history feed that powers most of the other Amazon-side workspaces.
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the publishing engine that takes Pricecrash's catches the last mile.
+- [Orders Butler tutorial](/help/tutorials/ordersbutler) - the upstream order-history feed that powers most of the other Amazon-side workspaces.

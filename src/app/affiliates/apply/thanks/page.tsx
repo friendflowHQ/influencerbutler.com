@@ -26,7 +26,7 @@ export default async function AffiliateThanksPage({ searchParams }: ThanksPagePr
           <h1 className="mt-5 text-3xl font-bold tracking-tight">Application received 🎉</h1>
           <p className="mt-3 text-slate-600">
             Thanks for applying to the Influencer Butler affiliate program. Our team reviews new applicants
-            weekly — most hear back within 48 hours.
+            weekly - most hear back within 48 hours.
           </p>
 
           {requiresEmailConfirmation ? (

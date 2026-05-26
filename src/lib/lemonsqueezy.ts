@@ -30,12 +30,12 @@ export type VariantResolution =
  * shorthand and the Daily Deals Workspace add-on.
  *
  * Plan strings recognised:
- *   - "monthly" / "annual"           — legacy aliases, still resolve to
+ *   - "monthly" / "annual"           - legacy aliases, still resolve to
  *                                       Pro Solo Monthly / Annual.
  *   - "solo-monthly" / "solo-annual"
  *   - "team-monthly" / "team-annual"
  *   - "agency-monthly" / "agency-annual"
- *   - "daily-deals-addon"            — $24.99/mo add-on SKU (no promos).
+ *   - "daily-deals-addon"            - $24.99/mo add-on SKU (no promos).
  */
 const PLAN_ENV_VAR: Record<string, string> = {
   monthly: "LEMONSQUEEZY_VARIANT_MONTHLY",
@@ -81,14 +81,14 @@ export function isAddonVariant(variantId: string | null | undefined): boolean {
 
 /**
  * Returns the variantIds list that discounts SHOULD scope to. The add-on
- * variant is intentionally absent — even if a future code path forgets to
+ * variant is intentionally absent - even if a future code path forgets to
  * check isAddonVariant before applying a discount, the LS-side scoping
  * (belt 3 of the contract) prevents the discount from applying to the
  * add-on at checkout.
  *
  * Returns every paid Pro variant ID we have configured. Empty if no Pro
  * variants are wired yet (LS treats no-scoping as "applies to all", which
- * is the unsafe default — callers should pass the array even if empty so
+ * is the unsafe default - callers should pass the array even if empty so
  * the caller can decide whether to skip discount creation entirely).
  */
 export function getDiscountableVariantIds(): string[] {

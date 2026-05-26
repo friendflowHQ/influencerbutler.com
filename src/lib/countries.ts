@@ -1,7 +1,7 @@
 // ISO 3166-1 alpha-2 country list for the affiliate apply form.
 // Ordered with the affiliate program's largest expected markets pinned to the
 // top, then alphabetical for the rest. Tax-form intake is handled by Lemon
-// Squeezy — this column is for analytics + region-aware support only.
+// Squeezy - this column is for analytics + region-aware support only.
 
 export type Country = {
   code: string; // ISO 3166-1 alpha-2

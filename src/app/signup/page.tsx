@@ -81,7 +81,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Try signing in immediately — works when email confirmation is disabled.
+    // Try signing in immediately - works when email confirmation is disabled.
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -100,7 +100,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Sign-in failed — email confirmation is likely required.
+    // Sign-in failed - email confirmation is likely required.
     setMessage("Check your email to confirm");
   };
 

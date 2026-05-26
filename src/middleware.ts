@@ -5,7 +5,7 @@ import { NodeHtmlMarkdown } from "node-html-markdown";
 // (Cloudflare's "Verified Bots" feature sets `cf-verified-bot: true`).
 // See src/lib/web-bot-auth.ts for the in-app stub.
 
-const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal"];
+const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal", "/help"];
 
 const MARKDOWN_PATH_MAP: Array<{ test: RegExp; resolve: (m: RegExpMatchArray) => string }> = [
   { test: /^\/$/, resolve: () => "/index.html" },
@@ -102,5 +102,7 @@ export const config = {
     "/legal/:slug",
     "/dashboard/:path*",
     "/affiliates/portal/:path*",
+    "/help",
+    "/help/:path*",
   ],
 };

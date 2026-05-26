@@ -39,7 +39,7 @@ type LicenseKeyRow = {
  *                -> license_key for that subscription
  *
  * Time-windowed (orders older than WELCOME_TOKEN_MAX_ORDER_AGE_MS are ignored)
- * so a leaked cookie can't keep pulling license keys days later — the legit
+ * so a leaked cookie can't keep pulling license keys days later - the legit
  * dashboard view at /dashboard/subscription is auth-gated and remains the
  * canonical place to see the key after the welcome window.
  *
@@ -84,7 +84,7 @@ export async function GET() {
 
   const order = orderData as OrderRow | null;
   if (!order) {
-    // Webhook hasn't landed yet — client should keep polling.
+    // Webhook hasn't landed yet - client should keep polling.
     return NextResponse.json({ status: "pending" });
   }
 

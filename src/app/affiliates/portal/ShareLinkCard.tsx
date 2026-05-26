@@ -37,7 +37,7 @@ export default function ShareLinkCard({
             Bare tracking link (no discount)
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Every sign-up that comes through this link — within a 30-day cookie — is credited to you.
+            Every sign-up that comes through this link - within a 30-day cookie - is credited to you.
             Use this when the 15%-off offer isn&apos;t the right framing.
           </p>
         </div>

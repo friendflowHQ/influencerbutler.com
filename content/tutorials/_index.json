@@ -3,7 +3,7 @@
   "tutorials": [
     {
       "id": "amazonbutler",
-      "title": "Amazon Butler — outreach to brands you sell",
+      "title": "Amazon Butler: outreach to brands you sell",
       "category": "Amazon",
       "summary": "Set up automated Creator Connections outreach for the brands behind your top-selling ASINs.",
       "order": 10,
@@ -11,7 +11,7 @@
     },
     {
       "id": "dailycommissionbutler",
-      "title": "Daily Commission Butler — accept campaigns from your sales",
+      "title": "Daily Commission Butler: accept campaigns from your sales",
       "category": "Amazon",
       "summary": "Auto-accept the right Amazon Creator Connections campaigns based on what you actually sold yesterday.",
       "order": 20,
@@ -19,7 +19,7 @@
     },
     {
       "id": "cc-check",
-      "title": "CC Check — keep your Creator Connections catalog fresh",
+      "title": "CC Check: keep your Creator Connections catalog fresh",
       "category": "Amazon",
       "summary": "Run the SPCC + download-all jobs that keep your accepted-campaign catalog and SPCC offers up to date.",
       "order": 30,
@@ -27,7 +27,7 @@
     },
     {
       "id": "ordersbutler",
-      "title": "Orders Butler — sync your real Amazon order history",
+      "title": "Orders Butler: sync your real Amazon order history",
       "category": "Amazon",
       "summary": "Pull your purchase + commission history straight from Amazon so the rest of the app has accurate ASIN signal.",
       "order": 40,
@@ -35,7 +35,7 @@
     },
     {
       "id": "pricecrashbutler",
-      "title": "Pricecrash Butler — catch Amazon pricing errors fast",
+      "title": "Pricecrash Butler: catch Amazon pricing errors fast",
       "category": "Amazon",
       "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Daily Deals Butler as drafts or auto-scheduled posts.",
       "order": 45,
@@ -43,7 +43,7 @@
     },
     {
       "id": "storefrontbutler",
-      "title": "Storefront Butler — sync every piece of your Amazon storefront",
+      "title": "Storefront Butler: sync every piece of your Amazon storefront",
       "category": "Amazon",
       "summary": "Pull photos, videos, idea lists, and media collections from your Amazon storefront into one searchable feed enriched with Creators API data.",
       "order": 50,
@@ -51,7 +51,7 @@
     },
     {
       "id": "data-refresh-butler",
-      "title": "Data Refresh Butler — schedule when CC & SPCC catalogs refresh",
+      "title": "Data Refresh Butler: schedule when CC & SPCC catalogs refresh",
       "category": "Amazon",
       "summary": "One place to control how often the Creator Connections campaign catalog and SPCC commission catalog get re-downloaded.",
       "order": 60,
@@ -59,7 +59,7 @@
     },
     {
       "id": "daily-deals",
-      "title": "Daily Deals Butler — harvest Amazon deals and post them automatically",
+      "title": "Daily Deals Butler: harvest Amazon deals and post them automatically",
       "category": "Amazon",
       "summary": "End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.",
       "order": 70,
@@ -67,7 +67,7 @@
     },
     {
       "id": "likebutler",
-      "title": "Like Butler — auto-like Amazon Creator storefronts you want to stay visible to",
+      "title": "Like Butler: auto-like Amazon Creator storefronts you want to stay visible to",
       "category": "Amazon",
       "summary": "Paste storefront links, set a like cap and delay, and Like Butler keeps you top-of-mind with brands by liking their CC storefront content on a cadence.",
       "order": 80,
@@ -75,7 +75,7 @@
     },
     {
       "id": "goldminebutler",
-      "title": "Goldmine Butler — find brands already paying creators in your niche",
+      "title": "Goldmine Butler: find brands already paying creators in your niche",
       "category": "Amazon",
       "summary": "Scan other creators' Amazon storefronts for #ad / #partner content to identify brands you should pitch.",
       "order": 90,
@@ -83,7 +83,7 @@
     },
     {
       "id": "video-butler",
-      "title": "Video Butler — re-upload Amazon storefront videos with fresh metadata",
+      "title": "Video Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",
       "summary": "Convert, re-encode, and re-upload your existing Amazon storefront videos with updated titles, descriptions, and tags.",
       "order": 100,
@@ -91,7 +91,7 @@
     },
     {
       "id": "youtube-butler",
-      "title": "YouTube Butler — upload Amazon storefront videos to YouTube with affiliate links",
+      "title": "YouTube Butler: upload Amazon storefront videos to YouTube with affiliate links",
       "category": "Amazon",
       "summary": "Cross-post your shoppable Amazon videos to YouTube with affiliate links and automatic Shorts detection.",
       "order": 110,
@@ -99,7 +99,7 @@
     },
     {
       "id": "retag-butler",
-      "title": "Retag Butler — replace out-of-stock ASINs across your published content",
+      "title": "Retag Butler: replace out-of-stock ASINs across your published content",
       "category": "Amazon",
       "summary": "Find every video, photo, and idea-list item pointing to an unavailable product and tag a replacement automatically.",
       "order": 120,
@@ -107,7 +107,7 @@
     },
     {
       "id": "relink-butler",
-      "title": "Relink Butler — swap affiliate link providers across published content (beta)",
+      "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
       "summary": "Rewrite affiliate links in your already-published Daily Deals, YouTube, Pinterest, and Benable content without re-editing each post.",
       "order": 130,
@@ -115,7 +115,7 @@
     },
     {
       "id": "voiceover-butler",
-      "title": "Voiceover Butler — FTC-compliant voiceover scripts from ASINs",
+      "title": "Voiceover Butler: FTC-compliant voiceover scripts from ASINs",
       "category": "Amazon",
       "summary": "Generate Amazon-Shoppable-compliant voiceover scripts for any ASIN, validated against Amazon's video rules and FTC disclosure requirements.",
       "order": 140,
@@ -123,7 +123,7 @@
     },
     {
       "id": "levanta",
-      "title": "Levanta Butler — automate outreach + email extraction across the Levanta brand network",
+      "title": "Levanta Butler: automate outreach + email extraction across the Levanta brand network",
       "category": "Partnerships",
       "summary": "Two-tab workspace that pitches Levanta-approved brands on autopilot and harvests brand contact emails during runs.",
       "order": 150,
@@ -131,15 +131,15 @@
     },
     {
       "id": "pitchbutler",
-      "title": "Pitch Butler — one CRM for every brand pipeline you're working",
+      "title": "Pitch Butler: one CRM for every brand pipeline you're working",
       "category": "Partnerships",
-      "summary": "Unified registry of brands you're prospecting, pitching, or negotiating with — imported from Creator Connections, Levanta, and Instagram extractor.",
+      "summary": "Unified registry of brands you're prospecting, pitching, or negotiating with - imported from Creator Connections, Levanta, and Instagram extractor.",
       "order": 160,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "benable-butler",
-      "title": "Benable Butler — AI-built Amazon collections published to Benable (beta)",
+      "title": "Benable Butler: AI-built Amazon collections published to Benable (beta)",
       "category": "Partnerships",
       "summary": "Type a niche keyword, pick a marketplace, and Benable Butler researches Amazon, picks matching ASINs, writes the collection, and publishes it.",
       "order": 170,
@@ -147,7 +147,7 @@
     },
     {
       "id": "benable-like-butler",
-      "title": "Benable Like Butler — auto-like other creators' Benable collections on a schedule",
+      "title": "Benable Like Butler: auto-like other creators' Benable collections on a schedule",
       "category": "Partnerships",
       "summary": "Paste Benable profile URLs, set max likes and delay, and Like Butler keeps you visible on those creators' recent-activity feeds.",
       "order": 180,
@@ -155,23 +155,23 @@
     },
     {
       "id": "benable-comment-butler",
-      "title": "Benable Comment Butler — AI-written comments on Benable collections",
+      "title": "Benable Comment Butler: AI-written comments on Benable collections",
       "category": "Partnerships",
-      "summary": "Drop short, friendly, product-specific comments on Benable list items — AI-written from Amazon product details, canned fallback if the model fails.",
+      "summary": "Drop short, friendly, product-specific comments on Benable list items - AI-written from Amazon product details, canned fallback if the model fails.",
       "order": 190,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "collab-butler",
-      "title": "Collab Butler — Kanban tracker for every brand collaboration in flight",
+      "title": "Collab Butler: Kanban tracker for every brand collaboration in flight",
       "category": "Partnerships",
-      "summary": "One board for every collab — pitched, in-production, posted, paid — with drag-to-update stages, filters, exports, and per-card payout + deadline detail.",
+      "summary": "One board for every collab - pitched, in-production, posted, paid - with drag-to-update stages, filters, exports, and per-card payout + deadline detail.",
       "order": 195,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "instagram",
-      "title": "Instagram Butler — DM brand collaborations directly on Instagram",
+      "title": "Instagram Butler: DM brand collaborations directly on Instagram",
       "category": "Instagram",
       "summary": "Send first-touch outreach DMs to brands and creators on Instagram using rotating templates, follower-count filters, and a do-not-message list.",
       "order": 200,
@@ -179,7 +179,7 @@
     },
     {
       "id": "messengerbutler",
-      "title": "Messenger Butler — Instagram DMs to creators you discover",
+      "title": "Messenger Butler: Instagram DMs to creators you discover",
       "category": "Instagram",
       "summary": "Send personalized opening DMs to the creators you've added to Instagram Butler's queue.",
       "order": 210,
@@ -187,7 +187,7 @@
     },
     {
       "id": "close-friends-butler",
-      "title": "Instagram Close Friends Butler — auto-add new followers to your Close Friends list",
+      "title": "Instagram Close Friends Butler: auto-add new followers to your Close Friends list",
       "category": "Instagram",
       "summary": "Automate adding new Instagram followers to your Close Friends list with strict per-hour and per-day rate limits and a do-not-add list.",
       "order": 220,
@@ -195,7 +195,7 @@
     },
     {
       "id": "instagram-email",
-      "title": "Instagram Email Collection — harvest brand emails hiding in your Instagram DMs",
+      "title": "Instagram Email Collection: harvest brand emails hiding in your Instagram DMs",
       "category": "Instagram",
       "summary": "Scan your Instagram DMs for email addresses brands have shared in conversation, then export them to a reusable contact list.",
       "order": 230,
@@ -203,7 +203,7 @@
     },
     {
       "id": "instagram-goldmine",
-      "title": "Instagram Goldmine — discover the brands paying creators in your niche on Instagram",
+      "title": "Instagram Goldmine: discover the brands paying creators in your niche on Instagram",
       "category": "Instagram",
       "summary": "Research-only crawler: seed with Instagram usernames, walk the suggested-accounts graph, and harvest posts tagged #ad / paid-partnership.",
       "order": 240,
@@ -211,7 +211,7 @@
     },
     {
       "id": "api-integrations",
-      "title": "API Integrations — store every API key Butler uses in one place",
+      "title": "API Integrations: store every API key Butler uses in one place",
       "category": "Other",
       "summary": "Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more.",
       "order": 300,
@@ -219,15 +219,15 @@
     },
     {
       "id": "actionqueue",
-      "title": "Action Queue — one inbox for every butler that needs your decision",
+      "title": "Action Queue: one inbox for every butler that needs your decision",
       "category": "Other",
-      "summary": "When any workspace hits a fork — approve a message, pick between options, accept a campaign — the decision lands here instead of blocking the run.",
+      "summary": "When any workspace hits a fork - approve a message, pick between options, accept a campaign - the decision lands here instead of blocking the run.",
       "order": 310,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "content-butler",
-      "title": "Content Butler — drag-and-drop calendar for what to film next",
+      "title": "Content Butler: drag-and-drop calendar for what to film next",
       "category": "Other",
       "summary": "Schedule the products you want to shoot on a Monthly / Weekly / Daily calendar. Drag from Orders Butler or add manually, tag by content type.",
       "order": 320,
@@ -235,7 +235,7 @@
     },
     {
       "id": "black-friday",
-      "title": "Black Friday Butler — never miss a time-limited Amazon deal on your storefront",
+      "title": "Black Friday Butler: never miss a time-limited Amazon deal on your storefront",
       "category": "Other",
       "summary": "Monitor your Amazon storefront on a cadence and log every Black-Friday-flagged or time-limited deal with timestamps.",
       "order": 330,
@@ -243,15 +243,15 @@
     },
     {
       "id": "ads-goldmine-butler",
-      "title": "Ads Goldmine — surface high-value ASINs by ad + sponsor density signals",
+      "title": "Ads Goldmine: surface high-value ASINs by ad + sponsor density signals",
       "category": "Other",
-      "summary": "Score the ASINs in your catalog across four signal tiers — Lightning Deals, Creator Connections, SPCC offers, brand-search density.",
+      "summary": "Score the ASINs in your catalog across four signal tiers - Lightning Deals, Creator Connections, SPCC offers, brand-search density.",
       "order": 340,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "pinterest-butler",
-      "title": "Pinterest Butler — Pinterest pin generation + scheduling (coming soon)",
+      "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
       "summary": "Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, write SEO copy, and schedule posts.",
       "order": 999,

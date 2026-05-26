@@ -1,19 +1,19 @@
 ---
-title: Benable Comment Butler — comentarios escritos por IA en colecciones de Benable
-summary: Deja comentarios cortos, amables y específicos de producto en elementos de listas de Benable — escritos por IA desde detalles de Amazon, con un fallback predefinido si el modelo falla.
+title: Benable Comment Butler: comentarios escritos por IA en colecciones de Benable
+summary: Deja comentarios cortos, amables y específicos de producto en elementos de listas de Benable - escritos por IA desde detalles de Amazon, con un fallback predefinido si el modelo falla.
 category: Partnerships
 ---
 
 ## Qué hace Benable Comment Butler
 
-Dar like a una colección de Benable es la señal de engagement más barata. Comentar es el siguiente nivel — un comentario corto y al tema te coloca en las notificaciones de un creador con más peso que un like. Benable Comment Butler escribe comentarios generados por IA adaptados a cada producto (sacados de los detalles del producto en Amazon) y los publica en los items de Benable que estén en tu cola.
+Dar like a una colección de Benable es la señal de engagement más barata. Comentar es el siguiente nivel - un comentario corto y al tema te coloca en las notificaciones de un creador con más peso que un like. Benable Comment Butler escribe comentarios generados por IA adaptados a cada producto (sacados de los detalles del producto en Amazon) y los publica en los items de Benable que estén en tu cola.
 
 Si la IA falla por cualquier razón (rate-limited, producto raro), Butler recurre a una frase canned pre-escrita de tu lista en vez de saltarse el item. Siempre se publica un comentario, nunca un pase vacío.
 
 ## Antes de empezar
 
 - **Una sesión activa de Benable** en Chrome.
-- **Clave de API de OpenAI** en **API Integrations** — genera los comentarios por producto.
+- **Clave de API de OpenAI** en **API Integrations** - genera los comentarios por producto.
 - **1-10 URLs de tienda de Benable** de creadores a los que quieres comentar.
 - **Al menos 3-5 frases canned de respaldo** en el textarea de canned-phrases (p. ej. "¡Me encanta esta elección!", "Lo añado a mi lista", "Exactamente lo que necesitaba").
 
@@ -21,9 +21,9 @@ Si la IA falla por cualquier razón (rate-limited, producto raro), Butler recurr
 
 Igual que Benable Butler, este espacio tiene tres modos escalonados:
 
-- **Dry run (por defecto)** — escribe los comentarios pero no los publica. Los saca en el log de ejecución para que revises el tono antes de ir en vivo.
-- **Preview** — genera un plan de comentarios que puedes leer de arriba abajo antes de comprometerte.
-- **Live** — publica los comentarios vía tu sesión de Benable.
+- **Dry run (por defecto)**: escribe los comentarios pero no los publica. Los saca en el log de ejecución para que revises el tono antes de ir en vivo.
+- **Preview**: genera un plan de comentarios que puedes leer de arriba abajo antes de comprometerte.
+- **Live**: publica los comentarios vía tu sesión de Benable.
 
 Empieza con Dry run. Lee 20-30 de los comentarios generados. Si el tono se siente correcto, cambia a Live.
 
@@ -34,9 +34,9 @@ Empieza con Dry run. Lee 20-30 de los comentarios generados. Si el tono se sient
 3. En **Modo**, deja Dry run para la primera pasada.
 4. En **Frases canned**, añade 5-10 comentarios de fallback. Mantenlos lo bastante genéricos como para encajar con cualquier producto (p. ej. "Una elección muy inteligente", "Lo añado al carrito ahora", "Me encanta la curación").
 5. En **Caps & pacing**:
-   - **Por ejecución** — empieza en 10. Es el total de comentarios entre todos los perfiles para la ejecución.
-   - **Retardo entre comentarios** — 15-30 segundos. Los comentarios tienen más fricción que los likes; necesitas un ritmo más lento para evitar rate-limits.
-   - **Jitter** — variación aleatoria de ±2 segundos para parecer humano.
+   - **Por ejecución**: empieza en 10. Es el total de comentarios entre todos los perfiles para la ejecución.
+   - **Retardo entre comentarios**: 15-30 segundos. Los comentarios tienen más fricción que los likes; necesitas un ritmo más lento para evitar rate-limits.
+   - **Jitter**: variación aleatoria de ±2 segundos para parecer humano.
 6. En **Tono**, elige un descriptor (p. ej. "amable + breve", "entusiasta", "reflexivo"). El modelo lo usa para dar estilo a cada comentario.
 7. Pulsa **Iniciar**.
 
@@ -44,8 +44,8 @@ Empieza con Dry run. Lee 20-30 de los comentarios generados. Si el tono se sient
 
 Dos opciones en **Sobre qué comentar**:
 
-- **Sólo productos publicados en Amazon** — comenta sólo los items que enlazan a Amazon (lo más común, lo más relevante para creadores de afiliación).
-- **Todos los elementos de la lista** — comenta cualquier cosa en cada colección, incluyendo items no-Amazon.
+- **Sólo productos publicados en Amazon**: comenta sólo los items que enlazan a Amazon (lo más común, lo más relevante para creadores de afiliación).
+- **Todos los elementos de la lista**: comenta cualquier cosa en cada colección, incluyendo items no-Amazon.
 
 Por defecto es Amazon-only. Cambia a Todos sólo si quieres alcance más amplio.
 
@@ -55,10 +55,10 @@ El toggle **Discover** expande el espacio más allá de tus tiendas listadas. Ac
 
 ## Ajustes con el tiempo
 
-- **Cap por ejecución** — 10 es conservador. Por encima de 30 por ejecución arriesga parecer spam a ojos de la moderación de Benable. El cap por día (campo aparte) es el techo duro — mantente por debajo de 50 al día incluso en cuentas establecidas.
-- **Cada N elementos** — comenta sólo cada N elementos dentro de una colección. Evita que tus comentarios bombardeen a un solo creador y parezcan inorgánicos.
-- **Descriptor de tono** — tonos más afilados producen comentarios más afilados. "Amable + breve, se dirige al producto específicamente, sin signos de exclamación" rinde más que sólo "amable".
-- **Calidad de las frases canned** — los fallbacks se disparan cuando la IA falla. Fallbacks malos te hacen quedar mal. Dedica 10 minutos a redactar 10 fuertes.
+- **Cap por ejecución**: 10 es conservador. Por encima de 30 por ejecución arriesga parecer spam a ojos de la moderación de Benable. El cap por día (campo aparte) es el techo duro - mantente por debajo de 50 al día incluso en cuentas establecidas.
+- **Cada N elementos**: comenta sólo cada N elementos dentro de una colección. Evita que tus comentarios bombardeen a un solo creador y parezcan inorgánicos.
+- **Descriptor de tono**: tonos más afilados producen comentarios más afilados. "Amable + breve, se dirige al producto específicamente, sin signos de exclamación" rinde más que sólo "amable".
+- **Calidad de las frases canned**: los fallbacks se disparan cuando la IA falla. Fallbacks malos te hacen quedar mal. Dedica 10 minutos a redactar 10 fuertes.
 
 ## Dónde van los datos
 
@@ -66,12 +66,12 @@ El historial por comentario (perfil + elemento + texto del comentario + marca de
 
 ## Tropiezos comunes
 
-- **"Falta la clave de OpenAI"** — configúrala en API Integrations. Comment Butler puede caer al fallback canned, pero es muy preferible generar comentarios frescos.
-- **Los comentarios fallan al publicarse (la UI devolvió error)** — Benable cambió selectores. Comment Butler muestra "Selectores aún no configurados" hasta que se vuelva a correr la inspección en runtime; el banner del espacio lo indica si pasa.
-- **Cada comentario es canned** — tu clave de OpenAI no es válida o está rate-limited. Comprueba API Integrations.
-- **Los comentarios se sienten genéricos** — afina el campo Tono y añade contexto específico del producto. La IA usa la descripción de Amazon + tu tono; si cualquiera de los dos es flojo, la salida es floja.
+- **"Falta la clave de OpenAI"**: configúrala en API Integrations. Comment Butler puede caer al fallback canned, pero es muy preferible generar comentarios frescos.
+- **Los comentarios fallan al publicarse (la UI devolvió error)**: Benable cambió selectores. Comment Butler muestra "Selectores aún no configurados" hasta que se vuelva a correr la inspección en runtime; el banner del espacio lo indica si pasa.
+- **Cada comentario es canned**: tu clave de OpenAI no es válida o está rate-limited. Comprueba API Integrations.
+- **Los comentarios se sienten genéricos**: afina el campo Tono y añade contexto específico del producto. La IA usa la descripción de Amazon + tu tono; si cualquiera de los dos es flojo, la salida es floja.
 
 ## Relacionado
 
-- [Tutorial de Benable Like Butler](/help/tutorials/benable-like-butler) — combina con Comment Butler para cobertura completa de engagement.
-- [Tutorial de Benable Butler](/help/tutorials/benable-butler) — publica tus propias colecciones.
+- [Tutorial de Benable Like Butler](/help/tutorials/benable-like-butler) - combina con Comment Butler para cobertura completa de engagement.
+- [Tutorial de Benable Butler](/help/tutorials/benable-butler) - publica tus propias colecciones.

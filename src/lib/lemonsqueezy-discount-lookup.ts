@@ -8,7 +8,7 @@
  * the cache covers WELCOME30 and any popular affiliate code essentially for free.
  *
  * Negative results (no matching record, expired, unpublished) are cached too so a
- * typo doesn't repeatedly hammer LS. Cache is process-local — fine for a Next.js
+ * typo doesn't repeatedly hammer LS. Cache is process-local - fine for a Next.js
  * server function where lambda warmth is short anyway.
  */
 
@@ -119,7 +119,7 @@ function normalize(record: LsDiscountListRecord): LsDiscount | null {
 /**
  * Returns the published, in-window LS discount for `code` or null if nothing
  * matches. Case-insensitive (we pass the code through, LS treats it case-sensitive
- * but we cache by uppercase to dedupe). Wrapped in a 2s timeout — any LS hiccup
+ * but we cache by uppercase to dedupe). Wrapped in a 2s timeout - any LS hiccup
  * silently degrades to null rather than blocking checkout creation.
  */
 export async function fetchDiscountByCode(

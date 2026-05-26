@@ -94,7 +94,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 }
 
 /**
- * Service-role Supabase client. Bypasses RLS — only call from admin-gated
+ * Service-role Supabase client. Bypasses RLS - only call from admin-gated
  * routes after getAdminSession() returns non-null. Returns null if the
  * SUPABASE_SERVICE_ROLE_KEY env var is missing.
  */

@@ -82,7 +82,7 @@ describe("appendAffRef", () => {
   });
 
   it("falls back gracefully when given a non-parseable URL", () => {
-    // appendAffRef shouldn't throw on malformed input — it has a try/catch
+    // appendAffRef shouldn't throw on malformed input - it has a try/catch
     // fallback that uses raw string concatenation. Verify both branches.
     const out = appendAffRef("not a url", "12345");
     // Either fallback returns "?aff_ref=12345" appended, or URL parses it as
@@ -142,7 +142,7 @@ describe("lookupAffiliateByCode", () => {
   it("resolves a lowercase code by matching against the uppercase row", async () => {
     setResponse([{ ls_affiliate_id: "111", affiliate_code: "LIZ" }]);
     const result = await lookupAffiliateByCode("liz");
-    // Returned code is the canonical (DB) value, NOT the typed input — this
+    // Returned code is the canonical (DB) value, NOT the typed input - this
     // matters because the canonical code is what gets applied at LS checkout.
     expect(result).toEqual({ lsAffiliateId: "111", code: "LIZ" });
   });
@@ -154,7 +154,7 @@ describe("lookupAffiliateByCode", () => {
   });
 
   it("returns null when the matched row has no ls_affiliate_id", async () => {
-    // This is the v2.0.x bug class — application was approved but profile
+    // This is the v2.0.x bug class - application was approved but profile
     // never got the ls_affiliate_id from the webhook. We should NOT credit
     // an affiliate whose LS account isn't actually wired up.
     setResponse([{ ls_affiliate_id: null, affiliate_code: "LIZ" }]);
@@ -184,7 +184,7 @@ describe("lookupAffiliateByCode", () => {
     setResponse([{ ls_affiliate_id: "222", affiliate_code: "LIZ2" }]);
     const result = await lookupAffiliateByCode("LIZ2");
     expect(result).toEqual({ lsAffiliateId: "222", code: "LIZ2" });
-    // The two codes must NOT collide — ilike with the literal "LIZ2" should
+    // The two codes must NOT collide - ilike with the literal "LIZ2" should
     // not match "LIZ". (PostgREST ilike doesn't add wildcards unless we do.)
     expect(ilikeMock).toHaveBeenCalledWith("affiliate_code", "LIZ2");
   });
@@ -192,7 +192,7 @@ describe("lookupAffiliateByCode", () => {
   it("does NOT wildcard the code (passing 'L' must not match 'LIZ')", async () => {
     setResponse([]);
     await lookupAffiliateByCode("L");
-    // We assert by inspecting the literal value sent — no leading/trailing %.
+    // We assert by inspecting the literal value sent - no leading/trailing %.
     const [, value] = ilikeMock.mock.calls[ilikeMock.mock.calls.length - 1];
     expect(value).toBe("L");
     expect(value).not.toContain("%");

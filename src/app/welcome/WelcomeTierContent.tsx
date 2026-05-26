@@ -9,7 +9,7 @@ type Props = {
 
 /**
  * Shared render body for the three /welcome/* tier pages. Keeps the tier pages
- * themselves thin — they just pass `tier` so server-rendered copy and layout
+ * themselves thin - they just pass `tier` so server-rendered copy and layout
  * stays consistent.
  */
 export default function WelcomeTierContent({ tier }: Props) {

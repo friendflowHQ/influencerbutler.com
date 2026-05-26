@@ -1,6 +1,6 @@
 ---
-title: Action Queue — una sola bandeja para cada butler que necesita tu decisión
-summary: Cuando cualquier espacio llega a una bifurcación — aprobar un mensaje, elegir entre opciones, aceptar una campaña — la decisión aterriza en Action Queue en vez de bloquear la ejecución.
+title: Action Queue: una sola bandeja para cada butler que necesita tu decisión
+summary: Cuando cualquier espacio llega a una bifurcación - aprobar un mensaje, elegir entre opciones, aceptar una campaña - la decisión aterriza en Action Queue en vez de bloquear la ejecución.
 category: Other
 ---
 
@@ -14,42 +14,42 @@ El objetivo: no perder impulso de ejecución por una decisión para la que no es
 
 ## Antes de empezar
 
-Nada. Action Queue lo consumen otros espacios — no tiene setup propio. Verás items aparecer en la cola cuando tus ejecuciones saquen decisiones.
+Nada. Action Queue lo consumen otros espacios - no tiene setup propio. Verás items aparecer en la cola cuando tus ejecuciones saquen decisiones.
 
 ## Cuándo aparecen items
 
 Fuentes habituales de items en cola:
 
-- **Daily Commission Butler** — campañas con tasa de comisión inusualmente alta o baja (vale la pena un vistazo manual antes de aceptar en automático).
-- **Retag Butler** — candidatos de ASIN de reemplazo que puntuaron por encima de tu umbral mínimo de similitud pero por debajo del umbral de auto-etiquetado.
-- **Voiceover Butler** — guiones que fallaron la validación en la primera generación y necesitan tu llamada sobre regenerar, editar o saltar.
-- **Messenger Butler / Instagram Butler** — variaciones de mensaje que la IA marcó como en el límite.
-- **Pitch Butler** — detecciones de marca duplicada que necesitan una decisión manual de fusión.
+- **Daily Commission Butler**: campañas con tasa de comisión inusualmente alta o baja (vale la pena un vistazo manual antes de aceptar en automático).
+- **Retag Butler**: candidatos de ASIN de reemplazo que puntuaron por encima de tu umbral mínimo de similitud pero por debajo del umbral de auto-etiquetado.
+- **Voiceover Butler**: guiones que fallaron la validación en la primera generación y necesitan tu llamada sobre regenerar, editar o saltar.
+- **Messenger Butler / Instagram Butler**: variaciones de mensaje que la IA marcó como en el límite.
+- **Pitch Butler**: detecciones de marca duplicada que necesitan una decisión manual de fusión.
 
-Los espacios que enrutan vía Action Queue son explícitos al respecto — su documentación lo indica.
+Los espacios que enrutan vía Action Queue son explícitos al respecto - su documentación lo indica.
 
 ## Trabajar la cola
 
 Abre **Action Queue** en el menú lateral. La cola es una lista de tarjetas, cada una con:
 
-- **Espacio origen** — qué butler encoló el item.
-- **Decisión necesaria** — una línea descriptiva ("¿Aceptar campaña al 12 % de comisión?", "¿Etiquetar reemplazo de ASIN por encima de 65 % similitud?").
-- **Contexto** — los datos que respaldan la decisión (nombre de marca, ASIN, vista previa del mensaje, etc.).
+- **Espacio origen**: qué butler encoló el item.
+- **Decisión necesaria**: una línea descriptiva ("¿Aceptar campaña al 12 % de comisión?", "¿Etiquetar reemplazo de ASIN por encima de 65 % similitud?").
+- **Contexto**: los datos que respaldan la decisión (nombre de marca, ASIN, vista previa del mensaje, etc.).
 - **Tres botones**:
-  - **Aprobar** — adelante con la acción propuesta.
-  - **Rechazar** — no hacerlo; el espacio origen marca el item como saltado.
-  - **Diferir** — déjalo en la cola para decidir después. Útil si necesitas investigar antes de decidir.
+  - **Aprobar**: adelante con la acción propuesta.
+  - **Rechazar**: no hacerlo; el espacio origen marca el item como saltado.
+  - **Diferir**: déjalo en la cola para decidir después. Útil si necesitas investigar antes de decidir.
 
-No hay auto-aprobar. Action Queue es intencionalmente manual — si querías autónomo, el modo auto del espacio origen lo habría manejado.
+No hay auto-aprobar. Action Queue es intencionalmente manual - si querías autónomo, el modo auto del espacio origen lo habría manejado.
 
 ## Ajustes con el tiempo
 
 El propio Action Queue no tiene nada que afinar. El volumen de items lo controlan los *espacios origen*:
 
-- **¿Demasiados items?** Aprieta los umbrales auto del espacio origen. P. ej. sube el auto-tag threshold de Retag Butler de 70 % a 80 % — menos items caen a revisión manual.
+- **¿Demasiados items?** Aprieta los umbrales auto del espacio origen. P. ej. sube el auto-tag threshold de Retag Butler de 70 % a 80 % - menos items caen a revisión manual.
 - **¿Pocos items?** Afloja esos mismos umbrales. El espacio origen está tomando más decisiones autónomas de las que quieres.
 
-Si apruebas el 90 %+ de items rutinariamente, el auto del espacio origen es demasiado cauteloso — relájalo. Si rechazas el 50 %+ con regularidad, es demasiado agresivo — apriétalo.
+Si apruebas el 90 %+ de items rutinariamente, el auto del espacio origen es demasiado cauteloso - relájalo. Si rechazas el 50 %+ con regularidad, es demasiado agresivo - apriétalo.
 
 ## Dónde van los datos
 
@@ -57,12 +57,12 @@ Los items en cola viven en la caché preseed. Las decisiones aprobadas/rechazada
 
 ## Tropiezos comunes
 
-- **Los items se acumulan durante semanas** — Action Queue no auto-limpia items viejos. Dedica 5 minutos a la semana a revisar o usa **Diferir** generosamente para que la cola no se infle.
-- **El espacio origen corrió pero no recogió tu aprobación** — el espacio sólo re-lee la cola en su siguiente ejecución programada. Dispara Run Now si quieres acción inmediata sobre una decisión.
-- **No aparecen items aunque un butler está corriendo** — ese butler no enruta por Action Queue. No todos los espacios lo hacen; la mayoría de decisiones son totalmente autónomas.
+- **Los items se acumulan durante semanas**: Action Queue no auto-limpia items viejos. Dedica 5 minutos a la semana a revisar o usa **Diferir** generosamente para que la cola no se infle.
+- **El espacio origen corrió pero no recogió tu aprobación**: el espacio sólo re-lee la cola en su siguiente ejecución programada. Dispara Run Now si quieres acción inmediata sobre una decisión.
+- **No aparecen items aunque un butler está corriendo**: ese butler no enruta por Action Queue. No todos los espacios lo hacen; la mayoría de decisiones son totalmente autónomas.
 
 ## Relacionado
 
-- [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) — fuente habitual de items en cola.
-- [Tutorial de Retag Butler](/help/tutorials/retag-butler) — otra fuente habitual, especialmente en modo Revisión.
-- [Tutorial de Voiceover Butler](/help/tutorials/voiceover-butler) — encola validaciones fallidas para tu decisión.
+- [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) - fuente habitual de items en cola.
+- [Tutorial de Retag Butler](/help/tutorials/retag-butler) - otra fuente habitual, especialmente en modo Revisión.
+- [Tutorial de Voiceover Butler](/help/tutorials/voiceover-butler) - encola validaciones fallidas para tu decisión.

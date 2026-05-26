@@ -12,7 +12,7 @@ const DISMISS_KEY_PREFIX = "ib_aff_upsell_dismissed_";
 const TIER_HEADLINES: Record<Exclude<Offer["tier"], null>, { headline: string; sub: string; cta: string }> = {
   "20": {
     headline: "Affiliate perk: 20% off your first month",
-    sub: "Try Influencer Butler for yourself — referrals convert way better when you actually use the product.",
+    sub: "Try Influencer Butler for yourself - referrals convert way better when you actually use the product.",
     cta: "Claim 20% off",
   },
   "30": {
@@ -69,7 +69,7 @@ export default function AffiliateUpsellBanner() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // ignore — fallback: user selects the code text themselves
+      // ignore - fallback: user selects the code text themselves
     }
   };
 
@@ -78,7 +78,7 @@ export default function AffiliateUpsellBanner() {
     try {
       sessionStorage.setItem(`${DISMISS_KEY_PREFIX}${offer.tier}`, "1");
     } catch {
-      // sessionStorage may be unavailable — dismiss in-memory only
+      // sessionStorage may be unavailable - dismiss in-memory only
     }
     setDismissed(true);
   };

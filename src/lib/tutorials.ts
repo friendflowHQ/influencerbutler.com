@@ -101,7 +101,7 @@ function escapeHtml(value: string): string {
 function renderInline(line: string): string {
   let out = escapeHtml(line);
   out = out.replace(/`([^`]+)`/g, (_, code: string) => `<code>${code}</code>`);
-  // ![alt](path) — must run BEFORE the link regex so the leading `!`
+  // ![alt](path) - must run BEFORE the link regex so the leading `!`
   // isn't consumed by it. Only same-origin /assets/ paths render.
   out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt: string, src: string) => {
     const safeSrc = src.startsWith("/assets/") ? src : "";
@@ -119,7 +119,7 @@ function renderInline(line: string): string {
 
 // Small, sandboxed Markdown subset: headings, paragraphs, bullet/ordered
 // lists, fenced code blocks, blockquotes, inline code/bold/italic/links.
-// Intentionally minimal — tutorials are content-heavy but structurally
+// Intentionally minimal - tutorials are content-heavy but structurally
 // simple, and avoiding a full Markdown lib keeps the bundle lean.
 function renderMarkdown(source: string): string {
   const lines = source.split(/\r?\n/);
@@ -205,7 +205,7 @@ async function readTutorialFile(id: string, locale: string): Promise<string | nu
 
 export async function loadTutorial(id: string, requestedLocale?: string): Promise<LoadedTutorial | null> {
   const locale = resolveLocale(requestedLocale);
-  // Strict ID guard — no path traversal.
+  // Strict ID guard - no path traversal.
   if (!/^[a-z0-9][a-z0-9-]{0,80}$/i.test(id)) return null;
 
   let raw = await readTutorialFile(id, locale);

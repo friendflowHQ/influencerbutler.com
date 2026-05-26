@@ -1,27 +1,27 @@
 ---
-title: Ads Goldmine — surface high-value ASINs by ad + sponsor density signals
-summary: Score the ASINs in your catalog across four signal tiers — Lightning Deals, Creator Connections, SPCC offers, brand-search density — to find which products to feature next.
+title: Ads Goldmine: surface high-value ASINs by ad + sponsor density signals
+summary: Score the ASINs in your catalog across four signal tiers - Lightning Deals, Creator Connections, SPCC offers, brand-search density - to find which products to feature next.
 category: Other
 ---
 
-> **Pass 1 — UI-only.** The scoring engine and the read-only catalog view ship today. A dedicated runner that triggers refreshes on a schedule is on the roadmap. For now, you click **Refresh Now** manually when you want fresh scores.
+> **Pass 1 - UI-only.** The scoring engine and the read-only catalog view ship today. A dedicated runner that triggers refreshes on a schedule is on the roadmap. For now, you click **Refresh Now** manually when you want fresh scores.
 
 ## What Ads Goldmine does
 
-Most of the time, the question isn't "what products exist?" — it's "which of the products I have access to are *worth* featuring right now?" Ads Goldmine answers that. It scores each ASIN in your catalog across four signals:
+Most of the time, the question isn't "what products exist?" - it's "which of the products I have access to are *worth* featuring right now?" Ads Goldmine answers that. It scores each ASIN in your catalog across four signals:
 
-- **Tier 1: Deal signals** (via the Creators API) — Lightning Deals, Prime-exclusive deals, % claimed. The freshness of these signals is the strongest "post this now" indicator.
-- **Tier 2: Creator Connections + SPCC** — read live from the catalogs cc-check harvests. ASINs with an active campaign or a sponsored offer score higher.
-- **Tier 4: Brand-search density** — how many sponsored slots a brand owns on its category search results. Brands buying ad space at scale are signal-rich pitch targets.
-- **Tier 4 PDP probe** — for top-ranked brands, walks the product detail page to count brand-store URLs and sponsored-carousel slots.
+- **Tier 1: Deal signals** (via the Creators API) - Lightning Deals, Prime-exclusive deals, % claimed. The freshness of these signals is the strongest "post this now" indicator.
+- **Tier 2: Creator Connections + SPCC**: read live from the catalogs cc-check harvests. ASINs with an active campaign or a sponsored offer score higher.
+- **Tier 4: Brand-search density**: how many sponsored slots a brand owns on its category search results. Brands buying ad space at scale are signal-rich pitch targets.
+- **Tier 4 PDP probe**: for top-ranked brands, walks the product detail page to count brand-store URLs and sponsored-carousel slots.
 
 The output is a sortable, filterable table of ASINs with a 0-100 composite score.
 
 ## Before you start
 
 - **CC Storefront ID** in the topbar.
-- **Creators API key** in API Integrations — required for Tier 1 signals. Without it, Tier 1 is skipped and your scores rely on Tiers 2 + 4 only.
-- **cc-check has run recently** — Ads Goldmine reads from the CC/SPCC catalogs cc-check maintains.
+- **Creators API key** in API Integrations - required for Tier 1 signals. Without it, Tier 1 is skipped and your scores rely on Tiers 2 + 4 only.
+- **cc-check has run recently**: Ads Goldmine reads from the CC/SPCC catalogs cc-check maintains.
 
 ## Running your first refresh
 
@@ -30,10 +30,10 @@ The output is a sortable, filterable table of ASINs with a 0-100 composite score
 
 The refresh runs the four tiers in order:
 
-1. Tier 1 Creators-API deal probe (6h TTL — won't re-run within 6 hours if already fresh; skipped entirely if no Creators API key).
+1. Tier 1 Creators-API deal probe (6h TTL - won't re-run within 6 hours if already fresh; skipped entirely if no Creators API key).
 2. Tier 4 brand-search probe (30 brands per session, 7-day TTL).
-3. Tier 4 PDP probe (top-ranked brands, 14-day TTL — counts brand-store URLs + sponsored carousels).
-4. Tier 2 (CC + SPCC) reads live without a runner — no probe needed.
+3. Tier 4 PDP probe (top-ranked brands, 14-day TTL - counts brand-store URLs + sponsored carousels).
+4. Tier 2 (CC + SPCC) reads live without a runner - no probe needed.
 
 A first refresh on a fresh catalog takes 5-15 minutes. Subsequent refreshes are minutes-to-seconds because the TTLs keep most data warm.
 
@@ -41,27 +41,27 @@ A first refresh on a fresh catalog takes 5-15 minutes. Subsequent refreshes are 
 
 The results table:
 
-- **Score** (0-100) — composite across all tiers. Filterable via the **Min score** slider.
-- **ASIN + product title** — the product.
-- **Brand** — clickable, opens a filter by brand.
-- **Per-tier breakdown** — columns show which tiers contributed to the score (you can see at a glance if a high score comes from deals, CC, or brand-search density).
-- **Last refreshed** — when each signal was last polled. Older signals get auto-faded styling.
+- **Score** (0-100) - composite across all tiers. Filterable via the **Min score** slider.
+- **ASIN + product title**: the product.
+- **Brand**: clickable, opens a filter by brand.
+- **Per-tier breakdown**: columns show which tiers contributed to the score (you can see at a glance if a high score comes from deals, CC, or brand-search density).
+- **Last refreshed**: when each signal was last polled. Older signals get auto-faded styling.
 
 What to do with high-score ASINs:
 
 - **Schedule them in Daily Deals Butler** for posting if the score is driven by Tier 1 (deal urgency).
-- **Pitch the brand via Pitch Butler** if the score is driven by Tier 4 (brand is spending on ads — they have budget for influencer too).
+- **Pitch the brand via Pitch Butler** if the score is driven by Tier 4 (brand is spending on ads - they have budget for influencer too).
 - **Feature in Video Butler / Voiceover Butler scripts** for any high-score ASIN.
 
 ## The feedback loop
 
-Once you have ≥5 tagged ASINs with ≥3 commission rows each, Ads Goldmine also computes a **conversion lift** column showing how each scored ASIN performed against your actual earnings data. This is the most important signal in the workspace — it tells you whether the scoring algorithm matches your real performance. Tune from there.
+Once you have ≥5 tagged ASINs with ≥3 commission rows each, Ads Goldmine also computes a **conversion lift** column showing how each scored ASIN performed against your actual earnings data. This is the most important signal in the workspace - it tells you whether the scoring algorithm matches your real performance. Tune from there.
 
 ## Tuning over time
 
-- **Refresh cadence** — once a week is enough for most users. Tier 1 deals have 6h freshness, Tier 4 has 7-14 days; weekly refreshes keep everything inside its window.
-- **Min score filter** — start at 50 to see only "worth your attention" rows. Drop to 30 if you want a broader pool to evaluate.
-- **Feedback loop interpretation** — if high-score ASINs are *not* converting, your scoring weight on Tier 1 vs Tier 4 needs tuning. Look at which tier the high-score-low-conversion rows are leaning on.
+- **Refresh cadence**: once a week is enough for most users. Tier 1 deals have 6h freshness, Tier 4 has 7-14 days; weekly refreshes keep everything inside its window.
+- **Min score filter**: start at 50 to see only "worth your attention" rows. Drop to 30 if you want a broader pool to evaluate.
+- **Feedback loop interpretation**: if high-score ASINs are *not* converting, your scoring weight on Tier 1 vs Tier 4 needs tuning. Look at which tier the high-score-low-conversion rows are leaning on.
 
 ## Where the data goes
 
@@ -69,13 +69,13 @@ Per-ASIN scores + per-tier signal caches live in `{userData}/InfluencerButler/wo
 
 ## Common gotchas
 
-- **"No data yet"** — you haven't clicked Refresh Now. Pass 1 has no auto-refresh — that's coming.
-- **Tier 1 column is blank** — Creators API key missing in API Integrations. Add it and re-refresh.
-- **Conversion lift column shows "—"** — you have fewer than 5 tagged ASINs or fewer than 3 commission rows per ASIN. Earnings Intelligence kicks the lift calculation in once you cross those thresholds.
-- **Scores feel uniform** — the catalog might be too small for the scoring algorithm to differentiate well. The algorithm works best on catalogs of 50+ ASINs.
+- **"No data yet"**: you haven't clicked Refresh Now. Pass 1 has no auto-refresh - that's coming.
+- **Tier 1 column is blank**: Creators API key missing in API Integrations. Add it and re-refresh.
+- **Conversion lift column shows "-"**: you have fewer than 5 tagged ASINs or fewer than 3 commission rows per ASIN. Earnings Intelligence kicks the lift calculation in once you cross those thresholds.
+- **Scores feel uniform**: the catalog might be too small for the scoring algorithm to differentiate well. The algorithm works best on catalogs of 50+ ASINs.
 
 ## Related
 
-- [cc-check tutorial](/help/tutorials/cc-check) — keeps the CC + SPCC catalogs Ads Goldmine reads from fresh.
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) — the workspace where you act on high-Tier-1-score ASINs.
-- [Pitch Butler tutorial](/help/tutorials/pitchbutler) — the workspace where you act on high-Tier-4-score brands.
+- [cc-check tutorial](/help/tutorials/cc-check) - keeps the CC + SPCC catalogs Ads Goldmine reads from fresh.
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the workspace where you act on high-Tier-1-score ASINs.
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) - the workspace where you act on high-Tier-4-score brands.

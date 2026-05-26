@@ -1,5 +1,5 @@
 ---
-title: Daily Deals Butler — harvest Amazon deals and post them automatically
+title: Daily Deals Butler: harvest Amazon deals and post them automatically
 summary: End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.
 category: Amazon
 ---
@@ -8,39 +8,39 @@ category: Amazon
 
 Daily Deals Butler is the most complete automation in InfluencerButler. It runs a full pipeline in one workspace:
 
-1. **Harvest** — pulls active Amazon deals matching your filters (discount %, commission floor, price range, keywords, brand).
-2. **Build the post** — wraps each deal in your template with hashtags, affiliate links, and optional AI-generated images.
-3. **Schedule** — posts to your connected social destinations (Instagram, Facebook groups + pages, Telegram, Reddit, Benable) on whatever per-platform cadence you set.
+1. **Harvest**: pulls active Amazon deals matching your filters (discount %, commission floor, price range, keywords, brand).
+2. **Build the post**: wraps each deal in your template with hashtags, affiliate links, and optional AI-generated images.
+3. **Schedule**: posts to your connected social destinations (Instagram, Facebook groups + pages, Telegram, Reddit, Benable) on whatever per-platform cadence you set.
 
-You set it up once and it ticks along — most users only revisit it to refine filters or add a new social destination.
+You set it up once and it ticks along - most users only revisit it to refine filters or add a new social destination.
 
 ## Before you start
 
 - **Amazon affiliate tag** configured (Settings → Amazon).
 - **CC Storefront ID** set in the topbar (so commission data is accurate).
-- **At least one social destination** connected in the Social Destinations tab. Telegram is the simplest first destination — the bot setup is a one-time paste.
-- **Data Refresh Butler** active (or coupled by default) — Daily Deals reads from the catalogs Data Refresh Butler maintains.
+- **At least one social destination** connected in the Social Destinations tab. Telegram is the simplest first destination - the bot setup is a one-time paste.
+- **Data Refresh Butler** active (or coupled by default) - Daily Deals reads from the catalogs Data Refresh Butler maintains.
 
 ## Running your first harvest
 
 The workspace opens to a chip-bar with 10 tabs. The setup flow follows them left-to-right:
 
-1. **Deal Filters** — start with the defaults: discount ≥30%, all categories, all commission rates. Click **Search Deals**. Confirm you see results before tightening filters.
-2. **Build Your Post** — the post template uses placeholders like `{title}`, `{price}`, `{discount}`, `{deeplink}`. Edit the template, hit **Preview** to see how a real deal renders.
-3. **Social Destinations** — connect at least one. Each platform has its own sub-flow (Telegram bot token, Facebook page picker, Instagram session) — the workspace explains each one inline.
-4. **Scheduler** — turn on the **Post scheduler** and pick a cadence. The defaults are conservative: groups every 1h, pages every 2h, Telegram every 15 min, Reddit/Instagram off.
+1. **Deal Filters**: start with the defaults: discount ≥30%, all categories, all commission rates. Click **Search Deals**. Confirm you see results before tightening filters.
+2. **Build Your Post**: the post template uses placeholders like `{title}`, `{price}`, `{discount}`, `{deeplink}`. Edit the template, hit **Preview** to see how a real deal renders.
+3. **Social Destinations**: connect at least one. Each platform has its own sub-flow (Telegram bot token, Facebook page picker, Instagram session) - the workspace explains each one inline.
+4. **Scheduler**: turn on the **Post scheduler** and pick a cadence. The defaults are conservative: groups every 1h, pages every 2h, Telegram every 15 min, Reddit/Instagram off.
 5. Click **Run now** under Harvest to do one search-and-post round so you can see end-to-end behavior before turning on the schedule.
 
 ## Filter presets
 
-The **active preset** (default named `default`) saves your filter config. You can have multiple presets for different niches — say one for "tech under $50" and one for "home decor under $100" — and swap between them from the Overview tab. Clones (a paid add-on) give each clone its own preset store so you can run multiple niches in parallel with no preset switching.
+The **active preset** (default named `default`) saves your filter config. You can have multiple presets for different niches - say one for "tech under $50" and one for "home decor under $100" - and swap between them from the Overview tab. Clones (a paid add-on) give each clone its own preset store so you can run multiple niches in parallel with no preset switching.
 
 ## Tuning over time
 
-- **percentOffMin** in the preset — start at 30%, raise to 40-50% once you have a sense of which discount threshold gets engagement.
-- **trackingDays** — how many days a deal sticks around in the "tracked" history before being eligible to re-post. Default 14.
-- **excludeLastMonth** — once on, won't re-post any deal that posted in the last 30 days. Keeps your feed feeling fresh.
-- **perDestination cadences** — Telegram tolerates much higher volume than Instagram. Don't apply Telegram's 15-min cadence to Instagram or you'll get rate-limited.
+- **percentOffMin** in the preset - start at 30%, raise to 40-50% once you have a sense of which discount threshold gets engagement.
+- **trackingDays**: how many days a deal sticks around in the "tracked" history before being eligible to re-post. Default 14.
+- **excludeLastMonth**: once on, won't re-post any deal that posted in the last 30 days. Keeps your feed feeling fresh.
+- **perDestination cadences**: Telegram tolerates much higher volume than Instagram. Don't apply Telegram's 15-min cadence to Instagram or you'll get rate-limited.
 
 ## Where the data goes
 
@@ -48,16 +48,16 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 
 ## Common gotchas
 
-- **"No deals match your filters"** — usually a too-narrow filter combo. Drop one filter at a time until results return.
-- **Posts fail silently to Telegram** — bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
-- **Instagram posts go to message requests, not inbox** — that's not a Daily Deals issue; that's Instagram's own routing for accounts you don't follow.
-- **Scheduler appears stopped** — check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
+- **"No deals match your filters"**: usually a too-narrow filter combo. Drop one filter at a time until results return.
+- **Posts fail silently to Telegram**: bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
+- **Instagram posts go to message requests, not inbox**: that's not a Daily Deals issue; that's Instagram's own routing for accounts you don't follow.
+- **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
 
 ## Clones (paid)
 
-Daily Deals supports clones at $24.99/mo each — each clone is a completely independent workspace with its own filters, destinations, and post history. Use clones if you actively run more than one niche; otherwise, presets in a single workspace handle most cases.
+Daily Deals supports clones at $24.99/mo each - each clone is a completely independent workspace with its own filters, destinations, and post history. Use clones if you actively run more than one niche; otherwise, presets in a single workspace handle most cases.
 
 ## Related
 
-- [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) — keeps the catalogs Daily Deals reads from up to date.
-- [Black Friday Butler tutorial](/help/tutorials/black-friday) — same kind of automation, time-limited deal flavor.
+- [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) - keeps the catalogs Daily Deals reads from up to date.
+- [Black Friday Butler tutorial](/help/tutorials/black-friday) - same kind of automation, time-limited deal flavor.

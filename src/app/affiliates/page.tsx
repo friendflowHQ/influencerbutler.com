@@ -4,7 +4,7 @@ import EarningsCalculator from "./EarningsCalculator";
 import FaqAccordion from "./FaqAccordion";
 
 export const metadata = {
-  title: "Affiliate Program — Earn 30% Recurring for 12 Months | Influencer Butler",
+  title: "Affiliate Program - Earn 30% Recurring for 12 Months | Influencer Butler",
   description:
     "Promote Influencer Butler and earn 30% recurring commission on every subscription for the first 12 months. 30-day cookie, last-click attribution, monthly payouts.",
 };
@@ -103,7 +103,7 @@ export default function AffiliatesLandingPage() {
             </h2>
           </div>
           <p className="max-w-md text-sm text-slate-600">
-            Drag the slider to see estimated monthly and 12-month commissions — assumes an average plan price of
+            Drag the slider to see estimated monthly and 12-month commissions - assumes an average plan price of
             $39/month, paid for the first 12 months of each referred subscription.
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function AffiliatesLandingPage() {
             <div>
               <p className="text-5xl font-black tracking-tight">30%</p>
               <p className="mt-2 text-sm text-white/90">
-                Recurring commission on every subscription — for the first 12 months they pay.
+                Recurring commission on every subscription - for the first 12 months they pay.
               </p>
             </div>
             <div>
@@ -176,7 +176,7 @@ export default function AffiliatesLandingPage() {
             <div>
               <p className="text-5xl font-black tracking-tight">12</p>
               <p className="mt-2 text-sm text-white/90">
-                Months of recurring commission per referred customer. Last-click attribution — the last referrer gets the sale.
+                Months of recurring commission per referred customer. Last-click attribution - the last referrer gets the sale.
               </p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function AffiliatesLandingPage() {
             </h2>
             <p className="mt-4 text-slate-600">
               Our best affiliates are people who already talk to creators, agencies, or sellers every day. If
-              your audience cares about Amazon, short-form video, or automating their hustle — this is a
+              your audience cares about Amazon, short-form video, or automating their hustle - this is a
               natural fit.
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function AffiliatesLandingPage() {
           Turn your audience into <span className="text-[#f97316]">recurring income.</span>
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-          Spots are reviewed weekly. Apply now — it takes about two minutes.
+          Spots are reviewed weekly. Apply now - it takes about two minutes.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -277,7 +277,7 @@ export default function AffiliatesLandingPage() {
             <a href="/#pricing" className="text-sm text-slate-500 transition hover:text-[#f97316]">Pricing</a>
             <a href="/#how-it-works" className="text-sm text-slate-500 transition hover:text-[#f97316]">How It Works</a>
             <a href="/#faq" className="text-sm text-slate-500 transition hover:text-[#f97316]">FAQ</a>
-            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates — Earn 30%</Link>
+            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates - Earn 30%</Link>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>

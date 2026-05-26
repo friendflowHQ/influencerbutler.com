@@ -1,5 +1,5 @@
 ---
-title: Relink Butler — swap affiliate link providers across published content (beta)
+title: Relink Butler: swap affiliate link providers across published content (beta)
 summary: Rewrite the affiliate links in your already-published Daily Deals, YouTube, Pinterest, and Benable content without re-editing each post manually.
 category: Amazon
 ---
@@ -8,14 +8,14 @@ category: Amazon
 
 ## What Relink Butler does
 
-If you switched your affiliate setup — say, from raw Amazon tags to Geniuslink for international, or from one link shortener to another — every existing post still points through the old provider. Relink Butler scans your published content, finds the old links, and rewrites them to use your new provider, without you having to re-edit each post by hand.
+If you switched your affiliate setup - say, from raw Amazon tags to Geniuslink for international, or from one link shortener to another - every existing post still points through the old provider. Relink Butler scans your published content, finds the old links, and rewrites them to use your new provider, without you having to re-edit each post by hand.
 
 It supports four modes:
 
-- **Host change** — swap the link host (e.g. `amzn.to` → `geni.us`) while keeping the ASIN.
-- **Retag** — update affiliate tags inline (rare; mostly for region-tag changes).
-- **Remint provider** — swap the entire affiliate provider, regenerating each link through the new one.
-- **Find-replace** — manual string-level swap. Use this when the other modes don't fit.
+- **Host change**: swap the link host (e.g. `amzn.to` → `geni.us`) while keeping the ASIN.
+- **Retag**: update affiliate tags inline (rare; mostly for region-tag changes).
+- **Remint provider**: swap the entire affiliate provider, regenerating each link through the new one.
+- **Find-replace**: manual string-level swap. Use this when the other modes don't fit.
 
 The point is the same in every mode: keep the published content the same, change where the link routes.
 
@@ -33,27 +33,27 @@ If you haven't used the corresponding workspace, that scope has nothing for Reli
 ## Running your first swap
 
 1. Open **Relink Butler** under Amazon Butler.
-2. In **Mode**, pick the swap type. **Remint provider** is the most common — use it when changing providers.
+2. In **Mode**, pick the swap type. **Remint provider** is the most common - use it when changing providers.
 3. In **Scope**, tick which content surfaces to rewrite. Daily Deals is on by default; tick others as needed.
-4. **Preview rewrites** — Relink Butler walks each scope, finds every affiliate link, and shows you a side-by-side diff: old link vs proposed new link, per row.
+4. **Preview rewrites**: Relink Butler walks each scope, finds every affiliate link, and shows you a side-by-side diff: old link vs proposed new link, per row.
 5. Review the diff. Untick anything that looks wrong.
 6. Click **Apply approved** to commit the swap.
 
-Daily Deals + Pinterest swaps happen in-app (just updating local databases). YouTube + Benable swaps require Chrome sessions because they have to edit published content remotely — Relink Butler launches Chrome the same way other workspaces do.
+Daily Deals + Pinterest swaps happen in-app (just updating local databases). YouTube + Benable swaps require Chrome sessions because they have to edit published content remotely - Relink Butler launches Chrome the same way other workspaces do.
 
 ## What Relink Butler does NOT do
 
-- **It doesn't delete the old link.** The publish history keeps both — the new replacement runs alongside. This matches Retag Butler's design philosophy: preserve history, route forward.
+- **It doesn't delete the old link.** The publish history keeps both - the new replacement runs alongside. This matches Retag Butler's design philosophy: preserve history, route forward.
 - **It doesn't touch raw Amazon links you posted manually outside InfluencerButler.** Only content posted through one of our scopes is tracked.
 - **It doesn't fix dead products.** If an underlying ASIN is dead, the link still routes through the new provider but lands on a 404. Use **Retag Butler** for dead-ASIN replacement.
 
 ## Common gotchas
 
-- **Preview is empty** — usually means the scope is empty. Verify Daily Deals (or whichever scope) has post history first.
-- **"New provider not configured"** — finish setup in API Integrations before running. The Remint mode needs the new provider's API key to generate replacement links.
-- **YouTube swaps slow** — YouTube only allows ~10 edits/hour without rate-limiting. Relink Butler honors this; let the run take its time.
+- **Preview is empty**: usually means the scope is empty. Verify Daily Deals (or whichever scope) has post history first.
+- **"New provider not configured"**: finish setup in API Integrations before running. The Remint mode needs the new provider's API key to generate replacement links.
+- **YouTube swaps slow**: YouTube only allows ~10 edits/hour without rate-limiting. Relink Butler honors this; let the run take its time.
 
 ## Related
 
-- [Retag Butler tutorial](/help/tutorials/retag-butler) — for *product* swaps (dead ASIN replacement), not affiliate-provider swaps.
-- [API Integrations tutorial](/help/tutorials/api-integrations) — where you configure the new provider before running Relink Butler.
+- [Retag Butler tutorial](/help/tutorials/retag-butler) - for *product* swaps (dead ASIN replacement), not affiliate-provider swaps.
+- [API Integrations tutorial](/help/tutorials/api-integrations) - where you configure the new provider before running Relink Butler.

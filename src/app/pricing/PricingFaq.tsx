@@ -5,7 +5,7 @@ const FAQ = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Cancel in one click from your dashboard. You keep access until the end of the current billing period — no support ticket, no questions.",
+    a: "Yes. Cancel in one click from your dashboard. You keep access until the end of the current billing period - no support ticket, no questions.",
   },
   {
     q: "Do you offer refunds?",
@@ -13,7 +13,7 @@ const FAQ = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "All major credit cards, debit cards, and PayPal — processed by Lemon Squeezy. Checkout opens right on this page, you never leave the site.",
+    a: "All major credit cards, debit cards, and PayPal - processed by Lemon Squeezy. Checkout opens right on this page, you never leave the site.",
   },
   {
     q: "Can I stack a welcome discount with an affiliate code?",
@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: "Is my data secure?",
-    a: "Your data stays on your computer — the butlers run locally. We don't store your Amazon credentials, Instagram passwords, or message content on our servers.",
+    a: "Your data stays on your computer - the butlers run locally. We don't store your Amazon credentials, Instagram passwords, or message content on our servers.",
   },
 ];
 

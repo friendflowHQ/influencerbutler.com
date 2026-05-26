@@ -2,7 +2,7 @@
   "schemaVersion": "2025-03-26",
   "name": "Influencer Butler",
   "version": "0.1.0",
-  "description": "MCP server for Influencer Butler — features catalog, pricing, affiliate link creation, and earnings summary for influencer creators.",
+  "description": "MCP server for Influencer Butler - features catalog, pricing, affiliate link creation, and earnings summary for influencer creators.",
   "publisher": {
     "name": "Influencer Butler",
     "url": "https://www.influencerbutler.com"

@@ -99,7 +99,7 @@ export default function EarningsSparkline({ data }: Props) {
             Earnings trend
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Last 90 days — {formatUsdFromCents(totalCents)} in commissions.
+            Last 90 days - {formatUsdFromCents(totalCents)} in commissions.
           </p>
         </div>
         <p className="text-xs text-slate-400">

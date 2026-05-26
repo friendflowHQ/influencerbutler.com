@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import ShareLinkCard from "@/app/affiliates/portal/ShareLinkCard";
 import EarningsSparkline from "./EarningsSparkline";
 import SocialShareButtons from "./SocialShareButtons";
+import LinkBuilder from "./LinkBuilder";
+import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
 import {
   formatUsdFromCents,
   buildShareLink,
@@ -28,16 +30,16 @@ const MILESTONES: { label: string; threshold: number }[] = [
 ];
 
 function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   try {
     return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(iso));
   } catch {
-    return "—";
+    return "-";
   }
 }
 
 function estimateNextPayout(): string {
-  // Lemon Squeezy pays monthly — approximate as the 1st of next month.
+  // Lemon Squeezy pays monthly - approximate as the 1st of next month.
   const now = new Date();
   const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(next);
@@ -62,7 +64,7 @@ export default function AffiliateDashboard({
     const prev = [...MILESTONES].reverse().find((m) => earned >= m.threshold);
     if (!next) {
       return {
-        label: "All milestones cleared — legend status.",
+        label: "All milestones cleared - legend status.",
         pct: 1,
         current: earned,
         target: earned,
@@ -106,11 +108,15 @@ export default function AffiliateDashboard({
         <BrandedCodeCard code={brandedCode} shareLink={brandedShareLink} />
       ) : null}
 
+      {isActive && brandedCode ? <LinkBuilder code={brandedCode} /> : null}
+
+      {isActive ? <AffiliateClickAnalytics /> : null}
+
       {isActive ? (
         <ShareLinkCard
           shareLink={shareLink}
           shareDomain={summary.shareDomain}
-          shareMessage="I've been using Influencer Butler — automation for Amazon Influencers. Worth a look:"
+          shareMessage="I've been using Influencer Butler - automation for Amazon Influencers. Worth a look:"
         />
       ) : null}
 
@@ -127,16 +133,16 @@ export default function AffiliateDashboard({
         />
         <StatCard
           label="Referrals"
-          value={referrals ? referrals.totalReferrals.toString() : "—"}
+          value={referrals ? referrals.totalReferrals.toString() : "-"}
           hint={
             referrals
               ? `${referrals.activeReferrals} still active`
-              : "Tracking syncing — check back soon"
+              : "Tracking syncing - check back soon"
           }
         />
         <StatCard
           label="Cancels"
-          value={referrals ? referrals.cancelledReferrals.toString() : "—"}
+          value={referrals ? referrals.cancelledReferrals.toString() : "-"}
           hint={
             referrals && referrals.totalReferrals > 0
               ? `${Math.round((referrals.cancelledReferrals / referrals.totalReferrals) * 100)}% churn`
@@ -158,15 +164,15 @@ export default function AffiliateDashboard({
         />
         <MotivationCard
           title="Active subscribers"
-          value={referrals ? referrals.activeReferrals.toString() : "—"}
-          body="Every active subscriber pays you 30% of their plan every month — for the first 12 months they stay subscribed."
+          value={referrals ? referrals.activeReferrals.toString() : "-"}
+          body="Every active subscriber pays you 30% of their plan every month - for the first 12 months they stay subscribed."
         />
         <MotivationCard
           title="Conversion rate"
           value={
             referrals && referrals.conversionRate !== null
               ? `${(referrals.conversionRate * 100).toFixed(1)}%`
-              : "—"
+              : "-"
           }
           body={
             referrals && referrals.totalClicks !== null
@@ -220,17 +226,17 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
     }
   };
 
-  const shareMessage = `Use my code ${code} for 15% off Influencer Butler — automation for Amazon Influencers that's actually worth it.`;
+  const shareMessage = `Use my code ${code} for 15% off Influencer Butler - automation for Amazon Influencers that's actually worth it.`;
 
   return (
     <section className="rounded-2xl border-2 border-[#f97316]/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-6 shadow-md">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-[#f97316]">
-            ★ Your branded promo code — the hook
+            ★ Your branded promo code - the hook
           </p>
           <p className="mt-1 text-sm text-slate-700">
-            Share this code for <strong>15% off</strong> your audience&apos;s first month — you earn
+            Share this code for <strong>15% off</strong> your audience&apos;s first month - you earn
             <strong> 30% recurring commission for 12 months</strong> per referred customer.
           </p>
         </div>
@@ -326,7 +332,7 @@ function MilestoneCard({
         />
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        {formatUsdFromCents(current)} of {formatUsdFromCents(target)} — keep going.
+        {formatUsdFromCents(current)} of {formatUsdFromCents(target)} - keep going.
       </p>
     </article>
   );

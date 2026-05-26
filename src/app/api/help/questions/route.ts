@@ -1,5 +1,5 @@
 /**
- * /api/help/questions — community Q&A storage. POST inserts an approved
+ * /api/help/questions - community Q&A storage. POST inserts an approved
  * question into the community_questions Supabase table. Auth is enforced
  * via the Supabase session cookie (no Authorization header needed).
  *

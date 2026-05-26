@@ -264,7 +264,7 @@
                     </div>
                     <div class="capability-image">
                         <!--
-                          ASSET NEEDED: before/after — on the left, a messy Amazon
+                          ASSET NEEDED: before/after - on the left, a messy Amazon
                           storefront with many products; on the right, a clean
                           vertical list of extracted ASINs. 16:9.
                           DROP IN: <img src="/assets/features/cc-check-before-after.png" alt="CC Check extracts every ASIN from a storefront page">
@@ -1010,7 +1010,7 @@
                     (function () {
                         const checkoutButtons = document.querySelectorAll('.checkout-btn');
 
-                        // Match the auth-token cookie specifically — other sb-* cookies
+                        // Match the auth-token cookie specifically - other sb-* cookies
                         // (PKCE verifiers etc.) exist for anonymous visitors too, and a
                         // present-but-expired session would 401 the authed endpoint.
                         const hasSupabaseAuthCookie = () =>
@@ -1038,7 +1038,7 @@
                             // .lemonsqueezy-button anchor are ignored by lemon.js
                             // (event.isTrusted is false), so they bypass the modal
                             // and do a full-page navigation. Url.Open() is the only
-                            // way to trigger the overlay from JS — the checkout
+                            // way to trigger the overlay from JS - the checkout
                             // stays on our domain inside an LS-managed iframe.
                             if (window.LemonSqueezy?.Url?.Open) {
                                 window.LemonSqueezy.Url.Open(withEmbedParam(url));
@@ -1086,7 +1086,7 @@
                                         body: JSON.stringify({ plan }),
                                     });
 
-                                    // Stale/expired session cookie — fall back to the guest
+                                    // Stale/expired session cookie - fall back to the guest
                                     // route so the user isn't stuck on a no-op click.
                                     if (response.status === 401) {
                                         try {

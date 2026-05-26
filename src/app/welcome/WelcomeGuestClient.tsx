@@ -31,7 +31,7 @@ type ApiResponse =
  * Shown by the /welcome dispatcher to a guest-checkout buyer who has the
  * welcome_token cookie but no Supabase auth session yet. Lets them download
  * the desktop app immediately and surfaces their license key as soon as the
- * LS webhooks land — without waiting for them to click a magic-link email.
+ * LS webhooks land - without waiting for them to click a magic-link email.
  *
  * The magic-link email still goes out in the background (handled by the LS
  * webhook) so they can sign in to the dashboard later; this page just stops
@@ -83,7 +83,7 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
           return;
         }
 
-        // pending — keep polling.
+        // pending - keep polling.
         setState({ status: "pending" });
         timer = setTimeout(tick, intervalMs);
       } catch (err) {
@@ -108,7 +108,7 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // ignore — clipboard API can be blocked in some browsers/contexts
+      // ignore - clipboard API can be blocked in some browsers/contexts
     }
   };
 
@@ -207,7 +207,7 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
                 Check your email for a sign-in link
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                We sent a sign-in link to the email you used at checkout — click it later
+                We sent a sign-in link to the email you used at checkout - click it later
                 whenever you want to manage billing or view your license from the
                 dashboard.
               </p>
@@ -288,7 +288,7 @@ function LicenseKeyPanel(props: {
         ) : (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             We couldn&apos;t load your license key on this page. Check the email we sent
-            you — it includes a sign-in link to view your key on the dashboard. If you
+            you - it includes a sign-in link to view your key on the dashboard. If you
             still need help, email{" "}
             <a
               href="mailto:hello@influencerbutler.com"

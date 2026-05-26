@@ -1,4 +1,4 @@
-// Free-trial conversion funnel — plain-text emails via Resend. Mirrors
+// Free-trial conversion funnel - plain-text emails via Resend. Mirrors
 // src/lib/conversion-emails.ts in style (direct fetch, no template library).
 // Sent by the /api/cron/affiliate-funnel cron in its sendTrialEmails step.
 
@@ -32,13 +32,13 @@ function annualCheckoutUrl(base: string, code: string | null): string {
 
 const COPY: Record<TrialTier, TierCopy> = {
   day0: {
-    subject: "Welcome to Influencer Butler — your trial is live",
+    subject: "Welcome to Influencer Butler: your trial is live",
     build: (v) => {
       const url = monthlyCheckoutUrl(v.subscriptionUrl, v.monthlyCode);
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Welcome aboard — your 3-day free trial is active.`,
+        `Welcome aboard - your 3-day free trial is active.`,
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://dl.influencerbutler.com`,
@@ -53,7 +53,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Questions? Just reply to this email.`,
         ``,
-        `— The Influencer Butler team`,
+        `- The Influencer Butler team`,
       ].join("\n");
     },
   },
@@ -63,7 +63,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're one day into your trial — here are the three moves that separate power users from everyone else:`,
+        `You're one day into your trial - here are the three moves that separate power users from everyone else:`,
         ``,
         `  1. Batch schedule a week of posts in one sitting. Consistency > volume.`,
         `  2. Enable auto-retries for failed uploads so you never lose a queued post.`,
@@ -71,14 +71,14 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Full playbook: https://www.influencerbutler.com/docs`,
         ``,
-        `Reply with any question — a real human will answer.`,
+        `Reply with any question - a real human will answer.`,
         ``,
-        `— The Influencer Butler team`,
+        `- The Influencer Butler team`,
       ].join("\n");
     },
   },
   day2: {
-    subject: "Switch to annual and save — 48h before your trial ends",
+    subject: "Switch to annual and save: 48h before your trial ends",
     build: (v) => {
       const url = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
       return [
@@ -87,7 +87,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         `Quick heads-up: your trial ends in about 24 hours.`,
         ``,
         v.annualCode
-          ? `If you're ready to commit, the annual plan already saves ~25% vs. monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual — stacking to the biggest discount we offer.`
+          ? `If you're ready to commit, the annual plan already saves ~25% vs. monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual - stacking to the biggest discount we offer.`
           : `The annual plan saves ~25% vs. monthly if you're ready to commit.`,
         ``,
         v.annualCode
@@ -96,23 +96,23 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Lock it in: ${url}`,
         ``,
-        `Prefer monthly? That's fine too — your ${v.monthlyPercent}% off monthly code is still good.`,
+        `Prefer monthly? That's fine too - your ${v.monthlyPercent}% off monthly code is still good.`,
         ``,
-        `— The Influencer Butler team`,
+        `- The Influencer Butler team`,
       ]
         .filter((line) => line !== undefined)
         .join("\n");
     },
   },
   day3: {
-    subject: "Your trial ends today — your discount codes expire at midnight",
+    subject: "Your trial ends today: your discount codes expire at midnight",
     build: (v) => {
       const monthlyUrl = monthlyCheckoutUrl(v.subscriptionUrl, v.monthlyCode);
       const annualUrl = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Last call — your trial ends tonight, and so do your personal discount codes.`,
+        `Last call - your trial ends tonight, and so do your personal discount codes.`,
         ``,
         v.monthlyCode
           ? `• ${v.monthlyPercent}% off monthly: ${v.monthlyCode}`
@@ -127,7 +127,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Both codes are single-use and locked to your account. After tonight, regular pricing applies.`,
         ``,
-        `— The Influencer Butler team`,
+        `- The Influencer Butler team`,
       ]
         .filter((line) => line !== "")
         .join("\n");
@@ -149,7 +149,7 @@ export type TrialEmailPayload = {
 export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.error("RESEND_API_KEY not set — trial email skipped");
+    console.error("RESEND_API_KEY not set - trial email skipped");
     return false;
   }
 

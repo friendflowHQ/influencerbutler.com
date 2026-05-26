@@ -116,12 +116,12 @@ async function sendWelcomeMagicLink(params: {
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.error("sendWelcomeMagicLink: RESEND_API_KEY not set — magic link email skipped");
+    console.error("sendWelcomeMagicLink: RESEND_API_KEY not set - magic link email skipped");
     return false;
   }
 
   const body = [
-    `Welcome to Influencer Butler — your payment is confirmed.`,
+    `Welcome to Influencer Butler - your payment is confirmed.`,
     ``,
     `Click the link below to finish setting up your account and download the desktop app:`,
     ``,
@@ -131,7 +131,7 @@ async function sendWelcomeMagicLink(params: {
     ``,
     `Questions? Reply to this email and a real human will answer.`,
     ``,
-    `— The Influencer Butler team`,
+    `- The Influencer Butler team`,
   ].join("\n");
 
   try {
@@ -216,7 +216,7 @@ async function sendWelcomeMagicLinkIfFresh(
 /**
  * Returns the Supabase user id for the given email, creating the auth user and
  * a matching profiles row if neither exists yet. Always sends a welcome
- * magic-link email (payment-first flow — the LS checkout is the user's only
+ * magic-link email (payment-first flow - the LS checkout is the user's only
  * interaction, so every guest order needs a sign-in link regardless of whether
  * a profile row pre-existed from an affiliate application, earlier signup
  * attempt, etc.). Dup sends are guarded by profiles.welcome_email_sent_at.
@@ -292,7 +292,7 @@ async function ensureUserForEmail(
       const readBack = await findUserIdByEmail(supabase, normalized);
       if (!readBack) {
         throw new Error(
-          `profiles.upsert(new-user) reported success but row is not queryable — suspect RLS filter on profiles for id=${userId}, email=${normalized}. Check SUPABASE_SERVICE_ROLE_KEY and RLS policies.`,
+          `profiles.upsert(new-user) reported success but row is not queryable - suspect RLS filter on profiles for id=${userId}, email=${normalized}. Check SUPABASE_SERVICE_ROLE_KEY and RLS policies.`,
         );
       }
     }
@@ -305,7 +305,7 @@ async function ensureUserForEmail(
 
 /**
  * Fallback lookup: find a Supabase auth user by email when no profile row
- * exists. Uses paginated listUsers — fine for accounts under a few thousand
+ * exists. Uses paginated listUsers - fine for accounts under a few thousand
  * users. Returns the first matching user id or null.
  */
 async function findAuthUserIdByEmail(
@@ -436,7 +436,7 @@ export async function POST(request: Request) {
 
   // Use the canonical supabase-js admin client rather than @supabase/ssr's
   // createServerClient. SSR's client is tuned for cookie-bound user auth and
-  // doesn't always route writes as the service_role JWT claim — so RLS can
+  // doesn't always route writes as the service_role JWT claim - so RLS can
   // silently filter inserts (returns data: [], error: null, no row written).
   // supabase-js with autoRefreshToken/persistSession off reliably bypasses RLS.
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -479,7 +479,7 @@ export async function POST(request: Request) {
         (orderEmail ? await ensureUserForEmail(supabase, orderEmail, { lsCustomerId }) : null);
       if (!userId) {
         throw new Error(
-          `order_created: no user context — directUserId=${directUserId ?? "null"}, orderEmail=${orderEmail ?? "null"}, lsCustomerId=${lsCustomerId ?? "null"}`,
+          `order_created: no user context - directUserId=${directUserId ?? "null"}, orderEmail=${orderEmail ?? "null"}, lsCustomerId=${lsCustomerId ?? "null"}`,
         );
       }
 
@@ -528,7 +528,7 @@ export async function POST(request: Request) {
         directUserId ?? (subEmail ? await ensureUserForEmail(supabase, subEmail) : null);
       if (!userId) {
         throw new Error(
-          `subscription_created: no user context — directUserId=${directUserId ?? "null"}, subEmail=${subEmail ?? "null"}`,
+          `subscription_created: no user context - directUserId=${directUserId ?? "null"}, subEmail=${subEmail ?? "null"}`,
         );
       }
 
@@ -550,7 +550,7 @@ export async function POST(request: Request) {
 
       // Phase F (2026-05-20): never mint trial discounts on add-on
       // subscriptions. The Daily Deals Workspace add-on has no trial and
-      // accepts no promo or affiliate codes — feeding it through
+      // accepts no promo or affiliate codes - feeding it through
       // mintTrialDiscounts would create LS discount records that
       // technically apply (per LS, when no variantIds scope is set),
       // contradicting belt 3 of the promo-exclusion contract.
@@ -690,7 +690,7 @@ export async function POST(request: Request) {
       // then fall back to profiles.email (direct-LS signup with an existing
       // Influencer Butler account), and finally to auth.users (existing auth
       // user with no profile row yet). If all three miss, the affiliate signed
-      // up at LS without ever touching our site — create a stub user + minimal
+      // up at LS without ever touching our site - create a stub user + minimal
       // application row so they're not orphaned. This is the silent-failure
       // class that left 3 approvals un-upserted for a month.
       let userId: string | null = null;
@@ -735,7 +735,7 @@ export async function POST(request: Request) {
 
       if (!userId) {
         console.warn(
-          "affiliate_activated: no matching account anywhere — provisioning stub user",
+          "affiliate_activated: no matching account anywhere - provisioning stub user",
           { email },
         );
         userId = await ensureUserForEmail(supabase, email);
@@ -760,7 +760,7 @@ export async function POST(request: Request) {
               agreed_to_terms: true,
               status: "approved",
               auto_approved: true,
-              admin_notes: "Stub row — direct LS signup, bypassed our funnel.",
+              admin_notes: "Stub row - direct LS signup, bypassed our funnel.",
               reviewed_at: new Date().toISOString(),
             },
             { onConflict: "user_id" },
@@ -834,7 +834,7 @@ export async function POST(request: Request) {
   }
 
   // Echo handler errors back into the 200 response body so they surface in the
-  // LS "Recent deliveries" UI — we can't tail Vercel logs from every context,
+  // LS "Recent deliveries" UI - we can't tail Vercel logs from every context,
   // and silently returning {received:true} meant 6 consecutive webhooks could
   // fail while LS showed green checkmarks. Still returns 200 so LS doesn't
   // retry-loop; if the fix needs a re-run, use LS's "Resend" button manually.

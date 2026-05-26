@@ -1,5 +1,5 @@
 ---
-title: Relink Butler — changez de fournisseur d'affiliation sur du contenu publié (beta)
+title: Relink Butler: changez de fournisseur d'affiliation sur du contenu publié (beta)
 summary: Réécrivez les liens d'affiliation de vos posts déjà publiés sur Daily Deals, YouTube, Pinterest et Benable sans ré-éditer chaque publication à la main.
 category: Amazon
 ---
@@ -8,14 +8,14 @@ category: Amazon
 
 ## Ce que fait Relink Butler
 
-Si vous avez changé votre setup d'affiliation — par exemple de tags Amazon bruts à Geniuslink pour l'international, ou d'un raccourcisseur à un autre — chaque post existant passe encore par l'ancien fournisseur. Relink Butler scanne votre contenu publié, trouve les vieux liens et les réécrit avec votre nouveau fournisseur, sans que vous ayez à ré-éditer chaque publication à la main.
+Si vous avez changé votre setup d'affiliation - par exemple de tags Amazon bruts à Geniuslink pour l'international, ou d'un raccourcisseur à un autre - chaque post existant passe encore par l'ancien fournisseur. Relink Butler scanne votre contenu publié, trouve les vieux liens et les réécrit avec votre nouveau fournisseur, sans que vous ayez à ré-éditer chaque publication à la main.
 
 Il supporte quatre modes :
 
-- **Changement de host** — change l'hôte du lien (par ex. `amzn.to` → `geni.us`) en gardant l'ASIN.
-- **Retag** — met à jour les tags d'affiliation en place (rare ; surtout pour les changements de tag par région).
-- **Remint provider** — change le fournisseur d'affiliation entier, en régénérant chaque lien par le nouveau.
-- **Find-replace** — substitution manuelle au niveau chaîne. À utiliser quand les autres modes ne collent pas.
+- **Changement de host**: change l'hôte du lien (par ex. `amzn.to` → `geni.us`) en gardant l'ASIN.
+- **Retag**: met à jour les tags d'affiliation en place (rare ; surtout pour les changements de tag par région).
+- **Remint provider**: change le fournisseur d'affiliation entier, en régénérant chaque lien par le nouveau.
+- **Find-replace**: substitution manuelle au niveau chaîne. À utiliser quand les autres modes ne collent pas.
 
 L'objectif est le même dans chaque mode : laisser le contenu publié identique, changer vers où route le lien.
 
@@ -33,27 +33,27 @@ Si vous n'avez pas utilisé le workspace correspondant, ce périmètre n'a rien 
 ## Votre premier swap
 
 1. Ouvrez **Relink Butler** sous Amazon Butler.
-2. Dans **Mode**, choisissez le type de swap. **Remint provider** est le plus courant — à utiliser quand vous changez de fournisseur.
+2. Dans **Mode**, choisissez le type de swap. **Remint provider** est le plus courant - à utiliser quand vous changez de fournisseur.
 3. Dans **Périmètre**, cochez quelles surfaces de contenu réécrire. Daily Deals est coché par défaut ; cochez les autres selon besoin.
-4. **Prévisualiser les réécritures** — Relink Butler parcourt chaque périmètre, trouve chaque lien d'affiliation et vous montre un diff côte à côte : ancien lien vs nouveau proposé, par ligne.
+4. **Prévisualiser les réécritures**: Relink Butler parcourt chaque périmètre, trouve chaque lien d'affiliation et vous montre un diff côte à côte : ancien lien vs nouveau proposé, par ligne.
 5. Revoyez le diff. Décochez ce qui paraît faux.
 6. Cliquez sur **Appliquer les approuvés** pour valider le swap.
 
-Les swaps Daily Deals + Pinterest se passent dans l'app (juste des mises à jour de bases locales). Les swaps YouTube + Benable requièrent des sessions Chrome car ils éditent du contenu publié à distance — Relink Butler lance Chrome de la même façon que les autres espaces.
+Les swaps Daily Deals + Pinterest se passent dans l'app (juste des mises à jour de bases locales). Les swaps YouTube + Benable requièrent des sessions Chrome car ils éditent du contenu publié à distance - Relink Butler lance Chrome de la même façon que les autres espaces.
 
 ## Ce que Relink Butler NE fait PAS
 
-- **Il ne supprime pas l'ancien lien.** L'historique de publication garde les deux — le nouveau remplacement tourne à côté. Cela correspond à la philosophie de Retag Butler : préserver l'historique, router vers l'avant.
+- **Il ne supprime pas l'ancien lien.** L'historique de publication garde les deux - le nouveau remplacement tourne à côté. Cela correspond à la philosophie de Retag Butler : préserver l'historique, router vers l'avant.
 - **Il ne touche pas les liens Amazon bruts que vous avez postés manuellement hors InfluencerButler.** Seul le contenu publié via un de nos périmètres est suivi.
 - **Il ne répare pas les produits morts.** Si un ASIN sous-jacent est mort, le lien route quand même via le nouveau fournisseur mais atterrit sur un 404. Utilisez **Retag Butler** pour le remplacement d'ASIN mort.
 
 ## Pièges courants
 
-- **L'aperçu est vide** — généralement le périmètre est vide. Vérifiez que Daily Deals (ou le périmètre concerné) a un historique de publication d'abord.
-- **"Nouveau fournisseur non configuré"** — terminez la configuration dans API Integrations avant de lancer. Le mode Remint a besoin de la clé API du nouveau fournisseur pour générer les liens de remplacement.
-- **Les swaps YouTube sont lents** — YouTube n'autorise que ~10 éditions/heure sans rate-limiting. Relink Butler le respecte ; laissez l'exécution prendre son temps.
+- **L'aperçu est vide**: généralement le périmètre est vide. Vérifiez que Daily Deals (ou le périmètre concerné) a un historique de publication d'abord.
+- **"Nouveau fournisseur non configuré"**: terminez la configuration dans API Integrations avant de lancer. Le mode Remint a besoin de la clé API du nouveau fournisseur pour générer les liens de remplacement.
+- **Les swaps YouTube sont lents**: YouTube n'autorise que ~10 éditions/heure sans rate-limiting. Relink Butler le respecte ; laissez l'exécution prendre son temps.
 
 ## Relié
 
-- [Tutoriel Retag Butler](/help/tutorials/retag-butler) — pour les swaps *produit* (remplacement d'ASIN mort), pas les swaps de fournisseur d'affiliation.
-- [Tutoriel API Integrations](/help/tutorials/api-integrations) — où vous configurez le nouveau fournisseur avant de lancer Relink Butler.
+- [Tutoriel Retag Butler](/help/tutorials/retag-butler) - pour les swaps *produit* (remplacement d'ASIN mort), pas les swaps de fournisseur d'affiliation.
+- [Tutoriel API Integrations](/help/tutorials/api-integrations) - où vous configurez le nouveau fournisseur avant de lancer Relink Butler.

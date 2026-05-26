@@ -25,7 +25,7 @@ export default function LikeButlerFreebieBanner() {
     try {
       sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
-      // sessionStorage may be unavailable — dismiss in-memory only
+      // sessionStorage may be unavailable - dismiss in-memory only
     }
     setDismissed(true);
   };
@@ -43,7 +43,7 @@ export default function LikeButlerFreebieBanner() {
             Two butlers are now free forever
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Like Butler and Benable Like Butler work on every account — trial, paid, expired, or
+            Like Butler and Benable Like Butler work on every account - trial, paid, expired, or
             cancelled. No license check, no quota. Use them as much as you want.
           </p>
         </div>

@@ -1,5 +1,5 @@
 /**
- * GET /api/help/manifest — returns the canonical tutorial manifest as JSON.
+ * GET /api/help/manifest - returns the canonical tutorial manifest as JSON.
  * Used by the desktop dashboard's help workspace to populate its left-nav
  * and offline cache. Filters tutorials to those that have at least one
  * locale variant on disk.

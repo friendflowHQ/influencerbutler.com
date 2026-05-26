@@ -55,9 +55,9 @@
                 <p>We are a small US-based independent software vendor. The Software is a desktop application that runs on your computer; the supporting cloud endpoints we operate are minimal in scope (licensing, transactional email, feedback) and are described below.</p>
 
                 <h2>2) What we collect, and where it goes</h2>
-                <p>We organize our data practices by <strong>destination</strong>, because most of what the Software touches never leaves your device. The three categories below are exhaustive — if it isn't listed here, the Software does not collect it.</p>
+                <p>We organize our data practices by <strong>destination</strong>, because most of what the Software touches never leaves your device. The three categories below are exhaustive - if it isn't listed here, the Software does not collect it.</p>
 
-                <h3>2.1 Local-only — never leaves your device</h3>
+                <h3>2.1 Local-only: never leaves your device</h3>
                 <p>The following data is processed entirely on the device on which you run the Software and is never transmitted to us or to any third party unless <strong>you</strong> explicitly export, share, or sync it:</p>
                 <ul>
                     <li>Workspace settings, templates, brand lists, message drafts, and campaign keywords.</li>
@@ -75,7 +75,7 @@
                     <li><strong>License key</strong> → licensing Worker: tier enforcement, seat counts (contract performance).</li>
                     <li><strong>Device fingerprint</strong> (OS ID, hardware-bound machine ID, install salt) → licensing Worker: per-device activation, anti-piracy, suspicious-login alerts (legitimate interest in license enforcement and account-security alerting).</li>
                     <li><strong>License usage counters</strong> (message-send counts, tier-gated feature usage) → licensing Worker: tier-cap enforcement, billing reconciliation (contract performance).</li>
-                    <li><strong>Feedback, feature requests, community Q&amp;A submissions</strong> → feedback Worker: product improvement, public Q&amp;A on the website (consent — you actively submit).</li>
+                    <li><strong>Feedback, feature requests, community Q&amp;A submissions</strong> → feedback Worker: product improvement, public Q&amp;A on the website (consent - you actively submit).</li>
                     <li><strong>Outbound deep-link rewrites and post-tap analytics</strong> → links Worker: affiliate link resolution (legitimate interest).</li>
                     <li><strong>Update-feed requests</strong> for <code>latest.yml</code> and <code>.exe</code> blobs → Cloudflare R2 (<code>dl.influencerbutler.com</code>): auto-update delivery (contract performance).</li>
                 </ul>
@@ -84,11 +84,11 @@
                 <h3>2.3 Sent to third-party processors acting on our behalf</h3>
                 <p>We contract with the following sub-processors. Each acts under written agreement and processes only the data needed to deliver its part of the Software.</p>
                 <ul>
-                    <li><strong>LemonSqueezy, Inc.</strong> — payment processing, subscription management, customer-portal hosting. Receives your billing details and transaction history. We do <strong>not</strong> receive or store full payment-card numbers. Their privacy practices: <a href="https://www.lemonsqueezy.com/privacy" target="_blank" rel="noopener">lemonsqueezy.com/privacy</a>.</li>
-                    <li><strong>Resend (Bounce, Inc.)</strong> — transactional email delivery. Receives your email address and the message body of magic-link emails, new-device login alerts, onboarding messages, and per-Butler issue notifications. Their privacy practices: <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">resend.com/legal/privacy-policy</a>.</li>
-                    <li><strong>Cloudflare, Inc.</strong> — infrastructure for the licensing / feedback / links Workers and for <code>dl.influencerbutler.com</code> (CDN + R2 object storage). Processes request metadata (IP address, user-agent, request headers) for transport-layer security and abuse mitigation. Their privacy practices: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy</a>.</li>
-                    <li><strong>AI providers you enable</strong> (OpenAI, Ideogram, FAL AI, and any others you add) — when you enable an AI feature and supply your own API key, the Software calls that provider directly from your device under your account. Company has no visibility into or contractual relationship with the provider on your behalf; the provider's privacy policy applies to whatever you send.</li>
-                    <li><strong>Google LLC (Google Analytics 4 / gtag.js)</strong> — only on the <code>influencerbutler.com</code> website, and only with your prior consent via the cookie banner. Receives standard GA4 event data (page views, referrer, anonymized IP). The desktop application does not contain Google Analytics or any comparable third-party analytics library.</li>
+                    <li><strong>LemonSqueezy, Inc.</strong>: payment processing, subscription management, customer-portal hosting. Receives your billing details and transaction history. We do <strong>not</strong> receive or store full payment-card numbers. Their privacy practices: <a href="https://www.lemonsqueezy.com/privacy" target="_blank" rel="noopener">lemonsqueezy.com/privacy</a>.</li>
+                    <li><strong>Resend (Bounce, Inc.)</strong>: transactional email delivery. Receives your email address and the message body of magic-link emails, new-device login alerts, onboarding messages, and per-Butler issue notifications. Their privacy practices: <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">resend.com/legal/privacy-policy</a>.</li>
+                    <li><strong>Cloudflare, Inc.</strong>: infrastructure for the licensing / feedback / links Workers and for <code>dl.influencerbutler.com</code> (CDN + R2 object storage). Processes request metadata (IP address, user-agent, request headers) for transport-layer security and abuse mitigation. Their privacy practices: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy</a>.</li>
+                    <li><strong>AI providers you enable</strong> (OpenAI, Ideogram, FAL AI, and any others you add) - when you enable an AI feature and supply your own API key, the Software calls that provider directly from your device under your account. Company has no visibility into or contractual relationship with the provider on your behalf; the provider's privacy policy applies to whatever you send.</li>
+                    <li><strong>Google LLC (Google Analytics 4 / gtag.js)</strong>: only on the <code>influencerbutler.com</code> website, and only with your prior consent via the cookie banner. Receives standard GA4 event data (page views, referrer, anonymized IP). The desktop application does not contain Google Analytics or any comparable third-party analytics library.</li>
                 </ul>
                 <p>We do not sell or "share" (as defined by CCPA/CPRA) your personal data to any third party for cross-context behavioral advertising, and we do not use your data to train AI models.</p>
 
@@ -96,8 +96,8 @@
                 <p>The <code>influencerbutler.com</code> marketing website uses Google Analytics 4 (<code>gtag.js</code>, measurement ID <code>G-S1TC1QLYNN</code>) to understand aggregate visitor traffic. GA4 sets cookies including <code>_ga</code> and <code>_ga_&lt;id&gt;</code> with a 14-month default retention.</p>
                 <p>We use <strong>Google Consent Mode v2</strong> with all consent signals defaulted to <code>denied</code>. Before you make a choice on the cookie banner, gtag.js sends pinged "consent denied" beacons that do not store identifying cookies. After you choose:</p>
                 <ul>
-                    <li><strong>Accept all</strong> — <code>analytics_storage</code> is set to <code>granted</code>; standard GA4 cookies are set; aggregate analytics flow.</li>
-                    <li><strong>Reject non-essential</strong> — the default-denied state persists; no analytics cookies are written.</li>
+                    <li><strong>Accept all</strong>: <code>analytics_storage</code> is set to <code>granted</code>; standard GA4 cookies are set; aggregate analytics flow.</li>
+                    <li><strong>Reject non-essential</strong>: the default-denied state persists; no analytics cookies are written.</li>
                 </ul>
                 <p>You can change your choice at any time from <a href="cookies.html">the cookie policy page</a> or by clearing <code>localStorage.ibConsent</code> in your browser. The desktop application does not load gtag.js or any other website-style analytics script.</p>
 
@@ -116,13 +116,13 @@
                 <h2>5) GDPR / EEA / UK rights</h2>
                 <p>If you are located in the European Economic Area, the United Kingdom, or Switzerland, you have the following rights with respect to your personal data:</p>
                 <ul>
-                    <li><strong>Access</strong> — request a copy of the personal data we hold about you.</li>
-                    <li><strong>Rectification</strong> — correct inaccurate or incomplete data.</li>
-                    <li><strong>Erasure ("right to be forgotten")</strong> — request deletion, subject to our retention obligations under §7.</li>
-                    <li><strong>Restriction</strong> — pause our processing while we investigate a dispute.</li>
-                    <li><strong>Portability</strong> — receive your data in a machine-readable format.</li>
-                    <li><strong>Objection</strong> — object to processing based on legitimate interest.</li>
-                    <li><strong>Withdraw consent</strong> — for processing that relies on consent (analytics, feedback submissions), at any time.</li>
+                    <li><strong>Access</strong>: request a copy of the personal data we hold about you.</li>
+                    <li><strong>Rectification</strong>: correct inaccurate or incomplete data.</li>
+                    <li><strong>Erasure ("right to be forgotten")</strong>: request deletion, subject to our retention obligations under §7.</li>
+                    <li><strong>Restriction</strong>: pause our processing while we investigate a dispute.</li>
+                    <li><strong>Portability</strong>: receive your data in a machine-readable format.</li>
+                    <li><strong>Objection</strong>: object to processing based on legitimate interest.</li>
+                    <li><strong>Withdraw consent</strong>: for processing that relies on consent (analytics, feedback submissions), at any time.</li>
                     <li><strong>Lodge a complaint</strong> with your local supervisory authority.</li>
                 </ul>
                 <p>To exercise any of these rights, email <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a> from the address associated with your license. We will respond within 30 days (extendable by 60 days for complex requests, with notice). Lawful bases for processing under GDPR Article 6 are listed inline in §2.2.</p>
@@ -133,8 +133,8 @@
                     <li><strong>Right to know</strong> what categories of personal information we collect, the sources, the business purposes, and the third parties with whom we share it (the answer is in §2).</li>
                     <li><strong>Right to delete</strong> your personal information, subject to the retention exceptions in §7.</li>
                     <li><strong>Right to correct</strong> inaccurate personal information.</li>
-                    <li><strong>Right to opt out of sale or sharing</strong> — we do <strong>not</strong> sell or share your personal information for cross-context behavioral advertising. There is nothing to opt out of, but we will honor Global Privacy Control (GPC) signals on the website as a "Do Not Sell or Share" request.</li>
-                    <li><strong>Right to non-discrimination</strong> — we will not deny service, charge different prices, or provide a different level of service because you exercised a CCPA right.</li>
+                    <li><strong>Right to opt out of sale or sharing</strong>: we do <strong>not</strong> sell or share your personal information for cross-context behavioral advertising. There is nothing to opt out of, but we will honor Global Privacy Control (GPC) signals on the website as a "Do Not Sell or Share" request.</li>
+                    <li><strong>Right to non-discrimination</strong>: we will not deny service, charge different prices, or provide a different level of service because you exercised a CCPA right.</li>
                 </ul>
                 <p>To exercise these rights, email <a href="mailto:privacy@influencerbutler.com">privacy@influencerbutler.com</a>. We will verify your identity by confirming control of the email address associated with your license.</p>
 

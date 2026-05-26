@@ -289,7 +289,7 @@ function Detail({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-0.5 text-sm text-slate-800">{value?.trim() || "—"}</p>
+      <p className="mt-0.5 text-sm text-slate-800">{value?.trim() || "-"}</p>
     </div>
   );
 }

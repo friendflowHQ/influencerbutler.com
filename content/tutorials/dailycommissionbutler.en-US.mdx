@@ -1,12 +1,12 @@
 ---
-title: Daily Commission Butler — accept campaigns from your sales
+title: Daily Commission Butler: accept campaigns from your sales
 summary: Auto-accept the right Amazon Creator Connections campaigns based on what you actually sold yesterday.
 category: Amazon
 ---
 
 ## What it does
 
-Daily Commission Butler reads your daily sales, finds the Creator Connections campaigns that match those products, and accepts the campaigns automatically. It runs once a day by default — set it and forget it.
+Daily Commission Butler reads your daily sales, finds the Creator Connections campaigns that match those products, and accepts the campaigns automatically. It runs once a day by default - set it and forget it.
 
 ## Prerequisites
 
@@ -23,19 +23,19 @@ If anything's missing, the workspace shows a banner telling you which step is in
    - **Minimum commission rate**: 5%
    - **Minimum recent sales**: 1 unit in the last 30 days
    - **Skip campaigns ending in less than**: 48h
-3. Click **Run once** to do a single dry pass — it shows you what *would* be accepted without committing.
+3. Click **Run once** to do a single dry pass - it shows you what *would* be accepted without committing.
 4. Review the candidate list. If it looks right, click **Accept all**. If you want it to run daily on its own, switch to the **Schedule** card and set a daily cron.
 
 ## Tuning over time
 
-After a week or two, look at the **Earnings Intelligence** workspace — it shows which auto-accepted campaigns actually generated commissions and which didn't. Raise the minimum commission rate or sales threshold to filter out duds.
+After a week or two, look at the **Earnings Intelligence** workspace - it shows which auto-accepted campaigns actually generated commissions and which didn't. Raise the minimum commission rate or sales threshold to filter out duds.
 
 ## Gotchas
 
-- **No campaigns to accept** usually means cc-check is stale — run cc-check and try again.
+- **No campaigns to accept** usually means cc-check is stale - run cc-check and try again.
 - **All campaigns rejected** typically points at thresholds being too aggressive. Drop the minimum commission rate to 3% for a run and see what shows up.
 
 ## Related
 
-- [cc-check tutorial](/help/tutorials/cc-check) — what keeps the campaign catalog fresh.
-- [Orders Butler tutorial](/help/tutorials/ordersbutler) — what feeds the sales data.
+- [cc-check tutorial](/help/tutorials/cc-check) - what keeps the campaign catalog fresh.
+- [Orders Butler tutorial](/help/tutorials/ordersbutler) - what feeds the sales data.

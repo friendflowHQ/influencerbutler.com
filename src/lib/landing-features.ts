@@ -33,7 +33,7 @@ const EMPTY: FeaturesSection = {
 
 function htmlDecode(s: string): string {
   return s
-    .replace(/&mdash;/g, "—")
+    .replace(/&mdash;/g, "-")
     .replace(/&ndash;/g, "–")
     .replace(/&rsquo;/g, "’")
     .replace(/&lsquo;/g, "‘")

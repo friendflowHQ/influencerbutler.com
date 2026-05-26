@@ -1,5 +1,5 @@
 /* ================================================================
-   Influencer Butler — Marketing Website Styles
+   Influencer Butler - Marketing Website Styles
    Brand: #f97316 (orange) from app's design system
    ================================================================ */
 
@@ -1012,7 +1012,7 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   border-color: var(--brand);
 }
 
-/* Beta badge — same default tone, given an explicit modifier so callers can
+/* Beta badge - same default tone, given an explicit modifier so callers can
    tune it later without touching every card. */
 .feature-badge--beta {
   background: var(--brand-50);
@@ -1020,7 +1020,7 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   border-color: var(--brand-200);
 }
 
-/* Free-forever badge — emerald so it visually pops next to the orange/brand
+/* Free-forever badge - emerald so it visually pops next to the orange/brand
    tones used by Core/Popular/Pro/Flagship. Signals "no license required". */
 .feature-badge--free {
   background: #ecfdf5;

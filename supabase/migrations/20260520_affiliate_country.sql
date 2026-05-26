@@ -1,7 +1,7 @@
 -- Affiliate country (ISO 3166-1 alpha-2)
 --
 -- Light analytics + tax-treaty hints. The actual tax form submission is
--- handled inside Lemon Squeezy's hosted affiliate portal — we do not collect
+-- handled inside Lemon Squeezy's hosted affiliate portal - we do not collect
 -- W-9 / W-8BEN / W-8BEN-E ourselves. See public/legal/affiliate-terms.html.
 
 ALTER TABLE affiliate_applications

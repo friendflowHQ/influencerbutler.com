@@ -4,13 +4,13 @@
  * Dependencies: ./lemonsqueezy-discount-lookup, ./affiliate-lookup, ./promo.
  *
  * The math (see computeSavedCents) compares codes by the total dollar amount
- * the user would save across a 24-month horizon — so 20% off forever beats
+ * the user would save across a 24-month horizon - so 20% off forever beats
  * 30% off once on an annual plan, but loses to 50% off the first year.
  *
  * Stacking rule (applyStackingRules): a customer may apply either an
  * Affiliate-tracked code (URL/typed) OR a site-wide welcome-cookie code,
  * not both. When any Affiliate candidate is present, welcome-cookie
- * candidates are dropped from the discount ranking before pickWinner runs —
+ * candidates are dropped from the discount ranking before pickWinner runs -
  * so the affiliate's discount actually applies and they keep attribution.
  *
  * Attribution is decoupled from discount: a URL-sourced affiliate code that
@@ -117,7 +117,7 @@ export function computeSavedCents(
  * (keeping the first appearance, which is also the highest-priority source
  * after `gatherCandidates` ordered them). LS lookup + Supabase affiliate
  * lookup run in parallel per code. Anything that returns no LS discount is
- * silently dropped — bogus codes are not errors.
+ * silently dropped - bogus codes are not errors.
  */
 export async function gatherCandidates(
   raw: RawCandidate[],
@@ -157,10 +157,10 @@ export async function gatherCandidates(
 }
 
 /**
- * WELCOME codes are our own discounts — we know their metadata at compile time
+ * WELCOME codes are our own discounts - we know their metadata at compile time
  * (see src/lib/promo.ts), so we don't need to round-trip LS just to read what
  * we already know. This also keeps the resolver functional when the LS API
- * is temporarily unreachable — the WELCOME tier still applies.
+ * is temporarily unreachable - the WELCOME tier still applies.
  */
 function synthesizeWelcomeLs(code: string): LsDiscount | null {
   if (code === WELCOME_FIRST_CODE) {
@@ -194,7 +194,7 @@ async function resolveLsForCandidate(
   if (source === "welcome-cookie") {
     return synthesizeWelcomeLs(code);
   }
-  // Typed / URL-sourced codes hit LS. (User-typed WELCOME30 also routes here —
+  // Typed / URL-sourced codes hit LS. (User-typed WELCOME30 also routes here -
   // LS will confirm it's published; we don't shortcut to the synth value because
   // the source tag matters for tie-breaks and audit.)
   return fetchDiscountByCode(code, storeId);
@@ -252,7 +252,7 @@ export function resolveAttribution(candidates: CandidateCode[]): Attribution | n
  * the discount comparison (and retains attribution). Without this filter,
  * WELCOME30/WELCOME15 silently undercuts the affiliate's branded code on
  * "best of 24-month NPV" ranking, paying the affiliate commission on a
- * site-wide discount that we'd also otherwise pay — double leakage.
+ * site-wide discount that we'd also otherwise pay - double leakage.
  *
  * Mirrored in customer-facing copy: see "No discount stacking" in
  * public/legal/affiliate-terms.html Section 3(e).

@@ -1,5 +1,5 @@
 /**
- * Summary: Unit tests for /api/profiles/by-license — bearer auth,
+ * Summary: Unit tests for /api/profiles/by-license - bearer auth,
  *   batch lookup against a fake service-role client, null fallback for
  *   missing hashes.
  * Dependencies: vitest, ../route, @/lib/admin.

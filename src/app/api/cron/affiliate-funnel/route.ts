@@ -18,7 +18,7 @@ const TIERS: ReadonlyArray<{
   thresholdMs: number;
   sentCol: string;
 }> = [
-  // Most-aged first — we send the highest tier that's due but not yet sent.
+  // Most-aged first - we send the highest tier that's due but not yet sent.
   { tier: "5d", thresholdMs: 5 * 24 * 60 * 60 * 1000, sentCol: "conversion_email_5d_sent_at" },
   { tier: "3d", thresholdMs: 3 * 24 * 60 * 60 * 1000, sentCol: "conversion_email_3d_sent_at" },
   { tier: "1h", thresholdMs: 60 * 60 * 1000, sentCol: "conversion_email_1h_sent_at" },
@@ -72,8 +72,8 @@ function getServiceClient(): CronClient | null {
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    // Without a secret configured we refuse to run — safer than open endpoint.
-    console.error("cron: CRON_SECRET not set — refusing to execute");
+    // Without a secret configured we refuse to run - safer than open endpoint.
+    console.error("cron: CRON_SECRET not set - refusing to execute");
     return false;
   }
   const header = request.headers.get("authorization") ?? "";
@@ -205,7 +205,7 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
         code = row.unique_discount_code_50;
       } else {
         if (!storeId) {
-          console.error("cron: LEMONSQUEEZY_STORE_ID not set — skipping 5d for", row.user_id);
+          console.error("cron: LEMONSQUEEZY_STORE_ID not set - skipping 5d for", row.user_id);
           continue;
         }
         const created = await createUniqueDiscount({

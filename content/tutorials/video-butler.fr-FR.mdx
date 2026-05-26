@@ -1,41 +1,41 @@
 ---
-title: Video Butler — re-uploadez vos vidéos de boutique Amazon avec de nouvelles métadonnées
-summary: Convertissez, ré-encodez et re-uploadez les vidéos déjà présentes sur votre boutique avec titres, descriptions et tags rafraîchis — sans rien refilmer.
+title: Video Butler: re-uploadez vos vidéos de boutique Amazon avec de nouvelles métadonnées
+summary: Convertissez, ré-encodez et re-uploadez les vidéos déjà présentes sur votre boutique avec titres, descriptions et tags rafraîchis - sans rien refilmer.
 category: Amazon
 ---
 
 ## Ce que fait Video Butler
 
-Video Butler est ce qui se rapproche le plus dans InfluencerButler d'un "coup de pouce gratuit d'engagement". Il reprend les vidéos achetables déjà sur votre boutique Amazon Creator et les re-upload avec des métadonnées fraîches — nouveaux titres, nouvelles descriptions, nouveaux liens d'affiliation, overlays de filigrane/légende optionnels. L'algo d'Amazon traite un re-upload comme un post neuf, donc une vidéo vieille de 6 mois peut prendre un second souffle sans rien refilmer.
+Video Butler est ce qui se rapproche le plus dans InfluencerButler d'un "coup de pouce gratuit d'engagement". Il reprend les vidéos achetables déjà sur votre boutique Amazon Creator et les re-upload avec des métadonnées fraîches - nouveaux titres, nouvelles descriptions, nouveaux liens d'affiliation, overlays de filigrane/légende optionnels. L'algo d'Amazon traite un re-upload comme un post neuf, donc une vidéo vieille de 6 mois peut prendre un second souffle sans rien refilmer.
 
 Vous pouvez aussi l'utiliser pour **élaguer les vidéos sous-performantes** (le moteur a un pas intégré "vues sous le seuil = suppression") et pour **recharger des vidéos supprimées** si vous avez enlevé quelque chose par erreur.
 
 ## Avant de commencer
 
-- **Storefront Butler a synchronisé vos vidéos au moins une fois** — Video Butler lit depuis ce catalogue.
+- **Storefront Butler a synchronisé vos vidéos au moins une fois**: Video Butler lit depuis ce catalogue.
 - **Session Creator Hub connectée** dans Chrome.
-- **FFmpeg installé** — se fait automatiquement à l'install de l'app. Si vous voyez "ffmpeg not found", lancez `npm run stage:ffmpeg` depuis la racine du repo.
+- **FFmpeg installé**: se fait automatiquement à l'install de l'app. Si vous voyez "ffmpeg not found", lancez `npm run stage:ffmpeg` depuis la racine du repo.
 - Optionnel : une image de filigrane et/ou une police pour les légendes, si vous voulez des overlays.
 
 ## Votre première conversion + re-upload
 
 1. Ouvrez **Video Butler** sous Amazon Butler.
 2. Dans la carte **Filtres et options** :
-   - **Durée min / max** — laissez large pour la première exécution.
-   - **Ignorer les vidéos avec vues ≥** — 1000 par défaut. Cela garde vos meilleures vidéos intactes. Celles *sous* ce seuil sont éligibles au re-upload.
-   - **Fenêtre temporelle** — 30 derniers jours par défaut. Vérifiez ce qui est éligible avant de valider.
-3. **Convertir** — choisissez `none` pour un re-upload pur, ou `vertical` / `square` / `horizontal` pour ré-encoder la forme. `none` est plus rapide.
-4. **Mode d'exécution** — `post-keep` (recommandé) re-upload puis garde les deux versions un jour ; `post-delete` remplace l'original immédiatement. Commencez par `post-keep` pour vérifier que le nouvel upload est correct avant de laisser partir l'ancien.
+   - **Durée min / max**: laissez large pour la première exécution.
+   - **Ignorer les vidéos avec vues ≥**: 1000 par défaut. Cela garde vos meilleures vidéos intactes. Celles *sous* ce seuil sont éligibles au re-upload.
+   - **Fenêtre temporelle**: 30 derniers jours par défaut. Vérifiez ce qui est éligible avant de valider.
+3. **Convertir**: choisissez `none` pour un re-upload pur, ou `vertical` / `square` / `horizontal` pour ré-encoder la forme. `none` est plus rapide.
+4. **Mode d'exécution**: `post-keep` (recommandé) re-upload puis garde les deux versions un jour ; `post-delete` remplace l'original immédiatement. Commencez par `post-keep` pour vérifier que le nouvel upload est correct avant de laisser partir l'ancien.
 5. Cliquez sur **Lancer**.
 
 Une fenêtre Chrome s'ouvre, télécharge chaque vidéo éligible de votre boutique, lance la conversion (s'il y en a une) et la republie via Creator Hub avec les nouvelles métadonnées.
 
 ## Réglages dans la durée
 
-- **skipViewsAtLeast** — le bouton le plus important. Montez-le pour protéger plus de vidéos performantes ; baissez-le pour être plus agressif sur le rafraîchissement du vieux contenu.
-- **deleteOriginal / deleteBeforeReupload** — avec les deux désactivés, les originaux restent. La section "Nettoyage" permet de les supprimer en lot après vérification des re-uploads.
-- **joinMode + joinClip** — colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
-- **Overlays légende / filigrane** — il y a un panneau séparé ; ils survivent au ré-encodage.
+- **skipViewsAtLeast**: le bouton le plus important. Montez-le pour protéger plus de vidéos performantes ; baissez-le pour être plus agressif sur le rafraîchissement du vieux contenu.
+- **deleteOriginal / deleteBeforeReupload**: avec les deux désactivés, les originaux restent. La section "Nettoyage" permet de les supprimer en lot après vérification des re-uploads.
+- **joinMode + joinClip**: colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
+- **Overlays légende / filigrane**: il y a un panneau séparé ; ils survivent au ré-encodage.
 
 ## La passe "Élaguer les vidéos sous-performantes"
 
@@ -43,7 +43,7 @@ Différent du re-upload : ça scanne votre boutique, applique vos règles de fil
 
 ## Le flux "Récemment supprimées"
 
-Le panneau du bas liste les vidéos que vous avez supprimées (dans la fenêtre de récupération d'Amazon) avec un bouton **Recharger la sélection**. Si une passe a supprimé trop, vous pouvez les récupérer depuis cette liste — pas besoin de ré-éditer depuis zéro.
+Le panneau du bas liste les vidéos que vous avez supprimées (dans la fenêtre de récupération d'Amazon) avec un bouton **Recharger la sélection**. Si une passe a supprimé trop, vous pouvez les récupérer depuis cette liste - pas besoin de ré-éditer depuis zéro.
 
 ## Où vont les données
 
@@ -51,13 +51,13 @@ Les logs par exécution arrivent dans la ligne video-butler du panneau Video Log
 
 ## Pièges courants
 
-- **"FFmpeg introuvable"** — lancez `npm run stage:ffmpeg` depuis la racine du repo, redémarrez l'app.
-- **"Session Creator Hub expirée"** — reconnectez-vous dans la fenêtre Chrome lancée par Video Butler, cliquez sur Reprendre.
-- **La vignette du re-upload est mauvaise** — Amazon choisit une vignette dans la première image par défaut. Pour la figer, utilisez le panneau **Police de vignette / Filigrane** pour superposer une image fixe.
-- **Un re-upload obtient moins de vues que l'original** — l'algorithme Amazon dé-priorise parfois le contenu qu'il reconnaît comme re-post. Tentez un vrai changement de métadonnées (nouveau titre, nouvelle accroche produit) plutôt qu'un rafraîchissement purement cosmétique.
+- **"FFmpeg introuvable"**: lancez `npm run stage:ffmpeg` depuis la racine du repo, redémarrez l'app.
+- **"Session Creator Hub expirée"**: reconnectez-vous dans la fenêtre Chrome lancée par Video Butler, cliquez sur Reprendre.
+- **La vignette du re-upload est mauvaise**: Amazon choisit une vignette dans la première image par défaut. Pour la figer, utilisez le panneau **Police de vignette / Filigrane** pour superposer une image fixe.
+- **Un re-upload obtient moins de vues que l'original**: l'algorithme Amazon dé-priorise parfois le contenu qu'il reconnaît comme re-post. Tentez un vrai changement de métadonnées (nouveau titre, nouvelle accroche produit) plutôt qu'un rafraîchissement purement cosmétique.
 
 ## Relié
 
-- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — ce qui alimente le catalogue de Video Butler.
-- [Tutoriel YouTube Butler](/help/tutorials/youtube-butler) — pour cross-poster ces vidéos sur YouTube.
-- [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) — génère des scripts conformes FTC à intégrer dans de nouvelles vidéos.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) - ce qui alimente le catalogue de Video Butler.
+- [Tutoriel YouTube Butler](/help/tutorials/youtube-butler) - pour cross-poster ces vidéos sur YouTube.
+- [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) - génère des scripts conformes FTC à intégrer dans de nouvelles vidéos.

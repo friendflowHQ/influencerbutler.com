@@ -61,7 +61,7 @@ async function sendApprovalEmail(params: {
     `Dear ${firstName},`,
     ``,
     ``,
-    `It is my privilege to inform you that your application has been approved. You are now, officially, an Influencer Butler affiliate — welcome.`,
+    `It is my privilege to inform you that your application has been approved. You are now, officially, an Influencer Butler affiliate - welcome.`,
     ``,
     ``,
     `Two small matters await your attention.`,
@@ -100,7 +100,7 @@ async function sendApprovalEmail(params: {
     `To activate your tracked referral link, please choose the path that fits you. Either way, take care to use this very email address (${params.to}) so I may pair your account correctly.`,
     ``,
     ``,
-    `  Path A — if you are already an Influencer Butler customer (or hold any Lemon Squeezy account):`,
+    `  Path A - if you are already an Influencer Butler customer (or hold any Lemon Squeezy account):`,
     ``,
     `    1. Sign in at https://app.lemonsqueezy.com using ${params.to}.`,
     `    2. Open the user menu in the top-right and select "Affiliate Hub".`,
@@ -111,7 +111,7 @@ async function sendApprovalEmail(params: {
 
   if (params.lsSignupUrl) {
     lines.push(
-      `  Path B — if you have no Lemon Squeezy account yet:`,
+      `  Path B - if you have no Lemon Squeezy account yet:`,
       ``,
       `    Register here, and your tracked link will appear on your dashboard the moment Lemon Squeezy confirms you:`,
       ``,
@@ -131,13 +131,13 @@ async function sendApprovalEmail(params: {
     `III. Tax forms and payouts`,
     ``,
     ``,
-    `Lemon Squeezy attends to both. During the brief setup above, they shall request the relevant tax form from you — a W-9 if you reside in the United States, a W-8BEN (or W-8BEN-E for entities) if you reside elsewhere. Should you be a United States affiliate earning six hundred dollars or more in a calendar year, Lemon Squeezy themselves shall furnish your 1099-NEC; Influencer Butler does not issue tax forms.`,
+    `Lemon Squeezy attends to both. During the brief setup above, they shall request the relevant tax form from you - a W-9 if you reside in the United States, a W-8BEN (or W-8BEN-E for entities) if you reside elsewhere. Should you be a United States affiliate earning six hundred dollars or more in a calendar year, Lemon Squeezy themselves shall furnish your 1099-NEC; Influencer Butler does not issue tax forms.`,
     ``,
     ``,
-    `Payouts likewise issue directly from Lemon Squeezy — monthly, on the first of each month, with a ten-dollar minimum balance, by PayPal or such other method as you nominate within your Lemon Squeezy portal. Influencer Butler stands entirely outside the payment chain. For any matter concerning payment timing, method, or tax documentation, the proper address is Lemon Squeezy support.`,
+    `Payouts likewise issue directly from Lemon Squeezy - monthly, on the first of each month, with a ten-dollar minimum balance, by PayPal or such other method as you nominate within your Lemon Squeezy portal. Influencer Butler stands entirely outside the payment chain. For any matter concerning payment timing, method, or tax documentation, the proper address is Lemon Squeezy support.`,
     ``,
     ``,
-    `For the full affiliate programme terms — including conduct expectations, FTC disclosure obligations, and termination provisions — please consult:`,
+    `For the full affiliate programme terms - including conduct expectations, FTC disclosure obligations, and termination provisions - please consult:`,
     ``,
     ``,
     `    https://www.influencerbutler.com/legal/affiliate-terms`,
@@ -169,7 +169,7 @@ async function sendApprovalEmail(params: {
       body: JSON.stringify({
         from: "Influencer Butler <affiliates@influencerbutler.com>",
         to: [params.to],
-        subject: "At your service — your Influencer Butler affiliate account stands ready",
+        subject: "At your service: your Influencer Butler affiliate account stands ready",
         text: lines.join("\n"),
       }),
     });
@@ -189,10 +189,10 @@ function buildBrandedShareLink(code: string): string {
  * auto-approval cron.
  *
  * Important: we do NOT programmatically create the Lemon Squeezy affiliate
- * record — LS deprecated POST /v1/affiliates. The user finishes their setup
+ * record - LS deprecated POST /v1/affiliates. The user finishes their setup
  * by signing up at LS's hosted affiliate portal (link in the approval email).
  * When LS activates them, the `affiliate_activated` webhook handler fills in
- * `profiles.ls_affiliate_id` — see src/app/api/webhooks/lemonsqueezy/route.ts.
+ * `profiles.ls_affiliate_id` - see src/app/api/webhooks/lemonsqueezy/route.ts.
  *
  * Idempotent: re-running for the same user doesn't create duplicate branded
  * codes or re-stamp reviewed_at (we skip code generation if profile already
@@ -269,13 +269,13 @@ export async function approveAffiliate(params: {
       brandedDiscountId = generated.discountId;
     } else {
       console.error("approve: branded code generation failed", { userId });
-      // Non-fatal — the user can still complete LS portal signup and earn commissions via the tracked link.
+      // Non-fatal - the user can still complete LS portal signup and earn commissions via the tracked link.
     }
   }
 
   // 3) Upsert the profile. We include email so the INSERT path works when the
   //    user doesn't have a profile row yet (profiles.email is NOT NULL). For
-  //    existing rows, email will be overwritten with the application's email —
+  //    existing rows, email will be overwritten with the application's email -
   //    harmless since it should match what they signed up with.
   //    We don't write ls_affiliate_id so we don't null out any value the
   //    webhook may have set earlier.
@@ -314,7 +314,7 @@ export async function approveAffiliate(params: {
 
   if (appUpdateError) {
     console.error("approve: application update failed", appUpdateError);
-    // Not fatal — profile is already set, the affiliate works.
+    // Not fatal - profile is already set, the affiliate works.
   }
 
   // 5) Fire-and-forget approval email.

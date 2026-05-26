@@ -6,7 +6,7 @@
     "name": "Influencer Butler",
     "version": "0.1.0",
     "title": "Influencer Butler MCP",
-    "description": "MCP server for Influencer Butler — features catalog, public pricing, affiliate link creation, and earnings summary for influencer creators.",
+    "description": "MCP server for Influencer Butler - features catalog, public pricing, affiliate link creation, and earnings summary for influencer creators.",
     "homepage": "https://www.influencerbutler.com",
     "documentation": "https://www.influencerbutler.com/.well-known/mcp.json",
     "icon": "https://www.influencerbutler.com/favicon.ico",

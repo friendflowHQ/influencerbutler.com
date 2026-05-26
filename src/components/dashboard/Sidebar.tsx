@@ -88,7 +88,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
           }
         }
       } catch {
-        // ignore — download link / avatar just won't show
+        // ignore - download link / avatar just won't show
       }
     };
     void checkLicense();

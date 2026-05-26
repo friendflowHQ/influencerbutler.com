@@ -1,6 +1,6 @@
 ---
-title: API Integrations — store every API key Butler uses in one place
-summary: Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more — with test-on-startup and affiliate-routing controls.
+title: API Integrations: store every API key Butler uses in one place
+summary: Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more - with test-on-startup and affiliate-routing controls.
 category: Other
 ---
 
@@ -8,37 +8,37 @@ category: Other
 
 A lot of workspaces in InfluencerButler talk to external APIs: Amazon's Creators API for product metadata, OpenAI for content generation, YouTube for uploads, Levanta/Archer/Logie/Geniuslink/Linktw.in for affiliate routing, and so on. Instead of asking for each key inside each workspace, API Integrations is the single panel where you paste them once and they're available everywhere.
 
-It also handles **affiliate routing** — the logic that decides which provider's link generates for any given product, optimizing for the highest commission rate when multiple providers cover the same ASIN.
+It also handles **affiliate routing** - the logic that decides which provider's link generates for any given product, optimizing for the highest commission rate when multiple providers cover the same ASIN.
 
 ## Before you start
 
-Nothing required — but each integration is independent, so you can add them one at a time as you wire up new workspaces. Common first integrations:
+Nothing required - but each integration is independent, so you can add them one at a time as you wire up new workspaces. Common first integrations:
 
-- **Amazon Creators API** — needed by Storefront Butler, Daily Commission Butler, Voiceover Butler, anything that reads product details.
-- **OpenAI** — needed by AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
-- **Your deeplink provider** — needed once you want shortened/tracked affiliate links instead of raw Amazon URLs.
+- **Amazon Creators API**: needed by Storefront Butler, Daily Commission Butler, Voiceover Butler, anything that reads product details.
+- **OpenAI**: needed by AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
+- **Your deeplink provider**: needed once you want shortened/tracked affiliate links instead of raw Amazon URLs.
 
 ## Adding an integration
 
 The panel is organized by section. Each section has:
 
-- A **paste-key field** — where you put the credential.
-- A **Test Connection** button — fires a single read-only request against the provider's API to verify the key.
-- A **status badge** — green when verified, red when invalid, grey when untested.
+- A **paste-key field** - where you put the credential.
+- A **Test Connection** button - fires a single read-only request against the provider's API to verify the key.
+- A **status badge** - green when verified, red when invalid, grey when untested.
 
-To add: open the section, paste the key, click Test Connection. If green, you're done — every workspace that uses this provider will pick the key up automatically.
+To add: open the section, paste the key, click Test Connection. If green, you're done - every workspace that uses this provider will pick the key up automatically.
 
 The full provider list:
 
-- **Amazon Creators API** — primary product-data source.
-- **Amazon Associates** — your affiliate tag (one per marketplace).
-- **OpenAI** — content generation.
-- **YouTube OAuth** — uploads + comments.
-- **Pinterest OAuth** — uploads (when Pinterest Butler ships).
-- **Levanta** — brand network.
-- **Archer** — affiliate network.
-- **Logie** — affiliate network.
-- **Benable** — referral link.
+- **Amazon Creators API**: primary product-data source.
+- **Amazon Associates**: your affiliate tag (one per marketplace).
+- **OpenAI**: content generation.
+- **YouTube OAuth**: uploads + comments.
+- **Pinterest OAuth**: uploads (when Pinterest Butler ships).
+- **Levanta**: brand network.
+- **Archer**: affiliate network.
+- **Logie**: affiliate network.
+- **Benable**: referral link.
 - **Deeplink providers**: PostTap, Linktw.in, URLGenius, Geniuslink, self-hosted. Choose one as primary.
 
 ## Affiliate routing
@@ -49,7 +49,7 @@ The bottom section of the panel: **Pick the highest-commission provider for each
 2. The logic checks each connected provider for their commission rate on that specific ASIN.
 3. The link is generated through whichever pays the most.
 
-Below the toggle is a checkbox grid of which providers participate in routing — uncheck a provider to exclude it even when connected (useful if you've connected a provider for testing but don't want it used in production yet).
+Below the toggle is a checkbox grid of which providers participate in routing - uncheck a provider to exclude it even when connected (useful if you've connected a provider for testing but don't want it used in production yet).
 
 Levanta / Archer / Logie attribution links are special-cased: their links route through whatever **deeplink provider** you have set as primary, regardless of routing toggles. That's because their attribution mechanism is independent of the link host.
 
@@ -57,7 +57,7 @@ Levanta / Archer / Logie attribution links are special-cased: their links route 
 
 A toggle in the panel header: **Test all integrations on app startup**. When on, every connected provider gets a Test Connection on launch, and the badges update accordingly.
 
-**Recommended off after the first few launches.** It adds 30-60 seconds to startup and most users only need to know an integration broke when a workspace fails — not pre-emptively at every launch.
+**Recommended off after the first few launches.** It adds 30-60 seconds to startup and most users only need to know an integration broke when a workspace fails - not pre-emptively at every launch.
 
 ## Tuning over time
 
@@ -67,16 +67,16 @@ A toggle in the panel header: **Test all integrations on app startup**. When on,
 
 ## Where the data goes
 
-API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. The store is AES-256-GCM with a key derived from your machine — keys aren't portable across machines without re-entering them.
+API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. The store is AES-256-GCM with a key derived from your machine - keys aren't portable across machines without re-entering them.
 
 ## Common gotchas
 
-- **Test Connection fails after a previously-working setup** — the provider rotated, revoked, or rate-limited the key. The topbar shows an "API Health" badge when this happens. Re-issue the key from the provider's dashboard, paste here, re-test.
-- **OpenAI key tested green but generation fails** — different OpenAI products use different rate limits. A key valid for completions may hit a billing/quota issue on a specific model. Check the OpenAI dashboard's billing tab.
-- **YouTube OAuth expires unexpectedly** — Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
-- **Affiliate routing picked the wrong provider** — usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
+- **Test Connection fails after a previously-working setup**: the provider rotated, revoked, or rate-limited the key. The topbar shows an "API Health" badge when this happens. Re-issue the key from the provider's dashboard, paste here, re-test.
+- **OpenAI key tested green but generation fails**: different OpenAI products use different rate limits. A key valid for completions may hit a billing/quota issue on a specific model. Check the OpenAI dashboard's billing tab.
+- **YouTube OAuth expires unexpectedly**: Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
+- **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
 
 ## Related
 
 - Every Amazon-side workspace ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) reads from here.
-- [Relink Butler tutorial](/help/tutorials/relink-butler) — uses the affiliate routing config to know what to swap published links to.
+- [Relink Butler tutorial](/help/tutorials/relink-butler) - uses the affiliate routing config to know what to swap published links to.

@@ -1,7 +1,7 @@
-/* Influencer Butler — WebMCP shim
+/* Influencer Butler - WebMCP shim
  * Registers a small set of marketing-tier tools on window.mcp so that
  * in-browser AI agents (Claude in Chrome, etc.) can interact with the site.
- * Spec: https://github.com/jasonjmcghee/WebMCP (W3C WebMCP CG draft) — emerging.
+ * Spec: https://github.com/jasonjmcghee/WebMCP (W3C WebMCP CG draft) - emerging.
  */
 (function () {
   if (typeof window === "undefined") return;

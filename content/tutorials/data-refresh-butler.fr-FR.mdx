@@ -1,5 +1,5 @@
 ---
-title: Data Refresh Butler — planifiez la mise à jour des catalogues CC et SPCC
+title: Data Refresh Butler: planifiez la mise à jour des catalogues CC et SPCC
 summary: Un seul endroit pour contrôler à quelle fréquence le catalogue des campagnes Creator Connections et celui des commissions SPCC sont re-téléchargés.
 category: Amazon
 ---
@@ -8,21 +8,21 @@ category: Amazon
 
 Data Refresh Butler est le planificateur des deux catalogues Amazon dont tout le reste dépend :
 
-- Le **catalogue des campagnes Creator Connections (CC)** — toutes les campagnes actives visibles pour votre boutique.
-- Le **catalogue SPCC** — taux de commission Sponsored Products for Creators.
+- Le **catalogue des campagnes Creator Connections (CC)** - toutes les campagnes actives visibles pour votre boutique.
+- Le **catalogue SPCC** - taux de commission Sponsored Products for Creators.
 
 Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence et Daily Deals lisent depuis ces catalogues. S'ils sont obsolètes, ces espaces prennent des décisions avec des données périmées. Data Refresh Butler est l'endroit où vous fixez la cadence.
 
-Il n'a pas de runner propre — il configure et déclenche simplement les runners du workspace **cc-check** selon la planification que vous choisissez.
+Il n'a pas de runner propre - il configure et déclenche simplement les runners du workspace **cc-check** selon la planification que vous choisissez.
 
 ## Avant de commencer
 
-- **ID de boutique CC** configuré dans la barre du haut — sans lui, cc-check n'a rien à télécharger.
+- **ID de boutique CC** configuré dans la barre du haut - sans lui, cc-check n'a rien à télécharger.
 - Optionnel : une **clé Creators API** dans **API Integrations** pour la partie SPCC. La partie CC n'a pas besoin de l'API.
 
 ## Configuration initiale (le chemin facile)
 
-La configuration par défaut couple les rafraîchissements à la cadence de recherche de Daily Deals : CC + SPCC se re-téléchargent **1 heure avant chaque recherche Daily Deals planifiée**. Si vous utilisez Daily Deals, c'est la bonne configuration — vous ne touchez rien d'autre.
+La configuration par défaut couple les rafraîchissements à la cadence de recherche de Daily Deals : CC + SPCC se re-téléchargent **1 heure avant chaque recherche Daily Deals planifiée**. Si vous utilisez Daily Deals, c'est la bonne configuration - vous ne touchez rien d'autre.
 
 1. Ouvrez **Data Refresh Butler** sous Amazon Butler.
 2. Vérifiez que la puce de couplage en haut indique : *"Se rafraîchit 1 h avant chaque recherche planifiée de Daily Deals."*
@@ -32,37 +32,37 @@ La configuration par défaut couple les rafraîchissements à la cadence de rech
 
 Si Daily Deals ne tourne pas selon un planning, cliquez sur **Dissocier** sur la puce de couplage et définissez une cadence manuelle :
 
-1. Dans **Planning de rafraîchissement**, choisissez un préréglage — **6 heures** est la valeur par défaut et suffit largement. Les préréglages 1h/3h sont agressifs et rarement nécessaires.
+1. Dans **Planning de rafraîchissement**, choisissez un préréglage - **6 heures** est la valeur par défaut et suffit largement. Les préréglages 1h/3h sont agressifs et rarement nécessaires.
 2. **Rafraîchir à cette heure** permet d'ancrer la cadence à une heure (par ex. toujours à 6 h).
 3. Dans **Rafraîchir le catalogue s'il a plus de**, laissez 12 h comme fenêtre de fraîcheur. Cela évite un re-téléchargement coûteux de 5 minutes si le catalogue en cache est encore récent.
 
 ## Séparer les cadences CC et SPCC (avancé)
 
-Les taux de commission (SPCC) changent plus souvent que les listes de campagnes (CC), vous pouvez donc rafraîchir SPCC plus vite que CC. Activez **Avancé — séparer SPCC sur une cadence plus rapide** :
+Les taux de commission (SPCC) changent plus souvent que les listes de campagnes (CC), vous pouvez donc rafraîchir SPCC plus vite que CC. Activez **Avancé - séparer SPCC sur une cadence plus rapide** :
 
 - **Creator Connections (complet)** : 24 h suffit pour la plupart des utilisateurs.
 - **Commissions SPCC uniquement** : 1 h ou 3 h si vous surveillez les marges de près ; 6 h sinon.
 
-La séparation est optionnelle — sans elle, les deux se rafraîchissent à la même cadence.
+La séparation est optionnelle - sans elle, les deux se rafraîchissent à la même cadence.
 
 ## Exécution à la demande
 
 La carte **Statut actuel** affiche les dernières et prochaines mises à jour pour chaque catalogue, ainsi que trois boutons :
 
-- **Lancer maintenant** sous CC — rafraîchit uniquement le catalogue CC.
-- **Lancer maintenant** sous SPCC — rafraîchit uniquement le catalogue SPCC.
-- **Rafraîchir les deux** — exécute les deux en séquence.
+- **Lancer maintenant** sous CC - rafraîchit uniquement le catalogue CC.
+- **Lancer maintenant** sous SPCC - rafraîchit uniquement le catalogue SPCC.
+- **Rafraîchir les deux**: exécute les deux en séquence.
 
 Utile avant une recherche Daily Deals manuelle ou avant d'examiner les candidates de Daily Commission Butler.
 
 ## Pièges courants
 
-- **"Rafraîchissement échoué : pas de boutique"** — configurez d'abord votre ID de boutique CC dans la barre du haut.
-- **La puce de couplage est absente** — Daily Deals n'a pas de planning actif, donc rien à coupler. Définissez d'abord un planning Daily Deals, ou utilisez la cadence manuelle.
-- **Le catalogue reste vide après un rafraîchissement** — généralement le runner cc-check sous-jacent a rencontré une invite de connexion Amazon. Ouvrez cc-check, connectez-vous et relancez.
+- **"Rafraîchissement échoué : pas de boutique"**: configurez d'abord votre ID de boutique CC dans la barre du haut.
+- **La puce de couplage est absente**: Daily Deals n'a pas de planning actif, donc rien à coupler. Définissez d'abord un planning Daily Deals, ou utilisez la cadence manuelle.
+- **Le catalogue reste vide après un rafraîchissement**: généralement le runner cc-check sous-jacent a rencontré une invite de connexion Amazon. Ouvrez cc-check, connectez-vous et relancez.
 
 ## Relié
 
-- [Tutoriel CC Check](/help/tutorials/cc-check) — le runner que cet espace planifie.
-- [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) — le principal consommateur d'un catalogue CC à jour.
-- [Tutoriel Daily Deals](/help/tutorials/daily-deals) — la source de couplage par défaut.
+- [Tutoriel CC Check](/help/tutorials/cc-check) - le runner que cet espace planifie.
+- [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) - le principal consommateur d'un catalogue CC à jour.
+- [Tutoriel Daily Deals](/help/tutorials/daily-deals) - la source de couplage par défaut.

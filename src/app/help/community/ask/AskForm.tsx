@@ -62,7 +62,7 @@ export default function AskForm({ tutorials }: { tutorials: Tutorial[] }) {
     return (
       <div className="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
         <h2 className="text-xl font-semibold text-emerald-900">
-          Thanks — your question is live
+          Thanks - your question is live
         </h2>
         <p className="mt-2 text-sm text-emerald-800">
           Find it on Community Q&amp;A now. The community (and the team) will

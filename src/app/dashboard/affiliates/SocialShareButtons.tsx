@@ -2,7 +2,7 @@
 
 // Pre-filled share buttons for X/Twitter, Facebook, WhatsApp, Reddit, and
 // email. Used inside BrandedCodeCard + ShareLinkCard so affiliates can post
-// their link in one click from the dashboard. No SDKs — just window.open with
+// their link in one click from the dashboard. No SDKs - just window.open with
 // each platform's documented share URL.
 
 type Props = {

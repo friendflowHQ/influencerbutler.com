@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import AskForm from "./AskForm";
 
 export const metadata = {
-  title: "Ask a question — Influencer Butler",
+  title: "Ask a question - Influencer Butler",
   description: "Post a question for the Influencer Butler community.",
 };
 
@@ -38,7 +38,7 @@ export default async function AskPage() {
     <main className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
             ← Influencer Butler
           </Link>
           <nav className="flex items-center gap-4 text-sm">

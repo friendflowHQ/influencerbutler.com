@@ -2,7 +2,7 @@
 -- user. Used by src/app/api/webhooks/lemonsqueezy/route.ts to avoid dispatching
 -- duplicate welcome emails when LS retries a webhook, while still sending the
 -- link to users whose profile row pre-existed (from affiliate applications or
--- earlier signup attempts) — the payment-first flow needs a sign-in link
+-- earlier signup attempts) - the payment-first flow needs a sign-in link
 -- regardless of prior profile state.
 
 ALTER TABLE profiles

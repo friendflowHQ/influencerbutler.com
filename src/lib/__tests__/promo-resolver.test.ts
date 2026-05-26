@@ -229,7 +229,7 @@ describe("resolveAttribution (first-touch wins)", () => {
       candidate({ code: "ORPHAN", source: "url-code", isAffiliate: true, lsAffiliateId: null }),
       candidate({ code: "BOB", source: "typed", isAffiliate: true, lsAffiliateId: "ls_bob" }),
     ]);
-    // ORPHAN passed `isAffiliate=true` but no lsAffiliateId — skipped from candidates set
+    // ORPHAN passed `isAffiliate=true` but no lsAffiliateId - skipped from candidates set
     expect(attr?.lsAffiliateId).toBe("ls_bob");
   });
 });
@@ -307,7 +307,7 @@ describe("resolveCheckoutDiscount (integration)", () => {
   it("tiny affiliate discount still wins under XOR (welcome is suppressed)", async () => {
     fetchMock.mockImplementation(async (code: string) => {
       if (code === "ALICE")
-        // Defensive case — a published 1-cent fixed discount on an affiliate code.
+        // Defensive case - a published 1-cent fixed discount on an affiliate code.
         return ls({ code: "ALICE", amount: 1, amountType: "fixed", duration: "once" });
       return null;
     });

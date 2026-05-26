@@ -1,41 +1,41 @@
 ---
-title: Video Butler — re-upload Amazon storefront videos with fresh metadata
-summary: Convert, re-encode, and re-upload your existing Amazon storefront videos with updated titles, descriptions, and tags — without re-shooting anything.
+title: Video Butler: re-upload Amazon storefront videos with fresh metadata
+summary: Convert, re-encode, and re-upload your existing Amazon storefront videos with updated titles, descriptions, and tags - without re-shooting anything.
 category: Amazon
 ---
 
 ## What Video Butler does
 
-Video Butler is the closest thing in InfluencerButler to a "free engagement boost." It takes the shoppable videos already on your Amazon Creator storefront and re-uploads them with refreshed metadata — new titles, new descriptions, new affiliate links, optional watermark/caption overlays. Amazon's algorithm treats a re-upload like a fresh post, so a 6-month-old video can get a second wind without you having to film anything new.
+Video Butler is the closest thing in InfluencerButler to a "free engagement boost." It takes the shoppable videos already on your Amazon Creator storefront and re-uploads them with refreshed metadata - new titles, new descriptions, new affiliate links, optional watermark/caption overlays. Amazon's algorithm treats a re-upload like a fresh post, so a 6-month-old video can get a second wind without you having to film anything new.
 
 You can also use it to **prune low-performing videos** (the engine has a built-in "views below threshold = delete" pass) and to **re-load deleted videos** if you previously removed something by mistake.
 
 ## Before you start
 
-- **Storefront Butler has synced your videos at least once** — Video Butler reads from that catalog.
+- **Storefront Butler has synced your videos at least once**: Video Butler reads from that catalog.
 - **Signed-in Amazon Creator Hub session** in Chrome.
-- **FFmpeg staged** — happens automatically on app install. If you ever see a "ffmpeg not found" error, run `npm run stage:ffmpeg` from the repo root.
+- **FFmpeg staged**: happens automatically on app install. If you ever see a "ffmpeg not found" error, run `npm run stage:ffmpeg` from the repo root.
 - Optional: a watermark image and/or caption font ready, if you want overlays.
 
 ## Running your first conversion + re-upload
 
 1. Open **Video Butler** under Amazon Butler.
 2. In the **Filters & Options** card:
-   - **Min length / Max length** — leave wide open for the first run.
-   - **Skip videos with views ≥** — defaults to 1000. This keeps your high-performers untouched. Videos *below* that view count are eligible for re-upload.
-   - **Time window** — defaults to last 30 days. Walk through what's eligible before committing.
-3. **Convert** — pick `none` for a pure re-upload, or `vertical` / `square` / `horizontal` to re-encode shape. `none` is faster.
-4. **Run mode** — `post-keep` (recommended) re-uploads then keeps both versions for a day; `post-delete` replaces the original immediately. Start with `post-keep` so you can verify the new upload looks right before letting the old one go.
+   - **Min length / Max length**: leave wide open for the first run.
+   - **Skip videos with views ≥**: defaults to 1000. This keeps your high-performers untouched. Videos *below* that view count are eligible for re-upload.
+   - **Time window**: defaults to last 30 days. Walk through what's eligible before committing.
+3. **Convert**: pick `none` for a pure re-upload, or `vertical` / `square` / `horizontal` to re-encode shape. `none` is faster.
+4. **Run mode**: `post-keep` (recommended) re-uploads then keeps both versions for a day; `post-delete` replaces the original immediately. Start with `post-keep` so you can verify the new upload looks right before letting the old one go.
 5. Click **Run**.
 
 A Chrome window opens, downloads each eligible video from your storefront, runs the conversion (if any), and posts it back through Creator Hub with the new metadata.
 
 ## Tuning over time
 
-- **skipViewsAtLeast** — the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.
-- **deleteOriginal / deleteBeforeReupload** — when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads.
-- **joinMode + joinClip** — splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
-- **Caption / watermark overlays** — there's a separate panel for these; they survive re-encoding.
+- **skipViewsAtLeast**: the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.
+- **deleteOriginal / deleteBeforeReupload**: when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads.
+- **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
+- **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
 ## The "Prune underperforming videos" pass
 
@@ -43,7 +43,7 @@ Distinct from re-upload: this scans your storefront, applies your filter rules (
 
 ## The "Recently deleted" recovery flow
 
-The bottom panel lists videos you've deleted (within Amazon's recovery window) with a **Re-load selected** button. If a delete pass removed too much, you can recover from this list — no need to re-edit from scratch.
+The bottom panel lists videos you've deleted (within Amazon's recovery window) with a **Re-load selected** button. If a delete pass removed too much, you can recover from this list - no need to re-edit from scratch.
 
 ## Where the data goes
 
@@ -51,13 +51,13 @@ Per-run logs land in the video-butler row of the Video Log panel. Original video
 
 ## Common gotchas
 
-- **"FFmpeg not found"** — run `npm run stage:ffmpeg` from the repo root, restart the app.
-- **"Creator Hub session expired"** — re-sign in via the Chrome window Video Butler spawned, click Resume.
-- **Re-uploaded video has wrong thumbnail** — Amazon picks a thumbnail from the first frame by default. To pin one, use the **Thumbnail font/Watermark** panel to overlay a static frame.
-- **A re-upload gets fewer views than the original** — Amazon's algorithm sometimes deprioritizes content it recognizes as a re-post. Try a meaningful metadata change (new title, new product hook) rather than a cosmetic-only refresh.
+- **"FFmpeg not found"**: run `npm run stage:ffmpeg` from the repo root, restart the app.
+- **"Creator Hub session expired"**: re-sign in via the Chrome window Video Butler spawned, click Resume.
+- **Re-uploaded video has wrong thumbnail**: Amazon picks a thumbnail from the first frame by default. To pin one, use the **Thumbnail font/Watermark** panel to overlay a static frame.
+- **A re-upload gets fewer views than the original**: Amazon's algorithm sometimes deprioritizes content it recognizes as a re-post. Try a meaningful metadata change (new title, new product hook) rather than a cosmetic-only refresh.
 
 ## Related
 
-- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — what feeds Video Butler's catalog.
-- [YouTube Butler tutorial](/help/tutorials/youtube-butler) — for cross-posting these videos to YouTube.
-- [Voiceover Butler tutorial](/help/tutorials/voiceover-butler) — generates FTC-compliant scripts you can drop into new videos.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - what feeds Video Butler's catalog.
+- [YouTube Butler tutorial](/help/tutorials/youtube-butler) - for cross-posting these videos to YouTube.
+- [Voiceover Butler tutorial](/help/tutorials/voiceover-butler) - generates FTC-compliant scripts you can drop into new videos.

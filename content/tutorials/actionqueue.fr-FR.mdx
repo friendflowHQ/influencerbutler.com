@@ -1,6 +1,6 @@
 ---
-title: Action Queue — une boîte de réception unique pour chaque butler qui a besoin de votre décision
-summary: Quand un espace atteint un embranchement — approuver un message, choisir entre options, accepter une campagne — la décision atterrit dans Action Queue plutôt que bloquer le run.
+title: Action Queue: une boîte de réception unique pour chaque butler qui a besoin de votre décision
+summary: Quand un espace atteint un embranchement - approuver un message, choisir entre options, accepter une campagne - la décision atterrit dans Action Queue plutôt que bloquer le run.
 category: Other
 ---
 
@@ -14,42 +14,42 @@ L'objectif : ne jamais perdre l'élan d'un run pour une décision que vous n'ét
 
 ## Avant de commencer
 
-Rien. Action Queue est consommé par d'autres espaces — il n'a pas de setup propre. Vous verrez des items apparaître dans la file au fur et à mesure que vos runs font remonter des décisions.
+Rien. Action Queue est consommé par d'autres espaces - il n'a pas de setup propre. Vous verrez des items apparaître dans la file au fur et à mesure que vos runs font remonter des décisions.
 
 ## Quand des items apparaissent
 
 Sources habituelles d'items en file :
 
-- **Daily Commission Butler** — campagnes dont le taux de commission est inhabituellement haut ou bas (vaut une vérification manuelle avant auto-acceptation).
-- **Retag Butler** — candidats d'ASIN de remplacement qui ont scoré au-dessus de votre seuil de similarité minimum mais en-dessous du seuil d'auto-tag.
-- **Voiceover Butler** — scripts qui ont échoué la validation à la première génération et nécessitent votre choix entre regénérer, éditer ou passer.
-- **Messenger Butler / Instagram Butler** — variantes de message que l'IA a flaggées comme limites.
-- **Pitch Butler** — détections de doublon de marque qui nécessitent une décision de fusion manuelle.
+- **Daily Commission Butler**: campagnes dont le taux de commission est inhabituellement haut ou bas (vaut une vérification manuelle avant auto-acceptation).
+- **Retag Butler**: candidats d'ASIN de remplacement qui ont scoré au-dessus de votre seuil de similarité minimum mais en-dessous du seuil d'auto-tag.
+- **Voiceover Butler**: scripts qui ont échoué la validation à la première génération et nécessitent votre choix entre regénérer, éditer ou passer.
+- **Messenger Butler / Instagram Butler**: variantes de message que l'IA a flaggées comme limites.
+- **Pitch Butler**: détections de doublon de marque qui nécessitent une décision de fusion manuelle.
 
-Les espaces qui routent via Action Queue sont explicites à ce sujet — leur doc le note.
+Les espaces qui routent via Action Queue sont explicites à ce sujet - leur doc le note.
 
 ## Travailler la file
 
 Ouvrez **Action Queue** dans la navigation. La file est une liste de cartes, chacune avec :
 
-- **Espace source** — quel butler a mis l'item en file.
-- **Décision requise** — une ligne descriptive ("Accepter campagne à 12 % de commission ?", "Taguer remplacement ASIN au-dessus de 65 % similarité ?").
-- **Contexte** — les données qui soutiennent la décision (nom de marque, ASIN, aperçu du message, etc.).
+- **Espace source**: quel butler a mis l'item en file.
+- **Décision requise**: une ligne descriptive ("Accepter campagne à 12 % de commission ?", "Taguer remplacement ASIN au-dessus de 65 % similarité ?").
+- **Contexte**: les données qui soutiennent la décision (nom de marque, ASIN, aperçu du message, etc.).
 - **Trois boutons** :
-  - **Approuver** — allez-y avec l'action proposée.
-  - **Rejeter** — ne pas le faire ; l'espace source marque l'item comme sauté.
-  - **Différer** — laissez-le dans la file pour une décision plus tard. Utile si vous devez chercher avant de décider.
+  - **Approuver**: allez-y avec l'action proposée.
+  - **Rejeter**: ne pas le faire ; l'espace source marque l'item comme sauté.
+  - **Différer**: laissez-le dans la file pour une décision plus tard. Utile si vous devez chercher avant de décider.
 
-Pas d'auto-approuver. Action Queue est intentionnellement manuel — si vous vouliez autonome, le mode auto de l'espace source l'aurait géré.
+Pas d'auto-approuver. Action Queue est intentionnellement manuel - si vous vouliez autonome, le mode auto de l'espace source l'aurait géré.
 
 ## Réglages dans la durée
 
 L'Action Queue lui-même n'a rien à régler. Le volume d'items est contrôlé par les *espaces sources* :
 
-- **Trop d'items ?** Resserrez les seuils auto de l'espace source. Par ex. montez l'auto-tag threshold de Retag Butler de 70 % à 80 % — moins d'items tombent en revue manuelle.
+- **Trop d'items ?** Resserrez les seuils auto de l'espace source. Par ex. montez l'auto-tag threshold de Retag Butler de 70 % à 80 % - moins d'items tombent en revue manuelle.
 - **Trop peu d'items ?** Relâchez ces mêmes seuils. L'espace source prend plus de décisions autonomes que vous ne voulez.
 
-Si vous approuvez 90 %+ des items régulièrement, le mode auto de l'espace source est trop prudent — détendez-le. Si vous rejetez 50 %+ régulièrement, il est trop agressif — resserrez-le.
+Si vous approuvez 90 %+ des items régulièrement, le mode auto de l'espace source est trop prudent - détendez-le. Si vous rejetez 50 %+ régulièrement, il est trop agressif - resserrez-le.
 
 ## Où vont les données
 
@@ -57,12 +57,12 @@ Les items en file vivent dans le cache preseed. Les décisions approuvées/rejet
 
 ## Pièges courants
 
-- **Les items s'accumulent pendant des semaines** — Action Queue n'auto-nettoie pas les items obsolètes. Passez 5 minutes par semaine à revoir, ou utilisez **Différer** généreusement pour que la file ne gonfle pas.
-- **L'espace source a tourné mais n'a pas pris votre approbation** — l'espace ne relit la file qu'à son prochain run planifié. Déclenchez Run Now si vous voulez une action immédiate sur une décision.
-- **Aucun item n'apparaît même qu'un butler tourne** — ce butler ne route pas via Action Queue. Tous les espaces ne le font pas ; la plupart des décisions sont entièrement autonomes.
+- **Les items s'accumulent pendant des semaines**: Action Queue n'auto-nettoie pas les items obsolètes. Passez 5 minutes par semaine à revoir, ou utilisez **Différer** généreusement pour que la file ne gonfle pas.
+- **L'espace source a tourné mais n'a pas pris votre approbation**: l'espace ne relit la file qu'à son prochain run planifié. Déclenchez Run Now si vous voulez une action immédiate sur une décision.
+- **Aucun item n'apparaît même qu'un butler tourne**: ce butler ne route pas via Action Queue. Tous les espaces ne le font pas ; la plupart des décisions sont entièrement autonomes.
 
 ## Relié
 
-- [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) — source habituelle d'items en file.
-- [Tutoriel Retag Butler](/help/tutorials/retag-butler) — autre source habituelle, surtout en mode Revue.
-- [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) — met en file les validations échouées pour votre décision.
+- [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) - source habituelle d'items en file.
+- [Tutoriel Retag Butler](/help/tutorials/retag-butler) - autre source habituelle, surtout en mode Revue.
+- [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) - met en file les validations échouées pour votre décision.

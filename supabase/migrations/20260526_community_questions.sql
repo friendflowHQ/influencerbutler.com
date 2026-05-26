@@ -3,9 +3,9 @@
 -- /dashboard/admin/community and uses the service-role client to bypass RLS.
 --
 -- Statuses:
---   pending  — just submitted, not visible publicly
---   approved — visible on /help/community
---   rejected — kept for audit, never visible publicly
+--   pending  - just submitted, not visible publicly
+--   approved - visible on /help/community
+--   rejected - kept for audit, never visible publicly
 
 CREATE TABLE IF NOT EXISTS community_questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,5 +1,5 @@
 ---
-title: Levanta Butler — automatisez la prise de contact + extraction d'emails sur le réseau Levanta
+title: Levanta Butler: automatisez la prise de contact + extraction d'emails sur le réseau Levanta
 summary: Espace à deux onglets qui pitche les marques approuvées par Levanta en automatique et récolte les emails de contact pendant les runs pour construire une liste réutilisable.
 category: Partnerships
 ---
@@ -8,35 +8,35 @@ category: Partnerships
 
 Levanta est un réseau de marques qui connecte des créateurs avec des marques qui payent pour du marketing d'influence. Levanta Butler automatise deux côtés du travail là-bas :
 
-1. **Message Brands** — envoie des pitches aux marques pour lesquelles Levanta vous a approuvé. Modèle avec `{brandName}`, `{campaignName}`, `{daysSinceMessage}`, `{address}`.
-2. **Email Extractor** — pendant l'envoi de messages, récolte simultanément l'email de contact de la marque pour vous construire une liste de contacts réutilisable. Utile pour le suivi hors Levanta plus tard (ou pour les marques qui quittent la plateforme).
+1. **Message Brands**: envoie des pitches aux marques pour lesquelles Levanta vous a approuvé. Modèle avec `{brandName}`, `{campaignName}`, `{daysSinceMessage}`, `{address}`.
+2. **Email Extractor**: pendant l'envoi de messages, récolte simultanément l'email de contact de la marque pour vous construire une liste de contacts réutilisable. Utile pour le suivi hors Levanta plus tard (ou pour les marques qui quittent la plateforme).
 
-Les deux onglets partagent un état — quand vous lancez Message Brands, l'extracteur d'emails tourne à côté sans config supplémentaire.
+Les deux onglets partagent un état - quand vous lancez Message Brands, l'extracteur d'emails tourne à côté sans config supplémentaire.
 
 ## Avant de commencer
 
 - **Un compte Levanta** au statut approuvé. Levanta verrouille la prise de contact derrière l'approbation ; sans approbation, l'espace s'affiche mais Lancer ne fait rien.
-- **Une session Levanta active** dans Chrome — Levanta Butler utilise votre session existante.
+- **Une session Levanta active** dans Chrome - Levanta Butler utilise votre session existante.
 - **Au moins un modèle de message par défaut** rédigé dans l'onglet Message Brands.
 
 ## Setup : le modèle de message
 
 Le champ Default Message est là où va l'essentiel du travail. Utilisez ces marqueurs :
 
-- `{brandName}` — la marque que vous pitchez.
-- `{campaignName}` — le nom Levanta de la campagne active (utile pour le contexte).
-- `{daysSinceMessage}` — combien de jours depuis votre dernier message à cette marque. Utile en relance.
-- `{address}` — votre adresse d'expédition, si la marque l'a demandée dans son brief.
+- `{brandName}` - la marque que vous pitchez.
+- `{campaignName}` - le nom Levanta de la campagne active (utile pour le contexte).
+- `{daysSinceMessage}` - combien de jours depuis votre dernier message à cette marque. Utile en relance.
+- `{address}` - votre adresse d'expédition, si la marque l'a demandée dans son brief.
 
 Gardez le default court et amical. L'UI de Levanta ne récompense pas les pavés.
 
-**Follow-up Message** (optionnel) — un second modèle envoyé après un délai que vous fixez (7 jours par défaut). Transforme une prise de contact ponctuelle en séquence sans mise en file manuelle.
+**Follow-up Message** (optionnel) - un second modèle envoyé après un délai que vous fixez (7 jours par défaut). Transforme une prise de contact ponctuelle en séquence sans mise en file manuelle.
 
 ## Votre première passe de prise de contact
 
 1. Ouvrez **Levanta Butler** dans la navigation (déployez le toggle parent Levanta), puis cliquez sur **Message Brands**.
 2. Confirmez votre message par défaut dans la carte Default Message.
-3. Dans **Filtres**, ajoutez des mots-clés ou noms de marque à cibler. Le chip-editor permet d'en ajouter plusieurs. Ajoutez aussi une liste **Skip keywords** — les marques qui matchent un terme de skip ne reçoivent pas de message.
+3. Dans **Filtres**, ajoutez des mots-clés ou noms de marque à cibler. Le chip-editor permet d'en ajouter plusieurs. Ajoutez aussi une liste **Skip keywords** - les marques qui matchent un terme de skip ne reçoivent pas de message.
 4. Cliquez sur **Lancer**.
 
 Une fenêtre Chrome s'ouvre. Levanta Butler parcourt chaque marque approuvée qui correspond à vos filtres, ouvre le fil de messages et publie le message du modèle. La carte **Current Brand** montre la progression en temps réel. L'extracteur d'emails tourne à côté automatiquement.
@@ -50,14 +50,14 @@ Passez à **Email Extractor** pour voir les contacts récoltés pendant les runs
 - Tag de source (de quelle campagne ou fil il vient).
 - Une case à cocher "sent outreach" pour marquer les contacts à qui vous avez déjà écrit en dehors.
 
-Vous n'avez pas besoin de lancer Email Extractor séparément — il s'appuie sur Message Brands. Mais vous venez ici pour *lire* ce qui a été collecté.
+Vous n'avez pas besoin de lancer Email Extractor séparément - il s'appuie sur Message Brands. Mais vous venez ici pour *lire* ce qui a été collecté.
 
 ## Réglages dans la durée
 
-- **Default Message + Follow-up Message** — courts, conversationnels, citent le produit de la marque. Évitez le langage scripté ; l'équipe de modération de Levanta signale la prise de contact formulaique.
-- **Filtres de mots-clés** — démarrez étroit (votre niche), élargissez prudemment. Les filtres larges envoient à tout le monde, ce qui dilue le signal et brûle votre cap quotidien.
-- **Skip keywords** — utile pour exclure des catégories de marque avec lesquelles vous ne voulez pas travailler (par ex. "vape", "jeux", "complément alimentaire").
-- **Délai de relance** — 7 jours par défaut. 10-14 jours se lit mieux comme un rappel poli ; <5 jours se lit insistant.
+- **Default Message + Follow-up Message**: courts, conversationnels, citent le produit de la marque. Évitez le langage scripté ; l'équipe de modération de Levanta signale la prise de contact formulaique.
+- **Filtres de mots-clés**: démarrez étroit (votre niche), élargissez prudemment. Les filtres larges envoient à tout le monde, ce qui dilue le signal et brûle votre cap quotidien.
+- **Skip keywords**: utile pour exclure des catégories de marque avec lesquelles vous ne voulez pas travailler (par ex. "vape", "jeux", "complément alimentaire").
+- **Délai de relance**: 7 jours par défaut. 10-14 jours se lit mieux comme un rappel poli ; <5 jours se lit insistant.
 
 ## Où vont les données
 
@@ -65,12 +65,12 @@ Les logs de prise de contact par run vivent dans `{userData}/InfluencerButler/wo
 
 ## Pièges courants
 
-- **"Session Levanta expirée"** — connectez-vous via la fenêtre Chrome ouverte, cliquez sur Reprendre.
-- **Bannière "Marque non approuvée"** en plein run — vous n'avez pas l'approbation pour cette campagne. Levanta Butler passe et continue ; rien à faire.
-- **Cap quotidien atteint** — Levanta impose des limites d'usage par créateur. Le tooltip déployable "Détails du cap d'usage" dans la barre du haut explique votre cap actuel et l'heure de reset.
-- **Email Extractor vide** — Levanta cache les emails tant que vous n'avez pas envoyé au moins un message. Lancez Message Brands d'abord, puis revoyez l'onglet Email Extractor.
+- **"Session Levanta expirée"**: connectez-vous via la fenêtre Chrome ouverte, cliquez sur Reprendre.
+- **Bannière "Marque non approuvée"** en plein run - vous n'avez pas l'approbation pour cette campagne. Levanta Butler passe et continue ; rien à faire.
+- **Cap quotidien atteint**: Levanta impose des limites d'usage par créateur. Le tooltip déployable "Détails du cap d'usage" dans la barre du haut explique votre cap actuel et l'heure de reset.
+- **Email Extractor vide**: Levanta cache les emails tant que vous n'avez pas envoyé au moins un message. Lancez Message Brands d'abord, puis revoyez l'onglet Email Extractor.
 
 ## Relié
 
-- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) — le CRM unifié qui peut importer les marques Levanta aux côtés des marques Amazon CC.
-- [Tutoriel Goldmine Butler](/help/tutorials/goldminebutler) — trouvez les marques qui valent la peine d'être pitchées même avant que Levanta vous approuve pour elles.
+- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) - le CRM unifié qui peut importer les marques Levanta aux côtés des marques Amazon CC.
+- [Tutoriel Goldmine Butler](/help/tutorials/goldminebutler) - trouvez les marques qui valent la peine d'être pitchées même avant que Levanta vous approuve pour elles.

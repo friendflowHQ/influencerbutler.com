@@ -1,5 +1,5 @@
 ---
-title: Benable Butler — AI-built Amazon collections published to Benable (beta)
+title: Benable Butler: AI-built Amazon collections published to Benable (beta)
 summary: Type a niche keyword, pick a marketplace, and Benable Butler researches Amazon, picks matching ASINs, writes the collection, and publishes it to your Benable account.
 category: Partnerships
 ---
@@ -15,17 +15,17 @@ The output is a complete Benable collection: header, sub-lists, products under e
 ## Before you start
 
 - **A Benable account** with your referral link saved in **API Integrations**.
-- **OpenAI API key** in API Integrations — the model that picks products and writes copy.
+- **OpenAI API key** in API Integrations - the model that picks products and writes copy.
 - **Amazon affiliate tag** for the marketplace you're targeting (amazon.com, amazon.co.uk, amazon.ca etc).
-- **First-time Publish** also needs you to sign into Benable in the Chrome window Butler spawns — a manual sign-in once, then your session persists for future runs.
+- **First-time Publish** also needs you to sign into Benable in the Chrome window Butler spawns - a manual sign-in once, then your session persists for future runs.
 
 ## The three modes (read this first)
 
 Benable Butler has three buttons that look similar but do very different things:
 
-- **Dry run** — runs the OpenAI + Amazon pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
-- **Preview** — same as Dry run plus writes a JSON + HTML report you can open in your browser. Lets you see the full collection structure before committing. Recommended for your first run in any niche.
-- **Publish** — actually creates the collection on Benable via Puppeteer (browser automation). Uses your saved Benable session. Takes 5-15 minutes depending on collection size.
+- **Dry run**: runs the OpenAI + Amazon pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
+- **Preview**: same as Dry run plus writes a JSON + HTML report you can open in your browser. Lets you see the full collection structure before committing. Recommended for your first run in any niche.
+- **Publish**: actually creates the collection on Benable via Puppeteer (browser automation). Uses your saved Benable session. Takes 5-15 minutes depending on collection size.
 
 **First run rule of thumb**: Dry run once → Preview once → review the HTML report → only then Publish.
 
@@ -35,7 +35,7 @@ Benable Butler has three buttons that look similar but do very different things:
 2. In **What should we publish?**, type a niche keyword (e.g. "minimalist kitchen", "running gear for beginners", "small-apartment storage"). Specific niches outperform broad ones.
 3. Pick a **Marketplace** (amazon.com is the default).
 4. Confirm your **Benable handle** auto-fills correctly. Edit if it's wrong.
-5. Click **Dry run**. Review the console output — does Butler understand your niche?
+5. Click **Dry run**. Review the console output - does Butler understand your niche?
 6. If yes, click **Preview**. Open the generated HTML report when it finishes. Walk through every list + product. Reject anything that doesn't fit.
 7. If the preview looks right, click **Publish**.
 
@@ -43,23 +43,23 @@ Publish opens a Chrome window. On first run, you sign into Benable manually; sub
 
 ## Tuning over time
 
-- **Niche keyword** — the single biggest knob. "Kitchen gadgets" is too broad → Butler returns 50 random products. "Compact kitchen tools for studio apartments" is right-sized → Butler returns a coherent collection.
-- **Priority CC / SPCC** in settings — when on, Butler prioritizes products that have active Creator Connections campaigns or Sponsored Products offers in your niche. Useful for monetization; turn off if you want pure curation regardless of commission.
-- **Collection size** — Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists of 5-7 items; broad niches get 6-8 lists.
+- **Niche keyword**: the single biggest knob. "Kitchen gadgets" is too broad → Butler returns 50 random products. "Compact kitchen tools for studio apartments" is right-sized → Butler returns a coherent collection.
+- **Priority CC / SPCC** in settings - when on, Butler prioritizes products that have active Creator Connections campaigns or Sponsored Products offers in your niche. Useful for monetization; turn off if you want pure curation regardless of commission.
+- **Collection size**: Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists of 5-7 items; broad niches get 6-8 lists.
 
 ## Where the data goes
 
-Generated collections are logged per-run in the preseed cache (JSON + HTML report). The Benable side of things — the actual published collection — lives in your Benable account.
+Generated collections are logged per-run in the preseed cache (JSON + HTML report). The Benable side of things - the actual published collection - lives in your Benable account.
 
 ## Common gotchas
 
-- **"OpenAI key missing"** — set it in API Integrations.
-- **"Benable sign-in required"** during Publish — first-time setup or session expired. Sign in via the spawned Chrome window, click Resume.
-- **The published collection has fewer items than the preview** — Benable rejects ASINs that aren't available in the chosen marketplace. The publish log shows which ones were skipped.
-- **Niche too narrow** — if Dry run returns <5 candidate ASINs, your niche is too tight. Broaden one notch.
+- **"OpenAI key missing"**: set it in API Integrations.
+- **"Benable sign-in required"** during Publish - first-time setup or session expired. Sign in via the spawned Chrome window, click Resume.
+- **The published collection has fewer items than the preview**: Benable rejects ASINs that aren't available in the chosen marketplace. The publish log shows which ones were skipped.
+- **Niche too narrow**: if Dry run returns <5 candidate ASINs, your niche is too tight. Broaden one notch.
 
 ## Related
 
-- [Benable Like Butler tutorial](/help/tutorials/benable-like-butler) — like other creators' Benable collections; companion workspace.
-- [Benable Comment Butler tutorial](/help/tutorials/benable-comment-butler) — comment on Benable collections.
-- [API Integrations tutorial](/help/tutorials/api-integrations) — where you configure the OpenAI + Benable credentials Benable Butler needs.
+- [Benable Like Butler tutorial](/help/tutorials/benable-like-butler) - like other creators' Benable collections; companion workspace.
+- [Benable Comment Butler tutorial](/help/tutorials/benable-comment-butler) - comment on Benable collections.
+- [API Integrations tutorial](/help/tutorials/api-integrations) - where you configure the OpenAI + Benable credentials Benable Butler needs.

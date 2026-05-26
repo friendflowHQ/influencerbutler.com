@@ -67,7 +67,7 @@ export default function WelcomePollClient({
         Finalizing your subscription…
       </h1>
       <p className="mt-2 text-sm text-slate-600">
-        This usually takes a few seconds. Hang tight — we&apos;re confirming everything with Lemon Squeezy.
+        This usually takes a few seconds. Hang tight - we&apos;re confirming everything with Lemon Squeezy.
       </p>
       <p className="mt-4 text-xs text-slate-400">{Math.round(elapsed)}s elapsed</p>
     </section>

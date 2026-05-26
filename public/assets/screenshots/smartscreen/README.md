@@ -2,7 +2,7 @@
 
 These images are referenced by `src/components/welcome/WindowsSmartScreenGuide.tsx`
 (shown on the post-purchase `/welcome/*` pages). Until real annotated screenshots
-land here, the component renders a labeled placeholder block in their place — swap
+land here, the component renders a labeled placeholder block in their place - swap
 the placeholder for an `<img>` in that component once the files below exist.
 
 ## Files to add
@@ -26,11 +26,11 @@ Annotated screenshot of the "Windows protected your PC" launch prompt that
 appears when running the .exe.
 
 - Aspect ratio: **16:10** (e.g. 1600×1000).
-- Capture both states ideally — but for one image, prefer the **after "More
+- Capture both states ideally - but for one image, prefer the **after "More
   info" was clicked** state so the **Run anyway** button is visible.
 - Annotate: arrow on **More info** (left) and a second arrow on **Run anyway**
   (right).
-- Confirm the prompt shows `Publisher: THE SOCIAL MEDIA POSSE LLC` — if it
+- Confirm the prompt shows `Publisher: THE SOCIAL MEDIA POSSE LLC` - if it
   doesn't, the binary isn't signed correctly and the screenshot would mislead
   users. Re-test with a fresh signed build before capturing.
 
@@ -38,6 +38,6 @@ appears when running the .exe.
 
 Match the rest of the site: light backgrounds, orange `#f97316` for annotation
 arrows/highlights (it ties to the step-number badges in the component). Keep
-the annotations sparse — one or two arrows per shot. Crop tight to the prompt.
+the annotations sparse - one or two arrows per shot. Crop tight to the prompt.
 
 PNG, lossless. Aim for &lt;300KB each (tinypng.com or similar after export).

@@ -1,5 +1,5 @@
 /**
- * Web Bot Auth (HTTP Message Signatures, RFC 9421) — DELEGATED.
+ * Web Bot Auth (HTTP Message Signatures, RFC 9421) - DELEGATED.
  *
  * Verification is handled at the edge: when this site is fronted by Cloudflare,
  * the "Verified Bots" feature checks Signature/Signature-Input headers against

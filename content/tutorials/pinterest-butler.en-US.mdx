@@ -1,5 +1,5 @@
 ---
-title: Pinterest Butler — Pinterest pin generation + scheduling (coming soon)
+title: Pinterest Butler: Pinterest pin generation + scheduling (coming soon)
 summary: Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, render niche-aware templates, write SEO copy, and schedule posts.
 category: Other
 ---
@@ -8,19 +8,19 @@ category: Other
 
 ## What Pinterest Butler will do
 
-When it ships, Pinterest Butler will be Pinterest's equivalent of Daily Deals Butler — an end-to-end content pipeline for the Pinterest side:
+When it ships, Pinterest Butler will be Pinterest's equivalent of Daily Deals Butler - an end-to-end content pipeline for the Pinterest side:
 
-1. **Source products** — read from your Amazon Idea Lists (curated lists you've built on Amazon) and from Storefront Butler's catalog.
-2. **Prioritize** — rank products by active Creator Connections campaign status. Products you can actually monetize get priority over generic catalog content.
-3. **Generate pins** — produce pin images from niche-aware templates. Templates respect category (food, fashion, home, fitness) and adapt fonts, colors, and layout per category.
-4. **Write SEO copy** — pin title + description optimized for Pinterest's search algorithm, with affiliate-tagged URLs.
-5. **Schedule** — post on a cadence respecting Pinterest's rate limits, with built-in jitter and per-board distribution.
+1. **Source products**: read from your Amazon Idea Lists (curated lists you've built on Amazon) and from Storefront Butler's catalog.
+2. **Prioritize**: rank products by active Creator Connections campaign status. Products you can actually monetize get priority over generic catalog content.
+3. **Generate pins**: produce pin images from niche-aware templates. Templates respect category (food, fashion, home, fitness) and adapt fonts, colors, and layout per category.
+4. **Write SEO copy**: pin title + description optimized for Pinterest's search algorithm, with affiliate-tagged URLs.
+5. **Schedule**: post on a cadence respecting Pinterest's rate limits, with built-in jitter and per-board distribution.
 
 In other words: the full pipeline from "I have a product catalog" to "pins are landing on Pinterest with affiliate links" without you touching the Pinterest UI.
 
 ## Why it's roadmap and not live
 
-The scoring + scheduling pieces in InfluencerButler are general-purpose enough to power Pinterest — they already run for Daily Deals, Benable Butler, and the Instagram stack. What's missing is:
+The scoring + scheduling pieces in InfluencerButler are general-purpose enough to power Pinterest - they already run for Daily Deals, Benable Butler, and the Instagram stack. What's missing is:
 
 - **A Pinterest OAuth flow** in API Integrations.
 - **A pin-generation module** (the visual template rendering is more involved than for text-based platforms).
@@ -33,8 +33,8 @@ These are tractable; they just haven't been built. Pinterest Butler shipping mea
 Nothing in Pinterest Butler itself. While you wait:
 
 - **Use Daily Deals Butler** for the closest existing equivalent on other platforms. Its post-template + scheduler patterns are what Pinterest Butler will model.
-- **Curate your Pinterest source data** — keep Amazon Idea Lists in good shape. The cleaner that source is, the better Pinterest Butler's first runs will look when it ships.
-- **Set up your Pinterest account profile** — if you don't have a creator account yet, set one up now. The OAuth flow Pinterest Butler will use requires creator-tier permissions.
+- **Curate your Pinterest source data**: keep Amazon Idea Lists in good shape. The cleaner that source is, the better Pinterest Butler's first runs will look when it ships.
+- **Set up your Pinterest account profile**: if you don't have a creator account yet, set one up now. The OAuth flow Pinterest Butler will use requires creator-tier permissions.
 
 ## Tracking the rollout
 
@@ -42,6 +42,6 @@ The workspace's nav button will switch from a "coming soon" panel to a working U
 
 ## Related
 
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) — the closest existing equivalent for now. Pinterest Butler will follow this pattern.
-- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — one of Pinterest Butler's planned data sources.
-- [API Integrations tutorial](/help/tutorials/api-integrations) — where the Pinterest OAuth will land once it's wired up.
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the closest existing equivalent for now. Pinterest Butler will follow this pattern.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - one of Pinterest Butler's planned data sources.
+- [API Integrations tutorial](/help/tutorials/api-integrations) - where the Pinterest OAuth will land once it's wired up.

@@ -1,30 +1,30 @@
 ---
-title: Black Friday Butler — never miss a time-limited Amazon deal on your storefront
+title: Black Friday Butler: never miss a time-limited Amazon deal on your storefront
 summary: Monitor your Amazon storefront on a cadence (5 minutes to 7 days) and log every Black-Friday-flagged or time-limited deal with timestamps.
 category: Other
 ---
 
 ## What Black Friday Butler does
 
-Around Q4 — Black Friday, Cyber Monday, Lightning Deals — Amazon time-stamps deals with countdowns. They're high-conversion windows for creators because the urgency moves audiences faster than a normal product post. But spotting them across your storefront manually is impossible: deals appear and expire while you're not looking.
+Around Q4 - Black Friday, Cyber Monday, Lightning Deals - Amazon time-stamps deals with countdowns. They're high-conversion windows for creators because the urgency moves audiences faster than a normal product post. But spotting them across your storefront manually is impossible: deals appear and expire while you're not looking.
 
 Black Friday Butler watches your storefront on a cadence and logs every time-flagged deal it sees, with the timestamp it first appeared and the timestamp it expired. You get a structured log of every window you could have promoted, which feeds your posting decisions for the rest of the season.
 
-Despite the name, it works year-round for any time-limited deal flagging — Black Friday is just the peak season.
+Despite the name, it works year-round for any time-limited deal flagging - Black Friday is just the peak season.
 
 ## Before you start
 
 - **Your Amazon Creator storefront URL** in the topbar (or paste a different one in the workspace).
-- **A signed-in Amazon session** in Chrome — Butler uses your existing session.
+- **A signed-in Amazon session** in Chrome - Butler uses your existing session.
 
 ## Running your first watch
 
 1. Open **Black Friday Butler** in the left nav.
 2. Confirm the **Storefront URL** field.
 3. Set **Refresh cadence**:
-   - **5 minutes** — only during the BFCM peak window. The Amazon side of the rate-limit budget is real.
-   - **15 minutes** (recommended default) — most of Q4. Catches Lightning Deals that often last 4-12 hours.
-   - **1 hour to 7 days** — off-peak monitoring. Useful for catching seasonal events outside Q4.
+   - **5 minutes**: only during the BFCM peak window. The Amazon side of the rate-limit budget is real.
+   - **15 minutes** (recommended default) - most of Q4. Catches Lightning Deals that often last 4-12 hours.
+   - **1 hour to 7 days**: off-peak monitoring. Useful for catching seasonal events outside Q4.
 4. Leave **Debug slow-mo** at 0. The slow-mo slider exists to help diagnose selector issues; raising it adds visible delays for debugging only.
 5. Click **Start run**.
 
@@ -34,18 +34,18 @@ A Chrome window opens, walks your storefront's deal-flagged content, and logs ev
 
 The results table has one row per deal flagged:
 
-- **Product** — title + ASIN.
-- **Deal type** — Lightning Deal, Black Friday, Cyber Monday, Limited Time, etc. (Amazon's own classification.)
-- **First seen** — when Butler first detected the flag.
-- **Expires** — when the flag is scheduled to lift (Amazon's countdown).
-- **Discount** — the % off at first detection.
-- **Status** — Active / Expired / Sold Out.
+- **Product**: title + ASIN.
+- **Deal type**: Lightning Deal, Black Friday, Cyber Monday, Limited Time, etc. (Amazon's own classification.)
+- **First seen**: when Butler first detected the flag.
+- **Expires**: when the flag is scheduled to lift (Amazon's countdown).
+- **Discount**: the % off at first detection.
+- **Status**: Active / Expired / Sold Out.
 
 Use the data to plan posts:
 
-- **Active deals expiring in the next 2-4 hours** — highest urgency, post first.
-- **Active deals with 12+ hours left** — schedule a post mid-window.
-- **Expired deals** — keep in the log for trend analysis (which categories ran the most deals last BFCM?).
+- **Active deals expiring in the next 2-4 hours**: highest urgency, post first.
+- **Active deals with 12+ hours left**: schedule a post mid-window.
+- **Expired deals**: keep in the log for trend analysis (which categories ran the most deals last BFCM?).
 
 **Export CSV** dumps the filtered table for use outside Butler.
 
@@ -61,9 +61,9 @@ The 5-min rate is a "pull only during the BFCM peak" setting. Don't leave it on 
 
 ## Tuning over time
 
-- **Cadence by season** — 15 minutes during Q4, 1 hour the rest of the year. Update once a quarter.
-- **What to do with expired-deal data** — export to a spreadsheet quarterly. Look for patterns: which categories ran the most deals, which brands offered the deepest discounts, which weekdays had peak deal density.
-- **Debug slow-mo** — only touch if you're investigating a selector issue and want to see the page interact slowly. Otherwise leave at 0.
+- **Cadence by season**: 15 minutes during Q4, 1 hour the rest of the year. Update once a quarter.
+- **What to do with expired-deal data**: export to a spreadsheet quarterly. Look for patterns: which categories ran the most deals, which brands offered the deepest discounts, which weekdays had peak deal density.
+- **Debug slow-mo**: only touch if you're investigating a selector issue and want to see the page interact slowly. Otherwise leave at 0.
 
 ## Where the data goes
 
@@ -71,12 +71,12 @@ Per-deal history (with full timeline of state changes) lives in the preseed cach
 
 ## Common gotchas
 
-- **"Amazon login required"** — your session expired. Sign in via the Chrome window Butler spawned, click Resume.
-- **Table fills up with the same product over and over** — the deal toggled active/expired/active across refreshes. That's accurate to what Amazon showed; not a bug.
-- **No deals found** — your storefront might not have time-flagged content right now. Check directly on Amazon; if Amazon shows none, Butler will show none.
-- **High CPU during 5-min cadence** — Chrome stays open between refreshes by default. Some setups close Chrome between runs to drop the CPU floor; toggle in settings if you need it.
+- **"Amazon login required"**: your session expired. Sign in via the Chrome window Butler spawned, click Resume.
+- **Table fills up with the same product over and over**: the deal toggled active/expired/active across refreshes. That's accurate to what Amazon showed; not a bug.
+- **No deals found**: your storefront might not have time-flagged content right now. Check directly on Amazon; if Amazon shows none, Butler will show none.
+- **High CPU during 5-min cadence**: Chrome stays open between refreshes by default. Some setups close Chrome between runs to drop the CPU floor; toggle in settings if you need it.
 
 ## Related
 
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) — the broader deal-hunting + posting workspace. Black Friday Butler is purely *your* storefront; Daily Deals hunts deals across all of Amazon.
-- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) — syncs your full storefront catalog (no time-deal focus).
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the broader deal-hunting + posting workspace. Black Friday Butler is purely *your* storefront; Daily Deals hunts deals across all of Amazon.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - syncs your full storefront catalog (no time-deal focus).

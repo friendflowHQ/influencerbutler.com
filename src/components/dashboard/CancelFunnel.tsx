@@ -407,7 +407,7 @@ function Step2Reason({
           onChange={(e) => onFeedback(e.target.value)}
           rows={3}
           className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none focus:ring-1 focus:ring-[#f97316]"
-          placeholder="Share a quick note — this helps us improve."
+          placeholder="Share a quick note - this helps us improve."
         />
       </div>
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
@@ -519,7 +519,7 @@ function reasonResponse(reason: Reason | null): { title: string; body: React.Rea
           <>
             <p>
               We ship new tools regularly. The roadmap is partly driven by what paying
-              customers request — so if there&apos;s something you need, let us know.
+              customers request - so if there&apos;s something you need, let us know.
             </p>
             <p>
               Email{" "}
@@ -540,7 +540,7 @@ function reasonResponse(reason: Reason | null): { title: string; body: React.Rea
         body: (
           <>
             <p>
-              We&apos;d genuinely love to know what the alternative does better — price,
+              We&apos;d genuinely love to know what the alternative does better - price,
               features, support, or something else. If you included it in the previous
               step, thank you. If not, feel free to email us at{" "}
               <a
@@ -785,7 +785,7 @@ function Step5FinalConfirm({
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold tracking-tight text-slate-900">
-        Last chance — are you sure?
+        Last chance - are you sure?
       </h3>
       <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
         <p>

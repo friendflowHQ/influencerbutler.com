@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cancel via Lemon Squeezy API — cancels at the end of the current period.
+    // Cancel via Lemon Squeezy API - cancels at the end of the current period.
     const lsResponse = await lsApi(`/subscriptions/${subscriptionId}`, {
       method: "DELETE",
     });

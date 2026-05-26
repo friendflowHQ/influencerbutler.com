@@ -9,28 +9,28 @@ type TierCopy = {
 
 const COPY: Record<ConversionTier, TierCopy> = {
   "1h": {
-    subject: "A little welcome gift — 20% off your first month",
+    subject: "A little welcome gift: 20% off your first month",
     leadLine:
       "Since you're now part of the Influencer Butler affiliate program, we'd love to have you on the inside as a customer too.",
     offerLine: "Use code {CODE} at checkout for 20% off your first month.",
     finalSell:
-      "Knowing the product firsthand makes your referrals way more convincing — and you keep 30% recurring on everyone you bring in, for the first 12 months of each subscription.",
+      "Knowing the product firsthand makes your referrals way more convincing - and you keep 30% recurring on everyone you bring in, for the first 12 months of each subscription.",
   },
   "3d": {
     subject: "Still on the fence? Here's 30% off your first month",
     leadLine:
-      "Quick nudge — if you've been thinking about spinning up Influencer Butler for your own creator accounts, we bumped your welcome offer.",
+      "Quick nudge - if you've been thinking about spinning up Influencer Butler for your own creator accounts, we bumped your welcome offer.",
     offerLine: "Use code {CODE} at checkout for 30% off your first month.",
     finalSell:
-      "Using the product makes every pitch to your audience land harder. And 30% commission on each referral — paid for the first 12 months — stacks fast.",
+      "Using the product makes every pitch to your audience land harder. And 30% commission on each referral - paid for the first 12 months - stacks fast.",
   },
   "5d": {
-    subject: "Final offer — 50% off your first month (one-time code)",
+    subject: "Final offer: 50% off your first month (one-time code)",
     leadLine:
-      "Last one from us. We generated a single-use code just for you — after this, we won't keep nudging.",
+      "Last one from us. We generated a single-use code just for you - after this, we won't keep nudging.",
     offerLine: "Use code {CODE} at checkout for 50% off your first month.",
     finalSell:
-      "This code is locked to your account and only works once. After that, regular pricing applies. Good luck either way — and thanks for repping Influencer Butler.",
+      "This code is locked to your account and only works once. After that, regular pricing applies. Good luck either way - and thanks for repping Influencer Butler.",
   },
 };
 
@@ -43,7 +43,7 @@ export async function sendConversionEmail(params: {
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.error("RESEND_API_KEY not set — conversion email skipped");
+    console.error("RESEND_API_KEY not set - conversion email skipped");
     return false;
   }
 
@@ -64,7 +64,7 @@ export async function sendConversionEmail(params: {
     ``,
     copy.finalSell,
     ``,
-    `— The Influencer Butler team`,
+    `- The Influencer Butler team`,
   ].join("\n");
 
   try {

@@ -177,7 +177,7 @@ export default function AffiliateApplyInline() {
           Affiliate program
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-          Earn 30% recurring — 12 months per referral.
+          Earn 30% recurring - 12 months per referral.
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           Tell us a bit about your audience and how you&apos;d promote Influencer Butler. Applications are
@@ -311,7 +311,7 @@ export default function AffiliateApplyInline() {
             <Field
               label="How do you plan to promote Influencer Butler?"
               required
-              hint="A few sentences is plenty — share what your audience looks like and how you plan to talk about us."
+              hint="A few sentences is plenty - share what your audience looks like and how you plan to talk about us."
             >
               <textarea
                 required

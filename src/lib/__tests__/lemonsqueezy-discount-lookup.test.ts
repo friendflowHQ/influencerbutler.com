@@ -144,7 +144,7 @@ describe("fetchDiscountByCode", () => {
   });
 
   it("ignores LS substring matches that aren't the exact code", async () => {
-    // LS filter[code] does a substring/contains match — make sure we don't
+    // LS filter[code] does a substring/contains match - make sure we don't
     // accept WELCOME300 when the caller asked for WELCOME30.
     lsApiMock.mockResolvedValue(
       fakeResponse({
@@ -155,14 +155,14 @@ describe("fetchDiscountByCode", () => {
     expect(await fetchDiscountByCode("WELCOME30", "store-1")).toBeNull();
   });
 
-  it("caches positive results — second call doesn't hit LS", async () => {
+  it("caches positive results - second call doesn't hit LS", async () => {
     lsApiMock.mockResolvedValue(fakeResponse({ ok: true, json: { data: [record()] } }));
     await fetchDiscountByCode("WELCOME30", "store-1");
     await fetchDiscountByCode("WELCOME30", "store-1");
     expect(lsApiMock).toHaveBeenCalledTimes(1);
   });
 
-  it("caches negative results — second bogus call doesn't hit LS", async () => {
+  it("caches negative results - second bogus call doesn't hit LS", async () => {
     lsApiMock.mockResolvedValue(fakeResponse({ ok: true, json: { data: [] } }));
     expect(await fetchDiscountByCode("BOGUS", "store-1")).toBeNull();
     expect(await fetchDiscountByCode("BOGUS", "store-1")).toBeNull();
@@ -185,7 +185,7 @@ describe("fetchDiscountByCode", () => {
     }
   });
 
-  it("cache is keyed by storeId — different stores miss each other", async () => {
+  it("cache is keyed by storeId - different stores miss each other", async () => {
     lsApiMock.mockResolvedValue(fakeResponse({ ok: true, json: { data: [record()] } }));
     await fetchDiscountByCode("WELCOME30", "store-1");
     await fetchDiscountByCode("WELCOME30", "store-2");

@@ -1,12 +1,12 @@
 ---
-title: Retag Butler — reemplaza ASIN agotados en tu contenido publicado
+title: Retag Butler: reemplaza ASIN agotados en tu contenido publicado
 summary: Encuentra cada vídeo, foto y elemento de lista de ideas en tu tienda de Amazon que apunta a un producto no disponible, y etiqueta un reemplazo automáticamente.
 category: Amazon
 ---
 
 ## Qué hace Retag Butler
 
-Cada creador de Amazon termina teniendo contenido que apunta a ASIN muertos — productos que se agotaron, se eliminaron del catálogo o que la marca cambió. Cada ASIN muerto es un enlace de afiliado roto que te cuesta comisión. Retag Butler escanea tu tienda, encuentra esas filas, busca ASIN de reemplazo en la misma categoría y los etiqueta.
+Cada creador de Amazon termina teniendo contenido que apunta a ASIN muertos - productos que se agotaron, se eliminaron del catálogo o que la marca cambió. Cada ASIN muerto es un enlace de afiliado roto que te cuesta comisión. Retag Butler escanea tu tienda, encuentra esas filas, busca ASIN de reemplazo en la misma categoría y los etiqueta.
 
 Detalle crítico: Retag Butler **añade** etiquetas de reemplazo junto a las antiguas en vez de eliminar la etiqueta vieja. El historial del producto original queda intacto (bueno para analítica), pero el enlace ahora apunta a algo que un espectador puede comprar.
 
@@ -14,15 +14,15 @@ Detalle crítico: Retag Butler **añade** etiquetas de reemplazo junto a las ant
 
 - **La URL de tu tienda de Amazon Creator** (se rellena desde Ajustes → Escaneo de tienda).
 - **Sesión de Creator Hub iniciada** en Chrome.
-- **Storefront Butler sincronizado recientemente** — Retag Butler lee qué filas están marcadas como no disponibles desde esa sincronización.
-- Opcional: una **clave de Creators API** en API Integrations — se usa para sugerencias de reemplazo de mejor calidad.
+- **Storefront Butler sincronizado recientemente**: Retag Butler lee qué filas están marcadas como no disponibles desde esa sincronización.
+- Opcional: una **clave de Creators API** en API Integrations - se usa para sugerencias de reemplazo de mejor calidad.
 
 ## Elegir tu modo
 
 Dos modos de ejecución:
 
-- **Revisión (recomendado para la primera ejecución)** — Retag Butler encuentra candidatos y te muestra cada reemplazo. Apruebas o rechazas uno a uno. Más lento, pero ves exactamente qué va a hacer.
-- **Auto** — todo lo que supere el umbral **Auto-tag threshold** se etiqueta automáticamente; lo demás va a revisión. Lo más rápido para catálogos grandes.
+- **Revisión (recomendado para la primera ejecución)**: Retag Butler encuentra candidatos y te muestra cada reemplazo. Apruebas o rechazas uno a uno. Más lento, pero ves exactamente qué va a hacer.
+- **Auto**: todo lo que supere el umbral **Auto-tag threshold** se etiqueta automáticamente; lo demás va a revisión. Lo más rápido para catálogos grandes.
 
 Empieza con Revisión. Tras 10-20 swaps tendrás criterio sobre qué significa "buen reemplazo" para tu umbral de similitud.
 
@@ -30,10 +30,10 @@ Empieza con Revisión. Tras 10-20 swaps tendrás criterio sobre qué significa "
 
 Hay dos puntuaciones que parecen relacionadas pero hacen cosas distintas:
 
-- **Min title similarity** — controla qué candidatos **aparecen** en la cola de revisión. Por defecto 50. Bájalo para ver más candidatos (algunos débiles); súbelo para ver sólo coincidencias obvias.
-- **Auto-tag threshold** — controla qué candidatos el modo Auto **escribe sin preguntarte**. Por defecto 70. Cualquier cosa por debajo cae a revisión manual incluso en modo Auto.
+- **Min title similarity**: controla qué candidatos **aparecen** en la cola de revisión. Por defecto 50. Bájalo para ver más candidatos (algunos débiles); súbelo para ver sólo coincidencias obvias.
+- **Auto-tag threshold**: controla qué candidatos el modo Auto **escribe sin preguntarte**. Por defecto 70. Cualquier cosa por debajo cae a revisión manual incluso en modo Auto.
 
-Regla práctica: mantén min similarity en 50 (quieres ver candidatos débiles para poder rechazarlos) y elige un auto threshold según lo confiado que estés — 80 si eres cauteloso, 70 por defecto, 60 si tienes mucho catálogo que limpiar.
+Regla práctica: mantén min similarity en 50 (quieres ver candidatos débiles para poder rechazarlos) y elige un auto threshold según lo confiado que estés - 80 si eres cauteloso, 70 por defecto, 60 si tienes mucho catálogo que limpiar.
 
 ## Tu primera ejecución
 
@@ -47,10 +47,10 @@ Se abre una ventana de Chrome, recorre tu tienda, identifica ASIN no disponibles
 
 ## Ajustes con el tiempo
 
-- **detectParentOnly** — activado, Retag Butler sólo marca familias enteras de ASIN padre como muertas, no variantes hijo. Reduce falsos positivos al precio de perder algunos swaps reales.
-- **mobileLens** — usa el motor de similitud visual de Amazon (más lento pero más listo para productos visualmente distintos como decoración del hogar). Apagado por defecto; actívalo si la similitud por título da matches débiles en tu categoría.
-- **skipRetaggedWithinDays** — por defecto 7. Una vez has reetiquetado una fila, Retag Butler no la considera durante ese plazo. Evita que des vueltas en círculo.
-- **Programador** — pon una cadencia diaria o semanal para que Retag Butler corra solo. La combinación Auto + programador es "configurar y olvidar" para tiendas establecidas.
+- **detectParentOnly**: activado, Retag Butler sólo marca familias enteras de ASIN padre como muertas, no variantes hijo. Reduce falsos positivos al precio de perder algunos swaps reales.
+- **mobileLens**: usa el motor de similitud visual de Amazon (más lento pero más listo para productos visualmente distintos como decoración del hogar). Apagado por defecto; actívalo si la similitud por título da matches débiles en tu categoría.
+- **skipRetaggedWithinDays**: por defecto 7. Una vez has reetiquetado una fila, Retag Butler no la considera durante ese plazo. Evita que des vueltas en círculo.
+- **Programador**: pon una cadencia diaria o semanal para que Retag Butler corra solo. La combinación Auto + programador es "configurar y olvidar" para tiendas establecidas.
 
 ## Dónde van los datos
 
@@ -58,12 +58,12 @@ El historial de re-etiquetado se registra por fila en tu caché preseed. El pane
 
 ## Tropiezos comunes
 
-- **"No se encontraron candidatos"** — probablemente Storefront Butler aún no ha marcado ninguna fila como no disponible. Vuelve a sincronizar Storefront Butler.
-- **El reemplazo se ve mal (p. ej. categoría no relacionada)** — sube min similarity a 60-65 para filtrar matches débiles.
-- **Banner "Ya re-etiquetado dentro del cooldown"** — Retag Butler está respetando `skipRetaggedWithinDays`. Bájalo o espera.
-- **El etiquetado falla en silencio** — la sesión de Creator Hub expiró. Vuelve a iniciar sesión en la ventana de Chrome abierta.
+- **"No se encontraron candidatos"**: probablemente Storefront Butler aún no ha marcado ninguna fila como no disponible. Vuelve a sincronizar Storefront Butler.
+- **El reemplazo se ve mal (p. ej. categoría no relacionada)**: sube min similarity a 60-65 para filtrar matches débiles.
+- **Banner "Ya re-etiquetado dentro del cooldown"**: Retag Butler está respetando `skipRetaggedWithinDays`. Bájalo o espera.
+- **El etiquetado falla en silencio**: la sesión de Creator Hub expiró. Vuelve a iniciar sesión en la ventana de Chrome abierta.
 
 ## Relacionado
 
-- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — proporciona la señal de no-disponible que Retag Butler usa.
-- [Tutorial de Relink Butler](/help/tutorials/relink-butler) — para cambiar el *proveedor de enlace de afiliado* en tu contenido, no el producto subyacente.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) - proporciona la señal de no-disponible que Retag Butler usa.
+- [Tutorial de Relink Butler](/help/tutorials/relink-butler) - para cambiar el *proveedor de enlace de afiliado* en tu contenido, no el producto subyacente.

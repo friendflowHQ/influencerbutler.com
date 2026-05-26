@@ -8,7 +8,7 @@ export type CreateBrandedDiscountInput = {
   /**
    * Phase F (2026-05-20): LS variant IDs the discount should be scoped to.
    * The Daily Deals Workspace add-on variant MUST be absent from this list
-   * — that's belt 3 of the triple-belt promo-exclusion contract. Callers
+   * - that's belt 3 of the triple-belt promo-exclusion contract. Callers
    * should pass getDiscountableVariantIds() from lemonsqueezy.ts.
    *
    * When omitted, LS applies the discount to ALL variants (the unsafe
@@ -25,7 +25,7 @@ export type CreateBrandedDiscountResult =
 /**
  * Creates a branded percent-off discount in Lemon Squeezy (e.g. "JOHN" → 15%).
  * On duplicate code (422 from LS) returns `{ ok: false, conflict: true }` so
- * the caller can try a numbered variant. No redemption cap — this is meant
+ * the caller can try a numbered variant. No redemption cap - this is meant
  * to be shared broadly by the affiliate.
  *
  * Scoped to `variantIds` if provided so the discount never lands on add-on

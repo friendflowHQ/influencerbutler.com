@@ -11,7 +11,7 @@
  * reappear (e.g. after a material change to what we collect).
  *
  * Honors the Global Privacy Control (GPC) browser signal as a
- * "decline" preference per CCPA/CPRA — no banner shown, no analytics
+ * "decline" preference per CCPA/CPRA - no banner shown, no analytics
  * cookies set.
  */
 (function () {
@@ -73,7 +73,7 @@
           ts: new Date().toISOString(),
         }),
       );
-    } catch (_) { /* private mode / quota — fail silently */ }
+    } catch (_) { /* private mode / quota - fail silently */ }
   }
 
   function applyChoice(analytics) {
@@ -103,7 +103,7 @@
     banner.setAttribute("aria-live", "polite");
     banner.setAttribute(
       "aria-label",
-      "Cookie consent — choose whether to allow analytics cookies on this site",
+      "Cookie consent - choose whether to allow analytics cookies on this site",
     );
     banner.innerHTML =
       '<div class="ib-consent-banner__inner">' +
@@ -159,7 +159,7 @@
   }
 
   function init() {
-    // 1) Honor browser-level Global Privacy Control as a "deny" signal —
+    // 1) Honor browser-level Global Privacy Control as a "deny" signal -
     //    no banner, defaults stay denied, no analytics cookies.
     if (gpcRequested()) {
       writeStored(false);

@@ -29,7 +29,7 @@ export default async function WelcomeDispatcherPage() {
     if (hasWelcomeToken) {
       return <WelcomeGuestClient />;
     }
-    // No token (e.g. opened /welcome directly, or cookie expired) — fall back
+    // No token (e.g. opened /welcome directly, or cookie expired) - fall back
     // to the legacy "check your inbox" screen with magic-link polling.
     return <WelcomeCheckInboxClient />;
   }

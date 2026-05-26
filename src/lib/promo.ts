@@ -1,6 +1,6 @@
 // Cookie-driven WELCOME promo. First-time visitors get WELCOME30 (30% off the
 // first payment), returning visitors get WELCOME15 (15%). Tier is decided
-// server-side from the presence of the ib_pv (visitor) cookie — no time
+// server-side from the presence of the ib_pv (visitor) cookie - no time
 // window, second visit downgrades immediately.
 //
 // The ib_promo cookie is a non-HttpOnly hint the client island can read for
@@ -8,7 +8,7 @@
 // its value and only checks ib_pv presence).
 //
 // Multi-code resolution: WELCOME, URL ?code=, and typed promo are all
-// candidates evaluated by src/lib/promo-resolver.ts — the highest-$-saved
+// candidates evaluated by src/lib/promo-resolver.ts - the highest-$-saved
 // wins the discount slot. Affiliate attribution (aff_ref on the LS checkout)
 // is tracked independently of which code's discount won, so an affiliate
 // who refers a user via ?code= still gets paid even when WELCOME30 beats
@@ -60,7 +60,7 @@ export function applyDiscount(originalCents: number, tier: PromoTier): number {
 
 /**
  * Sets/refreshes both cookies on a NextResponse. Safe to call on every
- * request — the visitor cookie is only set if missing (so its 2-year TTL
+ * request - the visitor cookie is only set if missing (so its 2-year TTL
  * doesn't reset constantly), but the promo hint cookie is always refreshed
  * to match the resolved tier.
  */

@@ -1,5 +1,5 @@
 /**
- * /api/help/questions/[id]/answers — post an answer on a question. Auth
+ * /api/help/questions/[id]/answers - post an answer on a question. Auth
  * is enforced via the Supabase session cookie. Answers are auto-approved
  * (status='approved' on insert); the question's answer_count is kept in
  * sync by a Postgres trigger.

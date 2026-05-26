@@ -1,30 +1,30 @@
 ---
-title: Black Friday Butler — ne ratez aucune offre Amazon à durée limitée sur votre boutique
+title: Black Friday Butler: ne ratez aucune offre Amazon à durée limitée sur votre boutique
 summary: Surveillez votre boutique Amazon à une cadence (5 minutes à 7 jours) et journalisez chaque offre flaggée Black Friday ou à durée limitée avec horodatage.
 category: Other
 ---
 
 ## Ce que fait Black Friday Butler
 
-Autour du Q4 — Black Friday, Cyber Monday, Lightning Deals — Amazon estampille les offres avec des comptes à rebours. Ce sont des fenêtres à forte conversion pour les créateurs parce que l'urgence déplace l'audience plus vite qu'un post produit normal. Mais les repérer manuellement sur toute votre boutique est impossible : les offres apparaissent et expirent pendant que vous ne regardez pas.
+Autour du Q4 - Black Friday, Cyber Monday, Lightning Deals - Amazon estampille les offres avec des comptes à rebours. Ce sont des fenêtres à forte conversion pour les créateurs parce que l'urgence déplace l'audience plus vite qu'un post produit normal. Mais les repérer manuellement sur toute votre boutique est impossible : les offres apparaissent et expirent pendant que vous ne regardez pas.
 
 Black Friday Butler surveille votre boutique à une cadence et journalise chaque offre time-flaggée qu'il voit, avec l'horodatage où elle est apparue et celui où elle a expiré. Vous obtenez un log structuré de chaque fenêtre que vous auriez pu promouvoir, ce qui nourrit vos décisions de publication pour le reste de la saison.
 
-Malgré le nom, il marche toute l'année pour n'importe quel marquage d'offre à durée limitée — Black Friday est juste la saison de pointe.
+Malgré le nom, il marche toute l'année pour n'importe quel marquage d'offre à durée limitée - Black Friday est juste la saison de pointe.
 
 ## Avant de commencer
 
 - **L'URL de votre boutique Amazon Creator** dans la barre du haut (ou collez-en une autre dans l'espace).
-- **Une session Amazon active** dans Chrome — Butler utilise votre session existante.
+- **Une session Amazon active** dans Chrome - Butler utilise votre session existante.
 
 ## Votre première surveillance
 
 1. Ouvrez **Black Friday Butler** dans la navigation.
 2. Vérifiez le champ **URL de la boutique**.
 3. Réglez la **Cadence de rafraîchissement** :
-   - **5 minutes** — uniquement pendant le pic BFCM. Le budget rate-limit côté Amazon est réel.
-   - **15 minutes** (défaut recommandé) — la majorité du Q4. Attrape les Lightning Deals qui durent souvent 4-12 heures.
-   - **1 heure à 7 jours** — surveillance hors pic. Utile pour attraper les événements saisonniers hors Q4.
+   - **5 minutes**: uniquement pendant le pic BFCM. Le budget rate-limit côté Amazon est réel.
+   - **15 minutes** (défaut recommandé) - la majorité du Q4. Attrape les Lightning Deals qui durent souvent 4-12 heures.
+   - **1 heure à 7 jours**: surveillance hors pic. Utile pour attraper les événements saisonniers hors Q4.
 4. Laissez **Debug slow-mo** à 0. Le slider slow-mo existe pour aider à diagnostiquer des soucis de sélecteurs ; le monter ajoute des délais visibles seulement pour le débogage.
 5. Cliquez sur **Démarrer le run**.
 
@@ -34,18 +34,18 @@ Une fenêtre Chrome s'ouvre, parcourt le contenu flaggé deal de votre boutique 
 
 Le tableau de résultats a une ligne par deal flaggé :
 
-- **Produit** — titre + ASIN.
-- **Type de deal** — Lightning Deal, Black Friday, Cyber Monday, Durée Limitée, etc. (classification d'Amazon).
-- **Vu la première fois** — quand Butler a détecté le flag pour la première fois.
-- **Expire** — quand le flag est programmé pour se lever (compte à rebours Amazon).
-- **Remise** — le % de remise à la première détection.
-- **Statut** — Actif / Expiré / En rupture.
+- **Produit**: titre + ASIN.
+- **Type de deal**: Lightning Deal, Black Friday, Cyber Monday, Durée Limitée, etc. (classification d'Amazon).
+- **Vu la première fois**: quand Butler a détecté le flag pour la première fois.
+- **Expire**: quand le flag est programmé pour se lever (compte à rebours Amazon).
+- **Remise**: le % de remise à la première détection.
+- **Statut**: Actif / Expiré / En rupture.
 
 Utilisez les données pour planifier les posts :
 
-- **Deals actifs expirant dans les 2-4 prochaines heures** — urgence maximale, postez en premier.
-- **Deals actifs avec 12h+ restantes** — planifiez un post à mi-fenêtre.
-- **Deals expirés** — gardez dans le log pour l'analyse de tendance (quelles catégories ont eu le plus de deals au dernier BFCM ?).
+- **Deals actifs expirant dans les 2-4 prochaines heures**: urgence maximale, postez en premier.
+- **Deals actifs avec 12h+ restantes**: planifiez un post à mi-fenêtre.
+- **Deals expirés**: gardez dans le log pour l'analyse de tendance (quelles catégories ont eu le plus de deals au dernier BFCM ?).
 
 **Exporter CSV** dump le tableau filtré pour usage hors Butler.
 
@@ -61,9 +61,9 @@ Le rythme de 5 min est un setting "tirer seulement pendant le pic BFCM". Ne le l
 
 ## Réglages dans la durée
 
-- **Cadence par saison** — 15 minutes pendant Q4, 1 heure le reste de l'année. Mettez à jour une fois par trimestre.
-- **Que faire des données de deals expirés** — exportez en tableur trimestriellement. Cherchez des patterns : quelles catégories ont eu le plus de deals, quelles marques ont offert les remises les plus profondes, quels jours de la semaine ont eu la plus forte densité de deals.
-- **Debug slow-mo** — n'y touchez que si vous investiguez un souci de sélecteurs et voulez voir la page interagir lentement. Sinon laissez à 0.
+- **Cadence par saison**: 15 minutes pendant Q4, 1 heure le reste de l'année. Mettez à jour une fois par trimestre.
+- **Que faire des données de deals expirés**: exportez en tableur trimestriellement. Cherchez des patterns : quelles catégories ont eu le plus de deals, quelles marques ont offert les remises les plus profondes, quels jours de la semaine ont eu la plus forte densité de deals.
+- **Debug slow-mo**: n'y touchez que si vous investiguez un souci de sélecteurs et voulez voir la page interagir lentement. Sinon laissez à 0.
 
 ## Où vont les données
 
@@ -71,12 +71,12 @@ L'historique par deal (avec timeline complète des changements d'état) vit dans
 
 ## Pièges courants
 
-- **"Connexion Amazon requise"** — votre session a expiré. Connectez-vous dans la fenêtre Chrome lancée, cliquez sur Reprendre.
-- **Le tableau se remplit avec le même produit encore et encore** — le deal a basculé actif/expiré/actif entre les rafraîchissements. C'est exact à ce qu'Amazon a affiché ; pas un bug.
-- **Aucun deal trouvé** — votre boutique n'a peut-être pas de contenu time-flaggé pour l'instant. Vérifiez directement sur Amazon ; si Amazon n'en montre aucun, Butler n'en montrera aucun.
-- **CPU haute pendant cadence de 5 min** — Chrome reste ouvert entre les rafraîchissements par défaut. Certains setups le ferment entre les runs pour baisser le plancher CPU ; basculez dans les paramètres si nécessaire.
+- **"Connexion Amazon requise"**: votre session a expiré. Connectez-vous dans la fenêtre Chrome lancée, cliquez sur Reprendre.
+- **Le tableau se remplit avec le même produit encore et encore**: le deal a basculé actif/expiré/actif entre les rafraîchissements. C'est exact à ce qu'Amazon a affiché ; pas un bug.
+- **Aucun deal trouvé**: votre boutique n'a peut-être pas de contenu time-flaggé pour l'instant. Vérifiez directement sur Amazon ; si Amazon n'en montre aucun, Butler n'en montrera aucun.
+- **CPU haute pendant cadence de 5 min**: Chrome reste ouvert entre les rafraîchissements par défaut. Certains setups le ferment entre les runs pour baisser le plancher CPU ; basculez dans les paramètres si nécessaire.
 
 ## Relié
 
-- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) — l'espace plus large de chasse + publication de deals. Black Friday Butler concerne purement *votre* boutique ; Daily Deals chasse les deals sur tout Amazon.
-- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) — synchronise votre catalogue boutique complet (sans focus deals à durée).
+- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) - l'espace plus large de chasse + publication de deals. Black Friday Butler concerne purement *votre* boutique ; Daily Deals chasse les deals sur tout Amazon.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) - synchronise votre catalogue boutique complet (sans focus deals à durée).

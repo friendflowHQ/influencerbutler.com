@@ -19,7 +19,7 @@ import { randomUUID } from "node:crypto";
 
 export const WELCOME_TOKEN_COOKIE = "ib_welcome_token";
 
-/** Cookie lifetime — long enough to outlive the LS checkout round-trip plus
+/** Cookie lifetime - long enough to outlive the LS checkout round-trip plus
  *  a few minutes of webhook latency, but short enough that a stale cookie on
  *  a shared device can't keep pulling license keys forever. */
 export const WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS = 60 * 60; // 1 hour

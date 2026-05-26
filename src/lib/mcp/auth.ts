@@ -27,8 +27,8 @@ type ProfileRow = {
  * Resolve the calling principal from an MCP HTTP request.
  *
  * Priority order:
- *   1. Bearer API key (ib_pat_...) — looked up by sha256 hash in mcp_api_keys
- *   2. Anonymous (returns null) — caller decides whether the tool needs auth
+ *   1. Bearer API key (ib_pat_...) - looked up by sha256 hash in mcp_api_keys
+ *   2. Anonymous (returns null) - caller decides whether the tool needs auth
  *
  * Cookie/session-based auth is intentionally NOT supported here: MCP clients
  * (Claude Desktop, etc.) talk to the server directly without browser cookies.

@@ -1,5 +1,5 @@
 ---
-title: YouTube Butler — sube vídeos de tu tienda de Amazon a YouTube con enlaces de afiliado
+title: YouTube Butler: sube vídeos de tu tienda de Amazon a YouTube con enlaces de afiliado
 summary: Cross-postea tus vídeos comprables de Amazon en YouTube con enlaces de afiliado en la descripción o en un comentario fijado, incluyendo detección automática de Shorts.
 category: Amazon
 ---
@@ -17,8 +17,8 @@ El objetivo es convertir tu catálogo de tienda de Amazon en un feed de contenid
 
 ## Antes de empezar
 
-- **Un canal de YouTube** — personal o de marca, los dos valen.
-- **Storefront Butler ha sincronizado tus vídeos al menos una vez** — YouTube Butler lee de ese inventario.
+- **Un canal de YouTube**: personal o de marca, los dos valen.
+- **Storefront Butler ha sincronizado tus vídeos al menos una vez**: YouTube Butler lee de ese inventario.
 - **Un token OAuth** para tu canal de YouTube. El **Setup Wizard** te lleva por 5 pasos; es de una sola vez.
 - **Tu tag de afiliado de Amazon** en Ajustes → Amazon, para que los enlaces vayan etiquetados.
 
@@ -29,27 +29,27 @@ El espacio abre en la pestaña **Setup Wizard**. Recórrela una vez:
 1. Pulsa **Iniciar configuración**.
 2. Paso 1: confirma tu tag de afiliado de Amazon.
 3. Paso 2: pega la URL de tu canal de YouTube.
-4. Paso 3: inicia sesión en YouTube (se abre una ventana de Chrome — inicia sesión normalmente y concede los scopes solicitados).
-5. Paso 4: elige dónde van los enlaces de afiliado — **descripción** (por defecto) o **comentario fijado**. El comentario fijado esquiva la supresión de enlaces de YouTube en descripciones para canales nuevos.
+4. Paso 3: inicia sesión en YouTube (se abre una ventana de Chrome - inicia sesión normalmente y concede los scopes solicitados).
+5. Paso 4: elige dónde van los enlaces de afiliado - **descripción** (por defecto) o **comentario fijado**. El comentario fijado esquiva la supresión de enlaces de YouTube en descripciones para canales nuevos.
 6. Paso 5: verifica con una subida de prueba (YouTube Butler sube un vídeo corto de prueba y lo borra inmediatamente para confirmar que tu token funciona).
 
 Sólo lo haces una vez. Tras el éxito, la pestaña del wizard muestra un banner verde "Setup complete".
 
 ## Tu primer lote
 
-1. Cambia a la pestaña **Inventory** — cada vídeo de Storefront Butler aparece aquí con un checkbox.
+1. Cambia a la pestaña **Inventory** - cada vídeo de Storefront Butler aparece aquí con un checkbox.
 2. Marca los vídeos que quieres subir. Empieza con 5-10 para el primer lote.
 3. Pasa a **Settings** y confirma:
-   - **Plantilla de título** — usa `{title}`, `{asin}`, `{price}`.
-   - **Plantilla de descripción** — los mismos marcadores más `{deeplink}` para el enlace de afiliado.
-   - **Etiquetas** — separadas por coma; YouTube las usa para que te encuentren.
+   - **Plantilla de título**: usa `{title}`, `{asin}`, `{price}`.
+   - **Plantilla de descripción**: los mismos marcadores más `{deeplink}` para el enlace de afiliado.
+   - **Etiquetas**: separadas por coma; YouTube las usa para que te encuentren.
 4. Pulsa **Upload Queued**.
 
 YouTube Butler recorre la cola con retardos integrados contra el rate-limit. La pestaña **Upload Log** transmite cada resultado. Un lote de 10 suele tardar 15-25 minutos según el tamaño.
 
 ## Reglas de rate-limit de YouTube
 
-Los canales nuevos (menos de 30 días, menos de ~50 suscriptores) tienen rate-limit agresivo. YouTube Butler tiene retardos integrados conservadores por esto — **no los desactives**. Reglas de orientación:
+Los canales nuevos (menos de 30 días, menos de ~50 suscriptores) tienen rate-limit agresivo. YouTube Butler tiene retardos integrados conservadores por esto - **no los desactives**. Reglas de orientación:
 
 - **Primera semana**: 3-5 subidas/día.
 - **Semanas 2-4**: 10-15/día.
@@ -59,7 +59,7 @@ Mantén ≤15 subidas por sesión incluso en canales más antiguos; YouTube tole
 
 ## El detector automático de Shorts
 
-Los vídeos verticales (más altos que anchos) Y ≤60 segundos se suben como Shorts automáticamente. Los Shorts tienen un feed distinto en el algoritmo de YouTube, así que esto importa — no marcas nada a mano.
+Los vídeos verticales (más altos que anchos) Y ≤60 segundos se suben como Shorts automáticamente. Los Shorts tienen un feed distinto en el algoritmo de YouTube, así que esto importa - no marcas nada a mano.
 
 ## Códigos QR de producto
 
@@ -71,12 +71,12 @@ El estado de subida por vídeo vive en el panel Upload Log (filtrable por estado
 
 ## Tropiezos comunes
 
-- **"Token OAuth caducado"** — vuelve a ejecutar el Setup Wizard. Los tokens duran cerca de un año.
-- **Subidas atascadas en "Processing" en YouTube** — es la cola de codificación de YouTube, no Butler. Los vídeos nuevos suelen pasar 10-30 minutos en "Processing"; nada que puedas hacer.
-- **El comentario fijado no se publicó** — tu cuenta de YouTube tiene que ser propietaria del canal, no gestora. Las cuentas gestoras no pueden fijar comentarios.
-- **Un lote de 30 subidas se detiene de golpe** — chocaste con el límite diario de YouTube. Espera 24 horas.
+- **"Token OAuth caducado"**: vuelve a ejecutar el Setup Wizard. Los tokens duran cerca de un año.
+- **Subidas atascadas en "Processing" en YouTube**: es la cola de codificación de YouTube, no Butler. Los vídeos nuevos suelen pasar 10-30 minutos en "Processing"; nada que puedas hacer.
+- **El comentario fijado no se publicó**: tu cuenta de YouTube tiene que ser propietaria del canal, no gestora. Las cuentas gestoras no pueden fijar comentarios.
+- **Un lote de 30 subidas se detiene de golpe**: chocaste con el límite diario de YouTube. Espera 24 horas.
 
 ## Relacionado
 
-- [Tutorial de Video Butler](/help/tutorials/video-butler) — el espacio para re-subir a Amazon; combina bien con YouTube Butler para multiplataforma.
-- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — fuente del inventario de vídeos.
+- [Tutorial de Video Butler](/help/tutorials/video-butler) - el espacio para re-subir a Amazon; combina bien con YouTube Butler para multiplataforma.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) - fuente del inventario de vídeos.

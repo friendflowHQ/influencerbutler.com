@@ -1,27 +1,27 @@
 ---
-title: Instagram Close Friends Butler — añade automáticamente nuevos seguidores a tu lista de Close Friends
+title: Instagram Close Friends Butler: añade automáticamente nuevos seguidores a tu lista de Close Friends
 summary: Automatiza añadir seguidores nuevos de Instagram a tu lista de Close Friends con límites estrictos por hora y por día, restricciones por día de la semana y una lista de no-añadir.
 category: Instagram
 ---
 
 ## Qué hace Close Friends Butler
 
-La función Close Friends de Instagram te permite publicar Historias visibles sólo para una lista curada. Para creadores, esa lista es donde van las ofertas exclusivas, el contenido detrás de cámaras y el contenido de alta conversión. El problema: añadir seguidores nuevos a Close Friends a mano es tedioso — Instagram te obliga a hacer scroll-y-tap uno por uno.
+La función Close Friends de Instagram te permite publicar Historias visibles sólo para una lista curada. Para creadores, esa lista es donde van las ofertas exclusivas, el contenido detrás de cámaras y el contenido de alta conversión. El problema: añadir seguidores nuevos a Close Friends a mano es tedioso - Instagram te obliga a hacer scroll-y-tap uno por uno.
 
 Close Friends Butler automatiza ese paso. Recorre tu lista de seguidores, añade a cualquiera que no esté ya en Close Friends (saltándose tu lista de no-añadir), y respeta caps estrictos de ritmo para que Instagram no marque la cuenta.
 
 ## Antes de empezar
 
 - **Una sesión activa de Instagram** en Chrome.
-- Una respuesta clara a: *¿a quién quieres en Close Friends?* Por defecto es "todos los que te siguen", pero igual quieres restringir a gente que ha interactuado de alguna forma. Butler no fuerza esto — tú lo haces vía la lista de no-añadir.
+- Una respuesta clara a: *¿a quién quieres en Close Friends?* Por defecto es "todos los que te siguen", pero igual quieres restringir a gente que ha interactuado de alguna forma. Butler no fuerza esto - tú lo haces vía la lista de no-añadir.
 
 ## Por qué importan los caps
 
 Instagram limita fuerte la acción "añadir a close friends". Hay tres caps separados y Butler se detiene en el **más bajo activo**:
 
-- **perHour** — 20 por defecto. No subas por encima de 30 ni en cuentas establecidas.
-- **perDay** — 200 por defecto. No subas por encima de 300.
-- **total** — 1000 por defecto. El cap de vida del config de ejecución; útil como freno en planificaciones largas.
+- **perHour**: 20 por defecto. No subas por encima de 30 ni en cuentas establecidas.
+- **perDay**: 200 por defecto. No subas por encima de 300.
+- **total**: 1000 por defecto. El cap de vida del config de ejecución; útil como freno en planificaciones largas.
 
 Estos caps son conservadores a propósito. Si rebasas el umbral invisible de Instagram, tu cuenta queda bloqueada para Close Friends durante 24-72 horas.
 
@@ -29,9 +29,9 @@ Estos caps son conservadores a propósito. Si rebasas el umbral invisible de Ins
 
 1. Abre **Instagram Close Friends Butler** dentro de Instagram Butler (toggle padre).
 2. En **Run settings**:
-   - **Por ejecución** — 25 (por defecto). Para la ejecución tras este número de adds, aunque otros caps permitan más.
-   - **Por hora** — 20 (por defecto). Tope duro por hora rodante.
-   - **Min/Max delay** — 7-15 segundos entre adds. Jitter aleatorio dentro de ese rango, parece más humano que un retardo fijo.
+   - **Por ejecución**: 25 (por defecto). Para la ejecución tras este número de adds, aunque otros caps permitan más.
+   - **Por hora**: 20 (por defecto). Tope duro por hora rodante.
+   - **Min/Max delay**: 7-15 segundos entre adds. Jitter aleatorio dentro de ese rango, parece más humano que un retardo fijo.
 3. (Opcional) En **Restringir por día**, fija en qué días de la semana puede dispararse la ejecución. Útil para una cadencia "sólo mañanas de entresemana".
 4. Pulsa **Ejecutar**.
 
@@ -39,16 +39,16 @@ Se abre una ventana de Chrome. Butler recorre tu lista de seguidores, abre cada 
 
 ## La lista de no-añadir
 
-Algunos seguidores no deberían estar en Close Friends — competidores, marcas con las que no quieres compartir contenido behind-the-scenes, gente que sólo sigue para spam. La **lista de no-añadir** (un textarea con un usuario por línea) los salta en cada ejecución.
+Algunos seguidores no deberían estar en Close Friends - competidores, marcas con las que no quieres compartir contenido behind-the-scenes, gente que sólo sigue para spam. La **lista de no-añadir** (un textarea con un usuario por línea) los salta en cada ejecución.
 
 También hay una **tabla de historial** al final que lista cada cuenta que Butler ha añadido a Close Friends con marca de tiempo. **Exportar CSV** la vuelca para backup; **Restaurar borrado** recupera lo eliminado por error; **Borrar todo** limpia el historial local (NO los quita de Close Friends en Instagram).
 
 ## Ajustes con el tiempo
 
-- **autoHarvestFollowers** queda activado por defecto — Butler vuelve a recorrer tu lista de seguidores en cada ejecución en vez de basarse en una caché. Añade unos segundos pero mantiene la lista al día.
-- **Cap por ejecución** — sube a 50 cuando hayas visto una semana de ejecuciones limpias a 25. No subas por encima de 75 ni en cuentas establecidas.
-- **Rango de delay** — 7-15s es seguro. 5-10s es el suelo; por debajo de 5s, Instagram frena agresivamente.
-- **Restringir por día** — útil para cuentas donde el algoritmo premia ventanas de actividad consistentes.
+- **autoHarvestFollowers** queda activado por defecto - Butler vuelve a recorrer tu lista de seguidores en cada ejecución en vez de basarse en una caché. Añade unos segundos pero mantiene la lista al día.
+- **Cap por ejecución**: sube a 50 cuando hayas visto una semana de ejecuciones limpias a 25. No subas por encima de 75 ni en cuentas establecidas.
+- **Rango de delay**: 7-15s es seguro. 5-10s es el suelo; por debajo de 5s, Instagram frena agresivamente.
+- **Restringir por día**: útil para cuentas donde el algoritmo premia ventanas de actividad consistentes.
 
 ## Dónde van los datos
 
@@ -56,11 +56,11 @@ El historial de Close Friends (handle + marca de tiempo) vive en la caché prese
 
 ## Tropiezos comunes
 
-- **Banner "Acción bloqueada"** — superaste el cap invisible de Instagram. Butler para solo. Espera 24-72 horas antes de reanudar y baja un escalón el cap por hora.
-- **Butler salta una cuenta elegible** — puede que ya esté en Close Friends. Butler comprueba el flag de pertenencia antes de añadir.
-- **El historial muestra adds pero Instagram dice que no están en Close Friends** — la UI de Instagram a veces va por detrás del estado real de la lista. Refresca tu página de Close Friends en Instagram directamente para confirmar.
+- **Banner "Acción bloqueada"**: superaste el cap invisible de Instagram. Butler para solo. Espera 24-72 horas antes de reanudar y baja un escalón el cap por hora.
+- **Butler salta una cuenta elegible**: puede que ya esté en Close Friends. Butler comprueba el flag de pertenencia antes de añadir.
+- **El historial muestra adds pero Instagram dice que no están en Close Friends**: la UI de Instagram a veces va por detrás del estado real de la lista. Refresca tu página de Close Friends en Instagram directamente para confirmar.
 
 ## Relacionado
 
-- [Tutorial de Instagram Butler](/help/tutorials/instagram) — el lado de DM outreach del stack de Instagram.
-- [Tutorial de Instagram Goldmine](/help/tutorials/instagram-goldmine) — investiga con quién interactuar en Instagram.
+- [Tutorial de Instagram Butler](/help/tutorials/instagram) - el lado de DM outreach del stack de Instagram.
+- [Tutorial de Instagram Goldmine](/help/tutorials/instagram-goldmine) - investiga con quién interactuar en Instagram.

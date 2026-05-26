@@ -54,6 +54,6 @@ console.log(`\nDone. rewrote=${touched} already-converted=${skipped} ` +
   `unmatched-with-ga-id=${untouchable.length}`);
 if (untouchable.length) {
   console.log("\nFiles that still reference the GA ID but did not match the " +
-    "inline-block pattern — these need a manual look:");
+    "inline-block pattern - these need a manual look:");
   for (const f of untouchable) console.log("  - " + path.relative(ROOT, f));
 }

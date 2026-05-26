@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { loadManifest } from "@/lib/tutorials";
+import { WorkspaceIcon } from "@/components/workspace-icon";
 
 export const metadata = {
-  title: "Help & Tutorials — Influencer Butler",
+  title: "Help & Tutorials - Influencer Butler",
   description:
     "Step-by-step setup and how-to guides for every Influencer Butler workspace, plus a community Q&A for questions.",
 };
@@ -22,7 +23,7 @@ export default async function HelpLandingPage() {
     <main className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
+          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
             ← Influencer Butler
           </Link>
           <nav className="flex items-center gap-4 text-sm">
@@ -59,7 +60,10 @@ export default async function HelpLandingPage() {
                     href={`/help/tutorials/${entry.id}`}
                     className="block rounded-lg border border-slate-200 bg-white p-5 transition hover:border-orange-500 hover:shadow"
                   >
-                    <h3 className="font-semibold text-slate-900">{entry.title}</h3>
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-orange-50 text-orange-600">
+                      <WorkspaceIcon id={entry.id} />
+                    </span>
+                    <h3 className="mt-4 font-semibold text-slate-900">{entry.title}</h3>
                     {entry.summary ? (
                       <p className="mt-2 text-sm text-slate-600">{entry.summary}</p>
                     ) : null}
@@ -72,7 +76,7 @@ export default async function HelpLandingPage() {
 
         {manifest.tutorials.length === 0 ? (
           <p className="mt-12 rounded border border-dashed border-slate-300 p-8 text-center text-slate-500">
-            No tutorials are published yet — check back soon.
+            No tutorials are published yet - check back soon.
           </p>
         ) : null}
       </section>

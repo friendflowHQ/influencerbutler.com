@@ -1,19 +1,19 @@
 ---
-title: Benable Comment Butler — commentaires écrits par IA sur les collections Benable
-summary: Déposez des commentaires courts, amicaux et spécifiques au produit sur les éléments de listes Benable — écrits par IA depuis les détails produit Amazon, avec une phrase de secours pré-écrite si le modèle échoue.
+title: Benable Comment Butler: commentaires écrits par IA sur les collections Benable
+summary: Déposez des commentaires courts, amicaux et spécifiques au produit sur les éléments de listes Benable - écrits par IA depuis les détails produit Amazon, avec une phrase de secours pré-écrite si le modèle échoue.
 category: Partnerships
 ---
 
 ## Ce que fait Benable Comment Butler
 
-Liker une collection Benable est le signal d'engagement le moins coûteux. Commenter est le cran au-dessus — un commentaire court et pertinent vous place dans les notifications d'un créateur avec plus de poids qu'un like. Benable Comment Butler écrit des commentaires générés par IA adaptés à chaque produit (tirés des détails produit Amazon) et les publie sur les éléments Benable dans votre file.
+Liker une collection Benable est le signal d'engagement le moins coûteux. Commenter est le cran au-dessus - un commentaire court et pertinent vous place dans les notifications d'un créateur avec plus de poids qu'un like. Benable Comment Butler écrit des commentaires générés par IA adaptés à chaque produit (tirés des détails produit Amazon) et les publie sur les éléments Benable dans votre file.
 
 Si l'IA échoue pour une raison ou une autre (rate-limit, produit bizarre), Butler retombe sur une phrase canned pré-écrite de votre liste plutôt que sauter l'élément. Vous obtenez toujours un commentaire posté, jamais un passage à vide.
 
 ## Avant de commencer
 
 - **Une session Benable active** dans Chrome.
-- **Clé d'API OpenAI** dans **API Integrations** — génère les commentaires par produit.
+- **Clé d'API OpenAI** dans **API Integrations** - génère les commentaires par produit.
 - **1-10 URLs de boutiques Benable** des créateurs à qui vous voulez commenter.
 - **Au moins 3-5 phrases canned de secours** dans le textarea canned-phrases (par ex. "Excellente sélection !", "Je l'ajoute à ma liste", "Exactement ce qu'il me fallait").
 
@@ -21,9 +21,9 @@ Si l'IA échoue pour une raison ou une autre (rate-limit, produit bizarre), Butl
 
 Comme Benable Butler, cet espace a trois modes échelonnés :
 
-- **Dry run (par défaut)** — écrit les commentaires mais ne les poste pas. Les ressort dans le log de run pour que vous vérifiiez le ton avant de passer en live.
-- **Preview** — génère un plan de commentaires que vous pouvez parcourir avant validation.
-- **Live** — poste réellement les commentaires via votre session Benable.
+- **Dry run (par défaut)**: écrit les commentaires mais ne les poste pas. Les ressort dans le log de run pour que vous vérifiiez le ton avant de passer en live.
+- **Preview**: génère un plan de commentaires que vous pouvez parcourir avant validation.
+- **Live**: poste réellement les commentaires via votre session Benable.
 
 Démarrez en Dry run. Lisez 20-30 commentaires générés. Si le ton vous convient, passez en Live.
 
@@ -34,9 +34,9 @@ Démarrez en Dry run. Lisez 20-30 commentaires générés. Si le ton vous convie
 3. Dans **Mode**, laissez Dry run pour la première passe.
 4. Dans **Phrases canned**, ajoutez 5-10 commentaires de fallback. Gardez-les assez génériques pour coller à n'importe quel produit (par ex. "Très belle sélection", "Je l'ajoute à mon panier", "J'adore la curation").
 5. Dans **Caps & pacing** :
-   - **Par run** — démarrez à 10. C'est le total de commentaires à travers tous les profils pour le run.
-   - **Délai entre commentaires** — 15-30 secondes. Les commentaires ont plus de friction que les likes ; vous avez besoin d'un rythme plus lent pour éviter les rate-limits.
-   - **Jitter** — variation aléatoire de ±2 secondes pour paraître humain.
+   - **Par run**: démarrez à 10. C'est le total de commentaires à travers tous les profils pour le run.
+   - **Délai entre commentaires**: 15-30 secondes. Les commentaires ont plus de friction que les likes ; vous avez besoin d'un rythme plus lent pour éviter les rate-limits.
+   - **Jitter**: variation aléatoire de ±2 secondes pour paraître humain.
 6. Dans **Ton**, choisissez un descripteur (par ex. "amical + bref", "enthousiaste", "réfléchi"). Le modèle l'utilise pour styliser chaque commentaire.
 7. Cliquez sur **Démarrer**.
 
@@ -44,8 +44,8 @@ Démarrez en Dry run. Lisez 20-30 commentaires générés. Si le ton vous convie
 
 Deux options dans **Sur quoi commenter** :
 
-- **Uniquement les produits publiés sur Amazon** — commente seulement les éléments qui lient vers Amazon (le plus courant, le plus pertinent pour les créateurs d'affiliation).
-- **Tous les éléments de la liste** — commente tout dans chaque collection, y compris les éléments non-Amazon.
+- **Uniquement les produits publiés sur Amazon**: commente seulement les éléments qui lient vers Amazon (le plus courant, le plus pertinent pour les créateurs d'affiliation).
+- **Tous les éléments de la liste**: commente tout dans chaque collection, y compris les éléments non-Amazon.
 
 Par défaut Amazon-only. Passez à Tous seulement si vous voulez une portée plus large.
 
@@ -55,10 +55,10 @@ Le toggle **Discover** étend l'espace au-delà de vos boutiques listées. Activ
 
 ## Réglages dans la durée
 
-- **Cap par run** — 10 est prudent. Au-dessus de 30 par run, ça risque de paraître spammy aux yeux de la modération Benable. Le cap par jour (champ séparé) est le plafond dur — restez sous 50 par jour même sur un compte établi.
-- **Tous les N éléments** — commente seulement tous les N éléments d'une collection. Évite que vos commentaires saturent un seul créateur et paraissent inorganiques.
-- **Descripteur de ton** — des tons plus précis produisent des commentaires plus précis. "Amical + bref, s'adresse au produit spécifiquement, sans points d'exclamation" surperforme un simple "amical".
-- **Qualité des phrases canned** — les fallbacks se déclenchent quand l'IA échoue. De mauvais fallbacks vous font mauvaise figure. Passez 10 minutes à en rédiger 10 solides.
+- **Cap par run**: 10 est prudent. Au-dessus de 30 par run, ça risque de paraître spammy aux yeux de la modération Benable. Le cap par jour (champ séparé) est le plafond dur - restez sous 50 par jour même sur un compte établi.
+- **Tous les N éléments**: commente seulement tous les N éléments d'une collection. Évite que vos commentaires saturent un seul créateur et paraissent inorganiques.
+- **Descripteur de ton**: des tons plus précis produisent des commentaires plus précis. "Amical + bref, s'adresse au produit spécifiquement, sans points d'exclamation" surperforme un simple "amical".
+- **Qualité des phrases canned**: les fallbacks se déclenchent quand l'IA échoue. De mauvais fallbacks vous font mauvaise figure. Passez 10 minutes à en rédiger 10 solides.
 
 ## Où vont les données
 
@@ -66,12 +66,12 @@ L'historique par commentaire (profil cible + élément + texte du commentaire + 
 
 ## Pièges courants
 
-- **"Clé OpenAI manquante"** — configurez-la dans API Integrations. Comment Butler peut retomber sur les phrases canned, mais il vaut largement mieux générer des commentaires frais.
-- **Les commentaires échouent à se poster (l'UI a renvoyé une erreur)** — Benable a changé ses sélecteurs. Comment Butler affiche "Sélecteurs pas encore configurés" tant que l'inspection runtime n'est pas relancée ; la bannière de l'espace l'indique si ça arrive.
-- **Chaque commentaire est canned** — votre clé OpenAI est invalide ou rate-limited. Vérifiez API Integrations.
-- **Les commentaires paraissent génériques** — affinez le champ Ton et ajoutez du contexte spécifique au produit. L'IA utilise la description Amazon + votre ton ; si l'un des deux est faible, la sortie est faible.
+- **"Clé OpenAI manquante"**: configurez-la dans API Integrations. Comment Butler peut retomber sur les phrases canned, mais il vaut largement mieux générer des commentaires frais.
+- **Les commentaires échouent à se poster (l'UI a renvoyé une erreur)**: Benable a changé ses sélecteurs. Comment Butler affiche "Sélecteurs pas encore configurés" tant que l'inspection runtime n'est pas relancée ; la bannière de l'espace l'indique si ça arrive.
+- **Chaque commentaire est canned**: votre clé OpenAI est invalide ou rate-limited. Vérifiez API Integrations.
+- **Les commentaires paraissent génériques**: affinez le champ Ton et ajoutez du contexte spécifique au produit. L'IA utilise la description Amazon + votre ton ; si l'un des deux est faible, la sortie est faible.
 
 ## Relié
 
-- [Tutoriel Benable Like Butler](/help/tutorials/benable-like-butler) — combinez avec Comment Butler pour une couverture d'engagement complète.
-- [Tutoriel Benable Butler](/help/tutorials/benable-butler) — publiez vos propres collections.
+- [Tutoriel Benable Like Butler](/help/tutorials/benable-like-butler) - combinez avec Comment Butler pour une couverture d'engagement complète.
+- [Tutoriel Benable Butler](/help/tutorials/benable-butler) - publiez vos propres collections.

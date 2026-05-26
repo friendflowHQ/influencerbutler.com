@@ -1,12 +1,12 @@
 ---
-title: Instagram Email Collection — harvest brand emails hiding in your Instagram DMs
+title: Instagram Email Collection: harvest brand emails hiding in your Instagram DMs
 summary: Scan your Instagram DMs for email addresses brands have shared in conversation, then export them to a reusable contact list.
 category: Instagram
 ---
 
 ## What Instagram Email Collection does
 
-Brands routinely share their pitch email in Instagram DMs — "send your media kit to brandname@..." or "let's continue this at marketing@brand.com." Those emails are valuable: they're a direct line to the brand contact who saw your work, outside Instagram's algorithmic reach.
+Brands routinely share their pitch email in Instagram DMs - "send your media kit to brandname@..." or "let's continue this at marketing@brand.com." Those emails are valuable: they're a direct line to the brand contact who saw your work, outside Instagram's algorithmic reach.
 
 But finding them later means scrolling through hundreds of DMs by hand. Instagram Email Collection scans your DM history, extracts email addresses, and dumps them in a table with the source thread + a "sent outreach" toggle so you can track who you've reached out to from the list.
 
@@ -18,9 +18,9 @@ But finding them later means scrolling through hundreds of DMs by hand. Instagra
 ## Running your first scan
 
 1. Open **Instagram Email Collection** under Instagram Butler.
-2. **Max threads to scan** — defaults to 50. This is how many DM threads (most recent first) Butler walks per run. Start at 50 to test, raise to 200-500 once you've seen it work.
-3. **Incremental** — leave on. Incremental mode only scans threads newer than the last run, so subsequent runs are fast. Turn off only for the first full backfill.
-4. **Full message history** (optional) — when on, Butler walks each thread to the very first message rather than stopping at recent. Slower but exhaustive. Use once on first backfill, then turn off.
+2. **Max threads to scan**: defaults to 50. This is how many DM threads (most recent first) Butler walks per run. Start at 50 to test, raise to 200-500 once you've seen it work.
+3. **Incremental**: leave on. Incremental mode only scans threads newer than the last run, so subsequent runs are fast. Turn off only for the first full backfill.
+4. **Full message history** (optional) - when on, Butler walks each thread to the very first message rather than stopping at recent. Slower but exhaustive. Use once on first backfill, then turn off.
 5. Click **Run**.
 
 A Chrome window opens. Butler walks your DM inbox, opens each thread, scans for email addresses using a robust regex, and adds matches to the results table. The first run on a heavy DM inbox takes 5-15 minutes; incremental runs are 30 seconds.
@@ -29,16 +29,16 @@ A Chrome window opens. Butler walks your DM inbox, opens each thread, scans for 
 
 The results table has one row per email found:
 
-- **Email** — the address itself.
-- **From thread** — the Instagram handle whose DM contained the email. Click to open the thread on Instagram.
-- **Snippet** — a few words of context around the email so you remember why it was shared.
-- **Sent** toggle — flag whether you've reached out to this email externally. Useful for not double-sending.
+- **Email**: the address itself.
+- **From thread**: the Instagram handle whose DM contained the email. Click to open the thread on Instagram.
+- **Snippet**: a few words of context around the email so you remember why it was shared.
+- **Sent** toggle - flag whether you've reached out to this email externally. Useful for not double-sending.
 
 Top toolbar buttons:
 
-- **Select visible** + **Clear selection** — pick rows for bulk actions.
-- **Mark as sent** — flip the Sent toggle on every selected row.
-- **Export CSV** — dump the filtered list to a spreadsheet for use outside Butler.
+- **Select visible** + **Clear selection** - pick rows for bulk actions.
+- **Mark as sent**: flip the Sent toggle on every selected row.
+- **Export CSV**: dump the filtered list to a spreadsheet for use outside Butler.
 
 ## Scheduling
 
@@ -47,13 +47,13 @@ The scheduler runs Email Collection on a cadence so new emails are surfaced as D
 1. Click **Enable Schedule**.
 2. Pick an interval (default 24h).
 
-While the schedule is active, settings lock. Click **Stop Schedule** before editing. Daily is plenty — Instagram DMs don't accumulate fast enough to need anything faster.
+While the schedule is active, settings lock. Click **Stop Schedule** before editing. Daily is plenty - Instagram DMs don't accumulate fast enough to need anything faster.
 
 ## Tuning over time
 
-- **maxThreads** — 50 is fine for daily incremental scans. Raise to 500 for the first full backfill, then drop back to 50.
-- **Incremental** — leave on after the first run. Saves 90%+ of run time.
-- **Full message history** — turn on once for the first full backfill, then off forever (incremental handles updates).
+- **maxThreads**: 50 is fine for daily incremental scans. Raise to 500 for the first full backfill, then drop back to 50.
+- **Incremental**: leave on after the first run. Saves 90%+ of run time.
+- **Full message history**: turn on once for the first full backfill, then off forever (incremental handles updates).
 
 ## Where the data goes
 
@@ -61,13 +61,13 @@ Harvested emails live in the preseed cache. The CSV export from the toolbar give
 
 ## Common gotchas
 
-- **No emails found despite lots of DMs** — many brand DMs share emails only in PDFs or images. Butler doesn't OCR — it only finds plain-text email patterns in message text.
-- **Schedule appears stuck** — settings lock during active schedule. Click Stop Schedule, edit, re-enable.
-- **Same email appears twice from different threads** — that's expected; the brand reached out from two different accounts. Use the Sent toggle to track only one of them.
-- **Instagram sign-in prompt mid-run** — solve in the spawned Chrome window, click Resume.
+- **No emails found despite lots of DMs**: many brand DMs share emails only in PDFs or images. Butler doesn't OCR - it only finds plain-text email patterns in message text.
+- **Schedule appears stuck**: settings lock during active schedule. Click Stop Schedule, edit, re-enable.
+- **Same email appears twice from different threads**: that's expected; the brand reached out from two different accounts. Use the Sent toggle to track only one of them.
+- **Instagram sign-in prompt mid-run**: solve in the spawned Chrome window, click Resume.
 
 ## Related
 
-- [Instagram Butler tutorial](/help/tutorials/instagram) — DM outreach workspace that complements this one.
-- [Pitch Butler tutorial](/help/tutorials/pitchbutler) — imports these emails into the unified brand CRM.
-- [Messenger Butler tutorial](/help/tutorials/messengerbutler) — handles in-flight Instagram conversations.
+- [Instagram Butler tutorial](/help/tutorials/instagram) - DM outreach workspace that complements this one.
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) - imports these emails into the unified brand CRM.
+- [Messenger Butler tutorial](/help/tutorials/messengerbutler) - handles in-flight Instagram conversations.
