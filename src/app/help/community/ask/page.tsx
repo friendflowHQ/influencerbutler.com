@@ -55,8 +55,8 @@ export default async function AskPage() {
       <section className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="text-3xl font-bold tracking-tight">Ask the community</h1>
         <p className="mt-2 text-slate-600">
-          Sign in is required to post. Your question lands in the moderation
-          queue and goes live once approved.
+          Sign in is required to post. Your question goes live on Community
+          Q&amp;A right away.
         </p>
 
         {signedIn ? (

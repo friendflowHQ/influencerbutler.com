@@ -86,7 +86,10 @@ export default async function CommunityPage({
     loadManifest(),
   ]);
 
-  const titlesById = new Map(manifest.tutorials.map((entry) => [entry.id, entry.title]));
+  const titlesById = new Map<string, string>(
+    manifest.tutorials.map((entry) => [entry.id, entry.title]),
+  );
+  titlesById.set("other", "Other");
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -138,6 +141,7 @@ export default async function CommunityPage({
                 {entry.title}
               </option>
             ))}
+            <option value="other">Other</option>
           </select>
           <button
             type="submit"

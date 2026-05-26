@@ -1,8 +1,7 @@
 /**
- * /api/help/questions — community Q&A storage. POST inserts a pending
- * question into the community_questions Supabase table; moderation
- * happens via /dashboard/admin/community. Auth is enforced via the
- * Supabase session cookie (no Authorization header needed).
+ * /api/help/questions — community Q&A storage. POST inserts an approved
+ * question into the community_questions Supabase table. Auth is enforced
+ * via the Supabase session cookie (no Authorization header needed).
  *
  * The listing page reads from Supabase directly, so there is no GET
  * handler here.
@@ -27,14 +26,7 @@ type AuthClient = {
   from: (table: string) => {
     insert: (
       payload: Record<string, unknown>,
-    ) => {
-      select: (cols: string) => {
-        single: () => Promise<{
-          data: { id: string } | null;
-          error: { message?: string } | null;
-        }>;
-      };
-    };
+    ) => Promise<{ error: { message?: string } | null }>;
   };
 };
 
@@ -82,20 +74,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  // Plain insert with no .select() returning clause. The returning
+  // SELECT goes through RLS, which would block reading rows the public
+  // policy doesn't grant (e.g. status='pending'), causing the call to
+  // fail with no row error even though the insert itself succeeded.
+  const { error } = await supabase
     .from("community_questions")
     .insert({
       workspace_id: workspaceId,
       title,
       body: body || null,
-      status: "pending",
+      status: "approved",
+      approved_at: new Date().toISOString(),
       author_id: userData.user.id,
       author_email: userData.user.email ?? null,
-    })
-    .select("id")
-    .single();
+    });
 
-  if (error || !data) {
+  if (error) {
     console.error("community_questions insert failed", error);
     return NextResponse.json(
       { ok: false, error: "Could not post question." },
@@ -103,5 +98,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true, id: data.id });
+  return NextResponse.json({ ok: true });
 }

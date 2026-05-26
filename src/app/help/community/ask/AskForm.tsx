@@ -62,11 +62,11 @@ export default function AskForm({ tutorials }: { tutorials: Tutorial[] }) {
     return (
       <div className="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
         <h2 className="text-xl font-semibold text-emerald-900">
-          Thanks — your question is in review
+          Thanks — your question is live
         </h2>
         <p className="mt-2 text-sm text-emerald-800">
-          We&apos;ll publish it on Community Q&amp;A once it&apos;s approved
-          (usually within a day). You&apos;ll see it appear in the list below.
+          Find it on Community Q&amp;A now. The community (and the team) will
+          chime in with answers.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link
@@ -111,6 +111,7 @@ export default function AskForm({ tutorials }: { tutorials: Tutorial[] }) {
               {entry.title}
             </option>
           ))}
+          <option value="other">Other</option>
         </select>
       </label>
 
