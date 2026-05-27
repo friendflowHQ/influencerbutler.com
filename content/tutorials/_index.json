@@ -242,6 +242,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "prime-day-butler",
+      "title": "Prime Day Butler: surface Amazon deals worth posting about",
+      "category": "Other",
+      "summary": "Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries — filter by % off and price, export to CSV.",
+      "order": 335,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "ads-goldmine-butler",
       "title": "Ads Goldmine: surface high-value ASINs by ad + sponsor density signals",
       "category": "Other",

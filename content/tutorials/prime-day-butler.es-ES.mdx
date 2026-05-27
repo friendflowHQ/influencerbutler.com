@@ -1,0 +1,48 @@
+---
+title: "Prime Day Butler: descubre ofertas de Amazon que vale la pena publicar"
+summary: Encuentra ofertas de Prime Day a partir del contenido que ya hiciste, productos que ya posees y descubrimientos nuevos de la API de Creators — filtra por % de descuento y precio, exporta a CSV.
+category: Other
+---
+
+## Qué hace
+
+Prime Day Butler es un radar estacional que descubre productos de Amazon que vale la pena promocionar, desde tres fuentes a la vez: contenido que ya publicaste en tu storefront, productos que has comprado (vía Orders Butler), y descubrimientos nuevos extraídos de la API de Creators. Filtras por palabra clave, % mínimo de descuento y precio máximo; la tabla se actualiza y exportas los candidatos a CSV para publicar.
+
+## Requisitos previos
+
+- **Storefront Butler** ha sincronizado al menos una vez para saber qué contenido has hecho.
+- **Orders Butler** ha sincronizado al menos una vez si quieres la señal "productos que poseo".
+- **Clave de API de Creators** configurada en **API Integrations** si quieres descubrimientos nuevos más allá de lo que ya tienes.
+
+Si falta alguna fuente, el workspace sigue funcionando — simplemente muestra menos filas. Los filtros indican de qué fuente proviene cada fila.
+
+## Primera ejecución
+
+1. Abre **Prime Day Butler** en el menú izquierdo (bajo el grupo Amazon).
+2. Configura los filtros:
+   - **Palabra clave** — opcional. Acota a un nicho, p. ej. "cocina".
+   - **% mínimo de descuento** — predeterminado 20%. Sube a 40–50% para una lista más ajustada.
+   - **Precio máximo ($)** — opcional. Omite productos de $200+ si tu audiencia no compra eso.
+   - **Toggles de fuente** — deja los tres activos para máxima cobertura; desactiva "descubrimientos nuevos" si solo quieres re-publicar lo que ya hiciste.
+   - **Solo elegibles para CC** — filtra a productos donde Amazon Creator Connections acepta el enlace de afiliado (las rutas de comisión más altas).
+3. Haz clic en **Ejecutar ahora**. La línea de estado muestra el progreso; la tabla se llena conforme se encuentran ofertas.
+4. Revisa los resultados. Cada fila muestra el ASIN, título, precio actual, % de descuento, fuente y (si es elegible para CC) la tasa de comisión.
+5. Haz clic en **Exportar CSV** para volcar la lista de candidatos. La mayoría de usuarios pega estos en el constructor de publicaciones de Daily Deals Butler, pero un CSV funciona para cualquier flujo.
+
+## Ajustes con el tiempo
+
+- Si la tabla está vacía: baja el umbral de % mínimo de descuento a 10% e inténtalo de nuevo — muchas "ofertas" que Amazon marca son descuentos medianos.
+- Si la tabla es abrumadora: activa **Solo elegibles para CC** y sube el % mínimo de descuento a 30%+ para obtener los candidatos de mayor impacto.
+- Si no ves tu propio contenido del storefront: confirma que Storefront Butler ejecutó en las últimas 24 horas.
+
+## Cosas a saber
+
+- **La lista se vuelve obsoleta rápido durante Prime Day.** Vuelve a ejecutar cada 2–4 horas durante la ventana del evento — los precios de Amazon cambian en tiempo real.
+- **Los descubrimientos nuevos pueden ser ruidosos.** La API de Creators no conoce tu nicho; combina el toggle de descubrimientos nuevos con un filtro de palabra clave ajustado.
+- **La elegibilidad para CC se retrasa.** Un producto puede ser elegible para CC hoy y ya no mañana. El campo de estado dice qué era cierto al momento del escaneo.
+
+## Relacionado
+
+- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals) — a dónde la mayoría de usuarios envían el CSV exportado.
+- [Tutorial de Black Friday Butler](/help/tutorials/black-friday) — la misma forma de radar estacional para la ventana de BFCM.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) — mantiene fresca la fuente "contenido que ya hice".
