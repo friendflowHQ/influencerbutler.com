@@ -19,7 +19,15 @@ El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de
 1. Abre **Pricecrash Butler** en el menú lateral (está bajo Orders Butler, en el grupo Amazon).
 2. Elige al menos una **categoría** para escanear. "All" recorre todos los departamentos de Amazon.
 3. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** o **Sin entrega**.
-4. Pulsa **Ejecutar**.
+4. Pulsa **Ejecutar**. Con el campo **Palabras clave señuelo** vacío, el runner recorre cada categoría seleccionada por su nodo raíz de Amazon ordenado por precio ascendente - sin filtro de texto del título, así captura artículos mal tarificados aunque el vendedor no haya escrito "clearance" en la ficha.
+
+## Palabras clave señuelo
+
+**Déjalo vacío** para la red más amplia: el runner escanea cada categoría sin filtro de palabras clave, y cualquier producto con un porcentaje de ahorro igual o superior a tu umbral se considera un acierto, independientemente del texto del título.
+
+Pega tu propia lista (separada por comas o saltos de línea) cuando quieras **estrechar** la búsqueda - útil para marcas concretas, tipos de producto o pistas de descuento ("clearance", "open box", "closeout", "overstock", "warehouse deal"). Las palabras clave se aplican a cada categoría seleccionada.
+
+Si la API de Amazon rechaza la búsqueda sin palabras clave para alguna categoría, Pricecrash detiene la ejecución y te indica qué categoría necesita una palabra manual. Añade al menos una palabra para esa categoría o quítala de la selección y vuelve a ejecutar.
 
 ## Escaneos periódicos
 

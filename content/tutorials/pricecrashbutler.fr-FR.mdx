@@ -19,7 +19,15 @@ Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les v
 1. Ouvrez **Pricecrash Butler** dans le menu latéral (sous Orders Butler, groupe Amazon).
 2. Sélectionnez au moins une **catégorie** à scanner. « All » couvre tous les rayons.
 3. Choisissez le comportement à la détection : **Brouillon pour relecture**, **Planifier automatiquement** ou **Sans transfert**.
-4. Cliquez sur **Lancer**.
+4. Cliquez sur **Lancer**. Avec le champ **Mots-clés appâts** vide, le runner parcourt chaque catégorie sélectionnée par son nœud racine Amazon trié par prix croissant - aucun filtre sur le titre, donc il attrape les articles mal tarifés même si le vendeur n'a jamais écrit « clearance » dans la fiche.
+
+## Mots-clés appâts
+
+**Laissez le champ vide** pour le filet le plus large : le runner scanne chaque catégorie sans filtre de mots-clés et tout produit dont le pourcentage d'économies atteint ou dépasse votre seuil devient une prise, peu importe le texte du titre.
+
+Collez votre propre liste (séparée par virgules ou retours à la ligne) pour **resserrer** la recherche - utile pour des marques précises, des types de produit ou des indices de remise (« clearance », « open box », « closeout », « overstock », « warehouse deal »). Les mots-clés s'appliquent à chaque catégorie sélectionnée.
+
+Si l'API Amazon refuse la recherche sans mots-clés pour une catégorie, Pricecrash arrête l'exécution et vous indique laquelle a besoin d'un mot-clé manuel. Ajoutez au moins un mot-clé pour cette catégorie ou retirez-la de la sélection, puis relancez.
 
 ## Scans récurrents
 

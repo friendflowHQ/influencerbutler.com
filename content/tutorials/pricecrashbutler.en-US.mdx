@@ -23,7 +23,7 @@ The threshold is yours - 99% is the default because that's where real pricing er
    - **Draft for review**: safer; sits in Daily Deals → Search until you approve it.
    - **Auto-schedule**: fastest; drops straight into Daily Deals → Schedule.
    - **No hand-off**: just log it in the panel; you act manually.
-4. Click **Run**. The runner will sweep your selected categories with a small bait-keyword set (clearance / open box / closeout / overstock by default) and report hits in the table at the bottom of the panel.
+4. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
 
 ## Recurring scans
 
@@ -43,9 +43,11 @@ True 99%-off matches are rare on purpose - Amazon's automated guards remove flag
 
 ## Bait keywords
 
-The bait-keyword textarea controls what the runner searches for in each category. By default the runner uses **clearance, open box, closeout, overstock, warehouse deal** - these surface unlisted-removed-mispriced inventory better than empty-keyword browses (which the Creators API doesn't even allow).
+The bait-keyword textarea controls what the runner searches for in each category. **Leave it empty** for the widest net: the runner scans each category by its root browse-node sorted price-ascending, with no title filter at all - the cheapest items in the category bubble up first, and any one of them with a savings percentage at or above your threshold becomes a hit, regardless of whether the listing calls itself "clearance" or anything else.
 
-Paste your own list (comma- or newline-separated) to bias the sweep toward specific brand stems or product types. Empty = use defaults.
+Paste your own list (comma- or newline-separated) when you want to **narrow** the sweep - useful for brand stems ("anker", "dyson"), product types ("router", "monitor"), or generic discount cues ("clearance", "open box", "closeout", "overstock", "warehouse deal") that bias the first page toward known-mispriced inventory. The runner applies your keywords to every selected category.
+
+If Amazon's API rejects a keyword-less browse for one of your categories (rare - it's usually a stale browse-node mapping), Pricecrash stops the run and tells you which category needs a manual keyword. Add at least one bait keyword for that category or unselect it, then run again.
 
 ## Hand-off to Daily Deals Butler
 
@@ -63,7 +65,7 @@ While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** coun
 ## Gotchas
 
 - **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Daily Deals Butler.
-- **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per (category, keyword) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
+- **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per category (or one page per keyword when keywords are set) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
 - **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
 - **Posts not appearing in Daily Deals**: confirm Daily Deals Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
 
