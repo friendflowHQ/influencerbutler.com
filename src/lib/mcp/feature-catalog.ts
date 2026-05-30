@@ -41,7 +41,7 @@ export const FEATURE_CATALOG: FeatureEntry[] = [
   entry("retag-butler", "Retag Butler: Fix dead product links in your old content", "Retag Butler finds content tagged to products that aren't sold anymore and adds a live replacement - without wiping your original tag. Dead tags get a live backup."),
   entry("storefront-butler", "Storefront Butler: Know your storefront inside and out", "Storefront Butler syncs every product in your storefront and shows you how many photos and videos you have for each one, so you know exactly what still needs content."),
   entry("video-butler", "Video Butler: Re-upload videos Amazon deleted", "Video Butler restores videos that Amazon removed, refreshes their info, and flips them between horizontal and vertical for you."),
-  entry("voiceover-butler", "Voiceover Butler: AI voiceover with FTC disclosures baked in", "Voiceover Butler writes AI voiceover scripts in your tone, niche, and audience - with FTC disclosures baked in and brand-safety guards on every script."),
+  entry("voiceover-butler", "Voiceover Butler: AI voiceover with FTC disclosures baked in", "Voiceover Butler writes AI voiceover scripts in your tone, niche, and audience - with FTC disclosures baked in and brand-safety guards on every script. For fashion items it grounds the script in your own fit (height and sizing) so viewers can gauge how things will look."),
   entry("youtube-butler", "YouTube Butler: Turn storefront videos into YouTube views", "YouTube Butler uploads your storefront videos to YouTube and stamps your affiliate QR code right on the video."),
 ];
 
