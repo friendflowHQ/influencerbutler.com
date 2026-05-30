@@ -13,7 +13,11 @@ Data Refresh Butler est le planificateur des deux catalogues Amazon dont tout le
 
 Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence et Daily Deals lisent depuis ces catalogues. S'ils sont obsolètes, ces espaces prennent des décisions avec des données périmées. Data Refresh Butler est l'endroit où vous fixez la cadence.
 
-Il n'a pas de runner propre - il configure et déclenche simplement les runners du workspace **cc-check** selon la planification que vous choisissez.
+Il n'a pas de runner propre - il configure et déclenche simplement le
+rafraîchissement des catalogues selon la planification que vous choisissez.
+C'est le **seul** endroit où vivent le rafraîchissement et la planification des
+catalogues : CC Check ne télécharge plus les catalogues lui-même, il vérifie
+seulement les ASIN par rapport à ce que ces rafraîchissements produisent.
 
 ## Avant de commencer
 
@@ -32,9 +36,10 @@ La configuration par défaut couple les rafraîchissements à la cadence de rech
 
 Si Daily Deals ne tourne pas selon un planning, cliquez sur **Dissocier** sur la puce de couplage et définissez une cadence manuelle :
 
-1. Dans **Planning de rafraîchissement**, choisissez un préréglage - **6 heures** est la valeur par défaut et suffit largement. Les préréglages 1h/3h sont agressifs et rarement nécessaires.
-2. **Rafraîchir à cette heure** permet d'ancrer la cadence à une heure (par ex. toujours à 6 h).
-3. Dans **Rafraîchir le catalogue s'il a plus de**, laissez 12 h comme fenêtre de fraîcheur. Cela évite un re-téléchargement coûteux de 5 minutes si le catalogue en cache est encore récent.
+1. Dans **Planning de rafraîchissement**, la valeur par défaut est **Personnalisé — quotidien à 04:00**. Cela suffit pour la plupart des utilisateurs ; un rafraîchissement nocturne une fois par jour garde les catalogues à jour sans surcharger Amazon. Les préréglages horaires sont agressifs et rarement nécessaires.
+2. **Rafraîchir à cette heure** permet d'ancrer le rafraîchissement quotidien à une heure précise (4:00 par défaut).
+3. Laissez **Inclure le rafraîchissement des commissions SPCC** activé (valeur par défaut) pour que chaque rafraîchissement planifié télécharge aussi le catalogue de commissions SPCC. Désactivez-le pour ne rafraîchir que le catalogue Creator Connections.
+4. Dans **Rafraîchir le catalogue s'il a plus de**, laissez 12 h comme fenêtre de fraîcheur. Cela évite un re-téléchargement coûteux de 5 minutes si le catalogue en cache est encore récent.
 
 ## Séparer les cadences CC et SPCC (avancé)
 
@@ -47,7 +52,7 @@ La séparation est optionnelle - sans elle, les deux se rafraîchissent à la m�
 
 ## Exécution à la demande
 
-La carte **Statut actuel** affiche les dernières et prochaines mises à jour pour chaque catalogue, ainsi que trois boutons :
+Les cartes CC et SPCC affichent une **date et heure de dernier rafraîchissement** explicites (par ex. « 30 mai 2026, 04:02 »), pour voir d'un coup d'œil la fraîcheur des données. La carte **Statut actuel** affiche les dernières et prochaines mises à jour pour chaque catalogue, ainsi que trois boutons :
 
 - **Lancer maintenant** sous CC - rafraîchit uniquement le catalogue CC.
 - **Lancer maintenant** sous SPCC - rafraîchit uniquement le catalogue SPCC.
@@ -63,6 +68,6 @@ Utile avant une recherche Daily Deals manuelle ou avant d'examiner les candidate
 
 ## Relié
 
-- [Tutoriel CC Check](/help/tutorials/cc-check) - le runner que cet espace planifie.
+- [Tutoriel CC Check](/help/tutorials/cc-check) - où vous vérifiez les ASIN et acceptez les campagnes par rapport aux catalogues que cet espace rafraîchit.
 - [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) - le principal consommateur d'un catalogue CC à jour.
 - [Tutoriel Daily Deals](/help/tutorials/daily-deals) - la source de couplage par défaut.

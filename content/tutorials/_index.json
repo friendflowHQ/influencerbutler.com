@@ -19,9 +19,9 @@
     },
     {
       "id": "cc-check",
-      "title": "CC Check: keep your Creator Connections catalog fresh",
+      "title": "CC Check: check ASINs and accept Creator Connections campaigns",
       "category": "Amazon",
-      "summary": "Run the SPCC + download-all jobs that keep your accepted-campaign catalog and SPCC offers up to date.",
+      "summary": "Check your ASINs against the live catalogs, accept campaigns, submit content, and extract brands from one results table.",
       "order": 30,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },

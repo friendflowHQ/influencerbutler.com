@@ -1,41 +1,60 @@
 ---
-title: CC Check: keep your Creator Connections catalog fresh
-summary: Run the SPCC + download-all jobs that keep your accepted-campaign catalog and SPCC offers up to date.
+title: "CC Check: check ASINs and accept Creator Connections campaigns"
+summary: Check your ASINs against the live catalogs, accept campaigns, submit content, and extract brands — all from one results table.
 category: Amazon
 ---
 
 ## What CC Check does
 
-CC Check is the data-refresh runner that keeps two catalogs current:
+CC Check is where you act on Creator Connections opportunities. It lets you:
 
-1. The **download-all** catalog of every Creator Connections campaign visible to you.
-2. The **SPCC** (Sponsored Products for Creators) commission catalog.
+- **Check ASINs** against the live Creator Connections + SPCC catalogs to see which products have active campaigns or commission offers.
+- **Accept campaigns** that match your storefront.
+- **Submit content** and **extract brands** from the results.
+- **Import ASINs** to check in bulk.
 
-Most other workspaces - Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence - depend on these catalogs being fresh. If you don't run CC Check, the rest of the app makes decisions on stale data.
+Everything lands in one **results table** you can sort, filter, and act on.
 
-## When to run it
+> **Catalog refresh moved.** Downloading and scheduling the Creator
+> Connections + SPCC catalogs now lives entirely in **Data Refresh Butler**.
+> CC Check reads whatever those catalogs currently hold — it no longer has its
+> own "download catalog" or "refresh schedule" sections. See the
+> [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) to set
+> how often catalogs refresh.
 
-The recommended setup is **automatic**, not manual:
+## Keeping catalogs fresh
 
-1. Open **Data Refresh Butler** in the left nav.
-2. Toggle on **Refresh CC & SPCC catalogs 1h before each search**. This couples CC Check to your Daily Deals cadence so it runs as a side effect.
-3. If you don't run Daily Deals, set a daily refresh cadence in Data Refresh Butler instead (24h is plenty).
+CC Check checks your ASINs against catalogs that **Data Refresh Butler** keeps
+current. The default flow:
 
-## Running manually
+1. During first-run setup, the catalogs are harvested in the background.
+2. After that, **Data Refresh Butler** refreshes them on a daily schedule (4:00 AM by default).
 
-If you need a one-off refresh:
+You don't run a catalog download from CC Check anymore. If a check looks like
+it's working against stale data, open Data Refresh Butler and click one of its
+**Refresh** buttons.
+
+## Checking and accepting
 
 1. Open **CC Check** in the left nav.
-2. Click **Run now**.
-3. Wait for the run to complete - it usually takes 1–3 minutes depending on catalog size.
+2. **Import ASINs** (or use the ones already loaded).
+3. Click **Check ASINs** to match them against the current catalogs.
+4. Review the results table, then **Accept Campaigns**, **Submit Content**, or **Extract Brands** as needed.
 
-You'll see a progress badge in the CC Check topbar and the **Last refreshed** timestamps update in Data Refresh Butler when it finishes.
+## Automating acceptance
+
+The **Schedule** ("Check ASINs") form lets you run the check/accept pipeline on
+a recurring cadence — handy if you want new matching campaigns accepted
+automatically. This acceptance schedule is separate from catalog refresh:
+Data Refresh Butler refreshes catalogs but never accepts campaigns on your
+behalf.
 
 ## Gotchas
 
-- **Catalog stays empty after a run**: check the topbar **CC Storefront ID** field. If it's blank or wrong, CC Check has nothing to download against.
-- **Run completes but downstream workspaces don't update**: they cache reads. Restart the workspace (close + reopen the app) to force a re-read.
+- **No results after a check**: confirm the topbar **CC Storefront ID** is set, and that Data Refresh Butler has harvested the catalogs at least once.
+- **Results look stale**: open Data Refresh Butler and refresh; the last-harvest date/time on its CC and SPCC cards tells you how current the data is.
 
 ## Related
 
+- [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) - controls how often the CC + SPCC catalogs refresh.
 - [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of a fresh CC catalog.

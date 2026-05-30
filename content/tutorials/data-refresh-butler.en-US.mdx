@@ -13,7 +13,10 @@ Data Refresh Butler is the scheduler for the two Amazon catalogs that everything
 
 Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence, and Daily Deals all read from these. If they're stale, those workspaces make decisions on old data. Data Refresh Butler is where you set the cadence.
 
-It has no runner of its own - it just configures and triggers the **cc-check** workspace's runners on the schedule you pick.
+It has no runner of its own - it just configures and triggers the catalog
+refresh on the schedule you pick. This is the **only** place catalog refresh and
+scheduling live: CC Check no longer downloads catalogs itself, it just checks
+ASINs against whatever these refreshes produce.
 
 ## Before you start
 
@@ -32,9 +35,10 @@ The default setup couples refreshes to your Daily Deals search cadence: CC + SPC
 
 If Daily Deals isn't running on a schedule, click **Break link** on the coupling chip and set a manual cadence:
 
-1. In **Refresh schedule**, pick a preset - **6 hours** is the default and is plenty for most users. The 1h/3h presets are aggressive and rarely needed.
-2. **Refresh at this time** lets you anchor the cadence to a clock time (e.g. always at 6 AM).
-3. In **Refresh catalogue if older than**, leave 12h as the freshness window. This skips a costly 5-minute redownload if the cached catalog is still recent enough.
+1. In **Refresh schedule**, the default is **Custom — daily at 04:00**. That's plenty for most users; a once-a-day overnight refresh keeps catalogs fresh without hammering Amazon. The hourly presets are aggressive and rarely needed.
+2. **Refresh at this time** lets you anchor the daily refresh to a clock time (defaults to 4:00 AM).
+3. Leave **Include SPCC commission refresh** on (the default) so each scheduled refresh also pulls the SPCC commission catalog. Turn it off to refresh only the Creator Connections catalog.
+4. In **Refresh catalogue if older than**, leave 12h as the freshness window. This skips a costly 5-minute redownload if the cached catalog is still recent enough.
 
 ## Splitting CC and SPCC cadences (advanced)
 
@@ -47,7 +51,7 @@ The split is opt-in - without it, both refresh on the same cadence.
 
 ## Running on demand
 
-The **Current status** card shows the last and next refresh times for each catalog, plus three action buttons:
+The CC and SPCC cards each show an explicit **last refresh** date and time (e.g. "May 30, 2026, 4:02 AM"), so you can tell at a glance how current the data is. The **Current status** card shows the last and next refresh times for each catalog, plus three action buttons:
 
 - **Run now** under CC - refreshes just the CC catalog.
 - **Run now** under SPCC - refreshes just the SPCC catalog.
@@ -63,6 +67,6 @@ Useful before a manual Daily Deals search or before reviewing Daily Commission B
 
 ## Related
 
-- [CC Check tutorial](/help/tutorials/cc-check) - the runner this workspace schedules.
+- [CC Check tutorial](/help/tutorials/cc-check) - where you check ASINs and accept campaigns against the catalogs this workspace refreshes.
 - [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of a fresh CC catalog.
 - [Daily Deals tutorial](/help/tutorials/daily-deals) - the default coupling source.

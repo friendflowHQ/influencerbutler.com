@@ -1,6 +1,6 @@
 ---
-title: CC Check: gardez votre catalogue Creator Connections à jour
-summary: Lancez les jobs SPCC + download-all qui maintiennent à jour votre catalogue de campagnes acceptées et les offres SPCC.
+title: "CC Check: vérifiez les ASIN et acceptez les campagnes Creator Connections"
+summary: Vérifiez vos ASIN par rapport aux catalogues en direct, acceptez les campagnes, envoyez du contenu et extrayez les marques, le tout depuis un seul tableau de résultats.
 category: Amazon
 ---
 
@@ -8,6 +8,56 @@ category: Amazon
 
 ## Ce que fait CC Check
 
-CC Check est le runner de rafraîchissement de données qui maintient à jour deux catalogues : le catalogue **download-all** de toutes les campagnes Creator Connections visibles pour vous, et le catalogue **SPCC** (Sponsored Products for Creators) de commissions.
+CC Check est l'endroit où vous agissez sur les opportunités Creator Connections. Il vous permet de :
 
-La plupart des autres espaces - Daily Commission Butler, Goldmine Butler, Earnings Intelligence - dépendent de la fraîcheur de ces catalogues.
+- **Vérifier les ASIN** par rapport aux catalogues en direct Creator Connections + SPCC pour voir quels produits ont des campagnes actives ou des offres de commission.
+- **Accepter les campagnes** qui correspondent à votre boutique.
+- **Envoyer du contenu** et **extraire les marques** des résultats.
+- **Importer des ASIN** pour les vérifier en masse.
+
+Tout apparaît dans un **tableau de résultats** que vous pouvez trier, filtrer et sur lequel vous pouvez agir.
+
+> **Le rafraîchissement des catalogues a déménagé.** Le téléchargement et la
+> planification des catalogues Creator Connections + SPCC vivent désormais
+> entièrement dans **Data Refresh Butler**. CC Check lit ce que ces catalogues
+> contiennent à tout moment ; il n'a plus ses propres sections « télécharger le
+> catalogue » ou « planning de rafraîchissement ». Consultez le
+> [tutoriel Data Refresh Butler](/help/tutorials/data-refresh-butler).
+
+## Garder les catalogues à jour
+
+CC Check vérifie vos ASIN par rapport aux catalogues que **Data Refresh Butler**
+garde à jour. Le flux par défaut :
+
+1. Lors de la configuration initiale, les catalogues sont téléchargés en arrière-plan.
+2. Ensuite, **Data Refresh Butler** les rafraîchit selon une planification quotidienne (4:00 par défaut).
+
+Vous ne lancez plus de téléchargement de catalogue depuis CC Check. Si une
+vérification semble travailler sur des données périmées, ouvrez Data Refresh
+Butler et cliquez sur l'un de ses boutons **Rafraîchir**.
+
+## Vérifier et accepter
+
+1. Ouvrez **CC Check** dans le menu de gauche.
+2. **Importez des ASIN** (ou utilisez ceux déjà chargés).
+3. Cliquez sur **Vérifier les ASIN** pour les croiser avec les catalogues actuels.
+4. Examinez le tableau de résultats, puis **Accepter les campagnes**, **Envoyer du contenu** ou **Extraire les marques** selon vos besoins.
+
+## Automatiser l'acceptation
+
+Le formulaire **Planning** (« Vérifier les ASIN ») permet d'exécuter le flux de
+vérification/acceptation selon une cadence récurrente, pratique si vous voulez
+que les nouvelles campagnes correspondantes soient acceptées automatiquement.
+Cette planification d'acceptation est distincte du rafraîchissement des
+catalogues : Data Refresh Butler rafraîchit les catalogues mais n'accepte jamais
+de campagnes à votre place.
+
+## Pièges
+
+- **Aucun résultat après une vérification**: confirmez que l'**ID de boutique CC** de la barre du haut est configuré et que Data Refresh Butler a téléchargé les catalogues au moins une fois.
+- **Les résultats semblent périmés**: ouvrez Data Refresh Butler et rafraîchissez ; la date/heure de dernier téléchargement sur ses cartes CC et SPCC indique la fraîcheur des données.
+
+## Relié
+
+- [Tutoriel Data Refresh Butler](/help/tutorials/data-refresh-butler) - contrôle la fréquence de rafraîchissement des catalogues CC + SPCC.
+- [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) - le principal consommateur d'un catalogue CC à jour.
