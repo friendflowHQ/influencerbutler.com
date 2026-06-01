@@ -1,37 +1,40 @@
 /**
- * /api/help/questions/[id]/upvote - toggle the current user's upvote on a
- * question. POST flips state: if no row exists in community_question_upvotes
+ * /api/help/questions/[id]/upvote - toggle the caller's upvote on a
+ * question. Auth is dual-mode:
+ *   - Authorization: Bearer <license-key>  (Influencer Butler desktop)
+ *   - Supabase session cookie                (website browser)
+ *
+ * POST flips state: if no row exists in community_question_upvotes
  * for (question_id, user_id), insert one; otherwise delete it. A trigger
  * keeps community_questions.upvotes in sync.
+ *
+ * Writes go through the service-role client because license-bearer
+ * callers have no session and so can't satisfy auth.uid() = user_id RLS.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/admin";
+import { resolveAuth } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Result<T> = { data: T | null; error: { message?: string } | null };
-
-// Shape returned after .select(...).eq(col, value). Supports both the
-// 2-eq chain (used to check whether the user has already upvoted) and
-// the 1-eq chain (used to read the denormalized upvote count).
-type ChainAfterFirstEq = {
-  eq: (col: string, value: string) => {
-    maybeSingle: () => Promise<Result<Record<string, unknown>>>;
-  };
-  single: () => Promise<Result<{ upvotes: number | null }>>;
-};
+const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 type UpvoteClient = {
-  auth: {
-    getUser: () => Promise<{
-      data: { user: { id?: string } | null };
-      error: unknown;
-    }>;
-  };
   from: (table: string) => {
     select: (cols: string) => {
-      eq: (col: string, value: string) => ChainAfterFirstEq;
+      eq: (col: string, value: string) => {
+        eq: (col: string, value: string) => {
+          maybeSingle: () => Promise<{
+            data: Record<string, unknown> | null;
+            error: { message?: string } | null;
+          }>;
+        };
+        single: () => Promise<{
+          data: { upvotes: number | null } | null;
+          error: { message?: string } | null;
+        }>;
+      };
     };
     insert: (
       payload: Record<string, unknown>,
@@ -47,27 +50,34 @@ type UpvoteClient = {
 };
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: questionId } = await params;
-  if (!questionId || !/^[0-9a-f-]{36}$/i.test(questionId)) {
+  if (!questionId || !UUID_RE.test(questionId)) {
     return NextResponse.json({ ok: false, error: "Bad question id" }, { status: 400 });
   }
 
-  const supabase = (await createClient()) as unknown as UpvoteClient;
-
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user?.id) {
+  const authResult = await resolveAuth(request);
+  if (!authResult.ok) {
     return NextResponse.json(
-      { ok: false, error: "Sign in required to upvote." },
-      { status: 401 },
+      { ok: false, error: authResult.error },
+      { status: authResult.status },
     );
   }
-  const userId = userData.user.id;
+  const { auth } = authResult;
+  const userId = auth.userId;
 
-  // Check current state (RLS lets the user see only their own row).
-  const { data: existing } = await supabase
+  const admin = createAdminClient() as unknown as UpvoteClient | null;
+  if (!admin) {
+    return NextResponse.json(
+      { ok: false, error: "Server misconfigured" },
+      { status: 500 },
+    );
+  }
+
+  // Check current state.
+  const { data: existing } = await admin
     .from("community_question_upvotes")
     .select("question_id")
     .eq("question_id", questionId)
@@ -76,7 +86,7 @@ export async function POST(
 
   let upvoted: boolean;
   if (existing) {
-    const { error } = await supabase
+    const { error } = await admin
       .from("community_question_upvotes")
       .delete()
       .eq("question_id", questionId)
@@ -87,7 +97,7 @@ export async function POST(
     }
     upvoted = false;
   } else {
-    const { error } = await supabase
+    const { error } = await admin
       .from("community_question_upvotes")
       .insert({ question_id: questionId, user_id: userId });
     if (error) {
@@ -98,7 +108,7 @@ export async function POST(
   }
 
   // Read the freshly-updated count back from the denormalized field.
-  const { data: counts } = await supabase
+  const { data: counts } = await admin
     .from("community_questions")
     .select("upvotes")
     .eq("id", questionId)

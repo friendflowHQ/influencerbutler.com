@@ -1,28 +1,34 @@
 /**
  * /api/help/questions/[id]/answers - post an answer on a question. Auth
- * is enforced via the Supabase session cookie. Answers are auto-approved
- * (status='approved' on insert); the question's answer_count is kept in
- * sync by a Postgres trigger.
+ * is dual-mode:
+ *   - Authorization: Bearer <license-key>  (Influencer Butler desktop)
+ *   - Supabase session cookie                (website browser)
+ *
+ * Answers are auto-approved (status='approved' on insert); the question's
+ * answer_count is kept in sync by a Postgres trigger.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/admin";
+import { resolveAuth } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BODY_MAX = 8000;
+const UUID_RE = /^[0-9a-f-]{36}$/i;
 
-type AuthClient = {
-  auth: {
-    getUser: () => Promise<{
-      data: { user: { id?: string; email?: string | null } | null };
-      error: unknown;
-    }>;
-  };
+type AdminInsertClient = {
   from: (table: string) => {
     insert: (
       payload: Record<string, unknown>,
-    ) => Promise<{ error: { message?: string } | null }>;
+    ) => {
+      select: (cols: string) => {
+        single: () => Promise<{
+          data: { id: string } | null;
+          error: { message?: string } | null;
+        }>;
+      };
+    };
   };
 };
 
@@ -33,7 +39,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: questionId } = await params;
-  if (!questionId || !/^[0-9a-f-]{36}$/i.test(questionId)) {
+  if (!questionId || !UUID_RE.test(questionId)) {
     return NextResponse.json({ ok: false, error: "Bad question id" }, { status: 400 });
   }
 
@@ -55,26 +61,35 @@ export async function POST(
     );
   }
 
-  const supabase = (await createClient()) as unknown as AuthClient;
-
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user?.id) {
+  const authResult = await resolveAuth(request);
+  if (!authResult.ok) {
     return NextResponse.json(
-      { ok: false, error: "Sign in required to answer." },
-      { status: 401 },
+      { ok: false, error: authResult.error },
+      { status: authResult.status },
+    );
+  }
+  const { auth } = authResult;
+
+  const admin = createAdminClient() as unknown as AdminInsertClient | null;
+  if (!admin) {
+    return NextResponse.json(
+      { ok: false, error: "Server misconfigured" },
+      { status: 500 },
     );
   }
 
-  const { error } = await supabase
+  const { data: inserted, error } = await admin
     .from("community_answers")
     .insert({
       question_id: questionId,
       body,
       status: "approved",
       approved_at: new Date().toISOString(),
-      author_id: userData.user.id,
-      author_email: userData.user.email ?? null,
-    });
+      author_id: auth.userId,
+      author_email: auth.email,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("community_answers insert failed", error);
@@ -84,5 +99,5 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: inserted?.id ?? null });
 }

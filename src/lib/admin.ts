@@ -6,6 +6,10 @@ export type AdminSession = {
   email: string;
 };
 
+export type AdminSessionAny =
+  | (AdminSession & { kind: "session" })
+  | (AdminSession & { kind: "license" });
+
 type ServiceClient = {
   from: (table: string) => {
     select: (cols: string) => {
@@ -91,6 +95,41 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   if (!allow.has(email.toLowerCase())) return null;
 
   return { userId, email };
+}
+
+/**
+ * Resolves an admin identity via EITHER:
+ *   1. Authorization: Bearer <license-key>  (Influencer Butler desktop)
+ *      - The license is looked up against license_keys.key_hash, the
+ *        owning email is resolved, and that email must be in
+ *        ADMIN_EMAILS.
+ *   2. Supabase session cookie               (website browser admin UI)
+ *      - Falls back to getAdminSession() above.
+ *
+ * Returns the resolved admin or null. Use this in admin routes that need
+ * to be callable from both surfaces.
+ *
+ * Lazy-imports license-auth to avoid a circular dependency (license-auth
+ * imports from this file).
+ */
+export async function getAdminSessionAny(request: Request): Promise<AdminSessionAny | null> {
+  const authHeader = request.headers.get("authorization") || "";
+  if (/^Bearer\s+/i.test(authHeader)) {
+    // License-bearer path.
+    const { resolveLicenseOnly, isEmailAdmin } = await import("./license-auth");
+    const result = await resolveLicenseOnly(request);
+    if (!result.ok) return null;
+    if (!isEmailAdmin(result.auth.email)) return null;
+    return {
+      kind: "license",
+      userId: result.auth.userId,
+      email: result.auth.email || "",
+    };
+  }
+  // Session-cookie path.
+  const session = await getAdminSession();
+  if (!session) return null;
+  return { kind: "session", userId: session.userId, email: session.email };
 }
 
 /**

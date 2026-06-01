@@ -8,7 +8,7 @@
  * answer_count in sync when an answer flips in or out of 'approved'.
  */
 import { NextResponse } from "next/server";
-import { getAdminSession, createAdminClient } from "@/lib/admin";
+import { getAdminSessionAny, createAdminClient } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ type UpdateClient = {
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 export async function POST(request: Request) {
-  const admin = await getAdminSession();
+  const admin = await getAdminSessionAny(request);
   if (!admin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
