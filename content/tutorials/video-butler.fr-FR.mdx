@@ -37,6 +37,21 @@ Une fenêtre Chrome s'ouvre, télécharge chaque vidéo éligible de votre bouti
 - **joinMode + joinClip**: colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
 - **Overlays légende / filigrane**: il y a un panneau séparé ; ils survivent au ré-encodage.
 
+## Acceptez les offres Creator Connections dans la même exécution
+
+Beaucoup des produits que vous présentez déjà dans vos vidéos de boutique ont une campagne Creator Connections (CC) active ou une offre Shoppable Video Creator Connections (SPCC) qui vous attend. Les trouver à la main veut dire faire défiler des listes d'opportunités sans fin. Video Butler peut le faire pour vous pendant qu'il traite vos vidéos.
+
+Activez **Accepter les offres Creator Connections** dans la carte Filtres et options. Au fur et à mesure que Video Butler lit chaque vidéo, il collecte les ASIN taggés et les vérifie auprès de notre service de recherche, qui sait quels ASIN ont une campagne CC ou une offre SPCC disponible quelque part. Pour les correspondances, il utilise ensuite votre session Amazon connectée pour :
+
+- **Accepter les campagnes CC** de ces ASIN en lot.
+- **Vous inscrire aux offres SPCC** et (quand "Envoyer la vidéo de boutique comme contenu" reste activé) envoyer la vidéo de boutique correspondante comme lien de contenu, pour que l'offre soit complétée et pas seulement acceptée.
+
+Quelques points à savoir :
+
+- La recherche vous dit seulement si une offre existe. Votre éligibilité à l'accepter est décidée localement par Amazon selon votre propre compte et région, donc une correspondance globale ne garantit pas que chaque offre aboutisse. Tout ce qui n'est pas éligible est simplement ignoré.
+- Si le service de recherche est injoignable, la passe d'acceptation est ignorée sans bruit et votre re-upload ou actualisation n'est pas affecté.
+- Cela n'envoie ni ne supprime jamais une vidéo de lui-même. Il accepte seulement les offres et y attache la vidéo de boutique que vous avez déjà.
+
 ## Actualisez vos données automatiquement (la nuit)
 
 Video Butler peut garder vos données à jour selon un horaire pour que vous n'ayez pas à le surveiller. Dans la carte **Actualiser les données automatiquement**, activez "Actualiser les données selon un horaire (sans envoi)" et choisissez une cadence : toutes les 12 heures, toutes les 24 heures, ou à une heure précise (par exemple 1h du matin). À cet horaire, l'application réanalyse votre boutique pour détecter les nouvelles vidéos et revérifie la disponibilité internationale de vos ASIN, puis enregistre les résultats dans le Video Log.

@@ -37,6 +37,21 @@ A Chrome window opens, downloads each eligible video from your storefront, runs 
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
+## Accept Creator Connections offers in the same run
+
+Many of the products you already feature in storefront videos have a live Creator Connections (CC) campaign or a Shoppable Video Creator Connections (SPCC) offer waiting for you. Finding them by hand means scrolling endless opportunity lists. Video Butler can do it for you while it works through your videos.
+
+Turn on **Accept Creator Connections offers** in the Filters & Options card. As Video Butler reads each video, it collects the tagged ASINs and checks them against our lookup service, which knows which ASINs have a CC campaign or SPCC offer available anywhere. For the matches, it then uses your signed-in Amazon session to:
+
+- **Accept the CC campaigns** for those ASINs in bulk.
+- **Opt into the SPCC offers**, and (when "Submit storefront video as content" is left on) submit the matching storefront video as the content link, so the offer is fully completed rather than just accepted.
+
+A couple of things to know:
+
+- The lookup only tells you whether an offer exists at all. Whether you are eligible to accept it is decided locally by Amazon against your own account and region, so a global match does not guarantee every offer goes through. Anything that is not eligible is simply skipped.
+- If the lookup service is unreachable, the accept pass is skipped quietly and your re-upload or refresh run is unaffected.
+- This never uploads or deletes a video on its own. It only accepts offers and attaches the storefront video you already have.
+
 ## Refresh your data automatically (overnight)
 
 Video Butler can keep your data current on a clock so you do not have to babysit it. In the **Refresh data automatically** card, turn on "Refresh data on a clock (no uploads)" and pick a cadence: every 12 hours, every 24 hours, or a specific time of day (for example, 1am). On that schedule the app re-scans your storefront for new videos and re-checks international product availability for your ASINs, then saves the results to the Video Log.
