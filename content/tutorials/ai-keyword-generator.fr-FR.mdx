@@ -1,0 +1,69 @@
+---
+title: "Mots-clés et filtres : configurez les filtres de prospection et créez des listes de mots-clés avec l'IA"
+summary: Configurez au même endroit les filtres de mots-clés et de marques de votre prospection, générez des mots-clés produits saisonniers avec l'IA, classez-les par rapport à votre catalogue CC et envoyez-les directement dans votre liste de mots-clés de Contacter les marques.
+category: Amazon
+---
+
+## Ce que fait Mots-clés et filtres
+
+Mots-clés et filtres se trouve sous **Amazon Butler › Contacter les marques › Mots-clés et filtres**. C'est deux outils dans un seul panneau :
+
+1. **Filtres de mots-clés et de marques** : les filtres d'inclusion/exclusion qui décident qui Contacter les marques contacte. Ils se trouvaient auparavant dans Contacter les marques ; ils vivent désormais ici pour que tout votre travail sur les mots-clés soit au même endroit.
+2. **Générateur de mots-clés par IA** : décrivez une niche et l'IA remplit les 12 groupes mensuels avec des mots-clés produits saisonniers. Les mots-clés générés sont classés par rapport à votre catalogue CC local (SPCC) ; les correspondances reçoivent une étiquette **SPCC** visible et sont triées en premier, puis vous envoyez les listes de votre choix vers Contacter les marques.
+
+C'est un espace de travail uniquement d'interface. Aucun processus à démarrer, rien à planifier. Vous configurez les filtres, générez, vérifiez et envoyez.
+
+## Les filtres de mots-clés et de marques
+
+En haut du panneau se trouvent les trois éditeurs de puces qui ciblent votre prospection :
+
+- **Mots-clés ou nom de marque** : ne contacte que les campagnes qui correspondent à ceux-ci. Laissez vide pour tout contacter.
+- **Ignorer les mots-clés dans le titre de la campagne** : ignore toute campagne dont le titre contient l'un de ces mots.
+- **Marques à ignorer** : ne contacte jamais les campagnes de ces marques.
+
+Ajoutez un mot et appuyez sur Entrée, désactivez une puce pour la mettre en pause sans la supprimer, et glissez pour réordonner afin que le premier mot-clé correspondant s'exécute en premier. Ces filtres pilotent Contacter les marques quand vous appuyez sur Exécuter et s'enregistrent automatiquement au fil de la saisie.
+
+## Avant de commencer
+
+- **Connectez votre clé API OpenAI** dans **Intégrations API**. Tant que ce n'est pas fait, le générateur par IA reste verrouillé et affiche une invite « Connecter OpenAI ». (Les filtres ci-dessus fonctionnent sans clé.)
+- **Lancez une actualisation SPCC** (CC Check / Data Refresh Butler) pour que votre catalogue soit rempli. Le classement SPCC ne vaut que ce que vaut le catalogue qui le sous-tend.
+
+## Générer des mots-clés
+
+1. Ouvrez **Amazon Butler › Contacter les marques › Mots-clés et filtres**.
+2. Renseignez **Catégorie / niche** (p. ex. `ustensiles de cuisine`), **Mots-clés par mois** et la fourchette de **prix min. / max.**.
+3. Activez les **biais produits** pour orienter l'IA : multiples, résout un problème, offrable, tendance, etc. Les biais cochés s'ajoutent comme instructions supplémentaires.
+4. Cliquez sur **Obtenir des mots-clés (les 12 mois)**. Si un mois contient déjà des mots-clés, on vous demandera de **Remplacer** ou d'**Ajouter**.
+5. Suivez la progression mois par mois dans la fenêtre. À la fin, les 12 groupes mensuels sont remplis et enregistrés automatiquement.
+
+Tout ce que vous saisissez est enregistré automatiquement. Il n'y a pas de bouton Enregistrer. Quittez et revenez, vos filtres et mots-clés sont exactement tels que vous les avez laissés.
+
+## Envoyer vers Contacter les marques
+
+Envoyer ÉNORMÉMENT de mots-clés d'un coup est rarement ce que vous voulez, alors la carte d'envoi vous propose trois façons ciblées de pousser des mots-clés vers les puces de Contacter les marques :
+
+- **Envoyer un seul mois** : un bouton par mois, chacun affichant son nombre de mots-clés. Cliquez sur un mois pour n'envoyer que cette liste.
+- **Envoyer vos propres mots-clés** : saisissez des mots-clés dans la zone (un par ligne ou séparés par des virgules) et cliquez sur **Envoyer vers Contacter les marques**. Cochez **Inclure aussi les 12 lots mensuels** si vous voulez que tout parte avec eux.
+- **Importer un fichier de mots-clés** : choisissez un fichier `.txt` ou `.csv` et ses mots-clés sont ajoutés à la zone ci-dessus, prêts à être envoyés.
+
+Quelle que soit la voie choisie, l'espace de travail supprime les doublons (sans tenir compte de la casse), classe chaque mot-clé par rapport à votre catalogue CC et étiquette les correspondances **SPCC**, puis les ajoute aux puces de mots-clés de Contacter les marques avec les correspondances SPCC en premier. Les puces se mettent à jour immédiatement si ce panneau est ouvert, et la modification persiste après un redémarrage dans tous les cas.
+
+## Copiez les réglages, ne payez pas deux fois
+
+Générer coûte un appel API. Pour éviter de payer deux fois lorsque vous voulez la même niche aux deux endroits :
+
+- Dans **Amazon Deals Butler › Filtres**, utilisez **Copier les réglages vers Mots-clés et filtres** pour pousser vos réglages de filtre ici.
+- Dans cet espace de travail, utilisez **Copier les réglages des Offres du jour** pour les récupérer dans l'autre sens.
+
+Les deux boutons copient les champs de filtre, les 12 groupes mensuels et les données de biais par mot-clé, sans utiliser de nouvel appel API.
+
+## Problèmes courants
+
+- **Le générateur est grisé** : votre clé OpenAI n'est pas connectée. Ouvrez Intégrations API et ajoutez-la.
+- **Aucune étiquette SPCC n'apparaît** : votre catalogue CC est vide ou obsolète. Lancez d'abord une actualisation SPCC.
+- **Un envoi a ajouté moins de mots-clés que prévu** : les doublons déjà présents dans votre liste Contacter les marques sont ignorés ; les puces désactivées comptent aussi comme présentes.
+
+## En lien
+
+- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) : le même moteur de mots-clés par IA, utilisé pour la collecte et la publication d'offres.
+- [Tutoriel CC Check](/help/tutorials/cc-check) : maintient à jour le catalogue SPCC qui alimente le classement des mots-clés.

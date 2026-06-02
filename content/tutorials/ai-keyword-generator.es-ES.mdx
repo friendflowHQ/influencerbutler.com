@@ -1,0 +1,69 @@
+---
+title: "Palabras clave y filtros: configura los filtros de contacto y crea listas de palabras clave con IA"
+summary: Configura en un solo lugar los filtros de palabras clave y marcas de tu contacto, genera palabras clave de productos por temporada con IA, clasifícalas frente a tu catálogo de CC y envíalas directamente a tu lista de palabras clave de Mensajear a Marcas.
+category: Amazon
+---
+
+## Qué hace Palabras clave y filtros
+
+Palabras clave y filtros está en **Amazon Butler › Mensajear a Marcas › Palabras clave y filtros**. Son dos herramientas en un solo panel:
+
+1. **Filtros de palabras clave y marcas**: los filtros de inclusión/omisión que deciden a quién contacta Mensajear a Marcas. Antes estaban dentro de Mensajear a Marcas; ahora viven aquí para que todo tu trabajo con palabras clave esté en un mismo sitio.
+2. **Generador de palabras clave con IA**: describe un nicho y la IA rellena los 12 grupos mensuales con palabras clave de productos por temporada. Las palabras clave generadas se clasifican frente a tu catálogo local de CC (SPCC); las coincidencias reciben una etiqueta **SPCC** visible y se ordenan primero, y luego envías las listas que quieras a Mensajear a Marcas.
+
+Es un espacio de trabajo solo de interfaz. No hay ningún ejecutor que iniciar ni nada que programar. Configuras filtros, generas, revisas y envías.
+
+## Los filtros de palabras clave y marcas
+
+En la parte superior del panel están los tres editores de chips que dirigen tu contacto:
+
+- **Palabras clave o nombre de marca**: solo contacta campañas que coincidan con estas. Déjalo vacío para contactar con todo.
+- **Omitir palabras clave en el título de la campaña**: omite cualquier campaña cuyo título contenga una de estas palabras.
+- **Marcas a omitir**: nunca contacta campañas de estas marcas.
+
+Añade una palabra y pulsa Intro, desactiva un chip para pausarlo sin borrarlo y arrastra para reordenar de modo que la primera palabra clave coincidente se ejecute primero. Estos filtros guían a Mensajear a Marcas cuando pulsas Ejecutar y se guardan automáticamente mientras escribes.
+
+## Antes de empezar
+
+- **Conecta tu clave de API de OpenAI** en **Integraciones de API**. Hasta que lo hagas, el generador con IA permanece bloqueado y muestra un aviso de "Conectar OpenAI". (Los filtros de arriba funcionan sin clave.)
+- **Ejecuta una actualización de SPCC** (CC Check / Data Refresh Butler) para que tu catálogo esté poblado. La clasificación SPCC es tan buena como el catálogo que la respalda.
+
+## Generar palabras clave
+
+1. Abre **Amazon Butler › Mensajear a Marcas › Palabras clave y filtros**.
+2. Rellena **Categoría / nicho** (p. ej. `utensilios de cocina`), **Palabras clave por mes** y el rango de **precio mín. / máx.**.
+3. Activa los **sesgos de producto** para guiar a la IA: múltiples, resuelve un problema, regalable, tendencia, etc. Los sesgos activados se acumulan como instrucciones adicionales.
+4. Haz clic en **Obtener palabras clave (los 12 meses)**. Si algún mes ya tiene palabras clave, se te preguntará si quieres **Reemplazar** o **Añadir**.
+5. Observa el progreso por mes en la ventana. Cuando termine, los 12 grupos mensuales quedan rellenos y guardados automáticamente.
+
+Todo lo que escribes se guarda automáticamente. No hay botón de Guardar. Sal y vuelve y tus filtros y palabras clave estarán exactamente como los dejaste.
+
+## Enviar a Mensajear a Marcas
+
+Enviar MUCHAS palabras clave de golpe rara vez es lo que quieres, así que la tarjeta de envío te ofrece tres formas acotadas de llevar palabras clave a los chips de Mensajear a Marcas:
+
+- **Enviar un solo mes**: un botón por mes, cada uno con su recuento de palabras clave. Haz clic en un mes para enviar solo esa lista.
+- **Enviar tus propias palabras clave**: escribe palabras clave en el cuadro (una por línea o separadas por comas) y haz clic en **Enviar a Mensajear a Marcas**. Marca **Incluir también los 12 lotes mensuales** si quieres que vaya todo junto con ellas.
+- **Subir un archivo de palabras clave**: elige un archivo `.txt` o `.csv` y sus palabras clave se añaden al cuadro de arriba, listas para enviar.
+
+Sea cual sea la vía que uses, el espacio de trabajo elimina los duplicados (sin distinguir mayúsculas), clasifica cada palabra clave frente a tu catálogo de CC y etiqueta las coincidencias como **SPCC**, y luego las añade a los chips de palabras clave de Mensajear a Marcas con las coincidencias SPCC primero. Los chips se actualizan al instante si ese panel está abierto, y el cambio persiste tras reiniciar en cualquier caso.
+
+## Copia los ajustes, no vuelvas a pagar
+
+Generar cuesta una llamada de API. Para no pagar dos veces cuando quieras el mismo nicho en ambos lugares:
+
+- En **Amazon Deals Butler › Filtros**, usa **Copiar ajustes a Palabras clave y filtros** para enviar tus ajustes de filtro aquí.
+- En este espacio de trabajo, usa **Copiar ajustes de Ofertas Diarias** para traerlos en sentido contrario.
+
+Ambos botones copian los campos de filtro, los 12 grupos mensuales y los datos de sesgo por palabra clave, sin gastar una nueva llamada de API.
+
+## Problemas habituales
+
+- **El generador está atenuado**: tu clave de OpenAI no está conectada. Abre Integraciones de API y añádela.
+- **No aparecen etiquetas SPCC**: tu catálogo de CC está vacío o desactualizado. Ejecuta primero una actualización de SPCC.
+- **Un envío añadió menos palabras clave de las esperadas**: se omiten los duplicados que ya están en tu lista de Mensajear a Marcas; los chips desactivados también cuentan como presentes.
+
+## Relacionado
+
+- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals): el mismo motor de palabras clave con IA, usado para recopilar y publicar ofertas.
+- [Tutorial de CC Check](/help/tutorials/cc-check): mantiene actualizado el catálogo SPCC que impulsa la clasificación de palabras clave.

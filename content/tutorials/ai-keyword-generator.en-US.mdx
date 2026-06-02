@@ -1,0 +1,69 @@
+---
+title: "Keywords & Filters: set outreach filters and build keyword lists with AI"
+summary: Set the keyword and brand filters for your outreach in one place, generate seasonal product keywords with AI, rank them against your CC catalog, and send them straight into your Message Brands keyword list.
+category: Amazon
+---
+
+## What Keywords & Filters does
+
+Keywords & Filters lives under **Amazon Butler › Message Brands › Keywords & Filters**. It is two tools in one panel:
+
+1. **Keyword & brand filters**: the include/skip filters that decide who Message Brands contacts. These used to sit inside Message Brands itself; they now live here so all of your keyword work is in one place.
+2. **AI keyword generator**: describe a niche and the AI fills all 12 monthly buckets with seasonal product keywords. Generated keywords are ranked against your local CC catalog (SPCC); matches get a visible **SPCC** tag and sort to the front, then you send the lists you want into Message Brands.
+
+It is a UI-only workspace. There is no runner to start and nothing schedules. You set filters, generate, review, and send.
+
+## The keyword & brand filters
+
+At the top of the panel are the three chip editors that target your outreach:
+
+- **Keywords or brand name**: only message campaigns that match these. Leave empty to message everything.
+- **Skip keywords in campaign title**: skip any campaign whose title contains one of these words.
+- **Brands to skip**: never message campaigns from these brands.
+
+Add a word and press Enter, turn a chip off to pause it without deleting, and drag to reorder so the first matching keyword runs first. These filters drive Message Brands when you press Run, and they auto-save as you type.
+
+## Before you start
+
+- **Connect your OpenAI API key** in **API Integrations**. Until you do, the AI generator stays locked and shows a "Connect OpenAI" prompt. (The filters above work without a key.)
+- **Run an SPCC refresh** (CC Check / Data Refresh Butler) so your catalog is populated. The SPCC ranking is only as good as the catalog behind it.
+
+## Generating keywords
+
+1. Open **Amazon Butler › Message Brands › Keywords & Filters**.
+2. Fill in **Category / niche** (e.g. `kitchen gadgets`), **Keywords per month**, and the **min / max price** range.
+3. Toggle the **product biases** to steer the AI: multiples, solves-a-problem, giftable, trending, and so on. Checked biases stack as extra instructions.
+4. Click **Get Keywords (all 12 months)**. If any month already has keywords, you'll be asked whether to **Replace** or **Append**.
+5. Watch the per-month progress in the modal. When it finishes, the 12 monthly buckets are filled and auto-saved.
+
+Everything you type auto-saves. There is no Save button. Leave and come back and your filters and keywords are exactly as you left them.
+
+## Sending to Message Brands
+
+Sending a TON of keywords at once is rarely what you want, so the send card gives you three scoped ways to push keywords into the Message Brands chips:
+
+- **Send a single month**: one button per month, each showing its keyword count. Click a month to send just that month's list.
+- **Send your own keywords**: type keywords into the box (one per line or comma separated) and click **Send to Message Brands**. Tick **Also include all 12 monthly batches** if you do want everything to go along with them.
+- **Upload a keyword file**: pick a `.txt` or `.csv` file and its keywords are added to the box above, ready to send.
+
+Whichever path you use, the workspace removes duplicates (case-insensitive), ranks each keyword against your CC catalog and tags catalog matches **SPCC**, then adds them to the Message Brands keyword chips with SPCC matches first. The chips update immediately if that panel is open, and the change persists across restarts either way.
+
+## Copy settings, don't re-pay
+
+Generating costs an API call. To avoid paying twice when you want the same niche in both places:
+
+- In **Amazon Deals Butler › Filters**, use **Copy settings to Keywords & Filters** to push your filter settings here.
+- In this workspace, use **Copy settings from Daily Deals** to pull them the other way.
+
+Both buttons copy the filter fields, the 12 monthly buckets, and the per-keyword bias data. No new API call is spent.
+
+## Common gotchas
+
+- **Generator is greyed out**: your OpenAI key isn't connected. Open API Integrations and add it.
+- **No SPCC tags appear**: your CC catalog is empty or stale. Run an SPCC refresh first.
+- **A send added fewer keywords than expected**: duplicates already in your Message Brands list are skipped; disabled chips count as present too.
+
+## Related
+
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the same AI keyword engine, used for deal harvesting and posting.
+- [CC Check tutorial](/help/tutorials/cc-check) - keeps the SPCC catalog that powers keyword ranking up to date.
