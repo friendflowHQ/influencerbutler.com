@@ -58,14 +58,6 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
-      "id": "data-refresh-butler",
-      "title": "Data Refresh Butler: schedule when CC & SPCC catalogs refresh",
-      "category": "Amazon",
-      "summary": "One place to control how often the Creator Connections campaign catalog and SPCC commission catalog get re-downloaded.",
-      "order": 60,
-      "locales": ["en-US", "es-ES", "fr-FR"]
-    },
-    {
       "id": "daily-deals",
       "title": "Daily Deals Butler: harvest Amazon deals and post them automatically",
       "category": "Amazon",

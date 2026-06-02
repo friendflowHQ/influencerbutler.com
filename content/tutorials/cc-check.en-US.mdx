@@ -15,46 +15,32 @@ CC Check is where you act on Creator Connections opportunities. It lets you:
 
 Everything lands in one **results table** you can sort, filter, and act on.
 
-> **Catalog refresh moved.** Downloading and scheduling the Creator
-> Connections + SPCC catalogs now lives entirely in **Data Refresh Butler**.
-> CC Check reads whatever those catalogs currently hold. It no longer has its
-> own "download catalog" or "refresh schedule" sections. See the
-> [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) to set
-> how often catalogs refresh.
+## Where the catalog data comes from
 
-## Keeping catalogs fresh
-
-CC Check checks your ASINs against catalogs that **Data Refresh Butler** keeps
-current. The default flow:
-
-1. During first-run setup, the catalogs are harvested in the background.
-2. After that, **Data Refresh Butler** refreshes them on a daily schedule (4:00 AM by default).
-
-You don't run a catalog download from CC Check anymore. If a check looks like
-it's working against stale data, open Data Refresh Butler and click one of its
-**Refresh** buttons.
+You don't download or refresh a catalog anymore. CC Check checks each ASIN
+against the **live** Creator Connections + SPCC catalogs, which are hosted
+centrally and kept current for you. There's nothing to schedule and no
+multi-hundred-megabyte download on your machine: every check reads the latest
+data on demand.
 
 ## Checking and accepting
 
 1. Open **CC Check** in the left nav.
 2. **Import ASINs** (or use the ones already loaded).
-3. Click **Check ASINs** to match them against the current catalogs.
+3. Click **Check ASINs** to match them against the live catalogs.
 4. Review the results table, then **Accept Campaigns**, **Submit Content**, or **Extract Brands** as needed.
 
 ## Automating acceptance
 
 The **Schedule** ("Check ASINs") form lets you run the check/accept pipeline on
 a recurring cadence, handy if you want new matching campaigns accepted
-automatically. This acceptance schedule is separate from catalog refresh:
-Data Refresh Butler refreshes catalogs but never accepts campaigns on your
-behalf.
+automatically. The app must stay open for scheduled sweeps to fire.
 
 ## Gotchas
 
-- **No results after a check**: confirm the topbar **CC Storefront ID** is set, and that Data Refresh Butler has harvested the catalogs at least once.
-- **Results look stale**: open Data Refresh Butler and refresh; the last-harvest date/time on its CC and SPCC cards tells you how current the data is.
+- **No results after a check**: confirm the topbar **CC Storefront ID** is set. CC Check needs it to know which storefront the campaigns should match.
+- **An ASIN you expected isn't matched**: it simply has no active CC or SPCC offer in the live catalog right now. Checks read the latest data, so try again later if a campaign launches.
 
 ## Related
 
-- [Data Refresh Butler tutorial](/help/tutorials/data-refresh-butler) - controls how often the CC + SPCC catalogs refresh.
-- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of a fresh CC catalog.
+- [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of live CC catalog data.

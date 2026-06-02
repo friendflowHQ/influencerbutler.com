@@ -17,46 +17,33 @@ CC Check es donde actúas sobre las oportunidades de Creator Connections. Te per
 
 Todo aparece en una **tabla de resultados** que puedes ordenar, filtrar y sobre la que puedes actuar.
 
-> **La actualización de catálogos se ha movido.** Descargar y programar los
-> catálogos de Creator Connections + SPCC ahora vive enteramente en **Data
-> Refresh Butler**. CC Check lee lo que esos catálogos contengan en cada
-> momento; ya no tiene sus propias secciones de "descargar catálogo" o
-> "programa de actualización". Consulta el
-> [tutorial de Data Refresh Butler](/help/tutorials/data-refresh-butler).
+## De dónde vienen los datos del catálogo
 
-## Mantener los catálogos frescos
-
-CC Check comprueba tus ASIN contra catálogos que **Data Refresh Butler**
-mantiene al día. El flujo por defecto:
-
-1. Durante la configuración inicial, los catálogos se descargan en segundo plano.
-2. Después, **Data Refresh Butler** los actualiza con una programación diaria (4:00 AM por defecto).
-
-Ya no ejecutas una descarga de catálogo desde CC Check. Si una comprobación
-parece trabajar con datos viejos, abre Data Refresh Butler y pulsa uno de sus
-botones de **Actualizar**.
+Ya no descargas ni actualizas un catálogo. CC Check comprueba cada ASIN contra
+los catálogos **en vivo** de Creator Connections + SPCC, que se alojan de forma
+centralizada y se mantienen al día por ti. No hay nada que programar ni ninguna
+descarga de cientos de megabytes en tu equipo: cada comprobación lee los datos
+más recientes bajo demanda.
 
 ## Comprobar y aceptar
 
 1. Abre **CC Check** en el nav izquierdo.
 2. **Importa ASIN** (o usa los que ya estén cargados).
-3. Pulsa **Comprobar ASIN** para cruzarlos con los catálogos actuales.
+3. Pulsa **Comprobar ASIN** para cruzarlos con los catálogos en vivo.
 4. Revisa la tabla de resultados y luego **Aceptar campañas**, **Enviar contenido** o **Extraer marcas** según necesites.
 
 ## Automatizar la aceptación
 
 El formulario **Programa** ("Comprobar ASIN") permite ejecutar el flujo de
 comprobación/aceptación con una cadencia recurrente, útil si quieres que las
-nuevas campañas coincidentes se acepten automáticamente. Esta programación de
-aceptación es independiente de la actualización de catálogos: Data Refresh
-Butler actualiza catálogos pero nunca acepta campañas por ti.
+nuevas campañas coincidentes se acepten automáticamente. La app debe permanecer
+abierta para que se ejecuten los barridos programados.
 
 ## Tropiezos
 
-- **Sin resultados tras una comprobación**: confirma que el **ID de tienda CC** de la barra superior está configurado y que Data Refresh Butler ha descargado los catálogos al menos una vez.
-- **Los resultados parecen viejos**: abre Data Refresh Butler y actualiza; la fecha/hora de última descarga en sus tarjetas CC y SPCC te dice cuán recientes son los datos.
+- **Sin resultados tras una comprobación**: confirma que el **ID de tienda CC** de la barra superior está configurado. CC Check lo necesita para saber con qué tienda deben coincidir las campañas.
+- **Un ASIN que esperabas no aparece**: simplemente no tiene ninguna oferta CC o SPCC activa en el catálogo en vivo en este momento. Las comprobaciones leen los datos más recientes, así que inténtalo de nuevo más tarde si se lanza una campaña.
 
 ## Relacionado
 
-- [Tutorial de Data Refresh Butler](/help/tutorials/data-refresh-butler) - controla con qué frecuencia se actualizan los catálogos CC + SPCC.
-- [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) - el principal consumidor de un catálogo CC fresco.
+- [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) - el principal consumidor de los datos en vivo del catálogo CC.
