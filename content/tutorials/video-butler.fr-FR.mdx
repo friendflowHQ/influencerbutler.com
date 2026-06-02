@@ -37,6 +37,14 @@ Une fenêtre Chrome s'ouvre, télécharge chaque vidéo éligible de votre bouti
 - **joinMode + joinClip**: colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
 - **Overlays légende / filigrane**: il y a un panneau séparé ; ils survivent au ré-encodage.
 
+## Actualisez vos données automatiquement (la nuit)
+
+Video Butler peut garder vos données à jour selon un horaire pour que vous n'ayez pas à le surveiller. Dans la carte **Actualiser les données automatiquement**, activez "Actualiser les données selon un horaire (sans envoi)" et choisissez une cadence : toutes les 12 heures, toutes les 24 heures, ou à une heure précise (par exemple 1h du matin). À cet horaire, l'application réanalyse votre boutique pour détecter les nouvelles vidéos et revérifie la disponibilité internationale de vos ASIN, puis enregistre les résultats dans le Video Log.
+
+C'est une passe uniquement de données : elle n'envoie, ne supprime et ne modifie jamais rien. L'avantage est que vos données sont récupérées et enregistrées à l'avance, de sorte qu'un envoi ultérieur peut ignorer l'étape lente de collecte des données et le Video Log reste à jour au lieu d'afficher une disponibilité manquante ou périmée.
+
+À savoir : comme tout horaire de l'application, une actualisation ne s'exécute que lorsque l'application est ouverte. Si l'application est fermée à l'heure programmée, l'exécution est rattrapée au prochain lancement. Pour une vraie actualisation nocturne, laissez l'application ouverte.
+
 ## La passe "Élaguer les vidéos sous-performantes"
 
 Différent du re-upload : ça scanne votre boutique, applique vos règles de filtre (plancher de vues, fenêtre d'âge) et produit une **liste de candidates à supprimer**. Vous validez avant que quoi que ce soit ne parte. Utile pour élaguer les vidéos qui ont sous-performé et qui tirent la moyenne vers le bas.

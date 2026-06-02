@@ -37,6 +37,14 @@ Se abre una ventana de Chrome, descarga cada vídeo elegible de tu tienda, hace 
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 
+## Actualiza tus datos automáticamente (de noche)
+
+Video Butler puede mantener tus datos al día según un horario para que no tengas que estar pendiente. En la tarjeta **Actualizar datos automáticamente**, activa "Actualizar datos según un horario (sin subidas)" y elige una cadencia: cada 12 horas, cada 24 horas o a una hora específica (por ejemplo, la 1:00). En ese horario la app vuelve a escanear tu tienda en busca de vídeos nuevos y vuelve a comprobar la disponibilidad internacional de tus ASIN, y luego guarda los resultados en el Video Log.
+
+Es una pasada solo de datos: nunca sube, borra ni edita nada. La ventaja es que tus datos se obtienen y se guardan con antelación, así una subida posterior puede omitir el lento paso de recopilación de datos y el Video Log se mantiene al día en vez de mostrar disponibilidad ausente o desactualizada.
+
+Algo que debes saber: como todo horario de la app, una actualización solo se ejecuta mientras la app está abierta. Si la app está cerrada a la hora programada, la ejecución se recupera la próxima vez que la abras. Para una actualización nocturna real, deja la app abierta.
+
 ## El paso "Podar vídeos de bajo rendimiento"
 
 Distinto de la re-subida: escanea tu tienda, aplica tus reglas de filtro (mínimo de visitas, ventana de edad) y produce una **lista de candidatos a borrar**. Revisas y apruebas antes de que se borre nada. Útil para podar vídeos que rindieron por debajo del objetivo y que tiran la media hacia abajo.

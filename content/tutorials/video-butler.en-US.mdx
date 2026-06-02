@@ -37,6 +37,14 @@ A Chrome window opens, downloads each eligible video from your storefront, runs 
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
+## Refresh your data automatically (overnight)
+
+Video Butler can keep your data current on a clock so you do not have to babysit it. In the **Refresh data automatically** card, turn on "Refresh data on a clock (no uploads)" and pick a cadence: every 12 hours, every 24 hours, or a specific time of day (for example, 1am). On that schedule the app re-scans your storefront for new videos and re-checks international product availability for your ASINs, then saves the results to the Video Log.
+
+This is a data-only pass: it never uploads, deletes, or edits anything. The benefit is that your data is pulled and saved ahead of time, so a later upload can skip the slow data-gathering step and the Video Log stays current instead of showing missing or out-of-date availability.
+
+One thing to know: like every schedule in the app, a refresh only runs while the app is open. If the app is closed at the scheduled time, the run is caught up the next time you launch it. For a true overnight refresh, leave the app running.
+
 ## The "Prune underperforming videos" pass
 
 Distinct from re-upload: this scans your storefront, applies your filter rules (views floor, age window), and produces a **delete candidate list**. You review and approve before anything goes. Useful for pruning videos that performed under target so they stop pulling down the average.
