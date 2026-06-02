@@ -10,6 +10,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "ai-keyword-generator",
+      "title": "Keywords & Filters: set outreach filters and build keyword lists with AI",
+      "category": "Amazon",
+      "summary": "Set the keyword and brand filters for your outreach in one place, generate seasonal product keywords with AI, rank them against your CC catalog, and send them straight into your Message Brands keyword list.",
+      "order": 15,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "dailycommissionbutler",
       "title": "Daily Commission Butler: accept campaigns from your sales",
       "category": "Amazon",
