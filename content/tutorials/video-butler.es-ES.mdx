@@ -37,6 +37,21 @@ Se abre una ventana de Chrome, descarga cada vídeo elegible de tu tienda, hace 
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 
+## Opciones de etiquetado de productos
+
+Dos ajustes de la tarjeta **Filtros y opciones** controlan cómo se etiquetan los productos de cada vídeo.
+
+**Gestión del ASIN principal.** Un vídeo de escaparate se etiqueta con uno o varios ASIN secundarios (una talla o color concretos), y cada secundario tiene un ASIN principal (la ficha que agrupa todas las variaciones). Elige cómo se gestionan los principales:
+
+- **Etiquetar el principal solo si no se puede etiquetar el secundario** (recomendado): etiqueta los ASIN secundarios y solo recurre al principal cuando no se ha podido etiquetar ningún secundario, de modo que la publicación conserve un enlace que funcione. Los ASIN principales normalmente no se pueden etiquetar directamente, así que esto mantiene la publicación limpia en lugar de registrar un principal fallido en cada vídeo.
+- **Etiquetar solo los ASIN secundarios**: nunca prueba el principal. El principal se sigue consultando para detectar duplicados.
+- **Etiquetar tanto el ASIN secundario como el principal**: lo etiqueta todo, el comportamiento original.
+
+**Productos no disponibles.** Dos comprobaciones independientes mantienen los productos sin stock fuera de tus publicaciones:
+
+- **Comprobación 1 (antes de subir)**: activa **Omitir subidas a productos no disponibles** y Video Butler consulta el stock de cada producto en la API de Amazon Creators, y luego omite las subidas a los que no están disponibles. Publicar sobre un producto muerto consigue 0 visualizaciones, lo que reduce la duración media de visualización y el % medio visto que alimentan tu puntuación de Creator Stars.
+- **Comprobación 2 (al etiquetar)**: una red de seguridad final para productos que siguen apareciendo como "No disponible actualmente" en la ventana Añadir productos de Amazon al etiquetar, que puede no coincidir con la comprobación de la API. Elige **Etiquetarlos de todos modos** para conservarlos, o **Quitarlos de la publicación** para que los espectadores nunca lleguen a un enlace roto.
+
 ## Acepta ofertas de Creator Connections en la misma ejecución
 
 Muchos de los productos que ya muestras en tus vídeos de tienda tienen una campaña de Creator Connections (CC) activa o una oferta de Shoppable Video Creator Connections (SPCC) esperándote. Encontrarlas a mano significa desplazarte por listas interminables de oportunidades. Video Butler puede hacerlo por ti mientras procesa tus vídeos.
