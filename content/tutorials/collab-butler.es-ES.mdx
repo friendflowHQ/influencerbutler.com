@@ -1,6 +1,6 @@
 ---
 title: Collab Butler: tracker Kanban de todas las colaboraciones con marcas en curso
-summary: Un tablero para cada colaboración - pitcheada, en producción, publicada, pagada - con arrastrar para actualizar etapas, filtros, exportaciones y detalle por tarjeta de pago + fecha límite.
+summary: Un tablero para cada colaboración - pitcheada, en producción, publicada, pagada - con vistas Tablero y Lista, cambio de etapa por arrastre o desplegable, acciones en lote, filtros, exportaciones y detalle por tarjeta de pago + fecha límite.
 category: Partnerships
 ---
 
@@ -38,6 +38,13 @@ La barra de filtros superior corta el tablero por:
 - **Búsqueda libre**: sobre nombre de marca + notas.
 - **Ventana de fecha límite**: en los próximos X días. Útil para planificación semanal.
 
+## Vistas, edición rápida y acciones en lote
+
+- **Vista Tablero o Lista**: usa el conmutador **Tablero / Lista** en la barra de herramientas. Tablero son las columnas Kanban clásicas. Lista es una tabla compacta (una fila por colaboración) con un desplegable de etapa en línea, etiquetas y fecha límite. La vista Lista funciona por completo a clics, así que nunca tienes que arrastrar. Tu elección se recuerda entre sesiones.
+- **Cambiar de etapa sin arrastrar**: cada tarjeta y cada fila de la lista tiene un pequeño **desplegable de etapa**. Elige una etapa para mover la colaboración. Arrastrar tarjetas entre columnas sigue funcionando si lo prefieres.
+- **Edición rápida**: pasa el cursor sobre una tarjeta y pulsa el pequeño botón de lápiz en su esquina para abrir un panel de edición rápida (marca, fecha límite, etapa, etiquetas, notas) sin salir del tablero. El panel solo se abre al pulsar el lápiz, así que ya no aparece solo por mover el ratón por el tablero.
+- **Seleccionar varias colaboraciones**: pulsa **Seleccionar** en la barra de herramientas para mostrar casillas. Marca las tarjetas que quieras (o **Seleccionar todo**) y usa la barra de acciones en lote para cambiar su etapa, añadir una etiqueta o archivarlas de una vez. Pulsa **Listo** para salir del modo de selección.
+
 ## Exportación
 
 Dos formatos:
@@ -60,7 +67,7 @@ Las tarjetas de colaboración viven en la caché preseed. El estado completo del
 ## Tropiezos comunes
 
 - **Delete All de verdad borra**: exporta JSON primero. Si ya le diste sin export, el backup previo a nivel app puede tener una copia en `{userData}/InfluencerButler/backups/` - comprueba antes de asumir que los datos están perdidos.
-- **El arrastre a etapa no dispara**: asegúrate de soltar la tarjeta en el header de columna de etapa, no en las tarjetas apiladas debajo.
+- **El arrastre a etapa no dispara**: asegúrate de soltar la tarjeta en el header de columna de etapa, no en las tarjetas apiladas debajo. Si arrastrar resulta incómodo, usa el **desplegable de etapa** por tarjeta o cambia a **vista Lista**.
 - **Exportación CSV con campos faltantes**: el CSV aplana estructuras anidadas. Usa JSON si necesitas el registro completo.
 - **Dos colaboraciones con la misma marca**: Collab Butler no deduplica; una marca puede tener varias tarjetas (una por trato). Usa el filtro de marca para verlas en paralelo.
 

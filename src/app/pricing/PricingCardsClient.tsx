@@ -77,6 +77,7 @@ export default function PricingCardsClient({
   initialCode,
 }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [errorPlan, setErrorPlan] = useState<string | null>(null);
   const [billing, setBilling] = useState<Interval>("annual");
   const touchedRef = useRef(false);
 
@@ -105,6 +106,7 @@ export default function PricingCardsClient({
 
   async function handleCheckout(plan: string): Promise<void> {
     setLoadingPlan(plan);
+    setErrorPlan(null);
     try {
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
 
@@ -141,15 +143,18 @@ export default function PricingCardsClient({
           return;
         }
       }
-      window.location.href = guestUrl;
+      // Don't blindly navigate to the guest URL on failure: a non-ok response
+      // 302-redirects to /#pricing?checkout_error=..., which dumps the visitor
+      // on the home page with no explanation. Surface the error instead.
+      const detail = await guestResponse
+        .json()
+        .then((body: { error?: string }) => body?.error)
+        .catch(() => undefined);
+      console.error("Pricing checkout failed", { plan, status: guestResponse.status, error: detail });
+      setErrorPlan(plan);
     } catch (error) {
       console.error("Pricing checkout failed", error);
-      const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
-      const affiliateParam =
-        initialCode && initialCode.length > 0
-          ? `&affiliateSource=${encodeURIComponent(initialCode)}`
-          : "";
-      window.location.href = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}${affiliateParam}`;
+      setErrorPlan(plan);
     } finally {
       setLoadingPlan(null);
     }
@@ -200,6 +205,11 @@ export default function PricingCardsClient({
               features={[...TIER_FEATURES[tier]]}
               cta="Start free trial"
               loading={loadingPlan === plan}
+              error={
+                errorPlan === plan
+                  ? "Checkout is temporarily unavailable. Please try again in a moment."
+                  : null
+              }
               onClickPrimary={() => handleCheckout(plan)}
             />
           );
@@ -227,6 +237,7 @@ type PlanCardProps = {
   ctaHref?: string;
   onClickPrimary?: () => void;
   loading?: boolean;
+  error?: string | null;
 };
 
 function PlanCard(props: PlanCardProps) {
@@ -248,6 +259,7 @@ function PlanCard(props: PlanCardProps) {
     ctaHref,
     onClickPrimary,
     loading,
+    error,
   } = props;
 
   const showDiscount = originalPriceLabel && discountedPriceLabel;
@@ -350,6 +362,11 @@ function PlanCard(props: PlanCardProps) {
             {loading ? "Loading…" : cta}
           </button>
         )}
+        {error ? (
+          <p role="alert" className="mt-2 text-center text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
       </div>
     </div>
   );

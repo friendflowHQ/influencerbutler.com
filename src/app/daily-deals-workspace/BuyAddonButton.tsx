@@ -44,11 +44,16 @@ type Props = {
  * routes + LS-side variant scoping enforces this even if we somehow
  * leaked a code into the request.
  */
+const CHECKOUT_ERROR_MESSAGE =
+  "Checkout is temporarily unavailable. Please try again in a moment, or contact support if it keeps happening.";
+
 export default function BuyAddonButton({ signedIn, label, className }: Props) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleClick() {
     setLoading(true);
+    setError(null);
     try {
       if (signedIn && hasAuthCookie()) {
         const response = await fetch("/api/checkout", {
@@ -76,10 +81,21 @@ export default function BuyAddonButton({ signedIn, label, className }: Props) {
           return;
         }
       }
-      window.location.href = guestUrl;
+      // Don't blindly navigate to the guest URL on failure: a non-ok response
+      // 302-redirects to /#pricing?checkout_error=..., which dumps the visitor
+      // on the home page with no explanation. Surface the error instead.
+      const detail = await guestResponse
+        .json()
+        .then((body: { error?: string }) => body?.error)
+        .catch(() => undefined);
+      console.error("Daily Deals add-on checkout failed", {
+        status: guestResponse.status,
+        error: detail,
+      });
+      setError(CHECKOUT_ERROR_MESSAGE);
     } catch (error) {
       console.error("Daily Deals add-on checkout failed", error);
-      window.location.href = `/api/checkout/guest?plan=${ADDON_PLAN_DAILY_DEALS}`;
+      setError(CHECKOUT_ERROR_MESSAGE);
     } finally {
       setLoading(false);
     }
@@ -99,6 +115,11 @@ export default function BuyAddonButton({ signedIn, label, className }: Props) {
       >
         {loading ? "Opening checkout…" : label ?? "Buy - $24.99/month"}
       </button>
+      {error ? (
+        <p role="alert" className="text-center text-sm font-medium text-red-600">
+          {error}
+        </p>
+      ) : null}
     </>
   );
 }

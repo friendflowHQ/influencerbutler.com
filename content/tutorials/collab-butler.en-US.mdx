@@ -1,6 +1,6 @@
 ---
 title: Collab Butler: Kanban tracker for every brand collaboration in flight
-summary: One board for every collab - pitched, in-production, posted, paid - with drag-to-update stages, filters, exports, and per-card payout + deadline detail.
+summary: One board for every collab - pitched, in-production, posted, paid - with Board and List views, drag- or dropdown-to-update stages, bulk actions, filters, exports, and per-card payout + deadline detail.
 category: Partnerships
 ---
 
@@ -38,6 +38,13 @@ The top filter bar slices the board by:
 - **Free-text search**: across brand name + notes.
 - **Deadline window**: within X days. Useful for weekly planning.
 
+## Views, quick edit, and bulk actions
+
+- **Board or List view**: use the **Board / List** switch in the toolbar. Board is the classic Kanban columns. List is a compact table (one row per collab) with an inline stage dropdown, tags, and deadline. List view is fully click-driven, so you never have to drag. Your choice is remembered between sessions.
+- **Change a stage without dragging**: every card and every list row has a small **stage dropdown**. Pick a stage from it to move the collab. Dragging cards between columns still works if you prefer it.
+- **Quick edit**: hover a card and click the small pencil button in its corner to open a quick-edit popover (brand, deadline, stage, tags, notes) without leaving the board. The popover only opens when you click the pencil, so it no longer pops up just from moving your mouse across the board.
+- **Select multiple collabs**: click **Select** in the toolbar to reveal checkboxes. Tick the cards you want (or **Select all**), then use the bulk toolbar to change their stage, add a tag, or archive them in one go. Click **Done** to leave Select mode.
+
 ## Exporting
 
 Two formats:
@@ -60,7 +67,7 @@ Collab cards live in the preseed cache. The full board state syncs into the app'
 ## Common gotchas
 
 - **Delete All actually deletes**: JSON export first. If you've already hit it without an export, the previous app-level backup might have a copy in `{userData}/InfluencerButler/backups/` - check before assuming the data is gone.
-- **Drag-to-stage doesn't fire**: make sure you're dropping the card on the stage column header, not the cards stacked under it.
+- **Drag-to-stage doesn't fire**: make sure you're dropping the card on the stage column header, not the cards stacked under it. If dragging is fiddly, use the per-card **stage dropdown** or switch to **List view** instead.
 - **CSV export missing fields**: CSV flattens nested structures. Use JSON if you need the full record.
 - **Two collabs with the same brand**: Collab Butler doesn't dedupe; one brand can have multiple cards (one per deal). Use the brand filter to see them side-by-side.
 

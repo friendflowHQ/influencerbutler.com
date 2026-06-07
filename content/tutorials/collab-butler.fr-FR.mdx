@@ -1,6 +1,6 @@
 ---
 title: Collab Butler: tracker Kanban pour chaque collaboration de marque en cours
-summary: Un seul tableau pour chaque collab - pitchée, en production, publiée, payée - avec drag-to-update des étapes, filtres, exports et détail par carte du paiement + de l'échéance.
+summary: Un seul tableau pour chaque collab - pitchée, en production, publiée, payée - avec vues Tableau et Liste, changement d'étape par glisser ou menu déroulant, actions groupées, filtres, exports et détail par carte du paiement + de l'échéance.
 category: Partnerships
 ---
 
@@ -38,6 +38,13 @@ La barre de filtres en haut découpe le tableau par :
 - **Recherche libre**: sur nom de marque + notes.
 - **Fenêtre d'échéance**: dans les X prochains jours. Utile pour la planification hebdo.
 
+## Vues, édition rapide et actions groupées
+
+- **Vue Tableau ou Liste**: utilisez le sélecteur **Tableau / Liste** dans la barre d'outils. Tableau, ce sont les colonnes Kanban classiques. Liste est un tableau compact (une ligne par collab) avec un menu déroulant d'étape en ligne, les tags et l'échéance. La vue Liste fonctionne entièrement au clic, vous n'avez donc jamais à glisser. Votre choix est mémorisé d'une session à l'autre.
+- **Changer d'étape sans glisser**: chaque carte et chaque ligne de liste a un petit **menu déroulant d'étape**. Choisissez-y une étape pour déplacer la collab. Glisser les cartes entre colonnes fonctionne toujours si vous préférez.
+- **Édition rapide**: survolez une carte et cliquez sur le petit bouton crayon dans son coin pour ouvrir un panneau d'édition rapide (marque, échéance, étape, tags, notes) sans quitter le tableau. Le panneau ne s'ouvre qu'au clic sur le crayon, il n'apparaît donc plus juste en déplaçant la souris sur le tableau.
+- **Sélectionner plusieurs collabs**: cliquez sur **Sélectionner** dans la barre d'outils pour afficher les cases à cocher. Cochez les cartes voulues (ou **Tout sélectionner**), puis utilisez la barre d'actions groupées pour changer leur étape, ajouter un tag ou les archiver d'un coup. Cliquez sur **Terminé** pour quitter le mode sélection.
+
 ## Export
 
 Deux formats :
@@ -60,7 +67,7 @@ Les cartes Collab vivent dans le cache preseed. L'état complet du tableau entre
 ## Pièges courants
 
 - **Delete All supprime réellement**: exportez en JSON d'abord. Si vous avez déjà cliqué sans export, le backup app-niveau précédent peut avoir une copie dans `{userData}/InfluencerButler/backups/` - vérifiez avant de supposer que les données sont perdues.
-- **Le drag-to-stage ne se déclenche pas**: assurez-vous de déposer la carte sur le header de colonne d'étape, pas sur les cartes empilées en dessous.
+- **Le drag-to-stage ne se déclenche pas**: assurez-vous de déposer la carte sur le header de colonne d'étape, pas sur les cartes empilées en dessous. Si glisser est pénible, utilisez le **menu déroulant d'étape** par carte ou passez en **vue Liste**.
 - **Export CSV avec champs manquants**: le CSV aplatit les structures imbriquées. Utilisez JSON s'il vous faut l'enregistrement complet.
 - **Deux collabs avec la même marque**: Collab Butler ne dédoublonne pas ; une marque peut avoir plusieurs cartes (une par deal). Utilisez le filtre de marque pour les voir côte à côte.
 
