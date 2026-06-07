@@ -3,7 +3,7 @@
  *   shapes shown on the homepage feature grid so help cards visually match.
  *   Stroke uses currentColor so the parent can theme via Tailwind text-*.
  */
-import type { SVGProps } from "react";
+import type { JSX, SVGProps } from "react";
 
 type IconRenderer = (props: SVGProps<SVGSVGElement>) => JSX.Element;
 
