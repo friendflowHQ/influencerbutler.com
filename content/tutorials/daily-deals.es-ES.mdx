@@ -42,6 +42,18 @@ El **preajuste activo** (por defecto llamado `default`) guarda tu configuración
 - **excludeLastMonth**: activado, no vuelve a publicar ofertas posteadas en los últimos 30 días. Mantiene tu feed fresco.
 - **Cadencias perDestination**: Telegram tolera mucho más volumen que Instagram. No apliques la cadencia de 15 min de Telegram a Instagram o te limitarán.
 
+## Crear listas de ideas de Amazon automáticamente
+
+En la pestaña Harvest hay una tarjeta **Crear listas de ideas de Amazon automáticamente**. Actívala y, tras cada búsqueda, Butler crea listas de ideas de Amazon en tu escaparate a partir de las ofertas que acabas de recolectar. Las listas se ordenan para que las ofertas activas en **Creator Connections** y **Sponsored Products for Creators** vayan primero, colocando tus productos más rentables arriba.
+
+Configúralo en tres pasos:
+
+1. **Elige cómo se agrupan los productos**: una lista por palabra clave, una sola lista de mejores ofertas, o deja que la IA las agrupe en listas temáticas.
+2. **Escanea escaparates**: Butler comprueba cuáles de tus escaparates son elegibles para Creator Connections y luego marcas en cuáles crear.
+3. **Texto con IA (opcional)**: déjalo activado y Butler escribe la descripción de la lista y un comentario corto para cada producto, con una voz cercana y honesta. Desactívalo para una descripción de plantilla sencilla y sin comentarios.
+
+Usa **Crear ahora** para ejecutarlo una vez, o activa el interruptor para que se ejecute tras cada búsqueda. La línea de estado muestra el progreso y el resumen de la última ejecución.
+
 ## Dónde van los datos
 
 Las ofertas recolectadas viven en la caché preseed; el historial de publicaciones en `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. La pestaña Console Log transmite cada intento de publicación y su resultado.

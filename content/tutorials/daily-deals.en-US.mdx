@@ -42,6 +42,18 @@ The **active preset** (default named `default`) saves your filter config. You ca
 - **excludeLastMonth**: once on, won't re-post any deal that posted in the last 30 days. Keeps your feed feeling fresh.
 - **perDestination cadences**: Telegram tolerates much higher volume than Instagram. Don't apply Telegram's 15-min cadence to Instagram or you'll get rate-limited.
 
+## Auto-build Amazon Idea Lists
+
+On the Harvest tab there is an **Auto-build Amazon Idea Lists** card. Turn it on and, after each search, Butler creates Amazon Idea Lists on your storefront from the deals you just harvested. Lists are ranked so the deals active in **Creator Connections** and **Sponsored Products for Creators** go first, putting your highest-earning products at the top.
+
+Set it up in three steps:
+
+1. **Pick how products are grouped**: one list per keyword, a single top-deals list, or let AI cluster them into themed lists.
+2. **Scan storefronts**: Butler checks which of your storefronts are eligible for Creator Connections, then you tick the ones to build on.
+3. **AI copy (optional)**: leave it on and Butler writes the list description and a short comment for each product in a friendly, honest voice. Turn it off for a plain templated description and no comments.
+
+Use **Build now** to run it once on demand, or flip the toggle so it runs after every harvest. The status line shows progress and the last run summary.
+
 ## Where the data goes
 
 Harvested deals live in the preseed cache; posted-deal history lives in `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. The Console Log tab streams every post attempt + outcome.
