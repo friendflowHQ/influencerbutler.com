@@ -34,6 +34,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "cc-deals",
+      "title": "Campaign Deals: track on-sale items in your Creator Connections campaigns",
+      "category": "Amazon",
+      "summary": "See which products in the campaigns you're in are on sale right now. Refresh on demand or on a schedule.",
+      "order": 35,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "ordersbutler",
       "title": "Orders Butler: sync your real Amazon order history",
       "category": "Amazon",
