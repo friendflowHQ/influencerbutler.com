@@ -296,6 +296,20 @@ export default async function DailyDealsWorkspacePage() {
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
             <dt className="text-base font-semibold text-slate-900">
+              How do I reactivate a locked workspace?
+            </dt>
+            <dd className="mt-2 text-sm text-slate-600">
+              When an add-on lapses, that workspace shows a lock notice inside
+              the app. You have two ways back in. Renew the subscription and the
+              workspace unlocks automatically the next time you sign in. Or, if
+              you already have an active add-on key, paste it right on the lock
+              screen and click Validate &amp; unlock to restore the workspace on
+              the spot. The lock screen also links straight to Manage
+              subscription so you can renew without leaving the app.
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6">
+            <dt className="text-base font-semibold text-slate-900">
               Can I buy more than one?
             </dt>
             <dd className="mt-2 text-sm text-slate-600">
