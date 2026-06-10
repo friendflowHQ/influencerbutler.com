@@ -1,48 +1,67 @@
 ---
 title: "Prime Day Butler: surface Amazon deals worth posting about"
-summary: Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Filter by % off and price, export to CSV.
+summary: Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Ranked by estimated earnings, split into quick wins and last-minute picks, with a tracked-keyword watchlist and CSV export.
 category: Other
 ---
 
 ## What it does
 
-Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from three sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), and fresh discoveries pulled from the Creators API. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV for posting.
+Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from three sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), and fresh discoveries pulled from the Creators API. Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's a quick win or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
+
+## The two buckets
+
+- **Quick wins**: deals on products you already have content for. The fastest path to a post. Just resurface what you made.
+- **Last-minute**: deals on products you own (from Orders Butler) that have a live deal but no content yet. These are the on-hand picks you can shoot today.
+
+A bucket tab above the table lets you view All, Quick wins, or Last-minute.
+
+## Earnings prioritization
+
+Each row shows three commission signals so you can post the biggest earners first:
+
+- **Amazon %**: the Associate Rate Card commission for the product's category.
+- **CC**: the best Creator Connections commission rate, when the product is CC-eligible.
+- **SPCC**: the estimated earnings-per-click for a Sponsored Products for Creators offer.
+
+The **Est. earnings** column picks the best per-sale estimate (Amazon vs CC) and the table sorts by it by default. Click any column header to re-sort.
 
 ## Prerequisites
 
 - **Storefront Butler** has synced at least once so it knows what content you've made.
-- **Orders Butler** has synced at least once if you want the "products I own" signal.
-- **Creators API key** configured in **API Integrations** if you want fresh discoveries beyond what you already have.
+- **Orders Butler** has synced at least once if you want the "products I own" and last-minute signals.
+- **Creators API key** configured in **API Integrations** for fresh discoveries, the owned-product deal check, and trending search.
+- **Associate Rate Card** harvested (under Settings) so the Amazon-default earnings estimate can populate. Without it, that column shows a dash.
 
-If any source is missing, the workspace still runs. It just shows fewer rows. The filters tell you which source each row came from.
+If any source is missing, the workspace still runs. It just shows fewer rows.
 
 ## First run
 
 1. Open **Prime Day Butler** in the left nav (under the Amazon group).
-2. Set the filters:
-   - **Keyword**: optional. Narrow to a niche, e.g. "kitchen".
+2. Optional: build a **tracked-keyword watchlist**. Type a keyword and click **Track**. Tracked keywords run on every pass and on Find trending, so you don't retype them each time.
+3. Set the filters:
+   - **Keyword**: optional one-off search for this run.
    - **Min % off**: defaults to 20%. Bump to 40–50% for a tighter list.
-   - **Max price ($)**: optional. Skip $200+ products if your audience won't bite.
-   - **Source toggles**: leave the three on for the widest net; turn off "fresh discoveries" if you only want to repost what you've already made.
-   - **CC-eligible only**: filter to products where Amazon Creator Connections accepts the affiliate link (highest commission paths).
-3. Click **Run now**. The status line shows progress; the table fills as deals are found.
-4. Review the results. Each row shows the ASIN, title, current price, % off, source, and (if CC-eligible) commission rate.
-5. Click **Export CSV** to dump the candidate list. Most users paste these into Daily Deals Butler's post-builder, but a CSV works for any workflow.
+   - **Max price ($)**: optional.
+   - **Source toggles**: leave them on for the widest net.
+   - **Check owned products for live deals**: turn on to build the last-minute bucket (uses extra Creators API calls).
+   - **CC-eligible only**: filter to products where Creator Connections accepts the affiliate link.
+4. Click **Run now**. The status line shows the count, split by quick wins and last-minute.
+5. Use the bucket tabs to focus, and sort by **Est. earnings** to post the biggest earners first.
+6. Per row: **Open** the product, **Download** your existing content, or **Add to Daily Deals** to queue a post. **Export CSV** dumps the whole filtered list, including the earnings columns.
 
-## Tuning over time
+## Find trending
 
-- If the table is empty: drop the Min % off threshold to 10% and try again. Many "deals" Amazon flags are mid-range discounts.
-- If the table is overwhelming: turn on **CC-eligible only** and bump Min % off to 30%+ to get the highest-leverage candidates.
-- If you don't see your own storefront content: confirm Storefront Butler ran in the last 24 hours.
+Click **Find trending** to pull current Prime Day deals from the Creators API (a seed query plus your tracked keywords). New deals merge into the table with the same earnings ranking, so trending picks slot in next to your own.
 
 ## Gotchas
 
 - **The list goes stale fast during Prime Day.** Re-run every 2–4 hours during the event window. Amazon's prices flip in real time.
-- **Fresh discoveries can be noisy.** The Creators API doesn't know your niche; pair the fresh-discoveries toggle with a tight keyword filter.
-- **CC eligibility lags.** A product can be CC-eligible today and gone tomorrow. The status field tells you what was true at scan time.
+- **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Settings.
+- **The owned-deal check costs API calls.** Turn off "Check owned products for live deals" if you're rate-limited and only need quick wins.
+- **CC eligibility lags.** A product can be CC-eligible today and gone tomorrow. The chip shows what was true at scan time.
 
 ## Related
 
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals): where most users send the exported CSV next.
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals): where most users send the picks next.
 - [Black Friday Butler tutorial](/help/tutorials/black-friday): same seasonal-radar shape for the BFCM window.
 - [Storefront Butler tutorial](/help/tutorials/storefrontbutler): keeps the "content I already made" source fresh.

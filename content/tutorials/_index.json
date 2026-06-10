@@ -253,7 +253,7 @@
       "id": "prime-day-butler",
       "title": "Prime Day Butler: surface Amazon deals worth posting about",
       "category": "Other",
-      "summary": "Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Filter by % off and price, export to CSV.",
+      "summary": "Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Ranked by estimated earnings, split into quick wins and last-minute picks, with a tracked-keyword watchlist and CSV export.",
       "order": 335,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },

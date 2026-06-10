@@ -1,48 +1,67 @@
 ---
-title: "Prime Day Butler: descubre ofertas de Amazon que vale la pena publicar"
-summary: Encuentra ofertas de Prime Day a partir del contenido que ya hiciste, productos que ya posees y descubrimientos nuevos de la API de Creators - filtra por % de descuento y precio, exporta a CSV.
+title: "Prime Day Butler: encuentra ofertas de Amazon que merece la pena publicar"
+summary: Encuentra ofertas de Prime Day a partir de contenido que ya creaste, productos que ya tienes y nuevos descubrimientos de la Creators API. Ordenado por ganancias estimadas, dividido en ganancias rápidas y de última hora, con lista de palabras clave seguidas y exportación a CSV.
 category: Other
 ---
 
 ## Qué hace
 
-Prime Day Butler es un radar estacional que descubre productos de Amazon que vale la pena promocionar, desde tres fuentes a la vez: contenido que ya publicaste en tu storefront, productos que has comprado (vía Orders Butler), y descubrimientos nuevos extraídos de la API de Creators. Filtras por palabra clave, % mínimo de descuento y precio máximo; la tabla se actualiza y exportas los candidatos a CSV para publicar.
+Prime Day Butler es un radar de temporada que muestra productos de Amazon con buenas ofertas desde tres fuentes a la vez: contenido que ya publicaste en tu tienda, productos que has comprado de verdad (desde Orders Butler) y nuevos descubrimientos de la Creators API. Cada fila se ordena por **ganancias estimadas** (las mayores primero) y se etiqueta con un grupo para que sepas si es una ganancia rápida o una opción de última hora. Filtras por palabra clave, % de descuento mínimo y precio máximo; la tabla se actualiza y exportas los candidatos a CSV.
+
+## Los dos grupos
+
+- **Ganancias rápidas**: ofertas de productos para los que ya tienes contenido. El camino más rápido a una publicación. Solo vuelve a usar lo que ya hiciste.
+- **Última hora**: ofertas de productos que posees (desde Orders Butler) con una oferta activa pero sin contenido todavía. Son las opciones a mano que puedes grabar hoy.
+
+Una pestaña de grupo encima de la tabla te permite ver Todos, Ganancias rápidas o Última hora.
+
+## Priorización por ganancias
+
+Cada fila muestra tres señales de comisión para que publiques primero lo que más rinde:
+
+- **Amazon %**: la comisión de la Tarjeta de Tarifas de Asociados para la categoría del producto.
+- **CC**: la mejor tarifa de comisión de Creator Connections, cuando el producto es elegible para CC.
+- **SPCC**: las ganancias por clic estimadas de una oferta de Sponsored Products for Creators.
+
+La columna **Ganancia est.** elige la mejor estimación por venta (Amazon o CC) y la tabla se ordena por ella de forma predeterminada. Haz clic en cualquier encabezado de columna para reordenar.
 
 ## Requisitos previos
 
-- **Storefront Butler** ha sincronizado al menos una vez para saber qué contenido has hecho.
-- **Orders Butler** ha sincronizado al menos una vez si quieres la señal "productos que poseo".
-- **Clave de API de Creators** configurada en **API Integrations** si quieres descubrimientos nuevos más allá de lo que ya tienes.
+- **Storefront Butler** se ha sincronizado al menos una vez para saber qué contenido has creado.
+- **Orders Butler** se ha sincronizado al menos una vez si quieres las señales de "productos que poseo" y de última hora.
+- **Clave de la Creators API** configurada en **Integraciones de API** para los nuevos descubrimientos, la comprobación de ofertas de productos que tienes y la búsqueda de tendencias.
+- **Tarjeta de Tarifas de Asociados** descargada (en Ajustes) para que se complete la estimación de ganancias de Amazon. Sin ella, esa columna muestra un guion.
 
-Si falta alguna fuente, el workspace sigue funcionando - simplemente muestra menos filas. Los filtros indican de qué fuente proviene cada fila.
+Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra menos filas.
 
 ## Primera ejecución
 
-1. Abre **Prime Day Butler** en el menú izquierdo (bajo el grupo Amazon).
-2. Configura los filtros:
-   - **Palabra clave** - opcional. Acota a un nicho, p. ej. "cocina".
-   - **% mínimo de descuento** - predeterminado 20%. Sube a 40–50% para una lista más ajustada.
-   - **Precio máximo ($)** - opcional. Omite productos de $200+ si tu audiencia no compra eso.
-   - **Toggles de fuente** - deja los tres activos para máxima cobertura; desactiva "descubrimientos nuevos" si solo quieres re-publicar lo que ya hiciste.
-   - **Solo elegibles para CC** - filtra a productos donde Amazon Creator Connections acepta el enlace de afiliado (las rutas de comisión más altas).
-3. Haz clic en **Ejecutar ahora**. La línea de estado muestra el progreso; la tabla se llena conforme se encuentran ofertas.
-4. Revisa los resultados. Cada fila muestra el ASIN, título, precio actual, % de descuento, fuente y (si es elegible para CC) la tasa de comisión.
-5. Haz clic en **Exportar CSV** para volcar la lista de candidatos. La mayoría de usuarios pega estos en el constructor de publicaciones de Daily Deals Butler, pero un CSV funciona para cualquier flujo.
+1. Abre **Prime Day Butler** en la navegación izquierda (en el grupo de Amazon).
+2. Opcional: crea una **lista de palabras clave seguidas**. Escribe una palabra clave y haz clic en **Seguir**. Las palabras clave seguidas se usan en cada pasada y al buscar tendencias, así no las reescribes cada vez.
+3. Configura los filtros:
+   - **Palabra clave**: búsqueda puntual opcional para esta ejecución.
+   - **% de descuento mínimo**: predeterminado en 20%. Sube a 40-50% para una lista más ajustada.
+   - **Precio máximo ($)**: opcional.
+   - **Interruptores de fuente**: déjalos activados para la red más amplia.
+   - **Buscar ofertas activas en productos que tengo**: actívalo para crear el grupo de última hora (usa llamadas extra a la Creators API).
+   - **Solo elegibles para CC**: filtra a productos donde Creator Connections acepta el enlace de afiliado.
+4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en ganancias rápidas y de última hora.
+5. Usa las pestañas de grupo para enfocarte y ordena por **Ganancia est.** para publicar primero lo que más rinde.
+6. Por fila: **Abrir** el producto, **Descargar** tu contenido existente o **Añadir a Amazon Deals** para encolar una publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
 
-## Ajustes con el tiempo
+## Buscar tendencias
 
-- Si la tabla está vacía: baja el umbral de % mínimo de descuento a 10% e inténtalo de nuevo - muchas "ofertas" que Amazon marca son descuentos medianos.
-- Si la tabla es abrumadora: activa **Solo elegibles para CC** y sube el % mínimo de descuento a 30%+ para obtener los candidatos de mayor impacto.
-- Si no ves tu propio contenido del storefront: confirma que Storefront Butler ejecutó en las últimas 24 horas.
+Haz clic en **Buscar tendencias** para traer ofertas actuales de Prime Day desde la Creators API (una consulta base más tus palabras clave seguidas). Las nuevas ofertas se fusionan en la tabla con la misma priorización por ganancias, así las tendencias quedan junto a las tuyas.
 
-## Cosas a saber
+## Detalles a tener en cuenta
 
-- **La lista se vuelve obsoleta rápido durante Prime Day.** Vuelve a ejecutar cada 2–4 horas durante la ventana del evento - los precios de Amazon cambian en tiempo real.
-- **Los descubrimientos nuevos pueden ser ruidosos.** La API de Creators no conoce tu nicho; combina el toggle de descubrimientos nuevos con un filtro de palabra clave ajustado.
-- **La elegibilidad para CC se retrasa.** Un producto puede ser elegible para CC hoy y ya no mañana. El campo de estado dice qué era cierto al momento del escaneo.
+- **La lista caduca rápido durante Prime Day.** Vuelve a ejecutar cada 2-4 horas durante la ventana del evento. Los precios de Amazon cambian en tiempo real.
+- **Las ganancias de Amazon necesitan la tarjeta de tarifas.** Si la columna Amazon % está vacía, descarga la Tarjeta de Tarifas de Asociados en Ajustes.
+- **La comprobación de ofertas de productos que tienes cuesta llamadas a la API.** Desactiva "Buscar ofertas activas en productos que tengo" si tienes límite de tasa y solo necesitas ganancias rápidas.
+- **La elegibilidad de CC va con retraso.** Un producto puede ser elegible para CC hoy y dejar de serlo mañana. El distintivo muestra lo que era cierto al momento del escaneo.
 
 ## Relacionado
 
-- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals) - a dónde la mayoría de usuarios envían el CSV exportado.
-- [Tutorial de Black Friday Butler](/help/tutorials/black-friday) - la misma forma de radar estacional para la ventana de BFCM.
-- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) - mantiene fresca la fuente "contenido que ya hice".
+- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals): a donde la mayoría envía las selecciones después.
+- [Tutorial de Black Friday Butler](/help/tutorials/black-friday): el mismo radar de temporada para la ventana de BFCM.
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler): mantiene fresca la fuente de "contenido que ya hice".
