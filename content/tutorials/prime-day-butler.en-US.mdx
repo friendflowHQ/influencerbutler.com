@@ -1,19 +1,32 @@
 ---
 title: "Prime Day Butler: surface Amazon deals worth posting about"
-summary: Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Ranked by estimated earnings, split into quick wins and last-minute picks, with a tracked-keyword watchlist and CSV export.
+summary: Find Prime Day deals from content you already made, products you already own, fresh Creators-API discoveries, and the Amazon Associates Deals Hub (including upcoming deals before they go live). Ranked by estimated earnings, flagged when a deal is the lowest price all year, split into upcoming, quick wins, and last-minute picks.
 category: Other
 ---
 
 ## What it does
 
-Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from three sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), and fresh discoveries pulled from the Creators API. Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's a quick win or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
+Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from four sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), fresh discoveries pulled from the Creators API, and the **Amazon Associates Deals Hub** (the curated deals catalogue, including upcoming deals that haven't started yet). Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's upcoming, a quick win, or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
 
-## The two buckets
+## The Deals Hub source (and upcoming deals)
 
+The Deals Hub is Amazon's own curated list of deals for creators. It is the only source that shows **upcoming** deals before they go live, with their future start date and future deal price. The Creators API can't see those yet: it only reflects the price that's live right now. So when an upcoming Prime Day deal is scheduled (say a vacuum dropping next week), the Deals Hub source surfaces it today, while the product's normal page still shows the old price.
+
+Each Deals Hub row carries a **Status** of Upcoming or Live, the deal schedule, and the deal tags Amazon applies (Best Deal, Prime Exclusive, Creator Favorite).
+
+> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Daily Deals, so you don't post embargoed pricing early.
+
+## Lowest price all year
+
+The Deals Hub also tells you when a deal beats the **lowest price seen so far this year**. When it does, the row shows a green **Lowest all year** badge with the percentage below the year's low (for example, a doorbell at 50% under its prior best price). That's the single strongest reason to post a deal, so there's a dedicated **vs YTD low** column you can sort on and a **Lowest all year only** filter to show just those.
+
+## The buckets
+
+- **Upcoming**: Deals Hub deals scheduled to start later. Plan your posts before the deal goes live.
 - **Quick wins**: deals on products you already have content for. The fastest path to a post. Just resurface what you made.
 - **Last-minute**: deals on products you own (from Orders Butler) that have a live deal but no content yet. These are the on-hand picks you can shoot today.
 
-A bucket tab above the table lets you view All, Quick wins, or Last-minute.
+A bucket tab above the table lets you view All, Upcoming, Quick wins, or Last-minute.
 
 ## Earnings prioritization
 
@@ -31,6 +44,7 @@ The **Est. earnings** column picks the best per-sale estimate (Amazon vs CC) and
 - **Orders Butler** has synced at least once if you want the "products I own" and last-minute signals.
 - **Creators API key** configured in **API Integrations** for fresh discoveries, the owned-product deal check, and trending search.
 - **Associate Rate Card** harvested (under Settings) so the Amazon-default earnings estimate can populate. Without it, that column shows a dash.
+- **Signed in to Amazon Associates in the app** for the Deals Hub source. Prime Day Butler reads the Deals Hub from your in-app Amazon browser, so it needs an active Associates session. If you're signed out, it skips the Deals Hub and tells you to sign in, then run again.
 
 If any source is missing, the workspace still runs. It just shows fewer rows.
 
@@ -42,11 +56,12 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
    - **Keyword**: optional one-off search for this run.
    - **Min % off**: defaults to 20%. Bump to 40–50% for a tighter list.
    - **Max price ($)**: optional.
-   - **Source toggles**: leave them on for the widest net.
+   - **Source toggles**: leave them on for the widest net. **Include Deals Hub** adds the curated catalogue and upcoming deals.
    - **Check owned products for live deals**: turn on to build the last-minute bucket (uses extra Creators API calls).
    - **CC-eligible only**: filter to products where Creator Connections accepts the affiliate link.
-4. Click **Run now**. The status line shows the count, split by quick wins and last-minute.
-5. Use the bucket tabs to focus, and sort by **Est. earnings** to post the biggest earners first.
+   - **Lowest all year only**: filter to deals that beat the year's lowest price.
+4. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
+5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals.
 6. Per row: **Open** the product, **Download** your existing content, or **Add to Daily Deals** to queue a post. **Export CSV** dumps the whole filtered list, including the earnings columns.
 
 ## Find trending
@@ -55,7 +70,9 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 
 ## Gotchas
 
-- **The list goes stale fast during Prime Day.** Re-run every 2–4 hours during the event window. Amazon's prices flip in real time.
+- **The list goes stale fast during Prime Day.** Re-run every 2–4 hours during the event window. Amazon's prices flip in real time. The Deals Hub is re-read at most every few hours, so a fresh run reuses the last harvest if it's recent.
+- **The Deals Hub needs a signed-in Amazon session in the app.** If the source comes back empty with a "sign in, then run again" note, open Amazon Associates in the app once to refresh the session.
+- **Upcoming deals are embargoed.** Their price and dates are confidential until Amazon publishes them. Use the upcoming view to plan, but wait until a deal is live (or its publish time) before you post.
 - **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Settings.
 - **The owned-deal check costs API calls.** Turn off "Check owned products for live deals" if you're rate-limited and only need quick wins.
 - **CC eligibility lags.** A product can be CC-eligible today and gone tomorrow. The chip shows what was true at scan time.

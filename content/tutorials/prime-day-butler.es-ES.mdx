@@ -1,19 +1,32 @@
 ---
 title: "Prime Day Butler: encuentra ofertas de Amazon que merece la pena publicar"
-summary: Encuentra ofertas de Prime Day a partir de contenido que ya creaste, productos que ya tienes y nuevos descubrimientos de la Creators API. Ordenado por ganancias estimadas, dividido en ganancias rápidas y de última hora, con lista de palabras clave seguidas y exportación a CSV.
+summary: Encuentra ofertas de Prime Day a partir de contenido que ya creaste, productos que ya tienes, nuevos descubrimientos de la Creators API y el Deals Hub de Amazon Associates (incluidas ofertas próximas antes de que empiecen). Ordenado por ganancias estimadas, marcado cuando una oferta es el precio más bajo del año, dividido en próximas, ganancias rápidas y de última hora.
 category: Other
 ---
 
 ## Qué hace
 
-Prime Day Butler es un radar de temporada que muestra productos de Amazon con buenas ofertas desde tres fuentes a la vez: contenido que ya publicaste en tu tienda, productos que has comprado de verdad (desde Orders Butler) y nuevos descubrimientos de la Creators API. Cada fila se ordena por **ganancias estimadas** (las mayores primero) y se etiqueta con un grupo para que sepas si es una ganancia rápida o una opción de última hora. Filtras por palabra clave, % de descuento mínimo y precio máximo; la tabla se actualiza y exportas los candidatos a CSV.
+Prime Day Butler es un radar de temporada que muestra productos de Amazon con buenas ofertas desde cuatro fuentes a la vez: contenido que ya publicaste en tu tienda, productos que has comprado de verdad (desde Orders Butler), nuevos descubrimientos de la Creators API y el **Deals Hub de Amazon Associates** (el catálogo de ofertas curado, incluidas ofertas próximas que aún no han empezado). Cada fila se ordena por **ganancias estimadas** (las mayores primero) y se etiqueta con un grupo para que sepas si es próxima, una ganancia rápida o una opción de última hora. Filtras por palabra clave, % de descuento mínimo y precio máximo; la tabla se actualiza y exportas los candidatos a CSV.
 
-## Los dos grupos
+## La fuente Deals Hub (y las ofertas próximas)
 
+El Deals Hub es la lista curada de ofertas de Amazon para creadores. Es la única fuente que muestra ofertas **próximas** antes de que empiecen, con su fecha de inicio futura y su precio de oferta futuro. La Creators API aún no puede verlas: solo refleja el precio activo ahora mismo. Así que cuando una oferta de Prime Day próxima está programada (por ejemplo, un aspirador que baja la semana que viene), la fuente Deals Hub la muestra hoy, mientras que la página normal del producto sigue mostrando el precio antiguo.
+
+Cada fila del Deals Hub lleva un **Estado** de Próxima o En directo, el calendario de la oferta y las etiquetas que aplica Amazon (Best Deal, Prime Exclusive, Creator Favorite).
+
+> Los precios de las ofertas próximas y las fechas de Prime Day son confidenciales hasta que Amazon las publique. Prime Day Butler marca las filas próximas y te pide confirmación antes de encolar una en Amazon Deals, para que no publiques precios embargados antes de tiempo.
+
+## Precio más bajo del año
+
+El Deals Hub también te dice cuándo una oferta supera el **precio más bajo visto en lo que va de año**. Cuando lo hace, la fila muestra un distintivo verde **Mínimo del año** con el porcentaje por debajo del mínimo del año (por ejemplo, un timbre con un 50% por debajo de su mejor precio anterior). Esa es la razón más fuerte para publicar una oferta, así que hay una columna dedicada **vs mín. año** por la que puedes ordenar y un filtro **Solo mínimo del año** para mostrar solo esas.
+
+## Los grupos
+
+- **Próximas**: ofertas del Deals Hub programadas para empezar más adelante. Planifica tus publicaciones antes de que la oferta empiece.
 - **Ganancias rápidas**: ofertas de productos para los que ya tienes contenido. El camino más rápido a una publicación. Solo vuelve a usar lo que ya hiciste.
 - **Última hora**: ofertas de productos que posees (desde Orders Butler) con una oferta activa pero sin contenido todavía. Son las opciones a mano que puedes grabar hoy.
 
-Una pestaña de grupo encima de la tabla te permite ver Todos, Ganancias rápidas o Última hora.
+Una pestaña de grupo encima de la tabla te permite ver Todos, Próximas, Ganancias rápidas o Última hora.
 
 ## Priorización por ganancias
 
@@ -31,6 +44,7 @@ La columna **Ganancia est.** elige la mejor estimación por venta (Amazon o CC) 
 - **Orders Butler** se ha sincronizado al menos una vez si quieres las señales de "productos que poseo" y de última hora.
 - **Clave de la Creators API** configurada en **Integraciones de API** para los nuevos descubrimientos, la comprobación de ofertas de productos que tienes y la búsqueda de tendencias.
 - **Tarjeta de Tarifas de Asociados** descargada (en Ajustes) para que se complete la estimación de ganancias de Amazon. Sin ella, esa columna muestra un guion.
+- **Sesión iniciada en Amazon Associates en la app** para la fuente Deals Hub. Prime Day Butler lee el Deals Hub desde el navegador de Amazon de la app, así que necesita una sesión de Associates activa. Si no has iniciado sesión, omite el Deals Hub y te pide que inicies sesión y vuelvas a ejecutar.
 
 Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra menos filas.
 
@@ -42,11 +56,12 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
    - **Palabra clave**: búsqueda puntual opcional para esta ejecución.
    - **% de descuento mínimo**: predeterminado en 20%. Sube a 40-50% para una lista más ajustada.
    - **Precio máximo ($)**: opcional.
-   - **Interruptores de fuente**: déjalos activados para la red más amplia.
+   - **Interruptores de fuente**: déjalos activados para la red más amplia. **Incluir Deals Hub** añade el catálogo curado y las ofertas próximas.
    - **Buscar ofertas activas en productos que tengo**: actívalo para crear el grupo de última hora (usa llamadas extra a la Creators API).
    - **Solo elegibles para CC**: filtra a productos donde Creator Connections acepta el enlace de afiliado.
-4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en ganancias rápidas y de última hora.
-5. Usa las pestañas de grupo para enfocarte y ordena por **Ganancia est.** para publicar primero lo que más rinde.
+   - **Solo mínimo del año**: filtra a ofertas que superan el precio más bajo del año.
+4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
+5. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año.
 6. Por fila: **Abrir** el producto, **Descargar** tu contenido existente o **Añadir a Amazon Deals** para encolar una publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
 
 ## Buscar tendencias
@@ -55,7 +70,9 @@ Haz clic en **Buscar tendencias** para traer ofertas actuales de Prime Day desde
 
 ## Detalles a tener en cuenta
 
-- **La lista caduca rápido durante Prime Day.** Vuelve a ejecutar cada 2-4 horas durante la ventana del evento. Los precios de Amazon cambian en tiempo real.
+- **La lista caduca rápido durante Prime Day.** Vuelve a ejecutar cada 2-4 horas durante la ventana del evento. Los precios de Amazon cambian en tiempo real. El Deals Hub se vuelve a leer como mucho cada pocas horas, así que una ejecución reciente reutiliza la última recogida si es reciente.
+- **El Deals Hub necesita una sesión iniciada en Amazon en la app.** Si la fuente vuelve vacía con un aviso de "inicia sesión y vuelve a ejecutar", abre Amazon Associates en la app una vez para refrescar la sesión.
+- **Las ofertas próximas están embargadas.** Su precio y fechas son confidenciales hasta que Amazon las publique. Usa la vista de próximas para planificar, pero espera a que una oferta esté en directo (o a su hora de publicación) antes de publicar.
 - **Las ganancias de Amazon necesitan la tarjeta de tarifas.** Si la columna Amazon % está vacía, descarga la Tarjeta de Tarifas de Asociados en Ajustes.
 - **La comprobación de ofertas de productos que tienes cuesta llamadas a la API.** Desactiva "Buscar ofertas activas en productos que tengo" si tienes límite de tasa y solo necesitas ganancias rápidas.
 - **La elegibilidad de CC va con retraso.** Un producto puede ser elegible para CC hoy y dejar de serlo mañana. El distintivo muestra lo que era cierto al momento del escaneo.
