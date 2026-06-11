@@ -336,6 +336,25 @@ async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubsc
   return getString(data?.user_id);
 }
 
+/**
+ * Resolves the LS subscription id (a numeric string from the webhook payload)
+ * to our internal subscriptions row: both the primary-key `id` and `user_id`.
+ * license_keys.subscription_id is a FK to subscriptions.id (NOT the LS id), and
+ * /api/welcome/license joins on it, so license_key_created must store the
+ * internal id here, not the LS string.
+ */
+async function findSubscriptionByLsId(
+  supabase: SupabaseServiceClient,
+  lsSubscriptionId: string,
+): Promise<{ id: string | null; userId: string | null }> {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("id,user_id")
+    .eq("ls_subscription_id", lsSubscriptionId)
+    .maybeSingle();
+  return { id: getString(data?.id), userId: getString(data?.user_id) };
+}
+
 async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
   const { data } = await supabase.from(table).select("id").eq(column, value).maybeSingle();
   return Boolean(data);
@@ -785,9 +804,10 @@ export async function POST(request: Request) {
       if (!recordId) return;
 
       const lsSubscriptionId = getString(attrs.subscription_id);
-      const userId =
-        directUserId ||
-        (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
+      const subscription = lsSubscriptionId
+        ? await findSubscriptionByLsId(supabase, lsSubscriptionId)
+        : { id: null, userId: null };
+      const userId = directUserId || subscription.userId;
 
       if (!userId) {
         throw new Error(
@@ -804,11 +824,14 @@ export async function POST(request: Request) {
           {
             ls_license_key_id: recordId,
             user_id: userId,
+            // FK to subscriptions.id (the internal uuid), which
+            // /api/welcome/license joins on. Resolved from the LS subscription
+            // id; the column is subscription_id, not ls_subscription_id.
+            subscription_id: subscription.id,
             key: licenseKeyString,
             key_hash: sha256Hex(licenseKeyString),
             status: getString(attrs.status),
             activation_limit: attrs.activation_limit ?? null,
-            ls_subscription_id: lsSubscriptionId,
           },
           { onConflict: "ls_license_key_id" },
         ),
