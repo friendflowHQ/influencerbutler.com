@@ -10,7 +10,7 @@ category: Amazon
 
 A veces un vendedor olvida un punto decimal. A veces el equipo de catálogo no marca una alerta. Cuando eso pasa, una aspiradora de $400 aparece a $4 y un creador atento puede publicar la oferta antes de que las defensas automáticas de Amazon o una revisión manual la corrijan.
 
-Pricecrash Butler es ese radar. Corre según un horario, consulta la Amazon Creators API en las categorías que te interesan, filtra cada resultado por porcentaje de descuento y, en cuanto aparece un producto con ≥99 % de descuento, lo envía a **Daily Deals Butler** como **borrador para revisión** o como **publicación programada automáticamente**.
+Pricecrash Butler es ese radar. Corre según un horario, consulta la Amazon Creators API en las categorías que te interesan, filtra cada resultado por porcentaje de descuento y, en cuanto aparece un producto con ≥99 % de descuento, lo envía a **Daily Deals Butler** como **borrador para revisión** o como **publicación programada automáticamente** que se publica de inmediato (o en tu próxima hora de publicación programada, tú eliges).
 
 El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de precio reales, pero puedes bajarlo a 75–85 % para abarcar liquidaciones y sobrantes.
 
@@ -18,7 +18,7 @@ El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de
 
 1. Abre **Pricecrash Butler** en el menú lateral (está bajo Orders Butler, en el grupo Amazon).
 2. Elige al menos una **categoría** para escanear. "All" recorre todos los departamentos de Amazon.
-3. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** o **Sin entrega**.
+3. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** (elige el momento debajo: **Publicar de inmediato** o **En la próxima hora de publicación programada**) o **Sin entrega**.
 4. Pulsa **Ejecutar**. Con el campo **Palabras clave señuelo** vacío, el runner recorre cada categoría seleccionada por su nodo raíz de Amazon ordenado por precio ascendente - sin filtro de texto del título, así captura artículos mal tarificados aunque el vendedor no haya escrito "clearance" en la ficha.
 
 ## Palabras clave señuelo
@@ -36,6 +36,10 @@ Activa la programación automática (1h / 3h / 6h / 12h / 24h). El valor por def
 ## Cómo funciona en realidad
 
 La Creators API no expone un filtro de "descuento mínimo" del lado del servidor. Pricecrash itera cada categoría con `sortBy: Price:LowToHigh` y filtra después por `savingsPercent`. Los aciertos al 99 % son raros - esa es la idea.
+
+## La píldora Pricecrash hype
+
+El texto de la publicación se construye con tu plantilla de **Build Your Post** en Daily Deals Butler, así que tus píldoras deciden qué publica Pricecrash. Allí hay una píldora arrastrable **Gancho Pricecrash** que inserta una frase de urgencia con el precio real (con los centavos enmascarados), como "¡CORRE! ¡EL VENDEDOR NO SABÍA QUE LO PUSO A $4.xx!". Cuando está en tu texto, reemplaza cualquier píldora de CTA y Gancho.
 
 ## Atajos comunes
 

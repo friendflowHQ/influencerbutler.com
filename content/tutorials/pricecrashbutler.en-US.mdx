@@ -11,7 +11,7 @@ Sellers sometimes forget a decimal point. Catalog teams sometimes miss a flag. W
 Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Daily Deals Butler** as either:
 
 - a **draft** in the Search tab (you approve before it posts), or
-- an **auto-scheduled post** that goes out on the next auto-fire tick.
+- an **auto-scheduled post** that publishes right away (or waits for your next scheduled post time, your choice).
 
 The threshold is yours - 99% is the default because that's where real pricing errors live, but you can dial it down to 75–85% to widen the net for clearance, overstock, and outlet pricing.
 
@@ -21,7 +21,7 @@ The threshold is yours - 99% is the default because that's where real pricing er
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
 3. Decide what should happen when a deal is found:
    - **Draft for review**: safer; sits in Daily Deals → Search until you approve it.
-   - **Auto-schedule**: fastest; drops straight into Daily Deals → Schedule.
+   - **Auto-schedule**: fastest; drops straight into Daily Deals → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Daily Deals posting schedule.
    - **No hand-off**: just log it in the panel; you act manually.
 4. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
 
@@ -51,12 +51,14 @@ If Amazon's API rejects a keyword-less browse for one of your categories (rare -
 
 ## Hand-off to Daily Deals Butler
 
-Each found deal is written into Daily Deals' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. From there:
+Each found deal is written into Daily Deals' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your **Build Your Post** template in Daily Deals Butler, so the pills you set there drive exactly what Pricecrash posts say. From there:
 
 - **Draft mode**: the post lands with `status: "draft"`. Open Daily Deals → Search, review, set destinations, hit Publish.
-- **Auto-schedule mode**: the post lands with `status: "scheduled"` and `scheduledAt: now`. The Daily Deals auto-fire daemon picks it up on the next tick (default 30s) and publishes to every enabled destination.
+- **Auto-schedule mode**: the post lands with `status: "scheduled"`. With **Post right away** (the default), Pricecrash publishes it immediately to every enabled destination, so a catch goes out within seconds even when the auto-fire schedule is off. With **On the next scheduled deal post time**, the post waits for your Daily Deals posting schedule's next run.
 
-The mode is **per-scan** - flip the radio between scheduled runs without re-opening Daily Deals.
+The mode and the timing are **per-scan** - flip them between scheduled runs without re-opening Daily Deals.
+
+**Tip - the Pricecrash hype pill.** In Daily Deals → Build Your Post there's a draggable **Pricecrash hype** pill that drops in a high-urgency line with the real (cents-masked) sale price, like "HURRY! THE SELLER DIDN'T KNOW THEY LISTED THIS FOR $4.xx!!!". When it's in your caption it replaces any CTA and Hook pills, so the urgency line carries the post.
 
 ## Topbar tally
 
