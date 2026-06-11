@@ -17,14 +17,14 @@ If Orders Butler is stale, every Amazon workspace is making decisions on stale d
 ## First sync
 
 1. Open **Orders Butler** in the left nav.
-2. Pick a **lookback window** - start with **90 days** for a fresh install. The first sync is the slowest because there's no incremental cursor yet.
+2. In **Run settings**, choose a scope. For a fresh install pick **All years (full catch-up)** so Orders Butler walks your whole history once. This first sync is the slowest because nothing is cached yet.
 3. Click **Sync now**.
 
-The runner opens a Chrome window, logs in (if needed), and walks the orders pages. A 90-day backfill on a normal account takes 2–4 minutes.
+The runner opens a Chrome window, logs in (if needed), and walks the orders pages. A full first catch-up can take a while on an account with years of history; a single recent year finishes much faster.
 
 ## Ongoing syncs
 
-After the first sync, Orders Butler tracks the most recent order it saw and only fetches newer ones on subsequent runs. Set it to **run daily** in the Schedule card - it'll add new orders incrementally in a few seconds.
+After the first catch-up, leave the scope on **Only new since last run** (the default). Orders Butler walks newest-first and stops as soon as it reaches orders you already have, so a routine sync finishes in seconds instead of re-walking your whole history. Set it to **run daily** in the Schedule card and it adds new orders incrementally. Reach for **All years (full catch-up)** only when you want a full reconciliation.
 
 ## Where the data lives
 
