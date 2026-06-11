@@ -50,6 +50,29 @@ Ces mêmes informations servent aussi de **jetons pour les messages aux marques*
 
 Le script apparaît sous la saisie, avec deux badges de validation : **Règles Shoppable Amazon** et **FTC**. Les deux doivent être verts pour que le script soit utilisable tel quel.
 
+## Écrire un script pour un produit qui n'est pas sur Amazon
+
+Tous les produits que vous scriptez ne sont pas sur Amazon. Voiceover Butler dispose d'un **mode hors Amazon** pour ces cas.
+
+Dans **Ajouter des produits**, utilisez le sélecteur **Source du produit** en haut :
+
+- **Produit Amazon (ASIN)** : par défaut. Collez les ASIN comme ci-dessus.
+- **Produit hors Amazon (sans ASIN)** : aucun ASIN requis. Vous saisissez le produit vous-même :
+  - **Nom du produit** : comment il s'appelle.
+  - **Type de produit (descripteur générique)** : une catégorie simple comme "nettoyant pour vitres" ou "tapis de yoga" que le script peut décrire.
+  - **Description du produit / caractéristiques clés** : une caractéristique par ligne. Elles jouent le même rôle que les puces produit d'Amazon.
+
+Tout le reste (durée, type de vidéo, accroche, rythme, mention, notes, déroulé à l'écran, consignes de la marque) fonctionne exactement de la même façon.
+
+### Le script peut-il dire le nom du produit ?
+
+Il y a une case **"Vous pouvez dire le nom de ce produit dans le script"** :
+
+- **Activée** (par défaut) : le script peut prononcer le nom du produit. Idéal pour les vidéos publiées hors Amazon (TikTok, Instagram, votre propre chaîne).
+- **Désactivée** : le nom est traité comme une fiche Amazon. Il n'est jamais prononcé, seulement décrit par son type générique. Utilisez ceci quand la vidéo est destinée à Amazon, qui n'autorise pas de nommer le produit exact. Une fois désactivée, renseignez le **Type de produit** pour que le script ait quelque chose à décrire.
+
+Les tâches hors Amazon affichent une étiquette **manual** là où l'ASIN figurerait normalement dans le tableau des tâches. L'import CSV reste réservé aux ASIN.
+
 ## Ce que le validateur attrape
 
 Le validateur passe chaque script contre :

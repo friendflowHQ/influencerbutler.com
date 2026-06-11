@@ -50,6 +50,29 @@ The same details double as **brand-outreach tokens**. In your Amazon outreach te
 
 The script appears below the input, with two validation badges: **Amazon Shoppable rules** and **FTC**. Both must be green for the script to be usable as-is.
 
+## Scripting a product that isn't on Amazon
+
+Not every product you script is on Amazon. Voiceover Butler has an **off-Amazon mode** for those.
+
+In **Add products**, use the **Product source** toggle at the top:
+
+- **Amazon product (ASIN)**: the default. Paste ASINs as above.
+- **Off-Amazon product (no ASIN)**: no ASIN required. You type the product yourself instead:
+  - **Product name**: what the thing is called.
+  - **Product type (generic descriptor)**: a plain category like "glass cleaner" or "yoga mat" the script can describe.
+  - **Product description / key features**: one feature per line. These play the same role the Amazon product bullets would.
+
+Everything else (length, video type, hook, pacing, disclosure, notes, on-screen timeline, brand guidelines) works exactly the same.
+
+### Can the script say the product's name?
+
+There's a **"You may say this product's name in the script"** checkbox:
+
+- **On** (default): the script can speak the product name. Right for videos posted off Amazon (TikTok, Instagram, your own channel).
+- **Off**: the name is treated like an Amazon listing. It's never spoken, only described by its generic type. Use this when the video is bound for Amazon, which doesn't allow naming the exact product. With it off, fill in the **Product type** so the script has something to describe.
+
+Off-Amazon jobs show a **manual** tag where the ASIN would normally be in the Jobs table. CSV import stays ASIN-only.
+
 ## What the validator catches
 
 The validator runs every script against:
