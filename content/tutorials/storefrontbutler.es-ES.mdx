@@ -45,6 +45,7 @@ Las filas se guardan en la caché del espacio de trabajo preseed. Los espacios d
 - **"La URL de tienda está vacía"**: configúrala en este espacio o en **Ajustes → Escaneo de tienda**. La copia de Ajustes es el valor por defecto para todos los espacios que necesitan tu tienda.
 - **La sincronización parece congelada en una sección**: Amazon está limitando peticiones. Storefront Butler reintenta con backoff; dale un minuto antes de pulsar Detener.
 - **Filas enriquecidas sin precios**: normalmente significa que tu clave de Creators API falta o ha caducado. Abre **API Integrations** y vuelve a verificarla.
+- **Un producto aparece en la columna Marketplaces pero en realidad no está a la venta ahí**: la columna lista todos los marketplaces de Amazon que tienen el listado, y tacha los que están agotados ahora mismo (la exportación CSV los marca como "(out of stock)"). Un código tachado significa que el listado sigue existiendo en ese marketplace pero no tiene una oferta comprable en este momento, así que trata sólo los códigos sin tachar como realmente a la venta. Esto también vale para los marketplaces internacionales.
 
 ## Relacionado
 

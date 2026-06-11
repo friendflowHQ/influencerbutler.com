@@ -45,6 +45,7 @@ Rows land in your preseed workspace cache. Downstream workspaces read directly f
 - **"Storefront URL is empty"**: set it in this workspace or in **Settings → Storefront Scan**. The Settings copy is the default for every workspace that needs your storefront.
 - **Sync looks frozen on a single section**: Amazon throttled. Storefront Butler retries with backoff; give it a minute before clicking Stop.
 - **Enrichment rows missing prices**: usually means your Creators API key is missing or expired. Open **API Integrations** and re-verify.
+- **A product shows in the Marketplaces column but isn't really for sale there**: the column lists every Amazon marketplace that carries the listing, and strikes through the ones that are currently out of stock (the CSV export marks them "(out of stock)"). A struck-through code means the listing still exists on that marketplace but has no buyable offer right now, so treat only the un-struck codes as actually being sold. This applies to the international marketplaces too.
 
 ## Related
 

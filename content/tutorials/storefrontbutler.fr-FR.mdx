@@ -45,6 +45,7 @@ Les lignes atterrissent dans le cache du workspace preseed. Les espaces en aval 
 - **"L'URL de boutique est vide"**: configurez-la dans cet espace ou dans **Paramètres → Scan de boutique**. La copie des Paramètres est la valeur par défaut pour tous les espaces qui ont besoin de votre boutique.
 - **La synchronisation semble figée sur une section**: Amazon vous limite. Storefront Butler retente avec backoff ; laissez-lui une minute avant de cliquer sur Arrêter.
 - **Lignes enrichies sans prix**: généralement votre clé Creators API est absente ou expirée. Ouvrez **API Integrations** et revérifiez-la.
+- **Un produit apparaît dans la colonne Marketplaces mais n'est pas vraiment en vente là-bas**: la colonne liste chaque marketplace Amazon qui propose la fiche, et barre ceux qui sont en rupture de stock pour le moment (l'export CSV les marque "(out of stock)"). Un code barré signifie que la fiche existe toujours sur ce marketplace mais n'a aucune offre achetable en ce moment ; ne considérez donc comme réellement en vente que les codes non barrés. Cela vaut aussi pour les marketplaces internationaux.
 
 ## Relié
 
