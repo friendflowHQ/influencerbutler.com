@@ -23,6 +23,10 @@ const FAQ = [
     q: "Is my data secure?",
     a: "Your data stays on your computer - the butlers run locally. We don't store your Amazon credentials, Instagram passwords, or message content on our servers.",
   },
+  {
+    q: "Do I need a powerful computer or server to run it?",
+    a: "It runs comfortably on most modern laptops and desktops. Because the butlers drive real Chrome sessions in the background, we recommend at least 2 CPU cores and 4 GB of RAM, and 4 cores with 8 GB for heavy use. On a small or virtual machine, turn on Low resource mode in Settings. It switches on by itself when the app detects limited hardware, and it runs your automations one at a time so the window stays responsive instead of freezing.",
+  },
 ];
 
 export default function PricingFaq() {
