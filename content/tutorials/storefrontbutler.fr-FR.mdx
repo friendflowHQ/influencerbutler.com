@@ -32,7 +32,7 @@ Une fenêtre Chrome s'ouvre et parcourt chaque section. La progression apparaît
 Quelques boutons que vous voudrez sans doute toucher après la première exécution :
 
 - **maxItemsByType** dans les paramètres plafonne le nombre d'éléments tirés par catégorie. Utile si vous avez 500+ photos mais ne vous intéressez qu'aux 100 plus récentes.
-- **createDeepLinks** + **deepLinkProvider** font passer chaque URL produit par votre fournisseur d'affiliation (PostTap, Linktw.in, Geniuslink, etc.) en entrant dans le flux.
+- **Le routage des liens** (le fournisseur de deeplink et le partenaire d'affiliation par lesquels passe chaque URL produit) se configure une seule fois dans **API Integrations > DeepLink Routing**, et non par workspace. Storefront Butler suit ce choix global automatiquement.
 - **flagUnavailableForRetag** reste activé par défaut - quand Storefront Butler voit un ASIN en rupture, il marque la ligne pour que Retag Butler puisse la remplacer ensuite.
 - **pricingScheduler** relance le rafraîchissement prix/commissions à une cadence (12 h par défaut) sans re-parcourir toute la boutique.
 

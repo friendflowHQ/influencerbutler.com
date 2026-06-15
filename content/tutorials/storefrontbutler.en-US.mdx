@@ -32,7 +32,7 @@ A Chrome window opens and walks each content section. Progress shows in the **Co
 A few knobs you'll likely touch after the first run:
 
 - **maxItemsByType** in settings caps how many items are pulled per category. Useful if you have 500+ photos but only care about the latest 100.
-- **createDeepLinks** + **deepLinkProvider** route every product URL through your configured affiliate provider (PostTap, Linktw.in, Geniuslink, etc.) on the way into the feed.
+- **Link routing** (which deeplink provider and affiliate partner every product URL goes through) is configured once in **API Integrations > DeepLink Routing**, not per workspace. Storefront Butler follows that global choice automatically.
 - **flagUnavailableForRetag** stays on by default - when Storefront Butler sees an out-of-stock ASIN, it tags the row so Retag Butler can swap it later.
 - **pricingScheduler** re-runs the price/commission refresh on a cadence (default 12h) without re-walking the whole storefront.
 
