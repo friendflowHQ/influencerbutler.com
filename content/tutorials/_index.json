@@ -226,6 +226,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "telegram-bot",
+      "title": "Telegram Bot setup: post deals to a Telegram channel",
+      "category": "Other",
+      "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Amazon Deals can post automatically.",
+      "order": 305,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "actionqueue",
       "title": "Action Queue: one inbox for every butler that needs your decision",
       "category": "Other",
