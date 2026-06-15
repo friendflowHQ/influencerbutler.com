@@ -33,7 +33,7 @@ A Chrome window opens, downloads each eligible video from your storefront, runs 
 ## Tuning over time
 
 - **skipViewsAtLeast**: the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.
-- **deleteOriginal / deleteBeforeReupload**: when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads.
+- **deleteOriginal / deleteBeforeReupload**: when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads. With "Delete before re-upload" on, the **Don't delete if added within (days)** field keeps any video added to Amazon within that many days from being deleted, so fresh listings stay put. 0 disables it.
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
