@@ -1,0 +1,94 @@
+---
+title: Find your Instagram channel link for Amazon Deals
+summary: Get the desktop URL for your Instagram broadcast channel so Amazon Deals Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.
+category: Instagram
+---
+
+## Why you need this
+
+Amazon Deals Butler can post your deals straight into an Instagram broadcast channel. To point it at the right channel, it needs the channel's desktop URL, which looks like this:
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+The catch: Instagram only shows your channel inside the mobile app, and it never displays that numeric channel ID anywhere in the interface. This guide walks you through pulling the ID out yourself, one time, so you can build the link and paste it into Amazon Deals Butler.
+
+You only have to do this once per channel.
+
+## Before you start
+
+- You manage an Instagram **broadcast channel** (the owner account).
+- You have the Instagram mobile app and a desktop computer with Chrome (or any Chromium browser with developer tools).
+- You are logged into the owner account in your desktop browser.
+
+## Step 1: Share the channel link from the mobile app
+
+1. Open the Instagram app on your phone.
+2. Go to your broadcast channel.
+3. Open the channel's settings and find the **Share** option for the channel link.
+4. Choose to send it to yourself by email.
+
+## Step 2: Open the link on your desktop
+
+1. On your computer, open the email you just sent yourself.
+2. Make sure you are logged into the Instagram account that **owns** the channel in your browser.
+3. Click the channel link from the email so it opens in your desktop browser.
+
+## Step 3: Open the developer console
+
+1. Right-click anywhere on the page and choose **Inspect**. This opens the browser developer tools.
+2. Click the **Console** tab.
+3. Clear anything already in the console so the output is easy to read.
+
+## Step 4: Read the channel ID
+
+Paste this single line into the console and press Enter:
+
+```
+[...document.documentElement.innerHTML.matchAll(/thread_fbid\D+(\d+)/g)].map(m=>m[1])
+```
+
+The first time you paste into the console, the browser may block it for safety and ask you to type **allow pasting** and press Enter. Do that, then paste the line again and press Enter.
+
+The console prints the channel ID. In our example it looks like this:
+
+```
+9633497573423662
+```
+
+Copy that number.
+
+## Step 5: Build the channel link
+
+Append the channel ID to the end of this base URL:
+
+```
+https://www.instagram.com/direct/t/
+```
+
+So the ID `9633497573423662` becomes:
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+That is the desktop link that opens the channel's message view directly, where deals get posted.
+
+## Step 6: Add it to Amazon Deals Butler
+
+1. In the app, open **Amazon Deals Butler**.
+2. Go to **Social Destinations**.
+3. Paste your link into the **Instagram Channel** field.
+
+The field saves automatically. Amazon Deals Butler now knows which channel to post to.
+
+## Common gotchas
+
+- **The snippet prints an empty list `[]`**: you are probably not logged into the owner account, or the page did not fully load. Reload the channel page while signed in as the owner and try again.
+- **The browser keeps blocking the paste**: type `allow pasting` exactly (no quotes) in the console, press Enter, then paste the snippet again.
+- **Several numbers print**: the channel ID is the long numeric value. If more than one appears, the channel ID is the one that, appended to the base URL, opens your channel.
+
+## Related
+
+- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the workspace that posts to this channel.

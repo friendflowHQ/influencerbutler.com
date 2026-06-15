@@ -1,0 +1,94 @@
+---
+title: Trouvez le lien de votre chaîne Instagram pour Amazon Deals
+summary: Récupérez l'URL bureau de votre chaîne de diffusion Instagram pour qu'Amazon Deals Butler puisse y publier. Le guide couvre le lien de partage mobile, un fragment d'une ligne dans la console pour lire l'ID de la chaîne, et la construction du lien final.
+category: Instagram
+---
+
+## Pourquoi vous en avez besoin
+
+Amazon Deals Butler peut publier vos offres directement dans une chaîne de diffusion Instagram. Pour viser la bonne chaîne, il lui faut l'URL bureau de la chaîne, qui ressemble à ceci :
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+Le souci : Instagram n'affiche votre chaîne que dans l'app mobile, et il ne montre jamais cet ID numérique de chaîne dans l'interface. Ce guide vous explique comment extraire l'ID vous-même, une seule fois, afin de construire le lien et de le coller dans Amazon Deals Butler.
+
+Vous n'avez à faire cela qu'une fois par chaîne.
+
+## Avant de commencer
+
+- Vous gérez une **chaîne de diffusion** Instagram (le compte propriétaire).
+- Vous avez l'app mobile Instagram et un ordinateur avec Chrome (ou tout navigateur Chromium avec les outils de développement).
+- Vous êtes connecté au compte propriétaire dans le navigateur de votre ordinateur.
+
+## Étape 1 : Partagez le lien de la chaîne depuis l'app mobile
+
+1. Ouvrez l'app Instagram sur votre téléphone.
+2. Allez sur votre chaîne de diffusion.
+3. Ouvrez les réglages de la chaîne et trouvez l'option **Partager** du lien de la chaîne.
+4. Choisissez de vous l'envoyer à vous-même par email.
+
+## Étape 2 : Ouvrez le lien sur votre ordinateur
+
+1. Sur votre ordinateur, ouvrez l'email que vous venez de vous envoyer.
+2. Assurez-vous d'être connecté dans votre navigateur au compte Instagram qui **possède** la chaîne.
+3. Cliquez sur le lien de la chaîne dans l'email pour qu'il s'ouvre dans le navigateur de votre ordinateur.
+
+## Étape 3 : Ouvrez la console développeur
+
+1. Faites un clic droit n'importe où sur la page et choisissez **Inspecter**. Cela ouvre les outils de développement du navigateur.
+2. Cliquez sur l'onglet **Console**.
+3. Effacez tout ce qui se trouve déjà dans la console pour que la sortie soit facile à lire.
+
+## Étape 4 : Lisez l'ID de la chaîne
+
+Collez cette seule ligne dans la console et appuyez sur Entrée :
+
+```
+[...document.documentElement.innerHTML.matchAll(/thread_fbid\D+(\d+)/g)].map(m=>m[1])
+```
+
+La première fois que vous collez dans la console, le navigateur peut le bloquer par sécurité et vous demander de taper **allow pasting** puis d'appuyer sur Entrée. Faites-le, puis collez à nouveau la ligne et appuyez sur Entrée.
+
+La console affiche l'ID de la chaîne. Dans notre exemple, il ressemble à ceci :
+
+```
+9633497573423662
+```
+
+Copiez ce nombre.
+
+## Étape 5 : Construisez le lien de la chaîne
+
+Ajoutez l'ID de la chaîne à la fin de cette URL de base :
+
+```
+https://www.instagram.com/direct/t/
+```
+
+Ainsi, l'ID `9633497573423662` devient :
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+C'est le lien bureau qui ouvre directement la vue de messages de la chaîne, là où les offres sont publiées.
+
+## Étape 6 : Ajoutez-le à Amazon Deals Butler
+
+1. Dans l'app, ouvrez **Amazon Deals Butler**.
+2. Allez dans **Social Destinations**.
+3. Collez votre lien dans le champ **Instagram Channel**.
+
+Le champ s'enregistre automatiquement. Amazon Deals Butler sait désormais sur quelle chaîne publier.
+
+## Pièges courants
+
+- **Le fragment affiche une liste vide `[]`** : vous n'êtes probablement pas connecté au compte propriétaire, ou la page n'a pas fini de charger. Rechargez la page de la chaîne en étant connecté au compte propriétaire et réessayez.
+- **Le navigateur continue de bloquer le collage** : tapez `allow pasting` exactement (sans guillemets) dans la console, appuyez sur Entrée, puis collez à nouveau le fragment.
+- **Plusieurs nombres s'affichent** : l'ID de la chaîne est la valeur numérique longue. Si plusieurs apparaissent, l'ID de la chaîne est celui qui, ajouté à l'URL de base, ouvre votre chaîne.
+
+## En lien
+
+- [Tutoriel Daily Deals Butler](/help/tutorials/daily-deals) - l'espace qui publie sur cette chaîne.

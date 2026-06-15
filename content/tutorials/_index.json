@@ -202,6 +202,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "instagram-channel-link",
+      "title": "Find your Instagram channel link for Amazon Deals",
+      "category": "Instagram",
+      "summary": "Get the desktop URL for your Instagram broadcast channel so Amazon Deals Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
+      "order": 225,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "instagram-email",
       "title": "Instagram Email Collection: harvest brand emails hiding in your Instagram DMs",
       "category": "Instagram",

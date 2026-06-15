@@ -1,0 +1,94 @@
+---
+title: Encuentra el enlace de tu canal de Instagram para Amazon Deals
+summary: Consigue la URL de escritorio de tu canal de difusión de Instagram para que Amazon Deals Butler pueda publicar en él. Te guía por el enlace de compartir del móvil, un fragmento de una línea en la consola para leer el ID del canal y la construcción del enlace final.
+category: Instagram
+---
+
+## Por qué lo necesitas
+
+Amazon Deals Butler puede publicar tus ofertas directamente en un canal de difusión de Instagram. Para apuntar al canal correcto, necesita la URL de escritorio del canal, que tiene este aspecto:
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+El problema: Instagram sólo muestra tu canal dentro de la app móvil y nunca muestra ese ID numérico del canal en ninguna parte de la interfaz. Esta guía te enseña a sacar el ID tú mismo, una sola vez, para que puedas construir el enlace y pegarlo en Amazon Deals Butler.
+
+Sólo tienes que hacer esto una vez por canal.
+
+## Antes de empezar
+
+- Gestionas un **canal de difusión** de Instagram (la cuenta propietaria).
+- Tienes la app móvil de Instagram y un ordenador con Chrome (o cualquier navegador Chromium con herramientas de desarrollo).
+- Has iniciado sesión con la cuenta propietaria en el navegador de tu ordenador.
+
+## Paso 1: Comparte el enlace del canal desde la app móvil
+
+1. Abre la app de Instagram en tu teléfono.
+2. Ve a tu canal de difusión.
+3. Abre los ajustes del canal y busca la opción **Compartir** del enlace del canal.
+4. Elige enviártelo a ti mismo por email.
+
+## Paso 2: Abre el enlace en tu ordenador
+
+1. En tu ordenador, abre el email que acabas de enviarte.
+2. Asegúrate de haber iniciado sesión en el navegador con la cuenta de Instagram que **es propietaria** del canal.
+3. Pulsa el enlace del canal del email para que se abra en el navegador de tu ordenador.
+
+## Paso 3: Abre la consola de desarrollador
+
+1. Haz clic derecho en cualquier parte de la página y elige **Inspeccionar**. Esto abre las herramientas de desarrollo del navegador.
+2. Pulsa la pestaña **Consola**.
+3. Limpia cualquier cosa que ya haya en la consola para que la salida sea fácil de leer.
+
+## Paso 4: Lee el ID del canal
+
+Pega esta única línea en la consola y pulsa Enter:
+
+```
+[...document.documentElement.innerHTML.matchAll(/thread_fbid\D+(\d+)/g)].map(m=>m[1])
+```
+
+La primera vez que pegues en la consola, el navegador puede bloquearlo por seguridad y pedirte que escribas **allow pasting** y pulses Enter. Hazlo, luego pega la línea de nuevo y pulsa Enter.
+
+La consola imprime el ID del canal. En nuestro ejemplo se ve así:
+
+```
+9633497573423662
+```
+
+Copia ese número.
+
+## Paso 5: Construye el enlace del canal
+
+Añade el ID del canal al final de esta URL base:
+
+```
+https://www.instagram.com/direct/t/
+```
+
+Así, el ID `9633497573423662` se convierte en:
+
+```
+https://www.instagram.com/direct/t/9633497573423662
+```
+
+Ese es el enlace de escritorio que abre directamente la vista de mensajes del canal, donde se publican las ofertas.
+
+## Paso 6: Añádelo a Amazon Deals Butler
+
+1. En la app, abre **Amazon Deals Butler**.
+2. Ve a **Social Destinations**.
+3. Pega tu enlace en el campo **Instagram Channel**.
+
+El campo se guarda automáticamente. Amazon Deals Butler ya sabe en qué canal publicar.
+
+## Tropiezos comunes
+
+- **El fragmento imprime una lista vacía `[]`**: probablemente no has iniciado sesión con la cuenta propietaria, o la página no cargó del todo. Recarga la página del canal con la sesión de la cuenta propietaria iniciada e inténtalo de nuevo.
+- **El navegador sigue bloqueando el pegado**: escribe `allow pasting` exactamente (sin comillas) en la consola, pulsa Enter y luego pega el fragmento de nuevo.
+- **Se imprimen varios números**: el ID del canal es el valor numérico largo. Si aparece más de uno, el ID del canal es el que, añadido a la URL base, abre tu canal.
+
+## Relacionado
+
+- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals) - el espacio que publica en este canal.
