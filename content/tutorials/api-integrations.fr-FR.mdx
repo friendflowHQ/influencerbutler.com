@@ -76,6 +76,57 @@ Les clés d'API sont stockées chiffrées dans `{userData}/InfluencerButler/secu
 - **L'OAuth YouTube expire de façon inattendue**: Google renouvelle les tokens OAuth environ chaque année. Relancez le Setup Wizard de YouTube Butler pour rafraîchir.
 - **Le routage d'affiliation a choisi le mauvais fournisseur**: généralement le mauvais fournisseur était coché. Ouvrez la section routage et vérifiez les cases à cocher des fournisseurs participants.
 
+<h2 id="telegram-bot-setup">Configuration du bot Telegram</h2>
+
+Amazon Deals peut publier les images de vos produits et leurs légendes directement dans un canal Telegram. Pour le configurer, il vous faut deux choses : un **token du bot** et l'**ID du canal (chat)** dans lequel vous voulez publier. Voici le guide complet.
+
+### 1. Créez un bot avec BotFather
+
+Dans Telegram, recherchez **@BotFather** (le bot officiel, il porte la coche bleue de vérification) et ouvrez une discussion avec lui. Envoyez la commande `/newbot`. BotFather demande un nom affiché, puis un nom d'utilisateur qui doit se terminer par `bot`, par exemple `gardenlovers_deals_bot`.
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : discussion BotFather après l'envoi de /newbot, montrant les demandes de nom et de nom d'utilisateur ]</div>
+
+### 2. Copiez le token du bot
+
+Une fois le nom d'utilisateur accepté, BotFather répond avec votre token d'accès. Il ressemble à `123456789:ABCdef...`. Copiez-le. Gardez-le privé : toute personne disposant de ce token peut publier en tant que votre bot.
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : réponse de BotFather contenant le token de l'API HTTP ]</div>
+
+De retour dans InfluencerButler, collez le token dans le champ **Telegram Bot Token** du panneau API Integrations.
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : la carte du bot Telegram avec le token collé dans "Telegram Bot Token" ]</div>
+
+### 3. Ajoutez le bot à votre canal en tant qu'administrateur
+
+Ouvrez le canal Telegram dans lequel vous voulez publier des offres, ou créez-en un nouveau. Ouvrez la liste des **Administrateurs** du canal, choisissez **Ajouter un administrateur**, recherchez votre bot par son nom d'utilisateur et ajoutez-le. Donnez-lui au moins l'autorisation **Publier des messages**.
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : écran "Administrateurs" du canal avec le bot ajouté et "Publier des messages" activé ]</div>
+
+### 4. Trouvez votre ID de canal / chat
+
+Il existe deux formats :
+
+- **Canal public** : utilisez l'identifiant public, par exemple `@gardenloversdeals`. C'est l'option la plus simple.
+- **Canal privé** : utilisez l'ID numérique, qui commence par `-100`, par exemple `-1001234567890`. Pour le trouver, transférez n'importe quel message du canal vers un bot d'aide comme **@getidsbot**, qui répond avec l'ID numérique.
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : l'ID numérique du chat renvoyé par un bot de recherche d'ID, ou le @identifiant public dans les infos du canal ]</div>
+
+### 5. Collez l'ID et testez
+
+Collez l'identifiant ou l'ID numérique dans le champ **Channel / Chat ID**, puis cliquez sur **Test Connection**. Quand tout est bien configuré, le statut passe au vert et affiche "Connected".
+
+<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : la carte Telegram après une connexion réussie, montrant le badge vert "Connected" ]</div>
+
+### Ce qui est publié
+
+Une fois connecté, Amazon Deals publie dans ce canal via l'endpoint `sendPhoto` de la Bot API de Telegram. Chaque publication porte l'image du produit de votre ligne d'offre et une légende construite à partir du modèle de votre compositeur de publications. Rien n'est envoyé tant que vous ne publiez pas, donc connecter le bot à l'avance est sans risque.
+
+### Problèmes courants avec Telegram
+
+- **Le test échoue avec "chat not found"** : le bot n'est pas encore dans le canal, ou l'identifiant / ID est incorrect. Revérifiez l'étape 3 et l'étape 4.
+- **Le test échoue avec "not enough rights"** : le bot est dans le canal mais n'est pas administrateur, ou n'a pas l'autorisation Publier des messages. Rouvrez la liste des administrateurs du canal et accordez-la.
+- **Les publications n'arrivent nulle part après un changement de nom d'utilisateur** : si vous avez renommé l'identifiant public du canal, mettez à jour le champ Channel / Chat ID pour qu'il corresponde, puis testez à nouveau.
+
 ## Relié
 
 - Chaque espace côté Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lit depuis ici.
