@@ -596,6 +596,25 @@ export async function POST(request: Request) {
           onConflict: "ls_subscription_id",
         }),
       );
+
+      // Backfill license rows that arrived before this subscription existed.
+      // order_created/subscription_created/license_key_created are independent
+      // webhook deliveries that can race; when license_key_created wins, the
+      // license lands with a null subscription_id (it couldn't resolve the
+      // not-yet-written subscription). Link this user's orphaned licenses now.
+      // Already-linked rows are left untouched (the `is(subscription_id, null)`
+      // guard), so this is a safe no-op in the common in-order case.
+      const createdSubscription = await findSubscriptionByLsId(supabase, recordId);
+      if (createdSubscription.id) {
+        await assertWrite(
+          "license_keys.update(backfill subscription_id)",
+          supabase
+            .from("license_keys")
+            .update({ subscription_id: createdSubscription.id })
+            .eq("user_id", userId)
+            .is("subscription_id", null),
+        );
+      }
     },
 
     subscription_updated: async () => {
