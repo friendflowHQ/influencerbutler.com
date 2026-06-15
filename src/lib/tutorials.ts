@@ -162,6 +162,19 @@ function renderMarkdown(source: string): string {
       out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
       continue;
     }
+    // @youtube(VIDEO_ID) on its own line -> responsive privacy-mode embed.
+    // The ID is strictly validated (YouTube IDs are short [A-Za-z0-9_-]); no
+    // arbitrary HTML/iframe markup is ever passed through, keeping the
+    // renderer's no-raw-HTML guarantee intact.
+    const video = line.match(/^@youtube\(([A-Za-z0-9_-]{6,20})\)\s*$/);
+    if (video) {
+      closeList();
+      const vid = video[1];
+      out.push(
+        `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="Tutorial video" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
+      );
+      continue;
+    }
     const bullet = line.match(/^\s*[-*]\s+(.*)$/);
     if (bullet) {
       if (listType !== "ul") {

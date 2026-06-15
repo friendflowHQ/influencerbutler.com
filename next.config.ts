@@ -28,7 +28,7 @@ const contentSecurityPolicy = [
   "font-src 'self' https://fonts.gstatic.com",
   `img-src ${imgSrc.join(" ")}`,
   `connect-src ${connectSrc.join(" ")}`,
-  "frame-src 'self' https://*.lemonsqueezy.com",
+  "frame-src 'self' https://*.lemonsqueezy.com https://www.youtube.com https://www.youtube-nocookie.com",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
