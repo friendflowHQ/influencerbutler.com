@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
 import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
 import {
@@ -37,7 +36,7 @@ declare global {
 }
 
 type Subscription = {
-  id: string;
+  id: string | null;
   ls_subscription_id: string;
   ls_variant_id: string | number | null;
   status: string;
@@ -90,41 +89,30 @@ export default function SubscriptionPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const supabase = createClient();
-
     const loadData = async () => {
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
+        // Resolved server-side: a service-role read (bypasses RLS) with an
+        // email -> Lemon Squeezy fallback, so an active subscriber is
+        // recognized even when the subscriptions row is RLS-hidden, mapped to
+        // a different user_id, or not yet written by the webhook.
+        const response = await fetch("/api/me/subscription-details");
 
-        if (!user) {
+        if (response.status === 401) {
           setLoading(false);
           return;
         }
 
-        // Fetch subscription (most recent active one)
-        const { data: subs } = await supabase
-          .from("subscriptions")
-          .select("id,ls_subscription_id,ls_variant_id,status,plan_name,renews_at,ends_at")
-          .eq("user_id", user.id)
-          .in("status", ["active", "on_trial", "past_due", "cancelled"])
-          .order("created_at", { ascending: false })
-          .limit(1);
+        const payload = (await response.json()) as {
+          subscription?: Subscription | null;
+          hasLicenseKey?: boolean;
+        };
 
-        const sub = subs && subs.length > 0 ? (subs[0] as Subscription) : null;
-        setSubscription(sub);
-
-        if (sub) {
-          const { data: keys } = await supabase
-            .from("license_keys")
-            .select("id")
-            .eq("subscription_id", sub.id)
-            .limit(1);
-
-          if (keys && keys.length > 0) {
-            setHasLicenseKey(true);
-          }
+        if (!response.ok) {
+          throw new Error("Could not load subscription details");
         }
+
+        setSubscription(payload.subscription ?? null);
+        setHasLicenseKey(Boolean(payload.hasLicenseKey));
       } catch (err) {
         console.error("Failed to load subscription data", err);
         setError("Failed to load subscription details.");
