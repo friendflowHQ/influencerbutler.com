@@ -4,16 +4,21 @@ import { notFound } from "next/navigation";
 import {
   loadBlogManifest,
   loadBlogPost,
+  loadPublishedPosts,
+  isPublished,
   formatBlogDate,
 } from "@/lib/blog";
+import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 
 export const revalidate = 300;
 
 const SITE = "https://www.influencerbutler.com";
 
 export async function generateStaticParams() {
-  const manifest = await loadBlogManifest();
-  return manifest.posts.map((entry) => ({ slug: entry.id }));
+  // Only pre-build posts that have actually published. Future-dated posts are
+  // generated on demand (ISR) once their date arrives.
+  const posts = await loadPublishedPosts();
+  return posts.map((entry) => ({ slug: entry.id }));
 }
 
 export async function generateMetadata({
@@ -69,6 +74,11 @@ export default async function BlogPostPage({
 
   const manifest = await loadBlogManifest();
   const entry = manifest.posts.find((p) => p.id === slug);
+
+  // Date gate: a future-dated post is not live yet, so 404 until its day.
+  const publishDate = (post.frontmatter.date as string) || entry?.date;
+  if (!isPublished(publishDate)) notFound();
+
   const category = (post.frontmatter.category as string) || entry?.category || "Blog";
   const title = (post.frontmatter.title as string) || entry?.title || slug;
   const summary = (post.frontmatter.summary as string) || entry?.summary || "";
@@ -78,10 +88,11 @@ export default async function BlogPostPage({
   const image = (post.frontmatter.image as string) || entry?.image || "";
   const imageAlt = (post.frontmatter.imageAlt as string) || entry?.imageAlt || title;
 
-  const related = manifest.posts
+  const live = manifest.posts.filter((p) => isPublished(p.date));
+  const related = live
     .filter((p) => p.category === category && p.id !== slug)
     .slice(0, 3);
-  const morePosts = manifest.posts.filter((p) => p.id !== slug).slice(0, 4);
+  const morePosts = live.filter((p) => p.id !== slug).slice(0, 4);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -111,24 +122,7 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            Influencer Butler
-          </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/blog" className="text-slate-700 hover:text-slate-900">
-              Blog
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-md bg-orange-600 px-3 py-1.5 font-semibold text-white hover:bg-orange-700"
-            >
-              Start free trial
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="mx-auto grid max-w-6xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_280px]">
         <article>
@@ -241,6 +235,8 @@ export default async function BlogPostPage({
           </div>
         </aside>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

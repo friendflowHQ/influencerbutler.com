@@ -70,6 +70,28 @@ export async function loadBlogManifest(): Promise<BlogManifest> {
   return cachedManifest;
 }
 
+// Today's date in UTC as a yyyy-mm-dd string. Compared lexicographically
+// against a post's `date` (also yyyy-mm-dd), which is correct for ISO dates.
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// A post is "published" once its date has arrived (date <= today, UTC).
+// This is the whole drip mechanism: posts are committed with future dates and
+// reveal themselves on their own day with no scheduled job. A missing date
+// means always-visible (defensive default).
+export function isPublished(dateISO?: string): boolean {
+  if (!dateISO) return true;
+  return dateISO <= todayISO();
+}
+
+// All posts whose publish date has arrived, newest first (manifest is already
+// sorted newest-first by loadBlogManifest).
+export async function loadPublishedPosts(): Promise<BlogManifestEntry[]> {
+  const manifest = await loadBlogManifest();
+  return manifest.posts.filter((p) => isPublished(p.date));
+}
+
 function parseFrontmatter(source: string): { frontmatter: Record<string, unknown>; body: string } {
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) {
@@ -120,7 +142,10 @@ function renderInline(line: string): string {
     const isAbsolute = /^https?:\/\//i.test(href);
     const isRootRelative = /^\/[A-Za-z0-9]/.test(href);
     const safeHref = isAbsolute || isRootRelative ? href : "#";
-    const external = isAbsolute ? ' rel="noreferrer noopener" target="_blank"' : "";
+    // External links in the blog are affiliate/partner links (e.g. the Benable
+    // referral), so mark them nofollow + sponsored per search-engine guidelines.
+    // This is SEO-only and does not affect referral tracking or commissions.
+    const external = isAbsolute ? ' rel="nofollow sponsored noreferrer noopener" target="_blank"' : "";
     return `<a href="${safeHref}"${external}>${text}</a>`;
   });
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -237,16 +262,4 @@ export function formatBlogDate(iso: string): string {
   // Parse as UTC date-only to avoid timezone drift on the server.
   const parts = iso.split("-").map((n) => parseInt(n, 10));
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return iso;
-  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-export function clearBlogCache() {
-  cachedManifest = null;
-  cachedManifestAt = 0;
-}
+  const d = new Date(Dat

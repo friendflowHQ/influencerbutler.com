@@ -76,7 +76,10 @@ async function main() {
     const blogManifestPath = path.join(repoRoot, "content", "blog", "_index.json");
     const blogRaw = await readFile(blogManifestPath, "utf8");
     const blog = JSON.parse(blogRaw);
-    const posts = Array.isArray(blog.posts) ? blog.posts : [];
+    const allPosts = Array.isArray(blog.posts) ? blog.posts : [];
+    // Only include posts whose publish date has arrived (date-gated drip).
+    const todayStr = fmtDate(new Date());
+    const posts = allPosts.filter((p) => !p || !p.date || p.date <= todayStr);
     if (posts.length) {
       entries.push({
         loc: `${SITE_ORIGIN}/blog`,

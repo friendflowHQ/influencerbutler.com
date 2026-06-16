@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadBlogManifest, formatBlogDate } from "@/lib/blog";
+import { loadPublishedPosts, formatBlogDate } from "@/lib/blog";
+import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 
 export const revalidate = 300;
 
@@ -30,33 +31,12 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogIndexPage() {
-  const manifest = await loadBlogManifest();
-  const posts = manifest.posts;
+  const posts = await loadPublishedPosts();
   const [featured, ...rest] = posts;
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            Influencer Butler
-          </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/blog" className="font-semibold text-orange-600">
-              Blog
-            </Link>
-            <Link href="/landing" className="text-slate-700 hover:text-slate-900">
-              Features
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-md bg-orange-600 px-3 py-1.5 font-semibold text-white hover:bg-orange-700"
-            >
-              Start free trial
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="mx-auto max-w-6xl px-6 py-12">
         <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
@@ -151,6 +131,8 @@ export default async function BlogIndexPage() {
           </Link>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }
