@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 
-type LicenseKey = {
-  id: string;
+export type LicenseKey = {
   key: string;
   status: string;
   activation_limit: number | null;
@@ -14,60 +12,15 @@ type LicenseKey = {
 
 type Props = {
   variant: "card" | "panel";
+  licenseKey: LicenseKey | null;
+  loading?: boolean;
 };
 
 const DOWNLOAD_URL = "https://dl.influencerbutler.com";
 
-export default function LicenseKeyDisplay({ variant }: Props) {
-  const [loading, setLoading] = useState(true);
-  const [licenseKey, setLicenseKey] = useState<LicenseKey | null>(null);
+export default function LicenseKeyDisplay({ variant, licenseKey, loading = false }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    const load = async () => {
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
-        if (!user) {
-          setLoading(false);
-          return;
-        }
-
-        const { data: subs } = await supabase
-          .from("subscriptions")
-          .select("id")
-          .eq("user_id", user.id)
-          .in("status", ["active", "on_trial", "past_due", "cancelled"])
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        const sub = subs && subs.length > 0 ? (subs[0] as { id: string }) : null;
-        if (!sub) {
-          setLoading(false);
-          return;
-        }
-
-        const { data: keys } = await supabase
-          .from("license_keys")
-          .select("id,key,status,activation_limit,activations_count")
-          .eq("subscription_id", sub.id)
-          .limit(1);
-
-        if (keys && keys.length > 0) {
-          setLicenseKey(keys[0] as LicenseKey);
-        }
-      } catch (err) {
-        console.error("Failed to load license key", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-  }, []);
 
   const handleCopy = async () => {
     if (!licenseKey) return;

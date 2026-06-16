@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
-import LicenseKeyDisplay from "@/components/dashboard/LicenseKeyDisplay";
+import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/LicenseKeyDisplay";
 import {
   PRICE_CENTS,
   TIER_NAME,
@@ -49,7 +49,7 @@ export default function SubscriptionPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [hasLicenseKey, setHasLicenseKey] = useState(false);
+  const [licenseKey, setLicenseKey] = useState<LicenseKey | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [showCancelFunnel, setShowCancelFunnel] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function SubscriptionPage() {
 
         const payload = (await response.json()) as {
           subscription?: Subscription | null;
-          hasLicenseKey?: boolean;
+          licenseKey?: LicenseKey | null;
         };
 
         if (!response.ok) {
@@ -112,7 +112,7 @@ export default function SubscriptionPage() {
         }
 
         setSubscription(payload.subscription ?? null);
-        setHasLicenseKey(Boolean(payload.hasLicenseKey));
+        setLicenseKey(payload.licenseKey ?? null);
       } catch (err) {
         console.error("Failed to load subscription data", err);
         setError("Failed to load subscription details.");
@@ -268,7 +268,7 @@ export default function SubscriptionPage() {
         </div>
       </section>
 
-      {hasLicenseKey ? <LicenseKeyDisplay variant="panel" /> : null}
+      {licenseKey ? <LicenseKeyDisplay variant="panel" licenseKey={licenseKey} /> : null}
 
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

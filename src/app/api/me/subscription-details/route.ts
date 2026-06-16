@@ -39,6 +39,30 @@ type SubscriptionRow = {
   ends_at?: string | null;
 };
 
+type LicenseKey = {
+  key: string;
+  status: string;
+  activation_limit: number | null;
+  activations_count: number | null;
+};
+
+type LicenseKeyRow = {
+  key?: string | null;
+  status?: string | null;
+  activation_limit?: number | null;
+  activations_count?: number | null;
+};
+
+function toLicenseKey(row: LicenseKeyRow | null | undefined): LicenseKey | null {
+  if (!row || !row.key) return null;
+  return {
+    key: row.key,
+    status: row.status ?? "active",
+    activation_limit: row.activation_limit ?? null,
+    activations_count: row.activations_count ?? null,
+  };
+}
+
 type LsSubscriptionAttributes = {
   status?: string | null;
   product_name?: string | null;
@@ -160,32 +184,32 @@ export async function GET() {
       ends_at: row.ends_at ?? null,
     };
 
-    let hasLicenseKey = false;
+    let licenseKey: LicenseKey | null = null;
     if (subscription.id) {
       const { data: keys } = await admin
         .from("license_keys")
-        .select("id")
+        .select("key,status,activation_limit,activations_count")
         .eq("subscription_id", subscription.id)
         .limit(1);
-      hasLicenseKey = Boolean(keys && keys.length > 0);
+      licenseKey = toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
     }
 
-    return NextResponse.json({ subscription, hasLicenseKey });
+    return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
   }
 
   // Fallback: resolve directly from Lemon Squeezy by email.
   const email = user.email ?? null;
   const subscription = email ? await fetchSubscriptionFromLs(email) : null;
 
-  let hasLicenseKey = false;
+  let licenseKey: LicenseKey | null = null;
   if (subscription) {
     const { data: keys } = await admin
       .from("license_keys")
-      .select("id")
+      .select("key,status,activation_limit,activations_count")
       .eq("user_id", user.id)
       .limit(1);
-    hasLicenseKey = Boolean(keys && keys.length > 0);
+    licenseKey = toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
   }
 
-  return NextResponse.json({ subscription, hasLicenseKey });
+  return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
 }

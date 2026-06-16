@@ -51,25 +51,19 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
           .eq("id", user.id)
           .maybeSingle();
 
-        const { data: subs } = await supabase
-          .from("subscriptions")
-          .select("id")
-          .eq("user_id", user.id)
-          .in("status", ["active", "on_trial", "past_due", "cancelled"])
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        const sub = subs && subs.length > 0 ? (subs[0] as { id: string }) : null;
-        if (sub) {
-          const { data: keys } = await supabase
-            .from("license_keys")
-            .select("id")
-            .eq("subscription_id", sub.id)
-            .limit(1);
-          if (keys && keys.length > 0) {
-            setHasLicenseKey(true);
-          }
-        }
+        // License key gates the "Download app" link. Resolve it via the
+        // service-role API (bypasses RLS) instead of an anon read of the
+        // subscriptions table, which has no SELECT policy and returns nothing.
+        void fetch("/api/me/subscription-details")
+          .then((res) => (res.ok ? res.json() : null))
+          .then((payload: { hasLicenseKey?: boolean } | null) => {
+            if (payload?.hasLicenseKey) {
+              setHasLicenseKey(true);
+            }
+          })
+          .catch(() => {
+            // ignore - download link just won't show
+          });
 
         const { data: profile } = await profilePromise;
         if (profile) {
