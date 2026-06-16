@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import {
+  ALL_PERMISSION_KEYS,
+  isPermissionKey,
+  type PermissionKey,
+} from "./permissions";
 
 export type AdminSession = {
   userId: string;
@@ -48,11 +53,11 @@ function parseAdminEmails(): Set<string> {
 }
 
 /**
- * Returns the current session's admin info if the caller's email is in the
- * ADMIN_EMAILS allowlist, or null otherwise. Use this at the top of every
- * admin-only route/page.
+ * Resolves the current Supabase session user from cookies, WITHOUT any
+ * allowlist check. Returns null if there's no logged-in user. Used as the base
+ * for both getAdminSession (super-admin gate) and resolveActor (staff lookup).
  */
-export async function getAdminSession(): Promise<AdminSession | null> {
+export async function getSessionUser(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "https://khutiiojhafblabtixpp.supabase.co",
@@ -75,26 +80,38 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     };
   };
 
-  let userId: string | null = null;
-  let email: string | null = null;
   try {
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    userId = session?.user?.id ?? null;
-    email = session?.user?.email ?? null;
+    const userId = session?.user?.id ?? null;
+    const email = session?.user?.email ?? null;
+    if (!userId || !email) return null;
+    return { userId, email };
   } catch (error) {
-    console.error("getAdminSession: auth.getSession threw", error);
+    console.error("getSessionUser: auth.getSession threw", error);
     return null;
   }
+}
 
-  if (!userId || !email) return null;
-
+export function isEmailAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
   const allow = parseAdminEmails();
-  if (allow.size === 0) return null;
-  if (!allow.has(email.toLowerCase())) return null;
+  if (allow.size === 0) return false;
+  return allow.has(email.toLowerCase());
+}
 
-  return { userId, email };
+/**
+ * Returns the current session's admin info if the caller's email is in the
+ * ADMIN_EMAILS allowlist, or null otherwise. Use this for super-admin-only
+ * surfaces (e.g. managing assistants). For permission-scoped surfaces use
+ * requirePermission instead.
+ */
+export async function getAdminSession(): Promise<AdminSession | null> {
+  const su = await getSessionUser();
+  if (!su) return null;
+  if (!isEmailAdmin(su.email)) return null;
+  return su;
 }
 
 /**
@@ -154,4 +171,128 @@ export function createAdminClient(): ServiceClient | null {
       },
     },
   }) as unknown as ServiceClient;
+}
+
+// ---------------------------------------------------------------------------
+// Assistant accounts + granular permissions
+// ---------------------------------------------------------------------------
+
+export type ActorRole = "admin" | "assistant";
+
+export type Actor = {
+  userId: string;
+  email: string;
+  role: ActorRole;
+  permissions: Set<PermissionKey>;
+  kind: "session" | "license";
+};
+
+type StaffRow = {
+  is_active?: boolean | null;
+  permissions?: unknown;
+};
+
+/** Reads an active staff_members row for a user, or null. Service-role only. */
+async function getActiveStaff(userId: string): Promise<StaffRow | null> {
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from("staff_members")
+      .select("is_active,permissions")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("getActiveStaff: query failed", error);
+      return null;
+    }
+    return (data as StaffRow | null) ?? null;
+  } catch (error) {
+    console.error("getActiveStaff threw", error);
+    return null;
+  }
+}
+
+function toPermissionSet(raw: unknown): Set<PermissionKey> {
+  const set = new Set<PermissionKey>();
+  if (Array.isArray(raw)) {
+    for (const v of raw) {
+      if (isPermissionKey(v)) set.add(v);
+    }
+  }
+  return set;
+}
+
+/**
+ * Resolves the acting admin/assistant for a request, via session cookie or
+ * (when present) an Authorization: Bearer license key. Super-admins
+ * (ADMIN_EMAILS) get every permission; assistants get the set on their active
+ * staff_members row. Returns null for anyone who is neither.
+ */
+export async function resolveActor(request?: Request): Promise<Actor | null> {
+  let userId: string | null = null;
+  let email: string | null = null;
+  let kind: "session" | "license" = "session";
+
+  const authHeader = request?.headers.get("authorization") || "";
+  if (/^Bearer\s+/i.test(authHeader)) {
+    const { resolveLicenseOnly } = await import("./license-auth");
+    const result = await resolveLicenseOnly(request as Request);
+    if (result.ok) {
+      userId = result.auth.userId;
+      email = result.auth.email ?? null;
+      kind = "license";
+    }
+  }
+
+  if (!userId) {
+    const su = await getSessionUser();
+    if (su) {
+      userId = su.userId;
+      email = su.email;
+      kind = "session";
+    }
+  }
+
+  if (!userId || !email) return null;
+
+  if (isEmailAdmin(email)) {
+    return {
+      userId,
+      email,
+      role: "admin",
+      permissions: new Set(ALL_PERMISSION_KEYS),
+      kind,
+    };
+  }
+
+  const staff = await getActiveStaff(userId);
+  if (staff && staff.is_active !== false) {
+    return {
+      userId,
+      email,
+      role: "assistant",
+      permissions: toPermissionSet(staff.permissions),
+      kind,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Returns the acting admin/assistant if they hold `perm` (super-admins always
+ * do), or null. Use at the top of every permission-scoped admin route:
+ *
+ *   const actor = await requirePermission("affiliates.approve", request);
+ *   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+ */
+export async function requirePermission(
+  perm: PermissionKey,
+  request?: Request,
+): Promise<Actor | null> {
+  const actor = await resolveActor(request);
+  if (!actor) return null;
+  if (actor.role === "admin") return actor;
+  return actor.permissions.has(perm) ? actor : null;
 }

@@ -10,7 +10,8 @@
  * confirmation before calling it.
  */
 import { NextResponse } from "next/server";
-import { getAdminSession, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,8 +29,8 @@ type DeleteClient = {
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 export async function POST(request: Request) {
-  const admin = await getAdminSession();
-  if (!admin) {
+  const actor = await requirePermission("community.delete", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -58,6 +59,13 @@ export async function POST(request: Request) {
     console.error("admin community delete failed", error);
     return NextResponse.json({ error: "Could not delete" }, { status: 500 });
   }
+
+  await logAdminAction({
+    actor,
+    action: "community.delete",
+    targetType: type,
+    targetId: id,
+  });
 
   return NextResponse.json({ ok: true });
 }

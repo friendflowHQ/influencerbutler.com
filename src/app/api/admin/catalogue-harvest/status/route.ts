@@ -12,7 +12,7 @@
  *   500 { error: ... }
  */
 import { NextResponse } from "next/server";
-import { getAdminSession, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,9 +37,9 @@ type ReadClient = {
   };
 };
 
-export async function GET() {
-  const admin = await getAdminSession();
-  if (!admin) {
+export async function GET(request: Request) {
+  const actor = await requirePermission("catalogue.view", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +63,7 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    admin: { email: admin.email },
+    admin: { email: actor.email },
     cc,
     spcc,
   });

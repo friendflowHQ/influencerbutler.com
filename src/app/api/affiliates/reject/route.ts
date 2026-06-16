@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAdminSession, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,8 @@ type RejectClient = {
 };
 
 export async function POST(request: Request) {
-  const admin = await getAdminSession();
-  if (!admin) {
+  const actor = await requirePermission("affiliates.reject", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -48,8 +49,8 @@ export async function POST(request: Request) {
       status: "rejected",
       reviewed_at: new Date().toISOString(),
       admin_notes: reason
-        ? `Rejected by ${admin.email}: ${reason}`
-        : `Rejected by ${admin.email}`,
+        ? `Rejected by ${actor.email}: ${reason}`
+        : `Rejected by ${actor.email}`,
     })
     .eq("user_id", userId);
 
@@ -57,6 +58,14 @@ export async function POST(request: Request) {
     console.error("reject: update failed", error);
     return NextResponse.json({ error: "Could not update application" }, { status: 500 });
   }
+
+  await logAdminAction({
+    actor,
+    action: "affiliate.reject",
+    targetType: "user",
+    targetId: userId,
+    details: reason ? { reason } : null,
+  });
 
   return NextResponse.json({ ok: true });
 }

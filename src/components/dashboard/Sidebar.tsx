@@ -33,6 +33,8 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const [hasLicenseKey, setHasLicenseKey] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [adminRole, setAdminRole] = useState<"admin" | "assistant" | null>(null);
+  const [adminPerms, setAdminPerms] = useState<string[]>([]);
   const { setHelpOpen } = useKeyboardShortcutsContext();
 
   useEffect(() => {
@@ -93,6 +95,46 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     };
     void checkLicense();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkAdmin = async () => {
+      try {
+        const res = await fetch("/api/admin/whoami", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          isStaff?: boolean;
+          role?: "admin" | "assistant" | null;
+          permissions?: string[];
+        };
+        if (!cancelled && json.isStaff) {
+          setAdminRole(json.role ?? null);
+          setAdminPerms(json.permissions ?? []);
+        }
+      } catch {
+        // not staff / network error: no admin nav
+      }
+    };
+    void checkAdmin();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const adminNavItems = useMemo(() => {
+    if (!adminRole) return [];
+    const perms = new Set(adminPerms);
+    const isAdmin = adminRole === "admin";
+    // `built` gates links to pages that exist; flip on as pages ship.
+    const items = [
+      { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
+      { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
+      { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
+      { href: "/dashboard/admin/users", label: "Users", perm: "users.view", built: true },
+      { href: "/dashboard/admin/staff", label: "Assistants", perm: "staff.manage", built: true },
+    ];
+    return items.filter((i) => i.built && (isAdmin || perms.has(i.perm)));
+  }, [adminRole, adminPerms]);
 
   const userDisplay = useMemo(() => {
     if (profileDisplayName && profileDisplayName.trim().length > 0) return profileDisplayName;
@@ -197,6 +239,34 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             );
           })}
         </nav>
+
+        {adminNavItems.length > 0 ? (
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {adminRole === "admin" ? "Admin" : "Assistant"}
+            </p>
+            <nav className="mt-2 flex flex-col gap-1" aria-label="Admin navigation">
+              {adminNavItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={[
+                      "rounded-lg px-3 py-2 text-sm font-medium transition",
+                      isActive
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
+                    ].join(" ")}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ) : null}
 
         {hasLicenseKey ? (
           <a

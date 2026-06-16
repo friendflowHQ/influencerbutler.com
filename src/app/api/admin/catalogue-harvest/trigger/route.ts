@@ -22,7 +22,8 @@
  *   ADMIN_EMAILS: existing comma-separated admin allowlist.
  */
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin";
+import { requirePermission } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +31,8 @@ export const dynamic = "force-dynamic";
 type TriggerBody = { kind?: "cc" | "spcc" | "both" };
 
 export async function POST(request: Request) {
-  const admin = await getAdminSession();
-  if (!admin) {
+  const actor = await requirePermission("catalogue.trigger", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         event_type: "harvest-catalogue",
-        client_payload: { kind, triggeredBy: admin.email, at: new Date().toISOString() },
+        client_payload: { kind, triggeredBy: actor.email, at: new Date().toISOString() },
       }),
     });
 
@@ -75,11 +76,18 @@ export async function POST(request: Request) {
       );
     }
 
+    await logAdminAction({
+      actor,
+      action: "catalogue.trigger",
+      targetType: "catalogue",
+      targetId: kind,
+    });
+
     return NextResponse.json({
       ok: true,
       dispatchedAt: new Date().toISOString(),
       kind,
-      admin: admin.email,
+      admin: actor.email,
     });
   } catch (error) {
     return NextResponse.json(

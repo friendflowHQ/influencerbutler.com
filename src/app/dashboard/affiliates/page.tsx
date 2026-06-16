@@ -256,20 +256,30 @@ function PendingState({
         </div>
         <h2 className="mt-4 text-xl font-semibold text-slate-900">Your application is under review</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Submitted {pretty}. Our team reviews new affiliates weekly - you&apos;ll hear back via email,
-          usually within 48 hours. Once approved, this page will automatically switch to your
-          affiliate dashboard.
+          Submitted {pretty}. We review your audience fit and promotion plan, then email you a
+          decision (usually within a day or two).
         </p>
+
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Heads up: there&apos;s a second signup after approval</p>
+          <p className="mt-1">
+            Once we approve you, you&apos;ll create a free account on Lemon Squeezy, our affiliate
+            and payments partner, using the same email you applied with. That one-time signup is
+            what activates your tracked referral link and lets you get paid. Your dashboard unlocks
+            as soon as Lemon Squeezy confirms you.
+          </p>
+        </div>
 
         <ol className="mt-8 space-y-3 text-sm text-slate-700">
           <li className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
             <span className="mt-0.5 font-semibold text-[#f97316]">1.</span>
-            <span>We review your audience fit and promotion plan.</span>
+            <span>We review your audience fit and promotion plan, then email you a decision.</span>
           </li>
           <li className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
             <span className="mt-0.5 font-semibold text-[#f97316]">2.</span>
             <span>
-              Once approved, your unique referral link and real-time stats show up here automatically.
+              You finish a quick one-time signup on Lemon Squeezy. Once they confirm you, your
+              referral link and real-time stats appear here.
             </span>
           </li>
           <li className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
@@ -305,14 +315,19 @@ function LsSignupPending({
     "idle" | "checking" | "found" | "not_found" | "error"
   >("idle");
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [showAlt, setShowAlt] = useState(false);
+  const [altEmail, setAltEmail] = useState("");
 
   const handleCheckStatus = async () => {
     if (checkState === "checking") return;
     setCheckState("checking");
     setCheckError(null);
     try {
+      const trimmedAlt = altEmail.trim();
       const res = await fetch("/api/affiliates/check-ls-status", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trimmedAlt ? { lsEmail: trimmedAlt } : {}),
         cache: "no-store",
       });
       const json = (await res.json().catch(() => ({}))) as {
@@ -350,10 +365,22 @@ function LsSignupPending({
           You&apos;re in - one last step.
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          Activate your tracked referral link by completing a 30-second signup on Lemon Squeezy.
-          Once they confirm you, your full affiliate dashboard unlocks automatically.
+          Activate your tracked referral link by completing a one-time signup on Lemon Squeezy, our
+          affiliate and payments partner. Lemon Squeezy reviews new affiliates on their side, which
+          can take a few days (sometimes longer), and your dashboard unlocks as soon as they confirm
+          you.
         </p>
       </header>
+
+      <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5 text-sm text-amber-900 shadow-sm">
+        <p className="font-semibold">Why finishing this step matters</p>
+        <p className="mt-1">
+          Your code already gives customers their discount, but you only start earning commission
+          once Lemon Squeezy activates you and your account is linked here. Until then, sales through
+          your code are not credited to you, so completing this signup is what turns your code into
+          earnings.
+        </p>
+      </section>
 
       <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-4 sm:p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">
@@ -379,9 +406,10 @@ function LsSignupPending({
               Submit it for approval.
             </li>
             <li>
-              Once approved (usually under 48 hours), Lemon Squeezy notifies us automatically and
-              this page unlocks your tracked link and dashboard. No store setup, no products, no
-              identity verification.
+              Lemon Squeezy reviews new affiliates themselves. This can take a few days and
+              sometimes longer, and the timing is on their side, not ours. As soon as they confirm
+              you, this page unlocks your tracked link and dashboard. No store setup and no products
+              to create.
             </li>
           </ol>
           <p className="mt-3 text-sm text-slate-700">
@@ -392,6 +420,7 @@ function LsSignupPending({
         </div>
 
         {signupUrl ? (
+          <>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <a
               href={signupUrl}
@@ -414,6 +443,48 @@ function LsSignupPending({
                   : "Already signed up? Check status now"}
             </button>
           </div>
+
+          <div className="mt-3">
+            {!showAlt ? (
+              <button
+                type="button"
+                onClick={() => setShowAlt(true)}
+                className="text-sm font-medium text-[#f97316] underline underline-offset-2 hover:text-[#ea580c]"
+              >
+                I signed up on Lemon Squeezy with a different email
+              </button>
+            ) : (
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <label
+                  htmlFor="ls-alt-email"
+                  className="block text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Your Lemon Squeezy email
+                </label>
+                <p className="mt-1 text-xs text-slate-500">
+                  Enter the email you used on Lemon Squeezy if it differs from
+                  {userEmail ? (
+                    <>
+                      {" "}your account email (
+                      <code className="font-mono text-slate-700">{userEmail}</code>)
+                    </>
+                  ) : (
+                    " your account email"
+                  )}
+                  , then click &quot;Check status now&quot; above.
+                </p>
+                <input
+                  id="ls-alt-email"
+                  type="email"
+                  value={altEmail}
+                  onChange={(e) => setAltEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800"
+                />
+              </div>
+            )}
+          </div>
+          </>
         ) : (
           <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Signup URL not configured. Reach out to{" "}
@@ -436,7 +507,8 @@ function LsSignupPending({
                 {" "}(<code className="font-mono text-slate-800">{userEmail}</code>)
               </>
             ) : null}{" "}
-            when signing up on Lemon Squeezy.
+            when signing up on Lemon Squeezy. If you used a different email there, use the
+            &quot;different email&quot; option above and check again.
           </p>
         ) : null}
 

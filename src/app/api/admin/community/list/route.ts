@@ -8,7 +8,7 @@
  * object with row counts per status for the requested type.
  */
 import { NextResponse } from "next/server";
-import { getAdminSessionAny, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
 import { resolveCommunityAuthors, type CommunityAuthor } from "@/lib/community-authors";
 
 export const runtime = "nodejs";
@@ -85,8 +85,8 @@ async function countByStatus(
 }
 
 export async function GET(request: Request) {
-  const admin = await getAdminSessionAny(request);
-  if (!admin) {
+  const actor = await requirePermission("community.view", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -130,7 +130,7 @@ export async function GET(request: Request) {
     for (const [id, author] of authorMap) authors[id] = author;
 
     // For answers, look up parent question titles so the admin sees context.
-    let questionTitles: Record<string, { title: string; workspace_id: string }> = {};
+    const questionTitles: Record<string, { title: string; workspace_id: string }> = {};
     if (type === "answer" && rows.length > 0) {
       const ids = Array.from(
         new Set(
@@ -160,7 +160,7 @@ export async function GET(request: Request) {
     const stats = await countByStatus(supabase, table);
 
     return NextResponse.json({
-      admin: { email: admin.email },
+      admin: { email: actor.email },
       type,
       status,
       rows,

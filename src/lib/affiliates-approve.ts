@@ -122,6 +122,12 @@ async function sendApprovalEmail(params: {
   }
 
   lines.push(
+    `A word on timing: Lemon Squeezy conduct their own review of new affiliates, which may take several days and on occasion longer. The schedule rests entirely with them. The moment they confirm you, your dashboard shall unlock of its own accord.`,
+    ``,
+    ``,
+    `Should you happen to sign up at Lemon Squeezy under a different email than this one, simply visit your affiliate dashboard and use the "different email" option to pair the two accounts yourself.`,
+    ``,
+    ``,
     `Should either step show "already an affiliate" or any other error, do reply to this email and I shall sort it out personally.`,
     ``,
     ``,

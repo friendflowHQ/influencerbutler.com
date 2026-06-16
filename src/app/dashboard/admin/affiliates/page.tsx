@@ -24,9 +24,39 @@ type ListResponse = {
   error?: string;
 };
 
+type StuckAffiliate = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  appliedAt: string | null;
+};
+
+type LsAffiliate = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  status: string;
+  linkedToUserId: string | null;
+  emailMatchesUserId: string | null;
+};
+
+type ReconcileResponse = {
+  admin?: { email: string };
+  stuck?: StuckAffiliate[];
+  lsAffiliates?: LsAffiliate[];
+  error?: string;
+};
+
 type RowState =
   | { kind: "idle" }
   | { kind: "working"; action: "approve" | "reject" }
+  | { kind: "success"; message: string }
+  | { kind: "error"; message: string };
+
+type LinkRowState =
+  | { kind: "idle" }
+  | { kind: "working" }
   | { kind: "success"; message: string }
   | { kind: "error"; message: string };
 
@@ -48,6 +78,14 @@ export default function AdminAffiliatesPage() {
   const [pending, setPending] = useState<PendingApplication[]>([]);
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Reconciliation (manual LS linking) state.
+  const [stuck, setStuck] = useState<StuckAffiliate[]>([]);
+  const [lsAffiliates, setLsAffiliates] = useState<LsAffiliate[]>([]);
+  const [reconcileLoading, setReconcileLoading] = useState(true);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [linkSel, setLinkSel] = useState<Record<string, string>>({});
+  const [linkRow, setLinkRow] = useState<Record<string, LinkRowState>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,12 +111,88 @@ export default function AdminAffiliatesPage() {
     }
   }, []);
 
+  const loadReconcile = useCallback(async () => {
+    setReconcileLoading(true);
+    setReconcileError(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-reconcile", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as ReconcileResponse;
+      if (!res.ok) {
+        setReconcileError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setStuck(json.stuck ?? []);
+      setLsAffiliates(json.lsAffiliates ?? []);
+    } catch (err) {
+      console.error(err);
+      setReconcileError("Network error loading linking data.");
+    } finally {
+      setReconcileLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadReconcile();
+  }, [load, loadReconcile]);
 
   const setRow = (userId: string, state: RowState) =>
     setRowState((prev) => ({ ...prev, [userId]: state }));
+
+  const setLink = (userId: string, state: LinkRowState) =>
+    setLinkRow((prev) => ({ ...prev, [userId]: state }));
+
+  const suggestedLsId = (aff: StuckAffiliate): string =>
+    lsAffiliates.find((l) => l.emailMatchesUserId === aff.userId && !l.linkedToUserId)?.id ?? "";
+
+  const effectiveSel = (aff: StuckAffiliate): string =>
+    linkSel[aff.userId] ?? suggestedLsId(aff);
+
+  const onLink = async (aff: StuckAffiliate) => {
+    const lsAffiliateId = effectiveSel(aff).trim();
+    if (!lsAffiliateId) {
+      setLink(aff.userId, { kind: "error", message: "Pick a Lemon Squeezy affiliate first." });
+      return;
+    }
+    if (
+      !window.confirm(
+        `Link ${aff.fullName ?? aff.email ?? aff.userId} to Lemon Squeezy affiliate ${lsAffiliateId}?\n\nThis unlocks their dashboard and starts crediting commission on their code.`,
+      )
+    ) {
+      return;
+    }
+    setLink(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId, lsAffiliateId }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        lsStatus?: string;
+        lsEmail?: string | null;
+      };
+      if (!res.ok) {
+        setLink(aff.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      const note = json.lsStatus && json.lsStatus !== "active"
+        ? ` (LS status: ${json.lsStatus} - they earn once LS marks them active).`
+        : ".";
+      setLink(aff.userId, { kind: "success", message: `Linked${note}` });
+      setTimeout(() => {
+        void loadReconcile();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setLink(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
 
   const onApprove = async (app: PendingApplication) => {
     if (
@@ -281,6 +395,114 @@ export default function AdminAffiliatesPage() {
           })}
         </ul>
       )}
+
+      <section className="space-y-4 border-t border-slate-200 pt-8">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+            Admin · Affiliate linking
+          </p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+            Link stuck affiliates to Lemon Squeezy
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            These users are approved on our side but have no Lemon Squeezy affiliate ID, so their
+            dashboard stays locked and their code earns no commission. This happens when their LS
+            signup email differs from their dashboard email. Pick the matching LS affiliate and link
+            them. An &quot;email match&quot; tag means the emails already line up.
+          </p>
+        </div>
+
+        {reconcileLoading ? (
+          <div className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white" />
+        ) : reconcileError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+            {reconcileError}
+          </div>
+        ) : stuck.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+            Every approved affiliate is linked to Lemon Squeezy. ✨
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {stuck.map((aff) => {
+              const state = linkRow[aff.userId] ?? { kind: "idle" };
+              const working = state.kind === "working";
+              const selected = effectiveSel(aff);
+              const available = lsAffiliates.filter((l) => !l.linkedToUserId);
+              return (
+                <li
+                  key={aff.userId}
+                  className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 sm:p-6 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900 break-words">
+                        {aff.fullName ?? "(no name)"}
+                      </p>
+                      <p className="text-sm text-slate-600 break-all">{aff.email ?? "(no email)"}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
+                        {aff.appliedAt ? `Applied ${formatDate(aff.appliedAt)} · ` : ""}
+                        user_id {aff.userId.slice(0, 8)}…
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-end gap-3">
+                    <label className="flex-1 min-w-[260px] text-sm">
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Lemon Squeezy affiliate
+                      </span>
+                      <select
+                        value={selected}
+                        onChange={(e) =>
+                          setLinkSel((prev) => ({ ...prev, [aff.userId]: e.target.value }))
+                        }
+                        disabled={working}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 disabled:opacity-60"
+                      >
+                        <option value="">Select an LS affiliate…</option>
+                        {available.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {(l.name ?? l.email ?? l.id)} · {l.status}
+                            {l.emailMatchesUserId === aff.userId ? " · email match" : ""} · {l.id}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => onLink(aff)}
+                      disabled={working || !selected}
+                      className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                    >
+                      {working ? "Linking…" : "Link"}
+                    </button>
+                  </div>
+
+                  {available.length === 0 ? (
+                    <p className="mt-3 text-xs text-slate-500">
+                      No unlinked Lemon Squeezy affiliates found in the store yet. They may still be
+                      pending review on LS&apos;s side, which we can&apos;t speed up.
+                    </p>
+                  ) : null}
+
+                  {state.kind === "success" ? (
+                    <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                  {state.kind === "error" ? (
+                    <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

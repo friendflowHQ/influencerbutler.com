@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin";
+import { requirePermission } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 import { approveAffiliate } from "@/lib/affiliates-approve";
 
 export const runtime = "nodejs";
@@ -10,8 +11,8 @@ type ApproveBody = {
 };
 
 export async function POST(request: Request) {
-  const admin = await getAdminSession();
-  if (!admin) {
+  const actor = await requirePermission("affiliates.approve", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -30,12 +31,20 @@ export async function POST(request: Request) {
   const result = await approveAffiliate({
     userId,
     actor: "admin",
-    adminEmail: admin.email,
+    adminEmail: actor.email,
   });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
+
+  await logAdminAction({
+    actor,
+    action: "affiliate.approve",
+    targetType: "user",
+    targetId: userId,
+    details: { brandedCode: result.brandedCode, lsAffiliateId: result.lsAffiliateId },
+  });
 
   return NextResponse.json({
     ok: true,

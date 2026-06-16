@@ -8,7 +8,8 @@
  * answer_count in sync when an answer flips in or out of 'approved'.
  */
 import { NextResponse } from "next/server";
-import { getAdminSessionAny, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +31,8 @@ type UpdateClient = {
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 export async function POST(request: Request) {
-  const admin = await getAdminSessionAny(request);
-  if (!admin) {
+  const actor = await requirePermission("community.moderate", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -68,6 +69,14 @@ export async function POST(request: Request) {
     console.error("admin community update failed", error);
     return NextResponse.json({ error: "Could not update" }, { status: 500 });
   }
+
+  await logAdminAction({
+    actor,
+    action: "community.moderate",
+    targetType: type,
+    targetId: id,
+    details: { status },
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession, createAdminClient } from "@/lib/admin";
+import { requirePermission, createAdminClient } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,9 +17,9 @@ type AdminListClient = {
   };
 };
 
-export async function GET() {
-  const admin = await getAdminSession();
-  if (!admin) {
+export async function GET(request: Request) {
+  const actor = await requirePermission("affiliates.view", request);
+  if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -43,7 +43,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      admin: { email: admin.email },
+      admin: { email: actor.email },
       pending: pending ?? [],
     });
   } catch (error) {

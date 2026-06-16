@@ -3,6 +3,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
 import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
 import LikeButlerFreebieBanner from "@/components/dashboard/LikeButlerFreebieBanner";
+import AdminBadge from "@/components/dashboard/AdminBadge";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 
 export default async function DashboardLayout({
@@ -21,16 +22,19 @@ export default async function DashboardLayout({
       <KeyboardShortcutsProvider>
         <Sidebar email={email} profileName={profileName} websiteHref="/" />
         <main className="flex-1 px-4 pb-10 pt-20 lg:px-10 lg:py-10">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
-            <Image
-              src="/assets/influencer-butler-logo.png"
-              alt="Influencer Butler logo"
-              width={18}
-              height={18}
-              className="rounded"
-              priority
-            />
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Influencer Butler</span>
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
+              <Image
+                src="/assets/influencer-butler-logo.png"
+                alt="Influencer Butler logo"
+                width={18}
+                height={18}
+                className="rounded"
+                priority
+              />
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Influencer Butler</span>
+            </div>
+            <AdminBadge />
           </div>
           <LikeButlerFreebieBanner />
           <AffiliateUpsellBanner />
