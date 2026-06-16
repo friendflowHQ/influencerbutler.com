@@ -277,7 +277,7 @@
       "id": "ads-goldmine-butler",
       "title": "Ads Goldmine: surface high-value ASINs by ad + sponsor density signals",
       "category": "Other",
-      "summary": "Score the ASINs in your catalog across four signal tiers - Lightning Deals, Creator Connections, SPCC offers, brand-search density.",
+      "summary": "Score the products you have access to across four signal tiers - Lightning Deals, Creator Connections, SPCC offers, brand-search density - to find which ones to feature or pitch next.",
       "order": 340,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
