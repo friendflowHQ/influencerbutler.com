@@ -38,7 +38,7 @@ export async function generateMetadata({
   const image = (post.frontmatter.image as string) || entry?.image || "";
   const keywords = (post.frontmatter.keywords as string) || entry?.keywords || "";
   const absImage = image ? `${SITE}${image}` : undefined;
-  const published = (post.frontmatter.date as string) || entry?.date;
+  const published = entry?.date || (post.frontmatter.date as string);
 
   return {
     title: `${title} | Influencer Butler`,
@@ -76,14 +76,14 @@ export default async function BlogPostPage({
   const entry = manifest.posts.find((p) => p.id === slug);
 
   // Date gate: a future-dated post is not live yet, so 404 until its day.
-  const publishDate = (post.frontmatter.date as string) || entry?.date;
+  const publishDate = entry?.date || (post.frontmatter.date as string);
   if (!isPublished(publishDate)) notFound();
 
   const category = (post.frontmatter.category as string) || entry?.category || "Blog";
   const title = (post.frontmatter.title as string) || entry?.title || slug;
   const summary = (post.frontmatter.summary as string) || entry?.summary || "";
   const author = (post.frontmatter.author as string) || entry?.author || "Influencer Butler Team";
-  const date = (post.frontmatter.date as string) || entry?.date || "";
+  const date = entry?.date || (post.frontmatter.date as string) || "";
   const readingTime = (post.frontmatter.readingTime as string) || entry?.readingTime || "";
   const image = (post.frontmatter.image as string) || entry?.image || "";
   const imageAlt = (post.frontmatter.imageAlt as string) || entry?.imageAlt || title;
