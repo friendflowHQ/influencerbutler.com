@@ -1,13 +1,13 @@
 /**
  * GET /api/admin/catalogue-harvest/status
  *
- * Admin-only. Returns the latest harvest result for both CC and SPCC from
+ * Admin-only. Returns the latest harvest result for CC, SPCC, and Deals from
  * catalogue_harvest_status. Powers the in-dashboard "Catalogue harvest"
  * panel: shows last successful run, current freshness, and (if stale)
  * an action chip prompting the admin to trigger a fresh run.
  *
  * Response:
- *   200 { ok: true, cc: Row | null, spcc: Row | null }
+ *   200 { ok: true, cc: Row | null, spcc: Row | null, deals: Row | null }
  *   403 { error: "Forbidden" }
  *   500 { error: ... }
  */
@@ -60,11 +60,13 @@ export async function GET(request: Request) {
   const rows = data ?? [];
   const cc = rows.find((r) => r.kind === "cc") ?? null;
   const spcc = rows.find((r) => r.kind === "spcc") ?? null;
+  const deals = rows.find((r) => r.kind === "deals") ?? null;
 
   return NextResponse.json({
     ok: true,
     admin: { email: actor.email },
     cc,
     spcc,
+    deals,
   });
 }

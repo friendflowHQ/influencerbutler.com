@@ -11,7 +11,7 @@
  *
  * Body shape (from scripts/harvest/write-heartbeat.js in the desktop repo):
  *   {
- *     kind: "cc" | "spcc",
+ *     kind: "cc" | "spcc" | "deals",
  *     status: "ok" | "error",
  *     message?: string,
  *     durationMs?: number,
@@ -78,9 +78,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Body is not valid JSON" }, { status: 400 });
   }
 
-  const kind = body.kind === "cc" || body.kind === "spcc" ? body.kind : null;
+  const kind =
+    body.kind === "cc" || body.kind === "spcc" || body.kind === "deals" ? body.kind : null;
   if (!kind) {
-    return NextResponse.json({ error: "kind must be 'cc' or 'spcc'" }, { status: 400 });
+    return NextResponse.json({ error: "kind must be 'cc', 'spcc', or 'deals'" }, { status: 400 });
   }
   const status = body.status === "ok" || body.status === "error" ? body.status : null;
   if (!status) {

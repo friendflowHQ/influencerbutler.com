@@ -136,6 +136,34 @@ describe("/api/admin/catalogue-harvest/heartbeat", () => {
     );
   });
 
+  it("upserts a 'deals' heartbeat with the deal count in campaign_count", async () => {
+    const fake = fakeAdminClient();
+    createAdminMock.mockReturnValue(fake.client);
+    const res = await POST(
+      signedRequest({
+        kind: "deals",
+        status: "ok",
+        version: "20260616T0900Z",
+        snapshotAt: "2026-06-16T09:00:12.000Z",
+        campaignCount: 4231,
+        durationMs: 88_000,
+        reportedAt: "2026-06-16T09:02:00.000Z",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(fake.upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "deals",
+        status: "ok",
+        version: "20260616T0900Z",
+        snapshot_at: "2026-06-16T09:00:12.000Z",
+        campaign_count: 4231,
+        duration_ms: 88_000,
+      }),
+      { onConflict: "kind" },
+    );
+  });
+
   it("returns 500 when the Supabase upsert errors", async () => {
     const upsertMock = vi.fn().mockResolvedValue({ error: { message: "db down" } });
     const fromMock = vi.fn().mockReturnValue({ upsert: upsertMock });

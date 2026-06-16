@@ -18,6 +18,7 @@ type StatusResponse = {
   admin?: { email: string };
   cc?: HarvestRow;
   spcc?: HarvestRow;
+  deals?: HarvestRow;
   error?: string;
 };
 
@@ -52,6 +53,7 @@ export default function CatalogueHarvestAdminPage() {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [cc, setCc] = useState<HarvestRow>(null);
   const [spcc, setSpcc] = useState<HarvestRow>(null);
+  const [deals, setDeals] = useState<HarvestRow>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [triggerState, setTriggerState] = useState<
     | { kind: "idle" }
@@ -77,6 +79,7 @@ export default function CatalogueHarvestAdminPage() {
       setAdminEmail(json.admin?.email ?? null);
       setCc(json.cc ?? null);
       setSpcc(json.spcc ?? null);
+      setDeals(json.deals ?? null);
     } catch (err) {
       console.error(err);
       setFetchError("Network error. Please refresh.");
@@ -195,7 +198,7 @@ export default function CatalogueHarvestAdminPage() {
           </dd>
           <dt className="font-medium">Version</dt>
           <dd>{row.version ?? "n/a"}</dd>
-          <dt className="font-medium">Campaigns</dt>
+          <dt className="font-medium">{row.kind === "deals" ? "Deals" : "Campaigns"}</dt>
           <dd>{row.campaign_count.toLocaleString()}</dd>
           <dt className="font-medium">Run duration</dt>
           <dd>{row.duration_ms > 0 ? `${Math.round(row.duration_ms / 1000)}s` : "n/a"}</dd>
@@ -213,8 +216,11 @@ export default function CatalogueHarvestAdminPage() {
         <h1 className="text-2xl font-semibold text-slate-900">Catalogue harvest</h1>
         <p className="mt-1 text-sm text-slate-600">
           {adminEmail ? `Signed in as ${adminEmail}. ` : null}
-          Tracks the centrally hosted CC and SPCC catalogue snapshots that the InfluencerButler
-          desktop app downloads from R2. Cron runs every 6 hours.
+          Tracks the CC, SPCC, and Deals catalogue snapshots that the InfluencerButler desktop app
+          downloads from R2. The hourly harvest runner on the operator&apos;s machine reports a
+          heartbeat per kind after each run, so &quot;fresh&quot; here means that run reported in.
+          Deals (Amazon promo deals) are status-only: they refresh with the hourly runner and have no
+          remote trigger button.
         </p>
       </header>
 
@@ -266,9 +272,10 @@ export default function CatalogueHarvestAdminPage() {
         ) : null}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-3">
         {renderRow("CC (Affiliate+ catalogue)", cc)}
         {renderRow("SPCC (Sponsored Products for Creators)", spcc)}
+        {renderRow("Deals (Amazon promo deals)", deals)}
       </section>
     </div>
   );

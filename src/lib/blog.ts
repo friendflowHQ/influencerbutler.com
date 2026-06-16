@@ -262,4 +262,16 @@ export function formatBlogDate(iso: string): string {
   // Parse as UTC date-only to avoid timezone drift on the server.
   const parts = iso.split("-").map((n) => parseInt(n, 10));
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return iso;
-  const d = new Date(Dat
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function clearBlogCache() {
+  cachedManifest = null;
+  cachedManifestAt = 0;
+}
