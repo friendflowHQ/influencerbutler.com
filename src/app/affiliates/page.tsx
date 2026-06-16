@@ -103,8 +103,8 @@ export default function AffiliatesLandingPage() {
             </h2>
           </div>
           <p className="max-w-md text-sm text-slate-600">
-            Drag the slider to see estimated monthly and 12-month commissions - assumes an average plan price of
-            $39/month, paid for the first 12 months of each referred subscription.
+            Pick the plan your referrals subscribe to and drag the slider to see estimated monthly and 12-month
+            commissions - 30% recurring, paid for the first 12 months of each referred subscription.
           </p>
         </div>
         <div className="mt-8">
