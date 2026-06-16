@@ -69,6 +69,36 @@ async function main() {
   // /help is auth-gated (see middleware.ts) so it must not appear in the
   // public sitemap or be crawled. robots.txt has matching Disallow rules.
 
+  // Blog is a public Next route (src/app/blog), not a static .html page, so
+  // the walk above never sees it. Pull the post list from the blog manifest
+  // and emit /blog plus each /blog/<slug> URL.
+  try {
+    const blogManifestPath = path.join(repoRoot, "content", "blog", "_index.json");
+    const blogRaw = await readFile(blogManifestPath, "utf8");
+    const blog = JSON.parse(blogRaw);
+    const posts = Array.isArray(blog.posts) ? blog.posts : [];
+    if (posts.length) {
+      entries.push({
+        loc: `${SITE_ORIGIN}/blog`,
+        lastmod: fmtDate(new Date()),
+        changefreq: "daily",
+        priority: "0.8",
+      });
+      for (const post of posts) {
+        if (!post || !post.id) continue;
+        entries.push({
+          loc: `${SITE_ORIGIN}/blog/${post.id}`,
+          lastmod: post.date || fmtDate(new Date()),
+          changefreq: "monthly",
+          priority: "0.7",
+        });
+      }
+      console.log(`generate-sitemap: added ${posts.length} blog posts`);
+    }
+  } catch (err) {
+    console.log(`generate-sitemap: no blog manifest (${err.code || err.message})`);
+  }
+
   entries.sort((a, b) => a.loc.localeCompare(b.loc));
 
   const body = entries
