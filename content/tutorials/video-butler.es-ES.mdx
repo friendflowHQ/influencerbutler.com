@@ -30,6 +30,38 @@ También sirve para **podar vídeos de bajo rendimiento** (el motor incluye un p
 
 Se abre una ventana de Chrome, descarga cada vídeo elegible de tu tienda, hace la conversión (si la hay) y lo vuelve a publicar vía Creator Hub con los metadatos nuevos.
 
+## Actualiza toda tu biblioteca entre mercados (un clic)
+
+Cuando quieras refrescar *todo* de una vez - volver a publicar tus vídeos de EE. UU. y distribuirlos a Canadá, Reino Unido, Australia y Singapur - hay una fórmula de un clic para ello. En **Preferred Formulas**, pulsa **US re-upload + fan-out → US (delete first) + CA + UK + AU + SG (≥31s)**.
+
+Una sola ejecución entonces:
+
+- **Vuelve a publicar tus vídeos de EE. UU. de al menos 31 segundos** (el mínimo de monetización de Amazon) en la tienda de EE. UU. *y* en CA, UK, AU y SG.
+- **Borra primero el original de EE. UU. y luego lo vuelve a publicar.** Esto importa: la detección de duplicados de Amazon es por tienda, así que una re-subida a EE. UU. se rechaza como duplicada salvo que el original ya no esté. Los demás mercados son tiendas distintas, por lo que sus originales se dejan intactos.
+- **Omite cualquier vídeo cuyo producto esté agotado, no disponible o sin etiquetar**, para que nunca vuelvas a publicar un enlace muerto.
+- **Omite lo que ya (re)cargaste en los últimos 45 días.** Una recarga reinicia la fecha de "añadido" del vídeo en Amazon, así que en una cadencia mensual cada vídeo vuelve a ser elegible para refresco aproximadamente cada 45 días en lugar de en cada ejecución.
+
+**Ejecuta Retag Butler primero.** Retag Butler vuelve a etiquetar los productos obsoletos o no disponibles de tus vídeos con otros disponibles. Ejecutarlo antes de esta fórmula hace que los vídeos que arregla se vuelvan a publicar con enlaces de producto que funcionan, mientras que los que no pudo arreglar se omiten. Consulta el [tutorial de Retag Butler](/help/tutorials/retag-butler).
+
+### Tus vídeos están a salvo aunque una re-publicación falle
+
+Como esta fórmula borra el original de EE. UU. antes de volver a publicar, Video Butler protege cada paso:
+
+- El vídeo se **descarga primero a tu ordenador**, antes de borrar nada.
+- El original **solo se borra después** de que Video Butler confirme que el producto está disponible y se puede etiquetar, nunca para un vídeo que no pueda volver a publicar.
+- Si una re-publicación falla tras el borrado, el vídeo aparece en la lista **Eliminados de Amazon** con su archivo descargado, para que lo recuperes con **Recargar seleccionados**.
+
+### Pruébalo primero con dos vídeos
+
+Esta fórmula borra vídeos de Amazon, así que compruébala en un lote pequeño antes de lanzarla sobre toda tu biblioteca:
+
+1. Desactiva **Process All** y pon **Max videos this run** en **2**.
+2. Activa **Watch it run** para seguir cada paso.
+3. Aplica la fórmula y pulsa **Ejecutar**. Se te pedirá escribir **DELETE** para confirmar.
+4. Verifica que el original de EE. UU. se borra *antes* de su re-publicación, que CA, UK, AU y SG no borran nada, y que los dos vídeos se ven bien en tu tienda.
+
+Una vez que se vea bien, vuelve a activar **Process All** para toda la biblioteca.
+
 ## Ajustes con el tiempo
 
 - **skipViewsAtLeast**: el control más importante. Súbelo para proteger más vídeos de buen rendimiento; bájalo para ser más agresivo refrescando contenido viejo.

@@ -93,7 +93,7 @@
       "id": "video-butler",
       "title": "Video Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",
-      "summary": "Convert, re-encode, and re-upload your existing Amazon storefront videos with updated titles, descriptions, and tags.",
+      "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata, including a one-click bulk reload to the US (delete-first) plus CA, UK, AU, and SG.",
       "order": 100,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },

@@ -30,6 +30,38 @@ You can also use it to **prune low-performing videos** (the engine has a built-i
 
 A Chrome window opens, downloads each eligible video from your storefront, runs the conversion (if any), and posts it back through Creator Hub with the new metadata.
 
+## Refresh your whole library across marketplaces (one click)
+
+When you want to refresh *everything* at once - re-post your US videos and fan them out to Canada, the UK, Australia, and Singapore - there is a one-click formula for it. Under **Preferred Formulas**, click **US re-upload + fan-out → US (delete first) + CA + UK + AU + SG (≥31s)**.
+
+A single run then:
+
+- **Re-posts your US videos that are at least 31 seconds long** (Amazon's monetization floor) to the US storefront *and* to CA, UK, AU, and SG.
+- **Deletes the US original first, then re-posts it.** This matters: Amazon's duplicate detection is per-storefront, so a US re-upload is rejected as a duplicate unless the original is gone first. The other marketplaces are separate storefronts, so their originals are left alone.
+- **Skips any video whose product is out of stock, unavailable, or untagged**, so you never re-post a dead link.
+- **Skips anything you already (re)loaded in the last 45 days.** A reload resets the video's "added" date on Amazon, so on a monthly cadence each video comes back up for a refresh roughly every 45 days instead of on every run.
+
+**Run Retag Butler first.** Retag Butler re-tags stale or unavailable products on your existing videos with available ones. Running it before this formula means the videos it fixes get re-posted with working product links, while the ones it could not fix are skipped. See the [Retag Butler tutorial](/help/tutorials/retag-butler).
+
+### Your videos are safe even if a re-post fails
+
+Because this formula deletes the US original before re-posting, Video Butler guards every step:
+
+- The video is **downloaded to your computer first**, before anything is deleted.
+- The original is **only deleted after** Video Butler confirms the product is available and taggable, never for a video it cannot re-post.
+- If a re-post fails after the delete, the video lands in the **Deleted from Amazon** list with its downloaded file, so you can recover it with **Re-load selected**.
+
+### Test on two videos first
+
+This formula deletes videos from Amazon, so prove it on a small batch before running your whole library:
+
+1. Turn **Process All** off and set **Max videos this run** to **2**.
+2. Turn **Watch it run** on so you can follow each step.
+3. Apply the formula and click **Run**. You will be asked to type **DELETE** to confirm.
+4. Check that the US original is deleted *before* its re-post, that CA, UK, AU, and SG do not delete anything, and that the two videos look right on your storefront.
+
+Once that looks good, turn **Process All** back on for the full library.
+
 ## Tuning over time
 
 - **skipViewsAtLeast**: the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.

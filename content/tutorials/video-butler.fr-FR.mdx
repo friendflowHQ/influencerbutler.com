@@ -30,6 +30,38 @@ Vous pouvez aussi l'utiliser pour **élaguer les vidéos sous-performantes** (le
 
 Une fenêtre Chrome s'ouvre, télécharge chaque vidéo éligible de votre boutique, lance la conversion (s'il y en a une) et la republie via Creator Hub avec les nouvelles métadonnées.
 
+## Actualisez toute votre bibliothèque sur tous les marchés (un clic)
+
+Quand vous voulez tout rafraîchir d'un coup - republier vos vidéos US et les diffuser au Canada, au Royaume-Uni, en Australie et à Singapour - il existe une formule en un clic. Sous **Preferred Formulas**, cliquez sur **US re-upload + fan-out → US (delete first) + CA + UK + AU + SG (≥31s)**.
+
+Une seule exécution effectue alors :
+
+- **Republie vos vidéos US d'au moins 31 secondes** (le seuil de monétisation d'Amazon) sur la boutique US *et* sur CA, UK, AU et SG.
+- **Supprime d'abord l'original US, puis le republie.** C'est important : la détection de doublons d'Amazon est par boutique, donc un re-upload US est rejeté comme doublon tant que l'original n'a pas disparu. Les autres marchés sont des boutiques distinctes, leurs originaux sont donc laissés intacts.
+- **Ignore toute vidéo dont le produit est en rupture, indisponible ou non tagué**, pour ne jamais republier un lien mort.
+- **Ignore ce que vous avez déjà (re)chargé dans les 45 derniers jours.** Un rechargement réinitialise la date d'"ajout" de la vidéo sur Amazon, donc sur une cadence mensuelle chaque vidéo redevient éligible à un rafraîchissement environ tous les 45 jours au lieu de chaque exécution.
+
+**Lancez Retag Butler d'abord.** Retag Butler retague les produits obsolètes ou indisponibles de vos vidéos avec des produits disponibles. Le lancer avant cette formule fait que les vidéos qu'il corrige sont republiées avec des liens produit fonctionnels, tandis que celles qu'il n'a pas pu corriger sont ignorées. Voir le [tutoriel Retag Butler](/help/tutorials/retag-butler).
+
+### Vos vidéos sont en sécurité même si une republication échoue
+
+Comme cette formule supprime l'original US avant de republier, Video Butler protège chaque étape :
+
+- La vidéo est **d'abord téléchargée sur votre ordinateur**, avant toute suppression.
+- L'original n'est **supprimé qu'après** que Video Butler a confirmé que le produit est disponible et taguable, jamais pour une vidéo qu'il ne peut pas republier.
+- Si une republication échoue après la suppression, la vidéo apparaît dans la liste **Supprimées d'Amazon** avec son fichier téléchargé, pour que vous la récupériez avec **Recharger la sélection**.
+
+### Testez d'abord sur deux vidéos
+
+Cette formule supprime des vidéos d'Amazon, alors prouvez-la sur un petit lot avant de lancer toute votre bibliothèque :
+
+1. Désactivez **Process All** et réglez **Max videos this run** sur **2**.
+2. Activez **Watch it run** pour suivre chaque étape.
+3. Appliquez la formule et cliquez sur **Lancer**. On vous demandera de taper **DELETE** pour confirmer.
+4. Vérifiez que l'original US est supprimé *avant* sa republication, que CA, UK, AU et SG ne suppriment rien, et que les deux vidéos s'affichent bien sur votre boutique.
+
+Une fois que cela semble bon, réactivez **Process All** pour toute la bibliothèque.
+
 ## Réglages dans la durée
 
 - **skipViewsAtLeast**: le bouton le plus important. Montez-le pour protéger plus de vidéos performantes ; baissez-le pour être plus agressif sur le rafraîchissement du vieux contenu.
