@@ -20,6 +20,112 @@ export async function lsApi(path: string, options: RequestInit = {}) {
   });
 }
 
+/**
+ * A license key resolved directly from the Lemon Squeezy API, used as a
+ * read-time fallback when the local license_keys table has no row (e.g. the
+ * license_key_created webhook never landed). Field names follow our internal
+ * shape, not the raw LS attribute names.
+ */
+export type LsLicense = {
+  lsLicenseKeyId: string;
+  key: string;
+  status: string;
+  activationLimit: number | null;
+  activationsCount: number | null;
+};
+
+type LsLicenseKeyAttributes = {
+  key?: string | null;
+  status?: string | null;
+  activation_limit?: number | null;
+  // LS calls the activations counter instances_count.
+  instances_count?: number | null;
+  disabled?: boolean | null;
+};
+
+type LsLicenseKey = {
+  id?: string;
+  attributes?: LsLicenseKeyAttributes;
+};
+
+/**
+ * Returns the LS order ids for an email, most recent first (LS sorts orders
+ * by created_at descending by default).
+ */
+async function fetchOrderIdsForEmail(email: string): Promise<string[]> {
+  const params = new URLSearchParams();
+  params.set("filter[user_email]", email);
+  params.set("page[size]", "50");
+
+  const response = await lsApi(`/orders?${params.toString()}`, { method: "GET" });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    console.error("lemonsqueezy: orders lookup failed", {
+      status: response.status,
+      text: text.slice(0, 500),
+    });
+    return [];
+  }
+
+  const payload = (await response.json()) as { data?: { id?: string }[] };
+  return (payload.data ?? [])
+    .map((item) => item.id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
+/** Picks the best key from an order: prefer enabled + active, else the first. */
+function pickBestLicenseKey(keys: LsLicenseKey[]): LsLicenseKey | null {
+  let fallback: LsLicenseKey | null = null;
+  for (const key of keys) {
+    if (!key.id || !key.attributes?.key) continue;
+    if (!fallback) fallback = key;
+    const a = key.attributes;
+    if (!a.disabled && a.status === "active") return key;
+  }
+  return fallback;
+}
+
+/**
+ * Resolves a user's license directly from Lemon Squeezy by email. LS license
+ * keys cannot be filtered by email, so we go orders-by-email then
+ * license-keys-by-order. Returns null if the user has no license in LS.
+ */
+export async function fetchLicenseFromLs(email: string): Promise<LsLicense | null> {
+  const orderIds = await fetchOrderIdsForEmail(email);
+
+  for (const orderId of orderIds) {
+    const params = new URLSearchParams();
+    params.set("filter[order_id]", orderId);
+    params.set("page[size]", "50");
+
+    const response = await lsApi(`/license-keys?${params.toString()}`, { method: "GET" });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: license-keys lookup failed", {
+        status: response.status,
+        orderId,
+        text: text.slice(0, 500),
+      });
+      continue;
+    }
+
+    const payload = (await response.json()) as { data?: LsLicenseKey[] };
+    const best = pickBestLicenseKey(payload.data ?? []);
+    if (best?.id && best.attributes?.key) {
+      const a = best.attributes;
+      return {
+        lsLicenseKeyId: best.id,
+        key: a.key as string,
+        status: a.status ?? "active",
+        activationLimit: a.activation_limit ?? null,
+        activationsCount: a.instances_count ?? null,
+      };
+    }
+  }
+
+  return null;
+}
+
 export type VariantResolution =
   | { ok: true; variantId: string }
   | { ok: false; reason: "missing-input" | "missing-env"; envVar?: string };

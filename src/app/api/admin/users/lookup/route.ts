@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { adminService } from "@/lib/admin-service";
+import { fetchLicenseFromLs } from "@/lib/lemonsqueezy";
+import { hashLicenseKey } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,13 +82,49 @@ export async function POST(request: Request) {
     svc.from("staff_members").select("role,permissions,is_active").eq("user_id", userId).maybeSingle(),
   ]);
 
+  // When the local table has no license row, fall back to Lemon Squeezy by
+  // email so an operator still sees (and can act on) the key. Best-effort
+  // backfill the row so the desktop app can authenticate by key_hash.
+  let licenses = licensesRes.data ?? [];
+  if (licenses.length === 0) {
+    const lsLicense = await fetchLicenseFromLs(email);
+    if (lsLicense) {
+      try {
+        await svc.from("license_keys").upsert(
+          {
+            ls_license_key_id: lsLicense.lsLicenseKeyId,
+            user_id: userId,
+            subscription_id: null,
+            key: lsLicense.key,
+            key_hash: hashLicenseKey(lsLicense.key),
+            status: lsLicense.status,
+            activation_limit: lsLicense.activationLimit,
+          },
+          { onConflict: "ls_license_key_id" },
+        );
+      } catch (error) {
+        console.error("admin/users/lookup: license backfill failed", error);
+      }
+      licenses = [
+        {
+          ls_license_key_id: lsLicense.lsLicenseKeyId,
+          key: lsLicense.key,
+          status: lsLicense.status,
+          activation_limit: lsLicense.activationLimit,
+          subscription_id: null,
+          created_at: null,
+        },
+      ];
+    }
+  }
+
   return NextResponse.json({
     found: true,
     userId,
     profile: profile ?? null,
     subscriptions: subsRes.data ?? [],
     orders: ordersRes.data ?? [],
-    licenses: licensesRes.data ?? [],
+    licenses,
     staff: (staffRes as { data?: unknown }).data ?? null,
   });
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lsApi } from "@/lib/lemonsqueezy";
+import { lsApi, fetchLicenseFromLs } from "@/lib/lemonsqueezy";
+import { hashLicenseKey } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -151,6 +152,71 @@ async function fetchSubscriptionFromLs(email: string): Promise<Subscription | nu
   };
 }
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+async function readLocalLicense(
+  admin: AdminClient,
+  column: "subscription_id" | "user_id",
+  value: string,
+): Promise<LicenseKey | null> {
+  const { data: keys } = await admin
+    .from("license_keys")
+    .select("key,status,activation_limit,activations_count")
+    .eq(column, value)
+    .limit(1);
+  return toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
+}
+
+/**
+ * Resolves the user's license, trying local rows first (by subscription_id,
+ * then by user_id to cover the race where the row exists but its
+ * subscription_id is still null), then falling back to the Lemon Squeezy API.
+ * When LS is the source, best-effort backfills the local table so subsequent
+ * loads are fast and the desktop app can authenticate by key_hash.
+ */
+async function resolveLicenseKey(
+  admin: AdminClient,
+  opts: { subscriptionId: string | null; userId: string; email: string | null },
+): Promise<LicenseKey | null> {
+  if (opts.subscriptionId) {
+    const local = await readLocalLicense(admin, "subscription_id", opts.subscriptionId);
+    if (local) return local;
+  }
+
+  const byUser = await readLocalLicense(admin, "user_id", opts.userId);
+  if (byUser) return byUser;
+
+  if (!opts.email) return null;
+
+  const lsLicense = await fetchLicenseFromLs(opts.email);
+  if (!lsLicense) return null;
+
+  // Best-effort backfill: never let a write failure break the read.
+  try {
+    await admin.from("license_keys").upsert(
+      {
+        ls_license_key_id: lsLicense.lsLicenseKeyId,
+        user_id: opts.userId,
+        subscription_id: opts.subscriptionId,
+        key: lsLicense.key,
+        key_hash: hashLicenseKey(lsLicense.key),
+        status: lsLicense.status,
+        activation_limit: lsLicense.activationLimit,
+      },
+      { onConflict: "ls_license_key_id" },
+    );
+  } catch (error) {
+    console.error("subscription-details: license backfill failed", error);
+  }
+
+  return {
+    key: lsLicense.key,
+    status: lsLicense.status,
+    activation_limit: lsLicense.activationLimit,
+    activations_count: lsLicense.activationsCount,
+  };
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -184,15 +250,11 @@ export async function GET() {
       ends_at: row.ends_at ?? null,
     };
 
-    let licenseKey: LicenseKey | null = null;
-    if (subscription.id) {
-      const { data: keys } = await admin
-        .from("license_keys")
-        .select("key,status,activation_limit,activations_count")
-        .eq("subscription_id", subscription.id)
-        .limit(1);
-      licenseKey = toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
-    }
+    const licenseKey = await resolveLicenseKey(admin, {
+      subscriptionId: subscription.id,
+      userId: user.id,
+      email: user.email ?? null,
+    });
 
     return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
   }
@@ -203,12 +265,11 @@ export async function GET() {
 
   let licenseKey: LicenseKey | null = null;
   if (subscription) {
-    const { data: keys } = await admin
-      .from("license_keys")
-      .select("key,status,activation_limit,activations_count")
-      .eq("user_id", user.id)
-      .limit(1);
-    licenseKey = toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
+    licenseKey = await resolveLicenseKey(admin, {
+      subscriptionId: null,
+      userId: user.id,
+      email,
+    });
   }
 
   return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
