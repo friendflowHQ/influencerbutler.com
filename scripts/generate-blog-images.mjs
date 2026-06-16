@@ -18,6 +18,9 @@
  *   --size=WxH      Override image size (default 1536x1024). gpt-image-1
  *                   supports 1024x1024, 1024x1536, 1536x1024, auto.
  *   --model=NAME    Override the image model (default gpt-image-1).
+ *   --quality=Q     Image quality: low | medium | high | auto (default medium).
+ *                   Lower quality is dramatically cheaper. "high" can cost 4-10x
+ *                   more than "medium" for little visible gain at blog-hero size.
  *
  * Dependencies: node:fs, node:path (Node 18+ for global fetch). No npm installs.
  */
@@ -46,6 +49,15 @@ const sizeArg = args.find((a) => a.startsWith("--size="));
 const size = sizeArg ? sizeArg.split("=")[1] : "1536x1024";
 const modelArg = args.find((a) => a.startsWith("--model="));
 const model = modelArg ? modelArg.split("=")[1] : "gpt-image-1";
+const qualityArg = args.find((a) => a.startsWith("--quality="));
+const VALID_QUALITY = ["low", "medium", "high", "auto"];
+let quality = qualityArg ? qualityArg.split("=")[1] : "medium";
+if (!VALID_QUALITY.includes(quality)) {
+  console.warn(
+    `Unknown --quality "${quality}". Using "medium". Valid: ${VALID_QUALITY.join(", ")}.`
+  );
+  quality = "medium";
+}
 
 const API_KEY = process.env.OPENAI_API_KEY;
 
@@ -85,6 +97,7 @@ async function generateOne(post) {
       model,
       prompt,
       size,
+      quality,
       n: 1,
     }),
   });
@@ -128,7 +141,7 @@ async function main() {
   }
 
   console.log(
-    `Generating ${posts.length} image(s) with ${model} at ${size}` +
+    `Generating ${posts.length} image(s) with ${model} at ${size}, quality=${quality}` +
       (force ? " (force)" : "") +
       "\n"
   );
