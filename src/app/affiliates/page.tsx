@@ -28,6 +28,12 @@ export default function AffiliatesLandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
+              href="/blog"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Blog
+            </Link>
+            <Link
               href="/login?next=/dashboard/affiliates"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >

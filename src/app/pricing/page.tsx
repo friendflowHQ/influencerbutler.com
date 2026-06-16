@@ -89,6 +89,9 @@ export default async function PricingPage({
             <Link href="#features" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
               Features
             </Link>
+            <Link href="/blog" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              Blog
+            </Link>
             <Link
               href={signedIn ? "/dashboard" : "/login"}
               className="font-medium text-slate-700 hover:text-[#f97316]"
