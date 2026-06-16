@@ -1,83 +1,86 @@
 ---
-title: Ads Goldmine: saca a la superficie ASIN de alto valor por señales de densidad de anuncios + patrocinio
-summary: Puntúa los ASIN de tu catálogo en cuatro niveles de señal - Lightning Deals, Creator Connections, ofertas SPCC, densidad de búsqueda por marca - para encontrar qué productos destacar a continuación.
+title: "Ads Goldmine: encuentra ASIN de alto valor por señales de anuncios y densidad de patrocinio"
+summary: Puntúa los productos a los que tienes acceso en cuatro niveles de señales - Lightning Deals, Creator Connections, ofertas SPCC, densidad de búsqueda de marca - para decidir cuáles destacar o contactar a continuación.
 category: Other
 ---
 
-> **Pasada 1 - sólo UI.** El motor de puntuación y la vista de catálogo de sólo lectura entran hoy. Un runner dedicado que dispare refrescos programados está en el roadmap. Por ahora pulsas **Refresh Now** manualmente cuando quieres scores frescos.
+> **La actualización es manual.** Los cuatro niveles de señales están activos, pero aún no hay actualización automática programada. Haz clic en **Actualizar ahora** cuando quieras puntuaciones frescas.
 
 ## Qué hace Ads Goldmine
 
-La mayor parte del tiempo, la pregunta no es "¿qué productos existen?" - es "¿cuáles de los productos a los que tengo acceso *vale la pena* destacar ahora mismo?". Ads Goldmine responde a eso. Puntúa cada ASIN de tu catálogo con cuatro señales:
+La mayoría de las veces la pregunta no es "¿qué productos existen?", sino "¿cuáles de los productos a los que tengo acceso *valen la pena* destacar o contactar ahora mismo?" Ads Goldmine responde a eso. Puntúa cada ASIN candidato según varias señales:
 
-- **Tier 1: Señales de oferta** (vía Creators API) - Lightning Deals, ofertas exclusivas para Prime, % reclamado. La frescura de estas señales es el mejor indicador "postea esto ya".
-- **Tier 2: Creator Connections + SPCC**: leído en vivo desde los catálogos que cc-check recoge. Los ASIN con campaña activa o con oferta patrocinada puntúan más alto.
-- **Tier 4: Densidad de búsqueda por marca**: cuántos slots patrocinados posee una marca en los resultados de búsqueda de su categoría. Las marcas que compran espacio publicitario a escala son objetivos de pitch ricos en señal.
-- **Tier 4 PDP probe**: para las marcas más arriba en el ranking, recorre la página de detalle del producto para contar URLs de brand-store y slots de carrusel patrocinado.
+- **Candidatos del catálogo** (la fuente de las filas): Ads Goldmine toma marcas y productos de los catálogos de Creator Connections y SPCC que recolecta cc-check, además de cada ASIN que hayas recolectado en tu ledger (Daily Commission, Orders Butler, Storefront Butler). Así la tabla se llena aunque tu propio ledger sea pequeño.
+- **Señales de oferta** (vía la Creators API): Lightning Deals, ofertas exclusivas Prime, % reclamado. La frescura de estas es el indicador más fuerte de "publica esto ahora".
+- **Creator Connections + SPCC**: se leen de los catálogos que mantiene cc-check y se confirman con la búsqueda global. Los ASIN con una campaña activa o una oferta patrocinada puntúan más alto. Este paso también rellena el título del producto, la imagen y el estado autoritativo de SPCC para las marcas del catálogo.
+- **Densidad de búsqueda de marca**: cuántos espacios patrocinados posee una marca en la búsqueda de su propia categoría. Las marcas que compran espacio publicitario a gran escala son objetivos ricos en señales para contactar.
+- **Sondeo de PDP**: para las marcas mejor clasificadas, recorre la página de detalle del producto para detectar una tienda de marca y contar los espacios de carrusel patrocinado.
 
-La salida es una tabla de ASIN ordenable y filtrable con una puntuación compuesta 0-100.
+El resultado es una tabla ordenable y filtrable de ASIN con una puntuación compuesta de 0-100 y un Motivo en lenguaje sencillo para cada fila.
 
 ## Antes de empezar
 
-- **ID de tienda CC** en la barra superior.
-- **Clave de Creators API** en API Integrations - obligatoria para las señales de Tier 1. Sin ella se omite Tier 1 y tus puntuaciones dependen sólo de Tiers 2 + 4.
-- **cc-check ha corrido recientemente**: Ads Goldmine lee desde los catálogos CC/SPCC que cc-check mantiene.
+- **CC Storefront ID** en la barra superior.
+- **Clave de la Creators API** en API Integrations - necesaria para las señales de oferta. Sin ella, la columna Oferta queda en blanco y las puntuaciones dependen de las demás señales.
+- **cc-check se ha ejecutado recientemente**: Ads Goldmine lee de los catálogos CC + SPCC que mantiene cc-check.
 
-## Tu primer refresco
+## Tu primera actualización
 
-1. Abre **Ads Goldmine** dentro de Amazon Butler.
-2. Pulsa **Refresh Now**.
+1. Abre **Ads Goldmine** en Amazon Butler.
+2. Haz clic en **Actualizar ahora**.
 
-El refresco ejecuta los cuatro tiers en orden:
+La actualización se ejecuta en orden:
 
-1. Sonda de ofertas Tier 1 Creators-API (TTL 6h - no se re-ejecuta dentro de 6 horas si ya está fresca; se omite del todo si no hay clave de Creators API).
-2. Sonda de búsqueda por marca Tier 4 (30 marcas por sesión, TTL 7 días).
-3. Sonda PDP Tier 4 (marcas mejor rankeadas, TTL 14 días - cuenta URLs de brand-store + carruseles patrocinados).
-4. Tier 2 (CC + SPCC) se lee en vivo sin runner - no hace falta sonda.
+1. Candidatos del catálogo: enumera productos promocionables de los catálogos CC + SPCC (no necesita clave de la Creators API).
+2. Señales de oferta: sondeo de ofertas por la Creators API (frescura de 6h - no se repite en 6 horas si ya está fresco; se omite por completo sin clave de la Creators API).
+3. Densidad de búsqueda de marca (un lote limitado de marcas por sesión, frescura de 7 días).
+4. Sondeo de PDP para las marcas mejor clasificadas (frescura de 14 días - detecta tiendas de marca + carruseles patrocinados).
+5. La presencia en Creator Connections + SPCC se resuelve al construir las filas, sin sondeo aparte.
 
-Un primer refresco sobre un catálogo nuevo tarda 5-15 minutos. Los siguientes son de minutos-a-segundos porque los TTL mantienen la mayoría de datos calientes.
+Una primera actualización en un catálogo nuevo tarda varios minutos. Las siguientes son de minutos a segundos porque las ventanas de frescura mantienen la mayoría de los datos al día. Los datos de Oferta, Tienda de marca y búsqueda de marca se rellenan de forma gradual entre actualizaciones, ya que cada ejecución sondea un lote limitado de las marcas de mayor prioridad.
 
-## Trabajar con los resultados
+## Trabajando con los resultados
 
-La tabla de resultados:
+El resumen del catálogo sobre la tabla cuenta **ASIN puntuados**, **Puntuación alta (≥50)**, **Oportunidades de CC**, **Oportunidades de SPCC** y **Marcas con tienda**.
 
-- **Score** (0-100) - compuesto entre todos los tiers. Filtrable vía el slider **Min score**.
-- **ASIN + título de producto**: el producto.
-- **Imagen**: una miniatura del producto. Usa el control **Tamaño de imagen** (Pequeño / Mediano / Grande) encima de la tabla para redimensionar todas las miniaturas; tu elección se recuerda entre reinicios.
-- **Marca**: clickeable, abre un filtro por marca.
-- **Motivo**: un resumen en lenguaje sencillo de por qué aparece la fila y por qué vale la pena contactar a la marca (por ejemplo, "En tu catálogo de Creator Connections. Hasta 8% de comisión"), compuesto a partir de las mismas señales que determinan el score.
-- **Desglose por tier**: columnas que muestran qué tiers contribuyeron al score (puedes ver de un vistazo si un score alto viene de ofertas, CC o densidad de búsqueda).
-- **Última actualización**: cuándo se sondeó cada señal por última vez. Las señales más viejas reciben estilo desvanecido.
+Las columnas de la tabla de resultados:
 
-Qué hacer con ASIN de score alto:
+- **Puntuación** (0-100): el compuesto de todas las señales. Filtra con el deslizador **Puntuación mínima**.
+- **Motivo**: un resumen en lenguaje sencillo de por qué aparece la fila y por qué vale la pena contactar a la marca (por ejemplo, "En tu catálogo de Creator Connections. Hasta 8% de comisión"), compuesto a partir de las mismas señales que determinan la puntuación.
+- **Marca**, **Producto**, **ASIN**: la marca, el título del producto y el ASIN.
+- **Imagen**: una miniatura del producto. Usa el control **Tamaño de imagen** (Pequeño / Mediano / Grande) sobre la tabla para redimensionar cada miniatura; tu elección se recuerda entre reinicios.
+- **CC**, **SPCC**, **Tienda de marca**, **Oferta**: columnas por señal que muestran qué señales contribuyeron a la puntuación, para ver de un vistazo si una puntuación alta viene de una campaña, una oferta patrocinada, una tienda de marca o una oferta activa.
+- **Acciones**: **Enviar a Content Butler** pone ese ASIN en cola como tarea de contenido sin asignar.
 
-- **Programarlos en Daily Deals Butler** para publicación si el score lo lidera Tier 1 (urgencia de oferta).
-- **Hacer pitch a la marca vía Pitch Butler** si el score lo lidera Tier 4 (la marca está gastando en anuncios - tiene presupuesto para influencer también).
-- **Destacar en guiones de Video Butler / Voiceover Butler** para cualquier ASIN con score alto.
+Los filtros acotan la lista: **Solo CC activo**, **Solo SPCC activo**, **Tiene tienda de marca** y **Solo Lightning Deal**, junto al deslizador de puntuación mínima. Los filtros y la disposición de columnas se guardan solos y se reaplican en el siguiente inicio.
 
-## El bucle de feedback
+Qué hacer con los ASIN de puntuación alta:
 
-Una vez tengas ≥5 ASIN etiquetados con ≥3 filas de comisión cada uno, Ads Goldmine también computa una columna de **lift de conversión** que muestra cómo cada ASIN puntuado rindió frente a tus datos reales de earnings. Es la señal más importante del espacio - te dice si el algoritmo de puntuación coincide con tu rendimiento real. Afina desde ahí.
+- **Enviar a Content Butler** directamente desde la tabla para poner contenido en cola.
+- **Programarlos en Daily Deals Butler** si la puntuación viene de la urgencia de la oferta (Lightning / exclusiva Prime).
+- **Contactar a la marca con Pitch Butler** si la puntuación viene de la densidad de búsqueda de marca o de una tienda de marca (la marca invierte en anuncios, así que tiene presupuesto también para influencers).
+- **Destacarlos en guiones de Video Butler / Voiceover Butler** para cualquier ASIN de puntuación alta.
 
 ## Ajustes con el tiempo
 
-- **Cadencia de refresco**: una vez a la semana basta para la mayoría de usuarios. Las ofertas Tier 1 tienen 6h de frescura, Tier 4 tiene 7-14 días; los refrescos semanales mantienen todo dentro de su ventana.
-- **Filtro Min score**: empieza en 50 para ver sólo filas "que merecen tu atención". Baja a 30 si quieres un pool más amplio para evaluar.
-- **Interpretación del bucle de feedback**: si los ASIN con score alto *no* están convirtiendo, los pesos de tu puntuación en Tier 1 vs Tier 4 necesitan afinarse. Mira en qué tier se apoyan las filas de score-alto-conversión-baja.
+- **Cadencia de actualización**: una vez por semana basta para la mayoría. Las señales de oferta tienen frescura de 6h, la de búsqueda/PDP de 7-14 días; actualizar cada semana mantiene todo dentro de su ventana.
+- **Filtro de puntuación mínima**: empieza en 50 para ver solo filas "que merecen tu atención". Baja a 30 si quieres un grupo más amplio para evaluar.
+- **Añade una clave de la Creators API** si la columna Oferta está vacía y quieres puntuación basada en ofertas - es la mayor fuente de diferenciación entre marcas de catálogo por lo demás similares.
 
-## Dónde van los datos
+## Dónde se guardan los datos
 
-Las puntuaciones por ASIN + las cachés de señal por tier viven en `{userData}/InfluencerButler/workspaces/preseed/cache/ads-goldmine/`. Los TTL mantienen acotado el crecimiento de archivos.
+Las señales de los sondeos y el conjunto de candidatos del catálogo viven en la carpeta `runtime/` del espacio de trabajo Ads Goldmine, dentro de tu directorio de datos de usuario: `ads-goldmine-butler_ads-signal-cache.json` (resultados de sondeo por ASIN y por marca) y `ads-goldmine-butler_ads-goldmine-candidates.json` (el conjunto acotado de candidatos CC + SPCC). Las ventanas de frescura mantienen acotado el crecimiento de los archivos.
 
-## Tropiezos comunes
+## Problemas comunes
 
-- **"Aún no hay datos"**: no has pulsado Refresh Now. La Pasada 1 no tiene auto-refresco - eso viene.
-- **La columna Tier 1 está vacía**: falta la clave de Creators API en API Integrations. Añádela y re-refresca.
-- **La columna de lift de conversión muestra "-"**: tienes menos de 5 ASIN etiquetados o menos de 3 filas de comisión por ASIN. Earnings Intelligence pone en marcha el cálculo de lift cuando cruzas esos umbrales.
-- **Las puntuaciones se sienten uniformes**: el catálogo puede ser demasiado pequeño para que el algoritmo diferencie bien. El algoritmo funciona mejor en catálogos de 50+ ASIN.
+- **"Aún no hay productos"**: no has hecho clic en Actualizar ahora, o cc-check todavía no ha recolectado los catálogos CC/SPCC. Ejecuta cc-check y luego Actualizar ahora.
+- **La columna Oferta está en blanco**: falta la clave de la Creators API en API Integrations. Añádela y vuelve a actualizar.
+- **SPCC, Tienda de marca u Oferta siguen mostrando "-" en la mayoría de filas**: esas señales se rellenan de forma gradual. SPCC se resuelve en la siguiente actualización; Tienda de marca y Oferta sondean un lote limitado de las marcas de mayor prioridad por ejecución, así que la cobertura crece a lo largo de varias actualizaciones.
+- **Muchas filas con puntuación 15**: son marcas que solo están en tu catálogo de Creator Connections sin otra señal todavía. Vuelve a actualizar (y añade una clave de la Creators API) para sumar señales de oferta, tienda de marca y búsqueda de marca que las diferencien.
 
 ## Relacionado
 
-- [Tutorial de cc-check](/help/tutorials/cc-check) - mantiene frescos los catálogos CC + SPCC desde los que Ads Goldmine lee.
-- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals) - el espacio donde actúas sobre los ASIN con Tier 1 alto.
-- [Tutorial de Pitch Butler](/help/tutorials/pitchbutler) - el espacio donde actúas sobre las marcas con Tier 4 alto.
+- [Tutorial de cc-check](/help/tutorials/cc-check) - mantiene frescos los catálogos CC + SPCC que lee Ads Goldmine.
+- [Tutorial de Content Butler](/help/tutorials/content-butler) - donde aterrizan las filas de "Enviar a Content Butler".
+- [Tutorial de Daily Deals Butler](/help/tutorials/daily-deals) - el espacio donde actúas sobre los ASIN con alta puntuación de oferta.
+- [Tutorial de Pitch Butler](/help/tutorials/pitchbutler) - el espacio donde actúas sobre las marcas de alta densidad.
