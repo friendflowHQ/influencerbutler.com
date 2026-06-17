@@ -1776,6 +1776,22 @@
       "pinImage": "/assets/blog/pins/amazon-influencer-prime-day-prep-routine.png",
       "pinDescription": "A veteran Amazon influencer's full Prime Day prep routine: earn across five country marketplaces from content you already made, mostly while you sleep. Save this pin so you can come back to it. #AmazonPrimeDayPrep #AmazonInfluencerPrimeDay #AmazonInfluencer #AmazonStorefront",
       "order": 99
+    },
+    {
+      "id": "keep-your-butler-running-while-traveling",
+      "title": "Heading Out This Summer? How to Keep Your Influencer Butler Running While You're Gone",
+      "category": "Growth",
+      "summary": "Taking a summer trip? Here is the exact setup I use to keep Influencer Butler running the whole time I am away: remote access, a UPS battery backup, and an auto-restart trick.",
+      "date": "2026-06-18",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "run influencer butler while traveling, keep computer running while away, ups battery backup for creators, chrome remote desktop creator",
+      "image": "/assets/blog/keep-your-butler-running-while-traveling.png",
+      "imageAlt": "Illustration of a relaxed creator on vacation while their computer keeps working at home",
+      "imagePrompt": "a relaxed creator on a beach chair with a sun hat and a cool drink, a small thought bubble showing a home desktop computer happily running on its own with a battery icon, warm reassuring summer mood",
+      "pinImage": "/assets/blog/pins/keep-your-butler-running-while-traveling.png",
+      "pinDescription": "Taking a summer trip? Here is the exact setup I use to keep Influencer Butler running the whole time I am away: remote access, a UPS battery backup, and an auto-restart trick. Save this pin so you can come back to it. #CreatorTips #ContentCreator #WorkFromAnywhere #AmazonInfluencer",
+      "order": 98
     }
   ]
 }
