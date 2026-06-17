@@ -42,6 +42,15 @@ export async function GET(request: Request) {
     return redirect;
   }
 
+  // Browser prefetch / prerender (Chrome "preload pages", hover speculation,
+  // Firefox/Safari prefetch) hits this GET before the human actually clicks,
+  // and can fire several times. Skip it WITHOUT arming the dedup cookie, so the
+  // genuine click that follows still sends exactly one email.
+  if (isPrefetchRequest(h)) {
+    console.log("trial/start: skipped (prefetch)");
+    return redirect;
+  }
+
   if (alreadyPinged) {
     console.log("trial/start: skipped (deduped)");
     return redirect;
@@ -63,6 +72,25 @@ export async function GET(request: Request) {
   after(() => sendNotification(details));
 
   return redirect;
+}
+
+// Detects speculative navigations (prefetch / prerender / preload) that browsers
+// fire before a real click. Chrome sends Sec-Purpose; older Chrome sends Purpose;
+// Firefox sends X-Moz; Safari sends X-Purpose.
+function isPrefetchRequest(h: Headers): boolean {
+  const signals = [
+    h.get("sec-purpose"),
+    h.get("purpose"),
+    h.get("x-purpose"),
+    h.get("x-moz"),
+  ];
+  for (const raw of signals) {
+    const v = (raw || "").toLowerCase();
+    if (v.includes("prefetch") || v.includes("prerender") || v.includes("preview") || v.includes("preload")) {
+      return true;
+    }
+  }
+  return false;
 }
 
 type ClickDetails = {
