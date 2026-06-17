@@ -324,7 +324,7 @@ export default function AdminAffiliatesPage() {
   const onMarkPaid = async (aff: OwedAffiliate) => {
     if (
       !window.confirm(
-        `Mark ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} as paid to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nDo this ONLY after you have issued the bonus in the Lemon Squeezy dashboard. Verify these ${aff.orderCount} orders against LS first - a later refund is not reflected here. This stamps the orders reconciled so they drop off the report.`,
+        `Mark ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} as paid to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nDo this ONLY after you have issued the bonus in the Lemon Squeezy dashboard. Sanity-check these ${aff.orderCount} orders against LS first - an older or partial refund may not be reflected here. This stamps the orders reconciled so they drop off the report.`,
       )
     ) {
       return;
@@ -681,8 +681,8 @@ export default function AdminAffiliatesPage() {
             commission in LS (LS can&apos;t back-date one). They are captured here at{" "}
             {commissionPercent}% of order value once the affiliate is linked. Pay each owed amount as
             a one-time bonus in the Lemon Squeezy dashboard, then click &quot;Mark paid&quot; so it
-            drops off this list. Verify the orders against LS first: a later refund is not reflected
-            here.
+            drops off this list. Refunds are tracked, but sanity-check against LS first: an older
+            refund or a partial refund may not be reflected here.
           </p>
         </div>
 

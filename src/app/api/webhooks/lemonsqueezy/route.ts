@@ -554,6 +554,23 @@ export async function POST(request: Request) {
       }
     },
 
+    // Mirror LS refunds onto orders.status so the owed-commissions report
+    // (which filters status='paid') stops counting a gap-window referral once
+    // it's refunded - otherwise we'd back-pay commission on money that was
+    // returned. LS sends the new status ('refunded' or 'partial_refund') in the
+    // payload; we only update an existing row (no upsert) so a stray refund
+    // event for an unknown order is a no-op rather than a phantom insert.
+    order_refunded: async () => {
+      if (!recordId) return;
+      await assertWrite(
+        "orders.update(order_refunded)",
+        supabase
+          .from("orders")
+          .update({ status: getString(attrs.status) ?? "refunded" })
+          .eq("ls_order_id", recordId),
+      );
+    },
+
     subscription_created: async () => {
       if (!recordId) {
         throw new Error("subscription_created: missing data.id (recordId)");

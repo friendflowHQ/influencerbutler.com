@@ -21,10 +21,12 @@ export const dynamic = "force-dynamic";
  *  POST -> mark a set of orders reconciled (stamps reconciled_at/amount/by),
  *          so they drop off the report. Guarded against double-stamping.
  *
- * Refund caveat: the webhook does not handle order_refunded, so orders.status
- * stays 'paid' after a later refund. We filter status='paid' but cannot detect
- * post-hoc refunds - the admin must verify against the LS dashboard before
- * paying. The response sets verifyAgainstLs=true to surface this in the UI.
+ * Refunds: the order_refunded webhook now flips orders.status off 'paid', so
+ * refunds going forward auto-exclude from this report. Two gaps remain, so the
+ * response still sets verifyAgainstLs=true: (1) orders refunded BEFORE that
+ * handler shipped stayed 'paid', and (2) a partial_refund excludes the whole
+ * order rather than prorating. The admin should still sanity-check against the
+ * LS dashboard before paying.
  */
 
 function commissionPercent(): number {
