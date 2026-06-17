@@ -156,7 +156,7 @@ export default function LicenseKeyDisplay({ variant, licenseKey, loading = false
           className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
         >
           <DownloadIcon />
-          Download for Windows
+          Download the desktop app
         </a>
       </div>
     </section>

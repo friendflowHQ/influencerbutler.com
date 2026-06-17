@@ -26,7 +26,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     steps: [
       {
         title: "Download and install the desktop app",
-        body: "Use the button below to grab the Windows installer.",
+        body: "Use the button below to grab the installer for your computer.",
       },
       {
         title: "Activate with your license key",
