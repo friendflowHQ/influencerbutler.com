@@ -194,7 +194,7 @@ export default async function BlogPostPage({
               for 3 days.
             </p>
             <a
-              href="https://dl.influencerbutler.com"
+              href="/go/trial?src=blog-post"
               className="mt-5 inline-block rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-700"
             >
               Start your free trial

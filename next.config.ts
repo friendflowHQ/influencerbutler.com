@@ -50,6 +50,7 @@ const agentDiscoveryLinkHeader = [
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
+      { source: "/go/trial", destination: "/api/trial/start" },
       { source: "/", destination: "/index.html" },
       { source: "/landing", destination: "/landing-page.html" },
       { source: "/stop-messaging-brands", destination: "/stop-messaging-brands.html" },

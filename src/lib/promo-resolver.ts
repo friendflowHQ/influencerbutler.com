@@ -20,7 +20,7 @@
  */
 
 import { fetchDiscountByCode, type LsDiscount } from "./lemonsqueezy-discount-lookup";
-import { lookupAffiliateByCode, withTimeout } from "./affiliate-lookup";
+import { lookupAffiliateOwnerByCode, withTimeout } from "./affiliate-lookup";
 import {
   WELCOME_FIRST_CODE,
   WELCOME_RETURNING_CODE,
@@ -48,6 +48,12 @@ export type CandidateCode = {
   ls: LsDiscount;
   isAffiliate: boolean;
   lsAffiliateId: string | null;
+  /**
+   * Affiliate's Supabase user id (profiles.id) if this code belongs to an
+   * affiliate, linked or not. Set even when `lsAffiliateId` is null, so the
+   * intended affiliate can be captured during the pre-LS-activation gap.
+   */
+  affiliateUserId: string | null;
   /** Pre-computed in the resolver so tests + tie-break can read it. */
   savedCents: number;
 };

@@ -58,7 +58,7 @@ export function SiteHeader() {
         </ul>
 
         <a
-          href="https://dl.influencerbutler.com"
+          href="/go/trial?src=blog-nav"
           className="ml-4 hidden rounded-[14px] bg-orange-500 px-6 py-2.5 text-[0.95rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 md:inline-flex"
         >
           Start Free Trial
@@ -97,7 +97,7 @@ export function SiteHeader() {
             ))}
             <li>
               <a
-                href="https://dl.influencerbutler.com"
+                href="/go/trial?src=blog-nav-mobile"
                 onClick={() => setOpen(false)}
                 className="mt-2 inline-flex rounded-[14px] bg-orange-500 px-6 py-2.5 font-semibold text-white hover:bg-orange-600"
               >

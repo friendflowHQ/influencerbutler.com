@@ -5,13 +5,40 @@ type ProfileLookupClient = {
     select: (cols: string) => {
       ilike: (col: string, value: string) => {
         limit: (n: number) => Promise<{
-          data: { ls_affiliate_id?: string | null; affiliate_code?: string | null }[] | null;
+          data:
+            | {
+                id?: string | null;
+                ls_affiliate_id?: string | null;
+                affiliate_code?: string | null;
+              }[]
+            | null;
           error: unknown;
         }>;
       };
     };
   };
 };
+
+function profileLookupClient(): ProfileLookupClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.error(
+      "affiliate-lookup: SUPABASE_SERVICE_ROLE_KEY not set - cannot look up branded codes",
+    );
+    return null;
+  }
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return [];
+      },
+      setAll() {
+        // stateless
+      },
+    },
+  }) as unknown as ProfileLookupClient;
+}
 
 export async function withTimeout<T>(
   promise: Promise<T>,
@@ -32,29 +59,18 @@ export async function withTimeout<T>(
 /**
  * Looks up the affiliate who owns a branded code. Case-insensitive. Returns
  * null if no match, or if the service-role key isn't configured.
+ *
+ * Linked-only contract: returns null when the matching profile has no
+ * `ls_affiliate_id`. This is the live discount/attribution path - we must not
+ * apply `aff_ref` (and thus pay commission) for an affiliate whose LS account
+ * isn't wired up yet. For the capture path that needs the intended affiliate
+ * BEFORE LS activation, use `lookupAffiliateOwnerByCode`.
  */
 export async function lookupAffiliateByCode(
   code: string,
 ): Promise<{ lsAffiliateId: string; code: string } | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    console.error(
-      "affiliate-lookup: SUPABASE_SERVICE_ROLE_KEY not set - cannot look up branded codes",
-    );
-    return null;
-  }
-
-  const svc = createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return [];
-      },
-      setAll() {
-        // stateless
-      },
-    },
-  }) as unknown as ProfileLookupClient;
+  const svc = profileLookupClient();
+  if (!svc) return null;
 
   const { data, error } = await svc
     .from("profiles")
@@ -71,6 +87,43 @@ export async function lookupAffiliateByCode(
   if (!row || !row.ls_affiliate_id || !row.affiliate_code) return null;
 
   return { lsAffiliateId: row.ls_affiliate_id, code: row.affiliate_code };
+}
+
+/**
+ * Capture-path lookup: resolves the affiliate who owns a branded code
+ * regardless of whether their LS account is activated yet. Returns the
+ * affiliate's `user_id` (profiles.id) and a possibly-null `lsAffiliateId`.
+ *
+ * Used to durably record the *intended* affiliate on an order during the
+ * pre-LS-activation gap, so the referral can be reconciled and paid once the
+ * affiliate goes live. Distinct from `lookupAffiliateByCode`, which is the
+ * linked-only live path and never returns unlinked affiliates.
+ */
+export async function lookupAffiliateOwnerByCode(
+  code: string,
+): Promise<{ affiliateUserId: string; lsAffiliateId: string | null; code: string } | null> {
+  const svc = profileLookupClient();
+  if (!svc) return null;
+
+  const { data, error } = await svc
+    .from("profiles")
+    .select("id,ls_affiliate_id,affiliate_code")
+    .ilike("affiliate_code", code)
+    .limit(1);
+
+  if (error) {
+    console.error("affiliate-lookup: owner lookup failed", error);
+    return null;
+  }
+
+  const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  if (!row || !row.id || !row.affiliate_code) return null;
+
+  return {
+    affiliateUserId: row.id,
+    lsAffiliateId: row.ls_affiliate_id ?? null,
+    code: row.affiliate_code,
+  };
 }
 
 export function appendAffRef(checkoutUrl: string, lsAffiliateId: string): string {
