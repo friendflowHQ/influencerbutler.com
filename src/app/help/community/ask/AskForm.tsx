@@ -106,7 +106,9 @@ export default function AskForm({ tutorials }: { tutorials: Tutorial[] }) {
           <option value="" disabled>
             Pick a workspace...
           </option>
-          {tutorials.map((entry) => (
+          {[...tutorials]
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map((entry) => (
             <option key={entry.id} value={entry.id}>
               {entry.title}
             </option>
