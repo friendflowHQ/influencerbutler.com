@@ -274,7 +274,7 @@ export default function AffiliatesLandingPage() {
               <span className="text-sm font-semibold tracking-tight">Influencer Butler</span>
             </Link>
             <p className="mt-3 max-w-[260px] text-sm text-slate-500">
-              The all-in-one command center for Amazon Influencers.
+              The all-in-one command center for creators and influencers.
             </p>
           </div>
           <div className="flex flex-col gap-2.5">

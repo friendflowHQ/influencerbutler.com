@@ -246,7 +246,7 @@ export default async function BlogPostPage({
               Try Influencer Butler
             </h2>
             <p className="mt-3 text-sm text-slate-600">
-              The all-in-one command center for Amazon influencers. 3-day free
+              The all-in-one command center for creators and influencers. 3-day free
               trial, cancel anytime.
             </p>
             <Link

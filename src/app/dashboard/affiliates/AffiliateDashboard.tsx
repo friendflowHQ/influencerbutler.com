@@ -116,7 +116,7 @@ export default function AffiliateDashboard({
         <ShareLinkCard
           shareLink={shareLink}
           shareDomain={summary.shareDomain}
-          shareMessage="I've been using Influencer Butler - automation for Amazon Influencers. Worth a look:"
+          shareMessage="I've been using Influencer Butler - automation for creators and influencers. Worth a look:"
         />
       ) : null}
 
@@ -226,7 +226,7 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
     }
   };
 
-  const shareMessage = `Use my code ${code} for 15% off Influencer Butler - automation for Amazon Influencers that's actually worth it.`;
+  const shareMessage = `Use my code ${code} for 15% off Influencer Butler - automation for creators and influencers that's actually worth it.`;
 
   return (
     <section className="rounded-2xl border-2 border-[#f97316]/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-6 shadow-md">

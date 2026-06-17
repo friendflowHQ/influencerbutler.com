@@ -131,7 +131,7 @@ export function SiteFooter() {
               </span>
             </Link>
             <p className="mt-3 max-w-[260px] text-sm text-slate-500">
-              The all-in-one command center for Amazon Influencers.
+              The all-in-one command center for creators and influencers.
             </p>
             <p className="mt-3 max-w-[260px] text-sm text-slate-500">
               Available in English, Spanish, and French.

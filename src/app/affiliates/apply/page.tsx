@@ -295,7 +295,7 @@ export default function AffiliateApplyPage() {
                   />
                 </Field>
               </div>
-              <Field label="Niche" hint="e.g. Amazon Influencers, creator tools, affiliate marketing">
+              <Field label="Niche" hint="e.g. content creators, Amazon influencers, affiliate marketing">
                 <input
                   value={niche}
                   onChange={(e) => setNiche(e.target.value)}

@@ -10,7 +10,7 @@ type ShareLinkCardProps = {
 };
 
 const DEFAULT_SHARE_MESSAGE =
-  "Influencer Butler is the all-in-one command center for Amazon Influencers. Try it:";
+  "Influencer Butler is the all-in-one command center for creators and influencers. Try it:";
 
 export default function ShareLinkCard({
   shareLink,
