@@ -7,8 +7,11 @@ import {
   loadPublishedPosts,
   isPublished,
   formatBlogDate,
+  resolvePinImage,
 } from "@/lib/blog";
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
+import BlogShareButtons from "@/components/blog/BlogShareButtons";
+import { buildPinDescription } from "@/lib/pinterest";
 
 export const revalidate = 300;
 
@@ -85,8 +88,18 @@ export default async function BlogPostPage({
   const author = (post.frontmatter.author as string) || entry?.author || "Influencer Butler Team";
   const date = entry?.date || (post.frontmatter.date as string) || "";
   const readingTime = (post.frontmatter.readingTime as string) || entry?.readingTime || "";
+  const keywords = (post.frontmatter.keywords as string) || entry?.keywords || "";
   const image = (post.frontmatter.image as string) || entry?.image || "";
   const imageAlt = (post.frontmatter.imageAlt as string) || entry?.imageAlt || title;
+
+  const shareUrl = `${SITE}/blog/${slug}`;
+  // Pinterest prefers a vertical pin image. The manifest pre-wires pinImage to
+  // /assets/blog/pins/<slug>.png; resolvePinImage uses it once that file exists
+  // and otherwise falls back to the landscape hero, so shares never point at a
+  // missing image.
+  const pinImage = resolvePinImage(entry?.pinImage, image);
+  const shareImage = pinImage ? `${SITE}${pinImage}` : "";
+  const pinDescription = buildPinDescription(title, summary, keywords);
 
   const live = manifest.posts.filter((p) => isPublished(p.date));
   const related = live
@@ -151,6 +164,8 @@ export default async function BlogPostPage({
                 alt={imageAlt}
                 className="h-auto w-full object-cover"
                 loading="eager"
+                data-pin-url={shareUrl}
+                data-pin-description={pinDescription}
               />
             </figure>
           ) : null}
@@ -158,6 +173,14 @@ export default async function BlogPostPage({
           <div
             className="help-tutorial-body mt-8"
             dangerouslySetInnerHTML={{ __html: post.html }}
+          />
+
+          <BlogShareButtons
+            url={shareUrl}
+            title={title}
+            summary={summary}
+            image={shareImage}
+            keywords={keywords}
           />
 
           <div className="mt-12 rounded-2xl border border-orange-200 bg-orange-50 p-8">
@@ -170,12 +193,12 @@ export default async function BlogPostPage({
               catching price drops and keeping your outreach moving. Try it free
               for 3 days.
             </p>
-            <Link
-              href="/signup"
+            <a
+              href="https://dl.influencerbutler.com"
               className="mt-5 inline-block rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-700"
             >
               Start your free trial
-            </Link>
+            </a>
           </div>
         </article>
 

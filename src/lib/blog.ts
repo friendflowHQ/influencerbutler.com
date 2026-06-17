@@ -7,6 +7,7 @@
  * Dependencies: node:fs/promises, node:path.
  */
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 export type BlogManifestEntry = {
@@ -20,6 +21,9 @@ export type BlogManifestEntry = {
   keywords: string;
   image: string; // /assets/blog/<slug>.png
   imageAlt: string;
+  // Optional vertical (2:3) Pinterest pin image, e.g. /assets/blog/pins/<slug>.png.
+  // When present it is used as the Pinterest share media; otherwise `image` is.
+  pinImage?: string;
   order: number;
 };
 
@@ -74,6 +78,23 @@ export async function loadBlogManifest(): Promise<BlogManifest> {
 // against a post's `date` (also yyyy-mm-dd), which is correct for ISO dates.
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Best Pinterest image for a post: the vertical pin (entry.pinImage) when that
+// file actually exists in public/, otherwise the landscape hero image. The
+// manifest pre-wires every post's pinImage to /assets/blog/pins/<slug>.png, but
+// those vertical pins are generated separately and may not exist yet, so we
+// verify the file is present before handing it to Pinterest. Returns "" when
+// neither image exists.
+export function resolvePinImage(
+  pinImage: string | undefined,
+  heroImage: string,
+): string {
+  if (pinImage) {
+    const abs = path.join(process.cwd(), "public", pinImage.replace(/^\//, ""));
+    if (existsSync(abs)) return pinImage;
+  }
+  return heroImage;
 }
 
 // A post is "published" once its date has arrived (date <= today, UTC).

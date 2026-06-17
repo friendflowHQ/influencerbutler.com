@@ -57,12 +57,12 @@ export function SiteHeader() {
           ))}
         </ul>
 
-        <Link
-          href="/#pricing"
+        <a
+          href="https://dl.influencerbutler.com"
           className="ml-4 hidden rounded-[14px] bg-orange-500 px-6 py-2.5 text-[0.95rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 md:inline-flex"
         >
           Start Free Trial
-        </Link>
+        </a>
 
         <button
           type="button"
@@ -96,13 +96,13 @@ export function SiteHeader() {
               </li>
             ))}
             <li>
-              <Link
-                href="/#pricing"
+              <a
+                href="https://dl.influencerbutler.com"
                 onClick={() => setOpen(false)}
                 className="mt-2 inline-flex rounded-[14px] bg-orange-500 px-6 py-2.5 font-semibold text-white hover:bg-orange-600"
               >
                 Start Free Trial
-              </Link>
+              </a>
             </li>
           </ul>
         </div>

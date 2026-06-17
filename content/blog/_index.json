@@ -13,7 +13,9 @@
       "image": "/assets/blog/amazon-creator-connections-guide-2026.png",
       "imageAlt": "Illustration of a creator matching products to brand campaigns on a dashboard",
       "imagePrompt": "Editorial flat illustration of a confident content creator at a desk reviewing brand campaign cards on a glowing dashboard, product boxes and commission badges floating around, warm and optimistic mood, clean modern vector style, soft shapes, brand accent color warm orange (#f59e0b) with navy and cream, plenty of negative space, no text, no logos",
-      "order": 1
+      "order": 1,
+      "pinImage": "/assets/blog/pins/amazon-creator-connections-guide-2026.png",
+      "pinDescription": "A plain-English guide to Amazon Creator Connections: how brand campaigns work, what gets you accepted, and the daily habits that quietly grow your commissions. Save this pin so you can come back to it. #AmazonCreatorConnections #CreatorConnectionsCampaigns #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "how-much-do-amazon-influencers-make",
@@ -27,7 +29,9 @@
       "image": "/assets/blog/how-much-do-amazon-influencers-make.png",
       "imageAlt": "Illustration of a rising earnings chart made of product thumbnails and coins",
       "imagePrompt": "Editorial flat illustration of a rising bar chart built from small product thumbnails and stacks of gold coins, a creator standing beside it looking thoughtful, warm hopeful mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no numbers, no logos",
-      "order": 2
+      "order": 2,
+      "pinImage": "/assets/blog/pins/how-much-do-amazon-influencers-make.png",
+      "pinDescription": "Real commission numbers for Amazon influencers in 2026, what separates the $300 months from the $3,000 months, and how to read your own earnings honestly. Save this pin so you can come back to it. #HowMuchDoAmazonInfluencersMake #AmazonInfluencerEarnings #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-storefront-tips",
@@ -41,7 +45,9 @@
       "image": "/assets/blog/amazon-influencer-storefront-tips.png",
       "imageAlt": "Illustration of a tidy storefront window arranged with curated product shelves",
       "imagePrompt": "Editorial flat illustration of a tidy storefront window with neatly arranged shelves of curated products, a checklist clipboard in the foreground with orange checkmarks, friendly inviting mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 3
+      "order": 3,
+      "pinImage": "/assets/blog/pins/amazon-influencer-storefront-tips.png",
+      "pinDescription": "Your storefront is a sales page, not a junk drawer. Here is the checklist for idea lists, thumbnails, and ordering that actually converts shoppers into commissions. Save this pin so you can come back to it. #AmazonInfluencerStorefront #AmazonStorefrontTips #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "catch-amazon-price-drops",
@@ -55,7 +61,9 @@
       "image": "/assets/blog/catch-amazon-price-drops.png",
       "imageAlt": "Illustration of a price tag dropping sharply with an alert bell ringing",
       "imagePrompt": "Editorial flat illustration of a large price tag with an arrow dropping sharply downward and a ringing alert bell beside it, a creator catching the deal in a net, energetic urgent but cheerful mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 4
+      "order": 4,
+      "pinImage": "/assets/blog/pins/catch-amazon-price-drops.png",
+      "pinDescription": "The deals that go viral are the ones posted first. Here is how to catch steep Amazon price drops and pricing errors the moment they happen, instead of an hour too late. Save this pin so you can come back to it. #AmazonPriceDrop #AmazonPriceGlitch #AmazonDeals #DealFinder"
     },
     {
       "id": "instagram-dm-outreach-playbook",
@@ -69,7 +77,9 @@
       "image": "/assets/blog/instagram-dm-outreach-playbook.png",
       "imageAlt": "Illustration of friendly chat bubbles flowing between a creator and a brand",
       "imagePrompt": "Editorial flat illustration of warm friendly chat bubbles flowing between a creator's phone and a brand storefront, hearts and handshake icons floating, approachable optimistic mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 5
+      "order": 5,
+      "pinImage": "/assets/blog/pins/instagram-dm-outreach-playbook.png",
+      "pinDescription": "Personalized DMs convert far better than cold email, but only if you do them right. Real scripts, timing, and a follow-up system that does not feel spammy. Save this pin so you can come back to it. #InstagramDmOutreach #DmScriptsForCreators #InstagramTips #ContentCreator"
     },
     {
       "id": "what-is-benable",
@@ -83,7 +93,9 @@
       "image": "/assets/blog/what-is-benable.png",
       "imageAlt": "Illustration of a curated recommendation list with linked product cards",
       "imagePrompt": "Editorial flat illustration of a hand holding a phone showing a curated recommendation list of linked product cards from many different brands, small affiliate link icons connecting them, friendly trustworthy mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 6
+      "order": 6,
+      "pinImage": "/assets/blog/pins/what-is-benable.png",
+      "pinDescription": "Benable lets you build shoppable recommendation lists across 35,000+ brands and keep the full commission. Here is how it works and who it is actually worth it for. Save this pin so you can come back to it. #WhatIsBenable #BenableAffiliate #Benable #AffiliateMarketing"
     },
     {
       "id": "deal-posting-influencer-guide",
@@ -97,7 +109,9 @@
       "image": "/assets/blog/deal-posting-influencer-guide.png",
       "imageAlt": "Illustration of a creator posting daily deal cards to a happy audience",
       "imagePrompt": "Editorial flat illustration of a relaxed creator on a couch while deal cards fly out to a happy engaged audience on phones, calm-but-productive mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 7
+      "order": 7,
+      "pinImage": "/assets/blog/pins/deal-posting-influencer-guide.png",
+      "pinDescription": "Deal accounts can earn every single day, but the grind is brutal if you do it by hand. Here is how the model works and how to keep it sustainable. Save this pin so you can come back to it. #DealPostingInfluencer #AmazonDealsInfluencer #AmazonDeals #DealFinder"
     },
     {
       "id": "choose-products-that-convert",
@@ -111,7 +125,9 @@
       "image": "/assets/blog/choose-products-that-convert.png",
       "imageAlt": "Illustration of a creator sorting products into keep and skip piles",
       "imagePrompt": "Editorial flat illustration of a creator sorting floating product boxes into a green keep pile and a faded skip pile using a magnifying glass, thoughtful decisive mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 8
+      "order": 8,
+      "pinImage": "/assets/blog/pins/choose-products-that-convert.png",
+      "pinDescription": "Most storefronts fail because of what they feature, not how they look. A simple framework for picking products that match buyer intent and pay you well. Save this pin so you can come back to it. #AmazonInfluencerProductSelection #ProductsThatConvert #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "grow-on-benable",
@@ -125,7 +141,9 @@
       "image": "/assets/blog/grow-on-benable.png",
       "imageAlt": "Illustration of recommendation lists rising in popularity with hearts and follows",
       "imagePrompt": "Editorial flat illustration of curated recommendation lists rising upward like a leaderboard with hearts, follow icons, and sparkles around them, a creator cheering nearby, upbeat encouraging mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 9
+      "order": 9,
+      "pinImage": "/assets/blog/pins/grow-on-benable.png",
+      "pinDescription": "Great Benable lists do not get discovered by accident. The engagement habits, list structure, and consistency that get your recommendations seen and shopped. Save this pin so you can come back to it. #HowToGrowOnBenable #BenableEngagement #Benable #AffiliateMarketing"
     },
     {
       "id": "instagram-close-friends-marketing",
@@ -139,7 +157,9 @@
       "image": "/assets/blog/instagram-close-friends-marketing.png",
       "imageAlt": "Illustration of a phone with a green close friends ring sharing a deal to fans",
       "imagePrompt": "Editorial flat illustration of a phone showing an Instagram-style story with a bright green ring, sharing a special deal to a small group of delighted loyal fans, intimate friendly exclusive mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) plus a green ring accent with navy and cream, generous negative space, no text, no logos",
-      "order": 10
+      "order": 10,
+      "pinImage": "/assets/blog/pins/instagram-close-friends-marketing.png",
+      "pinDescription": "The green ring is the most underrated sales tool on Instagram. How to use Close Friends to share deals with your most loyal fans without feeling pushy. Save this pin so you can come back to it. #InstagramCloseFriendsMarketing #CloseFriendsListStrategy #InstagramTips #ContentCreator"
     },
     {
       "id": "automate-creator-connections-campaigns",
@@ -153,7 +173,9 @@
       "image": "/assets/blog/automate-creator-connections-campaigns.png",
       "imageAlt": "Illustration of an automated workflow accepting the right campaigns each morning",
       "imagePrompt": "Editorial flat illustration of an automated conveyor belt sorting brand campaign cards, approving the good ones with orange checkmarks while a creator drinks coffee calmly, efficient relaxed morning mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 11
+      "order": 11,
+      "pinImage": "/assets/blog/pins/automate-creator-connections-campaigns.png",
+      "pinDescription": "Manually checking and accepting Creator Connections campaigns eats your morning. Here is a rules-based workflow that accepts the right ones based on what you actually sold. Save this pin so you can come back to it. #CreatorConnectionsAutomation #AcceptAmazonCampaigns #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "influencer-time-saving-tools",
@@ -167,7 +189,9 @@
       "image": "/assets/blog/influencer-time-saving-tools.png",
       "imageAlt": "Illustration of a creator reclaiming time as a clock unwinds into free hours",
       "imagePrompt": "Editorial flat illustration of a happy creator stepping away from a pile of repetitive tasks as a clock unwinds into free hours and a lightbulb of ideas, liberating uplifting mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
-      "order": 12
+      "order": 12,
+      "pinImage": "/assets/blog/pins/influencer-time-saving-tools.png",
+      "pinDescription": "The busywork of being a creator is invisible until you add it up. Here is where the hours actually go and the systems that quietly give them back. Save this pin so you can come back to it. #InfluencerAutomationTools #SaveTimeAsACreator #CreatorTips #ContentCreator"
     },
     {
       "id": "amazon-influencer-program-vs-associates",
@@ -181,7 +205,9 @@
       "image": "/assets/blog/amazon-influencer-program-vs-associates.png",
       "imageAlt": "Illustration comparing two affiliate paths side by side",
       "imagePrompt": "a split-path illustration with two glowing routes, one labeled by a storefront icon and one by a link icon, a creator choosing between them",
-      "order": 111
+      "order": 111,
+      "pinImage": "/assets/blog/pins/amazon-influencer-program-vs-associates.png",
+      "pinDescription": "Two Amazon affiliate programs, two very different fits. Here is how the Influencer Program and Associates differ and which one earns you more. Save this pin so you can come back to it. #AmazonInfluencerProgramVsAssociates #AmazonAssociates #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "get-accepted-amazon-influencer-program",
@@ -195,7 +221,9 @@
       "image": "/assets/blog/get-accepted-amazon-influencer-program.png",
       "imageAlt": "Illustration of an application being approved with a green check",
       "imagePrompt": "a phone showing an approved application with a green checkmark and confetti, a hopeful creator celebrating",
-      "order": 112
+      "order": 112,
+      "pinImage": "/assets/blog/pins/get-accepted-amazon-influencer-program.png",
+      "pinDescription": "The acceptance bar, what Amazon actually looks at, and the exact moves to make if your first application gets declined. Save this pin so you can come back to it. #AmazonInfluencerProgramAcceptance #GetAcceptedAmazonInfluencer #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-onsite-video-reviews-guide",
@@ -209,7 +237,9 @@
       "image": "/assets/blog/amazon-onsite-video-reviews-guide.png",
       "imageAlt": "Illustration of a product review video on a product page",
       "imagePrompt": "a product detail page on a tablet with a small review video thumbnail playing, a ring light and phone nearby",
-      "order": 113
+      "order": 113,
+      "pinImage": "/assets/blog/pins/amazon-onsite-video-reviews-guide.png",
+      "pinDescription": "Onsite videos are the quiet workhorse of Amazon income. How to film, upload, and rank short product review videos that earn on autopilot. Save this pin so you can come back to it. #AmazonOnsiteVideoReviews #AmazonInfluencerVideos #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "how-many-amazon-videos-to-make-money",
@@ -223,7 +253,9 @@
       "image": "/assets/blog/how-many-amazon-videos-to-make-money.png",
       "imageAlt": "Illustration of a growing stack of video thumbnails",
       "imagePrompt": "a rising staircase built from small video thumbnails leading up to a coin pile, a climbing creator",
-      "order": 114
+      "order": 114,
+      "pinImage": "/assets/blog/pins/how-many-amazon-videos-to-make-money.png",
+      "pinDescription": "The honest math on video volume: how many onsite reviews it takes to see meaningful commissions and why catalog size compounds. Save this pin so you can come back to it. #HowManyAmazonVideosToMakeMoney #AmazonInfluencerVideoCount #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-niche-selection",
@@ -237,7 +269,9 @@
       "image": "/assets/blog/amazon-influencer-niche-selection.png",
       "imageAlt": "Illustration of a creator selecting a niche from options",
       "imagePrompt": "a creator pointing at one glowing category tile among many, a magnifying glass highlighting it",
-      "order": 115
+      "order": 115,
+      "pinImage": "/assets/blog/pins/amazon-influencer-niche-selection.png",
+      "pinDescription": "Your niche decides your ceiling. A practical framework for choosing an Amazon storefront niche that is profitable, durable, and actually you. Save this pin so you can come back to it. #AmazonInfluencerNiche #ProfitableAmazonNiche #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-product-research-for-creators",
@@ -251,7 +285,9 @@
       "image": "/assets/blog/amazon-product-research-for-creators.png",
       "imageAlt": "Illustration of products being analyzed with charts",
       "imagePrompt": "floating product boxes with small demand charts and star ratings, a creator inspecting them with a loupe",
-      "order": 116
+      "order": 116,
+      "pinImage": "/assets/blog/pins/amazon-product-research-for-creators.png",
+      "pinDescription": "How to find products with built-in demand, healthy commissions, and review momentum, so your content does less convincing. Save this pin so you can come back to it. #AmazonProductResearch #ProductsThatSellAmazon #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-commission-rates-explained-2026",
@@ -265,7 +301,9 @@
       "image": "/assets/blog/amazon-commission-rates-explained-2026.png",
       "imageAlt": "Illustration of category tiles with percentage badges",
       "imagePrompt": "category tiles each with a percentage badge, a creator weighing them on a balance scale",
-      "order": 117
+      "order": 117,
+      "pinImage": "/assets/blog/pins/amazon-commission-rates-explained-2026.png",
+      "pinDescription": "Commission rates swing wildly by category. A clear breakdown of where the money is in 2026 and how to weight your storefront toward it. Save this pin so you can come back to it. #AmazonCommissionRates2026 #AmazonAffiliateRatesByCategory #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-storefront-idea-lists-that-convert",
@@ -279,7 +317,9 @@
       "image": "/assets/blog/amazon-storefront-idea-lists-that-convert.png",
       "imageAlt": "Illustration of tidy themed idea lists",
       "imagePrompt": "neatly themed list cards stacked on a phone, each with a clear cover image, a shopper tapping add to cart",
-      "order": 118
+      "order": 118,
+      "pinImage": "/assets/blog/pins/amazon-storefront-idea-lists-that-convert.png",
+      "pinDescription": "Idea lists are mini sales pages. How to theme, title, and order them so shoppers add to cart instead of bouncing. Save this pin so you can come back to it. #AmazonIdeaLists #AmazonStorefrontIdeaList #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-shoppable-video-tips",
@@ -293,7 +333,9 @@
       "image": "/assets/blog/amazon-shoppable-video-tips.png",
       "imageAlt": "Illustration of a shoppable video with a buy button",
       "imagePrompt": "a vertical product video with a tappable buy button and rising conversion arrow, a creator filming",
-      "order": 119
+      "order": 119,
+      "pinImage": "/assets/blog/pins/amazon-shoppable-video-tips.png",
+      "pinDescription": "Small filming and framing choices that quietly raise how many viewers buy. Ten practical tips for higher-converting Amazon videos. Save this pin so you can come back to it. #ShoppableVideoTips #AmazonVideoConversion #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "creator-connections-campaign-strategy",
@@ -307,7 +349,9 @@
       "image": "/assets/blog/creator-connections-campaign-strategy.png",
       "imageAlt": "Illustration of campaigns being scored and sorted",
       "imagePrompt": "brand campaign cards being scored with stars and sorted into yes and no trays, a thoughtful creator",
-      "order": 120
+      "order": 120,
+      "pinImage": "/assets/blog/pins/creator-connections-campaign-strategy.png",
+      "pinDescription": "Not every campaign is worth your content. A simple scoring approach to pick the Creator Connections campaigns that actually pay off. Save this pin so you can come back to it. #CreatorConnectionsStrategy #ChooseCreatorConnectionsCampaigns #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-mistakes-to-avoid",
@@ -321,7 +365,9 @@
       "image": "/assets/blog/amazon-influencer-mistakes-to-avoid.png",
       "imageAlt": "Illustration of a creator stepping around hidden pitfalls",
       "imagePrompt": "a creator walking a path dodging small pitfall holes labeled with warning icons, a guiding lightbulb",
-      "order": 121
+      "order": 121,
+      "pinImage": "/assets/blog/pins/amazon-influencer-mistakes-to-avoid.png",
+      "pinDescription": "The avoidable errors that cap your earnings, from chasing low-intent products to ignoring your own sales data. Fix these first. Save this pin so you can come back to it. #AmazonInfluencerMistakes #AmazonStorefrontMistakes #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-content-calendar",
@@ -335,7 +381,9 @@
       "image": "/assets/blog/amazon-influencer-content-calendar.png",
       "imageAlt": "Illustration of a tidy content calendar with product days",
       "imagePrompt": "a wall calendar with product icons pinned to days, a relaxed creator planning with coffee",
-      "order": 122
+      "order": 122,
+      "pinImage": "/assets/blog/pins/amazon-influencer-content-calendar.png",
+      "pinDescription": "Feast-or-famine income usually means no plan. A lightweight content calendar that smooths your Amazon earnings across the month. Save this pin so you can come back to it. #AmazonInfluencerContentCalendar #ContentPlanningCreators #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "seasonal-amazon-influencer-strategy",
@@ -349,7 +397,9 @@
       "image": "/assets/blog/seasonal-amazon-influencer-strategy.png",
       "imageAlt": "Illustration of four seasons around a storefront",
       "imagePrompt": "a circular four-season wheel around a small storefront, a creator pointing to the next season",
-      "order": 123
+      "order": 123,
+      "pinImage": "/assets/blog/pins/seasonal-amazon-influencer-strategy.png",
+      "pinDescription": "The biggest earners ride the calendar instead of reacting to it. A season-by-season plan for Amazon creators. Save this pin so you can come back to it. #SeasonalAmazonStrategy #AmazonInfluencerSeasonalSelling #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-prime-day-influencer-prep",
@@ -363,7 +413,9 @@
       "image": "/assets/blog/amazon-prime-day-influencer-prep.png",
       "imageAlt": "Illustration of a creator prepping for a big sale day",
       "imagePrompt": "a countdown clock over a storefront with deal tags ready, a creator lining up content cards",
-      "order": 102
+      "order": 102,
+      "pinImage": "/assets/blog/pins/amazon-prime-day-influencer-prep.png",
+      "pinDescription": "Prime Day is a sprint you win in advance. A prep checklist to maximize commissions during Amazon's biggest shopping window. Save this pin so you can come back to it. #PrimeDayInfluencer #AmazonPrimeDayStrategy #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-storefront-metrics-to-track",
@@ -377,7 +429,9 @@
       "image": "/assets/blog/amazon-storefront-metrics-to-track.png",
       "imageAlt": "Illustration of a clean analytics dashboard",
       "imagePrompt": "a simple dashboard with five highlighted metric cards, a creator reading it calmly",
-      "order": 124
+      "order": 124,
+      "pinImage": "/assets/blog/pins/amazon-storefront-metrics-to-track.png",
+      "pinDescription": "Forget vanity numbers. The five storefront metrics that actually predict your commissions and how to read them. Save this pin so you can come back to it. #AmazonStorefrontMetrics #AmazonInfluencerAnalytics #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-bestseller-signals-product-picks",
@@ -391,7 +445,9 @@
       "image": "/assets/blog/amazon-bestseller-signals-product-picks.png",
       "imageAlt": "Illustration of a bestseller badge and trend line",
       "imagePrompt": "a product wearing a bestseller ribbon with an upward trend line, a creator giving a thumbs up",
-      "order": 125
+      "order": 125,
+      "pinImage": "/assets/blog/pins/amazon-bestseller-signals-product-picks.png",
+      "pinDescription": "Best seller ranks and review velocity are free demand signals. How to read them to feature products that are already selling. Save this pin so you can come back to it. #AmazonBestSellerRank #ProductDemandSignals #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "is-amazon-influencer-income-passive",
@@ -405,7 +461,9 @@
       "image": "/assets/blog/is-amazon-influencer-income-passive.png",
       "imageAlt": "Illustration of a hammock next to a working laptop",
       "imagePrompt": "a creator in a hammock while a laptop quietly earns coins, a balance of rest and a bit of work",
-      "order": 126
+      "order": 126,
+      "pinImage": "/assets/blog/pins/is-amazon-influencer-income-passive.png",
+      "pinDescription": "The passive-income promise, examined. Where Amazon income is genuinely hands-off, where it isn't, and how to shift the balance. Save this pin so you can come back to it. #AmazonInfluencerPassiveIncome #IsAmazonInfluencerPassive #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "talk-about-products-so-people-buy",
@@ -419,7 +477,9 @@
       "image": "/assets/blog/talk-about-products-so-people-buy.png",
       "imageAlt": "Illustration of a creator describing a product warmly",
       "imagePrompt": "a creator gesturing toward a product with speech bubbles full of clear benefit icons, an interested viewer",
-      "order": 127
+      "order": 127,
+      "pinImage": "/assets/blog/pins/talk-about-products-so-people-buy.png",
+      "pinDescription": "Selling is mostly specificity and honesty. A repeatable way to describe products that builds trust and moves shoppers to buy. Save this pin so you can come back to it. #HowToDescribeProducts #ProductDescriptionsThatSell #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-storefront-makeover-checklist",
@@ -433,7 +493,9 @@
       "image": "/assets/blog/amazon-storefront-makeover-checklist.png",
       "imageAlt": "Illustration of a storefront before and after cleanup",
       "imagePrompt": "a split before-and-after of a cluttered then tidy storefront, a creator with a checklist",
-      "order": 128
+      "order": 128,
+      "pinImage": "/assets/blog/pins/amazon-storefront-makeover-checklist.png",
+      "pinDescription": "If your storefront looks busy but earns little, it needs a makeover, not more products. A checklist to fix the usual culprits. Save this pin so you can come back to it. #AmazonStorefrontMakeover #FixAmazonStorefront #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "first-100-dollars-amazon-influencer",
@@ -447,7 +509,9 @@
       "image": "/assets/blog/first-100-dollars-amazon-influencer.png",
       "imageAlt": "Illustration of a first earnings milestone",
       "imagePrompt": "a small milestone flag at one hundred coins, a beginner creator beaming",
-      "order": 129
+      "order": 129,
+      "pinImage": "/assets/blog/pins/first-100-dollars-amazon-influencer.png",
+      "pinDescription": "The unglamorous, totally doable path to your first hundred dollars in Amazon commissions, step by step. Save this pin so you can come back to it. #First100DollarsAmazonInfluencer #AmazonInfluencerBeginner #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "scale-amazon-influencer-full-time",
@@ -461,7 +525,9 @@
       "image": "/assets/blog/scale-amazon-influencer-full-time.png",
       "imageAlt": "Illustration of a small shop growing into a bigger one",
       "imagePrompt": "a tiny storefront morphing into a larger thriving one, a confident creator scaling up",
-      "order": 130
+      "order": 130,
+      "pinImage": "/assets/blog/pins/scale-amazon-influencer-full-time.png",
+      "pinDescription": "What changes when you go from pocket money to a real income: systems, volume, and the data habits that make it sustainable. Save this pin so you can come back to it. #ScaleAmazonInfluencer #FullTimeAmazonInfluencer #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "creator-connections-vs-brand-deals",
@@ -475,7 +541,9 @@
       "image": "/assets/blog/creator-connections-vs-brand-deals.png",
       "imageAlt": "Illustration weighing two brand-deal paths",
       "imagePrompt": "a balance scale with a campaign card on one side and a handshake on the other, a creator deciding",
-      "order": 131
+      "order": 131,
+      "pinImage": "/assets/blog/pins/creator-connections-vs-brand-deals.png",
+      "pinDescription": "Two ways to get paid by brands, with different effort and upside. How to decide which to chase at your stage. Save this pin so you can come back to it. #CreatorConnectionsVsBrandDeals #AmazonBrandDeals #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-keyword-research-no-tools",
@@ -489,7 +557,9 @@
       "image": "/assets/blog/amazon-keyword-research-no-tools.png",
       "imageAlt": "Illustration of search bar suggestions as treasure",
       "imagePrompt": "a search bar dropping keyword gems into a creator's basket, a magnifying glass theme",
-      "order": 132
+      "order": 132,
+      "pinImage": "/assets/blog/pins/amazon-keyword-research-no-tools.png",
+      "pinDescription": "You do not need expensive software to find what shoppers search. Free ways to uncover keywords that bring buyers to your content. Save this pin so you can come back to it. #AmazonKeywordResearch #FreeKeywordResearchCreators #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-returns-and-commissions",
@@ -503,7 +573,9 @@
       "image": "/assets/blog/amazon-returns-and-commissions.png",
       "imageAlt": "Illustration of a return arrow and a steadier choice",
       "imagePrompt": "a product with a return-arrow icon beside a sturdier product with a heart, a creator choosing wisely",
-      "order": 133
+      "order": 133,
+      "pinImage": "/assets/blog/pins/amazon-returns-and-commissions.png",
+      "pinDescription": "Returns claw back paid commissions and surprise new creators. How returns work and how to feature products that stick. Save this pin so you can come back to it. #AmazonReturnsCommissions #AmazonAffiliateReturns #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "highest-earning-amazon-categories-2026",
@@ -517,7 +589,9 @@
       "image": "/assets/blog/highest-earning-amazon-categories-2026.png",
       "imageAlt": "Illustration of category podiums with trophies",
       "imagePrompt": "category podiums with small trophies and coin stacks, a creator surveying the winners",
-      "order": 134
+      "order": 134,
+      "pinImage": "/assets/blog/pins/highest-earning-amazon-categories-2026.png",
+      "pinDescription": "Where per-video and per-click earnings concentrate in 2026, and how to angle your storefront toward the lucrative corners. Save this pin so you can come back to it. #HighestEarningAmazonCategories #BestAmazonCategoriesCreators2026 #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-link-in-bio",
@@ -531,7 +605,9 @@
       "image": "/assets/blog/amazon-influencer-link-in-bio.png",
       "imageAlt": "Illustration of a tidy link-in-bio page",
       "imagePrompt": "a phone showing a clean link-in-bio with a few clear buttons, a finger tapping the top one",
-      "order": 135
+      "order": 135,
+      "pinImage": "/assets/blog/pins/amazon-influencer-link-in-bio.png",
+      "pinDescription": "Your bio link is prime real estate. How to structure it so visitors land on the things most likely to earn you commissions. Save this pin so you can come back to it. #LinkInBioAmazonInfluencer #AmazonBioLinkStrategy #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "repurpose-one-video-everywhere",
@@ -545,7 +621,9 @@
       "image": "/assets/blog/repurpose-one-video-everywhere.png",
       "imageAlt": "Illustration of one video splitting to many platforms",
       "imagePrompt": "one central video splitting into several platform-shaped screens, a creator at the hub",
-      "order": 136
+      "order": 136,
+      "pinImage": "/assets/blog/pins/repurpose-one-video-everywhere.png",
+      "pinDescription": "Film once, post everywhere. A workflow to turn a single product video into content for Amazon, TikTok, Reels, and more. Save this pin so you can come back to it. #RepurposeContentCreators #RepurposeAmazonVideo #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "batch-filming-amazon-videos",
@@ -559,7 +637,9 @@
       "image": "/assets/blog/batch-filming-amazon-videos.png",
       "imageAlt": "Illustration of a creator filming many products in one setup",
       "imagePrompt": "a tidy filming corner with several products lined up to shoot, a creator working through them",
-      "order": 137
+      "order": 137,
+      "pinImage": "/assets/blog/pins/batch-filming-amazon-videos.png",
+      "pinDescription": "How to shoot a month of Amazon videos in a single focused session, with a setup and checklist that keeps quality high. Save this pin so you can come back to it. #BatchFilmingAmazonVideos #BatchContentCreation #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-storefront-seo",
@@ -573,7 +653,9 @@
       "image": "/assets/blog/amazon-storefront-seo.png",
       "imageAlt": "Illustration of a storefront rising in search results",
       "imagePrompt": "a storefront card climbing a search-results list, a magnifying glass and upward arrow",
-      "order": 138
+      "order": 138,
+      "pinImage": "/assets/blog/pins/amazon-storefront-seo.png",
+      "pinDescription": "Search is a free traffic source most creators ignore. How to title and structure your storefront so it surfaces in results. Save this pin so you can come back to it. #AmazonStorefrontSeo #GetFoundAmazonStorefront #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "track-amazon-commissions-accurately",
@@ -587,7 +669,9 @@
       "image": "/assets/blog/track-amazon-commissions-accurately.png",
       "imageAlt": "Illustration of an organized earnings ledger",
       "imagePrompt": "a clean ledger with neat rows of commissions and a calm creator reviewing it",
-      "order": 139
+      "order": 139,
+      "pinImage": "/assets/blog/pins/track-amazon-commissions-accurately.png",
+      "pinDescription": "Commission tracking gets messy fast across products and campaigns. A simple system to know exactly what is earning. Save this pin so you can come back to it. #TrackAmazonCommissions #AmazonEarningsTracking #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "amazon-influencer-tool-stack-2026",
@@ -601,7 +685,9 @@
       "image": "/assets/blog/amazon-influencer-tool-stack-2026.png",
       "imageAlt": "Illustration of a tidy toolkit for creators",
       "imagePrompt": "a small toolbox spilling out helpful app icons, a creator picking the essentials",
-      "order": 140
+      "order": 140,
+      "pinImage": "/assets/blog/pins/amazon-influencer-tool-stack-2026.png",
+      "pinDescription": "The handful of tools that actually save creators time and grow income in 2026, and the ones you can skip. Save this pin so you can come back to it. #AmazonInfluencerTools2026 #CreatorToolStack #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "consistency-system-earners-vs-quitters",
@@ -615,7 +701,9 @@
       "image": "/assets/blog/consistency-system-earners-vs-quitters.png",
       "imageAlt": "Illustration of a steady streak calendar",
       "imagePrompt": "a calendar with a long unbroken streak of checkmarks, a steady determined creator",
-      "order": 141
+      "order": 141,
+      "pinImage": "/assets/blog/pins/consistency-system-earners-vs-quitters.png",
+      "pinDescription": "Most creators quit right before it works. The simple consistency system that keeps you posting long enough to win. Save this pin so you can come back to it. #CreatorConsistency #PostingConsistencyCreators #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "never-miss-creator-connections-deadline",
@@ -629,7 +717,9 @@
       "image": "/assets/blog/never-miss-creator-connections-deadline.png",
       "imageAlt": "Illustration of deadline reminders being caught",
       "imagePrompt": "a creator catching falling deadline reminder tags in a net before they hit the floor",
-      "order": 142
+      "order": 142,
+      "pinImage": "/assets/blog/pins/never-miss-creator-connections-deadline.png",
+      "pinDescription": "Expired campaigns are lost money. A lightweight system to catch every Creator Connections deadline before it slips by. Save this pin so you can come back to it. #CreatorConnectionsDeadlines #AmazonCampaignDeadlines #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "simple-product-shots-amazon",
@@ -643,7 +733,9 @@
       "image": "/assets/blog/simple-product-shots-amazon.png",
       "imageAlt": "Illustration of a simple home product photo setup",
       "imagePrompt": "a window-lit product on a clean surface with a phone on a small tripod, a creator framing the shot",
-      "order": 143
+      "order": 143,
+      "pinImage": "/assets/blog/pins/simple-product-shots-amazon.png",
+      "pinDescription": "You do not need a studio. Easy lighting and framing tricks for product shots that look pro on Amazon and social. Save this pin so you can come back to it. #ProductPhotographyCreators #AmazonProductShots #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "affiliate-disclosure-trust-guide",
@@ -657,7 +749,9 @@
       "image": "/assets/blog/affiliate-disclosure-trust-guide.png",
       "imageAlt": "Illustration of a trust badge on content",
       "imagePrompt": "a content card with a small clear disclosure tag and a trust shield, an honest creator",
-      "order": 144
+      "order": 144,
+      "pinImage": "/assets/blog/pins/affiliate-disclosure-trust-guide.png",
+      "pinDescription": "Clear disclosures build trust and keep you compliant. How to disclose affiliate links the right way without killing conversions. Save this pin so you can come back to it. #AffiliateDisclosure #FtcDisclosureCreators #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "evergreen-amazon-content-pays",
@@ -671,7 +765,9 @@
       "image": "/assets/blog/evergreen-amazon-content-pays.png",
       "imageAlt": "Illustration of an evergreen tree growing coins",
       "imagePrompt": "a sturdy evergreen tree with coins as leaves, a creator resting in its long shade",
-      "order": 145
+      "order": 145,
+      "pinImage": "/assets/blog/pins/evergreen-amazon-content-pays.png",
+      "pinDescription": "Trendy posts spike and die. Evergreen product content keeps earning quietly for years. How to make more of it. Save this pin so you can come back to it. #EvergreenContentAmazon #EvergreenAffiliateContent #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "q4-playbook-amazon-creators",
@@ -685,7 +781,9 @@
       "image": "/assets/blog/q4-playbook-amazon-creators.png",
       "imageAlt": "Illustration of a holiday shopping surge plan",
       "imagePrompt": "a festive storefront with a rising sales graph and gift icons, a prepared creator",
-      "order": 146
+      "order": 146,
+      "pinImage": "/assets/blog/pins/q4-playbook-amazon-creators.png",
+      "pinDescription": "The last quarter makes or breaks the year. A playbook to maximize the holiday shopping surge as an Amazon creator. Save this pin so you can come back to it. #Q4AmazonStrategy #HolidayAmazonInfluencer #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "use-sales-data-to-decide-content",
@@ -699,7 +797,9 @@
       "image": "/assets/blog/use-sales-data-to-decide-content.png",
       "imageAlt": "Illustration of sales data pointing to next product",
       "imagePrompt": "a data chart with an arrow pointing at the next product to feature, a creator following the signal",
-      "order": 147
+      "order": 147,
+      "pinImage": "/assets/blog/pins/use-sales-data-to-decide-content.png",
+      "pinDescription": "Stop guessing what to post. Let your actual sales tell you the next product to feature, and watch your hit rate climb. Save this pin so you can come back to it. #SalesDataContentDecisions #WhatToFilmNextAmazon #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "how-to-start-a-deals-account",
@@ -713,7 +813,9 @@
       "image": "/assets/blog/how-to-start-a-deals-account.png",
       "imageAlt": "Illustration of launching a deals account",
       "imagePrompt": "a rocket made of deal tags lifting off a phone, an excited new deals creator",
-      "order": 148
+      "order": 148,
+      "pinImage": "/assets/blog/pins/how-to-start-a-deals-account.png",
+      "pinDescription": "Deal accounts can earn from day one if you set them up right. A step-by-step start guide for a new Amazon deals account. Save this pin so you can come back to it. #StartAmazonDealsAccount #DealsAccountBeginner #AmazonDeals #DealFinder"
     },
     {
       "id": "best-time-to-post-deals",
@@ -727,7 +829,9 @@
       "image": "/assets/blog/best-time-to-post-deals.png",
       "imageAlt": "Illustration of a clock over active deal feed",
       "imagePrompt": "a clock hovering over a buzzing deal feed with peak-hour highlights, an alert creator",
-      "order": 149
+      "order": 149,
+      "pinImage": "/assets/blog/pins/best-time-to-post-deals.png",
+      "pinDescription": "A great deal posted late is a dead deal. When deal audiences are most active and how to be first when it counts. Save this pin so you can come back to it. #BestTimeToPostDeals #DealPostingTiming #AmazonDeals #DealFinder"
     },
     {
       "id": "amazon-lightning-deals-explained",
@@ -741,7 +845,9 @@
       "image": "/assets/blog/amazon-lightning-deals-explained.png",
       "imageAlt": "Illustration of a lightning bolt over a deal tag",
       "imagePrompt": "a glowing lightning bolt striking a discounted price tag, a fast-moving creator catching it",
-      "order": 150
+      "order": 150,
+      "pinImage": "/assets/blog/pins/amazon-lightning-deals-explained.png",
+      "pinDescription": "Lightning deals move fast and reward speed. What they are, how to catch them, and how to post them before they sell out. Save this pin so you can come back to it. #AmazonLightningDeals #LightningDealsExplained #AmazonDeals #DealFinder"
     },
     {
       "id": "write-deal-posts-that-convert",
@@ -755,7 +861,9 @@
       "image": "/assets/blog/write-deal-posts-that-convert.png",
       "imageAlt": "Illustration of a high-performing deal post",
       "imagePrompt": "a deal post card with a bold price, a clicking cursor and share arrows around it",
-      "order": 151
+      "order": 151,
+      "pinImage": "/assets/blog/pins/write-deal-posts-that-convert.png",
+      "pinDescription": "The anatomy of a deal post people act on: the hook, the number, the urgency, the link. A simple formula you can reuse. Save this pin so you can come back to it. #DealPostsThatConvert #WriteDealPosts #AmazonDeals #DealFinder"
     },
     {
       "id": "build-a-deals-newsletter",
@@ -769,7 +877,9 @@
       "image": "/assets/blog/build-a-deals-newsletter.png",
       "imageAlt": "Illustration of an email full of deals",
       "imagePrompt": "an open envelope spilling deal tags into a happy subscriber's inbox, a creator sending it",
-      "order": 152
+      "order": 152,
+      "pinImage": "/assets/blog/pins/build-a-deals-newsletter.png",
+      "pinDescription": "Email is the deal hunter's secret weapon. How to turn your finds into a newsletter that earns on repeat. Save this pin so you can come back to it. #DealsNewsletter #EmailDealsAffiliate #AmazonDeals #DealFinder"
     },
     {
       "id": "run-deals-account-without-burnout",
@@ -783,7 +893,9 @@
       "image": "/assets/blog/run-deals-account-without-burnout.png",
       "imageAlt": "Illustration of a calm creator with automated deals",
       "imagePrompt": "a relaxed creator while deal posts float out on their own, a gentle balanced mood",
-      "order": 153
+      "order": 153,
+      "pinImage": "/assets/blog/pins/run-deals-account-without-burnout.png",
+      "pinDescription": "Posting deals all day is a fast track to burnout. How to keep the output high and the effort sustainable. Save this pin so you can come back to it. #DealsAccountBurnout #SustainableDealPosting #AmazonDeals #DealFinder"
     },
     {
       "id": "find-amazon-coupons-promo-codes",
@@ -797,7 +909,9 @@
       "image": "/assets/blog/find-amazon-coupons-promo-codes.png",
       "imageAlt": "Illustration of coupons and codes being collected",
       "imagePrompt": "a creator collecting glowing coupon tickets and code tags into a basket",
-      "order": 154
+      "order": 154,
+      "pinImage": "/assets/blog/pins/find-amazon-coupons-promo-codes.png",
+      "pinDescription": "Coupons stack into bigger savings and better posts. Where to find Amazon coupons and codes your audience will love. Save this pin so you can come back to it. #AmazonCoupons #AmazonPromoCodes #AmazonDeals #DealFinder"
     },
     {
       "id": "where-to-post-deals",
@@ -811,7 +925,9 @@
       "image": "/assets/blog/where-to-post-deals.png",
       "imageAlt": "Illustration of deals broadcasting to several channels",
       "imagePrompt": "a central deal tag broadcasting to several platform bubbles, a creator at the controls",
-      "order": 155
+      "order": 155,
+      "pinImage": "/assets/blog/pins/where-to-post-deals.png",
+      "pinDescription": "Your deals only earn where your audience hangs out. A tour of the best channels for deal posting and how each one pays. Save this pin so you can come back to it. #WhereToPostDeals #TelegramDeals #AmazonDeals #DealFinder"
     },
     {
       "id": "read-amazon-price-history",
@@ -825,7 +941,9 @@
       "image": "/assets/blog/read-amazon-price-history.png",
       "imageAlt": "Illustration of a price history chart with a true low",
       "imagePrompt": "a price-history line chart with a highlighted genuine low point, a creator verifying it",
-      "order": 156
+      "order": 156,
+      "pinImage": "/assets/blog/pins/read-amazon-price-history.png",
+      "pinDescription": "A discount is only real against the true baseline. How to read price history so you never post a fake markdown. Save this pin so you can come back to it. #AmazonPriceHistory #RealDealsPriceTracking #AmazonDeals #DealFinder"
     },
     {
       "id": "deal-hunter-seasonal-calendar",
@@ -839,7 +957,9 @@
       "image": "/assets/blog/deal-hunter-seasonal-calendar.png",
       "imageAlt": "Illustration of a year-round deals calendar",
       "imagePrompt": "a calendar with sale-day markers across the seasons, a creator planning the year",
-      "order": 157
+      "order": 157,
+      "pinImage": "/assets/blog/pins/deal-hunter-seasonal-calendar.png",
+      "pinDescription": "Sales follow a predictable rhythm. A season-by-season calendar of when the best deals drop so you can plan ahead. Save this pin so you can come back to it. #DealCalendar #SeasonalDeals #AmazonDeals #DealFinder"
     },
     {
       "id": "deal-accounts-grow-audience-fast",
@@ -853,7 +973,9 @@
       "image": "/assets/blog/deal-accounts-grow-audience-fast.png",
       "imageAlt": "Illustration of a deal post going viral",
       "imagePrompt": "a deal post with rapidly multiplying follower icons and share arrows, an excited creator",
-      "order": 158
+      "order": 158,
+      "pinImage": "/assets/blog/pins/deal-accounts-grow-audience-fast.png",
+      "pinDescription": "Deals are inherently shareable, which makes deal accounts grow quickly. The tactics that turn savings into followers. Save this pin so you can come back to it. #GrowDealsAccount #DealAccountAudienceGrowth #AmazonDeals #DealFinder"
     },
     {
       "id": "spot-a-fake-deal",
@@ -867,7 +989,9 @@
       "image": "/assets/blog/spot-a-fake-deal.png",
       "imageAlt": "Illustration of inspecting a suspicious deal",
       "imagePrompt": "a creator inspecting a deal tag with a magnifier revealing a red flag, a careful mood",
-      "order": 159
+      "order": 159,
+      "pinImage": "/assets/blog/pins/spot-a-fake-deal.png",
+      "pinDescription": "Posting a fake deal burns trust fast. The red flags that reveal an inflated discount and how to verify before you share. Save this pin so you can come back to it. #FakeDeals #SpotFakeDeal #AmazonDeals #DealFinder"
     },
     {
       "id": "prime-day-deal-strategy",
@@ -881,7 +1005,9 @@
       "image": "/assets/blog/prime-day-deal-strategy.png",
       "imageAlt": "Illustration of a creator ready for a big sale event",
       "imagePrompt": "a creator at a command desk during a big sale event with deal tags streaming, energetic",
-      "order": 107
+      "order": 107,
+      "pinImage": "/assets/blog/pins/prime-day-deal-strategy.png",
+      "pinDescription": "Prime Day is the deal poster's Super Bowl. How to prepare, pace, and post so you capture the surge without burning out. Save this pin so you can come back to it. #PrimeDayDealsStrategy #PrimeDayDealPosting #AmazonDeals #DealFinder"
     },
     {
       "id": "black-friday-deal-prep",
@@ -895,7 +1021,9 @@
       "image": "/assets/blog/black-friday-deal-prep.png",
       "imageAlt": "Illustration of black friday deal preparation",
       "imagePrompt": "a festive command center with a countdown and stacked deal cards, a ready creator",
-      "order": 160
+      "order": 160,
+      "pinImage": "/assets/blog/pins/black-friday-deal-prep.png",
+      "pinDescription": "Black Friday rewards the prepared. A pre-game checklist so your deals account is ready for the busiest week of the year. Save this pin so you can come back to it. #BlackFridayDealsPrep #BlackFridayInfluencer #AmazonDeals #DealFinder"
     },
     {
       "id": "cross-post-deals-efficiently",
@@ -909,7 +1037,9 @@
       "image": "/assets/blog/cross-post-deals-efficiently.png",
       "imageAlt": "Illustration of one deal posting to many places at once",
       "imagePrompt": "one deal tag duplicating neatly onto several screens at once, a relieved creator",
-      "order": 161
+      "order": 161,
+      "pinImage": "/assets/blog/pins/cross-post-deals-efficiently.png",
+      "pinDescription": "Manually posting the same deal everywhere is soul-draining. A smarter cross-posting workflow that saves hours. Save this pin so you can come back to it. #CrossPostDeals #PostDealsEverywhere #AmazonDeals #DealFinder"
     },
     {
       "id": "deal-urgency-without-spam",
@@ -923,7 +1053,9 @@
       "image": "/assets/blog/deal-urgency-without-spam.png",
       "imageAlt": "Illustration of a tasteful urgency timer on a deal",
       "imagePrompt": "a deal post with a tasteful ticking timer and a calm trustworthy tone, an honest creator",
-      "order": 162
+      "order": 162,
+      "pinImage": "/assets/blog/pins/deal-urgency-without-spam.png",
+      "pinDescription": "Urgency drives action but tips into spam fast. How to make deals feel time-sensitive while keeping your audience's trust. Save this pin so you can come back to it. #DealUrgency #UrgencyWithoutSpam #AmazonDeals #DealFinder"
     },
     {
       "id": "instagram-reels-affiliate-marketing",
@@ -937,7 +1069,9 @@
       "image": "/assets/blog/instagram-reels-affiliate-marketing.png",
       "imageAlt": "Illustration of a reel driving affiliate clicks",
       "imagePrompt": "a phone playing a vertical reel with product tags and a link arrow, a creator filming",
-      "order": 163
+      "order": 163,
+      "pinImage": "/assets/blog/pins/instagram-reels-affiliate-marketing.png",
+      "pinDescription": "Reels are reach. How to make Reels that introduce products naturally and send viewers to your affiliate links. Save this pin so you can come back to it. #InstagramReelsAffiliate #ReelsForAffiliateMarketing #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-bio-affiliate-clicks",
@@ -951,7 +1085,9 @@
       "image": "/assets/blog/instagram-bio-affiliate-clicks.png",
       "imageAlt": "Illustration of an optimized instagram bio",
       "imagePrompt": "a tidy profile bio with a clear call to action and a glowing link button, a tapping finger",
-      "order": 164
+      "order": 164,
+      "pinImage": "/assets/blog/pins/instagram-bio-affiliate-clicks.png",
+      "pinDescription": "Your bio has seconds to earn a tap. How to write an Instagram bio that turns profile visits into link clicks. Save this pin so you can come back to it. #InstagramBioAffiliate #InstagramBioLinkClicks #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-story-selling-tactics",
@@ -965,7 +1101,9 @@
       "image": "/assets/blog/instagram-story-selling-tactics.png",
       "imageAlt": "Illustration of a story with a swipe-up style link",
       "imagePrompt": "a story frame with a product and a link sticker, delighted viewers tapping through",
-      "order": 165
+      "order": 165,
+      "pinImage": "/assets/blog/pins/instagram-story-selling-tactics.png",
+      "pinDescription": "Stories are where loyal fans buy. The story formats and link tactics that quietly turn views into commissions. Save this pin so you can come back to it. #InstagramStorySelling #SellOnInstagramStories #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-hashtags-2026",
@@ -979,7 +1117,9 @@
       "image": "/assets/blog/instagram-hashtags-2026.png",
       "imageAlt": "Illustration of hashtags and discovery signals",
       "imagePrompt": "a hashtag symbol surrounded by discovery signals like search and reach icons, a curious creator",
-      "order": 166
+      "order": 166,
+      "pinImage": "/assets/blog/pins/instagram-hashtags-2026.png",
+      "pinDescription": "Hashtags are not dead, but they changed. What actually helps discovery on Instagram in 2026 and how to use tags now. Save this pin so you can come back to it. #InstagramHashtags2026 #DoHashtagsWork #InstagramTips #ContentCreator"
     },
     {
       "id": "good-instagram-engagement-rate",
@@ -993,7 +1133,9 @@
       "image": "/assets/blog/good-instagram-engagement-rate.png",
       "imageAlt": "Illustration of an engagement meter",
       "imagePrompt": "a circular engagement meter with hearts and comments filling it, a creator checking it",
-      "order": 167
+      "order": 167,
+      "pinImage": "/assets/blog/pins/good-instagram-engagement-rate.png",
+      "pinDescription": "Engagement rate is misunderstood. What counts as good in 2026, how to calculate it, and why brands actually care. Save this pin so you can come back to it. #InstagramEngagementRate #GoodEngagementRate2026 #InstagramTips #ContentCreator"
     },
     {
       "id": "grow-instagram-from-zero",
@@ -1007,7 +1149,9 @@
       "image": "/assets/blog/grow-instagram-from-zero.png",
       "imageAlt": "Illustration of a follower count starting to climb",
       "imagePrompt": "a follower counter ticking up from zero with small sprout icons, an encouraged creator",
-      "order": 168
+      "order": 168,
+      "pinImage": "/assets/blog/pins/grow-instagram-from-zero.png",
+      "pinDescription": "Starting at zero is the hardest part. A realistic plan to build your first real Instagram audience as a creator. Save this pin so you can come back to it. #GrowInstagramFromZero #InstagramGrowthCreators #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-content-pillars",
@@ -1021,7 +1165,9 @@
       "image": "/assets/blog/instagram-content-pillars.png",
       "imageAlt": "Illustration of content pillars holding up a feed",
       "imagePrompt": "a few sturdy pillars labeled with icons holding up a tidy content feed, a creator planning",
-      "order": 169
+      "order": 169,
+      "pinImage": "/assets/blog/pins/instagram-content-pillars.png",
+      "pinDescription": "Idea droughts come from no structure. How content pillars give you an endless, on-brand stream of post ideas. Save this pin so you can come back to it. #ContentPillars #InstagramContentIdeas #InstagramTips #ContentCreator"
     },
     {
       "id": "link-in-bio-tools-compared",
@@ -1035,7 +1181,9 @@
       "image": "/assets/blog/link-in-bio-tools-compared.png",
       "imageAlt": "Illustration comparing link-in-bio tools",
       "imagePrompt": "several link-in-bio app cards lined up with feature checkmarks, a creator comparing them",
-      "order": 170
+      "order": 170,
+      "pinImage": "/assets/blog/pins/link-in-bio-tools-compared.png",
+      "pinDescription": "Not all link-in-bio tools are built for affiliates. A clear comparison to pick the one that actually grows your income. Save this pin so you can come back to it. #LinkInBioTools #BestLinkInBioAffiliate #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-dm-automation-ethics",
@@ -1049,7 +1197,9 @@
       "image": "/assets/blog/instagram-dm-automation-ethics.png",
       "imageAlt": "Illustration of safe vs risky automation",
       "imagePrompt": "a balance between a friendly automated assistant and a warning sign, a careful creator",
-      "order": 171
+      "order": 171,
+      "pinImage": "/assets/blog/pins/instagram-dm-automation-ethics.png",
+      "pinDescription": "Automation can save hours or get you banned. Where the line is on Instagram DM automation and how to stay on the safe side. Save this pin so you can come back to it. #InstagramDmAutomation #DmAutomationSafe #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-collab-posts-strategy",
@@ -1063,7 +1213,9 @@
       "image": "/assets/blog/instagram-collab-posts-strategy.png",
       "imageAlt": "Illustration of two creators sharing one post",
       "imagePrompt": "two creator avatars connected to one shared post reaching two audiences, a friendly mood",
-      "order": 172
+      "order": 172,
+      "pinImage": "/assets/blog/pins/instagram-collab-posts-strategy.png",
+      "pinDescription": "Collab posts put your content in two feeds at once. How to use them to borrow audiences and grow faster. Save this pin so you can come back to it. #InstagramCollabPosts #CollabPostStrategy #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-broadcast-channels-creators",
@@ -1077,7 +1229,9 @@
       "image": "/assets/blog/instagram-broadcast-channels-creators.png",
       "imageAlt": "Illustration of a broadcast channel reaching fans",
       "imagePrompt": "a megaphone-style channel sending updates to a row of fans, a creator broadcasting warmly",
-      "order": 173
+      "order": 173,
+      "pinImage": "/assets/blog/pins/instagram-broadcast-channels-creators.png",
+      "pinDescription": "Broadcast channels are a direct line to fans. Whether they are worth it for affiliate creators and how to use them well. Save this pin so you can come back to it. #InstagramBroadcastChannels #BroadcastChannelCreators #InstagramTips #ContentCreator"
     },
     {
       "id": "convert-instagram-followers-to-buyers",
@@ -1091,7 +1245,9 @@
       "image": "/assets/blog/convert-instagram-followers-to-buyers.png",
       "imageAlt": "Illustration of followers becoming buyers",
       "imagePrompt": "follower icons walking along a path turning into shopping bags, a guiding creator",
-      "order": 174
+      "order": 174,
+      "pinImage": "/assets/blog/pins/convert-instagram-followers-to-buyers.png",
+      "pinDescription": "Followers are not income. The trust-building and link tactics that move passive followers to paying buyers. Save this pin so you can come back to it. #ConvertFollowersToBuyers #InstagramFollowersToSales #InstagramTips #ContentCreator"
     },
     {
       "id": "how-often-post-instagram",
@@ -1105,7 +1261,9 @@
       "image": "/assets/blog/how-often-post-instagram.png",
       "imageAlt": "Illustration of a balanced posting rhythm",
       "imagePrompt": "a metronome beside a content feed showing a steady balanced rhythm, a calm creator",
-      "order": 175
+      "order": 175,
+      "pinImage": "/assets/blog/pins/how-often-post-instagram.png",
+      "pinDescription": "More is not always better. What the data and your own sanity say about the right Instagram posting frequency. Save this pin so you can come back to it. #HowOftenPostInstagram #InstagramPostingFrequency #InstagramTips #ContentCreator"
     },
     {
       "id": "saves-shares-beat-likes",
@@ -1119,7 +1277,9 @@
       "image": "/assets/blog/saves-shares-beat-likes.png",
       "imageAlt": "Illustration of save and share icons outshining likes",
       "imagePrompt": "a save bookmark and share arrow glowing brighter than a small like heart, a creator noting it",
-      "order": 176
+      "order": 176,
+      "pinImage": "/assets/blog/pins/saves-shares-beat-likes.png",
+      "pinDescription": "Likes are the weakest signal now. Why saves and shares drive reach in 2026 and how to earn more of them. Save this pin so you can come back to it. #InstagramSavesShares #SavesVsLikes #InstagramTips #ContentCreator"
     },
     {
       "id": "land-ugc-deals-instagram",
@@ -1133,7 +1293,9 @@
       "image": "/assets/blog/land-ugc-deals-instagram.png",
       "imageAlt": "Illustration of a creator landing a ugc deal",
       "imagePrompt": "a creator handing a polished content clip to a brand for a handshake, a confident mood",
-      "order": 177
+      "order": 177,
+      "pinImage": "/assets/blog/pins/land-ugc-deals-instagram.png",
+      "pinDescription": "UGC pays even with a small following. How to position your Instagram and pitch to land user-generated content deals. Save this pin so you can come back to it. #UgcDeals #UgcCreatorInstagram #InstagramTips #ContentCreator"
     },
     {
       "id": "instagram-comment-engagement-strategy",
@@ -1147,7 +1309,9 @@
       "image": "/assets/blog/instagram-comment-engagement-strategy.png",
       "imageAlt": "Illustration of warm comment threads connecting people",
       "imagePrompt": "warm comment bubbles linking a creator and their community, a friendly connected mood",
-      "order": 178
+      "order": 178,
+      "pinImage": "/assets/blog/pins/instagram-comment-engagement-strategy.png",
+      "pinDescription": "Comments are where communities form. A genuine comment strategy that grows relationships and reach without feeling fake. Save this pin so you can come back to it. #InstagramCommentStrategy #EngagementComments #InstagramTips #ContentCreator"
     },
     {
       "id": "benable-vs-linktree",
@@ -1161,7 +1325,9 @@
       "image": "/assets/blog/benable-vs-linktree.png",
       "imageAlt": "Illustration comparing two bio-link tools",
       "imagePrompt": "two bio-link app cards side by side, one sprouting coins, a creator weighing them",
-      "order": 179
+      "order": 179,
+      "pinImage": "/assets/blog/pins/benable-vs-linktree.png",
+      "pinDescription": "Both live in your bio, but only one is built to earn. A clear comparison of Benable and Linktree for creators who want income. Save this pin so you can come back to it. #BenableVsLinktree #LinktreeAlternative #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-list-ideas",
@@ -1175,7 +1341,9 @@
       "image": "/assets/blog/benable-list-ideas.png",
       "imageAlt": "Illustration of many themed recommendation lists",
       "imagePrompt": "a fan of themed list cards spreading out like a deck, an inspired creator",
-      "order": 180
+      "order": 180,
+      "pinImage": "/assets/blog/pins/benable-list-ideas.png",
+      "pinDescription": "Stuck on what to make? Thirty Benable list ideas across niches that are easy to build and naturally shoppable. Save this pin so you can come back to it. #BenableListIdeas #BenableLists #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-best-practices-2026",
@@ -1189,7 +1357,9 @@
       "image": "/assets/blog/benable-best-practices-2026.png",
       "imageAlt": "Illustration of a polished high-performing list",
       "imagePrompt": "a gleaming well-structured list card with a small star, a proud creator",
-      "order": 181
+      "order": 181,
+      "pinImage": "/assets/blog/pins/benable-best-practices-2026.png",
+      "pinDescription": "The habits that separate Benable lists that earn from lists that gather dust, updated for how the platform works in 2026. Save this pin so you can come back to it. #BenableBestPractices #BenableTips2026 #Benable #AffiliateMarketing"
     },
     {
       "id": "make-money-on-benable-beginners",
@@ -1203,7 +1373,9 @@
       "image": "/assets/blog/make-money-on-benable-beginners.png",
       "imageAlt": "Illustration of a beginner earning first benable commission",
       "imagePrompt": "a beginner creator watching a first coin drop from a freshly published list, hopeful mood",
-      "order": 182
+      "order": 182,
+      "pinImage": "/assets/blog/pins/make-money-on-benable-beginners.png",
+      "pinDescription": "A plain, step-by-step walkthrough to set up Benable, build your first earning list, and share it where it counts. Save this pin so you can come back to it. #MakeMoneyOnBenable #BenableBeginner #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-seo-list-titles",
@@ -1217,7 +1389,9 @@
       "image": "/assets/blog/benable-seo-list-titles.png",
       "imageAlt": "Illustration of a list title rising in search",
       "imagePrompt": "a list title card climbing a search-results ladder, a magnifying glass highlighting it",
-      "order": 183
+      "order": 183,
+      "pinImage": "/assets/blog/pins/benable-seo-list-titles.png",
+      "pinDescription": "Your list title is its headline and its SEO. How to title Benable lists so they surface in search and get clicks. Save this pin so you can come back to it. #BenableSeo #BenableListTitles #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-for-amazon-influencers",
@@ -1231,7 +1405,9 @@
       "image": "/assets/blog/benable-for-amazon-influencers.png",
       "imageAlt": "Illustration of income streams from multiple sources",
       "imagePrompt": "a creator holding several income streams flowing from different brand icons, a steady balanced mood",
-      "order": 184
+      "order": 184,
+      "pinImage": "/assets/blog/pins/benable-for-amazon-influencers.png",
+      "pinDescription": "Relying on one platform is risky. How Amazon creators can add Benable to reach more brands and steady their income. Save this pin so you can come back to it. #BenableForAmazonInfluencers #DiversifyAffiliateIncome #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-niche-lists-that-sell",
@@ -1245,7 +1421,9 @@
       "image": "/assets/blog/benable-niche-lists-that-sell.png",
       "imageAlt": "Illustration of a focused list outperforming a giant one",
       "imagePrompt": "a small sharp list glowing next to a bulky dim one, a creator choosing the focused one",
-      "order": 185
+      "order": 185,
+      "pinImage": "/assets/blog/pins/benable-niche-lists-that-sell.png",
+      "pinDescription": "Bigger is not better on Benable. Why focused niche lists convert more shoppers than sprawling catch-all collections. Save this pin so you can come back to it. #BenableNicheLists #BenableListsThatSell #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-share-strategy",
@@ -1259,7 +1437,9 @@
       "image": "/assets/blog/benable-share-strategy.png",
       "imageAlt": "Illustration of a list shared across channels",
       "imagePrompt": "a benable list card traveling out to social bubbles and an inbox, a creator sharing it",
-      "order": 186
+      "order": 186,
+      "pinImage": "/assets/blog/pins/benable-share-strategy.png",
+      "pinDescription": "A list nobody sees earns nothing. The best places to share Benable lists and how to frame them so people click. Save this pin so you can come back to it. #ShareBenableLists #BenablePromotion #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-or-amazon-storefront",
@@ -1273,7 +1453,9 @@
       "image": "/assets/blog/benable-or-amazon-storefront.png",
       "imageAlt": "Illustration of two storefronts working together",
       "imagePrompt": "a benable list and an amazon storefront linked by a friendly bridge, a creator running both",
-      "order": 187
+      "order": 187,
+      "pinImage": "/assets/blog/pins/benable-or-amazon-storefront.png",
+      "pinDescription": "Benable and an Amazon storefront are not rivals. How they complement each other and a simple way to run both. Save this pin so you can come back to it. #BenableVsAmazonStorefront #BenableAndAmazon #Benable #AffiliateMarketing"
     },
     {
       "id": "benable-weekly-routine",
@@ -1287,7 +1469,9 @@
       "image": "/assets/blog/benable-weekly-routine.png",
       "imageAlt": "Illustration of a compounding weekly routine",
       "imagePrompt": "a weekly loop arrow with lists and coins growing each cycle, a consistent creator",
-      "order": 188
+      "order": 188,
+      "pinImage": "/assets/blog/pins/benable-weekly-routine.png",
+      "pinDescription": "Small, steady Benable habits beat sporadic bursts. A simple weekly routine that compounds your lists and your earnings. Save this pin so you can come back to it. #BenableRoutine #BenableConsistency #Benable #AffiliateMarketing"
     },
     {
       "id": "creator-burnout-prevention",
@@ -1301,7 +1485,9 @@
       "image": "/assets/blog/creator-burnout-prevention.png",
       "imageAlt": "Illustration of a balanced, rested creator",
       "imagePrompt": "a creator calmly balancing work and rest with a gentle glow, a sustainable mood",
-      "order": 189
+      "order": 189,
+      "pinImage": "/assets/blog/pins/creator-burnout-prevention.png",
+      "pinDescription": "Consistency is great until it breaks you. Sustainable systems and boundaries that keep creators posting without burning out. Save this pin so you can come back to it. #CreatorBurnout #AvoidBurnoutCreator #CreatorTips #ContentCreator"
     },
     {
       "id": "diversify-affiliate-income",
@@ -1315,7 +1501,9 @@
       "image": "/assets/blog/diversify-affiliate-income.png",
       "imageAlt": "Illustration of several income streams feeding one creator",
       "imagePrompt": "several small income streams flowing into one steady reservoir, a secure creator",
-      "order": 190
+      "order": 190,
+      "pinImage": "/assets/blog/pins/diversify-affiliate-income.png",
+      "pinDescription": "One platform, one income stream, one risk. Why and how creators spread earnings across programs to stay resilient. Save this pin so you can come back to it. #DiversifyAffiliateIncome #MultipleIncomeStreamsCreator #CreatorTips #ContentCreator"
     },
     {
       "id": "systems-behind-six-figure-creators",
@@ -1329,7 +1517,9 @@
       "image": "/assets/blog/systems-behind-six-figure-creators.png",
       "imageAlt": "Illustration of tidy systems powering a creator",
       "imagePrompt": "behind-the-scenes gears and checklists quietly powering a shining creator, an organized mood",
-      "order": 191
+      "order": 191,
+      "pinImage": "/assets/blog/pins/systems-behind-six-figure-creators.png",
+      "pinDescription": "The glamorous part is the content. The income comes from the boring systems. The routines top creators rely on. Save this pin so you can come back to it. #CreatorSystems #SixFigureCreatorHabits #CreatorTips #ContentCreator"
     },
     {
       "id": "batch-content-creation",
@@ -1343,7 +1533,9 @@
       "image": "/assets/blog/batch-content-creation.png",
       "imageAlt": "Illustration of grouped content tasks",
       "imagePrompt": "content tasks grouped into neat batches on a board, a relaxed focused creator",
-      "order": 192
+      "order": 192,
+      "pinImage": "/assets/blog/pins/batch-content-creation.png",
+      "pinDescription": "Switching tasks all day kills output. How batching similar work gives you more content and a calmer week. Save this pin so you can come back to it. #BatchContentCreation #BatchingForCreators #CreatorTips #ContentCreator"
     },
     {
       "id": "creator-metrics-that-matter",
@@ -1357,7 +1549,9 @@
       "image": "/assets/blog/creator-metrics-that-matter.png",
       "imageAlt": "Illustration of a few key metrics highlighted",
       "imagePrompt": "a dashboard with most numbers dimmed and a few key ones glowing, a focused creator",
-      "order": 193
+      "order": 193,
+      "pinImage": "/assets/blog/pins/creator-metrics-that-matter.png",
+      "pinDescription": "Most dashboards are noise. The few metrics that actually predict creator income and how to focus on them. Save this pin so you can come back to it. #CreatorMetrics #MetricsThatMatterCreators #CreatorTips #ContentCreator"
     },
     {
       "id": "micro-influencer-advantage-2026",
@@ -1371,7 +1565,9 @@
       "image": "/assets/blog/micro-influencer-advantage-2026.png",
       "imageAlt": "Illustration of a small but mighty audience",
       "imagePrompt": "a creator with a small tight circle of highly engaged fans glowing brightly, a warm mood",
-      "order": 194
+      "order": 194,
+      "pinImage": "/assets/blog/pins/micro-influencer-advantage-2026.png",
+      "pinDescription": "Small audiences, big trust. Why micro-influencers convert so well in 2026 and how to lean into the advantage. Save this pin so you can come back to it. #MicroInfluencer2026 #MicroInfluencerAdvantage #CreatorTips #ContentCreator"
     },
     {
       "id": "what-to-automate-as-creator",
@@ -1385,7 +1581,9 @@
       "image": "/assets/blog/what-to-automate-as-creator.png",
       "imageAlt": "Illustration of a creator delegating busywork to helpers",
       "imagePrompt": "a creator handing repetitive tasks to friendly robot helpers while keeping the human work, balanced",
-      "order": 195
+      "order": 195,
+      "pinImage": "/assets/blog/pins/what-to-automate-as-creator.png",
+      "pinDescription": "Automation is leverage, but some things must stay human. A clear line on what creators should automate and what to protect. Save this pin so you can come back to it. #WhatToAutomateCreator #CreatorAutomation #CreatorTips #ContentCreator"
     },
     {
       "id": "creator-goal-setting-quarter",
@@ -1399,7 +1597,9 @@
       "image": "/assets/blog/creator-goal-setting-quarter.png",
       "imageAlt": "Illustration of a clear quarterly goal target",
       "imagePrompt": "a clear target with a few well-placed arrows and a quarter calendar, a focused creator",
-      "order": 196
+      "order": 196,
+      "pinImage": "/assets/blog/pins/creator-goal-setting-quarter.png",
+      "pinDescription": "Vague goals go nowhere. A simple, creator-friendly way to set quarterly goals you will actually reach. Save this pin so you can come back to it. #CreatorGoalSetting #QuarterlyGoalsCreator #CreatorTips #ContentCreator"
     },
     {
       "id": "email-list-for-affiliate-creators",
@@ -1413,7 +1613,9 @@
       "image": "/assets/blog/email-list-for-affiliate-creators.png",
       "imageAlt": "Illustration of an owned email audience",
       "imagePrompt": "a creator holding a direct line to an inbox audience, separate from shifting platform clouds",
-      "order": 197
+      "order": 197,
+      "pinImage": "/assets/blog/pins/email-list-for-affiliate-creators.png",
+      "pinDescription": "Algorithms rent you an audience. Email lets you own one. Why affiliate creators should build a list and how to start. Save this pin so you can come back to it. #EmailListForCreators #AffiliateEmailList #CreatorTips #ContentCreator"
     },
     {
       "id": "consistency-beats-virality",
@@ -1427,7 +1629,9 @@
       "image": "/assets/blog/consistency-beats-virality.png",
       "imageAlt": "Illustration of steady growth vs a single spike",
       "imagePrompt": "a steady rising line outpacing a single tall spike over time, a patient creator",
-      "order": 198
+      "order": 198,
+      "pinImage": "/assets/blog/pins/consistency-beats-virality.png",
+      "pinDescription": "Virality is a lottery. Consistency is a plan. Why steady creators out-earn one-hit wonders and how to play the long game. Save this pin so you can come back to it. #ConsistencyBeatsVirality #ConsistencyOverViral #CreatorTips #ContentCreator"
     },
     {
       "id": "prime-day-2026-creator-playbook",
@@ -1441,7 +1645,9 @@
       "image": "/assets/blog/prime-day-2026-creator-playbook.png",
       "imageAlt": "Illustration of a creator preparing for Prime Day with a countdown",
       "imagePrompt": "a creator at a command desk with a Prime Day countdown banner, deal tags and a ready storefront, energetic anticipation",
-      "order": 101
+      "order": 101,
+      "pinImage": "/assets/blog/pins/prime-day-2026-creator-playbook.png",
+      "pinDescription": "Prime Day 2026 runs June 23-26. Here is the creator playbook to prep your storefront, pick the right deals, and earn the most during Amazon's biggest week. Save this pin so you can come back to it. #AmazonPrimeDay2026 #PrimeDayCreatorPlaybook #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "prime-day-storefront-checklist",
@@ -1455,7 +1661,9 @@
       "image": "/assets/blog/prime-day-storefront-checklist.png",
       "imageAlt": "Illustration of a storefront being prepped with a checklist before a big sale",
       "imagePrompt": "a tidy storefront being polished with a checklist clipboard and orange checkmarks, a countdown clock nearby",
-      "order": 103
+      "order": 103,
+      "pinImage": "/assets/blog/pins/prime-day-storefront-checklist.png",
+      "pinDescription": "A pre-event checklist to get your Amazon storefront and idea lists ready before Prime Day 2026 starts, so you capture the surge instead of scrambling. Save this pin so you can come back to it. #PrimeDayStorefrontChecklist #PrepareStorefrontPrimeDay #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "prime-day-content-ideas",
@@ -1469,7 +1677,9 @@
       "image": "/assets/blog/prime-day-content-ideas.png",
       "imageAlt": "Illustration of content ideas flowing for Prime Day",
       "imagePrompt": "a lightbulb spraying content idea cards toward a phone showing deal videos, creative energetic mood with a Prime Day vibe",
-      "order": 104
+      "order": 104,
+      "pinImage": "/assets/blog/pins/prime-day-content-ideas.png",
+      "pinDescription": "Stuck on what to post for Prime Day? Content formats and angles that turn the Prime Day rush into clicks and commissions. Save this pin so you can come back to it. #PrimeDayContentIdeas #WhatToPostPrimeDay #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "prime-day-creator-connections",
@@ -1483,7 +1693,9 @@
       "image": "/assets/blog/prime-day-creator-connections.png",
       "imageAlt": "Illustration of boosted campaign cards during a sale event",
       "imagePrompt": "brand campaign cards with boosted percentage badges raining down during a sale event, a creator catching the best ones",
-      "order": 105
+      "order": 105,
+      "pinImage": "/assets/blog/pins/prime-day-creator-connections.png",
+      "pinDescription": "Prime Day floods Creator Connections with boosted campaigns. How to spot and accept the best ones so the bonus rates work for you. Save this pin so you can come back to it. #CreatorConnectionsPrimeDay #PrimeDayCampaigns #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "prime-day-last-minute-prep",
@@ -1497,7 +1709,9 @@
       "image": "/assets/blog/prime-day-last-minute-prep.png",
       "imageAlt": "Illustration of a 48-hour countdown checklist before a sale",
       "imagePrompt": "a 48-hour countdown clock beside a short checklist with items ticked off fast, a focused creator",
-      "order": 106
+      "order": 106,
+      "pinImage": "/assets/blog/pins/prime-day-last-minute-prep.png",
+      "pinDescription": "Prime Day is almost here. The exact things to do in the final 48 hours so you are ready the moment the deals go live. Save this pin so you can come back to it. #LastMinutePrimeDayPrep #PrimeDay48HourChecklist #AmazonInfluencer #AmazonStorefront"
     },
     {
       "id": "prime-day-instagram-promotion",
@@ -1511,7 +1725,9 @@
       "image": "/assets/blog/prime-day-instagram-promotion.png",
       "imageAlt": "Illustration of Prime Day deals shared on Instagram stories",
       "imagePrompt": "a phone showing an Instagram story with a Prime Day deal and a link sticker, fans tapping through, lively mood",
-      "order": 108
+      "order": 108,
+      "pinImage": "/assets/blog/pins/prime-day-instagram-promotion.png",
+      "pinDescription": "Your Instagram is a Prime Day goldmine if you use it right. Story, Reel, and Close Friends tactics to drive deal clicks during the event. Save this pin so you can come back to it. #PromotePrimeDayOnInstagram #PrimeDayInstagramStories #InstagramTips #ContentCreator"
     },
     {
       "id": "prime-day-live-day-tactics",
@@ -1525,7 +1741,9 @@
       "image": "/assets/blog/prime-day-live-day-tactics.png",
       "imageAlt": "Illustration of real-time deal posting during a live sale",
       "imagePrompt": "a creator rapidly posting live deal cards as a countdown ticks, deal tags flying to an active audience, urgent but cheerful",
-      "order": 109
+      "order": 109,
+      "pinImage": "/assets/blog/pins/prime-day-live-day-tactics.png",
+      "pinDescription": "When the deals are live, speed and clarity win. How to post during Prime Day so your audience acts before the deals disappear. Save this pin so you can come back to it. #PrimeDayLiveTactics #PostingDuringPrimeDay #AmazonDeals #DealFinder"
     },
     {
       "id": "prime-day-after-momentum",
@@ -1539,7 +1757,9 @@
       "image": "/assets/blog/prime-day-after-momentum.png",
       "imageAlt": "Illustration of momentum continuing after a big sale event",
       "imagePrompt": "a creator riding a wave of momentum past a finished sale banner, reviewing a simple results chart, satisfied forward-looking mood",
-      "order": 110
+      "order": 110,
+      "pinImage": "/assets/blog/pins/prime-day-after-momentum.png",
+      "pinDescription": "Prime Day ends but the opportunity does not. How to ride the post-event wave, review what worked, and turn buyers into repeat fans. Save this pin so you can come back to it. #AfterPrimeDay #PostPrimeDayStrategy #CreatorTips #ContentCreator"
     }
   ]
 }

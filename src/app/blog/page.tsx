@@ -123,12 +123,12 @@ export default async function BlogIndexPage() {
             Connections, daily deals, Benable, and Instagram outreach, so you can
             focus on the part only you can do.
           </p>
-          <Link
-            href="/signup"
+          <a
+            href="https://dl.influencerbutler.com"
             className="mt-6 inline-block rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-700"
           >
             Start your 3-day free trial
-          </Link>
+          </a>
         </div>
       </section>
 
