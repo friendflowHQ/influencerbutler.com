@@ -1,6 +1,6 @@
 ---
 title: Pricecrash Butler: catch Amazon pricing errors fast
-summary: Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Daily Deals Butler as drafts or auto-scheduled posts.
+summary: Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Amazon Daily Deals as drafts or auto-scheduled posts.
 category: Amazon
 ---
 
@@ -8,7 +8,7 @@ category: Amazon
 
 Sellers sometimes forget a decimal point. Catalog teams sometimes miss a flag. When they do, a $400 vacuum shows up at $4, a $2,000 lens at $20, a $89 air fryer at $0.89 - and a smart creator can post the deal before Amazon's automated guards or a human cleanup pull it down.
 
-Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Daily Deals Butler** as either:
+Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Amazon Daily Deals** as either:
 
 - a **draft** in the Search tab (you approve before it posts), or
 - an **auto-scheduled post** that publishes right away (or waits for your next scheduled post time, your choice).
@@ -49,9 +49,9 @@ Paste your own list (comma- or newline-separated) when you want to **narrow** th
 
 If Amazon's API rejects a keyword-less browse for one of your categories (rare - it's usually a stale browse-node mapping), Pricecrash stops the run and tells you which category needs a manual keyword. Add at least one bait keyword for that category or unselect it, then run again.
 
-## Hand-off to Daily Deals Butler
+## Hand-off to Amazon Daily Deals
 
-Each found deal is written into Daily Deals' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your **Build Your Post** template in Daily Deals Butler, so the pills you set there drive exactly what Pricecrash posts say. From there:
+Each found deal is written into Daily Deals' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your **Build Your Post** template in Amazon Daily Deals, so the pills you set there drive exactly what Pricecrash posts say. From there:
 
 - **Draft mode**: the post lands with `status: "draft"`. Open Daily Deals → Search, review, set destinations, hit Publish.
 - **Auto-schedule mode**: the post lands with `status: "scheduled"`. With **Post right away** (the default), Pricecrash publishes it immediately to every enabled destination, so a catch goes out within seconds even when the auto-fire schedule is off. With **On the next scheduled deal post time**, the post waits for your Daily Deals posting schedule's next run.
@@ -66,12 +66,12 @@ While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** coun
 
 ## Gotchas
 
-- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Daily Deals Butler.
+- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Amazon Daily Deals.
 - **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per category (or one page per keyword when keywords are set) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
 - **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
-- **Posts not appearing in Daily Deals**: confirm Daily Deals Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
+- **Posts not appearing in Daily Deals**: confirm Amazon Daily Deals is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
 
 ## Related
 
-- [Daily Deals Butler tutorial](/help/tutorials/daily-deals) - the publishing engine that takes Pricecrash's catches the last mile.
+- [Amazon Daily Deals tutorial](/help/tutorials/daily-deals) - the publishing engine that takes Pricecrash's catches the last mile.
 - [Orders Butler tutorial](/help/tutorials/ordersbutler) - the upstream order-history feed that powers most of the other Amazon-side workspaces.

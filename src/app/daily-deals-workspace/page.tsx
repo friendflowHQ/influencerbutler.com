@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Daily Deals Workspace Add-on - $24.99/mo · Influencer Butler",
   description:
-    "Add a second Daily Deals Butler workspace for a different niche. Own filters, schedules, and queues - managed alongside your main workspace. No promo or affiliate codes apply.",
+    "Add a second Amazon Daily Deals workspace for a different niche. Own filters, schedules, and queues - managed alongside your main workspace. No promo or affiliate codes apply.",
   openGraph: {
     title: "Daily Deals Workspace Add-on - $24.99/mo",
     description:
-      "Add a second Daily Deals Butler workspace for a different niche.",
+      "Add a second Amazon Daily Deals workspace for a different niche.",
     type: "website",
   },
 };
@@ -69,10 +69,10 @@ export default async function DailyDealsWorkspacePage() {
             Add-on
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            One Daily Deals Butler per niche
+            One Amazon Daily Deals per niche
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            Run a separate Daily Deals Butler workspace for each niche you
+            Run a separate Amazon Daily Deals workspace for each niche you
             promote - Gardening, Sports, Cooking, whatever. Own filters,
             schedules, post queues, and tallies. Stacks cleanly with your
             Pro plan, no extra setup.
@@ -100,7 +100,7 @@ export default async function DailyDealsWorkspacePage() {
               </h3>
               <p className="mt-2 text-sm text-slate-600">
                 You post Gardening deals on one storefront and Sports deals on
-                another. One Daily Deals Butler doesn&apos;t cut it because the
+                another. One Amazon Daily Deals doesn&apos;t cut it because the
                 filters, schedules, and post queues need to be different per
                 niche.
               </p>
@@ -160,7 +160,7 @@ export default async function DailyDealsWorkspacePage() {
               </h3>
               <p className="mt-1 text-sm text-slate-600">
                 Next time you sign in, the new workspace is already credited.
-                Open Daily Deals Butler in the nav and click{" "}
+                Open Amazon Daily Deals in the nav and click{" "}
                 <span className="font-mono text-[13px]">+ Add Workspace</span>.
                 Name it whatever you want - &ldquo;Gardening&rdquo;,
                 &ldquo;Sports&rdquo;, &ldquo;Cooking&rdquo;.
@@ -178,7 +178,7 @@ export default async function DailyDealsWorkspacePage() {
               <p className="mt-1 text-sm text-slate-600">
                 Optionally clone your existing filters / presets / schedules
                 with one click (fresh queues + tallies), or start from the
-                Daily Deals Butler defaults. Your existing workspace stays
+                Amazon Daily Deals defaults. Your existing workspace stays
                 untouched.
               </p>
             </div>
@@ -193,7 +193,7 @@ export default async function DailyDealsWorkspacePage() {
             <div className="bg-slate-900 px-6 py-4 text-white">
               <h3 className="text-lg font-semibold">Daily Deals Workspace</h3>
               <p className="text-sm text-slate-300">
-                One extra Daily Deals Butler workspace per subscription
+                One extra Amazon Daily Deals workspace per subscription
               </p>
             </div>
             <div className="px-6 py-8 sm:px-10">
@@ -213,7 +213,7 @@ export default async function DailyDealsWorkspacePage() {
                   <span className="text-[#f97316]" aria-hidden>
                     ✓
                   </span>
-                  One additional Daily Deals Butler workspace
+                  One additional Amazon Daily Deals workspace
                 </li>
                 <li className="flex gap-2">
                   <span className="text-[#f97316]" aria-hidden>
@@ -318,7 +318,7 @@ export default async function DailyDealsWorkspacePage() {
             <dd className="mt-2 text-sm text-slate-600">
               Absolutely. Each $24.99/month subscription unlocks exactly one
               extra workspace. If you have four niches, buy four. They show up
-              as separate Butlers under Daily Deals Butler in the nav.
+              as separate Butlers under Amazon Daily Deals in the nav.
             </dd>
           </div>
         </dl>

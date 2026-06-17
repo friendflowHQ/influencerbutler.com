@@ -174,7 +174,7 @@ export default async function PricingPage({
                   Daily Deals Workspace
                 </h3>
                 <p className="text-sm text-slate-600">
-                  One additional Daily Deals Butler workspace per subscription.
+                  One additional Amazon Daily Deals workspace per subscription.
                 </p>
               </div>
               <div className="text-right">

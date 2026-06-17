@@ -53,7 +53,7 @@
       "id": "pricecrashbutler",
       "title": "Pricecrash Butler: catch Amazon pricing errors fast",
       "category": "Amazon",
-      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Daily Deals Butler as drafts or auto-scheduled posts.",
+      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Amazon Daily Deals as drafts or auto-scheduled posts.",
       "order": 45,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -67,7 +67,7 @@
     },
     {
       "id": "daily-deals",
-      "title": "Daily Deals Butler: harvest Amazon deals and post them automatically",
+      "title": "Amazon Daily Deals: harvest Amazon deals and post them automatically",
       "category": "Amazon",
       "summary": "End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.",
       "order": 70,
