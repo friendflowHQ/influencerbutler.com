@@ -954,79 +954,130 @@
                 <h2>Simple, Transparent Pricing</h2>
                 <p class="section-sub">Start free. Upgrade when you're ready for the full power of Butler.</p>
 
-                <div class="pricing-grid">
-                    <!-- FREE TRIAL -->
-                    <div class="pricing-card anim-up">
-                        <div class="pricing-header">
-                            <h3>Free Trial</h3>
-                            <p class="pricing-desc">Full Pro access, $0 for 3 days</p>
-                        </div>
-                        <div class="pricing-price">
-                            <span class="price-amount">$0</span>
-                            <span class="price-period">/ 3 days</span>
-                        </div>
-                        <p class="pricing-trial">Then $39/month &mdash; cancel anytime<br><small>Cancel before day 3 to avoid all charges. After conversion, all sales final.</small></p>
-                        <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> Full Pro access for 3 days</li>
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> CC Brand Messages</li>
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> Instagram DMs</li>
-                            <li><span class="pf-check">&#10003;</span> All 20+ Tools Unlocked</li>
-                            <li><span class="pf-check">&#10003;</span> Cancel anytime before day 3</li>
-                        </ul>
-                        <a class="btn btn-outline btn-block checkout-btn" href="#" data-plan="monthly">Start Free Trial</a>
-                    </div>
+                <div class="billing-toggle" role="tablist" aria-label="Billing cadence">
+                    <button type="button" role="tab" class="billing-opt" data-billing="monthly" aria-selected="false">Monthly</button>
+                    <button type="button" role="tab" class="billing-opt is-active" data-billing="annual" aria-selected="true">Annual <span class="billing-save">Save 17%</span></button>
+                </div>
 
-                    <!-- PRO MONTHLY -->
+                <div class="pricing-grid">
+                    <!-- PRO SOLO -->
                     <div class="pricing-card featured anim-up">
                         <div class="pricing-badge">Most Popular</div>
+                        <div class="pricing-save-badge">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Monthly</h3>
-                            <p class="pricing-desc">Full power, flexible billing</p>
+                            <h3>Pro Solo</h3>
+                            <p class="pricing-desc">Full power, 1 device</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount">$39</span>
-                            <span class="price-period">/ month</span>
+                            <span class="price-amount" data-monthly="$39" data-annual="$390">$390</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ year</span>
                         </div>
-                        <p class="pricing-trial">3-day free trial included &mdash; cancel before day 3 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-effective">That's just $32.50/month</p>
+                        <p class="pricing-trial">3-day free trial included - cancel before day 3 to avoid charges. After conversion, all sales final.</p>
                         <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> CC Brand Messages</li>
+                            <li><span class="pf-check">&#10003;</span> All 29+ automation tools</li>
+                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> CC brand messages</li>
                             <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> Instagram DMs</li>
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> Automation Actions</li>
-                            <li><span class="pf-check">&#10003;</span> All 20+ Tools Unlocked</li>
-                            <li><span class="pf-check">&#10003;</span> Deep Link Integrations</li>
-                            <li><span class="pf-check">&#10003;</span> Affiliate Network Integrations</li>
-                            <li><span class="pf-check">&#10003;</span> Analytics Dashboard</li>
-                            <li><span class="pf-check">&#10003;</span> Priority Support</li>
+                            <li><span class="pf-check">&#10003;</span> Commission harvesting</li>
+                            <li><span class="pf-check">&#10003;</span> Deep link &amp; affiliate integrations</li>
+                            <li><span class="pf-check">&#10003;</span> 1 activated device</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="monthly">Start Free Trial</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="annual" data-plan-monthly="monthly" data-plan-annual="annual">Start free trial</a>
                     </div>
 
-                    <!-- PRO ANNUAL -->
+                    <!-- PRO TEAM -->
                     <div class="pricing-card anim-up">
                         <div class="pricing-save-badge">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Annual</h3>
-                            <p class="pricing-desc">Best value - save $78/year</p>
+                            <h3>Pro Team</h3>
+                            <p class="pricing-desc">For creator teams - up to 10 devices</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount">$390</span>
-                            <span class="price-period">/ year</span>
+                            <span class="price-amount" data-monthly="$129" data-annual="$1,290">$1,290</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ year</span>
                         </div>
-                        <p class="pricing-effective">That's just $32.50/month</p>
-                        <p class="pricing-trial">3-day free trial included &mdash; cancel before day 3 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-effective">That's just $107.50/month</p>
+                        <p class="pricing-trial">3-day free trial included - cancel before day 3 to avoid charges. After conversion, all sales final.</p>
                         <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> Everything in Monthly</li>
-                            <li><span class="pf-check">&#10003;</span> Priority Feature Requests</li>
-                            <li><span class="pf-check">&#10003;</span> Early Access to New Features</li>
-                            <li><span class="pf-check">&#10003;</span> Dedicated Support</li>
+                            <li><span class="pf-check">&#10003;</span> Everything in Pro Solo</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 10 activated devices</li>
+                            <li><span class="pf-check">&#10003;</span> Shared seat pool for your team</li>
+                            <li><span class="pf-check">&#10003;</span> Priority email support</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="annual">Start Free Trial</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="team-annual" data-plan-monthly="team-monthly" data-plan-annual="team-annual">Start free trial</a>
+                    </div>
+
+                    <!-- PRO AGENCY -->
+                    <div class="pricing-card anim-up">
+                        <div class="pricing-save-badge">Save 17%</div>
+                        <div class="pricing-header">
+                            <h3>Pro Agency</h3>
+                            <p class="pricing-desc">For agencies - up to 25 devices</p>
+                        </div>
+                        <div class="pricing-price">
+                            <span class="price-amount" data-monthly="$299" data-annual="$2,990">$2,990</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ year</span>
+                        </div>
+                        <p class="pricing-effective">That's just $249.17/month</p>
+                        <p class="pricing-trial">3-day free trial included - cancel before day 3 to avoid charges. After conversion, all sales final.</p>
+                        <ul class="pricing-features">
+                            <li><span class="pf-check">&#10003;</span> Everything in Pro Team</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 25 activated devices</li>
+                            <li><span class="pf-check">&#10003;</span> Priority feature requests</li>
+                            <li><span class="pf-check">&#10003;</span> Dedicated support</li>
+                            <li><span class="pf-check">&#10003;</span> Early access to new butlers</li>
+                        </ul>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="agency-annual" data-plan-monthly="agency-monthly" data-plan-annual="agency-annual">Start free trial</a>
                     </div>
                 </div>
-                <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin-top:1.5rem;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6;">By proceeding, you agree to our <a href="legal/terms.html" style="color:var(--brand);text-decoration:underline;">Terms of Service</a>, <a href="legal/eula.html" style="color:var(--brand);text-decoration:underline;">EULA</a>, and <a href="legal/refund.html" style="color:var(--brand);text-decoration:underline;">Refund Policy</a>. <strong>This is an automatically-renewing subscription.</strong> Your payment method will be charged $39/month (or $390/year if you select annual) at the end of the 3-day free trial and on each renewal date thereafter until you cancel. You authorize these recurring charges by starting the trial and providing a payment instrument. <strong>All sales are final after the trial converts</strong> &mdash; cancel anytime before day 3 to avoid any charge. We do not refund the current or any past billing period, or the unused remainder of an annual plan. The software is delivered electronically on payment; you expressly consent to immediate performance and waive any statutory right of withdrawal. Before initiating a chargeback, PayPal claim, or bank dispute, contact <a href="mailto:hello@influencerbutler.com" style="color:var(--brand);text-decoration:underline;">hello@influencerbutler.com</a> &mdash; filing a dispute without contacting us first is a material breach of these terms.</p>
+                <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin-top:1.5rem;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6;">By proceeding, you agree to our <a href="legal/terms.html" style="color:var(--brand);text-decoration:underline;">Terms of Service</a>, <a href="legal/eula.html" style="color:var(--brand);text-decoration:underline;">EULA</a>, and <a href="legal/refund.html" style="color:var(--brand);text-decoration:underline;">Refund Policy</a>. <strong>This is an automatically-renewing subscription.</strong> Your payment method will be charged the recurring price of the plan you select (Pro Solo from $39/month or $390/year; Pro Team and Pro Agency are higher) at the end of the 3-day free trial and on each renewal date thereafter until you cancel. You authorize these recurring charges by starting the trial and providing a payment instrument. <strong>All sales are final after the trial converts</strong> - cancel anytime before day 3 to avoid any charge. We do not refund the current or any past billing period, or the unused remainder of an annual plan. The software is delivered electronically on payment; you expressly consent to immediate performance and waive any statutory right of withdrawal. Before initiating a chargeback, PayPal claim, or bank dispute, contact <a href="mailto:hello@influencerbutler.com" style="color:var(--brand);text-decoration:underline;">hello@influencerbutler.com</a> - filing a dispute without contacting us first is a material breach of these terms.</p>
                 <script>
                     (function () {
                         const checkoutButtons = document.querySelectorAll('.checkout-btn');
+
+                        // Plan strings the checkout APIs (/api/checkout, /api/checkout/guest)
+                        // accept. Bare "monthly"/"annual" alias to Pro Solo for back-compat.
+                        const ALLOWED_PLANS = [
+                            'monthly', 'annual',
+                            'solo-monthly', 'solo-annual',
+                            'team-monthly', 'team-annual',
+                            'agency-monthly', 'agency-annual',
+                        ];
+
+                        // Billing cadence toggle: swap displayed prices + the data-plan each
+                        // CTA submits, without a round-trip. Defaults to annual (matches /pricing).
+                        const billingToggle = document.querySelector('.billing-toggle');
+                        if (billingToggle) {
+                            const pricingSection = billingToggle.closest('.pricing');
+                            const opts = billingToggle.querySelectorAll('.billing-opt');
+                            const applyBilling = (billing) => {
+                                const annual = billing === 'annual';
+                                opts.forEach((opt) => {
+                                    const active = opt.getAttribute('data-billing') === billing;
+                                    opt.classList.toggle('is-active', active);
+                                    opt.setAttribute('aria-selected', active ? 'true' : 'false');
+                                });
+                                pricingSection.querySelectorAll('.price-amount, .price-period').forEach((el) => {
+                                    const next = el.getAttribute('data-' + billing);
+                                    if (next !== null) el.textContent = next;
+                                });
+                                // The "/month equivalent" line and Save badge only apply to annual.
+                                pricingSection.querySelectorAll('.pricing-effective').forEach((el) => {
+                                    el.style.display = annual ? '' : 'none';
+                                });
+                                pricingSection.querySelectorAll('.pricing-save-badge').forEach((el) => {
+                                    el.style.display = annual ? '' : 'none';
+                                });
+                                pricingSection.querySelectorAll('.checkout-btn').forEach((btn) => {
+                                    const plan = btn.getAttribute('data-plan-' + billing);
+                                    if (plan) btn.setAttribute('data-plan', plan);
+                                });
+                            };
+                            opts.forEach((opt) => {
+                                opt.addEventListener('click', () => applyBilling(opt.getAttribute('data-billing')));
+                            });
+                            applyBilling('annual');
+                        }
 
                         // Match the auth-token cookie specifically - other sb-* cookies
                         // (PKCE verifiers etc.) exist for anonymous visitors too, and a
@@ -1080,7 +1131,7 @@
                                 event.preventDefault();
                                 const plan = button.getAttribute('data-plan');
 
-                                if (plan !== 'monthly' && plan !== 'annual') {
+                                if (!ALLOWED_PLANS.includes(plan)) {
                                     return;
                                 }
 
