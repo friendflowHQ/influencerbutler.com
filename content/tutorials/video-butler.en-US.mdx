@@ -86,6 +86,20 @@ Two settings in the **Filters & Options** card control how each video's products
 
 **Shortcut.** You don't have to set these by hand. Under **Preferred Formulas**, click **In-stock products only (skip unavailable)** to turn on Check 1 and set Check 2 to remove unavailable products in one click. Your other filters stay exactly as they are.
 
+## Find a match by title when the ASIN doesn't exist abroad
+
+International uploads normally match a product to its listing by ASIN. But the same physical product often lives on a foreign marketplace under a different ASIN, so an ASIN-only match leaves a lot of uploadable videos on the table. Turn on **Search by product title when no ASIN matches the marketplace** in the Filters & Options card to recover them.
+
+When none of a video's ASINs exist on a destination marketplace, Video Butler searches that marketplace by the product title (using the Amazon Creators API, and falling back to a search of the marketplace when needed) and scores each result against your product title, the same close-title match Retag Butler uses. Then it surfaces what it found in **Results history** as a **Title match to confirm** row, so nothing uploads on a guess.
+
+You control how matches are handled:
+
+- **When a match is found**: choose **Suggest the single best match** (one candidate with Confirm and Reject) or **Let me pick from a short list** (choose the right listing from the top few). Pick from a list is the safer choice on non-English marketplaces, where the foreign listing's title can score low against your English one even when it is the right product, so it helps to eyeball it.
+- **Minimum match score to suggest**: the floor a candidate must clear before it is shown. Default 50.
+- **Auto-upload above this score**: leave at 0 to always confirm matches yourself. Set it high (for example 90) to let very strong matches upload automatically without asking.
+
+To act on a suggestion, open the Video Log, filter to **Title match to confirm**, and on each row click **Confirm** to upload the video to the chosen listing, or **Reject** to discard the suggestion. A confirmed match re-downloads the original and posts it to that marketplace straight away.
+
 ## Accept Creator Connections offers in the same run
 
 Many of the products you already feature in storefront videos have a live Creator Connections (CC) campaign or a Shoppable Video Creator Connections (SPCC) offer waiting for you. Finding them by hand means scrolling endless opportunity lists. Video Butler can do it for you while it works through your videos.

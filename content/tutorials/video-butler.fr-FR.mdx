@@ -86,6 +86,20 @@ Deux réglages de la carte **Filtres et options** contrôlent la façon dont les
 
 **Raccourci.** Pas besoin de tout régler à la main. Sous **Preferred Formulas**, cliquez sur **In-stock products only (skip unavailable)** pour activer la Vérification 1 et régler la Vérification 2 sur le retrait des produits indisponibles, en un seul clic. Vos autres filtres restent exactement tels quels.
 
+## Trouvez une correspondance par titre quand l'ASIN n'existe pas à l'étranger
+
+Les envois internationaux associent normalement un produit à sa fiche par ASIN. Mais le même produit physique existe souvent sur une marketplace étrangère sous un ASIN différent, donc une association par ASIN seule laisse de côté beaucoup de vidéos qui pourraient être envoyées. Activez **Rechercher par titre du produit quand aucun ASIN ne correspond sur la marketplace** dans la carte Filtres et options pour les récupérer.
+
+Quand aucun des ASIN d'une vidéo n'existe sur une marketplace de destination, Video Butler recherche cette marketplace par le titre du produit (via l'API Amazon Creators, avec un repli sur une recherche de la marketplace si nécessaire) et note chaque résultat par rapport au titre de votre produit, la même correspondance de titre proche qu'utilise Retag Butler. Il affiche ensuite ce qu'il a trouvé dans l'**historique des Résultats** sous forme d'une ligne **Correspondance de titre à confirmer**, pour que rien ne soit envoyé au hasard.
+
+Vous contrôlez la façon dont les correspondances sont traitées :
+
+- **Quand une correspondance est trouvée** : choisissez **Proposer la meilleure correspondance** (un candidat avec Confirmer et Rejeter) ou **Me laisser choisir dans une courte liste** (choisissez la bonne fiche parmi les premières). Choisir dans une liste est l'option la plus sûre sur les marketplaces non anglophones, où le titre de la fiche étrangère peut obtenir un score faible par rapport au vôtre en anglais même si c'est le bon produit ; il vaut donc mieux vérifier à l'œil.
+- **Score de correspondance minimum pour proposer** : le seuil qu'un candidat doit dépasser pour être affiché. Par défaut 50.
+- **Envoyer automatiquement au-dessus de ce score** : laissez à 0 pour confirmer toujours les correspondances vous-même. Mettez-le haut (par exemple 90) pour laisser les correspondances très fortes s'envoyer automatiquement sans demander.
+
+Pour agir sur une suggestion, ouvrez le Journal vidéo, filtrez sur **Correspondance de titre à confirmer** et sur chaque ligne cliquez sur **Confirmer** pour envoyer la vidéo vers la fiche choisie, ou sur **Rejeter** pour ignorer la suggestion. Une correspondance confirmée retélécharge l'original et le publie sur cette marketplace immédiatement.
+
 ## Acceptez les offres Creator Connections dans la même exécution
 
 Beaucoup des produits que vous présentez déjà dans vos vidéos de boutique ont une campagne Creator Connections (CC) active ou une offre Shoppable Video Creator Connections (SPCC) qui vous attend. Les trouver à la main veut dire faire défiler des listes d'opportunités sans fin. Video Butler peut le faire pour vous pendant qu'il traite vos vidéos.
