@@ -373,12 +373,17 @@ function LsSignupPending({
       </header>
 
       <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5 text-sm text-amber-900 shadow-sm">
-        <p className="font-semibold">Why finishing this step matters</p>
+        <p className="font-semibold">Please wait before you promote</p>
         <p className="mt-1">
           Your code already gives customers their discount, but you only start earning commission
           once Lemon Squeezy activates you and your account is linked here. Until then, sales through
-          your code are not credited to you, so completing this signup is what turns your code into
-          earnings.
+          your code are not tracked automatically, so hold off sharing until this page confirms
+          you are live: that is when your ready-to-share link appears below. If you have already
+          shared your code, email{" "}
+          <a className="font-semibold underline" href="mailto:hello@influencerbutler.com">
+            hello@influencerbutler.com
+          </a>{" "}
+          so we can credit those early referrals to you once you are activated.
         </p>
       </section>
 

@@ -70,9 +70,24 @@ export type Attribution = {
   source: CandidateSource;
 };
 
+/**
+ * The affiliate a checkout should be credited to, resolved by first-touch
+ * regardless of LS activation state. When `hasLsId` is true the live `aff_ref`
+ * path already credits LS; when false this is a pre-activation referral that
+ * must be captured on the order and reconciled once the affiliate goes live.
+ */
+export type IntendedAffiliate = {
+  affiliateUserId: string;
+  sourceCode: string;
+  source: CandidateSource;
+  hasLsId: boolean;
+};
+
 export type ResolvedDiscount = {
   winner: CandidateCode | null;
   attribution: Attribution | null;
+  /** First-touch affiliate to credit, linked or not (the capture safety net). */
+  intendedAffiliate: IntendedAffiliate | null;
   /** All candidates that survived resolution, sorted by savedCents DESC. Exposed for UI / logging. */
   candidates: CandidateCode[];
 };
@@ -142,17 +157,22 @@ export async function gatherCandidates(
 
   const resolved = await Promise.all(
     ordered.map(async ({ source, code }) => {
-      const [ls, affiliate] = await Promise.all([
+      const [ls, owner] = await Promise.all([
         resolveLsForCandidate(source, code, storeId),
-        withTimeout(lookupAffiliateByCode(code), AFFILIATE_LOOKUP_TIMEOUT_MS, null),
+        withTimeout(lookupAffiliateOwnerByCode(code), AFFILIATE_LOOKUP_TIMEOUT_MS, null),
       ]);
       if (!ls) return null;
+      // `isAffiliate` keeps its linked-only meaning (used by the stacking rule,
+      // pickWinner and resolveAttribution): true only when LS has activated the
+      // affiliate. `affiliateUserId` is set even for unlinked affiliates so the
+      // intended referral can still be captured during the activation gap.
       const candidate: CandidateCode = {
         source,
         code: ls.code,
         ls,
-        isAffiliate: Boolean(affiliate),
-        lsAffiliateId: affiliate ? affiliate.lsAffiliateId : null,
+        isAffiliate: Boolean(owner && owner.lsAffiliateId),
+        lsAffiliateId: owner?.lsAffiliateId ?? null,
+        affiliateUserId: owner?.affiliateUserId ?? null,
         savedCents: computeSavedCents(ls, plan),
       };
       return candidate;
@@ -250,6 +270,35 @@ export function resolveAttribution(candidates: CandidateCode[]): Attribution | n
 }
 
 /**
+ * First-touch intended affiliate, INCLUDING affiliates whose LS account isn't
+ * activated yet (lsAffiliateId null). Same priority as resolveAttribution
+ * (url-code > welcome-cookie > typed) but keyed off `affiliateUserId` so the
+ * pre-activation gap is covered. Independent of which discount won, so an order
+ * that ultimately used WELCOME30 is still attributed to the affiliate whose
+ * link the customer arrived through (the ib_aff_src first-touch cookie).
+ */
+export function resolveIntendedAffiliate(
+  candidates: CandidateCode[],
+): IntendedAffiliate | null {
+  const affiliates = candidates.filter((c) => c.affiliateUserId);
+  if (affiliates.length === 0) return null;
+
+  const priority: CandidateSource[] = ["url-code", "welcome-cookie", "typed"];
+  for (const src of priority) {
+    const match = affiliates.find((c) => c.source === src);
+    if (match && match.affiliateUserId) {
+      return {
+        affiliateUserId: match.affiliateUserId,
+        sourceCode: match.code,
+        source: match.source,
+        hasLsId: Boolean(match.lsAffiliateId),
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Affiliate-XOR-welcome stacking rule. A customer may apply either an
  * Affiliate-tracked code or a site-wide welcome-cookie code, not both.
  *
@@ -269,6 +318,23 @@ export function applyStackingRules(candidates: CandidateCode[]): CandidateCode[]
   );
   if (!hasAffiliate) return candidates;
   return candidates.filter((c) => c.source !== "welcome-cookie");
+}
+
+/**
+ * Builds the LS checkout `custom` fields that durably record the intended
+ * affiliate on the order. Empty object when there's no affiliate to capture
+ * (so spreading it is a no-op). The order_created webhook reads these back and
+ * persists them to the orders table. Values must be strings (LS custom_data).
+ */
+export function affiliateCaptureCustom(
+  intended: IntendedAffiliate | null,
+): Record<string, string> {
+  if (!intended) return {};
+  return {
+    ref_affiliate_user_id: intended.affiliateUserId,
+    ref_affiliate_code: intended.sourceCode,
+    ref_attribution_status: intended.hasLsId ? "live" : "pending",
+  };
 }
 
 export type ResolveInput = {
@@ -303,6 +369,7 @@ export async function resolveCheckoutDiscount(input: ResolveInput): Promise<Reso
   return {
     winner: pickWinner(candidates),
     attribution: resolveAttribution(candidates),
+    intendedAffiliate: resolveIntendedAffiliate(candidates),
     candidates: sortedCandidates,
   };
 }

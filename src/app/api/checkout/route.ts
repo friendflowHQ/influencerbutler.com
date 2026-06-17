@@ -9,7 +9,7 @@ import {
   writeAffiliateSourceCookieIfMissing,
   writePromoCookies,
 } from "@/lib/promo";
-import { resolveCheckoutDiscount } from "@/lib/promo-resolver";
+import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
 
 type CheckoutRequestBody = {
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
 
     const resolved: Awaited<ReturnType<typeof resolveCheckoutDiscount>> = isAddon
-      ? { winner: null, attribution: null, candidates: [] }
+      ? { winner: null, attribution: null, intendedAffiliate: null, candidates: [] }
       : await resolveCheckoutDiscount({
           typedCode: typedCode.length > 0 ? typedCode : null,
           urlCode,
@@ -113,6 +113,9 @@ export async function POST(request: Request) {
         discount_code: discountCode,
         custom: {
           supabase_user_id: userId,
+          // Capture the intended affiliate even when LS can't be credited yet
+          // (pre-activation gap). order_created persists these onto the order.
+          ...affiliateCaptureCustom(resolved.intendedAffiliate),
         },
       },
       product_options: {

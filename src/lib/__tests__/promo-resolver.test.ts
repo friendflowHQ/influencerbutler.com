@@ -9,6 +9,7 @@ import {
   computeSavedCents,
   pickWinner,
   resolveAttribution,
+  resolveIntendedAffiliate,
   resolveCheckoutDiscount,
   COMPARISON_HORIZON_MONTHS,
   type CandidateCode,
@@ -31,15 +32,15 @@ vi.mock("../affiliate-lookup", async () => {
   );
   return {
     ...actual,
-    lookupAffiliateByCode: vi.fn(),
+    lookupAffiliateOwnerByCode: vi.fn(),
   };
 });
 
 import { fetchDiscountByCode } from "../lemonsqueezy-discount-lookup";
-import { lookupAffiliateByCode } from "../affiliate-lookup";
+import { lookupAffiliateOwnerByCode } from "../affiliate-lookup";
 
 const fetchMock = fetchDiscountByCode as unknown as ReturnType<typeof vi.fn>;
-const affMock = lookupAffiliateByCode as unknown as ReturnType<typeof vi.fn>;
+const affMock = lookupAffiliateOwnerByCode as unknown as ReturnType<typeof vi.fn>;
 
 function ls(partial: Partial<LsDiscount> & { code: string }): LsDiscount {
   return {
@@ -60,6 +61,7 @@ function candidate(overrides: Partial<CandidateCode> & { code: string }): Candid
     ls: lsRecord,
     isAffiliate: overrides.isAffiliate ?? false,
     lsAffiliateId: overrides.lsAffiliateId ?? null,
+    affiliateUserId: overrides.affiliateUserId ?? null,
     savedCents: overrides.savedCents ?? computeSavedCents(lsRecord, MONTHLY_PLAN),
   };
 }
@@ -234,6 +236,48 @@ describe("resolveAttribution (first-touch wins)", () => {
   });
 });
 
+describe("resolveIntendedAffiliate (capture, includes pre-activation gap)", () => {
+  it("returns null when no candidate has an affiliateUserId", () => {
+    expect(resolveIntendedAffiliate([candidate({ code: "WELCOME30" })])).toBeNull();
+  });
+
+  it("captures an UNLINKED affiliate (no lsAffiliateId yet) - the gap case", () => {
+    const intended = resolveIntendedAffiliate([
+      candidate({
+        code: "ALEX",
+        source: "url-code",
+        isAffiliate: false,
+        lsAffiliateId: null,
+        affiliateUserId: "user_alex",
+      }),
+    ]);
+    expect(intended?.affiliateUserId).toBe("user_alex");
+    expect(intended?.hasLsId).toBe(false);
+    expect(intended?.sourceCode).toBe("ALEX");
+  });
+
+  it("marks hasLsId true once the affiliate is linked", () => {
+    const intended = resolveIntendedAffiliate([
+      candidate({
+        code: "ALEX",
+        source: "url-code",
+        isAffiliate: true,
+        lsAffiliateId: "ls_alex",
+        affiliateUserId: "user_alex",
+      }),
+    ]);
+    expect(intended?.hasLsId).toBe(true);
+  });
+
+  it("first-touch: URL-sourced affiliate beats typed affiliate", () => {
+    const intended = resolveIntendedAffiliate([
+      candidate({ code: "ALEX", source: "url-code", affiliateUserId: "user_alex" }),
+      candidate({ code: "BOB", source: "typed", affiliateUserId: "user_bob" }),
+    ]);
+    expect(intended?.affiliateUserId).toBe("user_alex");
+  });
+});
+
 describe("resolveCheckoutDiscount (integration)", () => {
   beforeEach(() => {
     fetchMock.mockReset();
@@ -250,7 +294,7 @@ describe("resolveCheckoutDiscount (integration)", () => {
     });
     affMock.mockImplementation(async (code: string) => {
       if (code.toUpperCase() === "ALICE")
-        return { lsAffiliateId: "ls_alice", code: "ALICE" };
+        return { affiliateUserId: "user_alice", lsAffiliateId: "ls_alice", code: "ALICE" };
       return null;
     });
 
@@ -313,7 +357,7 @@ describe("resolveCheckoutDiscount (integration)", () => {
     });
     affMock.mockImplementation(async (code: string) => {
       if (code.toUpperCase() === "ALICE")
-        return { lsAffiliateId: "ls_alice", code: "ALICE" };
+        return { affiliateUserId: "user_alice", lsAffiliateId: "ls_alice", code: "ALICE" };
       return null;
     });
 
@@ -344,7 +388,7 @@ describe("resolveCheckoutDiscount (integration)", () => {
     });
     affMock.mockImplementation(async (code: string) => {
       if (code.toUpperCase() === "ALICE")
-        return { lsAffiliateId: "ls_alice", code: "ALICE" };
+        return { affiliateUserId: "user_alice", lsAffiliateId: "ls_alice", code: "ALICE" };
       return null;
     });
 

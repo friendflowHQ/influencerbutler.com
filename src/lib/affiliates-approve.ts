@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/admin";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
 
-const BRANDED_CODE_PERCENT_OFF = 15;
+export const BRANDED_CODE_PERCENT_OFF = 15;
 
 type ApproveClient = {
   from: (table: string) => {
@@ -77,20 +77,13 @@ async function sendApprovalEmail(params: {
       `    ${params.brandedCode}`,
       ``,
       ``,
-      `Kindly share this code wherever you please. Each customer who redeems it shall earn you a 30% recurring commission for the first twelve months of their subscription.`,
+      `This code is reserved for you, and every subscription it brings in earns you a 30% recurring commission for the customer's first twelve months.`,
+      ``,
+      ``,
+      `One request, and it matters for your earnings: please do not begin promoting it just yet. Commission can only be credited once Lemon Squeezy has activated you (step II below). Sales that arrive before then are not tracked automatically, so kindly hold off sharing until your dashboard confirms you are live. The moment it does, your ready-to-share link appears there. If you have already shared the code, do let me know and I shall make certain those early referrals are credited to you once you are activated.`,
       ``,
       ``,
     );
-    if (params.brandedShareLink) {
-      lines.push(
-        `For your convenience, a pre-filled share link (the code is already applied):`,
-        ``,
-        ``,
-        `    ${params.brandedShareLink}`,
-        ``,
-        ``,
-      );
-    }
   }
 
   lines.push(

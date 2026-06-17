@@ -1,6 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-import { appendAffRef, lookupAffiliateByCode } from "../affiliate-lookup";
+import {
+  appendAffRef,
+  lookupAffiliateByCode,
+  lookupAffiliateOwnerByCode,
+} from "../affiliate-lookup";
 
 // --- Module-level Supabase mock ------------------------------------------
 // `lookupAffiliateByCode` imports `createServerClient` from `@supabase/ssr`
@@ -29,7 +33,11 @@ vi.mock("@supabase/ssr", () => ({
   }),
 }));
 
-type LookupRow = { ls_affiliate_id?: string | null; affiliate_code?: string | null };
+type LookupRow = {
+  id?: string | null;
+  ls_affiliate_id?: string | null;
+  affiliate_code?: string | null;
+};
 
 let currentResponse: { data: LookupRow[] | null; error: unknown } = {
   data: null,
@@ -196,5 +204,61 @@ describe("lookupAffiliateByCode", () => {
     const [, value] = ilikeMock.mock.calls[ilikeMock.mock.calls.length - 1];
     expect(value).toBe("L");
     expect(value).not.toContain("%");
+  });
+});
+
+describe("lookupAffiliateOwnerByCode (capture path, includes unlinked)", () => {
+  const ORIGINAL_ENV = { ...process.env };
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
+    ilikeMock.mockClear();
+    setResponse(null, null);
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  it("returns null when the service-role key is missing", async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const result = await lookupAffiliateOwnerByCode("ALEX");
+    expect(result).toBeNull();
+    expect(ilikeMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a LINKED affiliate with its lsAffiliateId", async () => {
+    setResponse([{ id: "user_alex", ls_affiliate_id: "ls_alex", affiliate_code: "ALEX" }]);
+    const result = await lookupAffiliateOwnerByCode("ALEX");
+    expect(result).toEqual({
+      affiliateUserId: "user_alex",
+      lsAffiliateId: "ls_alex",
+      code: "ALEX",
+    });
+  });
+
+  it("returns an UNLINKED affiliate (lsAffiliateId null) - the gap case", async () => {
+    // This is exactly what lookupAffiliateByCode refuses to return; the capture
+    // path needs it so the referral can be reconciled once LS activates them.
+    setResponse([{ id: "user_alex", ls_affiliate_id: null, affiliate_code: "ALEX" }]);
+    const result = await lookupAffiliateOwnerByCode("ALEX");
+    expect(result).toEqual({
+      affiliateUserId: "user_alex",
+      lsAffiliateId: null,
+      code: "ALEX",
+    });
+  });
+
+  it("returns null when the row has no id (defensive)", async () => {
+    setResponse([{ ls_affiliate_id: "ls_alex", affiliate_code: "ALEX" }]);
+    const result = await lookupAffiliateOwnerByCode("ALEX");
+    expect(result).toBeNull();
+  });
+
+  it("returns null on no match", async () => {
+    setResponse([]);
+    const result = await lookupAffiliateOwnerByCode("NOPE");
+    expect(result).toBeNull();
   });
 });

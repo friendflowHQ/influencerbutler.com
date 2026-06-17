@@ -38,7 +38,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "affiliates.approve", label: "Approve affiliates", description: "Approve pending applications (creates their branded code and emails them).", domain: "Affiliates", risk: "normal", built: true },
   { key: "affiliates.reject", label: "Reject affiliates", description: "Reject pending applications.", domain: "Affiliates", risk: "normal", built: true },
   { key: "affiliates.link", label: "Link Lemon Squeezy affiliate", description: "Manually link a user to their Lemon Squeezy affiliate ID.", domain: "Affiliates", risk: "normal", built: true },
-  { key: "affiliates.codes.manage", label: "Manage affiliate codes", description: "Regenerate or rename an affiliate's branded discount code.", domain: "Affiliates", risk: "normal", built: false },
+  { key: "affiliates.codes.manage", label: "Manage affiliate codes", description: "Regenerate or rename an affiliate's branded discount code.", domain: "Affiliates", risk: "normal", built: true },
 
   // Billing
   { key: "billing.view", label: "View billing", description: "Look up any user's subscriptions and orders.", domain: "Billing", risk: "normal", built: false },

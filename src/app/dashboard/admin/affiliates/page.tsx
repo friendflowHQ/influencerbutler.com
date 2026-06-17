@@ -41,12 +41,66 @@ type LsAffiliate = {
   emailMatchesUserId: string | null;
 };
 
+type CodeHealthStatus =
+  | "ok"
+  | "missing-code"
+  | "missing-discount-id"
+  | "discount-not-in-ls";
+
+type UnhealthyCode = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  health: CodeHealthStatus;
+};
+
 type ReconcileResponse = {
   admin?: { email: string };
   stuck?: StuckAffiliate[];
   lsAffiliates?: LsAffiliate[];
+  unhealthyCodes?: UnhealthyCode[];
   error?: string;
 };
+
+type OwedOrder = {
+  lsOrderId: string;
+  totalCents: number;
+  currency: string | null;
+  createdAt: string | null;
+};
+
+type OwedAffiliate = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  lsAffiliateId: string;
+  orderCount: number;
+  grossCents: number;
+  owedCents: number;
+  orders: OwedOrder[];
+};
+
+type OwedResponse = {
+  admin?: { email: string };
+  commissionPercent?: number;
+  verifyAgainstLs?: boolean;
+  affiliates?: OwedAffiliate[];
+  error?: string;
+};
+
+const CODE_HEALTH_LABEL: Record<CodeHealthStatus, string> = {
+  ok: "OK",
+  "missing-code": "No branded code was ever created",
+  "missing-discount-id": "Code exists locally but no LS discount id is stored",
+  "discount-not-in-ls": "Stored discount no longer exists in Lemon Squeezy",
+};
+
+function formatCents(cents: number, currency: string | null): string {
+  const amount = (cents / 100).toFixed(2);
+  return currency ? `${amount} ${currency}` : `$${amount}`;
+}
 
 type RowState =
   | { kind: "idle" }
@@ -82,10 +136,19 @@ export default function AdminAffiliatesPage() {
   // Reconciliation (manual LS linking) state.
   const [stuck, setStuck] = useState<StuckAffiliate[]>([]);
   const [lsAffiliates, setLsAffiliates] = useState<LsAffiliate[]>([]);
+  const [unhealthy, setUnhealthy] = useState<UnhealthyCode[]>([]);
   const [reconcileLoading, setReconcileLoading] = useState(true);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
   const [linkSel, setLinkSel] = useState<Record<string, string>>({});
   const [linkRow, setLinkRow] = useState<Record<string, LinkRowState>>({});
+  const [codeRow, setCodeRow] = useState<Record<string, LinkRowState>>({});
+
+  // Owed-commissions (pre-activation gap reconciliation) state.
+  const [owed, setOwed] = useState<OwedAffiliate[]>([]);
+  const [commissionPercent, setCommissionPercent] = useState(30);
+  const [owedLoading, setOwedLoading] = useState(true);
+  const [owedError, setOwedError] = useState<string | null>(null);
+  const [owedRow, setOwedRow] = useState<Record<string, LinkRowState>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,6 +190,7 @@ export default function AdminAffiliatesPage() {
       }
       setStuck(json.stuck ?? []);
       setLsAffiliates(json.lsAffiliates ?? []);
+      setUnhealthy(json.unhealthyCodes ?? []);
     } catch (err) {
       console.error(err);
       setReconcileError("Network error loading linking data.");
@@ -135,10 +199,37 @@ export default function AdminAffiliatesPage() {
     }
   }, []);
 
+  const loadOwed = useCallback(async () => {
+    setOwedLoading(true);
+    setOwedError(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-owed", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as OwedResponse;
+      if (!res.ok) {
+        setOwedError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setOwed(json.affiliates ?? []);
+      if (typeof json.commissionPercent === "number") {
+        setCommissionPercent(json.commissionPercent);
+      }
+    } catch (err) {
+      console.error(err);
+      setOwedError("Network error loading owed commissions.");
+    } finally {
+      setOwedLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void load();
     void loadReconcile();
-  }, [load, loadReconcile]);
+    void loadOwed();
+  }, [load, loadReconcile, loadOwed]);
 
   const setRow = (userId: string, state: RowState) =>
     setRowState((prev) => ({ ...prev, [userId]: state }));
@@ -191,6 +282,79 @@ export default function AdminAffiliatesPage() {
     } catch (err) {
       console.error(err);
       setLink(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const setCode = (userId: string, state: LinkRowState) =>
+    setCodeRow((prev) => ({ ...prev, [userId]: state }));
+
+  const setOwedState = (userId: string, state: LinkRowState) =>
+    setOwedRow((prev) => ({ ...prev, [userId]: state }));
+
+  const onRegenerate = async (uc: UnhealthyCode) => {
+    if (
+      !window.confirm(
+        `Recreate the branded discount code for ${uc.fullName ?? uc.email ?? uc.userId}?\n\nThis creates a fresh discount in Lemon Squeezy and stores it on their profile. The code string may change (e.g. ALEX -> ALEX2).`,
+      )
+    ) {
+      return;
+    }
+    setCode(uc.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-regenerate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: uc.userId }),
+      });
+      const json = (await res.json()) as { error?: string; code?: string };
+      if (!res.ok) {
+        setCode(uc.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setCode(uc.userId, { kind: "success", message: `Created code ${json.code}.` });
+      setTimeout(() => {
+        void loadReconcile();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setCode(uc.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const onMarkPaid = async (aff: OwedAffiliate) => {
+    if (
+      !window.confirm(
+        `Mark ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} as paid to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nDo this ONLY after you have issued the bonus in the Lemon Squeezy dashboard. Verify these ${aff.orderCount} orders against LS first - a later refund is not reflected here. This stamps the orders reconciled so they drop off the report.`,
+      )
+    ) {
+      return;
+    }
+    setOwedState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-owed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: aff.userId,
+          orderIds: aff.orders.map((o) => o.lsOrderId),
+          amountCents: aff.owedCents,
+        }),
+      });
+      const json = (await res.json()) as { error?: string; reconciledCount?: number };
+      if (!res.ok) {
+        setOwedState(aff.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setOwedState(aff.userId, {
+        kind: "success",
+        message: `Marked ${json.reconciledCount ?? 0} orders reconciled.`,
+      });
+      setTimeout(() => {
+        void loadOwed();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setOwedState(aff.userId, { kind: "error", message: "Network error." });
     }
   };
 
@@ -486,6 +650,175 @@ export default function AdminAffiliatesPage() {
                       pending review on LS&apos;s side, which we can&apos;t speed up.
                     </p>
                   ) : null}
+
+                  {state.kind === "success" ? (
+                    <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                  {state.kind === "error" ? (
+                    <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-4 border-t border-slate-200 pt-8">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+            Admin · Owed commissions
+          </p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+            Back-pay referrals from the pre-activation gap
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Orders referred with an affiliate&apos;s code BEFORE Lemon Squeezy activated them earn no
+            commission in LS (LS can&apos;t back-date one). They are captured here at{" "}
+            {commissionPercent}% of order value once the affiliate is linked. Pay each owed amount as
+            a one-time bonus in the Lemon Squeezy dashboard, then click &quot;Mark paid&quot; so it
+            drops off this list. Verify the orders against LS first: a later refund is not reflected
+            here.
+          </p>
+        </div>
+
+        {owedLoading ? (
+          <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
+        ) : owedError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+            {owedError}
+          </div>
+        ) : owed.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+            No owed gap-window commissions. ✨
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {owed.map((aff) => {
+              const state = owedRow[aff.userId] ?? { kind: "idle" };
+              const working = state.kind === "working";
+              const currency = aff.orders[0]?.currency ?? null;
+              return (
+                <li
+                  key={aff.userId}
+                  className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 sm:p-6 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900 break-words">
+                        {aff.fullName ?? "(no name)"}
+                      </p>
+                      <p className="text-sm text-slate-600 break-all">{aff.email ?? "(no email)"}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
+                        {aff.orderCount} order{aff.orderCount === 1 ? "" : "s"} ·{" "}
+                        {formatCents(aff.grossCents, currency)} gross · user_id{" "}
+                        {aff.userId.slice(0, 8)}…
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <p className="text-lg font-bold text-indigo-700">
+                        {formatCents(aff.owedCents, currency)} owed
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onMarkPaid(aff)}
+                        disabled={working}
+                        className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                      >
+                        {working ? "Saving…" : "Mark paid"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
+                      {aff.orderCount} captured order{aff.orderCount === 1 ? "" : "s"}
+                    </summary>
+                    <ul className="mt-2 space-y-1 rounded-lg bg-white/70 p-3 text-xs text-slate-600">
+                      {aff.orders.map((o) => (
+                        <li key={o.lsOrderId} className="flex flex-wrap justify-between gap-2">
+                          <span className="break-all">Order {o.lsOrderId}</span>
+                          <span>
+                            {formatCents(o.totalCents, o.currency)}
+                            {o.createdAt ? ` · ${formatDate(o.createdAt)}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+
+                  {state.kind === "success" ? (
+                    <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                  {state.kind === "error" ? (
+                    <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                      {state.message}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-4 border-t border-slate-200 pt-8">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+            Admin · Code health
+          </p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+            Affiliates with a broken branded code
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Branded-code creation at approval is non-fatal, so an affiliate can end up with no
+            working code in Lemon Squeezy. These need a fresh code before they promote.
+          </p>
+        </div>
+
+        {reconcileLoading ? (
+          <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
+        ) : unhealthy.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+            Every affiliate&apos;s branded code checks out. ✨
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {unhealthy.map((uc) => {
+              const state = codeRow[uc.userId] ?? { kind: "idle" };
+              const working = state.kind === "working";
+              return (
+                <li
+                  key={uc.userId}
+                  className="rounded-2xl border border-red-200 bg-red-50/40 p-4 sm:p-6 shadow-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900 break-words">
+                        {uc.fullName ?? "(no name)"}
+                      </p>
+                      <p className="text-sm text-slate-600 break-all">{uc.email ?? "(no email)"}</p>
+                      <p className="mt-1 text-xs text-red-700">
+                        {uc.affiliateCode ? `Code ${uc.affiliateCode}: ` : ""}
+                        {CODE_HEALTH_LABEL[uc.health]}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRegenerate(uc)}
+                      disabled={working}
+                      className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                    >
+                      {working ? "Creating…" : "Regenerate code"}
+                    </button>
+                  </div>
 
                   {state.kind === "success" ? (
                     <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

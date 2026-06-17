@@ -17,6 +17,9 @@ type LsWebhookPayload = {
     custom_data?: {
       supabase_user_id?: string;
       welcome_token?: string;
+      ref_affiliate_user_id?: string;
+      ref_affiliate_code?: string;
+      ref_attribution_status?: string;
     };
   };
   data?: {
@@ -480,6 +483,18 @@ export async function POST(request: Request) {
   // key to the buyer on the thank-you page without requiring auth.
   // See src/lib/welcome-token.ts.
   const welcomeToken = getString(payload.meta?.custom_data?.welcome_token);
+  // Intended affiliate captured at checkout (set by the checkout routes via
+  // affiliateCaptureCustom). Persisted on order_created so a referral made
+  // during the pre-LS-activation gap can be reconciled and paid once the
+  // affiliate goes live. status 'pending' = LS did NOT credit (owe a manual
+  // bonus); 'live' = aff_ref already credited LS (informational only).
+  const refAffiliateUserId = getString(payload.meta?.custom_data?.ref_affiliate_user_id);
+  const refAffiliateCode = getString(payload.meta?.custom_data?.ref_affiliate_code);
+  const refAttributionStatusRaw = getString(payload.meta?.custom_data?.ref_attribution_status);
+  const refAttributionStatus =
+    refAttributionStatusRaw === "live" || refAttributionStatusRaw === "pending"
+      ? refAttributionStatusRaw
+      : null;
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
@@ -517,6 +532,11 @@ export async function POST(request: Request) {
             // (manual LS dashboard checkouts won't), so we don't blank out a
             // previously-stamped token on a re-delivery.
             ...(welcomeToken ? { welcome_token: welcomeToken } : {}),
+            // Same null-guard for the captured affiliate: only write when this
+            // delivery carries it, so a re-delivery never blanks a prior value.
+            ...(refAffiliateUserId ? { ref_affiliate_user_id: refAffiliateUserId } : {}),
+            ...(refAffiliateCode ? { ref_affiliate_code: refAffiliateCode } : {}),
+            ...(refAttributionStatus ? { attribution_status: refAttributionStatus } : {}),
           },
           { onConflict: "ls_order_id" },
         ),

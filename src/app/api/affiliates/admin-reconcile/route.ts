@@ -48,6 +48,26 @@ type StoreAffiliate = {
   status: string;
 };
 
+type CodeHealth = "ok" | "missing-code" | "missing-discount-id" | "discount-not-in-ls";
+
+/**
+ * Verifies a branded discount still exists in Lemon Squeezy. Branded-code
+ * creation at approval is non-fatal (see affiliates-approve.ts), so a failed
+ * POST /discounts leaves the affiliate with no working code and no error - this
+ * is how we detect that silent failure after the fact.
+ */
+async function discountExistsInLs(discountId: string): Promise<boolean> {
+  try {
+    const res = await lsApi(`/discounts/${encodeURIComponent(discountId)}`);
+    return res.ok;
+  } catch (error) {
+    console.error("admin-reconcile: discount existence check failed", discountId, error);
+    // Treat a transient API error as "exists" so we don't false-flag healthy
+    // codes; a genuinely missing discount returns a clean 404 (res.ok false).
+    return true;
+  }
+}
+
 async function listStoreAffiliates(storeId: string): Promise<StoreAffiliate[]> {
   const out: StoreAffiliate[] = [];
   const pageSize = 100;
@@ -97,7 +117,7 @@ export async function GET(request: Request) {
     // Approved affiliates and their LS link state.
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("id,email,affiliate_code,ls_affiliate_id")
+      .select("id,email,affiliate_code,ls_affiliate_id,ls_affiliate_discount_id")
       .eq("is_affiliate", true);
 
     if (profilesErr) {
@@ -185,10 +205,53 @@ export async function GET(request: Request) {
       };
     });
 
+    // Code-health pass: confirm each affiliate's branded code was actually
+    // created in LS and the discount still exists. Catches the silent
+    // non-fatal failure path in affiliates-approve.ts.
+    const codeHealth = await Promise.all(
+      (profiles ?? []).map(async (row) => {
+        const userId = typeof row.id === "string" ? row.id : null;
+        if (!userId) return null;
+        const affiliateCode =
+          typeof row.affiliate_code === "string" && row.affiliate_code.length > 0
+            ? row.affiliate_code
+            : null;
+        const discountId =
+          typeof row.ls_affiliate_discount_id === "string" &&
+          row.ls_affiliate_discount_id.length > 0
+            ? row.ls_affiliate_discount_id
+            : null;
+
+        let health: CodeHealth;
+        if (!affiliateCode) {
+          health = "missing-code";
+        } else if (!discountId) {
+          health = "missing-discount-id";
+        } else if (!(await discountExistsInLs(discountId))) {
+          health = "discount-not-in-ls";
+        } else {
+          health = "ok";
+        }
+
+        return {
+          userId,
+          email: typeof row.email === "string" ? row.email : null,
+          fullName: appByUser.get(userId)?.fullName ?? null,
+          affiliateCode,
+          health,
+        };
+      }),
+    );
+
+    const unhealthyCodes = codeHealth.filter(
+      (c): c is NonNullable<typeof c> => c !== null && c.health !== "ok",
+    );
+
     return NextResponse.json({
       admin: { email: actor.email },
       stuck,
       lsAffiliates,
+      unhealthyCodes,
     });
   } catch (error) {
     console.error("admin-reconcile failed", error);
