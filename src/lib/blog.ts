@@ -7,7 +7,6 @@
  * Dependencies: node:fs/promises, node:path.
  */
 import { readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import path from "node:path";
 
 export type BlogManifestEntry = {
@@ -80,21 +79,17 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Best Pinterest image for a post: the vertical pin (entry.pinImage) when that
-// file actually exists in public/, otherwise the landscape hero image. The
-// manifest pre-wires every post's pinImage to /assets/blog/pins/<slug>.png, but
-// those vertical pins are generated separately and may not exist yet, so we
-// verify the file is present before handing it to Pinterest. Returns "" when
-// neither image exists.
+// Best Pinterest image for a post: the vertical pin (entry.pinImage) when set,
+// otherwise the landscape hero image. Every post's vertical pin is committed
+// alongside its manifest entry, so we trust pinImage without a runtime
+// filesystem check. A dynamic fs lookup here (existsSync on process.cwd()/
+// public/...) would force Next's file tracer to bundle the whole public/ folder
+// into the blog/[slug] serverless function and exceed Vercel's 300mb limit.
 export function resolvePinImage(
   pinImage: string | undefined,
   heroImage: string,
 ): string {
-  if (pinImage) {
-    const abs = path.join(process.cwd(), "public", pinImage.replace(/^\//, ""));
-    if (existsSync(abs)) return pinImage;
-  }
-  return heroImage;
+  return pinImage || heroImage;
 }
 
 // A post is "published" once its date has arrived (date <= today, UTC).
