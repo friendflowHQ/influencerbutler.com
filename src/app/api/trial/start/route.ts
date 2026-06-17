@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
 import { DESKTOP_APP_DOWNLOAD_URL } from "@/lib/welcome-copy";
+import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,7 +70,11 @@ export async function GET(request: Request) {
   });
 
   const details = collectDetails(request);
+  const geo = readGeo(h);
+  const source = new URL(request.url).searchParams.get("src");
   after(() => sendNotification(details));
+  // Record the click for the public recent-activity widget (best-effort).
+  after(() => logTrialClickActivity({ geo, source }));
 
   return redirect;
 }

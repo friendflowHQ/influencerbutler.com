@@ -19,6 +19,7 @@ export type PermissionDomain =
   | "Users"
   | "Community"
   | "Catalogue"
+  | "Marketing"
   | "Staff";
 
 export type PermissionDef = {
@@ -68,6 +69,9 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "catalogue.view", label: "View catalogue harvest", description: "See harvest status and history.", domain: "Catalogue", risk: "normal", built: true },
   { key: "catalogue.trigger", label: "Trigger catalogue harvest", description: "Kick off a CC / SPCC catalogue harvest.", domain: "Catalogue", risk: "normal", built: true },
 
+  // Marketing
+  { key: "activity.manage", label: "Manage recent-activity widget", description: "Configure the social-proof popup (window, count, on/off) and hide specific events.", domain: "Marketing", risk: "normal", built: true },
+
   // Staff (super-admin only)
   { key: "staff.manage", label: "Manage assistants", description: "Invite assistants and set their permissions. Super-admin only.", domain: "Staff", risk: "destructive", built: true, adminOnly: true },
 ] as const;
@@ -105,5 +109,6 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Users",
   "Community",
   "Catalogue",
+  "Marketing",
   "Staff",
 ];

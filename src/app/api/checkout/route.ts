@@ -11,6 +11,7 @@ import {
 } from "@/lib/promo";
 import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
+import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
 
 type CheckoutRequestBody = {
   plan?: string;
@@ -106,6 +107,11 @@ export async function POST(request: Request) {
 
     const siteUrl =
       process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+
+    // Stash the buyer's approximate location for the recent-activity widget,
+    // keyed by user id (authed checkout carries no welcome_token). The
+    // order_created webhook reads it back. Best-effort, fire-and-forget.
+    void upsertCheckoutGeo(`user:${userId}`, readGeo(request.headers));
 
     const checkoutAttributes: Record<string, unknown> = {
       checkout_data: {

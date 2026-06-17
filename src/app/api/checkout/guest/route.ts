@@ -15,6 +15,7 @@ import {
 } from "@/lib/promo";
 import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
+import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
 
 type LsCheckoutResponse = {
   data?: {
@@ -139,6 +140,12 @@ export async function GET(request: Request) {
     // as custom_data so the /welcome page can identify the buyer without auth.
     // See src/lib/welcome-token.ts.
     const welcomeToken = generateWelcomeToken();
+
+    // Stash the buyer's approximate location now (we have their Vercel geo here),
+    // keyed by welcome_token, so the order_created webhook - a server-to-server
+    // call from Lemon Squeezy with no visitor geo - can label the purchase in the
+    // recent-activity widget. Best-effort, fire-and-forget.
+    void upsertCheckoutGeo(welcomeToken, readGeo(request.headers));
 
     const checkoutData: Record<string, unknown> = {
       custom: {

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
+import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
 
@@ -552,6 +553,20 @@ export async function POST(request: Request) {
             .is("ls_customer_id", null),
         );
       }
+
+      // Record the purchase for the public recent-activity widget. Best-effort
+      // and non-throwing so it can never break order processing. Location comes
+      // from the geo we stashed at checkout (welcome_token for guests, user:<id>
+      // for authed buyers); first name from the Lemon Squeezy order.
+      const firstItem = attrs.first_order_item as
+        | { variant_name?: unknown; product_name?: unknown }
+        | undefined;
+      void logPurchaseActivity({
+        geoKey: welcomeToken ?? (directUserId ? `user:${directUserId}` : null),
+        firstName: firstNameFrom(getString(attrs.user_name)),
+        planLabel:
+          getString(firstItem?.variant_name) ?? getString(firstItem?.product_name),
+      });
     },
 
     // Mirror LS refunds onto orders.status so the owed-commissions report
