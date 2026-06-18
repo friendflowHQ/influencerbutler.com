@@ -203,7 +203,7 @@ export default function PricingCardsClient({
               }
               trialLabel="3-day free trial included - cancel before day 3 to avoid charges."
               features={[...TIER_FEATURES[tier]]}
-              cta="Start free trial"
+              cta="Buy Now!"
               loading={loadingPlan === plan}
               error={
                 errorPlan === plan
