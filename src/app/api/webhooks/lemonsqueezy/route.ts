@@ -640,6 +640,15 @@ export async function POST(request: Request) {
         if (trialDiscounts) {
           Object.assign(basePayload, trialDiscounts);
         }
+      } else if (status === "active" && !isAddonSubscription) {
+        // Direct Pro subscriber: paid from day one, no free trial. Anchor the
+        // Pro welcome + nurture sequence (sendProEmails in the affiliate-funnel
+        // cron) so they get a "thanks for subscribing" track instead of the
+        // trial sequence. Set only at creation time and only for status
+        // 'active', so a trial that later converts to active is NOT pulled into
+        // this track (it already received the trial emails). Add-on
+        // subscriptions (Daily Deals Workspace) are also 'active' but excluded.
+        basePayload.pro_started_at = new Date().toISOString();
       }
 
       await assertWrite(

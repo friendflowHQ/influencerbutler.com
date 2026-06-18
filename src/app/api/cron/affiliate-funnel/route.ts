@@ -4,6 +4,7 @@ import { approveAffiliate } from "@/lib/affiliates-approve";
 import { sendConversionEmail, type ConversionTier } from "@/lib/conversion-emails";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
+import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -417,6 +418,114 @@ function readPercentEnv(envVar: string, fallback: number): number {
   return parsed;
 }
 
+// --- Step D: pro welcome emails (direct subscribers) ----------------------
+
+// Customers who subscribed straight to a paid plan (LS status 'active', no
+// free trial). The webhook anchors them with subscriptions.pro_started_at;
+// here we send the welcome + nurture sequence. Separate from the trial track
+// so direct subscribers never get "your trial is live" / "trial ends today".
+
+const PRO_TIERS: ReadonlyArray<{
+  tier: ProTier;
+  thresholdMs: number;
+  sentCol: string;
+}> = [
+  // Most-aged first so we send the highest matured tier that's still pending.
+  { tier: "day10", thresholdMs: 240 * 60 * 60 * 1000, sentCol: "pro_email_day10_sent_at" },
+  { tier: "day5", thresholdMs: 120 * 60 * 60 * 1000, sentCol: "pro_email_day5_sent_at" },
+  { tier: "day2", thresholdMs: 48 * 60 * 60 * 1000, sentCol: "pro_email_day2_sent_at" },
+  { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "pro_email_day0_sent_at" },
+];
+
+type ProSubRow = {
+  user_id: string;
+  status: string | null;
+  plan_name: string | null;
+  pro_started_at: string | null;
+  pro_email_day0_sent_at: string | null;
+  pro_email_day2_sent_at: string | null;
+  pro_email_day5_sent_at: string | null;
+  pro_email_day10_sent_at: string | null;
+};
+
+function selectProTier(row: ProSubRow): (typeof PRO_TIERS)[number] | null {
+  if (!row.pro_started_at) return null;
+  const startedAt = new Date(row.pro_started_at).getTime();
+  if (!Number.isFinite(startedAt)) return null;
+  const age = Date.now() - startedAt;
+
+  for (const t of PRO_TIERS) {
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof ProSubRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, number>> {
+  const counts: Record<ProTier, number> = { day0: 0, day2: 0, day5: 0, day10: 0 };
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const subscriptionUrl = `${siteUrl.replace(/\/$/, "")}/dashboard/subscription`;
+
+  // Pull direct-subscriber rows that are at least day0-old (5 min).
+  const oldest = new Date(Date.now() - PRO_TIERS[PRO_TIERS.length - 1].thresholdMs).toISOString();
+
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select(
+      "user_id,status,plan_name,pro_started_at,pro_email_day0_sent_at,pro_email_day2_sent_at,pro_email_day5_sent_at,pro_email_day10_sent_at",
+    )
+    .lte("pro_started_at", oldest)
+    .limit(PER_RUN_LIMIT);
+
+  if (error) {
+    console.error("cron: pro welcome query failed", error);
+    return counts;
+  }
+
+  const rows = (data ?? []) as ProSubRow[];
+
+  for (const row of rows) {
+    // Stop nurturing once the subscription is no longer active (cancelled,
+    // past_due, paused). A paid plan that lapses shouldn't keep getting
+    // "thanks for subscribing" follow-ups.
+    if (row.status !== "active") continue;
+
+    const tier = selectProTier(row);
+    if (!tier) continue;
+
+    const contact = await fetchUserContact(supabase, row.user_id);
+    if (!contact) continue;
+
+    const sent = await sendProEmail({
+      tier: tier.tier,
+      to: contact.email,
+      name: contact.name,
+      planName: row.plan_name,
+      subscriptionUrl,
+    });
+
+    if (!sent) continue;
+
+    const { error: updateError } = await supabase
+      .from("subscriptions")
+      .update({ [tier.sentCol]: new Date().toISOString() })
+      .eq("user_id", row.user_id);
+
+    if (updateError) {
+      console.error("cron: pro welcome update failed", { userId: row.user_id, tier: tier.tier, updateError });
+      continue;
+    }
+
+    counts[tier.tier] += 1;
+  }
+
+  return counts;
+}
+
 // --- Handler --------------------------------------------------------------
 
 export async function GET(request: Request) {
@@ -432,11 +541,13 @@ export async function GET(request: Request) {
   const approval = await autoApprovePending(supabase);
   const emails = await sendTierEmails(supabase);
   const trial = await sendTrialEmails(supabase);
+  const pro = await sendProEmails(supabase);
 
   return NextResponse.json({
     ok: true,
     approval,
     emails,
     trial,
+    pro,
   });
 }
