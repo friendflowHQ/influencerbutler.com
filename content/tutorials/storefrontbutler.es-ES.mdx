@@ -46,6 +46,7 @@ Las filas se guardan en la caché del espacio de trabajo preseed. Los espacios d
 - **La sincronización parece congelada en una sección**: Amazon está limitando peticiones. Storefront Butler reintenta con backoff; dale un minuto antes de pulsar Detener.
 - **Filas enriquecidas sin precios**: normalmente significa que tu clave de Creators API falta o ha caducado. Abre **API Integrations** y vuelve a verificarla.
 - **Un producto aparece en la columna Marketplaces pero en realidad no está a la venta ahí**: la columna lista todos los marketplaces de Amazon que tienen el listado, y tacha los que están agotados ahora mismo (la exportación CSV los marca como "(out of stock)"). Un código tachado significa que el listado sigue existiendo en ese marketplace pero no tiene una oferta comprable en este momento, así que trata sólo los códigos sin tachar como realmente a la venta. Esto también vale para los marketplaces internacionales.
+- **La columna Estado del ASIN muestra "Pendiente"**: ese estado de disponibilidad (En stock / Agotado / No disponible) se lee desde la API de Creators y solo se rellena tras el enriquecimiento. Haz clic en **Update Pricing & Deals** para actualizarlo y luego usa el filtro **Estado del ASIN** de la parte superior de la tabla para acotar, por ejemplo, solo a los productos agotados. Las filas sin ASIN (algunas listas de ideas y fotos) muestran un guion en lugar de una etiqueta.
 
 ## Relacionado
 

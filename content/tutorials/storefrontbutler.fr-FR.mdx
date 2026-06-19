@@ -46,6 +46,7 @@ Les lignes atterrissent dans le cache du workspace preseed. Les espaces en aval 
 - **La synchronisation semble figée sur une section**: Amazon vous limite. Storefront Butler retente avec backoff ; laissez-lui une minute avant de cliquer sur Arrêter.
 - **Lignes enrichies sans prix**: généralement votre clé Creators API est absente ou expirée. Ouvrez **API Integrations** et revérifiez-la.
 - **Un produit apparaît dans la colonne Marketplaces mais n'est pas vraiment en vente là-bas**: la colonne liste chaque marketplace Amazon qui propose la fiche, et barre ceux qui sont en rupture de stock pour le moment (l'export CSV les marque "(out of stock)"). Un code barré signifie que la fiche existe toujours sur ce marketplace mais n'a aucune offre achetable en ce moment ; ne considérez donc comme réellement en vente que les codes non barrés. Cela vaut aussi pour les marketplaces internationaux.
+- **La colonne Statut ASIN affiche "En attente"**: ce statut de disponibilité (En stock / En rupture de stock / Indisponible) provient de l'API Creators et ne se remplit qu'après l'enrichissement. Cliquez sur **Update Pricing & Deals** pour l'actualiser, puis utilisez le filtre **Statut ASIN** en haut du tableau pour restreindre, par exemple, aux seuls produits en rupture de stock. Les lignes sans ASIN (certaines listes d'idées et photos) affichent un tiret au lieu d'une étiquette.
 
 ## Relié
 
