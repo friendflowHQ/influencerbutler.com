@@ -1,7 +1,8 @@
 import Link from "next/link";
 import LicenseKeyLoader from "@/components/dashboard/LicenseKeyLoader";
 import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
-import { WELCOME_COPY, DESKTOP_APP_DOWNLOAD_URL, type WelcomeTier } from "@/lib/welcome-copy";
+import DownloadButtons from "@/components/welcome/DownloadButtons";
+import { WELCOME_COPY, type WelcomeTier } from "@/lib/welcome-copy";
 
 type Props = {
   tier: WelcomeTier;
@@ -23,19 +24,16 @@ export default function WelcomeTierContent({ tier }: Props) {
       </h1>
       <p className="mt-3 text-sm text-slate-600 sm:text-base">{copy.subhead}</p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <a
-          href={DESKTOP_APP_DOWNLOAD_URL}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
-        >
-          Download the desktop app
-        </a>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
-        >
-          Go to dashboard
-        </Link>
+      <div className="mt-8">
+        <DownloadButtons source={`welcome-${tier}`} />
+        <div className="mt-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
+          >
+            Go to dashboard
+          </Link>
+        </div>
       </div>
 
       <WindowsSmartScreenGuide />

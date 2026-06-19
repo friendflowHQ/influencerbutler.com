@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
-import { DESKTOP_APP_DOWNLOAD_URL } from "@/lib/welcome-copy";
+import DownloadButtons from "@/components/welcome/DownloadButtons";
 
 type LicenseStatus =
   | { status: "loading" }
@@ -140,20 +140,16 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
         below.
       </p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <a
-          href={DESKTOP_APP_DOWNLOAD_URL}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
-        >
-          <DownloadIcon />
-          Download the desktop app
-        </a>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
-        >
-          Go to dashboard
-        </Link>
+      <div className="mt-8">
+        <DownloadButtons source="welcome-guest" />
+        <div className="mt-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
+          >
+            Go to dashboard
+          </Link>
+        </div>
       </div>
 
       <WindowsSmartScreenGuide />
@@ -347,18 +343,6 @@ function CheckIcon() {
   return (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"
-      />
     </svg>
   );
 }

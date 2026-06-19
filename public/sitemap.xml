@@ -8,7 +8,7 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/blog</loc>
-    <lastmod>2026-06-18</lastmod>
+    <lastmod>2026-06-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -99,6 +99,12 @@
   <url>
     <loc>https://www.influencerbutler.com/blog/prime-day-2026-creator-playbook</loc>
     <lastmod>2026-06-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/blog/prime-day-storefront-checklist</loc>
+    <lastmod>2026-06-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

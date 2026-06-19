@@ -7,7 +7,9 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
 
-const DOWNLOAD_URL = "https://dl.influencerbutler.com";
+// Sidebar is cramped, so the single button points at the /download chooser page
+// where the user picks Windows or Mac, rather than stacking platform buttons.
+const DOWNLOAD_URL = "/download";
 
 type SidebarProps = {
   email: string;

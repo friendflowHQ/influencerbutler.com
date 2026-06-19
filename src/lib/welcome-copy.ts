@@ -102,4 +102,21 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
   },
 };
 
-export const DESKTOP_APP_DOWNLOAD_URL = "https://dl.influencerbutler.com";
+// Bump this on each desktop release. The Mac installer filenames are
+// version-pinned (electron-builder writes InfluencerButler-${version}-${arch}.dmg),
+// so a release bump is a one-line change here.
+export const DESKTOP_APP_VERSION = "1.0.31";
+
+// Windows installer host. NOTE: this host redirects *everything* to the Windows
+// .exe, so never point a Mac button at it.
+export const WINDOWS_DOWNLOAD_URL = "https://dl.influencerbutler.com";
+
+// Mac installers live on a different host than Windows (the desktop app's
+// release feed). Apple Silicon is arm64, Intel is x64.
+export const MAC_RELEASES_BASE =
+  "https://influencerbutler.influencerbutler.com/dcb/releases";
+export const MAC_ARM_DOWNLOAD_URL = `${MAC_RELEASES_BASE}/InfluencerButler-${DESKTOP_APP_VERSION}-arm64.dmg`;
+export const MAC_INTEL_DOWNLOAD_URL = `${MAC_RELEASES_BASE}/InfluencerButler-${DESKTOP_APP_VERSION}-x64.dmg`;
+
+// Back-compat alias: existing imports of DESKTOP_APP_DOWNLOAD_URL get Windows.
+export const DESKTOP_APP_DOWNLOAD_URL = WINDOWS_DOWNLOAD_URL;

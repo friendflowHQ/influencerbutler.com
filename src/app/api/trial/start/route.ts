@@ -1,6 +1,10 @@
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
-import { DESKTOP_APP_DOWNLOAD_URL } from "@/lib/welcome-copy";
+import {
+  WINDOWS_DOWNLOAD_URL,
+  MAC_ARM_DOWNLOAD_URL,
+  MAC_INTEL_DOWNLOAD_URL,
+} from "@/lib/welcome-copy";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
@@ -26,8 +30,16 @@ export async function GET(request: Request) {
   const userAgent = h.get("user-agent");
 
   // Redirect happens no matter what. Build it first so every early return
-  // still sends the visitor where they expect to go.
-  const redirect = NextResponse.redirect(DESKTOP_APP_DOWNLOAD_URL, 302);
+  // still sends the visitor where they expect to go. The destination depends
+  // on the requested/detected OS so Mac users no longer land on the Windows
+  // .exe (see resolveDownloadTarget).
+  const requestUrl = new URL(request.url);
+  const { target: downloadTarget, os: resolvedOs } = resolveDownloadTarget(
+    requestUrl.searchParams.get("os"),
+    userAgent,
+    publicBaseUrl(h, requestUrl.origin),
+  );
+  const redirect = NextResponse.redirect(downloadTarget, 302);
   // Never let Vercel's CDN cache the 302 - a cached redirect would skip this
   // function on later clicks and suppress every future notification.
   redirect.headers.set("Cache-Control", "no-store");
@@ -69,9 +81,9 @@ export async function GET(request: Request) {
     maxAge: DEDUP_MAX_AGE_SECONDS,
   });
 
-  const details = collectDetails(request);
+  const details = { ...collectDetails(request), os: resolvedOs };
   const geo = readGeo(h);
-  const source = new URL(request.url).searchParams.get("src");
+  const source = requestUrl.searchParams.get("src");
   after(() => sendNotification(details));
   // Record the click for the public recent-activity widget (best-effort).
   after(() => logTrialClickActivity({ geo, source }));
@@ -98,6 +110,49 @@ function isPrefetchRequest(h: Headers): boolean {
   return false;
 }
 
+// Behind Vercel's proxy, new URL(request.url).origin can be an internal host,
+// so prefer the forwarded host/proto when building the /download redirect.
+function publicBaseUrl(h: Headers, fallbackOrigin: string): string {
+  const host = h.get("x-forwarded-host") || h.get("host");
+  if (!host) return fallbackOrigin;
+  const proto = h.get("x-forwarded-proto") || "https";
+  return `${proto}://${host}`;
+}
+
+// Picks where the visitor is sent based on an explicit ?os= param (used by the
+// real download buttons, which know exactly which file they want) or, when
+// absent, the User-Agent. The UA reliably tells us the OS but NOT the Mac CPU
+// architecture, so Mac visitors without an explicit choice go to the /download
+// chooser page rather than guessing arm64 vs x64. Windows stays a direct .exe.
+function resolveDownloadTarget(
+  osParam: string | null,
+  userAgent: string | null,
+  origin: string,
+): { target: string; os: string } {
+  switch (osParam) {
+    case "win":
+      return { target: WINDOWS_DOWNLOAD_URL, os: "windows (explicit)" };
+    case "mac-arm":
+      return { target: MAC_ARM_DOWNLOAD_URL, os: "mac apple silicon (explicit)" };
+    case "mac-intel":
+      return { target: MAC_INTEL_DOWNLOAD_URL, os: "mac intel (explicit)" };
+  }
+
+  const ua = (userAgent || "").toLowerCase();
+  const isWindows = ua.includes("windows") || ua.includes("win64") || ua.includes("win32");
+  if (isWindows) {
+    return { target: WINDOWS_DOWNLOAD_URL, os: "windows (detected)" };
+  }
+
+  const isMac = ua.includes("macintosh") || ua.includes("mac os x");
+  // Mac and every non-Windows visitor get the chooser so they can pick the
+  // right build instead of downloading a Windows installer they can't run.
+  return {
+    target: `${origin}/download`,
+    os: isMac ? "mac (detected, chooser)" : "non-windows (chooser)",
+  };
+}
+
 type ClickDetails = {
   ip: string;
   city: string;
@@ -109,6 +164,7 @@ type ClickDetails = {
   referrer: string;
   source: string;
   language: string;
+  os: string;
 };
 
 function firstValue(raw: string | null): string {
@@ -117,7 +173,7 @@ function firstValue(raw: string | null): string {
   return first && first.length > 0 ? first : "unknown";
 }
 
-function collectDetails(request: Request): ClickDetails {
+function collectDetails(request: Request): Omit<ClickDetails, "os"> {
   const h = request.headers;
   const url = new URL(request.url);
   const lat = h.get("x-vercel-ip-latitude");
@@ -184,6 +240,7 @@ async function sendNotification(d: ClickDetails): Promise<void> {
           ``,
           `Clicked from page: ${d.referrer}`,
           `Button / source tag: ${d.source}`,
+          `Sent to download for: ${d.os}`,
           `Device / browser: ${d.device}`,
           `Language: ${d.language}`,
         ].join("\n"),

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import DownloadButtons from "@/components/welcome/DownloadButtons";
 
 export type LicenseKey = {
   key: string;
@@ -15,8 +16,6 @@ type Props = {
   licenseKey: LicenseKey | null;
   loading?: boolean;
 };
-
-const DOWNLOAD_URL = "https://dl.influencerbutler.com";
 
 export default function LicenseKeyDisplay({ variant, licenseKey, loading = false }: Props) {
   const [revealed, setRevealed] = useState(false);
@@ -79,13 +78,7 @@ export default function LicenseKeyDisplay({ variant, licenseKey, loading = false
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
             </div>
-            <a
-              href={DOWNLOAD_URL}
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              <DownloadIcon />
-              Download app
-            </a>
+            <DownloadButtons source="dashboard-card" size="md" className="mt-3" />
           </>
         ) : (
           <p className="mt-2 text-sm text-slate-600">
@@ -151,13 +144,7 @@ export default function LicenseKeyDisplay({ variant, licenseKey, loading = false
         <p className="mt-1 text-sm text-slate-600">
           Install Influencer Butler on your computer, then paste your license key to activate.
         </p>
-        <a
-          href={DOWNLOAD_URL}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#ea580c]"
-        >
-          <DownloadIcon />
-          Download the desktop app
-        </a>
+        <DownloadButtons source="dashboard-panel" size="md" className="mt-3" />
       </div>
     </section>
   );
@@ -206,14 +193,6 @@ function CheckIcon() {
   return (
     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
     </svg>
   );
 }

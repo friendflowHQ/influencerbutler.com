@@ -23,7 +23,8 @@ type ProVars = {
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
 const DOCS_URL = "https://www.influencerbutler.com/docs";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
-const DOWNLOAD_URL = "https://dl.influencerbutler.com";
+// Chooser page so Mac recipients get the right build, not the Windows .exe.
+const DOWNLOAD_URL = "https://www.influencerbutler.com/download";
 
 const COPY: Record<ProTier, TierCopy> = {
   day0: {

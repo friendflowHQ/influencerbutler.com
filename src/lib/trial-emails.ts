@@ -41,7 +41,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         `Welcome aboard - your 3-day free trial is active.`,
         ``,
         `Three quick steps to get value today:`,
-        `  1. Install the desktop app: https://dl.influencerbutler.com`,
+        `  1. Install the desktop app: https://www.influencerbutler.com/download`,
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Connect your first creator account and schedule a post`,
         ``,
