@@ -139,6 +139,19 @@ When an upload fails, Video Butler records why: an Amazon compliance rejection, 
 
 Distinct from re-upload: this scans your storefront, applies your filter rules (views floor, age window), and produces a **delete candidate list**. You review and approve before anything goes. Useful for pruning videos that performed under target so they stop pulling down the average.
 
+## Delete + store videos with broken products
+
+Sometimes a video can't stay live: its product went out of stock, or it lost its product tag entirely. The **Delete + store: unavailable / untagged** run mode removes only those videos and saves each one to the **Deleted from Amazon** tab, so you can re-upload it later once the product is back or after you re-tag it.
+
+Pick it from **Run mode**, then choose your rules:
+
+- **Delete videos with no tagged products**: videos that currently have zero products attached.
+- **Delete videos whose products are all unavailable**: videos where every tagged product fails the stock check.
+- **Protect sponsored (#ad) videos**: skip anything tagged #ad, so brand-deal content is never removed.
+- **Protect videos with recent commissions**: skip videos whose products earned recently.
+
+It is fail-safe: a video is deleted only when its products are confirmed unavailable (or it has none). Anything Video Butler can't confirm is left in place. Every deleted video is downloaded first, so **Re-load selected** on the Deleted from Amazon tab puts it back whenever you're ready.
+
 ## The "Recently deleted" recovery flow
 
 The bottom panel lists videos you've deleted (within Amazon's recovery window) with a **Re-load selected** button. If a delete pass removed too much, you can recover from this list - no need to re-edit from scratch.

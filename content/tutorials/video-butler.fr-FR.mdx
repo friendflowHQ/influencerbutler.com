@@ -139,6 +139,19 @@ Quand un envoi échoue, Video Butler note pourquoi : un refus de conformité Ama
 
 Différent du re-upload : ça scanne votre boutique, applique vos règles de filtre (plancher de vues, fenêtre d'âge) et produit une **liste de candidates à supprimer**. Vous validez avant que quoi que ce soit ne parte. Utile pour élaguer les vidéos qui ont sous-performé et qui tirent la moyenne vers le bas.
 
+## Supprimer + stocker les vidéos aux produits cassés
+
+Parfois une vidéo ne peut pas rester en ligne : son produit est en rupture de stock, ou elle a perdu son tag produit. Le mode d'exécution **Supprimer + stocker : indisponibles / sans tag** retire uniquement ces vidéos et enregistre chacune dans l'onglet **Supprimées d'Amazon**, pour que vous puissiez la re-uploader plus tard une fois le produit de retour ou après l'avoir re-taggée.
+
+Choisissez-le dans **Mode d'exécution**, puis sélectionnez vos règles :
+
+- **Supprimer les vidéos sans produit taggé** : les vidéos qui n'ont actuellement aucun produit attaché.
+- **Supprimer les vidéos dont les produits sont tous indisponibles** : les vidéos où chaque produit taggé échoue au contrôle de stock.
+- **Protéger les vidéos sponsorisées (#ad)** : ignore tout ce qui est taggé #ad, pour que le contenu de partenariat de marque ne soit jamais retiré.
+- **Protéger les vidéos avec des commissions récentes** : ignore les vidéos dont les produits ont généré des revenus récemment.
+
+C'est sécurisé : une vidéo n'est supprimée que lorsque ses produits sont confirmés indisponibles (ou qu'elle n'en a aucun). Tout ce que Video Butler ne peut pas confirmer est laissé en place. Chaque vidéo supprimée est d'abord téléchargée, donc **Recharger la sélection** dans l'onglet Supprimées d'Amazon la republie quand vous le souhaitez.
+
 ## Le flux "Récemment supprimées"
 
 Le panneau du bas liste les vidéos que vous avez supprimées (dans la fenêtre de récupération d'Amazon) avec un bouton **Recharger la sélection**. Si une passe a supprimé trop, vous pouvez les récupérer depuis cette liste - pas besoin de ré-éditer depuis zéro.
