@@ -1,0 +1,76 @@
+---
+title: "Photo Reload Butler: reload Amazon storefront photos to other marketplaces"
+summary: Re-post your existing Amazon storefront photos to Canada, the UK, Australia, and Singapore with fresh tags, and reload photos that were removed from Amazon.
+category: Amazon
+---
+
+## What Photo Reload Butler does
+
+Photo Reload Butler is the photo counterpart to Video Butler. It takes the shoppable photos already on your Amazon Creator storefront and re-posts them to other marketplaces (Canada, the UK, Australia, Singapore) with fresh tags, so the same image can earn in every storefront you are eligible for. It can also reload photos that were removed from Amazon, because every delete saves the original to your computer first.
+
+There is no re-encoding, joining, or duration logic here. Photos do not need any of that. The settings are the ones that make sense for images: where the photo comes from, which marketplaces it posts to, a few timeframe and duplicate filters, an availability check, and how to handle the original after a re-post.
+
+## Before you start
+
+- **Storefront Butler has synced your storefront at least once**: Photo Reload Butler reads from that catalog.
+- **A signed-in Amazon Creator Hub session** in the Chrome window the butler opens. Each destination marketplace has its own "Log in to" button.
+- Photo Reload Butler appears under **Amazon Butler** once the **Amazon influencer** platform is enabled in Settings.
+
+## Running your first reload
+
+1. Open **Photo Reload Butler** under Amazon Butler.
+2. **Step 1, Source and destinations**: pick the **Photo source** (the marketplace your photos live on, usually US) and tick the **Upload destinations** you want to fan out to. Sign in to each destination with its "Log in to" button.
+3. **Step 2, What to process**: set a **Timeframe** (or leave the defaults), a **Max photos per run**, and any **Skip duplicates** rules so you do not re-post the same image twice.
+4. **Step 3, Reload behaviour**: choose a **Run mode**. Start with **Post and keep the original** so you can verify the new posts look right before letting anything go.
+5. Click **Run**.
+
+A Chrome window opens, reads each eligible photo from your storefront, and posts it to the destinations you picked. The **Photo Log** tab tracks every post with its destinations and status.
+
+## Fan out to other marketplaces
+
+The point of Photo Reload Butler is reach. A photo you posted in the US can usually be posted again in Canada, the UK, Australia, and Singapore, because each is a separate storefront. Tick those destinations in Step 1 and a single run posts the photo to each one it can.
+
+Each marketplace is a separate Amazon storefront, so you sign in to each one separately and a re-post to a different marketplace is not a duplicate.
+
+## Skip products that are not available
+
+Posting a photo to a product that is out of stock earns nothing and can drag down your storefront metrics. Turn on **Skip products that are currently unavailable** in Step 1 to enable two checks:
+
+- **Check 1 (before posting)**: asks the Amazon Creators API about each product's stock and skips posts to unavailable ones. It is fail-open, so an API error never blocks a post.
+- **Check 2 (while tagging)**: a final safety net for products that still show "Currently unavailable" in Amazon's Add products window at tag time. Choose to keep them on the post or drop them so viewers do not get a dead link.
+
+## Delete the original before re-posting
+
+Amazon's duplicate detection is per-storefront, so re-posting a photo to the same marketplace it already lives on can be rejected as a duplicate. To refresh a photo on its own storefront, turn on **Delete the original before re-posting** in Step 3. Your photo is safe: the original is downloaded to your computer first, and only then deleted. If a re-post fails after the delete, the photo lands in the **Deleted from Amazon** tab with its saved file so you can put it back.
+
+Other marketplaces are separate storefronts, so they never delete anything.
+
+### Test on a small batch first
+
+If you turn on delete-before-repost, prove it on a couple of photos before running your whole library. Set **Max photos per run** to a low number, turn **Watch it run** on, and run once. Check that the original is deleted before its re-post and that the photo looks right on your storefront. Then raise the max.
+
+## Reload photos that were deleted
+
+The **Deleted from Amazon** tab lists photos that were removed from your storefront, each with its locally saved original. Click **Reload Deleted Photos** to put them back on the marketplace they came from. Turn on **Skip photos already reloaded (by ASIN)** if you run this regularly and do not want to reload the same photo twice.
+
+## Tuning over time
+
+- **Timeframe**: limit a run to recent photos, or turn on **All time / all photos** for a full sweep (this overrides the date limits and the per-run max, so use it deliberately).
+- **Skip duplicates**: match by title, ASIN, title and ASIN, or "already posted to that marketplace" so a run never re-posts the same image.
+- **Keep original if it was added in the last N days**: with delete-before-repost on, this protects freshly added photos from being deleted.
+
+## Where the data goes
+
+Per-run logs land in the Photo Log. Original photo files are saved to your computer before any delete, so a reload can always put a photo back.
+
+## Common gotchas
+
+- **"Creator Hub session expired"**: sign in again from the Chrome window the butler opened, then run again.
+- **A re-post is rejected as a duplicate**: you are posting to the same storefront the photo already lives on. Turn on **Delete the original before re-posting** to refresh it, or post it to a different marketplace instead.
+- **Nothing posts**: make sure at least one destination marketplace is ticked and signed in.
+
+## Related
+
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler): what feeds Photo Reload Butler's catalog.
+- [Video Butler tutorial](/help/tutorials/video-butler): the same idea for shoppable videos.
+- [Retag Butler tutorial](/help/tutorials/retag-butler): fix stale or unavailable product tags before a reload.

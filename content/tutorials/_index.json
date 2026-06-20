@@ -98,6 +98,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "photo-reload-butler",
+      "title": "Photo Reload Butler: reload Amazon storefront photos to other marketplaces",
+      "category": "Amazon",
+      "summary": "Re-post your existing Amazon storefront photos to Canada, the UK, Australia, and Singapore with fresh tags, and reload photos that were removed from Amazon.",
+      "order": 101,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "youtube-butler",
       "title": "YouTube Butler: upload Amazon storefront videos to YouTube with affiliate links",
       "category": "Amazon",

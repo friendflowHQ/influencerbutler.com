@@ -1,0 +1,76 @@
+---
+title: "Photo Reload Butler: recarga fotos de tu escaparate de Amazon en otros marketplaces"
+summary: Vuelve a publicar tus fotos existentes del escaparate de Amazon en Canadá, Reino Unido, Australia y Singapur con etiquetas nuevas, y recarga las fotos que se eliminaron de Amazon.
+category: Amazon
+---
+
+## Qué hace Photo Reload Butler
+
+Photo Reload Butler es el equivalente para fotos de Video Butler. Toma las fotos comprables que ya están en tu escaparate de Amazon Creator y las vuelve a publicar en otros marketplaces (Canadá, Reino Unido, Australia, Singapur) con etiquetas nuevas, para que la misma imagen pueda generar ingresos en cada escaparate en el que seas elegible. También puede recargar fotos que se quitaron de Amazon, porque cada eliminación guarda primero el original en tu equipo.
+
+Aquí no hay recodificación, unión ni lógica de duración. Las fotos no necesitan nada de eso. Los ajustes son los que tienen sentido para imágenes: de dónde viene la foto, en qué marketplaces se publica, unos cuantos filtros de periodo y duplicados, una comprobación de disponibilidad y qué hacer con el original tras volver a publicar.
+
+## Antes de empezar
+
+- **Storefront Butler ha sincronizado tu escaparate al menos una vez**: Photo Reload Butler lee de ese catálogo.
+- **Una sesión iniciada de Amazon Creator Hub** en la ventana de Chrome que abre el butler. Cada marketplace de destino tiene su propio botón "Iniciar sesión en".
+- Photo Reload Butler aparece en **Amazon Butler** cuando la plataforma **Amazon influencer** está activada en Ajustes.
+
+## Tu primera recarga
+
+1. Abre **Photo Reload Butler** en Amazon Butler.
+2. **Paso 1, Fuente y destinos**: elige la **Fuente de fotos** (el marketplace donde están tus fotos, normalmente US) y marca los **Destinos de subida** a los que quieras expandir. Inicia sesión en cada destino con su botón "Iniciar sesión en".
+3. **Paso 2, Qué procesar**: define un **Periodo** (o deja los valores por defecto), un **Máximo de fotos por ejecución** y las reglas de **Omitir duplicados** para no volver a publicar la misma imagen dos veces.
+4. **Paso 3, Comportamiento de recarga**: elige un **Modo de ejecución**. Empieza por **Publicar y conservar el original** para verificar que las nuevas publicaciones se ven bien antes de dejar ir nada.
+5. Pulsa **Ejecutar**.
+
+Se abre una ventana de Chrome, lee cada foto elegible de tu escaparate y la publica en los destinos que elegiste. La pestaña **Registro de fotos** lleva la cuenta de cada publicación con sus destinos y estado.
+
+## Expande a otros marketplaces
+
+El objetivo de Photo Reload Butler es el alcance. Una foto que publicaste en US normalmente se puede publicar de nuevo en Canadá, Reino Unido, Australia y Singapur, porque cada uno es un escaparate distinto. Marca esos destinos en el Paso 1 y una sola ejecución publica la foto en cada uno que pueda.
+
+Cada marketplace es un escaparate de Amazon distinto, así que inicias sesión en cada uno por separado y volver a publicar en un marketplace diferente no es un duplicado.
+
+## Omitir productos que no están disponibles
+
+Publicar una foto en un producto agotado no genera nada y puede perjudicar las métricas de tu escaparate. Activa **Omitir productos que no están disponibles actualmente** en el Paso 1 para habilitar dos comprobaciones:
+
+- **Comprobación 1 (antes de publicar)**: consulta a la API de Amazon Creators el stock de cada producto y omite las publicaciones a los no disponibles. Es a prueba de fallos, así que un error de la API nunca bloquea una publicación.
+- **Comprobación 2 (al etiquetar)**: una red de seguridad final para productos que aún muestran "No disponible actualmente" en la ventana Añadir productos de Amazon al etiquetar. Elige conservarlos en la publicación o quitarlos para que los espectadores no encuentren un enlace muerto.
+
+## Eliminar el original antes de volver a publicar
+
+La detección de duplicados de Amazon es por escaparate, así que volver a publicar una foto en el mismo marketplace donde ya existe puede rechazarse como duplicado. Para refrescar una foto en su propio escaparate, activa **Eliminar el original antes de volver a publicar** en el Paso 3. Tu foto está a salvo: el original se descarga primero a tu equipo y solo entonces se elimina. Si una nueva publicación falla tras la eliminación, la foto va a la pestaña **Eliminadas de Amazon** con su archivo guardado para que puedas reponerla.
+
+Los demás marketplaces son escaparates distintos, así que nunca eliminan nada.
+
+### Prueba primero con un lote pequeño
+
+Si activas eliminar antes de volver a publicar, pruébalo con un par de fotos antes de ejecutar toda tu biblioteca. Pon **Máximo de fotos por ejecución** en un número bajo, activa **Ver la ejecución** y ejecuta una vez. Comprueba que el original se elimina antes de su nueva publicación y que la foto se ve bien en tu escaparate. Luego sube el máximo.
+
+## Recargar fotos que se eliminaron
+
+La pestaña **Eliminadas de Amazon** lista las fotos que se quitaron de tu escaparate, cada una con su original guardado localmente. Pulsa **Recargar fotos eliminadas** para reponerlas en el marketplace del que provienen. Activa **Omitir fotos ya recargadas (por ASIN)** si ejecutas esto con regularidad y no quieres recargar la misma foto dos veces.
+
+## Ajustes con el tiempo
+
+- **Periodo**: limita una ejecución a fotos recientes, o activa **Todo el tiempo / todas las fotos** para un barrido completo (esto anula los límites de fecha y el máximo por ejecución, así que úsalo de forma deliberada).
+- **Omitir duplicados**: coincide por título, ASIN, título y ASIN, o "ya publicada en ese marketplace" para que una ejecución nunca vuelva a publicar la misma imagen.
+- **Conservar el original si se añadió en los últimos N días**: con eliminar antes de volver a publicar activado, esto protege de la eliminación las fotos añadidas recientemente.
+
+## Adónde van los datos
+
+Los registros de cada ejecución van al Registro de fotos. Los archivos de foto originales se guardan en tu equipo antes de cualquier eliminación, así que una recarga siempre puede reponer una foto.
+
+## Problemas habituales
+
+- **"La sesión de Creator Hub ha caducado"**: vuelve a iniciar sesión desde la ventana de Chrome que abrió el butler y ejecuta de nuevo.
+- **Una nueva publicación se rechaza como duplicado**: estás publicando en el mismo escaparate donde ya existe la foto. Activa **Eliminar el original antes de volver a publicar** para refrescarla, o publícala en un marketplace diferente.
+- **No se publica nada**: asegúrate de que al menos un marketplace de destino esté marcado y con sesión iniciada.
+
+## Relacionado
+
+- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler): lo que alimenta el catálogo de Photo Reload Butler.
+- [Tutorial de Video Butler](/help/tutorials/video-butler): la misma idea para vídeos comprables.
+- [Tutorial de Retag Butler](/help/tutorials/retag-butler): corrige etiquetas de producto obsoletas o no disponibles antes de una recarga.

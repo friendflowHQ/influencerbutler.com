@@ -1,0 +1,76 @@
+---
+title: "Photo Reload Butler : rechargez les photos de votre vitrine Amazon sur d'autres marketplaces"
+summary: Republiez vos photos existantes de votre vitrine Amazon au Canada, au Royaume-Uni, en Australie et à Singapour avec de nouveaux tags, et rechargez les photos supprimées d'Amazon.
+category: Amazon
+---
+
+## Ce que fait Photo Reload Butler
+
+Photo Reload Butler est l'équivalent de Video Butler pour les photos. Il prend les photos achetables déjà présentes sur votre vitrine Amazon Creator et les republie sur d'autres marketplaces (Canada, Royaume-Uni, Australie, Singapour) avec de nouveaux tags, pour que la même image puisse générer des revenus sur chaque vitrine où vous êtes éligible. Il peut aussi recharger des photos retirées d'Amazon, car chaque suppression enregistre d'abord l'original sur votre ordinateur.
+
+Il n'y a ici ni réencodage, ni assemblage, ni logique de durée. Les photos n'en ont pas besoin. Les réglages sont ceux qui ont du sens pour des images : d'où vient la photo, sur quels marketplaces elle est publiée, quelques filtres de période et de doublons, une vérification de disponibilité, et que faire de l'original après une republication.
+
+## Avant de commencer
+
+- **Storefront Butler a synchronisé votre vitrine au moins une fois** : Photo Reload Butler lit dans ce catalogue.
+- **Une session Amazon Creator Hub connectée** dans la fenêtre Chrome que le butler ouvre. Chaque marketplace de destination a son propre bouton "Se connecter à".
+- Photo Reload Butler apparaît sous **Amazon Butler** une fois la plateforme **Amazon influencer** activée dans les Réglages.
+
+## Votre premier rechargement
+
+1. Ouvrez **Photo Reload Butler** sous Amazon Butler.
+2. **Étape 1, Source et destinations** : choisissez la **Source des photos** (le marketplace où se trouvent vos photos, généralement US) et cochez les **Destinations de mise en ligne** vers lesquelles vous voulez vous étendre. Connectez-vous à chaque destination avec son bouton "Se connecter à".
+3. **Étape 2, Quoi traiter** : définissez une **Période** (ou laissez les valeurs par défaut), un **Maximum de photos par exécution** et les règles **Ignorer les doublons** pour ne pas republier deux fois la même image.
+4. **Étape 3, Comportement de rechargement** : choisissez un **Mode d'exécution**. Commencez par **Publier et conserver l'original** afin de vérifier que les nouvelles publications sont correctes avant de laisser partir quoi que ce soit.
+5. Cliquez sur **Lancer**.
+
+Une fenêtre Chrome s'ouvre, lit chaque photo éligible de votre vitrine et la publie sur les destinations choisies. L'onglet **Journal photos** suit chaque publication avec ses destinations et son état.
+
+## Étendez-vous à d'autres marketplaces
+
+L'intérêt de Photo Reload Butler, c'est la portée. Une photo publiée aux US peut généralement être republiée au Canada, au Royaume-Uni, en Australie et à Singapour, car chacun est une vitrine distincte. Cochez ces destinations à l'étape 1 et une seule exécution publie la photo sur chacune qu'elle peut.
+
+Chaque marketplace est une vitrine Amazon distincte, vous vous connectez donc à chacune séparément, et une republication sur un marketplace différent n'est pas un doublon.
+
+## Ignorer les produits indisponibles
+
+Publier une photo sur un produit en rupture de stock ne rapporte rien et peut dégrader les indicateurs de votre vitrine. Activez **Ignorer les produits actuellement indisponibles** à l'étape 1 pour activer deux vérifications :
+
+- **Vérification 1 (avant la publication)** : interroge l'API Amazon Creators sur le stock de chaque produit et ignore les publications vers ceux qui sont indisponibles. Elle est tolérante aux pannes : une erreur d'API ne bloque jamais une publication.
+- **Vérification 2 (au moment du marquage)** : un filet de sécurité final pour les produits encore affichés "Actuellement indisponible" dans la fenêtre Ajouter des produits d'Amazon. Choisissez de les conserver dans la publication ou de les retirer pour que les spectateurs n'aient pas un lien mort.
+
+## Supprimer l'original avant de republier
+
+La détection de doublons d'Amazon se fait par vitrine, donc republier une photo sur le même marketplace où elle existe déjà peut être rejeté comme doublon. Pour rafraîchir une photo sur sa propre vitrine, activez **Supprimer l'original avant de republier** à l'étape 3. Votre photo est en sécurité : l'original est d'abord téléchargé sur votre ordinateur, et seulement ensuite supprimé. Si une republication échoue après la suppression, la photo arrive dans l'onglet **Supprimées d'Amazon** avec son fichier enregistré pour que vous puissiez la remettre.
+
+Les autres marketplaces sont des vitrines distinctes : ils ne suppriment jamais rien.
+
+### Testez d'abord sur un petit lot
+
+Si vous activez la suppression avant republication, prouvez-le sur deux ou trois photos avant de lancer toute votre bibliothèque. Réglez **Maximum de photos par exécution** sur un petit nombre, activez **Voir l'exécution** et lancez une fois. Vérifiez que l'original est supprimé avant sa republication et que la photo s'affiche correctement sur votre vitrine. Augmentez ensuite le maximum.
+
+## Recharger les photos supprimées
+
+L'onglet **Supprimées d'Amazon** liste les photos retirées de votre vitrine, chacune avec son original enregistré localement. Cliquez sur **Recharger les photos supprimées** pour les remettre sur le marketplace d'origine. Activez **Ignorer les photos déjà rechargées (par ASIN)** si vous lancez cela régulièrement et ne voulez pas recharger deux fois la même photo.
+
+## Réglages au fil du temps
+
+- **Période** : limitez une exécution aux photos récentes, ou activez **Toute la période / toutes les photos** pour un balayage complet (cela ignore les limites de date et le maximum par exécution, à utiliser de façon délibérée).
+- **Ignorer les doublons** : correspondance par titre, ASIN, titre et ASIN, ou "déjà publiée sur ce marketplace" pour qu'une exécution ne republie jamais la même image.
+- **Conserver l'original s'il a été ajouté au cours des N derniers jours** : avec la suppression avant republication activée, cela protège les photos récemment ajoutées contre la suppression.
+
+## Où vont les données
+
+Les journaux de chaque exécution arrivent dans le Journal photos. Les fichiers photo originaux sont enregistrés sur votre ordinateur avant toute suppression, donc un rechargement peut toujours remettre une photo.
+
+## Problèmes courants
+
+- **"Session Creator Hub expirée"** : reconnectez-vous depuis la fenêtre Chrome ouverte par le butler, puis relancez.
+- **Une republication est rejetée comme doublon** : vous publiez sur la même vitrine où la photo existe déjà. Activez **Supprimer l'original avant de republier** pour la rafraîchir, ou publiez-la sur un autre marketplace.
+- **Rien ne se publie** : assurez-vous qu'au moins un marketplace de destination est coché et connecté.
+
+## Associé
+
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) : ce qui alimente le catalogue de Photo Reload Butler.
+- [Tutoriel Video Butler](/help/tutorials/video-butler) : la même idée pour les vidéos achetables.
+- [Tutoriel Retag Butler](/help/tutorials/retag-butler) : corrigez les tags produit obsolètes ou indisponibles avant un rechargement.
