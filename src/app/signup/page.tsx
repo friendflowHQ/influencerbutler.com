@@ -66,7 +66,7 @@ export default function SignupPage() {
     const supabase = createClient();
 
     // Sign up directly via client-side Supabase SDK.
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -75,33 +75,34 @@ export default function SignupPage() {
       },
     });
 
+    setLoading(false);
+
     if (signUpError) {
-      setLoading(false);
       setError(signUpError.message);
       return;
     }
 
-    // Try signing in immediately - works when email confirmation is disabled.
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (!signInError) {
-      const selectedPlan = localStorage.getItem("selectedPlan");
-      localStorage.removeItem("selectedPlan");
-      if (selectedPlan === "monthly" || selectedPlan === "annual") {
-        window.location.href = `/dashboard?checkout=${selectedPlan}`;
-      } else {
-        window.location.href = "/dashboard";
-      }
+    // When "Confirm email" is enabled in Supabase (required in production),
+    // signUp returns no session: the account is inactive until the user clicks
+    // the link in their inbox, and /api/auth/callback establishes the session
+    // then. We deliberately do NOT sign the user in here. Sending an unverified
+    // account straight to the dashboard is exactly the "anyone can sign up with
+    // a fake email" gap we want to close, so verification gates dashboard access.
+    if (!data.session) {
+      setMessage(
+        "Almost there. Check your email and click the confirmation link to activate your account.",
+      );
       return;
     }
 
-    // Sign-in failed - email confirmation is likely required.
-    setMessage("Check your email to confirm");
+    // Confirmation disabled (dev / self-host): the account is already active.
+    const selectedPlan = localStorage.getItem("selectedPlan");
+    localStorage.removeItem("selectedPlan");
+    if (selectedPlan === "monthly" || selectedPlan === "annual") {
+      window.location.href = `/dashboard?checkout=${selectedPlan}`;
+    } else {
+      window.location.href = "/dashboard";
+    }
   };
 
   return (
