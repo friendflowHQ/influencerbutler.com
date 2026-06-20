@@ -100,6 +100,16 @@ You control how matches are handled:
 
 To act on a suggestion, open the Video Log, filter to **Title match to confirm**, and on each row click **Confirm** to upload the video to the chosen listing, or **Reject** to discard the suggestion. A confirmed match re-downloads the original and posts it to that marketplace straight away.
 
+## Auto-correct titles Amazon flags as non-compliant
+
+Amazon's title field quietly rejects some words. For example, "german" inside "Germany" trips its Community Guidelines filter, and the post will not save until you fix the title. Video Butler can handle this for you. In Filters & Options, set **If Amazon flags a banned word in the title**:
+
+- **Remove the flagged word** (the default): the butler strips just the offending word, tidies up the spacing, retypes the title, and continues posting.
+- **Rewrite the title with AI**: the butler asks AI to rewrite the title so it keeps your product meaning and your #ad tag, but drops whatever Amazon objected to. This uses your OpenAI key (the same one as AI cover images).
+- **Skip the post**: leave the post untouched and move on, the original behavior.
+
+If a correction still cannot get past Amazon's filter after a couple of tries, the post is skipped so nothing broken goes live.
+
 ## Accept Creator Connections offers in the same run
 
 Many of the products you already feature in storefront videos have a live Creator Connections (CC) campaign or a Shoppable Video Creator Connections (SPCC) offer waiting for you. Finding them by hand means scrolling endless opportunity lists. Video Butler can do it for you while it works through your videos.

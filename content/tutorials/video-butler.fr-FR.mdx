@@ -100,6 +100,16 @@ Vous contrôlez la façon dont les correspondances sont traitées :
 
 Pour agir sur une suggestion, ouvrez le Journal vidéo, filtrez sur **Correspondance de titre à confirmer** et sur chaque ligne cliquez sur **Confirmer** pour envoyer la vidéo vers la fiche choisie, ou sur **Rejeter** pour ignorer la suggestion. Une correspondance confirmée retélécharge l'original et le publie sur cette marketplace immédiatement.
 
+## Corrigez automatiquement les titres qu'Amazon juge non conformes
+
+Le champ de titre d'Amazon refuse discrètement certains mots. Par exemple, « german » à l'intérieur de « Germany » déclenche son filtre des Règles de la communauté, et la publication ne s'enregistre pas tant que vous n'avez pas corrigé le titre. Video Butler peut s'en charger pour vous. Dans Filtres et Options, réglez **Si Amazon signale un mot interdit dans le titre** :
+
+- **Supprimer le mot signalé** (l'option par défaut) : le butler retire seulement le mot problématique, corrige les espaces, retape le titre et continue à publier.
+- **Réécrire le titre avec l'IA** : le butler demande à l'IA de réécrire le titre en gardant le sens de votre produit et votre balise #ad, mais en retirant ce à quoi Amazon s'est opposé. Cela utilise votre clé OpenAI (la même que pour les couvertures par IA).
+- **Ignorer la publication** : laisse la publication intacte et passe à la suite, le comportement d'origine.
+
+Si une correction ne parvient toujours pas à passer le filtre d'Amazon après quelques tentatives, la publication est ignorée pour que rien de cassé ne soit mis en ligne.
+
 ## Acceptez les offres Creator Connections dans la même exécution
 
 Beaucoup des produits que vous présentez déjà dans vos vidéos de boutique ont une campagne Creator Connections (CC) active ou une offre Shoppable Video Creator Connections (SPCC) qui vous attend. Les trouver à la main veut dire faire défiler des listes d'opportunités sans fin. Video Butler peut le faire pour vous pendant qu'il traite vos vidéos.

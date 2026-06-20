@@ -100,6 +100,16 @@ Tú controlas cómo se gestionan las coincidencias:
 
 Para actuar sobre una sugerencia, abre el Registro de vídeos, filtra por **Coincidencia de título por confirmar** y en cada fila pulsa **Confirmar** para subir el vídeo a la ficha elegida, o **Rechazar** para descartar la sugerencia. Una coincidencia confirmada vuelve a descargar el original y lo publica en ese mercado de inmediato.
 
+## Corrige automáticamente los títulos que Amazon marca como no conformes
+
+El campo de título de Amazon rechaza en silencio algunas palabras. Por ejemplo, "german" dentro de "Germany" activa su filtro de Normas de la Comunidad, y la publicación no se guarda hasta que corriges el título. Video Butler puede encargarse de esto por ti. En Filtros y Opciones, ajusta **Si Amazon detecta una palabra prohibida en el título**:
+
+- **Quitar la palabra señalada** (la opción por defecto): el butler elimina solo la palabra problemática, arregla los espacios, vuelve a escribir el título y sigue publicando.
+- **Reescribir el título con IA**: el butler pide a la IA que reescriba el título manteniendo el significado de tu producto y tu etiqueta #ad, pero quitando aquello a lo que Amazon puso pega. Usa tu clave de OpenAI (la misma que para las portadas con IA).
+- **Omitir la publicación**: deja la publicación sin tocar y sigue adelante, el comportamiento original.
+
+Si una corrección sigue sin pasar el filtro de Amazon después de un par de intentos, la publicación se omite para que no salga nada roto.
+
 ## Acepta ofertas de Creator Connections en la misma ejecución
 
 Muchos de los productos que ya muestras en tus vídeos de tienda tienen una campaña de Creator Connections (CC) activa o una oferta de Shoppable Video Creator Connections (SPCC) esperándote. Encontrarlas a mano significa desplazarte por listas interminables de oportunidades. Video Butler puede hacerlo por ti mientras procesa tus vídeos.
