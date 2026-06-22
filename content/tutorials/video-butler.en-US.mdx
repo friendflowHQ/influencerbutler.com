@@ -152,7 +152,9 @@ Country view collapses those rows into one row per video, with a column for each
 - an amber dot: an upload is in progress.
 - an amber question mark: the video is not loaded there yet.
 
-The cells are not just a report. Click a country a video is not loaded to yet (or one that failed) and Video Butler loads that exact video to that marketplace, reusing the same re-upload pipeline. It re-downloads the original if needed, applies your current overlays, and posts it there. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing. The verified markets are clickable; the experimental markets are shown for reference only.
+The cells are not just a report. Each cell for a verified market a video is not loaded to yet (or one that failed) is a checkbox: click it to tick that video and country. Tick as many as you like, across as many videos as you like, then press **Re-load Selected** in the toolbar to load them all in one pass. Each video row also has a checkbox that ticks all of that video's loadable markets at once, and the header checkbox (and the **Select visible** button) ticks every loadable cell on screen. The experimental markets are shown for reference only and can't be ticked.
+
+When you load, Video Butler reuses the same re-upload pipeline: it re-downloads the original if needed, applies your current overlays, and posts the video to each selected marketplace. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing.
 
 ## Retry failed uploads by reason
 
