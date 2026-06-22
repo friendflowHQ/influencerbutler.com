@@ -141,6 +141,19 @@ Cada vídeo guarda su vendedor (en Creator Connections el vendedor de la campañ
 
 Esos mismos datos alimentan una columna **Cobertura de vídeo** en la tabla de resultados de Storefront Butler. Mientras navegas por productos para grabar, cada fila muestra "Vídeo" (este producto exacto ya tiene un vídeo), "Vendedor (N)" (tienes N vídeos de este vendedor pero aún no de este producto) o nada. Un filtro a juego te permite mostrar solo los productos cuyo vendedor ya cubriste, u ocultarlos, para repartir tus vídeos entre vendedores nuevos en lugar de duplicar.
 
+## Comprueba a qué países está subido cada vídeo (Vista por país)
+
+El Registro de vídeos normalmente muestra una fila por subida, así que un vídeo que repartiste a cinco mercados aparece cinco veces. Cuando quieras confirmar de un vistazo que cada vídeo llegó a todos los países, cambia el Registro de vídeos a **Vista por país** con el conmutador **Vista de lista / Vista por país** encima de la tabla.
+
+La Vista por país agrupa esas filas en una fila por vídeo, con una columna para cada mercado de Amazon: primero los mercados verificados (US, CA, UK, AU, SG) y luego los experimentales. Cada celda muestra el estado de ese país:
+
+- una marca verde: el vídeo está subido allí.
+- una cruz roja: se intentó una subida y falló.
+- un punto ámbar: hay una subida en curso.
+- un signo de interrogación ámbar: el vídeo aún no está subido allí.
+
+Las celdas no son solo un informe. Haz clic en un país al que un vídeo aún no se ha subido (o en uno que falló) y Video Butler sube ese vídeo exacto a ese mercado, reutilizando la misma cadena de re-subida. Vuelve a descargar el original si hace falta, aplica tus superposiciones actuales y lo publica allí. Tu copia original del escaparate nunca se elimina, porque una subida entre mercados solo añade un nuevo anuncio. Los mercados verificados son interactivos; los experimentales se muestran solo como referencia.
+
 ## Reintentar subidas fallidas por motivo
 
 Cuando una subida falla, Video Butler registra el motivo: un rechazo por cumplimiento de Amazon, una marca de duplicado, una miniatura rechazada, ningún producto etiquetable, un error de envío o subida, u otro motivo. En el **Registro de vídeos** estos fallos se agrupan por ti. Un panel **Reintentar por motivo del fallo** encima de la tabla muestra una etiqueta por causa con un recuento y un botón **Reintentar estos (N)**, así que una vez que hayas resuelto el problema de raíz puedes volver a ejecutar en un clic todos los vídeos que fallaron de la misma forma. También hay un filtro **Motivo del fallo** para acotar la tabla a una sola causa primero. Cada reintento vuelve a publicar solo los vídeos que elegiste, con sus ajustes y destino originales, y deja en paz los rechazos legítimos.

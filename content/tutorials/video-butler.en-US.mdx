@@ -141,6 +141,19 @@ Every video records its seller (on Creator Connections the campaign seller is th
 
 The same data powers a **Video Coverage** column in the Storefront Butler results table. While you browse products to film, each row shows "Video" (this exact product already has a video), "Seller (N)" (you have N videos for this seller but not this product yet), or nothing at all. A matching filter lets you show only products whose seller you have already covered, or hide them, so you can spread your videos across new sellers instead of doubling up.
 
+## See every country a video is loaded to (Country view)
+
+The Video Log normally lists one row per upload, so a video you fanned out to five marketplaces shows up five times. When you want to confirm at a glance that each video reached every country, switch the Video Log to **Country view** with the **List view / Country view** toggle above the table.
+
+Country view collapses those rows into one row per video, with a column for each Amazon marketplace: the verified markets (US, CA, UK, AU, SG) first, then the experimental ones. Each cell shows that country's status:
+
+- a green check: the video is loaded there.
+- a red cross: an upload was attempted and failed.
+- an amber dot: an upload is in progress.
+- an amber question mark: the video is not loaded there yet.
+
+The cells are not just a report. Click a country a video is not loaded to yet (or one that failed) and Video Butler loads that exact video to that marketplace, reusing the same re-upload pipeline. It re-downloads the original if needed, applies your current overlays, and posts it there. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing. The verified markets are clickable; the experimental markets are shown for reference only.
+
 ## Retry failed uploads by reason
 
 When an upload fails, Video Butler records why: an Amazon compliance rejection, a duplicate flag, a rejected thumbnail, no taggable products, a submit or upload error, or some other reason. In the **Video Log** these failures are grouped for you. A **Retry by failure reason** panel above the table shows one chip per cause with a count and a **Retry these (N)** button, so once you have fixed the root issue you can re-run every video that failed the same way in one click. There is also a **Failure reason** filter so you can narrow the table to a single cause first. Each retry re-posts only the videos you picked, using their original settings and destination, and leaves genuine rejections alone.
