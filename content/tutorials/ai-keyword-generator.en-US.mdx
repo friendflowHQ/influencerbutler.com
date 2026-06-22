@@ -39,6 +39,15 @@ Add a word and press Enter, turn a chip off to pause it without deleting, and dr
 
 Everything you type auto-saves. There is no Save button. Leave and come back and your filters and keywords are exactly as you left them.
 
+## Per-day keywords (optional)
+
+Each month card has a **Per-day keywords** drop-down. Open it to set keywords for specific calendar days of that month (day 1 to 31). On any given day, a run prefers that day's bucket. If the day is empty, it falls back to the month bucket, so you only fill the days you care about.
+
+- **One day at a time**: the small refresh button on a day regenerates just that day with AI.
+- **Fill all 31 days for this month**: generates a fresh set for every day of the month in one go (31 OpenAI calls).
+
+Day buckets auto-save like everything else and travel with the **Copy settings** buttons.
+
 ## Sending to Message Brands
 
 Sending a TON of keywords at once is rarely what you want, so the send card gives you three scoped ways to push keywords into the Message Brands chips:
@@ -56,7 +65,7 @@ Generating costs an API call. To avoid paying twice when you want the same niche
 - In **Amazon Deals Butler › Filters**, use **Copy settings to Keywords & Filters** to push your filter settings here.
 - In this workspace, use **Copy settings from Daily Deals** to pull them the other way.
 
-Both buttons copy the filter fields, the 12 monthly buckets, and the per-keyword bias data. No new API call is spent.
+Both buttons copy the filter fields, the 12 monthly buckets, every per-day bucket, and the per-keyword bias data. No new API call is spent.
 
 ## Common gotchas
 

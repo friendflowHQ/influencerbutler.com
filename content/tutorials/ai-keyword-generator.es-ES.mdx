@@ -39,6 +39,15 @@ Añade una palabra y pulsa Intro, desactiva un chip para pausarlo sin borrarlo y
 
 Todo lo que escribes se guarda automáticamente. No hay botón de Guardar. Sal y vuelve y tus filtros y palabras clave estarán exactamente como los dejaste.
 
+## Palabras clave por día (opcional)
+
+Cada tarjeta de mes tiene un desplegable **Palabras clave por día**. Ábrelo para definir palabras clave de días concretos de ese mes (del día 1 al 31). Cualquier día, una ejecución prefiere el cubo de ese día. Si el día está vacío, recurre al cubo del mes, así solo rellenas los días que te interesan.
+
+- **Un día cada vez**: el pequeño botón de actualizar de un día regenera solo ese día con IA.
+- **Rellenar los 31 días de este mes**: genera un conjunto nuevo para cada día del mes de una vez (31 llamadas a OpenAI).
+
+Los cubos de día se guardan automáticamente como todo lo demás y viajan con los botones **Copiar ajustes**.
+
 ## Enviar a Mensajear a Marcas
 
 Enviar MUCHAS palabras clave de golpe rara vez es lo que quieres, así que la tarjeta de envío te ofrece tres formas acotadas de llevar palabras clave a los chips de Mensajear a Marcas:
@@ -56,7 +65,7 @@ Generar cuesta una llamada de API. Para no pagar dos veces cuando quieras el mis
 - En **Amazon Deals Butler › Filtros**, usa **Copiar ajustes a Palabras clave y filtros** para enviar tus ajustes de filtro aquí.
 - En este espacio de trabajo, usa **Copiar ajustes de Ofertas Diarias** para traerlos en sentido contrario.
 
-Ambos botones copian los campos de filtro, los 12 grupos mensuales y los datos de sesgo por palabra clave, sin gastar una nueva llamada de API.
+Ambos botones copian los campos de filtro, los 12 grupos mensuales, cada cubo por día y los datos de sesgo por palabra clave, sin gastar una nueva llamada de API.
 
 ## Problemas habituales
 

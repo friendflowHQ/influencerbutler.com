@@ -39,6 +39,15 @@ Ajoutez un mot et appuyez sur Entrée, désactivez une puce pour la mettre en pa
 
 Tout ce que vous saisissez est enregistré automatiquement. Il n'y a pas de bouton Enregistrer. Quittez et revenez, vos filtres et mots-clés sont exactement tels que vous les avez laissés.
 
+## Mots-clés par jour (facultatif)
+
+Chaque carte de mois comporte un menu déroulant **Mots-clés par jour**. Ouvrez-le pour définir des mots-clés pour des jours précis de ce mois (du jour 1 au 31). Un jour donné, une exécution privilégie le bac de ce jour. Si le jour est vide, elle revient au bac du mois, vous ne remplissez donc que les jours qui vous intéressent.
+
+- **Un jour à la fois** : le petit bouton d'actualisation d'un jour régénère uniquement ce jour avec l'IA.
+- **Remplir les 31 jours de ce mois** : génère un nouvel ensemble pour chaque jour du mois en une seule fois (31 appels OpenAI).
+
+Les bacs de jour s'enregistrent automatiquement comme tout le reste et accompagnent les boutons **Copier les réglages**.
+
 ## Envoyer vers Contacter les marques
 
 Envoyer ÉNORMÉMENT de mots-clés d'un coup est rarement ce que vous voulez, alors la carte d'envoi vous propose trois façons ciblées de pousser des mots-clés vers les puces de Contacter les marques :
@@ -56,7 +65,7 @@ Générer coûte un appel API. Pour éviter de payer deux fois lorsque vous voul
 - Dans **Amazon Deals Butler › Filtres**, utilisez **Copier les réglages vers Mots-clés et filtres** pour pousser vos réglages de filtre ici.
 - Dans cet espace de travail, utilisez **Copier les réglages des Offres du jour** pour les récupérer dans l'autre sens.
 
-Les deux boutons copient les champs de filtre, les 12 groupes mensuels et les données de biais par mot-clé, sans utiliser de nouvel appel API.
+Les deux boutons copient les champs de filtre, les 12 groupes mensuels, chaque bac par jour et les données de biais par mot-clé, sans utiliser de nouvel appel API.
 
 ## Problèmes courants
 
