@@ -90,15 +90,16 @@ Dos ajustes de la tarjeta **Filtros y opciones** controlan cómo se etiquetan lo
 
 Las subidas internacionales normalmente emparejan un producto con su ficha por ASIN. Pero el mismo producto físico suele existir en un mercado extranjero con un ASIN distinto, así que emparejar solo por ASIN deja muchos vídeos que podrían subirse sin aprovechar. Activa **Buscar por título del producto cuando ningún ASIN coincide en el mercado** en la tarjeta de Filtros y opciones para recuperarlos.
 
-Cuando ninguno de los ASIN de un vídeo existe en un mercado de destino, Video Butler busca ese mercado por el título del producto (usando la API de Amazon Creators, y recurriendo a una búsqueda en el mercado cuando hace falta) y puntúa cada resultado frente al título de tu producto, la misma coincidencia de título cercano que usa Retag Butler. Luego muestra lo que encontró en el **historial de Resultados** como una fila **Coincidencia de título por confirmar**, así nada se sube por suposición.
+Cuando ninguno de los ASIN de un vídeo existe en un mercado de destino, Video Butler busca ese mercado por el título del producto (usando la API de Amazon Creators, y recurriendo a una búsqueda en el mercado cuando hace falta) y puntúa cada resultado frente al título de tu producto, la misma coincidencia de título cercano que usa Retag Butler. Cuando **Ordenar sugerencias por imagen del producto** está activado, también compara la foto de cada candidato con la imagen de tu producto original, así la ficha más parecida gana aunque su título traducido puntúe bajo. Luego muestra lo que encontró en el **historial de Resultados** como una fila **Coincidencia de título por confirmar**, así nada se sube por suposición.
 
 Tú controlas cómo se gestionan las coincidencias:
 
 - **Cuando se encuentra una coincidencia**: elige **Sugerir la mejor coincidencia** (un candidato con Confirmar y Rechazar) o **Dejarme elegir de una lista corta** (elige la ficha correcta entre las primeras). Elegir de una lista es la opción más segura en mercados que no están en inglés, donde el título de la ficha extranjera puede puntuar bajo frente al tuyo en inglés aunque sea el producto correcto, así que conviene revisarlo a ojo.
 - **Puntuación mínima de coincidencia para sugerir**: el umbral que un candidato debe superar para mostrarse. Por defecto 50.
 - **Subir automáticamente por encima de esta puntuación**: déjalo en 0 para confirmar siempre las coincidencias tú. Ponlo alto (por ejemplo 90) para que las coincidencias muy fuertes se suban automáticamente sin preguntar.
+- **Ordenar sugerencias por imagen del producto**: activado por defecto. Compara la foto de cada candidato con la imagen de tu producto original y muestra primero las que más se parecen. Esto importa en mercados que no están en inglés, donde el título está traducido pero la foto del producto es la misma. Desactívalo para ordenar solo por el texto del título.
 
-Para actuar sobre una sugerencia, abre el Registro de vídeos, filtra por **Coincidencia de título por confirmar** y en cada fila pulsa **Confirmar** para subir el vídeo a la ficha elegida, o **Rechazar** para descartar la sugerencia. Una coincidencia confirmada vuelve a descargar el original y lo publica en ese mercado de inmediato.
+Para actuar sobre una sugerencia, abre el Registro de vídeos, filtra por **Coincidencia de título por confirmar** y revisa en cada fila la foto del producto, el ASIN, el ASIN principal y el precio antes de pulsar **Confirmar** para subir el vídeo a la ficha elegida, o **Rechazar** para descartar la sugerencia. Una coincidencia confirmada vuelve a descargar el original y lo publica en ese mercado de inmediato.
 
 ## Corrige automáticamente los títulos que Amazon marca como no conformes
 

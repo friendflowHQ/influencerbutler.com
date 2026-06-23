@@ -53,6 +53,12 @@ Si activas eliminar antes de volver a publicar, pruébalo con un par de fotos an
 
 La pestaña **Eliminadas de Amazon** lista las fotos que se quitaron de tu escaparate, cada una con su original guardado localmente. Pulsa **Recargar fotos eliminadas** para reponerlas en el marketplace del que provienen. Activa **Omitir fotos ya recargadas (por ASIN)** si ejecutas esto con regularidad y no quieres recargar la misma foto dos veces.
 
+## Encuentra una coincidencia por título cuando el ASIN no existe en el extranjero
+
+Las subidas internacionales asocian normalmente un producto a su ficha por ASIN, pero el mismo producto físico suele existir en un mercado extranjero con un ASIN diferente. Cuando ninguno de los ASIN de una foto existe en un mercado de destino, Photo Reload Butler busca ese mercado por el título del producto (usando la API de Amazon Creators, con una búsqueda en el mercado como respaldo) y puntúa cada resultado frente al título de tu producto. También compara la foto de cada candidato con la imagen de tu producto original y muestra primero las fichas que más se parecen, lo que importa en mercados que no están en inglés, donde el título está traducido pero la foto del producto es la misma.
+
+Las coincidencias no se publican por suposición. Cada una aparece en el **Registro de fotos** como una fila **coincidencia sugerida** con la foto del producto, el ASIN, el ASIN principal y el precio del candidato. Revísala y pulsa **Confirmar** para subir la foto a esa ficha (esto vuelve a descargar el original y lo publica de inmediato) o **Rechazar** para descartar la sugerencia. En el modo de elegir de una lista eliges primero la ficha correcta; la vista previa de la foto se actualiza al cambiar la elección.
+
 ## Ajustes con el tiempo
 
 - **Periodo**: limita una ejecución a fotos recientes, o activa **Todo el tiempo / todas las fotos** para un barrido completo (esto anula los límites de fecha y el máximo por ejecución, así que úsalo de forma deliberada).

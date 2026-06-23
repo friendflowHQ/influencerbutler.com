@@ -53,6 +53,12 @@ If you turn on delete-before-repost, prove it on a couple of photos before runni
 
 The **Deleted from Amazon** tab lists photos that were removed from your storefront, each with its locally saved original. Click **Reload Deleted Photos** to put them back on the marketplace they came from. Turn on **Skip photos already reloaded (by ASIN)** if you run this regularly and do not want to reload the same photo twice.
 
+## Find a match by title when the ASIN doesn't exist abroad
+
+International uploads normally match a product to its listing by ASIN, but the same physical product often lives on a foreign marketplace under a different ASIN. When none of a photo's ASINs exist on a destination marketplace, Photo Reload Butler searches that marketplace by the product title (using the Amazon Creators API, falling back to a marketplace search) and scores each result against your product title. It also compares each candidate's photo to your original product image and ranks the closest looking listings first, which matters on non-English marketplaces where the title is translated but the product photo is the same.
+
+Matches are not posted on a guess. Each one shows up in the **Photo Log** as a **match-suggested** row with the candidate's product photo, ASIN, parent ASIN, and price. Review it, then click **Confirm** to upload the photo to that listing (this re-downloads the original and posts it straight away) or **Reject** to discard the suggestion. In pick-from-a-list mode you choose the right listing first; the photo preview updates as you change the choice.
+
 ## Tuning over time
 
 - **Timeframe**: limit a run to recent photos, or turn on **All time / all photos** for a full sweep (this overrides the date limits and the per-run max, so use it deliberately).

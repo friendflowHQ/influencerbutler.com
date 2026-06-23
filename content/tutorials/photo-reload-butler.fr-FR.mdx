@@ -53,6 +53,12 @@ Si vous activez la suppression avant republication, prouvez-le sur deux ou trois
 
 L'onglet **Supprimées d'Amazon** liste les photos retirées de votre vitrine, chacune avec son original enregistré localement. Cliquez sur **Recharger les photos supprimées** pour les remettre sur le marketplace d'origine. Activez **Ignorer les photos déjà rechargées (par ASIN)** si vous lancez cela régulièrement et ne voulez pas recharger deux fois la même photo.
 
+## Trouvez une correspondance par titre quand l'ASIN n'existe pas à l'étranger
+
+Les envois internationaux associent normalement un produit à sa fiche par ASIN, mais le même produit physique existe souvent sur une marketplace étrangère sous un ASIN différent. Quand aucun des ASIN d'une photo n'existe sur une marketplace de destination, Photo Reload Butler recherche cette marketplace par le titre du produit (via l'API Amazon Creators, avec un repli sur une recherche de la marketplace) et note chaque résultat par rapport au titre de votre produit. Il compare aussi la photo de chaque candidat à l'image de votre produit d'origine et affiche d'abord les fiches les plus ressemblantes, ce qui est important sur les marketplaces non anglophones, où le titre est traduit mais la photo du produit est la même.
+
+Les correspondances ne sont pas publiées au hasard. Chacune apparaît dans le **Journal photo** sous forme d'une ligne **correspondance suggérée** avec la photo du produit, l'ASIN, l'ASIN parent et le prix du candidat. Examinez-la, puis cliquez sur **Confirmer** pour envoyer la photo vers cette fiche (cela retélécharge l'original et le publie immédiatement) ou sur **Rejeter** pour ignorer la suggestion. Dans le mode choisir dans une liste, vous choisissez d'abord la bonne fiche ; l'aperçu de la photo se met à jour quand vous changez de choix.
+
 ## Réglages au fil du temps
 
 - **Période** : limitez une exécution aux photos récentes, ou activez **Toute la période / toutes les photos** pour un balayage complet (cela ignore les limites de date et le maximum par exécution, à utiliser de façon délibérée).
