@@ -210,6 +210,13 @@ const icons: Record<string, IconRenderer> = {
       <path d="M12 7v10M9 14h6" stroke="currentColor" />
     </svg>
   ),
+  "focus-mode": (p) => (
+    <svg {...baseProps} {...p}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" />
+      <circle cx="12" cy="12" r="3.5" stroke="currentColor" />
+      <path d="M12 1v3M12 20v3M1 12h3M20 12h3" stroke="currentColor" />
+    </svg>
+  ),
 };
 
 const fallback: IconRenderer = (p) => (

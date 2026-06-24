@@ -290,6 +290,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "focus-mode",
+      "title": "Focus Mode: a calmer, ADHD-friendly workspace",
+      "category": "Other",
+      "summary": "Turn on Focus mode (Ctrl+.) to strip distractions, plus reduced motion and run-one-task-at-a-time so the HUD stays calm and responsive.",
+      "order": 345,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
