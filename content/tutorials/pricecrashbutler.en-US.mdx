@@ -69,6 +69,7 @@ While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** coun
 
 - **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Amazon Daily Deals.
 - **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per category (or one page per keyword when keywords are set) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
+- **Only seeing amazon.com (US) deals when you sell on another marketplace?**: open Settings → API Integrations → Creators API and set the **Marketplace** dropdown to your store (for example amazon.co.uk), then save. Your main credentials already cover your own marketplace, so you do not need a separate "EU" or "FE" credential set just to scan it. Pricecrash then sweeps your marketplace by default; use the **Marketplaces to scan** tick-boxes only when you want to sweep additional regions.
 - **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
 - **Posts not appearing in Daily Deals**: confirm Amazon Daily Deals is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Daily Deals isn't visible the deal still lands on disk but you can't see it.
 
