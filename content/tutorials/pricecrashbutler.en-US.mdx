@@ -19,11 +19,12 @@ The threshold is yours - 99% is the default because that's where real pricing er
 
 1. Open **Pricecrash Butler** in the left nav (it lives under Orders Butler in the Amazon group).
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
-3. Decide what should happen when a deal is found:
+3. (Optional) Under **Marketplaces to scan**, tick the Amazon regions you want to sweep (UK, DE, FR and more). Leave them all unchecked to scan only your home marketplace. A box unlocks once you connect that region's Creators API credentials in Settings: US and CA use your default credentials; UK, DE, FR, IT and ES use your EU credentials; and JP, AU and IN use your FE credentials.
+4. Decide what should happen when a deal is found:
    - **Draft for review**: safer; sits in Daily Deals → Search until you approve it.
    - **Auto-schedule**: fastest; drops straight into Daily Deals → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Daily Deals posting schedule.
    - **No hand-off**: just log it in the panel; you act manually.
-4. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
+5. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
 
 ## Recurring scans
 
