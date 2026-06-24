@@ -8,6 +8,8 @@ category: Other
 
 Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from four sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), fresh discoveries pulled from the Creators API, and the **Amazon Associates Deals Hub** (the curated deals catalogue, including upcoming deals that haven't started yet). Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's upcoming, a quick win, or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
 
+The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Daily Deals in one click, with the video or photo you already made attached to the post.
+
 ## The Deals Hub source (and upcoming deals)
 
 The Deals Hub is Amazon's own curated list of deals for creators. It is the only source that shows **upcoming** deals before they go live, with their future start date and future deal price. The Creators API can't see those yet: it only reflects the price that's live right now. So when an upcoming Prime Day deal is scheduled (say a vacuum dropping next week), the Deals Hub source surfaces it today, while the product's normal page still shows the old price.
@@ -61,8 +63,24 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
    - **CC-eligible only**: filter to products where Creator Connections accepts the affiliate link.
    - **Lowest all year only**: filter to deals that beat the year's lowest price.
 4. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
-5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals.
-6. Per row: **Open** the product, **Download** your existing content, or **Add to Daily Deals** to queue a post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
+6. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Daily Deals** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+
+## Grab and post in a couple of clicks
+
+You don't have to queue deals one at a time. Tick the checkbox on each row you want (or **Select visible** to grab the whole filtered list), then pick how ready they should be under **Send as**:
+
+- **Drafts to review**: the deals land in the Daily Deals queue as drafts. You review them and choose destinations there before anything posts.
+- **Ready to post**: the deals arrive already targeting your enabled Social Destinations, so they're one click from going out.
+
+Click **Send selected to Daily Deals**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
+
+## Customize the table
+
+- **Reorder columns**: drag any column header left or right.
+- **Resize**: drag the right edge of a header.
+- **Show or hide columns**: open the **Columns** menu and tick what you want, or drag to reorder there. Your layout is remembered next launch.
+- **Sort**: click any header; the orange arrow shows the direction. The active sort and bucket tab are remembered too.
 
 ## Find trending
 

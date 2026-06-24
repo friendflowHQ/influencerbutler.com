@@ -8,6 +8,8 @@ category: Other
 
 Prime Day Butler es un radar de temporada que muestra productos de Amazon con buenas ofertas desde cuatro fuentes a la vez: contenido que ya publicaste en tu tienda, productos que has comprado de verdad (desde Orders Butler), nuevos descubrimientos de la Creators API y el **Deals Hub de Amazon Associates** (el catálogo de ofertas curado, incluidas ofertas próximas que aún no han empezado). Cada fila se ordena por **ganancias estimadas** (las mayores primero) y se etiqueta con un grupo para que sepas si es próxima, una ganancia rápida o una opción de última hora. Filtras por palabra clave, % de descuento mínimo y precio máximo; la tabla se actualiza y exportas los candidatos a CSV.
 
+La tabla funciona como Orders Butler: una miniatura del producto en cada fila, columnas que puedes arrastrar para reordenar, redimensionar u ocultar (el diseño se recuerda), encabezados que ordenan al hacer clic y un cuadro de filtro por palabra clave o ASIN en vivo. Marca las filas que quieras y envíalas directamente a Daily Deals con un clic, con el vídeo o la foto que ya creaste adjuntos a la publicación.
+
 ## La fuente Deals Hub (y las ofertas próximas)
 
 El Deals Hub es la lista curada de ofertas de Amazon para creadores. Es la única fuente que muestra ofertas **próximas** antes de que empiecen, con su fecha de inicio futura y su precio de oferta futuro. La Creators API aún no puede verlas: solo refleja el precio activo ahora mismo. Así que cuando una oferta de Prime Day próxima está programada (por ejemplo, un aspirador que baja la semana que viene), la fuente Deals Hub la muestra hoy, mientras que la página normal del producto sigue mostrando el precio antiguo.
@@ -61,8 +63,24 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
    - **Solo elegibles para CC**: filtra a productos donde Creator Connections acepta el enlace de afiliado.
    - **Solo mínimo del año**: filtra a ofertas que superan el precio más bajo del año.
 4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
-5. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año.
-6. Por fila: **Abrir** el producto, **Descargar** tu contenido existente o **Añadir a Amazon Deals** para encolar una publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
+5. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año. Escribe en el cuadro **Filtrar por palabra clave o ASIN** para acotar las filas visibles, o usa los filtros **Estado de la oferta** y **Solo con contenido creado**.
+6. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Amazon Deals** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
+
+## Selecciona y publica en un par de clics
+
+No tienes que encolar las ofertas de una en una. Marca la casilla de cada fila que quieras (o **Seleccionar visibles** para tomar toda la lista filtrada) y luego elige cómo de listas deben quedar en **Enviar como**:
+
+- **Borradores para revisar**: las ofertas llegan a la cola de Daily Deals como borradores. Las revisas y eliges destinos ahí antes de que se publique nada.
+- **Listas para publicar**: las ofertas llegan ya apuntando a tus Destinos sociales activos, a un clic de salir.
+
+Haz clic en **Enviar seleccionadas a Daily Deals**. Cada oferta lleva su enlace de afiliado o deep link (creado desde tu enrutado de enlaces en Integraciones de API) y el texto, y **el vídeo o la foto que ya creaste para ese producto se adjunta automáticamente**, buscado por ASIN en Video Butler y Photo Reload Butler. Si no hay copia local pero se conoce la fuente, se descarga al momento. Tu vídeo creado se publica en grupos y páginas de Facebook; otros destinos usan la imagen del producto. Las ofertas próximas (confidenciales) se confirman una vez antes de encolarse.
+
+## Personaliza la tabla
+
+- **Reordenar columnas**: arrastra cualquier encabezado a izquierda o derecha.
+- **Redimensionar**: arrastra el borde derecho de un encabezado.
+- **Mostrar u ocultar columnas**: abre el menú **Columnas** y marca lo que quieras, o arrastra para reordenar ahí. Tu diseño se recuerda en el próximo inicio.
+- **Ordenar**: haz clic en cualquier encabezado; la flecha naranja muestra la dirección. El orden activo y la pestaña de grupo también se recuerdan.
 
 ## Buscar tendencias
 

@@ -8,6 +8,8 @@ category: Other
 
 Prime Day Butler est un radar saisonnier qui fait remonter des produits Amazon en promotion depuis quatre sources à la fois : le contenu que tu as déjà publié sur ta boutique, les produits que tu as réellement achetés (depuis Orders Butler), les nouvelles découvertes tirées de l'API Creators et le **Deals Hub d'Amazon Associates** (le catalogue d'offres organisé, y compris les offres à venir qui n'ont pas encore commencé). Chaque ligne est classée par **gains estimés** (les plus élevés en premier) et étiquetée avec un groupe pour que tu saches s'il s'agit d'une offre à venir, d'un gain rapide ou d'une opportunité de dernière minute. Tu filtres par mot-clé, % de réduction minimum et prix maximum ; le tableau se met à jour et tu exportes les candidats en CSV.
 
+Le tableau fonctionne comme Orders Butler : une miniature du produit sur chaque ligne, des colonnes que tu peux glisser pour réordonner, redimensionner ou masquer (la disposition est mémorisée), des en-têtes triables au clic et un champ de filtre par mot-clé ou ASIN en direct. Coche les lignes voulues et envoie-les directement vers Daily Deals en un clic, avec la vidéo ou la photo que tu as déjà créée jointe au post.
+
 ## La source Deals Hub (et les offres à venir)
 
 Le Deals Hub est la liste organisée des offres d'Amazon pour les créateurs. C'est la seule source qui montre les offres **à venir** avant leur lancement, avec leur date de début future et leur prix d'offre futur. L'API Creators ne peut pas encore les voir : elle ne reflète que le prix en cours en ce moment. Donc quand une offre Prime Day à venir est programmée (par exemple un aspirateur qui baisse la semaine prochaine), la source Deals Hub la fait remonter dès aujourd'hui, alors que la page normale du produit affiche encore l'ancien prix.
@@ -61,8 +63,24 @@ Si une source manque, l'espace de travail fonctionne quand même. Il affiche sim
    - **Éligibles CC uniquement** : filtre les produits où Creator Connections accepte le lien d'affiliation.
    - **Plus bas de l'année uniquement** : filtre les offres qui battent le prix le plus bas de l'année.
 4. Clique sur **Lancer maintenant**. La ligne d'état affiche le total, réparti en à venir, gains rapides et dernière minute.
-5. Utilise les onglets de groupe pour te concentrer, trie par **Gains est.** pour publier d'abord ce qui rapporte le plus, ou par **vs plus bas année** pour commencer par les meilleures offres de l'année.
-6. Par ligne : **Ouvrir** le produit, **Télécharger** ton contenu existant ou **Ajouter à Amazon Deals** pour mettre un post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
+5. Utilise les onglets de groupe pour te concentrer, trie par **Gains est.** pour publier d'abord ce qui rapporte le plus, ou par **vs plus bas année** pour commencer par les meilleures offres de l'année. Saisis dans le champ **Filtrer par mot-clé ou ASIN** pour réduire les lignes affichées, ou utilise les filtres **Statut de l'offre** et **Avec contenu créé uniquement**.
+6. Par ligne : **Ouvrir** le produit, ouvrir les liens de la colonne **Contenu** ou **Télécharger** le fichier que tu as déjà créé, ou **Ajouter à Amazon Deals** pour mettre un seul post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
+
+## Sélectionne et publie en deux clics
+
+Tu n'as pas à mettre les offres en file une par une. Coche la case de chaque ligne voulue (ou **Sélectionner les visibles** pour prendre toute la liste filtrée), puis choisis leur état dans **Envoyer en tant que** :
+
+- **Brouillons à relire** : les offres arrivent dans la file Daily Deals en brouillons. Tu les relis et choisis les destinations là-bas avant toute publication.
+- **Prêtes à publier** : les offres arrivent en ciblant déjà tes Destinations sociales activées, à un clic de partir.
+
+Clique sur **Envoyer la sélection vers Daily Deals**. Chaque offre porte son lien d'affiliation ou deep link (créé depuis ton routage de liens dans les Intégrations API) et le texte, et **la vidéo ou la photo que tu as déjà créée pour ce produit est jointe automatiquement**, recherchée par ASIN dans Video Butler et Photo Reload Butler. S'il n'y a pas de copie locale mais que la source est connue, elle est téléchargée à la demande. Ta vidéo créée est publiée dans les groupes et pages Facebook ; les autres destinations utilisent l'image du produit. Les offres à venir (confidentielles) sont confirmées une fois avant la mise en file.
+
+## Personnalise le tableau
+
+- **Réordonner les colonnes** : glisse n'importe quel en-tête à gauche ou à droite.
+- **Redimensionner** : glisse le bord droit d'un en-tête.
+- **Afficher ou masquer des colonnes** : ouvre le menu **Colonnes** et coche ce que tu veux, ou glisse pour réordonner. Ta disposition est mémorisée au prochain lancement.
+- **Trier** : clique sur n'importe quel en-tête ; la flèche orange indique le sens. Le tri actif et l'onglet de groupe sont aussi mémorisés.
 
 ## Trouver les tendances
 
