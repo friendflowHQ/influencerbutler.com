@@ -76,16 +76,41 @@ export async function POST(request: Request) {
       .order("created_at", { ascending: false }),
     svc
       .from("license_keys")
-      .select("ls_license_key_id,key,status,activation_limit,subscription_id,created_at")
+      .select("ls_license_key_id,key,key_hash,status,activation_limit,subscription_id,created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     svc.from("staff_members").select("role,permissions,is_active").eq("user_id", userId).maybeSingle(),
   ]);
 
+  let licenses = licensesRes.data ?? [];
+
+  // Self-heal existing rows whose key_hash is missing or stale. The desktop
+  // app authenticates by key_hash, so a present-but-unhashed row would never
+  // activate. The zero-row backfill below only covers a *missing* row, not
+  // this case, so repair it here.
+  await Promise.all(
+    licenses.map(async (lic) => {
+      const key = typeof lic.key === "string" ? lic.key.trim() : "";
+      const lsId =
+        typeof lic.ls_license_key_id === "string" ? lic.ls_license_key_id : "";
+      if (!key || !lsId) return;
+      const expected = hashLicenseKey(key);
+      if (lic.key_hash === expected) return;
+      try {
+        await svc
+          .from("license_keys")
+          .update({ key_hash: expected })
+          .eq("ls_license_key_id", lsId);
+        lic.key_hash = expected;
+      } catch (error) {
+        console.error("admin/users/lookup: key_hash repair failed", error);
+      }
+    }),
+  );
+
   // When the local table has no license row, fall back to Lemon Squeezy by
   // email so an operator still sees (and can act on) the key. Best-effort
   // backfill the row so the desktop app can authenticate by key_hash.
-  let licenses = licensesRes.data ?? [];
   if (licenses.length === 0) {
     const lsLicense = await fetchLicenseFromLs(email);
     if (lsLicense) {
@@ -109,6 +134,7 @@ export async function POST(request: Request) {
         {
           ls_license_key_id: lsLicense.lsLicenseKeyId,
           key: lsLicense.key,
+          key_hash: hashLicenseKey(lsLicense.key),
           status: lsLicense.status,
           activation_limit: lsLicense.activationLimit,
           subscription_id: null,

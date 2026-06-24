@@ -70,6 +70,11 @@ type AdminLookupClient = {
         }>;
       };
     };
+    update: (values: Record<string, unknown>) => {
+      eq: (col: string, value: string) => Promise<{
+        error: { message?: string } | null;
+      }>;
+    };
   };
   auth: {
     admin: {
@@ -101,14 +106,47 @@ async function resolveLicenseBearer(
     return { ok: false, status: 503, error: "Server misconfigured" };
   }
   const licenseHash = hashLicenseKey(key);
-  const { data: row, error } = await admin
+  const hashLookup = await admin
     .from("license_keys")
     .select("user_id, key_hash")
     .eq("key_hash", licenseHash)
     .maybeSingle();
-  if (error) {
-    console.error("license-auth: license_keys lookup failed", error);
+  if (hashLookup.error) {
+    console.error("license-auth: license_keys lookup failed", hashLookup.error);
     return { ok: false, status: 500, error: "License lookup failed" };
+  }
+  let row = hashLookup.data;
+  // Self-heal fallback: a valid row may exist with a null or stale key_hash
+  // (e.g. written before the key_hash backfill, or by a path that did not
+  // compute it). Match on the plaintext key, then backfill the hash so the
+  // next activation hits the fast indexed key_hash path above.
+  if (!row || !row.user_id) {
+    const keyLookup = await admin
+      .from("license_keys")
+      .select("user_id, key_hash")
+      .eq("key", key)
+      .maybeSingle();
+    if (keyLookup.error) {
+      console.error(
+        "license-auth: license_keys key fallback failed",
+        keyLookup.error,
+      );
+      return { ok: false, status: 500, error: "License lookup failed" };
+    }
+    if (keyLookup.data && keyLookup.data.user_id) {
+      row = keyLookup.data;
+      if (keyLookup.data.key_hash !== licenseHash) {
+        const upd = await admin
+          .from("license_keys")
+          .update({ key_hash: licenseHash })
+          .eq("key", key);
+        if (upd.error) {
+          // Non-fatal: the caller is still authenticated this request; the
+          // hash just was not repaired, so it will retry the fallback again.
+          console.warn("license-auth: key_hash backfill failed", upd.error);
+        }
+      }
+    }
   }
   if (!row || !row.user_id) {
     return { ok: false, status: 401, error: "Unknown license" };
