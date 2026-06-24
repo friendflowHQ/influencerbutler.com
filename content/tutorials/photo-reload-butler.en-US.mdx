@@ -26,6 +26,16 @@ There is no re-encoding, joining, or duration logic here. Photos do not need any
 
 A Chrome window opens, reads each eligible photo from your storefront, and posts it to the destinations you picked. The **Photo Log** tab tracks every post with its destinations and status.
 
+## One-click Preferred Formulas
+
+You do not have to set the filters by hand. At the top of Step 1, **Preferred Formulas** gives you three one-click mixes for the most common reload paths. Clicking one fills in the source, destinations, and filters for you, and the active formula highlights in orange. Everything stays editable afterward and saves automatically.
+
+- **Fan out US photos → CA + UK + AU + SG**: takes your US photos and posts them to Canada, the UK, Australia, and Singapore, deduping on title and ASIN so the same image never posts to a marketplace twice. Use it once you have posted to US and want the same photos earning everywhere.
+- **US re-upload + fan-out → US (delete first) + CA + UK + AU + SG**: refreshes your US photos and fans them out at the same time. It deletes the US original first so the re-post is not rejected as a duplicate, then posts to US and the four other marketplaces. It skips unavailable products and photos added in the last 45 days. Run [Retag Butler](/help/tutorials/retag-butler) first so stale product tags get fixed before the re-post.
+- **In-stock products only (skip unavailable)**: turns on both availability checks in one click and leaves the rest of your filters alone.
+
+The middle formula deletes the US original before re-posting, so prove it on a small batch first (see "Test on a small batch first" below).
+
 ## Fan out to other marketplaces
 
 The point of Photo Reload Butler is reach. A photo you posted in the US can usually be posted again in Canada, the UK, Australia, and Singapore, because each is a separate storefront. Tick those destinations in Step 1 and a single run posts the photo to each one it can.
