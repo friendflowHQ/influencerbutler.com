@@ -119,6 +119,14 @@ export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<b
   const audienceId = process.env.RESEND_AUDIENCE_ID;
   if (!apiKey || !audienceId) return false;
 
+  // Resend requires an unsubscribe link in broadcasts; the {{{RESEND_UNSUBSCRIBE_URL}}}
+  // placeholder is replaced per-recipient and handles unsubscribes automatically.
+  const unsubHtml =
+    '<p style="margin:18px 0 0;font-size:12px;color:#9ca3af;">' +
+    '<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#9ca3af;">Unsubscribe</a></p>';
+  const html = bodyToHtml(issue.body) + unsubHtml;
+  const text = `${issue.body}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`;
+
   try {
     const createRes = await fetch("https://api.resend.com/broadcasts", {
       method: "POST",
@@ -129,8 +137,8 @@ export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<b
         reply_to: "hello@influencerbutler.com",
         subject: issue.subject,
         name: issue.subject,
-        html: bodyToHtml(issue.body),
-        text: issue.body,
+        html,
+        text,
       }),
     });
     if (!createRes.ok) {

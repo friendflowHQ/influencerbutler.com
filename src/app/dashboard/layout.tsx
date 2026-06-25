@@ -4,6 +4,7 @@ import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
 import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
 import LikeButlerFreebieBanner from "@/components/dashboard/LikeButlerFreebieBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
+import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 
 export default async function DashboardLayout({
@@ -35,6 +36,7 @@ export default async function DashboardLayout({
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Influencer Butler</span>
             </div>
             <AdminBadge />
+            <DashboardUserEmail />
           </div>
           <LikeButlerFreebieBanner />
           <AffiliateUpsellBanner />
