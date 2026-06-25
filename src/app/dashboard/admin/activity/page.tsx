@@ -18,11 +18,14 @@ type Activity = {
 
 type Config = { enabled: boolean; windowMinutes: number; maxCount: number };
 
+type UpcomingItem = { at: string; city: string; region: string | null; country: string };
+
 type ConfigResponse = {
   admin?: { email: string };
   config?: Config;
   events?: Activity[];
   seedEnabled?: boolean;
+  seedUpcoming?: UpcomingItem[];
   error?: string;
 };
 
@@ -68,6 +71,7 @@ export default function AdminActivityPage() {
   const [seedEnabled, setSeedEnabled] = useState<boolean>(false);
   const [seedBusy, setSeedBusy] = useState(false);
   const [seedNote, setSeedNote] = useState<string | null>(null);
+  const [seedUpcoming, setSeedUpcoming] = useState<UpcomingItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,6 +94,7 @@ export default function AdminActivityPage() {
         setMaxCount(json.config.maxCount);
       }
       setSeedEnabled(json.seedEnabled === true);
+      setSeedUpcoming(json.seedUpcoming ?? []);
       setEvents(json.events ?? []);
     } catch (err) {
       console.error(err);
@@ -162,6 +167,7 @@ export default function AdminActivityPage() {
       }
       setSeedEnabled(next);
       setSeedNote(next ? "Demo activity on." : "Demo activity off.");
+      await load();
     } catch {
       setSeedNote("Network error.");
     } finally {
@@ -299,6 +305,43 @@ export default function AdminActivityPage() {
               {seedNote ? <span className="text-sm text-slate-500">{seedNote}</span> : null}
             </div>
           </section>
+
+          {seedUpcoming.length > 0 ? (
+            <section className="mt-8">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                Upcoming demo activity
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                The next {seedUpcoming.length} scheduled seeded events. Each fires automatically at
+                the time shown (about one every 10 to 70 minutes, overnight US hours skipped), then
+                drops into Recent events below. The queue refills itself.
+              </p>
+              <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+                {seedUpcoming.map((it, i) => {
+                  const parts: string[] = [];
+                  if (it.city) parts.push(it.city);
+                  if (it.region && it.region !== it.city) parts.push(it.region);
+                  let where = parts.join(", ");
+                  if (!where && it.country) where = it.country;
+                  return (
+                    <div key={`${it.at}-${i}`} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">
+                            Scheduled
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-sm text-slate-800">
+                          Someone in {where || "Unknown location"} is checking out Influencer Butler
+                        </p>
+                        <p className="text-xs text-slate-400">{formatDate(it.at)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <section className="mt-8">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">

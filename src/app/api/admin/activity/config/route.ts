@@ -12,6 +12,7 @@ import {
   writeActivityConfig,
   listAdminActivity,
   readSeedEnabled,
+  getUpcomingSeedActivity,
   type ActivityConfig,
 } from "@/lib/recent-activity";
 
@@ -22,12 +23,19 @@ export async function GET(request: Request) {
   const actor = await requirePermission("activity.manage", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [config, events, seedEnabled] = await Promise.all([
+  const [config, events, seedEnabled, seedUpcoming] = await Promise.all([
     readActivityConfig(),
     listAdminActivity(50),
     readSeedEnabled(),
+    getUpcomingSeedActivity(24),
   ]);
-  return NextResponse.json({ admin: { email: actor.email }, config, events, seedEnabled });
+  return NextResponse.json({
+    admin: { email: actor.email },
+    config,
+    events,
+    seedEnabled,
+    seedUpcoming,
+  });
 }
 
 type ConfigBody = { enabled?: unknown; windowMinutes?: unknown; maxCount?: unknown };

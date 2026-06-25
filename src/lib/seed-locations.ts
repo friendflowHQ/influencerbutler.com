@@ -85,3 +85,85 @@ export function randomSeedLocation(): SeedLocation {
   const pool = Math.random() < 0.8 ? US_LOCATIONS : INTL_LOCATIONS;
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
+// --------------------------------------------------------------------------
+// Pre-scheduled demo-activity queue
+//
+// Instead of deciding each seeded event at fire time, we keep a rolling queue
+// of upcoming events (a planned time + location each) so the admin can see what
+// is coming. The cron fires the earliest due item, then tops the queue back up.
+// The queue lives in app_config 'activity_seed_queue' (see recent-activity.ts).
+// --------------------------------------------------------------------------
+
+export type SeedQueueItem = {
+  at: string; // ISO timestamp the event should fire
+  city: string;
+  region: string | null;
+  country: string;
+};
+
+const MIN_GAP_MINUTES = 10;
+const MAX_GAP_MINUTES = 70;
+// Skip the overnight US window when scheduling (08:00-12:59 UTC is roughly
+// 1am-7am Eastern / 10pm-4am Pacific), so the feed is quiet at those hours.
+const QUIET_UTC_START = 8;
+const QUIET_UTC_END = 13; // exclusive
+// Drop never-fired items older than this (e.g. left over from a paused period)
+// so re-enabling does not fire a stale backlog all at once.
+const STALE_GRACE_MS = 90 * 60 * 1000;
+
+function inQuietHours(d: Date): boolean {
+  const h = d.getUTCHours();
+  return h >= QUIET_UTC_START && h < QUIET_UTC_END;
+}
+
+/** If a time lands in the overnight window, bump it to just after the window opens. */
+function skipQuietHours(d: Date): Date {
+  if (!inQuietHours(d)) return d;
+  const out = new Date(d);
+  out.setUTCHours(QUIET_UTC_END, Math.floor(Math.random() * 15), 0, 0);
+  return out;
+}
+
+function nextTimeAfter(prev: Date): Date {
+  const gap = MIN_GAP_MINUTES + Math.floor(Math.random() * (MAX_GAP_MINUTES - MIN_GAP_MINUTES + 1));
+  return skipQuietHours(new Date(prev.getTime() + gap * 60_000));
+}
+
+/**
+ * Cleans and refills the queue: drops stale past items, then ensures at least
+ * `target` future items exist (spaced 10-70 min apart, overnight skipped, each
+ * with a random location). Due items (at <= now, still fresh) are kept so the
+ * cron can fire them. Pure: returns a new sorted array, does not fire anything.
+ */
+export function topUpSeedQueue(
+  items: SeedQueueItem[],
+  nowMs: number,
+  target: number,
+): SeedQueueItem[] {
+  const cleaned = items
+    .filter((it) => {
+      const t = new Date(it.at).getTime();
+      return Number.isFinite(t) && t >= nowMs - STALE_GRACE_MS;
+    })
+    .sort((a, b) => (a.at < b.at ? -1 : 1));
+
+  let last =
+    cleaned.length > 0
+      ? new Date(Math.max(new Date(cleaned[cleaned.length - 1].at).getTime(), nowMs))
+      : new Date(nowMs);
+
+  let futureCount = cleaned.filter((it) => new Date(it.at).getTime() > nowMs).length;
+  while (futureCount < target) {
+    const t = nextTimeAfter(last);
+    const loc = randomSeedLocation();
+    cleaned.push({ at: t.toISOString(), city: loc.city, region: loc.region, country: loc.country });
+    last = t;
+    futureCount += 1;
+  }
+
+  return cleaned.sort((a, b) => (a.at < b.at ? -1 : 1));
+}
+
+/** How many future items to keep scheduled ahead at any time. */
+export const SEED_QUEUE_TARGET = 24;

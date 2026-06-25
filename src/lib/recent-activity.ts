@@ -10,6 +10,7 @@
 // returns only non-identifying fields. See src/app/api/activity/recent.
 
 import { createServerClient } from "@supabase/ssr";
+import type { SeedQueueItem } from "@/lib/seed-locations";
 
 export type Geo = {
   city: string | null;
@@ -460,4 +461,58 @@ export async function deleteSeededActivity(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+// --- Pre-scheduled seed queue (upcoming demo events) ----------------------
+
+const SEED_QUEUE_KEY = "activity_seed_queue";
+
+export async function readSeedQueue(): Promise<SeedQueueItem[]> {
+  try {
+    const db = serviceDb();
+    if (!db) return [];
+    const { data, error } = await db
+      .from("app_config")
+      .select("value")
+      .eq("key", SEED_QUEUE_KEY)
+      .maybeSingle();
+    if (error || !data) return [];
+    const v = (data.value && typeof data.value === "object" ? data.value : {}) as Record<
+      string,
+      unknown
+    >;
+    const items = Array.isArray(v.items) ? (v.items as SeedQueueItem[]) : [];
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+export async function writeSeedQueue(items: SeedQueueItem[]): Promise<boolean> {
+  const db = serviceDb();
+  if (!db) return false;
+  const { error } = await db.from("app_config").upsert(
+    {
+      key: SEED_QUEUE_KEY,
+      value: { items },
+      updated_at: new Date().toISOString(),
+      updated_by: "cron:seed-activity",
+    },
+    { onConflict: "key" },
+  );
+  if (error) {
+    console.error("writeSeedQueue: upsert failed", error);
+    return false;
+  }
+  return true;
+}
+
+/** Upcoming (future) scheduled seed events, soonest first. */
+export async function getUpcomingSeedActivity(limit = 24): Promise<SeedQueueItem[]> {
+  const now = Date.now();
+  const queue = await readSeedQueue();
+  return queue
+    .filter((it) => new Date(it.at).getTime() > now)
+    .sort((a, b) => (a.at < b.at ? -1 : 1))
+    .slice(0, limit);
 }
