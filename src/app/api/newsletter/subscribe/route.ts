@@ -40,25 +40,29 @@ function serviceDb(): ServiceDb | null {
   }) as unknown as ServiceDb;
 }
 
-/** Best-effort: add the contact to the Resend Audience. Never throws. */
+/**
+ * Best-effort: add the contact to the Resend newsletter segment. Never throws.
+ * RESEND_AUDIENCE_ID holds a Resend *segment* id (Resend renamed Audiences to
+ * Segments); the current contacts API is POST /contacts with a `segments` array.
+ */
 async function addToResendAudience(email: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
-  if (!apiKey || !audienceId) return;
+  const segmentId = process.env.RESEND_AUDIENCE_ID;
+  if (!apiKey || !segmentId) return;
   try {
-    const res = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+    const res = await fetch("https://api.resend.com/contacts", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, unsubscribed: false }),
+      body: JSON.stringify({ email, unsubscribed: false, segments: [segmentId] }),
     });
     if (!res.ok) {
-      console.error("newsletter: Resend audience add failed", res.status);
+      console.error("newsletter: Resend contact add failed", res.status);
     }
   } catch (err) {
-    console.error("newsletter: Resend audience add threw", err);
+    console.error("newsletter: Resend contact add threw", err);
   }
 }
 

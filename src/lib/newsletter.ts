@@ -116,8 +116,11 @@ export function bodyToHtml(body: string): string {
  */
 export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const audienceId = process.env.RESEND_AUDIENCE_ID;
-  if (!apiKey || !audienceId) return false;
+  // RESEND_AUDIENCE_ID holds a Resend *segment* id. Resend renamed Audiences to
+  // Segments, and the Broadcasts API now targets a segment_id. The env var keeps
+  // its historical name so it does not need to be re-added in Vercel.
+  const segmentId = process.env.RESEND_AUDIENCE_ID;
+  if (!apiKey || !segmentId) return false;
 
   // Resend requires an unsubscribe link in broadcasts; the {{{RESEND_UNSUBSCRIBE_URL}}}
   // placeholder is replaced per-recipient and handles unsubscribes automatically.
@@ -132,7 +135,7 @@ export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<b
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        audience_id: audienceId,
+        segment_id: segmentId,
         from: FROM_ADDRESS,
         reply_to: "hello@influencerbutler.com",
         subject: issue.subject,
