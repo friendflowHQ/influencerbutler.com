@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Photo Reload Butler re-posts your Amazon storefront photos to Canada, the UK, Australia, and Singapore with fresh tags, and reloads photos that were removed from Amazon.">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Photo Reload Butler: re-post your storefront photos to every marketplace | Influencer Butler">
+    <meta property="og:description" content="The same shoppable photo, earning in every storefront you are eligible for. Fan out to CA, UK, AU, and SG, and reload deleted photos.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f97316">
+    <title>Photo Reload Butler: re-post your storefront photos to every marketplace | Influencer Butler</title>
+    <link rel="icon" type="image/png" href="/assets/influencer-butler-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+  <script src="/js/consent.js" defer></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-S1TC1QLYNN');
+  </script>
+</head>
+<body>
+    <header id="site-header">
+        <nav class="container">
+            <a href="/" class="logo" aria-label="Influencer Butler home">
+                <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" class="logo-img" width="40" height="40">
+                <span class="logo-text">Influencer Butler</span>
+            </a>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/#features" class="nav-link">Features</a></li>
+                <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="/#pricing" class="nav-link">Pricing</a></li>
+                <li><a href="/#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/blog" class="nav-link">Blog</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
+            </ul>
+            <a href="/go/trial" class="btn btn-primary nav-cta">Start Free Trial</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+            if (!authNavLink) return;
+            const hasSupabaseAuthCookie = document.cookie.split(';').map((e) => e.trim()).some((e) => /^sb-[^=]+-auth-token=/.test(e));
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <main class="feature-detail">
+        <div class="container">
+            <section class="feature-hero anim-up">
+                <div class="feature-hero-copy">
+                    <a href="/#features" class="feature-back-link">&larr; All tools</a>
+                    <div class="feature-hero-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#f97316" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" stroke="#f97316" stroke-width="2"/><path d="M21 15l-5-5L5 21" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h1>Photo Reload Butler</h1>
+                    <p class="feature-tagline">Your storefront photos, re-posted to every marketplace you are eligible for.</p>
+                    <div class="feature-hero-cta">
+                        <a class="btn btn-primary btn-lg" href="/#pricing">Start free</a>
+                        <a class="btn btn-outline btn-lg" href="/#features">See all tools</a>
+                    </div>
+                </div>
+                <div class="feature-hero-image">
+                    <div class="vob-carousel" role="region" aria-roledescription="carousel" aria-label="Photo Reload Butler screenshots" data-vob-carousel>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--prev" aria-label="Previous slide">&larr;</button>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--next" aria-label="Next slide">&rarr;</button>
+                        <div class="vob-carousel__track" data-vob-track tabindex="0">
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="1 of 3">
+                                <img src="/assets/features/photo-reload-butler-1.png" alt="Photo Reload Butler &mdash; pick your photo source and tick the destination marketplaces to fan out to" loading="lazy" width="1920" height="1140">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="2 of 3">
+                                <img src="/assets/features/photo-reload-butler-2.png" alt="Photo Reload Butler &mdash; one-click Preferred Formulas, timeframe, duplicate, and availability filters" loading="lazy" width="1920" height="1140">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="3 of 3">
+                                <img src="/assets/features/photo-reload-butler-3.png" alt="Photo Reload Butler &mdash; the Photo Log tracking every re-post with its destinations and status" loading="lazy" width="1920" height="1140">
+                            </figure>
+                        </div>
+                        <div class="vob-carousel__dots" role="tablist" aria-label="Carousel pagination">
+                            <button type="button" class="vob-carousel__dot is-active" data-vob-dot="0" aria-label="Slide 1"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="1" aria-label="Slide 2"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="2" aria-label="Slide 3"></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="feature-compare anim-up">
+                <div class="compare-col compare-without">
+                    <span class="compare-label">Without this</span>
+                    <p>Re-upload the same photo to Canada, the UK, Australia, and Singapore by hand. Re-tag every one. Lose the photos Amazon removed.</p>
+                </div>
+                <div class="compare-col compare-with">
+                    <span class="compare-label">With Butler</span>
+                    <p>One run fans a photo out to every marketplace you are eligible for with fresh tags, and a saved copy means a deleted photo can always go back.</p>
+                </div>
+            </section>
+
+            <section class="feature-saves anim-up">
+                <h2>How it saves you time, money, and headaches</h2>
+                <ul class="feature-saves-list">
+                    <li>The same shoppable photo earns in four more storefronts, with no extra shooting or editing.</li>
+                    <li>Every delete saves the original to your computer first, so a removed photo can always be reloaded.</li>
+                    <li>Availability checks skip out-of-stock products, so you do not post dead links that drag down your metrics.</li>
+                </ul>
+            </section>
+
+            <section class="feature-box anim-up">
+                <h2>What&rsquo;s in the box</h2>
+                <ul class="feature-box-list">
+                    <li>Fan-out to <strong>Canada, the UK, Australia, and Singapore</strong> from your US photos in a single run</li>
+                    <li><strong>Preferred Formulas</strong>: three one-click mixes that fill in source, destinations, and filters for the most common reload paths</li>
+                    <li><strong>Delete-before-repost</strong> to refresh a photo on its own storefront, with the original downloaded to your computer first</li>
+                    <li><strong>Reload deleted photos</strong> from the Deleted from Amazon tab, each with its locally saved original</li>
+                    <li>Skip-unavailable checks before posting and at tag time, both fail-open so an API error never blocks a post</li>
+                    <li>Title-based matching that finds a product&rsquo;s foreign listing by name and product image when the ASIN does not exist abroad</li>
+                    <li>Duplicate filters by title, ASIN, both, or already-posted-to-that-marketplace</li>
+                    <li>A <strong>Photo Log</strong> that tracks every post with its destinations and status</li>
+                </ul>
+            </section>
+
+            <section class="feature-proof anim-up">
+                <div class="proof-item">CA / UK / AU / SG fan-out</div>
+                <div class="proof-item">Preferred Formulas</div>
+                <div class="proof-item">Delete-before-repost</div>
+                <div class="proof-item">Reload deleted photos</div>
+                <div class="proof-item">Skip unavailable</div>
+                <div class="proof-item">Title match abroad</div>
+            </section>
+
+            <section class="feature-cta anim-up">
+                <h2>Ready to stop re-uploading by hand?</h2>
+                <div class="feature-cta-row">
+                    <a class="btn btn-primary btn-lg" href="/#pricing">Start free</a>
+                    <a class="btn btn-outline btn-lg" href="/help/tutorials/photo-reload-butler">Read the tutorial</a>
+                </div>
+                <a href="/#features" class="feature-back-link feature-back-bottom">&larr; Back to all tools</a>
+            </section>
+        </div>
+    </main>
+
+    <section class="affiliate-band">
+        <div class="container affiliate-band-inner">
+            <div class="affiliate-band-copy">
+                <p class="affiliate-band-eyebrow">Partner Program</p>
+                <h2>Earn 30% recurring. 12 months per referral.</h2>
+                <p class="affiliate-band-pitch">Love Influencer Butler? Get paid to share it. Every subscription you refer pays you 30% every month for the first 12 months they're subscribed. 30-day cookie, last-click attribution, monthly payouts via Lemon Squeezy.</p>
+                <ul class="affiliate-band-points">
+                    <li>30% recurring commission (12 mo per referral)</li>
+                    <li>30-day referral cookie</li>
+                    <li>No caps &mdash; earn forever</li>
+                </ul>
+            </div>
+            <div class="affiliate-band-actions">
+                <a href="/affiliates/apply" class="btn btn-primary btn-lg">Sign up &amp; start earning &rarr;</a>
+                <a href="/affiliates" class="affiliate-band-secondary">Learn about the program</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo">
+                    <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" width="36" height="36">
+                    <span class="logo-text">Influencer Butler</span>
+                </a>
+                <p>The all-in-one command center for creators and influencers.</p>
+                <p class="footer-langs">Available in English, Spanish, and French.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/#faq">FAQ</a>
+                <a href="/affiliates">Affiliates &mdash; Earn 30%</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="/legal/privacy.html">Privacy Policy</a>
+                <a href="/legal/eula.html">EULA</a>
+                <a href="/legal/terms.html">Terms of Service</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="mailto:hello@influencerbutler.com">Contact Us</a>
+                <a href="/dashboard">My Account</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 The Social Media Posse LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+  <script src="/js/webmcp.js" defer></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-vob-carousel]');
+      if (!root) return;
+      var track = root.querySelector('[data-vob-track]');
+      var slides = Array.prototype.slice.call(root.querySelectorAll('.vob-slide'));
+      var dots = Array.prototype.slice.call(root.querySelectorAll('[data-vob-dot]'));
+      var prevBtn = root.querySelector('.vob-carousel__nav--prev');
+      var nextBtn = root.querySelector('.vob-carousel__nav--next');
+      if (!track || slides.length === 0) return;
+      function activeIndex() {
+        var w = track.clientWidth;
+        if (!w) return 0;
+        return Math.round(track.scrollLeft / w);
+      }
+      function go(i) {
+        var n = slides.length;
+        var idx = ((i % n) + n) % n;
+        slides[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(activeIndex() - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(activeIndex() + 1); });
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () { go(parseInt(dot.dataset.vobDot, 10) || 0); });
+      });
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.intersectionRatio < 0.6) return;
+            var idx = slides.indexOf(entry.target);
+            if (idx < 0) return;
+            dots.forEach(function (d, i) { d.classList.toggle('is-active', i === idx); });
+          });
+        }, { root: track, threshold: [0.6] });
+        slides.forEach(function (s) { io.observe(s); });
+      }
+    })();
+  </script>
+  </body>
+</html>

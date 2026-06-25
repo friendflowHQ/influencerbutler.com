@@ -550,6 +550,15 @@
                         <p>Convert and reload Amazon videos with refreshed metadata. Queue management, duplicate detection, and CSV export.</p>
                     </a>
 
+                    <a class="feature-card anim-up" data-category="content" href="/features/photo-reload-butler">
+                        <div class="feature-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#f97316" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" stroke="#f97316" stroke-width="2"/><path d="M21 15l-5-5L5 21" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <h3>Photo Reload Butler</h3>
+                        <p>The photo counterpart to Video Butler. Re-posts your storefront photos to Canada, the UK, Australia, and Singapore with fresh tags, and reloads photos removed from Amazon.</p>
+                        <span class="feature-badge">New</span>
+                    </a>
+
                     <!-- Retag Butler (new) -->
                     <a class="feature-card anim-up" data-category="content" href="/features/retag-butler">
                         <div class="feature-icon">
@@ -1339,6 +1348,59 @@
             </div>
         </section>
     </main>
+
+    <!-- ===================== NEWSLETTER BAND ===================== -->
+    <section class="newsletter-band" style="background:#fff7ed;border-top:1px solid #fed7aa;border-bottom:1px solid #fed7aa;">
+        <div class="container" style="max-width:640px;text-align:center;padding-top:48px;padding-bottom:48px;">
+            <h2 style="margin:0 0 8px;">Not ready for a trial? Get the free newsletter.</h2>
+            <p style="margin:0 0 20px;color:#6b7280;">
+                Amazon-influencer tips, commission tactics, trending product picks, and new features.
+                No spam, unsubscribe anytime.
+            </p>
+            <form id="ib-newsletter-form" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                <input id="ib-newsletter-email" type="email" required placeholder="you@example.com"
+                    aria-label="Email address"
+                    style="flex:1;min-width:240px;max-width:360px;padding:12px 16px;border:1px solid #d1d5db;border-radius:14px;font-size:0.95rem;">
+                <button type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+            <p id="ib-newsletter-msg" role="status" aria-live="polite" style="margin:14px 0 0;font-weight:600;min-height:1.2em;"></p>
+        </div>
+    </section>
+    <script>
+      (function () {
+        var form = document.getElementById("ib-newsletter-form");
+        if (!form) return;
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var input = document.getElementById("ib-newsletter-email");
+          var msg = document.getElementById("ib-newsletter-msg");
+          var email = (input.value || "").trim();
+          if (!email) return;
+          msg.style.color = "#6b7280";
+          msg.textContent = "Joining...";
+          fetch("/api/newsletter/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, source: "home" })
+          })
+            .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, j: j }; }); })
+            .then(function (r) {
+              if (r.ok && r.j && r.j.ok) {
+                msg.style.color = "#16a34a";
+                msg.textContent = "You're in. Check your inbox for the next issue.";
+                form.style.display = "none";
+              } else {
+                msg.style.color = "#e11d48";
+                msg.textContent = (r.j && r.j.error) ? r.j.error : "Something went wrong. Please try again.";
+              }
+            })
+            .catch(function () {
+              msg.style.color = "#e11d48";
+              msg.textContent = "Network error. Please try again.";
+            });
+        });
+      })();
+    </script>
 
     <!-- ===================== AFFILIATE BAND ===================== -->
     <section class="affiliate-band">
