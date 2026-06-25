@@ -3,8 +3,26 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Influencer Butler",
-  description: "Influencer campaign automation platform",
+  metadataBase: new URL("https://www.influencerbutler.com"),
+  title: {
+    default: "Influencer Butler | All-in-One Amazon Influencer Automation Software",
+    template: "%s | Influencer Butler",
+  },
+  description:
+    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 29+ built-in tools.",
+  applicationName: "Influencer Butler",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Influencer Butler",
+    locale: "en_US",
+    url: "https://www.influencerbutler.com/",
+    images: ["/assets/influencer-butler-og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/assets/influencer-butler-og-image.png"],
+  },
   icons: {
     icon: "/assets/influencer-butler-logo.png",
     shortcut: "/assets/influencer-butler-logo.png",

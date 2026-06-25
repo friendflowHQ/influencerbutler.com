@@ -22,6 +22,7 @@ type ConfigResponse = {
   admin?: { email: string };
   config?: Config;
   events?: Activity[];
+  seedEnabled?: boolean;
   error?: string;
 };
 
@@ -49,7 +50,7 @@ function headline(e: Activity): string {
   if (e.kind === "purchase") {
     return `${e.firstName || "Someone"} from ${where} subscribed`;
   }
-  return `Someone from ${where} started a trial`;
+  return `Someone in ${where} is checking out Influencer Butler`;
 }
 
 export default function AdminActivityPage() {
@@ -64,6 +65,9 @@ export default function AdminActivityPage() {
   const [saving, setSaving] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [seedEnabled, setSeedEnabled] = useState<boolean>(false);
+  const [seedBusy, setSeedBusy] = useState(false);
+  const [seedNote, setSeedNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,6 +89,7 @@ export default function AdminActivityPage() {
         setHours(Math.max(1, Math.round(json.config.windowMinutes / 60)));
         setMaxCount(json.config.maxCount);
       }
+      setSeedEnabled(json.seedEnabled === true);
       setEvents(json.events ?? []);
     } catch (err) {
       console.error(err);
@@ -141,6 +146,53 @@ export default function AdminActivityPage() {
     }
   };
 
+  const toggleSeed = async (next: boolean) => {
+    setSeedBusy(true);
+    setSeedNote(null);
+    try {
+      const res = await fetch("/api/admin/activity/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", enabled: next }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setSeedNote(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setSeedEnabled(next);
+      setSeedNote(next ? "Demo activity on." : "Demo activity off.");
+    } catch {
+      setSeedNote("Network error.");
+    } finally {
+      setSeedBusy(false);
+    }
+  };
+
+  const purgeSeeded = async () => {
+    if (!window.confirm("Remove all seeded demo events? This cannot be undone.")) return;
+    setSeedBusy(true);
+    setSeedNote(null);
+    try {
+      const res = await fetch("/api/admin/activity/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purge" }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setSeedNote(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setSeedNote("Seeded events removed.");
+      await load();
+    } catch {
+      setSeedNote("Network error.");
+    } finally {
+      setSeedBusy(false);
+    }
+  };
+
   if (forbidden) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -154,8 +206,9 @@ export default function AdminActivityPage() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Recent-activity widget</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Controls the social-proof popup on the homepage. Showing real trial clicks and purchases
-        only.
+        Controls the social-proof popup on the homepage. It shows real trial clicks and purchases,
+        plus optional seeded demo activity during the launch period (see below). Turn the demo off
+        once real signups are flowing.
       </p>
 
       {loading ? (
@@ -214,6 +267,39 @@ export default function AdminActivityPage() {
             </div>
           </section>
 
+          <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+              Demo activity (launch period)
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              While real traffic is still ramping up, this trickles soft &quot;someone is checking
+              this out&quot; events into the feed (one every 10 to 70 minutes, from cities across the
+              US plus a few other countries) so the popup is not empty. These are clearly tagged
+              and never claim a verified purchase. Switch it off and remove them once real signups
+              arrive.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={seedEnabled}
+                  disabled={seedBusy}
+                  onChange={(ev) => void toggleSeed(ev.target.checked)}
+                  className="h-4 w-4"
+                />
+                Run demo activity
+              </label>
+              <button
+                onClick={purgeSeeded}
+                disabled={seedBusy}
+                className="rounded-lg border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+              >
+                Remove all seeded events
+              </button>
+              {seedNote ? <span className="text-sm text-slate-500">{seedNote}</span> : null}
+            </div>
+          </section>
+
           <section className="mt-8">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
               Recent events
@@ -241,6 +327,11 @@ export default function AdminActivityPage() {
                         >
                           {e.kind === "purchase" ? "Purchase" : "Trial click"}
                         </span>
+                        {e.source === "seed" ? (
+                          <span className="inline-flex items-center rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">
+                            Seeded
+                          </span>
+                        ) : null}
                         {e.hidden ? (
                           <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                             Hidden

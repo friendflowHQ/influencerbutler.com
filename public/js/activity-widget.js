@@ -53,12 +53,13 @@
 
   function headline(e) {
     var where = locationText(e);
-    var fromBit = where ? " from " + where : "";
     if (e.kind === "purchase") {
       var who = e.firstName ? e.firstName : "Someone";
-      return who + fromBit + " just subscribed";
+      return who + (where ? " from " + where : "") + " just subscribed";
     }
-    return "Someone" + fromBit + " started a free trial";
+    // Soft, browsing-level wording for trial-interest events (covers seeded
+    // demo activity too): no claim that anything was completed or verified.
+    return "Someone" + (where ? " in " + where : "") + " is checking out Influencer Butler";
   }
 
   function injectStyles() {
@@ -82,7 +83,6 @@
       ".ib-activity__body{min-width:0;padding-right:14px}" +
       ".ib-activity__msg{color:#111827;font-weight:600}" +
       ".ib-activity__time{color:#9ca3af;font-size:11.5px;margin-top:3px}" +
-      ".ib-activity__verified{color:#16a34a}" +
       ".ib-activity__close{position:absolute;top:7px;right:9px;border:0;background:none;" +
         "cursor:pointer;color:#9ca3af;font-size:17px;line-height:1;padding:2px}" +
       ".ib-activity__close:hover{color:#4b5563}";
@@ -118,9 +118,7 @@
   function render(root, e) {
     root.querySelector("#ib-activity-icon").textContent = e.kind === "purchase" ? "🛒" : "🎉";
     root.querySelector("#ib-activity-msg").textContent = headline(e);
-    var t = timeAgo(e.createdAt);
-    root.querySelector("#ib-activity-time").innerHTML =
-      (t ? t + " · " : "") + '<span class="ib-activity__verified">Verified</span>';
+    root.querySelector("#ib-activity-time").textContent = timeAgo(e.createdAt);
   }
 
   function run(events) {

@@ -11,6 +11,7 @@ import {
   readActivityConfig,
   writeActivityConfig,
   listAdminActivity,
+  readSeedEnabled,
   type ActivityConfig,
 } from "@/lib/recent-activity";
 
@@ -21,8 +22,12 @@ export async function GET(request: Request) {
   const actor = await requirePermission("activity.manage", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [config, events] = await Promise.all([readActivityConfig(), listAdminActivity(50)]);
-  return NextResponse.json({ admin: { email: actor.email }, config, events });
+  const [config, events, seedEnabled] = await Promise.all([
+    readActivityConfig(),
+    listAdminActivity(50),
+    readSeedEnabled(),
+  ]);
+  return NextResponse.json({ admin: { email: actor.email }, config, events, seedEnabled });
 }
 
 type ConfigBody = { enabled?: unknown; windowMinutes?: unknown; maxCount?: unknown };

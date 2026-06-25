@@ -72,6 +72,9 @@ type ServiceDb = {
     update: (payload: Record<string, unknown>) => {
       eq: (col: string, val: unknown) => Promise<{ error: unknown }>;
     };
+    delete: () => {
+      eq: (col: string, val: unknown) => Promise<{ error: unknown }>;
+    };
     select: (cols: string) => Filter;
   };
 };
@@ -339,6 +342,121 @@ export async function setActivityHidden(id: number, hidden: boolean): Promise<bo
     .eq("id", String(id));
   if (error) {
     console.error("setActivityHidden: update failed", error);
+    return false;
+  }
+  return true;
+}
+
+// --------------------------------------------------------------------------
+// Seeded demo activity (launch-period social proof)
+//
+// Until the site has real trial clicks and purchases, a cron
+// (src/app/api/cron/seed-activity) trickles in soft "someone is checking this
+// out" events so the homepage widget is not empty. Seeded rows are tagged
+// source = 'seed' so they can be told apart and removed in one click once real
+// activity takes over. The on/off switch lives in app_config under its own key
+// (separate from the widget's own enabled flag) so the admin can keep the widget
+// on with real data but stop seeding.
+// --------------------------------------------------------------------------
+
+export const SEED_SOURCE = "seed";
+const SEED_CONFIG_KEY = "activity_seed";
+
+export async function readSeedEnabled(): Promise<boolean> {
+  try {
+    const db = serviceDb();
+    if (!db) return false;
+    const { data, error } = await db
+      .from("app_config")
+      .select("value")
+      .eq("key", SEED_CONFIG_KEY)
+      .maybeSingle();
+    if (error || !data) return false;
+    const v = (data.value && typeof data.value === "object" ? data.value : {}) as Record<
+      string,
+      unknown
+    >;
+    return v.enabled === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function writeSeedEnabled(
+  enabled: boolean,
+  updatedBy: string | null,
+): Promise<boolean> {
+  const db = serviceDb();
+  if (!db) return false;
+  const { error } = await db.from("app_config").upsert(
+    {
+      key: SEED_CONFIG_KEY,
+      value: { enabled },
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy,
+    },
+    { onConflict: "key" },
+  );
+  if (error) {
+    console.error("writeSeedEnabled: upsert failed", error);
+    return false;
+  }
+  return true;
+}
+
+/** ISO timestamp of the most recent seeded event, or null if none exist yet. */
+export async function getLatestSeedActivityAt(): Promise<string | null> {
+  const db = serviceDb();
+  if (!db) return null;
+  try {
+    const { data, error } = await db
+      .from("activity_events")
+      .select("created_at")
+      .eq("source", SEED_SOURCE)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error || !data || data.length === 0) return null;
+    return (data[0].created_at as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Inserts one soft seeded trial-interest event. Never throws. */
+export async function insertSeedActivity(loc: {
+  city: string;
+  region: string | null;
+  country: string;
+}): Promise<boolean> {
+  try {
+    const db = serviceDb();
+    if (!db) return false;
+    const { error } = await db.from("activity_events").insert({
+      kind: "trial_click",
+      city: loc.city,
+      region: loc.region,
+      country: loc.country,
+      source: SEED_SOURCE,
+      is_bot: false,
+    });
+    if (error) {
+      console.error("insertSeedActivity: insert failed", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("insertSeedActivity threw", err);
+    return false;
+  }
+}
+
+/** Removes every seeded event (for when real activity takes over). */
+export async function deleteSeededActivity(): Promise<boolean> {
+  const db = serviceDb();
+  if (!db) return false;
+  const { error } = await db.from("activity_events").delete().eq("source", SEED_SOURCE);
+  if (error) {
+    console.error("deleteSeededActivity: delete failed", error);
     return false;
   }
   return true;

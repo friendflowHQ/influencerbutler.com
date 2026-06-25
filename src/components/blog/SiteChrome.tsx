@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 /**
  * Header and footer for the /blog pages. These mirror the markup and styling of
@@ -115,6 +116,15 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-[#fafafa] pt-14 pb-8">
       <div className="mx-auto max-w-6xl px-6">
+        <div className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <NewsletterSignup
+            source="footer"
+            title="The free Amazon-influencer newsletter"
+            subtitle="Tips, commission tactics, trending product picks, and new features. No spam, unsubscribe anytime."
+            className="max-w-xl"
+          />
+        </div>
+
         <div className="mb-10 grid gap-8 md:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2.5">

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/affiliate-funnel",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/seed-activity",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

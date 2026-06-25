@@ -15,6 +15,7 @@ const ROOT_PAGES = {
   "index.html": { url: "/", priority: "0.9", changefreq: "weekly" },
   "landing-page.html": { url: "/landing", priority: "0.7", changefreq: "weekly" },
   "email-sequences.html": { url: "/email-sequences", priority: "0.7", changefreq: "weekly" },
+  "stop-messaging-brands.html": { url: "/stop-messaging-brands", priority: "0.7", changefreq: "weekly" },
 };
 const LEGAL_DEFAULTS = { priority: "0.3", changefreq: "monthly" };
 const FEATURE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
