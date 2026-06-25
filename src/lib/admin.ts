@@ -46,7 +46,9 @@ function parseAdminEmails(): Set<string> {
   const raw = process.env.ADMIN_EMAILS ?? "";
   return new Set(
     raw
-      .split(",")
+      // Accept commas, semicolons, or any whitespace (incl. newlines) as
+      // separators, so a value pasted one-email-per-line still parses.
+      .split(/[\s,;]+/)
       .map((s) => s.trim().toLowerCase())
       .filter((s) => s.length > 0),
   );
