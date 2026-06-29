@@ -110,6 +110,19 @@ A deal in Upcoming is either a **Draft** or **Scheduled**. Only Scheduled deals 
 
 Want to post one deal right now without waiting for the schedule? Use **Post one now** on the Scheduler tab. It sends the next deal that is queued or scheduled.
 
+## Send deals to a Google Sheet
+
+If you keep your own deals spreadsheet, you can push Search Deals results straight into it. Open the **Google Sheet Sync** panel above the results table and follow the short setup: in your Google Sheet, open Apps Script, paste the script the panel gives you, deploy it as a Web app with access set to Anyone, and paste the resulting URL back into the app. The setup takes about two minutes and only needs to be done once.
+
+After you connect, the app reads your sheet's column headers and matches them to deal fields automatically (Product ID to ASIN, Image Link to the product image, and so on). Every match is shown in a grid so you can fix any that look wrong, and columns you set to "Do not fill" are left untouched.
+
+You control how rows are added and when:
+
+- **When adding rows**: add only new deals (skipping any ASIN already in the sheet), add every deal, or replace the sheet contents each time.
+- **When to send**: a button for all results, a button for just the rows you have selected, or automatically after every search.
+
+Your sheet URL is stored encrypted on your own machine, and only you can write to your sheet.
+
 ## Where the data goes
 
 Harvested deals live in the preseed cache; posted-deal history lives in `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. The Console Log tab streams every post attempt + outcome.

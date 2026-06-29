@@ -110,6 +110,19 @@ Una oferta en Próximas es un **Borrador** o está **Programada**. Solo las ofer
 
 ¿Quieres publicar una oferta ahora mismo sin esperar al programador? Usa **Publicar una ahora** en la pestaña Programador. Envía la siguiente oferta en cola o programada.
 
+## Envía ofertas a una Google Sheet
+
+Si tienes tu propia hoja de cálculo de ofertas, puedes enviar los resultados de Buscar ofertas directamente a ella. Abre el panel **Sincronización con Google Sheet** encima de la tabla de resultados y sigue la configuración breve: en tu Google Sheet, abre Apps Script, pega el script que te da el panel, impleméntalo como aplicación web con el acceso configurado en Cualquier persona y pega la URL resultante de vuelta en la app. La configuración tarda unos dos minutos y solo hay que hacerla una vez.
+
+Tras conectarte, la app lee las cabeceras de columna de tu hoja y las asocia a los campos de oferta automáticamente (ID de producto con ASIN, Enlace de imagen con la imagen del producto, etc.). Cada asociación se muestra en una cuadrícula para que corrijas las que parezcan incorrectas, y las columnas que pongas en "No rellenar" se dejan intactas.
+
+Tú controlas cómo se añaden las filas y cuándo:
+
+- **Al añadir filas**: añadir solo ofertas nuevas (omitiendo cualquier ASIN que ya esté en la hoja), añadir todas las ofertas o reemplazar el contenido de la hoja cada vez.
+- **Cuándo enviar**: un botón para todos los resultados, un botón solo para las filas que tengas seleccionadas, o automáticamente después de cada búsqueda.
+
+La URL de tu hoja se guarda cifrada en tu propio equipo, y solo tú puedes escribir en tu hoja.
+
 ## Dónde van los datos
 
 Las ofertas recolectadas viven en la caché preseed; el historial de publicaciones en `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. La pestaña Console Log transmite cada intento de publicación y su resultado.

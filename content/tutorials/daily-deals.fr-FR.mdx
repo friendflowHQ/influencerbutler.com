@@ -110,6 +110,19 @@ Une offre dans À venir est soit un **Brouillon**, soit **Programmée**. Seules 
 
 Vous voulez publier une offre immédiatement sans attendre le planning ? Utilisez **Publier une maintenant** dans l'onglet Planificateur. Il envoie la prochaine offre en file d'attente ou programmée.
 
+## Envoyez les offres vers une Google Sheet
+
+Si vous tenez votre propre feuille de calcul d'offres, vous pouvez y envoyer les résultats de Recherche d'offres directement. Ouvrez le panneau **Synchronisation Google Sheet** au-dessus du tableau des résultats et suivez la courte configuration : dans votre Google Sheet, ouvrez Apps Script, collez le script fourni par le panneau, déployez-le en tant qu'application Web avec l'accès réglé sur Tout le monde, puis collez l'URL obtenue dans l'application. La configuration prend environ deux minutes et ne se fait qu'une seule fois.
+
+Une fois connecté, l'application lit les en-têtes de colonnes de votre feuille et les associe automatiquement aux champs d'offre (ID produit vers ASIN, Lien de l'image vers l'image du produit, etc.). Chaque association est affichée dans une grille pour que vous corrigiez celles qui semblent incorrectes, et les colonnes réglées sur « Ne pas remplir » restent intactes.
+
+Vous décidez comment les lignes sont ajoutées et quand :
+
+- **Lors de l'ajout de lignes** : ajouter uniquement les nouvelles offres (en ignorant tout ASIN déjà présent dans la feuille), ajouter toutes les offres, ou remplacer le contenu de la feuille à chaque fois.
+- **Quand envoyer** : un bouton pour tous les résultats, un bouton pour seulement les lignes que vous avez sélectionnées, ou automatiquement après chaque recherche.
+
+L'URL de votre feuille est stockée chiffrée sur votre propre machine, et vous seul pouvez écrire dans votre feuille.
+
 ## Où vont les données
 
 Les deals récoltés vivent dans le cache preseed ; l'historique des publications dans `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. L'onglet Console Log diffuse chaque tentative de publication et son résultat.
