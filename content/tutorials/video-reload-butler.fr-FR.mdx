@@ -1,25 +1,25 @@
 ---
-title: Video Butler: re-uploadez vos vidéos de boutique Amazon avec de nouvelles métadonnées
+title: Video Reload Butler: re-uploadez vos vidéos de boutique Amazon avec de nouvelles métadonnées
 summary: Convertissez, ré-encodez et re-uploadez les vidéos déjà présentes sur votre boutique avec titres, descriptions et tags rafraîchis - sans rien refilmer.
 category: Amazon
 ---
 
-## Ce que fait Video Butler
+## Ce que fait Video Reload Butler
 
-Video Butler est ce qui se rapproche le plus dans InfluencerButler d'un "coup de pouce gratuit d'engagement". Il reprend les vidéos achetables déjà sur votre boutique Amazon Creator et les re-upload avec des métadonnées fraîches - nouveaux titres, nouvelles descriptions, nouveaux liens d'affiliation, overlays de filigrane/légende optionnels. L'algo d'Amazon traite un re-upload comme un post neuf, donc une vidéo vieille de 6 mois peut prendre un second souffle sans rien refilmer.
+Video Reload Butler est ce qui se rapproche le plus dans InfluencerButler d'un "coup de pouce gratuit d'engagement". Il reprend les vidéos achetables déjà sur votre boutique Amazon Creator et les re-upload avec des métadonnées fraîches - nouveaux titres, nouvelles descriptions, nouveaux liens d'affiliation, overlays de filigrane/légende optionnels. L'algo d'Amazon traite un re-upload comme un post neuf, donc une vidéo vieille de 6 mois peut prendre un second souffle sans rien refilmer.
 
 Vous pouvez aussi l'utiliser pour **élaguer les vidéos sous-performantes** (le moteur a un pas intégré "vues sous le seuil = suppression") et pour **recharger des vidéos supprimées** si vous avez enlevé quelque chose par erreur.
 
 ## Avant de commencer
 
-- **Storefront Butler a synchronisé vos vidéos au moins une fois**: Video Butler lit depuis ce catalogue.
+- **Storefront Butler a synchronisé vos vidéos au moins une fois**: Video Reload Butler lit depuis ce catalogue.
 - **Session Creator Hub connectée** dans Chrome.
 - **FFmpeg installé**: se fait automatiquement à l'install de l'app. Si vous voyez "ffmpeg not found", lancez `npm run stage:ffmpeg` depuis la racine du repo.
 - Optionnel : une image de filigrane et/ou une police pour les légendes, si vous voulez des overlays.
 
 ## Votre première conversion + re-upload
 
-1. Ouvrez **Video Butler** sous Amazon Butler.
+1. Ouvrez **Video Reload Butler** sous Amazon Butler.
 2. Dans la carte **Filtres et options** :
    - **Durée min / max**: laissez large pour la première exécution.
    - **Ignorer les vidéos avec vues ≥**: 1000 par défaut. Cela garde vos meilleures vidéos intactes. Celles *sous* ce seuil sont éligibles au re-upload.
@@ -45,10 +45,10 @@ Une seule exécution effectue alors :
 
 ### Vos vidéos sont en sécurité même si une republication échoue
 
-Comme cette formule supprime l'original US avant de republier, Video Butler protège chaque étape :
+Comme cette formule supprime l'original US avant de republier, Video Reload Butler protège chaque étape :
 
 - La vidéo est **d'abord téléchargée sur votre ordinateur**, avant toute suppression.
-- L'original n'est **supprimé qu'après** que Video Butler a confirmé que le produit est disponible et taguable, jamais pour une vidéo qu'il ne peut pas republier.
+- L'original n'est **supprimé qu'après** que Video Reload Butler a confirmé que le produit est disponible et taguable, jamais pour une vidéo qu'il ne peut pas republier.
 - Si une republication échoue après la suppression, la vidéo apparaît dans la liste **Supprimées d'Amazon** avec son fichier téléchargé, pour que vous la récupériez avec **Recharger la sélection**.
 
 ### Testez d'abord sur deux vidéos
@@ -81,7 +81,7 @@ Deux réglages de la carte **Filtres et options** contrôlent la façon dont les
 
 **Produits indisponibles.** Deux vérifications indépendantes gardent les produits en rupture hors de vos publications :
 
-- **Vérification 1 (avant la mise en ligne)** : activez **Ignorer les mises en ligne vers des produits indisponibles** et Video Butler interroge le stock de chaque produit via l'API Amazon Creators, puis ignore les mises en ligne vers ceux qui sont indisponibles. Publier sur un produit mort rapporte 0 vue, ce qui fait baisser la durée moyenne de visionnage et le % moyen visionné qui alimentent votre score Creator Stars.
+- **Vérification 1 (avant la mise en ligne)** : activez **Ignorer les mises en ligne vers des produits indisponibles** et Video Reload Butler interroge le stock de chaque produit via l'API Amazon Creators, puis ignore les mises en ligne vers ceux qui sont indisponibles. Publier sur un produit mort rapporte 0 vue, ce qui fait baisser la durée moyenne de visionnage et le % moyen visionné qui alimentent votre score Creator Stars.
 - **Vérification 2 (lors du taggage)** : un dernier filet de sécurité pour les produits qui affichent encore « Actuellement indisponible » dans la fenêtre Ajouter des produits d'Amazon au moment du taggage, ce qui peut différer de la vérification de l'API. Choisissez **Les taguer quand même** pour les conserver, ou **Les retirer de la publication** pour que les spectateurs ne tombent jamais sur un lien mort.
 
 **Raccourci.** Pas besoin de tout régler à la main. Sous **Preferred Formulas**, cliquez sur **In-stock products only (skip unavailable)** pour activer la Vérification 1 et régler la Vérification 2 sur le retrait des produits indisponibles, en un seul clic. Vos autres filtres restent exactement tels quels.
@@ -90,7 +90,7 @@ Deux réglages de la carte **Filtres et options** contrôlent la façon dont les
 
 Les envois internationaux associent normalement un produit à sa fiche par ASIN. Mais le même produit physique existe souvent sur une marketplace étrangère sous un ASIN différent, donc une association par ASIN seule laisse de côté beaucoup de vidéos qui pourraient être envoyées. Activez **Rechercher par titre du produit quand aucun ASIN ne correspond sur la marketplace** dans la carte Filtres et options pour les récupérer.
 
-Quand aucun des ASIN d'une vidéo n'existe sur une marketplace de destination, Video Butler recherche cette marketplace par le titre du produit (via l'API Amazon Creators, avec un repli sur une recherche de la marketplace si nécessaire) et note chaque résultat par rapport au titre de votre produit, la même correspondance de titre proche qu'utilise Retag Butler. Quand **Classer les suggestions par image du produit** est activé, il compare aussi la photo de chaque candidat à l'image de votre produit d'origine, pour que la fiche la plus ressemblante l'emporte même si son titre traduit obtient un score faible. Il affiche ensuite ce qu'il a trouvé dans l'**historique des Résultats** sous forme d'une ligne **Correspondance de titre à confirmer**, pour que rien ne soit envoyé au hasard.
+Quand aucun des ASIN d'une vidéo n'existe sur une marketplace de destination, Video Reload Butler recherche cette marketplace par le titre du produit (via l'API Amazon Creators, avec un repli sur une recherche de la marketplace si nécessaire) et note chaque résultat par rapport au titre de votre produit, la même correspondance de titre proche qu'utilise Retag Butler. Quand **Classer les suggestions par image du produit** est activé, il compare aussi la photo de chaque candidat à l'image de votre produit d'origine, pour que la fiche la plus ressemblante l'emporte même si son titre traduit obtient un score faible. Il affiche ensuite ce qu'il a trouvé dans l'**historique des Résultats** sous forme d'une ligne **Correspondance de titre à confirmer**, pour que rien ne soit envoyé au hasard.
 
 Vous contrôlez la façon dont les correspondances sont traitées :
 
@@ -103,7 +103,7 @@ Pour agir sur une suggestion, ouvrez le Journal vidéo, filtrez sur **Correspond
 
 ## Corrigez automatiquement les titres qu'Amazon juge non conformes
 
-Le champ de titre d'Amazon refuse discrètement certains mots. Par exemple, « german » à l'intérieur de « Germany » déclenche son filtre des Règles de la communauté, et la publication ne s'enregistre pas tant que vous n'avez pas corrigé le titre. Video Butler peut s'en charger pour vous. Dans Filtres et Options, réglez **Si Amazon signale un mot interdit dans le titre** :
+Le champ de titre d'Amazon refuse discrètement certains mots. Par exemple, « german » à l'intérieur de « Germany » déclenche son filtre des Règles de la communauté, et la publication ne s'enregistre pas tant que vous n'avez pas corrigé le titre. Video Reload Butler peut s'en charger pour vous. Dans Filtres et Options, réglez **Si Amazon signale un mot interdit dans le titre** :
 
 - **Supprimer le mot signalé** (l'option par défaut) : le butler retire seulement le mot problématique, corrige les espaces, retape le titre et continue à publier.
 - **Réécrire le titre avec l'IA** : le butler demande à l'IA de réécrire le titre en gardant le sens de votre produit et votre balise #ad, mais en retirant ce à quoi Amazon s'est opposé. Cela utilise votre clé OpenAI (la même que pour les couvertures par IA).
@@ -113,9 +113,9 @@ Si une correction ne parvient toujours pas à passer le filtre d'Amazon après q
 
 ## Acceptez les offres Creator Connections dans la même exécution
 
-Beaucoup des produits que vous présentez déjà dans vos vidéos de boutique ont une campagne Creator Connections (CC) active ou une offre Shoppable Video Creator Connections (SPCC) qui vous attend. Les trouver à la main veut dire faire défiler des listes d'opportunités sans fin. Video Butler peut le faire pour vous pendant qu'il traite vos vidéos.
+Beaucoup des produits que vous présentez déjà dans vos vidéos de boutique ont une campagne Creator Connections (CC) active ou une offre Shoppable Video Creator Connections (SPCC) qui vous attend. Les trouver à la main veut dire faire défiler des listes d'opportunités sans fin. Video Reload Butler peut le faire pour vous pendant qu'il traite vos vidéos.
 
-Activez **Accepter les offres Creator Connections** dans la carte Filtres et options. Au fur et à mesure que Video Butler lit chaque vidéo, il collecte les ASIN taggés et les vérifie auprès de notre service de recherche, qui sait quels ASIN ont une campagne CC ou une offre SPCC disponible quelque part. Pour les correspondances, il utilise ensuite votre session Amazon connectée pour :
+Activez **Accepter les offres Creator Connections** dans la carte Filtres et options. Au fur et à mesure que Video Reload Butler lit chaque vidéo, il collecte les ASIN taggés et les vérifie auprès de notre service de recherche, qui sait quels ASIN ont une campagne CC ou une offre SPCC disponible quelque part. Pour les correspondances, il utilise ensuite votre session Amazon connectée pour :
 
 - **Accepter les campagnes CC** de ces ASIN en lot.
 - **Vous inscrire aux offres SPCC** et (quand "Envoyer la vidéo de boutique comme contenu" reste activé) envoyer la vidéo de boutique correspondante comme lien de contenu, pour que l'offre soit complétée et pas seulement acceptée.
@@ -128,7 +128,7 @@ Quelques points à savoir :
 
 ## Actualisez vos données automatiquement (la nuit)
 
-Video Butler peut garder vos données à jour selon un horaire pour que vous n'ayez pas à le surveiller. Dans la carte **Actualiser les données automatiquement**, activez "Actualiser les données selon un horaire (sans envoi)" et choisissez une cadence : toutes les 12 heures, toutes les 24 heures, ou à une heure précise (par exemple 1h du matin). À cet horaire, l'application réanalyse votre boutique pour détecter les nouvelles vidéos et revérifie la disponibilité internationale de vos ASIN, puis enregistre les résultats dans le Video Log.
+Video Reload Butler peut garder vos données à jour selon un horaire pour que vous n'ayez pas à le surveiller. Dans la carte **Actualiser les données automatiquement**, activez "Actualiser les données selon un horaire (sans envoi)" et choisissez une cadence : toutes les 12 heures, toutes les 24 heures, ou à une heure précise (par exemple 1h du matin). À cet horaire, l'application réanalyse votre boutique pour détecter les nouvelles vidéos et revérifie la disponibilité internationale de vos ASIN, puis enregistre les résultats dans le Video Log.
 
 C'est une passe uniquement de données : elle n'envoie, ne supprime et ne modifie jamais rien. L'avantage est que vos données sont récupérées et enregistrées à l'avance, de sorte qu'un envoi ultérieur peut ignorer l'étape lente de collecte des données et le Video Log reste à jour au lieu d'afficher une disponibilité manquante ou périmée.
 
@@ -136,7 +136,7 @@ C'est une passe uniquement de données : elle n'envoie, ne supprime et ne modifi
 
 ## Voyez pour quels vendeurs vous avez déjà fait des vidéos
 
-Quand vous faites des vidéos de produits de nombreux vendeurs différents, il est facile de perdre le fil de qui vous avez déjà couvert et de finir par filmer un deuxième produit d'un vendeur traité le mois dernier. Video Butler tient désormais le compte pour vous.
+Quand vous faites des vidéos de produits de nombreux vendeurs différents, il est facile de perdre le fil de qui vous avez déjà couvert et de finir par filmer un deuxième produit d'un vendeur traité le mois dernier. Video Reload Butler tient désormais le compte pour vous.
 
 Chaque vidéo enregistre son vendeur (sur Creator Connections, le vendeur de la campagne est la marque). Dans le **Journal des vidéos**, vous avez une colonne **Vendeur** et un filtre par vendeur, pour afficher toutes les vidéos d'un vendeur d'un coup d'œil. Sous le journal, le panneau **Vendeurs pour lesquels vous avez fait des vidéos** résume le tout : chaque vendeur couvert, combien de vidéos et de produits vous avez réalisés pour lui, et la date de votre vidéo la plus récente, trié par celui que vous avez le plus couvert.
 
@@ -155,11 +155,11 @@ La Vue par pays regroupe ces lignes en une ligne par vidéo, avec une colonne po
 
 Les cellules ne sont pas qu'un rapport. Chaque cellule d'un marché vérifié où une vidéo n'est pas encore chargée (ou a échoué) est une case à cocher : cliquez dessus pour cocher cette vidéo et ce pays. Cochez-en autant que vous voulez, sur autant de vidéos que vous voulez, puis appuyez sur **Recharger la sélection** dans la barre d'outils pour les charger toutes en une fois. Chaque ligne de vidéo a aussi une case qui coche tous les marchés disponibles de cette vidéo d'un coup, et la case de l'en-tête (ainsi que le bouton **Sélectionner les visibles**) coche toutes les cellules disponibles à l'écran. Les marchés expérimentaux sont affichés à titre indicatif uniquement et ne peuvent pas être cochés.
 
-Quand vous chargez, Video Butler réutilise la même chaîne de re-téléversement : il retélécharge l'original si besoin, applique vos incrustations actuelles et publie la vidéo vers chaque marché sélectionné. Votre copie d'origine sur la vitrine n'est jamais supprimée, car un chargement entre marchés ne fait qu'ajouter une nouvelle annonce.
+Quand vous chargez, Video Reload Butler réutilise la même chaîne de re-téléversement : il retélécharge l'original si besoin, applique vos incrustations actuelles et publie la vidéo vers chaque marché sélectionné. Votre copie d'origine sur la vitrine n'est jamais supprimée, car un chargement entre marchés ne fait qu'ajouter une nouvelle annonce.
 
 ## Réessayer les envois échoués par motif
 
-Quand un envoi échoue, Video Butler note pourquoi : un refus de conformité Amazon, un signalement de doublon, une miniature refusée, aucun produit identifiable, une erreur d'envoi ou de téléversement, ou un autre motif. Dans le **Journal des vidéos**, ces échecs sont regroupés pour vous. Un panneau **Réessayer par motif d'échec** au-dessus du tableau affiche une puce par cause avec un compteur et un bouton **Réessayer ces vidéos (N)**, donc une fois la cause corrigée vous pouvez relancer en un clic toutes les vidéos qui ont échoué de la même façon. Il y a aussi un filtre **Motif de l'échec** pour d'abord restreindre le tableau à une seule cause. Chaque nouvelle tentative ne republie que les vidéos que vous avez choisies, avec leurs réglages et leur destination d'origine, et laisse tranquilles les vrais refus.
+Quand un envoi échoue, Video Reload Butler note pourquoi : un refus de conformité Amazon, un signalement de doublon, une miniature refusée, aucun produit identifiable, une erreur d'envoi ou de téléversement, ou un autre motif. Dans le **Journal des vidéos**, ces échecs sont regroupés pour vous. Un panneau **Réessayer par motif d'échec** au-dessus du tableau affiche une puce par cause avec un compteur et un bouton **Réessayer ces vidéos (N)**, donc une fois la cause corrigée vous pouvez relancer en un clic toutes les vidéos qui ont échoué de la même façon. Il y a aussi un filtre **Motif de l'échec** pour d'abord restreindre le tableau à une seule cause. Chaque nouvelle tentative ne republie que les vidéos que vous avez choisies, avec leurs réglages et leur destination d'origine, et laisse tranquilles les vrais refus.
 
 ## La passe "Élaguer les vidéos sous-performantes"
 
@@ -176,7 +176,7 @@ Choisissez-le dans **Mode d'exécution**, puis sélectionnez vos règles :
 - **Protéger les vidéos sponsorisées (#ad)** : ignore tout ce qui est taggé #ad, pour que le contenu de partenariat de marque ne soit jamais retiré.
 - **Protéger les vidéos avec des commissions récentes** : ignore les vidéos dont les produits ont généré des revenus récemment.
 
-C'est sécurisé : une vidéo n'est supprimée que lorsque ses produits sont confirmés indisponibles (ou qu'elle n'en a aucun). Tout ce que Video Butler ne peut pas confirmer est laissé en place. Chaque vidéo supprimée est d'abord téléchargée, donc **Recharger la sélection** dans l'onglet Supprimées d'Amazon la republie quand vous le souhaitez.
+C'est sécurisé : une vidéo n'est supprimée que lorsque ses produits sont confirmés indisponibles (ou qu'elle n'en a aucun). Tout ce que Video Reload Butler ne peut pas confirmer est laissé en place. Chaque vidéo supprimée est d'abord téléchargée, donc **Recharger la sélection** dans l'onglet Supprimées d'Amazon la republie quand vous le souhaitez.
 
 ## Le flux "Récemment supprimées"
 
@@ -184,17 +184,17 @@ Le panneau du bas liste les vidéos que vous avez supprimées (dans la fenêtre 
 
 ## Où vont les données
 
-Les logs par exécution arrivent dans la ligne video-butler du panneau Video Log. Les fichiers vidéo originaux sont téléchargés dans un dossier temporaire pendant la conversion et nettoyés après chaque exécution.
+Les logs par exécution arrivent dans la ligne video-reload-butler du panneau Video Log. Les fichiers vidéo originaux sont téléchargés dans un dossier temporaire pendant la conversion et nettoyés après chaque exécution.
 
 ## Pièges courants
 
 - **"FFmpeg introuvable"**: lancez `npm run stage:ffmpeg` depuis la racine du repo, redémarrez l'app.
-- **"Session Creator Hub expirée"**: reconnectez-vous dans la fenêtre Chrome lancée par Video Butler, cliquez sur Reprendre.
+- **"Session Creator Hub expirée"**: reconnectez-vous dans la fenêtre Chrome lancée par Video Reload Butler, cliquez sur Reprendre.
 - **La vignette du re-upload est mauvaise**: Amazon choisit une vignette dans la première image par défaut. Pour la figer, utilisez le panneau **Police de vignette / Filigrane** pour superposer une image fixe.
 - **Un re-upload obtient moins de vues que l'original**: l'algorithme Amazon dé-priorise parfois le contenu qu'il reconnaît comme re-post. Tentez un vrai changement de métadonnées (nouveau titre, nouvelle accroche produit) plutôt qu'un rafraîchissement purement cosmétique.
 
 ## Relié
 
-- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) - ce qui alimente le catalogue de Video Butler.
+- [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) - ce qui alimente le catalogue de Video Reload Butler.
 - [Tutoriel YouTube Butler](/help/tutorials/youtube-butler) - pour cross-poster ces vidéos sur YouTube.
 - [Tutoriel Voiceover Butler](/help/tutorials/voiceover-butler) - génère des scripts conformes FTC à intégrer dans de nouvelles vidéos.

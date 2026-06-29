@@ -8,7 +8,7 @@ category: Amazon
 
 Storefront Butler walks your entire Amazon Creator storefront - every shoppable video, photo post, idea list, and media collection - and stores the result in a single spreadsheet-ready feed. It then enriches each row with Creators API data (titles, prices, commission rates, parent ASINs) so downstream workspaces have one consistent source of truth.
 
-Lots of other workspaces depend on what Storefront Butler produces. **Video Butler** queues from this catalog. **Retag Butler** scans it for out-of-stock ASINs. **Benable Butler** lists from it. If Storefront Butler is empty or stale, those downstream tools have nothing to work with.
+Lots of other workspaces depend on what Storefront Butler produces. **Video Reload Butler** queues from this catalog. **Retag Butler** scans it for out-of-stock ASINs. **Benable Butler** lists from it. If Storefront Butler is empty or stale, those downstream tools have nothing to work with.
 
 ## Before you start
 
@@ -50,5 +50,5 @@ Rows land in your preseed workspace cache. Downstream workspaces read directly f
 
 ## Related
 
-- [Video Butler tutorial](/help/tutorials/video-butler) - what consumes the synced videos.
+- [Video Reload Butler tutorial](/help/tutorials/video-reload-butler) - what consumes the synced videos.
 - [Retag Butler tutorial](/help/tutorials/retag-butler) - finds replacements for the rows Storefront Butler flagged unavailable.

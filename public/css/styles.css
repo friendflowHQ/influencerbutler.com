@@ -1333,7 +1333,7 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   font-weight: 700;
 }
 
-/* Marketplaces list (Video Butler etc.) */
+/* Marketplaces list (Video Reload Butler etc.) */
 .feature-marketplaces {
   padding: 3rem 0;
   border-top: 1px solid var(--border);

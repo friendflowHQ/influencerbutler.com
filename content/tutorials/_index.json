@@ -90,8 +90,8 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
-      "id": "video-butler",
-      "title": "Video Butler: re-upload Amazon storefront videos with fresh metadata",
+      "id": "video-reload-butler",
+      "title": "Video Reload Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",
       "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata, including a one-click bulk reload to the US (delete-first) plus CA, UK, AU, and SG.",
       "order": 100,

@@ -78,6 +78,17 @@ const nextConfig: NextConfig = {
         destination: `${SUPABASE_AUTH_BASE}/.well-known/oauth-authorization-server`,
         permanent: false,
       },
+      // Video Butler was renamed to Video Reload Butler. Keep old links working.
+      {
+        source: "/features/video-butler",
+        destination: "/features/video-reload-butler",
+        permanent: true,
+      },
+      {
+        source: "/help/tutorials/video-butler",
+        destination: "/help/tutorials/video-reload-butler",
+        permanent: true,
+      },
     ];
   },
   async headers() {

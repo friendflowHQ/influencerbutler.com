@@ -1,25 +1,25 @@
 ---
-title: Video Butler: re-upload Amazon storefront videos with fresh metadata
+title: Video Reload Butler: re-upload Amazon storefront videos with fresh metadata
 summary: Convert, re-encode, and re-upload your existing Amazon storefront videos with updated titles, descriptions, and tags - without re-shooting anything.
 category: Amazon
 ---
 
-## What Video Butler does
+## What Video Reload Butler does
 
-Video Butler is the closest thing in InfluencerButler to a "free engagement boost." It takes the shoppable videos already on your Amazon Creator storefront and re-uploads them with refreshed metadata - new titles, new descriptions, new affiliate links, optional watermark/caption overlays. Amazon's algorithm treats a re-upload like a fresh post, so a 6-month-old video can get a second wind without you having to film anything new.
+Video Reload Butler is the closest thing in InfluencerButler to a "free engagement boost." It takes the shoppable videos already on your Amazon Creator storefront and re-uploads them with refreshed metadata - new titles, new descriptions, new affiliate links, optional watermark/caption overlays. Amazon's algorithm treats a re-upload like a fresh post, so a 6-month-old video can get a second wind without you having to film anything new.
 
 You can also use it to **prune low-performing videos** (the engine has a built-in "views below threshold = delete" pass) and to **re-load deleted videos** if you previously removed something by mistake.
 
 ## Before you start
 
-- **Storefront Butler has synced your videos at least once**: Video Butler reads from that catalog.
+- **Storefront Butler has synced your videos at least once**: Video Reload Butler reads from that catalog.
 - **Signed-in Amazon Creator Hub session** in Chrome.
 - **FFmpeg staged**: happens automatically on app install. If you ever see a "ffmpeg not found" error, run `npm run stage:ffmpeg` from the repo root.
 - Optional: a watermark image and/or caption font ready, if you want overlays.
 
 ## Running your first conversion + re-upload
 
-1. Open **Video Butler** under Amazon Butler.
+1. Open **Video Reload Butler** under Amazon Butler.
 2. In the **Filters & Options** card:
    - **Min length / Max length**: leave wide open for the first run.
    - **Skip videos with views ≥**: defaults to 1000. This keeps your high-performers untouched. Videos *below* that view count are eligible for re-upload.
@@ -45,10 +45,10 @@ A single run then:
 
 ### Your videos are safe even if a re-post fails
 
-Because this formula deletes the US original before re-posting, Video Butler guards every step:
+Because this formula deletes the US original before re-posting, Video Reload Butler guards every step:
 
 - The video is **downloaded to your computer first**, before anything is deleted.
-- The original is **only deleted after** Video Butler confirms the product is available and taggable, never for a video it cannot re-post.
+- The original is **only deleted after** Video Reload Butler confirms the product is available and taggable, never for a video it cannot re-post.
 - If a re-post fails after the delete, the video lands in the **Deleted from Amazon** list with its downloaded file, so you can recover it with **Re-load selected**.
 
 ### Test on two videos first
@@ -81,7 +81,7 @@ Two settings in the **Filters & Options** card control how each video's products
 
 **Unavailable products.** Two independent checks keep out-of-stock products off your posts:
 
-- **Check 1 (before upload)**: turn on **Skip uploads to unavailable products** and Video Butler asks the Amazon Creators API about each product's stock, then skips uploads to ones that are unavailable. Posting to a dead product earns 0 views, which drags down the Avg view duration and Avg % viewed that feed your Creator Stars score.
+- **Check 1 (before upload)**: turn on **Skip uploads to unavailable products** and Video Reload Butler asks the Amazon Creators API about each product's stock, then skips uploads to ones that are unavailable. Posting to a dead product earns 0 views, which drags down the Avg view duration and Avg % viewed that feed your Creator Stars score.
 - **Check 2 (while tagging)**: a final safety net for products that still show "Currently unavailable" in Amazon's Add products window at tag time, which can disagree with the API check. Choose **Tag them anyway** to keep them, or **Remove them from the post** so viewers never land on a dead link.
 
 **Shortcut.** You don't have to set these by hand. Under **Preferred Formulas**, click **In-stock products only (skip unavailable)** to turn on Check 1 and set Check 2 to remove unavailable products in one click. Your other filters stay exactly as they are.
@@ -90,7 +90,7 @@ Two settings in the **Filters & Options** card control how each video's products
 
 International uploads normally match a product to its listing by ASIN. But the same physical product often lives on a foreign marketplace under a different ASIN, so an ASIN-only match leaves a lot of uploadable videos on the table. Turn on **Search by product title when no ASIN matches the marketplace** in the Filters & Options card to recover them.
 
-When none of a video's ASINs exist on a destination marketplace, Video Butler searches that marketplace by the product title (using the Amazon Creators API, and falling back to a search of the marketplace when needed) and scores each result against your product title, the same close-title match Retag Butler uses. When **Rank suggestions by product image** is on, it also compares each candidate's photo to your original product image, so the closest looking listing wins even when its translated title scores low. Then it surfaces what it found in **Results history** as a **Title match to confirm** row, so nothing uploads on a guess.
+When none of a video's ASINs exist on a destination marketplace, Video Reload Butler searches that marketplace by the product title (using the Amazon Creators API, and falling back to a search of the marketplace when needed) and scores each result against your product title, the same close-title match Retag Butler uses. When **Rank suggestions by product image** is on, it also compares each candidate's photo to your original product image, so the closest looking listing wins even when its translated title scores low. Then it surfaces what it found in **Results history** as a **Title match to confirm** row, so nothing uploads on a guess.
 
 You control how matches are handled:
 
@@ -103,7 +103,7 @@ To act on a suggestion, open the Video Log, filter to **Title match to confirm**
 
 ## Auto-correct titles Amazon flags as non-compliant
 
-Amazon's title field quietly rejects some words. For example, "german" inside "Germany" trips its Community Guidelines filter, and the post will not save until you fix the title. Video Butler can handle this for you. In Filters & Options, set **If Amazon flags a banned word in the title**:
+Amazon's title field quietly rejects some words. For example, "german" inside "Germany" trips its Community Guidelines filter, and the post will not save until you fix the title. Video Reload Butler can handle this for you. In Filters & Options, set **If Amazon flags a banned word in the title**:
 
 - **Remove the flagged word** (the default): the butler strips just the offending word, tidies up the spacing, retypes the title, and continues posting.
 - **Rewrite the title with AI**: the butler asks AI to rewrite the title so it keeps your product meaning and your #ad tag, but drops whatever Amazon objected to. This uses your OpenAI key (the same one as AI cover images).
@@ -113,9 +113,9 @@ If a correction still cannot get past Amazon's filter after a couple of tries, t
 
 ## Accept Creator Connections offers in the same run
 
-Many of the products you already feature in storefront videos have a live Creator Connections (CC) campaign or a Shoppable Video Creator Connections (SPCC) offer waiting for you. Finding them by hand means scrolling endless opportunity lists. Video Butler can do it for you while it works through your videos.
+Many of the products you already feature in storefront videos have a live Creator Connections (CC) campaign or a Shoppable Video Creator Connections (SPCC) offer waiting for you. Finding them by hand means scrolling endless opportunity lists. Video Reload Butler can do it for you while it works through your videos.
 
-Turn on **Accept Creator Connections offers** in the Filters & Options card. As Video Butler reads each video, it collects the tagged ASINs and checks them against our lookup service, which knows which ASINs have a CC campaign or SPCC offer available anywhere. For the matches, it then uses your signed-in Amazon session to:
+Turn on **Accept Creator Connections offers** in the Filters & Options card. As Video Reload Butler reads each video, it collects the tagged ASINs and checks them against our lookup service, which knows which ASINs have a CC campaign or SPCC offer available anywhere. For the matches, it then uses your signed-in Amazon session to:
 
 - **Accept the CC campaigns** for those ASINs in bulk.
 - **Opt into the SPCC offers**, and (when "Submit storefront video as content" is left on) submit the matching storefront video as the content link, so the offer is fully completed rather than just accepted.
@@ -128,7 +128,7 @@ A couple of things to know:
 
 ## Refresh your data automatically (overnight)
 
-Video Butler can keep your data current on a clock so you do not have to babysit it. In the **Refresh data automatically** card, turn on "Refresh data on a clock (no uploads)" and pick a cadence: every 12 hours, every 24 hours, or a specific time of day (for example, 1am). On that schedule the app re-scans your storefront for new videos and re-checks international product availability for your ASINs, then saves the results to the Video Log.
+Video Reload Butler can keep your data current on a clock so you do not have to babysit it. In the **Refresh data automatically** card, turn on "Refresh data on a clock (no uploads)" and pick a cadence: every 12 hours, every 24 hours, or a specific time of day (for example, 1am). On that schedule the app re-scans your storefront for new videos and re-checks international product availability for your ASINs, then saves the results to the Video Log.
 
 This is a data-only pass: it never uploads, deletes, or edits anything. The benefit is that your data is pulled and saved ahead of time, so a later upload can skip the slow data-gathering step and the Video Log stays current instead of showing missing or out-of-date availability.
 
@@ -136,7 +136,7 @@ One thing to know: like every schedule in the app, a refresh only runs while the
 
 ## See which sellers you have already covered
 
-When you make videos for products from lots of different sellers, it is easy to lose track of who you have already covered and end up filming a second product for a seller you handled last month. Video Butler now keeps score for you.
+When you make videos for products from lots of different sellers, it is easy to lose track of who you have already covered and end up filming a second product for a seller you handled last month. Video Reload Butler now keeps score for you.
 
 Every video records its seller (on Creator Connections the campaign seller is the brand). In the **Video Log** you get a **Seller** column and a seller filter, so you can pull up every video for one seller at a glance. Below the log, the **Sellers you have made videos for** panel rolls it all up: each seller you have covered, how many videos and products you made for them, and the date of your most recent video, sorted by who you have covered the most.
 
@@ -155,11 +155,11 @@ Country view collapses those rows into one row per video, with a column for each
 
 The cells are not just a report. Each cell for a verified market a video is not loaded to yet (or one that failed) is a checkbox: click it to tick that video and country. Tick as many as you like, across as many videos as you like, then press **Re-load Selected** in the toolbar to load them all in one pass. Each video row also has a checkbox that ticks all of that video's loadable markets at once, and the header checkbox (and the **Select visible** button) ticks every loadable cell on screen. The experimental markets are shown for reference only and can't be ticked.
 
-When you load, Video Butler reuses the same re-upload pipeline: it re-downloads the original if needed, applies your current overlays, and posts the video to each selected marketplace. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing.
+When you load, Video Reload Butler reuses the same re-upload pipeline: it re-downloads the original if needed, applies your current overlays, and posts the video to each selected marketplace. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing.
 
 ## Retry failed uploads by reason
 
-When an upload fails, Video Butler records why: an Amazon compliance rejection, a duplicate flag, a rejected thumbnail, no taggable products, a submit or upload error, or some other reason. In the **Video Log** these failures are grouped for you. A **Retry by failure reason** panel above the table shows one chip per cause with a count and a **Retry these (N)** button, so once you have fixed the root issue you can re-run every video that failed the same way in one click. There is also a **Failure reason** filter so you can narrow the table to a single cause first. Each retry re-posts only the videos you picked, using their original settings and destination, and leaves genuine rejections alone.
+When an upload fails, Video Reload Butler records why: an Amazon compliance rejection, a duplicate flag, a rejected thumbnail, no taggable products, a submit or upload error, or some other reason. In the **Video Log** these failures are grouped for you. A **Retry by failure reason** panel above the table shows one chip per cause with a count and a **Retry these (N)** button, so once you have fixed the root issue you can re-run every video that failed the same way in one click. There is also a **Failure reason** filter so you can narrow the table to a single cause first. Each retry re-posts only the videos you picked, using their original settings and destination, and leaves genuine rejections alone.
 
 ## The "Prune underperforming videos" pass
 
@@ -176,7 +176,7 @@ Pick it from **Run mode**, then choose your rules:
 - **Protect sponsored (#ad) videos**: skip anything tagged #ad, so brand-deal content is never removed.
 - **Protect videos with recent commissions**: skip videos whose products earned recently.
 
-It is fail-safe: a video is deleted only when its products are confirmed unavailable (or it has none). Anything Video Butler can't confirm is left in place. Every deleted video is downloaded first, so **Re-load selected** on the Deleted from Amazon tab puts it back whenever you're ready.
+It is fail-safe: a video is deleted only when its products are confirmed unavailable (or it has none). Anything Video Reload Butler can't confirm is left in place. Every deleted video is downloaded first, so **Re-load selected** on the Deleted from Amazon tab puts it back whenever you're ready.
 
 ## The "Recently deleted" recovery flow
 
@@ -184,17 +184,17 @@ The bottom panel lists videos you've deleted (within Amazon's recovery window) w
 
 ## Where the data goes
 
-Per-run logs land in the video-butler row of the Video Log panel. Original video files are downloaded to a temp dir during conversion and cleaned up after each run.
+Per-run logs land in the video-reload-butler row of the Video Log panel. Original video files are downloaded to a temp dir during conversion and cleaned up after each run.
 
 ## Common gotchas
 
 - **"FFmpeg not found"**: run `npm run stage:ffmpeg` from the repo root, restart the app.
-- **"Creator Hub session expired"**: re-sign in via the Chrome window Video Butler spawned, click Resume.
+- **"Creator Hub session expired"**: re-sign in via the Chrome window Video Reload Butler spawned, click Resume.
 - **Re-uploaded video has wrong thumbnail**: Amazon picks a thumbnail from the first frame by default. To pin one, use the **Thumbnail font/Watermark** panel to overlay a static frame.
 - **A re-upload gets fewer views than the original**: Amazon's algorithm sometimes deprioritizes content it recognizes as a re-post. Try a meaningful metadata change (new title, new product hook) rather than a cosmetic-only refresh.
 
 ## Related
 
-- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - what feeds Video Butler's catalog.
+- [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - what feeds Video Reload Butler's catalog.
 - [YouTube Butler tutorial](/help/tutorials/youtube-butler) - for cross-posting these videos to YouTube.
 - [Voiceover Butler tutorial](/help/tutorials/voiceover-butler) - generates FTC-compliant scripts you can drop into new videos.
