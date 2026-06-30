@@ -35,6 +35,22 @@ Lo siembras con 3-10 usernames de Instagram de creadores cuya audiencia solapa c
 
 Se abre una ventana de Chrome. Goldmine recorre cada semilla, tira del grafo de cuentas sugeridas de Instagram, visita cada creador sugerido y escanea sus posts recientes en busca de etiquetas de divulgación. La tabla de **Posts** se llena en tiempo real.
 
+## Modo hashtag: recopilar correos de creadores por hashtag
+
+Si prefieres empezar por un tema en vez de por creadores semilla, cambia el **Modo de ejecución** a **Hashtags: recopilar correos de creadores**. En lugar de recorrer el grafo de cuentas sugeridas, Goldmine abre el feed de cada hashtag, visita el perfil de cada creador que publicó con él y obtiene su correo de contacto de la biografía o del botón de correo de cuenta profesional. Cada fila empareja el **nombre de usuario del creador con su correo**, listo para exportar.
+
+1. Pon el **Modo de ejecución** en **Hashtags: recopilar correos de creadores**. La caja de semillas se sustituye por una caja de **Hashtags** y aparecen los límites de hashtag.
+2. En **Hashtags**, pega un tag por línea (el `#` es opcional). También puedes pegar una URL `instagram.com/explore/tags/...`.
+3. Configura los límites que deciden cuándo parar, lo que ocurra primero:
+   - **Detener tras esta cantidad de correos**: sigue rastreando hasta recopilar esta cantidad de correos únicos de creadores (por ejemplo, 1000). Pon 0 para no fijar un objetivo de correos.
+   - **Solo publicaciones de los últimos N días**: omite las publicaciones más antiguas. Pon 0 para conservar publicaciones de cualquier antigüedad.
+   - **Máx. publicaciones revisadas por hashtag**: un tope de cuánto se lee cada feed de hashtag.
+4. Haz clic en **Iniciar descubrimiento**. La columna **Correo del creador** se rellena junto a cada nombre de usuario a medida que se visita a los creadores.
+
+**Ningún creador se recopila dos veces.** Dentro de una ejecución, cada creador se visita una sola vez sin importar cuántas de sus publicaciones aparecieran con el tag, y cada par nombre de usuario + correo se desduplica. Entre ejecuciones, un creador recopilado recientemente se omite automáticamente, así que volver a ejecutar un hashtag solo muestra creadores nuevos.
+
+Instagram limita mucho los feeds de hashtag. Si muestra un muro de límite de uso o de verificación, Goldmine se detiene de forma limpia en vez de sortearlo. Tu objetivo de correos es de mejor esfuerzo: si Instagram bloquea antes de alcanzarlo, la ejecución termina con lo que haya recopilado. Inténtalo más tarde o inicia sesión manualmente en el navegador del espacio de trabajo.
+
 ## Trabajar con los resultados
 
 Cada post que cualifica se vuelve una fila con:

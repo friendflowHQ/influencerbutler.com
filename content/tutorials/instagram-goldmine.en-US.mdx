@@ -35,6 +35,22 @@ You seed it with 3-10 Instagram usernames of creators whose audience overlaps yo
 
 A Chrome window opens. Goldmine walks each seed, pulls Instagram's suggested-accounts graph, visits each suggested creator, and scans their recent posts for disclosure tags. The **Posts** table fills in real-time.
 
+## Hashtag mode: collect creator emails by hashtag
+
+If you'd rather start from a topic than from seed creators, switch **Run mode** to **Hashtags: collect creator emails**. Instead of walking the suggested-accounts graph, Goldmine opens each hashtag's feed, visits the profile of every creator who posted under it, and pulls their contact email from their bio or professional-account Email button. Each row pairs the creator's **username with their email**, ready to export.
+
+1. Set **Run mode** to **Hashtags: collect creator emails**. The seed box is replaced by a **Hashtags** box and the hashtag limits appear.
+2. In **Hashtags**, paste one tag per line (the `#` is optional). You can also paste an `instagram.com/explore/tags/...` URL.
+3. Set the limits that decide when to stop, whichever is hit first:
+   - **Stop after this many emails**: keep crawling until this many unique creator emails are collected (for example, 1000). Set 0 for no email target.
+   - **Only posts from the last N days**: skip posts older than this. Set 0 to keep posts of any age.
+   - **Max posts scanned per hashtag**: a ceiling on how deep to read each hashtag feed.
+4. Click **Start Discovery**. The **Creator email** column fills in next to each username as creators are visited.
+
+**No creator is harvested twice.** Within a run, each creator is visited only once no matter how many of their posts surfaced under the tag, and each username + email pair is de-duplicated. Across runs, a creator harvested recently is skipped automatically, so re-running a hashtag only surfaces newly-found creators.
+
+Instagram gates hashtag feeds heavily. If it shows a rate-limit or verification wall, Goldmine stops cleanly rather than working around it. Your email target is best-effort: if Instagram blocks before the target is reached, the run ends with what it has collected so far. Try again later or sign in manually in the workspace browser.
+
 ## Working the results
 
 Every qualifying post becomes a row with:
