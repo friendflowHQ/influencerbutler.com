@@ -106,11 +106,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Stamp an activation date the first time we link an already-active LS
+  // affiliate (LS has no activation timestamp of its own). Only set it when the
+  // profile has none yet, so a re-link never moves the original date.
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("ls_activated_at")
+    .eq("id", userId)
+    .maybeSingle();
+  const alreadyStamped = Boolean(profileRow?.ls_activated_at);
+  const stampActivation =
+    !alreadyStamped && (lsAffiliate.status ?? "").toLowerCase() === "active";
+
   const { error: upsertErr } = await supabase.from("profiles").upsert(
     {
       id: userId,
       is_affiliate: true,
       ls_affiliate_id: lsAffiliateId,
+      ...(stampActivation ? { ls_activated_at: new Date().toISOString() } : {}),
     },
     { onConflict: "id" },
   );

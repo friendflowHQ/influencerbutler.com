@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
 
 type SocialHandles = Record<string, string | null | undefined>;
 
@@ -108,6 +109,7 @@ type RosterRow = {
   reviewedAt: string | null;
   commissionPercent: number | null;
   commissionDurationMonths: number | null;
+  lsActivatedAt: string | null;
 };
 
 type RosterResponse = {
@@ -117,7 +119,25 @@ type RosterResponse = {
   error?: string;
 };
 
-type TabKey = "roster" | "applications" | "reconcile" | "owed" | "payouts";
+type TabKey = "roster" | "applications" | "reconcile" | "owed" | "payouts" | "analytics";
+
+type AffiliateMonthly = {
+  userId: string;
+  fullName: string | null;
+  email: string | null;
+  affiliateCode: string | null;
+  ratePercent: number;
+  months: MonthlyBucket[];
+};
+
+type EarningsResponse = {
+  admin?: { email: string };
+  months?: string[];
+  totals?: MonthlyBucket[];
+  byAffiliate?: AffiliateMonthly[];
+  lsTotalEarningsCents?: number | null;
+  error?: string;
+};
 
 type PayoutLine = {
   lsOrderId: string;
@@ -679,6 +699,7 @@ export default function AdminAffiliatesPage() {
     { key: "reconcile", label: "Reconcile", count: null },
     { key: "owed", label: "Owed", count: null },
     { key: "payouts", label: "Payouts", count: null },
+    { key: "analytics", label: "Analytics", count: null },
   ];
 
   return (
@@ -1103,6 +1124,8 @@ export default function AdminAffiliatesPage() {
       ) : null}
 
       {tab === "payouts" ? <PayoutsTab onForbidden={() => setForbidden(true)} /> : null}
+
+      {tab === "analytics" ? <AnalyticsTab onForbidden={() => setForbidden(true)} /> : null}
     </div>
   );
 }
@@ -1236,6 +1259,11 @@ function RosterTab({
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadges row={r} />
+                      {r.lsActivatedAt ? (
+                        <p className="mt-1 text-[11px] text-slate-400 whitespace-nowrap">
+                          LS active since {formatDateShort(r.lsActivatedAt)}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-slate-800">
                       {formatUsd(r.totalEarningsCents)}
@@ -1835,6 +1863,188 @@ function PayoutsTab({ onForbidden }: { onForbidden: () => void }) {
           computed from your own order records.
         </p>
       ) : null}
+    </section>
+  );
+}
+
+const RANGE_OPTIONS = [6, 12, 24] as const;
+
+/**
+ * Analytics tab: a monthly bar chart of gross referred revenue, full affiliate
+ * earnings, and the top-up owed, program-wide with a per-affiliate filter, plus
+ * a totals table. All computed from our own orders (reconciles with Payouts).
+ */
+function AnalyticsTab({ onForbidden }: { onForbidden: () => void }) {
+  const [months, setMonths] = useState<number>(12);
+  const [data, setData] = useState<EarningsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string>("all");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/affiliates/admin-earnings?months=${months}`, {
+        cache: "no-store",
+      });
+      if (res.status === 403) {
+        onForbidden();
+        return;
+      }
+      const json = (await res.json()) as EarningsResponse;
+      if (!res.ok) {
+        setError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setData(json);
+    } catch (err) {
+      console.error(err);
+      setError("Network error loading analytics.");
+    } finally {
+      setLoading(false);
+    }
+  }, [months, onForbidden]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const buckets: MonthlyBucket[] = useMemo(() => {
+    if (!data) return [];
+    if (selected === "all") return data.totals ?? [];
+    return data.byAffiliate?.find((a) => a.userId === selected)?.months ?? [];
+  }, [data, selected]);
+
+  const summary = useMemo(() => {
+    return buckets.reduce(
+      (acc, b) => ({
+        gross: acc.gross + b.grossCents,
+        earned: acc.earned + b.earnedCents,
+        owed: acc.owed + b.owedCents,
+      }),
+      { gross: 0, earned: 0, owed: 0 },
+    );
+  }, [buckets]);
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          Admin · Analytics
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+          Affiliate earnings by month
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Gross revenue affiliates drove, what they earned at their full rate, and the top-up you owe
+          on top of Lemon Squeezy&apos;s 30%. Computed from your orders, so it reconciles with the
+          Payouts tab.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Affiliate
+          <select
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-[#f97316] focus:outline-none"
+          >
+            <option value="all">All affiliates</option>
+            {(data?.byAffiliate ?? []).map((a) => (
+              <option key={a.userId} value={a.userId}>
+                {a.fullName ?? a.email ?? a.affiliateCode ?? a.userId.slice(0, 8)} ({a.ratePercent}%)
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Range
+          <div className="flex gap-1">
+            {RANGE_OPTIONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setMonths(r)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  months === r
+                    ? "border-[#f97316] bg-orange-50 text-[#c2410c]"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {r}m
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="ml-auto flex flex-wrap gap-4 text-right">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue</p>
+            <p className="text-lg font-bold text-indigo-700">{formatUsd(summary.gross)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Earned</p>
+            <p className="text-lg font-bold text-violet-700">{formatUsd(summary.earned)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">You owe</p>
+            <p className="text-lg font-bold text-[#c2410c]">{formatUsd(summary.owed)}</p>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">{error}</div>
+      ) : (
+        <>
+          <MonthlyEarningsChart data={buckets} />
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-3">Month</th>
+                  <th className="px-4 py-3 text-right">Orders</th>
+                  <th className="px-4 py-3 text-right">Referred revenue</th>
+                  <th className="px-4 py-3 text-right">LS paid (30%)</th>
+                  <th className="px-4 py-3 text-right">You owe</th>
+                  <th className="px-4 py-3 text-right">Total earned</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {buckets
+                  .slice()
+                  .reverse()
+                  .map((b) => (
+                    <tr key={b.month} className="hover:bg-slate-50/60">
+                      <td className="px-4 py-2 font-medium text-slate-800">{b.month}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{b.orderCount}</td>
+                      <td className="px-4 py-2 text-right text-slate-800">{formatUsd(b.grossCents)}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{formatUsd(b.lsPaidCents)}</td>
+                      <td className="px-4 py-2 text-right font-medium text-[#c2410c]">
+                        {formatUsd(b.owedCents)}
+                      </td>
+                      <td className="px-4 py-2 text-right font-medium text-violet-700">
+                        {formatUsd(b.earnedCents)}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+
+          {typeof data?.lsTotalEarningsCents === "number" ? (
+            <p className="text-xs text-slate-400">
+              Lemon Squeezy reports {formatUsd(data.lsTotalEarningsCents)} in cumulative affiliate
+              earnings across all time (all affiliates). Use it as a rough sanity check against the
+              totals above.
+            </p>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

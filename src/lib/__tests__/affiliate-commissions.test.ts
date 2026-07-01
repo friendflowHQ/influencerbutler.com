@@ -7,9 +7,12 @@ import { describe, it, expect } from "vitest";
 import {
   computeAffiliateOwed,
   computeOrderOwed,
+  orderEconomics,
   resolveRatePercent,
   periodBounds,
   orderInPeriod,
+  monthKeyOf,
+  recentMonthLabels,
   type AffiliateTerms,
   type CommissionOrder,
 } from "../affiliate-commissions";
@@ -124,6 +127,40 @@ describe("computeAffiliateOwed", () => {
     expect(result.owedCents).toBe(15000);
     expect(result.ratePercent).toBe(70);
     expect(result.durationMonths).toBeNull();
+  });
+});
+
+describe("orderEconomics (analytics, includes paid orders)", () => {
+  it("still counts a reconciled order (unlike computeOrderOwed)", () => {
+    const paid = order({ reconciledAt: "2026-02-01T00:00:00.000Z", attributionStatus: "live" });
+    expect(computeOrderOwed(paid, LIFETIME_70, null)).toBeNull();
+    const econ = orderEconomics(paid, LIFETIME_70, new Date("2026-01-01T00:00:00.000Z").getTime());
+    expect(econ).not.toBeNull();
+    expect(econ!.grossCents).toBe(10000);
+    expect(econ!.lsPaidCents).toBe(3000);
+    expect(econ!.owedCents).toBe(4000);
+  });
+  it("excludes refunded and out-of-window orders", () => {
+    expect(orderEconomics(order({ status: "refunded" }), LIFETIME_70, null)).toBeNull();
+    expect(
+      orderEconomics(
+        order({ createdAt: "2027-03-01T00:00:00.000Z" }),
+        YEARLY_70,
+        new Date("2026-01-01T00:00:00.000Z").getTime(),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("month helpers", () => {
+  it("monthKeyOf extracts YYYY-MM (UTC)", () => {
+    expect(monthKeyOf("2026-06-15T23:00:00.000Z")).toBe("2026-06");
+    expect(monthKeyOf(null)).toBeNull();
+    expect(monthKeyOf("2026")).toBeNull();
+  });
+  it("recentMonthLabels returns trailing months oldest-first, crossing year boundary", () => {
+    expect(recentMonthLabels(2026, 2, 4)).toEqual(["2025-11", "2025-12", "2026-01", "2026-02"]);
+    expect(recentMonthLabels(2026, 7, 1)).toEqual(["2026-07"]);
   });
 });
 

@@ -110,20 +110,30 @@ export function buildFirstOrderByBuyer(orders: CommissionOrder[]): Map<string, n
   return first;
 }
 
+/** Money breakdown for one order under a set of terms. */
+export type OrderEconomics = {
+  /** The order total (referred revenue). */
+  grossCents: number;
+  /** What LS already credited the affiliate (0 or 30%). */
+  lsPaidCents: number;
+  /** What we still owe on top (promised rate minus lsPaidCents). */
+  owedCents: number;
+};
+
 /**
- * Computes the owed top-up for one order under a set of terms. Returns null when
- * the order is not commissionable (not paid, dateless, or outside the
- * affiliate's honored duration window). `firstOrderMs` is the buyer's first
- * paid-order time; when unknown we fall back to the order's own time (treating
- * it as the anchor), which keeps a lone order inside both windows.
+ * Core per-order economics under a set of terms. Returns null when the order is
+ * not commissionable (not paid, dateless, or outside the affiliate's honored
+ * duration window). Ignores the reconciled flag: analytics wants historical
+ * earnings whether or not the top-up has been paid. `firstOrderMs` is the
+ * buyer's first paid-order time; when unknown we fall back to the order's own
+ * time (treating it as the anchor), which keeps a lone order inside both windows.
  */
-export function computeOrderOwed(
+export function orderEconomics(
   order: CommissionOrder,
   terms: AffiliateTerms | null | undefined,
   firstOrderMs: number | null,
-): CommissionLine | null {
+): OrderEconomics | null {
   if (order.status !== "paid") return null;
-  if (order.reconciledAt) return null;
   if (!order.createdAt) return null;
   const orderMs = new Date(order.createdAt).getTime();
   if (!Number.isFinite(orderMs)) return null;
@@ -132,7 +142,7 @@ export function computeOrderOwed(
   const ratePercent = resolveRatePercent(terms);
   const durationMonths = terms?.commissionDurationMonths ?? null;
 
-  // Outside the affiliate's honored window: no top-up owed.
+  // Outside the affiliate's honored window: no commission owed.
   if (durationMonths !== null) {
     const anchorIso = new Date(anchorMs).toISOString();
     if (orderMs > addMonths(anchorIso, durationMonths)) return null;
@@ -152,13 +162,29 @@ export function computeOrderOwed(
   const fullOwed = Math.round((totalCents * ratePercent) / 100);
   const owedCents = Math.max(0, fullOwed - lsPaidCents);
 
+  return { grossCents: totalCents, lsPaidCents, owedCents };
+}
+
+/**
+ * Computes the unpaid owed top-up line for one order. Returns null when the
+ * order is not commissionable OR has already been reconciled (paid). Built on
+ * orderEconomics; used by the Owed / Payouts flows which show outstanding money.
+ */
+export function computeOrderOwed(
+  order: CommissionOrder,
+  terms: AffiliateTerms | null | undefined,
+  firstOrderMs: number | null,
+): CommissionLine | null {
+  if (order.reconciledAt) return null;
+  const econ = orderEconomics(order, terms, firstOrderMs);
+  if (!econ) return null;
   return {
     lsOrderId: order.lsOrderId,
     createdAt: order.createdAt,
     currency: order.currency,
-    totalCents,
-    lsPaidCents,
-    owedCents,
+    totalCents: econ.grossCents,
+    lsPaidCents: econ.lsPaidCents,
+    owedCents: econ.owedCents,
     attributionStatus: order.attributionStatus,
   };
 }
@@ -228,4 +254,30 @@ export function periodBounds(period: string): { startIso: string; endIso: string
 export function orderInPeriod(order: CommissionOrder, bounds: { startIso: string; endIso: string }): boolean {
   if (!order.createdAt) return false;
   return order.createdAt >= bounds.startIso && order.createdAt < bounds.endIso;
+}
+
+/** The YYYY-MM month an ISO timestamp falls in (UTC), or null. */
+export function monthKeyOf(iso: string | null): string | null {
+  if (!iso || iso.length < 7) return null;
+  return iso.slice(0, 7);
+}
+
+/**
+ * The last `count` month labels ending at `endYear`-`endMonth1` (1-based),
+ * oldest first. Callers pass the current UTC year/month (Date is banned in some
+ * runtimes, so the caller supplies it).
+ */
+export function recentMonthLabels(endYear: number, endMonth1: number, count: number): string[] {
+  const out: string[] = [];
+  let y = endYear;
+  let m = endMonth1; // 1-based
+  for (let i = 0; i < count; i++) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m -= 1;
+    if (m < 1) {
+      m = 12;
+      y -= 1;
+    }
+  }
+  return out.reverse();
 }

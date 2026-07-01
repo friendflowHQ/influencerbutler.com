@@ -330,14 +330,32 @@ async function findAuthUserIdByEmail(
   }
 }
 
-async function findUserIdBySubscription(supabase: SupabaseServiceClient, lsSubscriptionId: string) {
+/**
+ * Resolves a subscription's stored affiliate attribution so renewal orders can
+ * be credited to the referring affiliate (renewal webhooks carry no
+ * custom_data). Returns the owning user id plus the ref_* fields captured at
+ * subscription_created time. All null when the subscription had no referral.
+ */
+async function findSubscriptionAttribution(
+  supabase: SupabaseServiceClient,
+  lsSubscriptionId: string,
+): Promise<{
+  userId: string | null;
+  refAffiliateUserId: string | null;
+  refAffiliateCode: string | null;
+  attributionStatus: string | null;
+}> {
   const { data } = await supabase
     .from("subscriptions")
-    .select("user_id")
+    .select("user_id,ref_affiliate_user_id,ref_affiliate_code,attribution_status")
     .eq("ls_subscription_id", lsSubscriptionId)
     .maybeSingle();
-
-  return getString(data?.user_id);
+  return {
+    userId: getString(data?.user_id),
+    refAffiliateUserId: getString(data?.ref_affiliate_user_id),
+    refAffiliateCode: getString(data?.ref_affiliate_code),
+    attributionStatus: getString(data?.attribution_status),
+  };
 }
 
 /**
@@ -617,6 +635,12 @@ export async function POST(request: Request) {
         ls_product_id: attrs.product_id ?? null,
         ls_variant_id: attrs.variant_id ?? null,
         renews_at: attrs.renews_at ?? null,
+        // Durably record the referring affiliate so every renewal order can be
+        // credited to them (renewals carry no custom_data). Only write when this
+        // delivery actually carries it, so a re-delivery never blanks it.
+        ...(refAffiliateUserId ? { ref_affiliate_user_id: refAffiliateUserId } : {}),
+        ...(refAffiliateCode ? { ref_affiliate_code: refAffiliateCode } : {}),
+        ...(refAttributionStatus ? { attribution_status: refAttributionStatus } : {}),
       };
 
       // Phase F (2026-05-20): never mint trial discounts on add-on
@@ -741,9 +765,13 @@ export async function POST(request: Request) {
       if (!renewalOrderId) return;
 
       const lsSubscriptionId = getString(attrs.subscription_id);
-      const userId =
-        directUserId ||
-        (lsSubscriptionId ? await findUserIdBySubscription(supabase, lsSubscriptionId) : null);
+      // Recover the subscription's stored affiliate attribution: renewal
+      // webhooks carry no custom_data, so without this the referring affiliate
+      // would be lost on every renewal (breaking recurring/lifetime payouts).
+      const sub = lsSubscriptionId
+        ? await findSubscriptionAttribution(supabase, lsSubscriptionId)
+        : { userId: null, refAffiliateUserId: null, refAffiliateCode: null, attributionStatus: null };
+      const userId = directUserId || sub.userId;
 
       if (!userId) {
         throw new Error(
@@ -762,6 +790,15 @@ export async function POST(request: Request) {
             status: getString(attrs.status) ?? "paid",
             total: attrs.total ?? null,
             currency: getString(attrs.currency),
+            ...(lsSubscriptionId ? { ls_subscription_id: lsSubscriptionId } : {}),
+            // Carry the affiliate forward from the subscription so this renewal
+            // is credited. Copying the origin attribution_status is correct:
+            // pending-origin subs owe the full rate on every renewal, live ones
+            // get the 30%-credited treatment (and past 12mo the commission
+            // engine computes LS paid = 0, so lifetime renewals owe the full rate).
+            ...(sub.refAffiliateUserId ? { ref_affiliate_user_id: sub.refAffiliateUserId } : {}),
+            ...(sub.refAffiliateCode ? { ref_affiliate_code: sub.refAffiliateCode } : {}),
+            ...(sub.attributionStatus ? { attribution_status: sub.attributionStatus } : {}),
           },
           { onConflict: "ls_order_id" },
         ),
@@ -884,6 +921,18 @@ export async function POST(request: Request) {
           },
           { onConflict: "id" },
         ),
+      );
+
+      // LS exposes no activation timestamp, so stamp our own the FIRST time we
+      // learn they are active. The is(null) guard keeps the original date if
+      // affiliate_activated is re-delivered.
+      await assertWrite(
+        "profiles.update(ls_activated_at first-time)",
+        supabase
+          .from("profiles")
+          .update({ ls_activated_at: new Date().toISOString() })
+          .eq("id", userId)
+          .is("ls_activated_at", null),
       );
     },
 

@@ -36,6 +36,7 @@ type RosterRow = {
   reviewedAt: string | null;
   commissionPercent: number | null;
   commissionDurationMonths: number | null;
+  lsActivatedAt: string | null;
 };
 
 type RosterClient = {
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
       .select(
-        "id,email,is_affiliate,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months",
+        "id,email,is_affiliate,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months,ls_activated_at",
       );
 
     if (profilesErr) {
@@ -98,6 +99,7 @@ export async function GET(request: Request) {
       lsAffiliateId: string | null;
       commissionPercent: number | null;
       commissionDurationMonths: number | null;
+      lsActivatedAt: string | null;
     };
     const profileByUser = new Map<string, ProfileInfo>();
     for (const row of profiles ?? []) {
@@ -114,6 +116,7 @@ export async function GET(request: Request) {
           typeof row.commission_duration_months === "number"
             ? row.commission_duration_months
             : null,
+        lsActivatedAt: str(row.ls_activated_at),
       });
     }
 
@@ -175,6 +178,7 @@ export async function GET(request: Request) {
         reviewedAt: str(row.reviewed_at),
         commissionPercent: profile?.commissionPercent ?? null,
         commissionDurationMonths: profile?.commissionDurationMonths ?? null,
+        lsActivatedAt: profile?.lsActivatedAt ?? null,
         ...earnings,
       });
     }
@@ -198,6 +202,7 @@ export async function GET(request: Request) {
         reviewedAt: null,
         commissionPercent: profile.commissionPercent,
         commissionDurationMonths: profile.commissionDurationMonths,
+        lsActivatedAt: profile.lsActivatedAt,
         ...earnings,
       });
     }
