@@ -7,6 +7,8 @@
 // sequence ("your trial is live", "trial ends today"), so this is a separate
 // track keyed off subscriptions.pro_started_at.
 
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
+
 export type ProTier = "day0" | "day2" | "day5" | "day10";
 
 type TierCopy = {
@@ -25,6 +27,7 @@ const DOCS_URL = "https://www.influencerbutler.com/docs";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 // Chooser page so Mac recipients get the right build, not the Windows .exe.
 const DOWNLOAD_URL = "https://www.influencerbutler.com/download";
+const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 const COPY: Record<ProTier, TierCopy> = {
   day0: {
@@ -43,6 +46,8 @@ const COPY: Record<ProTier, TierCopy> = {
         `Manage your plan anytime: ${v.subscriptionUrl}`,
         ``,
         `Questions? Just reply to this email and a real human will answer.`,
+        ``,
+        COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
       ].join("\n");
@@ -64,6 +69,8 @@ const COPY: Record<ProTier, TierCopy> = {
         ``,
         `Reply with any question - a real human will answer.`,
         ``,
+        COMMUNITY_LINE,
+        ``,
         `- The Influencer Butler team`,
       ].join("\n");
     },
@@ -84,6 +91,8 @@ const COPY: Record<ProTier, TierCopy> = {
         ``,
         `Manage your plan: ${v.subscriptionUrl}`,
         ``,
+        COMMUNITY_LINE,
+        ``,
         `- The Influencer Butler team`,
       ].join("\n");
     },
@@ -99,6 +108,8 @@ const COPY: Record<ProTier, TierCopy> = {
         `One thing worth knowing: your Pro plan includes our affiliate program. Refer another creator and earn 30% recurring (for 12 months) on everyone you bring in.`,
         ``,
         `Open your affiliate dashboard: ${AFFILIATE_URL}`,
+        ``,
+        COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
       ].join("\n");

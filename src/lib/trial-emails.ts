@@ -2,6 +2,8 @@
 // src/lib/conversion-emails.ts in style (direct fetch, no template library).
 // Sent by the /api/cron/affiliate-funnel cron in its sendTrialEmails step.
 
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
+
 export type TrialTier = "day0" | "day1" | "day2" | "day3";
 
 type TierCopy = {
@@ -19,6 +21,7 @@ type TrialVars = {
 };
 
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 function monthlyCheckoutUrl(base: string, code: string | null): string {
   if (!code) return base;
@@ -53,6 +56,8 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Questions? Just reply to this email.`,
         ``,
+        COMMUNITY_LINE,
+        ``,
         `- The Influencer Butler team`,
       ].join("\n");
     },
@@ -72,6 +77,8 @@ const COPY: Record<TrialTier, TierCopy> = {
         `Full playbook: https://www.influencerbutler.com/docs`,
         ``,
         `Reply with any question - a real human will answer.`,
+        ``,
+        COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
       ].join("\n");
@@ -97,6 +104,8 @@ const COPY: Record<TrialTier, TierCopy> = {
         `Lock it in: ${url}`,
         ``,
         `Prefer monthly? That's fine too - your ${v.monthlyPercent}% off monthly code is still good.`,
+        ``,
+        COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
       ]
@@ -126,6 +135,8 @@ const COPY: Record<TrialTier, TierCopy> = {
           : `Continue: ${monthlyUrl}`,
         ``,
         `Both codes are single-use and locked to your account. After tonight, regular pricing applies.`,
+        ``,
+        COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
       ]

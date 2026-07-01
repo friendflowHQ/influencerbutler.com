@@ -15,6 +15,7 @@ import {
 import PricingCardsClient from "./PricingCardsClient";
 import PricingFaq from "./PricingFaq";
 import PricingFeatures from "./PricingFeatures";
+import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 
 export const dynamic = "force-dynamic";
 
@@ -240,6 +241,7 @@ function SiteFooter() {
             <p className="mt-3 text-sm text-slate-600">
               The all-in-one command center for creators and influencers.
             </p>
+            <FacebookGroupIconLink className="mt-4" />
           </div>
 
           <div>

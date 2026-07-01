@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import EarningsCalculator from "./EarningsCalculator";
 import FaqAccordion from "./FaqAccordion";
+import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 
 export const metadata = {
   title: "Affiliate Program - Earn 30% Recurring for 12 Months | Influencer Butler",
@@ -276,6 +277,7 @@ export default function AffiliatesLandingPage() {
             <p className="mt-3 max-w-[260px] text-sm text-slate-500">
               The all-in-one command center for creators and influencers.
             </p>
+            <FacebookGroupIconLink className="mt-4" />
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Product</h4>

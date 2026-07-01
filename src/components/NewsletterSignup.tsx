@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
 
 /**
  * Newsletter opt-in form. Posts to /api/newsletter/subscribe. Used in the site
@@ -56,7 +57,21 @@ export default function NewsletterSignup({ source, title, subtitle, className }:
       {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
 
       {status === "done" ? (
-        <p className="mt-3 text-sm font-medium text-emerald-700">{message}</p>
+        <div className="mt-3">
+          <p className="text-sm font-medium text-emerald-700">{message}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            While you wait, {" "}
+            <a
+              href={FACEBOOK_GROUP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#1877F2] hover:text-[#0d6ad8]"
+            >
+              join our Facebook group
+            </a>{" "}
+            to swap tips with other creators.
+          </p>
+        </div>
       ) : (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor={`newsletter-email-${source}`}>

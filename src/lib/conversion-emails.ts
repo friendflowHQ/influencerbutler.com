@@ -1,3 +1,5 @@
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
+
 export type ConversionTier = "1h" | "3d" | "5d";
 
 type TierCopy = {
@@ -63,6 +65,8 @@ export async function sendConversionEmail(params: {
     `Grab it here: ${checkoutUrl}`,
     ``,
     copy.finalSell,
+    ``,
+    `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`,
     ``,
     `- The Influencer Butler team`,
   ].join("\n");

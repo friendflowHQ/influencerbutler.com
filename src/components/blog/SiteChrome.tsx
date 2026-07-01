@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 
 /**
  * Header and footer for the /blog pages. These mirror the markup and styling of
@@ -146,6 +147,7 @@ export function SiteFooter() {
             <p className="mt-3 max-w-[260px] text-sm text-slate-500">
               Available in English, Spanish, and French.
             </p>
+            <FacebookGroupIconLink className="mt-4" />
           </div>
 
           <div>
