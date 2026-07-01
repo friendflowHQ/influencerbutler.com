@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/newsletter",
       "schedule": "0 13 * * 4"
+    },
+    {
+      "path": "/api/cron/commission-statements",
+      "schedule": "0 13 1 * *"
     }
   ]
 }

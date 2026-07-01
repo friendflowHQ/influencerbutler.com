@@ -34,6 +34,8 @@ type RosterRow = {
   unpaidEarningsCents: number | null;
   appliedAt: string | null;
   reviewedAt: string | null;
+  commissionPercent: number | null;
+  commissionDurationMonths: number | null;
 };
 
 type RosterClient = {
@@ -78,7 +80,9 @@ export async function GET(request: Request) {
 
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("id,email,is_affiliate,affiliate_code,ls_affiliate_id");
+      .select(
+        "id,email,is_affiliate,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months",
+      );
 
     if (profilesErr) {
       console.error("admin-roster: profiles query failed", profilesErr);
@@ -92,6 +96,8 @@ export async function GET(request: Request) {
       isAffiliate: boolean;
       affiliateCode: string | null;
       lsAffiliateId: string | null;
+      commissionPercent: number | null;
+      commissionDurationMonths: number | null;
     };
     const profileByUser = new Map<string, ProfileInfo>();
     for (const row of profiles ?? []) {
@@ -102,6 +108,12 @@ export async function GET(request: Request) {
         isAffiliate: row.is_affiliate === true,
         affiliateCode: str(row.affiliate_code),
         lsAffiliateId: str(row.ls_affiliate_id),
+        commissionPercent:
+          typeof row.commission_percent === "number" ? row.commission_percent : null,
+        commissionDurationMonths:
+          typeof row.commission_duration_months === "number"
+            ? row.commission_duration_months
+            : null,
       });
     }
 
@@ -161,6 +173,8 @@ export async function GET(request: Request) {
         lsStatus: lsAffiliateId ? lsById.get(lsAffiliateId)?.status ?? null : null,
         appliedAt: str(row.created_at),
         reviewedAt: str(row.reviewed_at),
+        commissionPercent: profile?.commissionPercent ?? null,
+        commissionDurationMonths: profile?.commissionDurationMonths ?? null,
         ...earnings,
       });
     }
@@ -182,6 +196,8 @@ export async function GET(request: Request) {
         lsStatus: profile.lsAffiliateId ? lsById.get(profile.lsAffiliateId)?.status ?? null : null,
         appliedAt: null,
         reviewedAt: null,
+        commissionPercent: profile.commissionPercent,
+        commissionDurationMonths: profile.commissionDurationMonths,
         ...earnings,
       });
     }

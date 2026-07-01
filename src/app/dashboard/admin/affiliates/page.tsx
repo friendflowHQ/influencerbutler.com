@@ -106,6 +106,8 @@ type RosterRow = {
   unpaidEarningsCents: number | null;
   appliedAt: string | null;
   reviewedAt: string | null;
+  commissionPercent: number | null;
+  commissionDurationMonths: number | null;
 };
 
 type RosterResponse = {
@@ -115,7 +117,41 @@ type RosterResponse = {
   error?: string;
 };
 
-type TabKey = "roster" | "applications" | "reconcile" | "owed";
+type TabKey = "roster" | "applications" | "reconcile" | "owed" | "payouts";
+
+type PayoutLine = {
+  lsOrderId: string;
+  createdAt: string | null;
+  currency: string | null;
+  totalCents: number;
+  lsPaidCents: number;
+  owedCents: number;
+  attributionStatus: string | null;
+};
+
+type PayoutAffiliate = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  lsAffiliateId: string | null;
+  ratePercent: number;
+  durationMonths: number | null;
+  orderCount: number;
+  grossCents: number;
+  lsPaidCents: number;
+  owedCents: number;
+  lines: PayoutLine[];
+  ls: { totalEarningsCents: number; unpaidEarningsCents: number } | null;
+};
+
+type PayoutsResponse = {
+  admin?: { email: string };
+  period?: string;
+  lsAvailable?: boolean;
+  affiliates?: PayoutAffiliate[];
+  error?: string;
+};
 
 type RosterFilter =
   | "all"
@@ -473,6 +509,45 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Per-affiliate commission terms (rate + duration) edits from the Roster tab.
+  const [termsRow, setTermsRow] = useState<Record<string, LinkRowState>>({});
+  const onSaveTerms = async (
+    userId: string,
+    commissionPercent: number | null,
+    commissionDurationMonths: number | null,
+  ): Promise<boolean> => {
+    setTermsRow((prev) => ({ ...prev, [userId]: { kind: "working" } }));
+    try {
+      const res = await fetch("/api/affiliates/admin-terms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, commissionPercent, commissionDurationMonths }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setTermsRow((prev) => ({
+          ...prev,
+          [userId]: { kind: "error", message: json.error ?? `Failed (${res.status})` },
+        }));
+        return false;
+      }
+      setTermsRow((prev) => ({ ...prev, [userId]: { kind: "success", message: "Saved." } }));
+      // Reflect the new terms in the roster without a full refetch.
+      setRoster((prev) =>
+        prev.map((r) =>
+          r.userId === userId
+            ? { ...r, commissionPercent, commissionDurationMonths }
+            : r,
+        ),
+      );
+      return true;
+    } catch (err) {
+      console.error(err);
+      setTermsRow((prev) => ({ ...prev, [userId]: { kind: "error", message: "Network error." } }));
+      return false;
+    }
+  };
+
   // Approve/reject work off a user id + display label so they can be triggered
   // from either the Applications cards or the Roster table.
   const approveUser = async (userId: string, label: string) => {
@@ -603,6 +678,7 @@ export default function AdminAffiliatesPage() {
     { key: "applications", label: "Applications", count: pending.length || null },
     { key: "reconcile", label: "Reconcile", count: null },
     { key: "owed", label: "Owed", count: null },
+    { key: "payouts", label: "Payouts", count: null },
   ];
 
   return (
@@ -650,6 +726,8 @@ export default function AdminAffiliatesPage() {
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
           rowState={rowState}
+          termsRow={termsRow}
+          onSaveTerms={onSaveTerms}
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
         />
@@ -1023,6 +1101,8 @@ export default function AdminAffiliatesPage() {
           )}
         </section>
       ) : null}
+
+      {tab === "payouts" ? <PayoutsTab onForbidden={() => setForbidden(true)} /> : null}
     </div>
   );
 }
@@ -1038,6 +1118,8 @@ function RosterTab({
   statusFilter,
   setStatusFilter,
   rowState,
+  termsRow,
+  onSaveTerms,
   onApprove,
   onReject,
 }: {
@@ -1051,6 +1133,12 @@ function RosterTab({
   statusFilter: RosterFilter;
   setStatusFilter: (value: RosterFilter) => void;
   rowState: Record<string, RowState>;
+  termsRow: Record<string, LinkRowState>;
+  onSaveTerms: (
+    userId: string,
+    commissionPercent: number | null,
+    commissionDurationMonths: number | null,
+  ) => Promise<boolean>;
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
 }) {
@@ -1113,6 +1201,7 @@ function RosterTab({
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3">Affiliate</th>
                 <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Terms</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Total earned</th>
                 <th className="px-4 py-3 text-right">Paid out</th>
@@ -1141,6 +1230,9 @@ function RosterTab({
                       ) : (
                         <span className="text-xs text-slate-400">-</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TermsCell row={r} state={termsRow[r.userId] ?? { kind: "idle" }} onSave={onSaveTerms} />
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadges row={r} />
@@ -1274,4 +1366,475 @@ function formatSocials(socials: SocialHandles | null): string | null {
   );
   if (entries.length === 0) return null;
   return entries.map(([k, v]) => `${k}: ${v}`).join(" · ");
+}
+
+function termsSummary(percent: number | null, months: number | null): string {
+  if (percent === null || percent === 30) return "30% (default)";
+  return `${percent}% · ${months === null ? "Lifetime" : `${months} mo`}`;
+}
+
+/**
+ * Inline editor for one affiliate's commission rate + duration. Shows the
+ * current terms as a badge; expands to a compact form on Edit. Leaving the
+ * percent blank and saving clears the custom rate (back to the 30% default).
+ */
+function TermsCell({
+  row,
+  state,
+  onSave,
+}: {
+  row: RosterRow;
+  state: LinkRowState;
+  onSave: (
+    userId: string,
+    commissionPercent: number | null,
+    commissionDurationMonths: number | null,
+  ) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [percent, setPercent] = useState<string>(
+    row.commissionPercent !== null ? String(row.commissionPercent) : "",
+  );
+  const [durationMode, setDurationMode] = useState<"lifetime" | "months">(
+    row.commissionDurationMonths === null ? "lifetime" : "months",
+  );
+  const [months, setMonths] = useState<string>(
+    row.commissionDurationMonths !== null ? String(row.commissionDurationMonths) : "12",
+  );
+
+  const working = state.kind === "working";
+  const custom = row.commissionPercent !== null && row.commissionPercent !== 30;
+
+  const startEdit = () => {
+    setPercent(row.commissionPercent !== null ? String(row.commissionPercent) : "");
+    setDurationMode(row.commissionDurationMonths === null ? "lifetime" : "months");
+    setMonths(row.commissionDurationMonths !== null ? String(row.commissionDurationMonths) : "12");
+    setEditing(true);
+  };
+
+  const save = async () => {
+    const trimmed = percent.trim();
+    const pctNum = trimmed === "" ? null : Number(trimmed);
+    if (pctNum !== null && (!Number.isFinite(pctNum) || pctNum < 0 || pctNum > 100)) {
+      window.alert("Rate must be a number between 0 and 100 (or blank for the 30% default).");
+      return;
+    }
+    let durationMonths: number | null = null;
+    if (pctNum !== null && durationMode === "months") {
+      const m = Number(months.trim());
+      if (!Number.isFinite(m) || m <= 0) {
+        window.alert("Duration months must be a positive number.");
+        return;
+      }
+      durationMonths = Math.round(m);
+    }
+    const ok = await onSave(row.userId, pctNum === null ? null : Math.round(pctNum), durationMonths);
+    if (ok) setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+            custom ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {termsSummary(row.commissionPercent, row.commissionDurationMonths)}
+        </span>
+        <button
+          type="button"
+          onClick={startEdit}
+          className="text-xs font-medium text-[#c2410c] hover:underline"
+        >
+          Edit
+        </button>
+        {state.kind === "success" ? (
+          <span className="text-xs text-emerald-700">{state.message}</span>
+        ) : null}
+        {state.kind === "error" ? (
+          <span className="text-xs text-red-700">{state.message}</span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          value={percent}
+          onChange={(e) => setPercent(e.target.value)}
+          placeholder="30"
+          className="w-16 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
+        />
+        <span className="text-xs text-slate-500">%</span>
+      </div>
+      <select
+        value={durationMode}
+        onChange={(e) => setDurationMode(e.target.value as "lifetime" | "months")}
+        className="rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
+      >
+        <option value="lifetime">Lifetime</option>
+        <option value="months">Months</option>
+      </select>
+      {durationMode === "months" ? (
+        <input
+          type="number"
+          min={1}
+          value={months}
+          onChange={(e) => setMonths(e.target.value)}
+          placeholder="12"
+          className="w-20 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
+        />
+      ) : null}
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={save}
+          disabled={working}
+          className="rounded bg-[#f97316] px-2 py-1 text-xs font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
+        >
+          {working ? "…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          disabled={working}
+          className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+      {state.kind === "error" ? (
+        <span className="text-xs text-red-700">{state.message}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function currentMonthValue(): string {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+/**
+ * Payouts tab: per custom-rate affiliate, the month's commissionable orders,
+ * what Lemon Squeezy already paid (30%), and the top-up we still owe. Lets the
+ * admin mark a month paid (shared reconciled stamp with the Owed tab) and email
+ * statements (combined master + optional individual copies). Self-contained: it
+ * fetches its own data and manages its own selection + row state.
+ */
+function PayoutsTab({ onForbidden }: { onForbidden: () => void }) {
+  const [period, setPeriod] = useState<string>(currentMonthValue());
+  const [rows, setRows] = useState<PayoutAffiliate[]>([]);
+  const [lsAvailable, setLsAvailable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [payRow, setPayRow] = useState<Record<string, LinkRowState>>({});
+  const [sendCombined, setSendCombined] = useState(true);
+  const [sendIndividual, setSendIndividual] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setSendMsg(null);
+    try {
+      const res = await fetch(`/api/affiliates/admin-payouts?period=${encodeURIComponent(period)}`, {
+        cache: "no-store",
+      });
+      if (res.status === 403) {
+        onForbidden();
+        return;
+      }
+      const json = (await res.json()) as PayoutsResponse;
+      if (!res.ok) {
+        setError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      const affiliates = json.affiliates ?? [];
+      setRows(affiliates);
+      setLsAvailable(json.lsAvailable === true);
+      // Default-select every affiliate that has a balance owed.
+      const sel: Record<string, boolean> = {};
+      for (const a of affiliates) sel[a.userId] = a.owedCents > 0;
+      setSelected(sel);
+    } catch (err) {
+      console.error(err);
+      setError("Network error loading payouts.");
+    } finally {
+      setLoading(false);
+    }
+  }, [period, onForbidden]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const selectedIds = useMemo(
+    () => rows.filter((r) => selected[r.userId]).map((r) => r.userId),
+    [rows, selected],
+  );
+
+  const totalOwed = useMemo(() => rows.reduce((sum, r) => sum + r.owedCents, 0), [rows]);
+
+  const onMarkMonthPaid = async (aff: PayoutAffiliate) => {
+    if (aff.owedCents <= 0 || aff.lines.length === 0) return;
+    if (
+      !window.confirm(
+        `Mark ${formatUsd(aff.owedCents)} paid to ${aff.fullName ?? aff.email ?? aff.userId} for ${period}?\n\nDo this only after you have actually paid the top-up. This stamps the ${aff.lines.length} order(s) reconciled so they drop off this month and the Owed tab.`,
+      )
+    ) {
+      return;
+    }
+    setPayRow((prev) => ({ ...prev, [aff.userId]: { kind: "working" } }));
+    try {
+      const res = await fetch("/api/affiliates/admin-payouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: aff.userId,
+          period,
+          orderIds: aff.lines.map((l) => l.lsOrderId),
+          amountCents: aff.owedCents,
+        }),
+      });
+      const json = (await res.json()) as { error?: string; reconciledCount?: number };
+      if (!res.ok) {
+        setPayRow((prev) => ({
+          ...prev,
+          [aff.userId]: { kind: "error", message: json.error ?? `Failed (${res.status})` },
+        }));
+        return;
+      }
+      setPayRow((prev) => ({
+        ...prev,
+        [aff.userId]: { kind: "success", message: `Marked ${json.reconciledCount ?? 0} paid.` },
+      }));
+      setTimeout(() => void load(), 1200);
+    } catch (err) {
+      console.error(err);
+      setPayRow((prev) => ({ ...prev, [aff.userId]: { kind: "error", message: "Network error." } }));
+    }
+  };
+
+  const onSend = async () => {
+    if (selectedIds.length === 0) {
+      setSendMsg("Select at least one affiliate to email.");
+      return;
+    }
+    if (!sendCombined && !sendIndividual) {
+      setSendMsg("Choose the combined copy, individual copies, or both.");
+      return;
+    }
+    setSending(true);
+    setSendMsg(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-send-statement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ period, userIds: selectedIds, sendCombined, sendIndividual }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        inbox?: string;
+        combinedSent?: boolean;
+        individualSent?: number;
+      };
+      if (!res.ok) {
+        setSendMsg(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      const parts: string[] = [];
+      if (sendCombined) parts.push(json.combinedSent ? `Combined copy sent to ${json.inbox}.` : "Combined copy failed.");
+      if (sendIndividual) parts.push(`${json.individualSent ?? 0} individual statement(s) sent.`);
+      setSendMsg(parts.join(" ") || "Done.");
+    } catch (err) {
+      console.error(err);
+      setSendMsg("Network error sending statements.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          Admin · Payouts
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+          Monthly commission top-ups
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          For affiliates on a custom rate, this is what they earned each month, what Lemon Squeezy
+          already paid (30%), and the top-up you still owe. Pay the balance, then mark the month paid.
+          Statements can be emailed as a combined master copy plus an optional copy to each affiliate.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Month
+          <input
+            type="month"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-[#f97316] focus:outline-none"
+          />
+        </label>
+        <div className="flex flex-col gap-1 text-xs text-slate-500">
+          <span className="font-semibold uppercase tracking-wider">Total owed</span>
+          <span className="text-lg font-bold text-indigo-700">{formatUsd(totalOwed)}</span>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-1.5 text-sm text-slate-700">
+            <input type="checkbox" checked={sendCombined} onChange={(e) => setSendCombined(e.target.checked)} />
+            Combined copy
+          </label>
+          <label className="flex items-center gap-1.5 text-sm text-slate-700">
+            <input type="checkbox" checked={sendIndividual} onChange={(e) => setSendIndividual(e.target.checked)} />
+            Email each affiliate
+          </label>
+          <button
+            type="button"
+            onClick={onSend}
+            disabled={sending}
+            className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+          >
+            {sending ? "Sending…" : `Email ${selectedIds.length || ""} selected`.trim()}
+          </button>
+        </div>
+      </div>
+
+      {sendMsg ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          {sendMsg}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">{error}</div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+          No custom-rate affiliates with activity this month. Set a rate above 30% on the Roster tab
+          to start tracking top-ups.
+        </div>
+      ) : (
+        <ul className="space-y-4">
+          {rows.map((aff) => {
+            const state = payRow[aff.userId] ?? { kind: "idle" };
+            const working = state.kind === "working";
+            const earned = aff.lsPaidCents + aff.owedCents;
+            // LS reports cumulative earnings; if it shows more unpaid than we
+            // attributed this month, a referral may have bypassed our capture.
+            const lsUnpaid = aff.ls?.unpaidEarningsCents ?? null;
+            return (
+              <li
+                key={aff.userId}
+                className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected[aff.userId] ?? false}
+                      onChange={(e) =>
+                        setSelected((prev) => ({ ...prev, [aff.userId]: e.target.checked }))
+                      }
+                      className="mt-1"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-slate-900 break-words">
+                        {aff.fullName ?? "(no name)"}
+                        <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-800">
+                          {aff.ratePercent}% · {aff.durationMonths === null ? "Lifetime" : `${aff.durationMonths} mo`}
+                        </span>
+                      </p>
+                      <p className="text-sm text-slate-600 break-all">{aff.email ?? "(no email)"}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
+                        {aff.orderCount} order{aff.orderCount === 1 ? "" : "s"} · earned{" "}
+                        {formatUsd(earned)} · LS paid {formatUsd(aff.lsPaidCents)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="text-lg font-bold text-indigo-700">{formatUsd(aff.owedCents)} owed</p>
+                    <button
+                      type="button"
+                      onClick={() => onMarkMonthPaid(aff)}
+                      disabled={working || aff.owedCents <= 0}
+                      className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                    >
+                      {working ? "Saving…" : "Mark month paid"}
+                    </button>
+                  </div>
+                </div>
+
+                {lsUnpaid !== null && lsUnpaid > aff.owedCents + aff.lsPaidCents ? (
+                  <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    Lemon Squeezy shows {formatUsd(lsUnpaid)} unpaid for this affiliate (cumulative),
+                    which is more than we attributed. Cross-check LS in case a referral bypassed our
+                    tracking (e.g. a raw LS affiliate link).
+                  </p>
+                ) : null}
+
+                {aff.lines.length > 0 ? (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
+                      {aff.lines.length} order{aff.lines.length === 1 ? "" : "s"} this month
+                    </summary>
+                    <ul className="mt-2 space-y-1 rounded-lg bg-white/70 p-3 text-xs text-slate-600">
+                      {aff.lines.map((l) => (
+                        <li key={l.lsOrderId} className="flex flex-wrap justify-between gap-2">
+                          <span className="break-all">
+                            Order {l.lsOrderId}
+                            {l.createdAt ? ` · ${formatDate(l.createdAt)}` : ""}
+                            {l.attributionStatus === "pending" ? " · gap" : ""}
+                          </span>
+                          <span>
+                            {formatCents(l.totalCents, l.currency)} · LS {formatUsd(l.lsPaidCents)} ·
+                            owe {formatUsd(l.owedCents)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+
+                {state.kind === "success" ? (
+                  <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    {state.message}
+                  </p>
+                ) : null}
+                {state.kind === "error" ? (
+                  <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    {state.message}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {!lsAvailable ? (
+        <p className="text-xs text-slate-400">
+          Lemon Squeezy is unavailable right now, so the LS cross-check is skipped. Owed amounts are
+          computed from your own order records.
+        </p>
+      ) : null}
+    </section>
+  );
 }

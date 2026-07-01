@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { resolveRatePercent } from "@/lib/affiliate-commissions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ type OwedAffiliate = {
   fullName: string | null;
   affiliateCode: string | null;
   lsAffiliateId: string;
+  ratePercent: number;
   orderCount: number;
   grossCents: number;
   owedCents: number;
@@ -95,7 +97,7 @@ export async function GET(request: Request) {
     // here - a still-unlinked affiliate's referrals stay pending until linked).
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("id,email,affiliate_code,ls_affiliate_id")
+      .select("id,email,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months")
       .eq("is_affiliate", true);
     if (profilesErr) {
       console.error("admin-owed: profiles query failed", profilesErr);
@@ -104,16 +106,33 @@ export async function GET(request: Request) {
 
     const activeByUser = new Map<
       string,
-      { email: string | null; affiliateCode: string | null; lsAffiliateId: string }
+      {
+        email: string | null;
+        affiliateCode: string | null;
+        lsAffiliateId: string;
+        ratePercent: number;
+      }
     >();
     for (const row of profiles ?? []) {
       const userId = str(row.id);
       const lsId = str(row.ls_affiliate_id);
       if (!userId || !lsId) continue; // unlinked -> not yet payable
+      // Pending gap orders earned nothing in LS, so we owe the affiliate's full
+      // promised rate (default 30). Duration does not matter here: gap orders
+      // are the customer's first, pre-activation purchase.
+      const ratePercent = resolveRatePercent({
+        commissionPercent:
+          typeof row.commission_percent === "number" ? row.commission_percent : null,
+        commissionDurationMonths:
+          typeof row.commission_duration_months === "number"
+            ? row.commission_duration_months
+            : null,
+      });
       activeByUser.set(userId, {
         email: str(row.email),
         affiliateCode: str(row.affiliate_code),
         lsAffiliateId: lsId,
+        ratePercent,
       });
     }
 
@@ -161,6 +180,7 @@ export async function GET(request: Request) {
           fullName: nameByUser.get(affUserId) ?? null,
           affiliateCode: active.affiliateCode,
           lsAffiliateId: active.lsAffiliateId,
+          ratePercent: active.ratePercent,
           orderCount: 0,
           grossCents: 0,
           owedCents: 0,
@@ -178,9 +198,10 @@ export async function GET(request: Request) {
       });
     }
 
+    // Owe each affiliate their own promised rate on the gap gross (LS paid $0).
     const affiliates = [...byAffiliate.values()].map((a) => ({
       ...a,
-      owedCents: Math.round((a.grossCents * percent) / 100),
+      owedCents: Math.round((a.grossCents * a.ratePercent) / 100),
     }));
     affiliates.sort((x, y) => y.owedCents - x.owedCents);
 
