@@ -1317,7 +1317,9 @@
         </section>
 
         <!-- ===================== TESTIMONIALS ===================== -->
-        <!-- NOTE: These are placeholder testimonials. Replace with real customer reviews. -->
+        <!-- These cards are the static fallback. /js/testimonials.js replaces them
+             at runtime with approved real reviews from /api/testimonials/feed when
+             any exist. Managed in the app at /dashboard/admin/testimonials. -->
         <section class="testimonials" id="testimonials">
             <div class="container">
                 <span class="section-label">Testimonials</span>
@@ -1585,6 +1587,7 @@
 
     <script src="js/main.js"></script>
     <script src="/js/activity-widget.js" defer></script>
+    <script src="/js/testimonials.js" defer></script>
   <script src="/js/webmcp.js" defer></script>
   </body>
 </html>

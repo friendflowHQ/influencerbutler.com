@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/commission-statements",
       "schedule": "0 13 1 * *"
+    },
+    {
+      "path": "/api/cron/testimonial-requests",
+      "schedule": "0 15 * * *"
     }
   ]
 }

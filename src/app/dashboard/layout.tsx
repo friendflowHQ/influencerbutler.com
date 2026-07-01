@@ -5,6 +5,7 @@ import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner"
 import LikeButlerFreebieBanner from "@/components/dashboard/LikeButlerFreebieBanner";
 import CcCheckFreebieBanner from "@/components/dashboard/CcCheckFreebieBanner";
 import FacebookGroupBanner from "@/components/dashboard/FacebookGroupBanner";
+import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
@@ -43,6 +44,7 @@ export default async function DashboardLayout({
           <CcCheckFreebieBanner />
           <LikeButlerFreebieBanner />
           <AffiliateUpsellBanner />
+          <TestimonialAskBanner />
           <FacebookGroupBanner />
           {children}
         </main>

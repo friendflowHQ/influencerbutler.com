@@ -72,6 +72,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
 
   // Marketing
   { key: "activity.manage", label: "Manage recent-activity widget", description: "Configure the social-proof popup (window, count, on/off) and hide specific events.", domain: "Marketing", risk: "normal", built: true },
+  { key: "testimonials.moderate", label: "Moderate testimonials", description: "Review, approve, hide, edit, reply to, and feature customer testimonials, and set auto-approval.", domain: "Marketing", risk: "normal", built: true },
 
   // Staff (super-admin only)
   { key: "staff.manage", label: "Manage assistants", description: "Invite assistants and set their permissions. Super-admin only.", domain: "Staff", risk: "destructive", built: true, adminOnly: true },
