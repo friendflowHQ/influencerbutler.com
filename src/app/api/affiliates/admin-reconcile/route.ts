@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { listStoreAffiliates } from "@/lib/affiliates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,22 +33,6 @@ type ReconcileClient = {
   };
 };
 
-type LsAffiliateItem = {
-  id?: string;
-  attributes?: {
-    status?: string;
-    user_email?: string | null;
-    user_name?: string | null;
-  };
-};
-
-type StoreAffiliate = {
-  id: string;
-  email: string | null;
-  name: string | null;
-  status: string;
-};
-
 type CodeHealth = "ok" | "missing-code" | "missing-discount-id" | "discount-not-in-ls";
 
 /**
@@ -66,34 +51,6 @@ async function discountExistsInLs(discountId: string): Promise<boolean> {
     // codes; a genuinely missing discount returns a clean 404 (res.ok false).
     return true;
   }
-}
-
-async function listStoreAffiliates(storeId: string): Promise<StoreAffiliate[]> {
-  const out: StoreAffiliate[] = [];
-  const pageSize = 100;
-  const maxPages = 10;
-  for (let page = 1; page <= maxPages; page++) {
-    const res = await lsApi(
-      `/affiliates?filter[store_id]=${encodeURIComponent(storeId)}&page[size]=${pageSize}&page[number]=${page}`,
-    );
-    if (!res.ok) {
-      console.error("admin-reconcile: LS affiliates list failed", res.status, "page", page);
-      break;
-    }
-    const json = (await res.json()) as { data?: LsAffiliateItem[] };
-    const items = Array.isArray(json.data) ? json.data : [];
-    for (const item of items) {
-      if (!item.id) continue;
-      out.push({
-        id: item.id,
-        email: item.attributes?.user_email ?? null,
-        name: item.attributes?.user_name ?? null,
-        status: item.attributes?.status ?? "unknown",
-      });
-    }
-    if (items.length < pageSize) break;
-  }
-  return out;
 }
 
 export async function GET(request: Request) {

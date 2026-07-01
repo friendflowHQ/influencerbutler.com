@@ -222,6 +222,67 @@ export async function fetchLsAffiliateReferrals(
   }
 }
 
+/**
+ * A single Lemon Squeezy affiliate as returned by the store-wide list endpoint,
+ * normalized to our internal field names. Earnings are included so callers can
+ * build a roster without a per-affiliate fetch (the list response already
+ * carries total_earnings / unpaid_earnings in each item's attributes).
+ */
+export type StoreAffiliate = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  status: string;
+  totalEarningsCents: number;
+  unpaidEarningsCents: number;
+};
+
+type LsAffiliateListItem = {
+  id?: string;
+  attributes?: {
+    status?: string;
+    user_email?: string | null;
+    user_name?: string | null;
+    total_earnings?: number;
+    unpaid_earnings?: number;
+  };
+};
+
+/**
+ * Lists every affiliate in the store, paginating the LS affiliates endpoint.
+ * Returns normalized rows including earnings. Callers should treat an empty
+ * array as "LS unavailable or no affiliates" and degrade gracefully.
+ */
+export async function listStoreAffiliates(storeId: string): Promise<StoreAffiliate[]> {
+  const out: StoreAffiliate[] = [];
+  const pageSize = 100;
+  const maxPages = 10;
+  for (let page = 1; page <= maxPages; page++) {
+    const res = await lsApi(
+      `/affiliates?filter[store_id]=${encodeURIComponent(storeId)}&page[size]=${pageSize}&page[number]=${page}`,
+    );
+    if (!res.ok) {
+      console.error("listStoreAffiliates: LS affiliates list failed", res.status, "page", page);
+      break;
+    }
+    const json = (await res.json()) as { data?: LsAffiliateListItem[] };
+    const items = Array.isArray(json.data) ? json.data : [];
+    for (const item of items) {
+      if (!item.id) continue;
+      out.push({
+        id: item.id,
+        email: item.attributes?.user_email ?? null,
+        name: item.attributes?.user_name ?? null,
+        status: item.attributes?.status ?? "unknown",
+        totalEarningsCents: Number(item.attributes?.total_earnings ?? 0),
+        unpaidEarningsCents: Number(item.attributes?.unpaid_earnings ?? 0),
+      });
+    }
+    if (items.length < pageSize) break;
+  }
+  return out;
+}
+
 export function buildShareLink(shareDomain: string | null, lsAffiliateId: string): string {
   if (!shareDomain) {
     return `https://influencerbutler.com/?aff=${encodeURIComponent(lsAffiliateId)}`;
