@@ -3,6 +3,7 @@
 // Sent by the /api/cron/affiliate-funnel cron in its sendTrialEmails step.
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { annualSavingsPct } from "@/lib/pricing-constants";
 
 export type TrialTier = "day0" | "day1" | "day2" | "day3";
 
@@ -85,17 +86,18 @@ const COPY: Record<TrialTier, TierCopy> = {
     },
   },
   day2: {
-    subject: "Switch to annual and save: 48h before your trial ends",
+    subject: "24 hours left: switch to annual and save",
     build: (v) => {
       const url = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
+      const annualBase = annualSavingsPct("solo");
       return [
         `Hi ${v.firstName},`,
         ``,
         `Quick heads-up: your trial ends in about 24 hours.`,
         ``,
         v.annualCode
-          ? `If you're ready to commit, the annual plan already saves ~25% vs. monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual - stacking to the biggest discount we offer.`
-          : `The annual plan saves ~25% vs. monthly if you're ready to commit.`,
+          ? `If you're ready to commit, annual already costs ${annualBase}% less than paying monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual on top: the biggest discount we offer.`
+          : `Annual already costs ${annualBase}% less than paying monthly if you're ready to commit.`,
         ``,
         v.annualCode
           ? `This code is unique to you, works only on the annual plan, and expires with your trial.`
@@ -103,7 +105,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Lock it in: ${url}`,
         ``,
-        `Prefer monthly? That's fine too - your ${v.monthlyPercent}% off monthly code is still good.`,
+        `Not ready for annual? Your ${v.monthlyPercent}% off monthly code still works.`,
         ``,
         COMMUNITY_LINE,
         ``,

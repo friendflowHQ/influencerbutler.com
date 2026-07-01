@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lsApi, fetchLicenseFromLs } from "@/lib/lemonsqueezy";
+import { lsApi, fetchLicenseFromLs, resolveAnnualVariantForMonthly } from "@/lib/lemonsqueezy";
 import { hashLicenseKey } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
@@ -217,6 +217,19 @@ async function resolveLicenseKey(
   };
 }
 
+/**
+ * True when the subscription is a billable monthly plan that can be swapped to
+ * the same tier's annual variant. Env-var-based variant resolution only works
+ * server-side, so this is computed here and returned to the client.
+ */
+function canUpgradeToAnnual(subscription: Subscription | null): boolean {
+  if (!subscription) return false;
+  if (subscription.status !== "active" && subscription.status !== "on_trial") {
+    return false;
+  }
+  return resolveAnnualVariantForMonthly(subscription.ls_variant_id) != null;
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -256,7 +269,12 @@ export async function GET() {
       email: user.email ?? null,
     });
 
-    return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
+    return NextResponse.json({
+      subscription,
+      hasLicenseKey: Boolean(licenseKey),
+      licenseKey,
+      canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+    });
   }
 
   // Fallback: resolve directly from Lemon Squeezy by email.
@@ -272,5 +290,10 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({ subscription, hasLicenseKey: Boolean(licenseKey), licenseKey });
+  return NextResponse.json({
+    subscription,
+    hasLicenseKey: Boolean(licenseKey),
+    licenseKey,
+    canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+  });
 }

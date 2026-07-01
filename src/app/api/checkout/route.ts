@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
 import { appendAffRef } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   readAffiliateSourceCookie,
   readPromoTier,
@@ -75,6 +76,40 @@ export async function POST(request: Request) {
 
     const email = userData.user.email;
     const userId = userData.user.id;
+
+    // Guard against accidental double-subscription: a user who already has an
+    // active (paid) subscription must not create a second parallel one via a
+    // fresh checkout (that would double-bill them and mint a second license).
+    // They should upgrade in-app instead (/dashboard/subscription -> Switch to
+    // annual). Deliberately NOT blocked:
+    //   - on_trial: the trial-conversion email converts trials via a fresh
+    //     annual checkout carrying the user's personal discount code.
+    //   - the Daily Deals add-on: a legitimate second, additive subscription.
+    // The guest checkout route (/api/checkout/guest) is exempt by nature:
+    // guests have no session and therefore no existing subscription.
+    if (!isAddon) {
+      // Service-role read: the subscriptions table has no anon/authenticated
+      // SELECT policy, so the RLS client returns nothing here. The user is
+      // already authenticated above, and we key the lookup by their own userId.
+      const { data: activeSub } = await createAdminClient()
+        .from("subscriptions")
+        .select("ls_subscription_id")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+
+      if (activeSub) {
+        return NextResponse.json(
+          {
+            error:
+              "You already have an active subscription. Manage or switch your plan from your dashboard.",
+            code: "already_subscribed",
+          },
+          { status: 409 },
+        );
+      }
+    }
 
     const cookieStore = await cookies();
     const cookieTier = readPromoTier(cookieStore);

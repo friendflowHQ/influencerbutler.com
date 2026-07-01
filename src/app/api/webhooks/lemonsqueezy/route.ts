@@ -688,6 +688,13 @@ export async function POST(request: Request) {
             status: getString(attrs.status),
             renews_at: attrs.renews_at ?? null,
             ends_at: attrs.ends_at ?? null,
+            // Keep plan/variant in sync so a mid-cycle plan change (e.g.
+            // monthly -> annual via /api/subscription/upgrade) is reflected on
+            // the dashboard. LS carries the current variant/product on every
+            // update, so overwriting with these values is idempotent.
+            plan_name: getString(attrs.product_name) ?? getString(attrs.variant_name),
+            ls_product_id: attrs.product_id ?? null,
+            ls_variant_id: attrs.variant_id ?? null,
           })
           .eq("ls_subscription_id", recordId),
       );

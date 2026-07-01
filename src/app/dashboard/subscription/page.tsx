@@ -51,6 +51,8 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [licenseKey, setLicenseKey] = useState<LicenseKey | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [canUpgradeToAnnual, setCanUpgradeToAnnual] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const [showCancelFunnel, setShowCancelFunnel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
@@ -105,6 +107,7 @@ export default function SubscriptionPage() {
         const payload = (await response.json()) as {
           subscription?: Subscription | null;
           licenseKey?: LicenseKey | null;
+          canUpgradeToAnnual?: boolean;
         };
 
         if (!response.ok) {
@@ -113,6 +116,7 @@ export default function SubscriptionPage() {
 
         setSubscription(payload.subscription ?? null);
         setLicenseKey(payload.licenseKey ?? null);
+        setCanUpgradeToAnnual(Boolean(payload.canUpgradeToAnnual));
       } catch (err) {
         console.error("Failed to load subscription data", err);
         setError("Failed to load subscription details.");
@@ -161,6 +165,34 @@ export default function SubscriptionPage() {
       setError(err instanceof Error ? err.message : "Checkout failed");
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  const handleUpgradeToAnnual = async () => {
+    if (!subscription) return;
+    setUpgrading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/subscription/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
+      });
+
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not switch to annual");
+      }
+
+      // The variant swap lands via the LS webhook; reload to pick up the new
+      // plan name + renewal date once it has been persisted.
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Upgrade failed");
+      setUpgrading(false);
     }
   };
 
@@ -274,6 +306,26 @@ export default function SubscriptionPage() {
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
+      ) : null}
+
+      {canUpgradeToAnnual ? (
+        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:p-6 shadow-sm">
+          <h2 className="text-lg font-semibold tracking-tight">Switch to annual and save</h2>
+          <p className="mt-1 text-sm text-slate-700">
+            Pay yearly instead of monthly and save {annualSavingsPct("solo")}%.{" "}
+            {subscription.status === "on_trial"
+              ? "You won't be charged until your trial ends, then you'll be billed yearly."
+              : "We'll apply a prorated credit for the rest of this month, so you only pay the difference today."}
+          </p>
+          <button
+            type="button"
+            onClick={handleUpgradeToAnnual}
+            disabled={upgrading}
+            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {upgrading ? "Switching…" : "Switch to annual"}
+          </button>
+        </section>
       ) : null}
 
       {subscription.status === "active" || subscription.status === "on_trial" ? (

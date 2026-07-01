@@ -208,3 +208,32 @@ export function getDiscountableVariantIds(): string[] {
   ];
   return ids.filter((id): id is string => typeof id === "string" && id.length > 0);
 }
+
+// Maps each tier's monthly variant env var to its annual counterpart. Used to
+// resolve the "switch to annual" upgrade target for an existing subscription.
+const MONTHLY_TO_ANNUAL_ENV: Record<string, string> = {
+  LEMONSQUEEZY_VARIANT_MONTHLY: "LEMONSQUEEZY_VARIANT_ANNUAL",
+  LEMONSQUEEZY_VARIANT_TEAM_MONTHLY: "LEMONSQUEEZY_VARIANT_TEAM_ANNUAL",
+  LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY: "LEMONSQUEEZY_VARIANT_AGENCY_ANNUAL",
+};
+
+/**
+ * Given a subscription's current variant id, returns the same tier's annual
+ * variant id, or null when the current variant is not a known monthly variant
+ * (i.e. it is already annual, is the add-on, or is unconfigured). Callers use
+ * a null return as "not eligible to upgrade to annual".
+ */
+export function resolveAnnualVariantForMonthly(
+  currentVariantId: string | number | null | undefined,
+): string | null {
+  if (currentVariantId == null) return null;
+  const current = String(currentVariantId);
+  for (const [monthlyEnv, annualEnv] of Object.entries(MONTHLY_TO_ANNUAL_ENV)) {
+    const monthlyId = process.env[monthlyEnv];
+    if (monthlyId && monthlyId === current) {
+      const annualId = process.env[annualEnv];
+      return annualId && annualId.length > 0 ? annualId : null;
+    }
+  }
+  return null;
+}
