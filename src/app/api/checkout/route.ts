@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
+import {
+  lsApi,
+  resolveVariantId,
+  isAddonVariant,
+  hasLiveSubscriptionForEmail,
+} from "@/lib/lemonsqueezy";
 import { appendAffRef } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -77,29 +82,39 @@ export async function POST(request: Request) {
     const email = userData.user.email;
     const userId = userData.user.id;
 
-    // Guard against accidental double-subscription: a user who already has an
-    // active (paid) subscription must not create a second parallel one via a
-    // fresh checkout (that would double-bill them and mint a second license).
-    // They should upgrade in-app instead (/dashboard/subscription -> Switch to
-    // annual). Deliberately NOT blocked:
-    //   - on_trial: the trial-conversion email converts trials via a fresh
-    //     annual checkout carrying the user's personal discount code.
-    //   - the Daily Deals add-on: a legitimate second, additive subscription.
-    // The guest checkout route (/api/checkout/guest) is exempt by nature:
-    // guests have no session and therefore no existing subscription.
+    // Guard against accidental double-subscription. A user who already has a
+    // live subscription (active, on_trial, or past_due) must not spin up a
+    // second parallel one via a fresh checkout: that double-bills them, mints a
+    // second license, and litters billing history with duplicate "Initial
+    // payment" rows. Legitimate trial->annual conversion goes through the in-app
+    // upgrade (/dashboard/subscription -> Switch to annual -> /api/subscription/
+    // upgrade), which mutates the EXISTING subscription in place and so never
+    // needs this checkout path.
+    //
+    // Two-layer check, mirroring /api/me/subscription-details, because a single
+    // local read is not enough: the subscription_created webhook may not have
+    // landed the row yet, or it may be mapped to a different user_id (email-match
+    // linking is fragile). Check the local table first (service-role read: the
+    // subscriptions table has no anon/authenticated SELECT policy), then fall
+    // back to Lemon Squeezy by email. The LS fallback fails open, so a transient
+    // LS error never blocks a legitimate first-time signup.
+    //
+    // Exempt: the Daily Deals add-on is a legitimate additive second sub. The
+    // guest checkout route (/api/checkout/guest) is exempt by nature (guests
+    // have no session and therefore no existing subscription).
     if (!isAddon) {
-      // Service-role read: the subscriptions table has no anon/authenticated
-      // SELECT policy, so the RLS client returns nothing here. The user is
-      // already authenticated above, and we key the lookup by their own userId.
-      const { data: activeSub } = await createAdminClient()
+      const { data: liveSub } = await createAdminClient()
         .from("subscriptions")
         .select("ls_subscription_id")
         .eq("user_id", userId)
-        .eq("status", "active")
+        .in("status", ["active", "on_trial", "past_due"])
         .limit(1)
         .maybeSingle();
 
-      if (activeSub) {
+      const alreadySubscribed =
+        liveSub != null || (await hasLiveSubscriptionForEmail(email));
+
+      if (alreadySubscribed) {
         return NextResponse.json(
           {
             error:

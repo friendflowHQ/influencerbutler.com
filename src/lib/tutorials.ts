@@ -14,6 +14,9 @@ export type TutorialManifestEntry = {
   summary: string;
   order: number;
   locales: string[];
+  /** Course grouping: tutorials sharing a `series` form an ordered course. */
+  series?: string;
+  seriesOrder?: number;
 };
 
 export type TutorialManifest = {
@@ -118,19 +121,29 @@ function renderInline(line: string): string {
 }
 
 // Small, sandboxed Markdown subset: headings, paragraphs, bullet/ordered
-// lists, fenced code blocks, blockquotes, inline code/bold/italic/links.
-// Intentionally minimal - tutorials are content-heavy but structurally
-// simple, and avoiding a full Markdown lib keeps the bundle lean.
-function renderMarkdown(source: string): string {
+// lists, task-list checkboxes, fenced code blocks, blockquotes, inline
+// code/bold/italic/links. Intentionally minimal - tutorials are
+// content-heavy but structurally simple, and avoiding a full Markdown lib
+// keeps the bundle lean.
+//
+// Task lists: `- [ ] Do the thing {#step-id}` renders a checkbox with
+// data-step-id="<docId>:<step-id>". The trailing {#anchor} is required for
+// course content so progress keys stay stable across edits and locales;
+// without it a per-document positional counter (s1, s2, ...) is used.
+// Checkboxes always render unchecked - completion state is user data,
+// hydrated client-side, never baked into the HTML.
+export function renderMarkdown(source: string, opts: { docId?: string } = {}): string {
+  const docId = opts.docId && /^[a-z0-9][a-z0-9-]{0,80}$/i.test(opts.docId) ? opts.docId : "";
   const lines = source.split(/\r?\n/);
   const out: string[] = [];
   let inCode = false;
   let codeBuf: string[] = [];
-  let listType: "ul" | "ol" | null = null;
+  let listType: "ul" | "ol" | "task" | null = null;
+  let taskCounter = 0;
 
   function closeList() {
     if (listType) {
-      out.push(`</${listType}>`);
+      out.push(`</${listType === "task" ? "ul" : listType}>`);
       listType = null;
     }
   }
@@ -172,6 +185,31 @@ function renderMarkdown(source: string): string {
       const vid = video[1];
       out.push(
         `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="Tutorial video" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
+      );
+      continue;
+    }
+    // Task-list item: `- [ ] text {#step-id}` (also accepts `[x]`, which is
+    // normalized to unchecked - see the renderer header comment).
+    const task = line.match(/^\s*[-*]\s+\[(?: |x|X)\]\s+(.*)$/);
+    if (task) {
+      if (listType !== "task") {
+        closeList();
+        out.push('<ul class="task-list">');
+        listType = "task";
+      }
+      let text = task[1];
+      let stepId = "";
+      const anchor = text.match(/\{#([a-z0-9-]{1,40})\}\s*$/);
+      if (anchor) {
+        stepId = anchor[1];
+        text = text.slice(0, anchor.index).trimEnd();
+      } else {
+        taskCounter += 1;
+        stepId = `s${taskCounter}`;
+      }
+      const stepKey = docId ? `${docId}:${stepId}` : stepId;
+      out.push(
+        `<li class="task-item"><label><input type="checkbox" data-step-id="${stepKey}" /><span>${renderInline(text)}</span></label></li>`,
       );
       continue;
     }
@@ -230,7 +268,7 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   if (!raw) return null;
 
   const { frontmatter, body } = parseFrontmatter(raw);
-  const html = renderMarkdown(body);
+  const html = renderMarkdown(body, { docId: id });
   return {
     id,
     locale: resolvedLocale,
@@ -240,7 +278,63 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   };
 }
 
+export type SearchIndexEntry = {
+  id: string;
+  title: string;
+  category: string;
+  summary: string;
+  text: string;
+};
+
+const searchIndexCache = new Map<string, { entries: SearchIndexEntry[]; at: number }>();
+
+// Strip the rendered tutorial HTML down to searchable plain text: drop tags,
+// decode the handful of entities our renderer emits, and collapse whitespace.
+function htmlToText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Build a keyword-search index over every tutorial for one locale. Each entry
+ * carries the manifest metadata plus the plain-text body, so callers (the
+ * /help search box and the desktop app via /api/help/search-index) can match
+ * a query against title + summary + category + body without loading each
+ * tutorial separately. Cached per locale with the same short TTL as the
+ * manifest.
+ */
+export async function loadSearchIndex(requestedLocale?: string): Promise<SearchIndexEntry[]> {
+  const locale = resolveLocale(requestedLocale);
+  const cached = searchIndexCache.get(locale);
+  if (cached && Date.now() - cached.at < MANIFEST_CACHE_MS) {
+    return cached.entries;
+  }
+  const manifest = await loadManifest();
+  const entries: SearchIndexEntry[] = [];
+  for (const entry of manifest.tutorials) {
+    const tutorial = await loadTutorial(entry.id, locale);
+    const text = tutorial ? htmlToText(tutorial.html) : "";
+    entries.push({
+      id: entry.id,
+      title: entry.title,
+      category: entry.category || "Other",
+      summary: entry.summary || "",
+      text,
+    });
+  }
+  searchIndexCache.set(locale, { entries, at: Date.now() });
+  return entries;
+}
+
 export function clearTutorialCache() {
   cachedManifest = null;
   cachedManifestAt = 0;
+  searchIndexCache.clear();
 }
