@@ -126,6 +126,45 @@ export async function fetchLicenseFromLs(email: string): Promise<LsLicense | nul
   return null;
 }
 
+/** LS subscription statuses that represent a live, billing-capable sub. */
+const LIVE_SUB_STATUSES = new Set(["active", "on_trial", "past_due"]);
+
+/**
+ * True when Lemon Squeezy already has a live (active / on_trial / past_due)
+ * subscription for this email. Used by the checkout double-subscribe guard as a
+ * fallback for when the local subscriptions row hasn't landed yet or is mapped
+ * to a different user_id (email-match linking is fragile - see the subscription
+ * details route). Fails OPEN (returns false) on any LS error so a transient API
+ * blip never blocks a legitimate first-time signup.
+ */
+export async function hasLiveSubscriptionForEmail(email: string): Promise<boolean> {
+  try {
+    const params = new URLSearchParams();
+    params.set("filter[user_email]", email);
+    params.set("page[size]", "50");
+
+    const response = await lsApi(`/subscriptions?${params.toString()}`, { method: "GET" });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: live-subscription lookup failed", {
+        status: response.status,
+        text: text.slice(0, 500),
+      });
+      return false; // fail open
+    }
+
+    const payload = (await response.json()) as {
+      data?: { attributes?: { status?: string | null } }[];
+    };
+    return (payload.data ?? []).some((s) =>
+      LIVE_SUB_STATUSES.has(s.attributes?.status ?? ""),
+    );
+  } catch (error) {
+    console.error("lemonsqueezy: live-subscription lookup threw", error);
+    return false; // fail open
+  }
+}
+
 export type VariantResolution =
   | { ok: true; variantId: string }
   | { ok: false; reason: "missing-input" | "missing-env"; envVar?: string };

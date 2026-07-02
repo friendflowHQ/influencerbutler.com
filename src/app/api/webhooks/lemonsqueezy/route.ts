@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
+import { lsApi } from "@/lib/lemonsqueezy";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 
@@ -31,18 +32,25 @@ type LsWebhookPayload = {
 
 type QueryResult = Promise<{ data: Record<string, unknown> | null }>;
 
+type ListResult = Promise<{
+  data: Record<string, unknown>[] | null;
+  error: { message?: string } | null;
+}>;
+
 type WriteResult = { error: { message?: string; code?: string; details?: string } | null };
+
+// A PostgREST select builder: chainable filters that either narrow to a single
+// row via maybeSingle() or resolve directly (awaited) to the full row list.
+type SelectFilter = ListResult & {
+  eq: (column: string, value: string) => SelectFilter;
+  neq: (column: string, value: string) => SelectFilter;
+  ilike: (column: string, pattern: string) => SelectFilter;
+  maybeSingle: () => QueryResult;
+};
 
 type SupabaseServiceClient = {
   from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        maybeSingle: () => QueryResult;
-      };
-      ilike: (column: string, pattern: string) => {
-        maybeSingle: () => QueryResult;
-      };
-    };
+    select: (columns: string) => SelectFilter;
     upsert: (
       payload: Record<string, unknown>,
       options?: { onConflict: string },
@@ -382,6 +390,79 @@ async function recordExists(supabase: SupabaseServiceClient, table: string, colu
   return Boolean(data);
 }
 
+/**
+ * Belt-and-suspenders for the checkout double-subscribe guard. When a new
+ * non-addon subscription is created for a user, cancel any OTHER trial
+ * subscriptions they still have running. Without this, a user who (re)subscribes
+ * while a previous trial is still live ends up with multiple parallel trials,
+ * each of which would independently convert to its own paid charge at its own
+ * trial-end - the exact duplicate-"Initial payment" mess the guard exists to
+ * prevent, for the cases the guard can't catch (guest/manual LS-dashboard
+ * checkouts, or a pre-guard race).
+ *
+ * Only ever cancels trials, never a paid 'active' sub and never the Daily Deals
+ * add-on (which is 'active', so already excluded by the status filter).
+ * Cancelling a trial in LS stops it converting to paid; the resulting
+ * subscription_cancelled webhook reconciles the row, but we also mark it here so
+ * the dashboard is correct immediately. Best-effort throughout: a failure to
+ * cancel one stale trial must never fail the whole webhook.
+ */
+async function supersedeStaleTrials(
+  supabase: SupabaseServiceClient,
+  userId: string,
+  keepLsSubscriptionId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("ls_subscription_id")
+    .eq("user_id", userId)
+    .eq("status", "on_trial")
+    .neq("ls_subscription_id", keepLsSubscriptionId);
+
+  if (error) {
+    console.error("supersedeStaleTrials: lookup failed", error.message);
+    return;
+  }
+
+  const staleIds = (data ?? [])
+    .map((r) => getString((r as { ls_subscription_id?: unknown }).ls_subscription_id))
+    .filter((id): id is string => id != null);
+
+  for (const staleId of staleIds) {
+    try {
+      // DELETE cancels the subscription; for a trial it means "won't convert to
+      // paid". A 404 means LS already has no such live sub - treat as done.
+      const res = await lsApi(`/subscriptions/${encodeURIComponent(staleId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok && res.status !== 404) {
+        const text = await res.text().catch(() => "");
+        console.error("supersedeStaleTrials: LS cancel failed", {
+          staleId,
+          status: res.status,
+          text: text.slice(0, 300),
+        });
+        continue; // leave the local row; the periodic reconcile can retry
+      }
+      // Mark locally right away so the dashboard doesn't show two trials until
+      // the subscription_cancelled webhook lands. ends_at is filled in by that
+      // webhook (it carries the authoritative trial-end/cancel timestamp).
+      const { error: updateError } = await supabase
+        .from("subscriptions")
+        .update({ status: "cancelled" })
+        .eq("ls_subscription_id", staleId);
+      if (updateError) {
+        console.error("supersedeStaleTrials: local mark failed", {
+          staleId,
+          message: updateError.message,
+        });
+      }
+    } catch (err) {
+      console.error("supersedeStaleTrials: threw", { staleId, err });
+    }
+  }
+}
+
 function readPercent(envVar: string, fallback: number): number {
   const raw = process.env[envVar];
   if (!raw) return fallback;
@@ -699,6 +780,13 @@ export async function POST(request: Request) {
             .eq("user_id", userId)
             .is("subscription_id", null),
         );
+      }
+
+      // Cancel any lingering trials this user still has, so a fresh subscription
+      // doesn't leave a second trial running that would later bill separately.
+      // Only fires for a new live non-addon sub; only cancels trials.
+      if (!isAddonSubscription && (status === "on_trial" || status === "active")) {
+        await supersedeStaleTrials(supabase, userId, recordId);
       }
     },
 
