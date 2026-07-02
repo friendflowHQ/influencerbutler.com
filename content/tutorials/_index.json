@@ -7,7 +7,7 @@
       "category": "Beginner Course",
       "summary": "What the free Amazon Influencer course covers, how the check-off system works, and what to honestly expect in your first months.",
       "order": 1,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 1
     },
@@ -17,7 +17,7 @@
       "category": "Beginner Course",
       "summary": "The difference between the Influencer Program and Associates, what onsite placement means, and where the money actually comes from.",
       "order": 2,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 2
     },
@@ -27,7 +27,7 @@
       "category": "Beginner Course",
       "summary": "Which social account to apply with, what Amazon looks for, the application walkthrough, and what to do if you get rejected.",
       "order": 3,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 3
     },
@@ -37,7 +37,7 @@
       "category": "Beginner Course",
       "summary": "The three-video review gate explained: what Amazon checks, the most common rejection reasons, and how to pass on your first try.",
       "order": 4,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 4
     },
@@ -47,7 +47,7 @@
       "category": "Beginner Course",
       "summary": "A phone, a window, and a 3-part script: how to film simple product videos that convert shoppers, plus the mistakes that waste your time.",
       "order": 5,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 5
     },
@@ -57,7 +57,7 @@
       "category": "Beginner Course",
       "summary": "How to upload videos, tag the right products, write titles that help you get watched, and avoid the tagging mistakes that cost commissions.",
       "order": 6,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 6
     },
@@ -67,7 +67,7 @@
       "category": "Beginner Course",
       "summary": "Set up your Amazon storefront: name, photo, idea lists, and how to organize products so visitors buy instead of bouncing.",
       "order": 7,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 7
     },
@@ -77,7 +77,7 @@
       "category": "Beginner Course",
       "summary": "The three numbers that matter in your Amazon earnings reports, what normal looks like for a beginner, and a healthy check-in cadence.",
       "order": 8,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 8
     },
@@ -87,7 +87,7 @@
       "category": "Beginner Course",
       "summary": "A concrete four-week action plan from application to a 20-video library, sized for a few hours per week.",
       "order": 9,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 9
     },
@@ -97,7 +97,7 @@
       "category": "Beginner Course",
       "summary": "The growth levers after your first months: Creator Connections, deal posting, and which repetitive tasks are worth automating.",
       "order": 9.1,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 10
     },
@@ -107,7 +107,7 @@
       "category": "Beginner Course",
       "summary": "Quick answers on followers, approval times, earnings, international programs, taxes, and the other questions beginners ask most.",
       "order": 9.2,
-      "locales": ["en-US"],
+      "locales": ["en-US", "es-ES", "fr-FR"],
       "series": "amazon-influencer-course",
       "seriesOrder": 11
     },
