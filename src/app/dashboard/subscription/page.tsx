@@ -57,7 +57,7 @@ export default function SubscriptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [promoCodeOpen, setPromoCodeOpen] = useState(false);
-  const [billingCadence, setBillingCadence] = useState<Interval>("annual");
+  const [billingCadence, setBillingCadence] = useState<Interval>("monthly");
   // First-touch affiliate code from ?code= - preserved across edits to the
   // promo input so the affiliate still gets aff_ref credit even if the user
   // types a better promo over it.
