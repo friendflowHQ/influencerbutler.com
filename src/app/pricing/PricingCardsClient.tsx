@@ -78,7 +78,7 @@ export default function PricingCardsClient({
 }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
-  const [billing, setBilling] = useState<Interval>("annual");
+  const [billing, setBilling] = useState<Interval>("monthly");
   const touchedRef = useRef(false);
 
   useEffect(() => {
