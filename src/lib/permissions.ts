@@ -20,6 +20,7 @@ export type PermissionDomain =
   | "Community"
   | "Catalogue"
   | "Marketing"
+  | "Operations"
   | "Staff";
 
 export type PermissionDef = {
@@ -74,6 +75,11 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "activity.manage", label: "Manage recent-activity widget", description: "Configure the social-proof popup (window, count, on/off) and hide specific events.", domain: "Marketing", risk: "normal", built: true },
   { key: "testimonials.moderate", label: "Moderate testimonials", description: "Review, approve, hide, edit, reply to, and feature customer testimonials, and set auto-approval.", domain: "Marketing", risk: "normal", built: true },
 
+  // Operations
+  { key: "reports.view", label: "View KPIs & reports", description: "Subscription counts, trial funnel, and conversion metrics on the admin overview.", domain: "Operations", risk: "normal", built: true },
+  { key: "webhooks.view", label: "View webhook log", description: "Recent Lemon Squeezy webhook deliveries and processing errors.", domain: "Operations", risk: "normal", built: true },
+  { key: "audit.view", label: "View admin audit log", description: "Read the append-only log of admin and assistant actions. Super-admin only.", domain: "Operations", risk: "normal", built: true, adminOnly: true },
+
   // Staff (super-admin only)
   { key: "staff.manage", label: "Manage assistants", description: "Invite assistants and set their permissions. Super-admin only.", domain: "Staff", risk: "destructive", built: true, adminOnly: true },
 ] as const;
@@ -112,5 +118,6 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Community",
   "Catalogue",
   "Marketing",
+  "Operations",
   "Staff",
 ];

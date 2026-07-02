@@ -86,6 +86,66 @@ export async function createBrandedDiscount(
   }
 }
 
+export type DiscountState = {
+  exists: boolean;
+  percent: number | null;
+  expiresAt: string | null;
+  redeemed: boolean;
+};
+
+/**
+ * Reads a discount's live state from Lemon Squeezy: percent, expiry, whether
+ * it still exists, and whether it has been redeemed (our minted codes are
+ * max_redemptions 1, so any redemption row means spent). Returns null when LS
+ * is unreachable so callers can fall back to locally derived data.
+ */
+export async function fetchDiscountState(discountId: string): Promise<DiscountState | null> {
+  try {
+    const [discountRes, redemptionsRes] = await Promise.all([
+      lsApi(`/discounts/${discountId}`, { method: "GET" }),
+      lsApi(
+        `/discount-redemptions?filter[discount_id]=${encodeURIComponent(discountId)}&page[size]=1`,
+        { method: "GET" },
+      ),
+    ]);
+
+    if (discountRes.status === 404) {
+      return { exists: false, percent: null, expiresAt: null, redeemed: false };
+    }
+    if (!discountRes.ok) {
+      const text = await discountRes.text().catch(() => "");
+      console.error("LS discount state fetch failed", {
+        status: discountRes.status,
+        body: text.slice(0, 300),
+      });
+      return null;
+    }
+
+    const discountPayload = (await discountRes.json()) as {
+      data?: { attributes?: { amount?: number | null; amount_type?: string | null; expires_at?: string | null } };
+    };
+    const attrs = discountPayload.data?.attributes ?? {};
+    const percent =
+      attrs.amount_type === "percent" && typeof attrs.amount === "number" ? attrs.amount : null;
+
+    let redeemed = false;
+    if (redemptionsRes.ok) {
+      const redemptionPayload = (await redemptionsRes.json()) as { data?: unknown[] };
+      redeemed = (redemptionPayload.data ?? []).length > 0;
+    }
+
+    return {
+      exists: true,
+      percent,
+      expiresAt: attrs.expires_at ?? null,
+      redeemed,
+    };
+  } catch (error) {
+    console.error("LS discount state fetch threw", error);
+    return null;
+  }
+}
+
 export type CreateUniqueDiscountInput = {
   storeId: string;
   percentOff: number;
@@ -111,7 +171,9 @@ export async function createUniqueDiscount(
 ): Promise<{ code: string; discountId: string } | null> {
   const prefix = input.namePrefix ?? "AFF";
   const suffix = randomBytes(4).toString("hex").toUpperCase();
-  const code = `${prefix}-${suffix}`;
+  // LS discount codes may only contain uppercase letters and numbers - a
+  // hyphen between prefix and suffix gets the whole request rejected (422).
+  const code = `${prefix}${suffix}`;
   const displayName = input.name ?? `Discount ${input.percentOff}% (${code})`;
 
   const attributes: Record<string, unknown> = {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import MyReviewCard, { type MyReview } from "@/components/dashboard/MyReviewCard";
 
 type SubmitState = "idle" | "saving" | "done" | "error";
 
@@ -57,6 +58,23 @@ export default function FeedbackPage() {
   const [state, setState] = useState<SubmitState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
+  const [myReview, setMyReview] = useState<MyReview | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const loadMyReview = useCallback(async () => {
+    try {
+      const res = await fetch("/api/testimonials/mine", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as { testimonial?: MyReview | null };
+      setMyReview(json.testimonial ?? null);
+    } catch {
+      // best-effort: page works without the status card
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadMyReview();
+  }, [loadMyReview]);
 
   useEffect(() => {
     let alive = true;
@@ -157,6 +175,7 @@ export default function FeedbackPage() {
       }
       setPublished(json.published === true);
       setState("done");
+      void loadMyReview();
     } catch {
       setError("Network error. Please try again.");
       setState("error");
@@ -165,7 +184,7 @@ export default function FeedbackPage() {
 
   if (state === "done") {
     return (
-      <div className="mx-auto max-w-2xl px-2 py-10">
+      <div className="mx-auto max-w-2xl space-y-6 px-2 py-10">
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
           <div className="text-4xl">{"💛"}</div>
           <h1 className="mt-3 text-xl font-bold text-slate-900">Thank you.</h1>
@@ -175,6 +194,30 @@ export default function FeedbackPage() {
               : "Your review is in and our team will take a look shortly. Thank you for sharing."}
           </p>
         </div>
+        {myReview ? <MyReviewCard review={myReview} /> : null}
+      </div>
+    );
+  }
+
+  // Already submitted and not writing a new one: show the status card instead
+  // of the blank form, with the option to add a fresh review.
+  if (myReview && !showForm) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6 px-2 py-8">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Your feedback</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Thanks for sharing your experience. Here is where your review stands.
+          </p>
+        </div>
+        <MyReviewCard review={myReview} />
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Write a new review
+        </button>
       </div>
     );
   }

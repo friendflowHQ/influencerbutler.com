@@ -126,6 +126,94 @@ export async function fetchLicenseFromLs(email: string): Promise<LsLicense | nul
   return null;
 }
 
+/** One activated device/install of a license key, per Lemon Squeezy. */
+export type LsLicenseInstance = {
+  id: string;
+  /** The instance UUID the License API expects for deactivation. */
+  identifier: string;
+  name: string | null;
+  createdAt: string | null;
+};
+
+type LsInstanceResource = {
+  id?: string;
+  attributes?: {
+    identifier?: string | null;
+    name?: string | null;
+    created_at?: string | null;
+  };
+};
+
+/**
+ * Lists the activation instances for a license key (main API). Returns [] on
+ * any API failure so callers degrade to "could not load devices".
+ */
+export async function fetchLicenseInstances(
+  lsLicenseKeyId: string,
+): Promise<LsLicenseInstance[] | null> {
+  try {
+    const params = new URLSearchParams();
+    params.set("filter[license_key_id]", lsLicenseKeyId);
+    params.set("page[size]", "100");
+    const response = await lsApi(`/license-key-instances?${params.toString()}`, { method: "GET" });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: license instances lookup failed", {
+        status: response.status,
+        text: text.slice(0, 500),
+      });
+      return null;
+    }
+    const payload = (await response.json()) as { data?: LsInstanceResource[] };
+    return (payload.data ?? [])
+      .filter((item): item is LsInstanceResource & { id: string } => typeof item.id === "string")
+      .map((item) => ({
+        id: item.id,
+        identifier: item.attributes?.identifier ?? "",
+        name: item.attributes?.name ?? null,
+        createdAt: item.attributes?.created_at ?? null,
+      }))
+      .filter((item) => item.identifier.length > 0);
+  } catch (error) {
+    console.error("lemonsqueezy: license instances lookup threw", error);
+    return null;
+  }
+}
+
+/**
+ * Deactivates one instance of a license key via the License API. Unlike the
+ * main API this endpoint authenticates with the license key itself and speaks
+ * plain application/json, so it gets a dedicated fetch instead of lsApi.
+ */
+export async function deactivateLicenseInstance(
+  licenseKey: string,
+  instanceIdentifier: string,
+): Promise<boolean> {
+  try {
+    const response = await fetch("https://api.lemonsqueezy.com/v1/licenses/deactivate", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ license_key: licenseKey, instance_id: instanceIdentifier }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: license deactivate failed", {
+        status: response.status,
+        text: text.slice(0, 500),
+      });
+      return false;
+    }
+    const payload = (await response.json().catch(() => null)) as { deactivated?: boolean } | null;
+    return payload?.deactivated === true;
+  } catch (error) {
+    console.error("lemonsqueezy: license deactivate threw", error);
+    return false;
+  }
+}
+
 /** LS subscription statuses that represent a live, billing-capable sub. */
 const LIVE_SUB_STATUSES = new Set(["active", "on_trial", "past_due"]);
 

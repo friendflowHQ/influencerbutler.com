@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
 import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/LicenseKeyDisplay";
+import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
 import {
   PRICE_CENTS,
   TIER_NAME,
@@ -212,7 +213,7 @@ export default function SubscriptionPage() {
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Start your free trial</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Unlock all 29+ automation tools with a 3-day free trial. Cancel anytime.
+            Unlock all 40+ automation tools with a 3-day free trial. Cancel anytime.
           </p>
         </section>
 
@@ -299,6 +300,8 @@ export default function SubscriptionPage() {
           </span>
         </div>
       </section>
+
+      <DiscountCodesCard />
 
       {licenseKey ? <LicenseKeyDisplay variant="panel" licenseKey={licenseKey} /> : null}
 

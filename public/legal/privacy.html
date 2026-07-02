@@ -86,7 +86,7 @@
                     <li><strong>License usage counters</strong> (message-send counts, tier-gated feature usage) → licensing Worker: tier-cap enforcement, billing reconciliation (contract performance).</li>
                     <li><strong>Feedback, feature requests, community Q&amp;A submissions</strong> → feedback Worker: product improvement, public Q&amp;A on the website (consent - you actively submit).</li>
                     <li><strong>Outbound deep-link rewrites and post-tap analytics</strong> → links Worker: affiliate link resolution (legitimate interest).</li>
-                    <li><strong>Update-feed requests</strong> for <code>latest.yml</code> and <code>.exe</code> blobs → Cloudflare R2 (<code>dl.influencerbutler.com</code>): auto-update delivery (contract performance).</li>
+                    <li><strong>Update-feed requests</strong> for update manifests (<code>latest.yml</code> / <code>latest-mac.yml</code>) and installer blobs (<code>.exe</code> on Windows; <code>.dmg</code> / <code>.zip</code> on Mac) → our release hosts (<code>dl.influencerbutler.com</code>, Cloudflare R2, for Windows; <code>influencerbutler.influencerbutler.com</code> for Mac): auto-update delivery (contract performance).</li>
                 </ul>
                 <p>We do <strong>not</strong> receive: the contents of your messages to third-party platforms, your platform credentials, your AI provider API keys, the contents of your workspace bundles, your screenshots, or any cookies beyond the magic-link auth cookie issued by our own Worker.</p>
 

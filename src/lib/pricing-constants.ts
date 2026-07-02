@@ -72,7 +72,7 @@ export const TIER_TAGLINE: Record<Tier, string> = {
 // the public /pricing page both render these verbatim.
 export const TIER_FEATURES: Record<Tier, readonly string[]> = {
   solo: [
-    "All 29+ automation tools",
+    "All 40+ automation tools",
     "Unlimited CC brand messages",
     "Unlimited Instagram DMs",
     "Commission harvesting",

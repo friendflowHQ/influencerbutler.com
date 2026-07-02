@@ -5,6 +5,17 @@
 (function () {
   "use strict";
 
+  /* ── Download-guidance popup ── */
+  // Loaded here (rather than via a <script> tag in all 50+ static pages) because
+  // main.js already runs on every marketing page that carries a download link.
+  // The script is self-contained and attaches its own delegated click listener.
+  if (!window.IBDownloadGuide) {
+    var dlg = document.createElement("script");
+    dlg.src = "/download-guidance.js";
+    dlg.defer = true;
+    document.head.appendChild(dlg);
+  }
+
   /* ── Sticky header shadow ── */
   const header = document.getElementById("site-header");
   if (header) {

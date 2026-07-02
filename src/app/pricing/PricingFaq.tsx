@@ -1,7 +1,7 @@
 const FAQ = [
   {
     q: "How does the free trial work?",
-    a: "Every paid plan starts with a 3-day free trial. You can use all 29+ butlers during the trial. Cancel anytime before day 3 and you won't be charged.",
+    a: "Every paid plan starts with a 3-day free trial. You can use all 40+ butlers during the trial. Cancel anytime before day 3 and you won't be charged.",
   },
   {
     q: "Can I cancel anytime?",

@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
-import { lsApi } from "@/lib/lemonsqueezy";
-import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
+import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
+import { logWebhookEvent } from "@/lib/webhook-events";
+import { lsApi } from "@/lib/lemonsqueezy";
 
 export const runtime = "nodejs";
 
@@ -58,6 +59,13 @@ type SupabaseServiceClient = {
     update: (payload: Record<string, unknown>) => {
       eq: (column: string, value: string) => Promise<WriteResult> & {
         is: (column: string, value: null) => Promise<WriteResult>;
+        not: (
+          column: string,
+          op: string,
+          value: null,
+        ) => Promise<WriteResult> & {
+          is: (column: string, value: null) => Promise<WriteResult>;
+        };
       };
     };
   };
@@ -391,6 +399,32 @@ async function recordExists(supabase: SupabaseServiceClient, table: string, colu
 }
 
 /**
+ * Analytics stamp: the FIRST time a trial subscription reports status
+ * 'active', record trial_converted_at. Idempotent (the is-null guard) and
+ * trials-only (the not-null trial_started_at guard). Best-effort by design:
+ * unlike the core writes this must NEVER fail the event, because the column
+ * arrives with a manually-applied migration (20260704) that prod may lag.
+ */
+async function stampTrialConversion(
+  supabase: SupabaseServiceClient,
+  lsSubscriptionId: string,
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ trial_converted_at: new Date().toISOString() })
+      .eq("ls_subscription_id", lsSubscriptionId)
+      .not("trial_started_at", "is", null)
+      .is("trial_converted_at", null);
+    if (error) {
+      console.error("stampTrialConversion: update failed", error);
+    }
+  } catch (error) {
+    console.error("stampTrialConversion threw", error);
+  }
+}
+
+/**
  * Belt-and-suspenders for the checkout double-subscribe guard. When a new
  * non-addon subscription is created for a user, cancel any OTHER trial
  * subscriptions they still have running. Without this, a user who (re)subscribes
@@ -463,81 +497,66 @@ async function supersedeStaleTrials(
   }
 }
 
-function readPercent(envVar: string, fallback: number): number {
-  const raw = process.env[envVar];
-  if (!raw) return fallback;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 100) return fallback;
-  return parsed;
-}
-
 /**
- * Mints two per-user LS discount codes when a trial subscription starts:
- *   - monthly first-month discount, restricted to monthly variant
- *   - annual-switch discount, restricted to annual variant
- * Both expire 1 day after trial_ends_at. Failures are logged and return null
- * so the cron retries on the next tick (it detects null code columns).
+ * Analytics capture: store the order's discount total and (when a discount
+ * was applied) resolve the code via the LS discount-redemptions API - the
+ * order payload itself never carries the code. Best-effort on every step:
+ * LS downtime or a missing column (manually-applied migration 20260704) must
+ * never affect webhook processing. An empty redemption result is an accepted
+ * loss - the redemption record can lag the order webhook by a moment.
  */
-async function mintTrialDiscounts(input: {
-  trialEndsAt: string | null;
-  userId: string;
-}): Promise<{
-  trial_discount_code_monthly: string | null;
-  trial_discount_code_annual: string | null;
-  ls_discount_id_monthly: string | null;
-  ls_discount_id_annual: string | null;
-} | null> {
-  const storeId = process.env.LEMONSQUEEZY_STORE_ID;
-  const monthlyVariant = process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
-  const annualVariant = process.env.LEMONSQUEEZY_VARIANT_ANNUAL;
-  if (!storeId) {
-    console.error("mintTrialDiscounts: LEMONSQUEEZY_STORE_ID not set");
-    return null;
-  }
+async function captureOrderDiscount(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+  discountTotal: unknown,
+): Promise<void> {
+  const totalCents = typeof discountTotal === "number" ? discountTotal : Number(discountTotal);
+  if (!Number.isFinite(totalCents)) return;
 
-  const monthlyPercent = readPercent("TRIAL_DISCOUNT_MONTHLY_PERCENT", 20);
-  const annualPercent = readPercent("TRIAL_DISCOUNT_ANNUAL_PERCENT", 30);
-
-  let expiresAt: string | null = null;
-  if (input.trialEndsAt) {
-    const end = new Date(input.trialEndsAt);
-    if (Number.isFinite(end.getTime())) {
-      expiresAt = new Date(end.getTime() + 24 * 60 * 60 * 1000).toISOString();
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({ discount_total_cents: totalCents })
+      .eq("ls_order_id", lsOrderId);
+    if (error) {
+      console.error("captureOrderDiscount: total update failed", error);
+      return;
     }
+  } catch (error) {
+    console.error("captureOrderDiscount: total update threw", error);
+    return;
   }
 
-  const monthly = monthlyVariant
-    ? await createUniqueDiscount({
-        storeId,
-        percentOff: monthlyPercent,
-        namePrefix: "TRIAL",
-        expiresAt,
-        variantIds: [monthlyVariant],
-        name: `Trial welcome ${monthlyPercent}% (monthly, user ${input.userId.slice(0, 8)})`,
-      })
-    : null;
+  if (totalCents <= 0) return;
 
-  const annual = annualVariant
-    ? await createUniqueDiscount({
-        storeId,
-        percentOff: annualPercent,
-        namePrefix: "ANNUAL",
-        expiresAt,
-        variantIds: [annualVariant],
-        name: `Trial annual-switch ${annualPercent}% (user ${input.userId.slice(0, 8)})`,
-      })
-    : null;
+  try {
+    const response = await lsApi(
+      `/discount-redemptions?filter[order_id]=${encodeURIComponent(lsOrderId)}&page[size]=1`,
+      { method: "GET" },
+    );
+    if (!response.ok) {
+      console.error("captureOrderDiscount: redemptions lookup failed", {
+        status: response.status,
+        lsOrderId,
+      });
+      return;
+    }
+    const payload = (await response.json()) as {
+      data?: { attributes?: { discount_code?: string | null } }[];
+    };
+    const code = payload.data?.[0]?.attributes?.discount_code ?? null;
+    if (!code) return;
 
-  if (!monthly && !annual) {
-    return null;
+    const { error } = await supabase
+      .from("orders")
+      .update({ discount_code: code })
+      .eq("ls_order_id", lsOrderId);
+    if (error) {
+      console.error("captureOrderDiscount: code update failed", error);
+    }
+  } catch (error) {
+    console.error("captureOrderDiscount: code resolution threw", error);
   }
-
-  return {
-    trial_discount_code_monthly: monthly?.code ?? null,
-    trial_discount_code_annual: annual?.code ?? null,
-    ls_discount_id_monthly: monthly?.discountId ?? null,
-    ls_discount_id_annual: annual?.discountId ?? null,
-  };
 }
 
 export async function POST(request: Request) {
@@ -571,6 +590,14 @@ export async function POST(request: Request) {
     payload = JSON.parse(rawBody) as LsWebhookPayload;
   } catch (error) {
     console.error("Invalid Lemon Squeezy webhook payload", error);
+    // Signature already verified, so this is a legitimate-but-broken delivery
+    // worth a log row. logWebhookEvent never throws.
+    await logWebhookEvent({
+      eventName: null,
+      recordId: null,
+      status: "error",
+      errorMessage: "invalid json payload",
+    });
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
@@ -641,6 +668,9 @@ export async function POST(request: Request) {
           { onConflict: "ls_order_id" },
         ),
       );
+
+      // Analytics only - never throws, never blocks order processing.
+      await captureOrderDiscount(supabase, recordId, attrs.discount_total);
 
       if (lsCustomerId) {
         await assertWrite(
@@ -810,6 +840,12 @@ export async function POST(request: Request) {
           })
           .eq("ls_subscription_id", recordId),
       );
+
+      // A trial reporting 'active' has just converted to paid. Best-effort
+      // analytics stamp; guards inside make it idempotent and trials-only.
+      if (getString(attrs.status) === "active") {
+        await stampTrialConversion(supabase, recordId);
+      }
     },
 
     subscription_cancelled: async () => {
@@ -891,6 +927,14 @@ export async function POST(request: Request) {
           { onConflict: "ls_order_id" },
         ),
       );
+
+      // Analytics only - never throws, never blocks renewal processing.
+      // A successful payment on a trial subscription is also its conversion
+      // moment (belt-and-braces alongside subscription_updated).
+      await captureOrderDiscount(supabase, renewalOrderId, attrs.discount_total);
+      if (lsSubscriptionId) {
+        await stampTrialConversion(supabase, lsSubscriptionId);
+      }
     },
 
     subscription_payment_failed: async () => {
@@ -1076,7 +1120,17 @@ export async function POST(request: Request) {
 
   const handler = eventName ? handlers[eventName] : undefined;
 
+  // Delivery-log context; logWebhookEvent is best-effort and never throws.
+  const userHint = directUserId ?? getString(attrs.user_email);
+
   if (!handler) {
+    await logWebhookEvent({
+      eventName: eventName ?? null,
+      recordId: recordId ?? null,
+      userHint,
+      status: "skipped",
+      payload,
+    });
     return NextResponse.json({ received: true, note: `no handler for ${eventName ?? "missing event_name"}` });
   }
 
@@ -1085,17 +1139,36 @@ export async function POST(request: Request) {
   // and silently returning {received:true} meant 6 consecutive webhooks could
   // fail while LS showed green checkmarks. Still returns 200 so LS doesn't
   // retry-loop; if the fix needs a re-run, use LS's "Resend" button manually.
+  const startedAt = Date.now();
   try {
     await handler();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined;
     console.error(`Lemon Squeezy webhook event handling failed for ${eventName}`, error);
+    await logWebhookEvent({
+      eventName: eventName ?? null,
+      recordId: recordId ?? null,
+      userHint,
+      status: "error",
+      errorMessage: stack ? `${message} | ${stack}` : message,
+      durationMs: Date.now() - startedAt,
+      payload,
+    });
     return NextResponse.json({
       received: true,
       handler_error: { event: eventName, message, stack },
     });
   }
+
+  await logWebhookEvent({
+    eventName: eventName ?? null,
+    recordId: recordId ?? null,
+    userHint,
+    status: "processed",
+    durationMs: Date.now() - startedAt,
+    payload,
+  });
 
   return NextResponse.json({ received: true, event: eventName });
 }

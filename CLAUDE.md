@@ -16,3 +16,15 @@ When you would have reached for one, choose one of these instead:
 Also avoid en dashes (Unicode U+2013) unless representing a numeric or date range like `2024-2026`.
 
 This rule applies to user-facing copy (tutorials, marketing pages, legal docs, emails, dashboard UI strings) and internal code (comments, log strings, error messages) alike. The site was bulk-cleaned of ~2,200 em dashes; please do not reintroduce them.
+
+## Embedding YouTube videos: also add them to Help & Tutorials
+
+Whenever we embed a YouTube video anywhere (marketing page, feature page, email, dashboard, or the desktop app), also embed it in Help & Tutorials in the matching tutorial section.
+
+- Use the `@youtube(VIDEO_ID)` syntax on its own line in the relevant `content/tutorials/*.mdx` file, and add it to **all locales** (`en-US`, `es-ES`, `fr-FR`). The renderer in `src/lib/tutorials.ts` turns it into a privacy-mode `youtube-nocookie.com` iframe; no raw iframe markup is needed.
+- **If you are unsure which tutorial or section it belongs in, ask first** before adding it.
+
+Reference embeds already in place:
+
+- Creator API setup (`plZS_nXX-BE`) in `api-integrations` (Watch the walkthrough section).
+- Amazon Deals to Google Worksheet (`gCIw2WNnbWU`) in `daily-deals` (Send deals to a Google Sheet section).

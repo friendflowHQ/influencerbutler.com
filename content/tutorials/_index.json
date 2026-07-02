@@ -298,6 +298,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "update-troubleshooting",
+      "title": "Update troubleshooting: fix \"Failed to uninstall old application files\"",
+      "category": "Other",
+      "summary": "If an update shows \"Failed to uninstall old application files\", your antivirus is briefly locking app files. The app now retries on its own; here is the 1-minute manual fix and the always-works reinstall path.",
+      "order": 350,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
