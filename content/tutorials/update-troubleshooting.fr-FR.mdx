@@ -1,0 +1,40 @@
+---
+title: Dépannage des mises à jour : "Failed to uninstall old application files"
+summary: Que faire si une mise à jour affiche "Failed to uninstall old application files. Please try running the installer again." C'est généralement votre antivirus qui verrouille brièvement des fichiers de l'app ; voici la solution en 1 minute.
+category: Other
+---
+
+## Ce que signifie ce message
+
+Quand Influencer Butler se met à jour, il remplace brièvement les fichiers de l'application dans son dossier d'installation. Si un autre programme garde l'un de ces fichiers ouvert à ce moment précis, la mise à jour ne peut pas les échanger et vous voyez :
+
+> Failed to uninstall old application files. Please try running the installer again.
+
+Vos données sont en sécurité. Rien n'est perdu : vos réglages, mots-clés, modèles, historique de gains et connexion vivent en dehors du dossier d'installation et ne sont jamais touchés par les mises à jour.
+
+## La cause habituelle : l'analyse en temps réel de l'antivirus
+
+Les antivirus (McAfee, Norton, Avast et autres) analysent les gros fichiers de programme dès que quelque chose y touche. Pendant une mise à jour, cette analyse peut verrouiller les fichiers de l'app plusieurs secondes d'affilée, exactement la fenêtre dont le programme de mise à jour a besoin. La mise à jour échoue alors qu'il n'y a en réalité aucun problème.
+
+## Ce que l'app fait automatiquement
+
+Les versions récentes d'Influencer Butler gèrent cela d'elles-mêmes :
+
+- Le programme de mise à jour attend la fin des verrouillages courts au lieu d'abandonner immédiatement.
+- Si une mise à jour ne s'applique toujours pas, l'app le remarque au prochain démarrage et réessaie discrètement à un moment calme, sans interrompre vos butlers en cours.
+- Réglages > Mises à jour affiche une bannière avec un bouton **Réessayer l'installation** dès qu'une mise à jour téléchargée n'est pas encore appliquée.
+
+La plupart du temps, vous n'avez rien à faire : la mise à jour s'installe d'elle-même en une ou deux sessions.
+
+## La solution manuelle en 1 minute
+
+Si le message revient et que vous voulez la mise à jour tout de suite :
+
+1. Mettez en pause la **protection en temps réel** de votre antivirus pendant quelques minutes (la plupart des icônes de barre des tâches proposent « Suspendre la protection » ou « Désactiver temporairement » ; choisissez la durée la plus courte).
+2. Ouvrez Influencer Butler, allez dans **Réglages > Mises à jour** et cliquez sur **Réessayer l'installation**. S'il n'y a pas de bannière, cliquez d'abord sur **Vérifier maintenant**.
+3. Laissez l'app se fermer et se réinstaller ; elle se relance sur la nouvelle version en quelques secondes.
+4. Réactivez la protection de votre antivirus.
+
+## Si rien d'autre ne fonctionne
+
+Téléchargez le dernier installateur pour votre ordinateur (Windows ou Mac) depuis [influencerbutler.com/download](https://www.influencerbutler.com/download) et exécutez-le par-dessus votre installation existante. Cela fonctionne toujours, conserve toutes vos données, et les mises à jour suivantes redeviennent automatiques.

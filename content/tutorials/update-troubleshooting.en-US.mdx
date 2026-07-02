@@ -1,0 +1,40 @@
+---
+title: Update troubleshooting: "Failed to uninstall old application files"
+summary: What to do if an update shows "Failed to uninstall old application files. Please try running the installer again." Usually your antivirus briefly locking app files; here is the 1-minute fix.
+category: Other
+---
+
+## What this message means
+
+When Influencer Butler updates itself, it briefly replaces the application files in its install folder. If another program is holding one of those files open at that exact moment, the update can't swap them and you'll see:
+
+> Failed to uninstall old application files. Please try running the installer again.
+
+Your data is safe. Nothing is lost: your settings, keywords, templates, earnings history, and sign-in all live outside the install folder and are never touched by updates.
+
+## The usual cause: antivirus real-time scanning
+
+Antivirus products (McAfee, Norton, Avast, and others) scan large program files the moment anything touches them. During an update that scan can hold the app's files locked for several seconds at a time, which is exactly the window the updater needs. The update then fails even though nothing is actually wrong.
+
+## What the app does about it automatically
+
+Recent versions of Influencer Butler handle this on their own:
+
+- The updater waits out short file locks instead of giving up right away.
+- If an update still fails to apply, the app notices at the next launch and quietly retries at a calm moment, without interrupting your running butlers.
+- Settings > Updates shows a banner with a **Retry install** button whenever a downloaded update hasn't applied yet.
+
+Most of the time you don't need to do anything: the update lands on its own within a session or two.
+
+## The 1-minute manual fix
+
+If you keep seeing the message and want the update now:
+
+1. Pause your antivirus **real-time protection** for a few minutes (most AV tray icons have a "Pause protection" or "Disable temporarily" option; pick the shortest duration offered).
+2. Open Influencer Butler, go to **Settings > Updates**, and click **Retry install**. If there is no banner, click **Check now** first.
+3. Let the app close and reinstall itself; it relaunches on the new version in a few seconds.
+4. Re-enable your antivirus protection.
+
+## If nothing else works
+
+Download the latest installer for your computer (Windows or Mac) from [influencerbutler.com/download](https://www.influencerbutler.com/download) and run it over your existing install. This always works, keeps all of your data, and future updates go back to installing automatically.
