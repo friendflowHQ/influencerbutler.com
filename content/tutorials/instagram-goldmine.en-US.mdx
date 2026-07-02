@@ -45,6 +45,7 @@ If you'd rather start from a topic than from seed creators, switch **Run mode** 
    - **Stop after this many emails**: keep crawling until this many unique creator emails are collected (for example, 1000). Set 0 for no email target.
    - **Only posts from the last N days**: skip posts older than this. Set 0 to keep posts of any age.
    - **Max posts scanned per hashtag**: a ceiling on how deep to read each hashtag feed.
+   - **Skip creators over this many followers**: a filter rather than a stop rule. Creators with more followers than this are skipped and their email is not collected. Set 0 for no follower cap.
 4. Click **Start Discovery**. The **Creator email** column fills in next to each username as creators are visited.
 
 **No creator is harvested twice.** Within a run, each creator is visited only once no matter how many of their posts surfaced under the tag, and each username + email pair is de-duplicated. Across runs, a creator harvested recently is skipped automatically, so re-running a hashtag only surfaces newly-found creators.

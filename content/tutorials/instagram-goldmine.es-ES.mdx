@@ -45,6 +45,7 @@ Si prefieres empezar por un tema en vez de por creadores semilla, cambia el **Mo
    - **Detener tras esta cantidad de correos**: sigue rastreando hasta recopilar esta cantidad de correos únicos de creadores (por ejemplo, 1000). Pon 0 para no fijar un objetivo de correos.
    - **Solo publicaciones de los últimos N días**: omite las publicaciones más antiguas. Pon 0 para conservar publicaciones de cualquier antigüedad.
    - **Máx. publicaciones revisadas por hashtag**: un tope de cuánto se lee cada feed de hashtag.
+   - **Omitir creadores con más seguidores que esto**: un filtro, no una regla de parada. Los creadores con más seguidores que esta cifra se omiten y su correo no se recopila. Pon 0 para no fijar un límite de seguidores.
 4. Haz clic en **Iniciar descubrimiento**. La columna **Correo del creador** se rellena junto a cada nombre de usuario a medida que se visita a los creadores.
 
 **Ningún creador se recopila dos veces.** Dentro de una ejecución, cada creador se visita una sola vez sin importar cuántas de sus publicaciones aparecieran con el tag, y cada par nombre de usuario + correo se desduplica. Entre ejecuciones, un creador recopilado recientemente se omite automáticamente, así que volver a ejecutar un hashtag solo muestra creadores nuevos.
