@@ -2,9 +2,8 @@ import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
 import {
   WINDOWS_DOWNLOAD_URL,
-  MAC_ARM_DOWNLOAD_URL,
-  MAC_INTEL_DOWNLOAD_URL,
-} from "@/lib/welcome-copy";
+  currentMacDownloadUrl,
+} from "@/lib/desktop-downloads";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
   // on the requested/detected OS so Mac users no longer land on the Windows
   // .exe (see resolveDownloadTarget).
   const requestUrl = new URL(request.url);
-  const { target: downloadTarget, os: resolvedOs } = resolveDownloadTarget(
+  const { target: downloadTarget, os: resolvedOs } = await resolveDownloadTarget(
     requestUrl.searchParams.get("os"),
     userAgent,
     publicBaseUrl(h, requestUrl.origin),
@@ -124,18 +123,24 @@ function publicBaseUrl(h: Headers, fallbackOrigin: string): string {
 // absent, the User-Agent. The UA reliably tells us the OS but NOT the Mac CPU
 // architecture, so Mac visitors without an explicit choice go to the /download
 // chooser page rather than guessing arm64 vs x64. Windows stays a direct .exe.
-function resolveDownloadTarget(
+async function resolveDownloadTarget(
   osParam: string | null,
   userAgent: string | null,
   origin: string,
-): { target: string; os: string } {
+): Promise<{ target: string; os: string }> {
   switch (osParam) {
     case "win":
       return { target: WINDOWS_DOWNLOAD_URL, os: "windows (explicit)" };
     case "mac-arm":
-      return { target: MAC_ARM_DOWNLOAD_URL, os: "mac apple silicon (explicit)" };
+      return {
+        target: await currentMacDownloadUrl("arm64"),
+        os: "mac apple silicon (explicit)",
+      };
     case "mac-intel":
-      return { target: MAC_INTEL_DOWNLOAD_URL, os: "mac intel (explicit)" };
+      return {
+        target: await currentMacDownloadUrl("x64"),
+        os: "mac intel (explicit)",
+      };
   }
 
   const ua = (userAgent || "").toLowerCase();

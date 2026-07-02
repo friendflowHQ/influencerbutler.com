@@ -36,6 +36,15 @@ type License = {
   activation_limit: number | null;
 };
 
+type Referral = {
+  code: string | null;
+  affiliateUserId: string | null;
+  affiliateEmail: string | null;
+  affiliateName: string | null;
+  attributionStatus: string | null;
+  attributedAt: string | null;
+};
+
 type LookupResult = {
   found: boolean;
   userId?: string;
@@ -44,8 +53,22 @@ type LookupResult = {
   orders?: Order[];
   licenses?: License[];
   staff?: { role?: string; permissions?: string[]; is_active?: boolean } | null;
+  referral?: Referral | null;
   error?: string;
 };
+
+function referralText(referral: Referral | null | undefined): string {
+  if (!referral) return "none (organic)";
+  const who =
+    referral.affiliateName || referral.affiliateEmail
+      ? ` by ${referral.affiliateName ?? referral.affiliateEmail}${
+          referral.affiliateName && referral.affiliateEmail ? ` (${referral.affiliateEmail})` : ""
+        }`
+      : "";
+  const code = referral.code ? `code ${referral.code}` : "no code recorded";
+  const status = referral.attributionStatus === "pending" ? ", attribution pending" : "";
+  return `${code}${who}${status}`;
+}
 
 function fmtMoney(total: number | null, currency: string | null): string {
   if (total == null) return "-";
@@ -249,6 +272,7 @@ export default function AdminUsersPage() {
               <div><span className="text-slate-500">Name: </span>{result.profile?.display_name ?? "-"}</div>
               <div><span className="text-slate-500">User ID: </span><span className="font-mono text-xs">{result.userId}</span></div>
               <div><span className="text-slate-500">Affiliate: </span>{result.profile?.is_affiliate ? `yes (${result.profile?.affiliate_code ?? "no code"})` : "no"}</div>
+              <div><span className="text-slate-500">Referred: </span>{referralText(result.referral)}</div>
               {result.staff ? (
                 <div><span className="text-slate-500">Staff: </span>{result.staff.role} ({result.staff.is_active ? "active" : "disabled"})</div>
               ) : null}

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Influencer Butler",
   },
   description:
-    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 29+ built-in tools.",
+    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 40+ built-in tools.",
   applicationName: "Influencer Butler",
   alternates: { canonical: "/" },
   openGraph: {
@@ -61,6 +61,7 @@ gtag('config', 'G-S1TC1QLYNN');`}
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
         {children}
+        <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
       </body>
     </html>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
-import { adminService } from "@/lib/admin-service";
+import { adminService, type AdminService } from "@/lib/admin-service";
 import { fetchLicenseFromLs } from "@/lib/lemonsqueezy";
 import { hashLicenseKey } from "@/lib/license-auth";
 
@@ -144,6 +144,8 @@ export async function POST(request: Request) {
     }
   }
 
+  const referral = await resolveReferral(svc, userId);
+
   return NextResponse.json({
     found: true,
     userId,
@@ -152,5 +154,92 @@ export async function POST(request: Request) {
     orders: ordersRes.data ?? [],
     licenses,
     staff: (staffRes as { data?: unknown }).data ?? null,
+    referral,
   });
+}
+
+type Referral = {
+  code: string | null;
+  affiliateUserId: string | null;
+  affiliateEmail: string | null;
+  affiliateName: string | null;
+  attributionStatus: string | null;
+  attributedAt: string | null;
+};
+
+type AttributionRow = {
+  ref_affiliate_user_id?: string | null;
+  ref_affiliate_code?: string | null;
+  attribution_status?: string | null;
+  created_at?: string | null;
+};
+
+/**
+ * Which affiliate / referral code brought this user in. Reads the attribution
+ * columns stamped by the order_created webhook (orders, migration 20260617),
+ * falling back to the subscription-level copy (20260702). Both are best-effort:
+ * prod schema is migrated manually, so a missing column just means "unknown"
+ * here, never a failed lookup.
+ */
+async function resolveReferral(svc: AdminService, userId: string): Promise<Referral | null> {
+  let attributed: AttributionRow | null = null;
+
+  try {
+    const { data } = await svc
+      .from("orders")
+      .select("ref_affiliate_user_id,ref_affiliate_code,attribution_status,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(50);
+    attributed =
+      ((data ?? []) as AttributionRow[]).find(
+        (row) => row.ref_affiliate_user_id || row.ref_affiliate_code,
+      ) ?? null;
+  } catch (error) {
+    console.error("admin/users/lookup: order referral read failed", error);
+  }
+
+  if (!attributed) {
+    try {
+      const { data } = await svc
+        .from("subscriptions")
+        .select("ref_affiliate_user_id,ref_affiliate_code,attribution_status,created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(20);
+      attributed =
+        ((data ?? []) as AttributionRow[]).find(
+          (row) => row.ref_affiliate_user_id || row.ref_affiliate_code,
+        ) ?? null;
+    } catch (error) {
+      console.error("admin/users/lookup: subscription referral read failed", error);
+    }
+  }
+
+  if (!attributed) return null;
+
+  let affiliateEmail: string | null = null;
+  let affiliateName: string | null = null;
+  if (attributed.ref_affiliate_user_id) {
+    try {
+      const { data: aff } = await svc
+        .from("profiles")
+        .select("email,display_name")
+        .eq("id", attributed.ref_affiliate_user_id)
+        .maybeSingle();
+      affiliateEmail = (aff?.email as string | undefined) ?? null;
+      affiliateName = (aff?.display_name as string | undefined) ?? null;
+    } catch (error) {
+      console.error("admin/users/lookup: affiliate profile read failed", error);
+    }
+  }
+
+  return {
+    code: attributed.ref_affiliate_code ?? null,
+    affiliateUserId: attributed.ref_affiliate_user_id ?? null,
+    affiliateEmail,
+    affiliateName,
+    attributionStatus: attributed.attribution_status ?? null,
+    attributedAt: attributed.created_at ?? null,
+  };
 }

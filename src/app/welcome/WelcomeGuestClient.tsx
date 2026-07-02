@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
+import MacInstallGuide from "@/components/welcome/MacInstallGuide";
 import DownloadButtons from "@/components/welcome/DownloadButtons";
 
 type LicenseStatus =
@@ -153,6 +154,7 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
       </div>
 
       <WindowsSmartScreenGuide />
+      <MacInstallGuide />
 
       <div className="mt-10">
         <LicenseKeyPanel

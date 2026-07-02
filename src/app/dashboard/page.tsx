@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/LicenseKeyDisplay";
+import DeviceManager from "@/components/dashboard/DeviceManager";
+import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
+import GettingStartedChecklist from "@/components/dashboard/GettingStartedChecklist";
 
 declare global {
   interface Window {
@@ -155,6 +158,10 @@ export default function DashboardOverviewPage() {
         <p className="mt-1 text-sm text-slate-600">Welcome to your Influencer Butler dashboard.</p>
       </div>
 
+      <GettingStartedChecklist />
+
+      <DiscountCodesCard />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">Subscription Status</h2>
@@ -183,6 +190,8 @@ export default function DashboardOverviewPage() {
 
         <LicenseKeyDisplay variant="card" licenseKey={licenseKey} loading={loading} />
       </div>
+
+      {licenseKey ? <DeviceManager /> : null}
 
       <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Quick Actions</h2>

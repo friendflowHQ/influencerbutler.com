@@ -1867,7 +1867,7 @@ function PayoutsTab({ onForbidden }: { onForbidden: () => void }) {
   );
 }
 
-const RANGE_OPTIONS = [6, 12, 24] as const;
+const RANGE_OPTIONS = [1, 6, 12, 24] as const;
 
 /**
  * Analytics tab: a monthly bar chart of gross referred revenue, full affiliate
@@ -1876,6 +1876,7 @@ const RANGE_OPTIONS = [6, 12, 24] as const;
  */
 function AnalyticsTab({ onForbidden }: { onForbidden: () => void }) {
   const [months, setMonths] = useState<number>(12);
+  const [customOpen, setCustomOpen] = useState(false);
   const [data, setData] = useState<EarningsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1961,14 +1962,17 @@ function AnalyticsTab({ onForbidden }: { onForbidden: () => void }) {
         </label>
         <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
           Range
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
             {RANGE_OPTIONS.map((r) => (
               <button
                 key={r}
                 type="button"
-                onClick={() => setMonths(r)}
+                onClick={() => {
+                  setCustomOpen(false);
+                  setMonths(r);
+                }}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                  months === r
+                  !customOpen && months === r
                     ? "border-[#f97316] bg-orange-50 text-[#c2410c]"
                     : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                 }`}
@@ -1976,6 +1980,35 @@ function AnalyticsTab({ onForbidden }: { onForbidden: () => void }) {
                 {r}m
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setCustomOpen(true)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                customOpen
+                  ? "border-[#f97316] bg-orange-50 text-[#c2410c]"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              Custom
+            </button>
+            {customOpen ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={months}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    if (Number.isFinite(next) && next >= 1) {
+                      setMonths(Math.min(120, Math.round(next)));
+                    }
+                  }}
+                  className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-800 focus:border-[#f97316] focus:outline-none"
+                />
+                <span className="text-xs font-normal normal-case text-slate-500">months</span>
+              </div>
+            ) : null}
           </div>
         </div>
         <div className="ml-auto flex flex-wrap gap-4 text-right">

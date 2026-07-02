@@ -299,6 +299,52 @@ export async function getPublicTestimonials(): Promise<{
   }
 }
 
+/** What a customer may see about their own review: no email, no moderation internals. */
+export type MyTestimonial = {
+  id: string;
+  rating: number;
+  body: string;
+  status: TestimonialStatus;
+  authorName: string | null;
+  authorRole: string | null;
+  photoUrl: string | null;
+  teamResponse: string | null;
+  respondedAt: string | null;
+  createdAt: string;
+};
+
+/** The signed-in user's most recent testimonial, or null (including on any error). */
+export async function getMyTestimonial(userId: string): Promise<MyTestimonial | null> {
+  const db = serviceDb();
+  if (!db) return null;
+  try {
+    const { data, error } = await db
+      .from("testimonials")
+      .select(
+        "id,rating,body,status,author_name,author_role,photo_url,team_response,responded_at,created_at",
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error || !data || data.length === 0) return null;
+    const row = data[0];
+    return {
+      id: String(row.id),
+      rating: Number(row.rating) || 0,
+      body: (row.body as string) ?? "",
+      status: ((row.status as string) ?? "pending") as TestimonialStatus,
+      authorName: (row.author_name as string | null) ?? null,
+      authorRole: (row.author_role as string | null) ?? null,
+      photoUrl: (row.photo_url as string | null) ?? null,
+      teamResponse: (row.team_response as string | null) ?? null,
+      respondedAt: (row.responded_at as string | null) ?? null,
+      createdAt: (row.created_at as string) ?? new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
 function toAdmin(row: Record<string, unknown>): AdminTestimonial {
   return {
     id: String(row.id),

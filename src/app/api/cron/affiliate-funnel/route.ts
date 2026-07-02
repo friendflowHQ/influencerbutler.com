@@ -4,6 +4,7 @@ import { approveAffiliate } from "@/lib/affiliates-approve";
 import { sendConversionEmail, type ConversionTier } from "@/lib/conversion-emails";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
+import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 
 export const runtime = "nodejs";
@@ -340,8 +341,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   const siteUrl =
     process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
   const subscriptionUrl = `${siteUrl.replace(/\/$/, "")}/dashboard/subscription`;
-  const monthlyPercent = readPercentEnv("TRIAL_DISCOUNT_MONTHLY_PERCENT", 20);
-  const annualPercent = readPercentEnv("TRIAL_DISCOUNT_ANNUAL_PERCENT", 30);
+  const { monthlyPercent, annualPercent } = trialDiscountPercents();
   const annualVariant = process.env.LEMONSQUEEZY_VARIANT_ANNUAL ?? null;
 
   // Pull trial rows that are at least day0-old (5 min) and still active or on trial.
@@ -381,6 +381,51 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     const contact = await fetchUserContact(supabase, row.user_id);
     if (!contact) continue;
 
+    // Webhook-time minting can fail (missing env vars, LS API error) and
+    // used to leave the row permanently without codes: the emails then talked
+    // about discount codes that never existed. Re-mint whatever is still
+    // missing while the trial is running.
+    if (
+      row.status === "on_trial" &&
+      (!row.trial_discount_code_monthly || !row.trial_discount_code_annual)
+    ) {
+      // trial_ends_at isn't stored on the row; the trial is 3 days (the day3
+      // tier threshold), so reconstruct it from trial_started_at.
+      const trialEndsAt = row.trial_started_at
+        ? new Date(new Date(row.trial_started_at).getTime() + 72 * 60 * 60 * 1000).toISOString()
+        : null;
+      const minted = await mintTrialDiscounts({
+        trialEndsAt,
+        userId: row.user_id,
+        skipMonthly: Boolean(row.trial_discount_code_monthly),
+        skipAnnual: Boolean(row.trial_discount_code_annual),
+      });
+      if (minted) {
+        const patch: Record<string, unknown> = {};
+        if (minted.trial_discount_code_monthly) {
+          patch.trial_discount_code_monthly = minted.trial_discount_code_monthly;
+          patch.ls_discount_id_monthly = minted.ls_discount_id_monthly;
+          row.trial_discount_code_monthly = minted.trial_discount_code_monthly;
+        }
+        if (minted.trial_discount_code_annual) {
+          patch.trial_discount_code_annual = minted.trial_discount_code_annual;
+          patch.ls_discount_id_annual = minted.ls_discount_id_annual;
+          row.trial_discount_code_annual = minted.trial_discount_code_annual;
+        }
+        if (Object.keys(patch).length > 0) {
+          // Persist before sending so a failed send can't strand freshly
+          // minted LS discounts (same idempotency rule as the 5d tier above).
+          const { error: mintError } = await supabase
+            .from("subscriptions")
+            .update(patch)
+            .eq("user_id", row.user_id);
+          if (mintError) {
+            console.error("cron: trial code persist failed", { userId: row.user_id, mintError });
+          }
+        }
+      }
+    }
+
     const sent = await sendTrialEmail({
       tier: tier.tier,
       to: contact.email,
@@ -408,14 +453,6 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   }
 
   return counts;
-}
-
-function readPercentEnv(envVar: string, fallback: number): number {
-  const raw = process.env[envVar];
-  if (!raw) return fallback;
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 100) return fallback;
-  return parsed;
 }
 
 // --- Step D: pro welcome emails (direct subscribers) ----------------------
@@ -526,6 +563,44 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
   return counts;
 }
 
+// --- Step E: housekeeping - prune old webhook delivery logs ----------------
+
+type DeleteClient = {
+  from: (table: string) => {
+    delete: (opts?: { count?: "exact" }) => {
+      lt: (col: string, value: string) => Promise<{ count: number | null; error: unknown }>;
+    };
+  };
+};
+
+/**
+ * Deletes webhook_events rows older than the retention window (default 60
+ * days, WEBHOOK_EVENTS_RETENTION_DAYS to tune). Indexed range delete; a no-op
+ * on most runs. Best-effort: the table may not exist yet (manual prod
+ * migrations), which is fine.
+ */
+async function pruneWebhookEvents(supabase: CronClient): Promise<number> {
+  const days = Number.parseInt(process.env.WEBHOOK_EVENTS_RETENTION_DAYS ?? "", 10);
+  const retentionDays = Number.isFinite(days) && days > 0 ? days : 60;
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    const client = supabase as unknown as DeleteClient;
+    const { count, error } = await client
+      .from("webhook_events")
+      .delete({ count: "exact" })
+      .lt("created_at", cutoff);
+    if (error) {
+      // Missing table on schema lag lands here - log-and-move-on.
+      console.error("cron: webhook_events prune failed", error);
+      return 0;
+    }
+    return count ?? 0;
+  } catch (error) {
+    console.error("cron: webhook_events prune threw", error);
+    return 0;
+  }
+}
+
 // --- Handler --------------------------------------------------------------
 
 export async function GET(request: Request) {
@@ -542,6 +617,7 @@ export async function GET(request: Request) {
   const emails = await sendTierEmails(supabase);
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
+  const webhookEventsPruned = await pruneWebhookEvents(supabase);
 
   return NextResponse.json({
     ok: true,
@@ -549,5 +625,6 @@ export async function GET(request: Request) {
     emails,
     trial,
     pro,
+    webhookEventsPruned,
   });
 }

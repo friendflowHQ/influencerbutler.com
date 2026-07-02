@@ -102,10 +102,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
   },
 };
 
-// Bump this on each desktop release. The Mac installer filenames are
-// version-pinned (electron-builder writes InfluencerButler-${version}-${arch}.dmg),
-// so a release bump is a one-line change here.
-export const DESKTOP_APP_VERSION = "1.0.31";
+// Fallback version for the Mac installer filenames (electron-builder writes
+// InfluencerButler-${version}-${arch}.dmg). The /api/trial/start redirect
+// resolves the current version live from the release feed's latest-mac.yml,
+// so this pin is only used when that feed is unreachable. Still worth bumping
+// on each desktop release.
+export const DESKTOP_APP_VERSION = "1.0.40";
 
 // Windows installer host. NOTE: this host redirects *everything* to the Windows
 // .exe, so never point a Mac button at it.

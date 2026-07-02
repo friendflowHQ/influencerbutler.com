@@ -1,6 +1,7 @@
 import Link from "next/link";
 import LicenseKeyLoader from "@/components/dashboard/LicenseKeyLoader";
 import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
+import MacInstallGuide from "@/components/welcome/MacInstallGuide";
 import DownloadButtons from "@/components/welcome/DownloadButtons";
 import { WELCOME_COPY, type WelcomeTier } from "@/lib/welcome-copy";
 
@@ -37,6 +38,7 @@ export default function WelcomeTierContent({ tier }: Props) {
       </div>
 
       <WindowsSmartScreenGuide />
+      <MacInstallGuide />
 
       <div className="mt-10">
         <LicenseKeyLoader variant="panel" />

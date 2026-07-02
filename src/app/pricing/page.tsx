@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Pricing - Influencer Butler",
   description:
-    "Pick your plan. All 29+ butlers included. Cancel anytime. Special discount for first-time visitors.",
+    "Pick your plan. All 40+ butlers included. Cancel anytime. Special discount for first-time visitors.",
   robots: {
     index: false,
     follow: false,
@@ -114,7 +114,7 @@ export default async function PricingPage({
             Upgrade and unlock every butler
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            All 29+ tools, unlimited messages, and priority support. Cancel anytime - no questions
+            All 40+ tools, unlimited messages, and priority support. Cancel anytime - no questions
             asked.
           </p>
           <div className="mt-5 flex justify-center">

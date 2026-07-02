@@ -8,7 +8,9 @@ import { annualSavingsPct } from "@/lib/pricing-constants";
 export type TrialTier = "day0" | "day1" | "day2" | "day3";
 
 type TierCopy = {
-  subject: string;
+  // Subject can depend on the vars (day3 drops the codes mention when the
+  // user has no codes).
+  subject: string | ((vars: TrialVars) => string);
   build: (vars: TrialVars) => string;
 };
 
@@ -90,60 +92,70 @@ const COPY: Record<TrialTier, TierCopy> = {
     build: (v) => {
       const url = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
       const annualBase = annualSavingsPct("solo");
-      return [
+      const lines = [
         `Hi ${v.firstName},`,
         ``,
         `Quick heads-up: your trial ends in about 24 hours.`,
         ``,
-        v.annualCode
-          ? `If you're ready to commit, annual already costs ${annualBase}% less than paying monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual on top: the biggest discount we offer.`
-          : `Annual already costs ${annualBase}% less than paying monthly if you're ready to commit.`,
-        ``,
-        v.annualCode
-          ? `This code is unique to you, works only on the annual plan, and expires with your trial.`
-          : ``,
-        ``,
-        `Lock it in: ${url}`,
-        ``,
-        `Not ready for annual? Your ${v.monthlyPercent}% off monthly code still works.`,
-        ``,
-        COMMUNITY_LINE,
-        ``,
-        `- The Influencer Butler team`,
-      ]
-        .filter((line) => line !== undefined)
-        .join("\n");
+      ];
+      if (v.annualCode) {
+        lines.push(
+          `If you're ready to commit, annual already costs ${annualBase}% less than paying monthly. Use code ${v.annualCode} for an extra ${v.annualPercent}% off annual on top: the biggest discount we offer.`,
+          ``,
+          `This code is unique to you, works only on the annual plan, and expires with your trial.`,
+        );
+      } else {
+        lines.push(
+          `Annual already costs ${annualBase}% less than paying monthly if you're ready to commit.`,
+        );
+      }
+      lines.push(``, `Lock it in: ${url}`, ``);
+      if (v.monthlyCode) {
+        lines.push(`Not ready for annual? Your ${v.monthlyPercent}% off monthly code still works.`, ``);
+      }
+      lines.push(COMMUNITY_LINE, ``, `- The Influencer Butler team`);
+      return lines.join("\n");
     },
   },
   day3: {
-    subject: "Your trial ends today: your discount codes expire at midnight",
+    subject: (v) =>
+      v.monthlyCode || v.annualCode
+        ? "Your trial ends today: your discount codes expire at midnight"
+        : "Your trial ends today",
     build: (v) => {
       const monthlyUrl = monthlyCheckoutUrl(v.subscriptionUrl, v.monthlyCode);
       const annualUrl = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
-      return [
-        `Hi ${v.firstName},`,
-        ``,
-        `Last call - your trial ends tonight, and so do your personal discount codes.`,
-        ``,
-        v.monthlyCode
-          ? `• ${v.monthlyPercent}% off monthly: ${v.monthlyCode}`
-          : ``,
-        v.annualCode
-          ? `• ${v.annualPercent}% off annual: ${v.annualCode}`
-          : ``,
-        ``,
-        v.annualCode
-          ? `Monthly: ${monthlyUrl}\nAnnual (best value): ${annualUrl}`
-          : `Continue: ${monthlyUrl}`,
-        ``,
-        `Both codes are single-use and locked to your account. After tonight, regular pricing applies.`,
-        ``,
-        COMMUNITY_LINE,
-        ``,
-        `- The Influencer Butler team`,
-      ]
-        .filter((line) => line !== "")
-        .join("\n");
+      const hasBoth = Boolean(v.monthlyCode && v.annualCode);
+      const hasAny = Boolean(v.monthlyCode || v.annualCode);
+
+      const lines = [`Hi ${v.firstName},`, ``];
+      if (hasAny) {
+        lines.push(`Last call - your trial ends tonight, and so do your personal discount codes.`, ``);
+        if (v.monthlyCode) {
+          lines.push(`• ${v.monthlyPercent}% off monthly: ${v.monthlyCode}`);
+        }
+        if (v.annualCode) {
+          lines.push(`• ${v.annualPercent}% off annual: ${v.annualCode}`);
+        }
+        lines.push(``);
+      } else {
+        lines.push(`Last call - your trial ends tonight.`, ``);
+      }
+      if (v.annualCode) {
+        lines.push(`Monthly: ${monthlyUrl}`, `Annual (best value): ${annualUrl}`);
+      } else {
+        lines.push(`Continue: ${monthlyUrl}`);
+      }
+      lines.push(``);
+      if (hasBoth) {
+        lines.push(`Both codes are single-use and locked to your account. After tonight, regular pricing applies.`);
+      } else if (hasAny) {
+        lines.push(`Your code is single-use and locked to your account. After tonight, regular pricing applies.`);
+      } else {
+        lines.push(`After tonight, regular pricing applies.`);
+      }
+      lines.push(``, COMMUNITY_LINE, ``, `- The Influencer Butler team`);
+      return lines.join("\n");
     },
   },
 };
@@ -169,14 +181,16 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
   const copy = COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
-  const body = copy.build({
+  const vars: TrialVars = {
     firstName,
     monthlyCode: payload.monthlyCode,
     annualCode: payload.annualCode,
     monthlyPercent: payload.monthlyPercent,
     annualPercent: payload.annualPercent,
     subscriptionUrl: payload.subscriptionUrl,
-  });
+  };
+  const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
+  const body = copy.build(vars);
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -188,7 +202,7 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
       body: JSON.stringify({
         from: FROM_ADDRESS,
         to: [payload.to],
-        subject: copy.subject,
+        subject,
         text: body,
       }),
     });

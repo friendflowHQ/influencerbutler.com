@@ -798,7 +798,7 @@ function Step5FinalConfirm({
         <p>
           Your subscription will remain active until{" "}
           <strong>{formatDate(renewsAt)}</strong>, after which you&apos;ll lose access to
-          all 20+ automation tools, brand outreach, and commission harvesting.
+          all 40+ automation tools, brand outreach, and commission harvesting.
         </p>
       </div>
 
