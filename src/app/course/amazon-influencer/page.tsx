@@ -6,7 +6,8 @@
  */
 import Link from "next/link";
 import { loadManifest } from "@/lib/tutorials";
-import { AMAZON_INFLUENCER_COURSE_ID, getCourseModules } from "@/lib/course";
+import { AMAZON_INFLUENCER_COURSE_ID, getCourseModules, moduleEmoji } from "@/lib/course";
+import { courseImage } from "@/lib/course-images";
 import CourseHubClient from "./course-hub-client";
 
 export const revalidate = 300;
@@ -95,6 +96,17 @@ export default async function CourseHubPage() {
           program&quot; to onsite video approval, your first uploads, and a week-by-week plan.
           Check off steps as you go; your progress saves automatically in your browser.
         </p>
+        {courseImage("aip-course-01-start-here") ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={courseImage("aip-course-01-start-here") as string}
+            alt=""
+            className="course-hero-image mt-8"
+            width={1200}
+            height={800}
+            loading="eager"
+          />
+        ) : null}
 
         <CourseHubClient
           seriesId={AMAZON_INFLUENCER_COURSE_ID}
@@ -102,28 +114,45 @@ export default async function CourseHubPage() {
         />
 
         <ol className="mt-10 space-y-4">
-          {modules.map((m, i) => (
-            <li key={m.id}>
-              <Link
-                href={`/course/amazon-influencer/${m.id}`}
-                data-course-module={m.id}
-                className="group flex items-start gap-4 rounded-xl border border-slate-200 p-5 transition hover:border-orange-400 hover:shadow-sm"
-              >
-                <span
-                  data-module-badge
-                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600 group-hover:bg-orange-100 group-hover:text-orange-700"
+          {modules.map((m, i) => {
+            const thumb = courseImage(m.id);
+            return (
+              <li key={m.id}>
+                <Link
+                  href={`/course/amazon-influencer/${m.id}`}
+                  data-course-module={m.id}
+                  className="group flex items-start gap-4 rounded-xl border border-slate-200 p-5 transition hover:border-orange-400 hover:shadow-sm"
                 >
-                  {i + 1}
-                </span>
-                <span>
-                  <span className="block font-semibold text-slate-900 group-hover:text-orange-700">
-                    {m.title}
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumb}
+                      alt=""
+                      className="hidden h-20 w-32 shrink-0 rounded-lg object-cover sm:block"
+                      width={128}
+                      height={80}
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <span
+                    data-module-badge
+                    className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-xl group-hover:bg-orange-100"
+                  >
+                    {moduleEmoji(m.id)}
                   </span>
-                  <span className="mt-1 block text-sm text-slate-600">{m.summary}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <span>
+                    <span className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                      Module {i + 1}
+                    </span>
+                    <span className="block font-semibold text-slate-900 group-hover:text-orange-700">
+                      {m.title}
+                    </span>
+                    <span className="mt-1 block text-sm text-slate-600">{m.summary}</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ol>
 
         <div className="mt-12 rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">

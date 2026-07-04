@@ -7,7 +7,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadManifest, loadTutorial } from "@/lib/tutorials";
-import { AMAZON_INFLUENCER_COURSE_ID, getCourseModules } from "@/lib/course";
+import { AMAZON_INFLUENCER_COURSE_ID, getCourseModules, moduleEmoji } from "@/lib/course";
+import { courseImage } from "@/lib/course-images";
 import CourseProgress from "@/components/course-progress";
 
 export const revalidate = 300;
@@ -62,6 +63,7 @@ export default async function CourseModulePage({
   const idx = modules.findIndex((m) => m.id === moduleId);
   const title = (tutorial.frontmatter.title as string) || current.title;
   const summary = (tutorial.frontmatter.summary as string) || current.summary;
+  const heroSrc = courseImage(moduleId);
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -82,18 +84,34 @@ export default async function CourseModulePage({
       </header>
 
       <section className="mx-auto grid max-w-6xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <article>
+        <article className="course-article">
           <Link
             href={BASE_PATH}
             className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-600"
           >
             ← All modules
           </Link>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-600">
-            Free course · Module {idx + 1} of {modules.length}
-          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-2xl">
+              {moduleEmoji(moduleId)}
+            </span>
+            <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
+              Free course · Module {idx + 1} of {modules.length}
+            </p>
+          </div>
           <h1 className="help-article-title">{title}</h1>
           {summary ? <p className="help-article-lead">{summary}</p> : null}
+          {heroSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={heroSrc}
+              alt=""
+              className="course-hero-image"
+              width={1200}
+              height={800}
+              loading="eager"
+            />
+          ) : null}
           <div
             className="help-tutorial-body"
             dangerouslySetInnerHTML={{ __html: tutorial.html }}
@@ -122,6 +140,7 @@ export default async function CourseModulePage({
                         : "block text-slate-700 hover:text-orange-600"
                     }
                   >
+                    <span className="mr-1.5">{moduleEmoji(entry.id)}</span>
                     {i + 1}. {entry.title}
                   </Link>
                 </li>

@@ -14,6 +14,7 @@ import {
   readProgress,
   writeProgress,
 } from "@/lib/course-progress-client";
+import { moduleEmoji } from "@/lib/course";
 
 type ModuleRef = { id: string; title: string; seriesOrder: number };
 
@@ -169,7 +170,7 @@ export default function CourseProgress({
             href={`${basePath}/${prev.id}`}
             className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-700 hover:border-orange-400 hover:text-orange-700"
           >
-            ← {prev.title}
+            ← {moduleEmoji(prev.id)} {prev.title}
           </Link>
         ) : (
           <span />
@@ -179,7 +180,7 @@ export default function CourseProgress({
             href={`${basePath}/${next.id}`}
             className="rounded-lg bg-orange-600 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-700 sm:text-right"
           >
-            Next: {next.title} →
+            Next: {moduleEmoji(next.id)} {next.title} →
           </Link>
         ) : null}
       </nav>

@@ -73,7 +73,7 @@ export default function CourseHubClient({
       if (isModuleDone(blob, m.id)) {
         badge.textContent = "✓";
         badge.className =
-          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white";
+          "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-xl font-bold text-white";
       }
     }
   }, [blob, modules]);

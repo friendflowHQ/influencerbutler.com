@@ -69,7 +69,7 @@ export default async function TutorialPage({
       </header>
 
       <section className="mx-auto grid max-w-6xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <article>
+        <article className={seriesId ? "course-article" : undefined}>
           <Link
             href="/help"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-600"
