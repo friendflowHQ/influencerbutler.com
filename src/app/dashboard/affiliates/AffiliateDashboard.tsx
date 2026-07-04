@@ -6,6 +6,7 @@ import EarningsSparkline from "./EarningsSparkline";
 import SocialShareButtons from "./SocialShareButtons";
 import LinkBuilder from "./LinkBuilder";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
+import CompetitorPlaybook from "./CompetitorPlaybook";
 import {
   formatUsdFromCents,
   buildShareLink,
@@ -192,6 +193,8 @@ export default function AffiliateDashboard({
         <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
         <InfoRow label="Payout processor" value="Lemon Squeezy" hint="Paid monthly" />
       </section>
+
+      {isActive ? <CompetitorPlaybook /> : null}
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Need help or want to see payout history?{" "}
