@@ -124,6 +124,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     // `built` gates links to pages that exist; flip on as pages ship.
     const items = [
       { href: "/dashboard/admin", label: "Overview", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
       { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
       { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
