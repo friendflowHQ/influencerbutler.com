@@ -81,25 +81,28 @@ export async function GET() {
       .from("license_keys")
       .select("ls_license_key_id,activations_count")
       .eq("user_id", userId)
-      .limit(1),
+      .limit(10),
     getMyTestimonial(userId),
   ]);
 
   const profile = profileRes.data as { display_name?: string | null; avatar_url?: string | null } | null;
-  const licenseRow =
-    licenseRes.data && licenseRes.data.length > 0
-      ? (licenseRes.data[0] as { ls_license_key_id?: string | number | null; activations_count?: number | null })
-      : null;
+  const licenseRows = (licenseRes.data ?? []) as {
+    ls_license_key_id?: string | number | null;
+    activations_count?: number | null;
+  }[];
 
-  // Activation: live instance count from LS, falling back to the local
-  // counter (which only the LS-read backfill ever populates).
+  // Activation: live instance count from LS across ALL of the user's keys
+  // (users can hold several; the app activates whichever they pasted),
+  // falling back to the local counter (which only the LS-read backfill
+  // ever populates).
   let activated = false;
-  if (licenseRow?.ls_license_key_id != null) {
-    const instances = await fetchLicenseInstances(String(licenseRow.ls_license_key_id));
+  for (const row of licenseRows) {
+    if (activated || row.ls_license_key_id == null) continue;
+    const instances = await fetchLicenseInstances(String(row.ls_license_key_id));
     if (instances !== null) {
       activated = instances.length > 0;
     } else {
-      activated = (licenseRow.activations_count ?? 0) > 0;
+      activated = (row.activations_count ?? 0) > 0;
     }
   }
 

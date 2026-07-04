@@ -159,12 +159,19 @@ async function readLocalLicense(
   column: "subscription_id" | "user_id",
   value: string,
 ): Promise<LicenseKey | null> {
+  // Users with several keys (plan changes, add-ons, regrants, test orders)
+  // must see their ACTIVE key, not an arbitrary row - the unordered LIMIT 1
+  // here used to flip between keys across refreshes. Prefer active, then
+  // newest.
   const { data: keys } = await admin
     .from("license_keys")
     .select("key,status,activation_limit,activations_count")
     .eq(column, value)
-    .limit(1);
-  return toLicenseKey(keys && keys.length > 0 ? (keys[0] as LicenseKeyRow) : null);
+    .order("created_at", { ascending: false })
+    .limit(10);
+  const rows = (keys ?? []) as LicenseKeyRow[];
+  const best = rows.find((k) => k.status === "active") ?? rows[0] ?? null;
+  return toLicenseKey(best);
 }
 
 /**
