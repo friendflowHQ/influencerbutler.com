@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Lists the devices (Lemon Squeezy license instances) a user's key is
- * activated on and lets them free up a seat. Self-fetching so it can drop
- * into any dashboard page; renders nothing until the list loads and stays
- * quiet (single line) when Lemon Squeezy is unreachable.
+ * Lists the devices (Lemon Squeezy license instances) a user's keys are
+ * activated on, grouped per product when the user holds more than one key
+ * (e.g. Team Pro + Daily Deals add-on), and lets them free up a seat.
+ * Self-fetching so it can drop into any dashboard page; renders nothing until
+ * the list loads and stays quiet (single line) when Lemon Squeezy is
+ * unreachable.
  */
 
 type Instance = {
@@ -15,9 +17,16 @@ type Instance = {
   createdAt: string | null;
 };
 
+type DeviceGroup = {
+  lsLicenseKeyId: string;
+  label: string | null;
+  status: string | null;
+  activationLimit: number | null;
+  instances: Instance[];
+};
+
 type ActivationsResponse = {
-  activationLimit?: number | null;
-  instances?: Instance[] | null;
+  groups?: DeviceGroup[] | null;
   error?: string;
 };
 
@@ -34,11 +43,18 @@ function formatDate(iso: string | null): string | null {
   }
 }
 
+function seatLine(group: DeviceGroup): string {
+  const used = group.instances.length;
+  if (group.activationLimit !== null && group.activationLimit > 0) {
+    return `${used} of ${group.activationLimit} devices in use`;
+  }
+  return `${used} ${used === 1 ? "device" : "devices"} in use`;
+}
+
 export default function DeviceManager() {
   const [loaded, setLoaded] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
-  const [instances, setInstances] = useState<Instance[]>([]);
-  const [activationLimit, setActivationLimit] = useState<number | null>(null);
+  const [groups, setGroups] = useState<DeviceGroup[]>([]);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -51,12 +67,11 @@ export default function DeviceManager() {
         return;
       }
       const json = (await res.json()) as ActivationsResponse;
-      if (json.instances === null) {
+      if (json.groups === null || json.groups === undefined) {
         setUnavailable(true);
         return;
       }
-      setInstances(json.instances ?? []);
-      setActivationLimit(json.activationLimit ?? null);
+      setGroups(json.groups);
     } catch {
       setUnavailable(true);
     } finally {
@@ -82,7 +97,7 @@ export default function DeviceManager() {
         setActionError(json.error ?? "Deactivation failed. Try again shortly.");
         return;
       }
-      setInstances(json.instances ?? []);
+      setGroups(json.groups ?? []);
     } catch {
       setActionError("Network error. Try again shortly.");
     } finally {
@@ -99,80 +114,101 @@ export default function DeviceManager() {
     );
   }
 
-  const countLine =
-    activationLimit !== null
-      ? `${instances.length} of ${activationLimit} devices in use`
-      : `${instances.length} ${instances.length === 1 ? "device" : "devices"} in use`;
+  if (groups.length === 0) return null;
+
+  const multiProduct = groups.length > 1;
+  const totalDevices = groups.reduce((n, g) => n + g.instances.length, 0);
+
+  const deviceRow = (inst: Instance) => {
+    const activated = formatDate(inst.createdAt);
+    const isConfirming = confirming === inst.identifier;
+    const isBusy = busy === inst.identifier;
+    return (
+      <li
+        key={inst.identifier}
+        className="flex flex-wrap items-center justify-between gap-3 py-3"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-slate-900">
+            {inst.name || "Unnamed device"}
+          </p>
+          {activated ? <p className="text-xs text-slate-500">Activated {activated}</p> : null}
+        </div>
+        {isConfirming ? (
+          <span className="flex items-center gap-2 text-xs">
+            <span className="text-slate-600">
+              Free up this seat? The app on that device will ask for the key again.
+            </span>
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => void deactivate(inst.identifier)}
+              className="rounded-lg bg-rose-600 px-3 py-1.5 font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+            >
+              {isBusy ? "Removing..." : "Yes, deactivate"}
+            </button>
+            <button
+              type="button"
+              disabled={isBusy}
+              onClick={() => setConfirming(null)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Keep
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setConfirming(inst.identifier);
+              setActionError(null);
+            }}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Deactivate
+          </button>
+        )}
+      </li>
+    );
+  };
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">Your devices</h2>
-        <span className="text-xs text-slate-500">{countLine}</span>
+        {!multiProduct && groups[0] ? (
+          <span className="text-xs text-slate-500">{seatLine(groups[0])}</span>
+        ) : (
+          <span className="text-xs text-slate-500">
+            {totalDevices} {totalDevices === 1 ? "device" : "devices"} across your plans
+          </span>
+        )}
       </div>
 
-      {instances.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-600">
-          No devices activated yet. Download the app and paste your license key to get started.
-        </p>
-      ) : (
-        <ul className="mt-3 divide-y divide-slate-100">
-          {instances.map((inst) => {
-            const activated = formatDate(inst.createdAt);
-            const isConfirming = confirming === inst.identifier;
-            const isBusy = busy === inst.identifier;
-            return (
-              <li
-                key={inst.identifier}
-                className="flex flex-wrap items-center justify-between gap-3 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">
-                    {inst.name || "Unnamed device"}
-                  </p>
-                  {activated ? (
-                    <p className="text-xs text-slate-500">Activated {activated}</p>
-                  ) : null}
-                </div>
-                {isConfirming ? (
-                  <span className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-600">
-                      Free up this seat? The app on that device will ask for the key again.
-                    </span>
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => void deactivate(inst.identifier)}
-                      className="rounded-lg bg-rose-600 px-3 py-1.5 font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
-                    >
-                      {isBusy ? "Removing..." : "Yes, deactivate"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => setConfirming(null)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Keep
-                    </button>
+      {groups.map((group) => (
+        <div key={group.lsLicenseKeyId} className={multiProduct ? "mt-4" : ""}>
+          {multiProduct ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 pb-1.5">
+              <p className="text-sm font-semibold text-slate-800">
+                {group.label ?? "License"}
+                {group.status && group.status !== "active" ? (
+                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {group.status}
                   </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirming(inst.identifier);
-                      setActionError(null);
-                    }}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    Deactivate
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                ) : null}
+              </p>
+              <span className="text-xs text-slate-500">{seatLine(group)}</span>
+            </div>
+          ) : null}
+          {group.instances.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-600">
+              No devices activated yet. Download the app and paste your license key to get started.
+            </p>
+          ) : (
+            <ul className="mt-1 divide-y divide-slate-100">{group.instances.map(deviceRow)}</ul>
+          )}
+        </div>
+      ))}
       {actionError ? <p className="mt-2 text-xs text-rose-600">{actionError}</p> : null}
     </article>
   );

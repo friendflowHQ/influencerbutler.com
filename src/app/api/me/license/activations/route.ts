@@ -7,12 +7,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET  /api/me/license/activations  - lists the signed-in user's activated
- *      devices, read live from Lemon Squeezy. A user can hold SEVERAL license
- *      keys (one per order: plan changes, add-ons, regrants), and the desktop
- *      app activates whichever one they pasted - so devices are aggregated
- *      across ALL of their keys, not just one arbitrary row (that arbitrary
- *      pick is exactly what made a fresh activation show "0 devices").
+ * GET  /api/me/license/activations  - the signed-in user's activated devices,
+ *      read live from Lemon Squeezy and grouped PER LICENSE KEY (per product):
+ *      a Team Pro key and a Daily Deals add-on key each get their own group
+ *      with their own seat count, instead of one misleading combined pool.
+ *      Groups are labeled with the owning subscription's plan name when the
+ *      key is linked to one. Inactive keys are omitted unless they still have
+ *      live instances (those must stay visible so they can be deactivated).
  * POST /api/me/license/activations  { action: "deactivate", instanceId }
  *      Frees up one activation seat. The instanceId is validated against the
  *      user's own instance lists server-side and deactivated with the key it
@@ -24,65 +25,88 @@ type LicenseRow = {
   key?: string | null;
   status?: string | null;
   activation_limit?: number | null;
+  subscription_id?: string | null;
 };
 
 type DeviceInstance = {
   identifier: string;
   name: string | null;
   createdAt: string | null;
-  /** Which of the user's keys this device is activated on (internal LS id). */
+};
+
+type DeviceGroup = {
+  /** Internal LS id of the key this group belongs to. */
   lsLicenseKeyId: string;
+  /** Product label, e.g. "Team Pro" or "Daily Deals Workspace"; null when unknown. */
+  label: string | null;
+  status: string | null;
+  activationLimit: number | null;
+  instances: DeviceInstance[];
 };
 
 async function readOwnLicenses(userId: string): Promise<LicenseRow[]> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("license_keys")
-    .select("ls_license_key_id,key,status,activation_limit,created_at")
+    .select("ls_license_key_id,key,status,activation_limit,subscription_id,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(10);
   return (data ?? []) as LicenseRow[];
 }
 
-/**
- * Fetches instances for every key. Returns null when EVERY lookup failed
- * (LS unreachable); partial failures just skip that key's devices.
- */
-async function collectDevices(rows: LicenseRow[]): Promise<DeviceInstance[] | null> {
-  const withIds = rows.filter((r) => r.ls_license_key_id != null);
-  if (withIds.length === 0) return [];
-  const results = await Promise.all(
-    withIds.map(async (row) => {
-      const lsId = String(row.ls_license_key_id);
-      const instances = await fetchLicenseInstances(lsId);
-      if (instances === null) return null;
-      return instances.map((i) => ({
-        identifier: i.identifier,
-        name: i.name,
-        createdAt: i.createdAt,
-        lsLicenseKeyId: lsId,
-      }));
-    }),
-  );
-  if (results.every((r) => r === null)) return null;
-  return results.filter((r): r is DeviceInstance[] => r !== null).flat();
+/** Maps the user's subscription row ids to plan names, best-effort. */
+async function readPlanNames(userId: string): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("subscriptions")
+      .select("id,plan_name")
+      .eq("user_id", userId)
+      .limit(20);
+    for (const row of (data ?? []) as { id?: string | null; plan_name?: string | null }[]) {
+      if (row.id && row.plan_name) map.set(row.id, row.plan_name);
+    }
+  } catch {
+    // labels are cosmetic; groups fall back to unlabeled
+  }
+  return map;
 }
 
 /**
- * Total seats: sum of the ACTIVE keys' limits (users accumulate inactive keys
- * from plan changes and test orders; counting those seats would show a bogus
- * "1 of 8"). Falls back to all keys when none is active; null when no key
- * declares a limit.
+ * Builds per-key device groups. Returns null when EVERY Lemon Squeezy lookup
+ * failed (LS unreachable); a partial failure just drops that key's group.
  */
-function totalLimit(rows: LicenseRow[]): number | null {
-  const active = rows.filter((r) => r.status === "active");
-  const pool = active.length > 0 ? active : rows;
-  const limits = pool
-    .map((r) => r.activation_limit)
-    .filter((n): n is number => typeof n === "number" && n > 0);
-  if (limits.length === 0) return null;
-  return limits.reduce((a, b) => a + b, 0);
+async function collectGroups(
+  rows: LicenseRow[],
+  planNames: Map<string, string>,
+): Promise<DeviceGroup[] | null> {
+  const withIds = rows.filter((r) => r.ls_license_key_id != null);
+  if (withIds.length === 0) return [];
+  const results = await Promise.all(
+    withIds.map(async (row): Promise<DeviceGroup | null | "ls-error"> => {
+      const lsId = String(row.ls_license_key_id);
+      const instances = await fetchLicenseInstances(lsId);
+      if (instances === null) return "ls-error";
+      const group: DeviceGroup = {
+        lsLicenseKeyId: lsId,
+        label: (row.subscription_id && planNames.get(row.subscription_id)) || null,
+        status: row.status ?? null,
+        activationLimit: row.activation_limit ?? null,
+        instances: instances.map((i) => ({
+          identifier: i.identifier,
+          name: i.name,
+          createdAt: i.createdAt,
+        })),
+      };
+      // Inactive keys with no devices are noise (plan changes, test orders).
+      if (group.status !== "active" && group.instances.length === 0) return null;
+      return group;
+    }),
+  );
+  if (results.every((r) => r === "ls-error")) return null;
+  return results.filter((r): r is DeviceGroup => r !== null && r !== "ls-error");
 }
 
 async function requireUser() {
@@ -100,19 +124,17 @@ export async function GET() {
 
   const rows = await readOwnLicenses(user.id);
   if (rows.length === 0) {
-    return NextResponse.json({ activationLimit: null, instances: [] });
+    return NextResponse.json({ groups: [] });
   }
 
-  const devices = await collectDevices(rows);
-  if (devices === null) {
+  const planNames = await readPlanNames(user.id);
+  const groups = await collectGroups(rows, planNames);
+  if (groups === null) {
     // LS unreachable: tell the client to show a quiet failure, not an empty list.
-    return NextResponse.json({ activationLimit: totalLimit(rows), instances: null });
+    return NextResponse.json({ groups: null });
   }
 
-  return NextResponse.json({
-    activationLimit: totalLimit(rows),
-    instances: devices,
-  });
+  return NextResponse.json({ groups });
 }
 
 export async function POST(request: Request) {
@@ -136,31 +158,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No license found" }, { status: 404 });
   }
 
-  const before = await collectDevices(rows);
+  const planNames = await readPlanNames(user.id);
+  const before = await collectGroups(rows, planNames);
   if (before === null) {
     return NextResponse.json({ error: "Could not reach Lemon Squeezy" }, { status: 502 });
   }
   // Ownership check: only instances on this user's keys can be named.
-  const target = before.find((i) => i.identifier === body.instanceId);
-  if (!target) {
+  const owningGroup = before.find((g) =>
+    g.instances.some((i) => i.identifier === body.instanceId),
+  );
+  if (!owningGroup) {
     // Already gone (deactivated elsewhere) counts as done.
-    return NextResponse.json({ ok: true, instances: before });
+    return NextResponse.json({ ok: true, groups: before });
   }
 
   const owningKey = rows.find(
-    (r) => r.ls_license_key_id != null && String(r.ls_license_key_id) === target.lsLicenseKeyId,
+    (r) => r.ls_license_key_id != null && String(r.ls_license_key_id) === owningGroup.lsLicenseKeyId,
   );
   if (!owningKey?.key) {
     return NextResponse.json({ error: "License key unavailable" }, { status: 500 });
   }
 
-  const deactivated = await deactivateLicenseInstance(owningKey.key, target.identifier);
+  const deactivated = await deactivateLicenseInstance(owningKey.key, body.instanceId);
 
-  const after = await collectDevices(rows);
-  const stillThere = (after ?? before).some((i) => i.identifier === target.identifier);
+  const after = await collectGroups(rows, planNames);
+  const stillThere = (after ?? before).some((g) =>
+    g.instances.some((i) => i.identifier === body.instanceId),
+  );
   if (!deactivated && stillThere) {
     return NextResponse.json({ error: "Deactivation failed. Try again shortly." }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, instances: after ?? [] });
+  return NextResponse.json({ ok: true, groups: after ?? [] });
 }
