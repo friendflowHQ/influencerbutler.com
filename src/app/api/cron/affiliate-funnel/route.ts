@@ -368,6 +368,27 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     const tier = selectTrialTier(row);
     if (!tier) continue;
 
+    // A trial that already converted to paid (early in-app upgrade, or the
+    // natural trial-end charge) must not get the countdown emails: day2 says
+    // "your trial ends in about 24 hours" and day3 says "your trial ends
+    // today", both wrong for someone already paying. Stamp both columns as
+    // handled so the row stops maturing into them on later runs. day0/day1
+    // stay eligible for 'active' rows - they're onboarding content, and the
+    // pro welcome track deliberately excludes trial converts (see the
+    // pro_started_at comment in the LS webhook), so this is their only
+    // onboarding sequence.
+    if (row.status === "active" && (tier.tier === "day2" || tier.tier === "day3")) {
+      const nowIso = new Date().toISOString();
+      await supabase
+        .from("subscriptions")
+        .update({
+          trial_email_day2_sent_at: row.trial_email_day2_sent_at ?? nowIso,
+          trial_email_day3_sent_at: row.trial_email_day3_sent_at ?? nowIso,
+        })
+        .eq("user_id", row.user_id);
+      continue;
+    }
+
     // Skip day2 annual-switch upsell if the user is already on annual.
     if (tier.tier === "day2" && row.ls_variant_id && annualVariant && String(row.ls_variant_id) === annualVariant) {
       // Mark as "sent" anyway so we don't keep reconsidering this row every run.
