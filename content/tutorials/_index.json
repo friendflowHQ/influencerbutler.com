@@ -248,6 +248,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "extension",
+      "title": "Chrome Extension: Amazon intel while you browse",
+      "category": "Amazon",
+      "summary": "Install the free Chrome extension: influencer vs brand video counts on any product, content gaps in your orders, Butler Approved seals, storefront checkups, and dashboard sync.",
+      "order": 145,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "levanta",
       "title": "Levanta Butler: automate outreach + email extraction across the Levanta brand network",
       "category": "Partnerships",

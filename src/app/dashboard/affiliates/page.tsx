@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AffiliateApplyInline from "./AffiliateApplyInline";
 import AffiliateDashboard from "./AffiliateDashboard";
+import PlannerCallout from "./PlannerCallout";
 import type { AffiliateReferralStats, AffiliateSummary } from "@/lib/affiliates";
 import { createClient } from "@/lib/supabase/client";
 
@@ -289,6 +290,8 @@ function PendingState({
         </ol>
       </section>
 
+      <PlannerCallout waiting />
+
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions? Email{" "}
         <Link
@@ -535,6 +538,8 @@ function LsSignupPending({
           Lemon Squeezy confirms you. Just refresh this page once signup is done.
         </p>
       </section>
+
+      <PlannerCallout waiting />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions? Email{" "}

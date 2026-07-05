@@ -23,6 +23,7 @@ const navItems = [
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/affiliates", label: "Affiliates" },
+  { href: "/dashboard/extension", label: "Extension" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
 ];
