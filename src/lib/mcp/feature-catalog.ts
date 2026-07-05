@@ -1,14 +1,18 @@
+import { butlerTier } from "@/lib/entitlements";
+
 export type FeatureEntry = {
   slug: string;
   title: string;
   description: string;
   url: string;
+  /** "free" = free forever on any account; "pro" = trial and Pro only. */
+  tier: "free" | "pro";
 };
 
 const BASE = "https://www.influencerbutler.com";
 
 function entry(slug: string, title: string, description: string): FeatureEntry {
-  return { slug, title, description, url: `${BASE}/features/${slug}` };
+  return { slug, title, description, url: `${BASE}/features/${slug}`, tier: butlerTier(slug) };
 }
 
 export const FEATURE_CATALOG: FeatureEntry[] = [
@@ -34,13 +38,13 @@ export const FEATURE_CATALOG: FeatureEntry[] = [
   entry("levanta-butler", "Levanta Butler: Brand outreach for Levanta", "Levanta Butler messages brands in the Levanta network for you and pulls contact emails from your Levanta feed."),
   entry("like-butler", "Like Butler: Auto-like storefronts the safe way", "Like Butler likes storefronts at a pace that keeps your account happy. Set your limits and walk away. Free forever - works on trial, paid, expired, or cancelled."),
   entry("messenger-butler", "Messenger Butler: Clean up your Amazon inbox", "Messenger Butler pulls your Amazon messages in, tags them, and lets you quick-reply. One tidy inbox instead of five open tabs."),
-  entry("orders-butler", "Orders Butler: Pull your full Amazon order history", "Orders Butler pulls your full Amazon order history in one click. No more copy-paste row by row."),
+  entry("orders-butler", "Orders Butler: Pull your full Amazon order history", "Orders Butler pulls your full Amazon order history in one click. No more copy-paste row by row. Free forever - works on trial, paid, expired, or cancelled."),
   entry("pinterest-butler", "Pinterest Butler: Idea Lists in. Pins out.", "Pinterest Butler turns your Amazon Idea Lists into scheduled, SEO-optimized pins with affiliate links wrapped automatically. Coming soon."),
   entry("pitch-butler", "Pitch Butler: One outbound queue for every brand source", "Pitch Butler unifies brand contacts from Levanta, Instagram, and Creator Connections into one outbound pitch queue with status pills and built-in follow-ups."),
   entry("prime-day-butler", "Prime Day Butler: Win Prime Day without the scramble", "Prime Day Butler unlocks June 10–July 1 and surfaces Prime Day deals you can post about: content you already made, products you already own, and fresh discoveries - with CC/SPCC opportunity flags and one-click handoff to Amazon Daily Deals."),
   entry("pricecrash-butler", "Pricecrash Butler: Catch Amazon pricing errors fast", "Pricecrash Butler scans Amazon on a schedule for products discounted ≥99% off and queues catches in Amazon Daily Deals - as drafts for review or auto-scheduled posts. Threshold is configurable down to 50% for a broader steep-discount radar."),
   entry("retag-butler", "Retag Butler: Fix dead product links in your old content", "Retag Butler finds content tagged to products that aren't sold anymore and adds a live replacement - without wiping your original tag. Dead tags get a live backup."),
-  entry("storefront-butler", "Storefront Butler: Know your storefront inside and out", "Storefront Butler syncs every product in your storefront and shows you how many photos and videos you have for each one, so you know exactly what still needs content."),
+  entry("storefront-butler", "Storefront Butler: Know your storefront inside and out", "Storefront Butler syncs every product in your storefront and shows you how many photos and videos you have for each one, so you know exactly what still needs content. Free forever - works on trial, paid, expired, or cancelled."),
   entry("video-reload-butler", "Video Reload Butler: Re-upload videos Amazon deleted", "Video Reload Butler restores videos that Amazon removed, refreshes their info, and flips them between horizontal and vertical for you."),
   entry("voiceover-butler", "Voiceover Butler: AI voiceover with FTC disclosures baked in", "Voiceover Butler writes AI voiceover scripts in your tone, niche, and audience - with FTC disclosures baked in and brand-safety guards on every script. For fashion items it grounds the script in your own fit (height and sizing) so viewers can gauge how things will look."),
   entry("youtube-butler", "YouTube Butler: Turn storefront videos into YouTube views", "YouTube Butler uploads your storefront videos to YouTube and stamps your affiliate QR code right on the video."),
@@ -50,7 +54,7 @@ export type PricingTier = {
   id: string;
   name: string;
   priceUsd: number | "free";
-  cadence: "free" | "monthly" | "annual";
+  cadence: "free" | "trial" | "monthly" | "annual";
   /** Seat count for Pro tiers, or null for the free tier. */
   seats: number | null;
   highlights: string[];
@@ -64,9 +68,22 @@ export type PricingTier = {
 export const PRICING_TIERS: PricingTier[] = [
   {
     id: "free",
-    name: "3-day free trial",
+    name: "Free forever",
     priceUsd: "free",
     cadence: "free",
+    seats: null,
+    highlights: [
+      "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
+      "Desktop free butlers: Like Butler, Benable Like Butler, CC Check, Orders Butler, Storefront Butler",
+      "No card, no expiry",
+    ],
+    signupUrl: `${BASE}/extension`,
+  },
+  {
+    id: "trial",
+    name: "3-day Pro trial",
+    priceUsd: "free",
+    cadence: "trial",
     seats: 1,
     highlights: [
       "Full Pro Solo access for 3 days",

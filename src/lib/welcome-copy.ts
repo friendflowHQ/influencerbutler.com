@@ -1,7 +1,7 @@
 // Per-tier copy for the /welcome/* thank-you pages. Kept as a single module so
 // the three tier routes stay thin render-only components.
 
-export type WelcomeTier = "trial" | "monthly" | "annual";
+export type WelcomeTier = "free" | "trial" | "monthly" | "annual";
 
 export type WelcomeCopy = {
   eyebrow: string;
@@ -18,8 +18,38 @@ export type WelcomeCopy = {
 };
 
 export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
+  free: {
+    eyebrow: "You're on the Free forever plan",
+    headline: "Welcome to Influencer Butler",
+    subhead:
+      "The whole Chrome extension and five See & Organize butlers are free forever, no card required. Here's how to get the most out of them.",
+    steps: [
+      {
+        title: "Add the Chrome extension",
+        body: "Install it and browse Amazon like normal: video counts, content gaps, Butler Approved seals, and storefront checks all work with no login.",
+      },
+      {
+        title: "Install the desktop app for the free butlers",
+        body: "Like Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler run free on any account.",
+      },
+      {
+        title: "Import and organize",
+        body: "Pull your full Amazon order history with Orders Butler and audit your photo & video coverage with Storefront Butler.",
+      },
+      {
+        title: "Upgrade when you're ready",
+        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 3-day Pro trial.",
+      },
+    ],
+    callout: {
+      title: "Ready for the money engines?",
+      body: "Start a 3-day Pro trial to unlock all 40+ butlers with full Pro access. Cancel anytime before day 3.",
+      ctaLabel: "See Pro pricing",
+      ctaHref: "/pricing",
+    },
+  },
   trial: {
-    eyebrow: "Your 3-day trial is live",
+    eyebrow: "Your 3-day Pro trial is live",
     headline: "Welcome to Influencer Butler",
     subhead:
       "You have full access for the next 3 days. Install the desktop app, activate your license key, and start scheduling.",

@@ -88,5 +88,5 @@ Certify all three usage statements (they are true):
 - [ ] `cd extension && npm run build && npm run zip`
 - [ ] Developer account has 2FA enabled ($5 one-time registration fee)
 - [ ] Privacy policy URL live at /extension/privacy (deployed)
-- [ ] After approval: put the listing URL in `CHROME_STORE_URL` in
-      `src/app/extension/page.tsx` and redeploy
+- [ ] After approval: set `NEXT_PUBLIC_CHROME_STORE_URL` to the listing URL in
+      the Vercel env (read by `src/app/extension/page.tsx`) and redeploy

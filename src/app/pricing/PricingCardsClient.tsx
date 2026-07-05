@@ -14,6 +14,9 @@ import {
   TIER_NAME,
   TIER_TAGLINE,
   TIER_FEATURES,
+  FREE_TIER_NAME,
+  FREE_TIER_TAGLINE,
+  FREE_TIER_FEATURES,
   annualSavingsPct,
   planStringFor,
   type Tier,
@@ -164,6 +167,8 @@ export default function PricingCardsClient({
     <>
       <Script src="https://assets.lemonsqueezy.com/lemon.js" strategy="afterInteractive" />
 
+      <FreeTierBand />
+
       <BillingToggle value={billing} onChange={setBilling} />
 
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -201,7 +206,7 @@ export default function PricingCardsClient({
               effectiveLabel={
                 monthlyEquivalent ? `That's just ${monthlyEquivalent}/month` : undefined
               }
-              trialLabel="3-day free trial included - cancel before day 3 to avoid charges."
+              trialLabel="3-day Pro trial included - cancel before day 3 to avoid charges."
               features={[...TIER_FEATURES[tier]]}
               cta="Buy Now!"
               loading={loadingPlan === plan}
@@ -216,6 +221,58 @@ export default function PricingCardsClient({
         })}
       </div>
     </>
+  );
+}
+
+function FreeTierBand() {
+  return (
+    <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 sm:p-8">
+      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="md:max-w-xl">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-900">
+              {FREE_TIER_NAME}
+            </h3>
+            <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+              $0
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-600">{FREE_TIER_TAGLINE}</p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {FREE_TIER_FEATURES.map((feature) => (
+              <li key={feature} className="flex items-start gap-2 text-sm text-slate-700">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                  className="mt-0.5 flex-shrink-0 text-emerald-600"
+                >
+                  <path
+                    d="m5 12 5 5L20 7"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex flex-shrink-0 flex-col gap-2">
+          <a
+            href="/extension"
+            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Get the free tools
+          </a>
+          <p className="text-center text-xs text-slate-500">No card. No expiry.</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

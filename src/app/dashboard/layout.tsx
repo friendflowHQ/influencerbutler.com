@@ -2,8 +2,7 @@ import Image from "next/image";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
 import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
-import LikeButlerFreebieBanner from "@/components/dashboard/LikeButlerFreebieBanner";
-import CcCheckFreebieBanner from "@/components/dashboard/CcCheckFreebieBanner";
+import FreeToolsBanner from "@/components/dashboard/FreeToolsBanner";
 import FacebookGroupBanner from "@/components/dashboard/FacebookGroupBanner";
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
@@ -41,8 +40,7 @@ export default async function DashboardLayout({
             <AdminBadge />
             <DashboardUserEmail />
           </div>
-          <CcCheckFreebieBanner />
-          <LikeButlerFreebieBanner />
+          <FreeToolsBanner />
           <AffiliateUpsellBanner />
           <TestimonialAskBanner />
           <FacebookGroupBanner />

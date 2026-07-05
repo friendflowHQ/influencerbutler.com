@@ -1,4 +1,5 @@
 import type { Finding } from "../transport/types";
+import type { HudCommand, HudCommandResult, HudStatus } from "../transport/hud-commands";
 
 // Typed chrome.runtime message contracts. Content scripts and the popup talk
 // to the background through these; content scripts never call the network
@@ -22,9 +23,13 @@ export type RuntimeMessage =
   | { kind: "SIGN_IN"; licenseKey: string }
   | { kind: "SIGN_OUT" }
   | { kind: "FLUSH_QUEUE" }
-  | { kind: "GET_PAGE_STATUS" };
+  | { kind: "GET_PAGE_STATUS" }
+  | { kind: "GET_HUD_STATUS"; force?: boolean }
+  | { kind: "SEND_HUD_COMMAND"; command: HudCommand };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
+
+export type { HudCommand, HudCommandResult, HudStatus };
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);

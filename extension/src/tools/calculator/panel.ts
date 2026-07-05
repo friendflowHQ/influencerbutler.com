@@ -19,8 +19,11 @@ export function renderCalculator(
     return;
   }
 
+  // If the SiteStripe bar gave us the real onsite commission for this
+  // product, use it as the starting rate instead of the saved guess.
+  const detectedCommission = signals.commissionRatePct;
   const state = {
-    commissionRatePct: settings.commissionRatePct,
+    commissionRatePct: detectedCommission ?? settings.commissionRatePct,
     viewsPerMonth: 1000,
     conversionPct: settings.conversionPct,
     minutesPerVideo: settings.minutesPerVideo,
@@ -29,6 +32,12 @@ export function renderCalculator(
 
   const results = el("dl", "kv");
   section.append(results);
+
+  if (detectedCommission !== null) {
+    const badge = el("p", "note");
+    badge.textContent = `Commission rate ${detectedCommission}% read live from your SiteStripe bar.`;
+    section.append(badge);
+  }
 
   const fields = el("div");
   fields.append(

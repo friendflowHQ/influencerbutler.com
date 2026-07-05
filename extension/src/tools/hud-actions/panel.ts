@@ -1,0 +1,141 @@
+import { addSection, el } from "../../ui/components";
+import { sendToBackground } from "../../shared/messages";
+import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
+import type { AuthStatus, HudCommandResult, HudStatus } from "../../shared/messages";
+import type { ProductRef, HudCommand } from "../../transport/hud-commands";
+import type { ProductSignals } from "../../amazon/product-signals";
+
+// "Send to your butler app" section. When the desktop app is running, its
+// buttons push the current product straight into a workspace (Daily Deals,
+// Content Butler) or accept its Creator Connections campaign, all over the
+// local bridge. When the app is not running, every button becomes a targeted
+// upsell: this is the extension-to-subscription funnel.
+
+export function renderHudActions(signals: ProductSignals): void {
+  if (!signals.asin) return;
+  const section = addSection("Send to your butler app");
+  const body = el("div");
+  const status = el("p", "progress");
+  section.append(body, status);
+
+  const product = toProductRef(signals);
+
+  void Promise.all([
+    sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
+    sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
+  ]).then(([hud, auth]) => {
+    if (hud.connected) {
+      renderConnected(body, status, product, hud);
+    } else {
+      renderUpsell(body, auth);
+    }
+  });
+}
+
+function renderConnected(
+  body: HTMLElement,
+  status: HTMLElement,
+  product: ProductRef,
+  hud: HudStatus,
+): void {
+  body.replaceChildren();
+
+  const run = (command: HudCommand, pending: string) => {
+    status.textContent = pending;
+    disableAll(body, true);
+    void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command }).then((result) => {
+      disableAll(body, false);
+      status.textContent = result.ok
+        ? (result.message ?? "Sent to your app.")
+        : (result.message ?? "Could not reach the app. Is it still running?");
+    });
+  };
+
+  // Daily Deals: workspace picker + send.
+  const workspaces = hud.dealWorkspaces?.length ? hud.dealWorkspaces : DEAL_WORKSPACES;
+  const dealRow = el("div", "row");
+  const picker = el("select");
+  for (const w of workspaces) {
+    const opt = el("option");
+    opt.value = w.key;
+    opt.textContent = w.label;
+    picker.append(opt);
+  }
+  const dealBtn = el("button", "btn");
+  dealBtn.textContent = "Push to Daily Deals";
+  dealBtn.addEventListener("click", () =>
+    run({ type: "deal.push", workspace: picker.value, product }, "Pushing to your deals workspace..."),
+  );
+  dealRow.append(picker, dealBtn);
+  body.append(dealRow);
+
+  // Content Butler + campaign acceptance.
+  const contentBtn = el("button", "btn secondary");
+  contentBtn.textContent = "Send to Content Butler";
+  contentBtn.addEventListener("click", () =>
+    run({ type: "content.push", product }, "Sending to Content Butler..."),
+  );
+
+  const ccBtn = el("button", "btn secondary");
+  ccBtn.textContent = "Accept CC campaign";
+  ccBtn.addEventListener("click", () =>
+    run({ type: "campaign.accept", kind: "cc", product }, "Checking Creator Connections..."),
+  );
+
+  const spccBtn = el("button", "btn secondary");
+  spccBtn.textContent = "Accept SPCC campaign";
+  spccBtn.addEventListener("click", () =>
+    run({ type: "campaign.accept", kind: "spcc", product }, "Checking Sponsored Products..."),
+  );
+
+  const grid = el("div", "row");
+  grid.style.flexWrap = "wrap";
+  grid.append(contentBtn, ccBtn, spccBtn);
+  body.append(grid);
+
+  const note = el("p", "note");
+  const version = hud.appVersion ? ` (app ${hud.appVersion})` : "";
+  note.textContent = `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`;
+  body.append(note);
+}
+
+function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
+  body.replaceChildren();
+  const card = el("div", "seal fail");
+  card.style.display = "block";
+  card.textContent = auth.signedIn
+    ? "Open the Influencer Butler desktop app to push this product into your Daily Deals, Content Butler, and to auto-accept campaigns."
+    : "Do the rest with the app: push this product to Daily Deals with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.";
+  body.append(card);
+
+  const cta = el("a", "btn");
+  cta.textContent = auth.signedIn ? "Open or install the app" : "Start your free trial";
+  (cta as HTMLAnchorElement).href = APP_TRIAL_URL;
+  (cta as HTMLAnchorElement).target = "_blank";
+  cta.style.display = "inline-block";
+  cta.style.marginTop = "8px";
+  cta.style.textDecoration = "none";
+  body.append(cta);
+
+  const note = el("p", "note");
+  note.textContent = "The scanning tools above are always free. The app adds the automation.";
+  body.append(note);
+}
+
+function toProductRef(signals: ProductSignals): ProductRef {
+  return {
+    asin: signals.asin as string,
+    marketplace: signals.marketplace,
+    title: signals.title?.slice(0, 200),
+    priceCents: signals.priceCents,
+    currency: signals.currency,
+    imageUrl: signals.imageUrl ?? undefined,
+    commissionRatePct: signals.commissionRatePct,
+  };
+}
+
+function disableAll(root: HTMLElement, disabled: boolean): void {
+  for (const btn of Array.from(root.querySelectorAll("button"))) {
+    (btn as HTMLButtonElement).disabled = disabled;
+  }
+}

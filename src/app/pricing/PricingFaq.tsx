@@ -1,7 +1,11 @@
 const FAQ = [
   {
-    q: "How does the free trial work?",
-    a: "Every paid plan starts with a 3-day free trial. You can use all 40+ butlers during the trial. Cancel anytime before day 3 and you won't be charged.",
+    q: "What's free forever?",
+    a: "The whole Chrome extension (video counts, content gaps, Butler Approved seals, storefront checks) works with no login. On the desktop app, five See & Organize butlers stay free on every account, even after a trial expires or a subscription is cancelled: Like Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler. No card required.",
+  },
+  {
+    q: "How does the 3-day Pro trial work?",
+    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 3-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 3 and you won't be charged.",
   },
   {
     q: "Can I cancel anytime?",

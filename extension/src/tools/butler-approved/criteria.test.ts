@@ -14,6 +14,8 @@ const goodSignals: ProductSignals = {
   inStock: true,
   boughtPastMonth: 200,
   brand: "TestBrand",
+  commissionRatePct: null,
+  imageUrl: null,
 };
 
 const lowCompetition: VideoCounts = { total: 4, influencer: 2, brand: 1, customer: 1, unknown: 0 };

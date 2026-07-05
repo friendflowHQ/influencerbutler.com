@@ -111,7 +111,7 @@ async function renderSettings(): Promise<void> {
   storefront.onchange = () =>
     void patchSettings({ storefrontHandle: storefront.value.trim() || null });
 
-  for (const tool of ["videoCounts", "approved", "calculator", "storefront"] as const) {
+  for (const tool of ["videoCounts", "approved", "calculator", "storefront", "ordersButler"] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);
     box.checked = settings.tools[tool];
     box.onchange = async () => {

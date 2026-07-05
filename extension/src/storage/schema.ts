@@ -16,14 +16,24 @@ export type Settings = {
     minPrice: number;
   };
   storefrontHandle: string | null;
+  orderHarvestScope: "new" | "all";
   tools: {
     videoCounts: boolean;
     approved: boolean;
     calculator: boolean;
     storefront: boolean;
+    ordersButler: boolean;
   };
   syncEnabled: boolean;
   debug: boolean;
+};
+
+// Where a marketplace's incremental harvest last stopped. "Only new since
+// last run" walks newest-first and halts at lastOrderId, so ongoing syncs
+// finish in seconds instead of re-walking the whole history.
+export type OrderCursor = {
+  lastOrderId: string;
+  lastHarvestAt: number;
 };
 
 export type AuthState = {
@@ -46,6 +56,7 @@ export type StorageShape = {
   queue: Finding[];
   lastSyncAt: number | null;
   cache: Record<string, CachedScan>;
+  orderCursors: Record<string, OrderCursor>;
   telemetry: { selectorMisses: Record<string, number> };
 };
 
@@ -64,11 +75,13 @@ export const DEFAULTS: StorageShape = {
       minPrice: 20,
     },
     storefrontHandle: null,
+    orderHarvestScope: "new",
     tools: {
       videoCounts: true,
       approved: true,
       calculator: true,
       storefront: true,
+      ordersButler: true,
     },
     syncEnabled: true,
     debug: false,
@@ -77,6 +90,7 @@ export const DEFAULTS: StorageShape = {
   queue: [],
   lastSyncAt: null,
   cache: {},
+  orderCursors: {},
   telemetry: { selectorMisses: {} },
 };
 

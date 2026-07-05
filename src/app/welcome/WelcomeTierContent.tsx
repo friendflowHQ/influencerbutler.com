@@ -10,12 +10,14 @@ type Props = {
 };
 
 /**
- * Shared render body for the three /welcome/* tier pages. Keeps the tier pages
+ * Shared render body for the /welcome/* tier pages. Keeps the tier pages
  * themselves thin - they just pass `tier` so server-rendered copy and layout
- * stays consistent.
+ * stays consistent. The Free tier has no license key of its own (we do not
+ * mint one), so the key panel and "save your key" aside are hidden for it.
  */
 export default function WelcomeTierContent({ tier }: Props) {
   const copy = WELCOME_COPY[tier];
+  const showLicenseKey = tier !== "free";
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8 lg:p-10">
@@ -40,19 +42,23 @@ export default function WelcomeTierContent({ tier }: Props) {
       <WindowsSmartScreenGuide />
       <MacInstallGuide />
 
-      <div className="mt-10">
-        <LicenseKeyLoader variant="panel" />
-      </div>
+      {showLicenseKey ? (
+        <>
+          <div className="mt-10">
+            <LicenseKeyLoader variant="panel" />
+          </div>
 
-      <aside className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-5">
-        <p className="text-sm font-semibold text-amber-900">
-          Save your license key somewhere safe
-        </p>
-        <p className="mt-1 text-sm text-amber-800">
-          Store it in your password manager or a notes app. You&apos;ll need it any time
-          you reinstall the desktop app or activate it on a new computer.
-        </p>
-      </aside>
+          <aside className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-5">
+            <p className="text-sm font-semibold text-amber-900">
+              Save your license key somewhere safe
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Store it in your password manager or a notes app. You&apos;ll need it any time
+              you reinstall the desktop app or activate it on a new computer.
+            </p>
+          </aside>
+        </>
+      ) : null}
 
       <div className="mt-10">
         <h2 className="text-lg font-semibold tracking-tight text-slate-900">What to expect</h2>

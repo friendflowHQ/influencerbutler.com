@@ -123,6 +123,88 @@ This is the HUD payoff. Suggested mapping into the existing Action Queue:
   A new storefront snapshot replaces previous storefront items (the checkup
   is a snapshot, not a log), matching the REST replace-on-scan semantics.
 
+## Commands (extension to app)
+
+Findings above flow extension -> app as fire-and-forget sync. Commands are the
+other direction of intent: the user clicks a button in the product panel to
+make the running app DO something now. This is the extension-to-subscription
+funnel, so it must feel instant and reliable.
+
+The extension side is built (`extension/src/background/hud-bridge.ts`,
+`extension/src/transport/hud-commands.ts`). It talks to the bridge from the
+background service worker, because an https Amazon page cannot open
+`ws://127.0.0.1` (mixed content) but the extension background can.
+
+### Status probe (lightweight, no pairing required)
+
+Before showing command buttons, the extension probes:
+
+1. Extension connects and sends `{ "type": "hello", "client": "extension" }`.
+2. The app replies with a status frame:
+
+```json
+{
+  "type": "status",
+  "appVersion": "1.0.41",
+  "dealWorkspaces": [
+    { "key": "default", "label": "Amazon Daily Deals (main)" },
+    { "key": "garden-bargains", "label": "Garden Bargains" }
+  ]
+}
+```
+
+`dealWorkspaces` is the app's real workspace list (including the user's own
+niche clones); the extension falls back to a static hint list if absent. If
+the app requires pairing (the handshake above), it MAY instead reply
+`{ "type": "needs-pairing" }` and the extension will prompt the user for the
+code. The `Origin` check (`chrome-extension://<id>`) is the security boundary
+for loopback; pairing is optional hardening.
+
+### Command frames
+
+The extension sends `{ "type": "command", "command": <Command> }` and expects
+`{ "type": "command.result", "ok": true|false, "message": "<short line>" }`.
+The `message` is shown verbatim in the panel ("Added to Garden Bargains",
+"No Creator Connections campaign for this ASIN", etc.). Commands:
+
+**`deal.push`** - drop the product into a Daily Deals workspace with that
+workspace's existing Build-Your-Post template and social destinations, exactly
+as if the user added it there by hand.
+
+```json
+{
+  "type": "deal.push",
+  "workspace": "garden-bargains",
+  "product": {
+    "asin": "B0016HF5GK", "marketplace": "amazon.com",
+    "title": "BISSELL Little Green ...", "priceCents": 9999, "currency": "USD",
+    "imageUrl": "https://m.media-amazon.com/images/I/...jpg",
+    "commissionRatePct": 3
+  }
+}
+```
+
+**`content.push`** - queue the product into Content Butler for a post.
+Same `product` shape.
+
+**`campaign.accept`** - accept the product's Creator Connections (`"kind":
+"cc"`) or Sponsored Products (`"kind": "spcc"`) campaign. The APP looks the
+ASIN up in its own local CC/SPCC catalogue (the extension does not need the
+catalogue for this), accepts if found, and returns a result message. If none
+exists, return `{ "ok": false, "message": "No CC campaign for this product." }`.
+
+```json
+{ "type": "campaign.accept", "kind": "cc", "product": { "asin": "...", "marketplace": "amazon.com" } }
+```
+
+### When the app is not running
+
+Every probe/command fails fast (short timeout). The extension then shows an
+upsell instead of the buttons: signed-in users get "open or install the app",
+anonymous users get "start your free trial", both linking to
+`/go/download`. That is the intended conversion path, so the failure mode is a
+feature, not an error.
+
 ## Versioning
 
 `v` in the envelope starts at 1. The desktop MUST ignore unknown `type`

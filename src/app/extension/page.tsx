@@ -7,8 +7,9 @@ export const metadata = {
     "See influencer vs brand video counts on any Amazon product, find content gaps in your own orders, spot Butler Approved opportunities, and check your storefront. 100% free.",
 };
 
-// Single spot to update when the Chrome Web Store listing goes live.
-const CHROME_STORE_URL = "#install";
+// Chrome Web Store listing URL. Set NEXT_PUBLIC_CHROME_STORE_URL in the Vercel
+// env once the listing is approved; until then the buttons scroll to #install.
+const CHROME_STORE_URL = process.env.NEXT_PUBLIC_CHROME_STORE_URL || "#install";
 
 const TOOLS = [
   {
@@ -245,9 +246,11 @@ export default function ExtensionLandingPage() {
           <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-orange-50 via-white to-white p-8 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">No desktop app yet?</h3>
             <p className="mt-2 text-sm text-slate-600">
-              The extension is free either way. When you are ready to automate the rest of your
-              influencer business (deal posting, Creator Connections outreach, commission
-              tracking, and 42+ other butlers), the desktop app has a 3-day free trial.
+              The extension is free either way, and the desktop app has free butlers too: Like
+              Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler stay free
+              forever. When you are ready to automate the rest of your influencer business (deal
+              posting, Creator Connections outreach, commission tracking, and 40+ other butlers),
+              start a 3-day Pro trial.
             </p>
             <Link
               href="/#pricing"

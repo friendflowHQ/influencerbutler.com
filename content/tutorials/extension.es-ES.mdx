@@ -6,12 +6,13 @@ category: Amazon
 
 ## Qué hace la extensión
 
-La extensión de Chrome de Influencer Butler es una compañera gratuita que trabaja mientras navegas por Amazon con normalidad. Añade cuatro herramientas:
+La extensión de Chrome de Influencer Butler es una compañera gratuita que trabaja mientras navegas por Amazon con normalidad. Añade cinco herramientas:
 
 1. **Escáner de videos**: en cualquier página de producto, un panel muestra cuántos videos tiene el producto y quién los hizo: influencer, marca o cliente. Esa es la competencia del carrusel al que entrarías.
 2. **Buscador de huecos de contenido**: en tu historial de pedidos de Amazon, un clic escanea los productos que ya compraste y marca los que tienen pocos o cero videos de influencers. Ya tienes esos productos, así que son los videos más rápidos que puedes grabar.
 3. **Sello Butler Approved**: un producto gana el sello cuando se vende activamente, tiene un hueco libre de influencer en el carrusel de videos, está en stock y supera tu precio mínimo. Cada criterio muestra si pasa o falla, para que siempre sepas por qué.
 4. **Chequeo del storefront**: en tu propia página de storefront, un clic revisa tus videos en busca de etiquetas de producto faltantes, exceso de etiquetas y productos etiquetados que ya no están disponibles.
+5. **Orders Butler**: en tu historial de pedidos de Amazon, sincroniza todo tu historial de compras con tu panel, la misma extracción que hace el runner de escritorio. Usa la cuenta de Amazon en la que esté conectado el navegador, así que también funciona en una cuenta que gestionas para otra persona.
 
 Todo funciona sin cuenta. Conectar tu clave de licencia es opcional y añade la sincronización con tu panel web.
 
@@ -34,6 +35,13 @@ Todo funciona sin cuenta. Conectar tu clave de licencia es opcional y añade la 
 1. En el panel, haz clic en **Scan these orders**; la extensión revisa cada producto de uno en uno, a un ritmo prudente
 1. Los productos con pocos o cero videos de influencers reciben una insignia roja de **content gap**: esas son tus victorias más fáciles
 
+## Sincronizar todo tu historial de pedidos (Orders Butler)
+
+1. Ve a tu historial de pedidos de Amazon (Devoluciones y Pedidos), con la sesión iniciada en la cuenta cuyos pedidos quieres: la tuya o una que gestionas, como la de un familiar
+1. En la sección **Orders Butler** del panel, elige un alcance: **Only new since last run** para una actualización rápida, o **All years (full catch-up)** la primera vez
+1. Haz clic en **Sync my orders**; la extensión recorre tus páginas de pedidos de una en una, a un ritmo prudente, y registra cada artículo en tu panel
+1. Mantén la pestaña abierta durante un catch-up completo. Si Amazon te pide iniciar sesión de nuevo, inicia sesión en la pestaña y haz clic en **Resume**
+
 ## Revisar tu storefront
 
 1. Abre tu propia página de storefront (amazon.com/shop/tuusuario) y desplázate para que carguen tus videos
@@ -49,5 +57,6 @@ Todo funciona sin cuenta. Conectar tu clave de licencia es opcional y añade la 
 ## Consejos
 
 - La extensión nunca rastrea Amazon en segundo plano. Los escaneos solo se ejecutan cuando pulsas un botón de escaneo y se pacen como una persona navegando.
+- Orders Butler sincroniza con tu clave de licencia conectada, así que los pedidos que extraes con la sesión iniciada en una cuenta que gestionas llegan a tu propio panel.
 - Tu clave de licencia se guarda solo en el almacenamiento local de la extensión en tu navegador.
 - Configura tu usuario de storefront en los ajustes del popup para que la extensión reconozca tu propio storefront al instante.
