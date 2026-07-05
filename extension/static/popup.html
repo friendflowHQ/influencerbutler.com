@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Influencer Butler</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="brand">
+        <img src="icons/icon-32.png" alt="" width="20" height="20" />
+        <span>Influencer Butler</span>
+      </div>
+      <span class="tag">Free</span>
+    </header>
+
+    <main>
+      <section id="page-status" class="card">
+        <h2>This page</h2>
+        <p id="page-status-text" class="muted">Checking the current tab...</p>
+        <ul id="page-status-list" class="stats" hidden></ul>
+      </section>
+
+      <section id="account" class="card">
+        <h2>Account</h2>
+        <div id="signed-out">
+          <p class="muted">
+            Everything works without an account. Connect your Influencer Butler
+            license key to sync findings to your dashboard and the desktop app.
+          </p>
+          <div class="row">
+            <input id="license-input" type="password" placeholder="License key" autocomplete="off" />
+            <button id="connect-btn" class="primary">Connect</button>
+          </div>
+          <p id="auth-error" class="error" hidden></p>
+          <p class="muted small">
+            No key yet? <a href="https://www.influencerbutler.com/pricing" target="_blank" rel="noreferrer">Start a free trial</a>
+          </p>
+        </div>
+        <div id="signed-in" hidden>
+          <p>Connected as <strong id="account-email"></strong></p>
+          <label class="row toggle">
+            <input id="sync-toggle" type="checkbox" />
+            <span>Sync findings to my dashboard</span>
+          </label>
+          <p id="sync-status" class="muted small"></p>
+          <button id="disconnect-btn" class="ghost">Disconnect</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Settings</h2>
+        <div class="grid">
+          <label>Commission rate (%)
+            <input id="set-commission" type="number" min="0" max="30" step="0.5" />
+          </label>
+          <label>Hourly value ($)
+            <input id="set-hourly" type="number" min="0" step="1" />
+          </label>
+          <label>Minutes per video
+            <input id="set-minutes" type="number" min="1" step="5" />
+          </label>
+          <label>Content gap threshold
+            <input id="set-gap" type="number" min="0" max="10" step="1" />
+          </label>
+          <label class="wide">My storefront handle
+            <input id="set-storefront" type="text" placeholder="e.g. influencerbutler" />
+          </label>
+        </div>
+        <h3>Tools</h3>
+        <label class="row toggle"><input id="tool-videoCounts" type="checkbox" /><span>Video counts</span></label>
+        <label class="row toggle"><input id="tool-approved" type="checkbox" /><span>Butler Approved seal</span></label>
+        <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span>Profit calculator</span></label>
+        <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span>Storefront checks</span></label>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <a href="https://www.influencerbutler.com/extension" target="_blank" rel="noreferrer">Help</a>
+      <a href="https://www.influencerbutler.com/dashboard/extension" target="_blank" rel="noreferrer">My dashboard</a>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

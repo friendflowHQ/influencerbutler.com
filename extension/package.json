@@ -1,0 +1,22 @@
+{
+  "name": "influencer-butler-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Free Chrome extension for Amazon Influencers: video counts, Butler Approved seals, profit math, and storefront checks.",
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint:dashes": "node scripts/check-dashes.mjs",
+    "icons": "node scripts/gen-icons.mjs",
+    "zip": "node scripts/zip.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -78,6 +78,13 @@ const nextConfig: NextConfig = {
         destination: `${SUPABASE_AUTH_BASE}/.well-known/oauth-authorization-server`,
         permanent: false,
       },
+      // The drip emails linked /docs for months but the route never existed.
+      // Real docs live at Help & Tutorials.
+      {
+        source: "/docs",
+        destination: "/help",
+        permanent: true,
+      },
       // Video Butler was renamed to Video Reload Butler. Keep old links working.
       {
         source: "/features/video-butler",

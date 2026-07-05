@@ -10,6 +10,10 @@
 import Image from "next/image";
 import { useState } from "react";
 
+// Every competitor claim in this file is "as of" this date. Update it every
+// time the rows/copy are re-verified against the competitors' live sites.
+const LAST_REVIEWED = "July 4, 2026";
+
 type Verdict = "yes" | "ltd" | "no" | "text";
 
 type Row = {
@@ -185,7 +189,7 @@ const COMPETITORS: Competitor[] = [
     credit:
       "Oink is a genuinely capable extension with a free tier and a lower entry price. If someone only lives inside Amazon in their browser, it does a lot.",
     win:
-      "Oink is a drawer of separate tools you operate one at a time, in one browser tab. Influencer Butler is a connected desktop system: outreach becomes a tracked collab card automatically, the inbox tags when a product ships and what to film next, and deals auto-post across five social platforms. It also reaches past Amazon into Instagram, YouTube, Pinterest, and more.",
+      "As of our last check, Oink is a drawer of separate tools you operate one at a time, in one browser tab. Influencer Butler is a connected desktop system: outreach becomes a tracked collab card automatically, the inbox tags when a product ships and what to film next, and deals auto-post across five social platforms. It also reaches past Amazon into Instagram, YouTube, Pinterest, and more.",
     points: [
       "An extension speeds up your clicking. A butler does the clicking for you.",
       "Oink hands you tools. Butler connects them so a brand deal tracks itself from shipped to filmed to paid.",
@@ -201,7 +205,7 @@ const COMPETITORS: Competitor[] = [
     credit:
       "Viral Vue's product-research database is a real strength. For pure discovery of what to add to your storefront, their data depth is a legitimate selling point.",
     win:
-      "Viral Vue tells you what to promote, then leaves the doing to you. Influencer Butler runs the whole workflow: it accepts CC and SPCC, tracks each brand deal end to end, revives dead links, re-uploads videos AND photos to international storefronts, and auto-posts your deals across five platforms. Research is one step; Butler automates the other twenty.",
+      "As of our last check, Viral Vue tells you what to promote, then leaves most of the doing to you. Influencer Butler runs the whole workflow: it accepts CC and SPCC, tracks each brand deal end to end, revives dead links, re-uploads videos AND photos to international storefronts, and auto-posts your deals across five platforms. Research is one step; Butler automates the other twenty.",
     points: [
       "Viral Vue is a research assistant. Butler is the whole staff that acts on the research.",
       "Great, you found a winning product. Butler is what tracks the deal, films the coverage list, and posts it everywhere while you sleep.",
@@ -217,7 +221,7 @@ const COMPETITORS: Competitor[] = [
     credit:
       "For video specifically, Cha-Ching reaches more countries (13+) and auto-translates and captions in the local language, which Butler's Video Reload does not do today. If a creator's only goal is multilingual video-to-YouTube at scale, Cha-Ching is strong at that one thing.",
     win:
-      "Cha-Ching does videos only: no photos, no brand outreach, no CC/SPCC auto-accept, no collab tracking, no deal posting, no inbox. Influencer Butler is a full suite: Video Reload AND Photo Reload butlers, plus 40+ other connected tools. You would need Cha-Ching plus five other tools to match one Butler.",
+      "As of our last check, Cha-Ching focuses on video only: no photo reload, brand outreach, CC/SPCC auto-accept, collab tracking, deal posting, or inbox. Influencer Butler is a full suite: Video Reload AND Photo Reload butlers, plus 40+ other connected tools. You would need Cha-Ching plus five other tools to match one Butler.",
     points: [
       "Cha-Ching does one thing. Butler does that plus your photos, your brand deals, your posting, and your earnings tracking.",
       "It reloads videos but not photos. Butler reloads both, and revives your dead product links on top.",
@@ -230,7 +234,7 @@ const COMPETITORS: Competitor[] = [
 const CAPTIONS: { label: string; text: string }[] = [
   {
     label: "Short",
-    text: "Oink, Viral Vue, and Cha-Ching each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep. Stop renting tools. Hire the butler.",
+    text: "The browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep. Stop renting tools. Hire the butler.",
   },
   {
     label: "Story / Reel",
@@ -238,7 +242,7 @@ const CAPTIONS: { label: string; text: string }[] = [
   },
   {
     label: "Comparison hook",
-    text: "I compared the top Amazon creator tools. Oink = a drawer of tools you run by hand. Viral Vue = great research, you still do the work. Cha-Ching = videos only, no photos. Influencer Butler = the whole job, done for you. Here is the breakdown.",
+    text: "I compared the top Amazon creator tools. The extensions = tools you run by hand. The research tools = great data, you still do the work. The single-purpose apps = one job only. Influencer Butler = the whole job, done for you. Here is the breakdown.",
   },
 ];
 
@@ -267,6 +271,31 @@ export default function CompetitorPlaybook() {
         Everything you need to promote Influencer Butler against the other Amazon-creator tools. Keep
         it honest: accurate comparisons convert better and keep us clear of trademark trouble.
       </p>
+      <p className="mt-1 text-xs font-semibold text-slate-500">
+        All competitor claims below are as of {LAST_REVIEWED}.
+      </p>
+
+      <div className="mt-4 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-4 text-sm text-slate-700">
+        <p className="font-semibold">Rules of the road (read once, it protects you and us)</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>
+            Always disclose your affiliate relationship (#ad or &quot;affiliate link&quot;) per FTC
+            rules, every post.
+          </li>
+          <li>
+            The copy-paste captions below name no competitors on purpose: they are safe to post
+            exactly as written.
+          </li>
+          <li>
+            Naming a competitor in your own words? Verify the claim on their current site first
+            (features and pricing change often) and prefer &quot;as of [date]&quot; phrasing.
+          </li>
+          <li>
+            Opinions and jokes are fine. Specific feature and price claims must be current and
+            true.
+          </li>
+        </ol>
+      </div>
 
       <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
         <Image
@@ -304,7 +333,7 @@ export default function CompetitorPlaybook() {
         {"   "}
         <span className="font-bold text-amber-600">{"~"} Limited</span>
         {"   "}
-        <span className="font-bold text-slate-400">{"✗"} No</span>
+        <span className="font-bold text-slate-400">{"✗"} Not offered (as of last review)</span>
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -387,7 +416,8 @@ export default function CompetitorPlaybook() {
 
       <h3 className="mt-7 text-lg font-semibold text-slate-900">Copy-paste captions</h3>
       <p className="mt-1 text-sm text-slate-600">
-        Drop your tracked link on the end of any of these.
+        Drop your tracked link on the end of any of these. They name no competitors on purpose, so
+        they are safe to post as-is; if you name one in your own words, follow the rules above.
       </p>
       <div className="mt-3 space-y-3">
         {CAPTIONS.map((cap) => (
@@ -410,10 +440,11 @@ export default function CompetitorPlaybook() {
       </div>
 
       <p className="mt-6 border-t border-slate-200 pt-4 text-xs text-slate-500">
-        Competitor features and pricing change often. Every claim here is drawn from each company's
-        public site as of the last review date. Before running a paid promo, spot-check the
-        competitor's current site. Do not overstate a competitor's weakness: &quot;Limited&quot;
-        means partial or unclear, not absent. Last reviewed: July 4, 2026.
+        Competitor features and pricing change often. Every claim here is drawn from each
+        company&apos;s public site as of the last review date. Before running a paid promo,
+        spot-check the competitor&apos;s current site. Do not overstate a competitor&apos;s
+        weakness: &quot;Limited&quot; means partial or unclear, not absent. Last reviewed:{" "}
+        {LAST_REVIEWED}.
       </p>
     </section>
   );
