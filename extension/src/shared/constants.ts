@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   gaps: `${API_BASE}/api/extension/gaps`,
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,
   orders: `${API_BASE}/api/extension/orders`,
+  feedback: `${API_BASE}/api/extension/feedback`,
 } as const;
 
 // Sync queue.

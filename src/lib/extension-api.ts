@@ -37,9 +37,13 @@ export function optionsResponse(): NextResponse {
   return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }
 
-/** Postgres "relation does not exist": the migration is not applied yet. */
+/**
+ * The migration is not applied yet. supabase-js goes through PostgREST, which
+ * reports a missing table as PGRST205 ("not found in the schema cache"), not
+ * the raw Postgres 42P01 - so both must be treated as "migration pending".
+ */
 export function isMissingTableError(error: { code?: string } | null): boolean {
-  return error?.code === "42P01";
+  return error?.code === "42P01" || error?.code === "PGRST205";
 }
 
 export function migrationPendingResponse(): NextResponse {

@@ -2,6 +2,7 @@ import { SYNC_ALARM, SYNC_PERIOD_MINUTES } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { getHudStatus, sendHudCommand } from "./hud-bridge";
+import { sendFeedback } from "./feedback";
 import { getState } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 
@@ -41,6 +42,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
       return true;
     case "SEND_HUD_COMMAND":
       void sendHudCommand(message.command).then(sendResponse);
+      return true;
+    case "SEND_FEEDBACK":
+      void sendFeedback(message.feedback).then(sendResponse);
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background
