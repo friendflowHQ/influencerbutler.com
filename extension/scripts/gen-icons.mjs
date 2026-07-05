@@ -54,7 +54,9 @@ for (const size of SIZES) {
     "--force-device-scale-factor=1",
     "--default-background-color=00000000",
     "--run-all-compositor-stages-before-draw",
-    "--virtual-time-budget=2000",
+    "--virtual-time-budget=4000",
+    // icon.html reads logo pixels from a file:// image via canvas.
+    "--allow-file-access-from-files",
     `--user-data-dir=${scratchProfile}`,
     `--window-size=${WINDOW},${WINDOW}`,
     `--screenshot=${shotPath}`,
