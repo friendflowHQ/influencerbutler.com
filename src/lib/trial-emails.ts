@@ -38,13 +38,13 @@ function annualCheckoutUrl(base: string, code: string | null): string {
 
 const COPY: Record<TrialTier, TierCopy> = {
   day0: {
-    subject: "Welcome to Influencer Butler: your trial is live",
+    subject: "Welcome to Influencer Butler: your Pro trial is live",
     build: (v) => {
       const url = monthlyCheckoutUrl(v.subscriptionUrl, v.monthlyCode);
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Welcome aboard - your 3-day free trial is active.`,
+        `Welcome aboard - your 3-day Pro trial is active, with every one of the 40+ butlers unlocked.`,
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,
@@ -71,7 +71,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're one day into your 3-day trial - here are the three fastest ways to see real results before it ends:`,
+        `You're one day into your 3-day Pro trial - here are the three fastest ways to see real results before it ends:`,
         ``,
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
@@ -158,6 +158,10 @@ const COPY: Record<TrialTier, TierCopy> = {
       } else {
         lines.push(`After tonight, regular pricing applies.`);
       }
+      lines.push(
+        ``,
+        `Either way, your free-forever butlers (Like Butler, Benable Like Butler, CC Check, Orders Butler, Storefront Butler) and the whole Chrome extension keep working - no card, no expiry.`,
+      );
       lines.push(``, COMMUNITY_LINE, ``, `- The Influencer Butler team`);
       return lines.join("\n");
     },

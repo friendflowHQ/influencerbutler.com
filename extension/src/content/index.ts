@@ -8,9 +8,11 @@ import {
 import { extractSignals, type ProductSignals } from "../amazon/product-signals";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
+import { initOrdersButler } from "../tools/orders-butler/harvester";
 import { evaluateApproved, criteriaToRecord } from "../tools/butler-approved/criteria";
 import { renderSeal } from "../tools/butler-approved/seal";
 import { renderCalculator } from "../tools/calculator/panel";
+import { renderHudActions } from "../tools/hud-actions/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { guard } from "../shared/guard";
 import { setDebug, log } from "../shared/log";
@@ -108,6 +110,10 @@ async function runForPage(): Promise<void> {
         guard("calculator", () => renderCalculator(signals, carousel.counts, settings));
       }
 
+      // The bridge to the desktop app (push to workspaces, accept campaigns)
+      // plus the download/trial upsell when the app is not running.
+      guard("hud-actions", () => renderHudActions(signals));
+
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
       // The video widget's classified data only hydrates once it scrolls
@@ -119,6 +125,7 @@ async function runForPage(): Promise<void> {
   } else if (pageType === "order-history") {
     guard("order-history", () => {
       if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
+      if (settings.tools.ordersButler) initOrdersButler("amazon.com");
       lastStatus.toolSummaries.push({ label: "Order scan", value: "Ready" });
     });
   } else if (pageType === "storefront") {

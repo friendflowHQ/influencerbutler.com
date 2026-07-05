@@ -5,8 +5,8 @@ import { FACEBOOK_GROUP_URL } from "@/lib/social";
 
 // Evergreen community invite shown to every logged-in user (trial and paid).
 // Dismissal is per-session, matching the other dashboard banners
-// (CcCheckFreebieBanner, LikeButlerFreebieBanner). No sunset date: the group
-// invite is not a time-boxed campaign.
+// (FreeToolsBanner). No sunset date: the group invite is not a time-boxed
+// campaign.
 const DISMISS_KEY = "ib_facebook_group_join_dismissed_v1";
 
 export default function FacebookGroupBanner() {

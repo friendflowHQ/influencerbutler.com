@@ -22,6 +22,7 @@ export const apiTransport: FindingTransport = {
     const scans = batch.filter((f) => f.type === "product_scan");
     const gaps = batch.filter((f) => f.type === "content_gap");
     const issues = batch.filter((f) => f.type === "storefront_issue");
+    const orders = batch.filter((f) => f.type === "order");
 
     const posts: Array<Promise<Response>> = [];
     if (scans.length > 0) {
@@ -67,6 +68,22 @@ export const apiTransport: FindingTransport = {
             severity: f.severity,
             subject: f.subject ?? null,
             detail: f.detail ?? null,
+            detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+    if (orders.length > 0) {
+      posts.push(
+        post(ENDPOINTS.orders, key, {
+          orders: orders.map((f) => ({
+            order_id: f.orderId,
+            order_date: f.orderDate ?? null,
+            asin: f.asin,
+            marketplace: f.marketplace,
+            title: f.title ?? null,
+            price_cents: f.priceCents ?? null,
+            currency: f.currency ?? "USD",
             detected_at: f.detectedAt,
           })),
         }),

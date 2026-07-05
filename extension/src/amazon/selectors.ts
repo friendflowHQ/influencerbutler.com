@@ -17,7 +17,9 @@ export type SelectorId =
   | "asinInput"
   | "orderCard"
   | "orderDate"
-  | "storefrontTile";
+  | "storefrontTile"
+  | "mainImage"
+  | "siteStripeCommission";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -55,12 +57,18 @@ const REGISTRY: Record<SelectorId, string[]> = {
   ],
   productTitle: ["#productTitle", "#title"],
   productByline: ["#bylineInfo"],
+  // :not(.a-text-price) skips the struck-through list price; queryMatchingText
+  // then skips empty decoy containers. Together they land on the current
+  // "price to pay" across buybox layouts.
   price: [
-    "#corePriceDisplay_desktop_feature_div .a-price .a-offscreen",
-    "#corePrice_feature_div .a-price .a-offscreen",
-    "#apex_desktop .a-price .a-offscreen",
-    ".a-price .a-offscreen",
+    ".priceToPay .a-offscreen",
+    ".reinventPricePriceToPayMargin .a-offscreen",
+    "#corePriceDisplay_desktop_feature_div .a-price:not(.a-text-price) .a-offscreen",
+    "#corePrice_feature_div .a-price:not(.a-text-price) .a-offscreen",
+    "#apex_desktop .a-price:not(.a-text-price) .a-offscreen",
+    ".a-price:not(.a-text-price) .a-offscreen",
     "#priceblock_ourprice",
+    "#priceblock_dealprice",
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
@@ -83,6 +91,20 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "a[href*='/vdp/']",
     "[data-testid*='video'] a",
   ],
+  mainImage: [
+    "#landingImage",
+    "#imgTagWrapperId img",
+    "#main-image-container img",
+  ],
+  // The SiteStripe "Influencers & Associates" bar shows the live commission
+  // rate for logged-in creators. Amazon labels it "Commission rate" with the
+  // percent in a sibling; we read the whole bar text and regex the percent.
+  siteStripeCommission: [
+    "#amzn-ss-text-shrink-link",
+    "#amzn-ss-wrap",
+    "#amzn-ss-tracking-id-display",
+    "[id^='amzn-ss']",
+  ],
 };
 
 type Miss = { id: string; count: number };
@@ -98,6 +120,30 @@ export function query<T extends Element = HTMLElement>(
       if (found) return found as T;
     } catch {
       // an invalid selector in one strategy must not kill the rest
+    }
+  }
+  recordMiss(id);
+  return null;
+}
+
+// Returns the trimmed text of the first element (across ALL selectors and all
+// their matches) whose text passes `test`. Unlike query(), it does not stop at
+// the first matching element: Amazon often has an empty decoy match before the
+// real one (e.g. a price container holding only a <style> block), so callers
+// that need actual content must keep looking.
+export function queryMatchingText(
+  doc: ParentNode,
+  id: SelectorId,
+  test: (text: string) => boolean,
+): string | null {
+  for (const sel of REGISTRY[id]) {
+    try {
+      for (const el of Array.from(doc.querySelectorAll(sel))) {
+        const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+        if (text && test(text)) return text;
+      }
+    } catch {
+      // skip an invalid selector strategy
     }
   }
   recordMiss(id);

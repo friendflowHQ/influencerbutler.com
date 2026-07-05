@@ -1,7 +1,13 @@
 /**
  * POST /api/extension/auth/check - the Chrome extension verifies a license
- * key here when the user connects their account in the popup. Bearer only:
- * this endpoint exists for the extension, not the browser dashboard.
+ * key here when the user OPTIONALLY connects their account in the popup.
+ * Bearer only: this endpoint exists for the extension, not the browser
+ * dashboard.
+ *
+ * The extension is part of the Free forever tier: all of its tools run
+ * anonymously with no login. Connecting a license key here is optional and
+ * only enables syncing scans/gaps back to the dashboard - it is NOT a
+ * paywall, and this endpoint deliberately does not check subscription tier.
  */
 import { resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";

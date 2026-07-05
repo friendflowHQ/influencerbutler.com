@@ -45,7 +45,26 @@ export type StorefrontIssueFinding = {
   detectedAt: string;
 };
 
-export type Finding = ProductScanFinding | ContentGapFinding | StorefrontIssueFinding;
+// One row per line item harvested from Amazon order history by the Orders
+// Butler tool. Mirrors the desktop runner's order pull: an order can contain
+// several ASINs, so we emit one finding per (order, asin) pair.
+export type OrderFinding = {
+  type: "order";
+  orderId: string;
+  orderDate: string | null; // YYYY-MM-DD as shown by Amazon, or null if unread
+  marketplace: string;
+  asin: string;
+  title?: string;
+  priceCents?: number | null;
+  currency?: string;
+  detectedAt: string;
+};
+
+export type Finding =
+  | ProductScanFinding
+  | ContentGapFinding
+  | StorefrontIssueFinding
+  | OrderFinding;
 
 export interface FindingTransport {
   id: "api" | "local";
@@ -58,7 +77,9 @@ export function findingKey(finding: Finding): string {
     ? finding.detectedAt.slice(0, 10)
     : finding.type === "content_gap"
       ? finding.detectedAt.slice(0, 10)
-      : finding.scannedAt.slice(0, 10);
+      : finding.type === "order"
+        ? finding.detectedAt.slice(0, 10)
+        : finding.scannedAt.slice(0, 10);
   switch (finding.type) {
     case "product_scan":
       return `${finding.type}:${finding.asin}:${finding.marketplace}:${day}`;
@@ -66,5 +87,9 @@ export function findingKey(finding: Finding): string {
       return `${finding.type}:${finding.asin}:${finding.marketplace}:${finding.gapType}:${day}`;
     case "storefront_issue":
       return `${finding.type}:${finding.subject ?? ""}:${finding.issueType}:${day}`;
+    // An order line item is immutable history: key on (order, asin) with no
+    // day component so the same purchase records once, not once per sync day.
+    case "order":
+      return `${finding.type}:${finding.orderId}:${finding.asin}:${finding.marketplace}`;
   }
 }

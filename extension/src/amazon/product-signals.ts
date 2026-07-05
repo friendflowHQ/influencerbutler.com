@@ -1,4 +1,4 @@
-import { query } from "./selectors";
+import { query, queryMatchingText } from "./selectors";
 
 // Reads the non-video signals off a product page: identity, price,
 // availability, social proof. Accepts any Document so fetched pages from the
@@ -13,10 +13,16 @@ export type ProductSignals = {
   inStock: boolean;
   boughtPastMonth: number | null;
   brand: string | null;
+  // Read from the SiteStripe bar when the user is a logged-in creator; null
+  // otherwise. Lets the calculator use the real onsite rate instead of a guess.
+  commissionRatePct: number | null;
+  imageUrl: string | null;
 };
 
 const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
 const BOUGHT_RE = /([\d,.]+)\s*([Kk])?\+?\s*bought in past month/;
+const COMMISSION_RE = /commission\s*rate[:\s]*([\d.]+)\s*%/i;
+const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 
 export function extractSignals(doc: Document, url: string): ProductSignals {
   return {
@@ -27,7 +33,33 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     inStock: extractInStock(doc),
     boughtPastMonth: extractBoughtPastMonth(doc),
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
+    commissionRatePct: extractCommissionRate(doc),
+    imageUrl: extractImage(doc),
   };
+}
+
+export function extractCommissionRate(doc: Document): number | null {
+  // Prefer the SiteStripe bar element; fall back to the specific "Commission
+  // rate: N%" string anywhere in the top of the page, since the bar's exact
+  // markup varies. The phrase only appears when SiteStripe is active.
+  const bar = query(doc, "siteStripeCommission");
+  const scope = bar?.closest("#amzn-ss-wrap, [id^='amzn-ss']") ?? bar;
+  const barText = cleanText(scope?.textContent) ?? "";
+  const value = matchCommission(barText) ?? matchCommission(cleanText(doc.body?.textContent?.slice(0, 8000)) ?? "");
+  return value;
+}
+
+function matchCommission(text: string): number | null {
+  const match = text.match(COMMISSION_RE);
+  if (!match || !match[1]) return null;
+  const value = parseFloat(match[1]);
+  return Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+}
+
+function extractImage(doc: Document): string | null {
+  const img = query<HTMLImageElement>(doc, "mainImage");
+  const src = img?.getAttribute("src") ?? img?.getAttribute("data-old-hires") ?? "";
+  return src.startsWith("http") ? src : null;
 }
 
 export function extractAsin(doc: Document, url: string): string | null {
@@ -48,8 +80,11 @@ export function marketplaceFromUrl(url: string): string {
 }
 
 function extractPrice(doc: Document): { priceCents: number | null; currency: string } {
-  const text = cleanText(query(doc, "price")?.textContent) ?? "";
-  const match = text.match(/([$€£])\s*([\d,]+)(?:\.(\d{2}))?/);
+  // Take the first price-bearing element across all selectors: Amazon's
+  // buybox often has an empty decoy price container (holding only a <style>
+  // block) that matches before the real price element.
+  const text = queryMatchingText(doc, "price", (t) => PRICE_RE.test(t)) ?? "";
+  const match = text.match(PRICE_RE);
   if (!match || !match[2]) return { priceCents: null, currency: "USD" };
   const whole = parseInt(match[2].replace(/,/g, ""), 10);
   const cents = match[3] ? parseInt(match[3], 10) : 0;

@@ -94,6 +94,20 @@ export const TIER_FEATURES: Record<Tier, readonly string[]> = {
   ],
 } as const;
 
+// Free forever tier. Not part of the paid Tier record (no price, no seat
+// pressure) so it lives as standalone constants the pricing UI renders as a
+// band above the paid cards. What "free" unlocks is defined in
+// src/lib/entitlements.ts (FREE_BUTLER_SLUGS) - keep the copy below in sync.
+export const FREE_TIER_NAME = "Free forever";
+export const FREE_TIER_TAGLINE = "The whole extension plus See & Organize butlers. No card, no expiry.";
+export const FREE_TIER_FEATURES: readonly string[] = [
+  "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
+  "Like Butler & Benable Like Butler: auto-like at a safe pace",
+  "CC Check: grab every ASIN from any page",
+  "Orders Butler: pull your full Amazon order history",
+  "Storefront Butler: audit your photo & video coverage",
+];
+
 // Plan-string canonical form used by /api/checkout + /api/checkout/guest
 // and the dashboard/public pricing UIs. Legacy "monthly"/"annual" strings
 // (no tier prefix) resolve to Solo so existing checkout links keep working.

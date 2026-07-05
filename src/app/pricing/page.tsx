@@ -111,19 +111,21 @@ export default async function PricingPage({
             Pricing
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Upgrade and unlock every butler
+            Start free, upgrade when you're ready
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            All 40+ tools, unlimited messages, and priority support. Cancel anytime - no questions
-            asked.
+            The whole Chrome extension and five See &amp; Organize butlers are free forever. Go Pro
+            for all 40+ tools, unlimited messages, and priority support. Cancel anytime - no
+            questions asked.
           </p>
           <div className="mt-5 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-900">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               <span>
-                <strong className="font-semibold">Three butlers stay free forever:</strong>{" "}
-                Like Butler, Benable Like Butler &amp; CC Check work on every account - even after
-                trial expiry or cancellation.
+                <strong className="font-semibold">Free forever:</strong>{" "}
+                the whole Chrome extension plus Like Butler, Benable Like Butler, CC Check, Orders
+                Butler &amp; Storefront Butler - on every account, even after trial expiry or
+                cancellation.
               </span>
             </span>
           </div>
@@ -360,8 +362,9 @@ function Guarantee() {
           />
         </svg>
         <p className="max-w-xl text-sm text-slate-700 sm:text-base">
-          <strong className="font-semibold text-slate-900">3-day free trial</strong> on every paid plan.
-          Cancel anytime from your dashboard - no support ticket required.
+          <strong className="font-semibold text-slate-900">3-day Pro trial</strong> on every paid plan,
+          plus a free-forever tier with no card. Cancel anytime from your dashboard - no support
+          ticket required.
         </p>
       </div>
     </section>

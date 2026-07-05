@@ -211,9 +211,10 @@ export default function SubscriptionPage() {
     return (
       <div className="space-y-6">
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Start your free trial</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Go Pro</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Unlock all 40+ automation tools with a 3-day free trial. Cancel anytime.
+            Your free-forever butlers and the Chrome extension keep working no matter what. Start a
+            3-day Pro trial to unlock all 40+ automation tools. Cancel anytime.
           </p>
         </section>
 
@@ -248,7 +249,7 @@ export default function SubscriptionPage() {
                   billingCadence === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
                 }
                 features={[...TIER_FEATURES[tier]]}
-                cta={isLoading ? "Starting…" : "Start 3-day free trial"}
+                cta={isLoading ? "Starting…" : "Start 3-day Pro trial"}
                 disabled={checkoutLoading !== null}
                 featured={tier === "solo"}
                 onSelect={() => handleStartCheckout(tier)}
