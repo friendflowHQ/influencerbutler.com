@@ -25,7 +25,16 @@ export type RuntimeMessage =
   | { kind: "FLUSH_QUEUE" }
   | { kind: "GET_PAGE_STATUS" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
-  | { kind: "SEND_HUD_COMMAND"; command: HudCommand };
+  | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
+  | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput };
+
+export type FeedbackInput = {
+  feedbackType: "bug" | "feature" | "praise" | "other";
+  message: string;
+  pageUrl?: string;
+};
+
+export type FeedbackResult = { ok: boolean; error?: string };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
 

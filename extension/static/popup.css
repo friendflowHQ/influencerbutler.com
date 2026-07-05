@@ -83,7 +83,7 @@ p { margin: 4px 0; }
 .row { display: flex; gap: 8px; align-items: center; margin: 8px 0 0; }
 .row input[type="password"], .row input[type="text"] { flex: 1; }
 
-input[type="password"], input[type="text"], input[type="number"] {
+input[type="password"], input[type="text"], input[type="number"], select, textarea {
   border: 1px solid var(--slate-200);
   border-radius: 8px;
   padding: 7px 9px;
@@ -92,7 +92,14 @@ input[type="password"], input[type="text"], input[type="number"] {
   background: #fff;
 }
 
-input:focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
+textarea { resize: vertical; min-height: 56px; }
+
+.fb-wide { display: block; margin-top: 8px; }
+
+/* Honeypot: off-screen, not display:none so bots still see it. */
+.fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
 
 button {
   border: 0;

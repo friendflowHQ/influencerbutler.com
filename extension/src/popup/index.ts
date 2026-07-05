@@ -1,4 +1,11 @@
-import { sendToBackground, type AuthStatus, type PageStatus, type SignInResult } from "../shared/messages";
+import {
+  sendToBackground,
+  type AuthStatus,
+  type FeedbackInput,
+  type FeedbackResult,
+  type PageStatus,
+  type SignInResult,
+} from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
 import type { Settings } from "../storage/schema";
 
@@ -10,6 +17,46 @@ void init();
 
 async function init(): Promise<void> {
   await Promise.all([renderPageStatus(), renderAccount(), renderSettings()]);
+  wireFeedback();
+}
+
+function wireFeedback(): void {
+  const btn = byId<HTMLButtonElement>("fb-send");
+  const type = byId<HTMLSelectElement>("fb-type");
+  const message = byId<HTMLTextAreaElement>("fb-message");
+  const honeypot = byId<HTMLInputElement>("fb-website");
+  const status = byId("fb-status");
+
+  btn.onclick = async () => {
+    if (honeypot.value) return; // bot
+    const text = message.value.trim();
+    if (text.length < 3) {
+      status.textContent = "Add a little more detail.";
+      return;
+    }
+    btn.disabled = true;
+    status.textContent = "Sending...";
+    let pageUrl: string | undefined;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url?.includes("amazon.com")) pageUrl = tab.url.split("?")[0];
+    } catch {
+      // page url is best-effort context, not required
+    }
+    const feedback: FeedbackInput = {
+      feedbackType: type.value as FeedbackInput["feedbackType"],
+      message: text,
+      pageUrl,
+    };
+    const result = await sendToBackground<FeedbackResult>({ kind: "SEND_FEEDBACK", feedback });
+    btn.disabled = false;
+    if (result.ok) {
+      message.value = "";
+      status.textContent = "Thanks! Sent.";
+    } else {
+      status.textContent = result.error ?? "Could not send. Try again.";
+    }
+  };
 }
 
 async function renderPageStatus(): Promise<void> {

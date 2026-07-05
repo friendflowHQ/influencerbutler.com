@@ -74,6 +74,29 @@
         <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span>Storefront checks</span></label>
         <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span>Orders Butler (sync order history)</span></label>
       </section>
+
+      <section class="card">
+        <h2>Feedback Butler</h2>
+        <p class="muted small">Found a bug or want a feature? Tell us. No account needed.</p>
+        <div class="grid">
+          <label class="wide">Type
+            <select id="fb-type">
+              <option value="bug">Bug report</option>
+              <option value="feature">Feature request</option>
+              <option value="praise">Praise</option>
+              <option value="other">Something else</option>
+            </select>
+          </label>
+        </div>
+        <label class="fb-wide">
+          <textarea id="fb-message" rows="3" placeholder="What happened, or what would help?"></textarea>
+        </label>
+        <input id="fb-website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" class="fb-hp" />
+        <div class="row">
+          <button id="fb-send" class="primary">Send feedback</button>
+          <span id="fb-status" class="muted small"></span>
+        </div>
+      </section>
     </main>
 
     <footer class="foot">
