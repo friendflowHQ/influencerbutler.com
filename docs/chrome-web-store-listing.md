@@ -83,7 +83,8 @@ Certify all three usage statements (they are true):
 
 ## Pre-submission checklist
 
-- [ ] Replace placeholder icons in `extension/static/icons/` with real art
+- [x] Branded icons in `extension/static/icons/` (vector butler mark rendered
+      by `npm run icons`; edit `extension/scripts/assets/icon.html` to tweak)
 - [ ] `cd extension && npm run build && npm run zip`
 - [ ] Developer account has 2FA enabled ($5 one-time registration fee)
 - [ ] Privacy policy URL live at /extension/privacy (deployed)

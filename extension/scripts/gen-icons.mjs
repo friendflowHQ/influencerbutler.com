@@ -1,68 +1,150 @@
-// Generates placeholder extension icons (orange rounded square with a white
-// "bowtie" butler mark) as PNGs, with zero dependencies. Rerun via
-// `npm run icons` if sizes change; replace with designed assets before the
-// Chrome Web Store listing.
+// Renders scripts/assets/icon.html (vector Influencer Butler mark: bowler
+// hat, orange face, tux and bowtie) to static/icons/icon-{16,32,48,128}.png
+// using the locally installed Chrome/Edge headless. No npm dependencies.
+//
+// Headless Chrome on Windows renders blank screenshots at window sizes
+// roughly between 100 and 160 px, so instead of sizing the window per icon
+// we always screenshot a reliable 256x256 window with the SVG pinned to the
+// exact target size in the top-left corner (?size=N), then crop the PNG in
+// pure Node (decode, crop, re-encode).
+//
+// Usage: npm run icons
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const SIZES = [16, 32, 48, 128];
-const ORANGE = [249, 115, 22, 255]; // #f97316, the site accent
-const WHITE = [255, 255, 255, 255];
-const CLEAR = [0, 0, 0, 0];
+const WINDOW = 256; // empirically reliable screenshot size
+let CRC_TABLE = null; // declared before the top-level render loop runs
 
-function main() {
-  const outDir = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), "static", "icons");
-  fs.mkdirSync(outDir, { recursive: true });
-  for (const size of SIZES) {
-    const png = encodePng(size, size, drawIcon(size));
-    fs.writeFileSync(path.join(outDir, `icon-${size}.png`), png);
-    console.log(`icons/icon-${size}.png`);
-  }
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const htmlPath = path.join(root, "scripts", "assets", "icon.html");
+const outDir = path.join(root, "static", "icons");
+fs.mkdirSync(outDir, { recursive: true });
+
+const CANDIDATES = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium-browser",
+].filter(Boolean);
+
+const browser = CANDIDATES.find((candidate) => fs.existsSync(candidate));
+if (!browser) {
+  console.error("No Chrome or Edge found. Set CHROME_PATH to a Chromium-based browser.");
+  process.exit(1);
 }
 
-function drawIcon(size) {
-  const px = new Uint8Array(size * size * 4);
-  const radius = Math.max(2, Math.round(size * 0.19));
-  const cx = (size - 1) / 2;
-  const cy = (size - 1) / 2;
-  // Bowtie: two triangles meeting at the center, plus a small square knot.
-  const tieHalfW = size * 0.32;
-  const tieHalfH = size * 0.16;
-  const knot = size * 0.07;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const i = (y * size + x) * 4;
-      let color = ORANGE;
-      // Rounded corners: clear pixels outside the corner circles.
-      const nx = Math.max(radius - x, x - (size - 1 - radius), 0);
-      const ny = Math.max(radius - y, y - (size - 1 - radius), 0);
-      if (nx * nx + ny * ny > radius * radius) color = CLEAR;
-      else {
-        const dx = Math.abs(x - cx);
-        const dy = Math.abs(y - cy);
-        const inWing = dx <= tieHalfW && dy <= tieHalfH * (dx / tieHalfW) + knot * 0.4;
-        const inKnot = dx <= knot && dy <= knot;
-        if (size >= 32 ? inWing || inKnot : dx <= tieHalfW && dy <= tieHalfH) color = WHITE;
+const scratchProfile = fs.mkdtempSync(path.join(os.tmpdir(), "ib-icons-"));
+const shotPath = path.join(scratchProfile, "shot.png");
+const fileUrl = "file:///" + htmlPath.replace(/\\/g, "/");
+
+for (const size of SIZES) {
+  execFileSync(browser, [
+    "--headless",
+    "--disable-gpu",
+    "--hide-scrollbars",
+    "--force-device-scale-factor=1",
+    "--default-background-color=00000000",
+    "--run-all-compositor-stages-before-draw",
+    "--virtual-time-budget=2000",
+    `--user-data-dir=${scratchProfile}`,
+    `--window-size=${WINDOW},${WINDOW}`,
+    `--screenshot=${shotPath}`,
+    `${fileUrl}?size=${size}`,
+  ]);
+  const shot = decodePng(fs.readFileSync(shotPath));
+  const cropped = crop(shot, size, size);
+  const out = path.join(outDir, `icon-${size}.png`);
+  fs.writeFileSync(out, encodePng(size, size, cropped));
+  console.log(`icons/icon-${size}.png (${size}x${size})`);
+}
+
+fs.rmSync(scratchProfile, { recursive: true, force: true });
+
+// ---------- minimal PNG codec (8-bit RGBA only) ----------
+
+function decodePng(buf) {
+  const width = buf.readUInt32BE(16);
+  const height = buf.readUInt32BE(20);
+  const bitDepth = buf[24];
+  const colorType = buf[25];
+  if (bitDepth !== 8 || colorType !== 6) {
+    throw new Error(`expected 8-bit RGBA png, got depth=${bitDepth} colorType=${colorType}`);
+  }
+  const idat = [];
+  let offset = 8;
+  while (offset < buf.length) {
+    const length = buf.readUInt32BE(offset);
+    const type = buf.toString("ascii", offset + 4, offset + 8);
+    if (type === "IDAT") idat.push(buf.subarray(offset + 8, offset + 8 + length));
+    offset += 12 + length;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const bpp = 4;
+  const stride = width * bpp;
+  const pixels = Buffer.alloc(height * stride);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    const line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
+    const prev = y > 0 ? pixels.subarray((y - 1) * stride, y * stride) : null;
+    const cur = pixels.subarray(y * stride, (y + 1) * stride);
+    for (let x = 0; x < stride; x++) {
+      const a = x >= bpp ? cur[x - bpp] : 0;
+      const b = prev ? prev[x] : 0;
+      const c = x >= bpp && prev ? prev[x - bpp] : 0;
+      let value = line[x];
+      switch (filter) {
+        case 0: break;
+        case 1: value = (value + a) & 0xff; break;
+        case 2: value = (value + b) & 0xff; break;
+        case 3: value = (value + ((a + b) >> 1)) & 0xff; break;
+        case 4: value = (value + paeth(a, b, c)) & 0xff; break;
+        default: throw new Error(`unsupported png filter ${filter}`);
       }
-      px.set(color, i);
+      cur[x] = value;
     }
   }
-  return px;
+  return { width, height, pixels };
+}
+
+function paeth(a, b, c) {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  if (pb <= pc) return b;
+  return c;
+}
+
+function crop(image, width, height) {
+  const out = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    image.pixels.copy(out, y * width * 4, y * image.width * 4, y * image.width * 4 + width * 4);
+  }
+  return out;
 }
 
 function encodePng(width, height, rgba) {
-  const raw = Buffer.alloc((width * 4 + 1) * height);
+  const stride = width * 4;
+  const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y++) {
-    raw[y * (width * 4 + 1)] = 0; // filter type 0 per scanline
-    raw.set(rgba.subarray(y * width * 4, (y + 1) * width * 4), y * (width * 4 + 1) + 1);
+    raw[y * (stride + 1)] = 0;
+    rgba.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // color type RGBA
+  ihdr[8] = 8;
+  ihdr[9] = 6;
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
@@ -80,7 +162,6 @@ function chunk(type, data) {
   return buf;
 }
 
-let CRC_TABLE = null;
 function crc32(buf) {
   if (!CRC_TABLE) {
     CRC_TABLE = new Uint32Array(256);
@@ -94,5 +175,3 @@ function crc32(buf) {
   for (const byte of buf) crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
 }
-
-main();
