@@ -43,6 +43,12 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/content/page-hook.ts")],
+    outfile: path.join(dist, "page-hook.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/popup/index.ts")],
     outfile: path.join(dist, "popup.js"),
     format: "iife",

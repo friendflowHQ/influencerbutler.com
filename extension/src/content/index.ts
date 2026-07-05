@@ -1,5 +1,10 @@
 import { detectPageType, type PageType } from "./page-type";
-import { extractCarousel, type CarouselResult } from "../amazon/video-carousel";
+import {
+  classifiedCount,
+  extractCarousel,
+  extractFromText,
+  type CarouselResult,
+} from "../amazon/video-carousel";
 import { extractSignals, type ProductSignals } from "../amazon/product-signals";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
@@ -20,6 +25,10 @@ import type { Finding, ProductScanFinding } from "../transport/types";
 
 let currentUrl = "";
 let lastStatus: PageStatus = { pageType: "other", toolSummaries: [] };
+// Video-widget network payloads captured by the MAIN-world page hook
+// (src/content/page-hook.ts), plus how much the rendered panel classified.
+let capturedVideoData: CarouselResult[] = [];
+let renderedClassified = -1;
 
 void main();
 
@@ -34,7 +43,29 @@ async function main(): Promise<void> {
     }
     return false;
   });
+  document.addEventListener("ib-ext-video-data", (event) => {
+    guard("video-data-hook", () => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (typeof detail !== "string") return;
+      const result = extractFromText(detail);
+      if (!result) return;
+      capturedVideoData.push(result);
+      log("content", `captured widget payload: ${classifiedCount(result)} classified`);
+      rebuildIfImproved();
+    });
+  });
   await runForPage();
+}
+
+// The widget's classified data can land well after first render (it only
+// loads once the video section is on screen). Whenever a better source
+// appears, rebuild the panel from scratch.
+function rebuildIfImproved(): void {
+  const probe = extractCarousel(document, capturedVideoData);
+  if (classifiedCount(probe) > renderedClassified) {
+    removeHost();
+    void runForPage();
+  }
 }
 
 async function runForPage(): Promise<void> {
@@ -46,7 +77,8 @@ async function runForPage(): Promise<void> {
 
   if (pageType === "product") {
     guard("product-tools", () => {
-      const carousel = extractCarousel(document);
+      const carousel = extractCarousel(document, capturedVideoData);
+      renderedClassified = classifiedCount(carousel);
       const signals = extractSignals(document, currentUrl);
 
       if (settings.tools.videoCounts) {
@@ -79,10 +111,10 @@ async function runForPage(): Promise<void> {
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
       // The video widget's classified data only hydrates once it scrolls
-      // into view (verified live 2026-07-04): until then we only have the
-      // image-block total. Poll for the state scripts and rebuild the panel
-      // when the real breakdown lands.
-      if (carousel.strategy !== "json") watchForVideoHydration();
+      // into view, and may arrive via state scripts, rail DOM, or the
+      // network hook. While any videos remain unclassified, keep polling
+      // the DOM sources and rebuild when coverage improves.
+      if (carousel.counts.unknown > 0) watchForVideoHydration();
     });
   } else if (pageType === "order-history") {
     guard("order-history", () => {
@@ -97,9 +129,10 @@ async function runForPage(): Promise<void> {
   }
 }
 
-// Re-extract every 2.5s until the widget's state scripts appear (the user
-// scrolling the video section into view triggers them), then rebuild the
-// panel with the classified counts. Gives up after 2 minutes.
+// Re-extract every 2.5s until classification coverage stops improving (the
+// user scrolling the video section into view is what triggers Amazon to
+// load the data). Gives up after 2 minutes; the network hook can still
+// trigger a rebuild any time after that.
 let hydrationWatch: number | null = null;
 
 function watchForVideoHydration(): void {
@@ -113,13 +146,7 @@ function watchForVideoHydration(): void {
       hydrationWatch = null;
       return;
     }
-    const probe = extractCarousel(document);
-    if (probe.strategy === "json") {
-      window.clearInterval(hydrationWatch as number);
-      hydrationWatch = null;
-      removeHost();
-      void runForPage();
-    }
+    rebuildIfImproved();
   }, 2500);
 }
 
@@ -165,6 +192,8 @@ function emitProductScan(
 function watchSpaNavigation(): void {
   const notice = () => {
     if (location.href === currentUrl) return;
+    capturedVideoData = [];
+    renderedClassified = -1;
     removeHost();
     void runForPage();
   };
