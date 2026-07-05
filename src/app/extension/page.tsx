@@ -62,7 +62,7 @@ const FAQ = [
   },
   {
     q: "Is my data private?",
-    a: "The extension stores everything locally in your browser. Findings leave your machine only if you connect your license key and keep sync turned on, and then only to your own Influencer Butler dashboard.",
+    a: "The extension stores everything locally in your browser. Findings leave your machine only if you connect your license key and keep sync turned on, and then only to your own Influencer Butler dashboard. No tracking, no analytics, no sale of data: read the full extension privacy policy at influencerbutler.com/extension/privacy.",
   },
   {
     q: "Which marketplaces are supported?",
@@ -331,6 +331,7 @@ export default function ExtensionLandingPage() {
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>
             <a href="/legal/privacy.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Privacy Policy</a>
+            <Link href="/extension/privacy" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension Privacy</Link>
             <a href="/legal/eula.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">EULA</a>
             <a href="/legal/terms.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Terms of Service</a>
           </div>

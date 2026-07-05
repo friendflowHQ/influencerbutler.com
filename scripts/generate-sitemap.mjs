@@ -78,6 +78,12 @@ async function main() {
     changefreq: "weekly",
     priority: "0.8",
   });
+  entries.push({
+    loc: `${SITE_ORIGIN}/extension/privacy`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "monthly",
+    priority: "0.3",
+  });
 
   // Blog is a public Next route (src/app/blog), not a static .html page, so
   // the walk above never sees it. Pull the post list from the blog manifest
