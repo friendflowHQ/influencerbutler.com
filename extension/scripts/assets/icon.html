@@ -80,7 +80,12 @@
     const out = document.getElementById("out");
     out.width = size;
     out.height = size;
-    const margin = size >= 48 ? Math.round(size * 0.04) : 0;
+    // Toolbar sizes (16/32) sit on light or dark browser chrome, and the
+    // mark is mostly black, so give them a white disc backing. Invisible on
+    // light toolbars, keeps the mark readable on dark ones. Store and
+    // management-page sizes (48/128) stay the pure logo on transparent.
+    const disc = size <= 32;
+    const margin = disc ? Math.round(size * 0.12) : size >= 48 ? Math.round(size * 0.04) : 0;
     const box = size - margin * 2;
     const scale = Math.min(box / cw, box / ch);
     const dw = cw * scale;
@@ -99,6 +104,12 @@
 
     const ctx = out.getContext("2d");
     ctx.imageSmoothingQuality = "high";
+    if (disc) {
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.drawImage(stage, sx, sy, sw, sh, (size - dw) / 2, (size - dh) / 2, dw, dh);
     document.title = "done";
   };
