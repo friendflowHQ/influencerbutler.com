@@ -112,6 +112,37 @@ async function main() {
     console.log(`generate-sitemap: no blog manifest (${err.code || err.message})`);
   }
 
+  // The free course lives on public Next routes (/course/amazon-influencer and
+  // one page per module). Unlike /help these are NOT auth-gated; pull the
+  // module list from the tutorials manifest (entries with a `series`).
+  try {
+    const tutManifestPath = path.join(repoRoot, "content", "tutorials", "_index.json");
+    const tutRaw = await readFile(tutManifestPath, "utf8");
+    const tut = JSON.parse(tutRaw);
+    const modules = (Array.isArray(tut.tutorials) ? tut.tutorials : []).filter(
+      (t) => t && t.series === "amazon-influencer-course" && t.id,
+    );
+    if (modules.length) {
+      entries.push({
+        loc: `${SITE_ORIGIN}/course/amazon-influencer`,
+        lastmod: fmtDate(new Date()),
+        changefreq: "monthly",
+        priority: "0.8",
+      });
+      for (const m of modules) {
+        entries.push({
+          loc: `${SITE_ORIGIN}/course/amazon-influencer/${m.id}`,
+          lastmod: fmtDate(new Date()),
+          changefreq: "monthly",
+          priority: "0.7",
+        });
+      }
+      console.log(`generate-sitemap: added course hub + ${modules.length} modules`);
+    }
+  } catch (err) {
+    console.log(`generate-sitemap: no tutorials manifest (${err.code || err.message})`);
+  }
+
   entries.sort((a, b) => a.loc.localeCompare(b.loc));
 
   const body = entries

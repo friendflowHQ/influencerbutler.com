@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadManifest, loadTutorial } from "@/lib/tutorials";
+import { getCourseModules, getSeriesForTutorial } from "@/lib/course";
+import CourseProgress from "@/components/course-progress";
 
 export const revalidate = 300;
 
@@ -39,6 +41,14 @@ export default async function TutorialPage({
   const siblings = manifest.tutorials.filter((entry) => entry.category === category && entry.id !== slug);
   const title = (tutorial.frontmatter.title as string) || current?.title || slug;
   const summary = (tutorial.frontmatter.summary as string) || current?.summary || "";
+  const seriesId = getSeriesForTutorial(current);
+  const courseModules = seriesId
+    ? getCourseModules(manifest, seriesId).map((m) => ({
+        id: m.id,
+        title: m.title,
+        seriesOrder: m.seriesOrder,
+      }))
+    : [];
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -59,7 +69,7 @@ export default async function TutorialPage({
       </header>
 
       <section className="mx-auto grid max-w-6xl gap-12 px-6 py-12 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <article>
+        <article className={seriesId ? "course-article" : undefined}>
           <Link
             href="/help"
             className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-600"
@@ -75,6 +85,14 @@ export default async function TutorialPage({
             className="help-tutorial-body"
             dangerouslySetInnerHTML={{ __html: tutorial.html }}
           />
+          {seriesId ? (
+            <CourseProgress
+              seriesId={seriesId}
+              moduleId={slug}
+              modules={courseModules}
+              basePath="/help/tutorials"
+            />
+          ) : null}
         </article>
 
         <aside className="space-y-8 lg:sticky lg:top-8 lg:self-start lg:border-l lg:border-slate-200 lg:pl-8">
