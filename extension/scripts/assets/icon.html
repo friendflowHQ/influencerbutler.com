@@ -1,0 +1,48 @@
+<!doctype html>
+<!--
+  Source for the extension icons (static/icons/icon-*.png).
+  Vector recreation of the Influencer Butler mark (bowler hat, orange face,
+  tux and bowtie from public/assets/influencer-butler-logo.png) on the brand
+  orange rounded square, so it stays crisp at 16px.
+  Render with: npm run icons (extension/scripts/gen-icons.mjs)
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  /* Default fills the viewport; the generator passes ?size=N to pin the SVG
+     to exactly N CSS pixels in the top-left corner for cropping. */
+  svg { display: block; width: 100vw; height: 100vh; }
+</style>
+<script>
+  addEventListener("DOMContentLoaded", () => {
+    const size = new URLSearchParams(location.search).get("size");
+    if (size) {
+      const svg = document.querySelector("svg");
+      svg.style.width = size + "px";
+      svg.style.height = size + "px";
+    }
+  });
+</script>
+</head>
+<body>
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- brand orange badge -->
+  <rect x="2" y="2" width="124" height="124" rx="26" fill="#f97316" />
+  <!-- tuxedo shoulders -->
+  <path d="M18 126 Q22 90 64 84 Q106 90 110 126 Z" fill="#141a24" />
+  <!-- shirt V -->
+  <path d="M50 86 L64 112 L78 86 Z" fill="#fff7ed" />
+  <!-- face -->
+  <circle cx="64" cy="52" r="22" fill="#fdba74" />
+  <!-- bowler hat -->
+  <path d="M46 42 A18 17 0 0 1 82 42 L82 45 L46 45 Z" fill="#141a24" />
+  <rect x="34" y="42" width="60" height="8" rx="4" fill="#141a24" />
+  <!-- bowtie -->
+  <path d="M45 82 L45 97 L60 89.5 Z" fill="#141a24" />
+  <path d="M83 82 L83 97 L68 89.5 Z" fill="#141a24" />
+  <circle cx="64" cy="89.5" r="5" fill="#141a24" />
+</svg>
+</body>
+</html>

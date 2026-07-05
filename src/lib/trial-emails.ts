@@ -49,7 +49,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,
         `  2. Paste your license key (on your welcome page) into the app`,
-        `  3. Connect your first creator account and schedule a post`,
+        `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
         v.monthlyCode
           ? `When your trial ends, use code ${v.monthlyCode} for ${v.monthlyPercent}% off your first month. It's unique to you and expires shortly after your trial.`
@@ -66,18 +66,18 @@ const COPY: Record<TrialTier, TierCopy> = {
     },
   },
   day1: {
-    subject: "3 things power users do first with Influencer Butler",
+    subject: "Day 1 of your trial: three butlers to switch on today",
     build: (v) => {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're one day into your trial - here are the three moves that separate power users from everyone else:`,
+        `You're one day into your 3-day trial - here are the three fastest ways to see real results before it ends:`,
         ``,
-        `  1. Batch schedule a week of posts in one sitting. Consistency > volume.`,
-        `  2. Enable auto-retries for failed uploads so you never lose a queued post.`,
-        `  3. Duplicate your best-performing post across all connected accounts.`,
+        `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
+        `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
+        `  3. Set up Amazon Daily Deals to find deals in your niche and post them automatically.`,
         ``,
-        `Full playbook: https://www.influencerbutler.com/docs`,
+        `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
         ``,
         `Reply with any question - a real human will answer.`,
         ``,
@@ -113,6 +113,10 @@ const COPY: Record<TrialTier, TierCopy> = {
       if (v.monthlyCode) {
         lines.push(`Not ready for annual? Your ${v.monthlyPercent}% off monthly code still works.`, ``);
       }
+      lines.push(
+        `Not for you? No hard feelings - cancel in one click from your dashboard before your trial ends and you won't be billed: ${v.subscriptionUrl}`,
+        ``,
+      );
       lines.push(COMMUNITY_LINE, ``, `- The Influencer Butler team`);
       return lines.join("\n");
     },

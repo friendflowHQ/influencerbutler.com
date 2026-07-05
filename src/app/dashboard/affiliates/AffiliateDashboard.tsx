@@ -7,6 +7,7 @@ import SocialShareButtons from "./SocialShareButtons";
 import LinkBuilder from "./LinkBuilder";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
 import CompetitorPlaybook from "./CompetitorPlaybook";
+import PlannerCallout from "./PlannerCallout";
 import {
   formatUsdFromCents,
   buildShareLink,
@@ -193,6 +194,8 @@ export default function AffiliateDashboard({
         <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
         <InfoRow label="Payout processor" value="Lemon Squeezy" hint="Paid monthly" />
       </section>
+
+      {isActive ? <PlannerCallout /> : null}
 
       {isActive ? <CompetitorPlaybook /> : null}
 

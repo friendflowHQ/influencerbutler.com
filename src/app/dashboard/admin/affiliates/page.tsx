@@ -261,6 +261,7 @@ export default function AdminAffiliatesPage() {
   const [rosterError, setRosterError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RosterFilter>("all");
+  const [checkRow, setCheckRow] = useState<Record<string, LinkRowState>>({});
 
   // Reconciliation (manual LS linking) state.
   const [stuck, setStuck] = useState<StuckAffiliate[]>([]);
@@ -405,6 +406,54 @@ export default function AdminAffiliatesPage() {
 
   const setLink = (userId: string, state: LinkRowState) =>
     setLinkRow((prev) => ({ ...prev, [userId]: state }));
+
+  const setCheck = (userId: string, state: LinkRowState) =>
+    setCheckRow((prev) => ({ ...prev, [userId]: state }));
+
+  // Live re-check of one roster row against Lemon Squeezy. Links on the spot
+  // if the affiliate finished LS portal signup but the webhook never landed.
+  const onCheckLs = async (row: RosterRow) => {
+    setCheck(row.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-check-ls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.userId }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        found?: boolean;
+        alreadyLinked?: boolean;
+        lsStatus?: string;
+        checkedEmails?: string[];
+      };
+      if (!res.ok) {
+        setCheck(row.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      if (!json.found) {
+        const emails = json.checkedEmails?.join(", ") ?? "their email";
+        setCheck(row.userId, {
+          kind: "error",
+          message: `No active Lemon Squeezy affiliate for ${emails} yet. They still need to finish LS portal signup, or use the Reconcile tab if they signed up under a different email.`,
+        });
+        return;
+      }
+      if (json.alreadyLinked) {
+        setCheck(row.userId, { kind: "success", message: "Already linked. Refreshing..." });
+      } else {
+        const note =
+          json.lsStatus && json.lsStatus !== "active" ? ` (LS status: ${json.lsStatus})` : "";
+        setCheck(row.userId, { kind: "success", message: `Linked${note}. Refreshing...` });
+      }
+      setTimeout(() => {
+        void loadRoster();
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      setCheck(row.userId, { kind: "error", message: "Network error." });
+    }
+  };
 
   const suggestedLsId = (aff: StuckAffiliate): string =>
     lsAffiliates.find((l) => l.emailMatchesUserId === aff.userId && !l.linkedToUserId)?.id ?? "";
@@ -748,9 +797,11 @@ export default function AdminAffiliatesPage() {
           setStatusFilter={setStatusFilter}
           rowState={rowState}
           termsRow={termsRow}
+          checkRow={checkRow}
           onSaveTerms={onSaveTerms}
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
+          onCheckLs={onCheckLs}
         />
       ) : null}
 
@@ -1142,9 +1193,11 @@ function RosterTab({
   setStatusFilter,
   rowState,
   termsRow,
+  checkRow,
   onSaveTerms,
   onApprove,
   onReject,
+  onCheckLs,
 }: {
   loading: boolean;
   error: string | null;
@@ -1157,6 +1210,7 @@ function RosterTab({
   setStatusFilter: (value: RosterFilter) => void;
   rowState: Record<string, RowState>;
   termsRow: Record<string, LinkRowState>;
+  checkRow: Record<string, LinkRowState>;
   onSaveTerms: (
     userId: string,
     commissionPercent: number | null,
@@ -1164,6 +1218,7 @@ function RosterTab({
   ) => Promise<boolean>;
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
+  onCheckLs: (row: RosterRow) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -1237,6 +1292,11 @@ function RosterTab({
               {rows.map((r) => {
                 const state = rowState[r.userId] ?? { kind: "idle" };
                 const working = state.kind === "working";
+                const check = checkRow[r.userId] ?? { kind: "idle" };
+                const notLinked =
+                  !r.lsLinked &&
+                  r.appStatus !== "rejected" &&
+                  (r.appStatus === "approved" || r.isAffiliate);
                 return (
                   <tr key={r.userId} className="align-top hover:bg-slate-50/60">
                     <td className="px-4 py-3">
@@ -1315,12 +1375,32 @@ function RosterTab({
                             <span className="text-xs text-red-700">{state.message}</span>
                           ) : null}
                         </div>
-                      ) : state.kind === "success" ? (
-                        <span className="text-xs text-emerald-700">{state.message}</span>
-                      ) : state.kind === "error" ? (
-                        <span className="text-xs text-red-700">{state.message}</span>
                       ) : (
-                        <span className="text-xs text-slate-400">-</span>
+                        <div className="flex max-w-[16rem] flex-col gap-1">
+                          {notLinked ? (
+                            <button
+                              type="button"
+                              onClick={() => onCheckLs(r)}
+                              disabled={check.kind === "working"}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
+                            >
+                              {check.kind === "working" ? "Checking…" : "Check LS link"}
+                            </button>
+                          ) : null}
+                          {check.kind === "success" ? (
+                            <span className="text-xs text-emerald-700">{check.message}</span>
+                          ) : null}
+                          {check.kind === "error" ? (
+                            <span className="text-xs text-red-700">{check.message}</span>
+                          ) : null}
+                          {state.kind === "success" ? (
+                            <span className="text-xs text-emerald-700">{state.message}</span>
+                          ) : state.kind === "error" ? (
+                            <span className="text-xs text-red-700">{state.message}</span>
+                          ) : !notLinked && check.kind === "idle" ? (
+                            <span className="text-xs text-slate-400">-</span>
+                          ) : null}
+                        </div>
                       )}
                     </td>
                   </tr>

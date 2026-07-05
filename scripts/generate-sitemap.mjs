@@ -70,6 +70,21 @@ async function main() {
   // /help is auth-gated (see middleware.ts) so it must not appear in the
   // public sitemap or be crawled. robots.txt has matching Disallow rules.
 
+  // /extension is a public Next route (src/app/extension), not a static
+  // .html page, so the walk above never sees it either.
+  entries.push({
+    loc: `${SITE_ORIGIN}/extension`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "weekly",
+    priority: "0.8",
+  });
+  entries.push({
+    loc: `${SITE_ORIGIN}/extension/privacy`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "monthly",
+    priority: "0.3",
+  });
+
   // Blog is a public Next route (src/app/blog), not a static .html page, so
   // the walk above never sees it. Pull the post list from the blog manifest
   // and emit /blog plus each /blog/<slug> URL.

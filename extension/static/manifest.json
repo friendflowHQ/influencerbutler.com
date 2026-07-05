@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Influencer Butler",
+  "version": "0.1.0",
+  "description": "Free tools for Amazon Influencers: video counts on any product, content gaps in your orders, Butler Approved seals, and storefront checks.",
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://www.amazon.com/*",
+    "https://www.influencerbutler.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.com/dp/*",
+        "https://www.amazon.com/*/dp/*",
+        "https://www.amazon.com/gp/product/*",
+        "https://www.amazon.com/gp/css/order-history*",
+        "https://www.amazon.com/your-orders/*",
+        "https://www.amazon.com/shop/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

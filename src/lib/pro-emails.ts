@@ -23,7 +23,7 @@ type ProVars = {
 };
 
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
-const DOCS_URL = "https://www.influencerbutler.com/docs";
+const HELP_URL = "https://www.influencerbutler.com/help";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 // Chooser page so Mac recipients get the right build, not the Windows .exe.
 const DOWNLOAD_URL = "https://www.influencerbutler.com/download";
@@ -41,7 +41,7 @@ const COPY: Record<ProTier, TierCopy> = {
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: ${DOWNLOAD_URL}`,
         `  2. Paste your license key (on your welcome page) into the app`,
-        `  3. Connect your first creator account and schedule a post`,
+        `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
         `Manage your plan anytime: ${v.subscriptionUrl}`,
         ``,
@@ -61,11 +61,11 @@ const COPY: Record<ProTier, TierCopy> = {
         ``,
         `Now that you're set up, here are the three moves that separate power users from everyone else:`,
         ``,
-        `  1. Batch schedule a week of posts in one sitting. Consistency beats volume.`,
-        `  2. Enable auto-retries for failed uploads so you never lose a queued post.`,
-        `  3. Duplicate your best-performing post across all connected accounts.`,
+        `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
+        `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
+        `  3. Set up Amazon Daily Deals to find deals in your niche and post them automatically.`,
         ``,
-        `Full playbook: ${DOCS_URL}`,
+        `Step-by-step tutorials for every butler: ${HELP_URL}`,
         ``,
         `Reply with any question - a real human will answer.`,
         ``,
@@ -87,7 +87,7 @@ const COPY: Record<ProTier, TierCopy> = {
         `  - Your storefront stays current without manual relinking.`,
         `  - You spend your time creating, not chasing payouts.`,
         ``,
-        `Walkthrough: ${DOCS_URL}`,
+        `Walkthrough: ${HELP_URL}`,
         ``,
         `Manage your plan: ${v.subscriptionUrl}`,
         ``,
