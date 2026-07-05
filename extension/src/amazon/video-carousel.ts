@@ -47,30 +47,60 @@ export function classifyCreatorType(raw: string): CreatorClass {
   return "unknown";
 }
 
-export function extractCarousel(doc: Document): CarouselResult {
+// How many videos a result actually classified (vs honest unknowns).
+export function classifiedCount(result: CarouselResult | null): number {
+  if (!result) return 0;
+  return result.counts.total - result.counts.unknown;
+}
+
+// Amazon serves several widget variants (state scripts, hero + rail DOM)
+// and none is reliably present, so extract from every source available,
+// including any network payloads the page hook captured (extras), and keep
+// whichever classified the most videos. The image-block total (#videoCount)
+// is authoritative for the grand total; shortfall is reported as
+// unclassified.
+export function extractCarousel(doc: Document, extras: CarouselResult[] = []): CarouselResult {
+  const candidates: CarouselResult[] = [...extras];
   const fromJson = extractFromScripts(doc);
-  if (fromJson && fromJson.counts.total > 0) {
-    // The state scripts hold the classified breakdown, but the image-block
-    // total is the authoritative video count; report any shortfall honestly.
-    const headerTotal = readHeaderCount(doc);
-    if (headerTotal !== null && headerTotal > fromJson.counts.total) {
-      fromJson.counts.unknown += headerTotal - fromJson.counts.total;
-      fromJson.counts.total = headerTotal;
-    }
-    return fromJson;
-  }
+  if (fromJson) candidates.push(fromJson);
   const fromDom = extractFromDom(doc);
-  if (fromDom.counts.total > 0) return fromDom;
+  candidates.push(fromDom);
+
+  let best: CarouselResult | null = null;
+  for (const candidate of candidates) {
+    if (
+      !best ||
+      classifiedCount(candidate) > classifiedCount(best) ||
+      (classifiedCount(candidate) === classifiedCount(best) &&
+        candidate.counts.total > best.counts.total)
+    ) {
+      best = candidate;
+    }
+  }
+
+  const headerTotal = readHeaderCount(doc);
+  if (best && best.counts.total > 0) {
+    if (headerTotal !== null && headerTotal > best.counts.total) {
+      best = {
+        ...best,
+        counts: {
+          ...best.counts,
+          unknown: best.counts.unknown + (headerTotal - best.counts.total),
+          total: headerTotal,
+        },
+      };
+    }
+    return best;
+  }
   // No hydrated data (widget not scrolled into view yet, or a fetched
   // document): the image-block total is still trustworthy on its own.
-  const headerTotal = readHeaderCount(doc);
   if (headerTotal !== null) {
     const counts = emptyCounts();
     counts.total = headerTotal;
     counts.unknown = headerTotal;
     return { counts, videos: [], strategy: "header" };
   }
-  return fromJson ?? fromDom;
+  return best ?? fromDom;
 }
 
 const CREATOR_TYPE_RE = /"creatorType"\s*:\s*"([A-Za-z_ -]+)"/g;
@@ -88,30 +118,50 @@ function extractFromScripts(doc: Document): CarouselResult | null {
   for (const script of Array.from(doc.querySelectorAll("script"))) {
     const text = script.textContent;
     if (!text || text.length < 40 || !text.includes("creatorType")) continue;
-
-    const types = allMatches(text, CREATOR_TYPE_RE);
-    if (types.length === 0) continue;
-    const titles = allMatches(text, TITLE_RE);
-    const names = allMatches(text, CREATOR_NAME_RE);
-
-    const fingerprint = types.join("|") + "::" + titles.join("|");
-    if (seenPayloads.has(fingerprint)) continue;
-    seenPayloads.add(fingerprint);
-
-    for (const [index, raw] of types.entries()) {
-      const kind = classifyCreatorType(raw);
-      counts[kind] += 1;
-      counts.total += 1;
-      videos.push({
-        title: decodeJsonString(titles[index] ?? null),
-        creatorName: decodeJsonString(names[index] ?? null),
-        creatorType: kind,
-      });
-    }
+    accumulateFromText(text, counts, videos, seenPayloads);
   }
 
   if (counts.total === 0) return null;
   return { counts, videos, strategy: "json" };
+}
+
+// Extracts a classified result from any raw text payload carrying
+// creatorType markers: used for the network responses the page hook
+// captures from the video widget's own data fetch.
+export function extractFromText(text: string): CarouselResult | null {
+  if (!text || !text.includes("creatorType")) return null;
+  const counts = emptyCounts();
+  const videos: CarouselVideo[] = [];
+  accumulateFromText(text, counts, videos, new Set<string>());
+  if (counts.total === 0) return null;
+  return { counts, videos, strategy: "json" };
+}
+
+function accumulateFromText(
+  text: string,
+  counts: VideoCounts,
+  videos: CarouselVideo[],
+  seenPayloads: Set<string>,
+): void {
+  const types = allMatches(text, CREATOR_TYPE_RE);
+  if (types.length === 0) return;
+  const titles = allMatches(text, TITLE_RE);
+  const names = allMatches(text, CREATOR_NAME_RE);
+
+  const fingerprint = types.join("|") + "::" + titles.join("|");
+  if (seenPayloads.has(fingerprint)) return;
+  seenPayloads.add(fingerprint);
+
+  for (const [index, raw] of types.entries()) {
+    const kind = classifyCreatorType(raw);
+    counts[kind] += 1;
+    counts.total += 1;
+    videos.push({
+      title: decodeJsonString(titles[index] ?? null),
+      creatorName: decodeJsonString(names[index] ?? null),
+      creatorType: kind,
+    });
+  }
 }
 
 function extractFromDom(doc: Document): CarouselResult {
@@ -126,8 +176,10 @@ function extractFromDom(doc: Document): CarouselResult {
   for (const card of cards) {
     const creatorLink = query(card, "videoCardCreatorLink");
     const byline = (query(card, "videoCardByline")?.textContent ?? "").trim();
+    const cardText = (card.textContent ?? "").replace(/\s+/g, " ");
     let kind: CreatorClass = "unknown";
-    if (creatorLink) {
+    if (creatorLink || /earns commissions/i.test(cardText)) {
+      // Amazon's FTC disclosure label only appears on influencer videos.
       kind = "influencer";
     } else if (/^brand:/i.test(byline) || (brandName && normalizeBrand(byline) === brandName)) {
       kind = "brand";
