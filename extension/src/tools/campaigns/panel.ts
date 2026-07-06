@@ -1,4 +1,5 @@
 import { addSection, chip, el } from "../../ui/components";
+import { t } from "../../i18n";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import type { ProductSignals } from "../../amazon/product-signals";
 
@@ -15,20 +16,19 @@ export async function renderCampaigns(signals: ProductSignals): Promise<void> {
   if (!loaded.cc && !loaded.spcc) return;
 
   const flags = membership(loaded, signals.asin);
-  const section = addSection("Campaigns");
+  const section = addSection(t().campaigns);
 
   if (!flags.cc && !flags.spcc) {
-    section.append(el("p", "note", "No Creator Connections or SPCC campaign found for this product."));
+    section.append(el("p", "note", t().noCampaign));
     return;
   }
 
   const row = el("div", "counts");
-  if (flags.cc) row.append(chip("good", "Creator Connections available"));
-  if (flags.spcc) row.append(chip("good", "SPCC available"));
+  if (flags.cc) row.append(chip("good", t().ccAvailable));
+  if (flags.spcc) row.append(chip("good", t().spccAvailable));
   section.append(row);
 
   const note = el("p", "note");
-  note.textContent =
-    "Accept it from the Send to your butler app section below (the app confirms and accepts).";
+  note.textContent = t().campaignAcceptNote;
   section.append(note);
 }

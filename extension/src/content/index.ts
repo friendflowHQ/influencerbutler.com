@@ -17,6 +17,7 @@ import { renderHudActions } from "../tools/hud-actions/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { guard } from "../shared/guard";
 import { setDebug, log } from "../shared/log";
+import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
 import { sendToBackground, type PageStatus, type RuntimeMessage } from "../shared/messages";
@@ -75,6 +76,7 @@ async function runForPage(): Promise<void> {
   currentUrl = location.href;
   const pageType = detectPageType(currentUrl);
   const settings = await getSettings();
+  setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
   log("content", `page type: ${pageType}`);
 
@@ -87,8 +89,8 @@ async function runForPage(): Promise<void> {
       if (settings.tools.videoCounts) {
         guard("video-counts", () => renderVideoCounts(carousel));
         lastStatus.toolSummaries.push({
-          label: "Videos",
-          value: `${carousel.counts.total} total, ${carousel.counts.influencer} influencer`,
+          label: t().sumVideos,
+          value: t().sumVideosValue(carousel.counts.total, carousel.counts.influencer),
         });
       }
 
@@ -101,8 +103,8 @@ async function runForPage(): Promise<void> {
           approvedRecord = criteriaToRecord(verdict);
           approvedFlag = verdict.approved;
           lastStatus.toolSummaries.push({
-            label: "Butler Approved",
-            value: verdict.approved ? "Yes" : "No",
+            label: t().sumApproved,
+            value: verdict.approved ? t().yes : t().no,
           });
         });
       }
@@ -130,12 +132,12 @@ async function runForPage(): Promise<void> {
     guard("order-history", () => {
       if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
       if (settings.tools.ordersButler) initOrdersButler("amazon.com");
-      lastStatus.toolSummaries.push({ label: "Order scan", value: "Ready" });
+      lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
-      lastStatus.toolSummaries.push({ label: "Storefront checkup", value: "Ready" });
+      lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   }
 }

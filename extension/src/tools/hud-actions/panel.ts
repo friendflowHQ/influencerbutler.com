@@ -1,4 +1,5 @@
 import { addSection, el } from "../../ui/components";
+import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
 import type { AuthStatus, HudCommandResult, HudStatus } from "../../shared/messages";
@@ -13,7 +14,7 @@ import type { ProductSignals } from "../../amazon/product-signals";
 
 export function renderHudActions(signals: ProductSignals): void {
   if (!signals.asin) return;
-  const section = addSection("Send to your butler app");
+  const section = addSection(t().sendToApp);
   const body = el("div");
   const status = el("p", "progress");
   section.append(body, status);
@@ -46,8 +47,8 @@ function renderConnected(
     void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command }).then((result) => {
       disableAll(body, false);
       status.textContent = result.ok
-        ? (result.message ?? "Sent to your app.")
-        : (result.message ?? "Could not reach the app. Is it still running?");
+        ? (result.message ?? t().sentToApp)
+        : (result.message ?? t().couldNotReachApp);
     });
   };
 
@@ -62,30 +63,30 @@ function renderConnected(
     picker.append(opt);
   }
   const dealBtn = el("button", "btn");
-  dealBtn.textContent = "Push to Daily Deals";
+  dealBtn.textContent = t().pushToDailyDeals;
   dealBtn.addEventListener("click", () =>
-    run({ type: "deal.push", workspace: picker.value, product }, "Pushing to your deals workspace..."),
+    run({ type: "deal.push", workspace: picker.value, product }, t().pushingDeals),
   );
   dealRow.append(picker, dealBtn);
   body.append(dealRow);
 
   // Content Butler + campaign acceptance.
   const contentBtn = el("button", "btn secondary");
-  contentBtn.textContent = "Send to Content Butler";
+  contentBtn.textContent = t().sendToContentButler;
   contentBtn.addEventListener("click", () =>
-    run({ type: "content.push", product }, "Sending to Content Butler..."),
+    run({ type: "content.push", product }, t().sendingContent),
   );
 
   const ccBtn = el("button", "btn secondary");
-  ccBtn.textContent = "Accept CC campaign";
+  ccBtn.textContent = t().acceptCc;
   ccBtn.addEventListener("click", () =>
-    run({ type: "campaign.accept", kind: "cc", product }, "Checking Creator Connections..."),
+    run({ type: "campaign.accept", kind: "cc", product }, t().checkingCc),
   );
 
   const spccBtn = el("button", "btn secondary");
-  spccBtn.textContent = "Accept SPCC campaign";
+  spccBtn.textContent = t().acceptSpcc;
   spccBtn.addEventListener("click", () =>
-    run({ type: "campaign.accept", kind: "spcc", product }, "Checking Sponsored Products..."),
+    run({ type: "campaign.accept", kind: "spcc", product }, t().checkingSpcc),
   );
 
   const grid = el("div", "row");
@@ -95,7 +96,7 @@ function renderConnected(
 
   const note = el("p", "note");
   const version = hud.appVersion ? ` (app ${hud.appVersion})` : "";
-  note.textContent = `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`;
+  note.textContent = t().connectedToApp(version);
   body.append(note);
 }
 
@@ -103,13 +104,11 @@ function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
   body.replaceChildren();
   const card = el("div", "seal fail");
   card.style.display = "block";
-  card.textContent = auth.signedIn
-    ? "Open the Influencer Butler desktop app to push this product into your Daily Deals, Content Butler, and to auto-accept campaigns."
-    : "Do the rest with the app: push this product to Daily Deals with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.";
+  card.textContent = auth.signedIn ? t().upsellSignedIn : t().upsellSignedOut;
   body.append(card);
 
   const cta = el("a", "btn");
-  cta.textContent = auth.signedIn ? "Open or install the app" : "Start your free trial";
+  cta.textContent = auth.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
   (cta as HTMLAnchorElement).href = APP_TRIAL_URL;
   (cta as HTMLAnchorElement).target = "_blank";
   cta.style.display = "inline-block";
@@ -118,7 +117,7 @@ function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
   body.append(cta);
 
   const note = el("p", "note");
-  note.textContent = "The scanning tools above are always free. The app adds the automation.";
+  note.textContent = t().toolsAlwaysFree;
   body.append(note);
 }
 
