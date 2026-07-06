@@ -8,6 +8,7 @@ import {
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
 import type { Settings } from "../storage/schema";
+import { setLocale, t } from "../i18n";
 
 // Popup: page status via the active tab's content script, account sign-in via
 // the background, settings straight to storage (content scripts pick changes
@@ -16,8 +17,28 @@ import type { Settings } from "../storage/schema";
 void init();
 
 async function init(): Promise<void> {
+  const settings = await getSettings();
+  setLocale(settings.locale);
+  applyStaticI18n();
   await Promise.all([renderPageStatus(), renderAccount(), renderSettings()]);
   wireFeedback();
+}
+
+// Translate the static popup chrome: every element carrying data-i18n gets its
+// text set, and data-i18n-ph sets an input/textarea placeholder. Interpolated
+// strings (counts, times) are handled inline where they are built.
+function applyStaticI18n(): void {
+  const dict = t() as unknown as Record<string, unknown>;
+  for (const node of Array.from(document.querySelectorAll<HTMLElement>("[data-i18n]"))) {
+    const value = dict[node.dataset.i18n ?? ""];
+    if (typeof value === "string") node.textContent = value;
+  }
+  for (const node of Array.from(document.querySelectorAll<HTMLElement>("[data-i18n-ph]"))) {
+    const value = dict[node.dataset.i18nPh ?? ""];
+    if (typeof value === "string") {
+      (node as HTMLInputElement | HTMLTextAreaElement).placeholder = value;
+    }
+  }
 }
 
 function wireFeedback(): void {
@@ -31,11 +52,11 @@ function wireFeedback(): void {
     if (honeypot.value) return; // bot
     const text = message.value.trim();
     if (text.length < 3) {
-      status.textContent = "Add a little more detail.";
+      status.textContent = t().feedbackAddDetail;
       return;
     }
     btn.disabled = true;
-    status.textContent = "Sending...";
+    status.textContent = t().feedbackSending;
     let pageUrl: string | undefined;
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -52,9 +73,9 @@ function wireFeedback(): void {
     btn.disabled = false;
     if (result.ok) {
       message.value = "";
-      status.textContent = "Thanks! Sent.";
+      status.textContent = t().feedbackThanks;
     } else {
-      status.textContent = result.error ?? "Could not send. Try again.";
+      status.textContent = result.error ?? t().feedbackFailed;
     }
   };
 }
@@ -65,18 +86,18 @@ async function renderPageStatus(): Promise<void> {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url?.includes("amazon.com")) {
-      text.textContent = "Open an Amazon product page, your orders, or your storefront to get started.";
+      text.textContent = t().openAmazonToStart;
       return;
     }
     const status = await chrome.tabs.sendMessage<unknown, PageStatus>(tab.id, { kind: "GET_PAGE_STATUS" });
     if (!status || status.pageType === "other") {
-      text.textContent = "This Amazon page has no butler tools. Try a product page.";
+      text.textContent = t().noToolsOnPage;
       return;
     }
     text.textContent = {
-      product: "Product page tools are active.",
-      "order-history": "Order history scan is ready.",
-      storefront: "Storefront checkup is ready.",
+      product: t().productToolsActive,
+      "order-history": t().orderScanReady,
+      storefront: t().storefrontCheckupReady,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
       list.hidden = false;
@@ -93,7 +114,7 @@ async function renderPageStatus(): Promise<void> {
       );
     }
   } catch {
-    text.textContent = "Reload the Amazon tab to activate the tools (the page was open before install).";
+    text.textContent = t().reloadTabToActivate;
   }
 }
 
@@ -109,16 +130,16 @@ async function renderAccount(): Promise<void> {
   signedIn.hidden = !status.signedIn;
 
   if (status.signedIn) {
-    byId("account-email").textContent = status.email ?? "connected";
+    byId("account-email").textContent = status.email ?? t().connectedFallback;
     const toggle = byId<HTMLInputElement>("sync-toggle");
     toggle.checked = settings.syncEnabled;
     toggle.onchange = () => void patchSettings({ syncEnabled: toggle.checked });
     byId("sync-status").textContent =
       status.queueDepth > 0
-        ? `${status.queueDepth} findings waiting to sync`
+        ? t().findingsWaiting(status.queueDepth)
         : status.lastSyncAt
-          ? `Last synced ${new Date(status.lastSyncAt).toLocaleTimeString()}`
-          : "Nothing to sync yet";
+          ? t().lastSynced(new Date(status.lastSyncAt).toLocaleTimeString())
+          : t().nothingToSync;
     byId("disconnect-btn").onclick = async () => {
       await sendToBackground({ kind: "SIGN_OUT" });
       await renderAccount();
@@ -140,13 +161,22 @@ async function renderAccount(): Promise<void> {
       await renderAccount();
     } else {
       errorEl.hidden = false;
-      errorEl.textContent = result.error ?? "That license key did not verify. Check it and try again.";
+      errorEl.textContent = result.error ?? t().licenseDidNotVerify;
     }
   };
 }
 
 async function renderSettings(): Promise<void> {
   const settings = await getSettings();
+
+  const language = byId<HTMLSelectElement>("set-language");
+  language.value = settings.locale;
+  language.onchange = async () => {
+    await patchSettings({ locale: language.value as Settings["locale"] });
+    // Re-render the whole popup in the chosen language. A reload is the simplest
+    // way to retranslate both the static chrome and the dynamic status lines.
+    location.reload();
+  };
 
   bindNumber("set-commission", settings.commissionRatePct, (v) => ({ commissionRatePct: v }));
   bindNumber("set-hourly", settings.hourlyValue, (v) => ({ hourlyValue: v }));

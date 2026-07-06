@@ -11,97 +11,105 @@
         <img src="icons/icon-32.png" alt="" width="20" height="20" />
         <span>Influencer Butler</span>
       </div>
-      <span class="tag">Free</span>
+      <span class="tag" data-i18n="tagFree">Free</span>
     </header>
 
     <main>
       <section id="page-status" class="card">
-        <h2>This page</h2>
-        <p id="page-status-text" class="muted">Checking the current tab...</p>
+        <h2 data-i18n="thisPageHeading">This page</h2>
+        <p id="page-status-text" class="muted" data-i18n="checkingTab">Checking the current tab...</p>
         <ul id="page-status-list" class="stats" hidden></ul>
       </section>
 
       <section id="account" class="card">
-        <h2>Account</h2>
+        <h2 data-i18n="accountHeading">Account</h2>
         <div id="signed-out">
-          <p class="muted">
+          <p class="muted" data-i18n="signedOutBlurb">
             Everything works without an account. Connect your Influencer Butler
             license key to sync findings to your dashboard and the desktop app.
           </p>
           <div class="row">
-            <input id="license-input" type="password" placeholder="License key" autocomplete="off" />
-            <button id="connect-btn" class="primary">Connect</button>
+            <input id="license-input" type="password" placeholder="License key" data-i18n-ph="licensePlaceholder" autocomplete="off" />
+            <button id="connect-btn" class="primary" data-i18n="connect">Connect</button>
           </div>
           <p id="auth-error" class="error" hidden></p>
           <p class="muted small">
-            No key yet? <a href="https://www.influencerbutler.com/pricing" target="_blank" rel="noreferrer">Start a free trial</a>
+            <span data-i18n="noKeyYet">No key yet?</span> <a href="https://www.influencerbutler.com/pricing" target="_blank" rel="noreferrer" data-i18n="startFreeTrial">Start a free trial</a>
           </p>
         </div>
         <div id="signed-in" hidden>
-          <p>Connected as <strong id="account-email"></strong></p>
+          <p><span data-i18n="connectedAs">Connected as</span> <strong id="account-email"></strong></p>
           <label class="row toggle">
             <input id="sync-toggle" type="checkbox" />
-            <span>Sync findings to my dashboard</span>
+            <span data-i18n="syncToggleLabel">Sync findings to my dashboard</span>
           </label>
           <p id="sync-status" class="muted small"></p>
-          <button id="disconnect-btn" class="ghost">Disconnect</button>
+          <button id="disconnect-btn" class="ghost" data-i18n="disconnect">Disconnect</button>
         </div>
       </section>
 
       <section class="card">
-        <h2>Settings</h2>
+        <h2 data-i18n="settingsHeading">Settings</h2>
         <div class="grid">
-          <label>Commission rate (%)
+          <label class="wide"><span data-i18n="languageLabel">Language</span>
+            <select id="set-language">
+              <option value="auto" data-i18n="langAuto">Auto (browser)</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+            </select>
+          </label>
+          <label><span data-i18n="commissionRateLabel">Commission rate (%)</span>
             <input id="set-commission" type="number" min="0" max="30" step="0.5" />
           </label>
-          <label>Hourly value ($)
+          <label><span data-i18n="hourlyValueLabel">Hourly value ($)</span>
             <input id="set-hourly" type="number" min="0" step="1" />
           </label>
-          <label>Minutes per video
+          <label><span data-i18n="minutesPerVideoLabel">Minutes per video</span>
             <input id="set-minutes" type="number" min="1" step="5" />
           </label>
-          <label>Content gap threshold
+          <label><span data-i18n="contentGapThresholdLabel">Content gap threshold</span>
             <input id="set-gap" type="number" min="0" max="10" step="1" />
           </label>
-          <label class="wide">My storefront handle
-            <input id="set-storefront" type="text" placeholder="e.g. influencerbutler" />
+          <label class="wide"><span data-i18n="storefrontHandleLabel">My storefront handle</span>
+            <input id="set-storefront" type="text" placeholder="e.g. influencerbutler" data-i18n-ph="storefrontHandlePlaceholder" />
           </label>
         </div>
-        <h3>Tools</h3>
-        <label class="row toggle"><input id="tool-videoCounts" type="checkbox" /><span>Video counts</span></label>
-        <label class="row toggle"><input id="tool-approved" type="checkbox" /><span>Butler Approved seal</span></label>
-        <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span>Profit calculator</span></label>
-        <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span>Storefront checks</span></label>
-        <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span>Orders Butler (sync order history)</span></label>
+        <h3 data-i18n="toolsHeading">Tools</h3>
+        <label class="row toggle"><input id="tool-videoCounts" type="checkbox" /><span data-i18n="toolVideoCounts">Video counts</span></label>
+        <label class="row toggle"><input id="tool-approved" type="checkbox" /><span data-i18n="toolApproved">Butler Approved seal</span></label>
+        <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span data-i18n="toolCalculator">Profit calculator</span></label>
+        <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span data-i18n="toolStorefront">Storefront checks</span></label>
+        <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span data-i18n="toolOrdersButler">Orders Butler (sync order history)</span></label>
       </section>
 
       <section class="card">
-        <h2>Feedback Butler</h2>
-        <p class="muted small">Found a bug or want a feature? Tell us. No account needed.</p>
+        <h2 data-i18n="feedbackHeading">Feedback Butler</h2>
+        <p class="muted small" data-i18n="feedbackBlurb">Found a bug or want a feature? Tell us. No account needed.</p>
         <div class="grid">
-          <label class="wide">Type
+          <label class="wide"><span data-i18n="feedbackTypeLabel">Type</span>
             <select id="fb-type">
-              <option value="bug">Bug report</option>
-              <option value="feature">Feature request</option>
-              <option value="praise">Praise</option>
-              <option value="other">Something else</option>
+              <option value="bug" data-i18n="feedbackTypeBug">Bug report</option>
+              <option value="feature" data-i18n="feedbackTypeFeature">Feature request</option>
+              <option value="praise" data-i18n="feedbackTypePraise">Praise</option>
+              <option value="other" data-i18n="feedbackTypeOther">Something else</option>
             </select>
           </label>
         </div>
         <label class="fb-wide">
-          <textarea id="fb-message" rows="3" placeholder="What happened, or what would help?"></textarea>
+          <textarea id="fb-message" rows="3" placeholder="What happened, or what would help?" data-i18n-ph="feedbackPlaceholder"></textarea>
         </label>
         <input id="fb-website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" class="fb-hp" />
         <div class="row">
-          <button id="fb-send" class="primary">Send feedback</button>
+          <button id="fb-send" class="primary" data-i18n="feedbackSend">Send feedback</button>
           <span id="fb-status" class="muted small"></span>
         </div>
       </section>
     </main>
 
     <footer class="foot">
-      <a href="https://www.influencerbutler.com/extension" target="_blank" rel="noreferrer">Help</a>
-      <a href="https://www.influencerbutler.com/dashboard/extension" target="_blank" rel="noreferrer">My dashboard</a>
+      <a href="https://www.influencerbutler.com/extension" target="_blank" rel="noreferrer" data-i18n="footerHelp">Help</a>
+      <a href="https://www.influencerbutler.com/dashboard/extension" target="_blank" rel="noreferrer" data-i18n="footerDashboard">My dashboard</a>
     </footer>
 
     <script src="popup.js"></script>
