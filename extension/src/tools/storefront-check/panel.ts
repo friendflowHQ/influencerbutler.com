@@ -1,58 +1,118 @@
 import { addSection, chip, el } from "../../ui/components";
 import { harvestStorefront, type ContentType, type HarvestResult } from "./harvest";
+import {
+  enrichContentProducts,
+  enrichProductDetails,
+  DETAIL_CAP,
+  type ProductDetail,
+} from "./enrich";
 import { buildCsv, downloadCsv } from "./csv";
 import { sendToBackground } from "../../shared/messages";
 import type { Finding, StorefrontIssueFinding } from "../../transport/types";
 
 const OVER_TAGGED_THRESHOLD = 10;
 
-// Storefront checkup. One "Check" button harvests the whole storefront through
-// Amazon's getItems feed (no scrolling, no image rendering, all pages), counts
-// every content type, surfaces untagged and over-tagged videos, and exports
-// the full tagged-product list as CSV.
+// Storefront checkup. The fast default (one getItems harvest, no scrolling, no
+// images) counts every content type and checks video tags. Three opt-in boxes
+// (off by default) add slower per-item passes: photo/list product tags,
+// product availability, and parent ASINs.
 export function initStorefrontPanel(): void {
   const section = addSection("Storefront checkup");
-  const intro = el("p", "note");
-  intro.textContent =
-    "Scans your whole storefront through Amazon's own feed: fast, no scrolling, no images loaded.";
+  section.append(
+    el(
+      "p",
+      "note",
+      "Fast scan of your whole storefront through Amazon's own feed: no scrolling, no images loaded. The boxes below add slower deep checks that open each item.",
+    ),
+  );
+
+  const deepContent = checkbox("Also scan photo and list product tags");
+  const checkAvailability = checkbox("Check product availability (opens each product)");
+  const parentAsins = checkbox("Resolve parent ASINs (opens each product)");
+  section.append(deepContent.wrap, checkAvailability.wrap, parentAsins.wrap);
+
   const button = el("button", "btn");
   button.textContent = "Check my storefront";
+  const stopBtn = el("button", "btn secondary");
+  stopBtn.textContent = "Stop";
+  stopBtn.style.display = "none";
+  const controls = el("div", "row");
+  controls.append(button, stopBtn);
+
   const progress = el("p", "progress");
   const summary = el("div", "counts");
+  const stats = el("div", "counts");
   const list = el("ul", "list");
   const exportRow = el("div", "row");
-  section.append(intro, button, progress, summary, list, exportRow);
+  section.append(controls, progress, summary, stats, list, exportRow);
+
+  let abort: AbortController | null = null;
+  window.addEventListener("pagehide", () => abort?.abort());
 
   button.addEventListener("click", () => {
-    button.disabled = true;
-    summary.replaceChildren();
-    list.replaceChildren();
-    exportRow.replaceChildren();
-    progress.textContent = "Scanning...";
+    abort = new AbortController();
+    const signal = abort.signal;
+    const wantDetails = checkAvailability.input.checked || parentAsins.input.checked;
 
-    void harvestStorefront((pages, items) => {
-      progress.textContent = `Scanning... ${items} items across ${pages} page${pages === 1 ? "" : "s"}`;
-    })
-      .then((result) => {
-        render(result, summary, list, exportRow, section);
-        progress.textContent = `Done: ${result.items.length} items in ${result.pages} pages${result.capped ? " (capped)" : ""}.`;
-      })
-      .catch(() => {
-        progress.textContent = "Scan failed. Reload the storefront tab and try again.";
+    button.disabled = true;
+    stopBtn.style.display = wantDetails || deepContent.input.checked ? "inline-block" : "none";
+    [summary, stats, list, exportRow].forEach((n) => n.replaceChildren());
+    progress.textContent = "Scanning the feed...";
+
+    void run()
+      .catch((err) => {
+        if ((err as Error)?.name !== "AbortError") {
+          progress.textContent = "Scan failed. Reload the storefront tab and try again.";
+        } else {
+          progress.textContent = "Stopped.";
+        }
       })
       .finally(() => {
         button.disabled = false;
         button.textContent = "Rescan";
+        stopBtn.style.display = "none";
       });
+
+    async function run(): Promise<void> {
+      const result = await harvestStorefront((pages, items) => {
+        progress.textContent = `Scanning the feed... ${items} items across ${pages} pages`;
+      });
+
+      if (deepContent.input.checked) {
+        await enrichContentProducts(
+          result.items,
+          (done, total) => (progress.textContent = `Opening photos and lists... ${done} of ${total}`),
+          signal,
+        );
+      }
+
+      let details: Map<string, ProductDetail> | undefined;
+      if (wantDetails) {
+        const unique = [...new Set(result.items.flatMap((i) => i.taggedAsins))];
+        const res = await enrichProductDetails(
+          unique,
+          (done, total) => (progress.textContent = `Opening products... ${done} of ${total}`),
+          signal,
+        );
+        details = res.details;
+        if (res.capped) {
+          progress.textContent = `Checked the first ${DETAIL_CAP} products (storefront has more).`;
+        }
+      }
+
+      render(result, details, { summary, stats, list, exportRow }, checkAvailability.input.checked);
+      progress.textContent = `Done: ${result.items.length} items across ${result.pages} pages${result.capped ? " (feed capped)" : ""}.`;
+    }
   });
+
+  stopBtn.addEventListener("click", () => abort?.abort());
 }
 
 function render(
   result: HarvestResult,
-  summary: HTMLElement,
-  list: HTMLElement,
-  exportRow: HTMLElement,
-  section: HTMLElement,
+  details: Map<string, ProductDetail> | undefined,
+  nodes: { summary: HTMLElement; stats: HTMLElement; list: HTMLElement; exportRow: HTMLElement },
+  checkedAvailability: boolean,
 ): void {
   const label: Record<ContentType, string> = {
     video: "videos",
@@ -61,66 +121,73 @@ function render(
     "media-list": "media lists",
   };
   for (const type of ["video", "photo", "idea-list", "media-list"] as ContentType[]) {
-    summary.append(chip("", `${result.counts[type]} ${label[type]}`));
+    nodes.summary.append(chip("", `${result.counts[type]} ${label[type]}`));
   }
 
-  const videos = result.items.filter((i) => i.type === "video");
-  const untagged = videos.filter((v) => v.taggedAsins.length === 0);
-  const overTagged = videos.filter((v) => v.taggedAsins.length > OVER_TAGGED_THRESHOLD);
+  const untagged = result.items.filter((i) => i.type === "video" && i.taggedAsins.length === 0);
+  const overTagged = result.items.filter((i) => i.taggedAsins.length > OVER_TAGGED_THRESHOLD);
   const uniqueProducts = new Set(result.items.flatMap((i) => i.taggedAsins));
+  const unavailable = details
+    ? [...uniqueProducts].filter((a) => details.get(a)?.available === false)
+    : [];
 
-  const stats = el("div", "counts");
-  stats.append(
-    chip(untagged.length > 0 ? "bad" : "good", `${untagged.length} untagged videos`),
+  nodes.stats.append(
+    chip(untagged.length > 0 ? "bad" : "good", `${untagged.length} untagged`),
     chip(overTagged.length > 0 ? "warn" : "good", `${overTagged.length} over-tagged`),
-    chip("", `${uniqueProducts.size} unique products tagged`),
+    chip("", `${uniqueProducts.size} unique products`),
   );
-  section.insertBefore(stats, list);
+  if (checkedAvailability) {
+    nodes.stats.append(chip(unavailable.length > 0 ? "bad" : "good", `${unavailable.length} unavailable`));
+  }
 
-  // List the untagged videos (the ones earning nothing), and record them.
   const storefrontUrl = location.origin + location.pathname;
   const now = new Date().toISOString();
-  for (const v of untagged.slice(0, 50)) {
+  const record = (finding: StorefrontIssueFinding) =>
+    void sendToBackground<void>({ kind: "RECORD_FINDING", finding: finding as Finding });
+
+  for (const v of untagged.slice(0, 40)) {
     const li = el("li");
     li.append(el("span", "t", v.title));
-    if (v.url) {
-      const a = el("a", "", "Open");
-      (a as HTMLAnchorElement).href = v.url;
-      (a as HTMLAnchorElement).target = "_blank";
-      li.append(a);
-    }
-    list.append(li);
-    const finding: StorefrontIssueFinding = {
-      type: "storefront_issue",
-      storefrontUrl,
-      issueType: "untagged",
-      severity: "error",
-      subject: v.title,
-      detail: "Video has no tagged products, so it cannot earn commissions.",
-      detectedAt: now,
-    };
-    void sendToBackground<void>({ kind: "RECORD_FINDING", finding: finding as Finding });
+    appendOpen(li, v.url);
+    nodes.list.append(li);
+    record({ type: "storefront_issue", storefrontUrl, issueType: "untagged", severity: "error", subject: v.title, detail: "No tagged products, so it earns nothing.", detectedAt: now });
   }
-  if (untagged.length === 0) {
-    list.append(el("li", "", "No untagged videos. Every video tags at least one product."));
+  for (const asin of unavailable.slice(0, 40)) {
+    const li = el("li");
+    li.append(el("span", "t", `Unavailable product ${asin}`));
+    appendOpen(li, `${location.origin}/dp/${asin}`);
+    nodes.list.append(li);
+    record({ type: "storefront_issue", storefrontUrl, issueType: "unavailable_product", severity: "warn", subject: asin, detail: "Tagged product is no longer available.", detectedAt: now });
+  }
+  if (untagged.length === 0 && unavailable.length === 0) {
+    nodes.list.append(el("li", "", "No untagged or unavailable issues found."));
   }
 
   const csvBtn = el("button", "btn secondary");
-  csvBtn.textContent = "Export all tagged products (CSV)";
-  csvBtn.addEventListener("click", () => {
-    downloadCsv(`storefront-${creatorHandle()}-${now.slice(0, 10)}.csv`, buildCsv(result));
-  });
-  exportRow.append(csvBtn);
+  csvBtn.textContent = "Export tagged products (CSV)";
+  csvBtn.addEventListener("click", () =>
+    downloadCsv(`storefront-${creatorHandle()}-${now.slice(0, 10)}.csv`, buildCsv(result, details)),
+  );
+  nodes.exportRow.append(csvBtn);
+}
 
-  if (result.items.some((i) => i.type !== "video" && !i.productsKnown)) {
-    section.append(
-      el(
-        "p",
-        "note",
-        "Photo and list product tags are not in the feed. The desktop app harvests those (and product availability) in full.",
-      ),
-    );
-  }
+function appendOpen(li: HTMLElement, url: string): void {
+  if (!url) return;
+  const a = el("a", "", "Open");
+  (a as HTMLAnchorElement).href = url;
+  (a as HTMLAnchorElement).target = "_blank";
+  li.append(a);
+}
+
+function checkbox(text: string): { wrap: HTMLElement; input: HTMLInputElement } {
+  const wrap = el("label", "row toggle");
+  wrap.style.gap = "8px";
+  const input = el("input");
+  input.type = "checkbox";
+  input.style.width = "auto";
+  input.style.flex = "none";
+  wrap.append(input, el("span", "note", text));
+  return { wrap, input };
 }
 
 function creatorHandle(): string {

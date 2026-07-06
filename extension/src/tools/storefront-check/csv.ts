@@ -1,28 +1,39 @@
 import type { HarvestResult } from "./harvest";
+import type { ProductDetail } from "./enrich";
 
-// Builds a CSV of every video and its tagged products (one row per tagged
-// product; untagged videos get a single row flagged UNTAGGED). Photos and
-// lists are included as counted rows without products, since the feed does not
-// carry their tags. Triggers a browser download from the content script via a
-// blob URL, so no downloads permission is needed.
+// Builds a CSV of every content item and its tagged products (one row per
+// tagged product; untagged videos get a single UNTAGGED row). When the opt-in
+// availability / parent-ASIN passes ran, those columns are filled in too.
+// Triggers a browser download from the content script via a blob URL, so no
+// downloads permission is needed.
 
 function esc(value: string): string {
   const v = value ?? "";
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
-export function buildCsv(result: HarvestResult): string {
-  const rows: string[] = ["content_type,title,url,status,tagged_asin"];
+export function buildCsv(
+  result: HarvestResult,
+  details?: Map<string, ProductDetail>,
+): string {
+  const rows: string[] = ["content_type,title,url,status,tagged_asin,available,parent_asin"];
+  const detailCols = (asin: string): [string, string] => {
+    const d = details?.get(asin);
+    if (!d) return ["", ""];
+    return [d.available ? "yes" : "no", d.parentAsin ?? ""];
+  };
+
   for (const item of result.items) {
-    if (item.type === "video" && item.taggedAsins.length === 0) {
-      rows.push([item.type, esc(item.title), esc(item.url), "UNTAGGED", ""].join(","));
-    } else if (item.taggedAsins.length > 0) {
-      for (const asin of item.taggedAsins) {
-        rows.push([item.type, esc(item.title), esc(item.url), "tagged", asin].join(","));
-      }
+    if (item.taggedAsins.length === 0) {
+      const status = item.type === "video" ? "UNTAGGED" : "no_products_found";
+      rows.push([item.type, esc(item.title), esc(item.url), status, "", "", ""].join(","));
     } else {
-      // photo / idea-list / media-list: products not in the feed
-      rows.push([item.type, esc(item.title), esc(item.url), "products_need_deep_scan", ""].join(","));
+      for (const asin of item.taggedAsins) {
+        const [available, parent] = detailCols(asin);
+        rows.push(
+          [item.type, esc(item.title), esc(item.url), "tagged", asin, available, parent].join(","),
+        );
+      }
     }
   }
   return rows.join("\n");

@@ -92,7 +92,7 @@ function extractPrice(doc: Document): { priceCents: number | null; currency: str
   return { priceCents: whole * 100 + cents, currency };
 }
 
-function extractInStock(doc: Document): boolean {
+export function extractInStock(doc: Document): boolean {
   const availability = cleanText(query(doc, "availability")?.textContent)?.toLowerCase() ?? "";
   if (availability.includes("unavailable")) return false;
   if (availability.includes("in stock")) return true;
