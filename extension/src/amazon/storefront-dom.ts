@@ -1,74 +1,45 @@
-import { queryAll } from "./selectors";
-
-// Storefront (amazon.com/shop/handle) parsing. The storefront is a React SPA;
-// tiles are found structurally by their video-detail hrefs, which survive
-// class-name churn far better than CSS classes.
+// Storefront (amazon.com/shop/handle) parsing. The storefront is a React SPA
+// whose content grid renders each video as a `.video-item-hero-container`
+// card (generic fallback `[class*="item-hero-container"]`), with the tagged
+// products sitting right inside the card as `[data-csa-c-item-id]` entries
+// whose value is `amzn1.asin.<ASIN>`. The card's own id is `...vse.video.<id>`.
+// So the whole checkup reads directly off the grid: no per-video fetching.
+// Selectors verified against a live storefront and the desktop repo's
+// docs/developer/storefront-butler-amazon-dom.md (2026-07-06).
 
 export type StorefrontVideoTile = {
-  url: string;
   videoId: string | null;
   title: string | null;
+  taggedProducts: number;
 };
 
-export type VideoDetailInfo = {
-  taggedProducts: number;
-  unavailableProducts: number;
-  productTitles: string[];
-};
+const ASIN_ITEM_RE = /amzn1\.asin/i;
+const VIDEO_ID_RE = /vse\.video\.([A-Za-z0-9-]+)/i;
 
 export function findVideoTiles(doc: Document): StorefrontVideoTile[] {
-  const seen = new Set<string>();
-  const tiles: StorefrontVideoTile[] = [];
-  const anchors = new Set<HTMLAnchorElement>([
-    ...queryAll<HTMLAnchorElement>(doc, "storefrontTile"),
-    ...Array.from(doc.querySelectorAll<HTMLAnchorElement>("a[href*='video']")).filter((a) =>
-      /\/(vdp|video)\//.test(a.getAttribute("href") ?? ""),
-    ),
-  ]);
-  for (const anchor of anchors) {
-    const href = anchor.getAttribute("href");
-    if (!href) continue;
-    const url = new URL(href, doc.baseURI ?? "https://www.amazon.com").toString();
-    if (seen.has(url)) continue;
-    seen.add(url);
-    tiles.push({
-      url,
-      videoId: extractVideoId(url),
-      title: anchor.getAttribute("aria-label") ?? (anchor.textContent?.trim() || null),
-    });
+  let cards = Array.from(doc.querySelectorAll<HTMLElement>(".video-item-hero-container"));
+  if (cards.length === 0) {
+    // Fallback: the generic hero container, kept only to video cards.
+    cards = Array.from(doc.querySelectorAll<HTMLElement>("[class*='item-hero-container']")).filter(
+      (c) => /video/i.test(c.className),
+    );
   }
-  return tiles;
+
+  return cards.map((card, index) => {
+    const ids = Array.from(card.querySelectorAll("[data-csa-c-item-id]")).map(
+      (el) => el.getAttribute("data-csa-c-item-id") ?? "",
+    );
+    const taggedProducts = ids.filter((v) => ASIN_ITEM_RE.test(v)).length;
+    const videoId = extractVideoId(ids.find((v) => VIDEO_ID_RE.test(v)) ?? "");
+    return {
+      videoId,
+      title: videoId ? `Video ${videoId.slice(0, 6)}` : `Video ${index + 1}`,
+      taggedProducts,
+    };
+  });
 }
 
-function extractVideoId(url: string): string | null {
-  const match = url.match(/\/vdp\/([a-z0-9]+)/i) ?? url.match(/video\/([a-z0-9-]+)/i);
+function extractVideoId(itemId: string): string | null {
+  const match = itemId.match(VIDEO_ID_RE);
   return match && match[1] ? match[1] : null;
-}
-
-// Parses a fetched video detail page for its tagged products and their
-// availability. Selector-light on purpose: product links are identified by
-// /dp/ hrefs, unavailability by adjacent text.
-export function parseVideoDetail(doc: Document): VideoDetailInfo {
-  const productCards = new Map<string, Element>();
-  for (const anchor of Array.from(doc.querySelectorAll<HTMLAnchorElement>("a[href*='/dp/']"))) {
-    const asinMatch = (anchor.getAttribute("href") ?? "").match(/\/dp\/([A-Z0-9]{10})/);
-    if (!asinMatch || !asinMatch[1]) continue;
-    const card = anchor.closest("li, [class*='product'], [data-asin]") ?? anchor;
-    if (!productCards.has(asinMatch[1])) productCards.set(asinMatch[1], card);
-  }
-
-  let unavailable = 0;
-  const titles: string[] = [];
-  for (const [, card] of productCards) {
-    const text = (card.textContent ?? "").replace(/\s+/g, " ");
-    if (/currently unavailable|out of stock/i.test(text)) unavailable += 1;
-    const title = text.trim().slice(0, 80);
-    if (title) titles.push(title);
-  }
-
-  return {
-    taggedProducts: productCards.size,
-    unavailableProducts: unavailable,
-    productTitles: titles,
-  };
 }
