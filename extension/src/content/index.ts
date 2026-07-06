@@ -11,6 +11,7 @@ import { query } from "../amazon/selectors";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
+import { initOrderVideoCounts } from "../tools/orders-butler/video-count-runner";
 import { evaluateApproved, criteriaToRecord } from "../tools/butler-approved/criteria";
 import { renderSeal } from "../tools/butler-approved/seal";
 import { renderCalculator } from "../tools/calculator/panel";
@@ -20,6 +21,7 @@ import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initUploadHelper } from "../tools/upload-helper/panel";
+import { maybeShowNudge } from "../tools/nudges/prompts";
 import { guard } from "../shared/guard";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
@@ -76,6 +78,10 @@ async function main(): Promise<void> {
     });
   });
   await runForPage();
+  // Re-engagement nudges (join the group, get the free app). Records first use
+  // on the first run and shows a timed modal on later visits. Guarded so a
+  // failure here never breaks the tools.
+  guard("nudges", () => maybeShowNudge());
 }
 
 // The widget's classified data can land well after first render (it only
@@ -161,7 +167,10 @@ async function runForPage(): Promise<void> {
   } else if (pageType === "order-history") {
     guard("order-history", () => {
       if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
-      if (settings.tools.ordersButler) initOrdersButler("amazon.com");
+      if (settings.tools.ordersButler) {
+        initOrdersButler("amazon.com");
+        initOrderVideoCounts("amazon.com");
+      }
       lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {

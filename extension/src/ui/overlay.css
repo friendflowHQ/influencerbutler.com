@@ -356,3 +356,95 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .badge-inline.gap { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
 .badge-inline.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
 .badge-inline.pending { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; }
+
+/* Centered modal for the re-engagement nudges (join the group, get the app).
+   Lives in its own shadow host so panel rebuilds never tear it down. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+  animation: ib-modal-fade 0.15s ease;
+}
+
+@keyframes ib-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e7ecf3;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.4), 0 2px 8px rgba(15, 23, 42, 0.08);
+  font: 14px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #0f172a;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 6px;
+}
+
+.modal-head .dot { width: 26px; height: 26px; border-radius: 8px; }
+
+.modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #ea580c, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modal-body { padding: 4px 20px 8px; }
+.modal-body p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #334155; }
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 20px;
+}
+
+.modal-actions .btn { flex: 1 1 auto; text-align: center; text-decoration: none; }
+
+.modal-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #c2410c;
+  cursor: pointer;
+  text-decoration: none;
+}
+.modal-link:hover { text-decoration: underline; }
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal-close:hover { background: #e2e8f0; color: #0f172a; }

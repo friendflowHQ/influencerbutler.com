@@ -263,6 +263,19 @@ export interface Dict {
   dateUnknown: string;
   plusMore: (n: number) => string;
 
+  // Orders Butler: update influencer video counts for ordered products
+  updateVideoCounts: string;
+  updateVideoCountsIntro: string;
+  updateVideoCountsAgain: string;
+  countPreparing: string;
+  countChecking: (index: number, total: number, title: string) => string;
+  countDone: (updated: number, noInfluencer: number) => string;
+  countStopped: (updated: number) => string;
+  countNoOrders: string;
+  countNoInfluencer: string;
+  countInfluencerN: (n: number) => string;
+  countPending: string;
+
   // Campaigns panel
   campaigns: string;
   noCampaign: string;
@@ -290,6 +303,25 @@ export interface Dict {
   ctaOpenApp: string;
   ctaStartTrial: string;
   toolsAlwaysFree: string;
+
+  // Re-engagement nudges (day-1 Facebook group, day-3 free desktop app).
+  // Shown both as an OS notification and as an in-page modal.
+  nudgeCloseLabel: string;
+  nudgeMaybeLater: string;
+  nudgeFbNotifTitle: string;
+  nudgeFbNotifBody: string;
+  nudgeFbTitle: string;
+  nudgeFbBody: string;
+  nudgeFbJoin: string;
+  nudgeAppNotifTitle: string;
+  nudgeAppNotifBody: string;
+  nudgeAppTitle: string;
+  nudgeAppBody: string;
+  nudgeAppFree: string;
+  nudgeAppDownloadWindows: string;
+  nudgeAppDownloadMac: string;
+  nudgeAppDownloadGeneric: string;
+  nudgeAppIntelMac: string;
 }
 
 const en: Dict = {
@@ -551,6 +583,20 @@ const en: Dict = {
   dateUnknown: "date unknown",
   plusMore: (n) => ` +${n} more`,
 
+  updateVideoCounts: "Update influencer video count",
+  updateVideoCountsIntro:
+    "Check how many influencer videos each product you have ordered already has. Each product opens briefly in the background so the exact creator breakdown can load, then closes. This can take a while for a long history: leave this tab open while it runs.",
+  updateVideoCountsAgain: "Update again",
+  countPreparing: "Gathering your ordered products...",
+  countChecking: (index, total, title) => `Checking ${index} of ${total}: ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Done. Updated ${updated} product${updated === 1 ? "" : "s"}, ${noInfluencer} with no influencer videos yet.`,
+  countStopped: (updated) => `Stopped. Updated ${updated} product${updated === 1 ? "" : "s"} so far.`,
+  countNoOrders: "No orders to check yet. Run \"Sync my orders\" first.",
+  countNoInfluencer: "No influencer videos",
+  countInfluencerN: (n) => `${n} influencer video${n === 1 ? "" : "s"}`,
+  countPending: "Count not available",
+
   campaigns: "Campaigns",
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
@@ -579,6 +625,27 @@ const en: Dict = {
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
+
+  nudgeCloseLabel: "Close",
+  nudgeMaybeLater: "Maybe later",
+  nudgeFbNotifTitle: "Join the Influencer Butler community",
+  nudgeFbNotifBody:
+    "Swap tips with other Amazon Influencers and get the most out of Influencer Butler. Click to join the Facebook group.",
+  nudgeFbTitle: "Come say hi in the community",
+  nudgeFbBody:
+    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips with other Amazon Influencers and hear about new features first.",
+  nudgeFbJoin: "Join the Facebook group",
+  nudgeAppNotifTitle: "Get the free Influencer Butler desktop app",
+  nudgeAppNotifBody:
+    "Automate deals, content, and campaign acceptance from your computer. Click to download it free for Windows or Mac.",
+  nudgeAppTitle: "Ready for the desktop app?",
+  nudgeAppBody:
+    "The desktop app does the heavy lifting: push products to Daily Deals, send them to Content Butler, and auto-accept Creator Connections campaigns.",
+  nudgeAppFree: "It is free to download and works alongside this extension.",
+  nudgeAppDownloadWindows: "Download for Windows",
+  nudgeAppDownloadMac: "Download for Mac",
+  nudgeAppDownloadGeneric: "Download the desktop app",
+  nudgeAppIntelMac: "Using an Intel Mac?",
 };
 
 const es: Dict = {
@@ -840,6 +907,20 @@ const es: Dict = {
   dateUnknown: "fecha desconocida",
   plusMore: (n) => ` +${n} más`,
 
+  updateVideoCounts: "Actualizar recuento de videos de influencers",
+  updateVideoCountsIntro:
+    "Comprueba cuántos videos de influencers tiene ya cada producto que has pedido. Cada producto se abre un momento en segundo plano para cargar el desglose exacto de creadores y luego se cierra. Con un historial largo puede tardar un rato: deja esta pestaña abierta mientras se ejecuta.",
+  updateVideoCountsAgain: "Actualizar de nuevo",
+  countPreparing: "Reuniendo tus productos pedidos...",
+  countChecking: (index, total, title) => `Comprobando ${index} de ${total}: ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Listo. ${updated} producto${updated === 1 ? "" : "s"} actualizado${updated === 1 ? "" : "s"}, ${noInfluencer} aún sin videos de influencers.`,
+  countStopped: (updated) => `Detenido. ${updated} producto${updated === 1 ? "" : "s"} actualizado${updated === 1 ? "" : "s"} hasta ahora.`,
+  countNoOrders: "Aún no hay pedidos que comprobar. Ejecuta \"Sincronizar mis pedidos\" primero.",
+  countNoInfluencer: "Sin videos de influencers",
+  countInfluencerN: (n) => `${n} video${n === 1 ? "" : "s"} de influencers`,
+  countPending: "Recuento no disponible",
+
   campaigns: "Campañas",
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
@@ -868,6 +949,27 @@ const es: Dict = {
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
+
+  nudgeCloseLabel: "Cerrar",
+  nudgeMaybeLater: "Quizás luego",
+  nudgeFbNotifTitle: "Únete a la comunidad de Influencer Butler",
+  nudgeFbNotifBody:
+    "Intercambia consejos con otros Amazon Influencers y saca el máximo partido a Influencer Butler. Haz clic para unirte al grupo de Facebook.",
+  nudgeFbTitle: "Ven a saludar a la comunidad",
+  nudgeFbBody:
+    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos con otros Amazon Influencers y enterarte de las novedades antes que nadie.",
+  nudgeFbJoin: "Unirme al grupo de Facebook",
+  nudgeAppNotifTitle: "Descarga gratis la app de escritorio de Influencer Butler",
+  nudgeAppNotifBody:
+    "Automatiza ofertas, contenido y aceptación de campañas desde tu ordenador. Haz clic para descargarla gratis para Windows o Mac.",
+  nudgeAppTitle: "¿List@ para la app de escritorio?",
+  nudgeAppBody:
+    "La app de escritorio hace el trabajo pesado: envía productos a Daily Deals, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
+  nudgeAppFree: "Es gratis de descargar y funciona junto a esta extensión.",
+  nudgeAppDownloadWindows: "Descargar para Windows",
+  nudgeAppDownloadMac: "Descargar para Mac",
+  nudgeAppDownloadGeneric: "Descargar la app de escritorio",
+  nudgeAppIntelMac: "¿Usas un Mac con Intel?",
 };
 
 const fr: Dict = {
@@ -1129,6 +1231,20 @@ const fr: Dict = {
   dateUnknown: "date inconnue",
   plusMore: (n) => ` +${n} de plus`,
 
+  updateVideoCounts: "Mettre à jour le nombre de vidéos d'influenceurs",
+  updateVideoCountsIntro:
+    "Vérifiez combien de vidéos d'influenceurs chaque produit que vous avez commandé possède déjà. Chaque produit s'ouvre brièvement en arrière-plan pour charger la répartition exacte des créateurs, puis se ferme. Cela peut prendre un moment pour un long historique : laissez cet onglet ouvert pendant l'exécution.",
+  updateVideoCountsAgain: "Mettre à jour à nouveau",
+  countPreparing: "Récupération de vos produits commandés...",
+  countChecking: (index, total, title) => `Vérification de ${index} sur ${total} : ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Terminé. ${updated} produit${updated === 1 ? "" : "s"} mis à jour, ${noInfluencer} sans vidéo d'influenceur pour l'instant.`,
+  countStopped: (updated) => `Arrêté. ${updated} produit${updated === 1 ? "" : "s"} mis à jour jusqu'ici.`,
+  countNoOrders: "Aucune commande à vérifier pour l'instant. Lancez d'abord \"Synchroniser mes commandes\".",
+  countNoInfluencer: "Aucune vidéo d'influenceur",
+  countInfluencerN: (n) => `${n} vidéo${n === 1 ? "" : "s"} d'influenceurs`,
+  countPending: "Nombre non disponible",
+
   campaigns: "Campagnes",
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
@@ -1157,6 +1273,27 @@ const fr: Dict = {
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
+
+  nudgeCloseLabel: "Fermer",
+  nudgeMaybeLater: "Plus tard",
+  nudgeFbNotifTitle: "Rejoignez la communauté Influencer Butler",
+  nudgeFbNotifBody:
+    "Échangez des astuces avec d'autres Amazon Influencers et tirez le meilleur d'Influencer Butler. Cliquez pour rejoindre le groupe Facebook.",
+  nudgeFbTitle: "Venez dire bonjour à la communauté",
+  nudgeFbBody:
+    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces avec d'autres Amazon Influencers et découvrir les nouveautés en premier.",
+  nudgeFbJoin: "Rejoindre le groupe Facebook",
+  nudgeAppNotifTitle: "Obtenez l'app de bureau Influencer Butler gratuite",
+  nudgeAppNotifBody:
+    "Automatisez les deals, le contenu et l'acceptation des campagnes depuis votre ordinateur. Cliquez pour la télécharger gratuitement pour Windows ou Mac.",
+  nudgeAppTitle: "Prêt pour l'app de bureau?",
+  nudgeAppBody:
+    "L'app de bureau fait le gros du travail: envoyez des produits vers Daily Deals, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
+  nudgeAppFree: "Elle est gratuite à télécharger et fonctionne avec cette extension.",
+  nudgeAppDownloadWindows: "Télécharger pour Windows",
+  nudgeAppDownloadMac: "Télécharger pour Mac",
+  nudgeAppDownloadGeneric: "Télécharger l'app de bureau",
+  nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
 };
 
 export type Locale = "en" | "es" | "fr";

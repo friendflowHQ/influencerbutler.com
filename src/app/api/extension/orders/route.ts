@@ -118,5 +118,76 @@ export async function GET(request: Request) {
     return jsonWithCors({ error: "Could not load orders" }, 500);
   }
 
-  return jsonWithCors({ ok: true, orders: data ?? [] });
+  const orders = data ?? [];
+  const withCounts = await mergeVideoCounts(admin, auth.auth.userId, orders);
+  return jsonWithCors({ ok: true, orders: withCounts });
+}
+
+type OrderRow = {
+  order_id: string;
+  asin: string;
+  marketplace: string;
+  title: string | null;
+  price_cents: number | null;
+  currency: string;
+  order_date: string | null;
+  detected_at: string;
+};
+
+// Video counts are a property of the product (ASIN), stored per scan in
+// extension_product_scans, not of the order. So we look up the latest known
+// breakdown for each ordered ASIN and attach it. Products never scanned come
+// back with null counts, which the dashboard renders as "not scanned yet".
+async function mergeVideoCounts(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  orders: OrderRow[],
+) {
+  const asins = [...new Set(orders.map((o) => o.asin))];
+  if (asins.length === 0) return orders.map(withNullCounts);
+
+  const { data, error } = await admin
+    .from("extension_product_scans")
+    .select(
+      "asin, marketplace, influencer_video_count, brand_video_count, customer_video_count, scanned_at",
+    )
+    .eq("user_id", userId)
+    .in("asin", asins);
+  if (error) {
+    // A missing scans table just means no counts yet; never fail the orders list
+    // over it. Return orders with null counts so the view still renders.
+    if (!isMissingTableError(error)) {
+      console.error("extension/orders: scan-count merge failed", error);
+    }
+    return orders.map(withNullCounts);
+  }
+
+  const byKey = new Map<string, (typeof data)[number]>();
+  for (const scan of data ?? []) {
+    byKey.set(`${scan.marketplace}:${scan.asin}`, scan);
+  }
+  return orders.map((o) => {
+    const scan = byKey.get(`${o.marketplace}:${o.asin}`);
+    if (!scan) return withNullCounts(o);
+    return {
+      ...o,
+      influencer_video_count: scan.influencer_video_count,
+      brand_video_count: scan.brand_video_count,
+      customer_video_count: scan.customer_video_count,
+      total_video_count:
+        scan.influencer_video_count + scan.brand_video_count + scan.customer_video_count,
+      scanned_at: scan.scanned_at,
+    };
+  });
+}
+
+function withNullCounts(o: OrderRow) {
+  return {
+    ...o,
+    influencer_video_count: null,
+    brand_video_count: null,
+    customer_video_count: null,
+    total_video_count: null,
+    scanned_at: null,
+  };
 }

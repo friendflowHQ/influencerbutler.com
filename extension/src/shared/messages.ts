@@ -1,4 +1,4 @@
-import type { Finding } from "../transport/types";
+import type { Finding, VideoCounts } from "../transport/types";
 import type { HudCommand, HudCommandResult, HudStatus } from "../transport/hud-commands";
 import type { IntegrationsState, IntegrationTestResult } from "../storage/schema";
 
@@ -31,6 +31,9 @@ export type RuntimeMessage =
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
   | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput }
   | { kind: "OPEN_URL"; url: string }
+  // Records first actual use so the background can schedule the re-engagement
+  // nudge alarms. Idempotent: only the first one sets the clock.
+  | { kind: "MARK_FIRST_USE" }
   // API integrations (options page + on-page link/AI use). Credentials never
   // ride these messages back to the UI; only non-secret field values do.
   | { kind: "GET_INTEGRATIONS" }
@@ -49,7 +52,18 @@ export type RuntimeMessage =
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   // Per-country availability for a tagged product, checked from the worker
   // (cross-marketplace fetch needs the host_permissions CORS bypass).
-  | { kind: "FETCH_MARKET_AVAILABILITY"; asin: string; markets: string[] };
+  | { kind: "FETCH_MARKET_AVAILABILITY"; asin: string; markets: string[] }
+  // Orders Butler "update influencer video count": the order-history content
+  // script asks the worker to open one product in a background tab so its
+  // client-side video breakdown hydrates and the page emits a product_scan.
+  // The worker waits for that scan (or times out), closes the tab, and returns
+  // the counts. Only the background can drive chrome.tabs, so the loop lives in
+  // the content script and each product is one short request that keeps the
+  // worker awake.
+  | { kind: "SCAN_ASIN_IN_TAB"; asin: string; marketplace: string }
+  // The list of unique products to run that count over: the account's synced
+  // order history, read from /api/extension/orders with the license key.
+  | { kind: "GET_ORDER_ASINS" };
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";
@@ -77,6 +91,18 @@ export type IntegrationsView = {
   global: IntegrationsGlobal;
   providers: IntegrationView[];
 };
+
+// Result of scanning one product in a background tab. `classified` is true when
+// the page hydrated far enough to split creators (influencer/brand/customer);
+// when false, `counts` holds only what could be read (often the total) and the
+// influencer figure is not trustworthy, so the UI shows "count not available".
+export type ScanAsinResult = {
+  counts: VideoCounts | null;
+  classified: boolean;
+};
+
+export type OrderAsinItem = { asin: string; marketplace: string; title: string | null };
+export type OrderAsinsResult = { ok: boolean; items: OrderAsinItem[]; error?: string };
 
 export type IntegrationTestOutcome = { ok: boolean; message: string };
 export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
