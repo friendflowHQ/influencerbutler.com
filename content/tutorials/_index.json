@@ -408,6 +408,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "group-invite-butler",
+      "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
+      "category": "Other",
+      "summary": "Invite harvested creator emails into your Facebook group, one at a time, at a human pace. Load a CSV or hand off from a Goldmine, set pacing and daily caps, and Butler skips anyone it already invited.",
+      "order": 342,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "focus-mode",
       "title": "Focus Mode: a calmer, ADHD-friendly workspace",
       "category": "Other",

@@ -1,0 +1,72 @@
+---
+title: "Group Invite Butler : faites grandir votre groupe Facebook à partir d'une liste d'e-mails de créateurs"
+summary: Invitez dans votre groupe Facebook les e-mails de créateurs que vous avez collectés, un par un et à un rythme humain. Chargez un CSV ou transférez les e-mails depuis un Goldmine, réglez le rythme et les plafonds quotidiens, et Butler ignore les personnes déjà invitées.
+category: Other
+---
+
+## Ce que fait Group Invite Butler
+
+Group Invite Butler invite des personnes dans un groupe Facebook que vous gérez, un e-mail à la fois et selon un calendrier naturel. Vous lui donnez une liste d'adresses e-mail et le groupe où vous voulez les ajouter ; il ouvre le formulaire d'invitation par e-mail du groupe, ajoute chaque adresse et gère lui-même son rythme pour que l'activité paraisse humaine et reste sous les limites de Facebook.
+
+Il est conçu pour les créateurs qui font grandir une communauté autour de leur boutique ou de leur niche. Les e-mails viennent en général du Goldmine Instagram ou Amazon (d'autres créateurs que vous avez trouvés), mais vous pouvez aussi charger votre propre liste depuis un CSV.
+
+## Avant de commencer
+
+Deux choses doivent être en place :
+
+- **Vous êtes connecté à Facebook dans l'application.** Group Invite Butler utilise la même session Facebook qu'Amazon Deals Butler. Si vous ne vous êtes pas encore connecté, ouvrez d'abord Amazon Deals Butler et connectez-vous à Facebook une fois là-bas.
+- **Vous gérez le groupe.** Vous ne pouvez envoyer des invitations par e-mail que pour un groupe où vous avez les droits d'invitation. Collez l'URL de ce groupe dans les réglages.
+
+## Remplir la file d'invitations
+
+Il y a deux façons de mettre des e-mails dans la file.
+
+### Depuis un Goldmine
+
+1. Ouvrez le **Goldmine Instagram** ou le **Goldmine Amazon** et lancez une collecte.
+2. Cliquez sur **Envoyer vers Group Invite Butler**. Les e-mails collectés passent directement dans la file, sans doublon avec ceux qui y sont déjà.
+
+### Depuis un CSV
+
+1. Dans la file d'invitations, cliquez sur **Charger un CSV**.
+2. Choisissez un fichier `.csv`. Le format est simple : **un e-mail par ligne dans la première colonne (colonne A)**. La ligne d'en-tête et toute colonne supplémentaire sont ignorées, donc une feuille de calcul exportée d'ailleurs fonctionne en général telle quelle.
+3. Butler valide chaque ligne, écarte ce qui n'est pas un e-mail et ajoute le reste. L'aide à côté du bouton rappelle le format si besoin.
+
+Dans les deux cas, les e-mails **déjà invités** (ou déjà dans la file) sont ignorés automatiquement, vous n'invitez donc jamais deux fois la même personne.
+
+## Régler le rythme et les limites
+
+Sous **Réglages d'exécution** :
+
+- **URL du groupe Facebook** : le groupe dans lequel vous invitez les gens. Obligatoire ; Butler ne démarre pas sans elle.
+- **Secondes entre les invitations** plus **Secondes supplémentaires aléatoires** : l'écart entre chaque invitation, plus une quantité aléatoire en plus pour que le rythme paraisse naturel. Plus lent est plus sûr.
+- **Invitations par jour** : un plafond quotidien qui se reporte d'une exécution à l'autre. `0` signifie aucun plafond quotidien.
+- **Invitations par exécution** : combien envoyer en une seule exécution. `0` signifie envoyer toute la file.
+
+Tout s'enregistre automatiquement à mesure que vous tapez. Il n'y a pas de bouton d'enregistrement.
+
+## Le lancer
+
+1. Réglez l'URL du groupe et le rythme.
+2. Cliquez sur **Démarrer Group Invite Butler**.
+3. Laissez **Regarder l'exécution** activé pour amener le navigateur au premier plan et voir chaque invitation partir, ou désactivez-le pour le laisser travailler en arrière-plan.
+
+La file affiche en direct les compteurs **En attente**, **Envoyé** et **Échec** à mesure qu'il travaille. Vous pouvez l'arrêter à tout moment ; l'exécution suivante reprend là où elle s'est arrêtée.
+
+## Après une exécution
+
+- **Réessayer les échecs** : renvoie chaque adresse en échec dans la file d'attente pour que l'exécution suivante la retente. Utile après un accroc où rien n'a réellement été envoyé.
+- **Renvoyer les envoyés** : renvoie en attente les adresses déjà envoyées pour les réinviter. Utile si une exécution a marqué comme envoyées des personnes que Facebook n'a pas réellement acceptées.
+- **Vider la file** : vide la liste d'attente. Votre registre durable des personnes invitées reste intact, donc les e-mails vidés puis rechargés apparaissent toujours comme déjà invités.
+
+## Problèmes courants
+
+- **Ça ne démarre pas** : vérifiez que l'URL du groupe Facebook est renseignée et que vous êtes connecté à Facebook (via Amazon Deals Butler).
+- **Mon CSV a chargé zéro e-mail** : assurez-vous que les adresses sont dans la **première colonne**. Les colonnes supplémentaires et les lignes d'en-tête sont ignorées exprès, mais si la colonne A contient autre chose que des e-mails, rien ne correspond.
+- **Quelqu'un apparaît comme Envoyé alors que je ne l'ai pas invité cette fois** : c'est le registre durable des invités qui fait son travail. Une fois qu'une personne a été invitée, elle reste marquée pour ne jamais l'être deux fois.
+- **Allez-y doucement au début** : un gros volume avec des intervalles courts, c'est ce qui déclenche les limites de Facebook. Commencez avec un plafond quotidien modeste et un délai confortable, puis desserrez une fois que vous le voyez tourner proprement.
+
+## En lien
+
+- [Tutoriel du Goldmine Instagram](/help/tutorials/instagram-goldmine) - l'une des deux sources qui alimentent la file d'invitations.
+- [Tutoriel de Goldmine Butler](/help/tutorials/goldminebutler) - trouve les créateurs et les marques qui valent la peine d'être invités au départ.
