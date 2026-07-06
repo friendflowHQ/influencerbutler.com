@@ -25,7 +25,7 @@ const common = {
   sourcemap: watch ? "inline" : false,
   minify: !watch,
   logLevel: "info",
-  loader: { ".css": "text" },
+  loader: { ".css": "text", ".png": "dataurl" },
 };
 
 const builds = [

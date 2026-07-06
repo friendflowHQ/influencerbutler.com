@@ -1,5 +1,6 @@
 import { getShadowRoot } from "./host";
 import { t } from "../i18n";
+import logoUrl from "../../static/icons/icon-48.png";
 
 // The floating panel is shared by every tool on a page: each tool adds a
 // section, so exactly one UI root exists no matter how many tools run.
@@ -11,7 +12,9 @@ export function getPanel(title: string): HTMLElement {
   if (panel && panel.isConnected) return body as HTMLElement;
   panel = el("div", "panel");
   const header = el("div", "header");
-  const dot = el("span", "dot");
+  const dot = el("img", "dot");
+  dot.src = logoUrl;
+  dot.alt = "";
   const titleEl = el("span", "title");
   titleEl.textContent = title;
   const chev = el("span", "chev");
