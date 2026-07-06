@@ -269,11 +269,34 @@ function StorefrontIssues({ issues }: { issues: IssueRow[] }) {
       : severity === "warn"
         ? "bg-amber-100 text-amber-800"
         : "bg-slate-100 text-slate-700";
+  const count = (t: string) => issues.filter((i) => i.issue_type === t).length;
+  const unavailable = count("unavailable_product");
+  const untagged = count("untagged");
+  const overTagged = count("over_tagged");
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
-        Storefront checkup
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          Storefront checkup
+        </p>
+        <a
+          href="/api/extension/storefront-issues/export"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          Download CSV
+        </a>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+          {untagged} untagged
+        </span>
+        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+          {unavailable} unavailable
+        </span>
+        <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+          {overTagged} over-tagged
+        </span>
+      </div>
       <ul className="mt-3 space-y-2">
         {issues.map((issue, index) => (
           <li key={index} className="rounded-xl bg-slate-50 p-3 text-sm">

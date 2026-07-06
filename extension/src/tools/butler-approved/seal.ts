@@ -1,13 +1,12 @@
 import { addSection, criteriaList, el } from "../../ui/components";
+import { t } from "../../i18n";
 import type { ApprovedVerdict } from "./criteria";
 
 export function renderSeal(verdict: ApprovedVerdict): void {
-  const section = addSection("Butler Approved");
+  const section = addSection(t().butlerApproved);
 
   const seal = el("div", verdict.approved ? "seal pass" : "seal fail");
-  seal.textContent = verdict.approved
-    ? "Butler Approved: worth making content for"
-    : "Not Butler Approved yet";
+  seal.textContent = verdict.approved ? t().approvedYes : t().approvedNo;
   section.append(seal);
 
   section.append(
@@ -17,6 +16,6 @@ export function renderSeal(verdict: ApprovedVerdict): void {
   );
 
   const note = el("p", "note");
-  note.textContent = "Criteria read from this page. Tune thresholds in the extension popup.";
+  note.textContent = t().approvedCriteriaNote;
   section.append(note);
 }

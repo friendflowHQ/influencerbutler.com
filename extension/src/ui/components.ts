@@ -1,4 +1,5 @@
 import { getShadowRoot } from "./host";
+import { t } from "../i18n";
 
 // The floating panel is shared by every tool on a page: each tool adds a
 // section, so exactly one UI root exists no matter how many tools run.
@@ -14,11 +15,11 @@ export function getPanel(title: string): HTMLElement {
   const titleEl = el("span", "title");
   titleEl.textContent = title;
   const chev = el("span", "chev");
-  chev.textContent = "hide";
+  chev.textContent = t().panelChevronHide;
   header.append(dot, titleEl, chev);
   header.addEventListener("click", () => {
     panel?.classList.toggle("collapsed");
-    chev.textContent = panel?.classList.contains("collapsed") ? "show" : "hide";
+    chev.textContent = panel?.classList.contains("collapsed") ? t().panelChevronShow : t().panelChevronHide;
   });
   body = el("div", "body");
   panel.append(header, body);

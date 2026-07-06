@@ -1,6 +1,7 @@
 import type { ProductSignals } from "../../amazon/product-signals";
 import type { VideoCounts } from "../../transport/types";
 import type { Settings } from "../../storage/schema";
+import { t } from "../../i18n";
 
 // Butler Approved: a product is worth making content for when all four
 // criteria pass. Pure evaluation over already-extracted signals; when a
@@ -28,7 +29,7 @@ export function evaluateApproved(
   const criteria: CriterionResult[] = [
     {
       key: "activelySelling",
-      label: `${settings.minBoughtPerMonth}+ bought in past month`,
+      label: t().critBought(settings.minBoughtPerMonth),
       state:
         signals.boughtPastMonth === null
           ? "unknown"
@@ -38,7 +39,7 @@ export function evaluateApproved(
     },
     {
       key: "openSlot",
-      label: `Fewer than ${settings.maxInfluencerVideos + 1} influencer videos`,
+      label: t().critOpenSlot(settings.maxInfluencerVideos + 1),
       state:
         counts === null
           ? "unknown"
@@ -48,12 +49,12 @@ export function evaluateApproved(
     },
     {
       key: "inStock",
-      label: "In stock",
+      label: t().critInStock,
       state: signals.inStock ? "pass" : "fail",
     },
     {
       key: "priceFloor",
-      label: `Price at least $${settings.minPrice}`,
+      label: t().critPriceFloor(settings.minPrice),
       state:
         signals.priceCents === null
           ? "unknown"
