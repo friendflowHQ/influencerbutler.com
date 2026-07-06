@@ -5,6 +5,7 @@ import {
 import { fetchDoc } from "../../amazon/html-fetch";
 import { queryAll } from "../../amazon/selectors";
 import { addSection, el } from "../../ui/components";
+import { t } from "../../i18n";
 import { getState, patchSettings, patchState } from "../../storage/store";
 import { sendToBackground } from "../../shared/messages";
 import type { Finding, OrderFinding } from "../../transport/types";
@@ -43,25 +44,24 @@ type ParsedOrder = {
 };
 
 export function initOrdersButler(marketplace: string): void {
-  const section = addSection("Orders Butler");
+  const section = addSection(t().ordersButler);
 
   const intro = el("p", "note");
-  intro.textContent =
-    "Pull your full Amazon order history into your dashboard, the same as the desktop runner. It uses whichever Amazon account this browser is signed into, so it works on an account you manage (for example a family member's) just by signing in here first.";
+  intro.textContent = t().ordersButlerIntro;
   section.append(intro);
 
   const scopeRow = el("label", "note");
-  scopeRow.textContent = "Scope: ";
+  scopeRow.textContent = t().scopeLabel;
   const scopeSelect = el("select") as HTMLSelectElement;
   scopeSelect.append(
-    new Option("Only new since last run", "new"),
-    new Option("All years (full catch-up)", "all"),
+    new Option(t().scopeNew, "new"),
+    new Option(t().scopeAll, "all"),
   );
   scopeRow.append(scopeSelect);
   section.append(scopeRow);
 
   const button = el("button", "btn");
-  button.textContent = "Sync my orders";
+  button.textContent = t().syncMyOrders;
   const progress = el("p", "progress");
   section.append(button, progress);
 
@@ -69,9 +69,9 @@ export function initOrdersButler(marketplace: string): void {
   const authBanner = el("div", "note");
   authBanner.hidden = true;
   const authText = el("span");
-  authText.textContent = "Amazon needs you to sign in. Sign in on this tab, then ";
+  authText.textContent = t().reauthPrompt;
   const resumeBtn = el("button", "btn");
-  resumeBtn.textContent = "Resume";
+  resumeBtn.textContent = t().resume;
   authBanner.append(authText, resumeBtn);
   section.append(authBanner);
 
@@ -116,7 +116,7 @@ export function initOrdersButler(marketplace: string): void {
       .finally(() => {
         button.disabled = false;
         scopeSelect.disabled = false;
-        button.textContent = "Sync again";
+        button.textContent = t().syncAgain;
       });
   });
 }
@@ -156,7 +156,7 @@ async function runHarvest(
       }
 
       const url = pageUrl(basePath, filterParam, `year-${year}`, startIndex);
-      progress.textContent = `Reading ${year}, page ${Math.floor(startIndex / PAGE_SIZE) + 1} (${orderCount} orders so far)...`;
+      progress.textContent = t().harvestReading(year, Math.floor(startIndex / PAGE_SIZE) + 1, orderCount);
 
       let doc: Document;
       try {
@@ -170,7 +170,7 @@ async function runHarvest(
       // Amazon bounced us to sign-in: pause and let the user re-auth, then
       // retry the same page. Mirrors the desktop runner's Login/Resume.
       if (isLoginPage(doc)) {
-        progress.textContent = "Waiting for Amazon sign-in...";
+        progress.textContent = t().waitingForSignin;
         await waitForResume();
         if (signal.aborted) break outer;
         continue; // refetch same startIndex
@@ -226,12 +226,12 @@ async function runHarvest(
   }
 
   progress.textContent = signal.aborted
-    ? `Stopped. ${itemCount} items from ${orderCount} orders synced so far.`
+    ? t().harvestStopped(itemCount, orderCount)
     : reachedCursor
-      ? `Up to date. ${itemCount} new items from ${orderCount} orders synced.`
+      ? t().harvestUpToDate(itemCount, orderCount)
       : orderCount > 0
-        ? `Done. ${itemCount} items from ${orderCount} orders synced to your dashboard.`
-        : "Done. No orders found on this account.";
+        ? t().harvestDone(itemCount, orderCount)
+        : t().harvestNoOrders;
 }
 
 // Parse an order-history document into orders and their line items. Defensive
@@ -334,8 +334,8 @@ function appendOrderRows(list: HTMLElement, orders: ParsedOrder[]): void {
     const title = order.items[0]?.title ?? "Order";
     li.append(el("span", "t", title.slice(0, 60)));
     const detail = el("span");
-    const extra = order.items.length > 1 ? ` +${order.items.length - 1} more` : "";
-    detail.textContent = `${order.orderDate ?? "date unknown"}${extra}`;
+    const extra = order.items.length > 1 ? t().plusMore(order.items.length - 1) : "";
+    detail.textContent = `${order.orderDate ?? t().dateUnknown}${extra}`;
     li.append(detail);
     list.append(li);
   }

@@ -9,15 +9,16 @@
   right: 16px;
   bottom: 16px;
   z-index: 2147483000;
-  width: 300px;
-  max-height: 70vh;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: 80vh;
   overflow: auto;
-  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #0f172a;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.2);
 }
 
 .panel.collapsed { width: auto; max-height: none; overflow: visible; }
@@ -27,10 +28,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 12px 16px;
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid #f1f5f9;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
 }
 
 .panel.collapsed .header { border-bottom: 0; }
@@ -44,28 +49,34 @@
 }
 
 .header .title { font-weight: 700; flex: 1; white-space: nowrap; }
-.header .chev { color: #64748b; font-size: 11px; }
+.header .chev { color: #64748b; font-size: 12px; }
 
-.body { padding: 10px 12px; display: grid; gap: 12px; }
+/* Sections stack with clear separators so tools read as distinct blocks. */
+.body { padding: 4px 0 8px; display: block; }
+
+.section { padding: 14px 16px; }
+.section + .section { border-top: 1px solid #f1f5f9; }
 
 .section h4 {
-  margin: 0 0 6px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #f97316;
 }
 
-.counts { display: flex; gap: 6px; flex-wrap: wrap; }
+.section > * + * { margin-top: 10px; }
+
+.counts { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 12px;
+  padding: 4px 11px;
+  font-size: 12.5px;
   font-weight: 600;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -84,41 +95,72 @@
   align-items: center;
   gap: 8px;
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .seal.pass { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
 .seal.fail { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
 
-.criteria { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; }
-.criteria li { display: flex; gap: 6px; align-items: baseline; font-size: 12px; color: #475569; }
-.criteria li .mark { font-weight: 700; width: 12px; flex: none; }
+.criteria { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.criteria li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: #334155; }
+.criteria li .mark { font-weight: 800; width: 14px; flex: none; text-align: center; }
 .criteria li.pass .mark { color: #16a34a; }
 .criteria li.fail .mark { color: #dc2626; }
 .criteria li.unknown .mark { color: #94a3b8; }
 
-.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; font-size: 12px; }
-.kv dt { color: #64748b; }
-.kv dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; font-size: 13px; align-items: baseline; }
+.kv dt { color: #475569; }
+.kv dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 
-.field { display: grid; gap: 3px; font-size: 12px; color: #64748b; margin-top: 6px; }
+/* Input fields: label above a full-width control, with breathing room. */
+.field { display: grid; gap: 4px; font-size: 12.5px; color: #475569; }
+.field + .field { margin-top: 10px; }
 .field input, .field select {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   font: inherit;
+  font-size: 13px;
   color: #0f172a;
   background: #fff;
   width: 100%;
 }
+.field input:focus, .field select:focus,
+textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: transparent; }
+
+/* Checkbox rows: each on its own line, checkbox pinned left, label readable. */
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 0;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.4;
+}
+.toggle + .toggle { border-top: 1px solid #f8fafc; }
+.toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+  accent-color: #f97316;
+  cursor: pointer;
+}
+.toggle span { color: #334155; font-size: 13px; }
+
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .btn {
   border: 0;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 9px;
+  padding: 10px 14px;
   font: inherit;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
   background: #f97316;
   color: #fff;
@@ -127,32 +169,37 @@
 .btn:hover { background: #ea580c; }
 .btn[disabled] { opacity: 0.6; cursor: default; }
 .btn.secondary { background: #f1f5f9; color: #0f172a; }
+.btn.secondary:hover { background: #e2e8f0; }
 
-.note { font-size: 11px; color: #94a3b8; margin: 4px 0 0; }
+.note { font-size: 12.5px; line-height: 1.5; color: #64748b; margin: 0; }
+/* A checkbox label may reuse .note; keep it readable next to the box. */
+.toggle .note { color: #334155; }
 
-.list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .list li {
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
-  padding: 6px 8px;
-  font-size: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 13px;
   display: grid;
-  gap: 2px;
+  gap: 3px;
 }
 .list li .t { font-weight: 600; color: #0f172a; }
-.list li a { color: #c2410c; text-decoration: none; }
+.list li a { color: #c2410c; text-decoration: none; font-weight: 600; }
+.list li a:hover { text-decoration: underline; }
 
-.progress { font-size: 12px; color: #64748b; }
+.progress { font-size: 12.5px; color: #64748b; margin: 0; }
 
 .badge-inline {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   border-radius: 999px;
-  padding: 1px 8px;
-  font-size: 11px;
+  padding: 2px 9px;
+  font-size: 11.5px;
   font-weight: 700;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  vertical-align: middle;
 }
 
 .badge-inline.gap { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }

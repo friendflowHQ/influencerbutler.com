@@ -3,6 +3,7 @@ import { fetchDoc } from "../../amazon/html-fetch";
 import { extractCarousel } from "../../amazon/video-carousel";
 import { extractSignals } from "../../amazon/product-signals";
 import { addSection, el } from "../../ui/components";
+import { t } from "../../i18n";
 import { createInlineBadge } from "../../ui/host";
 import { getState, patchState } from "../../storage/store";
 import { sendToBackground } from "../../shared/messages";
@@ -28,14 +29,14 @@ export function initOrderHistory(contentGapThreshold: number): void {
   const items = findOrderItems();
   if (items.length === 0) return;
 
-  const section = addSection("Content gaps in your orders");
+  const section = addSection(t().contentGapsHeading);
   const intro = el("p", "note");
-  intro.textContent = `${items.length} products on this page. Scan to find ones with few or no influencer videos: products you own and can film today.`;
+  intro.textContent = t().contentGapsIntro(items.length);
   section.append(intro);
 
   const progress = el("p", "progress");
   const button = el("button", "btn");
-  button.textContent = `Scan these orders (up to ${Math.min(items.length, ORDER_SCAN_CAP)})`;
+  button.textContent = t().scanTheseOrders(Math.min(items.length, ORDER_SCAN_CAP));
   section.append(button, progress);
 
   const resultsList = el("ul", "list");
@@ -50,7 +51,7 @@ export function initOrderHistory(contentGapThreshold: number): void {
     void runScan(items.slice(0, ORDER_SCAN_CAP), contentGapThreshold, progress, resultsList, abort.signal)
       .finally(() => {
         button.disabled = false;
-        button.textContent = "Rescan";
+        button.textContent = t().rescan;
       });
   });
 }
@@ -87,7 +88,7 @@ async function runScan(
 
   for (const [index, item] of items.entries()) {
     if (signal.aborted) break;
-    progress.textContent = `Checking ${index + 1} of ${items.length}...`;
+    progress.textContent = t().checkingOrder(index + 1, items.length);
 
     // Cached entries written by real product-page visits carry a classified
     // breakdown. Fresh fetches only see the static HTML, where Amazon ships
@@ -141,11 +142,11 @@ async function runScan(
       const detail = el("span");
       detail.textContent =
         counts.total === 0
-          ? "No videos at all: wide open"
+          ? t().gapNoVideos
           : counts.influencer === 0
-            ? "No influencer videos yet"
-            : `Only ${counts.influencer} influencer video${counts.influencer === 1 ? "" : "s"}`;
-      const link = el("a", "", "Open product");
+            ? t().gapNoInfluencer
+            : t().gapFewInfluencer(counts.influencer);
+      const link = el("a", "", t().openProduct);
       link.href = productUrl(item.asin);
       link.target = "_blank";
       li.append(detail, link);
@@ -166,10 +167,10 @@ async function runScan(
   }
 
   progress.textContent = signal.aborted
-    ? "Scan stopped."
+    ? t().scanStopped
     : gaps > 0
-      ? `Done: ${gaps} content gap${gaps === 1 ? "" : "s"} found. Film what you already own.`
-      : "Done: no content gaps in these orders.";
+      ? t().gapsFound(gaps)
+      : t().noGaps;
 }
 
 function annotate(
@@ -180,17 +181,17 @@ function annotate(
 ): void {
   let badge: HTMLElement;
   if (counts.total === 0) {
-    badge = createInlineBadge("gap", "No videos at all");
+    badge = createInlineBadge("gap", t().badgeNoVideos);
   } else if (!classified) {
     // Static fetch: total known, creator makeup not. Say exactly that.
-    badge = createInlineBadge("pending", `${counts.total} videos (visit to classify)`);
+    badge = createInlineBadge("pending", t().badgePending(counts.total));
   } else if (counts.influencer <= threshold) {
     badge = createInlineBadge(
       "gap",
-      counts.influencer === 0 ? "No influencer videos" : `${counts.influencer} influencer videos`,
+      counts.influencer === 0 ? t().badgeNoInfluencer : t().badgeInfluencerVideos(counts.influencer),
     );
   } else {
-    badge = createInlineBadge("ok", `${counts.influencer} influencer videos`);
+    badge = createInlineBadge("ok", t().badgeInfluencerVideos(counts.influencer));
   }
   badge.style.marginLeft = "6px";
   item.anchor.insertAdjacentElement("afterend", badge);

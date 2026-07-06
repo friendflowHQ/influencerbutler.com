@@ -7,6 +7,7 @@ import {
   type ProductDetail,
 } from "./enrich";
 import { buildCsv, downloadCsv } from "./csv";
+import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import type { Finding, StorefrontIssueFinding } from "../../transport/types";
 
@@ -17,24 +18,18 @@ const OVER_TAGGED_THRESHOLD = 10;
 // (off by default) add slower per-item passes: photo/list product tags,
 // product availability, and parent ASINs.
 export function initStorefrontPanel(): void {
-  const section = addSection("Storefront checkup");
-  section.append(
-    el(
-      "p",
-      "note",
-      "Fast scan of your whole storefront through Amazon's own feed: no scrolling, no images loaded. The boxes below add slower deep checks that open each item.",
-    ),
-  );
+  const section = addSection(t().storefrontCheckup);
+  section.append(el("p", "note", t().sfFastScanNote));
 
-  const deepContent = checkbox("Also scan photo and list product tags");
-  const checkAvailability = checkbox("Check product availability (opens each product)");
-  const parentAsins = checkbox("Resolve parent ASINs (opens each product)");
+  const deepContent = checkbox(t().sfDeepContent);
+  const checkAvailability = checkbox(t().sfCheckAvailability);
+  const parentAsins = checkbox(t().sfParentAsins);
   section.append(deepContent.wrap, checkAvailability.wrap, parentAsins.wrap);
 
   const button = el("button", "btn");
-  button.textContent = "Check my storefront";
+  button.textContent = t().sfCheckButton;
   const stopBtn = el("button", "btn secondary");
-  stopBtn.textContent = "Stop";
+  stopBtn.textContent = t().sfStop;
   stopBtn.style.display = "none";
   const controls = el("div", "row");
   controls.append(button, stopBtn);
@@ -57,31 +52,31 @@ export function initStorefrontPanel(): void {
     button.disabled = true;
     stopBtn.style.display = wantDetails || deepContent.input.checked ? "inline-block" : "none";
     [summary, stats, list, exportRow].forEach((n) => n.replaceChildren());
-    progress.textContent = "Scanning the feed...";
+    progress.textContent = t().sfScanningFeed;
 
     void run()
       .catch((err) => {
         if ((err as Error)?.name !== "AbortError") {
-          progress.textContent = "Scan failed. Reload the storefront tab and try again.";
+          progress.textContent = t().sfScanFailed;
         } else {
-          progress.textContent = "Stopped.";
+          progress.textContent = t().sfStopped;
         }
       })
       .finally(() => {
         button.disabled = false;
-        button.textContent = "Rescan";
+        button.textContent = t().sfRescan;
         stopBtn.style.display = "none";
       });
 
     async function run(): Promise<void> {
       const result = await harvestStorefront((pages, items) => {
-        progress.textContent = `Scanning the feed... ${items} items across ${pages} pages`;
+        progress.textContent = t().sfScanningProgress(items, pages);
       });
 
       if (deepContent.input.checked) {
         await enrichContentProducts(
           result.items,
-          (done, total) => (progress.textContent = `Opening photos and lists... ${done} of ${total}`),
+          (done, total) => (progress.textContent = t().sfOpeningPhotos(done, total)),
           signal,
         );
       }
@@ -91,17 +86,17 @@ export function initStorefrontPanel(): void {
         const unique = [...new Set(result.items.flatMap((i) => i.taggedAsins))];
         const res = await enrichProductDetails(
           unique,
-          (done, total) => (progress.textContent = `Opening products... ${done} of ${total}`),
+          (done, total) => (progress.textContent = t().sfOpeningProducts(done, total)),
           signal,
         );
         details = res.details;
         if (res.capped) {
-          progress.textContent = `Checked the first ${DETAIL_CAP} products (storefront has more).`;
+          progress.textContent = t().sfCheckedFirst(DETAIL_CAP);
         }
       }
 
       render(result, details, { summary, stats, list, exportRow }, checkAvailability.input.checked);
-      progress.textContent = `Done: ${result.items.length} items across ${result.pages} pages${result.capped ? " (feed capped)" : ""}.`;
+      progress.textContent = t().sfDone(result.items.length, result.pages, result.capped);
     }
   });
 
@@ -115,10 +110,10 @@ function render(
   checkedAvailability: boolean,
 ): void {
   const label: Record<ContentType, string> = {
-    video: "videos",
-    photo: "photos",
-    "idea-list": "idea lists",
-    "media-list": "media lists",
+    video: t().sfLabelVideos,
+    photo: t().sfLabelPhotos,
+    "idea-list": t().sfLabelIdeaLists,
+    "media-list": t().sfLabelMediaLists,
   };
   for (const type of ["video", "photo", "idea-list", "media-list"] as ContentType[]) {
     nodes.summary.append(chip("", `${result.counts[type]} ${label[type]}`));
@@ -132,12 +127,12 @@ function render(
     : [];
 
   nodes.stats.append(
-    chip(untagged.length > 0 ? "bad" : "good", `${untagged.length} untagged`),
-    chip(overTagged.length > 0 ? "warn" : "good", `${overTagged.length} over-tagged`),
-    chip("", `${uniqueProducts.size} unique products`),
+    chip(untagged.length > 0 ? "bad" : "good", t().chipUntagged(untagged.length)),
+    chip(overTagged.length > 0 ? "warn" : "good", t().chipOverTagged(overTagged.length)),
+    chip("", t().sfUniqueProducts(uniqueProducts.size)),
   );
   if (checkedAvailability) {
-    nodes.stats.append(chip(unavailable.length > 0 ? "bad" : "good", `${unavailable.length} unavailable`));
+    nodes.stats.append(chip(unavailable.length > 0 ? "bad" : "good", t().sfUnavailable(unavailable.length)));
   }
 
   const storefrontUrl = location.origin + location.pathname;
@@ -150,21 +145,21 @@ function render(
     li.append(el("span", "t", v.title));
     appendOpen(li, v.url);
     nodes.list.append(li);
-    record({ type: "storefront_issue", storefrontUrl, issueType: "untagged", severity: "error", subject: v.title, detail: "No tagged products, so it earns nothing.", detectedAt: now });
+    record({ type: "storefront_issue", storefrontUrl, issueType: "untagged", severity: "error", subject: v.title, detail: t().sfNoTaggedEarns, detectedAt: now });
   }
   for (const asin of unavailable.slice(0, 40)) {
     const li = el("li");
-    li.append(el("span", "t", `Unavailable product ${asin}`));
+    li.append(el("span", "t", t().sfUnavailableProduct(asin)));
     appendOpen(li, `${location.origin}/dp/${asin}`);
     nodes.list.append(li);
-    record({ type: "storefront_issue", storefrontUrl, issueType: "unavailable_product", severity: "warn", subject: asin, detail: "Tagged product is no longer available.", detectedAt: now });
+    record({ type: "storefront_issue", storefrontUrl, issueType: "unavailable_product", severity: "warn", subject: asin, detail: t().sfTaggedUnavailable, detectedAt: now });
   }
   if (untagged.length === 0 && unavailable.length === 0) {
-    nodes.list.append(el("li", "", "No untagged or unavailable issues found."));
+    nodes.list.append(el("li", "", t().sfNoIssues));
   }
 
   const csvBtn = el("button", "btn secondary");
-  csvBtn.textContent = "Export tagged products (CSV)";
+  csvBtn.textContent = t().sfExportCsv;
   csvBtn.addEventListener("click", () =>
     downloadCsv(`storefront-${creatorHandle()}-${now.slice(0, 10)}.csv`, buildCsv(result, details)),
   );
@@ -173,7 +168,7 @@ function render(
 
 function appendOpen(li: HTMLElement, url: string): void {
   if (!url) return;
-  const a = el("a", "", "Open");
+  const a = el("a", "", t().sfOpen);
   (a as HTMLAnchorElement).href = url;
   (a as HTMLAnchorElement).target = "_blank";
   li.append(a);
