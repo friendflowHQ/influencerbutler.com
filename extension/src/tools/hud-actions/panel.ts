@@ -89,9 +89,15 @@ function renderConnected(
     run({ type: "campaign.accept", kind: "spcc", product }, t().checkingSpcc),
   );
 
+  const collabBtn = el("button", "btn secondary");
+  collabBtn.textContent = t().addToCollab;
+  collabBtn.addEventListener("click", () =>
+    run({ type: "collaboration.add", product }, t().addingCollab),
+  );
+
   const grid = el("div", "row");
   grid.style.flexWrap = "wrap";
-  grid.append(contentBtn, ccBtn, spccBtn);
+  grid.append(contentBtn, ccBtn, spccBtn, collabBtn);
   body.append(grid);
 
   const note = el("p", "note");

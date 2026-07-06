@@ -95,6 +95,34 @@ export function chip(className: string, text: string): HTMLElement {
   return el("span", `chip ${className}`, text);
 }
 
+// A small "Copy" affordance next to a value (ASIN, etc). Copies to the
+// clipboard and briefly confirms. Stops propagation so it never toggles the
+// panel or triggers a parent row's click.
+export function copyButton(value: string): HTMLButtonElement {
+  const btn = el("button", "copy-btn");
+  btn.type = "button";
+  btn.textContent = t().copy;
+  btn.setAttribute("aria-label", `${t().copy}: ${value}`);
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    void navigator.clipboard
+      ?.writeText(value)
+      .then(() => {
+        btn.textContent = t().copied;
+        btn.classList.add("copied");
+        window.setTimeout(() => {
+          btn.textContent = t().copy;
+          btn.classList.remove("copied");
+        }, 1200);
+      })
+      .catch(() => {
+        // clipboard blocked (rare): leave the label unchanged
+      });
+  });
+  return btn;
+}
+
 export function criteriaList(
   rows: Array<{ label: string; state: "pass" | "fail" | "unknown" }>,
 ): HTMLElement {

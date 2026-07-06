@@ -44,6 +44,53 @@ export type AuthState = {
   verifiedAt: number | null;
 };
 
+// Third-party API integrations (OpenAI, Amazon Creators API, deeplink
+// providers, affiliate networks) configured on the options page. Credentials
+// are encrypted at rest with AES-GCM (see src/integrations/crypto.ts) and never
+// leave the machine: tests and live use call each provider's own API directly,
+// never influencerbutler.com. Keyed by the adapter id (src/integrations).
+export type EncryptedBlob = { iv: string; ct: string };
+
+export type IntegrationTestStatus = "untested" | "ok" | "fail";
+
+export type IntegrationTestResult = {
+  status: IntegrationTestStatus;
+  at: number | null;
+  message: string | null;
+};
+
+export type IntegrationState = {
+  enabled: boolean;
+  // Encrypted JSON of the provider's credential fields (Record<string,string>),
+  // or null when nothing has been saved yet.
+  credentialsEnc: EncryptedBlob | null;
+  lastTest: IntegrationTestResult;
+  // Whether this provider takes part in affiliate routing when connected.
+  routingParticipates: boolean;
+};
+
+export type IntegrationsState = {
+  global: {
+    // Run every saved test on browser startup (adds a few seconds; off by default).
+    testOnStartup: boolean;
+    // Master switch for rewriting Amazon links through connected providers.
+    affiliateRoutingEnabled: boolean;
+    // Which deeplink provider wraps generated links (adapter id), or null.
+    primaryDeeplinkProvider: string | null;
+    // Amazon Associates tag per marketplace country code, for example
+    // { US: "mytag-20", UK: "mytag-21" }. US defaults to the storefront handle.
+    perCountryTags: Record<string, string>;
+  };
+  providers: Record<string, IntegrationState>;
+};
+
+export const DEFAULT_INTEGRATION_STATE: IntegrationState = {
+  enabled: false,
+  credentialsEnc: null,
+  lastTest: { status: "untested", at: null, message: null },
+  routingParticipates: true,
+};
+
 export type CachedScan = {
   counts: VideoCounts;
   title?: string;
@@ -55,6 +102,7 @@ export type StorageShape = {
   schemaVersion: number;
   settings: Settings;
   auth: AuthState;
+  integrations: IntegrationsState;
   queue: Finding[];
   lastSyncAt: number | null;
   cache: Record<string, CachedScan>;
@@ -63,7 +111,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -90,6 +138,15 @@ export const DEFAULTS: StorageShape = {
     debug: false,
   },
   auth: { licenseKey: null, email: null, verifiedAt: null },
+  integrations: {
+    global: {
+      testOnStartup: false,
+      affiliateRoutingEnabled: false,
+      primaryDeeplinkProvider: null,
+      perCountryTags: {},
+    },
+    providers: {},
+  },
   queue: [],
   lastSyncAt: null,
   cache: {},
@@ -101,8 +158,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   if (!raw || typeof raw.schemaVersion !== "number") {
     return structuredClone(DEFAULTS);
   }
-  // Future schema bumps switch on raw.schemaVersion here. Merging with
-  // defaults also backfills any keys added within version 1.
+  // Future schema bumps switch on raw.schemaVersion here. Merging with defaults
+  // also backfills any keys added within a version. v1 -> v2 added the
+  // integrations slice; older stored state simply gains its defaults untouched.
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -113,7 +171,15 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       tools: { ...DEFAULTS.settings.tools, ...(raw.settings?.tools ?? {}) },
     },
     auth: { ...DEFAULTS.auth, ...(raw.auth ?? {}) },
+    integrations: {
+      global: {
+        ...structuredClone(DEFAULTS.integrations.global),
+        ...(raw.integrations?.global ?? {}),
+        perCountryTags: { ...(raw.integrations?.global?.perCountryTags ?? {}) },
+      },
+      providers: { ...(raw.integrations?.providers ?? {}) },
+    },
     telemetry: { selectorMisses: { ...(raw.telemetry?.selectorMisses ?? {}) } },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }

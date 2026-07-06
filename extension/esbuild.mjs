@@ -53,6 +53,12 @@ const builds = [
     outfile: path.join(dist, "popup.js"),
     format: "iife",
   },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/options/index.ts")],
+    outfile: path.join(dist, "options.js"),
+    format: "iife",
+  },
 ];
 
 if (watch) {

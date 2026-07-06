@@ -1,4 +1,4 @@
-export type PageType = "product" | "order-history" | "storefront" | "other";
+export type PageType = "product" | "order-history" | "storefront" | "creator-upload" | "other";
 
 export function detectPageType(url: string): PageType {
   let path: string;
@@ -12,5 +12,7 @@ export function detectPageType(url: string): PageType {
     return "order-history";
   }
   if (path.startsWith("/shop/")) return "storefront";
+  // The Creator Hub "Edit Video" page, where products are tagged before submit.
+  if (/^\/creatorhub\/video\//.test(path)) return "creator-upload";
   return "other";
 }

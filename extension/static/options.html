@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Influencer Butler: API Integrations</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="brand">
+        <img src="icons/icon-32.png" alt="" width="24" height="24" />
+        <span id="page-title">API Integrations</span>
+      </div>
+    </header>
+
+    <main id="root">
+      <p id="page-intro" class="intro"></p>
+      <p id="security-note" class="note"></p>
+
+      <section class="card globals">
+        <div class="row">
+          <button id="run-all" class="primary"></button>
+          <span id="run-all-status" class="muted small"></span>
+        </div>
+        <label class="toggle"><input id="test-on-startup" type="checkbox" /><span id="label-startup"></span></label>
+        <label class="toggle"><input id="affiliate-routing" type="checkbox" /><span id="label-routing"></span></label>
+        <label class="field">
+          <span id="label-primary-deeplink"></span>
+          <select id="primary-deeplink"></select>
+        </label>
+      </section>
+
+      <div id="categories"></div>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

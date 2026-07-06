@@ -20,6 +20,7 @@ export type SelectorId =
   | "storefrontTile"
   | "mainImage"
   | "breadcrumbs"
+  | "bestsellerRank"
   | "siteStripeCommission";
 
 const REGISTRY: Record<SelectorId, string[]> = {
@@ -102,6 +103,16 @@ const REGISTRY: Record<SelectorId, string[]> = {
   breadcrumbs: [
     "#wayfinding-breadcrumbs_feature_div",
     "#wayfinding-breadcrumbs_container",
+  ],
+  // Containers that hold the "Best Sellers Rank: #N in Category" text, newest
+  // detail-bullets layout first. We scan the whole container's text for every
+  // "#N in Category" and keep the narrowest.
+  bestsellerRank: [
+    "#detailBulletsWrapper_feature_div",
+    "#detailBullets_feature_div",
+    "#productDetails_detailBullets_sections1",
+    "#prodDetails",
+    "#SalesRank",
   ],
   // The SiteStripe "Influencers & Associates" bar shows the live commission
   // rate for logged-in creators. Amazon labels it "Commission rate" with the

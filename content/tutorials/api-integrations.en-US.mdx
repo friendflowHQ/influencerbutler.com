@@ -80,6 +80,16 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 - **YouTube OAuth expires unexpectedly**: Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
 - **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
 
+## In the Chrome extension too
+
+The free [Influencer Butler Chrome extension](/help/tutorials/extension) now has its own API Integrations panel, so you can connect the same providers without the desktop app. Open the extension popup and click the **gear icon** in the top-right to reach it. You get the same flow: paste a key, **Test Connection**, watch the badge turn green, and a **Run all saved tests** button plus a **test-on-startup** toggle. It covers OpenAI, the Amazon Creators API, per-country Associates tags, the deeplink providers, and the affiliate networks, with the same affiliate-routing and primary-deeplink controls.
+
+The important difference is where the keys live. In the extension, your keys stay on your device, encrypted in the browser's local storage, and are sent only to each provider's own API (for example OpenAI's key only ever goes to OpenAI). They never touch Influencer Butler servers. Because access to each provider is granted on demand, the first time you test or save a provider Chrome asks you to allow the extension to reach that provider's site.
+
+Once connected, the extension uses them while you browse Amazon: a **Copy my link** button on any product builds your affiliate/deeplink, and (when OpenAI is connected and tested) a **Draft caption** button writes a quick post for you.
+
+Note: live Test Connection currently makes a real read-only call for OpenAI and the Amazon Creators API; the deeplink providers and affiliate networks validate your saved configuration, with live pings added as each provider's endpoint is confirmed.
+
 ## Related
 
 - Every Amazon-side workspace ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) reads from here.

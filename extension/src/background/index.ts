@@ -10,8 +10,18 @@ import { getHudStatus, sendHudCommand } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
+import { fetchMarketAvailability } from "./market-availability";
+import {
+  buildIntegrationsView,
+  generateAffiliateLink,
+  maybeTestAllOnStartup,
+  openaiComplete,
+  saveIntegration,
+  testAllIntegrations,
+  testIntegration,
+} from "./integrations";
 import { API_BASE } from "../shared/constants";
-import { getState } from "../storage/store";
+import { getState, patchIntegrationsGlobal } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 
 // Background service worker: the only place that talks to
@@ -28,6 +38,7 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
   void refreshCatalogues();
   void refreshRateCard();
+  void maybeTestAllOnStartup();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -66,16 +77,64 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
       return true;
+    case "FETCH_MARKET_AVAILABILITY":
+      void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);
+      return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from
       // inside the overlay's shadow DOM, so open the tab here. Only our own
       // site is allowed, so a page can never drive this to an arbitrary URL.
       void openOurUrl(message.url).then(() => sendResponse(undefined));
       return true;
+    case "GET_INTEGRATIONS":
+      void buildIntegrationsView().then(sendResponse);
+      return true;
+    case "SAVE_INTEGRATION":
+      void saveIntegration(
+        message.id,
+        message.values,
+        message.enabled,
+        message.routingParticipates,
+      ).then(sendResponse);
+      return true;
+    case "SET_INTEGRATION_GLOBAL":
+      void patchIntegrationsGlobal(message.partial).then(sendResponse);
+      return true;
+    case "TEST_INTEGRATION":
+      void testIntegration(message.id).then(sendResponse);
+      return true;
+    case "TEST_ALL_INTEGRATIONS":
+      void testAllIntegrations().then(sendResponse);
+      return true;
+    case "GENERATE_AFFILIATE_LINK":
+      void generateAffiliateLink(message.asin, message.marketplace, message.url).then(sendResponse);
+      return true;
+    case "REWRITE_LINK":
+      void rewriteLink(message.url).then(sendResponse);
+      return true;
+    case "OPENAI_COMPLETE":
+      void openaiComplete(message.prompt).then(sendResponse);
+      return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background
   }
 });
+
+// Rewrite an existing Amazon product url through affiliate routing. This is the
+// automatic path, so it only rewrites when the global toggle is on; otherwise
+// it returns the url untouched. Extracts the ASIN and marketplace from the url.
+async function rewriteLink(url: string): Promise<import("../shared/messages").GenerateLinkResult> {
+  try {
+    const state = await getState();
+    if (!state.integrations.global.affiliateRoutingEnabled) return { ok: true, url };
+    const parsed = new URL(url);
+    const asin = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})/.exec(parsed.pathname)?.[1] ?? "";
+    const marketplace = parsed.hostname.replace(/^www\./, "");
+    return await generateAffiliateLink(asin, marketplace, url);
+  } catch {
+    return { ok: false, error: "That is not a valid product URL." };
+  }
+}
 
 async function openOurUrl(url: string): Promise<void> {
   try {
