@@ -190,6 +190,10 @@ export interface Dict {
   scanStopped: string;
   gapsFound: (n: number) => string;
   noGaps: string;
+  gapCheckNext: (next: number, remaining: number) => string;
+  gapFilterNoCc: string;
+  gapFilterNoCarousel: string;
+  gapExportCsv: string;
 
   // Orders Butler harvester panel
   ordersButler: string;
@@ -223,6 +227,8 @@ export interface Dict {
   sendToContentButler: string;
   acceptCc: string;
   acceptSpcc: string;
+  addToCollab: string;
+  addingCollab: string;
   pushingDeals: string;
   sendingContent: string;
   checkingCc: string;
@@ -421,6 +427,10 @@ const en: Dict = {
   scanStopped: "Scan stopped.",
   gapsFound: (n) => `Done: ${n} content gap${n === 1 ? "" : "s"} found. Film what you already own.`,
   noGaps: "Done: no content gaps in these orders.",
+  gapCheckNext: (next, remaining) => `Check next ${next} (${remaining} remaining)`,
+  gapFilterNoCc: "No Creator Connections campaign only",
+  gapFilterNoCarousel: "No upper carousel only",
+  gapExportCsv: "Export gaps CSV",
 
   ordersButler: "Orders Butler",
   ordersButlerIntro:
@@ -452,6 +462,8 @@ const en: Dict = {
   sendToContentButler: "Send to Content Butler",
   acceptCc: "Accept CC campaign",
   acceptSpcc: "Accept SPCC campaign",
+  addToCollab: "Add to Collaboration Tracker",
+  addingCollab: "Adding to Collaboration Tracker...",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
@@ -653,6 +665,10 @@ const es: Dict = {
   scanStopped: "Escaneo detenido.",
   gapsFound: (n) => `Listo: ${n} hueco${n === 1 ? "" : "s"} de contenido encontrado${n === 1 ? "" : "s"}. Graba lo que ya tienes.`,
   noGaps: "Listo: no hay huecos de contenido en estos pedidos.",
+  gapCheckNext: (next, remaining) => `Revisar los siguientes ${next} (${remaining} restantes)`,
+  gapFilterNoCc: "Solo sin campaña de Creator Connections",
+  gapFilterNoCarousel: "Solo sin carrusel superior",
+  gapExportCsv: "Exportar huecos CSV",
 
   ordersButler: "Orders Butler",
   ordersButlerIntro:
@@ -684,6 +700,8 @@ const es: Dict = {
   sendToContentButler: "Enviar a Content Butler",
   acceptCc: "Aceptar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
+  addToCollab: "Añadir al Collaboration Tracker",
+  addingCollab: "Añadiendo al Collaboration Tracker...",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
@@ -885,6 +903,10 @@ const fr: Dict = {
   scanStopped: "Analyse arrêtée.",
   gapsFound: (n) => `Terminé: ${n} manque${n === 1 ? "" : "s"} de contenu trouvé${n === 1 ? "" : "s"}. Filmez ce que vous avez déjà.`,
   noGaps: "Terminé: aucun manque de contenu dans ces commandes.",
+  gapCheckNext: (next, remaining) => `Vérifier les ${next} suivants (${remaining} restants)`,
+  gapFilterNoCc: "Uniquement sans campagne Creator Connections",
+  gapFilterNoCarousel: "Uniquement sans carrousel superieur",
+  gapExportCsv: "Exporter les manques CSV",
 
   ordersButler: "Orders Butler",
   ordersButlerIntro:
@@ -916,6 +938,8 @@ const fr: Dict = {
   sendToContentButler: "Envoyer à Content Butler",
   acceptCc: "Accepter la campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
+  addToCollab: "Ajouter au Collaboration Tracker",
+  addingCollab: "Ajout au Collaboration Tracker...",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",

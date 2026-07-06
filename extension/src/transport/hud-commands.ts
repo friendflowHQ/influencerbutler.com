@@ -17,7 +17,8 @@ export type ProductRef = {
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
   | { type: "content.push"; product: ProductRef }
-  | { type: "campaign.accept"; kind: "cc" | "spcc"; product: ProductRef };
+  | { type: "campaign.accept"; kind: "cc" | "spcc"; product: ProductRef }
+  | { type: "collaboration.add"; product: ProductRef };
 
 export type HudCommandResult = {
   ok: boolean;

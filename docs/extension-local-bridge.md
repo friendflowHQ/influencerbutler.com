@@ -197,6 +197,14 @@ exists, return `{ "ok": false, "message": "No CC campaign for this product." }`.
 { "type": "campaign.accept", "kind": "cc", "product": { "asin": "...", "marketplace": "amazon.com" } }
 ```
 
+**`collaboration.add`** - add the product to the app's Collaboration Tracker so
+the creator can track an outreach / brand collaboration for it. Same `product`
+shape.
+
+```json
+{ "type": "collaboration.add", "product": { "asin": "...", "marketplace": "amazon.com" } }
+```
+
 ### When the app is not running
 
 Every probe/command fails fast (short timeout). The extension then shows an
