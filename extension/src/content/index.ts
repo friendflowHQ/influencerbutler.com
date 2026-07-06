@@ -12,6 +12,7 @@ import { initOrdersButler } from "../tools/orders-butler/harvester";
 import { evaluateApproved, criteriaToRecord } from "../tools/butler-approved/criteria";
 import { renderSeal } from "../tools/butler-approved/seal";
 import { renderCalculator } from "../tools/calculator/panel";
+import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { guard } from "../shared/guard";
@@ -109,6 +110,9 @@ async function runForPage(): Promise<void> {
       if (settings.tools.calculator) {
         guard("calculator", () => renderCalculator(signals, carousel.counts, settings));
       }
+
+      // Campaign availability from the locally-cached membership filter.
+      guard("campaigns", () => void renderCampaigns(signals));
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
       // plus the download/trial upsell when the app is not running.

@@ -1,0 +1,34 @@
+import { addSection, chip, el } from "../../ui/components";
+import { getCache, loadFilters, membership } from "../../catalogue/cache";
+import type { ProductSignals } from "../../amazon/product-signals";
+
+// Shows whether this product likely has a Creator Connections or Sponsored
+// Products (SPCC) campaign, checked locally against the downloaded membership
+// filter (zero server cost). A hit is a strong hint, not a guarantee (Bloom
+// filters have a small false-positive rate); the app confirms on Accept.
+
+export async function renderCampaigns(signals: ProductSignals): Promise<void> {
+  if (!signals.asin) return;
+  const cache = await getCache();
+  const loaded = loadFilters(cache);
+  // No filters downloaded yet: stay quiet rather than show a misleading "none".
+  if (!loaded.cc && !loaded.spcc) return;
+
+  const flags = membership(loaded, signals.asin);
+  const section = addSection("Campaigns");
+
+  if (!flags.cc && !flags.spcc) {
+    section.append(el("p", "note", "No Creator Connections or SPCC campaign found for this product."));
+    return;
+  }
+
+  const row = el("div", "counts");
+  if (flags.cc) row.append(chip("good", "Creator Connections available"));
+  if (flags.spcc) row.append(chip("good", "SPCC available"));
+  section.append(row);
+
+  const note = el("p", "note");
+  note.textContent =
+    "Accept it from the Send to your butler app section below (the app confirms and accepts).";
+  section.append(note);
+}
