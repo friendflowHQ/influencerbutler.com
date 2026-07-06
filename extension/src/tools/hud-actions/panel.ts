@@ -109,11 +109,20 @@ function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
 
   const cta = el("a", "btn");
   cta.textContent = auth.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
+  // href is kept for middle-click / open-in-new-tab and accessibility, but a
+  // plain anchor does not reliably navigate from inside the overlay's shadow
+  // DOM, so a normal click routes through the background worker instead.
   (cta as HTMLAnchorElement).href = APP_TRIAL_URL;
   (cta as HTMLAnchorElement).target = "_blank";
+  (cta as HTMLAnchorElement).rel = "noopener";
   cta.style.display = "inline-block";
   cta.style.marginTop = "8px";
   cta.style.textDecoration = "none";
+  cta.addEventListener("click", (event) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    void sendToBackground<void>({ kind: "OPEN_URL", url: APP_TRIAL_URL });
+  });
   body.append(cta);
 
   const note = el("p", "note");

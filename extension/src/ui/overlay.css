@@ -68,6 +68,66 @@
 
 .section > * + * { margin-top: 10px; }
 
+/* Inline "i" bubble: keeps explanatory copy out of the way until hovered. */
+.infotip {
+  /* No positioning context here: the bubble anchors to the row (h4 / seal /
+     dt), which spans the panel width, so it can never clip past the edge. */
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* Rows that host an infotip become the bubble's containing block, so the
+   bubble is placed relative to the full-width row rather than the tiny mark. */
+.section h4,
+.seal,
+.kv dt {
+  position: relative;
+}
+.infotip-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: #fed7aa;
+  color: #c2410c;
+  font-size: 10px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.infotip-bubble {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  width: 240px;
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: 400 12px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+.infotip:hover .infotip-bubble,
+.infotip:focus .infotip-bubble,
+.infotip:focus-within .infotip-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 .counts { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .chip {
@@ -174,6 +234,37 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .note { font-size: 12.5px; line-height: 1.5; color: #64748b; margin: 0; }
 /* A checkbox label may reuse .note; keep it readable next to the box. */
 .toggle .note { color: #334155; }
+
+/* Disclosure: an orange-caret label row that toggles its content region,
+   matching the desktop app's collapsible sections. */
+.disclosure-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  user-select: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f97316;
+  text-align: left;
+}
+.disclosure-head:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
+.disclosure-caret {
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.disclosure:not(.open) .disclosure-caret { transform: rotate(-90deg); }
+.disclosure:not(.open) .disclosure-body { display: none; }
+.disclosure-body { margin-top: 10px; }
 
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .list li {

@@ -30,14 +30,54 @@ export function getPanel(title: string): HTMLElement {
   return body;
 }
 
-export function addSection(heading: string): HTMLElement {
+export function addSection(heading: string, info?: string): HTMLElement {
   const container = getPanel("Influencer Butler");
   const section = el("div", "section");
   const h = el("h4");
   h.textContent = heading;
+  if (info) h.append(infoTip(info));
   section.append(h);
   container.append(section);
   return section;
+}
+
+// A small "i" affordance that reveals explanatory copy on hover or focus,
+// so long-winded help text does not clutter the panel until it is wanted.
+export function infoTip(text: string): HTMLElement {
+  const tip = el("span", "infotip");
+  tip.tabIndex = 0;
+  tip.setAttribute("role", "img");
+  tip.setAttribute("aria-label", text);
+  tip.append(el("span", "infotip-mark", "i"), el("span", "infotip-bubble", text));
+  return tip;
+}
+
+// A disclosure block: a clickable label row with an orange caret that toggles
+// a content region, mirroring the desktop app's expandable sections. Returns
+// the content element to append children to (the container is added to `parent`).
+export function collapsible(
+  parent: HTMLElement,
+  label: string,
+  opts: { open?: boolean } = {},
+): HTMLElement {
+  const container = el("div", "disclosure");
+  const head = el("button", "disclosure-head") as HTMLButtonElement;
+  head.type = "button";
+  const caret = el("span", "disclosure-caret", "▾");
+  caret.setAttribute("aria-hidden", "true");
+  const content = el("div", "disclosure-body");
+  head.append(caret, el("span", "disclosure-label", label));
+  const setOpen = (open: boolean) => {
+    container.classList.toggle("open", open);
+    head.setAttribute("aria-expanded", String(open));
+  };
+  head.addEventListener("click", () =>
+    setOpen(!container.classList.contains("open")),
+  );
+  setOpen(opts.open ?? true);
+  container.append(head, content);
+  parent.append(container);
+  return content;
 }
 
 export function el<K extends keyof HTMLElementTagNameMap>(

@@ -11,7 +11,6 @@ import {
 } from "@/lib/blog";
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 import BlogShareButtons from "@/components/blog/BlogShareButtons";
-import NewsletterSignup from "@/components/NewsletterSignup";
 import { buildPinDescription } from "@/lib/pinterest";
 
 export const revalidate = 300;
@@ -200,15 +199,6 @@ export default async function BlogPostPage({
             >
               Start your free trial
             </a>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-8">
-            <NewsletterSignup
-              source="blog-post"
-              title="Not ready for a trial? Get the free newsletter."
-              subtitle="Amazon-influencer tips, commission tactics, and trending product picks, straight to your inbox."
-              className="max-w-xl"
-            />
           </div>
         </article>
 

@@ -9,6 +9,8 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { getHudStatus, sendHudCommand } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
+import { refreshRateCard } from "./rate-card";
+import { API_BASE } from "../shared/constants";
 import { getState } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 
@@ -20,13 +22,20 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void refreshCatalogues();
+  void refreshRateCard();
 });
 
-chrome.runtime.onStartup.addListener(() => void refreshCatalogues());
+chrome.runtime.onStartup.addListener(() => {
+  void refreshCatalogues();
+  void refreshRateCard();
+});
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) void flush();
-  if (alarm.name === CATALOGUE_ALARM) void refreshCatalogues();
+  if (alarm.name === CATALOGUE_ALARM) {
+    void refreshCatalogues();
+    void refreshRateCard();
+  }
 });
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
@@ -57,10 +66,26 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
       return true;
+    case "OPEN_URL":
+      // Content-script anchors with target=_blank do not reliably open from
+      // inside the overlay's shadow DOM, so open the tab here. Only our own
+      // site is allowed, so a page can never drive this to an arbitrary URL.
+      void openOurUrl(message.url).then(() => sendResponse(undefined));
+      return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background
   }
 });
+
+async function openOurUrl(url: string): Promise<void> {
+  try {
+    const target = new URL(url, API_BASE);
+    if (target.origin !== new URL(API_BASE).origin) return;
+    await chrome.tabs.create({ url: target.toString() });
+  } catch {
+    // malformed url: ignore rather than open anything
+  }
+}
 
 async function buildAuthStatus(): Promise<AuthStatus> {
   const [{ signedIn, email }, depth, state] = await Promise.all([

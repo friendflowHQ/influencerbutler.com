@@ -74,9 +74,11 @@ export function initStorefrontPanel(): void {
       });
 
       if (deepContent.input.checked) {
+        const started = Date.now();
         await enrichContentProducts(
           result.items,
-          (done, total) => (progress.textContent = t().sfOpeningPhotos(done, total)),
+          (done, total) =>
+            (progress.textContent = t().sfOpeningPhotos(done, total) + etaSuffix(started, done, total)),
           signal,
         );
       }
@@ -84,9 +86,12 @@ export function initStorefrontPanel(): void {
       let details: Map<string, ProductDetail> | undefined;
       if (wantDetails) {
         const unique = [...new Set(result.items.flatMap((i) => i.taggedAsins))];
+        const started = Date.now();
         const res = await enrichProductDetails(
           unique,
-          (done, total) => (progress.textContent = t().sfOpeningProducts(done, total)),
+          (done, total) =>
+            (progress.textContent =
+              t().sfOpeningProducts(done, total) + etaSuffix(started, done, total)),
           signal,
         );
         details = res.details;
@@ -187,4 +192,14 @@ function checkbox(text: string): { wrap: HTMLElement; input: HTMLInputElement } 
 
 function creatorHandle(): string {
   return location.pathname.match(/\/shop\/([^/?#]+)/)?.[1] ?? "storefront";
+}
+
+// A rough "time left" for the long opt-in passes, so a multi-thousand-product
+// storefront does not look frozen. Needs a few samples before the rate is
+// meaningful, and drops off near the end.
+function etaSuffix(started: number, done: number, total: number): string {
+  if (done < 5 || done >= total) return "";
+  const perItemMs = (Date.now() - started) / done;
+  const minutes = Math.round((perItemMs * (total - done)) / 60000);
+  return minutes >= 1 ? t().sfEtaMinLeft(minutes) : "";
 }

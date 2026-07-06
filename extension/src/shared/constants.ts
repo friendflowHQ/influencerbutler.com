@@ -18,6 +18,13 @@ export const CATALOGUE_ALARM = "ib-catalogue";
 export const CATALOGUE_PERIOD_MINUTES = 6 * 60;
 export const CATALOGUE_STALE_MS = 20 * 60 * 60 * 1000;
 
+// Amazon Associates commission-rate schedule ("rate card"), harvested centrally
+// and served here. Downloaded once a day and looked up locally so break-even
+// has a real category rate even when SiteStripe is not on the page. Refreshed
+// on the same alarm as the catalogue.
+export const RATE_CARD_BASE = `${API_BASE}/api/extension/rate-card`;
+export const RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
 // Sync queue.
 export const SYNC_ALARM = "ib-sync";
 export const SYNC_PERIOD_MINUTES = 2;

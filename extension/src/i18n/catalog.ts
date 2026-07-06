@@ -91,11 +91,15 @@ export interface Dict {
   chipUnclassified: (n: number) => string;
   videosTotalVia: (total: number, viaPageData: boolean) => string;
   influencerFallback: string;
+  influencerVideosLabel: (n: number) => string;
 
   // Butler Approved panel
   butlerApproved: string;
   approvedYes: string;
   approvedNo: string;
+  approvedReasonPass: string;
+  approvedReasonFail: (checks: string) => string;
+  approvedReasonUnknown: (checks: string) => string;
   approvedCriteriaNote: string;
   critBought: (n: number) => string;
   critOpenSlot: (n: number) => string;
@@ -107,6 +111,8 @@ export interface Dict {
   noPriceForMath: string;
   calcIntro: string;
   commissionFromSiteStripe: (pct: number) => string;
+  commissionFromRateCard: (pct: number, category: string) => string;
+  commissionFromRateCardDefault: (pct: number) => string;
   fieldCommissionRate: string;
   fieldHourlyRate: string;
   fieldMinutesFilmEdit: string;
@@ -132,6 +138,7 @@ export interface Dict {
   sfScanningProgress: (items: number, pages: number) => string;
   sfOpeningPhotos: (done: number, total: number) => string;
   sfOpeningProducts: (done: number, total: number) => string;
+  sfEtaMinLeft: (min: number) => string;
   sfCheckedFirst: (cap: number) => string;
   sfScanFailed: string;
   sfStopped: string;
@@ -296,10 +303,14 @@ const en: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
   influencerFallback: "Influencer",
+  influencerVideosLabel: (n) => `Influencer videos (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
   approvedNo: "Not Butler Approved yet",
+  approvedReasonPass: "Every check below passes, so this product is worth making content for.",
+  approvedReasonFail: (checks) => `Not approved yet: these checks did not pass - ${checks}.`,
+  approvedReasonUnknown: (checks) => `Could not read from this page: ${checks}.`,
   approvedCriteriaNote: "Criteria read from this page. Tune thresholds in the extension popup.",
   critBought: (n) => `${n}+ bought in past month`,
   critOpenSlot: (n) => `Fewer than ${n} influencer videos`,
@@ -311,6 +322,10 @@ const en: Dict = {
   calcIntro:
     "How many sales pay back the time you spend filming one video. This assumes the product is free (Creator Connections) or you already own it, not that you buy it.",
   commissionFromSiteStripe: (pct) => `Commission rate ${pct}% read live from your SiteStripe bar.`,
+  commissionFromRateCard: (pct, category) =>
+    `Using ${pct}% for "${category}" from the Amazon Associates rate card.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Using the ${pct}% all-other-categories rate from the Amazon Associates rate card.`,
   fieldCommissionRate: "Commission rate (%)",
   fieldHourlyRate: "Your hourly rate ($)",
   fieldMinutesFilmEdit: "Minutes to film + edit",
@@ -337,6 +352,7 @@ const en: Dict = {
   sfScanningProgress: (items, pages) => `Scanning the feed... ${items} items across ${pages} pages`,
   sfOpeningPhotos: (done, total) => `Opening photos and lists... ${done} of ${total}`,
   sfOpeningProducts: (done, total) => `Opening products... ${done} of ${total}`,
+  sfEtaMinLeft: (min) => ` (about ${min} min left)`,
   sfCheckedFirst: (cap) => `Checked the first ${cap} products (storefront has more).`,
   sfScanFailed: "Scan failed. Reload the storefront tab and try again.",
   sfStopped: "Stopped.",
@@ -503,10 +519,14 @@ const es: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
   influencerFallback: "Influencer",
+  influencerVideosLabel: (n) => `Videos de influencers (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
   approvedNo: "Todavía no es Butler Approved",
+  approvedReasonPass: "Todas las comprobaciones de abajo pasan, así que vale la pena crear contenido.",
+  approvedReasonFail: (checks) => `Todavía no aprobado: estas comprobaciones no pasaron - ${checks}.`,
+  approvedReasonUnknown: (checks) => `No se pudo leer de esta página: ${checks}.`,
   approvedCriteriaNote: "Criterios leídos de esta página. Ajusta los umbrales en el popup de la extensión.",
   critBought: (n) => `${n}+ comprados el mes pasado`,
   critOpenSlot: (n) => `Menos de ${n} videos de influencers`,
@@ -518,6 +538,10 @@ const es: Dict = {
   calcIntro:
     "Cuántas ventas recuperan el tiempo que pasas grabando un video. Esto asume que el producto es gratis (Creator Connections) o que ya lo tienes, no que lo compras.",
   commissionFromSiteStripe: (pct) => `Comisión del ${pct}% leída en vivo de tu barra SiteStripe.`,
+  commissionFromRateCard: (pct, category) =>
+    `Usando ${pct}% para "${category}" del tarifario de Amazon Associates.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Usando la tarifa general del ${pct}% del tarifario de Amazon Associates.`,
   fieldCommissionRate: "Comisión (%)",
   fieldHourlyRate: "Tu tarifa por hora ($)",
   fieldMinutesFilmEdit: "Minutos para grabar + editar",
@@ -544,6 +568,7 @@ const es: Dict = {
   sfScanningProgress: (items, pages) => `Escaneando el feed... ${items} elementos en ${pages} páginas`,
   sfOpeningPhotos: (done, total) => `Abriendo fotos y listas... ${done} de ${total}`,
   sfOpeningProducts: (done, total) => `Abriendo productos... ${done} de ${total}`,
+  sfEtaMinLeft: (min) => ` (unos ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Revisados los primeros ${cap} productos (el storefront tiene más).`,
   sfScanFailed: "El escaneo falló. Recarga la pestaña del storefront e inténtalo de nuevo.",
   sfStopped: "Detenido.",
@@ -710,10 +735,14 @@ const fr: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
   influencerFallback: "Influenceur",
+  influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",
   approvedNo: "Pas encore Butler Approved",
+  approvedReasonPass: "Toutes les verifications ci-dessous passent, donc ça vaut le coup de créer du contenu.",
+  approvedReasonFail: (checks) => `Pas encore approuvé : ces verifications n'ont pas passé - ${checks}.`,
+  approvedReasonUnknown: (checks) => `Impossible de lire sur cette page : ${checks}.`,
   approvedCriteriaNote: "Critères lus sur cette page. Réglez les seuils dans le popup de l'extension.",
   critBought: (n) => `${n}+ achetés le mois dernier`,
   critOpenSlot: (n) => `Moins de ${n} vidéos d'influenceurs`,
@@ -725,6 +754,10 @@ const fr: Dict = {
   calcIntro:
     "Combien de ventes remboursent le temps passé à filmer une vidéo. Cela suppose que le produit est gratuit (Creator Connections) ou que vous le possédez déjà, pas que vous l'achetez.",
   commissionFromSiteStripe: (pct) => `Taux de commission ${pct}% lu en direct de votre barre SiteStripe.`,
+  commissionFromRateCard: (pct, category) =>
+    `Taux de ${pct}% pour "${category}" selon la grille Amazon Associates.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Taux general de ${pct}% (autres categories) selon la grille Amazon Associates.`,
   fieldCommissionRate: "Taux de commission (%)",
   fieldHourlyRate: "Votre tarif horaire ($)",
   fieldMinutesFilmEdit: "Minutes pour filmer + monter",
@@ -751,6 +784,7 @@ const fr: Dict = {
   sfScanningProgress: (items, pages) => `Analyse du flux... ${items} éléments sur ${pages} pages`,
   sfOpeningPhotos: (done, total) => `Ouverture des photos et listes... ${done} sur ${total}`,
   sfOpeningProducts: (done, total) => `Ouverture des produits... ${done} sur ${total}`,
+  sfEtaMinLeft: (min) => ` (environ ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Les ${cap} premiers produits vérifiés (le storefront en a plus).`,
   sfScanFailed: "L'analyse a échoué. Rechargez l'onglet du storefront et réessayez.",
   sfStopped: "Arrêté.",

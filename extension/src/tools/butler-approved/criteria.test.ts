@@ -15,6 +15,7 @@ const goodSignals: ProductSignals = {
   boughtPastMonth: 200,
   brand: "TestBrand",
   commissionRatePct: null,
+  category: null,
   imageUrl: null,
 };
 
