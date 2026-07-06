@@ -1,4 +1,5 @@
 import { addSection, el } from "../../ui/components";
+import { t } from "../../i18n";
 import { calculate, formatCents, type CalculatorInputs } from "./model";
 import { patchSettings } from "../../storage/store";
 import type { Settings } from "../../storage/schema";
@@ -12,10 +13,10 @@ export function renderCalculator(
   counts: VideoCounts | null,
   settings: Settings,
 ): void {
-  const section = addSection("Break-even math");
+  const section = addSection(t().breakEvenMath);
 
   if (signals.priceCents === null) {
-    section.append(el("p", "note", "No price found on this page, so no math to run."));
+    section.append(el("p", "note", t().noPriceForMath));
     return;
   }
 
@@ -34,13 +35,12 @@ export function renderCalculator(
   // it is about earning back the value of your filming TIME, not buying the
   // product (Creator Connections gifts it, or you already own it).
   const intro = el("p", "note");
-  intro.textContent =
-    "How many sales pay back the time you spend filming one video. This assumes the product is free (Creator Connections) or you already own it, not that you buy it.";
+  intro.textContent = t().calcIntro;
   section.append(intro);
 
   if (detectedCommission !== null) {
     const badge = el("p", "note");
-    badge.textContent = `Commission rate ${detectedCommission}% read live from your SiteStripe bar.`;
+    badge.textContent = t().commissionFromSiteStripe(detectedCommission);
     section.append(badge);
   }
 
@@ -49,22 +49,22 @@ export function renderCalculator(
 
   const fields = el("div");
   fields.append(
-    numberField("Commission rate (%)", state.commissionRatePct, 0.5, (v) => {
+    numberField(t().fieldCommissionRate, state.commissionRatePct, 0.5, (v) => {
       state.commissionRatePct = v;
       void patchSettings({ commissionRatePct: v });
       update();
     }),
-    numberField("Your hourly rate ($)", state.hourlyValue, 5, (v) => {
+    numberField(t().fieldHourlyRate, state.hourlyValue, 5, (v) => {
       state.hourlyValue = v;
       void patchSettings({ hourlyValue: v });
       update();
     }),
-    numberField("Minutes to film + edit", state.minutesPerVideo, 5, (v) => {
+    numberField(t().fieldMinutesFilmEdit, state.minutesPerVideo, 5, (v) => {
       state.minutesPerVideo = v;
       void patchSettings({ minutesPerVideo: v });
       update();
     }),
-    numberField("Est. views per month", state.viewsPerMonth, 100, (v) => {
+    numberField(t().fieldViewsPerMonth, state.viewsPerMonth, 100, (v) => {
       state.viewsPerMonth = v;
       update();
     }),
@@ -72,8 +72,7 @@ export function renderCalculator(
   section.append(fields);
 
   const note = el("p", "note");
-  note.textContent =
-    "Estimates only. Monthly profit assumes the carousel splits views evenly across influencer videos.";
+  note.textContent = t().calcEstimatesNote;
   section.append(note);
 
   function update(): void {
@@ -87,13 +86,16 @@ export function renderCalculator(
       influencerCompetition: counts?.influencer ?? 0,
     };
     const r = calculate(inputs);
-    const timeLabel = `Your time to film (${state.minutesPerVideo} min @ ${formatCents(Math.round(state.hourlyValue * 100), signals.currency)}/hr)`;
+    const timeLabel = t().kvTimeToFilm(
+      state.minutesPerVideo,
+      formatCents(Math.round(state.hourlyValue * 100), signals.currency),
+    );
     results.replaceChildren(
-      kv("Commission per sale", formatCents(r.commissionPerSaleCents, signals.currency)),
+      kv(t().kvCommissionPerSale, formatCents(r.commissionPerSaleCents, signals.currency)),
       kv(timeLabel, formatCents(r.timeInvestmentCents, signals.currency)),
-      kv("Sales to earn that back", Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : "n/a"),
-      kv("Views for those sales", Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : "n/a"),
-      kv("Est. profit per month", formatCents(r.estMonthlyProfitCents, signals.currency)),
+      kv(t().kvSalesToEarnBack, Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : t().notApplicable),
+      kv(t().kvViewsForSales, Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : t().notApplicable),
+      kv(t().kvProfitPerMonth, formatCents(r.estMonthlyProfitCents, signals.currency)),
     );
   }
 

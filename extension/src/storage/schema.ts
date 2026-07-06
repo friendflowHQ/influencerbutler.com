@@ -1,4 +1,5 @@
 import type { Finding, VideoCounts } from "../transport/types";
+import type { LocaleSetting } from "../i18n";
 
 // Everything lives in chrome.storage.local. The license key deliberately
 // never goes to storage.sync so it cannot leave the machine via Chrome sync.
@@ -17,6 +18,7 @@ export type Settings = {
   };
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
+  locale: LocaleSetting;
   tools: {
     videoCounts: boolean;
     approved: boolean;
@@ -76,6 +78,7 @@ export const DEFAULTS: StorageShape = {
     },
     storefrontHandle: null,
     orderHarvestScope: "new",
+    locale: "auto",
     tools: {
       videoCounts: true,
       approved: true,
