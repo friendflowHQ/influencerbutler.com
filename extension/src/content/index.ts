@@ -13,6 +13,7 @@ import { initOrdersButler } from "../tools/orders-butler/harvester";
 import { evaluateApproved, criteriaToRecord } from "../tools/butler-approved/criteria";
 import { renderSeal } from "../tools/butler-approved/seal";
 import { renderCalculator } from "../tools/calculator/panel";
+import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
@@ -86,6 +87,9 @@ async function runForPage(): Promise<void> {
       const carousel = extractCarousel(document, capturedVideoData);
       renderedClassified = classifiedCount(carousel);
       const signals = extractSignals(document, currentUrl);
+
+      // Identity card first: the ASINs, category, rank, and rate at a glance.
+      guard("product-snapshot", () => renderProductSnapshot(signals));
 
       if (settings.tools.videoCounts) {
         guard("video-counts", () => renderVideoCounts(carousel));

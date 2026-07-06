@@ -19,6 +19,11 @@ export type ProductSignals = {
   // Narrowest breadcrumb category, used to look up the Associates rate card
   // when SiteStripe is not present. Null when there are no breadcrumbs.
   category: string | null;
+  // The variation parent ASIN (from the twister JSON), when this listing is a
+  // child variation; null for standalone products.
+  parentAsin: string | null;
+  // The most specific "#N in <category>" bestseller rank, when present.
+  bestsellerRank: { rank: number; category: string } | null;
   imageUrl: string | null;
 };
 
@@ -38,8 +43,60 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
     commissionRatePct: extractCommissionRate(doc),
     category: extractCategory(doc),
+    parentAsin: extractParentAsin(doc),
+    bestsellerRank: extractBestsellerRank(doc),
     imageUrl: extractImage(doc),
   };
+}
+
+const PARENT_ASIN_RE = /"parentAsin"\s*:\s*"([A-Z0-9]{10})"/;
+
+// Pure matcher (exported for tests): pull the parent ASIN out of a text blob.
+export function matchParentAsin(text: string): string | null {
+  if (!text.includes("parentAsin")) return null;
+  return text.match(PARENT_ASIN_RE)?.[1] ?? null;
+}
+
+export function extractParentAsin(doc: Document): string | null {
+  // The parent ASIN lives in the twister/variation JSON inside a state script.
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const text = script.textContent;
+    if (!text || !text.includes("parentAsin")) continue;
+    const found = matchParentAsin(text);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Best Sellers Rank reads like "#1,234 in Beauty (See Top 100 in Beauty) #5 in
+// Wrinkle & Anti-Aging Devices Customer Reviews: ...". The narrowest
+// subcategory (smallest rank number) is the most useful, so collect every
+// "#N in Category" and keep the smallest. The category is whatever follows
+// "in " up to the next real boundary: a parenthetical, another rank, a colon,
+// or Amazon's trailing "Customer Reviews" / script text.
+const RANK_HEAD_RE = /#([\d,]+)\s+in\s+/g;
+const RANK_CATEGORY_END_RE = /\s*(?:[(#:•›»]|Customer\b|See Top\b|var\b|function\b|\{)/i;
+
+// Pure parser (exported for tests): the smallest "#N in Category" in a blob.
+export function parseBestsellerRank(source: string): { rank: number; category: string } | null {
+  RANK_HEAD_RE.lastIndex = 0;
+  let best: { rank: number; category: string } | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = RANK_HEAD_RE.exec(source)) !== null) {
+    const rank = parseInt((match[1] ?? "").replace(/,/g, ""), 10);
+    if (!Number.isFinite(rank)) continue;
+    const tail = source.slice(RANK_HEAD_RE.lastIndex);
+    const end = tail.search(RANK_CATEGORY_END_RE);
+    const category = (end >= 0 ? tail.slice(0, end) : tail).trim().slice(0, 60);
+    if (!category) continue;
+    if (!best || rank < best.rank) best = { rank, category };
+  }
+  return best;
+}
+
+export function extractBestsellerRank(doc: Document): { rank: number; category: string } | null {
+  const source = cleanText(query(doc, "bestsellerRank")?.textContent) ?? "";
+  return source ? parseBestsellerRank(source) : null;
 }
 
 export function extractCategory(doc: Document): string | null {

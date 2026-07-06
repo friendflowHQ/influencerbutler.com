@@ -7,10 +7,15 @@ export function renderVideoCounts(result: CarouselResult): void {
   const section = addSection(t().videoCompetition);
 
   if (result.counts.total === 0) {
-    const empty = el("p", "note");
-    empty.textContent =
-      result.strategy === "none" ? t().noCarousel : t().noVideosYet;
-    section.append(empty);
+    // No upper carousel at all vs a carousel that exists but is empty are very
+    // different signals: the first means a video here will not surface on the
+    // listing, the second is a wide-open opportunity. Make each a clear seal.
+    const callout = el(
+      "div",
+      result.strategy === "none" ? "seal warn" : "seal pass",
+    );
+    callout.textContent = result.strategy === "none" ? t().noCarousel : t().noVideosYet;
+    section.append(callout);
     return;
   }
 

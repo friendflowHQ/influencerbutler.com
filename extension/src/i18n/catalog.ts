@@ -12,6 +12,19 @@ export interface Dict {
   // Shared panel chrome
   panelChevronHide: string;
   panelChevronShow: string;
+  copy: string;
+  copied: string;
+
+  // Product snapshot card
+  snapshotTitle: string;
+  snapshotProduct: string;
+  snapshotParent: string;
+  snapshotCategory: (category: string) => string;
+  snapshotRank: (rank: number, category: string) => string;
+  snapshotCommissionLive: (pct: number) => string;
+  snapshotCommissionCategory: (pct: number, category: string) => string;
+  snapshotCommissionDefault: (pct: number) => string;
+  snapshotCommissionNotSet: string;
 
   // Popup: static chrome
   tagFree: string;
@@ -164,10 +177,12 @@ export interface Dict {
   scanTheseOrders: (n: number) => string;
   checkingOrder: (i: number, n: number) => string;
   gapNoVideos: string;
+  gapNoCarousel: string;
   gapNoInfluencer: string;
   gapFewInfluencer: (n: number) => string;
   openProduct: string;
   badgeNoVideos: string;
+  badgeNoCarousel: string;
   badgePending: (n: number) => string;
   badgeNoInfluencer: string;
   badgeInfluencerVideos: (n: number) => string;
@@ -225,6 +240,19 @@ export interface Dict {
 const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
+  copy: "Copy",
+  copied: "Copied",
+
+  snapshotTitle: "Product snapshot",
+  snapshotProduct: "Product",
+  snapshotParent: "Parent",
+  snapshotCategory: (category) => `Category: ${category}`,
+  snapshotRank: (rank, category) => `#${rank} in ${category}`,
+  snapshotCommissionLive: (pct) => `Commission ${pct}% (live from SiteStripe)`,
+  snapshotCommissionCategory: (pct, category) =>
+    `Commission about ${pct}% (${category}, rate card)`,
+  snapshotCommissionDefault: (pct) => `Commission about ${pct}% (all-other-categories rate)`,
+  snapshotCommissionNotSet: "No commission rate set",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -292,7 +320,8 @@ const en: Dict = {
   sumStorefrontCheckup: "Storefront checkup",
 
   videoCompetition: "Video competition",
-  noCarousel: "No video carousel found on this page.",
+  noCarousel:
+    "No upper carousel: Amazon has not given this product a slot for influencer videos, so a video here will not show on the listing.",
   noVideosYet: "No videos yet: wide-open opportunity.",
   videosPending: (total) =>
     `${total} videos on this product. Scroll to the Product Videos section and the influencer / brand / customer breakdown fills in here automatically.`,
@@ -379,10 +408,12 @@ const en: Dict = {
   scanTheseOrders: (n) => `Scan these orders (up to ${n})`,
   checkingOrder: (i, n) => `Checking ${i} of ${n}...`,
   gapNoVideos: "No videos at all: wide open",
+  gapNoCarousel: "No upper carousel",
   gapNoInfluencer: "No influencer videos yet",
   gapFewInfluencer: (n) => `Only ${n} influencer video${n === 1 ? "" : "s"}`,
   openProduct: "Open product",
   badgeNoVideos: "No videos at all",
+  badgeNoCarousel: "No upper carousel",
   badgePending: (n) => `${n} videos (visit to classify)`,
   badgeNoInfluencer: "No influencer videos",
   badgeInfluencerVideos: (n) => `${n} influencer videos`,
@@ -441,6 +472,19 @@ const en: Dict = {
 const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
+  copy: "Copiar",
+  copied: "Copiado",
+
+  snapshotTitle: "Resumen del producto",
+  snapshotProduct: "Producto",
+  snapshotParent: "Padre",
+  snapshotCategory: (category) => `Categoría: ${category}`,
+  snapshotRank: (rank, category) => `#${rank} en ${category}`,
+  snapshotCommissionLive: (pct) => `Comisión ${pct}% (en vivo de SiteStripe)`,
+  snapshotCommissionCategory: (pct, category) =>
+    `Comisión aprox. ${pct}% (${category}, tarifario)`,
+  snapshotCommissionDefault: (pct) => `Comisión aprox. ${pct}% (tarifa general)`,
+  snapshotCommissionNotSet: "Sin tarifa de comisión",
 
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
@@ -508,7 +552,8 @@ const es: Dict = {
   sumStorefrontCheckup: "Chequeo del storefront",
 
   videoCompetition: "Competencia de videos",
-  noCarousel: "No se encontró carrusel de videos en esta página.",
+  noCarousel:
+    "Sin carrusel superior: Amazon no le ha dado a este producto un espacio para videos de influencers, así que un video aquí no aparecerá en la ficha.",
   noVideosYet: "Aún no hay videos: oportunidad abierta de par en par.",
   videosPending: (total) =>
     `${total} videos en este producto. Desplázate a la sección Videos del producto y el desglose de influencer / marca / cliente se completa aquí automáticamente.`,
@@ -595,10 +640,12 @@ const es: Dict = {
   scanTheseOrders: (n) => `Escanear estos pedidos (hasta ${n})`,
   checkingOrder: (i, n) => `Comprobando ${i} de ${n}...`,
   gapNoVideos: "Sin videos: totalmente abierto",
+  gapNoCarousel: "Sin carrusel superior",
   gapNoInfluencer: "Aún sin videos de influencers",
   gapFewInfluencer: (n) => `Solo ${n} video${n === 1 ? "" : "s"} de influencers`,
   openProduct: "Abrir producto",
   badgeNoVideos: "Sin videos",
+  badgeNoCarousel: "Sin carrusel superior",
   badgePending: (n) => `${n} videos (visita para clasificar)`,
   badgeNoInfluencer: "Sin videos de influencers",
   badgeInfluencerVideos: (n) => `${n} videos de influencers`,
@@ -657,6 +704,19 @@ const es: Dict = {
 const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
+  copy: "Copier",
+  copied: "Copié",
+
+  snapshotTitle: "Aperçu du produit",
+  snapshotProduct: "Produit",
+  snapshotParent: "Parent",
+  snapshotCategory: (category) => `Catégorie : ${category}`,
+  snapshotRank: (rank, category) => `#${rank} dans ${category}`,
+  snapshotCommissionLive: (pct) => `Commission ${pct}% (en direct de SiteStripe)`,
+  snapshotCommissionCategory: (pct, category) =>
+    `Commission environ ${pct}% (${category}, grille)`,
+  snapshotCommissionDefault: (pct) => `Commission environ ${pct}% (taux general)`,
+  snapshotCommissionNotSet: "Aucun taux de commission défini",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",
@@ -724,7 +784,8 @@ const fr: Dict = {
   sumStorefrontCheckup: "Bilan du storefront",
 
   videoCompetition: "Concurrence vidéo",
-  noCarousel: "Aucun carrousel vidéo trouvé sur cette page.",
+  noCarousel:
+    "Aucun carrousel superieur : Amazon n'a pas donné à ce produit d'emplacement pour les vidéos d'influenceurs, donc une vidéo ici n'apparaitra pas sur la fiche.",
   noVideosYet: "Pas encore de vidéos: opportunité grande ouverte.",
   videosPending: (total) =>
     `${total} vidéos sur ce produit. Faites défiler jusqu'à la section Vidéos du produit et la répartition influenceur / marque / client se remplit ici automatiquement.`,
@@ -811,10 +872,12 @@ const fr: Dict = {
   scanTheseOrders: (n) => `Analyser ces commandes (jusqu'à ${n})`,
   checkingOrder: (i, n) => `Vérification ${i} sur ${n}...`,
   gapNoVideos: "Aucune vidéo: grand ouvert",
+  gapNoCarousel: "Aucun carrousel superieur",
   gapNoInfluencer: "Pas encore de vidéos d'influenceurs",
   gapFewInfluencer: (n) => `Seulement ${n} vidéo${n === 1 ? "" : "s"} d'influenceurs`,
   openProduct: "Ouvrir le produit",
   badgeNoVideos: "Aucune vidéo",
+  badgeNoCarousel: "Aucun carrousel superieur",
   badgePending: (n) => `${n} vidéos (visitez pour classer)`,
   badgeNoInfluencer: "Pas de vidéos d'influenceurs",
   badgeInfluencerVideos: (n) => `${n} vidéos d'influenceurs`,

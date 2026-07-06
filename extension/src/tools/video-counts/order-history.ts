@@ -99,6 +99,9 @@ async function runScan(
     let counts = readCache(state.cache, item.asin);
     let inStock = state.cache[cacheKey(item.asin)]?.inStock ?? true;
     let classified = counts !== null;
+    // Cached hits came from a real product visit, so a carousel existed then.
+    // "No upper carousel" is only asserted from a fresh fetch (strategy none).
+    let noCarousel = false;
     if (!counts) {
       try {
         const doc = await fetchDoc(productUrl(item.asin), signal);
@@ -106,6 +109,7 @@ async function runScan(
         const signals = extractSignals(doc, productUrl(item.asin));
         counts = carousel.counts;
         inStock = signals.inStock;
+        noCarousel = carousel.strategy === "none" && carousel.counts.total === 0;
         classified = carousel.strategy === "json" || carousel.strategy === "dom";
         // Only classified breakdowns are worth caching for reuse; a bare
         // total from the static page is cheap to re-derive.
@@ -133,15 +137,16 @@ async function runScan(
       inStock &&
       (counts.total === 0 || (classified && counts.influencer <= threshold));
 
-    annotate(item, counts, classified, threshold);
+    annotate(item, counts, classified, threshold, noCarousel);
 
     if (isGap) {
       gaps += 1;
       const li = el("li");
       li.append(el("span", "t", item.title.slice(0, 70)));
       const detail = el("span");
-      detail.textContent =
-        counts.total === 0
+      detail.textContent = noCarousel
+        ? t().gapNoCarousel
+        : counts.total === 0
           ? t().gapNoVideos
           : counts.influencer === 0
             ? t().gapNoInfluencer
@@ -178,9 +183,12 @@ function annotate(
   counts: VideoCounts,
   classified: boolean,
   threshold: number,
+  noCarousel: boolean,
 ): void {
   let badge: HTMLElement;
-  if (counts.total === 0) {
+  if (noCarousel) {
+    badge = createInlineBadge("gap", t().badgeNoCarousel);
+  } else if (counts.total === 0) {
     badge = createInlineBadge("gap", t().badgeNoVideos);
   } else if (!classified) {
     // Static fetch: total known, creator makeup not. Say exactly that.
