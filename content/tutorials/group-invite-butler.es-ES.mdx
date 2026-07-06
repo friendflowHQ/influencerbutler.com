@@ -1,0 +1,72 @@
+---
+title: "Group Invite Butler: haz crecer tu grupo de Facebook con una lista de correos de creadores"
+summary: Invita a tu grupo de Facebook los correos de creadores que recopilaste, de uno en uno y a ritmo humano. Carga un CSV o envía los correos desde un Goldmine, ajusta el ritmo y los límites diarios, y Butler omite a quien ya invitaste.
+category: Other
+---
+
+## Qué hace Group Invite Butler
+
+Group Invite Butler invita a personas a un grupo de Facebook que administras, un correo cada vez y con un horario natural. Le das una lista de direcciones de correo y el grupo al que quieres sumarlas; abre el formulario de invitación por correo del grupo, añade cada dirección y se autorregula el ritmo para que la actividad parezca humana y se mantenga por debajo de los límites de Facebook.
+
+Está pensado para creadores que hacen crecer una comunidad en torno a su tienda o nicho. Los correos suelen venir del Goldmine de Instagram o de Amazon (otros creadores que encontraste), pero también puedes cargar tu propia lista desde un CSV.
+
+## Antes de empezar
+
+Hacen falta dos cosas:
+
+- **Has iniciado sesión en Facebook dentro de la app.** Group Invite Butler usa la misma sesión de Facebook que Amazon Deals Butler. Si aún no has iniciado sesión, abre primero Amazon Deals Butler e inicia sesión en Facebook allí una vez.
+- **Administras el grupo.** Solo puedes enviar invitaciones por correo en un grupo donde tengas permisos de invitación. Pega la URL de ese grupo en los ajustes.
+
+## Llenar la cola de invitaciones
+
+Hay dos formas de meter correos en la cola.
+
+### Desde un Goldmine
+
+1. Abre el **Goldmine de Instagram** o el **Goldmine de Amazon** y ejecuta una recopilación.
+2. Haz clic en **Enviar a Group Invite Butler**. Los correos recopilados pasan directamente a la cola, sin duplicar los que ya estén.
+
+### Desde un CSV
+
+1. En la cola de invitaciones, haz clic en **Cargar CSV**.
+2. Elige un archivo `.csv`. El formato es simple: **un correo por fila en la primera columna (columna A)**. Se ignoran la fila de encabezado y cualquier columna adicional, así que una hoja de cálculo que exportaste de otro sitio suele funcionar tal cual.
+3. Butler valida cada fila, descarta lo que no sea un correo y añade el resto. La ayuda junto al botón explica el formato por si necesitas un recordatorio.
+
+En ambos casos, los correos que **ya fueron invitados** (o que ya están en la cola) se omiten automáticamente, así nunca invitas dos veces a la misma persona.
+
+## Ajustar el ritmo y los límites
+
+En **Ajustes de ejecución**:
+
+- **URL del grupo de Facebook**: el grupo al que invitas a la gente. Obligatorio; Butler no arranca sin ella.
+- **Segundos entre invitaciones** más **Segundos extra aleatorios**: el intervalo entre cada invitación, más una cantidad al azar encima para que el ritmo parezca natural. Más lento es más seguro.
+- **Invitaciones por día**: un tope diario que se mantiene entre ejecuciones. `0` significa sin tope diario.
+- **Invitaciones por ejecución**: cuántas enviar en una sola ejecución. `0` significa enviar toda la cola.
+
+Todo se guarda solo mientras escribes. No hay botón de guardar.
+
+## Ejecutarlo
+
+1. Configura la URL del grupo y el ritmo.
+2. Haz clic en **Iniciar Group Invite Butler**.
+3. Deja activado **Ver cómo se ejecuta** para traer el navegador al frente y ver cada invitación, o desactívalo para que trabaje en segundo plano.
+
+La cola muestra los recuentos en vivo de **Pendiente**, **Enviado** y **Fallido** a medida que trabaja. Puedes detenerlo cuando quieras; la siguiente ejecución retoma donde lo dejó.
+
+## Después de una ejecución
+
+- **Reintentar fallidos**: devuelve cada dirección fallida a la cola de pendientes para que la siguiente ejecución vuelva a intentarlo. Útil tras un tropiezo en el que no se envió nada de verdad.
+- **Reenviar enviados**: devuelve a pendientes las direcciones ya enviadas para reinvitarlas. Útil si una ejecución marcó como enviadas a personas que Facebook no aceptó en realidad.
+- **Vaciar cola**: vacía la lista de pendientes. Tu registro duradero de invitados se mantiene, así que los correos vaciados y vueltos a cargar siguen apareciendo como ya invitados.
+
+## Problemas frecuentes
+
+- **No arranca**: comprueba que la URL del grupo de Facebook esté rellenada y que hayas iniciado sesión en Facebook (mediante Amazon Deals Butler).
+- **Mi CSV cargó cero correos**: asegúrate de que las direcciones estén en la **primera columna**. Las columnas adicionales y las filas de encabezado se ignoran a propósito, pero si la columna A tiene algo que no son correos, no coincide nada.
+- **Alguien aparece como Enviado y no lo invité en esta ejecución**: es el registro duradero de invitados haciendo su trabajo. Una vez que alguien ha sido invitado, queda marcado para que nunca se le invite dos veces.
+- **Ve despacio al principio**: mucho volumen con intervalos cortos es lo que dispara los límites de Facebook. Empieza con un tope diario modesto y un retardo cómodo, y afloja cuando lo veas funcionar limpio.
+
+## Relacionado
+
+- [Tutorial del Goldmine de Instagram](/help/tutorials/instagram-goldmine) - una de las dos fuentes que alimentan la cola de invitaciones.
+- [Tutorial de Goldmine Butler](/help/tutorials/goldminebutler) - encuentra a los creadores y marcas que vale la pena invitar en primer lugar.

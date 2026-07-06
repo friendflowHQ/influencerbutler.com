@@ -66,6 +66,10 @@ const FAQ = [
     a: "The extension stores everything locally in your browser. Findings leave your machine only if you connect your license key and keep sync turned on, and then only to your own Influencer Butler dashboard. No tracking, no analytics, no sale of data: read the full extension privacy policy at influencerbutler.com/extension/privacy.",
   },
   {
+    q: "Does it work on Mac?",
+    a: "Yes. It is a browser extension, so the same install works the same on Mac, Windows, and Linux in Chrome, Microsoft Edge, or Brave. There is nothing separate to download. Safari uses a different extension system and is not supported yet, so on a Mac just use Chrome, Edge, or Brave.",
+  },
+  {
     q: "Which marketplaces are supported?",
     a: "Amazon.com at launch. Additional marketplaces are on the roadmap.",
   },
@@ -146,6 +150,9 @@ export default function ExtensionLandingPage() {
               See your synced data
             </Link>
           </div>
+          <p className="mt-4 text-sm font-medium text-slate-500">
+            Works on Mac and Windows: Chrome, Edge, or Brave.
+          </p>
 
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
