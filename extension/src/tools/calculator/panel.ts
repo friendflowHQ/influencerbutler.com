@@ -30,14 +30,22 @@ export function renderCalculator(
     hourlyValue: settings.hourlyValue,
   };
 
-  const results = el("dl", "kv");
-  section.append(results);
+  // Explain up front what "break even" means here, since it trips people up:
+  // it is about earning back the value of your filming TIME, not buying the
+  // product (Creator Connections gifts it, or you already own it).
+  const intro = el("p", "note");
+  intro.textContent =
+    "How many sales pay back the time you spend filming one video. This assumes the product is free (Creator Connections) or you already own it, not that you buy it.";
+  section.append(intro);
 
   if (detectedCommission !== null) {
     const badge = el("p", "note");
     badge.textContent = `Commission rate ${detectedCommission}% read live from your SiteStripe bar.`;
     section.append(badge);
   }
+
+  const results = el("dl", "kv");
+  section.append(results);
 
   const fields = el("div");
   fields.append(
@@ -46,13 +54,18 @@ export function renderCalculator(
       void patchSettings({ commissionRatePct: v });
       update();
     }),
-    numberField("Est. views per month", state.viewsPerMonth, 100, (v) => {
-      state.viewsPerMonth = v;
+    numberField("Your hourly rate ($)", state.hourlyValue, 5, (v) => {
+      state.hourlyValue = v;
+      void patchSettings({ hourlyValue: v });
       update();
     }),
-    numberField("Minutes to make the video", state.minutesPerVideo, 5, (v) => {
+    numberField("Minutes to film + edit", state.minutesPerVideo, 5, (v) => {
       state.minutesPerVideo = v;
       void patchSettings({ minutesPerVideo: v });
+      update();
+    }),
+    numberField("Est. views per month", state.viewsPerMonth, 100, (v) => {
+      state.viewsPerMonth = v;
       update();
     }),
   );
@@ -60,7 +73,7 @@ export function renderCalculator(
 
   const note = el("p", "note");
   note.textContent =
-    "Estimates only. Competition share assumes the carousel splits views evenly across influencer videos.";
+    "Estimates only. Monthly profit assumes the carousel splits views evenly across influencer videos.";
   section.append(note);
 
   function update(): void {
@@ -74,11 +87,12 @@ export function renderCalculator(
       influencerCompetition: counts?.influencer ?? 0,
     };
     const r = calculate(inputs);
+    const timeLabel = `Your time to film (${state.minutesPerVideo} min @ ${formatCents(Math.round(state.hourlyValue * 100), signals.currency)}/hr)`;
     results.replaceChildren(
       kv("Commission per sale", formatCents(r.commissionPerSaleCents, signals.currency)),
-      kv("Your time investment", formatCents(r.timeInvestmentCents, signals.currency)),
-      kv("Sales to break even", Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : "n/a"),
-      kv("Views to break even", Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : "n/a"),
+      kv(timeLabel, formatCents(r.timeInvestmentCents, signals.currency)),
+      kv("Sales to earn that back", Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : "n/a"),
+      kv("Views for those sales", Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : "n/a"),
       kv("Est. profit per month", formatCents(r.estMonthlyProfitCents, signals.currency)),
     );
   }
