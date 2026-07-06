@@ -12,6 +12,7 @@ import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
 import { fetchMarketAvailability } from "./market-availability";
+import { enrichProducts } from "./enrich";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
 import {
   ensureNudgeAlarms,
@@ -106,6 +107,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "GET_ORDER_ASINS":
       void getOrderAsins().then(sendResponse);
+      return true;
+    case "ENRICH_PRODUCTS":
+      void enrichProducts(message.asins, message.marketplaces).then(sendResponse);
       return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from

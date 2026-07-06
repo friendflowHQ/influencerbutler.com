@@ -66,7 +66,12 @@ export type RuntimeMessage =
   | { kind: "SCAN_ASIN_IN_TAB"; asin: string; marketplace: string }
   // The list of unique products to run that count over: the account's synced
   // order history, read from /api/extension/orders with the license key.
-  | { kind: "GET_ORDER_ASINS" };
+  | { kind: "GET_ORDER_ASINS" }
+  // Creator API (PA-API) enrichment for the storefront checkup. The worker
+  // POSTs a batch of ASINs (<=10) to /api/extension/enrich with the license
+  // key so the content script never handles the secret. `marketplaces` filters
+  // to the storefront's own marketplace so each ASIN comes back as one row.
+  | { kind: "ENRICH_PRODUCTS"; asins: string[]; marketplaces?: string[] };
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";
@@ -106,6 +111,36 @@ export type ScanAsinResult = {
 
 export type OrderAsinItem = { asin: string; marketplace: string; title: string | null };
 export type OrderAsinsResult = { ok: boolean; items: OrderAsinItem[]; error?: string };
+
+// One normalized Creator API (PA-API) product row. Mirrors the server's
+// EnrichedItem shape in src/lib/paapi.ts, one per (asin, marketplace).
+export type EnrichedProduct = {
+  asin: string | null;
+  marketplace: string;
+  found: boolean;
+  title: string | null;
+  brand: string | null;
+  priceDisplay: string | null;
+  priceCents: number | null;
+  currency: string | null;
+  availability: string | null;
+  primeEligible: boolean | null;
+  binding: string | null;
+  browseNode: string | null;
+  imageUrl: string | null;
+  detailPageUrl: string | null;
+  error: string | null;
+};
+
+// Response of ENRICH_PRODUCTS. `configured` is false when the user has not
+// stored any Creator API credentials (so the caller can prompt them and fall
+// back to scrape data); `items` holds one entry per requested ASIN.
+export type EnrichResult = {
+  ok: boolean;
+  configured: boolean;
+  items: Array<{ asin: string; results: EnrichedProduct[] }>;
+  error?: string;
+};
 
 export type IntegrationTestOutcome = { ok: boolean; message: string };
 export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };

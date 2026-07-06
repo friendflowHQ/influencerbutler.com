@@ -4,6 +4,7 @@ import {
   deriveSigningKey,
   hmac,
   normalizeGetItems,
+  normalizeGetItemsBatch,
   sha256Hex,
   signRequest,
   amzDate,
@@ -161,5 +162,45 @@ describe("normalizeGetItems", () => {
     });
     expect(item.found).toBe(false);
     expect(item.error).toBe("PartnerTag invalid");
+  });
+});
+
+describe("normalizeGetItemsBatch", () => {
+  it("returns one row per requested ASIN, correlated by ASIN", () => {
+    const raw = {
+      ItemsResult: {
+        Items: [
+          {
+            ASIN: "B0SECOND1",
+            ItemInfo: { Title: { DisplayValue: "Second" } },
+            Offers: { Listings: [{ Price: { DisplayAmount: "$5.00", Amount: 5, Currency: "USD" } }] },
+          },
+          {
+            ASIN: "B0FIRST001",
+            ItemInfo: { Title: { DisplayValue: "First" } },
+          },
+        ],
+      },
+    };
+    // Requested order differs from the response order, and one ASIN is absent.
+    const rows = normalizeGetItemsBatch("amazon.com", raw, ["B0FIRST001", "B0SECOND1", "B0MISSING1"]);
+    expect(rows.map((r) => r.asin)).toEqual(["B0FIRST001", "B0SECOND1", "B0MISSING1"]);
+    expect(rows[0].title).toBe("First");
+    expect(rows[1].title).toBe("Second");
+    expect(rows[1].priceCents).toBe(500);
+    // The ASIN PA-API did not return is a not-found row (no error), still
+    // carrying its requested ASIN so callers can correlate it.
+    expect(rows[2].found).toBe(false);
+    expect(rows[2].error).toBeNull();
+    expect(rows[2].asin).toBe("B0MISSING1");
+  });
+
+  it("stamps a top-level error onto every requested ASIN", () => {
+    const rows = normalizeGetItemsBatch("amazon.com", {
+      Errors: [{ Code: "TooManyRequests", Message: "throttled" }],
+    }, ["B0AAAAAAA1", "B0BBBBBBB2"]);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.error === "throttled")).toBe(true);
+    expect(rows.map((r) => r.asin)).toEqual(["B0AAAAAAA1", "B0BBBBBBB2"]);
   });
 });

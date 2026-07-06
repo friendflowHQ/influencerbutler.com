@@ -49,6 +49,17 @@ type SelectFilter = ListResult & {
   maybeSingle: () => QueryResult;
 };
 
+// An update() filter chain: chainable filters that resolve (awaited) to a
+// WriteResult, or return the affected rows via select(). Superset of the
+// legacy .eq().is()/.not() shape so existing call sites keep type-checking.
+type UpdateFilter = Promise<WriteResult> & {
+  eq: (column: string, value: string) => UpdateFilter;
+  is: (column: string, value: null) => Promise<WriteResult>;
+  not: (column: string, op: string, value: null) => UpdateFilter;
+  or: (filters: string) => UpdateFilter;
+  select: (columns: string) => ListResult;
+};
+
 type SupabaseServiceClient = {
   from: (table: string) => {
     select: (columns: string) => SelectFilter;
@@ -57,16 +68,7 @@ type SupabaseServiceClient = {
       options?: { onConflict: string },
     ) => Promise<WriteResult>;
     update: (payload: Record<string, unknown>) => {
-      eq: (column: string, value: string) => Promise<WriteResult> & {
-        is: (column: string, value: null) => Promise<WriteResult>;
-        not: (
-          column: string,
-          op: string,
-          value: null,
-        ) => Promise<WriteResult> & {
-          is: (column: string, value: null) => Promise<WriteResult>;
-        };
-      };
+      eq: (column: string, value: string) => UpdateFilter;
     };
   };
   auth: {
@@ -193,18 +195,30 @@ async function sendWelcomeMagicLinkIfFresh(
   userId: string,
   email: string,
 ): Promise<void> {
-  const { data: profile } = await supabase
+  // Atomically claim the send BEFORE dispatching. order_created and
+  // subscription_created arrive as near-simultaneous webhook deliveries for a
+  // new subscription; a read-then-write guard lets both read a null timestamp
+  // and both send. Instead we stamp welcome_email_sent_at conditionally and
+  // only proceed if THIS update actually matched a row - the losing event gets
+  // zero rows back and bails. The condition also permits re-claiming a stamp
+  // older than 10 minutes (a genuine LS retry long after the first send).
+  const claimAtIso = new Date().toISOString();
+  const staleBeforeIso = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { data: claimed, error: claimError } = await supabase
     .from("profiles")
-    .select("welcome_email_sent_at")
+    .update({ welcome_email_sent_at: claimAtIso })
     .eq("id", userId)
-    .maybeSingle();
+    .or(`welcome_email_sent_at.is.null,welcome_email_sent_at.lt.${staleBeforeIso}`)
+    .select("id");
 
-  const lastSent = getString((profile as { welcome_email_sent_at?: string | null } | null)?.welcome_email_sent_at);
-  if (lastSent) {
-    const sentAtMs = new Date(lastSent).getTime();
-    if (Number.isFinite(sentAtMs) && Date.now() - sentAtMs < 10 * 60 * 1000) {
-      return;
-    }
+  if (claimError) {
+    console.error("sendWelcomeMagicLinkIfFresh: claim update failed", claimError);
+    return;
+  }
+  if (!claimed || claimed.length === 0) {
+    // Another concurrent event already claimed the send (or one went out in the
+    // last 10 minutes). Nothing to do.
+    return;
   }
 
   const siteUrl =
@@ -216,20 +230,20 @@ async function sendWelcomeMagicLinkIfFresh(
   });
 
   const actionLink = linkData?.properties?.action_link ?? null;
-  if (linkError || !actionLink) {
-    console.error("sendWelcomeMagicLinkIfFresh: generateLink failed", linkError);
-    return;
-  }
+  const sent = actionLink ? await sendWelcomeMagicLink({ to: email, actionLink }) : false;
 
-  const sent = await sendWelcomeMagicLink({ to: email, actionLink });
-  if (sent) {
-    await assertWrite(
-      "profiles.update(welcome_email_sent_at)",
-      supabase
-        .from("profiles")
-        .update({ welcome_email_sent_at: new Date().toISOString() })
-        .eq("id", userId),
-    );
+  if (!sent) {
+    // Release the claim so a retry (or the other event) can send. Only clear
+    // the stamp if it still holds the value we wrote, so we don't stomp a
+    // successful send from a racing event that claimed after us.
+    if (linkError || !actionLink) {
+      console.error("sendWelcomeMagicLinkIfFresh: generateLink failed", linkError);
+    }
+    await supabase
+      .from("profiles")
+      .update({ welcome_email_sent_at: null })
+      .eq("id", userId)
+      .eq("welcome_email_sent_at", claimAtIso);
   }
 }
 
