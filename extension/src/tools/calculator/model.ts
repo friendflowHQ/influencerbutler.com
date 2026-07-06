@@ -16,6 +16,10 @@ export type CalculatorResult = {
   timeInvestmentCents: number;
   salesToBreakEven: number;
   viewsToBreakEven: number;
+  // If you BUY the product yourself, break-even also has to recoup the price.
+  totalToEarnBackPurchasedCents: number;
+  salesToBreakEvenPurchased: number;
+  viewsToBreakEvenPurchased: number;
   estMonthlySalesShare: number;
   estMonthlyProfitCents: number;
 };
@@ -45,6 +49,17 @@ export function calculate(inputs: CalculatorInputs): CalculatorResult {
       ? Math.ceil(salesToBreakEven / conversion)
       : Infinity;
 
+  // Break-even when you paid for the product: recoup filming time AND price.
+  const totalToEarnBackPurchasedCents = timeInvestmentCents + Math.max(0, inputs.priceCents);
+  const salesToBreakEvenPurchased =
+    commissionPerSaleCents > 0
+      ? Math.ceil(totalToEarnBackPurchasedCents / commissionPerSaleCents)
+      : Infinity;
+  const viewsToBreakEvenPurchased =
+    conversion > 0 && Number.isFinite(salesToBreakEvenPurchased)
+      ? Math.ceil(salesToBreakEvenPurchased / conversion)
+      : Infinity;
+
   const share = competitionShare(inputs.influencerCompetition);
   const estMonthlySalesShare = Math.max(0, inputs.viewsPerMonth) * share * conversion;
   const estMonthlyProfitCents = Math.round(estMonthlySalesShare * commissionPerSaleCents);
@@ -54,6 +69,9 @@ export function calculate(inputs: CalculatorInputs): CalculatorResult {
     timeInvestmentCents,
     salesToBreakEven,
     viewsToBreakEven,
+    totalToEarnBackPurchasedCents,
+    salesToBreakEvenPurchased,
+    viewsToBreakEvenPurchased,
     estMonthlySalesShare,
     estMonthlyProfitCents,
   };

@@ -134,6 +134,7 @@ export interface Dict {
   videosTotalVia: (total: number, viaPageData: boolean) => string;
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
+  influencerVideosMore: (n: number) => string;
 
   // Video competition: Deep Scan (harvest every video)
   deepScan: string;
@@ -186,6 +187,10 @@ export interface Dict {
   kvViewsForSales: string;
   kvProfitPerMonth: string;
   notApplicable: string;
+  bePurchasedHeading: string;
+  bePurchasedNote: string;
+  kvPurchasePrice: string;
+  kvTotalToEarnBack: string;
 
   // Storefront checkup panel
   storefrontCheckup: string;
@@ -449,6 +454,7 @@ const en: Dict = {
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
+  influencerVideosMore: (n) => `+${n} more`,
 
   deepScan: "Deep Scan: harvest every video",
   deepScanIntro:
@@ -505,6 +511,11 @@ const en: Dict = {
   kvViewsForSales: "Views for those sales",
   kvProfitPerMonth: "Est. profit per month",
   notApplicable: "n/a",
+  bePurchasedHeading: "Break-even if purchased",
+  bePurchasedNote:
+    "If you buy the product yourself, this is what it takes to earn back the purchase price plus your filming time.",
+  kvPurchasePrice: "Purchase price",
+  kvTotalToEarnBack: "Time + purchase to earn back",
 
   storefrontCheckup: "Storefront checkup",
   sfFastScanNote:
@@ -773,6 +784,7 @@ const es: Dict = {
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
+  influencerVideosMore: (n) => `+${n} más`,
 
   deepScan: "Deep Scan: recopilar todos los videos",
   deepScanIntro:
@@ -829,6 +841,11 @@ const es: Dict = {
   kvViewsForSales: "Vistas para esas ventas",
   kvProfitPerMonth: "Ganancia estimada al mes",
   notApplicable: "n/d",
+  bePurchasedHeading: "Punto de equilibrio si lo compras",
+  bePurchasedNote:
+    "Si compras el producto, esto es lo que hace falta para recuperar el precio de compra más tu tiempo de grabación.",
+  kvPurchasePrice: "Precio de compra",
+  kvTotalToEarnBack: "Tiempo + compra a recuperar",
 
   storefrontCheckup: "Chequeo del storefront",
   sfFastScanNote:
@@ -1097,6 +1114,7 @@ const fr: Dict = {
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
+  influencerVideosMore: (n) => `+${n} de plus`,
 
   deepScan: "Deep Scan: récolter toutes les vidéos",
   deepScanIntro:
@@ -1153,6 +1171,11 @@ const fr: Dict = {
   kvViewsForSales: "Vues pour ces ventes",
   kvProfitPerMonth: "Profit estimé par mois",
   notApplicable: "n/d",
+  bePurchasedHeading: "Seuil de rentabilité si acheté",
+  bePurchasedNote:
+    "Si vous achetez le produit vous-même, voici ce qu'il faut pour récupérer le prix d'achat plus votre temps de tournage.",
+  kvPurchasePrice: "Prix d'achat",
+  kvTotalToEarnBack: "Temps + achat à récupérer",
 
   storefrontCheckup: "Bilan du storefront",
   sfFastScanNote:

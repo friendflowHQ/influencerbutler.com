@@ -69,6 +69,16 @@ export function renderCalculator(
   );
   section.append(fields);
 
+  // A second break-even for the case the user actually bought the product: it
+  // has to earn back the purchase price on top of the filming time.
+  const purchasedHeading = el("p", "note");
+  purchasedHeading.style.fontWeight = "700";
+  purchasedHeading.style.marginTop = "4px";
+  purchasedHeading.textContent = t().bePurchasedHeading;
+  purchasedHeading.append(infoTip(t().bePurchasedNote));
+  const purchasedResults = el("dl", "kv");
+  section.append(purchasedHeading, purchasedResults);
+
   function update(): void {
     const inputs: CalculatorInputs = {
       priceCents: signals.priceCents ?? 0,
@@ -90,6 +100,20 @@ export function renderCalculator(
       kv(t().kvSalesToEarnBack, Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : t().notApplicable),
       kv(t().kvViewsForSales, Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : t().notApplicable),
       kv(t().kvProfitPerMonth, formatCents(r.estMonthlyProfitCents, signals.currency), t().calcEstimatesNote),
+    );
+    purchasedResults.replaceChildren(
+      kv(t().kvPurchasePrice, formatCents(inputs.priceCents, signals.currency)),
+      kv(t().kvTotalToEarnBack, formatCents(r.totalToEarnBackPurchasedCents, signals.currency)),
+      kv(
+        t().kvSalesToEarnBack,
+        Number.isFinite(r.salesToBreakEvenPurchased) ? String(r.salesToBreakEvenPurchased) : t().notApplicable,
+      ),
+      kv(
+        t().kvViewsForSales,
+        Number.isFinite(r.viewsToBreakEvenPurchased)
+          ? r.viewsToBreakEvenPurchased.toLocaleString()
+          : t().notApplicable,
+      ),
     );
   }
 
