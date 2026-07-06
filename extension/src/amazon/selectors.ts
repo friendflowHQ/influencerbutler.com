@@ -19,6 +19,7 @@ export type SelectorId =
   | "orderDate"
   | "storefrontTile"
   | "mainImage"
+  | "breadcrumbs"
   | "siteStripeCommission";
 
 const REGISTRY: Record<SelectorId, string[]> = {
@@ -95,6 +96,12 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#landingImage",
     "#imgTagWrapperId img",
     "#main-image-container img",
+  ],
+  // The category breadcrumb trail above the title. The last crumb is the
+  // narrowest category, which we match against the Associates rate card.
+  breadcrumbs: [
+    "#wayfinding-breadcrumbs_feature_div",
+    "#wayfinding-breadcrumbs_container",
   ],
   // The SiteStripe "Influencers & Associates" bar shows the live commission
   // rate for logged-in creators. Amazon labels it "Commission rate" with the

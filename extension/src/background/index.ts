@@ -9,6 +9,7 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { getHudStatus, sendHudCommand } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
+import { refreshRateCard } from "./rate-card";
 import { getState } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 
@@ -20,13 +21,20 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void refreshCatalogues();
+  void refreshRateCard();
 });
 
-chrome.runtime.onStartup.addListener(() => void refreshCatalogues());
+chrome.runtime.onStartup.addListener(() => {
+  void refreshCatalogues();
+  void refreshRateCard();
+});
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) void flush();
-  if (alarm.name === CATALOGUE_ALARM) void refreshCatalogues();
+  if (alarm.name === CATALOGUE_ALARM) {
+    void refreshCatalogues();
+    void refreshRateCard();
+  }
 });
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {

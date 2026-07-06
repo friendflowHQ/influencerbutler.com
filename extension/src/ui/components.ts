@@ -30,14 +30,26 @@ export function getPanel(title: string): HTMLElement {
   return body;
 }
 
-export function addSection(heading: string): HTMLElement {
+export function addSection(heading: string, info?: string): HTMLElement {
   const container = getPanel("Influencer Butler");
   const section = el("div", "section");
   const h = el("h4");
   h.textContent = heading;
+  if (info) h.append(infoTip(info));
   section.append(h);
   container.append(section);
   return section;
+}
+
+// A small "i" affordance that reveals explanatory copy on hover or focus,
+// so long-winded help text does not clutter the panel until it is wanted.
+export function infoTip(text: string): HTMLElement {
+  const tip = el("span", "infotip");
+  tip.tabIndex = 0;
+  tip.setAttribute("role", "img");
+  tip.setAttribute("aria-label", text);
+  tip.append(el("span", "infotip-mark", "i"), el("span", "infotip-bubble", text));
+  return tip;
 }
 
 export function el<K extends keyof HTMLElementTagNameMap>(

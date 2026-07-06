@@ -2,6 +2,7 @@ import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { calculate, formatCents, type CalculatorInputs } from "./model";
 import { patchSettings } from "../../storage/store";
+import { getRateCard, rateForCategory } from "../../rate-card/cache";
 import type { Settings } from "../../storage/schema";
 import type { ProductSignals } from "../../amazon/product-signals";
 import type { VideoCounts } from "../../transport/types";
@@ -13,7 +14,7 @@ export function renderCalculator(
   counts: VideoCounts | null,
   settings: Settings,
 ): void {
-  const section = addSection(t().breakEvenMath);
+  const section = addSection(t().breakEvenMath, t().calcIntro);
 
   if (signals.priceCents === null) {
     section.append(el("p", "note", t().noPriceForMath));
@@ -31,13 +32,9 @@ export function renderCalculator(
     hourlyValue: settings.hourlyValue,
   };
 
-  // Explain up front what "break even" means here, since it trips people up:
-  // it is about earning back the value of your filming TIME, not buying the
-  // product (Creator Connections gifts it, or you already own it).
-  const intro = el("p", "note");
-  intro.textContent = t().calcIntro;
-  section.append(intro);
-
+  // The "what break even means" explainer now lives in the heading's info
+  // tooltip (it trips people up: it is about earning back your filming TIME,
+  // not buying the product, which Creator Connections gifts or you own).
   if (detectedCommission !== null) {
     const badge = el("p", "note");
     badge.textContent = t().commissionFromSiteStripe(detectedCommission);
@@ -47,27 +44,28 @@ export function renderCalculator(
   const results = el("dl", "kv");
   section.append(results);
 
+  const commissionField = numberField(t().fieldCommissionRate, state.commissionRatePct, 0.5, (v) => {
+    state.commissionRatePct = v;
+    void patchSettings({ commissionRatePct: v });
+    update();
+  });
   const fields = el("div");
   fields.append(
-    numberField(t().fieldCommissionRate, state.commissionRatePct, 0.5, (v) => {
-      state.commissionRatePct = v;
-      void patchSettings({ commissionRatePct: v });
-      update();
-    }),
+    commissionField.wrap,
     numberField(t().fieldHourlyRate, state.hourlyValue, 5, (v) => {
       state.hourlyValue = v;
       void patchSettings({ hourlyValue: v });
       update();
-    }),
+    }).wrap,
     numberField(t().fieldMinutesFilmEdit, state.minutesPerVideo, 5, (v) => {
       state.minutesPerVideo = v;
       void patchSettings({ minutesPerVideo: v });
       update();
-    }),
+    }).wrap,
     numberField(t().fieldViewsPerMonth, state.viewsPerMonth, 100, (v) => {
       state.viewsPerMonth = v;
       update();
-    }),
+    }).wrap,
   );
   section.append(fields);
 
@@ -100,6 +98,26 @@ export function renderCalculator(
   }
 
   update();
+
+  // No live SiteStripe rate on this page: fall back to the Associates rate
+  // card, matched on the product's category. Async (reads the cached card),
+  // so it fills in a moment after the panel renders.
+  if (detectedCommission === null) void applyRateCard();
+
+  async function applyRateCard(): Promise<void> {
+    const card = await getRateCard();
+    if (!card) return;
+    const match = rateForCategory(card, signals.category);
+    if (!match) return;
+    state.commissionRatePct = match.ratePct;
+    commissionField.input.value = String(match.ratePct);
+    const badge = el("p", "note");
+    badge.textContent = match.isDefault
+      ? t().commissionFromRateCardDefault(match.ratePct)
+      : t().commissionFromRateCard(match.ratePct, match.label);
+    section.insertBefore(badge, results);
+    update();
+  }
 }
 
 function kv(label: string, value: string): DocumentFragment {
@@ -115,7 +133,7 @@ function numberField(
   value: number,
   step: number,
   onChange: (value: number) => void,
-): HTMLElement {
+): { wrap: HTMLElement; input: HTMLInputElement } {
   const wrap = el("label", "field");
   wrap.append(document.createTextNode(label));
   const input = el("input");
@@ -128,5 +146,5 @@ function numberField(
     if (!Number.isNaN(parsed) && parsed >= 0) onChange(parsed);
   });
   wrap.append(input);
-  return wrap;
+  return { wrap, input };
 }

@@ -53,6 +53,19 @@ export async function readLatest(kind: CatalogueKind): Promise<LatestPointer> {
   return (await res.json()) as LatestPointer;
 }
 
+// Reads a small JSON object from R2, returning null when R2 is not configured
+// or the object does not exist yet (404). Used for the rate card (a few KB),
+// which needs neither the streaming nor the Bloom path.
+export async function r2ReadJson<T>(key: string): Promise<T | null> {
+  if (!r2Configured()) return null;
+  const res = await fetch(objectUrl(key), {
+    headers: { Authorization: `Bearer ${process.env.R2_READ_TOKEN}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`R2 read ${key} failed: ${res.status}`);
+  return (await res.json()) as T;
+}
+
 // Picks the source object: CC uses the compact asin-index, SPCC the catalog
 // (which is already small and carries the asin on every row).
 function sourceFile(kind: CatalogueKind, latest: LatestPointer): string {

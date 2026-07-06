@@ -16,6 +16,9 @@ export type ProductSignals = {
   // Read from the SiteStripe bar when the user is a logged-in creator; null
   // otherwise. Lets the calculator use the real onsite rate instead of a guess.
   commissionRatePct: number | null;
+  // Narrowest breadcrumb category, used to look up the Associates rate card
+  // when SiteStripe is not present. Null when there are no breadcrumbs.
+  category: string | null;
   imageUrl: string | null;
 };
 
@@ -34,8 +37,19 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     boughtPastMonth: extractBoughtPastMonth(doc),
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
     commissionRatePct: extractCommissionRate(doc),
+    category: extractCategory(doc),
     imageUrl: extractImage(doc),
   };
+}
+
+export function extractCategory(doc: Document): string | null {
+  // The last breadcrumb is the most specific category (e.g. "Above-Ground
+  // Pools"), which is what we token-match against the rate card.
+  const crumbs = query(doc, "breadcrumbs");
+  if (!crumbs) return null;
+  const links = Array.from(crumbs.querySelectorAll("a"));
+  const last = links[links.length - 1]?.textContent;
+  return cleanText(last) ?? null;
 }
 
 export function extractCommissionRate(doc: Document): number | null {

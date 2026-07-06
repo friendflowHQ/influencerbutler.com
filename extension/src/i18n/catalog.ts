@@ -107,6 +107,8 @@ export interface Dict {
   noPriceForMath: string;
   calcIntro: string;
   commissionFromSiteStripe: (pct: number) => string;
+  commissionFromRateCard: (pct: number, category: string) => string;
+  commissionFromRateCardDefault: (pct: number) => string;
   fieldCommissionRate: string;
   fieldHourlyRate: string;
   fieldMinutesFilmEdit: string;
@@ -312,6 +314,10 @@ const en: Dict = {
   calcIntro:
     "How many sales pay back the time you spend filming one video. This assumes the product is free (Creator Connections) or you already own it, not that you buy it.",
   commissionFromSiteStripe: (pct) => `Commission rate ${pct}% read live from your SiteStripe bar.`,
+  commissionFromRateCard: (pct, category) =>
+    `Using ${pct}% for "${category}" from the Amazon Associates rate card.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Using the ${pct}% all-other-categories rate from the Amazon Associates rate card.`,
   fieldCommissionRate: "Commission rate (%)",
   fieldHourlyRate: "Your hourly rate ($)",
   fieldMinutesFilmEdit: "Minutes to film + edit",
@@ -520,6 +526,10 @@ const es: Dict = {
   calcIntro:
     "Cuántas ventas recuperan el tiempo que pasas grabando un video. Esto asume que el producto es gratis (Creator Connections) o que ya lo tienes, no que lo compras.",
   commissionFromSiteStripe: (pct) => `Comisión del ${pct}% leída en vivo de tu barra SiteStripe.`,
+  commissionFromRateCard: (pct, category) =>
+    `Usando ${pct}% para "${category}" del tarifario de Amazon Associates.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Usando la tarifa general del ${pct}% del tarifario de Amazon Associates.`,
   fieldCommissionRate: "Comisión (%)",
   fieldHourlyRate: "Tu tarifa por hora ($)",
   fieldMinutesFilmEdit: "Minutos para grabar + editar",
@@ -728,6 +738,10 @@ const fr: Dict = {
   calcIntro:
     "Combien de ventes remboursent le temps passé à filmer une vidéo. Cela suppose que le produit est gratuit (Creator Connections) ou que vous le possédez déjà, pas que vous l'achetez.",
   commissionFromSiteStripe: (pct) => `Taux de commission ${pct}% lu en direct de votre barre SiteStripe.`,
+  commissionFromRateCard: (pct, category) =>
+    `Taux de ${pct}% pour "${category}" selon la grille Amazon Associates.`,
+  commissionFromRateCardDefault: (pct) =>
+    `Taux general de ${pct}% (autres categories) selon la grille Amazon Associates.`,
   fieldCommissionRate: "Taux de commission (%)",
   fieldHourlyRate: "Votre tarif horaire ($)",
   fieldMinutesFilmEdit: "Minutes pour filmer + monter",
