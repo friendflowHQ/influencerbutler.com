@@ -31,6 +31,9 @@ export type RuntimeMessage =
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
   | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput }
   | { kind: "OPEN_URL"; url: string }
+  // Opens the extension's options/settings page. Content scripts cannot call
+  // chrome.runtime.openOptionsPage directly, so the on-page gear routes here.
+  | { kind: "OPEN_OPTIONS" }
   // Records first actual use so the background can schedule the re-engagement
   // nudge alarms. Idempotent: only the first one sets the clock.
   | { kind: "MARK_FIRST_USE" }

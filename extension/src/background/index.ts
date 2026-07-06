@@ -114,6 +114,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       // this to an arbitrary URL.
       void openAllowedUrl(message.url).then(() => sendResponse(undefined));
       return true;
+    case "OPEN_OPTIONS":
+      void chrome.runtime.openOptionsPage(() => sendResponse(undefined));
+      return true;
     case "MARK_FIRST_USE":
       void markFirstUse().then(() => sendResponse(undefined));
       return true;

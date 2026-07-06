@@ -59,6 +59,25 @@
   background-clip: text;
   color: transparent;
 }
+.header .gear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+.header .gear:hover { color: #ea580c; background: #fff2e8; transform: rotate(30deg); }
+.header .gear:focus-visible { outline: 2px solid #f59e0b; outline-offset: 1px; }
+
 .header .chev { color: #94a3b8; font-size: 12px; font-weight: 600; }
 
 /* Sections stack with clear separators so tools read as distinct blocks. */

@@ -12,6 +12,7 @@ export interface Dict {
   // Shared panel chrome
   panelChevronHide: string;
   panelChevronShow: string;
+  panelSettings: string;
   copy: string;
   copied: string;
 
@@ -332,6 +333,7 @@ export interface Dict {
 const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
+  panelSettings: "Settings",
   copy: "Copy",
   copied: "Copied",
 
@@ -662,6 +664,7 @@ const en: Dict = {
 const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
+  panelSettings: "Ajustes",
   copy: "Copiar",
   copied: "Copiado",
 
@@ -992,6 +995,7 @@ const es: Dict = {
 const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
+  panelSettings: "Paramètres",
   copy: "Copier",
   copied: "Copié",
 
