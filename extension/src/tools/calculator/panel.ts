@@ -1,4 +1,4 @@
-import { addSection, el, infoTip } from "../../ui/components";
+import { addSection, collapsible, el, infoTip } from "../../ui/components";
 import { t } from "../../i18n";
 import { calculate, formatCents, type CalculatorInputs } from "./model";
 import { patchSettings } from "../../storage/store";
@@ -32,25 +32,43 @@ export function renderCalculator(
     hourlyValue: settings.hourlyValue,
   };
 
-  // The "what break even means" explainer now lives in the heading's info
-  // tooltip (it trips people up: it is about earning back your filming TIME,
-  // not buying the product, which Creator Connections gifts or you own).
+  // SiteStripe / rate-card badges live in a slot right under the heading, so
+  // they stay put as the cards below re-render.
+  const badgeSlot = el("div");
+  section.append(badgeSlot);
   if (detectedCommission !== null) {
     const badge = el("p", "note");
     badge.textContent = t().commissionFromSiteStripe(detectedCommission);
-    section.append(badge);
+    badgeSlot.append(badge);
   }
 
-  const results = el("dl", "kv");
-  section.append(results);
+  // Results-first, in soft cards like the desktop Orders Butler. Card 1 (top,
+  // accent): break-even when you BUY the product. Card 2: break-even on filming
+  // TIME only (product gifted via Creator Connections or already owned), with
+  // the tweakable assumptions collapsed under it.
+  const purchasedCard = el("div", "calc-card accent");
+  const purchasedTitle = el("p", "calc-card-title", t().bePurchasedHeading);
+  purchasedTitle.append(infoTip(t().bePurchasedNote));
+  const purchasedResults = el("dl", "kv");
+  purchasedCard.append(purchasedTitle, purchasedResults);
 
+  const timeCard = el("div", "calc-card");
+  const timeTitle = el("p", "calc-card-title", t().beTimeHeading);
+  timeTitle.append(infoTip(t().beTimeNote));
+  const results = el("dl", "kv");
+  timeCard.append(timeTitle, results);
+
+  section.append(purchasedCard, timeCard);
+
+  // The assumptions that drive both cards, collapsed by default under the
+  // orange caret, within the time card.
   const commissionField = numberField(t().fieldCommissionRate, state.commissionRatePct, 0.5, (v) => {
     state.commissionRatePct = v;
     void patchSettings({ commissionRatePct: v });
     update();
   });
-  const fields = el("div");
-  fields.append(
+  const inputs = collapsible(timeCard, t().beAdjustAssumptions, { open: false });
+  inputs.append(
     commissionField.wrap,
     numberField(t().fieldHourlyRate, state.hourlyValue, 5, (v) => {
       state.hourlyValue = v;
@@ -67,17 +85,6 @@ export function renderCalculator(
       update();
     }).wrap,
   );
-  section.append(fields);
-
-  // A second break-even for the case the user actually bought the product: it
-  // has to earn back the purchase price on top of the filming time.
-  const purchasedHeading = el("p", "note");
-  purchasedHeading.style.fontWeight = "700";
-  purchasedHeading.style.marginTop = "4px";
-  purchasedHeading.textContent = t().bePurchasedHeading;
-  purchasedHeading.append(infoTip(t().bePurchasedNote));
-  const purchasedResults = el("dl", "kv");
-  section.append(purchasedHeading, purchasedResults);
 
   function update(): void {
     const inputs: CalculatorInputs = {
@@ -135,7 +142,7 @@ export function renderCalculator(
     badge.textContent = match.isDefault
       ? t().commissionFromRateCardDefault(match.ratePct)
       : t().commissionFromRateCard(match.ratePct, match.label);
-    section.insertBefore(badge, results);
+    badgeSlot.append(badge);
     update();
   }
 }

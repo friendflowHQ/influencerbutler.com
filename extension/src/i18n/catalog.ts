@@ -190,6 +190,9 @@ export interface Dict {
   notApplicable: string;
   bePurchasedHeading: string;
   bePurchasedNote: string;
+  beTimeHeading: string;
+  beTimeNote: string;
+  beAdjustAssumptions: string;
   kvPurchasePrice: string;
   kvTotalToEarnBack: string;
 
@@ -199,6 +202,9 @@ export interface Dict {
   sfDeepContent: string;
   sfCheckAvailability: string;
   sfParentAsins: string;
+  sfCreatorApiEnrich: string;
+  sfEnrichingProducts: (done: number, total: number) => string;
+  sfCreatorApiNote: string;
   sfCheckButton: string;
   sfStop: string;
   sfRescan: string;
@@ -222,6 +228,12 @@ export interface Dict {
   sfNoTaggedEarns: string;
   sfUnavailableProduct: (asin: string) => string;
   sfTaggedUnavailable: string;
+  sfUntaggedHeading: (n: number) => string;
+  sfOverTaggedHeading: (n: number) => string;
+  sfUnavailableHeading: (n: number) => string;
+  sfOverTaggedCount: (n: number) => string;
+  sfOverTaggedDetail: string;
+  sfAndMore: (n: number) => string;
   sfNoIssues: string;
   sfExportCsv: string;
   sfOpen: string;
@@ -516,6 +528,10 @@ const en: Dict = {
   bePurchasedHeading: "Break-even if purchased",
   bePurchasedNote:
     "If you buy the product yourself, this is what it takes to earn back the purchase price plus your filming time.",
+  beTimeHeading: "Break-even time investment",
+  beTimeNote:
+    "Assumes the product is free (a Creator Connections gift or one you already own): how many sales earn back just your filming time.",
+  beAdjustAssumptions: "Adjust assumptions",
   kvPurchasePrice: "Purchase price",
   kvTotalToEarnBack: "Time + purchase to earn back",
 
@@ -525,6 +541,10 @@ const en: Dict = {
   sfDeepContent: "Also scan photo and list product tags",
   sfCheckAvailability: "Check product availability (opens each product)",
   sfParentAsins: "Resolve parent ASINs (opens each product)",
+  sfCreatorApiEnrich: "Enrich with Creator API (title, price, live availability)",
+  sfEnrichingProducts: (done, total) => `Enriching products via Creator API... ${done} of ${total}`,
+  sfCreatorApiNote:
+    "Connect the Creator API in Settings to add product titles, prices, and live availability. Exported without it for now.",
   sfCheckButton: "Check my storefront",
   sfStop: "Stop",
   sfRescan: "Rescan",
@@ -549,8 +569,14 @@ const en: Dict = {
   sfNoTaggedEarns: "No tagged products, so it earns nothing.",
   sfUnavailableProduct: (asin) => `Unavailable product ${asin}`,
   sfTaggedUnavailable: "Tagged product is no longer available.",
-  sfNoIssues: "No untagged or unavailable issues found.",
-  sfExportCsv: "Export tagged products (CSV)",
+  sfUntaggedHeading: (n) => `Untagged content (${n})`,
+  sfOverTaggedHeading: (n) => `Over-tagged content (${n})`,
+  sfUnavailableHeading: (n) => `Unavailable products (${n})`,
+  sfOverTaggedCount: (n) => `${n} products tagged`,
+  sfOverTaggedDetail: "Too many products tagged on one post dilutes each link.",
+  sfAndMore: (n) => `and ${n} more: see the CSV export`,
+  sfNoIssues: "No untagged, over-tagged, or unavailable issues found.",
+  sfExportCsv: "Export results (CSV)",
   sfOpen: "Open",
 
   contentGapsHeading: "Content gaps in your orders",
@@ -847,6 +873,10 @@ const es: Dict = {
   bePurchasedHeading: "Punto de equilibrio si lo compras",
   bePurchasedNote:
     "Si compras el producto, esto es lo que hace falta para recuperar el precio de compra más tu tiempo de grabación.",
+  beTimeHeading: "Equilibrio por tiempo invertido",
+  beTimeNote:
+    "Asume que el producto es gratis (un regalo de Creator Connections o uno que ya tienes): cuántas ventas recuperan solo tu tiempo de grabación.",
+  beAdjustAssumptions: "Ajustar supuestos",
   kvPurchasePrice: "Precio de compra",
   kvTotalToEarnBack: "Tiempo + compra a recuperar",
 
@@ -856,6 +886,10 @@ const es: Dict = {
   sfDeepContent: "También escanear etiquetas de fotos y listas",
   sfCheckAvailability: "Comprobar disponibilidad del producto (abre cada producto)",
   sfParentAsins: "Resolver ASIN padre (abre cada producto)",
+  sfCreatorApiEnrich: "Enriquecer con la Creator API (título, precio, disponibilidad en vivo)",
+  sfEnrichingProducts: (done, total) => `Enriqueciendo productos con la Creator API... ${done} de ${total}`,
+  sfCreatorApiNote:
+    "Conecta la Creator API en Ajustes para añadir títulos, precios y disponibilidad en vivo de los productos. Exportado sin ello por ahora.",
   sfCheckButton: "Revisar mi storefront",
   sfStop: "Detener",
   sfRescan: "Volver a escanear",
@@ -880,8 +914,14 @@ const es: Dict = {
   sfNoTaggedEarns: "Sin productos etiquetados, así que no gana nada.",
   sfUnavailableProduct: (asin) => `Producto no disponible ${asin}`,
   sfTaggedUnavailable: "El producto etiquetado ya no está disponible.",
+  sfUntaggedHeading: (n) => `Contenido sin etiquetas (${n})`,
+  sfOverTaggedHeading: (n) => `Contenido con exceso de etiquetas (${n})`,
+  sfUnavailableHeading: (n) => `Productos no disponibles (${n})`,
+  sfOverTaggedCount: (n) => `${n} productos etiquetados`,
+  sfOverTaggedDetail: "Etiquetar demasiados productos en una publicación diluye cada enlace.",
+  sfAndMore: (n) => `y ${n} más: consulta la exportación CSV`,
   sfNoIssues: "No se encontraron problemas de etiquetas o disponibilidad.",
-  sfExportCsv: "Exportar productos etiquetados (CSV)",
+  sfExportCsv: "Exportar resultados (CSV)",
   sfOpen: "Abrir",
 
   contentGapsHeading: "Huecos de contenido en tus pedidos",
@@ -1178,6 +1218,10 @@ const fr: Dict = {
   bePurchasedHeading: "Seuil de rentabilité si acheté",
   bePurchasedNote:
     "Si vous achetez le produit vous-même, voici ce qu'il faut pour récupérer le prix d'achat plus votre temps de tournage.",
+  beTimeHeading: "Rentabilité du temps investi",
+  beTimeNote:
+    "Suppose que le produit est gratuit (un cadeau Creator Connections ou un que vous possédez déjà) : combien de ventes récupèrent seulement votre temps de tournage.",
+  beAdjustAssumptions: "Ajuster les hypothèses",
   kvPurchasePrice: "Prix d'achat",
   kvTotalToEarnBack: "Temps + achat à récupérer",
 
@@ -1187,6 +1231,10 @@ const fr: Dict = {
   sfDeepContent: "Analyser aussi les étiquettes des photos et listes",
   sfCheckAvailability: "Vérifier la disponibilité du produit (ouvre chaque produit)",
   sfParentAsins: "Résoudre les ASIN parents (ouvre chaque produit)",
+  sfCreatorApiEnrich: "Enrichir avec la Creator API (titre, prix, disponibilité en direct)",
+  sfEnrichingProducts: (done, total) => `Enrichissement des produits via la Creator API... ${done} sur ${total}`,
+  sfCreatorApiNote:
+    "Connectez la Creator API dans les Paramètres pour ajouter les titres, prix et la disponibilité en direct des produits. Exporté sans cela pour l'instant.",
   sfCheckButton: "Vérifier mon storefront",
   sfStop: "Arrêter",
   sfRescan: "Réanalyser",
@@ -1211,8 +1259,14 @@ const fr: Dict = {
   sfNoTaggedEarns: "Aucun produit étiqueté, donc ne rapporte rien.",
   sfUnavailableProduct: (asin) => `Produit indisponible ${asin}`,
   sfTaggedUnavailable: "Le produit étiqueté n'est plus disponible.",
+  sfUntaggedHeading: (n) => `Contenu sans étiquettes (${n})`,
+  sfOverTaggedHeading: (n) => `Contenu sur-étiqueté (${n})`,
+  sfUnavailableHeading: (n) => `Produits indisponibles (${n})`,
+  sfOverTaggedCount: (n) => `${n} produits étiquetés`,
+  sfOverTaggedDetail: "Étiqueter trop de produits sur une publication dilue chaque lien.",
+  sfAndMore: (n) => `et ${n} de plus: voir l'export CSV`,
   sfNoIssues: "Aucun problème d'étiquette ou de disponibilité trouvé.",
-  sfExportCsv: "Exporter les produits étiquetés (CSV)",
+  sfExportCsv: "Exporter les résultats (CSV)",
   sfOpen: "Ouvrir",
 
   contentGapsHeading: "Manques de contenu dans vos commandes",
