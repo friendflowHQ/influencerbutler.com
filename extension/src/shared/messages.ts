@@ -26,7 +26,8 @@ export type RuntimeMessage =
   | { kind: "GET_PAGE_STATUS" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
-  | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput };
+  | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput }
+  | { kind: "OPEN_URL"; url: string };
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";

@@ -96,6 +96,9 @@ export interface Dict {
   butlerApproved: string;
   approvedYes: string;
   approvedNo: string;
+  approvedReasonPass: string;
+  approvedReasonFail: (checks: string) => string;
+  approvedReasonUnknown: (checks: string) => string;
   approvedCriteriaNote: string;
   critBought: (n: number) => string;
   critOpenSlot: (n: number) => string;
@@ -303,6 +306,9 @@ const en: Dict = {
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
   approvedNo: "Not Butler Approved yet",
+  approvedReasonPass: "Every check below passes, so this product is worth making content for.",
+  approvedReasonFail: (checks) => `Not approved yet: these checks did not pass - ${checks}.`,
+  approvedReasonUnknown: (checks) => `Could not read from this page: ${checks}.`,
   approvedCriteriaNote: "Criteria read from this page. Tune thresholds in the extension popup.",
   critBought: (n) => `${n}+ bought in past month`,
   critOpenSlot: (n) => `Fewer than ${n} influencer videos`,
@@ -515,6 +521,9 @@ const es: Dict = {
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
   approvedNo: "Todavía no es Butler Approved",
+  approvedReasonPass: "Todas las comprobaciones de abajo pasan, así que vale la pena crear contenido.",
+  approvedReasonFail: (checks) => `Todavía no aprobado: estas comprobaciones no pasaron - ${checks}.`,
+  approvedReasonUnknown: (checks) => `No se pudo leer de esta página: ${checks}.`,
   approvedCriteriaNote: "Criterios leídos de esta página. Ajusta los umbrales en el popup de la extensión.",
   critBought: (n) => `${n}+ comprados el mes pasado`,
   critOpenSlot: (n) => `Menos de ${n} videos de influencers`,
@@ -727,6 +736,9 @@ const fr: Dict = {
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",
   approvedNo: "Pas encore Butler Approved",
+  approvedReasonPass: "Toutes les verifications ci-dessous passent, donc ça vaut le coup de créer du contenu.",
+  approvedReasonFail: (checks) => `Pas encore approuvé : ces verifications n'ont pas passé - ${checks}.`,
+  approvedReasonUnknown: (checks) => `Impossible de lire sur cette page : ${checks}.`,
   approvedCriteriaNote: "Critères lus sur cette page. Réglez les seuils dans le popup de l'extension.",
   critBought: (n) => `${n}+ achetés le mois dernier`,
   critOpenSlot: (n) => `Moins de ${n} vidéos d'influenceurs`,
