@@ -26,6 +26,10 @@ export function corsHeaders(): Record<string, string> {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    // These are machine-only endpoints (the extension calls them, not people).
+    // robots.txt already disallows /api/, but that is advisory: this header
+    // tells any crawler that does fetch a response not to index or follow it.
+    "X-Robots-Tag": "noindex, nofollow",
   };
 }
 
