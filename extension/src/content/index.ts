@@ -6,6 +6,7 @@ import {
   type CarouselResult,
 } from "../amazon/video-carousel";
 import { extractSignals, type ProductSignals } from "../amazon/product-signals";
+import { query } from "../amazon/selectors";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
@@ -124,9 +125,12 @@ async function runForPage(): Promise<void> {
 
       // The video widget's classified data only hydrates once it scrolls
       // into view, and may arrive via state scripts, rail DOM, or the
-      // network hook. While any videos remain unclassified, keep polling
-      // the DOM sources and rebuild when coverage improves.
-      if (carousel.counts.unknown > 0) watchForVideoHydration();
+      // network hook. Nudge it into view automatically so the user does not
+      // have to scroll, then keep polling and rebuild as coverage improves.
+      if (carousel.counts.unknown > 0) {
+        autoHydrateVideos();
+        watchForVideoHydration();
+      }
     });
   } else if (pageType === "order-history") {
     guard("order-history", () => {
@@ -142,10 +146,41 @@ async function runForPage(): Promise<void> {
   }
 }
 
-// Re-extract every 2.5s until classification coverage stops improving (the
-// user scrolling the video section into view is what triggers Amazon to
-// load the data). Gives up after 2 minutes; the network hook can still
-// trigger a rebuild any time after that.
+// Amazon only loads the video widget's classified data once the widget is on
+// screen. Rather than make the user scroll to it, briefly bring it into view
+// (long enough to trip Amazon's lazy load and our network hook), then restore
+// the user's scroll position. The fetch it kicks off completes on its own
+// regardless of where we scroll back to, so the visible jump is momentary.
+// Runs at most once per URL; keyed so a rebuild does not re-nudge.
+let autoHydratedFor: string | null = null;
+
+function autoHydrateVideos(): void {
+  if (autoHydratedFor === currentUrl) return;
+  const widget = query(document, "videoWidget");
+  if (!widget) return; // not rendered yet; the watcher retries on its next tick
+  autoHydratedFor = currentUrl;
+  const rect = widget.getBoundingClientRect();
+  if (rect.bottom > 0 && rect.top < window.innerHeight) return; // already visible
+  const startX = window.scrollX;
+  const startY = window.scrollY;
+  try {
+    widget.scrollIntoView({ block: "center" });
+  } catch {
+    return;
+  }
+  window.setTimeout(() => {
+    try {
+      window.scrollTo(startX, startY);
+    } catch {
+      // ignore
+    }
+  }, 500);
+}
+
+// Re-extract every 2.5s until classification coverage stops improving. The
+// auto-nudge (or the user scrolling the video section into view) is what
+// triggers Amazon to load the data. Gives up after 2 minutes; the network
+// hook can still trigger a rebuild any time after that.
 let hydrationWatch: number | null = null;
 
 function watchForVideoHydration(): void {
@@ -159,6 +194,7 @@ function watchForVideoHydration(): void {
       hydrationWatch = null;
       return;
     }
+    autoHydrateVideos();
     rebuildIfImproved();
   }, 2500);
 }

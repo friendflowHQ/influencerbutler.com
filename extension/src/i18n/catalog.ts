@@ -132,6 +132,7 @@ export interface Dict {
   sfScanningProgress: (items: number, pages: number) => string;
   sfOpeningPhotos: (done: number, total: number) => string;
   sfOpeningProducts: (done: number, total: number) => string;
+  sfEtaMinLeft: (min: number) => string;
   sfCheckedFirst: (cap: number) => string;
   sfScanFailed: string;
   sfStopped: string;
@@ -337,6 +338,7 @@ const en: Dict = {
   sfScanningProgress: (items, pages) => `Scanning the feed... ${items} items across ${pages} pages`,
   sfOpeningPhotos: (done, total) => `Opening photos and lists... ${done} of ${total}`,
   sfOpeningProducts: (done, total) => `Opening products... ${done} of ${total}`,
+  sfEtaMinLeft: (min) => ` (about ${min} min left)`,
   sfCheckedFirst: (cap) => `Checked the first ${cap} products (storefront has more).`,
   sfScanFailed: "Scan failed. Reload the storefront tab and try again.",
   sfStopped: "Stopped.",
@@ -544,6 +546,7 @@ const es: Dict = {
   sfScanningProgress: (items, pages) => `Escaneando el feed... ${items} elementos en ${pages} páginas`,
   sfOpeningPhotos: (done, total) => `Abriendo fotos y listas... ${done} de ${total}`,
   sfOpeningProducts: (done, total) => `Abriendo productos... ${done} de ${total}`,
+  sfEtaMinLeft: (min) => ` (unos ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Revisados los primeros ${cap} productos (el storefront tiene más).`,
   sfScanFailed: "El escaneo falló. Recarga la pestaña del storefront e inténtalo de nuevo.",
   sfStopped: "Detenido.",
@@ -751,6 +754,7 @@ const fr: Dict = {
   sfScanningProgress: (items, pages) => `Analyse du flux... ${items} éléments sur ${pages} pages`,
   sfOpeningPhotos: (done, total) => `Ouverture des photos et listes... ${done} sur ${total}`,
   sfOpeningProducts: (done, total) => `Ouverture des produits... ${done} sur ${total}`,
+  sfEtaMinLeft: (min) => ` (environ ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Les ${cap} premiers produits vérifiés (le storefront en a plus).`,
   sfScanFailed: "L'analyse a échoué. Rechargez l'onglet du storefront et réessayez.",
   sfStopped: "Arrêté.",
