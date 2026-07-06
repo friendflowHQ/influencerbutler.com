@@ -1,4 +1,4 @@
-import { addSection, el } from "../../ui/components";
+import { addSection, el, infoTip } from "../../ui/components";
 import { t } from "../../i18n";
 import { calculate, formatCents, type CalculatorInputs } from "./model";
 import { patchSettings } from "../../storage/store";
@@ -69,10 +69,6 @@ export function renderCalculator(
   );
   section.append(fields);
 
-  const note = el("p", "note");
-  note.textContent = t().calcEstimatesNote;
-  section.append(note);
-
   function update(): void {
     const inputs: CalculatorInputs = {
       priceCents: signals.priceCents ?? 0,
@@ -93,7 +89,7 @@ export function renderCalculator(
       kv(timeLabel, formatCents(r.timeInvestmentCents, signals.currency)),
       kv(t().kvSalesToEarnBack, Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : t().notApplicable),
       kv(t().kvViewsForSales, Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : t().notApplicable),
-      kv(t().kvProfitPerMonth, formatCents(r.estMonthlyProfitCents, signals.currency)),
+      kv(t().kvProfitPerMonth, formatCents(r.estMonthlyProfitCents, signals.currency), t().calcEstimatesNote),
     );
   }
 
@@ -120,9 +116,10 @@ export function renderCalculator(
   }
 }
 
-function kv(label: string, value: string): DocumentFragment {
+function kv(label: string, value: string, info?: string): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const dt = el("dt", "", label);
+  if (info) dt.append(infoTip(info));
   const dd = el("dd", "", value);
   fragment.append(dt, dd);
   return fragment;

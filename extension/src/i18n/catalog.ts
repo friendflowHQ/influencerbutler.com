@@ -91,6 +91,7 @@ export interface Dict {
   chipUnclassified: (n: number) => string;
   videosTotalVia: (total: number, viaPageData: boolean) => string;
   influencerFallback: string;
+  influencerVideosLabel: (n: number) => string;
 
   // Butler Approved panel
   butlerApproved: string;
@@ -302,6 +303,7 @@ const en: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
   influencerFallback: "Influencer",
+  influencerVideosLabel: (n) => `Influencer videos (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
@@ -517,6 +519,7 @@ const es: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
   influencerFallback: "Influencer",
+  influencerVideosLabel: (n) => `Videos de influencers (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
@@ -732,6 +735,7 @@ const fr: Dict = {
   videosTotalVia: (total, viaPageData) =>
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
   influencerFallback: "Influenceur",
+  influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",

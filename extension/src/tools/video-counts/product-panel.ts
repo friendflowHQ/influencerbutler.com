@@ -1,4 +1,4 @@
-import { addSection, chip, el } from "../../ui/components";
+import { addSection, chip, collapsible, el } from "../../ui/components";
 import { t } from "../../i18n";
 import type { CarouselResult } from "../../amazon/video-carousel";
 
@@ -40,8 +40,12 @@ export function renderVideoCounts(result: CarouselResult): void {
     (v) => v.creatorType === "influencer" && (v.creatorName || v.title),
   );
   if (influencers.length > 0) {
+    const shown = influencers.slice(0, 6);
+    const content = collapsible(section, t().influencerVideosLabel(shown.length), {
+      open: true,
+    });
     const list = el("ul", "list");
-    for (const video of influencers.slice(0, 6)) {
+    for (const video of shown) {
       const item = el("li");
       item.append(el("span", "t", video.creatorName ?? t().influencerFallback));
       if (video.title) {
@@ -50,6 +54,6 @@ export function renderVideoCounts(result: CarouselResult): void {
       }
       list.append(item);
     }
-    section.append(list);
+    content.append(list);
   }
 }
