@@ -11,6 +11,13 @@ export const ENDPOINTS = {
   feedback: `${API_BASE}/api/extension/feedback`,
 } as const;
 
+// Campaign membership filters (CC / SPCC), downloaded once a day and checked
+// locally. GET /api/extension/catalogue/{kind}.
+export const CATALOGUE_BASE = `${API_BASE}/api/extension/catalogue`;
+export const CATALOGUE_ALARM = "ib-catalogue";
+export const CATALOGUE_PERIOD_MINUTES = 6 * 60;
+export const CATALOGUE_STALE_MS = 20 * 60 * 60 * 1000;
+
 // Sync queue.
 export const SYNC_ALARM = "ib-sync";
 export const SYNC_PERIOD_MINUTES = 2;
