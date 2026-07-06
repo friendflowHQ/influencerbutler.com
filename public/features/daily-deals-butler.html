@@ -81,15 +81,33 @@
                     </div>
                 </div>
                 <div class="feature-hero-image">
-                    <!--
-                      ASSET NEEDED: Screenshot of a Daily Deals queue with
-                      rows of deal cards (product image, discount %, price,
-                      schedule time), next to a filter panel on the left
-                      (category, min discount, price range, keyword). 16:9.
-                      DROP IN: <img src="/assets/features/daily-deals-butler-hero.png" alt="Daily Deals queue lined up for posting">
-                    -->
-                    <div class="feature-image-placeholder">
-                        <span class="placeholder-caption">Screenshot: deal cards lined up with schedule times</span>
+                    <div class="vob-carousel" role="region" aria-roledescription="carousel" aria-label="Amazon Daily Deals screenshots" data-vob-carousel>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--prev" aria-label="Previous slide">&larr;</button>
+                        <button type="button" class="vob-carousel__nav vob-carousel__nav--next" aria-label="Next slide">&rarr;</button>
+                        <div class="vob-carousel__track" data-vob-track tabindex="0">
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="1 of 5">
+                                <img src="/assets/features/daily-deals-butler-carousel-1.png" alt="Amazon Daily Deals: hot deals matched to your filters, lined up in a queue" loading="lazy" width="1920" height="1200">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="2 of 5">
+                                <img src="/assets/features/daily-deals-butler-carousel-2.png" alt="Amazon Daily Deals: filter deals by category, price drop, and keyword" loading="lazy" width="1920" height="1200">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="3 of 5">
+                                <img src="/assets/features/daily-deals-butler-carousel-3.png" alt="Amazon Daily Deals: post builder with AI-templated captions in your tone" loading="lazy" width="1920" height="1200">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="4 of 5">
+                                <img src="/assets/features/daily-deals-butler-carousel-4.png" alt="Amazon Daily Deals: multi-platform auto-posting with scheduled times" loading="lazy" width="1920" height="1200">
+                            </figure>
+                            <figure class="vob-slide" aria-roledescription="slide" aria-label="5 of 5">
+                                <img src="/assets/features/daily-deals-butler-carousel-5.png" alt="Amazon Daily Deals: per-country marketplace links and promo-code injection" loading="lazy" width="1920" height="1140">
+                            </figure>
+                        </div>
+                        <div class="vob-carousel__dots" role="tablist" aria-label="Carousel pagination">
+                            <button type="button" class="vob-carousel__dot is-active" data-vob-dot="0" aria-label="Slide 1"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="1" aria-label="Slide 2"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="2" aria-label="Slide 3"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="3" aria-label="Slide 4"></button>
+                            <button type="button" class="vob-carousel__dot" data-vob-dot="4" aria-label="Slide 5"></button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -221,5 +239,43 @@
 
     <script src="/js/main.js"></script>
   <script src="/js/webmcp.js" defer></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-vob-carousel]');
+      if (!root) return;
+      var track = root.querySelector('[data-vob-track]');
+      var slides = Array.prototype.slice.call(root.querySelectorAll('.vob-slide'));
+      var dots = Array.prototype.slice.call(root.querySelectorAll('[data-vob-dot]'));
+      var prevBtn = root.querySelector('.vob-carousel__nav--prev');
+      var nextBtn = root.querySelector('.vob-carousel__nav--next');
+      if (!track || slides.length === 0) return;
+      function activeIndex() {
+        var w = track.clientWidth;
+        if (!w) return 0;
+        return Math.round(track.scrollLeft / w);
+      }
+      function go(i) {
+        var n = slides.length;
+        var idx = ((i % n) + n) % n;
+        slides[idx].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(activeIndex() - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(activeIndex() + 1); });
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () { go(parseInt(dot.dataset.vobDot, 10) || 0); });
+      });
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.intersectionRatio < 0.6) return;
+            var idx = slides.indexOf(entry.target);
+            if (idx < 0) return;
+            dots.forEach(function (d, i) { d.classList.toggle('is-active', i === idx); });
+          });
+        }, { root: track, threshold: [0.6] });
+        slides.forEach(function (s) { io.observe(s); });
+      }
+    })();
+  </script>
   </body>
 </html>
