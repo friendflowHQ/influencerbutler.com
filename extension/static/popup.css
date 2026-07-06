@@ -51,6 +51,31 @@ body {
   padding: 2px 8px;
 }
 
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--slate-600);
+  cursor: pointer;
+}
+
+.gear:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
 main { padding: 10px 12px; display: grid; gap: 10px; }
 
 .card {

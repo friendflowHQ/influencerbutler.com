@@ -80,6 +80,16 @@ Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-sto
 - **El OAuth de YouTube caduca inesperadamente**: Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
 - **El enrutamiento de afiliados eligió el proveedor equivocado**: normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.
 
+## También en la extensión de Chrome
+
+La [extensión gratuita de Chrome de Influencer Butler](/help/tutorials/extension) ahora tiene su propio panel de Integraciones de API, así que puedes conectar los mismos proveedores sin la app de escritorio. Abre la ventana de la extensión y haz clic en el **icono de engranaje** de la esquina superior derecha. Tienes el mismo flujo: pegar una clave, **Probar conexión**, ver la insignia ponerse verde, un botón **Probar todo lo guardado** y un interruptor de prueba al iniciar. Cubre OpenAI, la Amazon Creators API, las etiquetas de Associates por país, los proveedores de deeplink y las redes de afiliados, con los mismos controles de enrutamiento de afiliados y de deeplink principal.
+
+La diferencia importante es dónde viven las claves. En la extensión, tus claves se quedan en tu dispositivo, cifradas en el almacenamiento local del navegador, y solo se envían a la API de cada proveedor (por ejemplo, la clave de OpenAI solo va a OpenAI). Nunca pasan por los servidores de Influencer Butler. Como el acceso a cada proveedor se concede cuando hace falta, la primera vez que pruebas o guardas un proveedor Chrome te pide permiso para que la extensión acceda a su sitio.
+
+Una vez conectados, la extensión los usa mientras navegas por Amazon: un botón **Copiar mi enlace** en cualquier producto crea tu enlace de afiliado/deeplink y, cuando OpenAI está conectado y probado, un botón **Redactar pie de foto** escribe una publicación rápida por ti.
+
+Nota: la prueba de conexión en vivo hace ahora una llamada real de solo lectura para OpenAI y la Amazon Creators API; los proveedores de deeplink y las redes de afiliados validan tu configuración guardada, con comprobaciones en vivo que se añadirán a medida que se confirme el endpoint de cada proveedor.
+
 ## Relacionado
 
 - Cada espacio del lado Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lee desde aquí.

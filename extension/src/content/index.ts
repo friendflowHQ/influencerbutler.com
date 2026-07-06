@@ -1,5 +1,6 @@
 import { detectPageType, type PageType } from "./page-type";
 import {
+  carouselSourceFor,
   classifiedCount,
   extractCarousel,
   extractFromText,
@@ -16,7 +17,9 @@ import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
+import { renderMyLink } from "../tools/my-link/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
+import { initUploadHelper } from "../tools/upload-helper/panel";
 import { guard } from "../shared/guard";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
@@ -34,6 +37,9 @@ let lastStatus: PageStatus = { pageType: "other", toolSummaries: [] };
 // Video-widget network payloads captured by the MAIN-world page hook
 // (src/content/page-hook.ts), plus how much the rendered panel classified.
 let capturedVideoData: CarouselResult[] = [];
+// The request URLs those payloads came from, so Deep Scan can replay the
+// widget's own endpoint with pagination instead of guessing one.
+let capturedVideoUrls: string[] = [];
 let renderedClassified = -1;
 
 void main();
@@ -51,11 +57,20 @@ async function main(): Promise<void> {
   });
   document.addEventListener("ib-ext-video-data", (event) => {
     guard("video-data-hook", () => {
-      const detail = (event as CustomEvent<string>).detail;
-      if (typeof detail !== "string") return;
-      const result = extractFromText(detail);
+      // The hook now sends { url, body }; tolerate the old bare-string shape.
+      const raw = (event as CustomEvent<unknown>).detail;
+      const { url, body } =
+        typeof raw === "string"
+          ? { url: "", body: raw }
+          : (raw as { url?: unknown; body?: unknown });
+      if (typeof body !== "string") return;
+      const requestUrl = typeof url === "string" ? url : "";
+      const result = extractFromText(body, carouselSourceFor(requestUrl));
       if (!result) return;
       capturedVideoData.push(result);
+      if (requestUrl && !capturedVideoUrls.includes(requestUrl)) {
+        capturedVideoUrls.push(requestUrl);
+      }
       log("content", `captured widget payload: ${classifiedCount(result)} classified`);
       rebuildIfImproved();
     });
@@ -92,7 +107,11 @@ async function runForPage(): Promise<void> {
       guard("product-snapshot", () => renderProductSnapshot(signals));
 
       if (settings.tools.videoCounts) {
-        guard("video-counts", () => renderVideoCounts(carousel));
+        guard("video-counts", () =>
+          renderVideoCounts(carousel, capturedVideoUrls, () =>
+            extractCarousel(document, capturedVideoData),
+          ),
+        );
         lastStatus.toolSummaries.push({
           label: t().sumVideos,
           value: t().sumVideosValue(carousel.counts.total, carousel.counts.influencer),
@@ -125,6 +144,9 @@ async function runForPage(): Promise<void> {
       // plus the download/trial upsell when the app is not running.
       guard("hud-actions", () => renderHudActions(signals));
 
+      // My affiliate/deeplink for this product, plus an optional AI caption.
+      guard("my-link", () => void renderMyLink(signals));
+
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
       // The video widget's classified data only hydrates once it scrolls
@@ -146,6 +168,11 @@ async function runForPage(): Promise<void> {
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
+    });
+  } else if (pageType === "creator-upload") {
+    guard("upload-helper", () => {
+      initUploadHelper();
+      lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
     });
   }
 }
@@ -246,6 +273,7 @@ function watchSpaNavigation(): void {
   const notice = () => {
     if (location.href === currentUrl) return;
     capturedVideoData = [];
+    capturedVideoUrls = [];
     renderedClassified = -1;
     removeHost();
     void runForPage();

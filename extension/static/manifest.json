@@ -6,8 +6,36 @@
   "permissions": ["storage", "alarms"],
   "host_permissions": [
     "https://www.amazon.com/*",
+    "https://www.amazon.ca/*",
+    "https://www.amazon.co.uk/*",
     "https://www.influencerbutler.com/*"
   ],
+  "optional_host_permissions": [
+    "https://api.openai.com/*",
+    "https://webservices.amazon.com/*",
+    "https://webservices.amazon.ca/*",
+    "https://webservices.amazon.com.mx/*",
+    "https://webservices.amazon.com.br/*",
+    "https://webservices.amazon.co.uk/*",
+    "https://webservices.amazon.de/*",
+    "https://webservices.amazon.fr/*",
+    "https://webservices.amazon.it/*",
+    "https://webservices.amazon.es/*",
+    "https://webservices.amazon.nl/*",
+    "https://webservices.amazon.se/*",
+    "https://webservices.amazon.pl/*",
+    "https://webservices.amazon.com.tr/*",
+    "https://webservices.amazon.ae/*",
+    "https://webservices.amazon.sa/*",
+    "https://webservices.amazon.in/*",
+    "https://webservices.amazon.co.jp/*",
+    "https://webservices.amazon.com.au/*",
+    "https://webservices.amazon.sg/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -20,7 +48,8 @@
         "https://www.amazon.com/gp/product/*",
         "https://www.amazon.com/gp/css/order-history*",
         "https://www.amazon.com/your-orders/*",
-        "https://www.amazon.com/shop/*"
+        "https://www.amazon.com/shop/*",
+        "https://www.amazon.com/creatorhub/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

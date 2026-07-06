@@ -255,6 +255,17 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+.caption-out {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+}
+
 .btn {
   border: 0;
   border-radius: 10px;

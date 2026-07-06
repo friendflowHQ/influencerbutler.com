@@ -180,7 +180,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white p-6 shadow-sm transition-transform lg:static lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-sm transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >

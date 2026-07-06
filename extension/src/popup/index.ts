@@ -22,6 +22,14 @@ async function init(): Promise<void> {
   applyStaticI18n();
   await Promise.all([renderPageStatus(), renderAccount(), renderSettings()]);
   wireFeedback();
+  wireOptions();
+}
+
+// The gear opens the full API Integrations settings page.
+function wireOptions(): void {
+  byId<HTMLButtonElement>("open-options").onclick = () => {
+    chrome.runtime.openOptionsPage();
+  };
 }
 
 // Translate the static popup chrome: every element carrying data-i18n gets its
@@ -98,6 +106,7 @@ async function renderPageStatus(): Promise<void> {
       product: t().productToolsActive,
       "order-history": t().orderScanReady,
       storefront: t().storefrontCheckupReady,
+      "creator-upload": t().uploadHelperReady,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
       list.hidden = false;

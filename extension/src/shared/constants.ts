@@ -9,7 +9,37 @@ export const ENDPOINTS = {
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,
   orders: `${API_BASE}/api/extension/orders`,
   feedback: `${API_BASE}/api/extension/feedback`,
+  // Creator API (PA-API) credential vault + product enrichment. The vault only
+  // ever stores the secret encrypted server-side; the extension never keeps it.
+  creatorApi: `${API_BASE}/api/extension/creator-api`,
+  enrich: `${API_BASE}/api/extension/enrich`,
 } as const;
+
+// The Start Here onboarding walkthrough (opened on install). The Creator API
+// setup step embeds this YouTube walkthrough (same video as the desktop app's
+// API Integrations > Creator API screen and the api-integrations tutorial), and
+// the "Show me where" button points at the Amazon Associates credentials page.
+export const ONBOARDING_VIDEO_ID = "plZS_nXX-BE";
+export const ASSOCIATES_CREDENTIALS_URL =
+  "https://affiliate-program.amazon.com/assoc_credentials/home";
+export const API_INTEGRATIONS_TUTORIAL_URL = `${API_BASE}/help/tutorials/api-integrations`;
+
+// Marketplaces the onboarding credential form offers. Host is what the
+// extension records from the page URL; label is shown to the user. Kept in sync
+// with MARKETPLACES in src/lib/paapi.ts on the server.
+export const CREATOR_API_MARKETPLACES: ReadonlyArray<{ host: string; label: string }> = [
+  { host: "amazon.com", label: "United States (amazon.com)" },
+  { host: "amazon.co.uk", label: "United Kingdom (amazon.co.uk)" },
+  { host: "amazon.ca", label: "Canada (amazon.ca)" },
+  { host: "amazon.com.au", label: "Australia (amazon.com.au)" },
+  { host: "amazon.de", label: "Germany (amazon.de)" },
+  { host: "amazon.fr", label: "France (amazon.fr)" },
+  { host: "amazon.it", label: "Italy (amazon.it)" },
+  { host: "amazon.es", label: "Spain (amazon.es)" },
+  { host: "amazon.co.jp", label: "Japan (amazon.co.jp)" },
+  { host: "amazon.in", label: "India (amazon.in)" },
+  { host: "amazon.com.mx", label: "Mexico (amazon.com.mx)" },
+];
 
 // Campaign membership filters (CC / SPCC), downloaded once a day and checked
 // locally. GET /api/extension/catalogue/{kind}.
@@ -46,6 +76,17 @@ export const SCAN_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // covers well over a decade of history before tripping.
 export const ORDER_HARVEST_PAGE_CAP = 200;
 export const ORDER_HARVEST_START_YEAR = 2013;
+
+// Deep Scan of a product's video carousels. Replays the widget's own ajax
+// endpoint page by page. These are light HTML/JSON fragments (not full product
+// pages), so they are paced gently like the storefront getItems feed rather
+// than the heavier 2.5-4s page fetches. Caps are runaway safety valves: a
+// product with hundreds of videos still finishes, but a parsing miss can never
+// become an unbounded crawl.
+export const VIDEO_HARVEST_PAGE_CAP = 40;
+export const VIDEO_HARVEST_VIDEO_CAP = 1000;
+export const VIDEO_HARVEST_DELAY_MIN_MS = 150;
+export const VIDEO_HARVEST_DELAY_MAX_MS = 400;
 
 // Amazon onsite commission defaults by category, user-overridable. These are
 // starting points for the calculator, not a promise of what Amazon pays.

@@ -92,8 +92,11 @@ function parseCard(card: Element, origin: string): HarvestedItem | null {
 
 export async function harvestStorefront(
   onProgress: (pages: number, items: number) => void,
+  creatorOverride?: string,
 ): Promise<HarvestResult> {
-  const creator = creatorFromPath();
+  // creatorOverride lets callers off the /shop/ page (e.g. the Creator Hub
+  // upload helper) harvest a known handle's feed; same-origin so it still works.
+  const creator = creatorOverride ?? creatorFromPath();
   const origin = location.origin;
   const counts: Record<ContentType, number> = {
     video: 0,

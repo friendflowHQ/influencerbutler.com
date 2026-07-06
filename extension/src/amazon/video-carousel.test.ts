@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { classifiedCount, classifyCreatorType, extractFromText } from "./video-carousel";
+import {
+  carouselSourceFor,
+  classifiedCount,
+  classifyCreatorType,
+  extractFromText,
+} from "./video-carousel";
 
 describe("classifyCreatorType", () => {
   it("classifies influencers", () => {
@@ -47,5 +52,42 @@ describe("extractFromText", () => {
   it("returns null for payloads without creatorType markers", () => {
     expect(extractFromText('{"unrelated":"data"}')).toBeNull();
     expect(extractFromText("")).toBeNull();
+  });
+
+  it("tags every video with the carousel source it was given", () => {
+    const result = extractFromText(payload, "lower");
+    expect(result?.videos.every((v) => v.carousel === "lower")).toBe(true);
+  });
+
+  it("attaches a video url only when one aligns to each video", () => {
+    const withUrls = JSON.stringify({
+      videos: [
+        { creatorType: "Influencer", title: "A", videoUrl: "https://www.amazon.com/vdp/1" },
+        { creatorType: "Vendor", title: "B", videoUrl: "https://www.amazon.com/vdp/2" },
+      ],
+    });
+    const result = extractFromText(withUrls);
+    expect(result?.videos.map((v) => v.url)).toEqual([
+      "https://www.amazon.com/vdp/1",
+      "https://www.amazon.com/vdp/2",
+    ]);
+  });
+});
+
+describe("carouselSourceFor", () => {
+  it("maps image-block sources to the upper carousel", () => {
+    expect(carouselSourceFor("detailpage-imageblock-player-x")).toBe("upper");
+    expect(carouselSourceFor("https://www.amazon.com/imageblock?asin=X")).toBe("upper");
+  });
+
+  it("maps related-videos sources to the lower carousel", () => {
+    expect(carouselSourceFor("vse-related-videos")).toBe("lower");
+    expect(carouselSourceFor("https://www.amazon.com/vse/related-videos")).toBe("lower");
+    expect(carouselSourceFor("vftphero-related-products-request-ps")).toBe("lower");
+  });
+
+  it("returns unknown rather than guessing a side", () => {
+    expect(carouselSourceFor("something-else")).toBe("unknown");
+    expect(carouselSourceFor("")).toBe("unknown");
   });
 });

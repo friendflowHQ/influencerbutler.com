@@ -27,9 +27,18 @@ export type CarouselVideo = {
   title: string | null;
   creatorName: string | null;
   creatorType: CreatorClass;
+  // Best-effort link to the video's detail page, when the payload carries one.
+  url: string | null;
+  // Which on-page carousel the video came from (see carouselSourceFor).
+  carousel: CarouselSource;
 };
 
 export type CreatorClass = "influencer" | "brand" | "customer" | "unknown";
+
+// The competitor's "Upper" vs "Lower" carousel: the brand's hero video lives in
+// the image block (upper); influencer and customer "Videos for this product"
+// live in the related-videos rail (lower).
+export type CarouselSource = "upper" | "lower" | "unknown";
 
 export type CarouselResult = {
   counts: VideoCounts;
@@ -44,6 +53,17 @@ export function classifyCreatorType(raw: string): CreatorClass {
     return "brand";
   }
   if (["customer", "shopper", "reviewer"].some((v) => value.includes(v))) return "customer";
+  return "unknown";
+}
+
+// Infer a video's carousel from the request URL or its owning state-script key.
+// Markers observed live on amazon.com product pages (2026-07-04); the exact set
+// is pinned during Deep Scan's live verification, so keep this list easy to
+// extend. Anything unrecognized stays "unknown" rather than guessing a side.
+export function carouselSourceFor(marker: string): CarouselSource {
+  const m = (marker || "").toLowerCase();
+  if (/imageblock|heroquickview|detailpage-imageblock-player/.test(m)) return "upper";
+  if (/vse|related-?videos|vftphero|related-products/.test(m)) return "lower";
   return "unknown";
 }
 
@@ -106,6 +126,10 @@ export function extractCarousel(doc: Document, extras: CarouselResult[] = []): C
 const CREATOR_TYPE_RE = /"creatorType"\s*:\s*"([A-Za-z_ -]+)"/g;
 const TITLE_RE = /"(?:videoTitle|title)"\s*:\s*"((?:[^"\\]|\\.){0,200}?)"/g;
 const CREATOR_NAME_RE = /"(?:creatorName|profileName|publicName)"\s*:\s*"((?:[^"\\]|\\.){0,120}?)"/g;
+// Only http(s) values under video-specific keys, so this never collides with an
+// unrelated "url" field. Best-effort: used for the CSV export link.
+const VIDEO_URL_RE =
+  /"(?:videoUrl|vdpUrl|videoPageUrl|shareUrl)"\s*:\s*"(https?:(?:[^"\\]|\\.){0,300}?)"/g;
 
 function extractFromScripts(doc: Document): CarouselResult | null {
   // Different state scripts hold DIFFERENT video sets (related videos in one,
@@ -118,7 +142,10 @@ function extractFromScripts(doc: Document): CarouselResult | null {
   for (const script of Array.from(doc.querySelectorAll("script"))) {
     const text = script.textContent;
     if (!text || text.length < 40 || !text.includes("creatorType")) continue;
-    accumulateFromText(text, counts, videos, seenPayloads);
+    // The a-state key (or the script id) tells us which carousel this payload
+    // feeds, so the videos it holds are tagged upper vs lower.
+    const marker = `${script.getAttribute("data-a-state") ?? ""} ${script.id ?? ""}`;
+    accumulateFromText(text, counts, videos, seenPayloads, carouselSourceFor(marker));
   }
 
   if (counts.total === 0) return null;
@@ -127,12 +154,16 @@ function extractFromScripts(doc: Document): CarouselResult | null {
 
 // Extracts a classified result from any raw text payload carrying
 // creatorType markers: used for the network responses the page hook
-// captures from the video widget's own data fetch.
-export function extractFromText(text: string): CarouselResult | null {
+// captures from the video widget's own data fetch. `source` tags every video
+// with the carousel it came from (derived by the caller from the request URL).
+export function extractFromText(
+  text: string,
+  source: CarouselSource = "unknown",
+): CarouselResult | null {
   if (!text || !text.includes("creatorType")) return null;
   const counts = emptyCounts();
   const videos: CarouselVideo[] = [];
-  accumulateFromText(text, counts, videos, new Set<string>());
+  accumulateFromText(text, counts, videos, new Set<string>(), source);
   if (counts.total === 0) return null;
   return { counts, videos, strategy: "json" };
 }
@@ -142,11 +173,16 @@ function accumulateFromText(
   counts: VideoCounts,
   videos: CarouselVideo[],
   seenPayloads: Set<string>,
+  source: CarouselSource = "unknown",
 ): void {
   const types = allMatches(text, CREATOR_TYPE_RE);
   if (types.length === 0) return;
   const titles = allMatches(text, TITLE_RE);
   const names = allMatches(text, CREATOR_NAME_RE);
+  // URLs only align to videos reliably when there is exactly one per video;
+  // otherwise a positional map would attach wrong links, so we drop them.
+  const urls = allMatches(text, VIDEO_URL_RE);
+  const alignedUrls = urls.length === types.length ? urls : [];
 
   const fingerprint = types.join("|") + "::" + titles.join("|");
   if (seenPayloads.has(fingerprint)) return;
@@ -160,6 +196,8 @@ function accumulateFromText(
       title: decodeJsonString(titles[index] ?? null),
       creatorName: decodeJsonString(names[index] ?? null),
       creatorType: kind,
+      url: decodeJsonString(alignedUrls[index] ?? null),
+      carousel: source,
     });
   }
 }
@@ -188,10 +226,22 @@ function extractFromDom(doc: Document): CarouselResult {
     }
     counts[kind] += 1;
     counts.total += 1;
+    const videoLink = card.querySelector<HTMLAnchorElement>(
+      "a[href*='/vdp/'], [data-video-url], [data-vdp-url]",
+    );
+    const href =
+      videoLink?.getAttribute("href") ??
+      videoLink?.getAttribute("data-video-url") ??
+      videoLink?.getAttribute("data-vdp-url") ??
+      null;
     videos.push({
       title: card.getAttribute("aria-label") ?? null,
       creatorName: byline || null,
       creatorType: kind,
+      url: href,
+      // The related-videos widget is the lower rail; the brand hero video lives
+      // in the image block, which is not part of this widget's cards.
+      carousel: "lower",
     });
   }
 

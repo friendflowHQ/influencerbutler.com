@@ -4,8 +4,10 @@
 // video) via XHR after the widget scrolls into view, and does not reliably
 // leave that data in the DOM. This shim wraps fetch/XHR as a pure
 // passthrough and, when a video-widget response goes by, republishes its
-// text to the isolated-world content script via a DOM CustomEvent. Nothing
-// is modified, blocked, or sent anywhere: it only listens.
+// text (and the request URL) to the isolated-world content script via a DOM
+// CustomEvent. The URL lets the Deep Scan replay the endpoint with pagination
+// and tag each payload's carousel source. Nothing is modified, blocked, or
+// sent anywhere: it only listens.
 
 (() => {
   const w = window as typeof window & { __ibExtHooked?: boolean };
@@ -15,10 +17,12 @@
   const URL_RE = /componentbuilder|vse|related-?videos|video/i;
   const looksLikeVideoData = (text: string) => text.includes('"creatorType"');
 
-  const emit = (text: string) => {
+  const emit = (url: string, text: string) => {
     try {
       document.dispatchEvent(
-        new CustomEvent("ib-ext-video-data", { detail: text.slice(0, 2_000_000) }),
+        new CustomEvent("ib-ext-video-data", {
+          detail: { url, body: text.slice(0, 2_000_000) },
+        }),
       );
     } catch {
       // never let the shim surface an error on the page
@@ -36,7 +40,7 @@
         result
           .then((response) => response.clone().text())
           .then((text) => {
-            if (looksLikeVideoData(text)) emit(text);
+            if (looksLikeVideoData(text)) emit(url, text);
           })
           .catch(() => undefined);
       }
@@ -64,7 +68,9 @@
         this.addEventListener("load", () => {
           try {
             const text = this.responseText;
-            if (typeof text === "string" && looksLikeVideoData(text)) emit(text);
+            if (typeof text === "string" && looksLikeVideoData(text)) {
+              emit(this.__ibUrl ?? "", text);
+            }
           } catch {
             // responseType may not be text; ignore
           }

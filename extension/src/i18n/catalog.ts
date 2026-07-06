@@ -72,6 +72,7 @@ export interface Dict {
   productToolsActive: string;
   orderScanReady: string;
   storefrontCheckupReady: string;
+  uploadHelperReady: string;
   reloadTabToActivate: string;
   connectedFallback: string;
   findingsWaiting: (n: number) => string;
@@ -92,6 +93,34 @@ export interface Dict {
   sumOrderScan: string;
   ready: string;
   sumStorefrontCheckup: string;
+  sumUploadHelper: string;
+
+  // Creator Hub upload helper panel
+  uploadHelperTitle: string;
+  uhTaggedProducts: (n: number) => string;
+  uhCheckAvailability: string;
+  uhCheckingAvailability: (done: number, total: number) => string;
+  uhInStock: string;
+  uhUnavailable: string;
+  uhUnknownAvail: string;
+  uhCheckDuplicate: string;
+  uhCheckingDuplicate: string;
+  uhCheckingDuplicateProgress: (n: number) => string;
+  uhDuplicateFound: string;
+  uhNoDuplicate: string;
+  uhNoHandle: string;
+  uhCheckFailed: string;
+  uhSubmitClose: string;
+  uhAutoSubmit: string;
+  uhAutoSubmitNote: string;
+  uhSubmitting: string;
+  uhSubmitted: string;
+  uhNotReady: string;
+  uhSubmitMissing: string;
+  uhWatching: string;
+  uhWatchTimeout: string;
+  uhStop: string;
+  uhStopped: string;
 
   // Video competition panel
   videoCompetition: string;
@@ -105,6 +134,26 @@ export interface Dict {
   videosTotalVia: (total: number, viaPageData: boolean) => string;
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
+
+  // Video competition: Deep Scan (harvest every video)
+  deepScan: string;
+  deepScanIntro: string;
+  deepScanRunning: (videos: number, pages: number) => string;
+  deepScanStop: string;
+  deepScanRescan: string;
+  deepScanDone: (classified: number, total: number) => string;
+  deepScanPartial: string;
+  deepScanNoEndpoint: string;
+  deepScanStopped: string;
+  upperCarousel: string;
+  lowerCarousel: string;
+  estTotalVideos: (n: number) => string;
+  allVideosLabel: (n: number) => string;
+  videoNoTitle: string;
+  videoExportCsv: string;
+  copySummary: string;
+  shareSummaryHeading: string;
+  shareTopCreators: string;
 
   // Butler Approved panel
   butlerApproved: string;
@@ -305,6 +354,7 @@ const en: Dict = {
   productToolsActive: "Product page tools are active.",
   orderScanReady: "Order history scan is ready.",
   storefrontCheckupReady: "Storefront checkup is ready.",
+  uploadHelperReady: "Upload helper is ready.",
   reloadTabToActivate: "Reload the Amazon tab to activate the tools (the page was open before install).",
   connectedFallback: "connected",
   findingsWaiting: (n) => `${n} findings waiting to sync`,
@@ -324,6 +374,34 @@ const en: Dict = {
   sumOrderScan: "Order scan",
   ready: "Ready",
   sumStorefrontCheckup: "Storefront checkup",
+  sumUploadHelper: "Upload helper",
+
+  uploadHelperTitle: "Upload helper",
+  uhTaggedProducts: (n) => `${n} tagged ${n === 1 ? "product" : "products"}`,
+  uhCheckAvailability: "Check availability (US, CA, UK)",
+  uhCheckingAvailability: (done, total) => `Checking ${done} of ${total}...`,
+  uhInStock: "in stock",
+  uhUnavailable: "unavailable",
+  uhUnknownAvail: "?",
+  uhCheckDuplicate: "Check for a duplicate video",
+  uhCheckingDuplicate: "Scanning your storefront videos...",
+  uhCheckingDuplicateProgress: (n) => `Scanned ${n} items...`,
+  uhDuplicateFound: "A video with this title is already on your storefront.",
+  uhNoDuplicate: "No storefront video has this title. Looks new.",
+  uhNoHandle: "Could not read your storefront handle from this page.",
+  uhCheckFailed: "Could not complete the check.",
+  uhSubmitClose: "Submit and close",
+  uhAutoSubmit: "Auto-submit when the video is ready",
+  uhAutoSubmitNote:
+    "Submits this video and returns to your video list. Auto-submit only fires once Amazon marks the video ready.",
+  uhSubmitting: "Submitting...",
+  uhSubmitted: "Submitted. Returning to your videos...",
+  uhNotReady: "Not ready yet: Amazon has not finished processing the video.",
+  uhSubmitMissing: "Could not find the Submit button on this page.",
+  uhWatching: "Waiting for the video to be ready...",
+  uhWatchTimeout: "Gave up waiting for the video to be ready.",
+  uhStop: "Stop",
+  uhStopped: "Stopped.",
 
   videoCompetition: "Video competition",
   noCarousel:
@@ -339,6 +417,28 @@ const en: Dict = {
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
+
+  deepScan: "Deep Scan: harvest every video",
+  deepScanIntro:
+    "Amazon only loads a handful of videos on screen. Deep Scan pages through the widget's own feed to classify every video it will serve, split by upper (brand hero) and lower (related) carousel.",
+  deepScanRunning: (videos, pages) => `Harvesting: ${videos} videos over ${pages} pages...`,
+  deepScanStop: "Stop",
+  deepScanRescan: "Run Deep Scan again",
+  deepScanDone: (classified, total) => `Classified ${classified} of ${total} videos.`,
+  deepScanPartial:
+    "Amazon served only part of the list, so this is a floor, not the full set.",
+  deepScanNoEndpoint:
+    "Scroll the Product Videos section into view once, then run Deep Scan so it can find the video feed.",
+  deepScanStopped: "Deep Scan stopped.",
+  upperCarousel: "Upper carousel (brand hero)",
+  lowerCarousel: "Lower carousel (related)",
+  estTotalVideos: (n) => `Est. total videos: ${n}`,
+  allVideosLabel: (n) => `All harvested videos (${n})`,
+  videoNoTitle: "Untitled video",
+  videoExportCsv: "Export videos (CSV)",
+  copySummary: "Copy summary",
+  shareSummaryHeading: "Product video competition (via Influencer Butler)",
+  shareTopCreators: "Top creators:",
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
@@ -543,6 +643,7 @@ const es: Dict = {
   productToolsActive: "Las herramientas de la página de producto están activas.",
   orderScanReady: "El escaneo del historial de pedidos está listo.",
   storefrontCheckupReady: "El chequeo del storefront está listo.",
+  uploadHelperReady: "El asistente de subida está listo.",
   reloadTabToActivate: "Recarga la pestaña de Amazon para activar las herramientas (la página estaba abierta antes de instalar).",
   connectedFallback: "conectado",
   findingsWaiting: (n) => `${n} hallazgos esperando sincronizar`,
@@ -562,6 +663,34 @@ const es: Dict = {
   sumOrderScan: "Escaneo de pedidos",
   ready: "Listo",
   sumStorefrontCheckup: "Chequeo del storefront",
+  sumUploadHelper: "Asistente de subida",
+
+  uploadHelperTitle: "Asistente de subida",
+  uhTaggedProducts: (n) => `${n} ${n === 1 ? "producto etiquetado" : "productos etiquetados"}`,
+  uhCheckAvailability: "Ver disponibilidad (US, CA, UK)",
+  uhCheckingAvailability: (done, total) => `Revisando ${done} de ${total}...`,
+  uhInStock: "en stock",
+  uhUnavailable: "no disponible",
+  uhUnknownAvail: "?",
+  uhCheckDuplicate: "Buscar un video duplicado",
+  uhCheckingDuplicate: "Revisando los videos de tu storefront...",
+  uhCheckingDuplicateProgress: (n) => `Revisados ${n} elementos...`,
+  uhDuplicateFound: "Ya tienes un video con este título en tu storefront.",
+  uhNoDuplicate: "Ningún video del storefront tiene este título. Parece nuevo.",
+  uhNoHandle: "No se pudo leer el identificador de tu storefront en esta página.",
+  uhCheckFailed: "No se pudo completar la revisión.",
+  uhSubmitClose: "Enviar y cerrar",
+  uhAutoSubmit: "Enviar automáticamente cuando el video esté listo",
+  uhAutoSubmitNote:
+    "Envía este video y vuelve a tu lista de videos. El envío automático solo ocurre cuando Amazon marca el video como listo.",
+  uhSubmitting: "Enviando...",
+  uhSubmitted: "Enviado. Volviendo a tus videos...",
+  uhNotReady: "Aún no está listo: Amazon no terminó de procesar el video.",
+  uhSubmitMissing: "No se encontró el botón Enviar en esta página.",
+  uhWatching: "Esperando a que el video esté listo...",
+  uhWatchTimeout: "Se dejó de esperar a que el video estuviera listo.",
+  uhStop: "Detener",
+  uhStopped: "Detenido.",
 
   videoCompetition: "Competencia de videos",
   noCarousel:
@@ -577,6 +706,28 @@ const es: Dict = {
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
+
+  deepScan: "Deep Scan: recopilar todos los videos",
+  deepScanIntro:
+    "Amazon solo carga unos pocos videos en pantalla. Deep Scan recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
+  deepScanRunning: (videos, pages) => `Recopilando: ${videos} videos en ${pages} páginas...`,
+  deepScanStop: "Detener",
+  deepScanRescan: "Ejecutar Deep Scan de nuevo",
+  deepScanDone: (classified, total) => `Clasificados ${classified} de ${total} videos.`,
+  deepScanPartial:
+    "Amazon entregó solo parte de la lista, así que esto es un mínimo, no el conjunto completo.",
+  deepScanNoEndpoint:
+    "Desplázate a la sección Videos del producto una vez y luego ejecuta Deep Scan para que encuentre el feed de videos.",
+  deepScanStopped: "Deep Scan detenido.",
+  upperCarousel: "Carrusel superior (video de marca)",
+  lowerCarousel: "Carrusel inferior (relacionados)",
+  estTotalVideos: (n) => `Total estimado de videos: ${n}`,
+  allVideosLabel: (n) => `Todos los videos recopilados (${n})`,
+  videoNoTitle: "Video sin título",
+  videoExportCsv: "Exportar videos (CSV)",
+  copySummary: "Copiar resumen",
+  shareSummaryHeading: "Competencia de videos del producto (vía Influencer Butler)",
+  shareTopCreators: "Creadores principales:",
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
@@ -781,6 +932,7 @@ const fr: Dict = {
   productToolsActive: "Les outils de la page produit sont actifs.",
   orderScanReady: "L'analyse de l'historique de commandes est prête.",
   storefrontCheckupReady: "Le bilan du storefront est prêt.",
+  uploadHelperReady: "L'assistant de mise en ligne est prêt.",
   reloadTabToActivate: "Rechargez l'onglet Amazon pour activer les outils (la page était ouverte avant l'installation).",
   connectedFallback: "connecté",
   findingsWaiting: (n) => `${n} découvertes en attente de synchronisation`,
@@ -800,6 +952,34 @@ const fr: Dict = {
   sumOrderScan: "Analyse des commandes",
   ready: "Prêt",
   sumStorefrontCheckup: "Bilan du storefront",
+  sumUploadHelper: "Assistant de mise en ligne",
+
+  uploadHelperTitle: "Assistant de mise en ligne",
+  uhTaggedProducts: (n) => `${n} ${n === 1 ? "produit tagué" : "produits tagués"}`,
+  uhCheckAvailability: "Vérifier la disponibilité (US, CA, UK)",
+  uhCheckingAvailability: (done, total) => `Vérification ${done} sur ${total}...`,
+  uhInStock: "en stock",
+  uhUnavailable: "indisponible",
+  uhUnknownAvail: "?",
+  uhCheckDuplicate: "Chercher une vidéo en double",
+  uhCheckingDuplicate: "Analyse des vidéos de votre storefront...",
+  uhCheckingDuplicateProgress: (n) => `${n} éléments analysés...`,
+  uhDuplicateFound: "Une vidéo avec ce titre est déjà sur votre storefront.",
+  uhNoDuplicate: "Aucune vidéo du storefront n'a ce titre. Elle semble nouvelle.",
+  uhNoHandle: "Impossible de lire l'identifiant de votre storefront sur cette page.",
+  uhCheckFailed: "Impossible de terminer la vérification.",
+  uhSubmitClose: "Soumettre et fermer",
+  uhAutoSubmit: "Soumettre automatiquement quand la vidéo est prête",
+  uhAutoSubmitNote:
+    "Soumet cette vidéo et revient à votre liste de vidéos. La soumission automatique ne se déclenche qu'une fois la vidéo marquée prête par Amazon.",
+  uhSubmitting: "Soumission...",
+  uhSubmitted: "Soumis. Retour à vos vidéos...",
+  uhNotReady: "Pas encore prêt : Amazon n'a pas fini de traiter la vidéo.",
+  uhSubmitMissing: "Bouton Soumettre introuvable sur cette page.",
+  uhWatching: "En attente que la vidéo soit prête...",
+  uhWatchTimeout: "Abandon de l'attente que la vidéo soit prête.",
+  uhStop: "Arrêter",
+  uhStopped: "Arrêté.",
 
   videoCompetition: "Concurrence vidéo",
   noCarousel:
@@ -815,6 +995,28 @@ const fr: Dict = {
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
+
+  deepScan: "Deep Scan: récolter toutes les vidéos",
+  deepScanIntro:
+    "Amazon ne charge que quelques vidéos à l'écran. Deep Scan parcourt le flux du widget pour classer toutes les vidéos qu'il fournit, réparties entre carrousel supérieur (vidéo de marque) et inférieur (vidéos liées).",
+  deepScanRunning: (videos, pages) => `Récolte: ${videos} vidéos sur ${pages} pages...`,
+  deepScanStop: "Arrêter",
+  deepScanRescan: "Relancer Deep Scan",
+  deepScanDone: (classified, total) => `${classified} vidéos classées sur ${total}.`,
+  deepScanPartial:
+    "Amazon n'a fourni qu'une partie de la liste: ceci est un minimum, pas l'ensemble complet.",
+  deepScanNoEndpoint:
+    "Faites défiler une fois jusqu'à la section Vidéos du produit, puis lancez Deep Scan pour qu'il trouve le flux de vidéos.",
+  deepScanStopped: "Deep Scan arrêté.",
+  upperCarousel: "Carrousel supérieur (vidéo de marque)",
+  lowerCarousel: "Carrousel inférieur (vidéos liées)",
+  estTotalVideos: (n) => `Total estimé de vidéos: ${n}`,
+  allVideosLabel: (n) => `Toutes les vidéos récoltées (${n})`,
+  videoNoTitle: "Vidéo sans titre",
+  videoExportCsv: "Exporter les vidéos (CSV)",
+  copySummary: "Copier le résumé",
+  shareSummaryHeading: "Concurrence vidéo du produit (via Influencer Butler)",
+  shareTopCreators: "Principaux créateurs:",
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",
