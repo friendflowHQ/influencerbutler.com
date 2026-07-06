@@ -1,0 +1,72 @@
+---
+title: "Group Invite Butler: grow your Facebook group from a list of creator emails"
+summary: Invite harvested creator emails into your Facebook group, one at a time, at a human pace. Load a CSV or hand emails over from a Goldmine, set your pacing and daily caps, and Butler skips anyone it already invited.
+category: Other
+---
+
+## What Group Invite Butler does
+
+Group Invite Butler invites people into a Facebook group you manage, one email at a time, on a natural schedule. You give it a list of email addresses and the group you want them in; it opens the group's email-invite form, adds each address, and paces itself so the activity looks human and stays under Facebook's limits.
+
+It's built for creators growing a community around their storefront or niche. The emails usually come from the Instagram or Amazon Goldmine (other creators you found), but you can also load your own list from a CSV.
+
+## Before you start
+
+Two things need to be in place:
+
+- **You're signed in to Facebook in the app.** Group Invite Butler uses the same Facebook session as Amazon Deals Butler. If you haven't signed in yet, open Amazon Deals Butler first and sign in to Facebook there once.
+- **You manage the group.** You can only send email invites for a group where you have invite permissions. Paste that group's URL into the settings.
+
+## Filling the invite queue
+
+There are two ways to get emails into the queue.
+
+### From a Goldmine
+
+1. Open the **Instagram Goldmine** or **Amazon Goldmine** and run a harvest.
+2. Click **Send to Group Invite Butler**. The harvested emails jump straight into the queue, deduped against anyone already there.
+
+### From a CSV
+
+1. In the Invite Queue, click **Load CSV**.
+2. Pick a `.csv` file. The format is simple: **one email per row in the first column (column A)**. A header row and any extra columns are ignored, so a spreadsheet you exported from somewhere else usually works as-is.
+3. Butler validates each row, drops anything that isn't an email, and adds the rest. The info tooltip next to the button spells out the format if you need a reminder.
+
+Either way, emails that were **already invited** (or already in the queue) are skipped automatically, so you never invite the same person twice.
+
+## Setting your pacing and limits
+
+Under **Run settings**:
+
+- **Facebook group URL**: the group you're inviting people into. Required; Butler won't start without it.
+- **Seconds between invites** plus **Random extra seconds**: the gap between each invite, plus a random amount on top so the timing looks natural. Slower is safer.
+- **Invites per day**: a daily cap that carries across runs. `0` means no daily cap.
+- **Invites per run**: how many to send in a single run. `0` means send the whole queue.
+
+Everything auto-saves as you type. There's no Save button.
+
+## Running it
+
+1. Set your group URL and pacing.
+2. Click **Start Group Invite Butler**.
+3. Leave **Watch it run** on to bring the browser to the front and watch each invite go out, or turn it off to let it work in the background.
+
+The queue shows live **Pending**, **Sent**, and **Failed** counts as it works. You can stop at any time; the next run picks up where it left off.
+
+## After a run
+
+- **Retry failed**: moves every failed address back into the pending queue so the next run tries them again. Useful after a hiccup where nothing actually sent.
+- **Redo sent**: moves already-sent addresses back to pending to re-invite them. Useful if a run marked people sent that Facebook didn't actually accept.
+- **Clear queue**: empties the pending list. Your durable invited record stays intact, so cleared-then-reloaded emails still show as already invited.
+
+## Common gotchas
+
+- **It won't start**: check that the Facebook group URL is filled in and that you're signed in to Facebook (via Amazon Deals Butler).
+- **My CSV loaded zero emails**: make sure the email addresses are in the **first column**. Extra columns and header rows are ignored on purpose, but if column A holds something other than emails, nothing matches.
+- **Someone shows as Sent that I didn't invite this run**: that's the durable invited record doing its job. Once anyone has been invited, they stay marked so they're never invited twice.
+- **Go slow at first**: high volume with short gaps is what trips Facebook's limits. Start with a modest daily cap and a comfortable delay, then loosen up once you see it running clean.
+
+## Related
+
+- [Instagram Goldmine tutorial](/help/tutorials/instagram-goldmine) - one of the two sources that feed the invite queue.
+- [Goldmine Butler tutorial](/help/tutorials/goldminebutler) - finds the creators and brands worth inviting in the first place.
