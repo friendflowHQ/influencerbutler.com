@@ -21,7 +21,13 @@ export type SelectorId =
   | "mainImage"
   | "breadcrumbs"
   | "bestsellerRank"
-  | "siteStripeCommission";
+  | "siteStripeCommission"
+  | "searchResultTile"
+  | "searchTileTitle"
+  | "searchTilePrice"
+  | "searchTileImage"
+  | "searchTileLink"
+  | "searchTileSponsored";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -122,6 +128,34 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#amzn-ss-wrap",
     "#amzn-ss-tracking-id-display",
     "[id^='amzn-ss']",
+  ],
+  // Search results (/s?k=...): each product tile carries its ASIN in data-asin.
+  // The organic-results container excludes the ad rail, but empty data-asin
+  // decoys (spacers, "shop by" cards) are filtered out by the parser.
+  searchResultTile: [
+    "div.s-result-item[data-component-type='s-search-result'][data-asin]",
+    "div[data-component-type='s-search-result'][data-asin]",
+    "div.s-result-item[data-asin]",
+  ],
+  // Per-tile selectors (queried within a tile element, not the whole document).
+  searchTileTitle: [
+    "[data-cy='title-recipe'] h2 span",
+    "h2 a span",
+    "h2 span",
+    "h2",
+  ],
+  searchTilePrice: [".a-price .a-offscreen", ".a-price"],
+  searchTileImage: ["img.s-image", ".s-image", "img"],
+  searchTileLink: [
+    "a.a-link-normal.s-no-outline",
+    "h2 a.a-link-normal",
+    "a.a-link-normal[href*='/dp/']",
+  ],
+  searchTileSponsored: [
+    ".puis-sponsored-label-text",
+    ".s-sponsored-label-text",
+    "[data-component-type='sp-sponsored-result']",
+    "a[aria-label='View Sponsored information']",
   ],
 };
 

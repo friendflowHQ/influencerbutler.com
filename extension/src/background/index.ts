@@ -4,6 +4,8 @@ import {
   FACEBOOK_GROUP_URL,
   SYNC_ALARM,
   SYNC_PERIOD_MINUTES,
+  WATCHLIST_ALARM,
+  WATCHLIST_PERIOD_MINUTES,
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
@@ -13,7 +15,17 @@ import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
+import { getDealSources, harvestDealSites } from "./deal-harvest";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
+import {
+  addToWatchlist,
+  getWatchlist,
+  handleWatchNotificationClick,
+  isWatched,
+  refreshWatchlist,
+  removeFromWatchlist,
+  setWatchConditions,
+} from "./watchlist";
 import {
   ensureNudgeAlarms,
   handleNudgeAlarm,
@@ -40,11 +52,14 @@ import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
+  void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
   void refreshCatalogues();
   void refreshRateCard();
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  // Idempotent: re-arm the watchlist alarm for installs that predate it.
+  void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
   void refreshCatalogues();
   void refreshRateCard();
   void maybeTestAllOnStartup();
@@ -59,12 +74,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     void refreshCatalogues();
     void refreshRateCard();
   }
+  if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
   handleNudgeAlarm(alarm.name);
 });
 
 // A nudge notification was clicked: open its target and record that the user
 // acted (so the matching in-page modal is suppressed).
 chrome.notifications.onClicked.addListener((notificationId) => {
+  // Watchlist alerts open the product directly; anything else is a nudge.
+  if (handleWatchNotificationClick(notificationId)) return;
   void handleNudgeNotificationClick(notificationId, openAllowedUrl);
 });
 
@@ -119,6 +137,27 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "ENRICH_PRODUCTS":
       void enrichProducts(message.asins, message.marketplaces).then(sendResponse);
+      return true;
+    case "ADD_TO_WATCHLIST":
+      void addToWatchlist(message.item).then(sendResponse);
+      return true;
+    case "REMOVE_FROM_WATCHLIST":
+      void removeFromWatchlist(message.asin, message.marketplace).then(sendResponse);
+      return true;
+    case "SET_WATCH_CONDITIONS":
+      void setWatchConditions(message.asin, message.marketplace, message.notifyOn).then(sendResponse);
+      return true;
+    case "GET_WATCHLIST":
+      void getWatchlist().then(sendResponse);
+      return true;
+    case "IS_WATCHED":
+      void isWatched(message.asin, message.marketplace).then(sendResponse);
+      return true;
+    case "HARVEST_DEAL_SITES":
+      void harvestDealSites(message.urls).then(sendResponse);
+      return true;
+    case "GET_DEAL_SOURCES":
+      void getDealSources(message.force).then(sendResponse);
       return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from

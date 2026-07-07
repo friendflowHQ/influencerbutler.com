@@ -125,6 +125,22 @@ L'URL de votre feuille est stockée chiffrée sur votre propre machine, et vous 
 
 Si vous utilisez plusieurs espaces d'offres, vous n'avez pas à refaire cette configuration pour chacun. Une fois vos colonnes et options réglées comme vous le souhaitez, utilisez **Copiez cette configuration vers vos autres espaces d'offres** en bas du panneau pour envoyer la même disposition et les mêmes options vers n'importe lequel de vos autres espaces Amazon Deals en une fois. Chaque espace garde sa propre feuille connectée, donc vos données ne se mélangent jamais. Si votre espace est réglé pour remplacer sa feuille à chaque fois, l'application vous demande d'abord de confirmer et nomme les espaces qu'elle va modifier, pour que vous n'effaciez jamais une feuille par accident.
 
+## Récoltez des offres depuis d'autres sites (Collecteur de sites de bons plans)
+
+Les créateurs partagent de longues listes de sites de bons plans ("où trouver les codes") : savewithcindy.shop, jungle.deals, promos4creators.com, Google Docs partagés, etc. Le **Collecteur de sites de bons plans** de l'extension Chrome gratuite transforme n'importe laquelle de ces listes en offres dans votre espace, pour que vous n'ayez pas à ouvrir chaque site et copier les produits à la main.
+
+1. Ouvrez le popup de l'extension et cliquez sur **Ouvrir le collecteur de sites**. Il s'ouvre dans son propre onglet.
+2. Choisissez vos sites : laissez **Inclure les sites recommandés** activé, collez les URL que vous suivez (une par ligne) et, si vous voulez, utilisez **Enregistrer ces sites** pour les avoir en un clic la prochaine fois.
+3. Cliquez sur **Collecter les offres**. L'extension vous demande la permission de lire ces sites, lit chacun, en extrait tous les produits Amazon et complète le titre, le prix et l'image depuis la Creator API si vous l'avez connectée.
+4. Passez en revue le tableau des résultats et décochez ce que vous ne voulez pas.
+5. Choisissez un **Espace Offres du Jour** et cliquez sur **Envoyer la sélection vers l'espace**. Avec l'app de bureau associée (depuis le popup de l'extension), les offres arrivent dans la liste Search Deals de cet espace, où elles se trient, se filtrent et se publient selon votre planning, exactement comme les offres récoltées sur Amazon.
+
+Chaque offre récoltée est aussi enregistrée dans votre tableau de bord, vous avez donc une trace même avant de l'envoyer. Quelques notes :
+
+- Le collecteur lit les liens produit Amazon d'une page, il fonctionne donc sur presque tous les sites, y compris un Google Doc publié. Les liens raccourcis (comme `amzn.to`) ne peuvent pas être lus sans les ouvrir, ils sont donc ignorés.
+- Collectez quelques sites à la fois. Les très longues listes sont limitées, et le collecteur vous le signale.
+- Seuls les sites que vous choisissez sont lus, uniquement quand vous cliquez sur Collecter, et votre connexion Amazon n'est jamais envoyée à ces sites tiers.
+
 ## Où vont les données
 
 Les deals récoltés vivent dans le cache preseed ; l'historique des publications dans `{userData}/InfluencerButler/workspaces/preseed/data/daily-deals/`. L'onglet Console Log diffuse chaque tentative de publication et son résultat.

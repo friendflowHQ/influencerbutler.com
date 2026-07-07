@@ -168,3 +168,32 @@ button[disabled] { opacity: 0.6; cursor: default; }
 
 .foot a { color: var(--slate-600); text-decoration: none; }
 .foot a:hover { color: var(--orange); }
+
+/* Watchlist card: one row per watched product with a remove and per-condition
+   alert toggles. */
+.watchlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.watchlist li {
+  border: 1px solid var(--slate-200);
+  border-radius: 9px;
+  padding: 8px 10px;
+}
+.watchlist-head { display: flex; align-items: center; gap: 8px; }
+.watchlist-title {
+  flex: 1;
+  font-weight: 600;
+  color: var(--slate-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.watchlist-conds { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.watchlist-cond {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--slate-600);
+  cursor: pointer;
+}
+.watchlist-cond input { width: auto; accent-color: var(--orange); }
+button.ghost.small { margin-top: 0; padding: 2px 9px; font-size: 12px; }

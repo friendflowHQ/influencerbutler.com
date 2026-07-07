@@ -198,6 +198,34 @@
 .seal.fail { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; font-weight: 600; }
 .seal.warn { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
 
+/* Butler Score: a big number in a soft band-colored card, next to the seal. */
+.score-badge {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.score-badge .score-num {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.score-badge .score-meta { display: flex; flex-direction: column; gap: 1px; }
+.score-badge .score-band { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
+.score-badge .score-outof { font-size: 11.5px; color: #94a3b8; font-weight: 600; }
+.score-badge.hot { background: #fff7ed; border-color: #fed7aa; }
+.score-badge.hot .score-num, .score-badge.hot .score-band { color: #c2410c; }
+.score-badge.warm { background: #fffbeb; border-color: #fde68a; }
+.score-badge.warm .score-num, .score-badge.warm .score-band { color: #b45309; }
+.score-badge.cool { background: #f8fafc; border-color: #e2e8f0; }
+.score-badge.cool .score-num, .score-badge.cool .score-band { color: #64748b; }
+
 /* Product snapshot: labelled ASIN rows with a copy affordance. */
 .idrows { display: grid; gap: 6px; }
 .idrow { display: flex; align-items: center; gap: 8px; font-size: 13px; }
@@ -413,6 +441,95 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .badge-inline.gap { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
 .badge-inline.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
 .badge-inline.pending { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; }
+
+/* Search-tile badge: a compact row of a score pill plus chips, dropped into
+   each result card. Kept in a shadow host so Amazon's grid styles never touch
+   it and ours never leak out. */
+.tile-badge {
+  font: 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 6px 0 2px;
+}
+.tile-badge-body { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.tile-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.tile-score.hot { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
+.tile-score.warm { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+.tile-score.cool { background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; }
+.tile-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+.tile-chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.tile-watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+}
+.tile-watch:hover { border-color: #fed7aa; color: #c2410c; }
+.tile-watch.on { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+.tile-watch[disabled] { opacity: 0.55; cursor: default; }
+
+/* Search toolbar: a full-width bar above the grid. Wraps on narrow layouts. */
+.search-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  border: 1px solid #f5e6cf;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+  font: 13px/1.4 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #0f172a;
+}
+.search-brand { display: inline-flex; align-items: center; gap: 8px; }
+.search-logo { width: 22px; height: 22px; object-fit: contain; }
+.search-count { font-weight: 800; letter-spacing: -0.01em; color: #c2410c; }
+.search-control { display: inline-flex; align-items: center; gap: 6px; }
+.search-control-label { color: #475569; font-size: 12.5px; }
+.search-control select,
+.search-control input.search-price {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: #0f172a;
+  background: #fff;
+}
+.search-control input.search-price { width: 72px; }
+.search-check { cursor: pointer; }
+.search-check input { width: 15px; height: 15px; accent-color: #f97316; cursor: pointer; }
+.search-scan { gap: 8px; margin-left: auto; }
+.search-scan .btn { padding: 7px 12px; font-size: 12.5px; }
+.search-status { font-size: 12px; color: #64748b; }
 
 /* Centered modal for the re-engagement nudges (join the group, get the app).
    Lives in its own shadow host so panel rebuilds never tear it down. */

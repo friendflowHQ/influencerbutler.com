@@ -24,6 +24,20 @@ export function removeHost(): void {
   shadow = null;
 }
 
+// A reusable inline shadow host for content that lives in the page flow rather
+// than the floating panel (search-tile badges, the search toolbar). The caller
+// builds arbitrary nodes into `root`; the overlay stylesheet is already loaded
+// so panel classes (.chip, .btn, .score-badge, ...) work inside it.
+export function createInlineShadow(hostClass?: string): { host: HTMLElement; root: ShadowRoot } {
+  const host = document.createElement("div");
+  host.className = hostClass ? `${UI_PREFIX}-inline ${hostClass}` : `${UI_PREFIX}-inline`;
+  const root = host.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  style.textContent = overlayCss;
+  root.append(style);
+  return { host, root };
+}
+
 // Inline badges live in the page flow (for example next to order items), so
 // they get their own tiny shadow hosts with the same stylesheet.
 export function createInlineBadge(className: string, text: string): HTMLElement {

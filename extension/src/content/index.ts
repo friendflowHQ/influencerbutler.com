@@ -14,6 +14,7 @@ import { initOrdersButler } from "../tools/orders-butler/harvester";
 import { initOrderVideoCounts } from "../tools/orders-butler/video-count-runner";
 import { evaluateApproved, criteriaToRecord } from "../tools/butler-approved/criteria";
 import { renderSeal } from "../tools/butler-approved/seal";
+import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
@@ -21,6 +22,9 @@ import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initUploadHelper } from "../tools/upload-helper/panel";
+import { initSearchOverlay } from "../tools/search-overlay/overlay";
+import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
+import { renderWatchButton } from "../tools/watchlist/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { guard } from "../shared/guard";
 import { setDebug, log } from "../shared/log";
@@ -139,6 +143,18 @@ async function runForPage(): Promise<void> {
         });
       }
 
+      // Butler Score: the 0-100 opportunity number. Complements the seal (same
+      // signals, continuous instead of pass/fail). Async because it reads the
+      // cached rate card and campaign catalogue; pushes its popup summary line
+      // once computed.
+      guard("butler-score", () =>
+        void renderProductScore(signals, carousel.counts, settings).then((value) => {
+          if (value !== null) {
+            lastStatus.toolSummaries.push({ label: t().sumScore, value: String(value) });
+          }
+        }),
+      );
+
       if (settings.tools.calculator) {
         guard("calculator", () => renderCalculator(signals, carousel.counts, settings));
       }
@@ -152,6 +168,11 @@ async function runForPage(): Promise<void> {
 
       // My affiliate/deeplink for this product, plus an optional AI caption.
       guard("my-link", () => void renderMyLink(signals));
+
+      // Watch this product for a restock, an opening video slot, or a price drop.
+      if (settings.tools.watchlist) {
+        guard("watchlist", () => void renderWatchButton(signals));
+      }
 
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
@@ -171,17 +192,32 @@ async function runForPage(): Promise<void> {
         initOrdersButler("amazon.com");
         initOrderVideoCounts("amazon.com");
       }
+      if (settings.tools.campaignMatcher) {
+        initCampaignMatcher("orders");
+        lastStatus.toolSummaries.push({ label: t().sumCampaignMatcher, value: t().ready });
+      }
       lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
+      if (settings.tools.campaignMatcher) {
+        initCampaignMatcher("storefront");
+        lastStatus.toolSummaries.push({ label: t().sumCampaignMatcher, value: t().ready });
+      }
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   } else if (pageType === "creator-upload") {
     guard("upload-helper", () => {
       initUploadHelper();
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
+    });
+  } else if (pageType === "search") {
+    guard("search-overlay", () => {
+      if (settings.tools.searchOverlay) {
+        void initSearchOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumSearchOverlay, value: t().ready });
+      }
     });
   }
 }
@@ -266,6 +302,7 @@ function emitProductScan(
     title: signals.title?.slice(0, 200),
     priceCents: signals.priceCents,
     currency: signals.currency,
+    inStock: signals.inStock,
     counts: carousel.counts,
     approved,
     approvedCriteria,

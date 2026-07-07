@@ -18,6 +18,9 @@ export type Settings = {
   };
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
+  // The user's own saved list of deal-aggregator URLs for the Deal Sites
+  // Harvester, on top of the curated list served from the site.
+  dealSources: string[];
   locale: LocaleSetting;
   tools: {
     videoCounts: boolean;
@@ -25,6 +28,9 @@ export type Settings = {
     calculator: boolean;
     storefront: boolean;
     ordersButler: boolean;
+    searchOverlay: boolean;
+    campaignMatcher: boolean;
+    watchlist: boolean;
   };
   syncEnabled: boolean;
   debug: boolean;
@@ -98,6 +104,33 @@ export type CachedScan = {
   ts: number;
 };
 
+// One ASIN the user is watching for a change. The background poller opens each
+// watched product briefly on an alarm, reads its current state, and fires a
+// notification when a subscribed condition trips. `last` is the state at the
+// previous check, so a change is a diff against it; null until the first check.
+export type WatchCondition = "back_in_stock" | "slot_opens" | "price_drop";
+
+export type WatchSnapshot = {
+  inStock: boolean | null;
+  influencerVideos: number | null;
+  priceCents: number | null;
+  checkedAt: number;
+};
+
+export type WatchItem = {
+  asin: string;
+  marketplace: string;
+  title: string | null;
+  addedAt: number;
+  notifyOn: WatchCondition[];
+  last: WatchSnapshot | null;
+};
+
+// A product cannot be watched forever with no ceiling: cap the list so the
+// background poller's per-alarm work (one background tab per item, paced) stays
+// bounded. Oldest entries are kept; adds past the cap are rejected in the UI.
+export const WATCHLIST_CAP = 50;
+
 // Per-nudge delivery state for the re-engagement prompts (join the Facebook
 // group on day 1, download the free desktop app on day 3). Each nudge reaches
 // the user through two channels: an OS notification (fired by the background on
@@ -131,6 +164,7 @@ export type StorageShape = {
   lastSyncAt: number | null;
   cache: Record<string, CachedScan>;
   orderCursors: Record<string, OrderCursor>;
+  watchlist: WatchItem[];
   telemetry: { selectorMisses: Record<string, number> };
   // When the extension was first actually used (first content-script run on an
   // Amazon page). Anchors the re-engagement nudge timers; null until first use.
@@ -139,7 +173,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -154,6 +188,7 @@ export const DEFAULTS: StorageShape = {
     },
     storefrontHandle: null,
     orderHarvestScope: "new",
+    dealSources: [],
     locale: "auto",
     tools: {
       videoCounts: true,
@@ -161,6 +196,9 @@ export const DEFAULTS: StorageShape = {
       calculator: true,
       storefront: true,
       ordersButler: true,
+      searchOverlay: true,
+      campaignMatcher: true,
+      watchlist: true,
     },
     syncEnabled: true,
     debug: false,
@@ -179,6 +217,7 @@ export const DEFAULTS: StorageShape = {
   lastSyncAt: null,
   cache: {},
   orderCursors: {},
+  watchlist: [],
   telemetry: { selectorMisses: {} },
   firstUseAt: null,
   nudges: {
@@ -193,9 +232,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   }
   // Future schema bumps switch on raw.schemaVersion here. Merging with defaults
   // also backfills any keys added within a version. v1 -> v2 added the
-  // integrations slice; v2 -> v3 added firstUseAt + nudges. Older stored state
-  // simply gains its defaults untouched (firstUseAt stays null so existing
-  // users start the nudge clock on their next Amazon visit).
+  // integrations slice; v2 -> v3 added firstUseAt + nudges; v3 -> v4 added the
+  // watchlist array plus the searchOverlay/campaignMatcher/watchlist tool flags.
+  // Older stored state simply gains its defaults untouched (an existing user's
+  // watchlist starts empty and the new tools default on).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -219,6 +259,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       fbGroup: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.fbGroup ?? {}) },
       appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
     },
-    schemaVersion: 3,
+    watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
+    schemaVersion: 4,
   };
 }

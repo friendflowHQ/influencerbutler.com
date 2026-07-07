@@ -1,10 +1,11 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
 import { log } from "../shared/log";
-import type { Finding, VideoCounts } from "../transport/types";
+import type { Finding, ProductScanFinding, VideoCounts } from "../transport/types";
 import type {
   OrderAsinItem,
   OrderAsinsResult,
+  ProductSnapshotResult,
   ScanAsinResult,
 } from "../shared/messages";
 
@@ -31,10 +32,13 @@ const SETTLE_MS = 3_500;
 type Pending = {
   asin: string;
   best: VideoCounts | null;
+  // The full finding behind `best`, so callers that need price/stock (the
+  // watchlist) get them alongside the counts, not just the video breakdown.
+  bestFinding: ProductScanFinding | null;
   settleTimer: ReturnType<typeof setTimeout> | null;
   dwellTimer: ReturnType<typeof setTimeout> | null;
   done: boolean;
-  resolve: (result: ScanAsinResult) => void;
+  resolve: (finding: ProductScanFinding | null) => void;
 };
 
 // Keyed by the tab we opened, so an incoming product_scan can be matched to the
@@ -53,29 +57,53 @@ function better(a: VideoCounts | null, b: VideoCounts): VideoCounts {
   return b.total >= a.total ? b : a;
 }
 
-export async function scanAsinInTab(asin: string, marketplace: string): Promise<ScanAsinResult> {
-  let tab: chrome.tabs.Tab;
-  try {
-    tab = await chrome.tabs.create({ url: productUrl(asin, marketplace), active: false });
-  } catch (error) {
-    log("order-video-scan", `could not open tab for ${asin}`, error);
-    return { counts: null, classified: false };
-  }
-  const tabId = tab.id;
-  if (typeof tabId !== "number") return { counts: null, classified: false };
+// Open one product in a background tab, wait for its content script to emit a
+// classified product_scan, and resolve with the best finding (or null on
+// failure/timeout). Shared by the order video-count pass and the watchlist
+// poller so the tab lifecycle lives in one place.
+function captureInTab(asin: string, marketplace: string): Promise<ProductScanFinding | null> {
+  return chrome.tabs
+    .create({ url: productUrl(asin, marketplace), active: false })
+    .then((tab) => {
+      const tabId = tab.id;
+      if (typeof tabId !== "number") return null;
+      return new Promise<ProductScanFinding | null>((resolve) => {
+        const pending: Pending = {
+          asin,
+          best: null,
+          bestFinding: null,
+          settleTimer: null,
+          dwellTimer: null,
+          done: false,
+          resolve,
+        };
+        pending.dwellTimer = setTimeout(() => finish(tabId), DWELL_TIMEOUT_MS);
+        pendingByTab.set(tabId, pending);
+      });
+    })
+    .catch((error) => {
+      log("order-video-scan", `could not open tab for ${asin}`, error);
+      return null;
+    });
+}
 
-  return new Promise<ScanAsinResult>((resolve) => {
-    const pending: Pending = {
-      asin,
-      best: null,
-      settleTimer: null,
-      dwellTimer: null,
-      done: false,
-      resolve,
-    };
-    pending.dwellTimer = setTimeout(() => finish(tabId), DWELL_TIMEOUT_MS);
-    pendingByTab.set(tabId, pending);
-  });
+export async function scanAsinInTab(asin: string, marketplace: string): Promise<ScanAsinResult> {
+  const finding = await captureInTab(asin, marketplace);
+  return { counts: finding?.counts ?? null, classified: finding !== null };
+}
+
+// Watchlist variant: the same tab scan, but returning the fields a change alert
+// diffs on (stock, influencer video count, price) rather than just the counts.
+export async function scanProductInTab(
+  asin: string,
+  marketplace: string,
+): Promise<ProductSnapshotResult> {
+  const finding = await captureInTab(asin, marketplace);
+  return {
+    inStock: finding?.inStock ?? null,
+    influencerVideos: finding?.counts.influencer ?? null,
+    priceCents: finding?.priceCents ?? null,
+  };
 }
 
 // Called from the RECORD_FINDING handler for every product_scan finding, with
@@ -88,7 +116,11 @@ export function noteScanFinding(finding: Finding, tabId: number | undefined): vo
   if (!pending || pending.done) return;
   if (finding.asin.toUpperCase() !== pending.asin.toUpperCase()) return;
 
-  pending.best = better(pending.best, finding.counts);
+  const chosen = better(pending.best, finding.counts);
+  if (chosen !== pending.best) {
+    pending.best = chosen;
+    pending.bestFinding = finding;
+  }
   if (pending.settleTimer === null) {
     pending.settleTimer = setTimeout(() => finish(tabId), SETTLE_MS);
   }
@@ -104,7 +136,7 @@ function finish(tabId: number): void {
   void chrome.tabs.remove(tabId).catch(() => {
     // tab may already be gone (user closed it, or navigation removed it)
   });
-  pending.resolve({ counts: pending.best, classified: pending.best !== null });
+  pending.resolve(pending.bestFinding);
 }
 
 // The products to run the count over: the account's synced order history. Read

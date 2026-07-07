@@ -1,6 +1,12 @@
 import type { Finding, VideoCounts } from "../transport/types";
+import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type { HudCommand, HudCommandResult, HudStatus, PairResult } from "../transport/hud-commands";
-import type { IntegrationsState, IntegrationTestResult } from "../storage/schema";
+import type {
+  IntegrationsState,
+  IntegrationTestResult,
+  WatchCondition,
+  WatchItem,
+} from "../storage/schema";
 
 type IntegrationsGlobal = IntegrationsState["global"];
 
@@ -16,7 +22,7 @@ export type AuthStatus = {
 };
 
 export type PageStatus = {
-  pageType: "product" | "order-history" | "storefront" | "creator-upload" | "other";
+  pageType: "product" | "order-history" | "storefront" | "creator-upload" | "search" | "other";
   toolSummaries: Array<{ label: string; value: string }>;
 };
 
@@ -76,7 +82,18 @@ export type RuntimeMessage =
   // POSTs a batch of ASINs (<=10) to /api/extension/enrich with the license
   // key so the content script never handles the secret. `marketplaces` filters
   // to the storefront's own marketplace so each ASIN comes back as one row.
-  | { kind: "ENRICH_PRODUCTS"; asins: string[]; marketplaces?: string[] };
+  | { kind: "ENRICH_PRODUCTS"; asins: string[]; marketplaces?: string[] }
+  // ASIN watchlist: add/remove a product and read the current list. The
+  // background poller checks each on an alarm and notifies on a change.
+  | { kind: "ADD_TO_WATCHLIST"; item: WatchInput }
+  | { kind: "REMOVE_FROM_WATCHLIST"; asin: string; marketplace: string }
+  | { kind: "SET_WATCH_CONDITIONS"; asin: string; marketplace: string; notifyOn: WatchCondition[] }
+  | { kind: "GET_WATCHLIST" }
+  | { kind: "IS_WATCHED"; asin: string; marketplace: string }
+  // Deal Sites Harvester: fetch and parse a list of aggregator URLs (the deals
+  // page requests the host permission first), and read the curated source list.
+  | { kind: "HARVEST_DEAL_SITES"; urls: string[] }
+  | { kind: "GET_DEAL_SOURCES"; force?: boolean };
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";
@@ -117,6 +134,26 @@ export type ScanAsinResult = {
 export type OrderAsinItem = { asin: string; marketplace: string; title: string | null };
 export type OrderAsinsResult = { ok: boolean; items: OrderAsinItem[]; error?: string };
 
+// One product's current state as read by the background tab scan, for the
+// watchlist to diff against the last check.
+export type ProductSnapshotResult = {
+  inStock: boolean | null;
+  influencerVideos: number | null;
+  priceCents: number | null;
+};
+
+// What the product/search "Watch" button sends to add an item.
+export type WatchInput = {
+  asin: string;
+  marketplace: string;
+  title: string | null;
+  notifyOn?: WatchCondition[];
+};
+
+// Returned by the watchlist add/remove/get messages: the full current list,
+// plus atCap on add when the watchlist is full so the UI can explain the block.
+export type WatchlistResult = { items: WatchItem[]; atCap?: boolean };
+
 // One normalized Creator API (PA-API) product row. Mirrors the server's
 // EnrichedItem shape in src/lib/paapi.ts, one per (asin, marketplace).
 export type EnrichedProduct = {
@@ -145,6 +182,19 @@ export type EnrichResult = {
   configured: boolean;
   items: Array<{ asin: string; results: EnrichedProduct[] }>;
   error?: string;
+};
+
+// One curated aggregator site the harvester offers in its picker.
+export type DealSource = { url: string; label: string };
+
+// Result of HARVEST_DEAL_SITES: the deduped products found across every URL,
+// per-URL fetch errors, and whether a cap (too many URLs or too many products)
+// truncated the run so the UI can say so instead of implying full coverage.
+export type HarvestResult = {
+  ok: boolean;
+  deals: HarvestedDeal[];
+  errors: Array<{ url: string; error: string }>;
+  capped: boolean;
 };
 
 export type IntegrationTestOutcome = { ok: boolean; message: string };

@@ -6,10 +6,11 @@ import {
   type PageStatus,
   type PairResult,
   type SignInResult,
+  type WatchlistResult,
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
-import type { Settings } from "../storage/schema";
-import { setLocale, t } from "../i18n";
+import type { Settings, WatchCondition } from "../storage/schema";
+import { resolveLocale, setLocale, t } from "../i18n";
 
 // Popup: page status via the active tab's content script, account sign-in via
 // the background, settings straight to storage (content scripts pick changes
@@ -21,9 +22,49 @@ async function init(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
-  await Promise.all([renderPageStatus(), renderAccount(), renderAppBridge(), renderSettings()]);
+  await Promise.all([
+    renderPageStatus(),
+    renderAccount(),
+    renderAppBridge(),
+    renderSettings(),
+    renderWatchlist(),
+  ]);
   wireFeedback();
   wireOptions();
+  wireDealHarvester(settings.locale);
+}
+
+// The Deal Sites Harvester opens in its own tab (it needs room for a review
+// table and outlives the popup, which closes on blur). Localized inline so the
+// three strings do not have to live in the shared catalog.
+function wireDealHarvester(locale: Settings["locale"]): void {
+  const dict = {
+    en: {
+      heading: "Deal Sites Harvester",
+      blurb:
+        "Pull deals from the daily-deal sites you follow and send them into a Daily Deals workspace in the app.",
+      open: "Open Deal Sites Harvester",
+    },
+    es: {
+      heading: "Recolector de sitios de ofertas",
+      blurb:
+        "Extrae ofertas de los sitios de ofertas diarias que sigues y envíalas a un espacio de Ofertas Diarias en la app.",
+      open: "Abrir el recolector de sitios",
+    },
+    fr: {
+      heading: "Collecteur de sites de bons plans",
+      blurb:
+        "Récupérez les offres des sites de bons plans que vous suivez et envoyez-les vers un espace Offres du Jour dans l'app.",
+      open: "Ouvrir le collecteur de sites",
+    },
+  }[resolveLocale(locale)];
+  byId("deals-heading").textContent = dict.heading;
+  byId("deals-blurb").textContent = dict.blurb;
+  const btn = byId<HTMLButtonElement>("open-deals");
+  btn.textContent = dict.open;
+  btn.onclick = () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("deals.html") });
+  };
 }
 
 // Local storage key the background's hud-bridge writes the pairing token to.
@@ -174,6 +215,7 @@ async function renderPageStatus(): Promise<void> {
       "order-history": t().orderScanReady,
       storefront: t().storefrontCheckupReady,
       "creator-upload": t().uploadHelperReady,
+      search: t().searchOverlayActive,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
       list.hidden = false;
@@ -264,13 +306,103 @@ async function renderSettings(): Promise<void> {
   storefront.onchange = () =>
     void patchSettings({ storefrontHandle: storefront.value.trim() || null });
 
-  for (const tool of ["videoCounts", "approved", "calculator", "storefront", "ordersButler"] as const) {
+  for (const tool of [
+    "videoCounts",
+    "approved",
+    "calculator",
+    "storefront",
+    "ordersButler",
+    "searchOverlay",
+    "campaignMatcher",
+    "watchlist",
+  ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);
     box.checked = settings.tools[tool];
     box.onchange = async () => {
       const current = await getSettings();
       await patchSettings({ tools: { ...current.tools, [tool]: box.checked } });
+      if (tool === "watchlist") await renderWatchlist();
     };
+  }
+}
+
+// The Watchlist card: the products the background poller is watching, each with
+// per-condition toggles and a remove. Hidden entirely when the watchlist tool
+// is off, so a user who does not want it never sees the card.
+async function renderWatchlist(): Promise<void> {
+  const card = byId("watchlist-card");
+  const list = byId("watchlist-list");
+  const empty = byId("watchlist-empty");
+
+  const settings = await getSettings();
+  if (!settings.tools.watchlist) {
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+
+  const { items } = await sendToBackground<WatchlistResult>({ kind: "GET_WATCHLIST" });
+  list.replaceChildren();
+  empty.hidden = items.length > 0;
+
+  const conditions: Array<{ key: WatchCondition; label: string }> = [
+    { key: "back_in_stock", label: t().watchCondBackInStock },
+    { key: "slot_opens", label: t().watchCondSlotOpens },
+    { key: "price_drop", label: t().watchCondPriceDrop },
+  ];
+
+  for (const item of items) {
+    const li = document.createElement("li");
+
+    const head = document.createElement("div");
+    head.className = "watchlist-head";
+    const title = document.createElement("span");
+    title.className = "watchlist-title";
+    title.textContent = item.title ?? item.asin;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "ghost small";
+    remove.textContent = t().watchRemoveShort;
+    remove.onclick = async () => {
+      await sendToBackground<WatchlistResult>({
+        kind: "REMOVE_FROM_WATCHLIST",
+        asin: item.asin,
+        marketplace: item.marketplace,
+      });
+      await renderWatchlist();
+    };
+    head.append(title, remove);
+    li.append(head);
+
+    const conds = document.createElement("div");
+    conds.className = "watchlist-conds";
+    for (const cond of conditions) {
+      const label = document.createElement("label");
+      label.className = "watchlist-cond";
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = item.notifyOn.includes(cond.key);
+      box.onchange = () => {
+        const next = conditions
+          .map((c) => c.key)
+          .filter((key) =>
+            key === cond.key ? box.checked : item.notifyOn.includes(key),
+          );
+        item.notifyOn = next;
+        void sendToBackground<WatchlistResult>({
+          kind: "SET_WATCH_CONDITIONS",
+          asin: item.asin,
+          marketplace: item.marketplace,
+          notifyOn: next,
+        });
+      };
+      const span = document.createElement("span");
+      span.textContent = cond.label;
+      label.append(box, span);
+      conds.append(label);
+    }
+    li.append(conds);
+    list.append(li);
   }
 }
 

@@ -59,6 +59,12 @@ const builds = [
     outfile: path.join(dist, "options.js"),
     format: "iife",
   },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/deals/index.ts")],
+    outfile: path.join(dist, "deals.js"),
+    format: "iife",
+  },
 ];
 
 if (watch) {

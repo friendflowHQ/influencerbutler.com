@@ -26,6 +26,9 @@ export type RetagIssue = {
 
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
+  // Batch push of harvested deals into one Daily Deals workspace, from the Deal
+  // Sites Harvester. Same target as deal.push, many products at once.
+  | { type: "deal.push.batch"; workspace: string; products: ProductRef[] }
   | { type: "content.push"; product: ProductRef }
   // Batch push of harvested order products into the Content Butler planner.
   | { type: "content.push.batch"; products: ProductRef[] }

@@ -55,6 +55,9 @@ export interface Dict {
   toolCalculator: string;
   toolStorefront: string;
   toolOrdersButler: string;
+  toolSearchOverlay: string;
+  toolCampaignMatcher: string;
+  toolWatchlist: string;
   feedbackHeading: string;
   feedbackBlurb: string;
   feedbackTypeLabel: string;
@@ -169,6 +172,39 @@ export interface Dict {
   critOpenSlot: (n: number) => string;
   critInStock: string;
   critPriceFloor: (n: number) => string;
+
+  // Butler Score panel
+  butlerScore: string;
+  butlerScoreIntro: string;
+  scoreBandLabel: (band: "hot" | "warm" | "cool") => string;
+  scoreOutOf: string;
+  scorePartCommission: string;
+  scorePartSlot: string;
+  scorePartDemand: string;
+  scorePartAvailability: string;
+  scorePartPrice: string;
+  scorePartCampaign: string;
+  sumScore: string;
+
+  // Search-results overlay
+  sumSearchOverlay: string;
+  searchCount: (n: number) => string;
+  searchSortLabel: string;
+  sortScore: string;
+  sortCommission: string;
+  sortPriceAsc: string;
+  sortPriceDesc: string;
+  sortRelevance: string;
+  searchCampaignOnly: string;
+  searchMinPrice: string;
+  searchScan: string;
+  searchScanStop: string;
+  searchScanning: (done: number, total: number) => string;
+  searchScanDone: (n: number) => string;
+  tileCommission: (amount: string) => string;
+  tileCampaign: string;
+  tileInfluencer: (n: number) => string;
+  searchOverlayActive: string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -303,6 +339,24 @@ export interface Dict {
   dealAvailable: string;
   dealPushNote: string;
 
+  // Campaign matcher panel
+  campaignMatcher: string;
+  campaignMatcherIntro: (source: "storefront" | "orders") => string;
+  campaignMatcherScan: string;
+  campaignMatcherRescan: string;
+  campaignMatcherScanning: string;
+  campaignMatcherHarvesting: (n: number) => string;
+  campaignMatcherFailed: string;
+  campaignMatcherNoProducts: string;
+  campaignMatcherNoCatalogue: string;
+  campaignMatcherSignIn: string;
+  campaignMatcherNone: string;
+  campaignMatcherDone: (matches: number, total: number) => string;
+  campaignMatcherAcceptedNote: string;
+  campaignMatcherAcceptAll: (n: number) => string;
+  campaignMatcherUpsell: string;
+  sumCampaignMatcher: string;
+
   // Send to app (HUD) panel
   sendToApp: string;
   pushToDailyDeals: string;
@@ -367,6 +421,28 @@ export interface Dict {
   nudgeAppDownloadMac: string;
   nudgeAppDownloadGeneric: string;
   nudgeAppIntelMac: string;
+
+  // ASIN watchlist (product-page button, search-tile star, popup list).
+  watchlist: string;
+  watchlistIntro: string;
+  watchAdd: string;
+  watchRemove: string;
+  watchAdded: string;
+  watchRemoved: string;
+  watchAtCap: (n: number) => string;
+  watchStar: string;
+  watchOn: string;
+  watchAddShort: string;
+  watchNotifTitle: string;
+  watchNotifBackInStock: (name: string) => string;
+  watchNotifSlotOpens: (name: string, videos: number) => string;
+  watchNotifPriceDrop: (name: string) => string;
+  popupWatchlistHeading: string;
+  popupWatchlistEmpty: string;
+  watchCondBackInStock: string;
+  watchCondSlotOpens: string;
+  watchCondPriceDrop: string;
+  watchRemoveShort: string;
 }
 
 const en: Dict = {
@@ -415,6 +491,9 @@ const en: Dict = {
   toolCalculator: "Profit calculator",
   toolStorefront: "Storefront checks",
   toolOrdersButler: "Orders Butler (sync order history)",
+  toolSearchOverlay: "Search results overlay",
+  toolCampaignMatcher: "Campaign matcher",
+  toolWatchlist: "Watchlist alerts",
   feedbackHeading: "Feedback Butler",
   feedbackBlurb: "Found a bug or want a feature? Tell us. No account needed.",
   feedbackTypeLabel: "Type",
@@ -530,6 +609,39 @@ const en: Dict = {
   critOpenSlot: (n) => `Fewer than ${n} influencer videos`,
   critInStock: "In stock",
   critPriceFloor: (n) => `Price at least $${n}`,
+
+  butlerScore: "Butler Score",
+  butlerScoreIntro:
+    "A 0-100 read on how worth-it this product is: commission per sale, an open video slot, demand, stock, and campaign eligibility rolled into one number.",
+  scoreBandLabel: (band) =>
+    band === "hot" ? "Hot pick" : band === "warm" ? "Worth a look" : "Low priority",
+  scoreOutOf: "out of 100",
+  scorePartCommission: "Commission",
+  scorePartSlot: "Open slot",
+  scorePartDemand: "Demand",
+  scorePartAvailability: "In stock",
+  scorePartPrice: "Price",
+  scorePartCampaign: "Campaign",
+  sumScore: "Butler Score",
+
+  sumSearchOverlay: "Search overlay",
+  searchCount: (n) => `${n} products scored`,
+  searchSortLabel: "Sort:",
+  sortScore: "Best Butler Score",
+  sortCommission: "Highest commission",
+  sortPriceAsc: "Price: low to high",
+  sortPriceDesc: "Price: high to low",
+  sortRelevance: "Amazon relevance",
+  searchCampaignOnly: "Campaign-eligible only",
+  searchMinPrice: "Min price",
+  searchScan: "Scan videos on this page",
+  searchScanStop: "Stop",
+  searchScanning: (done, total) => `Scanning ${done} of ${total}...`,
+  searchScanDone: (n) => `Scanned ${n} products.`,
+  tileCommission: (amount) => `${amount}/sale`,
+  tileCampaign: "Campaign",
+  tileInfluencer: (n) => `${n} infl. videos`,
+  searchOverlayActive: "Search overlay is active.",
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -671,6 +783,29 @@ const en: Dict = {
   dealAvailable: "Deal available",
   dealPushNote: "Push it to Daily Deals from the Send to your butler app section below.",
 
+  campaignMatcher: "Campaign matcher",
+  campaignMatcherIntro: (source) =>
+    source === "storefront"
+      ? "Find which products tagged in your storefront videos have an open Creator Connections or SPCC campaign you qualify for."
+      : "Find which of your ordered products have an open Creator Connections or SPCC campaign you qualify for.",
+  campaignMatcherScan: "Find campaigns I qualify for",
+  campaignMatcherRescan: "Scan again",
+  campaignMatcherScanning: "Checking your products...",
+  campaignMatcherHarvesting: (n) => `Reading your storefront... ${n} items`,
+  campaignMatcherFailed: "Could not complete the scan. Try again.",
+  campaignMatcherNoProducts: "No products found to check.",
+  campaignMatcherNoCatalogue: "Campaign catalogue is still downloading. Try again in a minute.",
+  campaignMatcherSignIn: "Connect your license key in the popup to check your ordered products.",
+  campaignMatcherNone:
+    "None of these products have an open Creator Connections or SPCC campaign right now.",
+  campaignMatcherDone: (matches, total) =>
+    `${matches} of ${total} products have an available campaign.`,
+  campaignMatcherAcceptedNote:
+    "A hit means a campaign is likely available. The app confirms each one and skips any you have already accepted.",
+  campaignMatcherAcceptAll: (n) => `Send all ${n} to the app to accept`,
+  campaignMatcherUpsell: "Open the desktop app to accept these campaigns in one click.",
+  sumCampaignMatcher: "Campaign matcher",
+
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Daily Deals",
   sendToContentButler: "Send to Content Butler",
@@ -738,6 +873,29 @@ const en: Dict = {
   nudgeAppDownloadMac: "Download for Mac",
   nudgeAppDownloadGeneric: "Download the desktop app",
   nudgeAppIntelMac: "Using an Intel Mac?",
+
+  watchlist: "Watchlist",
+  watchlistIntro:
+    "Get a browser alert when this product comes back in stock, an influencer video slot opens, or the price drops.",
+  watchAdd: "Watch this product",
+  watchRemove: "Stop watching",
+  watchAdded: "Added to your watchlist. We will alert you on a change.",
+  watchRemoved: "Removed from your watchlist.",
+  watchAtCap: (n) => `Your watchlist is full (${n}). Remove one first.`,
+  watchStar: "★",
+  watchOn: "Watching",
+  watchAddShort: "Watch",
+  watchNotifTitle: "Influencer Butler watch alert",
+  watchNotifBackInStock: (name) => `${name} is back in stock.`,
+  watchNotifSlotOpens: (name, videos) =>
+    `A video slot opened on ${name} (now ${videos} influencer videos).`,
+  watchNotifPriceDrop: (name) => `The price dropped on ${name}.`,
+  popupWatchlistHeading: "Watchlist",
+  popupWatchlistEmpty: "No products watched yet. Open a product and click Watch.",
+  watchCondBackInStock: "Back in stock",
+  watchCondSlotOpens: "Video slot opens",
+  watchCondPriceDrop: "Price drop",
+  watchRemoveShort: "Remove",
 };
 
 const es: Dict = {
@@ -786,6 +944,9 @@ const es: Dict = {
   toolCalculator: "Calculadora de ganancias",
   toolStorefront: "Chequeos del storefront",
   toolOrdersButler: "Orders Butler (sincronizar pedidos)",
+  toolSearchOverlay: "Overlay de resultados de búsqueda",
+  toolCampaignMatcher: "Buscador de campañas",
+  toolWatchlist: "Alertas de seguimiento",
   feedbackHeading: "Feedback Butler",
   feedbackBlurb: "¿Encontraste un error o quieres una función? Cuéntanos. No hace falta cuenta.",
   feedbackTypeLabel: "Tipo",
@@ -901,6 +1062,39 @@ const es: Dict = {
   critOpenSlot: (n) => `Menos de ${n} videos de influencers`,
   critInStock: "En stock",
   critPriceFloor: (n) => `Precio de al menos $${n}`,
+
+  butlerScore: "Butler Score",
+  butlerScoreIntro:
+    "Una lectura de 0 a 100 de lo que vale la pena este producto: comisión por venta, un espacio de video libre, demanda, stock y elegibilidad de campaña en un solo número.",
+  scoreBandLabel: (band) =>
+    band === "hot" ? "Muy recomendable" : band === "warm" ? "Vale un vistazo" : "Baja prioridad",
+  scoreOutOf: "de 100",
+  scorePartCommission: "Comisión",
+  scorePartSlot: "Espacio libre",
+  scorePartDemand: "Demanda",
+  scorePartAvailability: "En stock",
+  scorePartPrice: "Precio",
+  scorePartCampaign: "Campaña",
+  sumScore: "Butler Score",
+
+  sumSearchOverlay: "Overlay de búsqueda",
+  searchCount: (n) => `${n} productos puntuados`,
+  searchSortLabel: "Ordenar:",
+  sortScore: "Mejor Butler Score",
+  sortCommission: "Mayor comisión",
+  sortPriceAsc: "Precio: de menor a mayor",
+  sortPriceDesc: "Precio: de mayor a menor",
+  sortRelevance: "Relevancia de Amazon",
+  searchCampaignOnly: "Solo elegibles para campaña",
+  searchMinPrice: "Precio mín.",
+  searchScan: "Escanear videos de esta página",
+  searchScanStop: "Detener",
+  searchScanning: (done, total) => `Escaneando ${done} de ${total}...`,
+  searchScanDone: (n) => `Escaneados ${n} productos.`,
+  tileCommission: (amount) => `${amount}/venta`,
+  tileCampaign: "Campaña",
+  tileInfluencer: (n) => `${n} videos de infl.`,
+  searchOverlayActive: "El overlay de búsqueda está activo.",
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -1042,6 +1236,29 @@ const es: Dict = {
   dealAvailable: "Oferta disponible",
   dealPushNote: "Envíala a Daily Deals desde la sección Send to your butler app de abajo.",
 
+  campaignMatcher: "Buscador de campañas",
+  campaignMatcherIntro: (source) =>
+    source === "storefront"
+      ? "Descubre qué productos etiquetados en los videos de tu storefront tienen una campaña de Creator Connections o SPCC para la que calificas."
+      : "Descubre cuáles de tus productos pedidos tienen una campaña de Creator Connections o SPCC para la que calificas.",
+  campaignMatcherScan: "Buscar campañas para las que califico",
+  campaignMatcherRescan: "Buscar de nuevo",
+  campaignMatcherScanning: "Revisando tus productos...",
+  campaignMatcherHarvesting: (n) => `Leyendo tu storefront... ${n} elementos`,
+  campaignMatcherFailed: "No se pudo completar la búsqueda. Inténtalo de nuevo.",
+  campaignMatcherNoProducts: "No se encontraron productos para revisar.",
+  campaignMatcherNoCatalogue: "El catálogo de campañas aún se está descargando. Inténtalo en un minuto.",
+  campaignMatcherSignIn: "Conecta tu clave de licencia en el popup para revisar tus productos pedidos.",
+  campaignMatcherNone:
+    "Ninguno de estos productos tiene una campaña de Creator Connections o SPCC abierta ahora mismo.",
+  campaignMatcherDone: (matches, total) =>
+    `${matches} de ${total} productos tienen una campaña disponible.`,
+  campaignMatcherAcceptedNote:
+    "Un resultado significa que es probable que haya una campaña. La app confirma cada una y omite las que ya aceptaste.",
+  campaignMatcherAcceptAll: (n) => `Enviar los ${n} a la app para aceptar`,
+  campaignMatcherUpsell: "Abre la app de escritorio para aceptar estas campañas con un clic.",
+  sumCampaignMatcher: "Buscador de campañas",
+
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Daily Deals",
   sendToContentButler: "Enviar a Content Butler",
@@ -1109,6 +1326,29 @@ const es: Dict = {
   nudgeAppDownloadMac: "Descargar para Mac",
   nudgeAppDownloadGeneric: "Descargar la app de escritorio",
   nudgeAppIntelMac: "¿Usas un Mac con Intel?",
+
+  watchlist: "Lista de seguimiento",
+  watchlistIntro:
+    "Recibe un aviso del navegador cuando este producto vuelva a tener stock, se abra un espacio de video de influencer o baje el precio.",
+  watchAdd: "Seguir este producto",
+  watchRemove: "Dejar de seguir",
+  watchAdded: "Añadido a tu lista de seguimiento. Te avisaremos si cambia.",
+  watchRemoved: "Eliminado de tu lista de seguimiento.",
+  watchAtCap: (n) => `Tu lista de seguimiento está llena (${n}). Elimina uno primero.`,
+  watchStar: "★",
+  watchOn: "Siguiendo",
+  watchAddShort: "Seguir",
+  watchNotifTitle: "Alerta de seguimiento de Influencer Butler",
+  watchNotifBackInStock: (name) => `${name} vuelve a tener stock.`,
+  watchNotifSlotOpens: (name, videos) =>
+    `Se abrió un espacio de video en ${name} (ahora ${videos} videos de influencers).`,
+  watchNotifPriceDrop: (name) => `Bajó el precio de ${name}.`,
+  popupWatchlistHeading: "Lista de seguimiento",
+  popupWatchlistEmpty: "Aún no sigues productos. Abre un producto y pulsa Seguir.",
+  watchCondBackInStock: "Vuelve a stock",
+  watchCondSlotOpens: "Se abre espacio de video",
+  watchCondPriceDrop: "Baja de precio",
+  watchRemoveShort: "Eliminar",
 };
 
 const fr: Dict = {
@@ -1157,6 +1397,9 @@ const fr: Dict = {
   toolCalculator: "Calculateur de profit",
   toolStorefront: "Vérifications du storefront",
   toolOrdersButler: "Orders Butler (synchroniser les commandes)",
+  toolSearchOverlay: "Overlay des résultats de recherche",
+  toolCampaignMatcher: "Détecteur de campagnes",
+  toolWatchlist: "Alertes de suivi",
   feedbackHeading: "Feedback Butler",
   feedbackBlurb: "Un bug ou une idée de fonctionnalité? Dites-le-nous. Aucun compte requis.",
   feedbackTypeLabel: "Type",
@@ -1272,6 +1515,39 @@ const fr: Dict = {
   critOpenSlot: (n) => `Moins de ${n} vidéos d'influenceurs`,
   critInStock: "En stock",
   critPriceFloor: (n) => `Prix d'au moins ${n} $`,
+
+  butlerScore: "Butler Score",
+  butlerScoreIntro:
+    "Une note de 0 à 100 sur l'intérêt de ce produit : commission par vente, un créneau vidéo libre, la demande, le stock et l'éligibilité aux campagnes réunis en un seul chiffre.",
+  scoreBandLabel: (band) =>
+    band === "hot" ? "Excellent choix" : band === "warm" ? "À considérer" : "Priorité basse",
+  scoreOutOf: "sur 100",
+  scorePartCommission: "Commission",
+  scorePartSlot: "Créneau libre",
+  scorePartDemand: "Demande",
+  scorePartAvailability: "En stock",
+  scorePartPrice: "Prix",
+  scorePartCampaign: "Campagne",
+  sumScore: "Butler Score",
+
+  sumSearchOverlay: "Overlay de recherche",
+  searchCount: (n) => `${n} produits notés`,
+  searchSortLabel: "Trier :",
+  sortScore: "Meilleur Butler Score",
+  sortCommission: "Commission la plus élevée",
+  sortPriceAsc: "Prix : croissant",
+  sortPriceDesc: "Prix : décroissant",
+  sortRelevance: "Pertinence Amazon",
+  searchCampaignOnly: "Éligibles aux campagnes seulement",
+  searchMinPrice: "Prix min.",
+  searchScan: "Analyser les vidéos de cette page",
+  searchScanStop: "Arrêter",
+  searchScanning: (done, total) => `Analyse ${done} sur ${total}...`,
+  searchScanDone: (n) => `${n} produits analysés.`,
+  tileCommission: (amount) => `${amount}/vente`,
+  tileCampaign: "Campagne",
+  tileInfluencer: (n) => `${n} vidéos d'infl.`,
+  searchOverlayActive: "L'overlay de recherche est actif.",
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
@@ -1413,6 +1689,29 @@ const fr: Dict = {
   dealAvailable: "Offre disponible",
   dealPushNote: "Envoyez-la vers Daily Deals depuis la section Send to your butler app ci-dessous.",
 
+  campaignMatcher: "Détecteur de campagnes",
+  campaignMatcherIntro: (source) =>
+    source === "storefront"
+      ? "Trouvez quels produits taggés dans les vidéos de votre storefront ont une campagne Creator Connections ou SPCC ouverte à laquelle vous êtes éligible."
+      : "Trouvez lesquels de vos produits commandés ont une campagne Creator Connections ou SPCC ouverte à laquelle vous êtes éligible.",
+  campaignMatcherScan: "Trouver mes campagnes éligibles",
+  campaignMatcherRescan: "Relancer",
+  campaignMatcherScanning: "Vérification de vos produits...",
+  campaignMatcherHarvesting: (n) => `Lecture de votre storefront... ${n} éléments`,
+  campaignMatcherFailed: "Impossible de terminer l'analyse. Réessayez.",
+  campaignMatcherNoProducts: "Aucun produit à vérifier.",
+  campaignMatcherNoCatalogue: "Le catalogue des campagnes est en cours de téléchargement. Réessayez dans une minute.",
+  campaignMatcherSignIn: "Connectez votre clé de licence dans le popup pour vérifier vos produits commandés.",
+  campaignMatcherNone:
+    "Aucun de ces produits n'a de campagne Creator Connections ou SPCC ouverte pour le moment.",
+  campaignMatcherDone: (matches, total) =>
+    `${matches} produits sur ${total} ont une campagne disponible.`,
+  campaignMatcherAcceptedNote:
+    "Un résultat signifie qu'une campagne est probablement disponible. L'app confirme chacune et ignore celles déjà acceptées.",
+  campaignMatcherAcceptAll: (n) => `Envoyer les ${n} à l'app pour accepter`,
+  campaignMatcherUpsell: "Ouvrez l'app de bureau pour accepter ces campagnes en un clic.",
+  sumCampaignMatcher: "Détecteur de campagnes",
+
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Daily Deals",
   sendToContentButler: "Envoyer à Content Butler",
@@ -1480,6 +1779,29 @@ const fr: Dict = {
   nudgeAppDownloadMac: "Télécharger pour Mac",
   nudgeAppDownloadGeneric: "Télécharger l'app de bureau",
   nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
+
+  watchlist: "Liste de suivi",
+  watchlistIntro:
+    "Recevez une alerte du navigateur quand ce produit est de nouveau en stock, qu'un créneau vidéo d'influenceur se libère, ou que le prix baisse.",
+  watchAdd: "Suivre ce produit",
+  watchRemove: "Ne plus suivre",
+  watchAdded: "Ajouté à votre liste de suivi. Nous vous alerterons en cas de changement.",
+  watchRemoved: "Retiré de votre liste de suivi.",
+  watchAtCap: (n) => `Votre liste de suivi est pleine (${n}). Retirez-en un d'abord.`,
+  watchStar: "★",
+  watchOn: "Suivi",
+  watchAddShort: "Suivre",
+  watchNotifTitle: "Alerte de suivi Influencer Butler",
+  watchNotifBackInStock: (name) => `${name} est de nouveau en stock.`,
+  watchNotifSlotOpens: (name, videos) =>
+    `Un créneau vidéo s'est libéré sur ${name} (maintenant ${videos} vidéos d'influenceurs).`,
+  watchNotifPriceDrop: (name) => `Le prix a baissé sur ${name}.`,
+  popupWatchlistHeading: "Liste de suivi",
+  popupWatchlistEmpty: "Aucun produit suivi pour l'instant. Ouvrez un produit et cliquez sur Suivre.",
+  watchCondBackInStock: "De retour en stock",
+  watchCondSlotOpens: "Créneau vidéo libre",
+  watchCondPriceDrop: "Baisse de prix",
+  watchRemoveShort: "Retirer",
 };
 
 export type Locale = "en" | "es" | "fr";

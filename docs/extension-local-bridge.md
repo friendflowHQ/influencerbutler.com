@@ -184,6 +184,22 @@ as if the user added it there by hand.
 }
 ```
 
+**`deal.push.batch`** - same as `deal.push`, but many products into one
+workspace at once, from the Deal Sites Harvester. The extension chunks large
+harvests (200 products per command), so the app should accept a batch and
+return one result. Until the app supports this, the extension falls back to N
+sequential `deal.push` calls.
+
+```json
+{
+  "type": "deal.push.batch",
+  "workspace": "garden-bargains",
+  "products": [
+    { "asin": "B0016HF5GK", "marketplace": "amazon.com", "title": "...", "priceCents": 9999, "currency": "USD" }
+  ]
+}
+```
+
 **`content.push`** - queue the product into Content Butler for a post.
 Same `product` shape.
 

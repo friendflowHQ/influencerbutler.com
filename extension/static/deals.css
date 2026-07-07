@@ -1,0 +1,90 @@
+/* Deal Sites Harvester page. Layers on top of options.css (shared card, button,
+   field, badge styles). Only the table and a few harvester-specific bits live
+   here. No em dashes anywhere (repo rule). */
+
+#root {
+  max-width: 920px;
+}
+
+.deals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.deals-table th,
+.deals-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+.deals-table th {
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.deals-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.deals-table .prod {
+  max-width: 380px;
+}
+
+.deals-table .prod a {
+  color: #0b57d0;
+  text-decoration: none;
+}
+
+.deals-scroll {
+  overflow-x: auto;
+}
+
+.chip-code {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f3e8c8;
+  color: #7a5b00;
+  font-size: 11px;
+}
+
+.errors {
+  color: #a12;
+  font-size: 12px;
+}
+
+.errors ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.saved-list {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+}
+
+.saved-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.saved-list .url {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+textarea.paste {
+  width: 100%;
+  min-height: 90px;
+  font-family: inherit;
+  font-size: 13px;
+}

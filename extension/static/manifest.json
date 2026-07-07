@@ -11,6 +11,8 @@
     "https://www.influencerbutler.com/*"
   ],
   "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*",
     "https://api.openai.com/*",
     "https://webservices.amazon.com/*",
     "https://webservices.amazon.ca/*",
@@ -49,7 +51,10 @@
         "https://www.amazon.com/gp/css/order-history*",
         "https://www.amazon.com/your-orders/*",
         "https://www.amazon.com/shop/*",
-        "https://www.amazon.com/creatorhub/*"
+        "https://www.amazon.com/creatorhub/*",
+        "https://www.amazon.com/s*",
+        "https://www.amazon.ca/s*",
+        "https://www.amazon.co.uk/s*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

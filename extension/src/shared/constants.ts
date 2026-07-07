@@ -13,6 +13,10 @@ export const ENDPOINTS = {
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,
   enrich: `${API_BASE}/api/extension/enrich`,
+  // Deal Sites Harvester: sync harvested deals for the dashboard record, and
+  // fetch the curated list of aggregator sites to offer in the picker.
+  deals: `${API_BASE}/api/extension/deals`,
+  dealSources: `${API_BASE}/api/extension/deal-sources`,
 } as const;
 
 // The Start Here onboarding walkthrough (opened on install). The Creator API
@@ -88,6 +92,19 @@ export const VIDEO_HARVEST_VIDEO_CAP = 1000;
 export const VIDEO_HARVEST_DELAY_MIN_MS = 150;
 export const VIDEO_HARVEST_DELAY_MAX_MS = 400;
 
+// Deal Sites Harvester. Fetches each aggregator URL in the background (needs an
+// optional host permission the user grants per run), extracts Amazon products,
+// and enriches them. Paced like a person opening tabs, with caps as runaway
+// safety valves: a huge or malicious list can never turn into an unbounded
+// crawl. deal.push.batch is chunked so one big harvest is not a single command.
+export const DEAL_HARVEST_URL_CAP = 40;
+export const DEAL_HARVEST_ASIN_CAP = 1000;
+export const DEAL_HARVEST_DELAY_MIN_MS = 800;
+export const DEAL_HARVEST_DELAY_MAX_MS = 1800;
+export const DEAL_HARVEST_FETCH_TIMEOUT_MS = 15_000;
+export const DEAL_PUSH_CHUNK = 200;
+export const DEAL_SOURCES_STALE_MS = 20 * 60 * 60 * 1000;
+
 // Amazon onsite commission defaults by category, user-overridable. These are
 // starting points for the calculator, not a promise of what Amazon pays.
 export const COMMISSION_DEFAULTS: ReadonlyArray<{ key: string; label: string; ratePct: number }> = [
@@ -112,6 +129,15 @@ export const BRIDGE_STATUS_TTL_MS = 15_000;
 // Where to send someone who needs the app. Trial link is tracked.
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;
 export const APP_LEARN_URL = `${API_BASE}/extension`;
+
+// ASIN watchlist. The background poller opens each watched product in a
+// background tab on this alarm, but only a small batch per run (least-recently
+// checked first) so the MV3 worker's awake time stays bounded and a killed
+// worker resumes cleanly on the next alarm. Full coverage of a 50-item list
+// takes several runs, which is fine for restock / open-slot alerts.
+export const WATCHLIST_ALARM = "ib-watchlist";
+export const WATCHLIST_PERIOD_MINUTES = 3 * 60;
+export const WATCHLIST_RUN_CAP = 8;
 
 // Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
 // day 1 invites the user to the Facebook community, day 3 invites them to

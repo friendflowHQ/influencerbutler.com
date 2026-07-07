@@ -79,6 +79,15 @@
         <p id="app-pair-status" class="muted small"></p>
       </section>
 
+      <section id="deal-harvester" class="card">
+        <h2 id="deals-heading">Deal Sites Harvester</h2>
+        <p class="muted small" id="deals-blurb">
+          Pull deals from the daily-deal sites you follow and send them into a
+          Daily Deals workspace in the app.
+        </p>
+        <button id="open-deals" class="primary">Open Deal Sites Harvester</button>
+      </section>
+
       <section class="card">
         <h2 data-i18n="settingsHeading">Settings</h2>
         <div class="grid">
@@ -112,6 +121,15 @@
         <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span data-i18n="toolCalculator">Profit calculator</span></label>
         <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span data-i18n="toolStorefront">Storefront checks</span></label>
         <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span data-i18n="toolOrdersButler">Orders Butler (sync order history)</span></label>
+        <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
+        <label class="row toggle"><input id="tool-campaignMatcher" type="checkbox" /><span data-i18n="toolCampaignMatcher">Campaign matcher</span></label>
+        <label class="row toggle"><input id="tool-watchlist" type="checkbox" /><span data-i18n="toolWatchlist">Watchlist alerts</span></label>
+      </section>
+
+      <section id="watchlist-card" class="card">
+        <h2 data-i18n="popupWatchlistHeading">Watchlist</h2>
+        <p id="watchlist-empty" class="muted small" data-i18n="popupWatchlistEmpty">No products watched yet. Open a product and click Watch.</p>
+        <ul id="watchlist-list" class="watchlist"></ul>
       </section>
 
       <section class="card">
