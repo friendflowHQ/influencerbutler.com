@@ -281,7 +281,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
         command: { type: "retag.push", issues },
       }).then((r) => {
         retagBtn.disabled = false;
-        status.textContent = r.message ?? (r.ok ? t().sfSentToApp : t().sfCouldNotReachApp);
+        status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
       });
     });
     exportRow.append(retagBtn);
@@ -300,7 +300,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
         command: { type: "campaign.accept.batch", items: campaignItems },
       }).then((r) => {
         acceptBtn.disabled = false;
-        status.textContent = r.message ?? (r.ok ? t().sfSentToApp : t().sfCouldNotReachApp);
+        status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
       });
     });
     exportRow.append(acceptBtn);

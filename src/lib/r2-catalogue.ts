@@ -14,12 +14,12 @@ const BUCKET = "influencerbutler";
 const PREFIX = "dcb/catalogues";
 const ASIN_RE = /"asin"\s*:\s*"([A-Z0-9]{10})"/;
 
-export type CatalogueKind = "cc" | "spcc";
+export type CatalogueKind = "cc" | "spcc" | "deals";
 
 export type LatestPointer = {
   version: string;
   files: Record<string, { url: string }>;
-  totals: { asins?: number; campaigns?: number };
+  totals: { asins?: number; campaigns?: number; deals?: number };
 };
 
 export type BuiltFilter = {
@@ -66,11 +66,12 @@ export async function r2ReadJson<T>(key: string): Promise<T | null> {
   return (await res.json()) as T;
 }
 
-// Picks the source object: CC uses the compact asin-index, SPCC the catalog
-// (which is already small and carries the asin on every row).
+// Picks the source object: CC and deals use the compact asin-index (a JSON
+// object per line carrying "asin"), SPCC the catalog (already small and carries
+// the asin on every row).
 function sourceFile(kind: CatalogueKind, latest: LatestPointer): string {
   const rel =
-    kind === "cc"
+    kind === "cc" || kind === "deals"
       ? latest.files.asinIndex?.url
       : latest.files.catalog?.url ?? latest.files.spcc?.url;
   if (!rel) throw new Error(`no source file url for ${kind}`);
@@ -82,7 +83,7 @@ export async function buildFilter(kind: CatalogueKind): Promise<BuiltFilter> {
   const key = sourceFile(kind, latest);
   const res = await r2Fetch(key);
 
-  const expected = latest.totals.asins ?? latest.totals.campaigns ?? 200_000;
+  const expected = latest.totals.asins ?? latest.totals.campaigns ?? latest.totals.deals ?? 200_000;
   const builder = buildBloomStreaming(expected, 0.01);
 
   const stream = res.body!.pipeThrough(new DecompressionStream("gzip"));

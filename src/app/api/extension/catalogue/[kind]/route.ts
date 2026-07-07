@@ -20,7 +20,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KINDS = new Set(["cc", "spcc"]);
+const KINDS = new Set(["cc", "spcc", "deals"]);
 
 export async function OPTIONS() {
   return optionsResponse();

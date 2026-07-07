@@ -300,6 +300,8 @@ export interface Dict {
   ccAvailable: string;
   spccAvailable: string;
   campaignAcceptNote: string;
+  dealAvailable: string;
+  dealPushNote: string;
 
   // Send to app (HUD) panel
   sendToApp: string;
@@ -321,6 +323,31 @@ export interface Dict {
   ctaOpenApp: string;
   ctaStartTrial: string;
   toolsAlwaysFree: string;
+
+  // Desktop-app hand-offs: storefront -> Retag Butler + batch campaign accept,
+  // orders -> Content Butler planner, and the popup pairing flow.
+  sfSendToRetag: (n: number) => string;
+  sfSendingToRetag: string;
+  sfAcceptAllCampaigns: (n: number) => string;
+  sfAcceptingCampaigns: string;
+  obSendToContentButler: (n: number) => string;
+  obSendingToContentButler: string;
+  obSentToContentButler: (n: number) => string;
+  appBridgeHeading: string;
+  appBridgeBlurb: string;
+  appConnect: string;
+  appEnterCode: string;
+  appCodePlaceholder: string;
+  appPairSubmit: string;
+  appConnected: string;
+  appUnpair: string;
+  appRequestingCode: string;
+  appCodeShown: string;
+  appNotRunning: string;
+  appCodeInvalid: string;
+  appPairing: string;
+  appPaired: string;
+  appPairFailed: string;
 
   // Re-engagement nudges (day-1 Facebook group, day-3 free desktop app).
   // Shown both as an OS notification and as an in-page modal.
@@ -641,6 +668,8 @@ const en: Dict = {
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
   campaignAcceptNote: "Accept it from the Send to your butler app section below (the app confirms and accepts).",
+  dealAvailable: "Deal available",
+  dealPushNote: "Push it to Daily Deals from the Send to your butler app section below.",
 
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Daily Deals",
@@ -664,6 +693,30 @@ const en: Dict = {
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
+
+  sfSendToRetag: (n) => `Send ${n} issue(s) to Retag Butler`,
+  sfSendingToRetag: "Sending to Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Accept all available campaigns (${n})`,
+  sfAcceptingCampaigns: "Accepting campaigns in the app...",
+  obSendToContentButler: (n) => `Send ${n} product(s) to Content Butler`,
+  obSendingToContentButler: "Sending to Content Butler...",
+  obSentToContentButler: (n) => `Sent ${n} product(s) to Content Butler.`,
+  appBridgeHeading: "Desktop app",
+  appBridgeBlurb:
+    "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
+  appConnect: "Connect the desktop app",
+  appEnterCode: "Enter the 6-digit code showing in the desktop app:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Pair",
+  appConnected: "Connected to the desktop app.",
+  appUnpair: "Disconnect app",
+  appRequestingCode: "Asking the app for a code...",
+  appCodeShown: "The app is showing a 6-digit code. Type it above.",
+  appNotRunning: "The Influencer Butler app is not running. Open it and try again.",
+  appCodeInvalid: "Enter the 6 digits shown in the app.",
+  appPairing: "Pairing...",
+  appPaired: "Connected. You can now send products to the app.",
+  appPairFailed: "That did not work. Click Connect to try again.",
 
   nudgeCloseLabel: "Close",
   nudgeMaybeLater: "Maybe later",
@@ -986,6 +1039,8 @@ const es: Dict = {
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
   campaignAcceptNote: "Acéptala desde la sección Send to your butler app de abajo (la app confirma y acepta).",
+  dealAvailable: "Oferta disponible",
+  dealPushNote: "Envíala a Daily Deals desde la sección Send to your butler app de abajo.",
 
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Daily Deals",
@@ -1009,6 +1064,30 @@ const es: Dict = {
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
+
+  sfSendToRetag: (n) => `Enviar ${n} problema(s) a Retag Butler`,
+  sfSendingToRetag: "Enviando a Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Aceptar todas las campañas disponibles (${n})`,
+  sfAcceptingCampaigns: "Aceptando campañas en la app...",
+  obSendToContentButler: (n) => `Enviar ${n} producto(s) a Content Butler`,
+  obSendingToContentButler: "Enviando a Content Butler...",
+  obSentToContentButler: (n) => `Se enviaron ${n} producto(s) a Content Butler.`,
+  appBridgeHeading: "App de escritorio",
+  appBridgeBlurb:
+    "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
+  appConnect: "Conectar la app de escritorio",
+  appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Vincular",
+  appConnected: "Conectado a la app de escritorio.",
+  appUnpair: "Desconectar app",
+  appRequestingCode: "Pidiendo un código a la app...",
+  appCodeShown: "La app muestra un código de 6 dígitos. Escríbelo arriba.",
+  appNotRunning: "La app de Influencer Butler no está abierta. Ábrela e inténtalo de nuevo.",
+  appCodeInvalid: "Escribe los 6 dígitos que muestra la app.",
+  appPairing: "Vinculando...",
+  appPaired: "Conectado. Ya puedes enviar productos a la app.",
+  appPairFailed: "No funcionó. Haz clic en Conectar para intentarlo de nuevo.",
 
   nudgeCloseLabel: "Cerrar",
   nudgeMaybeLater: "Quizás luego",
@@ -1331,6 +1410,8 @@ const fr: Dict = {
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
   campaignAcceptNote: "Acceptez-la depuis la section Send to your butler app ci-dessous (l'app confirme et accepte).",
+  dealAvailable: "Offre disponible",
+  dealPushNote: "Envoyez-la vers Daily Deals depuis la section Send to your butler app ci-dessous.",
 
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Daily Deals",
@@ -1354,6 +1435,30 @@ const fr: Dict = {
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
+
+  sfSendToRetag: (n) => `Envoyer ${n} problème(s) vers Retag Butler`,
+  sfSendingToRetag: "Envoi vers Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Accepter toutes les campagnes disponibles (${n})`,
+  sfAcceptingCampaigns: "Acceptation des campagnes dans l'app...",
+  obSendToContentButler: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
+  obSendingToContentButler: "Envoi vers Content Butler...",
+  obSentToContentButler: (n) => `${n} produit(s) envoyé(s) vers Content Butler.`,
+  appBridgeHeading: "App de bureau",
+  appBridgeBlurb:
+    "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
+  appConnect: "Connecter l'app de bureau",
+  appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Associer",
+  appConnected: "Connecté à l'app de bureau.",
+  appUnpair: "Déconnecter l'app",
+  appRequestingCode: "Demande d'un code à l'app...",
+  appCodeShown: "L'app affiche un code à 6 chiffres. Saisissez-le ci-dessus.",
+  appNotRunning: "L'app Influencer Butler n'est pas ouverte. Ouvrez-la et réessayez.",
+  appCodeInvalid: "Saisissez les 6 chiffres affichés dans l'app.",
+  appPairing: "Association...",
+  appPaired: "Connecté. Vous pouvez maintenant envoyer des produits à l'app.",
+  appPairFailed: "Cela n'a pas fonctionné. Cliquez sur Connecter pour réessayer.",
 
   nudgeCloseLabel: "Fermer",
   nudgeMaybeLater: "Plus tard",
