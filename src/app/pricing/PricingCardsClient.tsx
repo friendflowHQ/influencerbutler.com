@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
+import { trackEvent } from "@/lib/analytics-client";
 import {
   DISCOUNT_PCT_FIRST,
   DISCOUNT_PCT_RETURNING,
@@ -110,6 +111,9 @@ export default function PricingCardsClient({
   async function handleCheckout(plan: string): Promise<void> {
     setLoadingPlan(plan);
     setErrorPlan(null);
+    // Funnel step: the visitor committed to a plan and we are about to open
+    // checkout. Pairs with cta_trial_click / download_page_view upstream.
+    trackEvent("checkout_start", { plan, billing });
     try {
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
 

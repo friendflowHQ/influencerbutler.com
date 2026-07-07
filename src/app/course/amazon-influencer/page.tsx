@@ -8,6 +8,7 @@ import Link from "next/link";
 import { loadManifest } from "@/lib/tutorials";
 import { AMAZON_INFLUENCER_COURSE_ID, getCourseModules, moduleEmoji } from "@/lib/course";
 import { courseImage } from "@/lib/course-images";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import CourseHubClient from "./course-hub-client";
 
 export const revalidate = 300;
@@ -155,7 +156,15 @@ export default async function CourseHubPage() {
           })}
         </ol>
 
-        <div className="mt-12 rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+        <div className="mt-12 rounded-xl border border-orange-200 bg-orange-50 p-6">
+          <NewsletterSignup
+            source="course"
+            title="Want the shortcuts emailed to you?"
+            subtitle="Get the free weekly newsletter: one practical Amazon Influencer tip per issue, no fluff. Unsubscribe anytime."
+          />
+        </div>
+
+        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
           <p>
             Built by the team behind{" "}
             <Link href="/" className="font-semibold text-orange-700 hover:underline">
@@ -165,6 +174,12 @@ export default async function CourseHubPage() {
             influencer. The course is complete without it; the app exists for when you reach
             the scaling stage in Module 10.
           </p>
+          <a
+            href="/go/trial?src=course"
+            className="mt-4 inline-flex items-center justify-center rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+          >
+            Start your free 3-day Pro trial
+          </a>
         </div>
       </section>
     </main>
