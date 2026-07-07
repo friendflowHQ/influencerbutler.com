@@ -1,0 +1,41 @@
+# Influencer Butler
+
+> Influencer Butler is an all-in-one desktop application for Amazon creators and
+> influencers, published by The Social Media Posse LLC. It bundles 40+ tools
+> ("butlers") to automate Amazon Creator Connections auto-accept, brand outreach,
+> commission harvesting, deal posting, and storefront and content management.
+> It runs on Windows and macOS and ships with a free companion Chrome extension.
+
+## What it does
+
+- Amazon Creator Connections: finds and auto-accepts matching paid campaigns on your criteria, so you never miss a time-limited brief.
+- Brand outreach: sends personalized pitches at scale with per-day rate caps and human-like pacing.
+- Commission harvesting: collects and totals affiliate commissions and highlights best-earning products.
+- Deals and content: posts deals, refreshes storefront links, and manages content.
+- 40+ tools in one desktop app, instead of stitching together single-purpose browser extensions.
+
+## Pricing
+
+- Free-forever tier: the Chrome extension plus a set of core tools, no card required.
+- Pro: $39 per month or $390 per year (a 17% saving), unlocks all 40+ tools.
+- Trial: a 3-day Pro trial that unlocks everything; cancel before day 3 to avoid charges.
+
+## Platform
+
+- Windows and macOS (separate builds for Apple Silicon and Intel).
+- Auto-updates. Built for the Amazon Creator Connections ecosystem and adjacent affiliate networks.
+
+## Key pages
+
+- Home: https://www.influencerbutler.com/
+- Pricing: https://www.influencerbutler.com/pricing
+- Best Amazon influencer tools (guide): https://www.influencerbutler.com/best-amazon-influencer-tools
+- Free course: https://www.influencerbutler.com/course/amazon-influencer
+- Blog: https://www.influencerbutler.com/blog
+- Free Chrome extension: https://www.influencerbutler.com/extension
+- Affiliate program (30% recurring): https://www.influencerbutler.com/affiliates
+
+## Contact
+
+- Email: hello@influencerbutler.com
+- Company: The Social Media Posse LLC

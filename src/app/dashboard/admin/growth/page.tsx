@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Confetti from "./Confetti";
 import GaSection, { type GaResponse } from "./GaSection";
+import SearchSection, { type SearchResponse } from "./SearchSection";
 import GoalsSection from "./GoalsSection";
 import ChecklistSection from "./ChecklistSection";
 import MetricTile from "./MetricTile";
@@ -53,6 +54,9 @@ export default function AdminGrowthPage() {
   const [gaLoading, setGaLoading] = useState(true);
   const [gaRefreshing, setGaRefreshing] = useState(false);
   const [ga, setGa] = useState<GaResponse | null>(null);
+  const [searchLoading, setSearchLoading] = useState(true);
+  const [searchRefreshing, setSearchRefreshing] = useState(false);
+  const [search, setSearch] = useState<SearchResponse | null>(null);
   const [confettiBursts, setConfettiBursts] = useState(0);
 
   const isCurrentMonth = month === currentMonthKey();
@@ -96,6 +100,22 @@ export default function AdminGrowthPage() {
     }
   }, []);
 
+  const loadSearch = useCallback(async (refresh = false) => {
+    if (refresh) setSearchRefreshing(true);
+    try {
+      const res = await fetch(`/api/admin/growth/search${refresh ? "?refresh=1" : ""}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      setSearch((await res.json()) as SearchResponse);
+    } catch {
+      // Search panel just stays in its previous state
+    } finally {
+      setSearchLoading(false);
+      setSearchRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadMetrics();
   }, [loadMetrics]);
@@ -103,6 +123,10 @@ export default function AdminGrowthPage() {
   useEffect(() => {
     void loadGa();
   }, [loadGa]);
+
+  useEffect(() => {
+    void loadSearch();
+  }, [loadSearch]);
 
   const celebrate = useCallback(() => setConfettiBursts((n) => n + 1), []);
 
@@ -252,6 +276,13 @@ export default function AdminGrowthPage() {
         loading={gaLoading}
         refreshing={gaRefreshing}
         onRefresh={() => void loadGa(true)}
+      />
+
+      <SearchSection
+        data={search}
+        loading={searchLoading}
+        refreshing={searchRefreshing}
+        onRefresh={() => void loadSearch(true)}
       />
 
       <ChecklistSection month={month} isCurrentMonth={isCurrentMonth} onCelebrate={celebrate} />
