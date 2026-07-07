@@ -4,7 +4,44 @@ import {
   BRIDGE_STATUS_TTL_MS,
 } from "../shared/constants";
 import { log } from "../shared/log";
-import type { HudCommand, HudCommandResult, HudStatus } from "../transport/hud-commands";
+import type {
+  HudCommand,
+  HudCommandResult,
+  HudStatus,
+  PairResult,
+} from "../transport/hud-commands";
+
+// Where the pairing token + this extension install's stable client id live.
+// The client id is generated once and reused so re-pairing rotates the token
+// on the same identity rather than accumulating dead entries in the app.
+const TOKEN_KEY = "ib-bridge-token";
+const CLIENT_ID_KEY = "ib-bridge-client-id";
+
+async function getStored(key: string): Promise<string | null> {
+  try {
+    const out = await chrome.storage.local.get(key);
+    const value = out?.[key];
+    return typeof value === "string" && value ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getToken(): Promise<string | null> {
+  return getStored(TOKEN_KEY);
+}
+
+export async function getClientId(): Promise<string> {
+  const existing = await getStored(CLIENT_ID_KEY);
+  if (existing) return existing;
+  const id = crypto.randomUUID();
+  try {
+    await chrome.storage.local.set({ [CLIENT_ID_KEY]: id });
+  } catch {
+    // If storage is unavailable the id just won't persist; pairing can retry.
+  }
+  return id;
+}
 
 // Talks to the desktop app's loopback WebSocket bridge from the background
 // service worker (the content script cannot: an https Amazon page blocks
@@ -87,15 +124,36 @@ function probePort(port: number): Promise<HudStatus | null> {
 }
 
 export async function sendHudCommand(command: HudCommand): Promise<HudCommandResult> {
+  const token = await getToken();
+  if (!token) {
+    // No pairing yet: the panel should prompt the user to connect the app
+    // rather than show a "not running" error.
+    return { ok: false, needsPairing: true, message: "Connect the app to the extension first." };
+  }
+  let sawApp = false;
   for (const port of BRIDGE_PORTS) {
-    const result = await sendToPort(port, command);
-    if (result) return result;
+    const result = await sendToPort(port, command, token);
+    if (result) {
+      if (result.needsPairing) sawApp = true; // app answered but rejected the token
+      else return result;
+    }
   }
   cached = null; // nothing answered; refresh status next time
+  if (sawApp) {
+    return { ok: false, needsPairing: true, message: "The app no longer recognizes this extension. Reconnect it." };
+  }
   return { ok: false, message: "The Influencer Butler app is not running." };
 }
 
-function sendToPort(port: number, command: HudCommand): Promise<HudCommandResult | null> {
+// Command socket: authenticate with the stored token, then send the command.
+// Resolves null when nothing is listening on this port (so the caller tries the
+// next), a result on a real answer, or { needsPairing } when the app answered
+// but rejected the token.
+function sendToPort(
+  port: number,
+  command: HudCommand,
+  token: string,
+): Promise<HudCommandResult | null> {
   return new Promise((resolve) => {
     let socket: WebSocket;
     try {
@@ -116,7 +174,7 @@ function sendToPort(port: number, command: HudCommand): Promise<HudCommandResult
     const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
     socket.onopen = () => {
       try {
-        socket.send(JSON.stringify({ type: "command", command }));
+        socket.send(JSON.stringify({ type: "auth", token }));
       } catch {
         done(null);
       }
@@ -127,10 +185,19 @@ function sendToPort(port: number, command: HudCommand): Promise<HudCommandResult
           type?: string;
           ok?: boolean;
           message?: string;
+          needsPairing?: boolean;
         };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "command", command }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, needsPairing: true, message: frame.message });
+          return;
+        }
         if (frame.type === "command.result") {
           log("hud", `command ${command.type} -> ${frame.ok ? "ok" : "fail"}`);
-          done({ ok: frame.ok === true, message: frame.message });
+          done({ ok: frame.ok === true, message: frame.message, needsPairing: frame.needsPairing });
           return;
         }
       } catch {
@@ -141,4 +208,99 @@ function sendToPort(port: number, command: HudCommand): Promise<HudCommandResult
     socket.onerror = () => done(null);
     socket.onclose = () => done(null);
   });
+}
+
+// ── Pairing ────────────────────────────────────────────────────────────────
+// Two round trips driven from the popup: first ask the app to show a 6-digit
+// code (it pops the code in the HUD), then submit the code the user typed. On
+// success the token is persisted and every later command authenticates with it.
+
+export async function requestPairing(): Promise<PairResult> {
+  const clientId = await getClientId();
+  for (const port of BRIDGE_PORTS) {
+    const r = await pairRoundTrip(port, { type: "pair.request", clientId }, "pair.pending");
+    if (r) return r;
+  }
+  return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
+}
+
+export async function submitPairingCode(code: string): Promise<PairResult> {
+  const clientId = await getClientId();
+  for (const port of BRIDGE_PORTS) {
+    const r = await pairRoundTrip(port, { type: "pair", clientId, code }, "paired");
+    if (r) return r;
+  }
+  return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
+}
+
+// One pairing exchange on a single port. Resolves null when nothing answers on
+// this port; otherwise a PairResult. On a "paired" frame it persists the token.
+function pairRoundTrip(
+  port: number,
+  outbound: Record<string, unknown>,
+  successType: "pair.pending" | "paired",
+): Promise<PairResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const done = (value: PairResult | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 4);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify(outbound));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      let frame: { type?: string; token?: string; message?: string };
+      try {
+        frame = JSON.parse(String(event.data));
+      } catch {
+        done(null);
+        return;
+      }
+      if (frame.type === "pair.pending" && successType === "pair.pending") {
+        done({ ok: true, stage: "pending", message: frame.message });
+        return;
+      }
+      if (frame.type === "paired" && successType === "paired") {
+        void chrome.storage.local
+          .set({ [TOKEN_KEY]: String(frame.token || "") })
+          .then(() => done({ ok: true, stage: "paired" }))
+          .catch(() => done({ ok: true, stage: "paired" }));
+        return;
+      }
+      if (frame.type === "pair.error" || frame.type === "auth.error") {
+        done({ ok: false, stage: "error", message: frame.message });
+        return;
+      }
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+export async function unpair(): Promise<void> {
+  try {
+    await chrome.storage.local.remove(TOKEN_KEY);
+  } catch {
+    // best effort
+  }
 }

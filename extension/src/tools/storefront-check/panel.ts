@@ -10,7 +10,11 @@ import { enrichWithCreatorApi } from "./creator-enrich";
 import { buildCsv, downloadCsv, OVER_TAGGED_THRESHOLD } from "./csv";
 import { t } from "../../i18n";
 import { sendToBackground, type EnrichedProduct } from "../../shared/messages";
+import type { HudStatus, HudCommandResult } from "../../shared/messages";
 import type { Finding, StorefrontIssueFinding } from "../../transport/types";
+import type { RetagIssue, ProductRef } from "../../transport/hud-commands";
+import { getCache, loadFilters, membership } from "../../catalogue/cache";
+import type { HarvestedItem } from "./harvest";
 
 // How many issues of each kind to list in the panel. The lists scroll, but a
 // pathological storefront should not build tens of thousands of DOM nodes, so
@@ -236,6 +240,115 @@ function render(
     downloadCsv(`storefront-${creatorHandle()}-${now.slice(0, 10)}.csv`, buildCsv(result, details, enriched)),
   );
   nodes.exportRow.append(csvBtn);
+
+  // Desktop-app hand-offs. Only shown when the app is running and paired: send
+  // the flagged content to Retag Butler, and accept any Creator Connections /
+  // SPCC campaigns found across the storefront's products. Falls back silently
+  // to the CSV + dashboard sync above when the app is not connected.
+  void renderButlerActions(nodes.exportRow, {
+    untagged,
+    overTagged,
+    unavailable,
+    productAsins: [...uniqueProducts],
+    marketplace: location.host.replace(/^www\./, ""),
+  });
+}
+
+type ButlerActionInput = {
+  untagged: HarvestedItem[];
+  overTagged: HarvestedItem[];
+  unavailable: string[];
+  productAsins: string[];
+  marketplace: string;
+};
+
+async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionInput): Promise<void> {
+  const hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" });
+  if (!hud.connected) return; // app absent: CSV + dashboard sync are the path
+
+  const status = el("p", "note");
+
+  // Send flagged content + dead products to Retag Butler as a work queue.
+  const issues = buildRetagIssues(input);
+  if (issues.length > 0) {
+    const retagBtn = el("button", "btn secondary");
+    retagBtn.textContent = t().sfSendToRetag(issues.length);
+    retagBtn.addEventListener("click", () => {
+      retagBtn.disabled = true;
+      status.textContent = t().sfSendingToRetag;
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "retag.push", issues },
+      }).then((r) => {
+        retagBtn.disabled = false;
+        status.textContent = r.message ?? (r.ok ? t().sfSentToApp : t().sfCouldNotReachApp);
+      });
+    });
+    exportRow.append(retagBtn);
+  }
+
+  // Accept every Creator Connections / SPCC campaign found across the products.
+  const campaignItems = await buildCampaignAcceptItems(input.productAsins, input.marketplace);
+  if (campaignItems.length > 0) {
+    const acceptBtn = el("button", "btn secondary");
+    acceptBtn.textContent = t().sfAcceptAllCampaigns(campaignItems.length);
+    acceptBtn.addEventListener("click", () => {
+      acceptBtn.disabled = true;
+      status.textContent = t().sfAcceptingCampaigns;
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "campaign.accept.batch", items: campaignItems },
+      }).then((r) => {
+        acceptBtn.disabled = false;
+        status.textContent = r.message ?? (r.ok ? t().sfSentToApp : t().sfCouldNotReachApp);
+      });
+    });
+    exportRow.append(acceptBtn);
+  }
+
+  if (issues.length > 0 || campaignItems.length > 0) exportRow.append(status);
+}
+
+// Map the three flagged sets into retag-butler rows. Untagged and over-tagged
+// carry a real content url/type/title; unavailable products are keyed by their
+// /dp/ url so they still get a stable work-queue row.
+function buildRetagIssues(input: ButlerActionInput): RetagIssue[] {
+  const issues: RetagIssue[] = [];
+  for (const item of input.untagged) {
+    if (!item.url) continue;
+    issues.push({ contentUrl: item.url, contentType: item.type, contentTitle: item.title, issueType: "untagged" });
+  }
+  for (const item of input.overTagged) {
+    if (!item.url) continue;
+    issues.push({ contentUrl: item.url, contentType: item.type, contentTitle: item.title, issueType: "over_tagged" });
+  }
+  for (const asin of input.unavailable) {
+    issues.push({
+      contentUrl: `${location.origin}/dp/${asin}`,
+      contentType: "video",
+      contentTitle: asin,
+      issueType: "unavailable_product",
+    });
+  }
+  return issues;
+}
+
+// Check the storefront's tagged products against the downloaded CC/SPCC
+// membership filters. A hit means "campaign likely available"; the app confirms
+// on accept. Prefers CC when a product hits both filters.
+async function buildCampaignAcceptItems(
+  asins: string[],
+  marketplace: string,
+): Promise<Array<{ kind: "cc" | "spcc"; product: ProductRef }>> {
+  const loaded = loadFilters(await getCache());
+  if (!loaded.cc && !loaded.spcc) return [];
+  const items: Array<{ kind: "cc" | "spcc"; product: ProductRef }> = [];
+  for (const asin of asins) {
+    const flags = membership(loaded, asin);
+    if (flags.cc) items.push({ kind: "cc", product: { asin, marketplace } });
+    else if (flags.spcc) items.push({ kind: "spcc", product: { asin, marketplace } });
+  }
+  return items;
 }
 
 // Renders one collapsible-in-spirit issue block: a heading, then up to `cap`

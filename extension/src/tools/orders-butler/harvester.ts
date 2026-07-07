@@ -8,8 +8,14 @@ import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { getState, patchSettings, patchState } from "../../storage/store";
 import { sendToBackground } from "../../shared/messages";
+import type { HudStatus, HudCommandResult } from "../../shared/messages";
 import type { Finding, OrderFinding } from "../../transport/types";
+import type { ProductRef } from "../../transport/hud-commands";
 import { log } from "../../shared/log";
+
+// Chunk size for the batched Content Butler push, so one huge history does not
+// arrive as a single multi-thousand-item command.
+const CONTENT_BUTLER_CHUNK = 200;
 
 // Orders Butler, in the browser. This is the extension counterpart to the
 // desktop runner: it walks the signed-in account's Amazon order history page
@@ -78,6 +84,11 @@ export function initOrdersButler(marketplace: string): void {
   const resultsList = el("ul", "list");
   section.append(resultsList);
 
+  // Holds the "Send N products to Content Butler" button after a harvest, when
+  // the desktop app is connected.
+  const actionsRow = el("div", "row");
+  section.append(actionsRow);
+
   // Reflect the saved scope and persist changes so the popup and the panel
   // agree on one setting.
   void getState().then((s) => {
@@ -109,7 +120,8 @@ export function initOrdersButler(marketplace: string): void {
     scopeSelect.disabled = true;
     abort = new AbortController();
     const scope = scopeSelect.value as HarvestScope;
-    void runHarvest(scope, marketplace, progress, resultsList, waitForResume, abort.signal)
+    actionsRow.replaceChildren();
+    void runHarvest(scope, marketplace, progress, resultsList, actionsRow, waitForResume, abort.signal)
       .catch((error) => {
         if (!abort?.signal.aborted) log("orders-butler", "harvest failed", error);
       })

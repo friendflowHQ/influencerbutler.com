@@ -4,6 +4,7 @@ import {
   type FeedbackInput,
   type FeedbackResult,
   type PageStatus,
+  type PairResult,
   type SignInResult,
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
@@ -20,9 +21,75 @@ async function init(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
-  await Promise.all([renderPageStatus(), renderAccount(), renderSettings()]);
+  await Promise.all([renderPageStatus(), renderAccount(), renderAppBridge(), renderSettings()]);
   wireFeedback();
   wireOptions();
+}
+
+// Local storage key the background's hud-bridge writes the pairing token to.
+// Kept in sync with TOKEN_KEY in src/background/hud-bridge.ts.
+const BRIDGE_TOKEN_KEY = "ib-bridge-token";
+
+async function isPairedLocal(): Promise<boolean> {
+  try {
+    const out = await chrome.storage.local.get(BRIDGE_TOKEN_KEY);
+    const token = out?.[BRIDGE_TOKEN_KEY];
+    return typeof token === "string" && token.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+// The "Desktop app" card: a two-step pairing flow. Connect asks the running app
+// to show a 6-digit code (it pops it in the app), then the user types the code
+// here to pair. Once paired, the token is stored and commands authenticate with
+// it; Disconnect forgets it.
+async function renderAppBridge(): Promise<void> {
+  const disconnected = byId("app-bridge-disconnected");
+  const pairing = byId("app-bridge-pairing");
+  const connected = byId("app-bridge-connected");
+  const status = byId("app-pair-status");
+
+  const show = (state: "disconnected" | "pairing" | "connected") => {
+    disconnected.hidden = state !== "disconnected";
+    pairing.hidden = state !== "pairing";
+    connected.hidden = state !== "connected";
+  };
+  show((await isPairedLocal()) ? "connected" : "disconnected");
+
+  byId<HTMLButtonElement>("app-connect-btn").onclick = async () => {
+    status.textContent = t().appRequestingCode;
+    const r = await sendToBackground<PairResult>({ kind: "REQUEST_PAIRING" });
+    if (r.ok && r.stage === "pending") {
+      show("pairing");
+      status.textContent = t().appCodeShown;
+      byId<HTMLInputElement>("app-code-input").focus();
+    } else {
+      status.textContent = r.message ?? t().appNotRunning;
+    }
+  };
+
+  byId<HTMLButtonElement>("app-pair-submit").onclick = async () => {
+    const code = byId<HTMLInputElement>("app-code-input").value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      status.textContent = t().appCodeInvalid;
+      return;
+    }
+    status.textContent = t().appPairing;
+    const r = await sendToBackground<PairResult>({ kind: "SUBMIT_PAIRING_CODE", code });
+    if (r.ok && r.stage === "paired") {
+      show("connected");
+      status.textContent = t().appPaired;
+    } else {
+      status.textContent = r.message ?? t().appPairFailed;
+    }
+  };
+
+  byId<HTMLButtonElement>("app-unpair-btn").onclick = async () => {
+    await sendToBackground({ kind: "UNPAIR_APP" });
+    show("disconnected");
+    status.textContent = "";
+  };
 }
 
 // The gear opens the full API Integrations settings page.

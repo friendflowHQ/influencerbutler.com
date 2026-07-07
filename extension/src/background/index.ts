@@ -7,7 +7,7 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
-import { getHudStatus, sendHudCommand } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
@@ -95,6 +95,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SEND_HUD_COMMAND":
       void sendHudCommand(message.command).then(sendResponse);
+      return true;
+    case "REQUEST_PAIRING":
+      void requestPairing().then(sendResponse);
+      return true;
+    case "SUBMIT_PAIRING_CODE":
+      void submitPairingCode(message.code).then(sendResponse);
+      return true;
+    case "UNPAIR_APP":
+      void unpair().then(() => sendResponse(undefined));
       return true;
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
