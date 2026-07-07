@@ -8,8 +8,14 @@ import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { getState, patchSettings, patchState } from "../../storage/store";
 import { sendToBackground } from "../../shared/messages";
+import type { HudStatus, HudCommandResult } from "../../shared/messages";
 import type { Finding, OrderFinding } from "../../transport/types";
+import type { ProductRef } from "../../transport/hud-commands";
 import { log } from "../../shared/log";
+
+// Chunk size for the batched Content Butler push, so one huge history does not
+// arrive as a single multi-thousand-item command.
+const CONTENT_BUTLER_CHUNK = 200;
 
 // Orders Butler, in the browser. This is the extension counterpart to the
 // desktop runner: it walks the signed-in account's Amazon order history page
@@ -78,6 +84,11 @@ export function initOrdersButler(marketplace: string): void {
   const resultsList = el("ul", "list");
   section.append(resultsList);
 
+  // Holds the "Send N products to Content Butler" button after a harvest, when
+  // the desktop app is connected.
+  const actionsRow = el("div", "row");
+  section.append(actionsRow);
+
   // Reflect the saved scope and persist changes so the popup and the panel
   // agree on one setting.
   void getState().then((s) => {
@@ -109,7 +120,8 @@ export function initOrdersButler(marketplace: string): void {
     scopeSelect.disabled = true;
     abort = new AbortController();
     const scope = scopeSelect.value as HarvestScope;
-    void runHarvest(scope, marketplace, progress, resultsList, waitForResume, abort.signal)
+    actionsRow.replaceChildren();
+    void runHarvest(scope, marketplace, progress, resultsList, actionsRow, waitForResume, abort.signal)
       .catch((error) => {
         if (!abort?.signal.aborted) log("orders-butler", "harvest failed", error);
       })
@@ -126,6 +138,7 @@ async function runHarvest(
   marketplace: string,
   progress: HTMLElement,
   resultsList: HTMLElement,
+  actionsRow: HTMLElement,
   waitForResume: () => Promise<void>,
   signal: AbortSignal,
 ): Promise<void> {
@@ -143,6 +156,8 @@ async function runHarvest(
   let itemCount = 0;
   let newestOrderId: string | null = null;
   let reachedCursor = false;
+  // Unique harvested products (deduped by ASIN) for the Content Butler push.
+  const products = new Map<string, ProductRef>();
 
   const currentYear = new Date().getFullYear();
 
@@ -205,6 +220,15 @@ async function runHarvest(
           }).catch(() => {
             // background may be waking; the queue is client-side, next sync resends
           });
+          if (item.asin && !products.has(item.asin)) {
+            products.set(item.asin, {
+              asin: item.asin,
+              marketplace,
+              title: item.title.slice(0, 200),
+              priceCents: item.priceCents,
+              currency: "USD",
+            });
+          }
           itemCount += 1;
         }
       }
@@ -232,6 +256,51 @@ async function runHarvest(
       : orderCount > 0
         ? t().harvestDone(itemCount, orderCount)
         : t().harvestNoOrders;
+
+  // Offer a one-click push of the harvested products into the desktop Content
+  // Butler planner, when the app is connected. The dashboard sync above always
+  // runs regardless; this is the extra desktop hand-off.
+  if (products.size > 0) {
+    void renderContentButlerAction(actionsRow, [...products.values()]);
+  }
+}
+
+async function renderContentButlerAction(actionsRow: HTMLElement, products: ProductRef[]): Promise<void> {
+  const hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" });
+  if (!hud.connected) return; // app absent: dashboard sync is the path
+
+  const status = el("p", "note");
+  const btn = el("button", "btn secondary");
+  btn.textContent = t().obSendToContentButler(products.length);
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    status.textContent = t().obSendingToContentButler;
+    void pushProductsToContentButler(products).then((result) => {
+      btn.disabled = false;
+      status.textContent = result.ok
+        ? t().obSentToContentButler(result.sent)
+        : (result.message ?? t().couldNotReachApp);
+    });
+  });
+  actionsRow.replaceChildren(btn, status);
+}
+
+// Push the products in chunks so one huge history is not a single command.
+// Stops on the first failed chunk and reports how many made it.
+async function pushProductsToContentButler(
+  products: ProductRef[],
+): Promise<{ ok: boolean; sent: number; message?: string }> {
+  let sent = 0;
+  for (let i = 0; i < products.length; i += CONTENT_BUTLER_CHUNK) {
+    const chunk = products.slice(i, i + CONTENT_BUTLER_CHUNK);
+    const r = await sendToBackground<HudCommandResult>({
+      kind: "SEND_HUD_COMMAND",
+      command: { type: "content.push.batch", products: chunk },
+    });
+    if (!r.ok) return { ok: false, sent, message: r.message };
+    sent += chunk.length;
+  }
+  return { ok: true, sent };
 }
 
 // Parse an order-history document into orders and their line items. Defensive

@@ -2,12 +2,12 @@ import { CATALOGUE_BASE, CATALOGUE_STALE_MS } from "../shared/constants";
 import { getCache, setFilter, versionOf, type CatalogueKind } from "../catalogue/cache";
 import { log } from "../shared/log";
 
-// Refreshes the CC / SPCC membership filters from the site, at most daily.
-// Sends If-None-Match with the cached version so an unchanged filter costs a
-// 304 and no re-download. Runs from the background worker (content scripts do
-// not call our API directly).
+// Refreshes the CC / SPCC / deals membership filters from the site, at most
+// daily. Sends If-None-Match with the cached version so an unchanged filter
+// costs a 304 and no re-download. Runs from the background worker (content
+// scripts do not call our API directly).
 
-const KINDS: CatalogueKind[] = ["cc", "spcc"];
+const KINDS: CatalogueKind[] = ["cc", "spcc", "deals"];
 
 export async function refreshCatalogues(): Promise<void> {
   const cache = await getCache();

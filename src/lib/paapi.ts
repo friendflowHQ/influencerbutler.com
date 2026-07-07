@@ -165,6 +165,7 @@ export type PaapiCreds = {
 
 export type EnrichedItem = {
   marketplace: string;
+  asin: string | null;
   found: boolean;
   title: string | null;
   brand: string | null;
@@ -180,9 +181,15 @@ export type EnrichedItem = {
   error: string | null;
 };
 
-function emptyItem(marketplace: string, error: string | null, found = false): EnrichedItem {
+function emptyItem(
+  marketplace: string,
+  error: string | null,
+  found = false,
+  asin: string | null = null,
+): EnrichedItem {
   return {
     marketplace,
+    asin,
     found,
     title: null,
     brand: null,
@@ -199,43 +206,32 @@ function emptyItem(marketplace: string, error: string | null, found = false): En
   };
 }
 
-/**
- * Maps a raw PA-API GetItemsResponse into a flat EnrichedItem for one
- * marketplace. Exported for unit testing against a sample payload.
- */
-export function normalizeGetItems(marketplaceHost: string, raw: unknown): EnrichedItem {
-  const body = raw as {
-    Errors?: Array<{ Code?: string; Message?: string }>;
-    ItemsResult?: { Items?: Array<Record<string, unknown>> };
+type RawItem = {
+  ASIN?: string;
+  DetailPageURL?: string;
+  ItemInfo?: {
+    Title?: { DisplayValue?: string };
+    ByLineInfo?: { Brand?: { DisplayValue?: string }; Manufacturer?: { DisplayValue?: string } };
+    Classifications?: { Binding?: { DisplayValue?: string } };
   };
-  const items = body?.ItemsResult?.Items;
-  if (!items || items.length === 0) {
-    const err = body?.Errors?.[0];
-    // NoResults / ItemNotAccessible means the ASIN is not on this marketplace.
-    const notFound = !err || err.Code === "NoResults" || err.Code === "ItemNotAccessible";
-    return emptyItem(marketplaceHost, notFound ? null : err?.Message ?? err?.Code ?? "PA-API error", false);
-  }
-  const item = items[0] as {
-    DetailPageURL?: string;
-    ItemInfo?: {
-      Title?: { DisplayValue?: string };
-      ByLineInfo?: { Brand?: { DisplayValue?: string }; Manufacturer?: { DisplayValue?: string } };
-      Classifications?: { Binding?: { DisplayValue?: string } };
-    };
-    Images?: { Primary?: { Medium?: { URL?: string } } };
-    Offers?: {
-      Listings?: Array<{
-        Price?: { DisplayAmount?: string; Amount?: number; Currency?: string };
-        Availability?: { Message?: string };
-        DeliveryInfo?: { IsPrimeEligible?: boolean };
-      }>;
-    };
-    BrowseNodeInfo?: { BrowseNodes?: Array<{ DisplayName?: string }> };
+  Images?: { Primary?: { Medium?: { URL?: string } } };
+  Offers?: {
+    Listings?: Array<{
+      Price?: { DisplayAmount?: string; Amount?: number; Currency?: string };
+      Availability?: { Message?: string };
+      DeliveryInfo?: { IsPrimeEligible?: boolean };
+    }>;
   };
+  BrowseNodeInfo?: { BrowseNodes?: Array<{ DisplayName?: string }> };
+};
+
+// Flatten one raw PA-API item into an EnrichedItem for the given marketplace.
+function normalizeItem(marketplaceHost: string, item: RawItem): EnrichedItem {
   const listing = item.Offers?.Listings?.[0];
   const priceAmount = listing?.Price?.Amount;
   return {
     marketplace: marketplaceHost,
+    asin: item.ASIN ? item.ASIN.toUpperCase() : null,
     found: true,
     title: item.ItemInfo?.Title?.DisplayValue ?? null,
     brand:
@@ -255,28 +251,85 @@ export function normalizeGetItems(marketplaceHost: string, raw: unknown): Enrich
   };
 }
 
+type RawGetItems = {
+  Errors?: Array<{ Code?: string; Message?: string }>;
+  ItemsResult?: { Items?: RawItem[] };
+};
+
+/**
+ * Maps a raw PA-API GetItemsResponse into a flat EnrichedItem for one
+ * marketplace (single-ASIN case). Exported for unit testing against a sample
+ * payload.
+ */
+export function normalizeGetItems(marketplaceHost: string, raw: unknown): EnrichedItem {
+  const body = raw as RawGetItems;
+  const items = body?.ItemsResult?.Items;
+  if (!items || items.length === 0) {
+    const err = body?.Errors?.[0];
+    // NoResults / ItemNotAccessible means the ASIN is not on this marketplace.
+    const notFound = !err || err.Code === "NoResults" || err.Code === "ItemNotAccessible";
+    return emptyItem(marketplaceHost, notFound ? null : err?.Message ?? err?.Code ?? "PA-API error", false);
+  }
+  return normalizeItem(marketplaceHost, items[0]);
+}
+
+/**
+ * Batch variant: a GetItems call for up to 10 ASINs returns one EnrichedItem
+ * per requested ASIN (order preserved). ASINs PA-API did not return (not on
+ * this marketplace, or a top-level Errors response) come back as not-found rows
+ * carrying their requested ASIN, so callers can always correlate by ASIN.
+ * Exported for unit testing against a sample payload.
+ */
+export function normalizeGetItemsBatch(
+  marketplaceHost: string,
+  raw: unknown,
+  requestedAsins: string[],
+): EnrichedItem[] {
+  const body = raw as RawGetItems;
+  const items = body?.ItemsResult?.Items ?? [];
+  const byAsin = new Map<string, EnrichedItem>();
+  for (const item of items) {
+    const row = normalizeItem(marketplaceHost, item);
+    if (row.asin) byAsin.set(row.asin, row);
+  }
+  // A top-level error with no items applies to the whole batch (bad partner
+  // tag, throttling, etc.); NoResults just means the ASINs are not here.
+  const err = items.length === 0 ? body?.Errors?.[0] : undefined;
+  const notFound = !err || err.Code === "NoResults" || err.Code === "ItemNotAccessible";
+  const batchError = notFound ? null : err?.Message ?? err?.Code ?? "PA-API error";
+  return requestedAsins.map(
+    (asin) => byAsin.get(asin) ?? emptyItem(marketplaceHost, batchError, false, asin),
+  );
+}
+
 // YYYYMMDDTHHMMSSZ from a Date (UTC), the format SigV4's x-amz-date expects.
 export function amzDate(now: Date): string {
   return now.toISOString().replace(/[:-]|\.\d{3}/g, "");
 }
 
+// PA-API GetItems accepts at most 10 ItemIds per request.
+export const GET_ITEMS_MAX = 10;
+
 /**
- * Calls PA-API GetItems for a single ASIN on one marketplace. Network and
- * PA-API errors are captured onto the returned EnrichedItem rather than thrown,
- * so a single bad marketplace never fails the whole enrichment.
+ * Calls PA-API GetItems for up to 10 ASINs on one marketplace and returns one
+ * EnrichedItem per requested ASIN (order preserved, correlated by ASIN).
+ * Network and PA-API errors are captured onto the returned rows rather than
+ * thrown, so a single bad marketplace never fails the whole enrichment.
  */
 export async function getItems(
   creds: PaapiCreds,
-  asin: string,
+  asins: string[],
   now: Date = new Date(),
-): Promise<EnrichedItem> {
+): Promise<EnrichedItem[]> {
+  const ids = asins.slice(0, GET_ITEMS_MAX);
   const info = marketplaceInfo(creds.host);
-  if (!info) return emptyItem(creds.host, "Unsupported marketplace");
+  if (!info) return ids.map((a) => emptyItem(creds.host, "Unsupported marketplace", false, a));
+  if (ids.length === 0) return [];
 
   const path = "/paapi5/getitems";
   const target = "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.GetItems";
   const payload = JSON.stringify({
-    ItemIds: [asin],
+    ItemIds: ids,
     ItemIdType: "ASIN",
     Resources: PAAPI_RESOURCES,
     PartnerTag: creds.partnerTag,
@@ -309,10 +362,10 @@ export async function getItems(
     });
     const json = await res.json().catch(() => null);
     if (!res.ok && !json) {
-      return emptyItem(creds.host, `PA-API HTTP ${res.status}`);
+      return ids.map((a) => emptyItem(creds.host, `PA-API HTTP ${res.status}`, false, a));
     }
-    return normalizeGetItems(creds.host, json);
+    return normalizeGetItemsBatch(creds.host, json, ids);
   } catch {
-    return emptyItem(creds.host, "Network error reaching PA-API");
+    return ids.map((a) => emptyItem(creds.host, "Network error reaching PA-API", false, a));
   }
 }

@@ -50,7 +50,7 @@ export function renderVideoCounts(
     summary.textContent = t().videosTotalVia(result.counts.total, result.strategy === "json");
     section.append(summary);
 
-    renderInfluencerList(section, result.videos);
+    renderInfluencerList(section, result.videos, result.counts.influencer);
   }
 
   // Deep Scan is only worth offering when Amazon claims more videos than we
@@ -60,13 +60,21 @@ export function renderVideoCounts(
   }
 }
 
-function renderInfluencerList(section: HTMLElement, videos: CarouselVideo[]): void {
+function renderInfluencerList(
+  section: HTMLElement,
+  videos: CarouselVideo[],
+  influencerCount: number,
+): void {
   const influencers = videos.filter(
     (v) => v.creatorType === "influencer" && (v.creatorName || v.title),
   );
   if (influencers.length === 0) return;
-  const shown = influencers.slice(0, 6);
-  const content = collapsible(section, t().influencerVideosLabel(shown.length), { open: true });
+  // Label with the true influencer count so the header matches the chip (the
+  // old code labelled with the shown slice, making it look like videos were
+  // missing). Show them all, with a high safety cap for the rare huge rail.
+  const CAP = 25;
+  const shown = influencers.slice(0, CAP);
+  const content = collapsible(section, t().influencerVideosLabel(influencerCount), { open: true });
   const list = el("ul", "list");
   for (const video of shown) {
     const item = el("li");
@@ -75,6 +83,9 @@ function renderInfluencerList(section: HTMLElement, videos: CarouselVideo[]): vo
     list.append(item);
   }
   content.append(list);
+  if (influencers.length > CAP) {
+    content.append(el("p", "note", t().influencerVideosMore(influencers.length - CAP)));
+  }
 }
 
 function renderDeepScan(

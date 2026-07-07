@@ -1,5 +1,6 @@
 import { getShadowRoot } from "./host";
 import { t } from "../i18n";
+import { sendToBackground } from "../shared/messages";
 import logoUrl from "../../static/icons/icon-48.png";
 
 // The floating panel is shared by every tool on a page: each tool adds a
@@ -17,9 +18,10 @@ export function getPanel(title: string): HTMLElement {
   dot.alt = "";
   const titleEl = el("span", "title");
   titleEl.textContent = title;
+  const gear = gearButton();
   const chev = el("span", "chev");
   chev.textContent = t().panelChevronHide;
-  header.append(dot, titleEl, chev);
+  header.append(dot, titleEl, gear, chev);
   header.addEventListener("click", () => {
     panel?.classList.toggle("collapsed");
     chev.textContent = panel?.classList.contains("collapsed") ? t().panelChevronShow : t().panelChevronHide;
@@ -28,6 +30,27 @@ export function getPanel(title: string): HTMLElement {
   panel.append(header, body);
   root.append(panel);
   return body;
+}
+
+// The gear in the header opens the full settings/options page (OpenAI key,
+// affiliate + deeplink connections, and every other integration). It sits in
+// the header but must not toggle the panel, so its click is stopped short.
+function gearButton(): HTMLButtonElement {
+  const btn = el("button", "gear") as HTMLButtonElement;
+  btn.type = "button";
+  btn.title = t().panelSettings;
+  btn.setAttribute("aria-label", t().panelSettings);
+  btn.innerHTML =
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="12" cy="12" r="3"></circle>' +
+    '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>' +
+    "</svg>";
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    void sendToBackground({ kind: "OPEN_OPTIONS" });
+  });
+  return btn;
 }
 
 export function addSection(heading: string, info?: string): HTMLElement {

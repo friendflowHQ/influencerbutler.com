@@ -5,6 +5,12 @@ import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
 import type { AuthStatus, HudCommandResult, HudStatus } from "../../shared/messages";
 import type { ProductRef, HudCommand } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
+import { getCache, loadFilters, membership } from "../../catalogue/cache";
+
+// Which campaigns the local CC/SPCC catalogue says this product has. Drives
+// whether the Accept buttons render at all: no point offering to accept (and
+// having the app open a browser) for a product with no campaign.
+type CampaignFlags = { cc: boolean; spcc: boolean };
 
 // "Send to your butler app" section. When the desktop app is running, its
 // buttons push the current product straight into a workspace (Daily Deals,
@@ -24,13 +30,25 @@ export function renderHudActions(signals: ProductSignals): void {
   void Promise.all([
     sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
-  ]).then(([hud, auth]) => {
+    campaignFlagsFor(signals.asin),
+  ]).then(([hud, auth, flags]) => {
     if (hud.connected) {
-      renderConnected(body, status, product, hud);
+      renderConnected(body, status, product, hud, flags);
     } else {
       renderUpsell(body, auth);
     }
   });
+}
+
+// Local, zero-cost CC/SPCC membership check against the downloaded bloom
+// filters. Degrades to "no campaigns" if the catalogue has not been downloaded.
+async function campaignFlagsFor(asin: string): Promise<CampaignFlags> {
+  try {
+    const flags = membership(loadFilters(await getCache()), asin);
+    return { cc: flags.cc, spcc: flags.spcc };
+  } catch {
+    return { cc: false, spcc: false };
+  }
 }
 
 function renderConnected(
@@ -38,6 +56,7 @@ function renderConnected(
   status: HTMLElement,
   product: ProductRef,
   hud: HudStatus,
+  flags: CampaignFlags,
 ): void {
   body.replaceChildren();
 
@@ -77,18 +96,6 @@ function renderConnected(
     run({ type: "content.push", product }, t().sendingContent),
   );
 
-  const ccBtn = el("button", "btn secondary");
-  ccBtn.textContent = t().acceptCc;
-  ccBtn.addEventListener("click", () =>
-    run({ type: "campaign.accept", kind: "cc", product }, t().checkingCc),
-  );
-
-  const spccBtn = el("button", "btn secondary");
-  spccBtn.textContent = t().acceptSpcc;
-  spccBtn.addEventListener("click", () =>
-    run({ type: "campaign.accept", kind: "spcc", product }, t().checkingSpcc),
-  );
-
   const collabBtn = el("button", "btn secondary");
   collabBtn.textContent = t().addToCollab;
   collabBtn.addEventListener("click", () =>
@@ -97,7 +104,29 @@ function renderConnected(
 
   const grid = el("div", "row");
   grid.style.flexWrap = "wrap";
-  grid.append(contentBtn, ccBtn, spccBtn, collabBtn);
+  grid.append(contentBtn);
+
+  // Accept buttons only appear when the local CC/SPCC catalogue says this
+  // product actually has a campaign, so we never ask the app to open a browser
+  // for a product with nothing to accept.
+  if (flags.cc) {
+    const ccBtn = el("button", "btn secondary");
+    ccBtn.textContent = t().acceptCc;
+    ccBtn.addEventListener("click", () =>
+      run({ type: "campaign.accept", kind: "cc", product }, t().checkingCc),
+    );
+    grid.append(ccBtn);
+  }
+  if (flags.spcc) {
+    const spccBtn = el("button", "btn secondary");
+    spccBtn.textContent = t().acceptSpcc;
+    spccBtn.addEventListener("click", () =>
+      run({ type: "campaign.accept", kind: "spcc", product }, t().checkingSpcc),
+    );
+    grid.append(spccBtn);
+  }
+
+  grid.append(collabBtn);
   body.append(grid);
 
   const note = el("p", "note");

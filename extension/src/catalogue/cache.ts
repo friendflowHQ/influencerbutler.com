@@ -4,7 +4,7 @@ import { bloomHas, decodeBits, type LoadedFilter } from "./bloom";
 // key (separate from the main extension state so it stays self-contained).
 // The background refreshes them daily; content scripts read and query locally.
 
-export type CatalogueKind = "cc" | "spcc";
+export type CatalogueKind = "cc" | "spcc" | "deals";
 
 type StoredFilter = {
   version: string;
@@ -38,7 +38,7 @@ export function versionOf(cache: CatalogueCache, kind: CatalogueKind): string | 
 // via loadFilters() and reuse.
 export function loadFilters(cache: CatalogueCache): Partial<Record<CatalogueKind, LoadedFilter>> {
   const out: Partial<Record<CatalogueKind, LoadedFilter>> = {};
-  for (const kind of ["cc", "spcc"] as const) {
+  for (const kind of ["cc", "spcc", "deals"] as const) {
     const f = cache[kind];
     if (f) out[kind] = { m: f.m, k: f.k, bits: decodeBits(f.bitsBase64) };
   }
@@ -52,5 +52,6 @@ export function membership(
   return {
     cc: loaded.cc ? bloomHas(loaded.cc, asin) : false,
     spcc: loaded.spcc ? bloomHas(loaded.spcc, asin) : false,
+    deals: loaded.deals ? bloomHas(loaded.deals, asin) : false,
   };
 }

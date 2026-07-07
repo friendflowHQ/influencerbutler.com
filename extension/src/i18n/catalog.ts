@@ -12,6 +12,7 @@ export interface Dict {
   // Shared panel chrome
   panelChevronHide: string;
   panelChevronShow: string;
+  panelSettings: string;
   copy: string;
   copied: string;
 
@@ -134,6 +135,7 @@ export interface Dict {
   videosTotalVia: (total: number, viaPageData: boolean) => string;
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
+  influencerVideosMore: (n: number) => string;
 
   // Video competition: Deep Scan (harvest every video)
   deepScan: string;
@@ -186,6 +188,13 @@ export interface Dict {
   kvViewsForSales: string;
   kvProfitPerMonth: string;
   notApplicable: string;
+  bePurchasedHeading: string;
+  bePurchasedNote: string;
+  beTimeHeading: string;
+  beTimeNote: string;
+  beAdjustAssumptions: string;
+  kvPurchasePrice: string;
+  kvTotalToEarnBack: string;
 
   // Storefront checkup panel
   storefrontCheckup: string;
@@ -193,6 +202,9 @@ export interface Dict {
   sfDeepContent: string;
   sfCheckAvailability: string;
   sfParentAsins: string;
+  sfCreatorApiEnrich: string;
+  sfEnrichingProducts: (done: number, total: number) => string;
+  sfCreatorApiNote: string;
   sfCheckButton: string;
   sfStop: string;
   sfRescan: string;
@@ -216,6 +228,12 @@ export interface Dict {
   sfNoTaggedEarns: string;
   sfUnavailableProduct: (asin: string) => string;
   sfTaggedUnavailable: string;
+  sfUntaggedHeading: (n: number) => string;
+  sfOverTaggedHeading: (n: number) => string;
+  sfUnavailableHeading: (n: number) => string;
+  sfOverTaggedCount: (n: number) => string;
+  sfOverTaggedDetail: string;
+  sfAndMore: (n: number) => string;
   sfNoIssues: string;
   sfExportCsv: string;
   sfOpen: string;
@@ -263,12 +281,27 @@ export interface Dict {
   dateUnknown: string;
   plusMore: (n: number) => string;
 
+  // Orders Butler: update influencer video counts for ordered products
+  updateVideoCounts: string;
+  updateVideoCountsIntro: string;
+  updateVideoCountsAgain: string;
+  countPreparing: string;
+  countChecking: (index: number, total: number, title: string) => string;
+  countDone: (updated: number, noInfluencer: number) => string;
+  countStopped: (updated: number) => string;
+  countNoOrders: string;
+  countNoInfluencer: string;
+  countInfluencerN: (n: number) => string;
+  countPending: string;
+
   // Campaigns panel
   campaigns: string;
   noCampaign: string;
   ccAvailable: string;
   spccAvailable: string;
   campaignAcceptNote: string;
+  dealAvailable: string;
+  dealPushNote: string;
 
   // Send to app (HUD) panel
   sendToApp: string;
@@ -290,11 +323,56 @@ export interface Dict {
   ctaOpenApp: string;
   ctaStartTrial: string;
   toolsAlwaysFree: string;
+
+  // Desktop-app hand-offs: storefront -> Retag Butler + batch campaign accept,
+  // orders -> Content Butler planner, and the popup pairing flow.
+  sfSendToRetag: (n: number) => string;
+  sfSendingToRetag: string;
+  sfAcceptAllCampaigns: (n: number) => string;
+  sfAcceptingCampaigns: string;
+  obSendToContentButler: (n: number) => string;
+  obSendingToContentButler: string;
+  obSentToContentButler: (n: number) => string;
+  appBridgeHeading: string;
+  appBridgeBlurb: string;
+  appConnect: string;
+  appEnterCode: string;
+  appCodePlaceholder: string;
+  appPairSubmit: string;
+  appConnected: string;
+  appUnpair: string;
+  appRequestingCode: string;
+  appCodeShown: string;
+  appNotRunning: string;
+  appCodeInvalid: string;
+  appPairing: string;
+  appPaired: string;
+  appPairFailed: string;
+
+  // Re-engagement nudges (day-1 Facebook group, day-3 free desktop app).
+  // Shown both as an OS notification and as an in-page modal.
+  nudgeCloseLabel: string;
+  nudgeMaybeLater: string;
+  nudgeFbNotifTitle: string;
+  nudgeFbNotifBody: string;
+  nudgeFbTitle: string;
+  nudgeFbBody: string;
+  nudgeFbJoin: string;
+  nudgeAppNotifTitle: string;
+  nudgeAppNotifBody: string;
+  nudgeAppTitle: string;
+  nudgeAppBody: string;
+  nudgeAppFree: string;
+  nudgeAppDownloadWindows: string;
+  nudgeAppDownloadMac: string;
+  nudgeAppDownloadGeneric: string;
+  nudgeAppIntelMac: string;
 }
 
 const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
+  panelSettings: "Settings",
   copy: "Copy",
   copied: "Copied",
 
@@ -417,6 +495,7 @@ const en: Dict = {
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
+  influencerVideosMore: (n) => `+${n} more`,
 
   deepScan: "Deep Scan: harvest every video",
   deepScanIntro:
@@ -473,6 +552,15 @@ const en: Dict = {
   kvViewsForSales: "Views for those sales",
   kvProfitPerMonth: "Est. profit per month",
   notApplicable: "n/a",
+  bePurchasedHeading: "Break-even if purchased",
+  bePurchasedNote:
+    "If you buy the product yourself, this is what it takes to earn back the purchase price plus your filming time.",
+  beTimeHeading: "Break-even time investment",
+  beTimeNote:
+    "Assumes the product is free (a Creator Connections gift or one you already own): how many sales earn back just your filming time.",
+  beAdjustAssumptions: "Adjust assumptions",
+  kvPurchasePrice: "Purchase price",
+  kvTotalToEarnBack: "Time + purchase to earn back",
 
   storefrontCheckup: "Storefront checkup",
   sfFastScanNote:
@@ -480,6 +568,10 @@ const en: Dict = {
   sfDeepContent: "Also scan photo and list product tags",
   sfCheckAvailability: "Check product availability (opens each product)",
   sfParentAsins: "Resolve parent ASINs (opens each product)",
+  sfCreatorApiEnrich: "Enrich with Creator API (title, price, live availability)",
+  sfEnrichingProducts: (done, total) => `Enriching products via Creator API... ${done} of ${total}`,
+  sfCreatorApiNote:
+    "Connect the Creator API in Settings to add product titles, prices, and live availability. Exported without it for now.",
   sfCheckButton: "Check my storefront",
   sfStop: "Stop",
   sfRescan: "Rescan",
@@ -504,8 +596,14 @@ const en: Dict = {
   sfNoTaggedEarns: "No tagged products, so it earns nothing.",
   sfUnavailableProduct: (asin) => `Unavailable product ${asin}`,
   sfTaggedUnavailable: "Tagged product is no longer available.",
-  sfNoIssues: "No untagged or unavailable issues found.",
-  sfExportCsv: "Export tagged products (CSV)",
+  sfUntaggedHeading: (n) => `Untagged content (${n})`,
+  sfOverTaggedHeading: (n) => `Over-tagged content (${n})`,
+  sfUnavailableHeading: (n) => `Unavailable products (${n})`,
+  sfOverTaggedCount: (n) => `${n} products tagged`,
+  sfOverTaggedDetail: "Too many products tagged on one post dilutes each link.",
+  sfAndMore: (n) => `and ${n} more: see the CSV export`,
+  sfNoIssues: "No untagged, over-tagged, or unavailable issues found.",
+  sfExportCsv: "Export results (CSV)",
   sfOpen: "Open",
 
   contentGapsHeading: "Content gaps in your orders",
@@ -551,11 +649,27 @@ const en: Dict = {
   dateUnknown: "date unknown",
   plusMore: (n) => ` +${n} more`,
 
+  updateVideoCounts: "Update influencer video count",
+  updateVideoCountsIntro:
+    "Check how many influencer videos each product you have ordered already has. Each product opens briefly in the background so the exact creator breakdown can load, then closes. This can take a while for a long history: leave this tab open while it runs.",
+  updateVideoCountsAgain: "Update again",
+  countPreparing: "Gathering your ordered products...",
+  countChecking: (index, total, title) => `Checking ${index} of ${total}: ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Done. Updated ${updated} product${updated === 1 ? "" : "s"}, ${noInfluencer} with no influencer videos yet.`,
+  countStopped: (updated) => `Stopped. Updated ${updated} product${updated === 1 ? "" : "s"} so far.`,
+  countNoOrders: "No orders to check yet. Run \"Sync my orders\" first.",
+  countNoInfluencer: "No influencer videos",
+  countInfluencerN: (n) => `${n} influencer video${n === 1 ? "" : "s"}`,
+  countPending: "Count not available",
+
   campaigns: "Campaigns",
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
   campaignAcceptNote: "Accept it from the Send to your butler app section below (the app confirms and accepts).",
+  dealAvailable: "Deal available",
+  dealPushNote: "Push it to Daily Deals from the Send to your butler app section below.",
 
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Daily Deals",
@@ -579,11 +693,57 @@ const en: Dict = {
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
+
+  sfSendToRetag: (n) => `Send ${n} issue(s) to Retag Butler`,
+  sfSendingToRetag: "Sending to Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Accept all available campaigns (${n})`,
+  sfAcceptingCampaigns: "Accepting campaigns in the app...",
+  obSendToContentButler: (n) => `Send ${n} product(s) to Content Butler`,
+  obSendingToContentButler: "Sending to Content Butler...",
+  obSentToContentButler: (n) => `Sent ${n} product(s) to Content Butler.`,
+  appBridgeHeading: "Desktop app",
+  appBridgeBlurb:
+    "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
+  appConnect: "Connect the desktop app",
+  appEnterCode: "Enter the 6-digit code showing in the desktop app:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Pair",
+  appConnected: "Connected to the desktop app.",
+  appUnpair: "Disconnect app",
+  appRequestingCode: "Asking the app for a code...",
+  appCodeShown: "The app is showing a 6-digit code. Type it above.",
+  appNotRunning: "The Influencer Butler app is not running. Open it and try again.",
+  appCodeInvalid: "Enter the 6 digits shown in the app.",
+  appPairing: "Pairing...",
+  appPaired: "Connected. You can now send products to the app.",
+  appPairFailed: "That did not work. Click Connect to try again.",
+
+  nudgeCloseLabel: "Close",
+  nudgeMaybeLater: "Maybe later",
+  nudgeFbNotifTitle: "Join the Influencer Butler community",
+  nudgeFbNotifBody:
+    "Swap tips with other Amazon Influencers and get the most out of Influencer Butler. Click to join the Facebook group.",
+  nudgeFbTitle: "Come say hi in the community",
+  nudgeFbBody:
+    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips with other Amazon Influencers and hear about new features first.",
+  nudgeFbJoin: "Join the Facebook group",
+  nudgeAppNotifTitle: "Get the free Influencer Butler desktop app",
+  nudgeAppNotifBody:
+    "Automate deals, content, and campaign acceptance from your computer. Click to download it free for Windows or Mac.",
+  nudgeAppTitle: "Ready for the desktop app?",
+  nudgeAppBody:
+    "The desktop app does the heavy lifting: push products to Daily Deals, send them to Content Butler, and auto-accept Creator Connections campaigns.",
+  nudgeAppFree: "It is free to download and works alongside this extension.",
+  nudgeAppDownloadWindows: "Download for Windows",
+  nudgeAppDownloadMac: "Download for Mac",
+  nudgeAppDownloadGeneric: "Download the desktop app",
+  nudgeAppIntelMac: "Using an Intel Mac?",
 };
 
 const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
+  panelSettings: "Ajustes",
   copy: "Copiar",
   copied: "Copiado",
 
@@ -706,6 +866,7 @@ const es: Dict = {
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
+  influencerVideosMore: (n) => `+${n} más`,
 
   deepScan: "Deep Scan: recopilar todos los videos",
   deepScanIntro:
@@ -762,6 +923,15 @@ const es: Dict = {
   kvViewsForSales: "Vistas para esas ventas",
   kvProfitPerMonth: "Ganancia estimada al mes",
   notApplicable: "n/d",
+  bePurchasedHeading: "Punto de equilibrio si lo compras",
+  bePurchasedNote:
+    "Si compras el producto, esto es lo que hace falta para recuperar el precio de compra más tu tiempo de grabación.",
+  beTimeHeading: "Equilibrio por tiempo invertido",
+  beTimeNote:
+    "Asume que el producto es gratis (un regalo de Creator Connections o uno que ya tienes): cuántas ventas recuperan solo tu tiempo de grabación.",
+  beAdjustAssumptions: "Ajustar supuestos",
+  kvPurchasePrice: "Precio de compra",
+  kvTotalToEarnBack: "Tiempo + compra a recuperar",
 
   storefrontCheckup: "Chequeo del storefront",
   sfFastScanNote:
@@ -769,6 +939,10 @@ const es: Dict = {
   sfDeepContent: "También escanear etiquetas de fotos y listas",
   sfCheckAvailability: "Comprobar disponibilidad del producto (abre cada producto)",
   sfParentAsins: "Resolver ASIN padre (abre cada producto)",
+  sfCreatorApiEnrich: "Enriquecer con la Creator API (título, precio, disponibilidad en vivo)",
+  sfEnrichingProducts: (done, total) => `Enriqueciendo productos con la Creator API... ${done} de ${total}`,
+  sfCreatorApiNote:
+    "Conecta la Creator API en Ajustes para añadir títulos, precios y disponibilidad en vivo de los productos. Exportado sin ello por ahora.",
   sfCheckButton: "Revisar mi storefront",
   sfStop: "Detener",
   sfRescan: "Volver a escanear",
@@ -793,8 +967,14 @@ const es: Dict = {
   sfNoTaggedEarns: "Sin productos etiquetados, así que no gana nada.",
   sfUnavailableProduct: (asin) => `Producto no disponible ${asin}`,
   sfTaggedUnavailable: "El producto etiquetado ya no está disponible.",
+  sfUntaggedHeading: (n) => `Contenido sin etiquetas (${n})`,
+  sfOverTaggedHeading: (n) => `Contenido con exceso de etiquetas (${n})`,
+  sfUnavailableHeading: (n) => `Productos no disponibles (${n})`,
+  sfOverTaggedCount: (n) => `${n} productos etiquetados`,
+  sfOverTaggedDetail: "Etiquetar demasiados productos en una publicación diluye cada enlace.",
+  sfAndMore: (n) => `y ${n} más: consulta la exportación CSV`,
   sfNoIssues: "No se encontraron problemas de etiquetas o disponibilidad.",
-  sfExportCsv: "Exportar productos etiquetados (CSV)",
+  sfExportCsv: "Exportar resultados (CSV)",
   sfOpen: "Abrir",
 
   contentGapsHeading: "Huecos de contenido en tus pedidos",
@@ -840,11 +1020,27 @@ const es: Dict = {
   dateUnknown: "fecha desconocida",
   plusMore: (n) => ` +${n} más`,
 
+  updateVideoCounts: "Actualizar recuento de videos de influencers",
+  updateVideoCountsIntro:
+    "Comprueba cuántos videos de influencers tiene ya cada producto que has pedido. Cada producto se abre un momento en segundo plano para cargar el desglose exacto de creadores y luego se cierra. Con un historial largo puede tardar un rato: deja esta pestaña abierta mientras se ejecuta.",
+  updateVideoCountsAgain: "Actualizar de nuevo",
+  countPreparing: "Reuniendo tus productos pedidos...",
+  countChecking: (index, total, title) => `Comprobando ${index} de ${total}: ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Listo. ${updated} producto${updated === 1 ? "" : "s"} actualizado${updated === 1 ? "" : "s"}, ${noInfluencer} aún sin videos de influencers.`,
+  countStopped: (updated) => `Detenido. ${updated} producto${updated === 1 ? "" : "s"} actualizado${updated === 1 ? "" : "s"} hasta ahora.`,
+  countNoOrders: "Aún no hay pedidos que comprobar. Ejecuta \"Sincronizar mis pedidos\" primero.",
+  countNoInfluencer: "Sin videos de influencers",
+  countInfluencerN: (n) => `${n} video${n === 1 ? "" : "s"} de influencers`,
+  countPending: "Recuento no disponible",
+
   campaigns: "Campañas",
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
   campaignAcceptNote: "Acéptala desde la sección Send to your butler app de abajo (la app confirma y acepta).",
+  dealAvailable: "Oferta disponible",
+  dealPushNote: "Envíala a Daily Deals desde la sección Send to your butler app de abajo.",
 
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Daily Deals",
@@ -868,11 +1064,57 @@ const es: Dict = {
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
+
+  sfSendToRetag: (n) => `Enviar ${n} problema(s) a Retag Butler`,
+  sfSendingToRetag: "Enviando a Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Aceptar todas las campañas disponibles (${n})`,
+  sfAcceptingCampaigns: "Aceptando campañas en la app...",
+  obSendToContentButler: (n) => `Enviar ${n} producto(s) a Content Butler`,
+  obSendingToContentButler: "Enviando a Content Butler...",
+  obSentToContentButler: (n) => `Se enviaron ${n} producto(s) a Content Butler.`,
+  appBridgeHeading: "App de escritorio",
+  appBridgeBlurb:
+    "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
+  appConnect: "Conectar la app de escritorio",
+  appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Vincular",
+  appConnected: "Conectado a la app de escritorio.",
+  appUnpair: "Desconectar app",
+  appRequestingCode: "Pidiendo un código a la app...",
+  appCodeShown: "La app muestra un código de 6 dígitos. Escríbelo arriba.",
+  appNotRunning: "La app de Influencer Butler no está abierta. Ábrela e inténtalo de nuevo.",
+  appCodeInvalid: "Escribe los 6 dígitos que muestra la app.",
+  appPairing: "Vinculando...",
+  appPaired: "Conectado. Ya puedes enviar productos a la app.",
+  appPairFailed: "No funcionó. Haz clic en Conectar para intentarlo de nuevo.",
+
+  nudgeCloseLabel: "Cerrar",
+  nudgeMaybeLater: "Quizás luego",
+  nudgeFbNotifTitle: "Únete a la comunidad de Influencer Butler",
+  nudgeFbNotifBody:
+    "Intercambia consejos con otros Amazon Influencers y saca el máximo partido a Influencer Butler. Haz clic para unirte al grupo de Facebook.",
+  nudgeFbTitle: "Ven a saludar a la comunidad",
+  nudgeFbBody:
+    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos con otros Amazon Influencers y enterarte de las novedades antes que nadie.",
+  nudgeFbJoin: "Unirme al grupo de Facebook",
+  nudgeAppNotifTitle: "Descarga gratis la app de escritorio de Influencer Butler",
+  nudgeAppNotifBody:
+    "Automatiza ofertas, contenido y aceptación de campañas desde tu ordenador. Haz clic para descargarla gratis para Windows o Mac.",
+  nudgeAppTitle: "¿List@ para la app de escritorio?",
+  nudgeAppBody:
+    "La app de escritorio hace el trabajo pesado: envía productos a Daily Deals, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
+  nudgeAppFree: "Es gratis de descargar y funciona junto a esta extensión.",
+  nudgeAppDownloadWindows: "Descargar para Windows",
+  nudgeAppDownloadMac: "Descargar para Mac",
+  nudgeAppDownloadGeneric: "Descargar la app de escritorio",
+  nudgeAppIntelMac: "¿Usas un Mac con Intel?",
 };
 
 const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
+  panelSettings: "Paramètres",
   copy: "Copier",
   copied: "Copié",
 
@@ -995,6 +1237,7 @@ const fr: Dict = {
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
+  influencerVideosMore: (n) => `+${n} de plus`,
 
   deepScan: "Deep Scan: récolter toutes les vidéos",
   deepScanIntro:
@@ -1051,6 +1294,15 @@ const fr: Dict = {
   kvViewsForSales: "Vues pour ces ventes",
   kvProfitPerMonth: "Profit estimé par mois",
   notApplicable: "n/d",
+  bePurchasedHeading: "Seuil de rentabilité si acheté",
+  bePurchasedNote:
+    "Si vous achetez le produit vous-même, voici ce qu'il faut pour récupérer le prix d'achat plus votre temps de tournage.",
+  beTimeHeading: "Rentabilité du temps investi",
+  beTimeNote:
+    "Suppose que le produit est gratuit (un cadeau Creator Connections ou un que vous possédez déjà) : combien de ventes récupèrent seulement votre temps de tournage.",
+  beAdjustAssumptions: "Ajuster les hypothèses",
+  kvPurchasePrice: "Prix d'achat",
+  kvTotalToEarnBack: "Temps + achat à récupérer",
 
   storefrontCheckup: "Bilan du storefront",
   sfFastScanNote:
@@ -1058,6 +1310,10 @@ const fr: Dict = {
   sfDeepContent: "Analyser aussi les étiquettes des photos et listes",
   sfCheckAvailability: "Vérifier la disponibilité du produit (ouvre chaque produit)",
   sfParentAsins: "Résoudre les ASIN parents (ouvre chaque produit)",
+  sfCreatorApiEnrich: "Enrichir avec la Creator API (titre, prix, disponibilité en direct)",
+  sfEnrichingProducts: (done, total) => `Enrichissement des produits via la Creator API... ${done} sur ${total}`,
+  sfCreatorApiNote:
+    "Connectez la Creator API dans les Paramètres pour ajouter les titres, prix et la disponibilité en direct des produits. Exporté sans cela pour l'instant.",
   sfCheckButton: "Vérifier mon storefront",
   sfStop: "Arrêter",
   sfRescan: "Réanalyser",
@@ -1082,8 +1338,14 @@ const fr: Dict = {
   sfNoTaggedEarns: "Aucun produit étiqueté, donc ne rapporte rien.",
   sfUnavailableProduct: (asin) => `Produit indisponible ${asin}`,
   sfTaggedUnavailable: "Le produit étiqueté n'est plus disponible.",
+  sfUntaggedHeading: (n) => `Contenu sans étiquettes (${n})`,
+  sfOverTaggedHeading: (n) => `Contenu sur-étiqueté (${n})`,
+  sfUnavailableHeading: (n) => `Produits indisponibles (${n})`,
+  sfOverTaggedCount: (n) => `${n} produits étiquetés`,
+  sfOverTaggedDetail: "Étiqueter trop de produits sur une publication dilue chaque lien.",
+  sfAndMore: (n) => `et ${n} de plus: voir l'export CSV`,
   sfNoIssues: "Aucun problème d'étiquette ou de disponibilité trouvé.",
-  sfExportCsv: "Exporter les produits étiquetés (CSV)",
+  sfExportCsv: "Exporter les résultats (CSV)",
   sfOpen: "Ouvrir",
 
   contentGapsHeading: "Manques de contenu dans vos commandes",
@@ -1129,11 +1391,27 @@ const fr: Dict = {
   dateUnknown: "date inconnue",
   plusMore: (n) => ` +${n} de plus`,
 
+  updateVideoCounts: "Mettre à jour le nombre de vidéos d'influenceurs",
+  updateVideoCountsIntro:
+    "Vérifiez combien de vidéos d'influenceurs chaque produit que vous avez commandé possède déjà. Chaque produit s'ouvre brièvement en arrière-plan pour charger la répartition exacte des créateurs, puis se ferme. Cela peut prendre un moment pour un long historique : laissez cet onglet ouvert pendant l'exécution.",
+  updateVideoCountsAgain: "Mettre à jour à nouveau",
+  countPreparing: "Récupération de vos produits commandés...",
+  countChecking: (index, total, title) => `Vérification de ${index} sur ${total} : ${title}...`,
+  countDone: (updated, noInfluencer) =>
+    `Terminé. ${updated} produit${updated === 1 ? "" : "s"} mis à jour, ${noInfluencer} sans vidéo d'influenceur pour l'instant.`,
+  countStopped: (updated) => `Arrêté. ${updated} produit${updated === 1 ? "" : "s"} mis à jour jusqu'ici.`,
+  countNoOrders: "Aucune commande à vérifier pour l'instant. Lancez d'abord \"Synchroniser mes commandes\".",
+  countNoInfluencer: "Aucune vidéo d'influenceur",
+  countInfluencerN: (n) => `${n} vidéo${n === 1 ? "" : "s"} d'influenceurs`,
+  countPending: "Nombre non disponible",
+
   campaigns: "Campagnes",
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
   campaignAcceptNote: "Acceptez-la depuis la section Send to your butler app ci-dessous (l'app confirme et accepte).",
+  dealAvailable: "Offre disponible",
+  dealPushNote: "Envoyez-la vers Daily Deals depuis la section Send to your butler app ci-dessous.",
 
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Daily Deals",
@@ -1157,6 +1435,51 @@ const fr: Dict = {
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
+
+  sfSendToRetag: (n) => `Envoyer ${n} problème(s) vers Retag Butler`,
+  sfSendingToRetag: "Envoi vers Retag Butler...",
+  sfAcceptAllCampaigns: (n) => `Accepter toutes les campagnes disponibles (${n})`,
+  sfAcceptingCampaigns: "Acceptation des campagnes dans l'app...",
+  obSendToContentButler: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
+  obSendingToContentButler: "Envoi vers Content Butler...",
+  obSentToContentButler: (n) => `${n} produit(s) envoyé(s) vers Content Butler.`,
+  appBridgeHeading: "App de bureau",
+  appBridgeBlurb:
+    "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
+  appConnect: "Connecter l'app de bureau",
+  appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
+  appCodePlaceholder: "123456",
+  appPairSubmit: "Associer",
+  appConnected: "Connecté à l'app de bureau.",
+  appUnpair: "Déconnecter l'app",
+  appRequestingCode: "Demande d'un code à l'app...",
+  appCodeShown: "L'app affiche un code à 6 chiffres. Saisissez-le ci-dessus.",
+  appNotRunning: "L'app Influencer Butler n'est pas ouverte. Ouvrez-la et réessayez.",
+  appCodeInvalid: "Saisissez les 6 chiffres affichés dans l'app.",
+  appPairing: "Association...",
+  appPaired: "Connecté. Vous pouvez maintenant envoyer des produits à l'app.",
+  appPairFailed: "Cela n'a pas fonctionné. Cliquez sur Connecter pour réessayer.",
+
+  nudgeCloseLabel: "Fermer",
+  nudgeMaybeLater: "Plus tard",
+  nudgeFbNotifTitle: "Rejoignez la communauté Influencer Butler",
+  nudgeFbNotifBody:
+    "Échangez des astuces avec d'autres Amazon Influencers et tirez le meilleur d'Influencer Butler. Cliquez pour rejoindre le groupe Facebook.",
+  nudgeFbTitle: "Venez dire bonjour à la communauté",
+  nudgeFbBody:
+    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces avec d'autres Amazon Influencers et découvrir les nouveautés en premier.",
+  nudgeFbJoin: "Rejoindre le groupe Facebook",
+  nudgeAppNotifTitle: "Obtenez l'app de bureau Influencer Butler gratuite",
+  nudgeAppNotifBody:
+    "Automatisez les deals, le contenu et l'acceptation des campagnes depuis votre ordinateur. Cliquez pour la télécharger gratuitement pour Windows ou Mac.",
+  nudgeAppTitle: "Prêt pour l'app de bureau?",
+  nudgeAppBody:
+    "L'app de bureau fait le gros du travail: envoyez des produits vers Daily Deals, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
+  nudgeAppFree: "Elle est gratuite à télécharger et fonctionne avec cette extension.",
+  nudgeAppDownloadWindows: "Télécharger pour Windows",
+  nudgeAppDownloadMac: "Télécharger pour Mac",
+  nudgeAppDownloadGeneric: "Télécharger l'app de bureau",
+  nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
 };
 
 export type Locale = "en" | "es" | "fr";

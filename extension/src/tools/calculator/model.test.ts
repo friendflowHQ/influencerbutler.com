@@ -23,6 +23,14 @@ describe("calculate", () => {
     expect(result.viewsToBreakEven).toBe(1250);
   });
 
+  it("adds the purchase price for the purchased break-even", () => {
+    const result = calculate(base);
+    // time 2500c + price 4000c = 6500c to earn back; /100c per sale = 65 sales.
+    expect(result.totalToEarnBackPurchasedCents).toBe(6500);
+    expect(result.salesToBreakEvenPurchased).toBe(65);
+    expect(result.viewsToBreakEvenPurchased).toBe(3250); // 65 / 2%
+  });
+
   it("estimates monthly profit dampened by competition", () => {
     const result = calculate(base);
     // 1000 views * 1/4 share * 2% conversion = 5 sales * $1 commission

@@ -34,6 +34,22 @@ type IssueRow = {
   detected_at: string;
 };
 
+type OrderRow = {
+  order_id: string;
+  asin: string;
+  marketplace: string;
+  title: string | null;
+  order_date: string | null;
+  influencer_video_count: number | null;
+  total_video_count: number | null;
+};
+
+type OrdersResponse = {
+  ok?: boolean;
+  error?: string;
+  orders?: OrderRow[];
+};
+
 type Summary = {
   ok?: boolean;
   migrationPending?: boolean;
@@ -49,6 +65,7 @@ type Summary = {
 
 export default function ExtensionPage() {
   const [data, setData] = useState<Summary | null>(null);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -71,7 +88,18 @@ export default function ExtensionPage() {
         if (!cancelled) setLoading(false);
       }
     };
+    // Orders load independently: a failure here never blocks the summary above.
+    const loadOrders = async () => {
+      try {
+        const res = await fetch("/api/extension/orders?limit=200", { cache: "no-store" });
+        const json = (await res.json()) as OrdersResponse;
+        if (!cancelled && res.ok && json.orders) setOrders(json.orders);
+      } catch (err) {
+        console.error("extension orders load failed", err);
+      }
+    };
     void load();
+    void loadOrders();
     return () => {
       cancelled = true;
     };
@@ -94,7 +122,8 @@ export default function ExtensionPage() {
     !data.migrationPending &&
     ((data.scanCounts?.total ?? 0) > 0 ||
       (data.openGapCount ?? 0) > 0 ||
-      (data.issueCount ?? 0) > 0);
+      (data.issueCount ?? 0) > 0 ||
+      orders.length > 0);
 
   return (
     <div className="space-y-6">
@@ -125,12 +154,79 @@ export default function ExtensionPage() {
             <StatTile label="Storefront issues" value={data.issueCount ?? 0} />
           </div>
 
+          <Orders orders={orders} />
           <RecentScans scans={data.recentScans ?? []} />
           <ContentGaps gaps={data.topGaps ?? []} />
           <StorefrontIssues issues={data.storefrontIssues ?? []} />
         </>
       ) : null}
     </div>
+  );
+}
+
+function Orders({ orders }: { orders: OrderRow[] }) {
+  if (orders.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+        Your orders: influencer videos on what you own
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        Fewer influencer videos means an emptier lane. Run &quot;Update influencer video count&quot; in
+        the extension&apos;s Orders Butler to fill these in.
+      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+              <th className="py-2 pr-4 font-semibold">Product</th>
+              <th className="py-2 pr-4 font-semibold">Ordered</th>
+              <th className="py-2 pr-4 font-semibold">Influencer videos</th>
+              <th className="py-2 font-semibold">Total videos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={`${order.order_id}-${order.asin}`} className="border-b border-slate-100">
+                <td className="max-w-xs py-2 pr-4">
+                  <a
+                    href={`https://www.${order.marketplace}/dp/${order.asin}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="line-clamp-1 font-medium text-slate-900 hover:text-[#f97316]"
+                  >
+                    {order.title ?? order.asin}
+                  </a>
+                </td>
+                <td className="py-2 pr-4 tabular-nums text-slate-500">
+                  {order.order_date ?? "-"}
+                </td>
+                <td className="py-2 pr-4">
+                  {order.influencer_video_count === null ? (
+                    <span className="text-xs text-slate-400">not scanned yet</span>
+                  ) : (
+                    <span
+                      className={`font-semibold tabular-nums ${
+                        order.influencer_video_count === 0 ? "text-green-700" : "text-[#c2410c]"
+                      }`}
+                    >
+                      {order.influencer_video_count}
+                    </span>
+                  )}
+                </td>
+                <td className="py-2 tabular-nums text-slate-700">
+                  {order.total_video_count === null ? (
+                    <span className="text-xs text-slate-400">-</span>
+                  ) : (
+                    order.total_video_count
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

@@ -1,5 +1,5 @@
 /**
- * Summary: Download-guidance popup for Influencer Butler.
+ * Summary: Download-guidance popup + funnel analytics for Influencer Butler.
  *
  * The moment a visitor clicks a real installer link (/go/download?os=... or
  * /go/trial), a small non-blocking bubble appears in the top-right corner and
@@ -7,6 +7,12 @@
  * toolbar in modern Chrome, Edge, Firefox and Safari). It tells them exactly
  * what to click next ("Keep" / "Run anyway" on Windows, "Open anyway" on Mac)
  * so first-time downloaders don't bail at the browser or SmartScreen prompt.
+ *
+ * This file is already loaded on every page in both worlds, so it is also the
+ * one place we fire the top-of-funnel GA4 events: cta_trial_click (any click on
+ * a /go/trial or /go/download link) and download_page_view (the /download
+ * chooser was reached). That makes the click -> download-page -> checkout
+ * drop-off visible in GA4 without editing all the static marketing pages.
  *
  * Loaded on both worlds:
  *   - React pages: <Script src="/download-guidance.js"> in src/app/layout.tsx
@@ -221,6 +227,53 @@
     },
     true,
   );
+
+  /* ── Funnel analytics ── */
+  // Fires GA4 events for the same trial/download CTAs the bubble watches. gtag
+  // is loaded on every page (React layout + static pages both include it);
+  // guard anyway so analytics can never break navigation.
+  function track(name, params) {
+    try {
+      if (typeof window.gtag === "function") window.gtag("event", name, params || {});
+    } catch (e) {
+      /* never break the page for an analytics call */
+    }
+  }
+
+  function trialCtaFrom(anchor) {
+    if (!anchor || !anchor.href) return null;
+    var url;
+    try {
+      url = new URL(anchor.href, window.location.href);
+    } catch (e) {
+      return null;
+    }
+    var path = url.pathname.replace(/\/+$/, "");
+    if (path !== "/go/trial" && path !== "/go/download") return null;
+    return {
+      src: url.searchParams.get("src") || "unknown",
+      os: url.searchParams.get("os") || "auto",
+      cta_path: path,
+    };
+  }
+
+  // Every real (unmodified) click on a trial/download CTA, anywhere on the site.
+  document.addEventListener(
+    "click",
+    function (e) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var anchor = e.target && e.target.closest ? e.target.closest("a") : null;
+      var cta = trialCtaFrom(anchor);
+      if (cta) track("cta_trial_click", cta);
+    },
+    true,
+  );
+
+  // The /download chooser page was reached: one event per load, so the
+  // click -> download-page-reached step is measurable.
+  if (location.pathname.replace(/\/+$/, "") === "/download") {
+    track("download_page_view", { path: location.pathname });
+  }
 
   // Test / QA seam: trigger the bubble without firing a real download.
   window.IBDownloadGuide = { show: show, hide: hide, detect: detect };

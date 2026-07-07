@@ -56,6 +56,29 @@
         </div>
       </section>
 
+      <section id="app-bridge" class="card">
+        <h2 data-i18n="appBridgeHeading">Desktop app</h2>
+        <p id="app-bridge-text" class="muted small" data-i18n="appBridgeBlurb">
+          Connect the Influencer Butler desktop app to accept campaigns and send
+          products to your butlers straight from Amazon.
+        </p>
+        <div id="app-bridge-disconnected">
+          <button id="app-connect-btn" class="primary" data-i18n="appConnect">Connect the desktop app</button>
+        </div>
+        <div id="app-bridge-pairing" hidden>
+          <p class="muted small" data-i18n="appEnterCode">Enter the 6-digit code showing in the desktop app:</p>
+          <div class="row">
+            <input id="app-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" data-i18n-ph="appCodePlaceholder" autocomplete="off" />
+            <button id="app-pair-submit" class="primary" data-i18n="appPairSubmit">Pair</button>
+          </div>
+        </div>
+        <div id="app-bridge-connected" hidden>
+          <p class="muted small" data-i18n="appConnected">Connected to the desktop app.</p>
+          <button id="app-unpair-btn" class="ghost" data-i18n="appUnpair">Disconnect app</button>
+        </div>
+        <p id="app-pair-status" class="muted small"></p>
+      </section>
+
       <section class="card">
         <h2 data-i18n="settingsHeading">Settings</h2>
         <div class="grid">

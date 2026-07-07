@@ -15,6 +15,7 @@ import {
   writeProgress,
 } from "@/lib/course-progress-client";
 import { moduleEmoji } from "@/lib/course";
+import { trackEvent } from "@/lib/analytics-client";
 
 type ModuleRef = { id: string; title: string; seriesOrder: number };
 
@@ -60,7 +61,12 @@ export default function CourseProgress({
       setStepsTotal(boxes.length);
       setModulesDone(countModulesDone(blob, moduleIds));
       const complete = boxes.length > 0 && done === boxes.length;
-      if (complete && !wasCompleteRef.current) setJustCompleted(true);
+      if (complete && !wasCompleteRef.current) {
+        setJustCompleted(true);
+        // Every step in this module just got checked off. Lets GA4 show
+        // per-module completion, not only pageviews.
+        trackEvent("course_module_complete", { module_id: moduleId, series_id: seriesId });
+      }
       wasCompleteRef.current = complete;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,6 +74,9 @@ export default function CourseProgress({
   );
 
   useEffect(() => {
+    // One view event per module opened, so GA4 shows which modules get read
+    // and where readers stop, beyond the raw pageview count.
+    trackEvent("course_module_view", { module_id: moduleId, series_id: seriesId });
     const article = document.querySelector(".help-tutorial-body");
     if (!article) return;
     const boxes = Array.from(

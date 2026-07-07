@@ -98,6 +98,30 @@ export type CachedScan = {
   ts: number;
 };
 
+// Per-nudge delivery state for the re-engagement prompts (join the Facebook
+// group on day 1, download the free desktop app on day 3). Each nudge reaches
+// the user through two channels: an OS notification (fired by the background on
+// an alarm) and an in-page modal (shown by the content script on the next
+// Amazon visit). `notifiedAt`/`modalShownAt` make each channel fire at most
+// once; `actedAt` (set when the user clicks either one) suppresses the other so
+// nobody is nagged twice for the same thing.
+export type NudgeState = {
+  notifiedAt: number | null;
+  modalShownAt: number | null;
+  actedAt: number | null;
+};
+
+export type NudgesState = {
+  fbGroup: NudgeState;
+  appDownload: NudgeState;
+};
+
+export const DEFAULT_NUDGE_STATE: NudgeState = {
+  notifiedAt: null,
+  modalShownAt: null,
+  actedAt: null,
+};
+
 export type StorageShape = {
   schemaVersion: number;
   settings: Settings;
@@ -108,10 +132,14 @@ export type StorageShape = {
   cache: Record<string, CachedScan>;
   orderCursors: Record<string, OrderCursor>;
   telemetry: { selectorMisses: Record<string, number> };
+  // When the extension was first actually used (first content-script run on an
+  // Amazon page). Anchors the re-engagement nudge timers; null until first use.
+  firstUseAt: number | null;
+  nudges: NudgesState;
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -152,6 +180,11 @@ export const DEFAULTS: StorageShape = {
   cache: {},
   orderCursors: {},
   telemetry: { selectorMisses: {} },
+  firstUseAt: null,
+  nudges: {
+    fbGroup: { ...DEFAULT_NUDGE_STATE },
+    appDownload: { ...DEFAULT_NUDGE_STATE },
+  },
 };
 
 export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
@@ -160,7 +193,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   }
   // Future schema bumps switch on raw.schemaVersion here. Merging with defaults
   // also backfills any keys added within a version. v1 -> v2 added the
-  // integrations slice; older stored state simply gains its defaults untouched.
+  // integrations slice; v2 -> v3 added firstUseAt + nudges. Older stored state
+  // simply gains its defaults untouched (firstUseAt stays null so existing
+  // users start the nudge clock on their next Amazon visit).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -180,6 +215,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       providers: { ...(raw.integrations?.providers ?? {}) },
     },
     telemetry: { selectorMisses: { ...(raw.telemetry?.selectorMisses ?? {}) } },
-    schemaVersion: 2,
+    nudges: {
+      fbGroup: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.fbGroup ?? {}) },
+      appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
+    },
+    schemaVersion: 3,
   };
 }

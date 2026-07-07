@@ -113,6 +113,16 @@ export const BRIDGE_STATUS_TTL_MS = 15_000;
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;
 export const APP_LEARN_URL = `${API_BASE}/extension`;
 
+// Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
+// day 1 invites the user to the Facebook community, day 3 invites them to
+// download the free desktop app. Each fires once via an OS notification (on the
+// alarm below) and once via an in-page modal on the next Amazon visit.
+export const FACEBOOK_GROUP_URL = "https://www.facebook.com/groups/influencerbutler";
+export const NUDGE_FB_ALARM = "ib-nudge-fb";
+export const NUDGE_APP_ALARM = "ib-nudge-app";
+export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
+export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
+
 // Daily Deals workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.
 export const DEAL_WORKSPACES: ReadonlyArray<{ key: string; label: string }> = [

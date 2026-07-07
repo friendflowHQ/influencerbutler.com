@@ -16,7 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-const KINDS: CatalogueKind[] = ["cc", "spcc"];
+const KINDS: CatalogueKind[] = ["cc", "spcc", "deals"];
 
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
