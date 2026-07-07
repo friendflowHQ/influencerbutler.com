@@ -1,6 +1,6 @@
 ---
 title: Pitch Butler: one CRM for every brand pipeline you're working
-summary: Unified registry of brands you're prospecting, pitching, or negotiating with - imported from Creator Connections, Levanta, and Instagram extractor in one place.
+summary: Unified registry of brands you're prospecting, pitching, or negotiating with - sent in from Goldmine, Ads Goldmine, and the Levanta extractor, or imported from Creator Connections and Instagram, all in one place. Connect Gmail to send pitches and auto-track replies.
 category: Partnerships
 ---
 
@@ -10,7 +10,7 @@ If you're running outreach across Amazon Creator Connections, Levanta, and Insta
 
 Each brand becomes a card. The card moves through stages: **Prospect → Pitched → Replied → Negotiating → Closed**. You log every touchpoint, queue follow-up messages, and search/filter across the whole pipeline.
 
-Pitch Butler doesn't *send* outreach on its own (that's what Amazon Butler, Levanta Butler, and Messenger Butler are for) - it tracks the pipeline so nothing falls through cracks.
+Pitch Butler tracks the pipeline so nothing falls through the cracks. It can also *send* pitches directly once you connect Gmail (see below), and it auto-advances a brand's stage when a reply lands.
 
 ## Before you start
 
@@ -31,6 +31,18 @@ You don't need all three - start with whichever has the most brands. You can add
 
 The first import is the slowest because it walks your full history. Subsequent imports are incremental.
 
+## Send contacts straight from your harvest tables
+
+You don't have to import in bulk. Any results table that harvests brand or creator contacts now has a **Send to Pitch Butler** button and a **Sent to Pitch Butler** column:
+
+- **Instagram Goldmine**: select the creators you want (or send them all), click **Send to Pitch Butler**.
+- **Ads Goldmine**: each brand row has its own **Send to Pitch Butler** action.
+- **Levanta email extractor**: select rows and send the brands over.
+
+The **Sent to Pitch Butler** column then reflects each contact's real state - **No → Queued → Sent → Replied** - pulled live from Pitch Butler. It's also editable: click the little status dropdown on any row to set it by hand, handy as a lightweight reminder before the real send happens.
+
+Every contact you send arrives tagged with two chips: **where it came from** (Instagram, Ads Goldmine, Levanta, Creator Connections) and **how it was found** (Hashtag Search, Seed profiles, Suggested profiles, Ads Goldmine). Those chips show on the brand card and in the detail pane, so months later you still know the origin of every lead.
+
 ## Working a brand card
 
 Click any card to open its detail view:
@@ -44,7 +56,7 @@ Click any card to open its detail view:
 
 The top filter bar lets you slice the brand list by:
 
-- **Source** (CC / Levanta / Instagram / manual).
+- **Source** (CC / Levanta / Instagram / Ads Goldmine / manual).
 - **Stage** (any of the five).
 - **Tag** (any custom tag you've applied).
 - **Last-touched window** (within X days).
@@ -55,6 +67,20 @@ Useful workflows:
 - "All brands tagged 'hot lead' that haven't been touched in 7+ days" → who to follow up with this week.
 - "Source = CC, Stage = Replied" → who's actually responding from your CC outreach.
 - "Source = Levanta, Stage = Negotiating" → active deals to close.
+
+Select several cards with their checkboxes to run a **bulk action**: set the same stage across everyone you picked in one click (e.g. move a whole batch of fresh leads to Prospect, or a set of dead ends to Dead).
+
+## Connect Gmail (beta)
+
+Connect your Gmail account and Pitch Butler can send pitches from your own address, so replies come back to *you* and the thread lives in your normal inbox and Sent folder.
+
+1. In the Pitch Butler header, click **Connect Gmail**. Your browser opens Google's sign-in; approve the access.
+2. Once connected, pitches you queue can send through Gmail, and **Sync now** scans your recent mail to match replies and sent messages back to the right brand.
+3. When a brand replies, its stage advances to **Replied** automatically, and the **Sent to Pitch Butler** column on your harvest tables updates to match.
+
+We ask only for permission to send mail and to read message headers (sender, recipient, subject, date) so we can match replies. We never read message bodies, and nothing but the matched status is stored.
+
+This feature rolls out gradually: while Google reviews our access request it's limited to invited test accounts, so you may see a "coming soon" note until it reaches you.
 
 ## Tuning over time
 

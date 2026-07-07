@@ -1,6 +1,6 @@
 ---
 title: Pitch Butler: un seul CRM pour tous les pipelines de marques que vous travaillez
-summary: Registre unifié des marques que vous prospectez, pitchez ou négociez - importé depuis Creator Connections, Levanta et l'extracteur Instagram au même endroit.
+summary: Registre unifié des marques que vous prospectez, pitchez ou négociez - envoyées depuis Goldmine, Ads Goldmine et l'extracteur Levanta, ou importées depuis Creator Connections et Instagram, le tout au même endroit. Connectez Gmail pour envoyer des pitches et suivre les réponses automatiquement.
 category: Partnerships
 ---
 
@@ -10,7 +10,7 @@ Si vous gérez la prise de contact à travers Amazon Creator Connections, Levant
 
 Chaque marque devient une carte. La carte se déplace entre les étapes : **Prospect → Pitched → Replied → Negotiating → Closed**. Vous journalisez chaque interaction, mettez en file des messages de relance et cherchez/filtrez sur tout le pipeline.
 
-Pitch Butler n'*envoie* pas la prise de contact lui-même (c'est le rôle d'Amazon Butler, Levanta Butler et Messenger Butler) - il suit le pipeline pour que rien ne passe entre les mailles.
+Pitch Butler suit le pipeline pour que rien ne passe entre les mailles. Il peut aussi *envoyer* des pitches directement une fois Gmail connecté (voir plus bas), et il fait avancer l'étape d'une marque automatiquement quand une réponse arrive.
 
 ## Avant de commencer
 
@@ -31,6 +31,18 @@ Vous n'avez pas besoin des trois - démarrez avec celle qui a le plus de marques
 
 Le premier import est le plus lent car il parcourt tout votre historique. Les suivants sont incrémentaux.
 
+## Envoyer des contacts directement depuis vos tableaux de résultats
+
+Pas besoin d'importer en masse. Tout tableau de résultats qui récolte des contacts de marques ou de créateurs a désormais un bouton **Envoyer à Pitch Butler** et une colonne **Envoyé à Pitch Butler** :
+
+- **Instagram Goldmine**: sélectionnez les créateurs voulus (ou envoyez-les tous), cliquez sur **Envoyer à Pitch Butler**.
+- **Ads Goldmine**: chaque ligne de marque a sa propre action **Envoyer à Pitch Butler**.
+- **Extracteur d'emails Levanta**: sélectionnez des lignes et envoyez les marques.
+
+La colonne **Envoyé à Pitch Butler** reflète l'état réel de chaque contact - **Non → En attente → Envoyé → Répondu** - en direct depuis Pitch Butler. Elle est aussi modifiable : cliquez sur le petit menu d'état d'une ligne pour le fixer à la main, pratique comme rappel léger avant l'envoi réel.
+
+Chaque contact envoyé arrive tagué avec deux puces : **d'où il vient** (Instagram, Ads Goldmine, Levanta, Creator Connections) et **comment il a été trouvé** (Recherche par hashtag, Profils de départ, Profils suggérés, Ads Goldmine). Ces puces s'affichent sur la carte et dans le panneau de détail, donc des mois plus tard vous connaissez encore l'origine de chaque lead.
+
 ## Travailler la carte d'une marque
 
 Cliquez sur n'importe quelle carte pour ouvrir sa vue détaillée :
@@ -44,7 +56,7 @@ Cliquez sur n'importe quelle carte pour ouvrir sa vue détaillée :
 
 La barre de filtres en haut permet de découper la liste par :
 
-- **Source** (CC / Levanta / Instagram / manuel).
+- **Source** (CC / Levanta / Instagram / Ads Goldmine / manuel).
 - **Étape** (une des cinq).
 - **Tag** (n'importe quel tag personnalisé appliqué).
 - **Fenêtre de dernier contact** (dans les X derniers jours).
@@ -55,6 +67,20 @@ Flux utiles :
 - "Toutes les marques taguées 'lead chaud' non touchées depuis 7+ jours" → à qui faire un suivi cette semaine.
 - "Source = CC, Étape = Replied" → qui répond réellement depuis votre prise de contact CC.
 - "Source = Levanta, Étape = Negotiating" → deals actifs à fermer.
+
+Sélectionnez plusieurs cartes avec leurs cases pour lancer une **action groupée** : fixez la même étape sur tous ceux choisis en un clic (par ex. déplacer un lot de nouveaux leads vers Prospect, ou un ensemble d'impasses vers Dead).
+
+## Connecter Gmail (bêta)
+
+Connectez votre compte Gmail et Pitch Butler peut envoyer des pitches depuis votre propre adresse, ainsi les réponses reviennent à *vous* et le fil vit dans votre boîte de réception et vos Envoyés habituels.
+
+1. Dans l'en-tête de Pitch Butler, cliquez sur **Connecter Gmail**. Votre navigateur ouvre la connexion Google ; approuvez l'accès.
+2. Une fois connecté, les pitches mis en file peuvent partir via Gmail, et **Synchroniser** scanne votre courrier récent pour rattacher réponses et messages envoyés à la bonne marque.
+3. Quand une marque répond, son étape passe à **Replied** automatiquement, et la colonne **Envoyé à Pitch Butler** de vos tableaux se met à jour.
+
+Nous demandons uniquement la permission d'envoyer du courrier et de lire les en-têtes des messages (expéditeur, destinataire, sujet, date) pour rattacher les réponses. Nous ne lisons jamais le corps des messages, et seul l'état rattaché est stocké.
+
+Cette fonctionnalité se déploie progressivement : pendant que Google examine notre demande d'accès, elle est limitée aux comptes de test invités, vous pouvez donc voir une note "bientôt disponible" jusqu'à ce qu'elle vous parvienne.
 
 ## Réglages dans la durée
 

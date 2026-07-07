@@ -267,7 +267,7 @@
       "id": "pitchbutler",
       "title": "Pitch Butler: one CRM for every brand pipeline you're working",
       "category": "Partnerships",
-      "summary": "Unified registry of brands you're prospecting, pitching, or negotiating with - imported from Creator Connections, Levanta, and Instagram extractor.",
+      "summary": "Unified registry of brands you're prospecting, pitching, or negotiating with - sent in from Goldmine, Ads Goldmine, and the Levanta extractor, or imported from Creator Connections and Instagram. Connect Gmail to send pitches and auto-track replies.",
       "order": 160,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
