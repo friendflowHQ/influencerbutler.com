@@ -218,7 +218,18 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     msg.textContent = pv.lastTest.message;
     msg.classList.add(pv.lastTest.status === "ok" ? "ok" : "fail");
   }
-  actions.append(saveBtn, testBtn, msg);
+  actions.append(saveBtn, testBtn);
+  // "Show me where" opens the provider's own credentials page in a new tab, so
+  // users can find these keys without leaving the flow. Matches the desktop app.
+  if (adapter.credentialsUrl) {
+    const whereBtn = document.createElement("button");
+    whereBtn.className = "ghost";
+    whereBtn.textContent = D.showMeWhere;
+    whereBtn.onclick = () =>
+      window.open(adapter.credentialsUrl, "_blank", "noopener,noreferrer");
+    actions.append(whereBtn);
+  }
+  actions.append(msg);
   block.append(actions);
 
   const collectValues = (): Record<string, string> => {

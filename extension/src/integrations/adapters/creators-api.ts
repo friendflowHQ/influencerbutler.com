@@ -1,5 +1,6 @@
 import type { IntegrationAdapter, TestResult } from "../types";
 import { amzDate, signPaapi } from "../sigv4";
+import { ASSOCIATES_CREDENTIALS_URL } from "../../shared/constants";
 
 // Amazon Product Advertising API v5 (what the desktop app calls the "Creators
 // API" for product data). Test is a read-only SearchItems call, signed with
@@ -111,6 +112,9 @@ export const creatorsApiAdapter: IntegrationAdapter = {
   labelKey: "provCreatorsApi",
   category: "productData",
   hosts: PAAPI_HOST_PATTERNS,
+  // Access key, secret key, and partner tag all live on the Associates
+  // credentials page, same destination as the desktop app's "Show me where".
+  credentialsUrl: ASSOCIATES_CREDENTIALS_URL,
   fields: [
     { name: "accessKey", labelKey: "fieldAccessKey", type: "password" },
     { name: "secretKey", labelKey: "fieldSecretKey", type: "password" },

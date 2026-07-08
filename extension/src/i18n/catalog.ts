@@ -241,6 +241,7 @@ export interface Dict {
   sfCreatorApiEnrich: string;
   sfEnrichingProducts: (done: number, total: number) => string;
   sfCreatorApiNote: string;
+  sfCreatorApiLocked: string;
   sfCheckButton: string;
   sfStop: string;
   sfRescan: string;
@@ -684,6 +685,8 @@ const en: Dict = {
   sfEnrichingProducts: (done, total) => `Enriching products via Creator API... ${done} of ${total}`,
   sfCreatorApiNote:
     "Connect the Creator API in Settings to add product titles, prices, and live availability. Exported without it for now.",
+  sfCreatorApiLocked:
+    "Connect the Creator API in Settings to enrich with product titles, prices, and live availability.",
   sfCheckButton: "Check my storefront",
   sfStop: "Stop",
   sfRescan: "Rescan",
@@ -1137,6 +1140,8 @@ const es: Dict = {
   sfEnrichingProducts: (done, total) => `Enriqueciendo productos con la Creator API... ${done} de ${total}`,
   sfCreatorApiNote:
     "Conecta la Creator API en Ajustes para añadir títulos, precios y disponibilidad en vivo de los productos. Exportado sin ello por ahora.",
+  sfCreatorApiLocked:
+    "Conecta la Creator API en Ajustes para enriquecer con títulos, precios y disponibilidad en vivo de los productos.",
   sfCheckButton: "Revisar mi storefront",
   sfStop: "Detener",
   sfRescan: "Volver a escanear",
@@ -1590,6 +1595,8 @@ const fr: Dict = {
   sfEnrichingProducts: (done, total) => `Enrichissement des produits via la Creator API... ${done} sur ${total}`,
   sfCreatorApiNote:
     "Connectez la Creator API dans les Paramètres pour ajouter les titres, prix et la disponibilité en direct des produits. Exporté sans cela pour l'instant.",
+  sfCreatorApiLocked:
+    "Connectez la Creator API dans les Paramètres pour enrichir avec les titres, prix et la disponibilité en direct des produits.",
   sfCheckButton: "Vérifier mon storefront",
   sfStop: "Arrêter",
   sfRescan: "Réanalyser",

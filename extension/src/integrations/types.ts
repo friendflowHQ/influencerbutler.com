@@ -54,6 +54,10 @@ export type IntegrationAdapter = {
   // here must also appear in static/manifest.json optional_host_permissions.
   hosts: string[];
   fields: FieldSpec[];
+  // Where to find these credentials on the provider's own site. When set, the
+  // options page shows a "Show me where" button next to the provider that opens
+  // this page in a new tab, matching the desktop app's button of the same name.
+  credentialsUrl?: string;
   // Read-only verification. Never mutates anything on the provider side.
   test(creds: Record<string, string>): Promise<TestResult>;
   // Deeplink providers turn an Amazon url into a wrapped/tracked link.

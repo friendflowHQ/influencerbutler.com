@@ -25,6 +25,7 @@ export interface OptionsDict {
   save: string;
   saving: string;
   saved: string;
+  showMeWhere: string;
   participatesLabel: string;
   secretSavedPlaceholder: string;
   statusOk: string;
@@ -83,6 +84,7 @@ const en: OptionsDict = {
   save: "Save",
   saving: "Saving...",
   saved: "Saved",
+  showMeWhere: "Show me where",
   participatesLabel: "Use in affiliate routing",
   secretSavedPlaceholder: "Saved. Leave blank to keep it.",
   statusOk: "Connected",
@@ -138,6 +140,7 @@ const es: OptionsDict = {
   save: "Guardar",
   saving: "Guardando...",
   saved: "Guardado",
+  showMeWhere: "Muéstrame dónde",
   participatesLabel: "Usar en el enrutado de afiliados",
   secretSavedPlaceholder: "Guardada. Déjalo en blanco para conservarla.",
   statusOk: "Conectado",
@@ -193,6 +196,7 @@ const fr: OptionsDict = {
   save: "Enregistrer",
   saving: "Enregistrement...",
   saved: "Enregistré",
+  showMeWhere: "Montrez-moi où",
   participatesLabel: "Utiliser dans le routage d'affiliation",
   secretSavedPlaceholder: "Enregistrée. Laissez vide pour la conserver.",
   statusOk: "Connecté",

@@ -10,7 +10,7 @@ import { enrichWithCreatorApi } from "./creator-enrich";
 import { buildCsv, downloadCsv, OVER_TAGGED_THRESHOLD } from "./csv";
 import { t } from "../../i18n";
 import { sendToBackground, type EnrichedProduct } from "../../shared/messages";
-import type { HudStatus, HudCommandResult } from "../../shared/messages";
+import type { HudStatus, HudCommandResult, IntegrationsView } from "../../shared/messages";
 import type { Finding, StorefrontIssueFinding } from "../../transport/types";
 import type { RetagIssue, ProductRef } from "../../transport/hud-commands";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
@@ -40,6 +40,15 @@ export function initStorefrontPanel(): void {
   const parentAsins = checkbox(t().sfParentAsins);
   const creatorApi = checkbox(t().sfCreatorApiEnrich);
   section.append(deepContent.wrap, checkAvailability.wrap, parentAsins.wrap, creatorApi.wrap);
+
+  // The enrich pass needs Creator API credentials, so lock the box until the
+  // integration is connected in Settings. Default to locked and unlock once we
+  // confirm it is configured, so the box never flashes enabled by mistake.
+  setLocked(creatorApi, t().sfCreatorApiLocked);
+  void sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" }).then((view) => {
+    const creds = view.providers.find((p) => p.id === "creatorsApi");
+    if (creds?.configured) setLocked(creatorApi, null);
+  });
 
   const button = el("button", "btn");
   button.textContent = t().sfCheckButton;
@@ -386,6 +395,17 @@ function checkbox(text: string): { wrap: HTMLElement; input: HTMLInputElement } 
   input.style.flex = "none";
   wrap.append(input, el("span", "note", text));
   return { wrap, input };
+}
+
+// Lock or unlock a checkbox. A locked box is disabled, dimmed, and unchecked,
+// with `reason` shown as a hover tooltip; pass null to restore it.
+function setLocked(box: { wrap: HTMLElement; input: HTMLInputElement }, reason: string | null): void {
+  const locked = reason !== null;
+  box.input.disabled = locked;
+  if (locked) box.input.checked = false;
+  box.wrap.style.opacity = locked ? "0.55" : "";
+  box.wrap.style.cursor = locked ? "not-allowed" : "";
+  box.wrap.title = reason ?? "";
 }
 
 function creatorHandle(): string {
