@@ -8,7 +8,7 @@ category: Partnerships
 
 Si gestionas contacto a través de Amazon Creator Connections, Levanta y DMs de Instagram, tu pipeline de marcas vive en cinco sitios distintos - la bandeja de entrada de cada plataforma, más lo que apuntaste en una hoja de cálculo. Pitch Butler es el espacio que los reúne en un CRM único.
 
-Cada marca se convierte en una tarjeta. La tarjeta se mueve por etapas: **Prospect → Pitched → Replied → Negotiating → Closed**. Registras cada interacción, encolas mensajes de seguimiento y buscas/filtras por todo el pipeline.
+Cada marca se convierte en una tarjeta. La tarjeta se mueve por etapas: **Prospect → Pitched → Replied → Negotiating → Closed**. Registras cada interacción, encolas mensajes de seguimiento y buscas/filtras por todo el pipeline. Por dentro es un CRM de verdad: una marca es una **cuenta** con sus propios **contactos** (las personas con las que trabajas) y **acuerdos** (oportunidades con importes y etapas), además de **tareas** con recordatorios y un panel de **informes**.
 
 Pitch Butler lleva el seguimiento del pipeline para que nada caiga por las grietas. Trabájalo como lista o como tablero de arrastrar-para-avanzar, y cada mensaje que envías desde cualquier espacio (Messenger incluido) sube al historial de la marca. También puede *enviar* pitches directamente una vez conectas Gmail (ver abajo), y avanza la etapa de una marca automáticamente cuando llega una respuesta.
 
@@ -51,13 +51,38 @@ Pulsa cualquier tarjeta para abrir su vista de detalle:
 - **Historial de mensajes**: cada touchpoint aparece como fila con marca de tiempo, ahora extraído de todos los espacios donde realmente mensajeas, no solo Pitch Butler. Una marca a la que escribiste en Messenger muestra aquí sus touchpoints de Messenger con una vista previa corta. Las filas que vienen de un hilo real son clicables: pulsa una para saltar directamente a esa conversación en el espacio de origen.
 - **Ver en Collab**: cuando una marca a la que hiciste pitch responde y se crea una tarjeta de colaboración, ambas quedan enlazadas. La tarjeta de la marca muestra un botón **Ver en Collab** que salta al tablero.
 - **Abrir en Instagram / Abrir en Messenger**: cuando una marca tiene un usuario de Instagram o un hilo de mensajes existente, un traspaso de un clic te lleva al espacio que envía, listo para mensajear.
-- **Valor del acuerdo**: registra cuánto vale un acuerdo. Los valores en **Negotiating** y **Closed** se suman en un total de **Cartera** mostrado sobre la lista.
+- **Contactos**: una marca es una cuenta, así que añade a las personas con las que trabajas (nombre, cargo, correo, teléfono). Todo se guarda solo mientras escribes.
+- **Acuerdos**: sigue las oportunidades como registros reales, no solo un número. Cada acuerdo tiene nombre, importe, etapa (Prospecto, Cualificado, Negociando, Ganado, Perdido) y una fecha de cierre prevista. El total de **Cartera** sobre la lista suma el importe de cada acuerdo abierto, para que refleje lo que está realmente en juego.
+- **Valor del acuerdo**: una estimación rápida de un solo número para las marcas para las que aún no has creado acuerdos. En cuanto una marca tiene acuerdos reales, esos toman el control del cálculo de la cartera.
 - **Encolar mensaje**: redacta un mensaje en tu plantilla por defecto. Escribe `{{brand}}` y se rellena con el nombre de la marca al encolar; envuelve variantes de texto en `{a|b}` y Pitch Butler elige una, así no hay dos pitches idénticos. Pitch Butler rastrea "encolado" como touchpoint, y envía directamente una vez conectas Gmail (abajo).
 - **Etiquetas**: etiquetas libres que aplicas a las marcas. Útil para filtrar (p. ej. "lead caliente", "estacional", "primavera 2026").
 
-## Vista de lista o tablero
+## Cuatro formas de trabajar: Lista, Tablero, Tareas, Informes
 
-Alterna entre **Lista** y **Tablero** en la parte superior de la cuadrícula. El tablero es un pipeline: una columna por estado, con un recuento en cada una. Arrastra una tarjeta de marca de una columna a la siguiente para avanzarla (suéltala en **Negotiating** y pasa a negociación). Tu elección de vista se recuerda la próxima vez que abras Pitch Butler.
+Las pestañas en la parte superior de la cuadrícula alternan entre cuatro vistas, y tu elección se recuerda la próxima vez que abras Pitch Butler:
+
+- **Lista**: el listado buscable y filtrable de todas las marcas.
+- **Tablero**: un pipeline con una columna por estado y un recuento en cada una. Arrastra una tarjeta de una columna a la siguiente para avanzarla (suéltala en **Negotiating** y pasa a negociación).
+- **Tareas**: tu lista de pendientes en todas las marcas (ver abajo).
+- **Informes**: el panel (ver abajo).
+
+## Tareas y recordatorios
+
+Abre la pestaña **Tareas** para ver todo lo que debes, agrupado en **Vencidas**, **Para hoy** y **Próximas**, con una sección **Hechas** debajo. Añade una tarea con un título, un tipo (pendiente, llamada, correo, reunión, nota) y una fecha límite; deja marcado **Recordarme** y Pitch Butler muestra una notificación de escritorio cuando llegue el momento, aunque la app esté en segundo plano. Pulsa la notificación y te lleva directamente a la pestaña Tareas. Las tareas nuevas se asocian a la marca seleccionada, y la pestaña muestra un recuento de lo vencido o de hoy para que nada se escape.
+
+## Panel de informes
+
+La pestaña **Informes** es tu pipeline de un vistazo:
+
+- **Tarjetas de indicadores**: valor de cartera, acuerdos abiertos, acuerdos ganados, tasa de éxito, valor medio del acuerdo, duración media del ciclo de venta, tasa de respuesta y tareas pendientes.
+- **Embudo de conversión**: cuántos acuerdos hay en cada etapa desde Prospecto hasta Ganado, para ver dónde se atascan las cosas.
+- **Acuerdos en el tiempo**: una tendencia de doce semanas de acuerdos creados frente a acuerdos ganados.
+
+Todo se actualiza en vivo a medida que añades contactos, mueves acuerdos y cierras negocios.
+
+## Importar desde CSV
+
+¿Ya tienes una lista de leads en una hoja de cálculo? Pulsa **Importar CSV** y elige el archivo. Pitch Butler lee automáticamente los nombres de columna comunes (nombre/marca/empresa, correo, usuario de Instagram, cargo, teléfono, etiquetas, valor del acuerdo, etapa del acuerdo), así que una exportación de casi cualquier sitio entra sin mapeo de columnas engorroso. Cada fila se convierte en una marca, más un contacto y un acuerdo cuando esas columnas están presentes, y obtienes un recuento de lo que entró. Se complementa con **Exportar CSV** para un ida y vuelta limpio.
 
 ## Añadir una marca a mano
 
