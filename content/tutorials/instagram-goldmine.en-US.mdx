@@ -58,6 +58,7 @@ Every qualifying post becomes a row with:
 
 - **Brand name**: extracted from the post caption (when the brand is `@mentioned` or named).
 - **Brand email**: a contact email pulled from the tagged brand's own profile - from the bio text or its professional-account Email button - when one is published. Controlled by the **Harvest tagged brand emails** toggle (on by default). Turn it off to skip the brand-profile visits and speed up runs.
+  - Many brands and creators list no email on Instagram itself, only a website link in their bio. Turn on **Also check the bio-link website for an email** and Goldmine opens that linked site and looks for an email there too (in the page text or a contact button), then adds it to the same column. It is off by default because it adds browsing time and opens pages outside Instagram.
 - **Creator handle**: who posted it.
 - **Post URL**: click to open in browser.
 - **Disclosure type**: `#ad`, `#partner`, `paid-partnership`, `mention`.
