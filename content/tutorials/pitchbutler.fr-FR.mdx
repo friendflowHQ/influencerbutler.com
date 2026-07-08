@@ -10,7 +10,7 @@ Si vous gérez la prise de contact à travers Amazon Creator Connections, Levant
 
 Chaque marque devient une carte. La carte se déplace entre les étapes : **Prospect → Pitched → Replied → Negotiating → Closed**. Vous journalisez chaque interaction, mettez en file des messages de relance et cherchez/filtrez sur tout le pipeline.
 
-Pitch Butler suit le pipeline pour que rien ne passe entre les mailles. Il peut aussi *envoyer* des pitches directement une fois Gmail connecté (voir plus bas), et il fait avancer l'étape d'une marque automatiquement quand une réponse arrive.
+Pitch Butler suit le pipeline pour que rien ne passe entre les mailles. Travaillez-le en liste ou en tableau glisser-pour-avancer, et chaque message que vous envoyez depuis n'importe quel espace (Messenger compris) remonte dans l'historique de la marque. Il peut aussi *envoyer* des pitches directement une fois Gmail connecté (voir plus bas), et il fait avancer l'étape d'une marque automatiquement quand une réponse arrive.
 
 ## Avant de commencer
 
@@ -47,10 +47,29 @@ Chaque contact envoyé arrive tagué avec deux puces : **d'où il vient** (Insta
 
 Cliquez sur n'importe quelle carte pour ouvrir sa vue détaillée :
 
-- **Sélecteur d'étape**: Prospect → Pitched → Replied → Negotiating → Closed. Faites glisser pour déplacer ; l'horodatage s'enregistre automatiquement.
-- **Journal d'interactions**: chaque interaction que vous journalisez (ou qu'un import a captée) apparaît en ligne horodatée. Vous pouvez ajouter des notes par interaction.
-- **Mettre un message en file**: rédige un message dans votre modèle par défaut. Pitch Butler n'auto-envoie pas (vous utiliseriez un autre espace pour ça) mais suit "en file" comme un touchpoint pour que vous n'oubliiez pas.
+- **Statut**: Prospect → Pitched → Replied → Negotiating → Closed → Dead. Fixez-le à la main, dans une action groupée, ou en faisant glisser la carte entre les colonnes de la vue tableau (ci-dessous).
+- **Historique des messages**: chaque touchpoint apparaît en ligne horodatée, désormais tiré de tous les espaces où vous échangez réellement, pas seulement Pitch Butler. Une marque à qui vous avez écrit dans Messenger affiche ici ses touchpoints Messenger avec un court aperçu. Les lignes issues d'un vrai fil sont cliquables : cliquez-en une pour sauter directement dans cette conversation dans l'espace d'origine.
+- **Voir dans Collab**: quand une marque contactée répond et qu'une carte de collaboration est créée, les deux sont liées. La carte de la marque affiche un bouton **Voir dans Collab** qui saute au tableau.
+- **Ouvrir dans Instagram / Ouvrir dans Messenger**: quand une marque a un identifiant Instagram ou un fil de messages existant, un relais en un clic vous emmène vers l'espace qui envoie, prêt à écrire.
+- **Valeur du contrat**: enregistrez ce que vaut un contrat. Les valeurs sur **Negotiating** et **Closed** s'additionnent dans un total **Portefeuille** affiché au-dessus de la liste.
+- **Mettre un message en file**: rédige un message dans votre modèle par défaut. Tapez `{{brand}}` et il se remplit avec le nom de la marque à la mise en file ; entourez des variantes de texte de `{a|b}` et Pitch Butler en choisit une, ainsi deux pitches ne sont jamais identiques. Pitch Butler suit "en file" comme touchpoint, et envoie directement une fois Gmail connecté (ci-dessous).
 - **Tags**: étiquettes libres que vous appliquez aux marques. Utile pour filtrer (par ex. "lead chaud", "saisonnier", "printemps 2026").
+
+## Vue liste ou tableau
+
+Basculez entre **Liste** et **Tableau** en haut de la grille. Le tableau est un pipeline : une colonne par statut, avec un compteur sur chacune. Faites glisser une carte de marque d'une colonne à la suivante pour la faire avancer (déposez-la sur **Negotiating** et elle passe en négociation). Votre choix de vue est mémorisé la prochaine fois que vous ouvrez Pitch Butler.
+
+## Ajouter une marque à la main
+
+Toutes les marques ne viennent pas d'un import. Cliquez sur **Ajouter une marque** dans l'en-tête, saisissez un nom (plus un e-mail ou un identifiant Instagram facultatifs), et elle entre dans le pipeline comme prospect manuel, prête à travailler comme n'importe quelle autre carte.
+
+## Ne manquez jamais une relance
+
+Activez le commutateur **Relance nécessaire** dans la barre de filtres pour ne voir que les marques contactées, qui n'ont jamais répondu, et silencieuses depuis plus de trois jours. Le commutateur porte un compteur en direct pour voir la taille de la pile d'un coup d'œil. Ouvrez-en une et cliquez sur **Envoyer la relance maintenant** pour mettre le rappel en file en une seule étape.
+
+## Exporter en CSV
+
+Cliquez sur **Exporter CSV** pour télécharger la liste de marques que vous regardez (filtres compris) sous forme de feuille de calcul : nom, statut, e-mails, sources, tags, valeur du contrat, et le dernier touchpoint avec son canal. Pratique pour une revue rapide du pipeline hors de l'app ou pour partager avec un responsable.
 
 ## Filtrage et recherche
 
@@ -67,6 +86,8 @@ Flux utiles :
 - "Toutes les marques taguées 'lead chaud' non touchées depuis 7+ jours" → à qui faire un suivi cette semaine.
 - "Source = CC, Étape = Replied" → qui répond réellement depuis votre prise de contact CC.
 - "Source = Levanta, Étape = Negotiating" → deals actifs à fermer.
+
+Plus le commutateur **Relance nécessaire** (voir ci-dessus) pour les marques devenues silencieuses après un pitch.
 
 Sélectionnez plusieurs cartes avec leurs cases pour lancer une **action groupée** : fixez la même étape sur tous ceux choisis en un clic (par ex. déplacer un lot de nouveaux leads vers Prospect, ou un ensemble d'impasses vers Dead).
 

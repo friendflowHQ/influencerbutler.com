@@ -10,7 +10,7 @@ Si gestionas contacto a través de Amazon Creator Connections, Levanta y DMs de 
 
 Cada marca se convierte en una tarjeta. La tarjeta se mueve por etapas: **Prospect → Pitched → Replied → Negotiating → Closed**. Registras cada interacción, encolas mensajes de seguimiento y buscas/filtras por todo el pipeline.
 
-Pitch Butler lleva el seguimiento del pipeline para que nada caiga por las grietas. También puede *enviar* pitches directamente una vez conectas Gmail (ver abajo), y avanza la etapa de una marca automáticamente cuando llega una respuesta.
+Pitch Butler lleva el seguimiento del pipeline para que nada caiga por las grietas. Trabájalo como lista o como tablero de arrastrar-para-avanzar, y cada mensaje que envías desde cualquier espacio (Messenger incluido) sube al historial de la marca. También puede *enviar* pitches directamente una vez conectas Gmail (ver abajo), y avanza la etapa de una marca automáticamente cuando llega una respuesta.
 
 ## Antes de empezar
 
@@ -47,10 +47,29 @@ Cada contacto que envías llega etiquetado con dos chips: **de dónde vino** (In
 
 Pulsa cualquier tarjeta para abrir su vista de detalle:
 
-- **Selector de etapa**: Prospect → Pitched → Replied → Negotiating → Closed. Arrastra para mover; la marca de tiempo se registra automáticamente.
-- **Log de interacciones**: cada interacción que registras (o que una importación recogió) aparece como fila con marca de tiempo. Puedes añadir notas por interacción.
-- **Encolar mensaje**: redacta un mensaje en tu plantilla por defecto. Pitch Butler no auto-envía (usarías otro espacio para eso) pero rastrea "encolado" como un touchpoint para que no se te olvide.
+- **Estado**: Prospect → Pitched → Replied → Negotiating → Closed → Dead. Fíjalo a mano, en una acción en bloque, o arrastrando la tarjeta entre columnas en la vista de tablero (más abajo).
+- **Historial de mensajes**: cada touchpoint aparece como fila con marca de tiempo, ahora extraído de todos los espacios donde realmente mensajeas, no solo Pitch Butler. Una marca a la que escribiste en Messenger muestra aquí sus touchpoints de Messenger con una vista previa corta. Las filas que vienen de un hilo real son clicables: pulsa una para saltar directamente a esa conversación en el espacio de origen.
+- **Ver en Collab**: cuando una marca a la que hiciste pitch responde y se crea una tarjeta de colaboración, ambas quedan enlazadas. La tarjeta de la marca muestra un botón **Ver en Collab** que salta al tablero.
+- **Abrir en Instagram / Abrir en Messenger**: cuando una marca tiene un usuario de Instagram o un hilo de mensajes existente, un traspaso de un clic te lleva al espacio que envía, listo para mensajear.
+- **Valor del acuerdo**: registra cuánto vale un acuerdo. Los valores en **Negotiating** y **Closed** se suman en un total de **Cartera** mostrado sobre la lista.
+- **Encolar mensaje**: redacta un mensaje en tu plantilla por defecto. Escribe `{{brand}}` y se rellena con el nombre de la marca al encolar; envuelve variantes de texto en `{a|b}` y Pitch Butler elige una, así no hay dos pitches idénticos. Pitch Butler rastrea "encolado" como touchpoint, y envía directamente una vez conectas Gmail (abajo).
 - **Etiquetas**: etiquetas libres que aplicas a las marcas. Útil para filtrar (p. ej. "lead caliente", "estacional", "primavera 2026").
+
+## Vista de lista o tablero
+
+Alterna entre **Lista** y **Tablero** en la parte superior de la cuadrícula. El tablero es un pipeline: una columna por estado, con un recuento en cada una. Arrastra una tarjeta de marca de una columna a la siguiente para avanzarla (suéltala en **Negotiating** y pasa a negociación). Tu elección de vista se recuerda la próxima vez que abras Pitch Butler.
+
+## Añadir una marca a mano
+
+No todas las marcas vienen de una importación. Pulsa **Añadir marca** en la cabecera, escribe un nombre (y un correo o usuario de Instagram opcionales), y entra en el pipeline como prospecto manual, lista para trabajar como cualquier otra tarjeta.
+
+## Nunca pierdas un seguimiento
+
+Activa el interruptor **Necesita seguimiento** en la barra de filtros para ver solo marcas a las que hiciste pitch, que nunca respondieron, y que llevan más de tres días en silencio. El interruptor lleva un recuento en vivo para que veas el tamaño del montón de un vistazo. Abre una y pulsa **Enviar seguimiento ahora** para encolar el recordatorio en un solo paso.
+
+## Exportar a CSV
+
+Pulsa **Exportar CSV** para descargar la lista de marcas que estás viendo (con filtros incluidos) como hoja de cálculo: nombre, estado, correos, fuentes, etiquetas, valor del acuerdo y el último touchpoint con su canal. Útil para una revisión rápida del pipeline fuera de la app o para compartir con un responsable.
 
 ## Filtrado y búsqueda
 
@@ -67,6 +86,8 @@ Flujos útiles:
 - "Todas las marcas con etiqueta 'lead caliente' que no se han tocado en 7+ días" → a quién hay que dar seguimiento esta semana.
 - "Origen = CC, Etapa = Replied" → quién está respondiendo realmente desde tu contacto CC.
 - "Origen = Levanta, Etapa = Negotiating" → tratos activos por cerrar.
+
+Además el interruptor **Necesita seguimiento** (ver arriba) para marcas que quedaron en silencio tras un pitch.
 
 Selecciona varias tarjetas con sus casillas para lanzar una **acción en bloque**: fija la misma etapa en todos los que elegiste de un clic (p. ej. mover un lote de leads nuevos a Prospect, o un conjunto de callejones sin salida a Dead).
 

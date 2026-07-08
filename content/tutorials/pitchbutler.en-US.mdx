@@ -10,7 +10,7 @@ If you're running outreach across Amazon Creator Connections, Levanta, and Insta
 
 Each brand becomes a card. The card moves through stages: **Prospect → Pitched → Replied → Negotiating → Closed**. You log every touchpoint, queue follow-up messages, and search/filter across the whole pipeline.
 
-Pitch Butler tracks the pipeline so nothing falls through the cracks. It can also *send* pitches directly once you connect Gmail (see below), and it auto-advances a brand's stage when a reply lands.
+Pitch Butler tracks the pipeline so nothing falls through the cracks. Work it as a list or as a drag-to-advance board, and every message you send from any workspace (Messenger included) rolls up into the brand's history. It can also *send* pitches directly once you connect Gmail (see below), and it auto-advances a brand's stage when a reply lands.
 
 ## Before you start
 
@@ -47,10 +47,29 @@ Every contact you send arrives tagged with two chips: **where it came from** (In
 
 Click any card to open its detail view:
 
-- **Stage selector**: Prospect → Pitched → Replied → Negotiating → Closed. Drag to move; the timestamp records automatically.
-- **Touchpoints log**: every interaction you log (or that an import picked up) shows here as a timestamped row. You can add notes per touchpoint.
-- **Queue message**: drafts a message in your default template. Pitch Butler doesn't auto-send (you'd use a different workspace for that) but it tracks "queued" as a touchpoint so you don't forget.
+- **Status**: Prospect → Pitched → Replied → Negotiating → Closed → Dead. Set it by hand, in a bulk action, or by dragging the card between columns in the board view (below).
+- **Message history**: every touchpoint shows here as a timestamped row, now pulled from every workspace you actually message in, not just Pitch Butler. A brand you messaged in Messenger shows its Messenger touchpoints here with a short preview. Rows that came from a real thread are clickable: click one to jump straight into that conversation in the source workspace.
+- **View in Collab**: when a brand you pitched replies and a collaboration card gets created, the two are linked. The brand card gets a **View in Collab** button that jumps to the board.
+- **Open in Instagram / Open in Messenger**: when a brand has an Instagram handle or an existing message thread, a one-click hand-off takes you to the workspace that sends, ready to message.
+- **Deal value**: record what a deal is worth. Values on **Negotiating** and **Closed** brands add up into a **Pipeline** total shown above the list.
+- **Queue message**: drafts a message in your default template. Type `{{brand}}` and it fills in the brand name when queued; wrap wording choices in `{a|b}` and Pitch Butler picks one so no two pitches read identically. Pitch Butler tracks "queued" as a touchpoint, and sends directly once you connect Gmail (below).
 - **Tags**: free-form labels you apply across brands. Useful for filtering (e.g. "hot lead", "seasonal", "spring 2026").
+
+## List or board view
+
+Toggle between **List** and **Board** at the top of the grid. The board is a pipeline: one column per status, with a count on each. Drag a brand card from one column to the next to advance it (drop it on **Negotiating** and it's negotiating). Your choice of view is remembered next time you open Pitch Butler.
+
+## Add a brand by hand
+
+Not every brand comes from an import. Click **Add brand** in the header, type a name (plus an optional email or Instagram handle), and it drops into the pipeline as a manual prospect, ready to work like any other card.
+
+## Never miss a follow-up
+
+Turn on the **Needs follow-up** toggle in the filter bar to see only brands you pitched, that never replied, and that have gone quiet for more than three days. The toggle carries a live count so you can see the size of the pile at a glance. Open one and click **Send follow-up now** to queue the nudge in a single step.
+
+## Export to CSV
+
+Click **Export CSV** to download the brand list you're currently looking at (filters and all) as a spreadsheet: name, status, emails, sources, tags, deal value, and the last touch with its channel. Handy for a quick pipeline review outside the app or for sharing with a manager.
 
 ## Filtering and search
 
@@ -67,6 +86,8 @@ Useful workflows:
 - "All brands tagged 'hot lead' that haven't been touched in 7+ days" → who to follow up with this week.
 - "Source = CC, Stage = Replied" → who's actually responding from your CC outreach.
 - "Source = Levanta, Stage = Negotiating" → active deals to close.
+
+Plus the **Needs follow-up** toggle (see above) for brands that have gone quiet after a pitch.
 
 Select several cards with their checkboxes to run a **bulk action**: set the same stage across everyone you picked in one click (e.g. move a whole batch of fresh leads to Prospect, or a set of dead ends to Dead).
 
