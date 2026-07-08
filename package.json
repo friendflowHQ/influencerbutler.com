@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-gtag.mjs && node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-image-lightbox.mjs && node scripts/inject-gtag.mjs && node scripts/generate-sitemap.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
     "inject:webmcp": "node scripts/inject-webmcp.mjs",
+    "inject:image-lightbox": "node scripts/inject-image-lightbox.mjs",
     "inject:gtag": "node scripts/inject-gtag.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs"
   },

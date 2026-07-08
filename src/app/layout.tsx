@@ -63,6 +63,7 @@ gtag('config', 'G-S1TC1QLYNN');`}
         {children}
         <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
+        <Script src="/js/image-lightbox.js" strategy="afterInteractive" />
       </body>
     </html>
   );
