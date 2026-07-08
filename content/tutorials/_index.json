@@ -2,6 +2,14 @@
   "version": 1,
   "tutorials": [
     {
+      "id": "getting-started-influencer-butler",
+      "title": "Getting started: your first 15 minutes",
+      "category": "Getting Started",
+      "summary": "Brand new? Start here. Sign in, connect your Amazon storefront, and run your first Butler. No experience needed.",
+      "order": 0.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "aip-course-01-start-here",
       "title": "Start here: how this course works",
       "category": "Beginner Course",

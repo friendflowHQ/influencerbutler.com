@@ -14,6 +14,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 # AI / LLM crawlers (per-bot rules)
 User-agent: GPTBot
@@ -26,6 +27,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: ChatGPT-User
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -37,6 +39,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: OAI-SearchBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -48,6 +51,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: ClaudeBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -59,6 +63,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: Claude-Web
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -70,6 +75,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: anthropic-ai
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -81,6 +87,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: Google-Extended
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -92,6 +99,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: PerplexityBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -103,6 +111,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: cohere-ai
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -114,6 +123,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: FacebookBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -125,6 +135,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: Bytespider
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -136,6 +147,7 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 User-agent: CCBot
 Content-Signal: search=yes, ai-input=yes, ai-train=no
@@ -147,5 +159,6 @@ Disallow: /welcome
 Disallow: /login
 Disallow: /signup
 Disallow: /help
+Disallow: /setup
 
 Sitemap: https://www.influencerbutler.com/sitemap.xml
