@@ -1,0 +1,120 @@
+---
+title: Run Influencer Butler in the cloud (free 24/7 PC)
+summary: Put Influencer Butler on a free, always-on cloud computer so your butlers keep running even when your laptop is slow, closed, or traveling. Step-by-step, no tech skills needed.
+category: Other
+---
+
+## Why do this
+
+If your computer is slow or old, or you travel and do not want your butlers interrupted every time you close your laptop, you can run Influencer Butler on a **free** cloud computer instead. It lives in Amazon's data center, never turns off, and you connect to it from your own laptop or phone. Set it up once and your butlers run 24/7 while you get on with your day.
+
+It is genuinely free to start: new AWS accounts get free credits (currently up to $200) plus a free usage window, which covers a small always-on computer for months. This tutorial is the short checklist version. For the full, screenshot-by-screenshot walkthrough, read the [complete guide on our blog](https://www.influencerbutler.com/blog/run-influencer-butler-free-cloud-pc).
+
+## Before you start
+
+- [ ] I have about 30 minutes (you only do this once) {#have-time}
+- [ ] I have my Influencer Butler login handy {#have-login}
+- [ ] I have a card for AWS sign-up verification (you will not be charged inside the free limits) {#have-card}
+
+## Create your free cloud computer
+
+- [ ] Go to aws.amazon.com and click **Create a free account**, then finish the free sign-up {#signup}
+
+![Creating a free AWS account](/assets/blog/cloud-pc/01-signup.png)
+
+*Suggested screenshot: the AWS sign-up page with the Create a free account button.*
+
+- [ ] Sign in and find your **free credits** under the billing or Free Tier area {#free-credits}
+
+![Your free AWS credits](/assets/blog/cloud-pc/02-free-credits.png)
+
+*Suggested screenshot: the Free Tier or billing page showing your free credit balance.*
+
+- [ ] In the AWS search bar, type **EC2** and open it (EC2 just means cloud computers) {#open-ec2}
+
+![Opening EC2](/assets/blog/cloud-pc/03-open-ec2.png)
+
+*Suggested screenshot: the AWS search bar with EC2 typed in.*
+
+- [ ] Click the orange **Launch instance** button {#launch-instance}
+
+![The Launch instance button](/assets/blog/cloud-pc/04-launch-instance.png)
+
+*Suggested screenshot: the EC2 dashboard with the orange Launch instance button.*
+
+- [ ] Name it (for example **Butler PC**) and pick a **Windows** option marked Free tier eligible {#pick-windows}
+
+![Naming it and picking Windows](/assets/blog/cloud-pc/05-name-windows.png)
+
+*Suggested screenshot: the Name box filled in and a Windows image selected.*
+
+- [ ] Choose a size with **2 to 4 GB of memory** (such as **t3.small**). The tiny 1 GB free size is too slow for a browser app; your free credits cover the bigger size for months {#choose-size}
+
+![Choosing a 2 to 4 GB size](/assets/blog/cloud-pc/06-instance-size.png)
+
+*Suggested screenshot: the instance type list with t3.small selected.*
+
+- [ ] Click **Create new key pair**, download the file, and keep it safe {#key-pair}
+
+![Creating a key pair](/assets/blog/cloud-pc/07-key-pair.png)
+
+*Suggested screenshot: the Create key pair pop-up.*
+
+- [ ] In network settings, make sure **Allow RDP** (Remote Desktop) is checked; limit it to **My IP** if offered {#allow-rdp}
+
+![Allowing Remote Desktop](/assets/blog/cloud-pc/08-allow-rdp.png)
+
+*Suggested screenshot: the network settings with Allow RDP checked.*
+
+- [ ] Click **Launch instance** and wait for the green **Success** screen {#launch}
+
+![The success screen](/assets/blog/cloud-pc/09-launch-success.png)
+
+*Suggested screenshot: the green Success screen.*
+
+## Connect and install
+
+- [ ] Open your instance, click **Connect > RDP client > Get password**, upload your key file, and copy the password and the address (Public DNS / IP) {#get-password}
+
+![Getting your password](/assets/blog/cloud-pc/10-get-password.png)
+
+*Suggested screenshot: the Connect screen with the Get password button.*
+
+- [ ] Open **Remote Desktop** on your own device (built into Windows; free Windows App from the App Store on Mac), paste the address, and log in as **Administrator** with the password {#remote-desktop}
+
+![Connecting with Remote Desktop](/assets/blog/cloud-pc/11-remote-desktop.png)
+
+*Suggested screenshot: the Remote Desktop app with your cloud PC address typed in.*
+
+- [ ] You now see your cloud Windows desktop; you are controlling it remotely {#connected}
+
+![Your cloud desktop](/assets/blog/cloud-pc/12-cloud-desktop.png)
+
+*Suggested screenshot: the fresh Windows desktop of your cloud PC.*
+
+- [ ] On the cloud desktop, open the browser, download Influencer Butler, and run the installer (if Windows warns, click **More info > Run anyway**) {#install}
+
+![Downloading Influencer Butler](/assets/blog/cloud-pc/13-download-ib.png)
+
+*Suggested screenshot: the Influencer Butler download page in the cloud browser.*
+
+- [ ] Open Influencer Butler, log in, and start your butlers {#start-butlers}
+
+![Influencer Butler running](/assets/blog/cloud-pc/14-running.png)
+
+*Suggested screenshot: Influencer Butler running and logged in on the cloud desktop.*
+
+## Leave it running and keep it free
+
+- [ ] When done, just **close the Remote Desktop window** (do not shut the PC down). The cloud computer keeps running your butlers 24/7 {#leave-running}
+- [ ] In the AWS search bar, open **Budgets** and create a small ($1) budget with your email so you get a heads-up long before any charge {#billing-alarm}
+
+![Setting a billing alarm](/assets/blog/cloud-pc/15-billing-alarm.png)
+
+*Suggested screenshot: the AWS Budgets page creating a small billing alarm.*
+
+- [ ] Check your Free Tier balance every few weeks; if the free period ever ends, a small cloud PC is only a few dollars a month, or you can **terminate** it to stop all costs {#stay-free}
+
+## That is it
+
+Your butlers now run on an always-on cloud computer. Close your laptop, travel, lose your wifi: they keep working. For the full walkthrough with every screenshot, see the [complete guide on our blog](https://www.influencerbutler.com/blog/run-influencer-butler-free-cloud-pc).

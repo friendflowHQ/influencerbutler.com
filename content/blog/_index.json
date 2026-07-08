@@ -2,6 +2,19 @@
   "version": 1,
   "posts": [
     {
+      "id": "run-influencer-butler-free-cloud-pc",
+      "title": "Run Influencer Butler on a Free Cloud PC (AWS), Even on a Slow or Travel Laptop",
+      "category": "Growth",
+      "summary": "A dead-simple, step-by-step guide to running Influencer Butler 24/7 on a free cloud computer, so your butlers keep working even when your laptop is slow, closed, or on a plane.",
+      "date": "2026-07-07",
+      "author": "The Influencer Butler Team",
+      "readingTime": "10 min read",
+      "keywords": "run influencer butler in the cloud, free aws cloud pc, aws free tier, remote desktop influencer butler, run influencer butler 24/7, free cloud computer for creators",
+      "image": "/assets/blog/run-influencer-butler-free-cloud-pc.png",
+      "imageAlt": "Illustration of a free always-on cloud computer running Influencer Butler around the clock",
+      "order": 1
+    },
+    {
       "id": "amazon-influencer-gold-status-optimization",
       "title": "You Hit Amazon Influencer Gold. Here Is How to Actually Cash In On It",
       "category": "Amazon",

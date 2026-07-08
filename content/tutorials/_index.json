@@ -440,6 +440,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "run-in-cloud",
+      "title": "Run Influencer Butler in the cloud (free 24/7 PC)",
+      "category": "Other",
+      "summary": "Put Influencer Butler on a free, always-on cloud computer (AWS) so your butlers keep running even when your laptop is slow, closed, or traveling. Step-by-step, no tech skills needed.",
+      "order": 351,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",

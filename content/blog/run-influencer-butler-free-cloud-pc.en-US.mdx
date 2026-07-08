@@ -1,0 +1,200 @@
+---
+title: Run Influencer Butler on a Free Cloud PC (AWS), Even on a Slow or Travel Laptop
+summary: A dead-simple, step-by-step guide to running Influencer Butler 24/7 on a free cloud computer, so your butlers keep working even when your laptop is slow, closed, or on a plane.
+category: Growth
+date: 2026-07-07
+author: The Influencer Butler Team
+readingTime: 10 min read
+keywords: run influencer butler in the cloud, free aws cloud pc, aws free tier, remote desktop influencer butler, run influencer butler 24/7, free cloud computer for creators
+image: /assets/blog/run-influencer-butler-free-cloud-pc.png
+imageAlt: Illustration of a free always-on cloud computer running Influencer Butler around the clock
+---
+
+If your computer is slow, old, or you are always on the go, this guide is for you. You are going to put Influencer Butler on a **free** computer that lives in the cloud and never turns off, so your butlers keep working around the clock, even when your own laptop is closed, dead, or in your bag on a plane.
+
+The best part: you can do this for **free**. Amazon (yes, the same Amazon) rents out computers in its data centers, and it gives new users free credit and a free trial period to use them. So you get a fast, always-on computer for your butlers without paying a cent for months. No tech degree required. If you can follow a recipe, you can do this.
+
+Let me walk you through it in plain English, one screenshot at a time.
+
+## What we are actually building (in normal-person words)
+
+Think of it like renting a second computer that lives inside one of Amazon's buildings. It is always plugged in, always online, and it never sleeps. You connect to it from your own laptop or phone using a free app called Remote Desktop, and it feels just like sitting in front of a normal Windows computer. You install Influencer Butler on it once, log in, start your butlers, and then you can close your own laptop and walk away. The cloud computer keeps going.
+
+Why this is perfect for slow or travel laptops:
+
+- **It is fast even if your laptop is not.** The cloud computer does all the work. Your old laptop is just a window into it.
+- **It never gets interrupted.** Close your lid, lose your wifi, hop on a flight: the cloud computer does not care. It keeps running your butlers.
+- **It is free to start.** Amazon gives new users free credit (currently up to $200) and a free usage period, so you can run this at no cost for months.
+
+Here is what the finished setup looks like: a free cloud computer, always on, running your butlers for you.
+
+![A free always-on cloud computer running Influencer Butler](/assets/blog/run-influencer-butler-free-cloud-pc.png)
+
+*Suggested screenshot: the cloud desktop with Influencer Butler open and running (you can use your real setup once it is done).*
+
+## What you need before you start
+
+- A **free** AWS account. AWS is Amazon's cloud service. Signing up is free, though they will ask for a card to verify you are a real person (you will not be charged while you stay inside the free limits, and we will show you how to stay there).
+- About **30 minutes**, once.
+- Your **Influencer Butler login**, the same one you use on your own computer.
+
+That is it. Let's go.
+
+## Step 1: Create your free AWS account
+
+Go to **aws.amazon.com** and click the big **Create a free account** button. Enter your email, pick a password, and follow the prompts. You will add a card for verification and pick the **Basic (free)** support plan when it asks. Take your time; it is just a normal sign-up.
+
+![Creating a free AWS account](/assets/blog/cloud-pc/01-signup.png)
+
+*Suggested screenshot: the AWS sign-up page with the email box and the Create a free account button.*
+
+## Step 2: Find your free credits
+
+Once you are signed in, you land on the AWS console (a big dashboard with lots of options; do not let it scare you). New accounts get **free credits** and a **free usage window**. You can see your free balance under the billing or Free Tier area. This is the pool of **free** money and hours that will cover your cloud computer. Good to know it is there.
+
+![Your free AWS credits and Free Tier balance](/assets/blog/cloud-pc/02-free-credits.png)
+
+*Suggested screenshot: the AWS Free Tier or billing page showing your free credit balance.*
+
+> Quick honesty note on the word free: brand-new AWS accounts get free credits (up to $200) that last about six months, and some older accounts get a small computer free for a full year. Either way, this setup is genuinely free to run for months. We will also set up a safety alarm in Step 15 so there are never any surprises.
+
+## Step 3: Open EC2 (the cloud-computer service)
+
+At the top of the AWS console there is a search bar. Type **EC2** and click the **EC2** result. EC2 is just Amazon's name for "cloud computers." This is where your new computer will live.
+
+![Opening EC2 from the AWS search bar](/assets/blog/cloud-pc/03-open-ec2.png)
+
+*Suggested screenshot: the AWS search bar with EC2 typed in and the EC2 result highlighted.*
+
+## Step 4: Click Launch instance
+
+On the EC2 page, click the orange **Launch instance** button. "Instance" is just a fancy word for "one cloud computer." You are about to create yours.
+
+![The EC2 Launch instance button](/assets/blog/cloud-pc/04-launch-instance.png)
+
+*Suggested screenshot: the EC2 dashboard with the orange Launch instance button.*
+
+## Step 5: Name it and pick Windows
+
+Give it a friendly name like **Butler PC**. Then, under the list of operating systems, choose a **Windows** option that is marked **Free tier eligible**. We pick Windows because Influencer Butler is a Windows app, and Windows gives you a normal desktop you can click around in.
+
+![Naming the instance and choosing Windows](/assets/blog/cloud-pc/05-name-windows.png)
+
+*Suggested screenshot: the Name box filled in and a Windows image selected, with the Free tier eligible label visible.*
+
+## Step 6: Choose a size that can actually run it
+
+This is the one spot where a little detail matters. AWS offers a tiny **free** size with only 1 GB of memory. It is technically free, but it is too weak to comfortably run a browser-based app like Influencer Butler; it will feel sluggish.
+
+Instead, pick a slightly bigger size, something with **2 to 4 GB of memory** (for example **t3.small** or **t3.medium**). Here is the good news: your **free credits from Step 2 cover this** for months, so it is still free to you. Only after your free credits and free hours run out would it cost a few dollars a month, and by then you will know whether it is worth keeping.
+
+![Choosing a 2 to 4 GB instance size](/assets/blog/cloud-pc/06-instance-size.png)
+
+*Suggested screenshot: the instance type list with a 2 to 4 GB size such as t3.small selected.*
+
+## Step 7: Create a key pair
+
+AWS will ask you to create a **key pair**. Click **Create new key pair**, give it any name, and download the little file it gives you. Keep that file somewhere safe. You only need it once, to unlock your computer's password in Step 10.
+
+![Creating a key pair](/assets/blog/cloud-pc/07-key-pair.png)
+
+*Suggested screenshot: the Create key pair pop-up.*
+
+## Step 8: Allow Remote Desktop
+
+In the network settings box, make sure the option to **Allow RDP** (Remote Desktop) is checked. This is what lets you connect to your cloud computer from your own laptop. If it offers to limit it to "My IP," that is a good, safer choice.
+
+![Allowing Remote Desktop in network settings](/assets/blog/cloud-pc/08-allow-rdp.png)
+
+*Suggested screenshot: the network settings box with Allow RDP traffic checked.*
+
+## Step 9: Launch it
+
+Click the **Launch instance** button on the right. You will see a friendly green **Success** screen. That is it: your cloud computer now exists and is booting up. Give it a couple of minutes to wake up.
+
+![The launch success screen](/assets/blog/cloud-pc/09-launch-success.png)
+
+*Suggested screenshot: the green Success screen after launching the instance.*
+
+## Step 10: Get your password
+
+Go back to your list of instances and click your new **Butler PC**. Click **Connect**, then the **RDP client** tab, then **Get password**. Upload the key file you saved in Step 7, and AWS will show you the password for your cloud computer. Copy it somewhere handy. Also copy the **Public DNS** or **IP address** shown on that screen; that is your computer's "address."
+
+![Getting your cloud PC password](/assets/blog/cloud-pc/10-get-password.png)
+
+*Suggested screenshot: the Connect screen, RDP client tab, with the Get password button.*
+
+## Step 11: Open Remote Desktop and connect
+
+Now, on your own laptop, open the **Remote Desktop** app.
+
+- **On Windows:** it is already installed. Search your Start menu for **Remote Desktop Connection**.
+- **On a Mac:** get the **free** Windows App (formerly Microsoft Remote Desktop) from the App Store.
+
+Paste in the address from Step 10, then enter the username **Administrator** and the password you copied. Click connect.
+
+![Connecting with Remote Desktop](/assets/blog/cloud-pc/11-remote-desktop.png)
+
+*Suggested screenshot: the Remote Desktop Connection app with your cloud PC address typed in.*
+
+## Step 12: You are in
+
+A Windows desktop appears in a window on your screen. That is your cloud computer. You are now controlling it as if you were sitting right in front of it. Feels like magic the first time.
+
+![The cloud PC Windows desktop](/assets/blog/cloud-pc/12-cloud-desktop.png)
+
+*Suggested screenshot: the fresh Windows desktop of your new cloud PC.*
+
+## Step 13: Install Influencer Butler on the cloud PC
+
+On the cloud desktop, open the web browser and go to your Influencer Butler download page, exactly like you would on any new computer. Download the installer and run it. (If Windows shows a blue "protected your PC" box, click **More info**, then **Run anyway**; that just means the file is new, not unsafe.)
+
+![Downloading Influencer Butler on the cloud PC](/assets/blog/cloud-pc/13-download-ib.png)
+
+*Suggested screenshot: the Influencer Butler download page open in the browser on the cloud PC.*
+
+## Step 14: Log in and start your butlers
+
+Open Influencer Butler on the cloud computer and log in with your normal account. Set up and start whichever butlers you want running: your Daily Commission Butler, your Instagram butlers, whatever you use. This is the same app you already know, just running on a computer that never sleeps.
+
+![Influencer Butler running on the cloud PC](/assets/blog/cloud-pc/14-running.png)
+
+*Suggested screenshot: Influencer Butler running and logged in on the cloud desktop.*
+
+## Step 15: The magic part, leave it running
+
+Here is the whole point. When you are done, do **not** shut the cloud computer down. Just **close the Remote Desktop window** (or close your laptop entirely). The cloud computer stays on and keeps running your butlers 24/7.
+
+- **Close Remote Desktop** = you leave, but the cloud PC keeps working. This is what you want almost every time.
+- **Shut down** (from inside the Windows Start menu) = the cloud PC turns off and stops working. Only do this if you want to pause it.
+
+Now you can travel, close your laptop, lose your wifi, and your butlers never miss a beat.
+
+## Keep it free: set a safety alarm
+
+To make sure "free" stays free, set a simple billing alarm so AWS emails you if you ever get close to a charge. In the AWS search bar, go to **Budgets**, create a small budget (say $1), and add your email. Now you will always get a heads-up long before any real cost.
+
+![Setting a billing alarm in AWS Budgets](/assets/blog/cloud-pc/15-billing-alarm.png)
+
+*Suggested screenshot: the AWS Budgets page creating a small billing alarm so there are no surprises.*
+
+A couple more habits to stay free and safe:
+
+- **Check your Free Tier balance** every few weeks (that page from Step 2).
+- When your free period eventually ends, a small cloud computer is only a few dollars a month, far less than most creators expect. If it is saving you hours, it easily pays for itself. If not, you can **terminate** the instance to stop all costs.
+
+## Quick FAQ
+
+**Is it really free?** Yes, for months. New AWS accounts get free credits (up to $200) plus a free usage window, and that comfortably covers a small always-on cloud computer. We also set up the alarm in Step 15 so nothing sneaks up on you.
+
+**I use a Mac. Can I still do this?** Absolutely. You connect from your Mac using the free Windows App from the App Store, and the cloud computer itself runs Windows so Influencer Butler works perfectly.
+
+**Will it keep running if my laptop dies or loses wifi?** Yes. That is the whole benefit. Your laptop is just a remote control. The cloud computer keeps working on its own.
+
+**Is my login safe on it?** It is your private computer that only you can reach with your password and key file. Keep the password and key file to yourself, limit Remote Desktop to "My IP" in Step 8, and you are in good shape.
+
+## The takeaway
+
+If your computer is slow or you travel a lot, you no longer have to babysit Influencer Butler on a laptop that keeps getting interrupted. For **free**, you can put it on an always-on cloud computer that runs your butlers around the clock. Set it up once, close your laptop, and let it work while you live your life.
+
+New to Influencer Butler? [Start your free 3-day trial](/signup) and then park it on a free cloud PC so it never stops working for you.

@@ -1,0 +1,120 @@
+---
+title: Ejecuta Influencer Butler en la nube (PC gratis 24/7)
+summary: Pon Influencer Butler en un ordenador en la nube gratis y siempre encendido para que tus butlers sigan trabajando aunque tu portátil sea lento, esté cerrado o de viaje. Paso a paso, sin conocimientos técnicos.
+category: Other
+---
+
+## Por qué hacer esto
+
+Si tu ordenador es lento o antiguo, o viajas y no quieres que tus butlers se interrumpan cada vez que cierras el portátil, puedes ejecutar Influencer Butler en un ordenador en la nube **gratis**. Vive en el centro de datos de Amazon, nunca se apaga, y te conectas a él desde tu propio portátil o móvil. Lo configuras una vez y tus butlers funcionan 24/7 mientras tú sigues con tu día.
+
+Empezar es realmente gratis: las cuentas nuevas de AWS reciben créditos gratis (actualmente hasta 200 $) más un periodo de uso gratuito, que cubre un pequeño ordenador siempre encendido durante meses. Este tutorial es la versión resumida en lista. Para el recorrido completo con capturas de pantalla, lee la [guía completa en nuestro blog](https://www.influencerbutler.com/blog/run-influencer-butler-free-cloud-pc).
+
+## Antes de empezar
+
+- [ ] Tengo unos 30 minutos (solo lo haces una vez) {#have-time}
+- [ ] Tengo a mano mi acceso a Influencer Butler {#have-login}
+- [ ] Tengo una tarjeta para la verificación del registro de AWS (no te cobran dentro de los límites gratuitos) {#have-card}
+
+## Crea tu ordenador en la nube gratis
+
+- [ ] Ve a aws.amazon.com y haz clic en **Crear una cuenta gratuita**, y completa el registro gratuito {#signup}
+
+![Crear una cuenta de AWS gratis](/assets/blog/cloud-pc/01-signup.png)
+
+*Captura sugerida: la página de registro de AWS con el botón Crear una cuenta gratuita.*
+
+- [ ] Inicia sesión y busca tus **créditos gratis** en la sección de facturación o Free Tier {#free-credits}
+
+![Tus créditos gratis de AWS](/assets/blog/cloud-pc/02-free-credits.png)
+
+*Captura sugerida: la página de Free Tier o facturación con tu saldo de crédito gratis.*
+
+- [ ] En la barra de búsqueda de AWS, escribe **EC2** y ábrelo (EC2 significa simplemente ordenadores en la nube) {#open-ec2}
+
+![Abrir EC2](/assets/blog/cloud-pc/03-open-ec2.png)
+
+*Captura sugerida: la barra de búsqueda de AWS con EC2 escrito.*
+
+- [ ] Haz clic en el botón naranja **Lanzar instancia** {#launch-instance}
+
+![El botón Lanzar instancia](/assets/blog/cloud-pc/04-launch-instance.png)
+
+*Captura sugerida: el panel de EC2 con el botón naranja Lanzar instancia.*
+
+- [ ] Ponle un nombre (por ejemplo **Butler PC**) y elige una opción de **Windows** marcada como Free tier eligible {#pick-windows}
+
+![Ponerle nombre y elegir Windows](/assets/blog/cloud-pc/05-name-windows.png)
+
+*Captura sugerida: el campo Nombre rellenado y una imagen de Windows seleccionada.*
+
+- [ ] Elige un tamaño con **2 a 4 GB de memoria** (como **t3.small**). El diminuto tamaño gratis de 1 GB es demasiado lento para una app de navegador; tus créditos gratis cubren el tamaño mayor durante meses {#choose-size}
+
+![Elegir un tamaño de 2 a 4 GB](/assets/blog/cloud-pc/06-instance-size.png)
+
+*Captura sugerida: la lista de tipos de instancia con t3.small seleccionado.*
+
+- [ ] Haz clic en **Crear nuevo par de claves**, descarga el archivo y guárdalo a salvo {#key-pair}
+
+![Crear un par de claves](/assets/blog/cloud-pc/07-key-pair.png)
+
+*Captura sugerida: la ventana Crear par de claves.*
+
+- [ ] En la configuración de red, asegúrate de que **Permitir RDP** (Escritorio remoto) esté marcado; limítalo a **Mi IP** si te lo ofrece {#allow-rdp}
+
+![Permitir Escritorio remoto](/assets/blog/cloud-pc/08-allow-rdp.png)
+
+*Captura sugerida: la configuración de red con Permitir RDP marcado.*
+
+- [ ] Haz clic en **Lanzar instancia** y espera la pantalla verde de **Éxito** {#launch}
+
+![La pantalla de éxito](/assets/blog/cloud-pc/09-launch-success.png)
+
+*Captura sugerida: la pantalla verde de Éxito.*
+
+## Conéctate e instala
+
+- [ ] Abre tu instancia, haz clic en **Conectar > Cliente RDP > Obtener contraseña**, sube tu archivo de clave y copia la contraseña y la dirección (DNS público / IP) {#get-password}
+
+![Obtener tu contraseña](/assets/blog/cloud-pc/10-get-password.png)
+
+*Captura sugerida: la pantalla Conectar con el botón Obtener contraseña.*
+
+- [ ] Abre **Escritorio remoto** en tu propio dispositivo (integrado en Windows; la app gratuita Windows App de la App Store en Mac), pega la dirección e inicia sesión como **Administrator** con la contraseña {#remote-desktop}
+
+![Conectar con Escritorio remoto](/assets/blog/cloud-pc/11-remote-desktop.png)
+
+*Captura sugerida: la app de Escritorio remoto con la dirección de tu PC en la nube.*
+
+- [ ] Ahora ves tu escritorio de Windows en la nube; lo estás controlando de forma remota {#connected}
+
+![Tu escritorio en la nube](/assets/blog/cloud-pc/12-cloud-desktop.png)
+
+*Captura sugerida: el escritorio de Windows recién creado de tu PC en la nube.*
+
+- [ ] En el escritorio de la nube, abre el navegador, descarga Influencer Butler y ejecuta el instalador (si Windows avisa, haz clic en **Más información > Ejecutar de todas formas**) {#install}
+
+![Descargar Influencer Butler](/assets/blog/cloud-pc/13-download-ib.png)
+
+*Captura sugerida: la página de descarga de Influencer Butler en el navegador de la nube.*
+
+- [ ] Abre Influencer Butler, inicia sesión y pon en marcha tus butlers {#start-butlers}
+
+![Influencer Butler en marcha](/assets/blog/cloud-pc/14-running.png)
+
+*Captura sugerida: Influencer Butler funcionando y con sesión iniciada en el escritorio de la nube.*
+
+## Déjalo en marcha y mantenlo gratis
+
+- [ ] Cuando termines, simplemente **cierra la ventana de Escritorio remoto** (no apagues el PC). El ordenador en la nube sigue ejecutando tus butlers 24/7 {#leave-running}
+- [ ] En la barra de búsqueda de AWS, abre **Budgets** y crea un presupuesto pequeño (1 $) con tu correo para recibir un aviso mucho antes de cualquier cargo {#billing-alarm}
+
+![Configurar una alarma de facturación](/assets/blog/cloud-pc/15-billing-alarm.png)
+
+*Captura sugerida: la página de AWS Budgets creando una pequeña alarma de facturación.*
+
+- [ ] Revisa tu saldo de Free Tier cada pocas semanas; si el periodo gratis termina, un PC pequeño en la nube cuesta solo unos pocos dólares al mes, o puedes **terminar** la instancia para detener todos los costes {#stay-free}
+
+## Eso es todo
+
+Tus butlers ahora funcionan en un ordenador en la nube siempre encendido. Cierra el portátil, viaja, pierde el wifi: siguen trabajando. Para el recorrido completo con cada captura de pantalla, mira la [guía completa en nuestro blog](https://www.influencerbutler.com/blog/run-influencer-butler-free-cloud-pc).
