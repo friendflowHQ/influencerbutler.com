@@ -208,6 +208,9 @@ export default async function QuestionDetailPage({
             >
               Community Q&amp;A
             </Link>
+            <Link href="/course/amazon-influencer" className="text-slate-700 hover:text-slate-900">
+              Free Course
+            </Link>
           </nav>
         </div>
       </header>

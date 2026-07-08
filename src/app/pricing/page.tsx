@@ -94,6 +94,12 @@ export default async function PricingPage({
               Blog
             </Link>
             <Link
+              href="/course/amazon-influencer"
+              className="hidden text-slate-600 hover:text-[#f97316] sm:inline"
+            >
+              Free Course
+            </Link>
+            <Link
               href={signedIn ? "/dashboard" : "/login"}
               className="font-medium text-slate-700 hover:text-[#f97316]"
             >
@@ -255,6 +261,7 @@ function SiteFooter() {
               <li><Link href="/pricing" className="hover:text-[#f97316]">Pricing</Link></li>
               <li><Link href="/#how-it-works" className="hover:text-[#f97316]">How It Works</Link></li>
               <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
+              <li><Link href="/course/amazon-influencer" className="hover:text-[#f97316]">Free Amazon Influencer Course</Link></li>
               <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates - Earn 30%</Link></li>
             </ul>
           </div>

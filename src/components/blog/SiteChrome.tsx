@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#pricing", label: "Pricing" },
   { href: "/#faq", label: "FAQ" },
+  { href: "/course/amazon-influencer", label: "Free Course" },
   { href: "/blog", label: "Blog", current: true },
   { href: "/login", label: "Login" },
 ];
@@ -169,6 +170,9 @@ export function SiteFooter() {
               </Link>
               <Link href="/blog" className="block text-slate-500 hover:text-orange-500">
                 Blog
+              </Link>
+              <Link href="/course/amazon-influencer" className="block text-slate-500 hover:text-orange-500">
+                Free Amazon Influencer Course
               </Link>
               <Link href="/affiliates" className="block text-slate-500 hover:text-orange-500">
                 Affiliates: Earn 30%

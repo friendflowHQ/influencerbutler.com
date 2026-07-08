@@ -29,6 +29,12 @@ export default function AffiliatesLandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
+              href="/course/amazon-influencer"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Free Course
+            </Link>
+            <Link
               href="/blog"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
