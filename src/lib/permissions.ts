@@ -51,7 +51,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "billing.refund", label: "Issue refund", description: "Guided: log intent and open Lemon Squeezy to issue a refund. Moves money.", domain: "Billing", risk: "money", built: true },
 
   // Licenses
-  { key: "licenses.view", label: "View licenses", description: "See a user's license keys and their status.", domain: "Licenses", risk: "normal", built: false },
+  { key: "licenses.view", label: "View licenses & comps", description: "See license keys, and the Comps page tracking free-code subscriptions and their expiry.", domain: "Licenses", risk: "normal", built: true },
   { key: "licenses.regenerate", label: "Regenerate license", description: "Guided: log intent and open Lemon Squeezy to reissue a license key.", domain: "Licenses", risk: "destructive", built: true },
   { key: "licenses.revoke", label: "Revoke license", description: "Mark a license key revoked (or reactivate it) in our database.", domain: "Licenses", risk: "destructive", built: true },
   { key: "licenses.resend", label: "Resend license", description: "Email a license key to its owner.", domain: "Licenses", risk: "normal", built: true },
