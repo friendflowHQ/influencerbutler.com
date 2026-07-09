@@ -37,7 +37,11 @@ export type HudCommand =
   | { type: "campaign.accept.batch"; items: Array<{ kind: "cc" | "spcc"; product: ProductRef }> }
   // Batch push of storefront-checkup issues into the desktop Retag Butler.
   | { type: "retag.push"; issues: RetagIssue[] }
-  | { type: "collaboration.add"; product: ProductRef };
+  | { type: "collaboration.add"; product: ProductRef }
+  // Turn the brand of the product being viewed into a Pitch Butler prospect.
+  // The desktop resolves/creates the brand and opens a deal; product carries the
+  // ASIN context so the pitch links back to what prompted it.
+  | { type: "pitch.add"; brand: string; product?: ProductRef };
 
 export type HudCommandResult = {
   ok: boolean;

@@ -33,7 +33,7 @@ export function renderHudActions(signals: ProductSignals): void {
     campaignFlagsFor(signals.asin),
   ]).then(([hud, auth, flags]) => {
     if (hud.connected) {
-      renderConnected(body, status, product, hud, flags);
+      renderConnected(body, status, product, hud, flags, signals.brand);
     } else {
       renderUpsell(body, auth);
     }
@@ -57,6 +57,7 @@ function renderConnected(
   product: ProductRef,
   hud: HudStatus,
   flags: CampaignFlags,
+  brand: string | null,
 ): void {
   body.replaceChildren();
 
@@ -127,6 +128,18 @@ function renderConnected(
   }
 
   grid.append(collabBtn);
+
+  // Pitch this brand: only when the page named a brand. Turns the product into
+  // an outreach lead in Pitch Butler (brand + prospect deal), no browser.
+  if (brand && brand.trim()) {
+    const pitchBtn = el("button", "btn secondary");
+    pitchBtn.textContent = t().pitchThisBrand(brand.trim());
+    pitchBtn.addEventListener("click", () =>
+      run({ type: "pitch.add", brand: brand.trim(), product }, t().pitchingBrand),
+    );
+    grid.append(pitchBtn);
+  }
+
   body.append(grid);
 
   const note = el("p", "note");

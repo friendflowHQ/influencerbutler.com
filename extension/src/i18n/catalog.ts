@@ -387,6 +387,8 @@ export interface Dict {
   acceptSpcc: string;
   addToCollab: string;
   addingCollab: string;
+  pitchThisBrand: (brand: string) => string;
+  pitchingBrand: string;
   pushingDeals: string;
   sendingContent: string;
   checkingCc: string;
@@ -860,6 +862,8 @@ const en: Dict = {
   acceptSpcc: "Accept SPCC campaign",
   addToCollab: "Add to Collaboration Tracker",
   addingCollab: "Adding to Collaboration Tracker...",
+  pitchThisBrand: (brand) => `Pitch ${brand}`,
+  pitchingBrand: "Adding to Pitch Butler...",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
@@ -1338,6 +1342,8 @@ const es: Dict = {
   acceptSpcc: "Aceptar campaña SPCC",
   addToCollab: "Añadir al Collaboration Tracker",
   addingCollab: "Añadiendo al Collaboration Tracker...",
+  pitchThisBrand: (brand) => `Contactar a ${brand}`,
+  pitchingBrand: "Añadiendo a Pitch Butler...",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
@@ -1816,6 +1822,8 @@ const fr: Dict = {
   acceptSpcc: "Accepter la campagne SPCC",
   addToCollab: "Ajouter au Collaboration Tracker",
   addingCollab: "Ajout au Collaboration Tracker...",
+  pitchThisBrand: (brand) => `Contacter ${brand}`,
+  pitchingBrand: "Ajout à Pitch Butler...",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",
