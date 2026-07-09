@@ -107,6 +107,11 @@ export function renderCalculator(
       kv(t().kvSalesToEarnBack, Number.isFinite(r.salesToBreakEven) ? String(r.salesToBreakEven) : t().notApplicable),
       kv(t().kvViewsForSales, Number.isFinite(r.viewsToBreakEven) ? r.viewsToBreakEven.toLocaleString() : t().notApplicable),
       kv(t().kvProfitPerMonth, formatCents(r.estMonthlyProfitCents, signals.currency), t().calcEstimatesNote),
+      kv(
+        t().kvRoiPerMinute,
+        `${formatCents(r.estProfitPerFilmMinuteCents, signals.currency)}${t().perMinuteSuffix}`,
+        t().roiPerMinuteNote,
+      ),
     );
     purchasedResults.replaceChildren(
       kv(t().kvPurchasePrice, formatCents(inputs.priceCents, signals.currency)),

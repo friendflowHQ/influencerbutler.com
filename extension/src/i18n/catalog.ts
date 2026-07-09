@@ -241,6 +241,9 @@ export interface Dict {
   kvSalesToEarnBack: string;
   kvViewsForSales: string;
   kvProfitPerMonth: string;
+  kvRoiPerMinute: string;
+  perMinuteSuffix: string;
+  roiPerMinuteNote: string;
   notApplicable: string;
   bePurchasedHeading: string;
   bePurchasedNote: string;
@@ -700,6 +703,9 @@ const en: Dict = {
   kvSalesToEarnBack: "Sales to earn that back",
   kvViewsForSales: "Views for those sales",
   kvProfitPerMonth: "Est. profit per month",
+  kvRoiPerMinute: "Profit per filming minute",
+  perMinuteSuffix: "/min",
+  roiPerMinuteNote: "Estimated monthly profit divided by the minutes you spend filming and editing. Your real limit is time: this ranks products by the return each minute of effort buys.",
   notApplicable: "n/a",
   bePurchasedHeading: "Break-even if purchased",
   bePurchasedNote:
@@ -1173,6 +1179,9 @@ const es: Dict = {
   kvSalesToEarnBack: "Ventas para recuperarlo",
   kvViewsForSales: "Vistas para esas ventas",
   kvProfitPerMonth: "Ganancia estimada al mes",
+  kvRoiPerMinute: "Ganancia por minuto de grabación",
+  perMinuteSuffix: "/min",
+  roiPerMinuteNote: "Ganancia mensual estimada dividida entre los minutos que dedicas a grabar y editar. Tu límite real es el tiempo: esto ordena los productos por el retorno que compra cada minuto de esfuerzo.",
   notApplicable: "n/d",
   bePurchasedHeading: "Punto de equilibrio si lo compras",
   bePurchasedNote:
@@ -1646,6 +1655,9 @@ const fr: Dict = {
   kvSalesToEarnBack: "Ventes pour rembourser",
   kvViewsForSales: "Vues pour ces ventes",
   kvProfitPerMonth: "Profit estimé par mois",
+  kvRoiPerMinute: "Profit par minute de tournage",
+  perMinuteSuffix: "/min",
+  roiPerMinuteNote: "Profit mensuel estimé divisé par les minutes passées à tourner et monter. Votre vraie limite est le temps: ceci classe les produits selon le retour que chaque minute d'effort rapporte.",
   notApplicable: "n/d",
   bePurchasedHeading: "Seuil de rentabilité si acheté",
   bePurchasedNote:

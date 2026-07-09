@@ -22,6 +22,10 @@ export type CalculatorResult = {
   viewsToBreakEvenPurchased: number;
   estMonthlySalesShare: number;
   estMonthlyProfitCents: number;
+  // Estimated monthly profit divided by the minutes spent filming and editing:
+  // an efficiency signal, since a creator's real constraint is time, not ideas.
+  // Ranks products by "profit each minute of my effort buys", not gross payout.
+  estProfitPerFilmMinuteCents: number;
 };
 
 // A new video splits carousel attention with existing influencer videos;
@@ -64,6 +68,10 @@ export function calculate(inputs: CalculatorInputs): CalculatorResult {
   const estMonthlySalesShare = Math.max(0, inputs.viewsPerMonth) * share * conversion;
   const estMonthlyProfitCents = Math.round(estMonthlySalesShare * commissionPerSaleCents);
 
+  const minutes = Math.max(0, inputs.minutesPerVideo);
+  const estProfitPerFilmMinuteCents =
+    minutes > 0 ? Math.round(estMonthlyProfitCents / minutes) : 0;
+
   return {
     commissionPerSaleCents,
     timeInvestmentCents,
@@ -74,6 +82,7 @@ export function calculate(inputs: CalculatorInputs): CalculatorResult {
     viewsToBreakEvenPurchased,
     estMonthlySalesShare,
     estMonthlyProfitCents,
+    estProfitPerFilmMinuteCents,
   };
 }
 

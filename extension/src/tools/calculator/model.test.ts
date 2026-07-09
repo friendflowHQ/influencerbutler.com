@@ -38,6 +38,13 @@ describe("calculate", () => {
     expect(result.estMonthlyProfitCents).toBe(500);
   });
 
+  it("derives profit per filming minute from monthly profit and minutes", () => {
+    // 500c monthly profit over 60 minutes = 8c/min (rounded).
+    expect(calculate(base).estProfitPerFilmMinuteCents).toBe(8);
+    // Zero minutes cannot divide: report 0 rather than Infinity/NaN.
+    expect(calculate({ ...base, minutesPerVideo: 0 }).estProfitPerFilmMinuteCents).toBe(0);
+  });
+
   it("returns Infinity break-even when commission is zero", () => {
     const result = calculate({ ...base, priceCents: 0 });
     expect(result.salesToBreakEven).toBe(Infinity);
