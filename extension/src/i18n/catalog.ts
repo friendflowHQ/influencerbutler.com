@@ -34,6 +34,14 @@ export interface Dict {
   priceHistoryLow: (amount: string) => string;
   priceHistoryLowest: string;
   priceHistoryNote: string;
+  shotListTitle: string;
+  shotListShowFeatures: string;
+  shotListBeatHook: string;
+  shotListBeatUnbox: string;
+  shotListBeatUse: string;
+  shotListBeatResult: string;
+  shotListBeatCta: string;
+  shotListBeatFtc: string;
 
   // Popup: static chrome
   tagFree: string;
@@ -481,6 +489,14 @@ const en: Dict = {
   priceHistoryLow: (amount) => `Low ${amount}`,
   priceHistoryLowest: "Lowest yet",
   priceHistoryNote: "Prices seen since you started browsing with the extension.",
+  shotListTitle: "Shot list",
+  shotListShowFeatures: "Show these features on camera:",
+  shotListBeatHook: "Hook in the first 3 seconds: the result or the problem it solves",
+  shotListBeatUnbox: "Show the packaging and what is in the box",
+  shotListBeatUse: "Demonstrate it in real use, not just held up to the camera",
+  shotListBeatResult: "Show the before and after, or the end result",
+  shotListBeatCta: "Clear call to action: send viewers to your storefront link",
+  shotListBeatFtc: "Add your FTC disclosure on screen and in the caption (#ad, #CommissionsEarned)",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -946,6 +962,14 @@ const es: Dict = {
   priceHistoryLow: (amount) => `Mínimo ${amount}`,
   priceHistoryLowest: "El más bajo hasta ahora",
   priceHistoryNote: "Precios vistos desde que empezaste a navegar con la extensión.",
+  shotListTitle: "Guion de grabación",
+  shotListShowFeatures: "Muestra estas características en cámara:",
+  shotListBeatHook: "Gancho en los primeros 3 segundos: el resultado o el problema que resuelve",
+  shotListBeatUnbox: "Muestra el empaque y qué incluye la caja",
+  shotListBeatUse: "Demuéstralo en uso real, no solo sostenido ante la cámara",
+  shotListBeatResult: "Muestra el antes y el después, o el resultado final",
+  shotListBeatCta: "Llamada a la acción clara: envía a los espectadores a tu tienda",
+  shotListBeatFtc: "Añade tu aviso legal FTC en pantalla y en el texto (#ad, #CommissionsEarned)",
 
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
@@ -1411,6 +1435,14 @@ const fr: Dict = {
   priceHistoryLow: (amount) => `Plus bas ${amount}`,
   priceHistoryLowest: "Plus bas jamais vu",
   priceHistoryNote: "Prix vus depuis que vous naviguez avec l'extension.",
+  shotListTitle: "Plan de tournage",
+  shotListShowFeatures: "Montrez ces caractéristiques à la caméra:",
+  shotListBeatHook: "Accroche dans les 3 premières secondes: le résultat ou le problème résolu",
+  shotListBeatUnbox: "Montrez l'emballage et le contenu de la boîte",
+  shotListBeatUse: "Montrez-le en usage réel, pas seulement tenu devant la caméra",
+  shotListBeatResult: "Montrez l'avant et l'après, ou le résultat final",
+  shotListBeatCta: "Appel à l'action clair: envoyez les spectateurs vers votre boutique",
+  shotListBeatFtc: "Ajoutez votre mention FTC à l'écran et dans la légende (#ad, #CommissionsEarned)",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",

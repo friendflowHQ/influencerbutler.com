@@ -22,6 +22,7 @@ import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
+import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
@@ -179,6 +180,11 @@ async function runForPage(): Promise<void> {
 
       // My affiliate/deeplink for this product, plus an optional AI caption.
       guard("my-link", () => void renderMyLink(signals));
+
+      // A product-specific filming plan: the features to show plus best-practice
+      // beats and the FTC disclosure. Pairs with Butler Approved (what to film)
+      // and My Link (where to send viewers).
+      guard("shot-list", () => renderShotList(signals));
 
       // Watch this product for a restock, an opening video slot, or a price drop.
       if (settings.tools.watchlist) {
