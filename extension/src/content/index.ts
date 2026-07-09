@@ -18,6 +18,7 @@ import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
+import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
@@ -121,6 +122,10 @@ async function runForPage(): Promise<void> {
       // over the bridge). Reserves a slot here; reveals only if paired and there
       // are earnings, so it stays invisible for everyone else.
       guard("earnings", () => renderProductEarnings(signals));
+
+      // Price history sparkline, built locally from prices seen while browsing.
+      // Reserves a slot; reveals only once there are at least two observations.
+      guard("price-history", () => renderPriceHistory(signals));
 
       if (settings.tools.videoCounts) {
         guard("video-counts", () =>

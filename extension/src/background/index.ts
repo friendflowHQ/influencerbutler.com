@@ -17,6 +17,7 @@ import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { getDealSources, harvestDealSites } from "./deal-harvest";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
+import { getPriceHistory, recordPriceFromFinding } from "./price-history";
 import {
   addToWatchlist,
   getWatchlist,
@@ -92,6 +93,8 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       // When this finding came from a tab we opened for the order video-count
       // pass, feed its counts to that in-flight scan before queueing as usual.
       noteScanFinding(message.finding, sender.tab?.id);
+      // Fold any product-scan price into the local price-history sparkline.
+      void recordPriceFromFinding(message.finding);
       void enqueue(message.finding)
         .then(() => flush())
         .finally(() => sendResponse(undefined));
@@ -116,6 +119,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "LOOKUP_EARNINGS":
       void lookupEarnings(message.asins).then(sendResponse);
+      return true;
+    case "GET_PRICE_HISTORY":
+      void getPriceHistory(message.asin, message.marketplace).then(sendResponse);
       return true;
     case "REQUEST_PAIRING":
       void requestPairing().then(sendResponse);

@@ -11,6 +11,7 @@ import type {
 import type {
   IntegrationsState,
   IntegrationTestResult,
+  PricePoint,
   WatchCondition,
   WatchItem,
 } from "../storage/schema";
@@ -46,6 +47,9 @@ export type RuntimeMessage =
   // product pages and search tiles can show real earnings. Routed to the app
   // over the local bridge; returns paired:false when the app was never connected.
   | { kind: "LOOKUP_EARNINGS"; asins: string[] }
+  // Read the locally-built price history for a product, for the sparkline on the
+  // product panel. Returns points oldest-first (may be empty on a fresh install).
+  | { kind: "GET_PRICE_HISTORY"; asin: string; marketplace: string }
   // Desktop-app pairing, driven from the popup: ask the app to show a 6-digit
   // code, submit the code the user typed, or forget the stored token.
   | { kind: "REQUEST_PAIRING" }
@@ -213,6 +217,7 @@ export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
 export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
+export type { PricePoint };
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);

@@ -29,6 +29,11 @@ export interface Dict {
   earningsTitle: string;
   earningsAmount: (amount: string, count: number) => string;
   earningsNote: string;
+  priceHistoryTitle: string;
+  priceHistoryNow: (amount: string) => string;
+  priceHistoryLow: (amount: string) => string;
+  priceHistoryLowest: string;
+  priceHistoryNote: string;
 
   // Popup: static chrome
   tagFree: string;
@@ -471,6 +476,11 @@ const en: Dict = {
   earningsTitle: "Your earnings",
   earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
   earningsNote: "You have already earned here. Find more products like the ones already paying you.",
+  priceHistoryTitle: "Price history",
+  priceHistoryNow: (amount) => `Now ${amount}`,
+  priceHistoryLow: (amount) => `Low ${amount}`,
+  priceHistoryLowest: "Lowest yet",
+  priceHistoryNote: "Prices seen since you started browsing with the extension.",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -931,6 +941,11 @@ const es: Dict = {
   earningsTitle: "Tus ganancias",
   earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
   earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
+  priceHistoryTitle: "Historial de precios",
+  priceHistoryNow: (amount) => `Ahora ${amount}`,
+  priceHistoryLow: (amount) => `Mínimo ${amount}`,
+  priceHistoryLowest: "El más bajo hasta ahora",
+  priceHistoryNote: "Precios vistos desde que empezaste a navegar con la extensión.",
 
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
@@ -1391,6 +1406,11 @@ const fr: Dict = {
   earningsTitle: "Vos gains",
   earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
   earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",
+  priceHistoryTitle: "Historique des prix",
+  priceHistoryNow: (amount) => `Maintenant ${amount}`,
+  priceHistoryLow: (amount) => `Plus bas ${amount}`,
+  priceHistoryLowest: "Plus bas jamais vu",
+  priceHistoryNote: "Prix vus depuis que vous naviguez avec l'extension.",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",

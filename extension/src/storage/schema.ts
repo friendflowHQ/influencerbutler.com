@@ -104,6 +104,19 @@ export type CachedScan = {
   ts: number;
 };
 
+// A single observed price for a product, so the product panel can draw a small
+// price-history sparkline and flag an all-time low. Built locally from the
+// prices the extension already reads as the creator browses (no extra fetch, no
+// server): the record starts empty and grows over time. Keyed by
+// `marketplace:asin`; points are kept oldest-first.
+export type PricePoint = { at: number; cents: number };
+
+// Bounds so the history can never grow without limit: at most this many points
+// per product, and at most this many products tracked (least-recently-seen
+// products drop out first).
+export const PRICE_HISTORY_POINTS_CAP = 90;
+export const PRICE_HISTORY_ASINS_CAP = 300;
+
 // One ASIN the user is watching for a change. The background poller opens each
 // watched product briefly on an alarm, reads its current state, and fires a
 // notification when a subscribed condition trips. `last` is the state at the
@@ -163,6 +176,8 @@ export type StorageShape = {
   queue: Finding[];
   lastSyncAt: number | null;
   cache: Record<string, CachedScan>;
+  // Price history per `marketplace:asin`, oldest-first. See PricePoint.
+  priceHistory: Record<string, PricePoint[]>;
   orderCursors: Record<string, OrderCursor>;
   watchlist: WatchItem[];
   telemetry: { selectorMisses: Record<string, number> };
@@ -173,7 +188,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -216,6 +231,7 @@ export const DEFAULTS: StorageShape = {
   queue: [],
   lastSyncAt: null,
   cache: {},
+  priceHistory: {},
   orderCursors: {},
   watchlist: [],
   telemetry: { selectorMisses: {} },
@@ -233,9 +249,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // Future schema bumps switch on raw.schemaVersion here. Merging with defaults
   // also backfills any keys added within a version. v1 -> v2 added the
   // integrations slice; v2 -> v3 added firstUseAt + nudges; v3 -> v4 added the
-  // watchlist array plus the searchOverlay/campaignMatcher/watchlist tool flags.
-  // Older stored state simply gains its defaults untouched (an existing user's
-  // watchlist starts empty and the new tools default on).
+  // watchlist array plus the searchOverlay/campaignMatcher/watchlist tool flags;
+  // v4 -> v5 added the priceHistory map. Older stored state simply gains its
+  // defaults untouched (an existing user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -260,6 +276,8 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
     },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
-    schemaVersion: 4,
+    priceHistory:
+      raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
+    schemaVersion: 5,
   };
 }
