@@ -1,4 +1,5 @@
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { sendMarketingEmail } from "@/lib/marketing-email";
 
 export type ConversionTier = "1h" | "3d" | "5d";
 
@@ -43,12 +44,6 @@ export async function sendConversionEmail(params: {
   code: string;
   checkoutUrl?: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - conversion email skipped");
-    return false;
-  }
-
   const copy = COPY[params.tier];
   const firstName = params.name.split(" ")[0] || "there";
   const checkoutUrl =
@@ -71,23 +66,10 @@ export async function sendConversionEmail(params: {
     `- The Influencer Butler team`,
   ].join("\n");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <affiliates@influencerbutler.com>",
-        to: [params.to],
-        subject: copy.subject,
-        text: body,
-      }),
-    });
-    return res.ok;
-  } catch (error) {
-    console.error("Conversion email send failed", error);
-    return false;
-  }
+  return sendMarketingEmail({
+    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    to: params.to,
+    subject: copy.subject,
+    text: body,
+  });
 }
