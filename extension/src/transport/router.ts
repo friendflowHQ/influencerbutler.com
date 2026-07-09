@@ -31,28 +31,34 @@ export async function flush(): Promise<void> {
   if (state.queue.length === 0) return;
 
   const batch = state.queue.slice(0, SYNC_BATCH_MAX);
+
+  // Dual-send: deliver the batch to every available sink (the HUD local bridge
+  // and the website API), not just the first that answers, so findings reach the
+  // app AND the dashboard when both are up. Re-delivery on a retry is safe: both
+  // sinks upsert by a stable key, so a finding seen twice updates in place.
+  let anyAvailable = false;
+  let anyRetryable = false;
+  let deliveredSomewhere = false;
   for (const transport of TRANSPORTS) {
     if (!(await transport.isAvailable())) continue;
+    anyAvailable = true;
     const result = await transport.send(batch);
-    if (result.ok) {
-      await patchState((s) => {
-        const sent = new Set(batch.map(findingKey));
-        s.queue = s.queue.filter((f) => !sent.has(findingKey(f)));
-        s.lastSyncAt = Date.now();
-      });
-      return;
-    }
-    if (!result.retry) {
-      // Permanent failure (for example a revoked key): drop the batch so the
-      // queue cannot wedge, the next scans will re-emit fresh findings.
-      await patchState((s) => {
-        const dropped = new Set(batch.map(findingKey));
-        s.queue = s.queue.filter((f) => !dropped.has(findingKey(f)));
-      });
-      return;
-    }
-    // retryable: leave the queue intact for the next alarm
+    if (result.ok) deliveredSomewhere = true;
+    else if (result.retry) anyRetryable = true;
+    // A non-retryable failure (for example a revoked key) is unrecoverable for
+    // that sink; it does not hold the batch.
   }
+
+  if (!anyAvailable) return; // no sink up right now; keep the queue for next alarm
+  if (anyRetryable) return; // a sink wants a retry; keep the batch (idempotent re-send)
+
+  // Every available sink either accepted or permanently rejected the batch: drop
+  // it so the queue cannot wedge, and stamp the sync time if anything took it.
+  await patchState((s) => {
+    const done = new Set(batch.map(findingKey));
+    s.queue = s.queue.filter((f) => !done.has(findingKey(f)));
+    if (deliveredSomewhere) s.lastSyncAt = Date.now();
+  });
 }
 
 export async function queueDepth(): Promise<number> {

@@ -27,6 +27,8 @@ export interface DealsDict {
   colSource: string;
   noResults: string;
   someErrors: string;
+  foundSummary: (n: number) => string;
+  errorSummary: (n: number) => string;
   cappedNote: string;
   enriching: string;
   sendHeading: string;
@@ -67,6 +69,8 @@ const en: DealsDict = {
   colSource: "From",
   noResults: "No Amazon products were found on those sites.",
   someErrors: "Some sites could not be read:",
+  foundSummary: (n) => `Found ${n} deal${n === 1 ? "" : "s"}.`,
+  errorSummary: (n) => `${n} site${n === 1 ? "" : "s"} could not be read.`,
   cappedNote: "Results were capped. Harvest fewer sites at a time for full coverage.",
   enriching: "Filling in prices and commission...",
   sendHeading: "Send to a workspace",
@@ -107,6 +111,8 @@ const es: DealsDict = {
   colSource: "De",
   noResults: "No se encontraron productos de Amazon en esos sitios.",
   someErrors: "Algunos sitios no se pudieron leer:",
+  foundSummary: (n) => `Se ${n === 1 ? "encontró" : "encontraron"} ${n} oferta${n === 1 ? "" : "s"}.`,
+  errorSummary: (n) => `${n} sitio${n === 1 ? "" : "s"} no se ${n === 1 ? "pudo" : "pudieron"} leer.`,
   cappedNote: "Se limitaron los resultados. Recolecta menos sitios a la vez para cobertura completa.",
   enriching: "Completando precios y comisión...",
   sendHeading: "Enviar a un espacio",
@@ -147,6 +153,8 @@ const fr: DealsDict = {
   colSource: "De",
   noResults: "Aucun produit Amazon trouvé sur ces sites.",
   someErrors: "Certains sites n'ont pas pu être lus:",
+  foundSummary: (n) => `${n} offre${n === 1 ? "" : "s"} trouvée${n === 1 ? "" : "s"}.`,
+  errorSummary: (n) => `${n} site${n === 1 ? "" : "s"} n'a pas pu être lu.`,
   cappedNote: "Les résultats ont été limités. Collectez moins de sites à la fois pour une couverture complète.",
   enriching: "Ajout des prix et de la commission...",
   sendHeading: "Envoyer vers un espace",

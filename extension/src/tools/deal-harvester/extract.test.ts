@@ -38,6 +38,30 @@ describe("extractDeals", () => {
     expect(asins).toEqual(["B0AAAAAAAA", "B0GGGGGGGG"]);
   });
 
+  it("keeps the same ASIN on two different marketplaces (both absolute links)", () => {
+    // A creator with US and UK tags can promote both; the deal must not collapse
+    // to whichever marketplace happened to appear first on the page.
+    const html = `
+      <a href="https://www.amazon.com/dp/B0AAAAAAAA">US</a>
+      <a href="https://www.amazon.co.uk/dp/B0AAAAAAAA">UK</a>
+    `;
+    const deals = extractDeals(html, "https://savewithcindy.shop/");
+    expect(deals).toEqual([
+      { asin: "B0AAAAAAAA", marketplace: "amazon.com", sourceUrl: "https://savewithcindy.shop/", promoCode: null },
+      { asin: "B0AAAAAAAA", marketplace: "amazon.co.uk", sourceUrl: "https://savewithcindy.shop/", promoCode: null },
+    ]);
+  });
+
+  it("does not invent a .com row from the relative tail of an absolute non-US link", () => {
+    // The relative regex also matches the /dp/<asin> inside the absolute URL; a
+    // naive marketplace-keyed dedup would wrongly add a second amazon.com row.
+    const html = `<a href="https://www.amazon.co.uk/dp/B0BBBBBBBB/ref=x">UK only</a>`;
+    const deals = extractDeals(html, "https://x.shop/");
+    expect(deals).toEqual([
+      { asin: "B0BBBBBBBB", marketplace: "amazon.co.uk", sourceUrl: "https://x.shop/", promoCode: null },
+    ]);
+  });
+
   it("pairs a promo code when the ASIN and code ride the same element", () => {
     const html = `<div data-asin="B0HHHHHHHH" data-coupon="SAVE20">deal</div>`;
     const deals = extractDeals(html, "https://promos4creators.com/");

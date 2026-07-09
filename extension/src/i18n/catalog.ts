@@ -201,6 +201,7 @@ export interface Dict {
   searchScanStop: string;
   searchScanning: (done: number, total: number) => string;
   searchScanDone: (n: number) => string;
+  searchScanMore: (done: number, remaining: number) => string;
   tileCommission: (amount: string) => string;
   tileCampaign: string;
   tileInfluencer: (n: number) => string;
@@ -639,6 +640,7 @@ const en: Dict = {
   searchScanStop: "Stop",
   searchScanning: (done, total) => `Scanning ${done} of ${total}...`,
   searchScanDone: (n) => `Scanned ${n} products.`,
+  searchScanMore: (done, remaining) => `Scanned ${done}. Click Scan again for ${remaining} more.`,
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
   tileInfluencer: (n) => `${n} infl. videos`,
@@ -1094,6 +1096,7 @@ const es: Dict = {
   searchScanStop: "Detener",
   searchScanning: (done, total) => `Escaneando ${done} de ${total}...`,
   searchScanDone: (n) => `Escaneados ${n} productos.`,
+  searchScanMore: (done, remaining) => `Escaneados ${done}. Pulsa Escanear de nuevo para ${remaining} más.`,
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
   tileInfluencer: (n) => `${n} videos de infl.`,
@@ -1549,6 +1552,7 @@ const fr: Dict = {
   searchScanStop: "Arrêter",
   searchScanning: (done, total) => `Analyse ${done} sur ${total}...`,
   searchScanDone: (n) => `${n} produits analysés.`,
+  searchScanMore: (done, remaining) => `${done} analysés. Cliquez de nouveau sur Analyser pour ${remaining} de plus.`,
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
   tileInfluencer: (n) => `${n} vidéos d'infl.`,

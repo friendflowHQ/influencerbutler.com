@@ -27,6 +27,10 @@ type Row = {
   commissionCents: number | null;
   flags: { cc: boolean; spcc: boolean };
   influencerVideos: number | null;
+  // True once a video scan has been attempted for this tile (success or not),
+  // so repeated Scan clicks advance to the next unscanned batch instead of
+  // re-scanning the same top rows and silently ignoring the rest of the page.
+  scanned: boolean;
   score: ButlerScore;
   badgeBody: HTMLElement;
   showWatch: boolean;
@@ -79,6 +83,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       commissionCents,
       flags: { cc: flags.cc, spcc: flags.spcc },
       influencerVideos: null,
+      scanned: false,
       score: scoreFor(tile, defaultRate, flags, null, settings),
       badgeBody,
       showWatch: settings.tools.watchlist,
@@ -130,15 +135,19 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
 
   const runScan = async (setStatus: (text: string) => void): Promise<void> => {
     stopScan = false;
-    // Only scan visible (unfiltered) rows, best-scored first, up to the cap.
-    const targets = [...rows]
-      .filter((r) => r.tile.el.style.display !== "none")
-      .sort(comparator("score"))
-      .slice(0, SCAN_CAP);
+    // Scan the next batch of not-yet-scanned visible rows, best-scored first, up
+    // to the cap. The scan opens a background tab per product, so the per-run cap
+    // keeps one click from spawning dozens of tabs; clicking Scan again advances
+    // to the next batch rather than silently leaving the rest of the page unscored.
+    const pending = [...rows]
+      .filter((r) => r.tile.el.style.display !== "none" && !r.scanned)
+      .sort(comparator("score"));
+    const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
     for (const row of targets) {
       if (stopScan) break;
       setStatus(t().searchScanning(done + 1, targets.length));
+      row.scanned = true;
       try {
         const result = await sendToBackground<ScanAsinResult>({
           kind: "SCAN_ASIN_IN_TAB",
@@ -155,7 +164,12 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       }
       done += 1;
     }
-    setStatus(t().searchScanDone(done));
+    // How many visible rows are still unscanned (either beyond this batch's cap,
+    // or skipped because the user hit Stop) so the user knows more can be scored.
+    const remaining = rows.filter(
+      (r) => r.tile.el.style.display !== "none" && !r.scanned,
+    ).length;
+    setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
   };
 
   const toolbarHost = renderToolbar({

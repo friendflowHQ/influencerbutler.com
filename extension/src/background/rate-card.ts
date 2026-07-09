@@ -1,6 +1,6 @@
 import { RATE_CARD_BASE, RATE_CARD_STALE_MS } from "../shared/constants";
 import { getRateCard, setRateCard, type RateCardRow } from "../rate-card/cache";
-import { log } from "../shared/log";
+import { log, warn } from "../shared/log";
 
 // Refreshes the Associates rate card from the site, at most daily. Sends
 // If-None-Match with the cached version so an unchanged card costs a 304 and no
@@ -30,7 +30,19 @@ export async function refreshRateCard(): Promise<void> {
       notBuilt?: boolean;
       migrationPending?: boolean;
     };
-    if (data.notBuilt || data.migrationPending || !data.version || !Array.isArray(data.rows)) return;
+    // The server can report the card is not published yet (pre-migration). Do
+    // not overwrite a good cached card with nothing, but do not fail silently
+    // either: warn so a wedged server state is diagnosable rather than showing
+    // stale or default-only commission math with no signal. warn() always logs,
+    // unlike log() which is gated on the debug flag.
+    if (data.notBuilt || data.migrationPending) {
+      warn(
+        "rate-card",
+        `server reports rate card unavailable (${data.notBuilt ? "notBuilt" : "migrationPending"}); keeping ${existing ? "cached card" : "category defaults"}`,
+      );
+      return;
+    }
+    if (!data.version || !Array.isArray(data.rows)) return;
 
     await setRateCard({
       marketplace: data.marketplace ?? "amazon.com",

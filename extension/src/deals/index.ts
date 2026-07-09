@@ -190,7 +190,10 @@ async function runHarvest(
 }
 
 function harvestSummary(result: HarvestResult): string {
-  const parts: string[] = [];
+  // Always confirm how many deals were found (a successful harvest used to show
+  // a blank status), then surface read errors and the cap when they apply.
+  const parts: string[] = [D.foundSummary(result.deals.length)];
+  if (result.errors.length > 0) parts.push(D.errorSummary(result.errors.length));
   if (result.capped) parts.push(D.cappedNote);
   return parts.join(" ");
 }

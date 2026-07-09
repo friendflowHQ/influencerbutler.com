@@ -10,6 +10,7 @@ import type {
   HudStatus,
   PairResult,
 } from "../transport/hud-commands";
+import type { Finding } from "../transport/types";
 
 // Where the pairing token + this extension install's stable client id live.
 // The client id is generated once and reused so re-pairing rotates the token
@@ -29,6 +30,12 @@ async function getStored(key: string): Promise<string | null> {
 
 async function getToken(): Promise<string | null> {
   return getStored(TOKEN_KEY);
+}
+
+// Whether this install has a pairing token, i.e. the app has been connected at
+// least once. Used by the local finding transport to decide it can deliver.
+export async function isPaired(): Promise<boolean> {
+  return (await getToken()) !== null;
 }
 
 export async function getClientId(): Promise<string> {
@@ -198,6 +205,84 @@ function sendToPort(
         if (frame.type === "command.result") {
           log("hud", `command ${command.type} -> ${frame.ok ? "ok" : "fail"}`);
           done({ ok: frame.ok === true, message: frame.message, needsPairing: frame.needsPairing });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Findings ─────────────────────────────────────────────────────────────────
+// The passive sync stream (scans, gaps, orders, deals, storefront issues) the
+// extension already posts to the website, mirrored into the running app so a
+// finding lands in the HUD too, not only the web dashboard. The finding router
+// dual-sends: this path and the website API are independent sinks, so a failure
+// here never affects the website record. Returns transport-style {ok, retry}:
+// retry when the app was expected but did not answer (it may be coming up),
+// no-retry when it answered but rejected the token (re-pairing is the fix).
+
+export async function sendFindings(findings: Finding[]): Promise<{ ok: boolean; retry: boolean }> {
+  const token = await getToken();
+  if (!token) return { ok: false, retry: false }; // not paired: nothing to deliver to
+  for (const port of BRIDGE_PORTS) {
+    const result = await sendFindingsToPort(port, findings, token);
+    if (result) return result;
+  }
+  cached = null; // nothing answered; refresh status next time
+  return { ok: false, retry: true };
+}
+
+function sendFindingsToPort(
+  port: number,
+  findings: Finding[],
+  token: string,
+): Promise<{ ok: boolean; retry: boolean } | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: { ok: boolean; retry: boolean } | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "findings", findings }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, retry: false }); // rejected the token; re-pairing needed
+          return;
+        }
+        if (frame.type === "findings.result") {
+          done({ ok: frame.ok === true, retry: frame.ok !== true });
           return;
         }
       } catch {

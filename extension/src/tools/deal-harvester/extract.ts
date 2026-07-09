@@ -72,54 +72,77 @@ function hostOf(url: string): string {
 // Map an amazon.* host to the marketplace string the rest of the pipeline uses
 // (matches MARKETPLACE_RE on the server: lowercase host without www).
 function marketplaceFromHost(host: string): string {
-  return host.toLowerCase();
+  return host.toLowerCase().replace(/\.$/, "");
 }
 
 /**
  * Extract every Amazon product on an aggregator page. Deduped by (asin,
- * marketplace), first occurrence wins, original page order preserved so the
- * review list mirrors how the deals appear on the source.
+ * marketplace) so the same product genuinely listed on two marketplaces
+ * (amazon.com and amazon.co.uk) keeps a row for each: a creator with tags in
+ * both regions can promote both. First occurrence wins per marketplace and
+ * original page order is preserved so the review list mirrors the source.
  */
 export function extractDeals(html: string, sourceUrl: string): HarvestedDeal[] {
   const byKey = new Map<string, HarvestedDeal>();
-  // Every ASIN already placed, regardless of marketplace. An absolute Amazon
-  // link is authoritative for the marketplace, so once an ASIN is seen we do
-  // not let a later marketplace-less match (which would default to .com) add a
-  // second, wrong row for the same product: the relative regex also matches
-  // inside absolute URLs, so this is what keeps one product to one row.
-  const seenAsins = new Set<string>();
+  // ASINs seen via an ABSOLUTE Amazon link, which carries the real marketplace.
+  // A relative/data match defaults to .com and the relative regex also fires on
+  // the `/dp/<asin>` *inside* an absolute URL, so a relative match for an ASIN
+  // we already placed absolutely is almost always that same URL's tail: we drop
+  // it rather than invent a second, wrong .com row. This is only about the
+  // relative-vs-absolute double count; two absolute links on different hosts
+  // are two real products and both are kept.
+  const absoluteAsins = new Set<string>();
 
-  const backfillCode = (asin: string, promoCode: string | null): boolean => {
-    if (!promoCode || !seenAsins.has(asin)) return false;
+  // Set a promo code on any already-placed row for this ASIN that lacks one
+  // (the code and the link often ride different elements, across marketplaces).
+  const backfillCode = (asin: string, promoCode: string | null): void => {
+    if (!promoCode) return;
     for (const deal of byKey.values()) {
       if (deal.asin === asin && !deal.promoCode) deal.promoCode = promoCode;
     }
-    return true;
   };
 
-  const add = (asin: string, marketplace: string, promoCode: string | null) => {
-    if (backfillCode(asin, promoCode)) return; // already have this product
-    if (seenAsins.has(asin)) return;
-    seenAsins.add(asin);
-    byKey.set(`${marketplace}:${asin}`, { asin, marketplace, sourceUrl, promoCode });
+  const place = (asin: string, marketplace: string, promoCode: string | null) => {
+    const key = `${marketplace}:${asin}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      if (promoCode && !existing.promoCode) existing.promoCode = promoCode;
+      return;
+    }
+    byKey.set(key, { asin, marketplace, sourceUrl, promoCode });
   };
 
-  // Absolute links first: they carry the real marketplace host, so they win the
-  // marketplace for any ASIN that also appears as a bare relative link.
+  const addAbsolute = (asin: string, marketplace: string) => {
+    absoluteAsins.add(asin);
+    place(asin, marketplace, null);
+  };
+
+  const addDefault = (asin: string, promoCode: string | null) => {
+    // Suppress a .com default row for an ASIN already captured absolutely (it is
+    // the tail of that URL), but still carry any promo code onto the real row.
+    if (absoluteAsins.has(asin)) {
+      backfillCode(asin, promoCode);
+      return;
+    }
+    place(asin, DEFAULT_MARKETPLACE, promoCode);
+  };
+
+  // Absolute links first: they carry the real marketplace host and mark the
+  // ASIN so a later relative match of the same URL's tail is not double-counted.
   for (const m of html.matchAll(ABSOLUTE_ASIN_RE)) {
-    add(m[2] as string, marketplaceFromHost(m[1] ?? DEFAULT_MARKETPLACE), null);
+    addAbsolute(m[2] as string, marketplaceFromHost(m[1] ?? DEFAULT_MARKETPLACE));
   }
   // Relative links and asin= params: marketplace unknown, default to .com.
   for (const m of html.matchAll(RELATIVE_ASIN_RE)) {
-    add(m[1] as string, DEFAULT_MARKETPLACE, null);
+    addDefault(m[1] as string, null);
   }
   // data-asin attributes on embeds.
   for (const m of html.matchAll(DATA_ASIN_RE)) {
-    add(m[1] as string, DEFAULT_MARKETPLACE, null);
+    addDefault(m[1] as string, null);
   }
   // Pair ASIN + promo code when both ride the same element.
   for (const m of html.matchAll(DATA_PAIR_RE)) {
-    add(m[1] as string, DEFAULT_MARKETPLACE, (m[2] ?? "").trim() || null);
+    addDefault(m[1] as string, (m[2] ?? "").trim() || null);
   }
 
   const generic = [...byKey.values()];
