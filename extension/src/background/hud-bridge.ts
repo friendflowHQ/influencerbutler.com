@@ -9,6 +9,7 @@ import type {
   HudCommand,
   HudCommandResult,
   HudStatus,
+  NotifyPollResult,
   PairResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
@@ -362,6 +363,86 @@ function lookupEarningsOnPort(
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Notification poll (reverse channel) ──────────────────────────────────────
+// Ask the running app for anything it wants to show the creator (a butler run
+// finished, earnings synced) since our last cursor. Pull, not push: an MV3
+// worker cannot keep a socket open for the app to push to. Authed with the
+// pairing token. Returns ok:false (silently) when not paired or not answering.
+
+export async function pollNotifications(since: number): Promise<NotifyPollResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, entries: [], cursor: since };
+  for (const port of BRIDGE_PORTS) {
+    const result = await pollNotificationsOnPort(port, since, token);
+    if (result) return result;
+  }
+  return { ok: false, entries: [], cursor: since };
+}
+
+function pollNotificationsOnPort(
+  port: number,
+  since: number,
+  token: string,
+): Promise<NotifyPollResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: NotifyPollResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          entries?: NotifyPollResult["entries"];
+          cursor?: number;
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "notify.poll", since }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, entries: [], cursor: since });
+          return;
+        }
+        if (frame.type === "notify.result") {
+          done({
+            ok: frame.ok === true,
+            entries: Array.isArray(frame.entries) ? frame.entries : [],
+            cursor: Number(frame.cursor) || since,
           });
           return;
         }

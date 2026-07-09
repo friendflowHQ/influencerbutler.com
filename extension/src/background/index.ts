@@ -18,6 +18,7 @@ import { enrichProducts } from "./enrich";
 import { getDealSources, harvestDealSites } from "./deal-harvest";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
 import { getPriceHistory, recordPriceFromFinding } from "./price-history";
+import { pollAppNotifications } from "./app-notifications";
 import {
   addToWatchlist,
   getWatchlist,
@@ -70,7 +71,11 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SYNC_ALARM) void flush();
+  if (alarm.name === SYNC_ALARM) {
+    void flush();
+    // Reverse channel: pick up anything the paired app wants to show the creator.
+    void pollAppNotifications();
+  }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
     void refreshRateCard();

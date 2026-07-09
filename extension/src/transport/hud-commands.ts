@@ -89,3 +89,23 @@ export type EarningsLookupResult = {
   results: AsinEarnings[];
   message?: string;
 };
+
+// One thing the running app wants to surface in the extension (a butler run
+// finished, earnings synced). Delivered by polling, not push, because an MV3
+// worker cannot hold a socket open.
+export type AppNotification = {
+  seq: number;
+  ts: number;
+  kind: string;
+  title: string;
+  body: string;
+  url: string | null;
+};
+
+// Result of a notification poll: the entries newer than the cursor we sent, and
+// the app's current high-water cursor to store for next time.
+export type NotifyPollResult = {
+  ok: boolean;
+  entries: AppNotification[];
+  cursor: number;
+};
