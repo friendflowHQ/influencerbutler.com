@@ -106,6 +106,7 @@ export const FREE_TIER_FEATURES: readonly string[] = [
   "CC Check: grab every ASIN from any page",
   "Orders Butler: pull your full Amazon order history",
   "Storefront Butler: audit your photo & video coverage",
+  "Influencer Butler branded deep links + Link Performance click dashboard",
 ];
 
 // Plan-string canonical form used by /api/checkout + /api/checkout/guest
