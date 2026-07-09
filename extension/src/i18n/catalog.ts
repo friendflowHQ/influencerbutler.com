@@ -349,6 +349,11 @@ export interface Dict {
   countStopped: (updated: number) => string;
   countNoOrders: string;
   countNoInfluencer: string;
+  ofrEarnedChip: (amount: string) => string;
+  ofrFilmFirst: string;
+  ofrCoverage: (covered: number, total: number) => string;
+  ofrGaps: (n: number) => string;
+  ofrEarningGaps: (n: number) => string;
   countInfluencerN: (n: number) => string;
   countPending: string;
 
@@ -821,6 +826,11 @@ const en: Dict = {
   countStopped: (updated) => `Stopped. Updated ${updated} product${updated === 1 ? "" : "s"} so far.`,
   countNoOrders: "No orders to check yet. Run \"Sync my orders\" first.",
   countNoInfluencer: "No influencer videos",
+  ofrEarnedChip: (amount) => `${amount} earned`,
+  ofrFilmFirst: "Film first",
+  ofrCoverage: (covered, total) => `${covered} of ${total} have your content`,
+  ofrGaps: (n) => `${n} gap${n === 1 ? "" : "s"}`,
+  ofrEarningGaps: (n) => `${n} proven earner${n === 1 ? "" : "s"} with no video`,
   countInfluencerN: (n) => `${n} influencer video${n === 1 ? "" : "s"}`,
   countPending: "Count not available",
 
@@ -1301,6 +1311,11 @@ const es: Dict = {
   countStopped: (updated) => `Detenido. ${updated} producto${updated === 1 ? "" : "s"} actualizado${updated === 1 ? "" : "s"} hasta ahora.`,
   countNoOrders: "Aún no hay pedidos que comprobar. Ejecuta \"Sincronizar mis pedidos\" primero.",
   countNoInfluencer: "Sin videos de influencers",
+  ofrEarnedChip: (amount) => `${amount} ganados`,
+  ofrFilmFirst: "Graba esto primero",
+  ofrCoverage: (covered, total) => `${covered} de ${total} tienen tu contenido`,
+  ofrGaps: (n) => `${n} hueco${n === 1 ? "" : "s"}`,
+  ofrEarningGaps: (n) => `${n} que ya te paga${n === 1 ? "" : "n"} sin video`,
   countInfluencerN: (n) => `${n} video${n === 1 ? "" : "s"} de influencers`,
   countPending: "Recuento no disponible",
 
@@ -1781,6 +1796,11 @@ const fr: Dict = {
   countStopped: (updated) => `Arrêté. ${updated} produit${updated === 1 ? "" : "s"} mis à jour jusqu'ici.`,
   countNoOrders: "Aucune commande à vérifier pour l'instant. Lancez d'abord \"Synchroniser mes commandes\".",
   countNoInfluencer: "Aucune vidéo d'influenceur",
+  ofrEarnedChip: (amount) => `${amount} gagnés`,
+  ofrFilmFirst: "Filmez ceci d'abord",
+  ofrCoverage: (covered, total) => `${covered} sur ${total} ont votre contenu`,
+  ofrGaps: (n) => `${n} manque${n === 1 ? "" : "s"}`,
+  ofrEarningGaps: (n) => `${n} déjà rentable${n === 1 ? "" : "s"} sans vidéo`,
   countInfluencerN: (n) => `${n} vidéo${n === 1 ? "" : "s"} d'influenceurs`,
   countPending: "Nombre non disponible",
 
