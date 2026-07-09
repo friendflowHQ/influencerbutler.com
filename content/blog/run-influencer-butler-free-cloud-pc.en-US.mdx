@@ -40,7 +40,7 @@ Here is what the finished setup looks like: a free cloud computer, always on, ru
 
 That is it. Let's go.
 
-**Prefer to skip the setup? There is a one-click shortcut.** The free AWS steps below are worth it, and this guide walks you through every one. But if fiddling with the AWS console is not your idea of fun, you can rent a ready-made Windows cloud PC in about a minute from a service like [Cloudzy](https://cloudzy.com/buy-rdp/?ref=REPLACE-WITH-YOUR-CLOUDZY-AFFILIATE-ID) for a few dollars a month, then skip straight to installing Influencer Butler. There is more on that shortcut at the end. Heads up: that is an affiliate link, so we earn a little if you sign up through it, at no extra cost to you. We only mention it because it genuinely saves you the hassle.
+**Prefer to skip the setup? There is a one-click shortcut.** The free AWS steps below are worth it, and this guide walks you through every one. But if fiddling with the AWS console is not your idea of fun, you can rent a ready-made Windows cloud PC in a few minutes from a managed host like [Hostwinds](https://clients.hostwinds.com/aff.php?aff=10402) for a few dollars a month, then skip straight to installing Influencer Butler. There is more on that shortcut at the end. Heads up: that is an affiliate link, so we earn a little if you sign up through it, at no extra cost to you. We only mention it because it genuinely saves you the hassle.
 
 ## Step 1: Create your free AWS account
 
@@ -86,13 +86,15 @@ Give it a friendly name like **Butler PC**. Then, under the list of operating sy
 
 ## Step 6: Choose a size that can actually run it
 
-This is the one spot where a little detail matters. AWS offers a tiny **free** size with only 1 GB of memory. It is technically free, but it is too weak to comfortably run a browser-based app like Influencer Butler; it will feel sluggish.
+This is the one spot that matters most, and we learned it the hard way. AWS offers a tiny size with only 1 GB of memory (**t3.micro**) that is part of the always-free tier. **Do not use it for this.** We tried, and it was painfully slow: Windows alone eats most of 1 GB before you even open a browser, so the whole thing crawls and lags.
 
-Instead, pick a slightly bigger size, something with **2 to 4 GB of memory** (for example **t3.small** or **t3.medium**). Here is the good news: your **free credits from Step 2 cover this** for months, so it is still free to you. Only after your free credits and free hours run out would it cost a few dollars a month, and by then you will know whether it is worth keeping.
+**Pick t3.medium (4 GB of memory) instead.** It is the size that actually runs Influencer Butler smoothly, with no lag. The good news: your **free credits from Step 2 cover it**, so it is still $0 for months. It is not part of the always-free tier, so you will see "Free-tier eligible: false" next to it. That is fine: your credits are paying, not the free hours. After your credits run out, running t3.medium around the clock is roughly $44 a month. If that is more than you want to spend, see the one-click paid shortcut at the end, which can work out cheaper.
+
+If your budget is tighter than your patience, **t3.small** (2 GB) is the smallest step up that is usable, but it is still snug because Windows is greedy. If you can, go t3.medium. The difference in how it feels is night and day.
 
 ![Choosing a 2 to 4 GB instance size](/assets/blog/cloud-pc/06-instance-size.png)
 
-*Suggested screenshot: the instance type list with a 2 to 4 GB size such as t3.small selected.*
+*Suggested screenshot: the instance type list with t3.medium selected.*
 
 ## Step 7: Create a key pair
 
@@ -183,15 +185,15 @@ To make sure "free" stays free, set a simple billing alarm so AWS emails you if 
 A couple more habits to stay free and safe:
 
 - **Check your Free Tier balance** every few weeks (that page from Step 2).
-- When your free period eventually ends, a small cloud computer is only a few dollars a month, far less than most creators expect. If it is saving you hours, it easily pays for itself. If not, you can **terminate** the instance to stop all costs.
+- When your free credits eventually run out, running t3.medium around the clock is roughly $44 a month. If the hours it saves you are worth that, keep it. If not, you can **stop** the instance when you are not using it, drop to a smaller size, or **terminate** it to end all costs.
 
-## The shortcut: a ready-made cloud PC in about a minute
+## The shortcut: a ready-made cloud PC, no AWS console
 
 Everything above is the free way, and for most people it is the right way. But if you took one look at 15 steps and thought "no thanks," there is a paid shortcut that skips almost all of it.
 
-Services built specifically for this, like [Cloudzy](https://cloudzy.com/buy-rdp/?ref=REPLACE-WITH-YOUR-CLOUDZY-AFFILIATE-ID), hand you a ready-made Windows cloud PC (they call it an "RDP") in about 60 seconds for a few dollars a month. There is no AWS console, no key pairs, no instance sizes to choose. You sign up, they email you an address and a password, you open Remote Desktop just like in Step 11, and you go straight to installing Influencer Butler. If your time is worth more than a few dollars a month, this is the easy button.
+A managed host like [Hostwinds](https://clients.hostwinds.com/aff.php?aff=10402) gives you a ready-made Windows cloud PC (a Windows VPS) for a few dollars a month, with no AWS console, no key pairs, and no instance sizes to choose. You pick a plan, they set up your Windows machine and send you an address and password, you open Remote Desktop just like in Step 11, and you go straight to installing Influencer Butler. If your time is worth more than a few dollars a month, this is the easy button.
 
-*Heads up: the [Cloudzy](https://cloudzy.com/buy-rdp/?ref=REPLACE-WITH-YOUR-CLOUDZY-AFFILIATE-ID) links here are affiliate links, so we earn a small commission if you sign up through them, at no extra cost to you. We would point you there either way, because it genuinely removes the setup work. The free AWS path above stays free and is always your other option.*
+*Heads up: the [Hostwinds](https://clients.hostwinds.com/aff.php?aff=10402) links here are affiliate links, so we earn a small commission if you sign up through them, at no extra cost to you. We would point you there either way, because it genuinely removes the setup work. The free AWS path above stays free and is always your other option.*
 
 ## Quick FAQ
 
