@@ -4,6 +4,7 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { annualSavingsPct } from "@/lib/pricing-constants";
+import { sendMarketingEmail } from "@/lib/marketing-email";
 
 export type TrialTier = "day0" | "day1" | "day2" | "day3";
 
@@ -180,12 +181,6 @@ export type TrialEmailPayload = {
 };
 
 export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - trial email skipped");
-    return false;
-  }
-
   const copy = COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
@@ -200,28 +195,5 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [payload.to],
-        subject,
-        text: body,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("Trial email send failed", { status: res.status, body: text.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Trial email send threw", error);
-    return false;
-  }
+  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject, text: body });
 }

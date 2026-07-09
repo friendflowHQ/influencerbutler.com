@@ -8,6 +8,7 @@
 // track keyed off subscriptions.pro_started_at.
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { sendMarketingEmail } from "@/lib/marketing-email";
 
 export type ProTier = "day0" | "day2" | "day5" | "day10";
 
@@ -126,12 +127,6 @@ export type ProEmailPayload = {
 };
 
 export async function sendProEmail(payload: ProEmailPayload): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - pro welcome email skipped");
-    return false;
-  }
-
   const copy = COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
@@ -141,28 +136,5 @@ export async function sendProEmail(payload: ProEmailPayload): Promise<boolean> {
     subscriptionUrl: payload.subscriptionUrl,
   });
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [payload.to],
-        subject: copy.subject,
-        text: body,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("Pro welcome email send failed", { status: res.status, body: text.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Pro welcome email send threw", error);
-    return false;
-  }
+  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: copy.subject, text: body });
 }

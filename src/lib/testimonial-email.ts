@@ -7,6 +7,7 @@
 // If that changes, add the offer line to the body below.
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { sendMarketingEmail } from "@/lib/marketing-email";
 
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
@@ -40,37 +41,8 @@ function buildBody(firstName: string, feedbackUrl: string): string {
 }
 
 export async function sendTestimonialEmail(payload: TestimonialEmailPayload): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - testimonial email skipped");
-    return false;
-  }
-
   const firstName = payload.name.split(" ")[0] || "there";
   const body = buildBody(firstName, payload.feedbackUrl);
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [payload.to],
-        subject: SUBJECT,
-        text: body,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("Testimonial email send failed", { status: res.status, body: text.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Testimonial email send threw", error);
-    return false;
-  }
+  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: SUBJECT, text: body });
 }
