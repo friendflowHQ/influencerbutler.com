@@ -26,6 +26,9 @@ export interface Dict {
   snapshotCommissionCategory: (pct: number, category: string) => string;
   snapshotCommissionDefault: (pct: number) => string;
   snapshotCommissionNotSet: string;
+  earningsTitle: string;
+  earningsAmount: (amount: string, count: number) => string;
+  earningsNote: string;
 
   // Popup: static chrome
   tagFree: string;
@@ -204,6 +207,7 @@ export interface Dict {
   searchScanMore: (done: number, remaining: number) => string;
   tileCommission: (amount: string) => string;
   tileCampaign: string;
+  tileProvenEarner: string;
   tileInfluencer: (n: number) => string;
   searchOverlayActive: string;
 
@@ -464,6 +468,9 @@ const en: Dict = {
     `Commission about ${pct}% (${category}, rate card)`,
   snapshotCommissionDefault: (pct) => `Commission about ${pct}% (all-other-categories rate)`,
   snapshotCommissionNotSet: "No commission rate set",
+  earningsTitle: "Your earnings",
+  earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
+  earningsNote: "You have already earned here. Find more products like the ones already paying you.",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -643,6 +650,7 @@ const en: Dict = {
   searchScanMore: (done, remaining) => `Scanned ${done}. Click Scan again for ${remaining} more.`,
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
+  tileProvenEarner: "Proven earner",
   tileInfluencer: (n) => `${n} infl. videos`,
   searchOverlayActive: "Search overlay is active.",
 
@@ -920,6 +928,9 @@ const es: Dict = {
     `Comisión aprox. ${pct}% (${category}, tarifario)`,
   snapshotCommissionDefault: (pct) => `Comisión aprox. ${pct}% (tarifa general)`,
   snapshotCommissionNotSet: "Sin tarifa de comisión",
+  earningsTitle: "Tus ganancias",
+  earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
+  earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
 
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
@@ -1099,6 +1110,7 @@ const es: Dict = {
   searchScanMore: (done, remaining) => `Escaneados ${done}. Pulsa Escanear de nuevo para ${remaining} más.`,
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
+  tileProvenEarner: "Ya te ha pagado",
   tileInfluencer: (n) => `${n} videos de infl.`,
   searchOverlayActive: "El overlay de búsqueda está activo.",
 
@@ -1376,6 +1388,9 @@ const fr: Dict = {
     `Commission environ ${pct}% (${category}, grille)`,
   snapshotCommissionDefault: (pct) => `Commission environ ${pct}% (taux general)`,
   snapshotCommissionNotSet: "Aucun taux de commission défini",
+  earningsTitle: "Vos gains",
+  earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
+  earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",
@@ -1555,6 +1570,7 @@ const fr: Dict = {
   searchScanMore: (done, remaining) => `${done} analysés. Cliquez de nouveau sur Analyser pour ${remaining} de plus.`,
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
+  tileProvenEarner: "Déjà rentable",
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
   searchOverlayActive: "L'overlay de recherche est actif.",
 

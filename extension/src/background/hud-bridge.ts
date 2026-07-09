@@ -5,6 +5,7 @@ import {
 } from "../shared/constants";
 import { log } from "../shared/log";
 import type {
+  EarningsLookupResult,
   HudCommand,
   HudCommandResult,
   HudStatus,
@@ -283,6 +284,85 @@ function sendFindingsToPort(
         }
         if (frame.type === "findings.result") {
           done({ ok: frame.ok === true, retry: frame.ok !== true });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Earnings lookup ──────────────────────────────────────────────────────────
+// Ask the running app what the creator earned on a batch of ASINs, so the
+// extension can show real earnings on the Amazon page. Read-only; authed with
+// the pairing token because it returns private earnings. Returns paired:false
+// when never connected so callers stay silent instead of erroring.
+
+export async function lookupEarnings(asins: string[]): Promise<EarningsLookupResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await lookupEarningsOnPort(port, asins, token);
+    if (result) return result;
+  }
+  cached = null;
+  return { ok: false, results: [] };
+}
+
+function lookupEarningsOnPort(
+  port: number,
+  asins: string[],
+  token: string,
+): Promise<EarningsLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: EarningsLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: EarningsLookupResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "earnings.lookup", payload: { asins } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "earnings.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
           return;
         }
       } catch {

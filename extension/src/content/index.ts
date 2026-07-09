@@ -17,6 +17,7 @@ import { renderSeal } from "../tools/butler-approved/seal";
 import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
+import { renderProductEarnings } from "../tools/earnings/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
@@ -115,6 +116,11 @@ async function runForPage(): Promise<void> {
 
       // Identity card first: the ASINs, category, rank, and rate at a glance.
       guard("product-snapshot", () => renderProductSnapshot(signals));
+
+      // Your real earnings on this exact product (from the desktop app ledger,
+      // over the bridge). Reserves a slot here; reveals only if paired and there
+      // are earnings, so it stays invisible for everyone else.
+      guard("earnings", () => renderProductEarnings(signals));
 
       if (settings.tools.videoCounts) {
         guard("video-counts", () =>

@@ -66,3 +66,22 @@ export type HudStatus = {
   // falls back to DEAL_WORKSPACES otherwise.
   dealWorkspaces?: Array<{ key: string; label: string }>;
 };
+
+// What the creator has actually earned on one ASIN, read from the desktop app's
+// Daily Commission Butler ledger over the bridge. Earnings are keyed by ASIN
+// (not marketplace) and can span currencies; amount is in whole currency units.
+export type AsinEarnings = {
+  asin: string;
+  hasEarnings: boolean;
+  byCurrency: Array<{ currency: string; amount: number; count: number }>;
+  totalCount: number;
+};
+
+// Result of a batched earnings lookup. `paired` is false when the extension has
+// never connected the app, so the caller can stay silent rather than error.
+export type EarningsLookupResult = {
+  ok: boolean;
+  paired?: boolean;
+  results: AsinEarnings[];
+  message?: string;
+};

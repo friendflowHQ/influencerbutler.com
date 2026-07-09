@@ -1,6 +1,13 @@
 import type { Finding, VideoCounts } from "../transport/types";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
-import type { HudCommand, HudCommandResult, HudStatus, PairResult } from "../transport/hud-commands";
+import type {
+  AsinEarnings,
+  EarningsLookupResult,
+  HudCommand,
+  HudCommandResult,
+  HudStatus,
+  PairResult,
+} from "../transport/hud-commands";
 import type {
   IntegrationsState,
   IntegrationTestResult,
@@ -35,6 +42,10 @@ export type RuntimeMessage =
   | { kind: "GET_PAGE_STATUS" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
+  // Ask the running desktop app what the creator earned on a batch of ASINs, so
+  // product pages and search tiles can show real earnings. Routed to the app
+  // over the local bridge; returns paired:false when the app was never connected.
+  | { kind: "LOOKUP_EARNINGS"; asins: string[] }
   // Desktop-app pairing, driven from the popup: ask the app to show a 6-digit
   // code, submit the code the user typed, or forget the stored token.
   | { kind: "REQUEST_PAIRING" }
@@ -201,7 +212,7 @@ export type IntegrationTestOutcome = { ok: boolean; message: string };
 export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
-export type { HudCommand, HudCommandResult, HudStatus, PairResult };
+export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);

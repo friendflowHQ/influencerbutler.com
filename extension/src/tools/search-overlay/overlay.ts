@@ -9,7 +9,12 @@ import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents } from "../calculator/model";
-import { sendToBackground, type ScanAsinResult, type WatchlistResult } from "../../shared/messages";
+import {
+  sendToBackground,
+  type EarningsLookupResult,
+  type ScanAsinResult,
+  type WatchlistResult,
+} from "../../shared/messages";
 import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
 import type { Settings } from "../../storage/schema";
 
@@ -35,6 +40,9 @@ type Row = {
   badgeBody: HTMLElement;
   showWatch: boolean;
   watched: boolean;
+  // True when the desktop app ledger shows the creator has already earned on
+  // this ASIN: turns Amazon search into "find more of what already paid me".
+  provenEarner: boolean;
 };
 
 let stopScan = false;
@@ -88,6 +96,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       badgeBody,
       showWatch: settings.tools.watchlist,
       watched: false,
+      provenEarner: false,
     };
     mountBadge(tile, badgeBody);
     renderBadge(row);
@@ -107,6 +116,26 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       }
     });
   }
+
+  // "Proven earner" tint: one batched lookup against the desktop app ledger marks
+  // the tiles the creator has already earned on. Returns instantly when the app
+  // was never paired, so this is a no-op for everyone else.
+  void sendToBackground<EarningsLookupResult>({
+    kind: "LOOKUP_EARNINGS",
+    asins: rows.map((r) => r.tile.asin),
+  }).then((res) => {
+    if (!res.ok) return;
+    const earners = new Set(
+      res.results.filter((r) => r.hasEarnings).map((r) => r.asin.toUpperCase()),
+    );
+    if (earners.size === 0) return;
+    for (const row of rows) {
+      if (earners.has(row.tile.asin.toUpperCase())) {
+        row.provenEarner = true;
+        renderBadge(row);
+      }
+    }
+  });
 
   // Anchor after the last tile so reordering stays within the results block and
   // never drags a tile past pagination or a footer.
@@ -234,6 +263,11 @@ function renderBadge(row: Row): void {
   const body = row.badgeBody;
   body.replaceChildren();
   body.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
+  // Proven earner leads the chips: a product that already paid you is the
+  // strongest buy signal on the page.
+  if (row.provenEarner) {
+    body.append(el("span", "tile-chip good", t().tileProvenEarner));
+  }
   if (row.commissionCents !== null) {
     body.append(
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
