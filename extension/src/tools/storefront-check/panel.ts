@@ -254,11 +254,19 @@ function render(
   // the flagged content to Retag Butler, and accept any Creator Connections /
   // SPCC campaigns found across the storefront's products. Falls back silently
   // to the CSV + dashboard sync above when the app is not connected.
+  // ASIN -> title from the Creator API pass, when it ran, so products pushed to
+  // the app carry a real name instead of a bare ASIN.
+  const titles = new Map<string, string>();
+  if (enriched) {
+    for (const [asin, p] of enriched) if (p.title) titles.set(asin, p.title);
+  }
+
   void renderButlerActions(nodes.exportRow, {
     untagged,
     overTagged,
     unavailable,
     productAsins: [...uniqueProducts],
+    titles,
     marketplace: location.host.replace(/^www\./, ""),
   });
 }
@@ -268,6 +276,7 @@ type ButlerActionInput = {
   overTagged: HarvestedItem[];
   unavailable: string[];
   productAsins: string[];
+  titles: Map<string, string>;
   marketplace: string;
 };
 
@@ -296,6 +305,32 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     exportRow.append(retagBtn);
   }
 
+  // "Steal this niche": drop every product on this storefront into Content
+  // Butler as ideas to plan. Works on any /shop/ page, so it turns a competitor's
+  // storefront into your own content backlog; titles ride along when the Creator
+  // API pass filled them in.
+  if (input.productAsins.length > 0) {
+    const products: ProductRef[] = input.productAsins.map((asin) => ({
+      asin,
+      marketplace: input.marketplace,
+      title: input.titles.get(asin),
+    }));
+    const contentBtn = el("button", "btn secondary");
+    contentBtn.textContent = t().sfSendToContent(products.length);
+    contentBtn.addEventListener("click", () => {
+      contentBtn.disabled = true;
+      status.textContent = t().sfSendingToContent;
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "content.push.batch", products },
+      }).then((r) => {
+        contentBtn.disabled = false;
+        status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+      });
+    });
+    exportRow.append(contentBtn);
+  }
+
   // Accept every Creator Connections / SPCC campaign found across the products.
   const campaignItems = await buildCampaignAcceptItems(input.productAsins, input.marketplace);
   if (campaignItems.length > 0) {
@@ -315,7 +350,9 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     exportRow.append(acceptBtn);
   }
 
-  if (issues.length > 0 || campaignItems.length > 0) exportRow.append(status);
+  if (issues.length > 0 || campaignItems.length > 0 || input.productAsins.length > 0) {
+    exportRow.append(status);
+  }
 }
 
 // Map the three flagged sets into retag-butler rows. Untagged and over-tagged

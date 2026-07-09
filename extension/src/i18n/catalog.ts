@@ -403,6 +403,8 @@ export interface Dict {
   // Desktop-app hand-offs: storefront -> Retag Butler + batch campaign accept,
   // orders -> Content Butler planner, and the popup pairing flow.
   sfSendToRetag: (n: number) => string;
+  sfSendToContent: (n: number) => string;
+  sfSendingToContent: string;
   sfSendingToRetag: string;
   sfAcceptAllCampaigns: (n: number) => string;
   sfAcceptingCampaigns: string;
@@ -875,6 +877,8 @@ const en: Dict = {
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
 
   sfSendToRetag: (n) => `Send ${n} issue(s) to Retag Butler`,
+  sfSendToContent: (n) => `Send ${n} product(s) to Content Butler`,
+  sfSendingToContent: "Sending to Content Butler...",
   sfSendingToRetag: "Sending to Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accept all available campaigns (${n})`,
   sfAcceptingCampaigns: "Accepting campaigns in the app...",
@@ -1351,6 +1355,8 @@ const es: Dict = {
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
 
   sfSendToRetag: (n) => `Enviar ${n} problema(s) a Retag Butler`,
+  sfSendToContent: (n) => `Enviar ${n} producto(s) a Content Butler`,
+  sfSendingToContent: "Enviando a Content Butler...",
   sfSendingToRetag: "Enviando a Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Aceptar todas las campañas disponibles (${n})`,
   sfAcceptingCampaigns: "Aceptando campañas en la app...",
@@ -1827,6 +1833,8 @@ const fr: Dict = {
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
 
   sfSendToRetag: (n) => `Envoyer ${n} problème(s) vers Retag Butler`,
+  sfSendToContent: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
+  sfSendingToContent: "Envoi vers Content Butler...",
   sfSendingToRetag: "Envoi vers Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accepter toutes les campagnes disponibles (${n})`,
   sfAcceptingCampaigns: "Acceptation des campagnes dans l'app...",
