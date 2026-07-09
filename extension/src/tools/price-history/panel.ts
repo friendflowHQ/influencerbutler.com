@@ -21,11 +21,16 @@ export function renderPriceHistory(signals: ProductSignals): void {
 }
 
 async function fill(section: HTMLElement, signals: ProductSignals): Promise<void> {
+  const asin = signals.asin;
+  if (!asin) {
+    section.remove();
+    return;
+  }
   let points: PricePoint[];
   try {
     points = await sendToBackground<PricePoint[]>({
       kind: "GET_PRICE_HISTORY",
-      asin: signals.asin,
+      asin,
       marketplace: signals.marketplace,
     });
   } catch {
