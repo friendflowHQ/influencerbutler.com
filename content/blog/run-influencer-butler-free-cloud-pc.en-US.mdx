@@ -86,13 +86,15 @@ Give it a friendly name like **Butler PC**. Then, under the list of operating sy
 
 ## Step 6: Choose a size that can actually run it
 
-This is the one spot where a little detail matters. AWS offers a tiny **free** size with only 1 GB of memory. It is technically free, but it is too weak to comfortably run a browser-based app like Influencer Butler; it will feel sluggish.
+This is the one spot that matters most, and we learned it the hard way. AWS offers a tiny size with only 1 GB of memory (**t3.micro**) that is part of the always-free tier. **Do not use it for this.** We tried, and it was painfully slow: Windows alone eats most of 1 GB before you even open a browser, so the whole thing crawls and lags.
 
-Instead, pick a slightly bigger size, something with **2 to 4 GB of memory** (for example **t3.small** or **t3.medium**). Here is the good news: your **free credits from Step 2 cover this** for months, so it is still free to you. Only after your free credits and free hours run out would it cost a few dollars a month, and by then you will know whether it is worth keeping.
+**Pick t3.medium (4 GB of memory) instead.** It is the size that actually runs Influencer Butler smoothly, with no lag. The good news: your **free credits from Step 2 cover it**, so it is still $0 for months. It is not part of the always-free tier, so you will see "Free-tier eligible: false" next to it. That is fine: your credits are paying, not the free hours. After your credits run out, running t3.medium around the clock is roughly $44 a month. If that is more than you want to spend, see the one-click paid shortcut at the end, which can work out cheaper.
+
+If your budget is tighter than your patience, **t3.small** (2 GB) is the smallest step up that is usable, but it is still snug because Windows is greedy. If you can, go t3.medium. The difference in how it feels is night and day.
 
 ![Choosing a 2 to 4 GB instance size](/assets/blog/cloud-pc/06-instance-size.png)
 
-*Suggested screenshot: the instance type list with a 2 to 4 GB size such as t3.small selected.*
+*Suggested screenshot: the instance type list with t3.medium selected.*
 
 ## Step 7: Create a key pair
 
@@ -183,7 +185,7 @@ To make sure "free" stays free, set a simple billing alarm so AWS emails you if 
 A couple more habits to stay free and safe:
 
 - **Check your Free Tier balance** every few weeks (that page from Step 2).
-- When your free period eventually ends, a small cloud computer is only a few dollars a month, far less than most creators expect. If it is saving you hours, it easily pays for itself. If not, you can **terminate** the instance to stop all costs.
+- When your free credits eventually run out, running t3.medium around the clock is roughly $44 a month. If the hours it saves you are worth that, keep it. If not, you can **stop** the instance when you are not using it, drop to a smaller size, or **terminate** it to end all costs.
 
 ## The shortcut: a ready-made cloud PC in about a minute
 
