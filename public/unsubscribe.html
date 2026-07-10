@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Unsubscribe : Influencer Butler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #f97316;
+      --orange-dark: #ea580c;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #fff7ed;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      width: 100%;
+      max-width: 460px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      padding: 36px 32px;
+    }
+    .brand {
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--orange-dark);
+      letter-spacing: 0.02em;
+      margin: 0 0 20px;
+    }
+    h1 { font-size: 22px; margin: 0 0 10px; line-height: 1.25; }
+    p { font-size: 15px; line-height: 1.55; color: var(--muted); margin: 0 0 20px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 0 0 6px; color: var(--ink); }
+    input[type="email"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 15px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+    }
+    input[type="email"]:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
+    button {
+      margin-top: 16px;
+      width: 100%;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--orange);
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+    }
+    button:hover { background: var(--orange-dark); }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .msg { margin-top: 16px; font-size: 14px; line-height: 1.5; display: none; }
+    .msg.error { display: block; color: #b91c1c; }
+    .msg.success { display: block; color: #15803d; }
+    .foot { margin: 22px 0 0; font-size: 13px; color: var(--muted); }
+    .foot a { color: var(--orange-dark); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="brand">INFLUENCER BUTLER</p>
+    <div id="form-view">
+      <h1>Unsubscribe from our emails</h1>
+      <p>Enter the email address you'd like removed and you won't hear from us again. Account and purchase emails you specifically requested may still be sent where required.</p>
+      <form id="unsub-form" novalidate>
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button id="submit" type="submit">Unsubscribe me</button>
+        <div id="msg" class="msg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+    <div id="done-view" style="display:none;">
+      <h1>You're unsubscribed</h1>
+      <p id="done-text">We've removed your address from our emails. It can take a little while for anything already scheduled to stop.</p>
+    </div>
+    <p class="foot">Changed your mind or need help? Email <a href="mailto:hello@influencerbutler.com">hello@influencerbutler.com</a>.</p>
+  </main>
+
+  <script>
+    (function () {
+      var form = document.getElementById("unsub-form");
+      var input = document.getElementById("email");
+      var btn = document.getElementById("submit");
+      var msg = document.getElementById("msg");
+
+      // Prefill from ?e= so links that already know the address are one-click.
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var pre = params.get("e");
+        if (pre) input.value = pre;
+      } catch (e) { /* no-op */ }
+
+      function showError(text) {
+        msg.textContent = text;
+        msg.className = "msg error";
+      }
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var email = (input.value || "").trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showError("Please enter a valid email address.");
+          return;
+        }
+        msg.className = "msg";
+        btn.disabled = true;
+        btn.textContent = "Unsubscribing...";
+
+        fetch("/api/email/unsubscribe-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email }),
+        })
+          .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+          })
+          .then(function (result) {
+            if (!result.ok) {
+              throw new Error((result.data && result.data.error) || "Something went wrong.");
+            }
+            document.getElementById("form-view").style.display = "none";
+            document.getElementById("done-view").style.display = "block";
+            document.getElementById("done-text").textContent =
+              "We've removed " + email + " from our emails. It can take a little while for anything already scheduled to stop.";
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = "Unsubscribe me";
+            showError(err.message || "Something went wrong. Please try again.");
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

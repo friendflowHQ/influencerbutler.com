@@ -58,6 +58,7 @@ const nextConfig: NextConfig = {
       { source: "/stop-messaging-brands", destination: "/stop-messaging-brands.html" },
       { source: "/best-amazon-influencer-tools", destination: "/best-amazon-influencer-tools.html" },
       { source: "/email-sequences", destination: "/email-sequences.html" },
+      { source: "/unsubscribe", destination: "/unsubscribe.html" },
       { source: "/features/:slug", destination: "/features/:slug.html" },
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
