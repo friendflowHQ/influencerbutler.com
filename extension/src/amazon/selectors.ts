@@ -14,6 +14,7 @@ export type SelectorId =
   | "availability"
   | "addToCart"
   | "boughtPastMonth"
+  | "buyboxAnchor"
   | "asinInput"
   | "orderCard"
   | "orderDate"
@@ -80,6 +81,14 @@ const REGISTRY: Record<SelectorId, string[]> = {
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
+  // Where the inline card mounts: the buybox / right column, newest first. The
+  // card inserts just above whichever is found.
+  buyboxAnchor: [
+    "#desktop_buybox",
+    "#buybox",
+    "#rightCol",
+    "#apex_desktop",
+  ],
   boughtPastMonth: [
     "#socialProofingAsinFaceout_feature_div",
     "#social-proofing-faceout-title-tk_bought",

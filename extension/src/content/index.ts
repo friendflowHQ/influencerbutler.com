@@ -19,6 +19,7 @@ import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
 import { renderPriceHistory } from "../tools/price-history/panel";
+import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
@@ -128,6 +129,11 @@ async function runForPage(): Promise<void> {
       // Price history sparkline, built locally from prices seen while browsing.
       // Reserves a slot; reveals only once there are at least two observations.
       guard("price-history", () => renderPriceHistory(signals));
+
+      // Inline card at the buybox: identity, Creator-API market availability,
+      // and a one-tap Collab Butler action (injected into the page, not the
+      // floating panel).
+      guard("inline-card", () => renderInlineCard(signals));
 
       if (settings.tools.videoCounts) {
         guard("video-counts", () =>

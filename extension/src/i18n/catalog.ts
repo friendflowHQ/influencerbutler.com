@@ -43,6 +43,14 @@ export interface Dict {
   shotListBeatCta: string;
   shotListBeatFtc: string;
 
+  // Inline card at the buybox
+  inlineCardTitle: string;
+  inlineAvailabilityHeading: string;
+  inlineInStock: string;
+  inlineUnavailable: string;
+  inlineNotListed: string;
+  inlineConnectCreatorApi: string;
+
   // Popup: static chrome
   tagFree: string;
   thisPageHeading: string;
@@ -534,6 +542,13 @@ const en: Dict = {
   shotListBeatResult: "Show the before and after, or the end result",
   shotListBeatCta: "Clear call to action: send viewers to your storefront link",
   shotListBeatFtc: "Add your FTC disclosure on screen and in the caption (#ad, #CommissionsEarned)",
+
+  inlineCardTitle: "Product intel",
+  inlineAvailabilityHeading: "Market availability",
+  inlineInStock: "in stock",
+  inlineUnavailable: "unavailable",
+  inlineNotListed: "not listed",
+  inlineConnectCreatorApi: "Connect the Creator API for live cross-country availability",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -1044,6 +1059,13 @@ const es: Dict = {
   shotListBeatCta: "Llamada a la acción clara: envía a los espectadores a tu tienda",
   shotListBeatFtc: "Añade tu aviso legal FTC en pantalla y en el texto (#ad, #CommissionsEarned)",
 
+  inlineCardTitle: "Información del producto",
+  inlineAvailabilityHeading: "Disponibilidad por país",
+  inlineInStock: "en stock",
+  inlineUnavailable: "no disponible",
+  inlineNotListed: "no listado",
+  inlineConnectCreatorApi: "Conecta la Creator API para disponibilidad en varios países",
+
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
   checkingTab: "Comprobando la pestaña actual...",
@@ -1552,6 +1574,13 @@ const fr: Dict = {
   shotListBeatResult: "Montrez l'avant et l'après, ou le résultat final",
   shotListBeatCta: "Appel à l'action clair: envoyez les spectateurs vers votre boutique",
   shotListBeatFtc: "Ajoutez votre mention FTC à l'écran et dans la légende (#ad, #CommissionsEarned)",
+
+  inlineCardTitle: "Infos produit",
+  inlineAvailabilityHeading: "Disponibilité par pays",
+  inlineInStock: "en stock",
+  inlineUnavailable: "indisponible",
+  inlineNotListed: "non listé",
+  inlineConnectCreatorApi: "Connectez la Creator API pour la disponibilité multi-pays",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",

@@ -622,3 +622,46 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   cursor: pointer;
 }
 .modal-close:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Inline card mounted next to the Amazon buybox. Our orange->amber accent bar
+   keeps it clearly ours, distinct from the floating panel and the competitor. */
+.inline-card {
+  width: 300px;
+  max-width: 100%;
+  margin: 0 0 14px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #f5e6cf;
+  border-top: 3px solid #f97316;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #0f172a;
+}
+.inline-card > * + * { margin-top: 8px; }
+.inline-card-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ea580c, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.inline-avail-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c2410c;
+}
+.inline-connect {
+  display: inline-block;
+  color: #c2410c;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 12px;
+}
