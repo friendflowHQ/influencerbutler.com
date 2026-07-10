@@ -140,7 +140,7 @@ export interface Dict {
   influencerVideosLabel: (n: number) => string;
   influencerVideosMore: (n: number) => string;
 
-  // Video competition: Deep Scan (harvest every video)
+  // Video competition: full video sweep (harvest every video)
   deepScan: string;
   deepScanIntro: string;
   deepScanRunning: (videos: number, pages: number) => string;
@@ -577,18 +577,18 @@ const en: Dict = {
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
   influencerVideosMore: (n) => `+${n} more`,
 
-  deepScan: "Deep Scan: harvest every video",
+  deepScan: "Sweep every video",
   deepScanIntro:
-    "Amazon only loads a handful of videos on screen. Deep Scan pages through the widget's own feed to classify every video it will serve, split by upper (brand hero) and lower (related) carousel.",
+    "Amazon only loads a handful of videos on screen. This sweep pages through the widget's own feed to classify every video it will serve, split by upper (brand hero) and lower (related) carousel.",
   deepScanRunning: (videos, pages) => `Harvesting: ${videos} videos over ${pages} pages...`,
   deepScanStop: "Stop",
-  deepScanRescan: "Run Deep Scan again",
+  deepScanRescan: "Sweep again",
   deepScanDone: (classified, total) => `Classified ${classified} of ${total} videos.`,
   deepScanPartial:
     "Amazon served only part of the list, so this is a floor, not the full set.",
   deepScanNoEndpoint:
-    "Scroll the Product Videos section into view once, then run Deep Scan so it can find the video feed.",
-  deepScanStopped: "Deep Scan stopped.",
+    "Scroll the Product Videos section into view once, then run the sweep so it can find the video feed.",
+  deepScanStopped: "Sweep stopped.",
   upperCarousel: "Upper carousel (brand hero)",
   lowerCarousel: "Lower carousel (related)",
   estTotalVideos: (n) => `Est. total videos: ${n}`,
@@ -814,8 +814,8 @@ const en: Dict = {
   sendToContentButler: "Send to Content Butler",
   acceptCc: "Accept CC campaign",
   acceptSpcc: "Accept SPCC campaign",
-  addToCollab: "Add to Collaboration Tracker",
-  addingCollab: "Adding to Collaboration Tracker...",
+  addToCollab: "Add to Collab Butler",
+  addingCollab: "Adding to Collab Butler...",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
@@ -1032,18 +1032,18 @@ const es: Dict = {
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
   influencerVideosMore: (n) => `+${n} más`,
 
-  deepScan: "Deep Scan: recopilar todos los videos",
+  deepScan: "Barrer todos los videos",
   deepScanIntro:
-    "Amazon solo carga unos pocos videos en pantalla. Deep Scan recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
+    "Amazon solo carga unos pocos videos en pantalla. Este barrido recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
   deepScanRunning: (videos, pages) => `Recopilando: ${videos} videos en ${pages} páginas...`,
   deepScanStop: "Detener",
-  deepScanRescan: "Ejecutar Deep Scan de nuevo",
+  deepScanRescan: "Barrer de nuevo",
   deepScanDone: (classified, total) => `Clasificados ${classified} de ${total} videos.`,
   deepScanPartial:
     "Amazon entregó solo parte de la lista, así que esto es un mínimo, no el conjunto completo.",
   deepScanNoEndpoint:
-    "Desplázate a la sección Videos del producto una vez y luego ejecuta Deep Scan para que encuentre el feed de videos.",
-  deepScanStopped: "Deep Scan detenido.",
+    "Desplázate a la sección Videos del producto una vez y luego ejecuta el barrido para que encuentre el feed de videos.",
+  deepScanStopped: "Barrido detenido.",
   upperCarousel: "Carrusel superior (video de marca)",
   lowerCarousel: "Carrusel inferior (relacionados)",
   estTotalVideos: (n) => `Total estimado de videos: ${n}`,
@@ -1269,8 +1269,8 @@ const es: Dict = {
   sendToContentButler: "Enviar a Content Butler",
   acceptCc: "Aceptar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
-  addToCollab: "Añadir al Collaboration Tracker",
-  addingCollab: "Añadiendo al Collaboration Tracker...",
+  addToCollab: "Añadir a Collab Butler",
+  addingCollab: "Añadiendo a Collab Butler...",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
@@ -1487,18 +1487,18 @@ const fr: Dict = {
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
   influencerVideosMore: (n) => `+${n} de plus`,
 
-  deepScan: "Deep Scan: récolter toutes les vidéos",
+  deepScan: "Balayer toutes les vidéos",
   deepScanIntro:
-    "Amazon ne charge que quelques vidéos à l'écran. Deep Scan parcourt le flux du widget pour classer toutes les vidéos qu'il fournit, réparties entre carrousel supérieur (vidéo de marque) et inférieur (vidéos liées).",
+    "Amazon ne charge que quelques vidéos à l'écran. Ce balayage parcourt le flux du widget pour classer toutes les vidéos qu'il fournit, réparties entre carrousel supérieur (vidéo de marque) et inférieur (vidéos liées).",
   deepScanRunning: (videos, pages) => `Récolte: ${videos} vidéos sur ${pages} pages...`,
   deepScanStop: "Arrêter",
-  deepScanRescan: "Relancer Deep Scan",
+  deepScanRescan: "Relancer le balayage",
   deepScanDone: (classified, total) => `${classified} vidéos classées sur ${total}.`,
   deepScanPartial:
     "Amazon n'a fourni qu'une partie de la liste: ceci est un minimum, pas l'ensemble complet.",
   deepScanNoEndpoint:
-    "Faites défiler une fois jusqu'à la section Vidéos du produit, puis lancez Deep Scan pour qu'il trouve le flux de vidéos.",
-  deepScanStopped: "Deep Scan arrêté.",
+    "Faites défiler une fois jusqu'à la section Vidéos du produit, puis lancez le balayage pour qu'il trouve le flux de vidéos.",
+  deepScanStopped: "Balayage arrêté.",
   upperCarousel: "Carrousel supérieur (vidéo de marque)",
   lowerCarousel: "Carrousel inférieur (vidéos liées)",
   estTotalVideos: (n) => `Total estimé de vidéos: ${n}`,
@@ -1724,8 +1724,8 @@ const fr: Dict = {
   sendToContentButler: "Envoyer à Content Butler",
   acceptCc: "Accepter la campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
-  addToCollab: "Ajouter au Collaboration Tracker",
-  addingCollab: "Ajout au Collaboration Tracker...",
+  addToCollab: "Ajouter à Collab Butler",
+  addingCollab: "Ajout à Collab Butler...",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",
