@@ -99,6 +99,9 @@ export default async function PricingPage({
             >
               Free Course
             </Link>
+            <Link href="/about" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              About
+            </Link>
             <Link
               href={signedIn ? "/dashboard" : "/login"}
               className="font-medium text-slate-700 hover:text-[#f97316]"
