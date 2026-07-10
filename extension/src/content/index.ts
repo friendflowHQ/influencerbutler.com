@@ -17,6 +17,7 @@ import { renderSeal } from "../tools/butler-approved/seal";
 import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
+import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
@@ -115,6 +116,11 @@ async function runForPage(): Promise<void> {
 
       // Identity card first: the ASINs, category, rank, and rate at a glance.
       guard("product-snapshot", () => renderProductSnapshot(signals));
+
+      // Inline card at the buybox: identity, Creator-API market availability,
+      // and a one-tap Collab Butler action (injected into the page, not the
+      // floating panel).
+      guard("inline-card", () => renderInlineCard(signals));
 
       if (settings.tools.videoCounts) {
         guard("video-counts", () =>

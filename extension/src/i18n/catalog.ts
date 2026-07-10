@@ -27,6 +27,14 @@ export interface Dict {
   snapshotCommissionDefault: (pct: number) => string;
   snapshotCommissionNotSet: string;
 
+  // Inline card at the buybox
+  inlineCardTitle: string;
+  inlineAvailabilityHeading: string;
+  inlineInStock: string;
+  inlineUnavailable: string;
+  inlineNotListed: string;
+  inlineConnectCreatorApi: string;
+
   // Popup: static chrome
   tagFree: string;
   thisPageHeading: string;
@@ -463,6 +471,13 @@ const en: Dict = {
     `Commission about ${pct}% (${category}, rate card)`,
   snapshotCommissionDefault: (pct) => `Commission about ${pct}% (all-other-categories rate)`,
   snapshotCommissionNotSet: "No commission rate set",
+
+  inlineCardTitle: "Product intel",
+  inlineAvailabilityHeading: "Market availability",
+  inlineInStock: "in stock",
+  inlineUnavailable: "unavailable",
+  inlineNotListed: "not listed",
+  inlineConnectCreatorApi: "Connect the Creator API for live cross-country availability",
 
   tagFree: "Free",
   thisPageHeading: "This page",
@@ -919,6 +934,13 @@ const es: Dict = {
   snapshotCommissionDefault: (pct) => `Comisión aprox. ${pct}% (tarifa general)`,
   snapshotCommissionNotSet: "Sin tarifa de comisión",
 
+  inlineCardTitle: "Información del producto",
+  inlineAvailabilityHeading: "Disponibilidad por país",
+  inlineInStock: "en stock",
+  inlineUnavailable: "no disponible",
+  inlineNotListed: "no listado",
+  inlineConnectCreatorApi: "Conecta la Creator API para disponibilidad en varios países",
+
   tagFree: "Gratis",
   thisPageHeading: "Esta página",
   checkingTab: "Comprobando la pestaña actual...",
@@ -1373,6 +1395,13 @@ const fr: Dict = {
     `Commission environ ${pct}% (${category}, grille)`,
   snapshotCommissionDefault: (pct) => `Commission environ ${pct}% (taux general)`,
   snapshotCommissionNotSet: "Aucun taux de commission défini",
+
+  inlineCardTitle: "Infos produit",
+  inlineAvailabilityHeading: "Disponibilité par pays",
+  inlineInStock: "en stock",
+  inlineUnavailable: "indisponible",
+  inlineNotListed: "non listé",
+  inlineConnectCreatorApi: "Connectez la Creator API pour la disponibilité multi-pays",
 
   tagFree: "Gratuit",
   thisPageHeading: "Cette page",
