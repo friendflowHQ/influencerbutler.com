@@ -92,6 +92,19 @@ export function parseCompMonths(code: string | null | undefined): number | null 
 }
 
 /**
+ * Token appended to a synthetic comp code to mark a never-expiring ("forever")
+ * grant, e.g. KAYFREEFOREVER. This is the explicit, self-documenting signal the
+ * loader/cron use to tell a deliberate forever comp (months + expires_at both
+ * null) apart from a legacy comp whose duration could not be parsed (also null).
+ */
+export const FOREVER_TOKEN = "FOREVER";
+
+/** True when a comp code marks a never-expiring grant (carries FOREVER). */
+export function isForeverCode(code: string | null | undefined): boolean {
+  return /FOREVER/i.test(code ?? "");
+}
+
+/**
  * Best-effort recipient name from a code: the leading segment before FREE, the
  * first digit, or a spelled-out unit. CAREESEFREE3M -> "Careese",
  * CHRISTINAONEYEARFREE -> "Christina". Returns null if nothing sensible remains.

@@ -23,12 +23,15 @@ export const dynamic = "force-dynamic";
 const ALLOWED_PLANS = new Set(["monthly", "team-monthly", "agency-monthly", "daily-deals-addon"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MONTHS = 36;
+const MAX_SEATS = 100;
 
 type Body = {
   email?: unknown;
   name?: unknown;
   months?: unknown;
   plan?: unknown;
+  seats?: unknown;
+  forever?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -47,17 +50,19 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : null;
   const plan = typeof body.plan === "string" ? body.plan : "monthly";
-  const months =
-    typeof body.months === "number"
+  const forever = body.forever === true;
+  const months = forever
+    ? null
+    : typeof body.months === "number"
       ? body.months
       : Number.parseInt(String(body.months), 10);
 
   if (!EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Enter a valid recipient email." }, { status: 400 });
   }
-  if (!Number.isInteger(months) || months < 1 || months > MAX_MONTHS) {
+  if (!forever && (!Number.isInteger(months) || (months as number) < 1 || (months as number) > MAX_MONTHS)) {
     return NextResponse.json(
-      { error: `Free months must be a whole number between 1 and ${MAX_MONTHS}.` },
+      { error: `Free months must be a whole number between 1 and ${MAX_MONTHS}, or mark the comp as forever.` },
       { status: 400 },
     );
   }
@@ -65,7 +70,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported plan." }, { status: 400 });
   }
 
-  const result = await issueInHouseComp({ email, name, months, plan });
+  // Optional seat override. Absent -> issuer applies the plan's default seat count.
+  let seats: number | undefined;
+  if (body.seats != null && body.seats !== "") {
+    const parsed = typeof body.seats === "number" ? body.seats : Number.parseInt(String(body.seats), 10);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_SEATS) {
+      return NextResponse.json(
+        { error: `Seats must be a whole number between 1 and ${MAX_SEATS}.` },
+        { status: 400 },
+      );
+    }
+    seats = parsed;
+  }
+
+  const result = await issueInHouseComp({ email, name, months, plan, seats, forever });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
@@ -74,6 +92,8 @@ export async function POST(request: Request) {
     by: actor.email,
     email: result.email,
     months,
+    forever,
+    seats: result.activationLimit,
     plan,
   });
 
@@ -82,6 +102,8 @@ export async function POST(request: Request) {
     key: result.key,
     email: result.email,
     months,
+    forever,
+    activationLimit: result.activationLimit,
     expiresAt: result.expiresAt,
   });
 }
