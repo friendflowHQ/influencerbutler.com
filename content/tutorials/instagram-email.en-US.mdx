@@ -44,7 +44,7 @@ Top toolbar buttons:
 
 The scheduler runs Email Collection on a cadence so new emails are surfaced as DMs come in:
 
-1. Click **Enable Schedule**.
+1. Click **Apply Schedule**.
 2. Pick an interval (default 24h).
 
 While the schedule is active, settings lock. Click **Stop Schedule** before editing. Daily is plenty - Instagram DMs don't accumulate fast enough to need anything faster.
@@ -62,8 +62,8 @@ Harvested emails live in the preseed cache. The CSV export from the toolbar give
 ## Common gotchas
 
 - **No emails found despite lots of DMs**: many brand DMs share emails only in PDFs or images. Butler doesn't OCR - it only finds plain-text email patterns in message text.
-- **Schedule appears stuck**: settings lock during active schedule. Click Stop Schedule, edit, re-enable.
-- **Same email appears twice from different threads**: that's expected; the brand reached out from two different accounts. Use the Sent toggle to track only one of them.
+- **Schedule appears stuck**: settings lock during active schedule. Click Stop Schedule, edit, re-apply.
+- **Same email under a different name**: each email address is listed once. If a brand messaged you from two accounts, Butler keeps the entry under the handle it resolves and won't duplicate the address.
 - **Instagram sign-in prompt mid-run**: solve in the spawned Chrome window, click Resume.
 
 ## Related
