@@ -26,7 +26,8 @@ import { randomUUID } from "crypto";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
 import { addMonthsUtc } from "@/lib/comp-codes";
-import { SEAT_LIMIT, TIER_NAME, tierForPlan } from "@/lib/pricing-constants";
+import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
+import { resolveVariantId } from "@/lib/lemonsqueezy";
 
 export type IssueCompInput = {
   email: string;
@@ -164,8 +165,19 @@ async function sendCompEmail(params: {
 export async function issueInHouseComp(input: IssueCompInput): Promise<IssueCompResult> {
   const email = input.email.trim();
   const months = input.months;
+  const isDailyDeals = input.plan === ADDON_PLAN_DAILY_DEALS;
   const tier = tierForPlan(input.plan);
-  if (!tier) return { ok: false, status: 400, error: "Unsupported plan." };
+  if (!tier && !isDailyDeals) return { ok: false, status: 400, error: "Unsupported plan." };
+
+  // The LS variant id for this plan, stored on the synthetic subscription so
+  // the licensing worker's in-house validation returns the right tier / add-on.
+  const variant = resolveVariantId(input.plan, undefined);
+  if (!variant.ok) {
+    console.error("comp-issue: variant resolve failed", { plan: input.plan, variant });
+    return { ok: false, status: 500, error: "Server misconfiguration" };
+  }
+  const planName = isDailyDeals ? "Daily Deals Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
+  const activationLimit = isDailyDeals ? 1 : SEAT_LIMIT[tier!];
 
   const svc = adminService();
   if (!svc) return { ok: false, status: 503, error: "Server misconfigured" };
@@ -173,19 +185,22 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   const userId = await ensureCompUser(svc, email, input.name);
   if (!userId) return { ok: false, status: 502, error: "Could not create the recipient account." };
 
-  // Never stack a comp on someone who already has live access.
-  const liveSub = await svc
-    .from("subscriptions")
-    .select("id")
-    .eq("user_id", userId)
-    .in("status", LIVE_STATUSES)
-    .limit(1);
-  if (!liveSub.error && (liveSub.data?.length ?? 0) > 0) {
-    return {
-      ok: false,
-      status: 409,
-      error: "That account already has a live subscription. Cancel it first, or use another email.",
-    };
+  // Never stack a second PRIMARY comp on someone who already has live access.
+  // The Daily Deals add-on is meant to sit ON TOP of a plan, so it is exempt.
+  if (!isDailyDeals) {
+    const liveSub = await svc
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", userId)
+      .in("status", LIVE_STATUSES)
+      .limit(1);
+    if (!liveSub.error && (liveSub.data?.length ?? 0) > 0) {
+      return {
+        ok: false,
+        status: 409,
+        error: "That account already has a live subscription. Cancel it first, or use another email.",
+      };
+    }
   }
 
   const nowIso = new Date().toISOString();
@@ -194,12 +209,13 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   const key = randomUUID().toUpperCase();
   const keyHash = hashLicenseKey(key);
 
-  // 1) Synthetic subscription = Pro.
+  // 1) Synthetic subscription = the entitlement (Pro tier, or the add-on).
   const subInsert = await svc.from("subscriptions").insert({
     ls_subscription_id: sentinel,
     user_id: userId,
     status: "active",
-    plan_name: `${TIER_NAME[tier]} (comp)`,
+    plan_name: planName,
+    ls_variant_id: variant.variantId,
   });
   if (subInsert.error) {
     console.error("comp-issue: subscriptions insert failed", subInsert.error);
@@ -227,7 +243,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     key,
     key_hash: keyHash,
     status: "active",
-    activation_limit: SEAT_LIMIT[tier],
+    activation_limit: activationLimit,
   });
   if (keyInsert.error) {
     console.error("comp-issue: license_keys insert failed - rolling back subscription", keyInsert.error);
