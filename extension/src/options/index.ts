@@ -165,6 +165,14 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   head.append(name, makeBadge(pv.lastTest.status));
   block.append(head);
 
+  // Optional one-line explainer (e.g. for providers with no credential fields).
+  if (adapter.descriptionKey) {
+    const desc = document.createElement("p");
+    desc.className = "muted small";
+    desc.textContent = label(adapter.descriptionKey);
+    block.append(desc);
+  }
+
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.
   const inputs = new Map<string, HTMLInputElement>();
   if (adapter.id === ASSOCIATES) {

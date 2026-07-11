@@ -1,7 +1,7 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
 import { ADAPTERS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
-import { getIntegration, getIntegrations, getSettings, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
+import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
 import type {
   GenerateLinkResult,
@@ -16,11 +16,20 @@ import type {
 // raw secrets never travel back out.
 
 const ASSOCIATES = "associates";
+// Influencer Butler branded links authenticate with the signed-in license key
+// instead of a stored, user-typed credential (see adapters/influencerbutler).
+const IB_LINKS = "influencerbutler";
 
-// Decrypt a provider's stored credentials. Associates has no encrypted blob:
-// its "credentials" are the per-country affiliate tags kept in global state.
+// Decrypt a provider's stored credentials. Two providers have no encrypted blob:
+// Associates' "credentials" are the per-country affiliate tags in global state,
+// and the branded-link provider's "credential" is the signed-in license key,
+// supplied from auth at call time so it is never duplicated into storage.
 async function credsFor(id: string, integrations: IntegrationsState): Promise<Record<string, string>> {
   if (id === ASSOCIATES) return { ...integrations.global.perCountryTags };
+  if (id === IB_LINKS) {
+    const { auth } = await getState();
+    return auth.licenseKey ? { licenseKey: auth.licenseKey } : {};
+  }
   const provider = integrations.providers[id];
   return decryptFields(provider?.credentialsEnc ?? null);
 }
@@ -47,7 +56,9 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
     const configured =
       adapter.id === ASSOCIATES
         ? Object.values(integrations.global.perCountryTags).some((v) => v.trim())
-        : Boolean(state?.credentialsEnc);
+        : adapter.id === IB_LINKS
+          ? Boolean(creds.licenseKey)
+          : Boolean(state?.credentialsEnc);
     providers.push({
       id: adapter.id,
       enabled: state?.enabled ?? false,
@@ -74,6 +85,18 @@ export async function saveIntegration(
 ): Promise<IntegrationView> {
   const adapter = getAdapter(id);
   if (!adapter) throw new Error(`unknown integration: ${id}`);
+
+  if (id === IB_LINKS) {
+    // No stored credentials: the license key is read from auth at call time.
+    // Only the enable / routing flags are persisted.
+    if (enabled !== undefined || routingParticipates !== undefined) {
+      await patchIntegration(id, (s) => {
+        if (enabled !== undefined) s.enabled = enabled;
+        if (routingParticipates !== undefined) s.routingParticipates = routingParticipates;
+      });
+    }
+    return viewFor(id);
+  }
 
   if (id === ASSOCIATES) {
     // Tags are not secret; store them directly in global state.

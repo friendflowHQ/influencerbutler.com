@@ -19,6 +19,18 @@ export const ENDPOINTS = {
   dealSources: `${API_BASE}/api/extension/deal-sources`,
 } as const;
 
+// Influencer Butler branded short-link service (links.influencerbutler.com),
+// the same worker the desktop app's "selfhosted" DeepLink Routing option calls.
+// The extension authenticates each request with the signed-in Lemon Squeezy
+// license key (no separate credential), mirroring SelfHostedLinkClient in the
+// desktop repo. `create` mints/looks up a branded link; `list` is a read-only,
+// paid-gated endpoint used to verify the license and tier without minting.
+export const IB_LINKS_BASE = "https://links.influencerbutler.com";
+export const IB_LINKS_ENDPOINTS = {
+  create: `${IB_LINKS_BASE}/api/links`,
+  list: `${IB_LINKS_BASE}/api/links/list`,
+} as const;
+
 // The Start Here onboarding walkthrough (opened on install). The Creator API
 // setup step embeds this YouTube walkthrough (same video as the desktop app's
 // API Integrations > Creator API screen and the api-integrations tutorial), and

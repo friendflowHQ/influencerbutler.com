@@ -42,6 +42,8 @@ export interface OptionsDict {
   provOpenai: string;
   provCreatorsApi: string;
   provAssociates: string;
+  provInfluencerButler: string;
+  provInfluencerButlerDesc: string;
   provPosttap: string;
   provLinktwin: string;
   provUrlgenius: string;
@@ -99,6 +101,9 @@ const en: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Amazon Associates tags",
+  provInfluencerButler: "Influencer Butler branded links",
+  provInfluencerButlerDesc:
+    "Turn your links into short links.influencerbutler.com links with click analytics. No setup: it uses your signed-in license. Free on any plan.",
   provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",
@@ -155,6 +160,9 @@ const es: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Etiquetas de Amazon Associates",
+  provInfluencerButler: "Enlaces de marca de Influencer Butler",
+  provInfluencerButlerDesc:
+    "Convierte tus enlaces en enlaces cortos de links.influencerbutler.com con analítica de clics. Sin configuración: usa tu licencia iniciada. Gratis en cualquier plan.",
   provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",
@@ -211,6 +219,9 @@ const fr: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Balises Amazon Associates",
+  provInfluencerButler: "Liens de marque Influencer Butler",
+  provInfluencerButlerDesc:
+    "Transformez vos liens en liens courts links.influencerbutler.com avec des statistiques de clics. Sans configuration : utilise votre licence connectée. Gratuit sur toute offre.",
   provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",

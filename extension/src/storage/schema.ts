@@ -56,6 +56,8 @@ export type OrderCursor = {
 
 export type AuthState = {
   licenseKey: string | null;
+  // Masked email for display only (e***@gmail.com). The server never sends the
+  // raw address to a license-bearer client. API auth uses licenseKey, not this.
   email: string | null;
   verifiedAt: number | null;
 };
@@ -63,8 +65,11 @@ export type AuthState = {
 // Third-party API integrations (OpenAI, Amazon Creators API, deeplink
 // providers, affiliate networks) configured on the options page. Credentials
 // are encrypted at rest with AES-GCM (see src/integrations/crypto.ts) and never
-// leave the machine: tests and live use call each provider's own API directly,
-// never influencerbutler.com. Keyed by the adapter id (src/integrations).
+// leave the machine: tests and live use call each provider's own API directly.
+// The one exception is the Influencer Butler branded-link provider, which is a
+// first-party service (links.influencerbutler.com) authenticated with the
+// signed-in license key rather than a stored third-party credential. Keyed by
+// the adapter id (src/integrations).
 export type EncryptedBlob = { iv: string; ct: string };
 
 export type IntegrationTestStatus = "untested" | "ok" | "fail";

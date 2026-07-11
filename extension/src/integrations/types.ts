@@ -5,6 +5,7 @@
 // already decrypted and never leave the worker.
 
 export type DeeplinkProviderId =
+  | "influencerbutler"
   | "posttap"
   | "linktwin"
   | "urlgenius"
@@ -54,6 +55,10 @@ export type IntegrationAdapter = {
   // here must also appear in static/manifest.json optional_host_permissions.
   hosts: string[];
   fields: FieldSpec[];
+  // Optional one-line explainer shown under the provider name on the options
+  // page (i18n key). Useful for providers with no credential fields, where the
+  // form alone would not explain what the provider does.
+  descriptionKey?: string;
   // Where to find these credentials on the provider's own site. When set, the
   // options page shows a "Show me where" button next to the provider that opens
   // this page in a new tab, matching the desktop app's button of the same name.

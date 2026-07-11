@@ -11,7 +11,8 @@
     "https://affiliate-program.amazon.com/*",
     "https://affiliate-program.amazon.ca/*",
     "https://affiliate-program.amazon.co.uk/*",
-    "https://www.influencerbutler.com/*"
+    "https://www.influencerbutler.com/*",
+    "https://links.influencerbutler.com/*"
   ],
   "optional_host_permissions": [
     "http://*/*",
