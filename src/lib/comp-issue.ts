@@ -25,19 +25,28 @@
 import { randomUUID } from "crypto";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
-import { addMonthsUtc } from "@/lib/comp-codes";
+import { addMonthsUtc, FOREVER_TOKEN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
 
 export type IssueCompInput = {
   email: string;
   name?: string | null;
-  months: number;
+  /** Free-window length in months, or null for a never-expiring (forever) comp. */
+  months: number | null;
   plan: string;
+  /**
+   * Devices allowed on the key at once (the license_keys.activation_limit).
+   * Omitted -> the plan's default seat count (Solo 1 / Team 10 / Agency 25,
+   * Daily Deals add-on 1).
+   */
+  seats?: number | null;
+  /** When true, the comp never expires and is never auto-cancelled. */
+  forever?: boolean;
 };
 
 export type IssueCompResult =
-  | { ok: true; key: string; userId: string; email: string; expiresAt: string }
+  | { ok: true; key: string; userId: string; email: string; expiresAt: string | null; activationLimit: number }
   | { ok: false; status: number; error: string };
 
 // Statuses that mean the user already has live access, so we must not stack a
@@ -103,7 +112,8 @@ async function ensureCompUser(
 async function sendCompEmail(params: {
   to: string;
   key: string;
-  months: number;
+  months: number | null;
+  forever: boolean;
   signInLink: string | null;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -117,8 +127,13 @@ async function sendCompEmail(params: {
     "https://www.influencerbutler.com"
   ).replace(/\/$/, "");
 
+  const durationPhrase =
+    params.forever || params.months == null
+      ? "Influencer Butler Pro, free forever"
+      : `${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free`;
+
   const lines = [
-    `Great news: you have been given ${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free.`,
+    `Great news: you have been given ${durationPhrase}.`,
     ``,
     `Your license key:`,
     ``,
@@ -164,10 +179,14 @@ async function sendCompEmail(params: {
 
 export async function issueInHouseComp(input: IssueCompInput): Promise<IssueCompResult> {
   const email = input.email.trim();
-  const months = input.months;
+  const forever = input.forever === true;
+  const months = forever ? null : input.months;
   const isDailyDeals = input.plan === ADDON_PLAN_DAILY_DEALS;
   const tier = tierForPlan(input.plan);
   if (!tier && !isDailyDeals) return { ok: false, status: 400, error: "Unsupported plan." };
+  if (!forever && (typeof months !== "number" || !Number.isInteger(months) || months < 1)) {
+    return { ok: false, status: 400, error: "Free months must be a whole number, or mark the comp as forever." };
+  }
 
   // The LS variant id for this plan, stored on the synthetic subscription so
   // the licensing worker's in-house validation returns the right tier / add-on.
@@ -177,7 +196,13 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     return { ok: false, status: 500, error: "Server misconfiguration" };
   }
   const planName = isDailyDeals ? "Daily Deals Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
-  const activationLimit = isDailyDeals ? 1 : SEAT_LIMIT[tier!];
+  // Seat limit written to the key: the admin's chosen count when valid, else the
+  // plan's default (Solo 1 / Team 10 / Agency 25, Daily Deals add-on 1).
+  const planDefaultSeats = isDailyDeals ? 1 : SEAT_LIMIT[tier!];
+  const activationLimit =
+    typeof input.seats === "number" && Number.isInteger(input.seats) && input.seats >= 1
+      ? input.seats
+      : planDefaultSeats;
 
   const svc = adminService();
   if (!svc) return { ok: false, status: 503, error: "Server misconfigured" };
@@ -204,7 +229,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   }
 
   const nowIso = new Date().toISOString();
-  const expiresAt = addMonthsUtc(nowIso, months);
+  const expiresAt = forever ? null : addMonthsUtc(nowIso, months!);
   const sentinel = `comp:${randomUUID()}`;
   const key = randomUUID().toUpperCase();
   const keyHash = hashLicenseKey(key);
@@ -261,7 +286,8 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
 
   // 3) Track the comp. Non-fatal: the grant already works; this drives the list
   //    and the expiry cron.
-  const discountCode = `${codeNameSegment(input.name, email)}FREE${months}M`;
+  const codeSeg = codeNameSegment(input.name, email);
+  const discountCode = forever ? `${codeSeg}FREE${FOREVER_TOKEN}` : `${codeSeg}FREE${months}M`;
   const grantInsert = await svc.from("comp_grants").insert({
     ls_subscription_id: sentinel,
     user_id: userId,
@@ -295,7 +321,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   } catch (err) {
     console.error("comp-issue: generateLink threw", err);
   }
-  await sendCompEmail({ to: email, key, months, signInLink });
+  await sendCompEmail({ to: email, key, months, forever, signInLink });
 
-  return { ok: true, key, userId, email, expiresAt };
+  return { ok: true, key, userId, email, expiresAt, activationLimit };
 }

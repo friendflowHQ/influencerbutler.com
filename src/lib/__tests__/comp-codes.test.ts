@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonthsUtc, compNameFromCode, parseCompMonths } from "../comp-codes";
+import { addMonthsUtc, compNameFromCode, isForeverCode, parseCompMonths } from "../comp-codes";
 
 describe("parseCompMonths", () => {
   it("parses the going-forward NAMEFREE#M format", () => {
@@ -40,6 +40,25 @@ describe("parseCompMonths", () => {
   it("rejects out-of-range durations", () => {
     expect(parseCompMonths("XFREE0M")).toBeNull();
     expect(parseCompMonths("XFREE99M")).toBeNull();
+  });
+});
+
+describe("isForeverCode", () => {
+  it("detects the FOREVER token minted for never-expiring comps", () => {
+    expect(isForeverCode("KAYFREEFOREVER")).toBe(true);
+    expect(isForeverCode("kayfreeforever")).toBe(true); // case-insensitive
+  });
+
+  it("is false for ordinary and duration-bearing codes", () => {
+    expect(isForeverCode("CAREESEFREE3M")).toBe(false);
+    expect(isForeverCode("BENABLE")).toBe(false);
+    expect(isForeverCode("")).toBe(false);
+    expect(isForeverCode(null)).toBe(false);
+  });
+
+  it("a forever code carries no parseable month count (loader treats it as forever, not needs-months)", () => {
+    expect(parseCompMonths("KAYFREEFOREVER")).toBeNull();
+    expect(compNameFromCode("KAYFREEFOREVER")).toBe("Kay");
   });
 });
 

@@ -78,6 +78,7 @@ export async function GET(request: Request) {
 
   for (const row of result.rows) {
     if (row.state === "cancelled") continue;
+    if (row.state === "forever") continue; // never expires, never dunned
     if (row.state === "unknown-months" || row.months == null || row.daysRemaining == null) {
       needsMonths.push(row);
       continue;

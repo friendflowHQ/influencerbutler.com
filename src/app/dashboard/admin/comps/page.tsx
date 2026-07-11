@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type CompState =
   | "unknown-months"
+  | "forever"
   | "expired"
   | "expiring-7"
   | "expiring-30"
@@ -32,6 +33,7 @@ type CompRow = {
   licenseKey: string | null;
   activatedAt: string | null;
   lastSeenAt: string | null;
+  seats: number | null;
 };
 
 type ListResponse = {
@@ -48,6 +50,15 @@ const FILTERS = [
   { key: "expired", label: "Expired, still live" },
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
+
+// Default seat count per plan (Solo 1 / Team 10 / Agency 25, Daily Deals 1).
+// Mirrors SEAT_LIMIT server-side; used only to prefill the editable Seats field.
+const PLAN_DEFAULT_SEATS: Record<string, number> = {
+  monthly: 1,
+  "team-monthly": 10,
+  "agency-monthly": 25,
+  "daily-deals-addon": 1,
+};
 
 function shortDate(iso: string | null): string {
   if (!iso) return "-";
@@ -99,6 +110,7 @@ function ActivationCell({ row }: { row: CompRow }) {
 
 function daysChip(row: CompRow): string {
   if (row.state === "cancelled") return "bg-slate-100 text-slate-500";
+  if (row.state === "forever") return "bg-indigo-100 text-indigo-700";
   if (row.state === "unknown-months") return "bg-amber-100 text-amber-700";
   const d = row.daysRemaining ?? 0;
   if (d <= 0) return "bg-rose-100 text-rose-700";
@@ -109,6 +121,7 @@ function daysChip(row: CompRow): string {
 
 function daysLabel(row: CompRow): string {
   if (row.state === "cancelled") return "cancelled";
+  if (row.state === "forever") return "forever";
   if (row.state === "unknown-months") return "set months";
   const d = row.daysRemaining;
   if (d == null) return "-";
@@ -157,11 +170,17 @@ export default function AdminCompsPage() {
   const [grantName, setGrantName] = useState("");
   const [grantMonths, setGrantMonths] = useState("3");
   const [grantPlan, setGrantPlan] = useState("monthly");
+  const [grantForever, setGrantForever] = useState(false);
+  const [grantSeats, setGrantSeats] = useState("1");
   const [granting, setGranting] = useState(false);
   const [grantError, setGrantError] = useState<string | null>(null);
-  const [grantResult, setGrantResult] = useState<{ key: string; email: string; expiresAt: string | null } | null>(
-    null,
-  );
+  const [grantResult, setGrantResult] = useState<{
+    key: string;
+    email: string;
+    expiresAt: string | null;
+    forever: boolean;
+    seats: number | null;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   // "Backfill from Lemon Squeezy" one-off maintenance action.
@@ -276,12 +295,17 @@ export default function AdminCompsPage() {
     setGrantResult(null);
     setCopied(false);
     const months = Number(grantMonths.trim());
+    const seats = Number(grantSeats.trim());
     if (!grantEmail.trim()) {
       setGrantError("Enter the recipient's email.");
       return;
     }
-    if (!Number.isInteger(months) || months < 1 || months > 36) {
-      setGrantError("Free months must be a whole number between 1 and 36.");
+    if (!grantForever && (!Number.isInteger(months) || months < 1 || months > 36)) {
+      setGrantError("Free months must be a whole number between 1 and 36, or mark it forever.");
+      return;
+    }
+    if (!Number.isInteger(seats) || seats < 1 || seats > 100) {
+      setGrantError("Seats must be a whole number between 1 and 100.");
       return;
     }
     setGranting(true);
@@ -292,7 +316,9 @@ export default function AdminCompsPage() {
         body: JSON.stringify({
           email: grantEmail.trim(),
           name: grantName.trim() || undefined,
-          months,
+          months: grantForever ? null : months,
+          forever: grantForever,
+          seats,
           plan: grantPlan,
         }),
       });
@@ -301,6 +327,8 @@ export default function AdminCompsPage() {
         key?: string;
         email?: string;
         expiresAt?: string;
+        forever?: boolean;
+        activationLimit?: number;
         error?: string;
       };
       if (!res.ok || !json.ok || !json.key) {
@@ -311,6 +339,8 @@ export default function AdminCompsPage() {
         key: json.key,
         email: json.email ?? grantEmail.trim(),
         expiresAt: json.expiresAt ?? null,
+        forever: json.forever === true,
+        seats: typeof json.activationLimit === "number" ? json.activationLimit : seats,
       });
       setGrantEmail("");
       setGrantName("");
@@ -320,6 +350,13 @@ export default function AdminCompsPage() {
     } finally {
       setGranting(false);
     }
+  };
+
+  // Changing the plan resets Seats to that plan's default (admin can re-edit).
+  const changePlan = (plan: string) => {
+    setGrantPlan(plan);
+    const def = PLAN_DEFAULT_SEATS[plan];
+    if (typeof def === "number") setGrantSeats(String(def));
   };
 
   const copyKey = async () => {
@@ -382,7 +419,8 @@ export default function AdminCompsPage() {
         <p className="mt-1 text-sm text-slate-600">
           Mints a license key and Pro access for the recipient right here, entirely in Supabase (no
           Lemon Squeezy). The key is emailed to them with a download and sign-in link, and shown
-          below for you to copy. It auto-cancels at the end of the free window.
+          below for you to copy. It auto-cancels at the end of the free window, unless you mark it
+          forever. Seats set how many devices can use the key at once.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
@@ -411,16 +449,27 @@ export default function AdminCompsPage() {
               type="number"
               min={1}
               max={36}
-              value={grantMonths}
+              value={grantForever ? "" : grantMonths}
+              disabled={grantForever}
+              placeholder={grantForever ? "Forever" : undefined}
               onChange={(e) => setGrantMonths(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
             />
+            <span className="mt-1.5 flex items-center gap-2 text-xs font-normal text-slate-600">
+              <input
+                type="checkbox"
+                checked={grantForever}
+                onChange={(e) => setGrantForever(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-slate-300"
+              />
+              Never expires (forever free)
+            </span>
           </label>
           <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-700">Plan</span>
             <select
               value={grantPlan}
-              onChange={(e) => setGrantPlan(e.target.value)}
+              onChange={(e) => changePlan(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
               <option value="monthly">Solo Monthly</option>
@@ -428,6 +477,20 @@ export default function AdminCompsPage() {
               <option value="agency-monthly">Agency Monthly</option>
               <option value="daily-deals-addon">Daily Deals Workspace (add-on)</option>
             </select>
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Seats (devices at once)</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={grantSeats}
+              onChange={(e) => setGrantSeats(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <span className="mt-1.5 block text-xs font-normal text-slate-500">
+              Defaults to the plan&rsquo;s seat count; lower it to restrict the key.
+            </span>
           </label>
         </div>
         <div className="mt-4 flex items-center gap-3">
@@ -460,9 +523,16 @@ export default function AdminCompsPage() {
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
-            {grantResult.expiresAt ? (
-              <p className="mt-2 text-xs text-emerald-700">Free window ends {shortDate(grantResult.expiresAt)}.</p>
-            ) : null}
+            <p className="mt-2 text-xs text-emerald-700">
+              {grantResult.forever
+                ? "Never expires (forever free)."
+                : grantResult.expiresAt
+                  ? `Free window ends ${shortDate(grantResult.expiresAt)}.`
+                  : ""}
+              {grantResult.seats != null
+                ? ` ${grantResult.seats} device${grantResult.seats === 1 ? "" : "s"} allowed at once.`
+                : ""}
+            </p>
           </div>
         ) : null}
       </section>
@@ -564,7 +634,9 @@ export default function AdminCompsPage() {
                       {row.discountCode ?? "-"}
                     </td>
                     <td className="px-4 py-3">
-                      {row.months != null ? (
+                      {row.state === "forever" ? (
+                        <span className="font-medium text-indigo-600">Forever</span>
+                      ) : row.months != null ? (
                         <span className="text-slate-700">
                           {row.months}
                           {row.monthsSource === "manual" ? (
@@ -607,6 +679,11 @@ export default function AdminCompsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <KeyCell value={row.licenseKey} />
+                      {row.seats != null ? (
+                        <div className="mt-0.5 text-xs text-slate-400">
+                          {row.seats} seat{row.seats === 1 ? "" : "s"}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {done ? (

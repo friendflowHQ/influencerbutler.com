@@ -17,13 +17,14 @@
  * auto-cancelled on a guess.
  */
 import { createAdminClient } from "@/lib/admin";
-import { addMonthsUtc, compNameFromCode, parseCompMonths } from "@/lib/comp-codes";
+import { addMonthsUtc, compNameFromCode, isForeverCode, parseCompMonths } from "@/lib/comp-codes";
 
 const ROW_LIMIT = 5000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type CompState =
   | "unknown-months"
+  | "forever"
   | "expired"
   | "expiring-7"
   | "expiring-30"
@@ -55,6 +56,8 @@ export type CompRow = {
   /** In-house only: when the desktop first activated the key, and last checked in. */
   activatedAt: string | null;
   lastSeenAt: string | null;
+  /** Devices allowed on the key at once (license_keys.activation_limit), if known. */
+  seats: number | null;
 };
 
 export type CompsResult = {
@@ -100,7 +103,12 @@ function isCompOrder(total: number, code: string | null): boolean {
 }
 
 type OrderComp = { code: string | null; issuedAt: string | null };
-type LicenseInfo = { status: string | null; createdAt: string | null; key: string | null };
+type LicenseInfo = {
+  status: string | null;
+  createdAt: string | null;
+  key: string | null;
+  seats: number | null;
+};
 
 export async function loadComps(now: number = Date.now()): Promise<CompsResult | null> {
   const svc = createAdminClient() as unknown as CompsClient | null;
@@ -195,22 +203,27 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   const licenseByUser = new Map<string, LicenseInfo>();
   // license_keys.id -> {key,status}, so a comp can show its OWN minted key
   // (via comp_grants.license_key_id) rather than the user's first key.
-  const licenseById = new Map<string, { key: string | null; status: string | null }>();
+  const licenseById = new Map<string, { key: string | null; status: string | null; seats: number | null }>();
   if (uidArr.length > 0) {
     const [profilesRes, licensesRes] = await Promise.all([
       svc.from("profiles").select("id,email").in("id", uidArr).limit(ROW_LIMIT),
-      svc.from("license_keys").select("id,user_id,status,created_at,key").in("user_id", uidArr).limit(ROW_LIMIT),
+      svc
+        .from("license_keys")
+        .select("id,user_id,status,created_at,key,activation_limit")
+        .in("user_id", uidArr)
+        .limit(ROW_LIMIT),
     ]);
     for (const row of profilesRes.data ?? []) {
       const id = str(row.id);
       if (id) emailByUser.set(id, str(row.email));
     }
     for (const row of licensesRes.data ?? []) {
+      const seats = typeof row.activation_limit === "number" ? row.activation_limit : null;
       const id = str(row.id);
-      if (id) licenseById.set(id, { key: str(row.key), status: str(row.status) });
+      if (id) licenseById.set(id, { key: str(row.key), status: str(row.status), seats });
       const uid = str(row.user_id);
       if (uid && !licenseByUser.has(uid)) {
-        licenseByUser.set(uid, { status: str(row.status), createdAt: str(row.created_at), key: str(row.key) });
+        licenseByUser.set(uid, { status: str(row.status), createdAt: str(row.created_at), key: str(row.key), seats });
       }
     }
   }
@@ -251,7 +264,8 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     "expiring-7": 2,
     "expiring-30": 3,
     active: 4,
-    cancelled: 5,
+    forever: 5,
+    cancelled: 6,
   };
   rows.sort((a, b) => {
     if (rank[a.state] !== rank[b.state]) return rank[a.state] - rank[b.state];
@@ -278,7 +292,7 @@ function buildCompRow(args: {
   userId: string | null;
   emailByUser: Map<string, string | null>;
   licenseByUser: Map<string, LicenseInfo>;
-  licenseById: Map<string, { key: string | null; status: string | null }>;
+  licenseById: Map<string, { key: string | null; status: string | null; seats: number | null }>;
   now: number;
 }): CompRow {
   const { lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, licenseById, now } = args;
@@ -302,16 +316,20 @@ function buildCompRow(args: {
       ? "parsed"
       : null;
 
+  // A forever comp (code carries FOREVER) never expires and is never cancelled.
+  const forever = isForeverCode(code);
   const issuedAt =
     str(grant?.issued_at) ?? order?.issuedAt ?? license?.createdAt ?? (sub ? str(sub.created_at) : null);
-  const expiresAt =
-    str(grant?.expires_at) ?? (months != null && issuedAt ? addMonthsUtc(issuedAt, months) : null);
+  const expiresAt = forever
+    ? null
+    : str(grant?.expires_at) ?? (months != null && issuedAt ? addMonthsUtc(issuedAt, months) : null);
   const daysRemaining =
     expiresAt != null ? Math.floor((new Date(expiresAt).getTime() - now) / DAY_MS) : null;
 
   const cancelledAt = str(grant?.cancelled_at);
   let state: CompState;
   if (status === "cancelled" || cancelledAt) state = "cancelled";
+  else if (forever) state = "forever";
   else if (months == null || daysRemaining == null) state = "unknown-months";
   else if (daysRemaining <= 0) state = "expired";
   else if (daysRemaining <= 7) state = "expiring-7";
@@ -343,5 +361,6 @@ function buildCompRow(args: {
     source,
     activatedAt: str(grant?.activated_at),
     lastSeenAt: str(grant?.last_seen_at),
+    seats: grantLicense?.seats ?? license?.seats ?? null,
   };
 }
