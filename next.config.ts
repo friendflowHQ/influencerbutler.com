@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const SUPABASE_AUTH_BASE = "https://khutiiojhafblabtixpp.supabase.co/auth/v1";
 
+// Single source of truth for the Chrome Web Store listing. The site's
+// /extension short link (used across the landing page, footer, help pages, and
+// the desktop app's install buttons) redirects here, so the extension id lives
+// in exactly one place.
+const CHROME_EXTENSION_URL =
+  "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
+
 const connectSrc = [
   "'self'",
   "https://*.supabase.co",
@@ -70,6 +77,21 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Chrome Web Store short links. /extension is referenced across the
+      // landing page, footer, and help tutorials; /help/chrome-extension is
+      // baked into already-shipped desktop app builds. Both land on the live
+      // Web Store listing. Kept non-permanent so the target can be retargeted
+      // without a browser-cached 301 lock-in.
+      {
+        source: "/extension",
+        destination: CHROME_EXTENSION_URL,
+        permanent: false,
+      },
+      {
+        source: "/help/chrome-extension",
+        destination: CHROME_EXTENSION_URL,
+        permanent: false,
+      },
       {
         source: "/.well-known/openid-configuration",
         destination: `${SUPABASE_AUTH_BASE}/.well-known/openid-configuration`,
