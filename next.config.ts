@@ -98,6 +98,14 @@ const nextConfig: NextConfig = {
         destination: "/help/tutorials/video-reload-butler",
         permanent: true,
       },
+      // /help/chrome-extension is a help link baked into already-shipped desktop
+      // app builds. Route it to the extension's help article. Non-permanent so
+      // the target can be retargeted without a browser-cached 301 lock-in.
+      {
+        source: "/help/chrome-extension",
+        destination: "/help/tutorials/extension",
+        permanent: false,
+      },
     ];
   },
   async headers() {

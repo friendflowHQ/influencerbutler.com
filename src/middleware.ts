@@ -7,6 +7,13 @@ import { NodeHtmlMarkdown } from "node-html-markdown";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal", "/help"];
 
+// Public exceptions to the auth gate above. The Chrome-extension tutorial is the
+// target of the desktop app's baked-in Help link (/help/chrome-extension
+// redirects here in next.config.ts), and those users are typically logged out in
+// their browser, so it must be readable without a web session. Every other /help
+// page stays gated.
+const PUBLIC_PATHS = new Set(["/help/tutorials/extension"]);
+
 const MARKDOWN_PATH_MAP: Array<{ test: RegExp; resolve: (m: RegExpMatchArray) => string }> = [
   { test: /^\/$/, resolve: () => "/index.html" },
   { test: /^\/landing\/?$/, resolve: () => "/landing-page.html" },
@@ -40,10 +47,15 @@ function estimateTokens(text: string): number {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Auth gate runs first, unchanged from the previous behavior.
-  const isProtected = PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  // Auth gate runs first. Normalize a trailing slash so the public-path
+  // allowlist matches regardless of how the link was written.
+  const normalizedPath =
+    pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  const isProtected =
+    !PUBLIC_PATHS.has(normalizedPath) &&
+    PROTECTED_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
 
   if (isProtected) {
     // Matches sb-<ref>-auth-token and chunked variants like sb-<ref>-auth-token.0
