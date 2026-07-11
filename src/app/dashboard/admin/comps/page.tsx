@@ -85,6 +85,18 @@ export default function AdminCompsPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // "Grant a comp" form: mints a recipient-bound checkout link.
+  const [grantEmail, setGrantEmail] = useState("");
+  const [grantName, setGrantName] = useState("");
+  const [grantMonths, setGrantMonths] = useState("3");
+  const [grantPlan, setGrantPlan] = useState("monthly");
+  const [granting, setGranting] = useState(false);
+  const [grantError, setGrantError] = useState<string | null>(null);
+  const [grantResult, setGrantResult] = useState<{ checkoutUrl: string; code: string; email: string } | null>(
+    null,
+  );
+  const [copied, setCopied] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
@@ -188,6 +200,67 @@ export default function AdminCompsPage() {
     }
   };
 
+  const grantComp = async () => {
+    setGrantError(null);
+    setGrantResult(null);
+    setCopied(false);
+    const months = Number(grantMonths.trim());
+    if (!grantEmail.trim()) {
+      setGrantError("Enter the recipient's email.");
+      return;
+    }
+    if (!Number.isInteger(months) || months < 1 || months > 36) {
+      setGrantError("Free months must be a whole number between 1 and 36.");
+      return;
+    }
+    setGranting(true);
+    try {
+      const res = await fetch("/api/admin/comps/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: grantEmail.trim(),
+          name: grantName.trim() || undefined,
+          months,
+          plan: grantPlan,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        checkoutUrl?: string;
+        code?: string;
+        email?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.ok || !json.checkoutUrl) {
+        setGrantError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setGrantResult({
+        checkoutUrl: json.checkoutUrl,
+        code: json.code ?? "",
+        email: json.email ?? grantEmail.trim(),
+      });
+      setGrantEmail("");
+      setGrantName("");
+      await load();
+    } catch {
+      setGrantError("Network error. Please retry.");
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!grantResult) return;
+    try {
+      await navigator.clipboard.writeText(grantResult.checkoutUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   if (forbidden) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -206,9 +279,100 @@ export default function AdminCompsPage() {
         your card is not charged. Cancelling drops the user to Free; the license is not revoked.
       </p>
 
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+        <h2 className="text-base font-semibold text-slate-900">Grant a comp</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Creates a 100%-off checkout link tied to the recipient&rsquo;s own email. Send them the
+          link: when they complete the free checkout, the subscription and license land on THEIR
+          account. Do not check out yourself and forward the key - that binds the account to you.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Recipient email</span>
+            <input
+              type="email"
+              value={grantEmail}
+              onChange={(e) => setGrantEmail(e.target.value)}
+              placeholder="kay@example.com"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Name (optional)</span>
+            <input
+              type="text"
+              value={grantName}
+              onChange={(e) => setGrantName(e.target.value)}
+              placeholder="Kay"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Free months</span>
+            <input
+              type="number"
+              min={1}
+              max={36}
+              value={grantMonths}
+              onChange={(e) => setGrantMonths(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Plan</span>
+            <select
+              value={grantPlan}
+              onChange={(e) => setGrantPlan(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="monthly">Solo Monthly</option>
+              <option value="team-monthly">Team Monthly</option>
+              <option value="agency-monthly">Agency Monthly</option>
+            </select>
+          </label>
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={() => void grantComp()}
+            disabled={granting}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+          >
+            {granting ? "Creating..." : "Create comp link"}
+          </button>
+          {grantError ? <span className="text-sm text-rose-600">{grantError}</span> : null}
+        </div>
+
+        {grantResult ? (
+          <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
+            <p className="font-medium text-emerald-800">
+              Comp link ready for {grantResult.email} (code {grantResult.code}). Send this link to
+              them:
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                readOnly
+                value={grantResult.checkoutUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                className="w-full rounded-md border border-emerald-300 bg-white px-2 py-1.5 font-mono text-xs text-slate-700"
+              />
+              <button
+                onClick={() => void copyLink()}
+                className="shrink-0 rounded-md border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
-        <p className="font-semibold text-slate-700">For accurate tracking, going forward:</p>
+        <p className="font-semibold text-slate-700">Issuing comps by hand in Lemon Squeezy?</p>
         <ul className="mt-1 list-disc space-y-1 pl-5">
+          <li>
+            Prefer &ldquo;Grant a comp&rdquo; above - it binds the comp to the recipient&rsquo;s
+            account automatically. Only do it by hand when you need an annual plan for a full year.
+          </li>
           <li>
             Name codes <code className="rounded bg-white px-1 py-0.5">NAMEFREE#M</code> - e.g.{" "}
             <code className="rounded bg-white px-1 py-0.5">CAREESEFREE3M</code>,{" "}
@@ -220,6 +384,10 @@ export default function AdminCompsPage() {
             Create each discount as <strong>100% off, Duration = Repeating for N months</strong> (or
             use an annual plan for a year). A one-time 100% code on a monthly plan still bills your
             card from month 2.
+          </li>
+          <li>
+            Have the RECIPIENT complete the checkout with their own email (or send them the code) -
+            never check out yourself and forward the key.
           </li>
         </ul>
       </div>

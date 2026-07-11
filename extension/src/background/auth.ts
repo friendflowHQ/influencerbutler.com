@@ -21,15 +21,19 @@ export async function signIn(licenseKey: string): Promise<SignInResult> {
             : "Could not verify right now. Try again in a minute.",
       };
     }
-    const data = (await response.json()) as { email?: string };
+    // The server returns only a masked email (e***@gmail.com), never the raw
+    // address: a license key is an account credential, so the connector is not
+    // necessarily the account owner. We store and display the masked value.
+    const data = (await response.json()) as { maskedEmail?: string | null };
+    const maskedEmail = data.maskedEmail ?? null;
     await patchState((state) => {
       state.auth = {
         licenseKey: trimmed,
-        email: data.email ?? null,
+        email: maskedEmail,
         verifiedAt: Date.now(),
       };
     });
-    return { ok: true, email: data.email };
+    return { ok: true, email: maskedEmail ?? undefined };
   } catch {
     return { ok: false, error: "Network error verifying the key. Are you online?" };
   }
