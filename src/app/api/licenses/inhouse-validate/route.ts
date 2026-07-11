@@ -16,8 +16,8 @@
  * where variantId maps to a tier via the desktop's tierForVariantId, and addons
  * carries { type: "daily-deals-workspace" } for a comped Daily Deals add-on.
  */
-import { NextResponse } from "next/server";
-import { adminService } from "@/lib/admin-service";
+import { NextResponse, after } from "next/server";
+import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
@@ -49,12 +49,13 @@ export async function POST(request: Request) {
   if (!svc) return NextResponse.json({ valid: false, error: "server_error" }, { status: 500 });
 
   // Resolve the key to a user (hash first, plaintext fallback).
-  const cols = "user_id,status,activation_limit";
+  const cols = "id,user_id,status,activation_limit";
   let lic = (await svc.from("license_keys").select(cols).eq("key_hash", hashLicenseKey(keyValue)).maybeSingle()).data;
   if (!lic?.user_id) {
     lic = (await svc.from("license_keys").select(cols).eq("key", keyValue).maybeSingle()).data;
   }
   const userId = lic?.user_id ? String(lic.user_id) : null;
+  const licenseKeyId = lic?.id ? String(lic.id) : null;
   if (!userId) return NextResponse.json({ valid: false });
 
   const licStatus = typeof lic?.status === "string" ? lic.status.toLowerCase() : null;
@@ -97,6 +98,10 @@ export async function POST(request: Request) {
 
   const email = (await svc.from("profiles").select("email").eq("id", userId).maybeSingle()).data?.email;
 
+  // Record that this comp's key checked in (first activation + last seen), so the
+  // Comps page can show "Active". Best-effort, off the response path.
+  if (licenseKeyId) after(() => stampSeen(svc, licenseKeyId));
+
   return NextResponse.json({
     valid: true,
     email: typeof email === "string" ? email : null,
@@ -106,4 +111,26 @@ export async function POST(request: Request) {
     activationLimit,
     addons,
   });
+}
+
+/**
+ * Stamp the comp_grants row for a license key: last_seen_at every time, and
+ * activated_at once (first check-in). Best-effort; keyed by license_key_id so it
+ * only ever touches the in-house comp that minted this key.
+ */
+async function stampSeen(svc: AdminService, licenseKeyId: string): Promise<void> {
+  try {
+    const nowIso = new Date().toISOString();
+    const existing = await svc
+      .from("comp_grants")
+      .select("activated_at")
+      .eq("license_key_id", licenseKeyId)
+      .maybeSingle();
+    if (!existing.data) return;
+    const patch: Record<string, unknown> = { last_seen_at: nowIso, updated_at: nowIso };
+    if (!existing.data.activated_at) patch.activated_at = nowIso;
+    await svc.from("comp_grants").update(patch).eq("license_key_id", licenseKeyId);
+  } catch (err) {
+    console.warn("inhouse-validate: stampSeen failed", err);
+  }
 }

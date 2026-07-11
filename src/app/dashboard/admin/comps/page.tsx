@@ -30,6 +30,8 @@ type CompRow = {
   warn1SentAt: string | null;
   source: "in_house" | "lemonsqueezy";
   licenseKey: string | null;
+  activatedAt: string | null;
+  lastSeenAt: string | null;
 };
 
 type ListResponse = {
@@ -56,6 +58,43 @@ function shortDate(iso: string | null): string {
   } catch {
     return iso;
   }
+}
+
+function relativeTime(iso: string | null): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const diff = Date.now() - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+// The "Activated" cell: has the comped user actually turned on their license?
+// Only in-house comps report this (they validate through our endpoint).
+function ActivationCell({ row }: { row: CompRow }) {
+  if (row.source !== "in_house") return <span className="text-slate-400">-</span>;
+  if (!row.activatedAt && !row.lastSeenAt) {
+    return (
+      <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+        Not activated
+      </span>
+    );
+  }
+  return (
+    <div>
+      <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+        Active
+      </span>
+      {row.lastSeenAt ? (
+        <div className="mt-0.5 text-xs text-slate-400">seen {relativeTime(row.lastSeenAt)}</div>
+      ) : null}
+    </div>
+  );
 }
 
 function daysChip(row: CompRow): string {
@@ -484,7 +523,7 @@ export default function AdminCompsPage() {
         <p className="mt-8 text-slate-500">No comps in this view.</p>
       ) : (
         <section className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[1100px] text-left text-sm">
+          <table className="w-full min-w-[1250px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-4 py-3">User</th>
@@ -495,6 +534,7 @@ export default function AdminCompsPage() {
                 <th className="px-4 py-3">Expires</th>
                 <th className="px-4 py-3">Remaining</th>
                 <th className="px-4 py-3">Subscription</th>
+                <th className="px-4 py-3">Activated</th>
                 <th className="px-4 py-3">License key</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -561,6 +601,9 @@ export default function AdminCompsPage() {
                           renews {shortDate(row.renewsAt)}
                         </div>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ActivationCell row={row} />
                     </td>
                     <td className="px-4 py-3">
                       <KeyCell value={row.licenseKey} />
