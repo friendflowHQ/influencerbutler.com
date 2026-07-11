@@ -48,6 +48,8 @@ export type CompRow = {
   cancelledAt: string | null;
   warn7SentAt: string | null;
   warn1SentAt: string | null;
+  /** 'in_house' comps are minted + cancelled entirely in Supabase; 'lemonsqueezy' via LS. */
+  source: "in_house" | "lemonsqueezy";
 };
 
 export type CompsResult = {
@@ -92,76 +94,18 @@ function isCompOrder(total: number, code: string | null): boolean {
   return total === 0;
 }
 
+type OrderComp = { code: string | null; issuedAt: string | null };
+type LicenseInfo = { status: string | null; createdAt: string | null };
+
 export async function loadComps(now: number = Date.now()): Promise<CompsResult | null> {
   const svc = createAdminClient() as unknown as CompsClient | null;
   if (!svc) return null;
 
   let migrationPending = false;
 
-  // 1) Discounted orders, oldest first (so the first per user is the earliest).
-  //    Filtering to discount_total_cents > 0 keeps this scan small even on a
-  //    large orders table. If that column is missing (20260704 not applied in
-  //    prod), degrade to an empty comp list rather than erroring.
-  const ordersRes = await svc
-    .from("orders")
-    .select("user_id,ls_subscription_id,total,discount_total_cents,discount_code,created_at")
-    .gt("discount_total_cents", 0)
-    .order("created_at", { ascending: true })
-    .limit(ROW_LIMIT);
-
-  if (ordersRes.error) {
-    console.error("loadComps: orders query failed", ordersRes.error);
-    return { rows: [], migrationPending: true };
-  }
-
-  // Earliest comp order per user.
-  const compByUser = new Map<string, { code: string | null; issuedAt: string | null }>();
-  for (const row of ordersRes.data ?? []) {
-    const userId = str(row.user_id);
-    if (!userId) continue;
-    const code = str(row.discount_code);
-    if (!isCompOrder(num(row.total), code)) continue;
-    if (compByUser.has(userId)) continue; // ascending order => first is earliest
-    compByUser.set(userId, { code, issuedAt: str(row.created_at) });
-  }
-
-  const userIds = [...compByUser.keys()];
-  if (userIds.length === 0) return { rows: [], migrationPending };
-
-  // 2) Live subscriptions for those users.
-  const subsRes = await svc
-    .from("subscriptions")
-    .select("ls_subscription_id,user_id,status,plan_name,renews_at,created_at")
-    .in("user_id", userIds)
-    .limit(ROW_LIMIT);
-  if (subsRes.error) {
-    console.error("loadComps: subscriptions query failed", subsRes.error);
-    return { rows: [], migrationPending: true };
-  }
-
-  // 3) Emails and license status, keyed by user.
-  const [profilesRes, licensesRes] = await Promise.all([
-    svc.from("profiles").select("id,email").in("id", userIds).limit(ROW_LIMIT),
-    svc
-      .from("license_keys")
-      .select("user_id,status,created_at")
-      .in("user_id", userIds)
-      .limit(ROW_LIMIT),
-  ]);
-  const emailByUser = new Map<string, string | null>();
-  for (const row of profilesRes.data ?? []) {
-    const id = str(row.id);
-    if (id) emailByUser.set(id, str(row.email));
-  }
-  const licenseByUser = new Map<string, { status: string | null; createdAt: string | null }>();
-  for (const row of licensesRes.data ?? []) {
-    const id = str(row.user_id);
-    if (id && !licenseByUser.has(id)) {
-      licenseByUser.set(id, { status: str(row.status), createdAt: str(row.created_at) });
-    }
-  }
-
-  // 4) comp_grants overrides + automation markers (table may not exist yet).
+  // 1) comp_grants is the canonical store: it holds in-house comps (no order),
+  //    backfilled LS comps, and automation markers. If the table is missing,
+  //    degrade to order-detection only.
   const grantBySub = new Map<string, Row>();
   const grantsRes = await svc.from("comp_grants").select("*").limit(ROW_LIMIT);
   if (grantsRes.error) {
@@ -173,62 +117,120 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     }
   }
 
-  // 5) One comp row per subscription whose user has a comp order.
+  // 2) Order-detected LS comps (earliest discounted order per user). Missing
+  //    discount columns (20260704 not in prod) degrades to no order comps rather
+  //    than hiding in-house comps, which live in comp_grants + subscriptions.
+  const compByUser = new Map<string, OrderComp>();
+  const ordersRes = await svc
+    .from("orders")
+    .select("user_id,ls_subscription_id,total,discount_total_cents,discount_code,created_at")
+    .gt("discount_total_cents", 0)
+    .order("created_at", { ascending: true })
+    .limit(ROW_LIMIT);
+  if (ordersRes.error) {
+    migrationPending = true;
+  } else {
+    for (const row of ordersRes.data ?? []) {
+      const userId = str(row.user_id);
+      if (!userId) continue;
+      const code = str(row.discount_code);
+      if (!isCompOrder(num(row.total), code)) continue;
+      if (compByUser.has(userId)) continue; // ascending => first is earliest
+      compByUser.set(userId, { code, issuedAt: str(row.created_at) });
+    }
+  }
+
+  // 3) The subscriptions to consider: those of order-comp users and grant users,
+  //    plus grant subscription ids directly (in-house/backfilled comps).
+  const grantSubIds: string[] = [];
+  const userIdSet = new Set<string>([...compByUser.keys()]);
+  for (const [subId, grant] of grantBySub) {
+    grantSubIds.push(subId);
+    const uid = str(grant.user_id);
+    if (uid) userIdSet.add(uid);
+  }
+  if (userIdSet.size === 0 && grantSubIds.length === 0) return { rows: [], migrationPending };
+
+  const subById = new Map<string, Row>();
+  if (userIdSet.size > 0) {
+    const r = await svc
+      .from("subscriptions")
+      .select("ls_subscription_id,user_id,status,plan_name,renews_at,created_at")
+      .in("user_id", [...userIdSet])
+      .limit(ROW_LIMIT);
+    if (r.error) migrationPending = true;
+    else
+      for (const s of r.data ?? []) {
+        const id = str(s.ls_subscription_id);
+        if (id) subById.set(id, s);
+      }
+  }
+  const missingSubIds = grantSubIds.filter((id) => !subById.has(id));
+  if (missingSubIds.length > 0) {
+    const r = await svc
+      .from("subscriptions")
+      .select("ls_subscription_id,user_id,status,plan_name,renews_at,created_at")
+      .in("ls_subscription_id", missingSubIds)
+      .limit(ROW_LIMIT);
+    if (!r.error)
+      for (const s of r.data ?? []) {
+        const id = str(s.ls_subscription_id);
+        if (id) subById.set(id, s);
+      }
+  }
+
+  // 4) Emails + license status for every user we might render.
+  const finalUserIds = new Set<string>(userIdSet);
+  for (const s of subById.values()) {
+    const uid = str(s.user_id);
+    if (uid) finalUserIds.add(uid);
+  }
+  const uidArr = [...finalUserIds];
+  const emailByUser = new Map<string, string | null>();
+  const licenseByUser = new Map<string, LicenseInfo>();
+  if (uidArr.length > 0) {
+    const [profilesRes, licensesRes] = await Promise.all([
+      svc.from("profiles").select("id,email").in("id", uidArr).limit(ROW_LIMIT),
+      svc.from("license_keys").select("user_id,status,created_at").in("user_id", uidArr).limit(ROW_LIMIT),
+    ]);
+    for (const row of profilesRes.data ?? []) {
+      const id = str(row.id);
+      if (id) emailByUser.set(id, str(row.email));
+    }
+    for (const row of licensesRes.data ?? []) {
+      const id = str(row.user_id);
+      if (id && !licenseByUser.has(id)) {
+        licenseByUser.set(id, { status: str(row.status), createdAt: str(row.created_at) });
+      }
+    }
+  }
+
+  // 5) One row per comp. A subscription is a comp when it has a grant OR its user
+  //    is order-detected. Grants whose subscription was not found are still shown.
   const rows: CompRow[] = [];
-  for (const sub of subsRes.data ?? []) {
+  const emitted = new Set<string>();
+  for (const [lsSubId, sub] of subById) {
     const userId = str(sub.user_id);
-    const lsSubId = str(sub.ls_subscription_id);
-    if (!userId || !lsSubId) continue;
-    const comp = compByUser.get(userId);
-    if (!comp) continue;
-
-    const status = str(sub.status);
     const grant = grantBySub.get(lsSubId);
-    const license = licenseByUser.get(userId);
-
-    const code = comp.code;
-    const parsed = parseCompMonths(code);
-    const manualMonths =
-      grant && str(grant.months_source) === "manual" && typeof grant.months === "number"
-        ? (grant.months as number)
-        : null;
-    const months = manualMonths ?? parsed;
-    const monthsSource: "parsed" | "manual" | null =
-      manualMonths != null ? "manual" : parsed != null ? "parsed" : null;
-
-    const issuedAt = comp.issuedAt ?? license?.createdAt ?? str(sub.created_at);
-    const expiresAt = months != null && issuedAt ? addMonthsUtc(issuedAt, months) : null;
-    const daysRemaining =
-      expiresAt != null ? Math.floor((new Date(expiresAt).getTime() - now) / DAY_MS) : null;
-
-    const cancelledAt = str(grant?.cancelled_at);
-    let state: CompState;
-    if (status === "cancelled" || cancelledAt) state = "cancelled";
-    else if (months == null || daysRemaining == null) state = "unknown-months";
-    else if (daysRemaining <= 0) state = "expired";
-    else if (daysRemaining <= 7) state = "expiring-7";
-    else if (daysRemaining <= 30) state = "expiring-30";
-    else state = "active";
-
-    rows.push({
-      lsSubscriptionId: lsSubId,
-      userId,
-      email: emailByUser.get(userId) ?? null,
-      name: compNameFromCode(code),
-      discountCode: code,
-      months,
-      monthsSource,
-      issuedAt,
-      expiresAt,
-      daysRemaining,
-      subscriptionStatus: status,
-      renewsAt: str(sub.renews_at),
-      licenseStatus: license?.status ?? null,
-      state,
-      cancelledAt,
-      warn7SentAt: str(grant?.warn7_sent_at),
-      warn1SentAt: str(grant?.warn1_sent_at),
-    });
+    const order = userId ? compByUser.get(userId) : undefined;
+    if (!grant && !order) continue; // not a comp subscription
+    rows.push(buildCompRow({ lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, now }));
+    emitted.add(lsSubId);
+  }
+  for (const [lsSubId, grant] of grantBySub) {
+    if (emitted.has(lsSubId)) continue;
+    rows.push(
+      buildCompRow({
+        lsSubId,
+        sub: null,
+        grant,
+        order: undefined,
+        userId: str(grant.user_id),
+        emailByUser,
+        licenseByUser,
+        now,
+      }),
+    );
   }
 
   // Needs-attention first: unknown months, then soonest-expiring. Cancelled last.
@@ -248,4 +250,78 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   });
 
   return { rows, migrationPending };
+}
+
+/**
+ * Builds one CompRow from whichever sources are present: the live subscription,
+ * the comp_grants row (canonical for in-house/backfilled comps and manual
+ * overrides), and the earliest comp order (LS order-detected comps). A grant's
+ * stored months/issued_at/expires_at take precedence over values derived from
+ * the code, so in-house comps (which carry all three) render exactly.
+ */
+function buildCompRow(args: {
+  lsSubId: string;
+  sub: Row | null;
+  grant: Row | undefined;
+  order: OrderComp | undefined;
+  userId: string | null;
+  emailByUser: Map<string, string | null>;
+  licenseByUser: Map<string, LicenseInfo>;
+  now: number;
+}): CompRow {
+  const { lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, now } = args;
+
+  const status = sub ? str(sub.status) : null;
+  const license = userId ? licenseByUser.get(userId) : undefined;
+
+  const code = str(grant?.discount_code) ?? order?.code ?? null;
+  const parsed = parseCompMonths(code);
+  const grantMonths = grant && typeof grant.months === "number" ? (grant.months as number) : null;
+  const isManual = grant != null && str(grant.months_source) === "manual" && grantMonths != null;
+  const months = (isManual ? grantMonths : null) ?? parsed ?? grantMonths;
+  const monthsSource: "parsed" | "manual" | null = isManual
+    ? "manual"
+    : parsed != null || grantMonths != null
+      ? "parsed"
+      : null;
+
+  const issuedAt =
+    str(grant?.issued_at) ?? order?.issuedAt ?? license?.createdAt ?? (sub ? str(sub.created_at) : null);
+  const expiresAt =
+    str(grant?.expires_at) ?? (months != null && issuedAt ? addMonthsUtc(issuedAt, months) : null);
+  const daysRemaining =
+    expiresAt != null ? Math.floor((new Date(expiresAt).getTime() - now) / DAY_MS) : null;
+
+  const cancelledAt = str(grant?.cancelled_at);
+  let state: CompState;
+  if (status === "cancelled" || cancelledAt) state = "cancelled";
+  else if (months == null || daysRemaining == null) state = "unknown-months";
+  else if (daysRemaining <= 0) state = "expired";
+  else if (daysRemaining <= 7) state = "expiring-7";
+  else if (daysRemaining <= 30) state = "expiring-30";
+  else state = "active";
+
+  const source: "in_house" | "lemonsqueezy" =
+    str(grant?.source) === "in_house" ? "in_house" : "lemonsqueezy";
+
+  return {
+    lsSubscriptionId: lsSubId,
+    userId,
+    email: (userId ? emailByUser.get(userId) : null) ?? str(grant?.user_email) ?? null,
+    name: compNameFromCode(code),
+    discountCode: code,
+    months,
+    monthsSource,
+    issuedAt,
+    expiresAt,
+    daysRemaining,
+    subscriptionStatus: status,
+    renewsAt: sub ? str(sub.renews_at) : null,
+    licenseStatus: license?.status ?? null,
+    state,
+    cancelledAt,
+    warn7SentAt: str(grant?.warn7_sent_at),
+    warn1SentAt: str(grant?.warn1_sent_at),
+    source,
+  };
 }
