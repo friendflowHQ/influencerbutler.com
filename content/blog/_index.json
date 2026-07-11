@@ -2,6 +2,19 @@
   "version": 1,
   "posts": [
     {
+      "id": "auto-post-daily-deals-facebook-telegram-reddit",
+      "title": "How to Auto-Post Amazon Daily Deals to Facebook, Telegram, and Reddit (Beginner's Guide)",
+      "category": "Amazon",
+      "summary": "A plain-English, step-by-step guide to auto-posting Amazon deals to your Facebook groups and pages, Telegram channels, and Reddit, so fresh deals go out around the clock without you lifting a finger.",
+      "date": "2026-07-11",
+      "author": "The Influencer Butler Team",
+      "readingTime": "11 min read",
+      "keywords": "auto post amazon deals, post deals to facebook group, telegram deal channel, post deals to reddit, automate daily deals, amazon affiliate deal posting",
+      "image": "/assets/blog/auto-post-daily-deals-facebook-telegram-reddit.png",
+      "imageAlt": "Illustration of one Amazon deal fanning out to Facebook, Telegram, and Reddit automatically",
+      "order": 1
+    },
+    {
       "id": "run-influencer-butler-free-cloud-pc",
       "title": "Run Influencer Butler on a Free Cloud PC (AWS), Even on a Slow or Travel Laptop",
       "category": "Growth",
