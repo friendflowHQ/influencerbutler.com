@@ -28,6 +28,7 @@ type CompRow = {
   cancelledAt: string | null;
   warn7SentAt: string | null;
   warn1SentAt: string | null;
+  source: "in_house" | "lemonsqueezy";
 };
 
 type ListResponse = {
@@ -92,10 +93,14 @@ export default function AdminCompsPage() {
   const [grantPlan, setGrantPlan] = useState("monthly");
   const [granting, setGranting] = useState(false);
   const [grantError, setGrantError] = useState<string | null>(null);
-  const [grantResult, setGrantResult] = useState<{ checkoutUrl: string; code: string; email: string } | null>(
+  const [grantResult, setGrantResult] = useState<{ key: string; email: string; expiresAt: string | null } | null>(
     null,
   );
   const [copied, setCopied] = useState(false);
+
+  // "Backfill from Lemon Squeezy" one-off maintenance action.
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -227,19 +232,19 @@ export default function AdminCompsPage() {
       });
       const json = (await res.json()) as {
         ok?: boolean;
-        checkoutUrl?: string;
-        code?: string;
+        key?: string;
         email?: string;
+        expiresAt?: string;
         error?: string;
       };
-      if (!res.ok || !json.ok || !json.checkoutUrl) {
+      if (!res.ok || !json.ok || !json.key) {
         setGrantError(json.error ?? `Failed (${res.status})`);
         return;
       }
       setGrantResult({
-        checkoutUrl: json.checkoutUrl,
-        code: json.code ?? "",
+        key: json.key,
         email: json.email ?? grantEmail.trim(),
+        expiresAt: json.expiresAt ?? null,
       });
       setGrantEmail("");
       setGrantName("");
@@ -251,13 +256,40 @@ export default function AdminCompsPage() {
     }
   };
 
-  const copyLink = async () => {
+  const copyKey = async () => {
     if (!grantResult) return;
     try {
-      await navigator.clipboard.writeText(grantResult.checkoutUrl);
+      await navigator.clipboard.writeText(grantResult.key);
       setCopied(true);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const runBackfill = async () => {
+    setBackfillMsg(null);
+    setBackfilling(true);
+    try {
+      const res = await fetch("/api/admin/comps/backfill", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        created?: number;
+        toCreate?: number;
+        redemptionsScanned?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setBackfillMsg(json.error ?? `Backfill failed (${res.status})`);
+        return;
+      }
+      setBackfillMsg(
+        `Backfill complete: added ${json.created ?? 0} comp${(json.created ?? 0) === 1 ? "" : "s"} (scanned ${json.redemptionsScanned ?? 0} redemptions).`,
+      );
+      await load();
+    } catch {
+      setBackfillMsg("Network error running backfill. Please retry.");
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -282,9 +314,9 @@ export default function AdminCompsPage() {
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="text-base font-semibold text-slate-900">Grant a comp</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Creates a 100%-off checkout link tied to the recipient&rsquo;s own email. Send them the
-          link: when they complete the free checkout, the subscription and license land on THEIR
-          account. Do not check out yourself and forward the key - that binds the account to you.
+          Mints a license key and Pro access for the recipient right here, entirely in Supabase (no
+          Lemon Squeezy). The key is emailed to them with a download and sign-in link, and shown
+          below for you to copy. It auto-cancels at the end of the free window.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
@@ -337,7 +369,7 @@ export default function AdminCompsPage() {
             disabled={granting}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
           >
-            {granting ? "Creating..." : "Create comp link"}
+            {granting ? "Minting..." : "Mint comp"}
           </button>
           {grantError ? <span className="text-sm text-rose-600">{grantError}</span> : null}
         </div>
@@ -345,58 +377,54 @@ export default function AdminCompsPage() {
         {grantResult ? (
           <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
             <p className="font-medium text-emerald-800">
-              Comp link ready for {grantResult.email} (code {grantResult.code}). Send this link to
-              them:
+              Comp minted for {grantResult.email} and emailed to them. Their license key:
             </p>
             <div className="mt-2 flex items-center gap-2">
               <input
                 readOnly
-                value={grantResult.checkoutUrl}
+                value={grantResult.key}
                 onFocus={(e) => e.currentTarget.select()}
                 className="w-full rounded-md border border-emerald-300 bg-white px-2 py-1.5 font-mono text-xs text-slate-700"
               />
               <button
-                onClick={() => void copyLink()}
+                onClick={() => void copyKey()}
                 className="shrink-0 rounded-md border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
               >
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>
+            {grantResult.expiresAt ? (
+              <p className="mt-2 text-xs text-emerald-700">Free window ends {shortDate(grantResult.expiresAt)}.</p>
+            ) : null}
           </div>
         ) : null}
       </section>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600">
-        <p className="font-semibold text-slate-700">Issuing comps by hand in Lemon Squeezy?</p>
-        <ul className="mt-1 list-disc space-y-1 pl-5">
-          <li>
-            Prefer &ldquo;Grant a comp&rdquo; above - it binds the comp to the recipient&rsquo;s
-            account automatically. Only do it by hand when you need an annual plan for a full year.
-          </li>
-          <li>
-            Name codes <code className="rounded bg-white px-1 py-0.5">NAMEFREE#M</code> - e.g.{" "}
-            <code className="rounded bg-white px-1 py-0.5">CAREESEFREE3M</code>,{" "}
-            <code className="rounded bg-white px-1 py-0.5">BRANDONFREE12M</code>. Uppercase, no
-            hyphens (Lemon Squeezy rejects them). Codes that do not encode a duration show
-            &ldquo;set months&rdquo; for you to fill in.
-          </li>
-          <li>
-            Create each discount as <strong>100% off, Duration = Repeating for N months</strong> (or
-            use an annual plan for a year). A one-time 100% code on a monthly plan still bills your
-            card from month 2.
-          </li>
-          <li>
-            Have the RECIPIENT complete the checkout with their own email (or send them the code) -
-            never check out yourself and forward the key.
-          </li>
-        </ul>
+        <p className="font-semibold text-slate-700">Older comps missing from the list?</p>
+        <p className="mt-1">
+          Comps issued in Lemon Squeezy before we started capturing discount data do not show up
+          automatically. Run the backfill once to reconstruct them from Lemon Squeezy. New comps
+          minted with &ldquo;Grant a comp&rdquo; above appear immediately.
+        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={() => void runBackfill()}
+            disabled={backfilling}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            {backfilling ? "Backfilling..." : "Backfill from Lemon Squeezy"}
+          </button>
+          {backfillMsg ? <span className="text-slate-600">{backfillMsg}</span> : null}
+        </div>
       </div>
 
       {migrationPending ? (
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
-          Some data is unavailable until the <code>20260711_comp_grants.sql</code> migration (and
-          the discount-capture columns) are applied in Supabase. Manual overrides and expiry
-          automation need that table; the list still shows what it can.
+          Some data is unavailable until the <code>20260711_comp_grants.sql</code> and{" "}
+          <code>20260712_comp_grants_inhouse.sql</code> migrations (and the discount-capture
+          columns) are applied in Supabase. Overrides, in-house comps, and expiry automation need
+          those; the list still shows what it can.
         </div>
       ) : null}
 
@@ -432,6 +460,7 @@ export default function AdminCompsPage() {
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-4 py-3">User</th>
+                <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3">Months</th>
                 <th className="px-4 py-3">Issued</th>
@@ -450,6 +479,17 @@ export default function AdminCompsPage() {
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{row.email ?? "(no email)"}</div>
                       {row.name ? <div className="text-xs text-slate-500">{row.name}</div> : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          row.source === "in_house"
+                            ? "bg-indigo-100 text-indigo-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {row.source === "in_house" ? "In-house" : "Lemon Squeezy"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">
                       {row.discountCode ?? "-"}

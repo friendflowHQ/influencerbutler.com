@@ -364,3 +364,87 @@ export function resolveAnnualVariantForMonthly(
   }
   return null;
 }
+
+// --- Comp backfill helpers -------------------------------------------------
+// Used by /api/admin/comps/backfill to reconstruct comps that were issued before
+// the discount-capture webhook (so they never landed in our orders data) from
+// Lemon Squeezy's discount + redemption records.
+
+export type LsCompDiscount = { id: string; code: string | null; name: string | null };
+export type LsDiscountRedemption = {
+  lsOrderId: string | null;
+  discountCode: string | null;
+  createdAt: string | null;
+};
+
+type LsPageMeta = { meta?: { page?: { last_page?: number } } };
+
+/**
+ * Lists Lemon Squeezy discounts that look like comps: 100%-off percent codes, or
+ * whose code/name mentions FREE. Pages until exhausted or `maxPages`.
+ */
+export async function listCompLikeDiscounts(maxPages = 20): Promise<LsCompDiscount[]> {
+  const out: LsCompDiscount[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const res = await lsApi(`/discounts?page[size]=100&page[number]=${page}`, { method: "GET" });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("listCompLikeDiscounts: fetch failed", { status: res.status, text: text.slice(0, 300) });
+      break;
+    }
+    const payload = (await res.json()) as LsPageMeta & {
+      data?: { id?: string; attributes?: { name?: string; code?: string; amount?: number; amount_type?: string } }[];
+    };
+    const data = payload.data ?? [];
+    for (const d of data) {
+      const id = d.id;
+      if (!id) continue;
+      const a = d.attributes ?? {};
+      const code = typeof a.code === "string" ? a.code : null;
+      const name = typeof a.name === "string" ? a.name : null;
+      const isPercent100 = a.amount_type === "percent" && typeof a.amount === "number" && a.amount >= 100;
+      const looksFree = /FREE/i.test(code ?? "") || /FREE/i.test(name ?? "");
+      if (isPercent100 || looksFree) out.push({ id, code, name });
+    }
+    const lastPage = payload.meta?.page?.last_page;
+    if (data.length === 0 || (lastPage != null && page >= lastPage)) break;
+  }
+  return out;
+}
+
+/**
+ * Lists the redemptions for a discount (which order used it, when). Pages until
+ * exhausted or `maxPages`.
+ */
+export async function listDiscountRedemptions(
+  discountId: string,
+  maxPages = 20,
+): Promise<LsDiscountRedemption[]> {
+  const out: LsDiscountRedemption[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const res = await lsApi(
+      `/discount-redemptions?filter[discount_id]=${encodeURIComponent(discountId)}&page[size]=100&page[number]=${page}`,
+      { method: "GET" },
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("listDiscountRedemptions: fetch failed", { discountId, status: res.status, text: text.slice(0, 300) });
+      break;
+    }
+    const payload = (await res.json()) as LsPageMeta & {
+      data?: { attributes?: { order_id?: number | string; discount_code?: string; created_at?: string } }[];
+    };
+    const data = payload.data ?? [];
+    for (const r of data) {
+      const a = r.attributes ?? {};
+      out.push({
+        lsOrderId: a.order_id != null ? String(a.order_id) : null,
+        discountCode: typeof a.discount_code === "string" ? a.discount_code : null,
+        createdAt: typeof a.created_at === "string" ? a.created_at : null,
+      });
+    }
+    const lastPage = payload.meta?.page?.last_page;
+    if (data.length === 0 || (lastPage != null && page >= lastPage)) break;
+  }
+  return out;
+}

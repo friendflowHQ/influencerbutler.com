@@ -111,15 +111,19 @@ export async function GET(request: Request) {
   // Cancel expired comps.
   const cancelled: CompRow[] = [];
   for (const row of toCancel) {
-    const res = await cancelCompSubscription(row.lsSubscriptionId, {
-      userId: row.userId,
-      email: row.email,
-      discountCode: row.discountCode,
-      months: row.months,
-      monthsSource: row.monthsSource,
-      issuedAt: row.issuedAt,
-      expiresAt: row.expiresAt,
-    });
+    const res = await cancelCompSubscription(
+      row.lsSubscriptionId,
+      {
+        userId: row.userId,
+        email: row.email,
+        discountCode: row.discountCode,
+        months: row.months,
+        monthsSource: row.monthsSource,
+        issuedAt: row.issuedAt,
+        expiresAt: row.expiresAt,
+      },
+      row.source,
+    );
     await logAdminAction({
       actor: null,
       action: "comps.cancel",
