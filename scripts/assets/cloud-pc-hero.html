@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { margin: 0; padding: 0; }
+      html, body { width: 1600px; height: 1000px; }
+      svg { display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Hero illustration for the "Run Influencer Butler on a free cloud PC" blog
+      post. Editorial flat-vector style in the site palette (warm orange #f59e0b,
+      navy #0f172a, cream). Metaphor: a monitor (the cloud PC) floating in a cloud
+      running 24/7, with the user's own laptop connecting in remotely (dashed
+      link). Rendered to public/assets/blog/run-influencer-butler-free-cloud-pc.png
+      by scripts/generate-cloud-pc-hero.mjs (headless Chrome screenshot).
+    -->
+    <svg width="1600" height="1000" viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg" gradientUnits="userSpaceOnUse" cx="820" cy="380" r="1050">
+          <stop offset="0" stop-color="#fffdf8" />
+          <stop offset="0.62" stop-color="#fdf3de" />
+          <stop offset="1" stop-color="#f7e2ba" />
+        </radialGradient>
+        <linearGradient id="org" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f9ad2e" />
+          <stop offset="1" stop-color="#ef8f0d" />
+        </linearGradient>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1e293b" />
+          <stop offset="1" stop-color="#0f172a" />
+        </linearGradient>
+        <path id="spark" d="M0,-12 Q0,0 12,0 Q0,0 0,12 Q0,0 -12,0 Q0,0 0,-12 Z" />
+      </defs>
+
+      <!-- background -->
+      <rect x="0" y="0" width="1600" height="1000" fill="url(#bg)" />
+
+      <!-- faint depth blobs -->
+      <circle cx="230" cy="180" r="150" fill="#fdeecb" opacity="0.6" />
+      <circle cx="1420" cy="780" r="200" fill="#fdeecb" opacity="0.55" />
+
+      <!-- ===== the user's own laptop (bottom left), connecting in remotely ===== -->
+      <g>
+        <!-- soft shadow under the laptop -->
+        <ellipse cx="398" cy="714" rx="168" ry="22" fill="#e4d0a4" opacity="0.5" />
+        <!-- dashed remote-desktop link from laptop up to the cloud PC -->
+        <path d="M476 552 C 566 458, 600 470, 662 472" fill="none" stroke="#f59e0b" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 14" />
+        <circle cx="476" cy="552" r="7" fill="#f59e0b" />
+        <circle cx="662" cy="472" r="7" fill="#f59e0b" />
+        <!-- laptop base (keyboard deck, widening toward viewer) -->
+        <path d="M300 666 L496 666 L526 702 L270 702 Z" fill="#334155" />
+        <path d="M300 666 L496 666 L490 675 L306 675 Z" fill="#475569" />
+        <!-- laptop screen lid (landscape) -->
+        <rect x="304" y="548" width="188" height="122" rx="12" fill="url(#screen)" />
+        <rect x="318" y="562" width="160" height="94" rx="7" fill="#111c30" />
+        <!-- tiny app on the laptop -->
+        <ellipse cx="398" cy="606" rx="22" ry="5.5" fill="#f59e0b" />
+        <path d="M380 606 Q380 585 398 585 Q416 585 416 606 Z" fill="#f59e0b" />
+        <rect x="380" y="597" width="36" height="7" fill="#0f172a" opacity="0.85" />
+        <rect x="356" y="626" width="84" height="7" rx="3.5" fill="#334155" />
+        <rect x="364" y="640" width="64" height="7" rx="3.5" fill="#334155" />
+      </g>
+
+      <!-- ===== the cloud ===== -->
+      <!-- under-shade layer -->
+      <g fill="#e6edf7" transform="translate(0,20)">
+        <ellipse cx="810" cy="360" rx="300" ry="112" />
+        <circle cx="628" cy="360" r="120" />
+        <circle cx="988" cy="358" r="128" />
+        <circle cx="742" cy="292" r="118" />
+        <circle cx="900" cy="298" r="108" />
+        <circle cx="812" cy="268" r="98" />
+      </g>
+      <!-- white cloud -->
+      <g fill="#ffffff">
+        <ellipse cx="810" cy="360" rx="300" ry="112" />
+        <circle cx="628" cy="360" r="120" />
+        <circle cx="988" cy="358" r="128" />
+        <circle cx="742" cy="292" r="118" />
+        <circle cx="900" cy="298" r="108" />
+        <circle cx="812" cy="268" r="98" />
+      </g>
+
+      <!-- ===== the cloud PC (monitor floating in the cloud) ===== -->
+      <g>
+        <!-- little orbit dots suggesting "always running" -->
+        <circle cx="640" cy="300" r="6" fill="#f59e0b" opacity="0.9" />
+        <circle cx="980" cy="300" r="6" fill="#0f172a" opacity="0.5" />
+        <!-- screen -->
+        <rect x="656" y="286" width="308" height="196" rx="20" fill="url(#screen)" />
+        <rect x="674" y="304" width="272" height="160" rx="11" fill="#111c30" />
+        <!-- window header -->
+        <circle cx="694" cy="324" r="5" fill="#ef4444" />
+        <circle cx="712" cy="324" r="5" fill="#f59e0b" />
+        <circle cx="730" cy="324" r="5" fill="#22c55e" />
+        <!-- online dot -->
+        <circle cx="922" cy="324" r="8" fill="#22c55e" />
+        <circle cx="922" cy="324" r="14" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.4" />
+        <!-- butler bowler hat mark (the app) -->
+        <ellipse cx="810" cy="393" rx="46" ry="11" fill="#f59e0b" />
+        <path d="M786 393 Q786 350 810 350 Q834 350 834 393 Z" fill="#f59e0b" />
+        <rect x="786" y="381" width="48" height="9" fill="#0f172a" opacity="0.85" />
+        <!-- app content lines -->
+        <rect x="722" y="418" width="176" height="9" rx="4.5" fill="#334155" />
+        <rect x="744" y="436" width="132" height="9" rx="4.5" fill="#334155" />
+      </g>
+
+      <!-- ===== badges ===== -->
+      <!-- FREE pill -->
+      <g transform="rotate(-8 520 244)">
+        <rect x="444" y="216" width="152" height="58" rx="29" fill="url(#org)" />
+        <text x="520" y="255" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="34" font-weight="800" fill="#ffffff" letter-spacing="1">FREE</text>
+      </g>
+      <!-- 24/7 badge -->
+      <g>
+        <circle cx="1092" cy="258" r="56" fill="url(#org)" />
+        <circle cx="1092" cy="258" r="56" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.45" />
+        <text x="1092" y="270" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="#ffffff">24/7</text>
+        <circle cx="1132" cy="220" r="10" fill="#22c55e" stroke="#ffffff" stroke-width="3" />
+      </g>
+
+      <!-- ===== floating decor ===== -->
+      <!-- crescent moon (runs while you sleep) -->
+      <g>
+        <circle cx="1316" cy="212" r="34" fill="#0f172a" />
+        <circle cx="1332" cy="200" r="32" fill="url(#bg)" />
+      </g>
+      <!-- paper plane (works while you travel) -->
+      <g>
+        <path d="M1218 628 L1298 606 L1258 664 Z" fill="#f59e0b" />
+        <path d="M1218 628 L1258 664 L1256 640 Z" fill="#d97706" />
+        <path d="M1150 648 Q1190 636 1218 628" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10" opacity="0.7" />
+      </g>
+      <!-- sparkles -->
+      <use href="#spark" transform="translate(560 236) scale(1.3)" fill="#f59e0b" />
+      <use href="#spark" transform="translate(1150 470) scale(1.1)" fill="#0f172a" opacity="0.55" />
+      <use href="#spark" transform="translate(690 610) scale(0.9)" fill="#f59e0b" />
+      <use href="#spark" transform="translate(1010 150) scale(0.8)" fill="#0f172a" opacity="0.45" />
+    </svg>
+  </body>
+</html>
