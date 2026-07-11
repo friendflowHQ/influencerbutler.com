@@ -17,9 +17,10 @@ import { issueInHouseComp } from "@/lib/comp-issue";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Monthly plans only: the free window is expressed in months. (Seat count still
-// comes from the tier: Solo 1, Team 10, Agency 25.)
-const ALLOWED_PLANS = new Set(["monthly", "team-monthly", "agency-monthly"]);
+// Comp plans: Pro monthly tiers plus the Daily Deals Workspace add-on. The free
+// window is expressed in months. (Seat count comes from the tier: Solo 1, Team
+// 10, Agency 25; the add-on is 1.)
+const ALLOWED_PLANS = new Set(["monthly", "team-monthly", "agency-monthly", "daily-deals-addon"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MONTHS = 36;
 

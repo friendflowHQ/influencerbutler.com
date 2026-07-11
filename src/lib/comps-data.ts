@@ -190,19 +190,24 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   const uidArr = [...finalUserIds];
   const emailByUser = new Map<string, string | null>();
   const licenseByUser = new Map<string, LicenseInfo>();
+  // license_keys.id -> {key,status}, so a comp can show its OWN minted key
+  // (via comp_grants.license_key_id) rather than the user's first key.
+  const licenseById = new Map<string, { key: string | null; status: string | null }>();
   if (uidArr.length > 0) {
     const [profilesRes, licensesRes] = await Promise.all([
       svc.from("profiles").select("id,email").in("id", uidArr).limit(ROW_LIMIT),
-      svc.from("license_keys").select("user_id,status,created_at,key").in("user_id", uidArr).limit(ROW_LIMIT),
+      svc.from("license_keys").select("id,user_id,status,created_at,key").in("user_id", uidArr).limit(ROW_LIMIT),
     ]);
     for (const row of profilesRes.data ?? []) {
       const id = str(row.id);
       if (id) emailByUser.set(id, str(row.email));
     }
     for (const row of licensesRes.data ?? []) {
-      const id = str(row.user_id);
-      if (id && !licenseByUser.has(id)) {
-        licenseByUser.set(id, { status: str(row.status), createdAt: str(row.created_at), key: str(row.key) });
+      const id = str(row.id);
+      if (id) licenseById.set(id, { key: str(row.key), status: str(row.status) });
+      const uid = str(row.user_id);
+      if (uid && !licenseByUser.has(uid)) {
+        licenseByUser.set(uid, { status: str(row.status), createdAt: str(row.created_at), key: str(row.key) });
       }
     }
   }
@@ -216,7 +221,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     const grant = grantBySub.get(lsSubId);
     const order = userId ? compByUser.get(userId) : undefined;
     if (!grant && !order) continue; // not a comp subscription
-    rows.push(buildCompRow({ lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, now }));
+    rows.push(buildCompRow({ lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, licenseById, now }));
     emitted.add(lsSubId);
   }
   for (const [lsSubId, grant] of grantBySub) {
@@ -230,6 +235,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
         userId: str(grant.user_id),
         emailByUser,
         licenseByUser,
+        licenseById,
         now,
       }),
     );
@@ -269,12 +275,18 @@ function buildCompRow(args: {
   userId: string | null;
   emailByUser: Map<string, string | null>;
   licenseByUser: Map<string, LicenseInfo>;
+  licenseById: Map<string, { key: string | null; status: string | null }>;
   now: number;
 }): CompRow {
-  const { lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, now } = args;
+  const { lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, licenseById, now } = args;
 
   const status = sub ? str(sub.status) : null;
   const license = userId ? licenseByUser.get(userId) : undefined;
+  // Prefer the comp's OWN minted key (comp_grants.license_key_id) so a user
+  // with multiple keys shows the right one; fall back to their first key.
+  const grantLicense = str(grant?.license_key_id)
+    ? licenseById.get(str(grant?.license_key_id) as string)
+    : undefined;
 
   const code = str(grant?.discount_code) ?? order?.code ?? null;
   const parsed = parseCompMonths(code);
@@ -319,8 +331,8 @@ function buildCompRow(args: {
     daysRemaining,
     subscriptionStatus: status,
     renewsAt: sub ? str(sub.renews_at) : null,
-    licenseStatus: license?.status ?? null,
-    licenseKey: license?.key ?? null,
+    licenseStatus: grantLicense?.status ?? license?.status ?? null,
+    licenseKey: grantLicense?.key ?? license?.key ?? null,
     state,
     cancelledAt,
     warn7SentAt: str(grant?.warn7_sent_at),
