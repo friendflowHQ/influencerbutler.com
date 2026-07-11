@@ -7,9 +7,13 @@ export const metadata = {
     "See influencer vs brand video counts on any Amazon product, find content gaps in your own orders, spot Butler Approved opportunities, and check your storefront. 100% free.",
 };
 
-// Chrome Web Store listing URL. Set NEXT_PUBLIC_CHROME_STORE_URL in the Vercel
-// env once the listing is approved; until then the buttons scroll to #install.
-const CHROME_STORE_URL = process.env.NEXT_PUBLIC_CHROME_STORE_URL || "#install";
+// Chrome Web Store listing URL. The extension is live, so default straight to
+// the listing (same id that next.config.ts treats as the single source of
+// truth). NEXT_PUBLIC_CHROME_STORE_URL can override it in the Vercel env if the
+// listing is ever retargeted.
+const CHROME_STORE_URL =
+  process.env.NEXT_PUBLIC_CHROME_STORE_URL ||
+  "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
 const TOOLS = [
   {
