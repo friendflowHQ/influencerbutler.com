@@ -44,6 +44,8 @@ const COPY: Record<ProTier, TierCopy> = {
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
+        `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
+        ``,
         `Manage your plan anytime: ${v.subscriptionUrl}`,
         ``,
         `Questions? Just reply to this email and a real human will answer.`,

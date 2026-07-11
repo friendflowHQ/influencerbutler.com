@@ -46,6 +46,13 @@ export default function DownloadButtons({ source, size = "lg", className }: Prop
       >
         Older Intel Mac? Download here
       </a>
+      <p className="mt-3 text-xs text-slate-500">
+        Also free:{" "}
+        <a href="/extension" className="font-semibold text-slate-600 underline hover:text-[#f97316]">
+          add the Chrome extension
+        </a>{" "}
+        for Amazon intel while you browse, on every account.
+      </p>
     </div>
   );
 }

@@ -52,6 +52,8 @@ const COPY: Record<TrialTier, TierCopy> = {
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
+        `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
+        ``,
         v.monthlyCode
           ? `When your trial ends, use code ${v.monthlyCode} for ${v.monthlyPercent}% off your first month. It's unique to you and expires shortly after your trial.`
           : `We'll follow up with a discount code before your trial ends.`,
