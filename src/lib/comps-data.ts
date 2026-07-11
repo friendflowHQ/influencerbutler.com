@@ -52,6 +52,9 @@ export type CompRow = {
   source: "in_house" | "lemonsqueezy";
   /** The recipient's license key (from license_keys.key), for the admin to copy. */
   licenseKey: string | null;
+  /** In-house only: when the desktop first activated the key, and last checked in. */
+  activatedAt: string | null;
+  lastSeenAt: string | null;
 };
 
 export type CompsResult = {
@@ -338,5 +341,7 @@ function buildCompRow(args: {
     warn7SentAt: str(grant?.warn7_sent_at),
     warn1SentAt: str(grant?.warn1_sent_at),
     source,
+    activatedAt: str(grant?.activated_at),
+    lastSeenAt: str(grant?.last_seen_at),
   };
 }
