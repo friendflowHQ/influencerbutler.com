@@ -200,14 +200,15 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     user_id: userId,
     status: "active",
     plan_name: `${TIER_NAME[tier]} (comp)`,
-    renews_at: null,
-    ends_at: expiresAt,
-    pro_started_at: nowIso,
-    created_at: nowIso,
   });
   if (subInsert.error) {
     console.error("comp-issue: subscriptions insert failed", subInsert.error);
-    return { ok: false, status: 500, error: "Could not create the comp subscription." };
+    const detail = (subInsert.error as { message?: string })?.message;
+    return {
+      ok: false,
+      status: 500,
+      error: `Could not create the comp subscription${detail ? `: ${detail}` : "."}`,
+    };
   }
 
   const subRow = await svc
@@ -231,7 +232,8 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   if (keyInsert.error) {
     console.error("comp-issue: license_keys insert failed - rolling back subscription", keyInsert.error);
     await svc.from("subscriptions").delete().eq("ls_subscription_id", sentinel);
-    return { ok: false, status: 500, error: "Could not create the license key." };
+    const detail = (keyInsert.error as { message?: string })?.message;
+    return { ok: false, status: 500, error: `Could not create the license key${detail ? `: ${detail}` : "."}` };
   }
 
   const keyRow = await svc
