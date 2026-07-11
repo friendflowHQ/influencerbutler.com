@@ -6,7 +6,7 @@ import {
   isAddonVariant,
   hasLiveSubscriptionForEmail,
 } from "@/lib/lemonsqueezy";
-import { appendAffRef } from "@/lib/affiliate-lookup";
+import { appendAffRef, selfHostedAffiliatesEnabled } from "@/lib/affiliate-lookup";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -239,9 +239,15 @@ export async function POST(request: Request) {
 
     // Belt 1 cont.: add-on checkouts never get an aff_ref query param either,
     // so the affiliate doesn't earn commission on the add-on SKU.
-    const checkoutUrl = !isAddon && resolved.attribution
-      ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
-      : rawCheckoutUrl;
+    //
+    // Self-hosted program: we never append aff_ref, because we track and pay
+    // the affiliate ourselves (the ref_* custom_data captured above is the
+    // record of truth). aff_ref only exists to hand the referral to LS's own
+    // affiliate program, which we no longer use. See selfHostedAffiliatesEnabled.
+    const checkoutUrl =
+      !isAddon && !selfHostedAffiliatesEnabled() && resolved.attribution
+        ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
+        : rawCheckoutUrl;
 
     const jsonResponse = NextResponse.json({
       checkoutUrl,

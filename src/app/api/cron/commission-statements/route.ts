@@ -97,7 +97,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, sent: false, reason: "already-sent", period });
   }
 
-  const result = await loadAffiliateCommissions({ period, customRatesOnly: true, onlyOwed: true });
+  // Self-hosted program: we pay EVERY owed affiliate (not just custom-rate
+  // top-ups), so statements go to all affiliates with a nonzero balance.
+  const result = await loadAffiliateCommissions({ period, customRatesOnly: false, onlyOwed: true });
   if (!result) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }

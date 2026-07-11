@@ -116,7 +116,7 @@ export default function AffiliateApplyInline() {
       return;
     }
     if (!country) {
-      setError("Please select your country so Lemon Squeezy can route the right tax form to you.");
+      setError("Please select your country so we can route the right tax form to you.");
       return;
     }
     if (promotionStrategy.trim().length < 30) {
@@ -286,7 +286,7 @@ export default function AffiliateApplyInline() {
             <Field
               label="Country"
               required
-              hint="Lemon Squeezy uses this to collect the right tax form (W-9 for US, W-8BEN otherwise) when you finish setup."
+              hint="We use this to give you the right tax form (W-9 for US, W-8BEN otherwise) in your dashboard."
             >
               <select
                 required
@@ -340,8 +340,8 @@ export default function AffiliateApplyInline() {
               >
                 Affiliate Program Terms
               </Link>{" "}
-              and understand that Lemon Squeezy collects my tax forms (W-9 or W-8BEN) and handles
-              all payouts to me directly.
+              and understand that I complete my tax form (W-9 or W-8BEN) in my dashboard and that
+              Influencer Butler pays my commissions directly via PayPal.
             </span>
           </label>
 
@@ -366,7 +366,7 @@ export default function AffiliateApplyInline() {
         <Step
           n={2}
           title="Get approved"
-          body="We review weekly and email you a decision, usually within 48 hours."
+          body="We review promptly and email you a decision, usually within a day."
         />
         <Step
           n={3}

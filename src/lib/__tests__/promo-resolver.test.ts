@@ -11,8 +11,10 @@ import {
   resolveAttribution,
   resolveIntendedAffiliate,
   resolveCheckoutDiscount,
+  affiliateCaptureCustom,
   COMPARISON_HORIZON_MONTHS,
   type CandidateCode,
+  type IntendedAffiliate,
 } from "../promo-resolver";
 import type { LsDiscount } from "../lemonsqueezy-discount-lookup";
 
@@ -275,6 +277,43 @@ describe("resolveIntendedAffiliate (capture, includes pre-activation gap)", () =
       candidate({ code: "BOB", source: "typed", affiliateUserId: "user_bob" }),
     ]);
     expect(intended?.affiliateUserId).toBe("user_alex");
+  });
+});
+
+describe("affiliateCaptureCustom (self-hosted cutover)", () => {
+  function intended(overrides: Partial<IntendedAffiliate> = {}): IntendedAffiliate {
+    return {
+      affiliateUserId: overrides.affiliateUserId ?? "user_alex",
+      sourceCode: overrides.sourceCode ?? "ALEX",
+      source: overrides.source ?? "url-code",
+      hasLsId: overrides.hasLsId ?? false,
+    };
+  }
+
+  it("returns an empty object when there's no affiliate to capture", () => {
+    expect(affiliateCaptureCustom(null, true)).toEqual({});
+    expect(affiliateCaptureCustom(null, false)).toEqual({});
+  });
+
+  it("self-hosted: always captures as 'pending', even for a linked affiliate", () => {
+    // The whole point of the cutover: LS never pays commission, so every
+    // referral is owed in full by us and must be captured 'pending'.
+    const linked = affiliateCaptureCustom(intended({ hasLsId: true }), true);
+    expect(linked.ref_attribution_status).toBe("pending");
+    expect(linked.ref_affiliate_user_id).toBe("user_alex");
+    expect(linked.ref_affiliate_code).toBe("ALEX");
+
+    const unlinked = affiliateCaptureCustom(intended({ hasLsId: false }), true);
+    expect(unlinked.ref_attribution_status).toBe("pending");
+  });
+
+  it("legacy (self-hosting disabled): live when linked, pending when not", () => {
+    expect(affiliateCaptureCustom(intended({ hasLsId: true }), false).ref_attribution_status).toBe(
+      "live",
+    );
+    expect(affiliateCaptureCustom(intended({ hasLsId: false }), false).ref_attribution_status).toBe(
+      "pending",
+    );
   });
 });
 

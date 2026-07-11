@@ -130,6 +130,55 @@ describe("computeAffiliateOwed", () => {
   });
 });
 
+describe("post-cutover steady state (all captures are 'pending')", () => {
+  // After the self-hosted cutover we never append aff_ref, so LS pays nothing
+  // and every new referred order is captured 'pending'. The engine must then
+  // owe the FULL promised rate with lsPaidCents=0 on every order, regardless of
+  // rate, duration, or how far past the (now-irrelevant) 12-month LS window the
+  // order falls. These cases document that steady state.
+  const DEFAULT_30: AffiliateTerms = { commissionPercent: null, commissionDurationMonths: null };
+
+  it("default-30% affiliate now owes the full 30% (LS no longer covers it)", () => {
+    // Contrast with the legacy 'live' case below, where the same affiliate owed 0.
+    const line = computeOrderOwed(order({ attributionStatus: "pending" }), DEFAULT_30, null);
+    expect(line).not.toBeNull();
+    expect(line!.lsPaidCents).toBe(0);
+    expect(line!.owedCents).toBe(3000); // full 30% of $100
+  });
+
+  it("legacy live default-30% order still owes 0 (overlap-period regression guard)", () => {
+    const line = computeOrderOwed(order({ attributionStatus: "live" }), DEFAULT_30, null);
+    expect(line!.owedCents).toBe(0);
+  });
+
+  it("all-pending cohort: monthly, annual, and past-12mo renewals all owe full rate", () => {
+    const anchor = new Date("2026-01-01T00:00:00.000Z").getTime();
+    const orders: CommissionOrder[] = [
+      order({ lsOrderId: "m1", buyerUserId: "b1", createdAt: "2026-01-10T00:00:00.000Z", attributionStatus: "pending" }),
+      order({ lsOrderId: "m2", buyerUserId: "b1", createdAt: "2026-06-10T00:00:00.000Z", attributionStatus: "pending" }),
+      // 15 months out: irrelevant now that LS is out of the loop.
+      order({ lsOrderId: "m3", buyerUserId: "b1", createdAt: "2027-04-10T00:00:00.000Z", attributionStatus: "pending" }),
+    ];
+    const result = computeAffiliateOwed(LIFETIME_70, orders, orders);
+    expect(result.lsPaidCents).toBe(0);
+    expect(result.grossCents).toBe(30000);
+    expect(result.owedCents).toBe(21000); // full 70% of $300, nothing subtracted
+    void anchor;
+  });
+
+  it("a yearly-duration affiliate still stops owing past their own window", () => {
+    // The cutover does NOT change the affiliate's own honored duration window;
+    // only LS's 12-month subtraction becomes moot. A 12-month affiliate still
+    // earns nothing on an order 14 months after the buyer's first order.
+    const line = computeOrderOwed(
+      order({ createdAt: "2027-03-01T00:00:00.000Z", attributionStatus: "pending" }),
+      YEARLY_70,
+      new Date("2026-01-01T00:00:00.000Z").getTime(),
+    );
+    expect(line).toBeNull();
+  });
+});
+
 describe("orderEconomics (analytics, includes paid orders)", () => {
   it("still counts a reconciled order (unlike computeOrderOwed)", () => {
     const paid = order({ reconciledAt: "2026-02-01T00:00:00.000Z", attributionStatus: "live" });

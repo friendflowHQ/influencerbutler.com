@@ -110,7 +110,7 @@ export default function AffiliateApplyPage() {
       return;
     }
     if (!country) {
-      setError("Please select your country so Lemon Squeezy can route the right tax form to you.");
+      setError("Please select your country so we can route the right tax form to you.");
       return;
     }
     if (promotionStrategy.trim().length < 30) {
@@ -352,7 +352,7 @@ export default function AffiliateApplyPage() {
               <Field
                 label="Country"
                 required
-                hint="Lemon Squeezy uses this to collect the right tax form (W-9 for US, W-8BEN otherwise) when you finish setup."
+                hint="We use this to give you the right tax form (W-9 for US, W-8BEN otherwise) in your dashboard."
               >
                 <select
                   required
@@ -406,8 +406,8 @@ export default function AffiliateApplyPage() {
                 >
                   Affiliate Program Terms
                 </Link>{" "}
-                and understand that Lemon Squeezy collects my tax forms (W-9 or W-8BEN) and handles
-                all payouts to me directly.
+                and understand that I complete my tax form (W-9 or W-8BEN) in my dashboard and that
+                Influencer Butler pays my commissions directly via PayPal.
               </span>
             </label>
 
@@ -426,9 +426,8 @@ export default function AffiliateApplyPage() {
             </button>
 
             <p className="text-center text-xs text-slate-500">
-              After approval you&apos;ll finish setup in Lemon Squeezy. If you&apos;ve ever bought
-              Influencer Butler, look for <span className="font-medium">Affiliate Hub</span> in your
-              Lemon Squeezy user menu - not the public signup form.
+              Approval is instant once we review you: your branded code and tracked link go live in
+              your dashboard right away, with no second signup anywhere else.
             </p>
 
             <p className="text-center text-sm text-slate-500">

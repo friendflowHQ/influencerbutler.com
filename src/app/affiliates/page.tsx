@@ -138,19 +138,19 @@ export default function AffiliatesLandingPage() {
                 step: "01",
                 title: "Apply",
                 body:
-                  "Tell us about your audience and how you plan to promote. Most applications are reviewed within 48 hours.",
+                  "Tell us about your audience and how you plan to promote. Most applications are reviewed within a day.",
               },
               {
                 step: "02",
                 title: "Get your link",
                 body:
-                  "Once approved, log in to your portal to grab your unique referral link, track clicks, and see earnings in real time.",
+                  "The moment you're approved, your unique referral link and real-time stats are live in your dashboard. No second signup anywhere else.",
               },
               {
                 step: "03",
                 title: "Earn recurring",
                 body:
-                  "Every subscription you refer pays you 30% every month for the first 12 months. Payouts go out monthly via Lemon Squeezy.",
+                  "Every subscription you refer pays you 30% every month for the first 12 months. We pay you directly, monthly via PayPal.",
               },
             ].map((s) => (
               <article

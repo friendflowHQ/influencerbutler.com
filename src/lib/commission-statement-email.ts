@@ -72,16 +72,22 @@ export function buildStatementBody(statement: AffiliateStatement, period: string
     for (const l of statement.lines) {
       lines.push(
         `  ${shortDate(l.createdAt)}  order ${formatUsdFromCents(l.totalCents)}  ` +
-          `LS paid ${formatUsdFromCents(l.lsPaidCents)}  top-up owed ${formatUsdFromCents(l.owedCents)}`,
+          `commission owed ${formatUsdFromCents(l.owedCents)}`,
       );
     }
   }
   lines.push("");
   lines.push(`Total earned this month: ${formatUsdFromCents(earnedCents(statement))}`);
-  lines.push(`Already paid by Lemon Squeezy: ${formatUsdFromCents(statement.lsPaidCents)}`);
-  lines.push(`Balance we owe you: ${formatUsdFromCents(statement.owedCents)}`);
+  // During the transition off Lemon Squeezy, some renewals may still have been
+  // credited by LS; only mention it when there's actually a nonzero amount.
+  if (statement.lsPaidCents > 0) {
+    lines.push(`Already credited by Lemon Squeezy: ${formatUsdFromCents(statement.lsPaidCents)}`);
+  }
+  lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents)}`);
   lines.push("");
-  lines.push("We pay top-up balances on the 1st of each month. Questions? Just reply to this email.");
+  lines.push(
+    "We pay via PayPal on or around the 1st of each month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less. Make sure your tax form and PayPal email are set in your dashboard. Questions? Just reply to this email.",
+  );
   lines.push("");
   lines.push("- The Influencer Butler team");
   return lines.join("\n");
@@ -100,7 +106,7 @@ export function buildCombinedBody(statements: AffiliateStatement[], period: stri
     lines.push(`${who}${s.affiliateCode ? ` (${s.affiliateCode})` : ""} - rate ${s.ratePercent}%`);
     lines.push(
       `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s))}, ` +
-        `LS paid ${formatUsdFromCents(s.lsPaidCents)}, you owe ${formatUsdFromCents(s.owedCents)}`,
+        `owed via PayPal ${formatUsdFromCents(s.owedCents)}`,
     );
     lines.push("");
     totalOwed += s.owedCents;
@@ -109,10 +115,12 @@ export function buildCombinedBody(statements: AffiliateStatement[], period: stri
   }
   lines.push("----------------------------------------");
   lines.push(`Total earned: ${formatUsdFromCents(totalEarned)}`);
-  lines.push(`Total paid by Lemon Squeezy: ${formatUsdFromCents(totalLs)}`);
-  lines.push(`Total you owe this month: ${formatUsdFromCents(totalOwed)}`);
+  if (totalLs > 0) {
+    lines.push(`Total already credited by Lemon Squeezy: ${formatUsdFromCents(totalLs)}`);
+  }
+  lines.push(`Total owed this month: ${formatUsdFromCents(totalOwed)}`);
   lines.push("");
-  lines.push("Pay the top-up balances, then mark each affiliate paid in the Payouts tab.");
+  lines.push('Disburse each affiliate via PayPal in the Owed tab (or mark paid if you paid another way).');
   return lines.join("\n");
 }
 

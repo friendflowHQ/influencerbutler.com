@@ -578,6 +578,56 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Programmatic PayPal payout. Recomputes owed from the engine server-side,
+  // requires a verified tax form + PayPal email, and reconciles the orders only
+  // once PayPal confirms the payout succeeded (webhook / poller).
+  const onDisburse = async (aff: OwedAffiliate) => {
+    if (
+      !window.confirm(
+        `Send ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId} via PayPal now?\n\nThis pays the affiliate directly. Their tax form must be verified and a PayPal email on file. The exact amount is recomputed at send. Orders are marked paid only once PayPal confirms success.`,
+      )
+    ) {
+      return;
+    }
+    setOwedState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-disburse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        code?: string;
+        payoutBatchId?: string;
+      };
+      if (!res.ok) {
+        const friendly =
+          json.code === "no_paypal"
+            ? "This affiliate hasn't added a PayPal email yet."
+            : json.code === "tax_unverified"
+              ? "This affiliate's tax form isn't verified yet."
+              : json.code === "below_minimum"
+                ? "Owed is below the $10 payout minimum."
+                : json.code === "already_disbursed"
+                  ? "A payout for this affiliate already exists."
+                  : json.error ?? `Failed (${res.status})`;
+        setOwedState(aff.userId, { kind: "error", message: friendly });
+        return;
+      }
+      setOwedState(aff.userId, {
+        kind: "success",
+        message: "PayPal payout sent and processing. Orders reconcile once PayPal confirms it.",
+      });
+      setTimeout(() => {
+        void loadOwed();
+      }, 2500);
+    } catch (err) {
+      console.error(err);
+      setOwedState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
   // Per-affiliate commission terms (rate + duration) edits from the Roster tab.
   const [termsRow, setTermsRow] = useState<Record<string, LinkRowState>>({});
   const onSaveTerms = async (
@@ -1078,15 +1128,15 @@ export default function AdminAffiliatesPage() {
               Admin · Owed commissions
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-              Back-pay referrals from the pre-activation gap
+              Owed affiliate commissions
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Orders referred with an affiliate&apos;s code BEFORE Lemon Squeezy activated them earn no
-              commission in LS (LS can&apos;t back-date one). They are captured here at{" "}
-              {commissionPercent}% of order value once the affiliate is linked. Pay each owed amount as
-              a one-time bonus in the Lemon Squeezy dashboard, then click &quot;Mark paid&quot; so it
-              drops off this list. Refunds are tracked, but sanity-check against LS first: an older
-              refund or a partial refund may not be reflected here.
+              Commissions we owe affiliates on their referred orders (default {commissionPercent}% of
+              order value, or the affiliate&apos;s custom rate). Click{" "}
+              <strong>Disburse via PayPal</strong> to pay directly: the exact amount is recomputed at
+              send, and it requires a verified tax form and a PayPal email on file. Orders are marked
+              reconciled only once PayPal confirms the payout succeeded. Use{" "}
+              <strong>Mark paid manually</strong> only if you paid the affiliate some other way.
             </p>
           </div>
 
@@ -1130,11 +1180,19 @@ export default function AdminAffiliatesPage() {
                         </p>
                         <button
                           type="button"
+                          onClick={() => onDisburse(aff)}
+                          disabled={working}
+                          className="rounded-lg bg-[#0070ba] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005a96] disabled:opacity-60"
+                        >
+                          {working ? "Working…" : "Disburse via PayPal"}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => onMarkPaid(aff)}
                           disabled={working}
-                          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                          className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
                         >
-                          {working ? "Saving…" : "Mark paid"}
+                          Mark paid manually
                         </button>
                       </div>
                     </div>
@@ -1943,7 +2001,185 @@ function PayoutsTab({ onForbidden }: { onForbidden: () => void }) {
           computed from your own order records.
         </p>
       ) : null}
+
+      <PayoutLedgerHistory />
     </section>
+  );
+}
+
+type LedgerPayout = {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  period: string | null;
+  grossCents: number;
+  currency: string;
+  status: string;
+  paypalEmail: string | null;
+  errorNote: string | null;
+  createdAt: string | null;
+  paidAt: string | null;
+  retryable: boolean;
+};
+
+const PAYOUT_STATUS_STYLE: Record<string, string> = {
+  success: "bg-emerald-100 text-emerald-800",
+  processing: "bg-blue-100 text-blue-800",
+  pending: "bg-blue-100 text-blue-800",
+  unclaimed: "bg-amber-100 text-amber-800",
+  failed: "bg-red-100 text-red-800",
+  denied: "bg-red-100 text-red-800",
+  blocked: "bg-red-100 text-red-800",
+  returned: "bg-red-100 text-red-800",
+};
+
+/** Payout ledger history + retry, shown under the monthly top-ups. */
+function PayoutLedgerHistory() {
+  const [rows, setRows] = useState<LedgerPayout[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryRow, setRetryRow] = useState<Record<string, LinkRowState>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-payouts-ledger", { cache: "no-store" });
+      const json = (await res.json()) as { payouts?: LedgerPayout[]; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setRows(json.payouts ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Network error loading payout history.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const onRetry = async (p: LedgerPayout) => {
+    if (
+      !window.confirm(
+        `Retry the ${formatUsd(p.grossCents)} payout to ${p.name ?? p.email ?? p.userId}?\n\nThis sends a fresh PayPal payout for the amount still owed. The failed attempt is kept for your records.`,
+      )
+    ) {
+      return;
+    }
+    setRetryRow((prev) => ({ ...prev, [p.id]: { kind: "working" } }));
+    try {
+      const res = await fetch("/api/affiliates/admin-payouts-ledger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payoutId: p.id }),
+      });
+      const json = (await res.json()) as { error?: string; code?: string };
+      if (!res.ok) {
+        const friendly =
+          json.code === "no_paypal"
+            ? "The affiliate still has no PayPal email on file."
+            : json.code === "tax_unverified"
+              ? "The affiliate's tax form isn't verified."
+              : json.code === "below_minimum"
+                ? "Nothing is owed anymore (below the minimum)."
+                : json.error ?? `Failed (${res.status})`;
+        setRetryRow((prev) => ({ ...prev, [p.id]: { kind: "error", message: friendly } }));
+        return;
+      }
+      setRetryRow((prev) => ({ ...prev, [p.id]: { kind: "success", message: "Retry sent (processing)." } }));
+      setTimeout(() => void load(), 2000);
+    } catch (err) {
+      console.error(err);
+      setRetryRow((prev) => ({ ...prev, [p.id]: { kind: "error", message: "Network error." } }));
+    }
+  };
+
+  return (
+    <div className="mt-8 border-t border-slate-200 pt-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold tracking-tight text-slate-900">PayPal payout history</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Every PayPal disbursement and its status. Orders reconcile only when a payout succeeds; a
+            failed or returned payout can be retried, which sends a fresh payout for what&apos;s still owed.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 h-20 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      ) : error ? (
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>
+      ) : rows.length === 0 ? (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
+          No payouts yet. Use &quot;Disburse via PayPal&quot; on the Owed tab.
+        </div>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {rows.map((p) => {
+            const state = retryRow[p.id] ?? { kind: "idle" };
+            const working = state.kind === "working";
+            const badge = PAYOUT_STATUS_STYLE[p.status] ?? "bg-slate-100 text-slate-700";
+            return (
+              <li key={p.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 break-words">
+                      {p.name ?? p.email ?? p.userId.slice(0, 8)}
+                      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${badge}`}>
+                        {p.status}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500 break-all">
+                      {formatUsd(p.grossCents)}
+                      {p.period ? ` · ${p.period}` : " · ad-hoc"}
+                      {p.paypalEmail ? ` · ${p.paypalEmail}` : ""}
+                      {p.paidAt ? ` · paid ${formatDate(p.paidAt)}` : p.createdAt ? ` · ${formatDate(p.createdAt)}` : ""}
+                    </p>
+                    {p.errorNote ? (
+                      <p className="mt-1 text-xs text-red-600 break-words">{p.errorNote}</p>
+                    ) : null}
+                  </div>
+                  {p.retryable ? (
+                    <button
+                      type="button"
+                      onClick={() => onRetry(p)}
+                      disabled={working}
+                      className="rounded-lg bg-[#0070ba] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#005a96] disabled:opacity-60"
+                    >
+                      {working ? "Retrying…" : "Retry"}
+                    </button>
+                  ) : null}
+                </div>
+                {state.kind === "success" ? (
+                  <p className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800">
+                    {state.message}
+                  </p>
+                ) : null}
+                {state.kind === "error" ? (
+                  <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-800">
+                    {state.message}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 

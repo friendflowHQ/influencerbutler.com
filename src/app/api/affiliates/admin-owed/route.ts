@@ -7,15 +7,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Owed-commissions reconciliation feed (the pre-LS-activation gap payout path).
+ * Owed-commissions reconciliation feed.
  *
- * When an affiliate is approved their branded code goes live immediately, but
- * Lemon Squeezy only credits commission (via aff_ref) after it activates them,
- * days later. Orders referred during that gap are captured on the order with
- * attribution_status='pending' (see the checkout routes + order_created
- * webhook) but earn the affiliate nothing in LS. LS has no API to back-date a
- * commission, so we surface what's owed here and the admin pays it as a
- * one-time manual bonus inside the LS dashboard, then marks it reconciled.
+ * Self-hosted program: every referred order is captured attribution_status=
+ * 'pending' (we no longer hand referrals to Lemon Squeezy), so we owe the
+ * affiliate their full promised rate on all of them. This feed surfaces the
+ * unreconciled pending gross per affiliate for the manual "mark paid" path.
+ *
+ * Note: owed here is a simplified `gross * ratePercent` on pending unreconciled
+ * paid orders. For custom-DURATION affiliates whose window has closed this can
+ * overstate vs the engine (src/lib/affiliate-commissions.ts); the programmatic
+ * PayPal disburse path (Phase 3) drives off loadAffiliateCommissions and is the
+ * source of truth. Default-30% affiliates (no duration window) match exactly.
  *
  *  GET  -> per now-active affiliate, their pending unreconciled paid orders and
  *          the commission owed (AFFILIATE_COMMISSION_PERCENT, default 30%).
@@ -71,7 +74,7 @@ type OwedAffiliate = {
   email: string | null;
   fullName: string | null;
   affiliateCode: string | null;
-  lsAffiliateId: string;
+  lsAffiliateId: string | null;
   ratePercent: number;
   orderCount: number;
   grossCents: number;
@@ -109,14 +112,17 @@ export async function GET(request: Request) {
       {
         email: string | null;
         affiliateCode: string | null;
-        lsAffiliateId: string;
+        lsAffiliateId: string | null;
         ratePercent: number;
       }
     >();
     for (const row of profiles ?? []) {
       const userId = str(row.id);
       const lsId = str(row.ls_affiliate_id);
-      if (!userId || !lsId) continue; // unlinked -> not yet payable
+      // Self-hosted program: every approved affiliate is payable by us, whether
+      // or not they ever had a Lemon Squeezy affiliate id. (Legacy LS id is kept
+      // only for reference.) A pending order owes the full promised rate.
+      if (!userId) continue;
       // Pending gap orders earned nothing in LS, so we owe the affiliate's full
       // promised rate (default 30). Duration does not matter here: gap orders
       // are the customer's first, pre-activation purchase.

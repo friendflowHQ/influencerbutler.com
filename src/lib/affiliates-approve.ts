@@ -51,7 +51,6 @@ async function sendApprovalEmail(params: {
   name: string;
   brandedCode: string | null;
   brandedShareLink: string | null;
-  lsSignupUrl: string | null;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return false;
@@ -61,10 +60,7 @@ async function sendApprovalEmail(params: {
     `Dear ${firstName},`,
     ``,
     ``,
-    `It is my privilege to inform you that your application has been approved. You are now, officially, an Influencer Butler affiliate - welcome.`,
-    ``,
-    ``,
-    `Two small matters await your attention.`,
+    `It is my privilege to inform you that your application has been approved. You are now, officially, an Influencer Butler affiliate, and you are live immediately: there is no second signup and nothing to wait for.`,
     ``,
     ``,
   ];
@@ -77,66 +73,35 @@ async function sendApprovalEmail(params: {
       `    ${params.brandedCode}`,
       ``,
       ``,
-      `This code is reserved for you, and every subscription it brings in earns you a 30% recurring commission for the customer's first twelve months.`,
-      ``,
-      ``,
-      `One request, and it matters for your earnings: please do not begin promoting it just yet. Commission can only be credited once Lemon Squeezy has activated you (step II below). Sales that arrive before then are not tracked automatically, so kindly hold off sharing until your dashboard confirms you are live. The moment it does, your ready-to-share link appears there. If you have already shared the code, do let me know and I shall make certain those early referrals are credited to you once you are activated.`,
+      `Share it far and wide. Every subscription it brings in earns you a 30% recurring commission for the customer's first twelve months, and every referral is tracked to you automatically.`,
       ``,
       ``,
     );
+    if (params.brandedShareLink) {
+      lines.push(
+        `Your ready-to-share link, with the code already applied, is:`,
+        ``,
+        `    ${params.brandedShareLink}`,
+        ``,
+        ``,
+      );
+    }
   }
 
   lines.push(
-    `II. A brief one-time setup`,
+    `II. When you are ready to be paid`,
     ``,
     ``,
-    `To activate your tracked referral link, please choose the path that fits you. Either way, take care to use this very email address (${params.to}) so I may pair your account correctly.`,
+    `Payouts are made monthly by PayPal. To receive them, please complete two quick items in your dashboard whenever it suits you:`,
+    ``,
+    `    1. Your tax form: a W-9 if you reside in the United States, or a W-8BEN (or W-8BEN-E for entities) if you reside elsewhere. We use it solely to issue your 1099 where required.`,
+    `    2. Your PayPal email: the address where we should send your commissions.`,
     ``,
     ``,
-    `  Path A - if you are already an Influencer Butler customer (or hold any Lemon Squeezy account):`,
-    ``,
-    `    1. Sign in at https://app.lemonsqueezy.com using ${params.to}.`,
-    `    2. Open the user menu in the top-right and select "Affiliate Hub".`,
-    `    3. Find the Influencer Butler programme and apply.`,
+    `A note on payouts: they are issued monthly with a ten-dollar minimum balance, which rolls forward until reached. PayPal receiving and currency-conversion fees are borne by you, so the amount that lands may be slightly less than your gross commission.`,
     ``,
     ``,
-  );
-
-  if (params.lsSignupUrl) {
-    lines.push(
-      `  Path B - if you have no Lemon Squeezy account yet:`,
-      ``,
-      `    Register here, and your tracked link will appear on your dashboard the moment Lemon Squeezy confirms you:`,
-      ``,
-      `    ${params.lsSignupUrl}`,
-      ``,
-      ``,
-    );
-  }
-
-  lines.push(
-    `A word on timing: Lemon Squeezy conduct their own review of new affiliates, which may take several days and on occasion longer. The schedule rests entirely with them. The moment they confirm you, your dashboard shall unlock of its own accord.`,
-    ``,
-    ``,
-    `Should you happen to sign up at Lemon Squeezy under a different email than this one, simply visit your affiliate dashboard and use the "different email" option to pair the two accounts yourself.`,
-    ``,
-    ``,
-    `Should either step show "already an affiliate" or any other error, do reply to this email and I shall sort it out personally.`,
-    ``,
-    ``,
-  );
-
-  lines.push(
-    `III. Tax forms and payouts`,
-    ``,
-    ``,
-    `Lemon Squeezy attends to both. During the brief setup above, they shall request the relevant tax form from you - a W-9 if you reside in the United States, a W-8BEN (or W-8BEN-E for entities) if you reside elsewhere. Should you be a United States affiliate earning six hundred dollars or more in a calendar year, Lemon Squeezy themselves shall furnish your 1099-NEC; Influencer Butler does not issue tax forms.`,
-    ``,
-    ``,
-    `Payouts likewise issue directly from Lemon Squeezy - monthly, on the first of each month, with a ten-dollar minimum balance, by PayPal or such other method as you nominate within your Lemon Squeezy portal. Influencer Butler stands entirely outside the payment chain. For any matter concerning payment timing, method, or tax documentation, the proper address is Lemon Squeezy support.`,
-    ``,
-    ``,
-    `For the full affiliate programme terms - including conduct expectations, FTC disclosure obligations, and termination provisions - please consult:`,
+    `For the full affiliate programme terms, including conduct expectations and FTC disclosure obligations, please consult:`,
     ``,
     ``,
     `    https://www.influencerbutler.com/legal/affiliate-terms`,
@@ -187,11 +152,13 @@ function buildBrandedShareLink(code: string): string {
  * Shared affiliate approval flow used by both the admin endpoint and the
  * auto-approval cron.
  *
- * Important: we do NOT programmatically create the Lemon Squeezy affiliate
- * record - LS deprecated POST /v1/affiliates. The user finishes their setup
- * by signing up at LS's hosted affiliate portal (link in the approval email).
- * When LS activates them, the `affiliate_activated` webhook handler fills in
- * `profiles.ls_affiliate_id` - see src/app/api/webhooks/lemonsqueezy/route.ts.
+ * Self-hosted program: approval makes the affiliate live IMMEDIATELY. We mint
+ * their branded 15%-off discount code (the customer's price cut + our
+ * attribution key) and set is_affiliate. There is no Lemon Squeezy affiliate
+ * portal step: we track every referral ourselves via the ref_* order capture
+ * and pay commissions directly (see src/lib/promo-resolver.ts and the payout
+ * ledger). `ls_affiliate_id` is a legacy column and is never set for new
+ * affiliates.
  *
  * Idempotent: re-running for the same user doesn't create duplicate branded
  * codes or re-stamp reviewed_at (we skip code generation if profile already
@@ -318,13 +285,11 @@ export async function approveAffiliate(params: {
 
   // 5) Fire-and-forget approval email.
   const brandedShareLink = brandedCode ? buildBrandedShareLink(brandedCode) : null;
-  const lsSignupUrl = process.env.NEXT_PUBLIC_LEMONSQUEEZY_AFFILIATE_SIGNUP_URL ?? null;
   const emailSent = await sendApprovalEmail({
     to: application.email,
     name: application.full_name,
     brandedCode,
     brandedShareLink,
-    lsSignupUrl,
   });
 
   return {

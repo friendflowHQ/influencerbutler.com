@@ -40,6 +40,18 @@ function profileLookupClient(): ProfileLookupClient | null {
   }) as unknown as ProfileLookupClient;
 }
 
+/**
+ * Self-hosted affiliate program flag. When enabled (the default), we track and
+ * pay every affiliate ourselves and never hand referrals to Lemon Squeezy's
+ * affiliate program: aff_ref is not appended at checkout, and every captured
+ * referral is recorded as "pending" so the commission engine owes the full
+ * promised rate. Set AFFILIATE_SELF_HOSTED="false" to fall back to the legacy
+ * LS affiliate program (aff_ref + live-if-linked attribution).
+ */
+export function selfHostedAffiliatesEnabled(): boolean {
+  return process.env.AFFILIATE_SELF_HOSTED !== "false";
+}
+
 export async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,

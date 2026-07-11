@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
-import { appendAffRef } from "@/lib/affiliate-lookup";
+import { appendAffRef, selfHostedAffiliatesEnabled } from "@/lib/affiliate-lookup";
 import {
   WELCOME_TOKEN_COOKIE,
   WELCOME_TOKEN_COOKIE_MAX_AGE_SECONDS,
@@ -217,9 +217,12 @@ export async function GET(request: Request) {
     }
 
     // Belt 2 cont.: add-on checkouts never get an aff_ref query param either.
-    const checkoutUrl = !isAddon && resolved.attribution
-      ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
-      : rawCheckoutUrl;
+    // Self-hosted program: aff_ref is never appended (we pay affiliates
+    // ourselves off the captured ref_* custom_data). See selfHostedAffiliatesEnabled.
+    const checkoutUrl =
+      !isAddon && !selfHostedAffiliatesEnabled() && resolved.attribution
+        ? appendAffRef(rawCheckoutUrl, resolved.attribution.lsAffiliateId)
+        : rawCheckoutUrl;
 
     if (wantsJson(request)) {
       const jsonResponse = NextResponse.json({

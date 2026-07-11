@@ -13,15 +13,15 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "When do I get paid?",
-    a: "Monthly, on the 1st of each month, paid directly by Lemon Squeezy once your unpaid balance is at least $10. If you're under $10 it rolls to next month. Payout method (PayPal, Wise, bank, etc.) is set in your Lemon Squeezy portal at app.lemonsqueezy.com. Influencer Butler is not part of the payment chain - payout questions go to Lemon Squeezy support.",
+    a: "Monthly, around the 1st of each month, paid directly by us via PayPal once your unpaid balance is at least $10. If you're under $10 it rolls to next month. Add your PayPal email right in your affiliate dashboard. PayPal receiving and currency-conversion fees are not covered, so the amount that lands can be slightly less than your gross commission.",
   },
   {
     q: "How do taxes work?",
-    a: "Lemon Squeezy collects a W-9 (if you're in the US) or W-8BEN / W-8BEN-E (if you're outside the US) when you finish signup at their affiliate portal. If you're a US affiliate earning $600 or more in a calendar year, Lemon Squeezy issues your 1099-NEC. Non-US affiliates may have US tax withholding applied per your country's treaty rate - the rate is set by which W-8 form you submit. None of this lives in your Influencer Butler dashboard; your tax info is in your LS portal.",
+    a: "Because we pay you directly, you complete your tax form in your affiliate dashboard: a W-9 if you're in the US, or a W-8BEN / W-8BEN-E if you're outside the US. Your taxpayer ID is encrypted and used only to prepare your 1099. If you're a US affiliate earning $600 or more in a calendar year, we issue your 1099-NEC. Non-US affiliates provide a W-8BEN and are responsible for reporting income in their own country; US withholding may apply depending on your tax treaty.",
   },
   {
     q: "What if my referral cancels or refunds?",
-    a: "You earn for the first 12 months they pay. The moment they cancel - or once they hit the 12-month mark, whichever comes first - no more commissions accrue on that customer, but every commission you already earned stays yours. Refunds during Lemon Squeezy's clawback window reduce your unpaid balance accordingly.",
+    a: "You earn for the first 12 months they pay. The moment they cancel - or once they hit the 12-month mark, whichever comes first - no more commissions accrue on that customer, but every commission you already earned stays yours. Refunds within the refund window reduce your unpaid balance accordingly.",
   },
   {
     q: "How do I promote Influencer Butler?",
@@ -29,11 +29,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I stack with other promo codes?",
-    a: "No. A customer can use either your affiliate code OR a site-wide welcome discount at checkout - not both. If they arrive through your affiliate link, your code's discount applies and the welcome discount is suppressed so you still earn the commission. Lemon-Squeezy-side referral attribution is preserved either way.",
+    a: "No. A customer can use either your affiliate code OR a site-wide welcome discount at checkout - not both. If they arrive through your affiliate link, your code's discount applies and the welcome discount is suppressed so you still earn the commission. Your referral attribution is preserved either way.",
   },
   {
     q: "Who reviews applications?",
-    a: "Our team reviews new applicants weekly. We're looking for creators and operators whose audience actually benefits from the product. Most applications get a response within 48 hours.",
+    a: "Our team reviews new applicants promptly. We're looking for creators and operators whose audience actually benefits from the product. Most applications get a response within a day, and the moment you're approved your code and tracked link are live, with no second signup anywhere else.",
   },
   {
     q: "Do I need to be a customer to be an affiliate?",

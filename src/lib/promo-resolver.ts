@@ -20,7 +20,11 @@
  */
 
 import { fetchDiscountByCode, type LsDiscount } from "./lemonsqueezy-discount-lookup";
-import { lookupAffiliateOwnerByCode, withTimeout } from "./affiliate-lookup";
+import {
+  lookupAffiliateOwnerByCode,
+  selfHostedAffiliatesEnabled,
+  withTimeout,
+} from "./affiliate-lookup";
 import {
   WELCOME_FIRST_CODE,
   WELCOME_RETURNING_CODE,
@@ -325,15 +329,23 @@ export function applyStackingRules(candidates: CandidateCode[]): CandidateCode[]
  * affiliate on the order. Empty object when there's no affiliate to capture
  * (so spreading it is a no-op). The order_created webhook reads these back and
  * persists them to the orders table. Values must be strings (LS custom_data).
+ *
+ * Self-hosted program: we credit and pay every referral ourselves and never
+ * append aff_ref, so LS pays no commission. Every capture is therefore
+ * "pending", which tells the commission engine to owe the full promised rate.
+ * The legacy path (self-hosting disabled) keeps the live-if-linked behavior so
+ * the engine subtracts the 30% LS actually paid. `selfHosted` defaults to the
+ * env flag but is injectable for tests.
  */
 export function affiliateCaptureCustom(
   intended: IntendedAffiliate | null,
+  selfHosted: boolean = selfHostedAffiliatesEnabled(),
 ): Record<string, string> {
   if (!intended) return {};
   return {
     ref_affiliate_user_id: intended.affiliateUserId,
     ref_affiliate_code: intended.sourceCode,
-    ref_attribution_status: intended.hasLsId ? "live" : "pending",
+    ref_attribution_status: !selfHosted && intended.hasLsId ? "live" : "pending",
   };
 }
 
