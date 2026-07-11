@@ -29,6 +29,7 @@ type CompRow = {
   warn7SentAt: string | null;
   warn1SentAt: string | null;
   source: "in_house" | "lemonsqueezy";
+  licenseKey: string | null;
 };
 
 type ListResponse = {
@@ -75,6 +76,32 @@ function daysLabel(row: CompRow): string {
   if (d < 0) return `${Math.abs(d)}d overdue`;
   if (d === 0) return "today";
   return `${d}d left`;
+}
+
+// A compact, click-to-copy license key cell. Shows a shortened form; the full
+// key is in the title and copied on click.
+function KeyCell({ value }: { value: string | null }) {
+  const [copied, setCopied] = useState(false);
+  if (!value) return <span className="text-slate-400">-</span>;
+  const short = value.length > 13 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
+  return (
+    <button
+      type="button"
+      title={`${value} (click to copy)`}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        } catch {
+          setCopied(false);
+        }
+      }}
+      className="font-mono text-xs text-slate-600 hover:text-indigo-600"
+    >
+      {copied ? "Copied" : short}
+    </button>
+  );
 }
 
 export default function AdminCompsPage() {
@@ -456,7 +483,7 @@ export default function AdminCompsPage() {
         <p className="mt-8 text-slate-500">No comps in this view.</p>
       ) : (
         <section className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-4 py-3">User</th>
@@ -467,6 +494,7 @@ export default function AdminCompsPage() {
                 <th className="px-4 py-3">Expires</th>
                 <th className="px-4 py-3">Remaining</th>
                 <th className="px-4 py-3">Subscription</th>
+                <th className="px-4 py-3">License key</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -532,6 +560,9 @@ export default function AdminCompsPage() {
                           renews {shortDate(row.renewsAt)}
                         </div>
                       ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      <KeyCell value={row.licenseKey} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       {done ? (
