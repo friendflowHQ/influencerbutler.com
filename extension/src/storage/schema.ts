@@ -16,6 +16,15 @@ export type Settings = {
     maxInfluencerVideos: number;
     minPrice: number;
   };
+  // User-tunable floors for Campaign Radar's highlight on the Creator
+  // Connections grid. This is the differentiator over the competitor's fixed
+  // thresholds: a campaign is highlighted only when it clears all three.
+  // minRemainingBudget is in dollars, matching approved.minPrice.
+  campaignRadar: {
+    minCommissionPct: number;
+    minDaysRemaining: number;
+    minRemainingBudget: number;
+  };
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
   // The user's own saved list of deal-aggregator URLs for the Deal Sites
@@ -30,6 +39,7 @@ export type Settings = {
     ordersButler: boolean;
     searchOverlay: boolean;
     campaignMatcher: boolean;
+    campaignRadar: boolean;
     watchlist: boolean;
   };
   syncEnabled: boolean;
@@ -188,7 +198,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -200,6 +210,11 @@ export const DEFAULTS: StorageShape = {
       minBoughtPerMonth: 50,
       maxInfluencerVideos: 5,
       minPrice: 20,
+    },
+    campaignRadar: {
+      minCommissionPct: 10,
+      minDaysRemaining: 7,
+      minRemainingBudget: 1000,
     },
     storefrontHandle: null,
     orderHarvestScope: "new",
@@ -213,6 +228,7 @@ export const DEFAULTS: StorageShape = {
       ordersButler: true,
       searchOverlay: true,
       campaignMatcher: true,
+      campaignRadar: true,
       watchlist: true,
     },
     syncEnabled: true,
@@ -250,8 +266,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // also backfills any keys added within a version. v1 -> v2 added the
   // integrations slice; v2 -> v3 added firstUseAt + nudges; v3 -> v4 added the
   // watchlist array plus the searchOverlay/campaignMatcher/watchlist tool flags;
-  // v4 -> v5 added the priceHistory map. Older stored state simply gains its
-  // defaults untouched (an existing user's price history starts empty).
+  // v4 -> v5 added the priceHistory map; v5 -> v6 added the campaignRadar
+  // thresholds plus the campaignRadar tool flag. Older stored state simply gains
+  // its defaults untouched (an existing user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -259,6 +276,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       ...structuredClone(DEFAULTS.settings),
       ...(raw.settings ?? {}),
       approved: { ...DEFAULTS.settings.approved, ...(raw.settings?.approved ?? {}) },
+      campaignRadar: {
+        ...DEFAULTS.settings.campaignRadar,
+        ...(raw.settings?.campaignRadar ?? {}),
+      },
       tools: { ...DEFAULTS.settings.tools, ...(raw.settings?.tools ?? {}) },
     },
     auth: { ...DEFAULTS.auth, ...(raw.auth ?? {}) },
@@ -278,6 +299,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 5,
+    schemaVersion: 6,
   };
 }

@@ -215,6 +215,7 @@ async function renderPageStatus(): Promise<void> {
       "order-history": t().orderScanReady,
       storefront: t().storefrontCheckupReady,
       "creator-upload": t().uploadHelperReady,
+      "campaign-grid": t().campaignRadarActive,
       search: t().searchOverlayActive,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
@@ -314,6 +315,7 @@ async function renderSettings(): Promise<void> {
     "ordersButler",
     "searchOverlay",
     "campaignMatcher",
+    "campaignRadar",
     "watchlist",
   ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);

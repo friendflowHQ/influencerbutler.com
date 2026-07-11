@@ -15,6 +15,26 @@
   var FIRST_DELAY_MS = 2500; // let the page settle before the first card
   var CYCLE_MS = 6000; // time each event stays up
 
+  // Marketing social proof is for prospects, not people already signed in. Skip
+  // the authenticated app area so the "someone is checking this out" card never
+  // pops up inside a paying customer's dashboard.
+  var SKIP_PREFIXES = ["/dashboard"];
+
+  function onAppSurface() {
+    var path = "";
+    try {
+      path = window.location.pathname || "";
+    } catch (_) {
+      return false;
+    }
+    for (var i = 0; i < SKIP_PREFIXES.length; i++) {
+      if (path === SKIP_PREFIXES[i] || path.indexOf(SKIP_PREFIXES[i] + "/") === 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function dismissed() {
     try {
       return window.sessionStorage.getItem(DISMISS_KEY) === "1";
@@ -143,6 +163,7 @@
   }
 
   function init() {
+    if (onAppSurface()) return;
     if (dismissed()) return;
     fetch("/api/activity/recent", { headers: { accept: "application/json" } })
       .then(function (res) { return res.ok ? res.json() : null; })

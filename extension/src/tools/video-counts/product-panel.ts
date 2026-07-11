@@ -10,9 +10,9 @@ const POLL_TRIES = 12;
 const POLL_INTERVAL_MS = 1200;
 
 // The headline tool: who owns this product's video carousel? The passive view
-// shows whatever hydrated on its own; Deep Scan actively harvests every video
-// Amazon will serve and splits them into upper (brand hero) and lower (related)
-// carousels, like the competitor's "Deep Scan & Share".
+// shows whatever hydrated on its own; the full video sweep actively harvests
+// every video Amazon will serve and splits them into upper (brand hero) and
+// lower (related) carousels.
 export function renderVideoCounts(
   result: CarouselResult,
   endpoints: string[] = [],

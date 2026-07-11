@@ -27,6 +27,7 @@ import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
+import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { guard } from "../shared/guard";
@@ -234,6 +235,13 @@ async function runForPage(): Promise<void> {
       if (settings.tools.searchOverlay) {
         void initSearchOverlay(settings);
         lastStatus.toolSummaries.push({ label: t().sumSearchOverlay, value: t().ready });
+      }
+    });
+  } else if (pageType === "campaign-grid") {
+    guard("campaign-radar", () => {
+      if (settings.tools.campaignRadar) {
+        void initCampaignRadar(settings);
+        lastStatus.toolSummaries.push({ label: t().sumCampaignRadar, value: t().ready });
       }
     });
   }

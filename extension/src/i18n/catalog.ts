@@ -156,7 +156,7 @@ export interface Dict {
   influencerVideosLabel: (n: number) => string;
   influencerVideosMore: (n: number) => string;
 
-  // Video competition: Deep Scan (harvest every video)
+  // Video competition: full video sweep (harvest every video)
   deepScan: string;
   deepScanIntro: string;
   deepScanRunning: (videos: number, pages: number) => string;
@@ -223,6 +223,29 @@ export interface Dict {
   tileProvenEarner: string;
   tileInfluencer: (n: number) => string;
   searchOverlayActive: string;
+
+  // Campaign Radar (Creator Connections campaign grid)
+  sumCampaignRadar: string;
+  toolCampaignRadar: string;
+  campaignRadarActive: string;
+  radarCount: (n: number) => string;
+  radarMinCommission: string;
+  radarMinDays: string;
+  radarMinBudget: string;
+  radarOnlyPassing: string;
+  radarSortLabel: string;
+  radarSortScore: string;
+  radarSortRate: string;
+  radarSortDays: string;
+  radarSortRelevance: string;
+  radarChipOwned: string;
+  radarChipEarner: string;
+  radarChipRate: (pct: number) => string;
+  radarChipDays: (n: number) => string;
+  radarChipEnded: string;
+  radarChipBudget: (amount: string) => string;
+  radarChipCc: string;
+  radarChipSpcc: string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -623,18 +646,18 @@ const en: Dict = {
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
   influencerVideosMore: (n) => `+${n} more`,
 
-  deepScan: "Deep Scan: harvest every video",
+  deepScan: "Sweep every video",
   deepScanIntro:
-    "Amazon only loads a handful of videos on screen. Deep Scan pages through the widget's own feed to classify every video it will serve, split by upper (brand hero) and lower (related) carousel.",
+    "Amazon only loads a handful of videos on screen. This sweep pages through the widget's own feed to classify every video it will serve, split by upper (brand hero) and lower (related) carousel.",
   deepScanRunning: (videos, pages) => `Harvesting: ${videos} videos over ${pages} pages...`,
   deepScanStop: "Stop",
-  deepScanRescan: "Run Deep Scan again",
+  deepScanRescan: "Sweep again",
   deepScanDone: (classified, total) => `Classified ${classified} of ${total} videos.`,
   deepScanPartial:
     "Amazon served only part of the list, so this is a floor, not the full set.",
   deepScanNoEndpoint:
-    "Scroll the Product Videos section into view once, then run Deep Scan so it can find the video feed.",
-  deepScanStopped: "Deep Scan stopped.",
+    "Scroll the Product Videos section into view once, then run the sweep so it can find the video feed.",
+  deepScanStopped: "Sweep stopped.",
   upperCarousel: "Upper carousel (brand hero)",
   lowerCarousel: "Lower carousel (related)",
   estTotalVideos: (n) => `Est. total videos: ${n}`,
@@ -691,6 +714,28 @@ const en: Dict = {
   tileProvenEarner: "Proven earner",
   tileInfluencer: (n) => `${n} infl. videos`,
   searchOverlayActive: "Search overlay is active.",
+
+  sumCampaignRadar: "Campaign Radar",
+  toolCampaignRadar: "Campaign Radar (highlight campaigns)",
+  campaignRadarActive: "Campaign Radar is active.",
+  radarCount: (n) => `${n} campaigns scored`,
+  radarMinCommission: "Min rate (%)",
+  radarMinDays: "Min days left",
+  radarMinBudget: "Min budget ($)",
+  radarOnlyPassing: "Only campaigns that pass",
+  radarSortLabel: "Sort",
+  radarSortScore: "Best match",
+  radarSortRate: "Commission",
+  radarSortDays: "Days left",
+  radarSortRelevance: "Page order",
+  radarChipOwned: "You own this",
+  radarChipEarner: "You've earned on this",
+  radarChipRate: (pct) => `${pct}% rate`,
+  radarChipDays: (n) => `${n} days left`,
+  radarChipEnded: "Ended",
+  radarChipBudget: (amount) => `${amount} left`,
+  radarChipCc: "CC eligible",
+  radarChipSpcc: "SPCC eligible",
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -870,8 +915,8 @@ const en: Dict = {
   sendToContentButler: "Send to Content Butler",
   acceptCc: "Accept CC campaign",
   acceptSpcc: "Accept SPCC campaign",
-  addToCollab: "Add to Collaboration Tracker",
-  addingCollab: "Adding to Collaboration Tracker...",
+  addToCollab: "Add to Collab Butler",
+  addingCollab: "Adding to Collab Butler...",
   pitchThisBrand: (brand) => `Pitch ${brand}`,
   pitchingBrand: "Adding to Pitch Butler...",
   pushingDeals: "Pushing to your deals workspace...",
@@ -1108,18 +1153,18 @@ const es: Dict = {
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
   influencerVideosMore: (n) => `+${n} más`,
 
-  deepScan: "Deep Scan: recopilar todos los videos",
+  deepScan: "Barrer todos los videos",
   deepScanIntro:
-    "Amazon solo carga unos pocos videos en pantalla. Deep Scan recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
+    "Amazon solo carga unos pocos videos en pantalla. Este barrido recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
   deepScanRunning: (videos, pages) => `Recopilando: ${videos} videos en ${pages} páginas...`,
   deepScanStop: "Detener",
-  deepScanRescan: "Ejecutar Deep Scan de nuevo",
+  deepScanRescan: "Barrer de nuevo",
   deepScanDone: (classified, total) => `Clasificados ${classified} de ${total} videos.`,
   deepScanPartial:
     "Amazon entregó solo parte de la lista, así que esto es un mínimo, no el conjunto completo.",
   deepScanNoEndpoint:
-    "Desplázate a la sección Videos del producto una vez y luego ejecuta Deep Scan para que encuentre el feed de videos.",
-  deepScanStopped: "Deep Scan detenido.",
+    "Desplázate a la sección Videos del producto una vez y luego ejecuta el barrido para que encuentre el feed de videos.",
+  deepScanStopped: "Barrido detenido.",
   upperCarousel: "Carrusel superior (video de marca)",
   lowerCarousel: "Carrusel inferior (relacionados)",
   estTotalVideos: (n) => `Total estimado de videos: ${n}`,
@@ -1176,6 +1221,28 @@ const es: Dict = {
   tileProvenEarner: "Ya te ha pagado",
   tileInfluencer: (n) => `${n} videos de infl.`,
   searchOverlayActive: "El overlay de búsqueda está activo.",
+
+  sumCampaignRadar: "Radar de campañas",
+  toolCampaignRadar: "Radar de campañas (resaltar campañas)",
+  campaignRadarActive: "El Radar de campañas está activo.",
+  radarCount: (n) => `${n} campañas puntuadas`,
+  radarMinCommission: "Tasa mín. (%)",
+  radarMinDays: "Días mín. restantes",
+  radarMinBudget: "Presupuesto mín. ($)",
+  radarOnlyPassing: "Solo campañas que cumplen",
+  radarSortLabel: "Ordenar",
+  radarSortScore: "Mejor coincidencia",
+  radarSortRate: "Comisión",
+  radarSortDays: "Días restantes",
+  radarSortRelevance: "Orden de la página",
+  radarChipOwned: "Ya lo tienes",
+  radarChipEarner: "Ya has ganado con esto",
+  radarChipRate: (pct) => `${pct}% de tasa`,
+  radarChipDays: (n) => `${n} días restantes`,
+  radarChipEnded: "Finalizada",
+  radarChipBudget: (amount) => `${amount} restante`,
+  radarChipCc: "Elegible CC",
+  radarChipSpcc: "Elegible SPCC",
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -1355,8 +1422,8 @@ const es: Dict = {
   sendToContentButler: "Enviar a Content Butler",
   acceptCc: "Aceptar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
-  addToCollab: "Añadir al Collaboration Tracker",
-  addingCollab: "Añadiendo al Collaboration Tracker...",
+  addToCollab: "Añadir a Collab Butler",
+  addingCollab: "Añadiendo a Collab Butler...",
   pitchThisBrand: (brand) => `Contactar a ${brand}`,
   pitchingBrand: "Añadiendo a Pitch Butler...",
   pushingDeals: "Enviando a tu workspace de ofertas...",
@@ -1593,18 +1660,18 @@ const fr: Dict = {
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
   influencerVideosMore: (n) => `+${n} de plus`,
 
-  deepScan: "Deep Scan: récolter toutes les vidéos",
+  deepScan: "Balayer toutes les vidéos",
   deepScanIntro:
-    "Amazon ne charge que quelques vidéos à l'écran. Deep Scan parcourt le flux du widget pour classer toutes les vidéos qu'il fournit, réparties entre carrousel supérieur (vidéo de marque) et inférieur (vidéos liées).",
+    "Amazon ne charge que quelques vidéos à l'écran. Ce balayage parcourt le flux du widget pour classer toutes les vidéos qu'il fournit, réparties entre carrousel supérieur (vidéo de marque) et inférieur (vidéos liées).",
   deepScanRunning: (videos, pages) => `Récolte: ${videos} vidéos sur ${pages} pages...`,
   deepScanStop: "Arrêter",
-  deepScanRescan: "Relancer Deep Scan",
+  deepScanRescan: "Relancer le balayage",
   deepScanDone: (classified, total) => `${classified} vidéos classées sur ${total}.`,
   deepScanPartial:
     "Amazon n'a fourni qu'une partie de la liste: ceci est un minimum, pas l'ensemble complet.",
   deepScanNoEndpoint:
-    "Faites défiler une fois jusqu'à la section Vidéos du produit, puis lancez Deep Scan pour qu'il trouve le flux de vidéos.",
-  deepScanStopped: "Deep Scan arrêté.",
+    "Faites défiler une fois jusqu'à la section Vidéos du produit, puis lancez le balayage pour qu'il trouve le flux de vidéos.",
+  deepScanStopped: "Balayage arrêté.",
   upperCarousel: "Carrousel supérieur (vidéo de marque)",
   lowerCarousel: "Carrousel inférieur (vidéos liées)",
   estTotalVideos: (n) => `Total estimé de vidéos: ${n}`,
@@ -1661,6 +1728,28 @@ const fr: Dict = {
   tileProvenEarner: "Déjà rentable",
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
   searchOverlayActive: "L'overlay de recherche est actif.",
+
+  sumCampaignRadar: "Radar de campagnes",
+  toolCampaignRadar: "Radar de campagnes (mettre en évidence)",
+  campaignRadarActive: "Le Radar de campagnes est actif.",
+  radarCount: (n) => `${n} campagnes notées`,
+  radarMinCommission: "Taux min. (%)",
+  radarMinDays: "Jours min. restants",
+  radarMinBudget: "Budget min. ($)",
+  radarOnlyPassing: "Seulement les campagnes qui passent",
+  radarSortLabel: "Trier",
+  radarSortScore: "Meilleure correspondance",
+  radarSortRate: "Commission",
+  radarSortDays: "Jours restants",
+  radarSortRelevance: "Ordre de la page",
+  radarChipOwned: "Vous l'avez déjà",
+  radarChipEarner: "Vous avez déjà gagné dessus",
+  radarChipRate: (pct) => `${pct}% de taux`,
+  radarChipDays: (n) => `${n} jours restants`,
+  radarChipEnded: "Terminée",
+  radarChipBudget: (amount) => `${amount} restant`,
+  radarChipCc: "Éligible CC",
+  radarChipSpcc: "Éligible SPCC",
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
@@ -1840,8 +1929,8 @@ const fr: Dict = {
   sendToContentButler: "Envoyer à Content Butler",
   acceptCc: "Accepter la campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
-  addToCollab: "Ajouter au Collaboration Tracker",
-  addingCollab: "Ajout au Collaboration Tracker...",
+  addToCollab: "Ajouter à Collab Butler",
+  addingCollab: "Ajout à Collab Butler...",
   pitchThisBrand: (brand) => `Contacter ${brand}`,
   pitchingBrand: "Ajout à Pitch Butler...",
   pushingDeals: "Envoi vers votre espace deals...",

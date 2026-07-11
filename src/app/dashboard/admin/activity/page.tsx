@@ -208,11 +208,18 @@ export default function AdminActivityPage() {
     );
   }
 
+  // Genuine visitor / customer events only (seeded demo rows are tagged
+  // source = "seed"). This is the activity real visitors see in the popup,
+  // now that the widget loads on every page of the site, not just the homepage.
+  const realEvents = events.filter((e) => e.source !== "seed");
+  const liveRealCount = realEvents.filter((e) => !e.hidden && !e.isBot).length;
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Recent-activity widget</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Controls the social-proof popup on the homepage. It shows real trial clicks and purchases,
+        Controls the social-proof popup that runs across the whole site (every page, whichever one a
+        visitor lands on, except the logged-in dashboard). It shows real trial clicks and purchases,
         plus optional seeded demo activity during the launch period (see below). Turn the demo off
         once real signups are flowing.
       </p>
@@ -270,6 +277,72 @@ export default function AdminActivityPage() {
                 {saving ? "Saving..." : "Save settings"}
               </button>
               {savedNote ? <span className="text-sm text-slate-500">{savedNote}</span> : null}
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                Recent real activity
+              </h2>
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                {liveRealCount} live now
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              Genuine visitor trial clicks and customer purchases only (seeded demo events are
+              excluded). This is what real visitors see in the social-proof popup, which now runs on
+              every page of the site, not just the homepage. &quot;Live now&quot; counts the events
+              currently eligible to appear (not hidden, not a bot, within the window above).
+            </p>
+            <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+              {realEvents.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-slate-500">
+                  No real activity captured yet. Trial-CTA clicks and purchases from across the site
+                  will land here.
+                </p>
+              ) : (
+                realEvents.map((e) => (
+                  <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${
+                            e.kind === "purchase"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-orange-200 bg-orange-50 text-orange-700"
+                          }`}
+                        >
+                          {e.kind === "purchase" ? "Purchase" : "Trial click"}
+                        </span>
+                        {e.hidden ? (
+                          <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            Hidden
+                          </span>
+                        ) : null}
+                        {e.isBot ? (
+                          <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                            Bot
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 truncate text-sm text-slate-800">{headline(e)}</p>
+                      <p className="text-xs text-slate-400">
+                        {formatDate(e.createdAt)}
+                        {e.planLabel ? ` · ${e.planLabel}` : ""}
+                        {e.source ? ` · ${e.source}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleHidden(e)}
+                      disabled={busyId === e.id}
+                      className="flex-none rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      {busyId === e.id ? "..." : e.hidden ? "Unhide" : "Hide"}
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 

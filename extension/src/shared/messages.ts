@@ -30,7 +30,14 @@ export type AuthStatus = {
 };
 
 export type PageStatus = {
-  pageType: "product" | "order-history" | "storefront" | "creator-upload" | "search" | "other";
+  pageType:
+    | "product"
+    | "order-history"
+    | "storefront"
+    | "creator-upload"
+    | "campaign-grid"
+    | "search"
+    | "other";
   toolSummaries: Array<{ label: string; value: string }>;
 };
 

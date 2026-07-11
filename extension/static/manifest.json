@@ -1,13 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Free tools for Amazon Influencers: video counts, content gaps in your orders, Butler Approved seals, and storefront checks.",
   "permissions": ["storage", "alarms", "notifications", "tabs"],
   "host_permissions": [
     "https://www.amazon.com/*",
     "https://www.amazon.ca/*",
     "https://www.amazon.co.uk/*",
+    "https://affiliate-program.amazon.com/*",
+    "https://affiliate-program.amazon.ca/*",
+    "https://affiliate-program.amazon.co.uk/*",
     "https://www.influencerbutler.com/*"
   ],
   "optional_host_permissions": [
@@ -52,6 +55,7 @@
         "https://www.amazon.com/your-orders/*",
         "https://www.amazon.com/shop/*",
         "https://www.amazon.com/creatorhub/*",
+        "https://affiliate-program.amazon.com/p/connect/*",
         "https://www.amazon.com/s*",
         "https://www.amazon.ca/dp/*",
         "https://www.amazon.ca/*/dp/*",
@@ -60,6 +64,7 @@
         "https://www.amazon.ca/your-orders/*",
         "https://www.amazon.ca/shop/*",
         "https://www.amazon.ca/creatorhub/*",
+        "https://affiliate-program.amazon.ca/p/connect/*",
         "https://www.amazon.ca/s*",
         "https://www.amazon.co.uk/dp/*",
         "https://www.amazon.co.uk/*/dp/*",
@@ -68,6 +73,7 @@
         "https://www.amazon.co.uk/your-orders/*",
         "https://www.amazon.co.uk/shop/*",
         "https://www.amazon.co.uk/creatorhub/*",
+        "https://affiliate-program.amazon.co.uk/p/connect/*",
         "https://www.amazon.co.uk/s*"
       ],
       "js": ["content.js"],

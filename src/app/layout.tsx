@@ -62,6 +62,7 @@ gtag('config', 'G-S1TC1QLYNN');`}
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
         {children}
         <Script src="/download-guidance.js" strategy="afterInteractive" />
+        <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
         <Script src="/js/image-lightbox.js" strategy="afterInteractive" />
       </body>

@@ -1,0 +1,152 @@
+// Campaign Radar score: a single 0-100 number that ranks a Creator Connections
+// campaign the way a creator would weigh it, so the campaign grid can be sorted
+// best-first and the strong campaigns highlighted. It is the sibling of the
+// product Butler Score (tools/score/model.ts): same style (weights sum to 100,
+// clamp01, a missing signal contributes a neutral half rather than a penalty),
+// but different inputs. A campaign is judged by its commission RATE, how much
+// runway it has left, how much budget is still unspent, and two personal signals
+// the competition cannot see: whether the creator already owns the product (so
+// they can film authentic content today) and whether they have already earned on
+// it (a proven earner).
+//
+// Pure math over already-parsed signals, no Chrome APIs, unit-tested. Every
+// input is nullable: the owned / proven-earner signals are absent for a user who
+// never synced order history or never paired the desktop app, and read neutral
+// rather than as a penalty so the rate/days/budget score still stands on its own.
+
+export type CampaignScoreBand = "hot" | "warm" | "cool";
+
+export type CampaignScore = {
+  score: number; // 0-100, rounded
+  band: CampaignScoreBand;
+  // Each part is the (already weighted) points that component contributed, so
+  // the UI can explain the number. They sum to `score`.
+  parts: {
+    commission: number;
+    timing: number;
+    budget: number;
+    owned: number;
+    earner: number;
+  };
+};
+
+export type CampaignScoreInputs = {
+  // The campaign's commission rate as a percent (e.g. 15 for 15%), or null when
+  // the grid did not surface it.
+  commissionRatePct: number | null;
+  // Whole days until the campaign's end date, or null when no end date parsed.
+  // Negative (already expired) clamps to zero.
+  daysRemaining: number | null;
+  // Remaining (unspent) campaign budget in cents, or null when not surfaced.
+  remainingBudgetCents: number | null;
+  // The creator already bought this product (from synced order history). Null
+  // when order history was never synced, so the signal is simply unknown.
+  owned: boolean | null;
+  // The creator has already earned affiliate commission on this product (from
+  // the desktop app ledger). Null when the app was never paired.
+  provenEarner: boolean | null;
+};
+
+// The user-tunable floors. This is the differentiator: Oink's highlight
+// thresholds are fixed; ours are these, editable on the options page and live in
+// the grid toolbar. Budget floor is in dollars to match `approved.minPrice`.
+export type RadarThresholds = {
+  minCommissionPct: number;
+  minDaysRemaining: number;
+  minRemainingBudget: number; // dollars
+};
+
+// Weights sum to 100. Commission dominates because the rate is what actually
+// decides whether a video here earns. "Owned" is weighted heavily too: a product
+// the creator already has on hand is the fastest, most authentic content to make.
+const WEIGHTS = {
+  commission: 40,
+  timing: 15,
+  budget: 10,
+  owned: 25,
+  earner: 10,
+} as const;
+
+// A commission rate at or above 20% scores full marks on that component; below it
+// scales linearly. CC rates typically run ~5-20%.
+const RATE_SATURATION_PCT = 20;
+// A campaign with 30+ days of runway left has all the timing room it needs. More
+// runway = more time to publish and let the video earn (see the note below on
+// direction). Fewer days scales down toward zero.
+const DAYS_SATURATION = 30;
+// $5,000 of unspent budget or more is as good as this component scores; the
+// campaigns in the wild run ~$5k-$50k, so this saturates most healthy ones.
+const BUDGET_SATURATION_CENTS = 500_000;
+
+function clamp01(n: number): number {
+  return Math.min(1, Math.max(0, n));
+}
+
+export function computeCampaignScore(inputs: CampaignScoreInputs): CampaignScore {
+  const commissionUnit =
+    inputs.commissionRatePct === null
+      ? 0.5
+      : clamp01(Math.max(0, inputs.commissionRatePct) / RATE_SATURATION_PCT);
+
+  // Timing: more days remaining is better (a longer runway to publish and earn).
+  // If a live inspection shows creators actually prize urgency (grab it before it
+  // closes) over runway, flip this single line to
+  // `1 - clamp01(days / DAYS_SATURATION)` and nothing else changes.
+  const timingUnit =
+    inputs.daysRemaining === null
+      ? 0.5
+      : clamp01(Math.max(0, inputs.daysRemaining) / DAYS_SATURATION);
+
+  const budgetUnit =
+    inputs.remainingBudgetCents === null
+      ? 0.5
+      : clamp01(Math.max(0, inputs.remainingBudgetCents) / BUDGET_SATURATION_CENTS);
+
+  // Personal signals: present = full, absent = none, unknown (never synced /
+  // never paired) = neutral half, mirroring the campaign bonus in the product
+  // model so an un-paired user is not unfairly sunk.
+  const ownedUnit = inputs.owned === null ? 0.5 : inputs.owned ? 1 : 0;
+  const earnerUnit = inputs.provenEarner === null ? 0.5 : inputs.provenEarner ? 1 : 0;
+
+  const parts = {
+    commission: commissionUnit * WEIGHTS.commission,
+    timing: timingUnit * WEIGHTS.timing,
+    budget: budgetUnit * WEIGHTS.budget,
+    owned: ownedUnit * WEIGHTS.owned,
+    earner: earnerUnit * WEIGHTS.earner,
+  };
+
+  const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);
+  const score = Math.round(raw);
+  return { score, band: bandFor(score), parts };
+}
+
+export function bandFor(score: number): CampaignScoreBand {
+  if (score >= 70) return "hot";
+  if (score >= 40) return "warm";
+  return "cool";
+}
+
+// Whether a campaign clears every user-set floor. The overlay highlights (draws
+// the "pink border" equivalent on) only campaigns that pass, and the toolbar's
+// "meets my thresholds" filter uses the same test. A null signal is treated as
+// unknown and does NOT fail the floor (the campaign is not penalized for data the
+// grid did not surface).
+export function meetsRadarThresholds(
+  inputs: CampaignScoreInputs,
+  thresholds: RadarThresholds,
+): boolean {
+  if (inputs.commissionRatePct !== null && inputs.commissionRatePct < thresholds.minCommissionPct) {
+    return false;
+  }
+  if (inputs.daysRemaining !== null && inputs.daysRemaining < thresholds.minDaysRemaining) {
+    return false;
+  }
+  if (
+    inputs.remainingBudgetCents !== null &&
+    inputs.remainingBudgetCents < thresholds.minRemainingBudget * 100
+  ) {
+    return false;
+  }
+  return true;
+}
