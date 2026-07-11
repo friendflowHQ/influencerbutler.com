@@ -77,19 +77,21 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Chrome Web Store short links. /extension is referenced across the
-      // landing page, footer, and help tutorials; /help/chrome-extension is
-      // baked into already-shipped desktop app builds. Both land on the live
-      // Web Store listing. Kept non-permanent so the target can be retargeted
-      // without a browser-cached 301 lock-in.
+      // /extension is the Web Store short link referenced across the landing
+      // page, footer, and help tutorials, so it lands on the live Web Store
+      // listing. Kept non-permanent so the target can be retargeted without a
+      // browser-cached 301 lock-in.
       {
         source: "/extension",
         destination: CHROME_EXTENSION_URL,
         permanent: false,
       },
+      // /help/chrome-extension is a help link baked into already-shipped desktop
+      // app builds, so it lands on the extension's help article rather than the
+      // install listing. Non-permanent for the same retargeting reason.
       {
         source: "/help/chrome-extension",
-        destination: CHROME_EXTENSION_URL,
+        destination: "/help/tutorials/extension",
         permanent: false,
       },
       {
