@@ -50,6 +50,8 @@ export type CompRow = {
   warn1SentAt: string | null;
   /** 'in_house' comps are minted + cancelled entirely in Supabase; 'lemonsqueezy' via LS. */
   source: "in_house" | "lemonsqueezy";
+  /** The recipient's license key (from license_keys.key), for the admin to copy. */
+  licenseKey: string | null;
 };
 
 export type CompsResult = {
@@ -95,7 +97,7 @@ function isCompOrder(total: number, code: string | null): boolean {
 }
 
 type OrderComp = { code: string | null; issuedAt: string | null };
-type LicenseInfo = { status: string | null; createdAt: string | null };
+type LicenseInfo = { status: string | null; createdAt: string | null; key: string | null };
 
 export async function loadComps(now: number = Date.now()): Promise<CompsResult | null> {
   const svc = createAdminClient() as unknown as CompsClient | null;
@@ -191,7 +193,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   if (uidArr.length > 0) {
     const [profilesRes, licensesRes] = await Promise.all([
       svc.from("profiles").select("id,email").in("id", uidArr).limit(ROW_LIMIT),
-      svc.from("license_keys").select("user_id,status,created_at").in("user_id", uidArr).limit(ROW_LIMIT),
+      svc.from("license_keys").select("user_id,status,created_at,key").in("user_id", uidArr).limit(ROW_LIMIT),
     ]);
     for (const row of profilesRes.data ?? []) {
       const id = str(row.id);
@@ -200,7 +202,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     for (const row of licensesRes.data ?? []) {
       const id = str(row.user_id);
       if (id && !licenseByUser.has(id)) {
-        licenseByUser.set(id, { status: str(row.status), createdAt: str(row.created_at) });
+        licenseByUser.set(id, { status: str(row.status), createdAt: str(row.created_at), key: str(row.key) });
       }
     }
   }
@@ -318,6 +320,7 @@ function buildCompRow(args: {
     subscriptionStatus: status,
     renewsAt: sub ? str(sub.renews_at) : null,
     licenseStatus: license?.status ?? null,
+    licenseKey: license?.key ?? null,
     state,
     cancelledAt,
     warn7SentAt: str(grant?.warn7_sent_at),
