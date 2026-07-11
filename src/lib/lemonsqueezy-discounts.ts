@@ -156,6 +156,14 @@ export type CreateUniqueDiscountInput = {
   variantIds?: string[];
   /** Override the human-readable `name` attribute shown in the LS dashboard. */
   name?: string;
+  /**
+   * When set (>= 1), the discount recurs for this many billing cycles
+   * (LS `duration: "repeating"`, `duration_in_months: N`) instead of the
+   * default one-time `duration: "once"`. Comps use this: a one-time 100% code
+   * on a monthly plan still bills from month 2, so a multi-month comp must
+   * repeat for the whole free window.
+   */
+  durationMonths?: number;
 };
 
 /**
@@ -181,10 +189,18 @@ export async function createUniqueDiscount(
     code,
     amount: input.percentOff,
     amount_type: "percent",
-    duration: "once",
     is_limited_redemptions: true,
     max_redemptions: 1,
   };
+
+  // Default is a one-time discount; a multi-month comp must recur for the whole
+  // free window (LS "repeating" + duration_in_months) or it re-bills from cycle 2.
+  if (input.durationMonths && input.durationMonths >= 1) {
+    attributes.duration = "repeating";
+    attributes.duration_in_months = Math.floor(input.durationMonths);
+  } else {
+    attributes.duration = "once";
+  }
 
   if (input.expiresAt) {
     attributes.expires_at = input.expiresAt;

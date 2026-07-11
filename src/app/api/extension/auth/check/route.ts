@@ -8,9 +8,15 @@
  * anonymously with no login. Connecting a license key here is optional and
  * only enables syncing scans/gaps back to the dashboard - it is NOT a
  * paywall, and this endpoint deliberately does not check subscription tier.
+ *
+ * PRIVACY: a license key is an account credential, so the caller is not
+ * necessarily the account owner (e.g. a comp key the owner shared). We never
+ * return the raw account email or display name here - only a masked email
+ * (e***@gmail.com) so the legitimate owner can confirm they connected the
+ * right account without disclosing the full address to a key holder.
  */
 import { resolveLicenseOnly } from "@/lib/license-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { maskEmail } from "@/lib/mask-email";
 import { jsonWithCors, optionsResponse } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
@@ -26,24 +32,8 @@ export async function POST(request: Request) {
     return jsonWithCors({ error: result.error }, result.status);
   }
 
-  let displayName: string | null = null;
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("profiles")
-      .select("display_name")
-      .eq("id", result.auth.userId)
-      .maybeSingle();
-    displayName = (data?.display_name as string | null) ?? null;
-  } catch (error) {
-    // Best effort: the key is valid either way.
-    console.warn("extension/auth/check: profile lookup failed", error);
-  }
-
   return jsonWithCors({
     ok: true,
-    userId: result.auth.userId,
-    email: result.auth.email,
-    displayName,
+    maskedEmail: maskEmail(result.auth.email),
   });
 }
