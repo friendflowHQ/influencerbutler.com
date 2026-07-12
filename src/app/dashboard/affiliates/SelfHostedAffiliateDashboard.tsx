@@ -62,7 +62,10 @@ type Props = {
 };
 
 function brandedShareLink(code: string): string {
-  return `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(code)}`;
+  // Land prospects on the public pricing page, not the auth-gated dashboard.
+  // /pricing handles ?code= (prefill + attribution cookie); /dashboard would
+  // bounce a logged-out visitor to sign-in and lose the referral.
+  return `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(code)}`;
 }
 
 // "the first 12 months" for a capped window, or "the life of the subscription"

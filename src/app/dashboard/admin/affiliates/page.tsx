@@ -217,7 +217,7 @@ function formatUsd(cents: number | null): string {
 // attributes the referral. Mirrors brandedShareLink in the affiliate dashboard.
 const AFFILIATE_SHARE_ORIGIN = "https://www.influencerbutler.com";
 function affiliateShareLink(code: string): string {
-  return `${AFFILIATE_SHARE_ORIGIN}/dashboard/subscription?code=${encodeURIComponent(code)}`;
+  return `${AFFILIATE_SHARE_ORIGIN}/pricing?code=${encodeURIComponent(code)}`;
 }
 
 type RowState =

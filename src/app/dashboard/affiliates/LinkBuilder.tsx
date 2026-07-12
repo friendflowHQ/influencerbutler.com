@@ -9,7 +9,10 @@ type Props = {
 };
 
 function buildLink(code: string, slug: ChannelSlug): string {
-  return `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(
+  // Public pricing page (not the auth-gated dashboard) so logged-out prospects
+  // land on a live page. /pricing reads ?code= (prefill + attribution) and ?s=
+  // (channel) for the click analytics breakdown.
+  return `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(
     code,
   )}&s=${slug}`;
 }

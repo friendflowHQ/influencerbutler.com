@@ -88,10 +88,19 @@ export default function PricingCardsClient({
   useEffect(() => {
     if (touchedRef.current) return;
     touchedRef.current = true;
-    const body =
-      initialCode && initialCode.length > 0
-        ? JSON.stringify({ affiliateSource: initialCode })
-        : undefined;
+    const hasCode = Boolean(initialCode && initialCode.length > 0);
+    // With a code, forward the channel tag (?s=) and referrer so an affiliate's
+    // per-channel click analytics still populate now that share links land here
+    // instead of /dashboard/subscription (which bounced logged-out prospects to
+    // sign-in). Without a code we still POST bare so the promo-tier cookie
+    // (first-visit vs returning) gets written.
+    const body = hasCode
+      ? JSON.stringify({
+          affiliateSource: initialCode,
+          source: new URLSearchParams(window.location.search).get("s") ?? undefined,
+          referrer: document.referrer || undefined,
+        })
+      : undefined;
     fetch("/api/promo/touch", {
       method: "POST",
       headers: body ? { "Content-Type": "application/json" } : undefined,

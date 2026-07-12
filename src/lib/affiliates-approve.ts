@@ -145,7 +145,9 @@ async function sendApprovalEmail(params: {
 }
 
 function buildBrandedShareLink(code: string): string {
-  return `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(code)}`;
+  // Public pricing page so a logged-out prospect lands on a live page; the
+  // auth-gated /dashboard would bounce them to sign-in and drop the referral.
+  return `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(code)}`;
 }
 
 /**
