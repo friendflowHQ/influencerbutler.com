@@ -69,6 +69,15 @@ Une fois que cela semble bon, réactivez **Process All** pour toute la biblioth�
 - **joinMode + joinClip**: colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
 - **Overlays légende / filigrane**: il y a un panneau séparé ; ils survivent au ré-encodage.
 
+## Publiez dans la langue de chaque pays
+
+Quand vous diffusez une vidéo vers un marché non anglophone, vous pouvez la publier dans la langue de ce pays plutôt qu'en anglais. Ouvrez **Localiser pour chaque marché** et activez-le. Dès lors, pour chaque destination non anglophone, Video Reload Butler :
+
+- **Traduit le titre de la publication** dans la langue du marché avant de le saisir dans le compositeur.
+- **Incruste des sous-titres en langue locale dans la vidéo** lorsque les Sous-titres sont activés. Il transcrit l'audio une seule fois, puis traduit et incruste une copie par langue, de sorte qu'une publication allemande porte des sous-titres allemands et une publication japonaise des sous-titres japonais.
+
+Les marchés anglophones (US, CA, UK, AU, SG) sont publiés sans changement, et les marchés qui partagent une langue réutilisent la même traduction et le même encodage, donc une diffusion vers plusieurs pays reste rapide. La traduction utilise votre propre clé OpenAI depuis **Intégrations API** et consomme un petit nombre de jetons par exécution ; elle est donc désactivée par défaut.
+
 ## Options de taggage des produits
 
 Deux réglages de la carte **Filtres et options** contrôlent la façon dont les produits de chaque vidéo sont tagués.
@@ -146,14 +155,14 @@ Ces mêmes données alimentent une colonne **Couverture vidéo** dans le tableau
 
 Le Journal des vidéos affiche normalement une ligne par envoi, donc une vidéo que vous avez diffusée vers cinq marchés apparaît cinq fois. Quand vous voulez confirmer d'un coup d'oeil que chaque vidéo a atteint tous les pays, basculez le Journal des vidéos en **Vue par pays** avec le sélecteur **Vue liste / Vue par pays** au-dessus du tableau.
 
-La Vue par pays regroupe ces lignes en une ligne par vidéo, avec une colonne pour chaque marché Amazon : d'abord les marchés vérifiés (US, CA, UK, AU, SG), puis les marchés expérimentaux. Chaque cellule indique le statut de ce pays :
+La Vue par pays regroupe ces lignes en une ligne par vidéo, avec une colonne pour chaque marché Amazon : d'abord les marchés vérifiés (US, CA, UK, AU, SG), puis les marchés en bêta (Allemagne, France, Italie, Espagne, Japon, Inde, Mexique, Brésil). Chaque cellule indique le statut de ce pays :
 
 - une coche verte : la vidéo y est chargée.
 - une croix rouge : un envoi a été tenté et a échoué.
 - un point ambre : un envoi est en cours.
 - un point d'interrogation ambre : la vidéo n'y est pas encore chargée.
 
-Les cellules ne sont pas qu'un rapport. Chaque cellule d'un marché vérifié où une vidéo n'est pas encore chargée (ou a échoué) est une case à cocher : cliquez dessus pour cocher cette vidéo et ce pays. Cochez-en autant que vous voulez, sur autant de vidéos que vous voulez, puis appuyez sur **Recharger la sélection** dans la barre d'outils pour les charger toutes en une fois. Chaque ligne de vidéo a aussi une case qui coche tous les marchés disponibles de cette vidéo d'un coup, et la case de l'en-tête (ainsi que le bouton **Sélectionner les visibles**) coche toutes les cellules disponibles à l'écran. Les marchés expérimentaux sont affichés à titre indicatif uniquement et ne peuvent pas être cochés.
+Les cellules ne sont pas qu'un rapport. Chaque cellule d'un marché vérifié où une vidéo n'est pas encore chargée (ou a échoué) est une case à cocher : cliquez dessus pour cocher cette vidéo et ce pays. Cochez-en autant que vous voulez, sur autant de vidéos que vous voulez, puis appuyez sur **Recharger la sélection** dans la barre d'outils pour les charger toutes en une fois. Chaque ligne de vidéo a aussi une case qui coche tous les marchés disponibles de cette vidéo d'un coup, et la case de l'en-tête (ainsi que le bouton **Sélectionner les visibles**) coche toutes les cellules disponibles à l'écran. Les marchés en bêta sont affichés ici à titre indicatif ; pour y publier, sélectionnez-les dans le sélecteur Source et destinations du premier onglet et lancez.
 
 Quand vous chargez, Video Reload Butler réutilise la même chaîne de re-téléversement : il retélécharge l'original si besoin, applique vos incrustations actuelles et publie la vidéo vers chaque marché sélectionné. Votre copie d'origine sur la vitrine n'est jamais supprimée, car un chargement entre marchés ne fait qu'ajouter une nouvelle annonce.
 

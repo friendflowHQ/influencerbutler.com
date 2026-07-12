@@ -69,6 +69,15 @@ Una vez que se vea bien, vuelve a activar **Process All** para toda la bibliotec
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 
+## Publica en el idioma de cada país
+
+Cuando expandes un vídeo a un mercado no anglófono, puedes publicarlo en el idioma de ese país en lugar de en inglés. Abre **Localiza para cada mercado** y actívalo. A partir de entonces, para cada destino no anglófono Video Reload Butler:
+
+- **Traduce el título de la publicación** al idioma del mercado antes de escribirlo en el compositor.
+- **Incrusta subtítulos en el idioma local en el vídeo** cuando los Subtítulos están activados. Transcribe el audio una vez y luego traduce e incrusta una copia por idioma, de modo que una publicación en alemán lleva subtítulos en alemán y una en japonés lleva subtítulos en japonés.
+
+Los mercados en inglés (US, CA, UK, AU, SG) se publican sin cambios, y los mercados que comparten idioma reutilizan la misma traducción y codificación, así que expandir a varios países sigue siendo rápido. La traducción usa tu propia clave de OpenAI de **Integraciones de API** y consume una pequeña cantidad de tokens por ejecución, por lo que está desactivada por defecto.
+
 ## Opciones de etiquetado de productos
 
 Dos ajustes de la tarjeta **Filtros y opciones** controlan cómo se etiquetan los productos de cada vídeo.
@@ -146,14 +155,14 @@ Esos mismos datos alimentan una columna **Cobertura de vídeo** en la tabla de r
 
 El Registro de vídeos normalmente muestra una fila por subida, así que un vídeo que repartiste a cinco mercados aparece cinco veces. Cuando quieras confirmar de un vistazo que cada vídeo llegó a todos los países, cambia el Registro de vídeos a **Vista por país** con el conmutador **Vista de lista / Vista por país** encima de la tabla.
 
-La Vista por país agrupa esas filas en una fila por vídeo, con una columna para cada mercado de Amazon: primero los mercados verificados (US, CA, UK, AU, SG) y luego los experimentales. Cada celda muestra el estado de ese país:
+La Vista por país agrupa esas filas en una fila por vídeo, con una columna para cada mercado de Amazon: primero los mercados verificados (US, CA, UK, AU, SG) y luego los mercados en beta (Alemania, Francia, Italia, España, Japón, India, México, Brasil). Cada celda muestra el estado de ese país:
 
 - una marca verde: el vídeo está subido allí.
 - una cruz roja: se intentó una subida y falló.
 - un punto ámbar: hay una subida en curso.
 - un signo de interrogación ámbar: el vídeo aún no está subido allí.
 
-Las celdas no son solo un informe. Cada celda de un mercado verificado al que un vídeo aún no se ha subido (o en el que falló) es una casilla: haz clic para marcar ese vídeo y país. Marca tantos como quieras, en tantos vídeos como quieras, y luego pulsa **Recargar seleccionados** en la barra de herramientas para subirlos todos de una vez. Cada fila de vídeo también tiene una casilla que marca todos los mercados disponibles de ese vídeo a la vez, y la casilla de la cabecera (y el botón **Seleccionar visibles**) marca todas las celdas disponibles en pantalla. Los mercados experimentales se muestran solo como referencia y no se pueden marcar.
+Las celdas no son solo un informe. Cada celda de un mercado verificado al que un vídeo aún no se ha subido (o en el que falló) es una casilla: haz clic para marcar ese vídeo y país. Marca tantos como quieras, en tantos vídeos como quieras, y luego pulsa **Recargar seleccionados** en la barra de herramientas para subirlos todos de una vez. Cada fila de vídeo también tiene una casilla que marca todos los mercados disponibles de ese vídeo a la vez, y la casilla de la cabecera (y el botón **Seleccionar visibles**) marca todas las celdas disponibles en pantalla. Los mercados en beta se muestran aquí como referencia; para publicar en ellos, selecciónalos en el selector de Fuente y destinos de la primera pestaña y ejecuta.
 
 Cuando subes, Video Reload Butler reutiliza la misma cadena de re-subida: vuelve a descargar el original si hace falta, aplica tus superposiciones actuales y publica el vídeo en cada mercado seleccionado. Tu copia original del escaparate nunca se elimina, porque una subida entre mercados solo añade un nuevo anuncio.
 

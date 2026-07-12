@@ -69,6 +69,15 @@ Once that looks good, turn **Process All** back on for the full library.
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
+## Post in each country's language
+
+When you fan a video out to a non-English marketplace, you can post it in that country's language instead of English. Open **Localize for each marketplace** and turn it on. From then on, for every non-English destination Video Reload Butler:
+
+- **Translates the post title** into the marketplace's language before it types it into the composer.
+- **Burns local-language captions into the video** when Closed Captions are on. It transcribes the audio once, then translates and burns a copy per language, so a German post carries German subtitles and a Japanese post carries Japanese subtitles.
+
+English markets (US, CA, UK, AU, SG) post unchanged, and markets that share a language reuse the same translation and encode, so a fan-out to several countries stays fast. Translation uses your own OpenAI key from **API Integrations** and spends a small amount of tokens per run, so it is off by default.
+
 ## Product tagging options
 
 Two settings in the **Filters & Options** card control how each video's products get tagged.
@@ -146,14 +155,14 @@ The same data powers a **Video Coverage** column in the Storefront Butler result
 
 The Video Log normally lists one row per upload, so a video you fanned out to five marketplaces shows up five times. When you want to confirm at a glance that each video reached every country, switch the Video Log to **Country view** with the **List view / Country view** toggle above the table.
 
-Country view collapses those rows into one row per video, with a column for each Amazon marketplace: the verified markets (US, CA, UK, AU, SG) first, then the experimental ones. Each cell shows that country's status:
+Country view collapses those rows into one row per video, with a column for each Amazon marketplace: the verified markets (US, CA, UK, AU, SG) first, then the beta markets (Germany, France, Italy, Spain, Japan, India, Mexico, Brazil). Each cell shows that country's status:
 
 - a green check: the video is loaded there.
 - a red cross: an upload was attempted and failed.
 - an amber dot: an upload is in progress.
 - an amber question mark: the video is not loaded there yet.
 
-The cells are not just a report. Each cell for a verified market a video is not loaded to yet (or one that failed) is a checkbox: click it to tick that video and country. Tick as many as you like, across as many videos as you like, then press **Re-load Selected** in the toolbar to load them all in one pass. Each video row also has a checkbox that ticks all of that video's loadable markets at once, and the header checkbox (and the **Select visible** button) ticks every loadable cell on screen. The experimental markets are shown for reference only and can't be ticked.
+The cells are not just a report. Each cell for a verified market a video is not loaded to yet (or one that failed) is a checkbox: click it to tick that video and country. Tick as many as you like, across as many videos as you like, then press **Re-load Selected** in the toolbar to load them all in one pass. Each video row also has a checkbox that ticks all of that video's loadable markets at once, and the header checkbox (and the **Select visible** button) ticks every loadable cell on screen. The beta markets are shown here for reference; to post to them, select them in the Source and destinations picker on the first tab and run.
 
 When you load, Video Reload Butler reuses the same re-upload pipeline: it re-downloads the original if needed, applies your current overlays, and posts the video to each selected marketplace. Your original storefront copy is never deleted, because a cross-marketplace load only adds a new listing.
 
