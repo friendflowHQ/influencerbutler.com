@@ -211,7 +211,12 @@ export default function SelfHostedAffiliateDashboard({
       <AffiliateClickAnalytics endpoint={clicksUrl} />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Unpaid earnings" value={formatUsdFromCents(data.owedCents)} hint="Paid monthly via PayPal" />
+        <StatCard
+          label="Unpaid earnings"
+          value={formatUsdFromCents(data.owedCents)}
+          hint="Paid monthly via PayPal"
+          tooltip="Paid monthly via PayPal. A month's earnings clear after a short hold (about 30 days, to cover any refunds), then pay out on or around the 1st of the following month, once your balance reaches $10. PayPal fees are not covered, so the amount that lands may be slightly less."
+        />
         <StatCard label="Paid to date" value={formatUsdFromCents(data.paidCents)} hint="Successful payouts" />
         <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
         <StatCard
@@ -221,8 +226,20 @@ export default function SelfHostedAffiliateDashboard({
         />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
+        <InfoRow
+          label="Payout schedule"
+          value="Monthly"
+          hint="On or around the 1st, via PayPal"
+          tooltip="We pay monthly via PayPal. A month's earnings are held through the following month (a buffer for refunds), then paid on or around the 1st of the month after. Example: earnings from July are paid in early September."
+        />
+        <InfoRow
+          label="Minimum payout"
+          value="$10"
+          hint="Balances under $10 roll over to the next month"
+          tooltip="You need at least $10 in unpaid earnings to be paid out. Anything under $10 stays on your balance and rolls into the next monthly run."
+        />
         <InfoRow
           label="Payout method"
           value={data.paypalEmail ? "PayPal" : "Not set"}
@@ -330,20 +347,59 @@ function BrandedCodeCard({
   );
 }
 
-function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+/** Small hoverable info marker; uses the native title tooltip pattern. */
+function InfoTip({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      aria-label={text}
+      className="ml-1 cursor-help align-middle text-slate-400"
+    >
+      &#9432;
+    </span>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tooltip?: string;
+}) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+        {tooltip ? <InfoTip text={tooltip} /> : null}
+      </p>
       <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </article>
   );
 }
 
-function InfoRow({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function InfoRow({
+  label,
+  value,
+  hint,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tooltip?: string;
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+        {tooltip ? <InfoTip text={tooltip} /> : null}
+      </p>
       <p className="mt-1 text-base font-semibold text-slate-900">{value}</p>
       {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
     </div>

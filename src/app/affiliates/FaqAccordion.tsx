@@ -13,7 +13,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "When do I get paid?",
-    a: "Monthly, around the 1st of each month, paid directly by us via PayPal once your unpaid balance is at least $10. If you're under $10 it rolls to next month. Add your PayPal email right in your affiliate dashboard. PayPal receiving and currency-conversion fees are not covered, so the amount that lands can be slightly less than your gross commission.",
+    a: "Monthly, via PayPal, paid directly by us. A month's earnings are held through the following month (a short buffer that lets refunds settle first), then paid on or around the 1st of the month after, once your unpaid balance is at least $10. For example, commissions you earn in July are paid in early September. If you're under $10 it rolls to next month. Add your PayPal email and complete your tax form right in your affiliate dashboard, since we can't send a payout without both. PayPal receiving and currency-conversion fees are not covered, so the amount that lands can be slightly less than your gross commission.",
   },
   {
     q: "How do taxes work?",

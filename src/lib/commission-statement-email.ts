@@ -17,6 +17,7 @@ import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
 
 const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
 const REPLY_TO = "affiliates@influencerbutler.com";
+const DASHBOARD_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 
 export const DEFAULT_STATEMENT_INBOX = "thesocialmediaposse@gmail.com";
 
@@ -86,21 +87,37 @@ export function buildStatementBody(statement: AffiliateStatement, period: string
   lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents)}`);
   lines.push("");
   lines.push(
-    "We pay via PayPal on or around the 1st of each month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less. Make sure your tax form and PayPal email are set in your dashboard. Questions? Just reply to this email.",
+    "We pay via PayPal monthly. Earnings for a month clear after a short hold (about 30 days, to cover any refunds) and pay out on or around the 1st of the following month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less. Make sure your tax form and PayPal email are set in your dashboard. Questions? Just reply to this email.",
   );
   lines.push("");
   lines.push("- The Influencer Butler team");
   return lines.join("\n");
 }
 
+/** Why an owed affiliate cannot be paid yet, keyed by userId. */
+export type NotReadyMap = Map<string, { missingTax: boolean; missingPaypal: boolean }>;
+
+function notReadyReason(reason: { missingTax: boolean; missingPaypal: boolean }): string {
+  const missing = [
+    reason.missingTax ? "tax form" : null,
+    reason.missingPaypal ? "PayPal email" : null,
+  ].filter(Boolean);
+  return missing.length > 0 ? missing.join(" + ") : "setup";
+}
+
 /** Combined master body listing every selected affiliate. */
-export function buildCombinedBody(statements: AffiliateStatement[], period: string): string {
+export function buildCombinedBody(
+  statements: AffiliateStatement[],
+  period: string,
+  notReady?: NotReadyMap,
+): string {
   const lines: string[] = [];
   lines.push(`Affiliate commission statement: ${formatPeriod(period)}`);
   lines.push("");
   let totalOwed = 0;
   let totalEarned = 0;
   let totalLs = 0;
+  let totalBlocked = 0;
   for (const s of statements) {
     const who = s.fullName || s.email || s.affiliateCode || s.userId;
     lines.push(`${who}${s.affiliateCode ? ` (${s.affiliateCode})` : ""} - rate ${s.ratePercent}%`);
@@ -108,6 +125,11 @@ export function buildCombinedBody(statements: AffiliateStatement[], period: stri
       `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s))}, ` +
         `owed via PayPal ${formatUsdFromCents(s.owedCents)}`,
     );
+    const blocked = notReady?.get(s.userId);
+    if (blocked) {
+      lines.push(`  NOT PAYABLE YET: missing ${notReadyReason(blocked)} (reminder sent)`);
+      totalBlocked += s.owedCents;
+    }
     lines.push("");
     totalOwed += s.owedCents;
     totalEarned += earnedCents(s);
@@ -119,6 +141,9 @@ export function buildCombinedBody(statements: AffiliateStatement[], period: stri
     lines.push(`Total already credited by Lemon Squeezy: ${formatUsdFromCents(totalLs)}`);
   }
   lines.push(`Total owed this month: ${formatUsdFromCents(totalOwed)}`);
+  if (totalBlocked > 0) {
+    lines.push(`Total not yet payable (missing tax form / PayPal): ${formatUsdFromCents(totalBlocked)}`);
+  }
   lines.push("");
   lines.push('Disburse each affiliate via PayPal in the Owed tab (or mark paid if you paid another way).');
   return lines.join("\n");
@@ -182,10 +207,72 @@ export async function sendAffiliateStatement(
 export async function sendCombinedStatement(
   statements: AffiliateStatement[],
   period: string,
+  notReady?: NotReadyMap,
 ): Promise<boolean> {
   return sendViaResend({
     to: statementInbox(),
     subject: `Affiliate commissions: ${formatPeriod(period)}`,
-    text: buildCombinedBody(statements, period),
+    text: buildCombinedBody(statements, period, notReady),
   });
+}
+
+// -------------------------------------------------------------------------
+// Tax-form / payout reminder
+//
+// Sent to an affiliate who has earned commission but cannot be paid yet
+// because their tax form is not verified and/or they have no PayPal email on
+// file. This is a TRANSACTIONAL email (it is required for a paid account to
+// receive money it is owed), so it goes through the same direct-to-Resend
+// path as the statement above: no suppression check, no unsubscribe footer.
+// -------------------------------------------------------------------------
+
+export type TaxReminderParams = {
+  to: string;
+  name: string | null;
+  owedCents: number;
+  missingTax: boolean;
+  missingPaypal: boolean;
+};
+
+/** Reminder body (plain text). */
+export function buildTaxReminderBody(params: TaxReminderParams): string {
+  const first = params.name?.split(" ")[0] || "there";
+  const lines: string[] = [];
+  lines.push(`Hi ${first},`);
+  lines.push("");
+  lines.push(
+    `Good news: you have ${formatUsdFromCents(params.owedCents)} in Influencer Butler affiliate commissions waiting.`,
+  );
+  lines.push("");
+  lines.push("Before we can send it, we need a couple of things from you:");
+  if (params.missingTax) {
+    lines.push("  - Your tax form (a W-9 if you're in the US, or a W-8BEN / W-8BEN-E if you're outside the US)");
+  }
+  if (params.missingPaypal) {
+    lines.push("  - Your PayPal payout email");
+  }
+  lines.push("");
+  lines.push(`Add them here: ${DASHBOARD_URL}`);
+  lines.push("");
+  lines.push(
+    "Once that's done you'll be paid on our next monthly run. We pay via PayPal monthly, on or around the 1st of the month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less.",
+  );
+  lines.push("");
+  lines.push("Questions? Just reply to this email.");
+  lines.push("");
+  lines.push("- The Influencer Butler team");
+  return lines.join("\n");
+}
+
+/** Send an affiliate a "complete your tax form / PayPal to get paid" reminder. */
+export async function sendTaxFormReminder(params: TaxReminderParams): Promise<boolean> {
+  if (!params.to) {
+    console.error("sendTaxFormReminder: no recipient email");
+    return false;
+  }
+  const amount = formatUsdFromCents(params.owedCents);
+  const subject = params.missingTax
+    ? `Action needed: add your tax form to get your ${amount} commission`
+    : `Action needed: add your PayPal email to get your ${amount} commission`;
+  return sendViaResend({ to: params.to, subject, text: buildTaxReminderBody(params) });
 }

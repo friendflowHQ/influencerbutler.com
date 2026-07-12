@@ -3,6 +3,8 @@ import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { disburseAffiliate } from "@/lib/paypal-payouts";
+import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
+import { sendTaxReminderOnce } from "@/lib/tax-reminder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +54,32 @@ export async function POST(request: Request) {
       targetId: userId,
       details: { code: outcome.code ?? null, httpStatus: outcome.httpStatus },
     });
+
+    // If the payout was blocked because the affiliate hasn't completed their
+    // tax form or PayPal email, nudge them to fix it. Best-effort and throttled
+    // to once per affiliate per month (shared with the monthly cron), and never
+    // allowed to break the admin response.
+    if (outcome.code === "tax_unverified" || outcome.code === "no_paypal") {
+      try {
+        const commissions = await loadAffiliateCommissions({
+          userIds: [userId],
+          period: period ?? undefined,
+        });
+        const stmt = commissions?.statements.find((s) => s.userId === userId) ?? null;
+        if (stmt?.email && stmt.owedCents > 0) {
+          await sendTaxReminderOnce(createAdminClient(), userId, {
+            to: stmt.email,
+            name: stmt.fullName,
+            owedCents: stmt.owedCents,
+            missingTax: outcome.code === "tax_unverified",
+            missingPaypal: outcome.code === "no_paypal",
+          });
+        }
+      } catch (error) {
+        console.error("admin-disburse: tax reminder failed", error);
+      }
+    }
+
     return NextResponse.json(
       { ok: false, error: outcome.error, code: outcome.code, payout: outcome.existing ?? null },
       { status: outcome.httpStatus },
