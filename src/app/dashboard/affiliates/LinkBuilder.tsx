@@ -9,10 +9,10 @@ type Props = {
 };
 
 function buildLink(code: string, slug: ChannelSlug): string {
-  // Public pricing page (not the auth-gated dashboard) so logged-out prospects
-  // land on a live page. /pricing reads ?code= (prefill + attribution) and ?s=
-  // (channel) for the click analytics breakdown.
-  return `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(
+  // Homepage so the link reads as a clean brand URL (no "/pricing"). The static
+  // homepage captures ?code= (attribution) and ?s= (channel, for the click
+  // analytics breakdown) via /js/affiliate-touch.js.
+  return `https://www.influencerbutler.com/?code=${encodeURIComponent(
     code,
   )}&s=${slug}`;
 }

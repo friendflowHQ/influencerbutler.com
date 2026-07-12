@@ -142,9 +142,10 @@ async function sendApprovalEmail(params: {
 }
 
 function buildBrandedShareLink(code: string): string {
-  // Public pricing page so a logged-out prospect lands on a live page; the
-  // auth-gated /dashboard would bounce them to sign-in and drop the referral.
-  return `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(code)}`;
+  // Homepage so the link reads as a clean brand URL (no "/pricing"). The static
+  // homepage captures ?code= via /js/affiliate-touch.js, setting the ib_aff_src
+  // cookie so the affiliate's discount + attribution still resolve at checkout.
+  return `https://www.influencerbutler.com/?code=${encodeURIComponent(code)}`;
 }
 
 /**

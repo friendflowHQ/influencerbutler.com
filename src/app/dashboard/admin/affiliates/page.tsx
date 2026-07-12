@@ -214,10 +214,12 @@ function formatUsd(cents: number | null): string {
 }
 
 // The affiliate's shareable link: the branded code auto-applies at checkout and
-// attributes the referral. Mirrors brandedShareLink in the affiliate dashboard.
+// attributes the referral. Mirrors brandedShareLink in the affiliate dashboard -
+// a clean homepage URL (no "/pricing"); the ?code= is captured on the homepage
+// by /js/affiliate-touch.js.
 const AFFILIATE_SHARE_ORIGIN = "https://www.influencerbutler.com";
 function affiliateShareLink(code: string): string {
-  return `${AFFILIATE_SHARE_ORIGIN}/pricing?code=${encodeURIComponent(code)}`;
+  return `${AFFILIATE_SHARE_ORIGIN}/?code=${encodeURIComponent(code)}`;
 }
 
 type RowState =

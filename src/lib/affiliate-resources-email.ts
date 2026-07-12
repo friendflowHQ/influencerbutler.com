@@ -97,7 +97,11 @@ export function buildAffiliateResourcesEmail(params: {
 
 /** Build the public share link for an affiliate code (matches the dashboard). */
 export function affiliateShareLink(code: string): string {
-  return `${SITE}/pricing?code=${encodeURIComponent(code)}`;
+  // Land prospects on the homepage (not /pricing) so the link reads as a clean
+  // brand URL. The ?code= is captured there by /js/affiliate-touch.js, which
+  // sets the ib_aff_src cookie so the affiliate's discount + attribution still
+  // resolve at checkout. See src/app/api/checkout/route.ts.
+  return `${SITE}/?code=${encodeURIComponent(code)}`;
 }
 
 /**
