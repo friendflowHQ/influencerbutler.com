@@ -6,7 +6,6 @@
 
 export type DeeplinkProviderId =
   | "influencerbutler"
-  | "posttap"
   | "linktwin"
   | "urlgenius"
   | "geniuslink"

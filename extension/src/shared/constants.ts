@@ -17,6 +17,8 @@ export const ENDPOINTS = {
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
   dealSources: `${API_BASE}/api/extension/deal-sources`,
+  // Instagram Goldmine (self-hosted build only): harvested creator + email rows.
+  instagramCreators: `${API_BASE}/api/extension/instagram-creators`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),
@@ -39,6 +41,19 @@ export const ONBOARDING_VIDEO_ID = "plZS_nXX-BE";
 export const ASSOCIATES_CREDENTIALS_URL =
   "https://affiliate-program.amazon.com/assoc_credentials/home";
 export const API_INTEGRATIONS_TUTORIAL_URL = `${API_BASE}/help/tutorials/api-integrations`;
+
+// "Show me where" destinations for the deeplink and affiliate-network
+// providers, matching the desktop app's API Integrations screen. Each points at
+// the provider's own dashboard where the API key (and secret / group id where
+// applicable) is issued.
+export const PROVIDER_CREDENTIALS_URLS = {
+  urlgenius: "https://urlgeni.us/",
+  geniuslink: "https://my.geni.us/",
+  linktwin: "https://linktw.in/",
+  levanta: "https://app.levanta.io/",
+  archer: "https://app.archeraffiliates.com/",
+  logie: "https://www.mylogie.com/",
+} as const;
 
 // Marketplaces the onboarding credential form offers. Host is what the
 // extension records from the page URL; label is shown to the user. Kept in sync
@@ -116,6 +131,14 @@ export const DEAL_HARVEST_DELAY_MAX_MS = 1800;
 export const DEAL_HARVEST_FETCH_TIMEOUT_MS = 15_000;
 export const DEAL_PUSH_CHUNK = 200;
 export const DEAL_SOURCES_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Instagram Goldmine (self-hosted build only). Harvested creator rows are
+// pushed into the desktop app's Pitch / Group Invite butlers in chunks so one
+// big run is not a single oversized bridge command.
+export const CREATOR_PUSH_CHUNK = 200;
+// Where to fetch a bio-link site for the "also check bio-link website" toggle:
+// paced and time-boxed like the deal harvester's aggregator fetches.
+export const IG_BIOLINK_FETCH_TIMEOUT_MS = 12_000;
 
 // Amazon onsite commission defaults by category, user-overridable. These are
 // starting points for the calculator, not a promise of what Amazon pays.

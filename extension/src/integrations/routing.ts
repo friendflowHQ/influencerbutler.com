@@ -2,14 +2,17 @@ import { getAdapter } from "./registry";
 import { canonicalProductUrl, withAffiliateTag } from "./url";
 import type { LinkTarget } from "./types";
 
-// Turns a product into the user's affiliate link. MVP routing = the correct
-// per-country affiliate tag applied to the product url, then wrapped through the
-// primary deeplink provider when one is set. Levanta/Archer/Logie attribution
-// also flows through that same primary deeplink provider (desktop parity).
-//
-// Phase 2 (documented in the plan): when multiple networks cover an ASIN,
-// pick the highest-commission provider by consulting the cached rate card in
-// src/rate-card. Until then routing is deterministic: tag + primary deeplink.
+// Turns a product into the user's affiliate link. Routing applies the correct
+// per-country affiliate tag to the product url, then resolves the final link in
+// priority order:
+//   1. The first participating affiliate network that can mint its own
+//      attribution link (Levanta, then Archer) wins outright, because that link
+//      already encodes attribution and should not be re-wrapped.
+//   2. Otherwise the primary deeplink provider wraps the tagged url.
+//   3. Otherwise the plain tagged url is returned.
+// Every step falls through on error so a misconfigured provider never blocks a
+// working link. Logie/Benable have no minting step, so their attribution still
+// flows through the primary deeplink provider (desktop parity).
 
 // Amazon marketplace domain (as produced by marketplaceFromUrl) -> country code
 // used as the key in integrations.global.perCountryTags.
@@ -56,6 +59,9 @@ export function resolveTag(
 export type RoutingConfig = {
   enabled: boolean;
   primaryDeeplinkProvider: string | null;
+  // Participating affiliate-network ids that can mint their own attribution
+  // link, in priority order. Tried before the primary deeplink provider.
+  affiliateNetworks?: string[];
   perCountryTags: Record<string, string>;
   storefrontHandle: string | null;
 };
@@ -76,17 +82,38 @@ export async function buildAffiliateLink(
 
   const tagged = tag ? withAffiliateTag(url, tag) : url;
 
-  const providerId = config.primaryDeeplinkProvider;
-  if (!config.enabled || !providerId) return tagged;
-
-  const adapter = getAdapter(providerId);
-  if (!adapter?.generateLink) return tagged;
+  if (!config.enabled) return tagged;
 
   const target: LinkTarget = { asin: input.asin, marketplace: input.marketplace, url, tag };
-  try {
-    return await adapter.generateLink(target, await getProviderCreds(providerId));
-  } catch {
-    // A misconfigured provider must never block copying a working link.
-    return tagged;
+
+  // 1. A participating affiliate network that can mint wins outright.
+  for (const networkId of config.affiliateNetworks ?? []) {
+    const adapter = getAdapter(networkId);
+    if (!adapter?.generateLink) continue;
+    try {
+      const minted = await adapter.generateLink(target, await getProviderCreds(networkId));
+      // A network only "wins" when it actually produced a different, tracked
+      // link; if it fell back to the tagged url, keep trying the next option.
+      if (minted && minted !== tagged) return minted;
+    } catch {
+      // Fall through to the next network / the primary deeplink provider.
+    }
   }
+
+  // 2. The primary deeplink provider wraps the tagged url.
+  const providerId = config.primaryDeeplinkProvider;
+  if (providerId) {
+    const adapter = getAdapter(providerId);
+    if (adapter?.generateLink) {
+      try {
+        return await adapter.generateLink(target, await getProviderCreds(providerId));
+      } catch {
+        // A misconfigured provider must never block copying a working link.
+        return tagged;
+      }
+    }
+  }
+
+  // 3. Plain tagged url.
+  return tagged;
 }

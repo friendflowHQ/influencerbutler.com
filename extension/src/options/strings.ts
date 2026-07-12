@@ -44,7 +44,6 @@ export interface OptionsDict {
   provAssociates: string;
   provInfluencerButler: string;
   provInfluencerButlerDesc: string;
-  provPosttap: string;
   provLinktwin: string;
   provUrlgenius: string;
   provGeniuslink: string;
@@ -55,6 +54,11 @@ export interface OptionsDict {
   provBenable: string;
   // Field labels (referenced by field.labelKey)
   fieldApiKey: string;
+  fieldApiSecret: string;
+  fieldGroupId: string;
+  fieldToken: string;
+  fieldUsername: string;
+  fieldPassword: string;
   fieldModel: string;
   fieldAccessKey: string;
   fieldSecretKey: string;
@@ -104,7 +108,6 @@ const en: OptionsDict = {
   provInfluencerButler: "Influencer Butler branded links",
   provInfluencerButlerDesc:
     "Turn your links into short links.influencerbutler.com links with click analytics. No setup: it uses your signed-in license. Free on any plan.",
-  provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",
   provGeniuslink: "Geniuslink",
@@ -114,6 +117,11 @@ const en: OptionsDict = {
   provLogie: "Logie",
   provBenable: "Benable",
   fieldApiKey: "API key",
+  fieldApiSecret: "API secret",
+  fieldGroupId: "Group id",
+  fieldToken: "Token or API key",
+  fieldUsername: "Username or email",
+  fieldPassword: "Password",
   fieldModel: "Model (optional)",
   fieldAccessKey: "Access key",
   fieldSecretKey: "Secret key",
@@ -163,7 +171,6 @@ const es: OptionsDict = {
   provInfluencerButler: "Enlaces de marca de Influencer Butler",
   provInfluencerButlerDesc:
     "Convierte tus enlaces en enlaces cortos de links.influencerbutler.com con analítica de clics. Sin configuración: usa tu licencia iniciada. Gratis en cualquier plan.",
-  provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",
   provGeniuslink: "Geniuslink",
@@ -173,6 +180,11 @@ const es: OptionsDict = {
   provLogie: "Logie",
   provBenable: "Benable",
   fieldApiKey: "Clave de API",
+  fieldApiSecret: "Secreto de API",
+  fieldGroupId: "Id de grupo",
+  fieldToken: "Token o clave de API",
+  fieldUsername: "Usuario o correo",
+  fieldPassword: "Contraseña",
   fieldModel: "Modelo (opcional)",
   fieldAccessKey: "Clave de acceso",
   fieldSecretKey: "Clave secreta",
@@ -222,7 +234,6 @@ const fr: OptionsDict = {
   provInfluencerButler: "Liens de marque Influencer Butler",
   provInfluencerButlerDesc:
     "Transformez vos liens en liens courts links.influencerbutler.com avec des statistiques de clics. Sans configuration : utilise votre licence connectée. Gratuit sur toute offre.",
-  provPosttap: "PostTap",
   provLinktwin: "Linktw.in",
   provUrlgenius: "URLGenius",
   provGeniuslink: "Geniuslink",
@@ -232,6 +243,11 @@ const fr: OptionsDict = {
   provLogie: "Logie",
   provBenable: "Benable",
   fieldApiKey: "Clé API",
+  fieldApiSecret: "Secret API",
+  fieldGroupId: "Id de groupe",
+  fieldToken: "Jeton ou clé API",
+  fieldUsername: "Nom d'utilisateur ou e-mail",
+  fieldPassword: "Mot de passe",
   fieldModel: "Modèle (facultatif)",
   fieldAccessKey: "Clé d'accès",
   fieldSecretKey: "Clé secrète",

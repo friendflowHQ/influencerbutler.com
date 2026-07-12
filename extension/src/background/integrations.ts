@@ -1,5 +1,5 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
-import { ADAPTERS, getAdapter } from "../integrations/registry";
+import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
@@ -188,6 +188,18 @@ export async function generateAffiliateLink(
 ): Promise<GenerateLinkResult> {
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
+    // Affiliate networks that are enabled, take part in routing, have saved
+    // credentials, and can mint their own link. Tried before the deeplink
+    // wrapper (see buildAffiliateLink), in registry order.
+    const affiliateNetworks = AFFILIATE_NETWORK_IDS.filter((id) => {
+      const state = integrations.providers[id];
+      return Boolean(
+        state?.enabled &&
+          state.routingParticipates &&
+          state.credentialsEnc &&
+          getAdapter(id)?.generateLink,
+      );
+    });
     const link = await buildAffiliateLink(
       { asin, marketplace, url },
       {
@@ -195,6 +207,7 @@ export async function generateAffiliateLink(
         // global toggle only governs automatic rewriting (see rewriteLink).
         enabled: true,
         primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
+        affiliateNetworks,
         perCountryTags: integrations.global.perCountryTags,
         storefrontHandle: settings.storefrontHandle,
       },

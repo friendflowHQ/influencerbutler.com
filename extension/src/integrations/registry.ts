@@ -31,6 +31,13 @@ export const DEEPLINK_PROVIDER_IDS: IntegrationId[] = ADAPTERS.filter(
   (a) => a.category === "deeplink",
 ).map((a) => a.id);
 
+// Every affiliate-network adapter, in ADAPTERS order. Routing tries these (in
+// this order) before the primary deeplink provider, since a network that can
+// mint its own attribution link should win over a generic wrapper.
+export const AFFILIATE_NETWORK_IDS: IntegrationId[] = ADAPTERS.filter(
+  (a) => a.category === "affiliateNetwork",
+).map((a) => a.id);
+
 // Every host pattern any adapter may request, deduplicated. Mirrored in
 // static/manifest.json optional_host_permissions so runtime requests succeed.
 export const ALL_INTEGRATION_HOSTS: string[] = [

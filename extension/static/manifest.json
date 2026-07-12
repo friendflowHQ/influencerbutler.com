@@ -36,7 +36,13 @@
     "https://webservices.amazon.in/*",
     "https://webservices.amazon.co.jp/*",
     "https://webservices.amazon.com.au/*",
-    "https://webservices.amazon.sg/*"
+    "https://webservices.amazon.sg/*",
+    "https://api.urlgeni.us/*",
+    "https://api.geni.us/*",
+    "https://linktw.in/*",
+    "https://app.levanta.io/*",
+    "https://api.archeraffiliates.com/*",
+    "https://api.logie.ai/*"
   ],
   "options_ui": {
     "page": "options.html",

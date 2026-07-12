@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildAffiliateLink, countryFor, resolveTag } from "./routing";
 import { withAffiliateTag, canonicalProductUrl } from "./url";
 import { validateTags } from "./adapters/associates";
 
 const noCreds = async () => ({});
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("countryFor", () => {
   it("maps known marketplaces and defaults to US", () => {
@@ -84,6 +86,45 @@ describe("buildAffiliateLink", () => {
       },
     );
     expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20");
+  });
+
+  it("prefers a participating affiliate network's minted link over the deeplink wrapper", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ link: "https://levanta.pxf.io/abc" }), { status: 200 })),
+    );
+    const url = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: "selfhosted",
+        affiliateNetworks: ["levanta"],
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      async (id): Promise<Record<string, string>> =>
+        id === "levanta" ? { apiKey: "k" } : { linkTemplate: "https://go.me/?url={url}" },
+    );
+    expect(url).toBe("https://levanta.pxf.io/abc");
+  });
+
+  it("falls back to the deeplink wrapper when the network mint fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+    const url = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: "selfhosted",
+        affiliateNetworks: ["levanta"],
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      async (id): Promise<Record<string, string>> =>
+        id === "levanta" ? { apiKey: "k" } : { linkTemplate: "https://go.me/?url={url}" },
+    );
+    expect(url).toBe(
+      `https://go.me/?url=${encodeURIComponent("https://www.amazon.com/dp/B0ABC12345?tag=t-20")}`,
+    );
   });
 });
 
