@@ -2,8 +2,6 @@ import Image from "next/image";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
 import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
-import FreeToolsBanner from "@/components/dashboard/FreeToolsBanner";
-import FacebookGroupBanner from "@/components/dashboard/FacebookGroupBanner";
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
@@ -40,10 +38,8 @@ export default async function DashboardLayout({
             <AdminBadge />
             <DashboardUserEmail />
           </div>
-          <FreeToolsBanner />
           <AffiliateUpsellBanner />
           <TestimonialAskBanner />
-          <FacebookGroupBanner />
           {children}
         </main>
         <ShortcutHelpOverlay />

@@ -167,7 +167,7 @@ export default function AffiliateClickAnalytics({
 
         <article className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Daily clicks</p>
-          <ClicksSparkline data={data.byDay} loading={loading} />
+          <ClicksBarChart data={data.byDay} timeframe={timeframe} loading={loading} />
         </article>
       </div>
 
@@ -329,73 +329,103 @@ function Skeleton({ width }: { width: string }) {
   return <span className={`inline-block h-7 ${width} animate-pulse rounded bg-slate-200 align-middle`} />;
 }
 
-const SPARK_W = 600;
-const SPARK_H = 80;
-const SPARK_PAD_X = 4;
-const SPARK_PAD_Y = 6;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Cap zero-filling for "All time" so we never render years of daily bars. */
+const ALL_TIME_DENSIFY_CAP = 120;
 
-function ClicksSparkline({
+/** UTC yyyy-mm-dd key, matching how the API buckets created_at (created_at.slice(0,10)). */
+function utcDayKey(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function dayLabel(dateKey: string): string {
+  const d = new Date(`${dateKey}T00:00:00.000Z`);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/**
+ * Turn the API's sparse byDay (only days that had clicks) into a dense, ordered
+ * series with a bucket for every day in the window - so a single day of clicks
+ * still renders one bar, and gaps show as zero instead of collapsing.
+ */
+function buildDailySeries(
+  byDay: { date: string; count: number }[],
+  timeframe: Timeframe,
+): { date: string; count: number }[] {
+  const counts = new Map(byDay.map((d) => [d.date, d.count]));
+  const todayMs = new Date(`${utcDayKey(Date.now())}T00:00:00.000Z`).getTime();
+  const entry = TIMEFRAMES.find((t) => t.value === timeframe);
+
+  let numDays: number;
+  if (entry && entry.days !== null) {
+    numDays = entry.days;
+  } else {
+    // "All time": span from the earliest click day to today (byDay is asc).
+    if (byDay.length === 0) return [];
+    const firstMs = new Date(`${byDay[0].date}T00:00:00.000Z`).getTime();
+    const span = Math.floor((todayMs - firstMs) / DAY_MS) + 1;
+    // Too wide to zero-fill sensibly: fall back to the sparse days as-is.
+    if (span > ALL_TIME_DENSIFY_CAP) return byDay.map((d) => ({ ...d }));
+    numDays = Math.max(1, span);
+  }
+
+  const out: { date: string; count: number }[] = [];
+  for (let i = numDays - 1; i >= 0; i--) {
+    const key = utcDayKey(todayMs - i * DAY_MS);
+    out.push({ date: key, count: counts.get(key) ?? 0 });
+  }
+  return out;
+}
+
+function ClicksBarChart({
   data,
+  timeframe,
   loading,
 }: {
   data: { date: string; count: number }[];
+  timeframe: Timeframe;
   loading: boolean;
 }) {
-  const computed = useMemo(() => {
-    if (data.length === 0) return null;
-    const max = Math.max(1, ...data.map((d) => d.count));
-    const innerW = SPARK_W - SPARK_PAD_X * 2;
-    const innerH = SPARK_H - SPARK_PAD_Y * 2;
-    const step = data.length > 1 ? innerW / (data.length - 1) : 0;
-    const points = data.map((d, i) => {
-      const x = SPARK_PAD_X + step * i;
-      const y = SPARK_PAD_Y + innerH - (d.count / max) * innerH;
-      return { x, y };
-    });
-    const linePath = points
-      .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(2)},${p.y.toFixed(2)}`)
-      .join(" ");
-    const baseY = SPARK_PAD_Y + innerH;
-    const areaPath =
-      points.length > 0
-        ? `${linePath} L${points[points.length - 1].x.toFixed(2)},${baseY} L${points[0].x.toFixed(2)},${baseY} Z`
-        : "";
-    return { linePath, areaPath, max };
-  }, [data]);
+  const series = useMemo(() => buildDailySeries(data, timeframe), [data, timeframe]);
+  const max = useMemo(() => Math.max(1, ...series.map((d) => d.count)), [series]);
+  const total = useMemo(() => series.reduce((s, d) => s + d.count, 0), [series]);
 
   if (loading) {
-    return <div className="mt-3 h-20 animate-pulse rounded bg-slate-100" />;
+    return <div className="mt-3 h-24 animate-pulse rounded bg-slate-100" />;
   }
 
-  if (!computed) {
+  if (series.length === 0 || total === 0) {
     return <p className="mt-3 text-sm text-slate-500">No clicks in this window.</p>;
   }
 
   return (
-    <svg
-      viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
-      preserveAspectRatio="none"
-      className="mt-3 h-20 w-full"
-      role="img"
-      aria-label="Daily clicks sparkline"
-    >
-      <defs>
-        <linearGradient id="affiliate-clicks-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f97316" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {computed.areaPath ? <path d={computed.areaPath} fill="url(#affiliate-clicks-fill)" /> : null}
-      {computed.linePath ? (
-        <path
-          d={computed.linePath}
-          fill="none"
-          stroke="#f97316"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : null}
-    </svg>
+    <div className="mt-3">
+      <div
+        className="flex h-24 w-full items-end gap-px border-b border-slate-200"
+        role="img"
+        aria-label={`Daily clicks bar chart, peak ${max} on a single day`}
+      >
+        {series.map((d) => {
+          const heightPct = d.count > 0 ? Math.max(8, (d.count / max) * 100) : 0;
+          return (
+            <div
+              key={d.date}
+              className="flex h-full flex-1 items-end"
+              title={`${dayLabel(d.date)}: ${d.count.toLocaleString()} click${d.count === 1 ? "" : "s"}`}
+            >
+              <div
+                className="w-full rounded-t-sm bg-[#f97316] transition-[height]"
+                style={{ height: `${heightPct}%` }}
+                aria-hidden
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
+        <span>{dayLabel(series[0].date)}</span>
+        <span>{dayLabel(series[series.length - 1].date)}</span>
+      </div>
+    </div>
   );
 }
