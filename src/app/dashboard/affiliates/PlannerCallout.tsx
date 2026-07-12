@@ -1,6 +1,6 @@
 // Reusable callout that points affiliates to the Content Planner. Shown while
-// they wait for Lemon Squeezy activation and on the active dashboard, so they
-// can plan and schedule content before their tracked link goes live.
+// their application is under review and on the active dashboard, so they can
+// plan and schedule content before their tracked link goes live.
 
 import Link from "next/link";
 
@@ -14,7 +14,7 @@ export default function PlannerCallout({ waiting = false }: { waiting?: boolean 
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
             {waiting
-              ? "Waiting on Lemon Squeezy? Start planning your content now."
+              ? "Waiting on approval? Start planning your content now."
               : "Plan and schedule your next promo in minutes."}
           </p>
           <p className="mt-1 text-sm text-slate-700">

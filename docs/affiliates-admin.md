@@ -1,5 +1,14 @@
 # Affiliate program: admin guide
 
+> **Stale (LS-era): this guide predates the self-hosted cutover and is kept only for historical context.**
+> The program no longer uses the Lemon Squeezy affiliate portal. Approval makes an affiliate live
+> immediately (no LS portal signup, no linking step), tracking is self-hosted (first-touch `ib_aff_src`
+> cookie, 30-day window, attribution stamped on orders/subscriptions), commissions are computed by
+> `src/lib/affiliate-commissions.ts` (default 30% for 12 months; custom rates like Samantha's 70% run
+> for the customer's lifetime), and payouts go out via PayPal from the Owed/Payouts tabs. The old
+> "Reconcile / Check LS link / Not linked" admin UI has been removed; the remaining "Fix codes" tab only
+> regenerates broken branded discount codes. Treat the code as the source of truth until this doc is rewritten.
+
 This doc covers running the Influencer Butler affiliate program. The system has three moving parts: our Supabase tables, the Lemon Squeezy affiliate feature, and the consolidated dashboard at `/dashboard/affiliates`. Approval is automated - one click in the admin page creates the Lemon Squeezy record, links it to the user, and emails them.
 
 ## Environment variables

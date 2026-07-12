@@ -9,6 +9,7 @@ import {
   computeOrderOwed,
   orderEconomics,
   resolveRatePercent,
+  resolveDurationMonths,
   periodBounds,
   orderInPeriod,
   monthKeyOf,
@@ -41,6 +42,20 @@ describe("resolveRatePercent", () => {
     expect(resolveRatePercent(null)).toBe(30);
     expect(resolveRatePercent({ commissionPercent: null, commissionDurationMonths: null })).toBe(30);
     expect(resolveRatePercent({ commissionPercent: 200, commissionDurationMonths: null })).toBe(30);
+  });
+});
+
+describe("resolveDurationMonths", () => {
+  it("caps a default-rate affiliate at 12 months", () => {
+    expect(resolveDurationMonths(null)).toBe(12);
+    expect(resolveDurationMonths({ commissionPercent: null, commissionDurationMonths: null })).toBe(12);
+  });
+  it("treats a custom-rate affiliate with no explicit duration as lifetime", () => {
+    expect(resolveDurationMonths(LIFETIME_70)).toBeNull();
+  });
+  it("honors an explicit positive duration for either kind", () => {
+    expect(resolveDurationMonths(YEARLY_70)).toBe(12);
+    expect(resolveDurationMonths({ commissionPercent: null, commissionDurationMonths: 6 })).toBe(6);
   });
 });
 
@@ -132,18 +147,31 @@ describe("computeAffiliateOwed", () => {
 
 describe("post-cutover steady state (all captures are 'pending')", () => {
   // After the self-hosted cutover we never append aff_ref, so LS pays nothing
-  // and every new referred order is captured 'pending'. The engine must then
-  // owe the FULL promised rate with lsPaidCents=0 on every order, regardless of
-  // rate, duration, or how far past the (now-irrelevant) 12-month LS window the
-  // order falls. These cases document that steady state.
+  // and every new referred order is captured 'pending'. The engine then owes the
+  // FULL promised rate with lsPaidCents=0, subtracting nothing. How long that
+  // keeps accruing depends on the affiliate's honored window: a custom-rate deal
+  // (e.g. Samantha) with no explicit duration runs for the customer's lifetime,
+  // while a default-rate affiliate is capped at 12 months to match the advertised
+  // offer. These cases document that steady state.
   const DEFAULT_30: AffiliateTerms = { commissionPercent: null, commissionDurationMonths: null };
 
-  it("default-30% affiliate now owes the full 30% (LS no longer covers it)", () => {
+  it("default-30% affiliate now owes the full 30% within its window (LS no longer covers it)", () => {
     // Contrast with the legacy 'live' case below, where the same affiliate owed 0.
     const line = computeOrderOwed(order({ attributionStatus: "pending" }), DEFAULT_30, null);
     expect(line).not.toBeNull();
     expect(line!.lsPaidCents).toBe(0);
     expect(line!.owedCents).toBe(3000); // full 30% of $100
+  });
+
+  it("default-30% affiliate owes nothing past its 12-month window", () => {
+    // 14 months after the buyer's first order: a default affiliate is capped at
+    // 12 months, so no top-up accrues (unlike a custom-lifetime affiliate).
+    const line = computeOrderOwed(
+      order({ createdAt: "2027-03-01T00:00:00.000Z", attributionStatus: "pending" }),
+      DEFAULT_30,
+      new Date("2026-01-01T00:00:00.000Z").getTime(),
+    );
+    expect(line).toBeNull();
   });
 
   it("legacy live default-30% order still owes 0 (overlap-period regression guard)", () => {

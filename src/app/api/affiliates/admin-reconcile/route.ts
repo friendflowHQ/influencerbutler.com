@@ -7,18 +7,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Admin reconciliation feed. Answers "how will we ever know to link them up?"
- * by surfacing, in one place:
+ * Admin code-health feed. Surfaces `unhealthyCodes`: affiliates whose branded
+ * discount code is missing or broken (see CodeHealth below), so an admin can
+ * regenerate it from the "Fix codes" tab.
  *
- *  - stuck: IB users approved as affiliates (is_affiliate=true) whose
- *           profiles.ls_affiliate_id is still null. These earn $0 until linked.
- *  - lsAffiliates: every affiliate in our Lemon Squeezy store, with status and
- *           email, flagged with whether their email matches an IB account and
- *           whether they're already linked.
- *
- * An admin eyeballs the two lists, spots the email mismatch (dashboard
- * elizabethdean30 <-> LS thesocialmediaposse), and links them via
- * POST /api/affiliates/admin-link.
+ * Historically this feed also surfaced `stuck` affiliates and `lsAffiliates` to
+ * hand-link people to the Lemon Squeezy affiliate portal. That flow is retired
+ * now that the program is self-hosted, so only `unhealthyCodes` is consumed by
+ * the UI; the other fields remain in the response shape but are no longer read.
  */
 
 type ReconcileResult<T> = Promise<{ data: T[] | null; error: unknown }>;

@@ -83,6 +83,9 @@ export async function GET() {
       grossCents: stmt?.grossCents ?? 0,
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,
+      // null = lifetime (custom deals like Samantha); a number = capped window.
+      // When there's no statement yet, a default affiliate is capped at 12 months.
+      durationMonths: stmt ? stmt.durationMonths : 12,
       paidCents,
       paypalEmail: (profile.paypal_email as string | null) ?? null,
       taxStatus,

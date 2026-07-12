@@ -252,14 +252,14 @@ export default function AffiliatePlannerPage() {
           Content Planner
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-slate-600">
-          Plan and schedule your promo content here, then just drop your tracked link in once Lemon
-          Squeezy activates you. Hooks, captions, an email funnel, a 14-day calendar, and ready-made
+          Plan and schedule your promo content here, then just drop your tracked link in as soon as
+          you are approved. Hooks, captions, an email funnel, a 14-day calendar, and ready-made
           graphics, all in one place.
         </p>
       </header>
 
       <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-5 shadow-sm">
-        <p className="text-sm font-semibold text-slate-900">Waiting on Lemon Squeezy? Get a head start.</p>
+        <p className="text-sm font-semibold text-slate-900">Waiting on approval? Get a head start.</p>
         <p className="mt-1 text-sm text-slate-700">
           You do not have to wait to plan. Write your captions, line up your calendar, and queue your
           posts now. The moment your tracked link appears on your dashboard, you paste it in and go

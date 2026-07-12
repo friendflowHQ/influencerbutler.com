@@ -27,6 +27,10 @@
 export const LS_BASE_PERCENT = 30;
 export const LS_CREDIT_MONTHS = 12;
 export const DEFAULT_COMMISSION_PERCENT = 30;
+// Default honored window for an affiliate with no custom rate. Matches the
+// advertised "30% for the first 12 months" offer. Custom-rate affiliates keep
+// their own duration (null = lifetime), so this default never touches them.
+export const DEFAULT_COMMISSION_DURATION_MONTHS = 12;
 
 /** Per-affiliate terms, as stored on the profiles row. */
 export type AffiliateTerms = {
@@ -86,6 +90,23 @@ export function resolveRatePercent(terms: AffiliateTerms | null | undefined): nu
   return DEFAULT_COMMISSION_PERCENT;
 }
 
+/**
+ * Resolve the honored commission window for an affiliate.
+ *
+ *  - An explicit positive `commissionDurationMonths` always wins.
+ *  - When no duration is set: an affiliate with a custom rate is treated as
+ *    lifetime (null, never expires), matching how custom deals like Samantha's
+ *    70% are configured. An affiliate on the default rate is capped at
+ *    DEFAULT_COMMISSION_DURATION_MONTHS (12), matching the advertised offer.
+ */
+export function resolveDurationMonths(terms: AffiliateTerms | null | undefined): number | null {
+  const raw = terms?.commissionDurationMonths;
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) return raw;
+  const hasCustomRate =
+    typeof terms?.commissionPercent === "number" && Number.isFinite(terms.commissionPercent);
+  return hasCustomRate ? null : DEFAULT_COMMISSION_DURATION_MONTHS;
+}
+
 function addMonths(iso: string, months: number): number {
   const d = new Date(iso);
   d.setUTCMonth(d.getUTCMonth() + months);
@@ -140,7 +161,7 @@ export function orderEconomics(
 
   const anchorMs = firstOrderMs ?? orderMs;
   const ratePercent = resolveRatePercent(terms);
-  const durationMonths = terms?.commissionDurationMonths ?? null;
+  const durationMonths = resolveDurationMonths(terms);
 
   // Outside the affiliate's honored window: no commission owed.
   if (durationMonths !== null) {
@@ -224,7 +245,7 @@ export function computeAffiliateOwed(
 
   return {
     ratePercent: resolveRatePercent(terms),
-    durationMonths: terms?.commissionDurationMonths ?? null,
+    durationMonths: resolveDurationMonths(terms),
     lines,
     orderCount: lines.length,
     grossCents,

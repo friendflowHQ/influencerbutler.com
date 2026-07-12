@@ -24,6 +24,8 @@ type SelfHostedData = {
   grossCents: number;
   orderCount: number;
   ratePercent: number;
+  // null = lifetime (custom deals); a number = the honored window in months.
+  durationMonths: number | null;
   paidCents: number;
   paypalEmail: string | null;
   taxStatus: "not_submitted" | "submitted" | "verified" | "rejected";
@@ -34,6 +36,14 @@ type Props = { displayName: string };
 
 function brandedShareLink(code: string): string {
   return `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(code)}`;
+}
+
+// "the first 12 months" for a capped window, or "the life of the subscription"
+// for a lifetime (custom) deal like Samantha's.
+function durationPhrase(durationMonths: number | null): string {
+  return durationMonths === null
+    ? "the life of the subscription"
+    : `the first ${durationMonths} months`;
 }
 
 export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
@@ -97,8 +107,8 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
           Welcome back, {displayName}.
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          You earn {data.ratePercent}% recurring for the first 12 months of every subscription you
-          refer. Share your link, and we pay you directly.
+          You earn {data.ratePercent}% recurring for {durationPhrase(data.durationMonths)} of every
+          subscription you refer. Share your link, and we pay you directly.
         </p>
       </header>
 
@@ -125,7 +135,13 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
         <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
       </div>
 
-      {code ? <BrandedCodeCard code={code} shareLink={brandedShareLink(code)} /> : null}
+      {code ? (
+        <BrandedCodeCard
+          code={code}
+          shareLink={brandedShareLink(code)}
+          durationMonths={data.durationMonths}
+        />
+      ) : null}
 
       {code ? <LinkBuilder code={code} /> : null}
 
@@ -135,7 +151,11 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
         <StatCard label="Unpaid earnings" value={formatUsdFromCents(data.owedCents)} hint="Paid monthly via PayPal" />
         <StatCard label="Paid to date" value={formatUsdFromCents(data.paidCents)} hint="Successful payouts" />
         <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
-        <StatCard label="Commission rate" value={`${data.ratePercent}%`} hint="Recurring for 12 months" />
+        <StatCard
+          label="Commission rate"
+          value={`${data.ratePercent}%`}
+          hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
+        />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -169,7 +189,15 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
   );
 }
 
-function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string }) {
+function BrandedCodeCard({
+  code,
+  shareLink,
+  durationMonths,
+}: {
+  code: string;
+  shareLink: string;
+  durationMonths: number | null;
+}) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -195,7 +223,8 @@ function BrandedCodeCard({ code, shareLink }: { code: string; shareLink: string 
       </p>
       <p className="mt-1 text-sm text-slate-700">
         Share this code for <strong>15% off</strong> your audience&apos;s first month. You earn
-        <strong> recurring commission for 12 months</strong> per referred customer.
+        <strong> recurring commission for {durationPhrase(durationMonths)}</strong> per referred
+        customer.
       </p>
 
       <div className="mt-4 flex items-center gap-3 rounded-lg border-2 border-[#f97316]/50 bg-white px-4 py-3 shadow-sm">
