@@ -46,15 +46,17 @@ type Subscription = {
   ends_at: string | null;
 };
 
+type SubscriptionEntry = {
+  subscription: Subscription;
+  licenseKey: LicenseKey | null;
+  canUpgradeToAnnual: boolean;
+};
+
 export default function SubscriptionPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [licenseKey, setLicenseKey] = useState<LicenseKey | null>(null);
+  const [entries, setEntries] = useState<SubscriptionEntry[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [canUpgradeToAnnual, setCanUpgradeToAnnual] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
-  const [showCancelFunnel, setShowCancelFunnel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
   const [promoCodeOpen, setPromoCodeOpen] = useState(false);
@@ -106,6 +108,7 @@ export default function SubscriptionPage() {
         }
 
         const payload = (await response.json()) as {
+          subscriptions?: SubscriptionEntry[] | null;
           subscription?: Subscription | null;
           licenseKey?: LicenseKey | null;
           canUpgradeToAnnual?: boolean;
@@ -115,9 +118,21 @@ export default function SubscriptionPage() {
           throw new Error("Could not load subscription details");
         }
 
-        setSubscription(payload.subscription ?? null);
-        setLicenseKey(payload.licenseKey ?? null);
-        setCanUpgradeToAnnual(Boolean(payload.canUpgradeToAnnual));
+        if (Array.isArray(payload.subscriptions)) {
+          setEntries(payload.subscriptions);
+        } else if (payload.subscription) {
+          // Backward-compat: wrap the singular fields if the API predates the
+          // subscriptions array.
+          setEntries([
+            {
+              subscription: payload.subscription,
+              licenseKey: payload.licenseKey ?? null,
+              canUpgradeToAnnual: Boolean(payload.canUpgradeToAnnual),
+            },
+          ]);
+        } else {
+          setEntries([]);
+        }
       } catch (err) {
         console.error("Failed to load subscription data", err);
         setError("Failed to load subscription details.");
@@ -169,34 +184,6 @@ export default function SubscriptionPage() {
     }
   };
 
-  const handleUpgradeToAnnual = async () => {
-    if (!subscription) return;
-    setUpgrading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/subscription/upgrade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
-      });
-
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "Could not switch to annual");
-      }
-
-      // The variant swap lands via the LS webhook; reload to pick up the new
-      // plan name + renewal date once it has been persisted.
-      setTimeout(() => window.location.reload(), 1500);
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Upgrade failed");
-      setUpgrading(false);
-    }
-  };
-
   if (loading) {
     return (
       <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
@@ -207,7 +194,7 @@ export default function SubscriptionPage() {
   }
 
   // No active subscription → show upgrade CTA
-  if (!subscription) {
+  if (entries.length === 0) {
     return (
       <div className="space-y-6">
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
@@ -261,7 +248,59 @@ export default function SubscriptionPage() {
     );
   }
 
-  // Active subscription view
+  // Active subscription view: one self-contained card per subscription. A user
+  // can own several (a Pro plan plus one or more Daily Deals Workspace add-ons).
+  const showPlanNames = entries.length > 1;
+
+  return (
+    <div className="space-y-6">
+      {showPlanNames ? (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold tracking-tight">Your subscriptions</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            You have {entries.length} active subscriptions. Each workspace is managed on its own
+            below.
+          </p>
+        </section>
+      ) : null}
+
+      <DiscountCodesCard />
+
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      {entries.map((entry) => (
+        <SubscriptionCard
+          key={entry.subscription.ls_subscription_id}
+          subscription={entry.subscription}
+          licenseKey={entry.licenseKey}
+          canUpgradeToAnnual={entry.canUpgradeToAnnual}
+        />
+      ))}
+    </div>
+  );
+}
+
+type SubscriptionCardProps = {
+  subscription: Subscription;
+  licenseKey: LicenseKey | null;
+  canUpgradeToAnnual: boolean;
+};
+
+/**
+ * One subscription's management block: plan header + status, its own license
+ * key, the switch-to-annual offer, and the cancel funnel. State (upgrading /
+ * cancel funnel visibility) is local so multiple cards don't share flags, and
+ * the upgrade + cancel calls key off this card's ls_subscription_id.
+ */
+function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: SubscriptionCardProps) {
+  const [upgrading, setUpgrading] = useState(false);
+  const [showCancelFunnel, setShowCancelFunnel] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const statusBadge = getStatusBadge(subscription.status);
   const renewalDate = subscription.renews_at
     ? new Date(subscription.renews_at).toLocaleDateString("en-US", {
@@ -277,6 +316,33 @@ export default function SubscriptionPage() {
         day: "numeric",
       })
     : null;
+
+  const handleUpgradeToAnnual = async () => {
+    setUpgrading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/subscription/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
+      });
+
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not switch to annual");
+      }
+
+      // The variant swap lands via the LS webhook; reload to pick up the new
+      // plan name + renewal date once it has been persisted.
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Upgrade failed");
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -301,8 +367,6 @@ export default function SubscriptionPage() {
           </span>
         </div>
       </section>
-
-      <DiscountCodesCard />
 
       {licenseKey ? <LicenseKeyDisplay variant="panel" licenseKey={licenseKey} /> : null}
 

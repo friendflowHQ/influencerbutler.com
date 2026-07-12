@@ -121,7 +121,26 @@ function pickBestLsSubscription(subs: LsSubscription[]): LsSubscription | null {
   return best;
 }
 
-async function fetchSubscriptionFromLs(email: string): Promise<Subscription | null> {
+function mapLsSubscription(sub: LsSubscription): Subscription | null {
+  if (!sub.id) return null;
+  const a = sub.attributes ?? {};
+  return {
+    id: null,
+    ls_subscription_id: sub.id,
+    ls_variant_id: a.variant_id ?? null,
+    status: a.status ?? "active",
+    plan_name: a.product_name ?? a.variant_name ?? null,
+    renews_at: a.renews_at ?? null,
+    ends_at: a.ends_at ?? null,
+  };
+}
+
+/**
+ * Fetches all of the user's Lemon Squeezy subscriptions by email, ordered with
+ * the most relevant one first (active/on_trial before past_due/cancelled). Used
+ * only as a fallback when no local subscriptions rows exist.
+ */
+async function fetchSubscriptionsFromLs(email: string): Promise<Subscription[]> {
   const params = new URLSearchParams();
   params.set("filter[user_email]", email);
   params.set("page[size]", "50");
@@ -133,23 +152,17 @@ async function fetchSubscriptionFromLs(email: string): Promise<Subscription | nu
       status: response.status,
       text: text.slice(0, 500),
     });
-    return null;
+    return [];
   }
 
   const payload = (await response.json()) as { data?: LsSubscription[] };
-  const best = pickBestLsSubscription(payload.data ?? []);
-  if (!best?.id) return null;
-
-  const a = best.attributes ?? {};
-  return {
-    id: null,
-    ls_subscription_id: best.id,
-    ls_variant_id: a.variant_id ?? null,
-    status: a.status ?? "active",
-    plan_name: a.product_name ?? a.variant_name ?? null,
-    renews_at: a.renews_at ?? null,
-    ends_at: a.ends_at ?? null,
-  };
+  const all = payload.data ?? [];
+  const best = pickBestLsSubscription(all);
+  // Surface the "best" subscription first, then the rest in their original order.
+  const ordered = best
+    ? [best, ...all.filter((s) => s.id !== best.id)]
+    : all;
+  return ordered.map(mapLsSubscription).filter((s): s is Subscription => s !== null);
 }
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -172,6 +185,42 @@ async function readLocalLicense(
   const rows = (keys ?? []) as LicenseKeyRow[];
   const best = rows.find((k) => k.status === "active") ?? rows[0] ?? null;
   return toLicenseKey(best);
+}
+
+/**
+ * Fetches every license key for the user in one query and groups them by
+ * subscription_id, keeping the best (active, then newest) key per subscription.
+ * Lets us assign each subscription its own key without an extra query per row.
+ * Keys whose subscription_id is null are omitted (they can't be matched to a
+ * specific subscription and are handled by the per-primary fallback instead).
+ */
+async function readLicenseKeysBySubscription(
+  admin: AdminClient,
+  userId: string,
+): Promise<Map<string, LicenseKey>> {
+  const { data: keys } = await admin
+    .from("license_keys")
+    .select("key,status,activation_limit,activations_count,subscription_id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  const rows = (keys ?? []) as (LicenseKeyRow & { subscription_id?: string | null })[];
+  const bySub = new Map<string, LicenseKey>();
+  // Rows are newest-first; only replace an existing entry when the new row is
+  // active and the kept one is not, so we prefer active then newest.
+  for (const row of rows) {
+    const subId = row.subscription_id;
+    if (!subId) continue;
+    const mapped = toLicenseKey(row);
+    if (!mapped) continue;
+    const existing = bySub.get(subId);
+    if (!existing) {
+      bySub.set(subId, mapped);
+    } else if (existing.status !== "active" && mapped.status === "active") {
+      bySub.set(subId, mapped);
+    }
+  }
+  return bySub;
 }
 
 /**
@@ -237,6 +286,31 @@ function canUpgradeToAnnual(subscription: Subscription | null): boolean {
   return resolveAnnualVariantForMonthly(subscription.ls_variant_id) != null;
 }
 
+type SubscriptionEntry = {
+  subscription: Subscription;
+  licenseKey: LicenseKey | null;
+  hasLicenseKey: boolean;
+  canUpgradeToAnnual: boolean;
+};
+
+/**
+ * Serializes the response, keeping the singular top-level fields (mirroring the
+ * primary/first entry) for backward compatibility with the dashboard overview
+ * and license-key loaders, while adding the full `subscriptions` array that the
+ * subscription management page renders.
+ */
+function buildResponse(entries: SubscriptionEntry[]) {
+  const primary = entries[0] ?? null;
+  return NextResponse.json({
+    subscriptions: entries,
+    // Backward-compat singular fields (primary subscription).
+    subscription: primary?.subscription ?? null,
+    hasLicenseKey: primary ? primary.hasLicenseKey : false,
+    licenseKey: primary?.licenseKey ?? null,
+    canUpgradeToAnnual: primary ? primary.canUpgradeToAnnual : false,
+  });
+}
+
 export async function GET() {
   const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -248,59 +322,88 @@ export async function GET() {
   const user = userData.user;
   const admin = createAdminClient();
 
-  // Primary: service-role read by user_id (bypasses RLS).
+  // Primary: service-role read by user_id (bypasses RLS). A user can own several
+  // subscriptions (a Pro plan plus one or more Daily Deals Workspace add-ons),
+  // so we return all of them, ordered active/on_trial first then newest.
   const { data: subs } = await admin
     .from("subscriptions")
     .select("id,ls_subscription_id,ls_variant_id,status,plan_name,renews_at,ends_at")
     .eq("user_id", user.id)
     .in("status", VISIBLE_STATUSES)
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .order("created_at", { ascending: false });
 
-  const row = (subs && subs.length > 0 ? subs[0] : null) as SubscriptionRow | null;
+  const rows = ((subs ?? []) as SubscriptionRow[]).filter(
+    (r) => r.ls_subscription_id != null,
+  );
 
-  if (row && row.ls_subscription_id != null) {
-    const subscription: Subscription = {
-      id: row.id ?? null,
-      ls_subscription_id: String(row.ls_subscription_id),
-      ls_variant_id: row.ls_variant_id ?? null,
-      status: row.status ?? "active",
-      plan_name: row.plan_name ?? null,
-      renews_at: row.renews_at ?? null,
-      ends_at: row.ends_at ?? null,
-    };
+  if (rows.length > 0) {
+    const subscriptions: Subscription[] = rows
+      .map((row) => ({
+        id: row.id ?? null,
+        ls_subscription_id: String(row.ls_subscription_id),
+        ls_variant_id: row.ls_variant_id ?? null,
+        status: row.status ?? "active",
+        plan_name: row.plan_name ?? null,
+        renews_at: row.renews_at ?? null,
+        ends_at: row.ends_at ?? null,
+      }))
+      // created_at desc from the query; re-order active/on_trial ahead of
+      // past_due/cancelled for display without another round trip.
+      .sort((a, b) => rankStatus(a.status) - rankStatus(b.status));
 
-    const licenseKey = await resolveLicenseKey(admin, {
-      subscriptionId: subscription.id,
-      userId: user.id,
-      email: user.email ?? null,
-    });
+    const keysBySub = await readLicenseKeysBySubscription(admin, user.id);
 
-    return NextResponse.json({
-      subscription,
-      hasLicenseKey: Boolean(licenseKey),
-      licenseKey,
-      canUpgradeToAnnual: canUpgradeToAnnual(subscription),
-    });
+    const entries: SubscriptionEntry[] = [];
+    for (let i = 0; i < subscriptions.length; i += 1) {
+      const subscription = subscriptions[i];
+      let licenseKey = subscription.id ? keysBySub.get(subscription.id) ?? null : null;
+      // The primary subscription keeps the full resolution chain (user_id ->
+      // Lemon Squeezy backfill) so single-sub / webhook-race accounts still
+      // resolve a key. Secondaries resolve strictly by subscription_id so the
+      // same key is never handed to two different subscriptions.
+      if (!licenseKey && i === 0) {
+        licenseKey = await resolveLicenseKey(admin, {
+          subscriptionId: subscription.id,
+          userId: user.id,
+          email: user.email ?? null,
+        });
+      }
+      entries.push({
+        subscription,
+        licenseKey,
+        hasLicenseKey: Boolean(licenseKey),
+        canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+      });
+    }
+
+    return buildResponse(entries);
   }
 
   // Fallback: resolve directly from Lemon Squeezy by email.
   const email = user.email ?? null;
-  const subscription = email ? await fetchSubscriptionFromLs(email) : null;
+  const lsSubs = email ? await fetchSubscriptionsFromLs(email) : [];
 
-  let licenseKey: LicenseKey | null = null;
-  if (subscription) {
-    licenseKey = await resolveLicenseKey(admin, {
-      subscriptionId: null,
-      userId: user.id,
-      email,
-    });
+  if (lsSubs.length === 0) {
+    return buildResponse([]);
   }
 
-  return NextResponse.json({
-    subscription,
-    hasLicenseKey: Boolean(licenseKey),
-    licenseKey,
-    canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+  // Only the primary gets a key here: LS keys can't be mapped to a specific
+  // subscription by email alone.
+  const primaryLicenseKey = await resolveLicenseKey(admin, {
+    subscriptionId: null,
+    userId: user.id,
+    email,
   });
+
+  const entries: SubscriptionEntry[] = lsSubs.map((subscription, i) => {
+    const licenseKey = i === 0 ? primaryLicenseKey : null;
+    return {
+      subscription,
+      licenseKey,
+      hasLicenseKey: Boolean(licenseKey),
+      canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+    };
+  });
+
+  return buildResponse(entries);
 }
