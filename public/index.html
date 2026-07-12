@@ -1273,28 +1273,15 @@
                             window.location.href = `/api/checkout/guest?plan=${plan}`;
                         };
 
-                        const withEmbedParam = (url) => {
-                            try {
-                                const u = new URL(url);
-                                u.searchParams.set('embed', '1');
-                                return u.toString();
-                            } catch {
-                                return url + (url.includes('?') ? '&' : '?') + 'embed=1';
-                            }
-                        };
-
                         const openCheckout = (url) => {
-                            // Programmatic clicks on a dynamically-added
-                            // .lemonsqueezy-button anchor are ignored by lemon.js
-                            // (event.isTrusted is false), so they bypass the modal
-                            // and do a full-page navigation. Url.Open() is the only
-                            // way to trigger the overlay from JS - the checkout
-                            // stays on our domain inside an LS-managed iframe.
-                            if (window.LemonSqueezy?.Url?.Open) {
-                                window.LemonSqueezy.Url.Open(withEmbedParam(url));
-                            } else {
-                                window.location.href = url;
-                            }
+                            // Full-page Lemon Squeezy hosted checkout, NOT the embedded
+                            // overlay. In the overlay, clicking the remove (x) control on
+                            // the auto-applied WELCOME discount made LS's checkout break
+                            // out of the iframe and land the buyer on a 404, killing the
+                            // sale. A full-page checkout reloads LS's own page in place,
+                            // so adding or removing a discount is safe. Buyers return to
+                            // us via product_options.redirect_url (/welcome) after payment.
+                            window.location.href = url;
                         };
 
                         const openGuestCheckoutOverlay = async (plan) => {

@@ -31,10 +31,6 @@ type Props = {
   initialCode: string | null;
 };
 
-type LemonSqueezyWindow = Window & {
-  LemonSqueezy?: { Url?: { Open?: (url: string) => void } };
-};
-
 const TIER_ORDER: readonly Tier[] = ["solo", "team", "agency"] as const;
 
 function formatMoney(cents: number): string {
@@ -55,23 +51,14 @@ function hasAuthCookie(): boolean {
     .some((entry) => /^sb-[^=]+-auth-token=/.test(entry));
 }
 
-function withEmbedParam(url: string): string {
-  try {
-    const u = new URL(url);
-    u.searchParams.set("embed", "1");
-    return u.toString();
-  } catch {
-    return url + (url.includes("?") ? "&" : "?") + "embed=1";
-  }
-}
-
 function openCheckout(url: string): void {
-  const w = window as LemonSqueezyWindow;
-  if (w.LemonSqueezy?.Url?.Open) {
-    w.LemonSqueezy.Url.Open(withEmbedParam(url));
-  } else {
-    window.location.href = url;
-  }
+  // Full-page Lemon Squeezy hosted checkout, NOT the embedded overlay. In the
+  // overlay, clicking the remove (x) control on an auto-applied discount made
+  // LS's checkout break out of the iframe and land the buyer on a 404, killing
+  // the sale. A full-page checkout reloads LS's own page in place, so adding or
+  // removing a discount is safe. Buyers return via the checkout's redirect_url
+  // (/welcome) after payment.
+  window.location.href = url;
 }
 
 export default function PricingCardsClient({

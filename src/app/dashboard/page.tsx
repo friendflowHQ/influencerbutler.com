@@ -113,11 +113,11 @@ export default function DashboardOverviewPage() {
           throw new Error("Missing checkout URL");
         }
 
-        if (window.LemonSqueezy?.Url?.Open) {
-          window.LemonSqueezy.Url.Open(checkoutUrl);
-        } else {
-          window.location.href = checkoutUrl;
-        }
+        // Full-page Lemon Squeezy hosted checkout, NOT the embedded overlay.
+        // Removing an applied discount in the overlay could break out of the
+        // iframe and land the buyer on a 404 (see index.html / PricingCardsClient).
+        // A full-page checkout reloads LS's own page in place, so it is safe.
+        window.location.href = checkoutUrl;
       } catch (error) {
         console.error("Unable to launch checkout", error);
       }
