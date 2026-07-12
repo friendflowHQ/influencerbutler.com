@@ -45,6 +45,7 @@ type SelfHostedData = {
   // Present only in the admin "view as" payload.
   displayName?: string | null;
   taxForm?: TaxFormDetails | null;
+  canEditPayout?: boolean;
 };
 
 type Props = {
@@ -55,6 +56,9 @@ type Props = {
   dataUrl?: string;
   clicksUrl?: string;
   readOnly?: boolean;
+  /** When set (admin view) AND the payload's canEditPayout is true, the payout
+   *  card stays editable and saves the affiliate's PayPal email here. */
+  payoutSaveUrl?: string;
 };
 
 function brandedShareLink(code: string): string {
@@ -74,6 +78,7 @@ export default function SelfHostedAffiliateDashboard({
   dataUrl = "/api/affiliates/me-selfhosted",
   clicksUrl = "/api/affiliates/clicks",
   readOnly = false,
+  payoutSaveUrl,
 }: Props) {
   const [data, setData] = useState<SelfHostedData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -159,12 +164,30 @@ export default function SelfHostedAffiliateDashboard({
       ) : null}
 
       {readOnly ? (
-        <ReadOnlyPayoutTaxPanel
-          paypalEmail={data.paypalEmail}
-          taxStatus={data.taxStatus}
-          taxFormType={data.taxFormType}
-          taxForm={data.taxForm ?? null}
-        />
+        <div className="space-y-2">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ReadOnlyTaxCard
+              taxStatus={data.taxStatus}
+              taxFormType={data.taxFormType}
+              taxForm={data.taxForm ?? null}
+            />
+            {payoutSaveUrl && data.canEditPayout ? (
+              <PayoutMethodCard
+                initialEmail={data.paypalEmail}
+                endpoint={payoutSaveUrl}
+                onChange={reload}
+              />
+            ) : (
+              <ReadOnlyPayoutCard paypalEmail={data.paypalEmail} />
+            )}
+          </div>
+          {payoutSaveUrl && data.canEditPayout ? (
+            <p className="text-xs text-slate-500">
+              You&apos;re setting this on the affiliate&apos;s behalf. They can also add or change
+              their PayPal email themselves in their own dashboard.
+            </p>
+          ) : null}
+        </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <TaxFormCard onChange={reload} />
@@ -354,58 +377,59 @@ function DefRow({ k, v }: { k: string; v: string }) {
   );
 }
 
-// Read-only replacement for the editable TaxFormCard + PayoutMethodCard, used by
-// the admin "view as affiliate" page. Shows the affiliate's tax + payout status
-// (and full tax details when the admin endpoint included them) with no editors.
-function ReadOnlyPayoutTaxPanel({
-  paypalEmail,
+// Read-only tax card for the admin "view as affiliate" page. Shows the tax
+// status (and full details when the admin endpoint included them) with no editor.
+function ReadOnlyTaxCard({
   taxStatus,
   taxFormType,
   taxForm,
 }: {
-  paypalEmail: string | null;
   taxStatus: string;
   taxFormType: string | null;
   taxForm: TaxFormDetails | null;
 }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax form</p>
-        <p className="mt-2 flex items-center gap-2 text-base font-semibold text-slate-900">
-          {taxStatusLabel(taxStatus)}
-          {taxFormType ? (
-            <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              {taxFormType}
-            </span>
-          ) : null}
-        </p>
-        {taxForm ? (
-          <dl className="mt-3 space-y-1.5 text-sm">
-            {taxForm.legalName ? <DefRow k="Legal name" v={taxForm.legalName} /> : null}
-            {taxForm.country ? <DefRow k="Country" v={taxForm.country} /> : null}
-            {taxForm.tinLast4 ? (
-              <DefRow
-                k="TIN"
-                v={`•••• ${taxForm.tinLast4}${taxForm.tinKind ? ` (${taxForm.tinKind.toUpperCase()})` : ""}`}
-              />
-            ) : null}
-            {taxForm.submittedAt ? <DefRow k="Submitted" v={fmtDate(taxForm.submittedAt)} /> : null}
-            {taxForm.verifiedAt ? <DefRow k="Verified" v={fmtDate(taxForm.verifiedAt)} /> : null}
-            {taxForm.rejectedReason ? <DefRow k="Rejected reason" v={taxForm.rejectedReason} /> : null}
-          </dl>
-        ) : taxStatus !== "not_submitted" ? (
-          <p className="mt-2 text-xs text-slate-500">
-            Full tax details are hidden (requires the tax-view permission).
-          </p>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax form</p>
+      <p className="mt-2 flex items-center gap-2 text-base font-semibold text-slate-900">
+        {taxStatusLabel(taxStatus)}
+        {taxFormType ? (
+          <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+            {taxFormType}
+          </span>
         ) : null}
-      </section>
+      </p>
+      {taxForm ? (
+        <dl className="mt-3 space-y-1.5 text-sm">
+          {taxForm.legalName ? <DefRow k="Legal name" v={taxForm.legalName} /> : null}
+          {taxForm.country ? <DefRow k="Country" v={taxForm.country} /> : null}
+          {taxForm.tinLast4 ? (
+            <DefRow
+              k="TIN"
+              v={`•••• ${taxForm.tinLast4}${taxForm.tinKind ? ` (${taxForm.tinKind.toUpperCase()})` : ""}`}
+            />
+          ) : null}
+          {taxForm.submittedAt ? <DefRow k="Submitted" v={fmtDate(taxForm.submittedAt)} /> : null}
+          {taxForm.verifiedAt ? <DefRow k="Verified" v={fmtDate(taxForm.verifiedAt)} /> : null}
+          {taxForm.rejectedReason ? <DefRow k="Rejected reason" v={taxForm.rejectedReason} /> : null}
+        </dl>
+      ) : taxStatus !== "not_submitted" ? (
+        <p className="mt-2 text-xs text-slate-500">
+          Full tax details are hidden (requires the tax-view permission).
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Payout method</p>
-        <p className="mt-2 text-base font-semibold text-slate-900">{paypalEmail ? "PayPal" : "Not set"}</p>
-        <p className="mt-1 text-sm text-slate-600">{paypalEmail ?? "No PayPal email on file yet."}</p>
-      </section>
-    </div>
+// Read-only payout summary, shown in the admin view when the actor may not edit
+// the affiliate's payout email (lacks the affiliates.payout permission).
+function ReadOnlyPayoutCard({ paypalEmail }: { paypalEmail: string | null }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Payout method</p>
+      <p className="mt-2 text-base font-semibold text-slate-900">{paypalEmail ? "PayPal" : "Not set"}</p>
+      <p className="mt-1 text-sm text-slate-600">{paypalEmail ?? "No PayPal email on file yet."}</p>
+    </section>
   );
 }

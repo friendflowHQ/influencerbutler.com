@@ -11,9 +11,16 @@ import { useState } from "react";
 type Props = {
   initialEmail: string | null;
   onChange?: (email: string) => void;
+  /** Save target. Defaults to the caller's own payout method; the admin "view
+   *  as" page points this at an affiliate-scoped admin endpoint. */
+  endpoint?: string;
 };
 
-export default function PayoutMethodCard({ initialEmail, onChange }: Props) {
+export default function PayoutMethodCard({
+  initialEmail,
+  onChange,
+  endpoint = "/api/affiliates/payout-method",
+}: Props) {
   const [email, setEmail] = useState(initialEmail ?? "");
   const [saved, setSaved] = useState<string | null>(initialEmail);
   const [editing, setEditing] = useState(!initialEmail);
@@ -24,7 +31,7 @@ export default function PayoutMethodCard({ initialEmail, onChange }: Props) {
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/affiliates/payout-method", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paypalEmail: email.trim() }),

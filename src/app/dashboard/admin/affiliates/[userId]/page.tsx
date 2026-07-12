@@ -33,6 +33,7 @@ export default function AdminAffiliateViewPage() {
         displayName=""
         dataUrl={`/api/affiliates/admin-affiliate-view?userId=${encodeURIComponent(userId)}`}
         clicksUrl={`/api/affiliates/admin-affiliate-clicks?userId=${encodeURIComponent(userId)}`}
+        payoutSaveUrl={`/api/affiliates/admin-payout-method?userId=${encodeURIComponent(userId)}`}
       />
     </div>
   );

@@ -80,6 +80,8 @@ export async function GET(request: Request) {
 
     // Whether this actor may see the affiliate's full tax details (PII).
     const canSeeTax = actor.role === "admin" || actor.permissions.has("affiliates.tax.view");
+    // Whether this actor may edit the affiliate's payout email on their behalf.
+    const canEditPayout = actor.role === "admin" || actor.permissions.has("affiliates.payout");
 
     // Tax form: always the status/type (matching me-selfhosted); full details
     // (legal name, country, TIN last-4) only for actors with affiliates.tax.view.
@@ -137,6 +139,7 @@ export async function GET(request: Request) {
       taxStatus,
       taxFormType,
       taxForm,
+      canEditPayout,
     });
   } catch (err) {
     console.error("admin-affiliate-view error", err);
