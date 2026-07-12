@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/admin";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
+import { affiliateResourcesLines } from "@/lib/affiliate-resources-email";
 
 export const BRANDED_CODE_PERCENT_OFF = 15;
 
@@ -109,13 +110,9 @@ async function sendApprovalEmail(params: {
     ``,
   );
 
+  lines.push(...affiliateResourcesLines());
+
   lines.push(
-    `Your affiliate dashboard awaits you at:`,
-    ``,
-    ``,
-    `    https://www.influencerbutler.com/dashboard/affiliates`,
-    ``,
-    ``,
     `Should you require anything further, do write to hello@influencerbutler.com and I shall attend to you promptly.`,
     ``,
     ``,

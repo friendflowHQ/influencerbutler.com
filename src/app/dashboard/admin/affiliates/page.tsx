@@ -286,6 +286,9 @@ export default function AdminAffiliatesPage() {
   // Per-row state for the roster "Generate new code" action.
   const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
 
+  // One-time "email all affiliates the dashboard + resources guide" action.
+  const [broadcast, setBroadcast] = useState<LinkRowState>({ kind: "idle" });
+
   const load = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
@@ -738,9 +741,64 @@ export default function AdminAffiliatesPage() {
     { key: "analytics", label: "Analytics", count: null },
   ];
 
+  // Preview the recipient count, confirm, then send the resources email to every
+  // current affiliate. New affiliates already get this in their approval email.
+  const onBroadcastResources = async () => {
+    setBroadcast({ kind: "working" });
+    try {
+      const dryRes = await fetch("/api/affiliates/admin-broadcast-resources?dry=1", {
+        method: "POST",
+      });
+      const dry = (await dryRes.json()) as { total?: number; lastSent?: string | null; error?: string };
+      if (!dryRes.ok) {
+        setBroadcast({ kind: "error", message: dry.error ?? `Failed (${dryRes.status})` });
+        return;
+      }
+      const lastNote = dry.lastSent
+        ? `\n\nHeads up: last sent ${new Date(dry.lastSent).toLocaleString()}.`
+        : "";
+      if (
+        !window.confirm(
+          `Email the dashboard & resources guide to ${dry.total ?? 0} affiliate(s)?\n\nThis sends to every current affiliate.${lastNote}`,
+        )
+      ) {
+        setBroadcast({ kind: "idle" });
+        return;
+      }
+      const res = await fetch("/api/affiliates/admin-broadcast-resources", { method: "POST" });
+      const json = (await res.json()) as { total?: number; sent?: number; failed?: number; error?: string };
+      if (!res.ok) {
+        setBroadcast({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      const failedNote = json.failed ? `, ${json.failed} failed` : "";
+      setBroadcast({ kind: "success", message: `Sent ${json.sent ?? 0}/${json.total ?? 0}${failedNote}.` });
+    } catch (err) {
+      console.error(err);
+      setBroadcast({ kind: "error", message: "Network error." });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {header}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={onBroadcastResources}
+          disabled={broadcast.kind === "working"}
+          className="rounded-lg border border-[#f97316] bg-orange-50 px-3 py-2 text-sm font-semibold text-[#c2410c] transition hover:bg-orange-100 disabled:opacity-60"
+        >
+          {broadcast.kind === "working" ? "Sending…" : "Email affiliates: dashboard & resources"}
+        </button>
+        {broadcast.kind === "success" ? (
+          <span className="text-sm text-emerald-700">{broadcast.message}</span>
+        ) : null}
+        {broadcast.kind === "error" ? (
+          <span className="text-sm text-red-700">{broadcast.message}</span>
+        ) : null}
+      </div>
 
       <nav className="flex flex-wrap gap-2 border-b border-slate-200">
         {tabs.map((t) => {
