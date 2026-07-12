@@ -102,6 +102,20 @@ function getString(value: unknown): string | null {
 }
 
 /**
+ * Like getString but also accepts finite numbers. Lemon Squeezy sends its
+ * relational ids (subscription_id, order_id, customer_id) inside `attributes`
+ * as JSON numbers, not strings, so getString silently returned null for them.
+ * That dropped the subscription lookup on renewal (subscription_payment_success)
+ * webhooks - which carry no custom_data and no directUserId - and failed every
+ * renewal with "no user context for sub=null".
+ */
+function getIdString(value: unknown): string | null {
+  if (typeof value === "string") return value.length > 0 ? value : null;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return null;
+}
+
+/**
  * Awaits a Supabase mutation and throws on error with the DB-reported reason.
  * Silent write failures were masking RLS/FK/column-missing issues that made
  * webhooks look like they succeeded while no rows landed.
@@ -643,7 +657,7 @@ export async function POST(request: Request) {
         throw new Error("order_created: missing data.id (recordId)");
       }
 
-      const lsCustomerId = getString(attrs.customer_id);
+      const lsCustomerId = getIdString(attrs.customer_id);
       const orderEmail = getString(attrs.user_email);
 
       // Payment-first flow: when the CTA used the guest checkout, there is no
@@ -899,10 +913,10 @@ export async function POST(request: Request) {
     },
 
     subscription_payment_success: async () => {
-      const renewalOrderId = getString(attrs.order_id) ?? recordId;
+      const renewalOrderId = getIdString(attrs.order_id) ?? recordId;
       if (!renewalOrderId) return;
 
-      const lsSubscriptionId = getString(attrs.subscription_id);
+      const lsSubscriptionId = getIdString(attrs.subscription_id);
       // Recover the subscription's stored affiliate attribution: renewal
       // webhooks carry no custom_data, so without this the referring affiliate
       // would be lost on every renewal (breaking recurring/lifetime payouts).
@@ -952,7 +966,7 @@ export async function POST(request: Request) {
     },
 
     subscription_payment_failed: async () => {
-      const lsSubscriptionId = getString(attrs.subscription_id) ?? recordId;
+      const lsSubscriptionId = getIdString(attrs.subscription_id) ?? recordId;
       if (!lsSubscriptionId) return;
       await assertWrite(
         "subscriptions.update(subscription_payment_failed)",
@@ -1085,7 +1099,7 @@ export async function POST(request: Request) {
     license_key_created: async () => {
       if (!recordId) return;
 
-      const lsSubscriptionId = getString(attrs.subscription_id);
+      const lsSubscriptionId = getIdString(attrs.subscription_id);
       const subscription = lsSubscriptionId
         ? await findSubscriptionByLsId(supabase, lsSubscriptionId)
         : { id: null, userId: null };
