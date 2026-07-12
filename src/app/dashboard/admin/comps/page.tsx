@@ -172,11 +172,12 @@ export default function AdminCompsPage() {
   const [grantPlan, setGrantPlan] = useState("monthly");
   const [grantForever, setGrantForever] = useState(false);
   const [grantSeats, setGrantSeats] = useState("1");
+  const [grantAllowExisting, setGrantAllowExisting] = useState(false);
   const [granting, setGranting] = useState(false);
   const [grantError, setGrantError] = useState<string | null>(null);
   const [grantResult, setGrantResult] = useState<{
     key: string;
-    email: string;
+    email: string | null;
     expiresAt: string | null;
     forever: boolean;
     seats: number | null;
@@ -296,10 +297,6 @@ export default function AdminCompsPage() {
     setCopied(false);
     const months = Number(grantMonths.trim());
     const seats = Number(grantSeats.trim());
-    if (!grantEmail.trim()) {
-      setGrantError("Enter the recipient's email.");
-      return;
-    }
     if (!grantForever && (!Number.isInteger(months) || months < 1 || months > 36)) {
       setGrantError("Free months must be a whole number between 1 and 36, or mark it forever.");
       return;
@@ -314,18 +311,19 @@ export default function AdminCompsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: grantEmail.trim(),
+          email: grantEmail.trim() || undefined,
           name: grantName.trim() || undefined,
           months: grantForever ? null : months,
           forever: grantForever,
           seats,
           plan: grantPlan,
+          allowExisting: grantAllowExisting,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
         key?: string;
-        email?: string;
+        email?: string | null;
         expiresAt?: string;
         forever?: boolean;
         activationLimit?: number;
@@ -337,7 +335,7 @@ export default function AdminCompsPage() {
       }
       setGrantResult({
         key: json.key,
-        email: json.email ?? grantEmail.trim(),
+        email: json.email ?? (grantEmail.trim() || null),
         expiresAt: json.expiresAt ?? null,
         forever: json.forever === true,
         seats: typeof json.activationLimit === "number" ? json.activationLimit : seats,
@@ -424,7 +422,7 @@ export default function AdminCompsPage() {
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
-            <span className="mb-1 block font-medium text-slate-700">Recipient email</span>
+            <span className="mb-1 block font-medium text-slate-700">Recipient email (optional)</span>
             <input
               type="email"
               value={grantEmail}
@@ -432,6 +430,9 @@ export default function AdminCompsPage() {
               placeholder="kay@example.com"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
+            <span className="mt-1.5 block text-xs font-normal text-slate-500">
+              Leave blank to mint an unassigned key you copy and hand out. It is not emailed.
+            </span>
           </label>
           <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-700">Name (optional)</span>
@@ -493,7 +494,16 @@ export default function AdminCompsPage() {
             </span>
           </label>
         </div>
-        <div className="mt-4 flex items-center gap-3">
+        <label className="mt-4 flex items-center gap-2 text-xs font-normal text-slate-600">
+          <input
+            type="checkbox"
+            checked={grantAllowExisting}
+            onChange={(e) => setGrantAllowExisting(e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-slate-300"
+          />
+          Grant even if this account already has a subscription (stacks a second comp)
+        </label>
+        <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => void grantComp()}
             disabled={granting}
@@ -507,7 +517,9 @@ export default function AdminCompsPage() {
         {grantResult ? (
           <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
             <p className="font-medium text-emerald-800">
-              Comp minted for {grantResult.email} and emailed to them. Their license key:
+              {grantResult.email
+                ? `Comp minted for ${grantResult.email} and emailed to them. Their license key:`
+                : "Unassigned comp minted. Copy the key and hand it out:"}
             </p>
             <div className="mt-2 flex items-center gap-2">
               <input

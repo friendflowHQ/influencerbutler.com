@@ -17,7 +17,13 @@
  * auto-cancelled on a guess.
  */
 import { createAdminClient } from "@/lib/admin";
-import { addMonthsUtc, compNameFromCode, isForeverCode, parseCompMonths } from "@/lib/comp-codes";
+import {
+  addMonthsUtc,
+  compNameFromCode,
+  isForeverCode,
+  isPlaceholderCompEmail,
+  parseCompMonths,
+} from "@/lib/comp-codes";
 
 const ROW_LIMIT = 5000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -342,7 +348,11 @@ function buildCompRow(args: {
   return {
     lsSubscriptionId: lsSubId,
     userId,
-    email: (userId ? emailByUser.get(userId) : null) ?? str(grant?.user_email) ?? null,
+    // Unassigned comps carry a placeholder identity; show them as email-less.
+    email: (() => {
+      const resolved = (userId ? emailByUser.get(userId) : null) ?? str(grant?.user_email) ?? null;
+      return isPlaceholderCompEmail(resolved) ? null : resolved;
+    })(),
     name: compNameFromCode(code),
     discountCode: code,
     months,

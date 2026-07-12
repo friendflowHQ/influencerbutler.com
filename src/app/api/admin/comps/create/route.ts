@@ -32,6 +32,7 @@ type Body = {
   plan?: unknown;
   seats?: unknown;
   forever?: unknown;
+  allowExisting?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -51,13 +52,16 @@ export async function POST(request: Request) {
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : null;
   const plan = typeof body.plan === "string" ? body.plan : "monthly";
   const forever = body.forever === true;
+  const allowExisting = body.allowExisting === true;
   const months = forever
     ? null
     : typeof body.months === "number"
       ? body.months
       : Number.parseInt(String(body.months), 10);
 
-  if (!EMAIL_RE.test(email)) {
+  // Email is optional: omit it to mint an unassigned key the admin hands out.
+  // When one IS given, it must be well-formed.
+  if (email && !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Enter a valid recipient email." }, { status: 400 });
   }
   if (!forever && (!Number.isInteger(months) || (months as number) < 1 || (months as number) > MAX_MONTHS)) {
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
     seats = parsed;
   }
 
-  const result = await issueInHouseComp({ email, name, months, plan, seats, forever });
+  const result = await issueInHouseComp({ email, name, months, plan, seats, forever, allowExisting });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

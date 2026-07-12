@@ -99,6 +99,20 @@ export function parseCompMonths(code: string | null | undefined): number | null 
  */
 export const FOREVER_TOKEN = "FOREVER";
 
+/**
+ * Domain used for the synthetic identity behind an UNASSIGNED comp: one minted
+ * with no recipient email, so the admin can hand the key out later. The comp
+ * machinery is keyed on a user_id, so we still create a user + subscription, but
+ * under a placeholder address that is never emailed and hidden in the UI. See
+ * issueInHouseComp and isPlaceholderCompEmail.
+ */
+export const COMP_PLACEHOLDER_DOMAIN = "unassigned.comp.influencerbutler.com";
+
+/** True when an email is a placeholder for an unassigned (no-recipient) comp. */
+export function isPlaceholderCompEmail(email: string | null | undefined): boolean {
+  return typeof email === "string" && email.toLowerCase().endsWith(`@${COMP_PLACEHOLDER_DOMAIN}`);
+}
+
 /** True when a comp code marks a never-expiring grant (carries FOREVER). */
 export function isForeverCode(code: string | null | undefined): boolean {
   return /FOREVER/i.test(code ?? "");

@@ -25,12 +25,17 @@
 import { randomUUID } from "crypto";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
-import { addMonthsUtc, FOREVER_TOKEN } from "@/lib/comp-codes";
+import { addMonthsUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
 
 export type IssueCompInput = {
-  email: string;
+  /**
+   * Recipient email, or empty/null to mint an UNASSIGNED comp (a spare key the
+   * admin hands out later). Unassigned comps get a placeholder identity and are
+   * not emailed; whoever holds the key can still activate the desktop app.
+   */
+  email?: string | null;
   name?: string | null;
   /** Free-window length in months, or null for a never-expiring (forever) comp. */
   months: number | null;
@@ -43,10 +48,24 @@ export type IssueCompInput = {
   seats?: number | null;
   /** When true, the comp never expires and is never auto-cancelled. */
   forever?: boolean;
+  /**
+   * When true, skip the "account already has a live subscription" guard and
+   * stack this comp on top anyway. Entitlements read the newest subscription, so
+   * a fresh comp takes effect and its own expiry cron only cancels this row.
+   */
+  allowExisting?: boolean;
 };
 
 export type IssueCompResult =
-  | { ok: true; key: string; userId: string; email: string; expiresAt: string | null; activationLimit: number }
+  | {
+      ok: true;
+      key: string;
+      userId: string;
+      /** The recipient email, or null for an unassigned (no-recipient) comp. */
+      email: string | null;
+      expiresAt: string | null;
+      activationLimit: number;
+    }
   | { ok: false; status: number; error: string };
 
 // Statuses that mean the user already has live access, so we must not stack a
@@ -178,7 +197,13 @@ async function sendCompEmail(params: {
 }
 
 export async function issueInHouseComp(input: IssueCompInput): Promise<IssueCompResult> {
-  const email = input.email.trim();
+  // No recipient email -> an unassigned comp: mint under a placeholder identity
+  // so the entitlement (which needs a user_id) still works, skip delivery, and
+  // let the admin copy the key and hand it out. hasRecipient gates the email +
+  // sign-in link and how the grant/list present it.
+  const rawEmail = (input.email ?? "").trim();
+  const hasRecipient = rawEmail.length > 0;
+  const email = hasRecipient ? rawEmail : `comp-${randomUUID()}@${COMP_PLACEHOLDER_DOMAIN}`;
   const forever = input.forever === true;
   const months = forever ? null : input.months;
   const isDailyDeals = input.plan === ADDON_PLAN_DAILY_DEALS;
@@ -210,9 +235,11 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   const userId = await ensureCompUser(svc, email, input.name);
   if (!userId) return { ok: false, status: 502, error: "Could not create the recipient account." };
 
-  // Never stack a second PRIMARY comp on someone who already has live access.
-  // The Daily Deals add-on is meant to sit ON TOP of a plan, so it is exempt.
-  if (!isDailyDeals) {
+  // Never stack a second PRIMARY comp on someone who already has live access,
+  // unless the admin explicitly overrides (allowExisting). The Daily Deals
+  // add-on is meant to sit ON TOP of a plan, so it is always exempt. Unassigned
+  // comps get a fresh placeholder user, so this never trips for them.
+  if (!isDailyDeals && !input.allowExisting) {
     const liveSub = await svc
       .from("subscriptions")
       .select("id")
@@ -291,7 +318,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   const grantInsert = await svc.from("comp_grants").insert({
     ls_subscription_id: sentinel,
     user_id: userId,
-    user_email: email,
+    user_email: hasRecipient ? email : null,
     discount_code: discountCode,
     months,
     months_source: "manual",
@@ -304,24 +331,27 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     console.error("comp-issue: comp_grants insert failed (grant still active)", grantInsert.error);
   }
 
-  // 4) Deliver the key. Best-effort; the admin UI also shows it.
-  let signInLink: string | null = null;
-  try {
-    const siteUrl = (
-      process.env.SITE_URL ??
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      "https://www.influencerbutler.com"
-    ).replace(/\/$/, "");
-    const link = await svc.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo: `${siteUrl}/dashboard` },
-    });
-    signInLink = link.data?.properties?.action_link ?? null;
-  } catch (err) {
-    console.error("comp-issue: generateLink threw", err);
+  // 4) Deliver the key. Best-effort; the admin UI also shows it. Skipped for
+  //    unassigned comps (no real recipient to email or sign in).
+  if (hasRecipient) {
+    let signInLink: string | null = null;
+    try {
+      const siteUrl = (
+        process.env.SITE_URL ??
+        process.env.NEXT_PUBLIC_SITE_URL ??
+        "https://www.influencerbutler.com"
+      ).replace(/\/$/, "");
+      const link = await svc.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: { redirectTo: `${siteUrl}/dashboard` },
+      });
+      signInLink = link.data?.properties?.action_link ?? null;
+    } catch (err) {
+      console.error("comp-issue: generateLink threw", err);
+    }
+    await sendCompEmail({ to: email, key, months, forever, signInLink });
   }
-  await sendCompEmail({ to: email, key, months, forever, signInLink });
 
-  return { ok: true, key, userId, email, expiresAt, activationLimit };
+  return { ok: true, key, userId, email: hasRecipient ? email : null, expiresAt, activationLimit };
 }
