@@ -45,8 +45,15 @@ export default async function PricingPage({
   const params = await searchParams;
   const cookieStore = await cookies();
 
+  // Affiliate code via ?code=… URL param wins over the WELCOME promo.
+  const rawCode = typeof params.code === "string" ? params.code.trim() : "";
+
   // Redirect users with an active/on_trial subscription - they shouldn't see
   // first-payment discount UI. Mirrors src/app/welcome/page.tsx auth check.
+  // Exception: when an affiliate code is present this is a share link meant for
+  // prospects. Never bounce those visitors to the dashboard - it looks broken to
+  // the affiliate testing their own link and drops the referral. Keep them on
+  // pricing so the code tracks and applies.
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   let signedIn = false;
@@ -59,13 +66,10 @@ export default async function PricingPage({
       .order("created_at", { ascending: false })
       .limit(1);
     const status = subs && subs.length > 0 ? subs[0].status : null;
-    if (status === "active" || status === "on_trial") {
+    if ((status === "active" || status === "on_trial") && rawCode.length === 0) {
       redirect("/dashboard?from=pricing");
     }
   }
-
-  // Affiliate code via ?code=… URL param wins over the WELCOME promo.
-  const rawCode = typeof params.code === "string" ? params.code.trim() : "";
   const affiliate =
     rawCode.length > 0 ? await withTimeout(lookupAffiliateByCode(rawCode), 3000, null) : null;
 
