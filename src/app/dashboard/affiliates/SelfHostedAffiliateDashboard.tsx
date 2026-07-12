@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import LinkBuilder from "./LinkBuilder";
 import SocialShareButtons from "./SocialShareButtons";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
-import CompetitorPlaybook from "./CompetitorPlaybook";
-import PlannerCallout from "./PlannerCallout";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
 import { formatUsdFromCents } from "@/lib/affiliates";
@@ -254,9 +252,6 @@ export default function SelfHostedAffiliateDashboard({
           label="Share in one click"
         />
       ) : null}
-
-      <PlannerCallout />
-      <CompetitorPlaybook code={code ?? undefined} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions about a payout?{" "}

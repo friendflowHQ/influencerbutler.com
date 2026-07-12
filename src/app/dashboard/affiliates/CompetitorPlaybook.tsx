@@ -12,7 +12,7 @@ import { useState } from "react";
 
 // Every competitor claim in this file is "as of" this date. Update it every
 // time the rows/copy are re-verified against the competitors' live sites.
-const LAST_REVIEWED = "July 4, 2026";
+const LAST_REVIEWED = "July 12, 2026";
 
 type Verdict = "yes" | "ltd" | "no" | "text";
 
@@ -45,6 +45,13 @@ const ROWS: Row[] = [
     oink: { v: "text", t: "40+" },
     vue: { v: "text", t: "Several" },
     cha: { v: "text", t: "1 (video sync)" },
+  },
+  {
+    cap: "Free browser extension (video counts, gaps, seal, storefront)",
+    ib: { v: "yes", t: "free forever" },
+    oink: { v: "ltd", t: "free tier" },
+    vue: { v: "ltd", t: "free tier" },
+    cha: { v: "no" },
   },
   {
     cap: "Auto-accept Creator Connections",
@@ -166,7 +173,7 @@ const MASCOTS: { emoji: string; name: string; body: string; butler?: boolean }[]
   {
     emoji: "\u{1F3B0}",
     name: "Cha-Ching Automate",
-    body: "The one-trick specialist. Does exactly one job (videos to YouTube) and nothing else.",
+    body: "The one-trick specialist. Does one job (cross-posting your videos to YouTube and 13+ international Amazon marketplaces) and nothing else.",
   },
 ];
 
@@ -234,7 +241,11 @@ const COMPETITORS: Competitor[] = [
 const CAPTIONS: { label: string; text: string }[] = [
   {
     label: "Short",
-    text: "The browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep. Stop renting tools. Hire the butler.",
+    text: "The paid browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep. Stop renting tools. Hire the butler.",
+  },
+  {
+    label: "Free tool",
+    text: "The Amazon intel other extensions charge $30/mo for? Influencer Butler gives it to you free. See how many influencer videos any product has, find content gaps in your own orders, and spot the products worth filming, right in your browser. No card, installs in one click:",
   },
   {
     label: "Story / Reel",
@@ -242,12 +253,23 @@ const CAPTIONS: { label: string; text: string }[] = [
   },
   {
     label: "Comparison hook",
-    text: "I compared the top Amazon creator tools. The extensions = tools you run by hand. The research tools = great data, you still do the work. The single-purpose apps = one job only. Influencer Butler = the whole job, done for you. Here is the breakdown.",
+    text: "I compared the top Amazon creator tools. The paid extensions = tools you run by hand. The research tools = great data, you still do the work. The single-purpose apps = one job only. Influencer Butler = the whole job, done for you (and its browser extension is free). Here is the breakdown.",
   },
 ];
 
-export default function CompetitorPlaybook() {
+// Tracked free-extension link. Points at /extension/get (NOT the bare
+// /extension short link, which redirects straight to the Web Store before any
+// attribution can fire). /extension/get renders our landing page and sets the
+// affiliate's first-touch cookie, so a later purchase still credits them.
+// Falls back to the plain landing page if the affiliate has no branded code yet.
+function extensionLink(code?: string): string {
+  const base = "https://www.influencerbutler.com/extension/get";
+  return code ? `${base}?code=${encodeURIComponent(code)}` : base;
+}
+
+export default function CompetitorPlaybook({ code }: { code?: string }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const trackedExtLink = extensionLink(code);
 
   const copy = async (key: string, text: string) => {
     try {
@@ -413,6 +435,75 @@ export default function CompetitorPlaybook() {
           </article>
         ))}
       </div>
+
+      <section className="mt-7 rounded-xl border-2 border-[#f97316]/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-5 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#f97316]">
+          Your secret weapon
+        </p>
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">
+          Lead with our free browser extension
+        </h3>
+        <p className="mt-2 text-sm text-slate-700">
+          The competitors sell a browser extension. We give one away. Our free Chrome extension hands
+          your audience the exact on-Amazon intel Oink and Viral Vue charge $25 to $50 a month for:
+          influencer vs brand vs customer video counts on any product, content gaps from their own
+          order history, a Butler Approved opportunity seal, and a one-click storefront checkup. No
+          account, no card, installs in one click.
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          Why it is your best opener: a free install is the lowest-friction thing you can ask for, and
+          the extension syncs into the full 40+ butler desktop suite. So a free user is a warm lead
+          who upsells themselves into the paid app, which is where your recurring commission comes
+          from.
+        </p>
+
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Talking points
+        </p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <li>Lead with the free tool. It costs your audience nothing and it sells the butler for you.</li>
+          <li>
+            &quot;The intel other extensions charge $30/mo for, free.&quot; That headline converts on
+            its own.
+          </li>
+          <li>
+            Once they connect a license key, the extension feeds the desktop app: a natural,
+            no-pressure path to the paid subscription you earn on.
+          </li>
+        </ul>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Your tracked free-extension link
+          </p>
+          <p className="mt-1 text-xs text-slate-600">
+            Send people here, not straight to the Chrome Web Store. This link credits you if they buy
+            later, even after installing the free tool first.
+          </p>
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+            <input
+              type="text"
+              readOnly
+              value={trackedExtLink}
+              onClick={(e) => (e.target as HTMLInputElement).select()}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20"
+            />
+            <button
+              type="button"
+              onClick={() => copy("ext-link", trackedExtLink)}
+              className="shrink-0 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+            >
+              {copied === "ext-link" ? "Copied!" : "Copy link"}
+            </button>
+          </div>
+          {code ? null : (
+            <p className="mt-2 text-xs text-amber-700">
+              Your branded code is not set yet, so this is the plain link. Once your code appears on
+              your dashboard, it will be baked in here automatically.
+            </p>
+          )}
+        </div>
+      </section>
 
       <h3 className="mt-7 text-lg font-semibold text-slate-900">Copy-paste captions</h3>
       <p className="mt-1 text-sm text-slate-600">

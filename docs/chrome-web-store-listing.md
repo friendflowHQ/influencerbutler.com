@@ -4,6 +4,10 @@ Copy-paste material for the Developer Dashboard listing. Keep this file in
 sync with `extension/static/manifest.json` and the extension's actual
 behavior; reviewers compare the two.
 
+For shipping new **code** (as opposed to editing this listing copy), see
+[chrome-web-store-publishing.md](chrome-web-store-publishing.md): the release is
+automated as `npm run bump` + `npm run release`.
+
 Privacy policy URL (required field):
 `https://www.influencerbutler.com/extension/privacy`
 

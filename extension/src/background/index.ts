@@ -16,6 +16,7 @@ import { refreshRateCard } from "./rate-card";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { getDealSources, harvestDealSites } from "./deal-harvest";
+import { handleInstagramMessage } from "./instagram";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
 import { getPriceHistory, recordPriceFromFinding } from "./price-history";
 import { pollAppNotifications } from "./app-notifications";
@@ -93,6 +94,9 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 });
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
+  // Instagram Goldmine (self-hosted build only). Gated behind the build flag so
+  // the whole handler dead-code-eliminates out of the public build.
+  if (IB_IG_ENABLED && handleInstagramMessage(message, sendResponse)) return true;
   switch (message.kind) {
     case "RECORD_FINDING":
       // When this finding came from a tab we opened for the order video-count

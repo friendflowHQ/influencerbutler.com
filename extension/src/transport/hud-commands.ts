@@ -14,6 +14,19 @@ export type ProductRef = {
   commissionRatePct?: number | null;
 };
 
+// One Instagram Goldmine creator, sent in a batch to the desktop Pitch / Group
+// Invite butlers. Field names mirror the desktop enqueue contract (email +
+// source) so the receiver keys rows without translation.
+export type CreatorRef = {
+  username: string;
+  email: string;
+  fullName?: string | null;
+  sourceHashtag?: string;
+  followerCount?: number | null;
+  engagementRatePct?: number | null;
+  profileUrl?: string;
+};
+
 // One flagged storefront item, sent in a batch to the desktop Retag Butler.
 // Field names mirror the retag-butler row (contentUrl/contentType/contentTitle)
 // so the desktop can key rows without translation.
@@ -38,6 +51,18 @@ export type HudCommand =
   // Batch push of storefront-checkup issues into the desktop Retag Butler.
   | { type: "retag.push"; issues: RetagIssue[] }
   | { type: "collaboration.add"; product: ProductRef }
+  // Butler Bar "Save to Link Butler": mint + record a Butler Link (branded,
+  // app-opening, tracked Calling Card) for the product in the desktop Link
+  // Butler, so it shows up in The Ledger. The extension mints its own copyable
+  // Calling Card directly; this records + enriches it (routing/Best-Rate). The
+  // worker is idempotent per owner+target, so both resolve to the same slug.
+  | { type: "link.mint"; product: ProductRef; url?: string; campaign?: string }
+  // Batch push of Instagram Goldmine creators into the desktop app. `target`
+  // picks the destination butler ("pitch" -> Pitch Butler prospects,
+  // "group-invite" -> Group Invite Butler). Mirrors the desktop enqueue
+  // contracts (groupInvite.enqueue / pitch:enqueue-contacts) so the receiver
+  // keys rows without translation.
+  | { type: "creator.push.batch"; target: "pitch" | "group-invite"; creators: CreatorRef[] }
   // Turn the brand of the product being viewed into a Pitch Butler prospect.
   // The desktop resolves/creates the brand and opens a deal; product carries the
   // ASIN context so the pitch links back to what prompted it.

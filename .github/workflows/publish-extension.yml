@@ -1,0 +1,34 @@
+# Push-button Chrome Web Store release for the extension.
+#
+# Runs the same build -> zip -> publish that `npm run release` does locally,
+# using the CWS_* OAuth credentials stored as GitHub repo secrets. Trigger it
+# manually (Actions -> this workflow -> Run workflow) or by pushing a tag like
+# ext-v0.1.2. Bump the version first (npm run bump) and commit before tagging so
+# the packaged version matches the tag.
+name: Publish extension
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "ext-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - run: npm run zip
+      - run: npm run publish:store
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}

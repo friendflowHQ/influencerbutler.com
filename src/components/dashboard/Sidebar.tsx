@@ -17,12 +17,22 @@ type SidebarProps = {
   websiteHref?: string;
 };
 
-const navItems = [
+type NavChild = { href: string; label: string };
+type NavItem = { href: string; label: string; children?: NavChild[] };
+
+const navItems: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
-  { href: "/dashboard/affiliates", label: "Affiliates" },
+  {
+    href: "/dashboard/affiliates",
+    label: "Affiliates",
+    children: [
+      { href: "/dashboard/affiliates/planner", label: "Content Planner" },
+      { href: "/dashboard/affiliates/playbook", label: "Competitor Playbook" },
+    ],
+  },
   { href: "/dashboard/extension", label: "Extension" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
@@ -226,20 +236,46 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
         <nav className="mt-8 flex flex-1 flex-col gap-2" aria-label="Dashboard navigation">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            // Show a parent's children only while inside that section, so the
+            // cramped sidebar stays clean elsewhere.
+            const showChildren = Boolean(item.children) && pathname.startsWith(item.href);
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileOpen(false)}
-                className={[
-                  "rounded-lg px-3 py-2.5 text-sm font-medium transition",
-                  isActive
-                    ? "bg-[#f97316] text-white shadow-sm"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                ].join(" ")}
-              >
-                {item.label}
-              </Link>
+              <div key={item.href} className="flex flex-col gap-1">
+                <Link
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={[
+                    "rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                    isActive
+                      ? "bg-[#f97316] text-white shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  {item.label}
+                </Link>
+                {showChildren ? (
+                  <div className="ml-3 flex flex-col gap-1 border-l border-slate-200 pl-3">
+                    {item.children!.map((child) => {
+                      const isChildActive = pathname === child.href;
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={[
+                            "rounded-lg px-3 py-2 text-sm font-medium transition",
+                            isChildActive
+                              ? "bg-[#f97316] text-white shadow-sm"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                          ].join(" ")}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
         </nav>

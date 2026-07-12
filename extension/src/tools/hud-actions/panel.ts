@@ -129,6 +129,15 @@ function renderConnected(
 
   grid.append(collabBtn);
 
+  // Save to Link Butler: mint + record a branded, app-opening Calling Card for
+  // this product in the desktop Link Butler (so it lands in The Ledger).
+  const linkBtn = el("button", "btn secondary");
+  linkBtn.textContent = t().saveToLinkButler;
+  linkBtn.addEventListener("click", () =>
+    run({ type: "link.mint", product }, t().savingLink),
+  );
+  grid.append(linkBtn);
+
   // Pitch this brand: only when the page named a brand. Turns the product into
   // an outreach lead in Pitch Butler (brand + prospect deal), no browser.
   if (brand && brand.trim()) {

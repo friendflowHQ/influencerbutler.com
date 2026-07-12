@@ -32,6 +32,47 @@ async function init(): Promise<void> {
   wireFeedback();
   wireOptions();
   wireDealHarvester(settings.locale);
+  // Instagram Goldmine launcher: self-hosted build only. The whole call (and its
+  // import-free body) dead-code-eliminates out of the public build, leaving the
+  // card hidden as authored in popup.html.
+  if (IB_IG_ENABLED) wireGoldmine();
+}
+
+// Build and wire the Instagram Goldmine card. Constructed entirely in JS (not
+// in popup.html) so the public build's popup markup is byte-for-byte unchanged;
+// this whole function dead-code-eliminates out when IB_IG_ENABLED is false. It
+// opens in its own tab (it needs room for the config + results table and
+// outlives the popup).
+function wireGoldmine(): void {
+  const main = document.querySelector("main");
+  const anchor = document.getElementById("deal-harvester");
+  if (!main) return;
+
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const h2 = document.createElement("h2");
+  h2.textContent = "Instagram Goldmine";
+
+  const blurb = document.createElement("p");
+  blurb.className = "muted small";
+  blurb.textContent =
+    "Crawl Instagram hashtags for creator emails using your own logged-in Instagram session, then send them to Pitch or Group Invite.";
+
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "Open Instagram Goldmine";
+  btn.onclick = () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("goldmine.html") });
+  };
+
+  card.append(h2, blurb, btn);
+  // Place it just after the Deal Sites Harvester card, else at the end.
+  if (anchor && anchor.parentElement === main) {
+    anchor.insertAdjacentElement("afterend", card);
+  } else {
+    main.append(card);
+  }
 }
 
 // The Deal Sites Harvester opens in its own tab (it needs room for a review

@@ -411,6 +411,8 @@ export interface Dict {
   sendToApp: string;
   pushToDailyDeals: string;
   sendToContentButler: string;
+  saveToLinkButler: string;
+  savingLink: string;
   acceptCc: string;
   acceptSpcc: string;
   addToCollab: string;
@@ -913,6 +915,8 @@ const en: Dict = {
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Daily Deals",
   sendToContentButler: "Send to Content Butler",
+  saveToLinkButler: "Save to Link Butler",
+  savingLink: "Saving link...",
   acceptCc: "Accept CC campaign",
   acceptSpcc: "Accept SPCC campaign",
   addToCollab: "Add to Collab Butler",
@@ -1420,6 +1424,8 @@ const es: Dict = {
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Daily Deals",
   sendToContentButler: "Enviar a Content Butler",
+  saveToLinkButler: "Guardar en Link Butler",
+  savingLink: "Guardando enlace...",
   acceptCc: "Aceptar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
   addToCollab: "Añadir a Collab Butler",
@@ -1927,6 +1933,8 @@ const fr: Dict = {
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Daily Deals",
   sendToContentButler: "Envoyer à Content Butler",
+  saveToLinkButler: "Enregistrer dans Link Butler",
+  savingLink: "Enregistrement du lien...",
   acceptCc: "Accepter la campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
   addToCollab: "Ajouter à Collab Butler",

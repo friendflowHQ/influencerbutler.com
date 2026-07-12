@@ -115,7 +115,14 @@ export type RuntimeMessage =
   // Deal Sites Harvester: fetch and parse a list of aggregator URLs (the deals
   // page requests the host permission first), and read the curated source list.
   | { kind: "HARVEST_DEAL_SITES"; urls: string[] }
-  | { kind: "GET_DEAL_SOURCES"; force?: boolean };
+  | { kind: "GET_DEAL_SOURCES"; force?: boolean }
+  // Instagram Goldmine (self-hosted build only): fetch a creator's bio-link
+  // site cross-origin from the worker (content scripts on instagram.com cannot)
+  // and return the first email found on it. The Goldmine page requests the
+  // needed host permission before the run.
+  | { kind: "IG_FETCH_BIO_LINK"; url: string };
+
+export type IgBioLinkResult = { email: string | null };
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";

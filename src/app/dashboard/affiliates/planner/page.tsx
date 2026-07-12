@@ -30,6 +30,14 @@ type Idea = {
 
 const IDEAS: Idea[] = [
   {
+    feature: "Free Chrome extension",
+    cat: "Amazon Automation",
+    hook: "The Amazon intel other tools charge $30/mo for, free.",
+    caption:
+      "Our free Chrome extension shows how many influencer videos any Amazon product has, finds content gaps hiding in your own order history, and flags the products actually worth filming, right in your browser. No account, no card, one-click install. It is the easiest yes I can offer, and it is the front door to the whole butler:",
+    visual: "/assets/extension/extension_product_page_view_version_1.0.png",
+  },
+  {
     feature: "Daily Commission Butler",
     cat: "Amazon Automation",
     hook: "Stop leaving Creator Connections money on the table.",
@@ -155,7 +163,7 @@ const FUNNEL: Email[] = [
     step: "Email 1 · Welcome",
     subject: "The tool that gave me my evenings back",
     body:
-      "Open by sharing your own before/after: how many hours a week the Amazon grind used to eat. Introduce Influencer Butler as a desktop app that does the busywork for you. One soft CTA to the free 3-day trial via your link.",
+      "Open by sharing your own before/after: how many hours a week the Amazon grind used to eat. Introduce Influencer Butler as a desktop app that does the busywork for you. Give them a no-friction first step: the free Chrome extension (no card) via your tracked link, then a soft CTA to the free 3-day trial of the full app.",
   },
   {
     step: "Email 2 · Problem + agitate",
@@ -186,7 +194,7 @@ const FUNNEL: Email[] = [
 const CALENDAR: { day: string; focus: string; platform: string }[] = [
   { day: "Day 1", focus: "Your before/after story (the grind vs. now)", platform: "Reel / TikTok" },
   { day: "Day 2", focus: "Daily Commission Butler auto-accept", platform: "Story + link" },
-  { day: "Day 3", focus: "CC Check grab-every-ASIN demo (free forever)", platform: "Reel" },
+  { day: "Day 3", focus: "Free Chrome extension: video counts + content gaps (free forever)", platform: "Reel" },
   { day: "Day 4", focus: "Email 1 to your list", platform: "Email" },
   { day: "Day 5", focus: "Messenger Butler tidy inbox", platform: "Carousel" },
   { day: "Day 6", focus: "Amazon Daily Deals 5-platform auto-post", platform: "Reel" },

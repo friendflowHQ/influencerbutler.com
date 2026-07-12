@@ -1,0 +1,117 @@
+/* Instagram Goldmine tab. Leans on options.css for the base card/button chrome
+   and adds the three-column config layout and the results table. */
+
+#root {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.gm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .gm-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.gm-field > span {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.gm-field .hint {
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.gm-field input[type="number"],
+.gm-field input[type="text"],
+.gm-field select,
+.gm-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.gm-field textarea {
+  min-height: 150px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.gm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.gm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.gm-progress {
+  font-size: 13px;
+  opacity: 0.85;
+  min-height: 18px;
+}
+
+.gm-scroll {
+  overflow-x: auto;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.gm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gm-table th,
+.gm-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+
+.gm-table th {
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--bg, #fff);
+}
+
+.gm-num {
+  text-align: right;
+}
+
+.gm-empty {
+  padding: 24px;
+  text-align: center;
+  opacity: 0.7;
+  font-size: 13px;
+}

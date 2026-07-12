@@ -85,12 +85,31 @@ export type DealFinding = {
   detectedAt: string;
 };
 
+// One creator harvested from an Instagram hashtag by the Instagram Goldmine
+// tool (self-hosted build only). The engine resolves a post's author, reads the
+// bio email off the profile, and pairs it with the hashtag it was found under.
+// One finding per (username, email): a creator can surface more than one
+// address, and the same address recurs across hashtags.
+export type InstagramCreatorFinding = {
+  type: "instagram_creator";
+  username: string;
+  email: string;
+  sourceHashtag: string;
+  fullName?: string | null;
+  followerCount?: number | null;
+  engagementRatePct?: number | null;
+  bioLinkUrl?: string | null;
+  postUrl?: string | null;
+  detectedAt: string;
+};
+
 export type Finding =
   | ProductScanFinding
   | ContentGapFinding
   | StorefrontIssueFinding
   | OrderFinding
-  | DealFinding;
+  | DealFinding
+  | InstagramCreatorFinding;
 
 export interface FindingTransport {
   id: "api" | "local";
@@ -104,6 +123,10 @@ export function findingKey(finding: Finding): string {
       ? finding.scannedAt.slice(0, 10)
       : finding.detectedAt.slice(0, 10);
   switch (finding.type) {
+    // A harvested creator is keyed on (username, email) with no day component:
+    // the same address for the same creator records once, not once per run day.
+    case "instagram_creator":
+      return `${finding.type}:${finding.username}:${finding.email}`;
     case "product_scan":
       return `${finding.type}:${finding.asin}:${finding.marketplace}:${day}`;
     case "content_gap":

@@ -23,6 +23,7 @@ export const apiTransport: FindingTransport = {
     const gaps = batch.filter((f) => f.type === "content_gap");
     const issues = batch.filter((f) => f.type === "storefront_issue");
     const orders = batch.filter((f) => f.type === "order");
+    const creators = batch.filter((f) => f.type === "instagram_creator");
 
     const posts: Array<Promise<Response>> = [];
     if (scans.length > 0) {
@@ -84,6 +85,24 @@ export const apiTransport: FindingTransport = {
             title: f.title ?? null,
             price_cents: f.priceCents ?? null,
             currency: f.currency ?? "USD",
+            detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+
+    if (creators.length > 0) {
+      posts.push(
+        post(ENDPOINTS.instagramCreators, key, {
+          creators: creators.map((f) => ({
+            username: f.username,
+            email: f.email,
+            source_hashtag: f.sourceHashtag,
+            full_name: f.fullName ?? null,
+            follower_count: f.followerCount ?? null,
+            engagement_rate_pct: f.engagementRatePct ?? null,
+            bio_link_url: f.bioLinkUrl ?? null,
+            post_url: f.postUrl ?? null,
             detected_at: f.detectedAt,
           })),
         }),

@@ -31,6 +31,19 @@ npm run lint:dashes   # em dash ban, also enforced on every build
 npm run zip           # dist/ -> influencer-butler-extension-<version>.zip
 ```
 
+## Release
+
+The extension is live on the Chrome Web Store and auto-updates for users once a
+new version is published there. Publishing is automated:
+
+```
+npm run bump patch    # bump package.json + static/manifest.json (or minor/major)
+npm run release       # build -> zip -> upload to the Web Store -> submit for review
+```
+
+One-time OAuth credential setup and the `--dry-run` safe check are documented in
+`docs/chrome-web-store-publishing.md` at the repo root.
+
 ## Architecture notes
 
 - `src/amazon/` is the only place allowed to know Amazon's DOM. Selectors

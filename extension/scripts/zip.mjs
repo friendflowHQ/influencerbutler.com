@@ -6,13 +6,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const dist = path.join(root, "dist");
+// The self-hosted build (Instagram Goldmine) is packaged from dist-selfhosted/
+// under a distinct name; it is distributed off the Web Store.
+const selfHosted = process.argv.includes("--selfhosted");
+const dist = path.join(root, selfHosted ? "dist-selfhosted" : "dist");
+const buildCmd = selfHosted ? "npm run build:selfhosted" : "npm run build";
 if (!fs.existsSync(path.join(dist, "manifest.json"))) {
-  console.error("dist/ is missing or incomplete; run `npm run build` first");
+  console.error(`${path.basename(dist)}/ is missing or incomplete; run \`${buildCmd}\` first`);
   process.exit(1);
 }
 const { version } = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-const out = path.join(root, `influencer-butler-extension-${version}.zip`);
+const suffix = selfHosted ? "-selfhosted" : "";
+const out = path.join(root, `influencer-butler-extension${suffix}-${version}.zip`);
 fs.rmSync(out, { force: true });
 
 if (process.platform === "win32") {
