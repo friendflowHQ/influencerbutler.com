@@ -212,6 +212,13 @@ function formatUsd(cents: number | null): string {
   }).format(cents / 100);
 }
 
+// The affiliate's shareable link: the branded code auto-applies at checkout and
+// attributes the referral. Mirrors brandedShareLink in the affiliate dashboard.
+const AFFILIATE_SHARE_ORIGIN = "https://www.influencerbutler.com";
+function affiliateShareLink(code: string): string {
+  return `${AFFILIATE_SHARE_ORIGIN}/dashboard/subscription?code=${encodeURIComponent(code)}`;
+}
+
 type RowState =
   | { kind: "idle" }
   | { kind: "working"; action: "approve" | "reject" }
@@ -274,6 +281,9 @@ export default function AdminAffiliatesPage() {
   const [owedLoading, setOwedLoading] = useState(true);
   const [owedError, setOwedError] = useState<string | null>(null);
   const [owedRow, setOwedRow] = useState<Record<string, LinkRowState>>({});
+
+  // Per-row state for the roster "Generate new code" action.
+  const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -431,6 +441,39 @@ export default function AdminAffiliatesPage() {
     } catch (err) {
       console.error(err);
       setCode(uc.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const setGen = (userId: string, state: LinkRowState) =>
+    setGenRow((prev) => ({ ...prev, [userId]: state }));
+
+  // Roster-level "generate a fresh numbered code" (e.g. KAY -> KAY2). Reuses the
+  // same generator as approval: the affiliate's first name plus the next unused
+  // number. Replacing an existing code means links shared with the OLD code stop
+  // attributing, so we warn first.
+  const onGenerateCode = async (row: RosterRow) => {
+    const label = row.name ?? row.email ?? row.userId;
+    const warn = row.affiliateCode
+      ? `Generate a new code for ${label}?\n\nThis mints a fresh code (their name plus the next unused number, e.g. ${row.affiliateCode} -> ${row.affiliateCode}2) and replaces their current code ${row.affiliateCode}. Any link already shared with the old code stops tracking.`
+      : `Generate a code for ${label}?\n\nThis mints a branded code from their name (plus a number if taken) and unlocks their share link.`;
+    if (!window.confirm(warn)) return;
+    setGen(row.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-regenerate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.userId }),
+      });
+      const json = (await res.json()) as { error?: string; code?: string };
+      if (!res.ok) {
+        setGen(row.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGen(row.userId, { kind: "success", message: `New code ${json.code}.` });
+      setTimeout(() => void loadRoster(), 1500);
+    } catch (err) {
+      console.error(err);
+      setGen(row.userId, { kind: "error", message: "Network error." });
     }
   };
 
@@ -740,9 +783,11 @@ export default function AdminAffiliatesPage() {
           setStatusFilter={setStatusFilter}
           rowState={rowState}
           termsRow={termsRow}
+          genRow={genRow}
           onSaveTerms={onSaveTerms}
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
+          onGenerateCode={onGenerateCode}
         />
       ) : null}
 
@@ -1038,9 +1083,11 @@ function RosterTab({
   setStatusFilter,
   rowState,
   termsRow,
+  genRow,
   onSaveTerms,
   onApprove,
   onReject,
+  onGenerateCode,
 }: {
   loading: boolean;
   error: string | null;
@@ -1053,6 +1100,7 @@ function RosterTab({
   setStatusFilter: (value: RosterFilter) => void;
   rowState: Record<string, RowState>;
   termsRow: Record<string, LinkRowState>;
+  genRow: Record<string, LinkRowState>;
   onSaveTerms: (
     userId: string,
     commissionPercent: number | null,
@@ -1060,6 +1108,7 @@ function RosterTab({
   ) => Promise<boolean>;
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
+  onGenerateCode: (row: RosterRow) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -1119,7 +1168,7 @@ function RosterTab({
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3">Affiliate</th>
-                <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Code &amp; link</th>
                 <th className="px-4 py-3">Terms</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Total earned</th>
@@ -1133,6 +1182,7 @@ function RosterTab({
               {rows.map((r) => {
                 const state = rowState[r.userId] ?? { kind: "idle" };
                 const working = state.kind === "working";
+                const gen = genRow[r.userId] ?? { kind: "idle" };
                 return (
                   <tr key={r.userId} className="align-top hover:bg-slate-50/60">
                     <td className="px-4 py-3">
@@ -1142,13 +1192,7 @@ function RosterTab({
                       <p className="text-xs text-slate-500 break-all">{r.email ?? "(no email)"}</p>
                     </td>
                     <td className="px-4 py-3">
-                      {r.affiliateCode ? (
-                        <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">
-                          {r.affiliateCode}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400">-</span>
-                      )}
+                      <CodeCell code={r.affiliateCode} />
                     </td>
                     <td className="px-4 py-3">
                       <TermsCell row={r} state={termsRow[r.userId] ?? { kind: "idle" }} onSave={onSaveTerms} />
@@ -1213,13 +1257,30 @@ function RosterTab({
                         </div>
                       ) : (
                         <div className="flex max-w-[16rem] flex-col gap-1">
+                          {r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate) ? (
+                            <button
+                              type="button"
+                              onClick={() => onGenerateCode(r)}
+                              disabled={gen.kind === "working"}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
+                            >
+                              {gen.kind === "working"
+                                ? "Generating…"
+                                : r.affiliateCode
+                                  ? "New code"
+                                  : "Generate code"}
+                            </button>
+                          ) : null}
+                          {gen.kind === "success" ? (
+                            <span className="text-xs text-emerald-700">{gen.message}</span>
+                          ) : gen.kind === "error" ? (
+                            <span className="text-xs text-red-700">{gen.message}</span>
+                          ) : null}
                           {state.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{state.message}</span>
                           ) : state.kind === "error" ? (
                             <span className="text-xs text-red-700">{state.message}</span>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
-                          )}
+                          ) : null}
                         </div>
                       )}
                     </td>
@@ -1235,6 +1296,46 @@ function RosterTab({
         Paid out is derived as total earned minus unpaid balance from Lemon Squeezy. LS does not
         expose an exact last-payout date, so amounts are shown instead of a date.
       </p>
+    </div>
+  );
+}
+
+// Shows an affiliate's branded code plus their full share link, each with a
+// one-click copy. Falls back to a dash when they have no code yet (the roster
+// Actions column offers "Generate code" in that case).
+function CodeCell({ code }: { code: string | null }) {
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  if (!code) return <span className="text-xs text-slate-400">-</span>;
+  const link = affiliateShareLink(code);
+  const copy = async (text: string, which: "code" | "link") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      setTimeout(() => setCopied(null), 1500);
+    } catch (err) {
+      console.error("copy failed", err);
+    }
+  };
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">{code}</span>
+        <button
+          type="button"
+          onClick={() => copy(code, "code")}
+          className="text-[11px] font-medium text-slate-500 transition hover:text-[#c2410c]"
+        >
+          {copied === "code" ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => copy(link, "link")}
+        title={link}
+        className="max-w-[220px] truncate text-left text-[11px] text-slate-500 transition hover:text-[#c2410c]"
+      >
+        {copied === "link" ? "Link copied!" : link.replace(/^https:\/\//, "")}
+      </button>
     </div>
   );
 }
