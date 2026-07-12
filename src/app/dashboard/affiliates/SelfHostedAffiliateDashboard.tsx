@@ -298,7 +298,8 @@ function BrandedCodeCard({
         ★ Your branded promo code
       </p>
       <p className="mt-1 text-sm text-slate-700">
-        Share this code for <strong>15% off</strong> your audience&apos;s first month. You earn
+        Share this code for <strong>15% off every month</strong>, for as long as they stay
+        subscribed. You earn
         <strong> recurring commission for {durationPhrase(durationMonths)}</strong> per referred
         customer.
       </p>

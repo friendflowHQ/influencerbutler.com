@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { certificationTextFor, type TaxFormType } from "@/lib/tax-certification";
 
 /**
  * Affiliate tax form (W-9 / W-8BEN / W-8BEN-E). Because the self-hosted program
@@ -152,15 +153,25 @@ function TaxFormEditor({
   const [tinKind, setTinKind] = useState<"ssn" | "ein" | "itin" | "foreign">("ssn");
   const [tin, setTin] = useState("");
   const [treatyCountry, setTreatyCountry] = useState("");
+  const [signatureName, setSignatureName] = useState("");
   const [certified, setCertified] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formType = isUsPerson ? "W-9" : isEntity ? "W-8BEN-E" : "W-8BEN";
+  const formType: TaxFormType = isUsPerson ? "W-9" : isEntity ? "W-8BEN-E" : "W-8BEN";
+  const signatureDate = new Date().toISOString().slice(0, 10);
+  // Foreign filers (W-8) must sign with a typed name matching their legal name.
+  const signatureMismatch =
+    !isUsPerson &&
+    signatureName.trim().toLowerCase() !== legalName.trim().toLowerCase();
+  const canSubmit =
+    !submitting && certified && signatureName.trim().length > 0 && !signatureMismatch;
 
   const submit = async () => {
     setError(null);
     if (!legalName.trim()) return setError("Enter your legal name.");
+    if (!signatureName.trim()) return setError("Type your full legal name to sign.");
+    if (signatureMismatch) return setError("Your signature must match your legal name exactly.");
     if (!certified) return setError("You must certify the form to submit it.");
     if (isUsPerson && !tin.trim()) return setError("Enter your SSN or EIN.");
     setSubmitting(true);
@@ -182,7 +193,9 @@ function TaxFormEditor({
           tin: tin.trim() || null,
           tinKind: isUsPerson ? tinKind : "foreign",
           treatyCountry: !isUsPerson ? treatyCountry.trim() || null : null,
-          signatureName: legalName.trim(),
+          signatureName: signatureName.trim(),
+          signatureDate,
+          certificationText: certificationTextFor(formType),
           certified,
         }),
       });
@@ -308,13 +321,34 @@ function TaxFormEditor({
           </>
         )}
 
-        <label className="flex items-start gap-2 text-xs text-slate-600">
-          <input type="checkbox" className="mt-0.5" checked={certified} onChange={(e) => setCertified(e.target.checked)} />
-          <span>
-            Under penalties of perjury, I certify that the information above is true, correct, and
-            complete, and that I am the person (or authorized to sign for the entity) named above.
-          </span>
-        </label>
+        <Field label="Signature (type your full legal name)">
+          <input
+            className={inputCls}
+            value={signatureName}
+            onChange={(e) => setSignatureName(e.target.value)}
+            placeholder={legalName.trim() || "Your full legal name"}
+            autoComplete="off"
+          />
+          {!isUsPerson && signatureName.trim() && signatureMismatch ? (
+            <p className="mt-1 text-xs text-red-600">
+              Your signature must match your legal name exactly.
+            </p>
+          ) : null}
+        </Field>
+
+        <div className="rounded-lg border-2 border-slate-400 bg-slate-50 p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-700">Certification</p>
+          <label className="mt-2 flex items-start gap-2 text-sm font-medium text-slate-800">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={certified}
+              onChange={(e) => setCertified(e.target.checked)}
+            />
+            <span>{certificationTextFor(formType)}</span>
+          </label>
+          <p className="mt-2 text-xs text-slate-500">Date: {signatureDate}</p>
+        </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
@@ -322,7 +356,7 @@ function TaxFormEditor({
           <button
             type="button"
             onClick={submit}
-            disabled={submitting}
+            disabled={!canSubmit}
             className="inline-flex items-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c] disabled:opacity-60"
           >
             {submitting ? "Submitting..." : "Submit tax form"}

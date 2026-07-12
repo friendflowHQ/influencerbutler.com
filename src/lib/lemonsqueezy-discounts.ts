@@ -28,6 +28,9 @@ export type CreateBrandedDiscountResult =
  * the caller can try a numbered variant. No redemption cap - this is meant
  * to be shared broadly by the affiliate.
  *
+ * The discount is `duration: "forever"`, so it recurs on every renewal for as
+ * long as the referred customer stays subscribed (not just their first charge).
+ *
  * Scoped to `variantIds` if provided so the discount never lands on add-on
  * SKUs (Phase F promo-exclusion contract).
  */
@@ -53,7 +56,7 @@ export async function createBrandedDiscount(
             code: input.code,
             amount: input.percentOff,
             amount_type: "percent",
-            duration: "once",
+            duration: "forever",
           },
           relationships,
         },
@@ -83,6 +86,48 @@ export async function createBrandedDiscount(
   } catch (error) {
     console.error("LS branded discount create threw", error);
     return { ok: false, conflict: false };
+  }
+}
+
+/**
+ * Updates an existing Lemon Squeezy discount's `duration` in place (PATCH).
+ * Used to backfill already-minted affiliate branded codes from the old
+ * one-time (`"once"`) behavior to recurring (`"forever"`) without deleting and
+ * recreating them, which would break the shared share links.
+ *
+ * Returns `{ ok: false }` and logs on failure (including 404 for a discount
+ * that no longer exists in LS).
+ */
+export async function updateDiscountDuration(
+  discountId: string,
+  duration: "once" | "forever",
+): Promise<{ ok: boolean }> {
+  try {
+    const response = await lsApi(`/discounts/${discountId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        data: {
+          type: "discounts",
+          id: discountId,
+          attributes: { duration },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("LS discount duration update failed", {
+        status: response.status,
+        body: text.slice(0, 500),
+        discountId,
+      });
+      return { ok: false };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error("LS discount duration update threw", error);
+    return { ok: false };
   }
 }
 
