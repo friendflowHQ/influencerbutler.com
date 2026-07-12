@@ -17,6 +17,18 @@ import { formatUsdFromCents } from "@/lib/affiliates";
  * owed / paid stats from the commission engine + payout ledger.
  */
 
+type TaxFormDetails = {
+  legalName: string | null;
+  country: string | null;
+  tinLast4: string | null;
+  tinKind: string | null;
+  formType: string | null;
+  status: string | null;
+  submittedAt: string | null;
+  verifiedAt: string | null;
+  rejectedReason: string | null;
+};
+
 type SelfHostedData = {
   brandedCode: string | null;
   createdAt: string | null;
@@ -30,9 +42,20 @@ type SelfHostedData = {
   paypalEmail: string | null;
   taxStatus: "not_submitted" | "submitted" | "verified" | "rejected";
   taxFormType: string | null;
+  // Present only in the admin "view as" payload.
+  displayName?: string | null;
+  taxForm?: TaxFormDetails | null;
 };
 
-type Props = { displayName: string };
+type Props = {
+  displayName: string;
+  /** Data source for the main payload. Defaults to the caller's own dashboard;
+   *  the admin "view as" page points these at affiliate-scoped admin endpoints
+   *  and sets readOnly to hide the tax/payout editors. */
+  dataUrl?: string;
+  clicksUrl?: string;
+  readOnly?: boolean;
+};
 
 function brandedShareLink(code: string): string {
   return `https://www.influencerbutler.com/dashboard/subscription?code=${encodeURIComponent(code)}`;
@@ -46,7 +69,12 @@ function durationPhrase(durationMonths: number | null): string {
     : `the first ${durationMonths} months`;
 }
 
-export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
+export default function SelfHostedAffiliateDashboard({
+  displayName,
+  dataUrl = "/api/affiliates/me-selfhosted",
+  clicksUrl = "/api/affiliates/clicks",
+  readOnly = false,
+}: Props) {
   const [data, setData] = useState<SelfHostedData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   // Bump to re-fetch after a child (tax form / payout method) changes.
@@ -57,7 +85,7 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch("/api/affiliates/me-selfhosted", { cache: "no-store" });
+        const res = await fetch(dataUrl, { cache: "no-store" });
         if (!res.ok) {
           if (!cancelled) setLoadError(`Failed to load (${res.status})`);
           return;
@@ -73,7 +101,7 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, dataUrl]);
 
   if (loadError) {
     return (
@@ -104,7 +132,7 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
           Affiliate dashboard
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-          Welcome back, {displayName}.
+          Welcome back, {data.displayName ?? displayName}.
         </h1>
         <p className="mt-1 text-sm text-slate-600">
           You earn {data.ratePercent}% recurring for {durationPhrase(data.durationMonths)} of every
@@ -130,10 +158,19 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
         </section>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TaxFormCard onChange={reload} />
-        <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
-      </div>
+      {readOnly ? (
+        <ReadOnlyPayoutTaxPanel
+          paypalEmail={data.paypalEmail}
+          taxStatus={data.taxStatus}
+          taxFormType={data.taxFormType}
+          taxForm={data.taxForm ?? null}
+        />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TaxFormCard onChange={reload} />
+          <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
+        </div>
+      )}
 
       {code ? (
         <BrandedCodeCard
@@ -145,7 +182,7 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
 
       {code ? <LinkBuilder code={code} /> : null}
 
-      <AffiliateClickAnalytics />
+      <AffiliateClickAnalytics endpoint={clicksUrl} />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Unpaid earnings" value={formatUsdFromCents(data.owedCents)} hint="Paid monthly via PayPal" />
@@ -163,7 +200,7 @@ export default function SelfHostedAffiliateDashboard({ displayName }: Props) {
         <InfoRow
           label="Payout method"
           value={data.paypalEmail ? "PayPal" : "Not set"}
-          hint={data.paypalEmail ?? "Add your PayPal email above"}
+          hint={data.paypalEmail ?? (readOnly ? "No PayPal email on file yet" : "Add your PayPal email above")}
         />
       </section>
 
@@ -283,6 +320,92 @@ function InfoRow({ label, value, hint }: { label: string; value: string; hint?: 
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
       <p className="mt-1 text-base font-semibold text-slate-900">{value}</p>
       {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+function taxStatusLabel(status: string): string {
+  switch (status) {
+    case "verified":
+      return "Verified";
+    case "submitted":
+      return "Submitted, pending review";
+    case "rejected":
+      return "Rejected";
+    default:
+      return "Not submitted";
+  }
+}
+
+function fmtDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+function DefRow({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className="text-slate-500">{k}</dt>
+      <dd className="text-right font-medium text-slate-800">{v}</dd>
+    </div>
+  );
+}
+
+// Read-only replacement for the editable TaxFormCard + PayoutMethodCard, used by
+// the admin "view as affiliate" page. Shows the affiliate's tax + payout status
+// (and full tax details when the admin endpoint included them) with no editors.
+function ReadOnlyPayoutTaxPanel({
+  paypalEmail,
+  taxStatus,
+  taxFormType,
+  taxForm,
+}: {
+  paypalEmail: string | null;
+  taxStatus: string;
+  taxFormType: string | null;
+  taxForm: TaxFormDetails | null;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tax form</p>
+        <p className="mt-2 flex items-center gap-2 text-base font-semibold text-slate-900">
+          {taxStatusLabel(taxStatus)}
+          {taxFormType ? (
+            <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              {taxFormType}
+            </span>
+          ) : null}
+        </p>
+        {taxForm ? (
+          <dl className="mt-3 space-y-1.5 text-sm">
+            {taxForm.legalName ? <DefRow k="Legal name" v={taxForm.legalName} /> : null}
+            {taxForm.country ? <DefRow k="Country" v={taxForm.country} /> : null}
+            {taxForm.tinLast4 ? (
+              <DefRow
+                k="TIN"
+                v={`•••• ${taxForm.tinLast4}${taxForm.tinKind ? ` (${taxForm.tinKind.toUpperCase()})` : ""}`}
+              />
+            ) : null}
+            {taxForm.submittedAt ? <DefRow k="Submitted" v={fmtDate(taxForm.submittedAt)} /> : null}
+            {taxForm.verifiedAt ? <DefRow k="Verified" v={fmtDate(taxForm.verifiedAt)} /> : null}
+            {taxForm.rejectedReason ? <DefRow k="Rejected reason" v={taxForm.rejectedReason} /> : null}
+          </dl>
+        ) : taxStatus !== "not_submitted" ? (
+          <p className="mt-2 text-xs text-slate-500">
+            Full tax details are hidden (requires the tax-view permission).
+          </p>
+        ) : null}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Payout method</p>
+        <p className="mt-2 text-base font-semibold text-slate-900">{paypalEmail ? "PayPal" : "Not set"}</p>
+        <p className="mt-1 text-sm text-slate-600">{paypalEmail ?? "No PayPal email on file yet."}</p>
+      </section>
     </div>
   );
 }

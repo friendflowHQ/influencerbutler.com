@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
 
 type SocialHandles = Record<string, string | null | undefined>;
@@ -1186,9 +1187,19 @@ function RosterTab({
                 return (
                   <tr key={r.userId} className="align-top hover:bg-slate-50/60">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-900 break-words">
-                        {r.name ?? "(no name)"}
-                      </p>
+                      {r.isAffiliate || r.appStatus === "approved" ? (
+                        <Link
+                          href={`/dashboard/admin/affiliates/${r.userId}`}
+                          title="View this affiliate's dashboard (read-only)"
+                          className="font-semibold text-slate-900 underline decoration-slate-300 underline-offset-2 transition hover:text-[#c2410c] hover:decoration-[#f97316] break-words"
+                        >
+                          {r.name ?? "(no name)"}
+                        </Link>
+                      ) : (
+                        <p className="font-semibold text-slate-900 break-words">
+                          {r.name ?? "(no name)"}
+                        </p>
+                      )}
                       <p className="text-xs text-slate-500 break-all">{r.email ?? "(no email)"}</p>
                     </td>
                     <td className="px-4 py-3">

@@ -58,7 +58,13 @@ function regionDisplayName(code: string): string {
   }
 }
 
-export default function AffiliateClickAnalytics() {
+export default function AffiliateClickAnalytics({
+  endpoint = "/api/affiliates/clicks",
+}: {
+  /** Data source. Defaults to the caller's own clicks; the admin "view as"
+   *  dashboard points this at an affiliate-scoped admin endpoint. */
+  endpoint?: string;
+} = {}) {
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +78,7 @@ export default function AffiliateClickAnalytics() {
     const load = async () => {
       try {
         const { from, to } = windowForTimeframe(timeframe);
-        const res = await fetch("/api/affiliates/clicks", {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ from, to }),
@@ -97,7 +103,7 @@ export default function AffiliateClickAnalytics() {
     return () => {
       cancelled = true;
     };
-  }, [timeframe]);
+  }, [timeframe, endpoint]);
 
   const data = stats ?? EMPTY_STATS;
   const deltaPct =
