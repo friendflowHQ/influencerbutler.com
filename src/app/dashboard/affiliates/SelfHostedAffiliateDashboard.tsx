@@ -239,7 +239,7 @@ export default function SelfHostedAffiliateDashboard({
       ) : null}
 
       <PlannerCallout />
-      <CompetitorPlaybook />
+      <CompetitorPlaybook code={code ?? undefined} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions about a payout?{" "}

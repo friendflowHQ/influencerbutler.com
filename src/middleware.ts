@@ -63,6 +63,19 @@ export async function middleware(request: NextRequest) {
       (cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name),
     );
     if (!hasAuthCookie) {
+      // Salvage already-shared affiliate links. Older share links pointed at the
+      // auth-gated /dashboard/subscription?code=CODE. Send logged-out prospects to
+      // the public pricing page (carrying code + channel) so the click tracks and
+      // the promo prefills, instead of bouncing them to sign-in and losing the
+      // referral. New links already point at /pricing; this rescues old ones.
+      const affiliateCode = request.nextUrl.searchParams.get("code");
+      if (normalizedPath === "/dashboard/subscription" && affiliateCode) {
+        const pricing = new URL("/pricing", request.nextUrl.origin);
+        pricing.searchParams.set("code", affiliateCode);
+        const channel = request.nextUrl.searchParams.get("s");
+        if (channel) pricing.searchParams.set("s", channel);
+        return NextResponse.redirect(pricing);
+      }
       const nextTarget = `${pathname}${request.nextUrl.search}`;
       const redirectUrl = new URL("/login", request.nextUrl.origin);
       redirectUrl.searchParams.set("next", nextTarget);
