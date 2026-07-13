@@ -22,11 +22,15 @@ function resolveNext(raw: string | null): string {
   return ok ? raw : "/dashboard";
 }
 
+type LinkMode = "signin" | "reset";
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
+  const [linkNotice, setLinkNotice] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -50,6 +54,40 @@ function LoginForm() {
     // Hard redirect so the middleware sees the fresh session cookies.
     const next = resolveNext(searchParams.get("next"));
     window.location.href = next;
+  };
+
+  // Emails a one-time sign-in link (mode "signin") or a password-reset link
+  // (mode "reset"). The endpoint always reports success, so accounts created
+  // without a password (trial/comp checkouts) can still get in from here.
+  const requestLink = async (mode: LinkMode) => {
+    setError(null);
+    setLinkNotice(null);
+    if (!email) {
+      setError("Enter your email above first, then choose an option.");
+      return;
+    }
+    setLinkMode(mode);
+    try {
+      const res = await fetch("/api/auth/login-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, mode }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(data?.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+      setLinkNotice(
+        mode === "reset"
+          ? "If that email has an account, we just sent a link to reset your password. Check your inbox."
+          : "If that email has an account, we just sent a sign-in link. Check your inbox.",
+      );
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLinkMode(null);
+    }
   };
 
   return (
@@ -83,6 +121,7 @@ function LoginForm() {
       </div>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {linkNotice ? <p className="text-sm text-green-700">{linkNotice}</p> : null}
 
       <button
         type="submit"
@@ -91,6 +130,30 @@ function LoginForm() {
       >
         {loading ? "Logging in..." : "Log in"}
       </button>
+
+      <div className="pt-2 text-sm text-slate-600">
+        <p>
+          No password yet, or trouble signing in?{" "}
+          <button
+            type="button"
+            onClick={() => requestLink("signin")}
+            disabled={linkMode !== null}
+            className="font-medium text-[#f97316] hover:text-[#ea580c] disabled:opacity-60"
+          >
+            {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
+          </button>
+        </p>
+        <p className="mt-1">
+          <button
+            type="button"
+            onClick={() => requestLink("reset")}
+            disabled={linkMode !== null}
+            className="font-medium text-slate-500 hover:text-slate-700 disabled:opacity-60"
+          >
+            {linkMode === "reset" ? "Sending..." : "Forgot your password?"}
+          </button>
+        </p>
+      </div>
     </form>
   );
 }
