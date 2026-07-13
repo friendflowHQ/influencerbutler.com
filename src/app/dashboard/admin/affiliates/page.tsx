@@ -112,6 +112,8 @@ type RosterRow = {
   commissionDurationMonths: number | null;
   affiliateCompMonthlyQuota: number | null;
   lsActivatedAt: string | null;
+  subscriptionStatus: string | null;
+  subscriptionActive: boolean;
 };
 
 type RosterResponse = {
@@ -181,7 +183,9 @@ type RosterFilter =
   | "approved"
   | "rejected"
   | "linked"
-  | "unlinked";
+  | "unlinked"
+  | "sub-active"
+  | "sub-inactive";
 
 const ROSTER_FILTERS: { key: RosterFilter; label: string }[] = [
   { key: "all", label: "All" },
@@ -190,6 +194,8 @@ const ROSTER_FILTERS: { key: RosterFilter; label: string }[] = [
   { key: "rejected", label: "Rejected" },
   { key: "linked", label: "Linked" },
   { key: "unlinked", label: "Unlinked" },
+  { key: "sub-active", label: "Active sub" },
+  { key: "sub-inactive", label: "No sub" },
 ];
 
 const CODE_HEALTH_LABEL: Record<CodeHealthStatus, string> = {
@@ -288,6 +294,9 @@ export default function AdminAffiliatesPage() {
 
   // Per-row state for the roster "Generate new code" action.
   const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
+
+  // Per-row state for the roster "Email resources" action (single affiliate).
+  const [emailRow, setEmailRow] = useState<Record<string, LinkRowState>>({});
 
   // One-time "email all affiliates the dashboard + resources guide" action.
   const [broadcast, setBroadcast] = useState<LinkRowState>({ kind: "idle" });
@@ -481,6 +490,36 @@ export default function AdminAffiliatesPage() {
     } catch (err) {
       console.error(err);
       setGen(row.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const setEmail = (userId: string, state: LinkRowState) =>
+    setEmailRow((prev) => ({ ...prev, [userId]: state }));
+
+  // Send the dashboard + resources guide to a single affiliate (same content as
+  // the roster-wide broadcast, but scoped to one row). Handy for resends or for
+  // an affiliate who missed the original.
+  const onEmailResources = async (row: RosterRow) => {
+    const label = row.name ?? row.email ?? row.userId;
+    if (!window.confirm(`Email the dashboard & resources guide to ${label}?`)) return;
+    setEmail(row.userId, { kind: "working" });
+    try {
+      const res = await fetch(
+        `/api/affiliates/admin-broadcast-resources?userId=${encodeURIComponent(row.userId)}`,
+        { method: "POST" },
+      );
+      const json = (await res.json()) as { sent?: number; failed?: number; error?: string };
+      if (!res.ok || !json.sent) {
+        setEmail(row.userId, {
+          kind: "error",
+          message: json.error ?? (json.failed ? "Send failed." : `Failed (${res.status})`),
+        });
+        return;
+      }
+      setEmail(row.userId, { kind: "success", message: "Sent." });
+    } catch (err) {
+      console.error(err);
+      setEmail(row.userId, { kind: "error", message: "Network error." });
     }
   };
 
@@ -731,6 +770,8 @@ export default function AdminAffiliatesPage() {
       if (statusFilter === "rejected" && r.appStatus !== "rejected") return false;
       if (statusFilter === "linked" && !r.lsLinked) return false;
       if (statusFilter === "unlinked" && r.lsLinked) return false;
+      if (statusFilter === "sub-active" && !r.subscriptionActive) return false;
+      if (statusFilter === "sub-inactive" && r.subscriptionActive) return false;
       if (!q) return true;
       return (
         (r.name ?? "").toLowerCase().includes(q) ||
@@ -884,11 +925,13 @@ export default function AdminAffiliatesPage() {
           termsRow={termsRow}
           compRow={compRow}
           genRow={genRow}
+          emailRow={emailRow}
           onSaveTerms={onSaveTerms}
           onSaveCompAllowance={onSaveCompAllowance}
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
           onGenerateCode={onGenerateCode}
+          onEmailResources={onEmailResources}
         />
       ) : null}
 
@@ -1186,11 +1229,13 @@ function RosterTab({
   termsRow,
   compRow,
   genRow,
+  emailRow,
   onSaveTerms,
   onSaveCompAllowance,
   onApprove,
   onReject,
   onGenerateCode,
+  onEmailResources,
 }: {
   loading: boolean;
   error: string | null;
@@ -1205,6 +1250,7 @@ function RosterTab({
   termsRow: Record<string, LinkRowState>;
   compRow: Record<string, LinkRowState>;
   genRow: Record<string, LinkRowState>;
+  emailRow: Record<string, LinkRowState>;
   onSaveTerms: (
     userId: string,
     commissionPercent: number | null,
@@ -1214,6 +1260,7 @@ function RosterTab({
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
   onGenerateCode: (row: RosterRow) => void;
+  onEmailResources: (row: RosterRow) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -1288,6 +1335,7 @@ function RosterTab({
                 const state = rowState[r.userId] ?? { kind: "idle" };
                 const working = state.kind === "working";
                 const gen = genRow[r.userId] ?? { kind: "idle" };
+                const email = emailRow[r.userId] ?? { kind: "idle" };
                 return (
                   <tr key={r.userId} className="align-top hover:bg-slate-50/60">
                     <td className="px-4 py-3">
@@ -1398,6 +1446,21 @@ function RosterTab({
                           ) : gen.kind === "error" ? (
                             <span className="text-xs text-red-700">{gen.message}</span>
                           ) : null}
+                          {(r.appStatus === "approved" || r.isAffiliate) && r.email ? (
+                            <button
+                              type="button"
+                              onClick={() => onEmailResources(r)}
+                              disabled={email.kind === "working"}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
+                            >
+                              {email.kind === "working" ? "Emailing…" : "Email resources"}
+                            </button>
+                          ) : null}
+                          {email.kind === "success" ? (
+                            <span className="text-xs text-emerald-700">{email.message}</span>
+                          ) : email.kind === "error" ? (
+                            <span className="text-xs text-red-700">{email.message}</span>
+                          ) : null}
                           {state.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{state.message}</span>
                           ) : state.kind === "error" ? (
@@ -1484,6 +1547,20 @@ function StatusBadges({ row }: { row: RosterRow }) {
       label: active ? "LS active" : `LS ${row.lsStatus ?? "linked"}`,
       className: active ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-600",
     });
+  }
+
+  // The affiliate's own subscription to the product (paid = "active"), separate
+  // from the Lemon Squeezy affiliate-account badge above. On-trial does not
+  // count as active but is worth surfacing for context.
+  if (row.subscriptionActive) {
+    badges.push({
+      label: `Sub: ${row.subscriptionStatus ?? "active"}`,
+      className: "bg-emerald-100 text-emerald-800",
+    });
+  } else if ((row.subscriptionStatus ?? "").toLowerCase() === "on_trial") {
+    badges.push({ label: "Sub: trial", className: "bg-slate-100 text-slate-600" });
+  } else {
+    badges.push({ label: "No sub", className: "bg-slate-100 text-slate-500" });
   }
 
   return (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { listStoreAffiliates, type StoreAffiliate } from "@/lib/affiliates";
+import { tierForSubscriptionStatus } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ type RosterRow = {
   commissionDurationMonths: number | null;
   affiliateCompMonthlyQuota: number | null;
   lsActivatedAt: string | null;
+  subscriptionStatus: string | null;
+  subscriptionActive: boolean;
 };
 
 type RosterClient = {
@@ -142,6 +145,38 @@ export async function GET(request: Request) {
       console.warn("admin-roster: comp allowance read skipped", err);
     }
 
+    // Personal subscription status per affiliate, keyed by user id. This is the
+    // affiliate's own paid/trial subscription to the product, distinct from
+    // their Lemon Squeezy affiliate-account status. subscriptions has RLS with
+    // no SELECT policy, so this only returns rows via the service-role admin
+    // client. One batched read, then reduce to the newest row per user in JS.
+    // Degrade to "no subscription info" on error, like the reads above.
+    const subStatusByUser = new Map<string, { status: string | null; createdAt: string }>();
+    try {
+      const { data: subs } = await supabase
+        .from("subscriptions")
+        .select("user_id,status,created_at");
+      for (const row of subs ?? []) {
+        const userId = str(row.user_id);
+        if (!userId) continue;
+        const createdAt = str(row.created_at) ?? "";
+        const existing = subStatusByUser.get(userId);
+        if (!existing || createdAt > existing.createdAt) {
+          subStatusByUser.set(userId, { status: str(row.status), createdAt });
+        }
+      }
+    } catch (err) {
+      console.warn("admin-roster: subscription read skipped", err);
+    }
+
+    const buildSubscription = (userId: string) => {
+      const status = subStatusByUser.get(userId)?.status ?? null;
+      return {
+        subscriptionStatus: status,
+        subscriptionActive: tierForSubscriptionStatus(status) === "pro",
+      };
+    };
+
     // LS earnings, keyed by affiliate id. Degrade gracefully: if LS is down we
     // still return the roster with earnings marked unavailable (null).
     const storeId = process.env.LEMONSQUEEZY_STORE_ID;
@@ -202,6 +237,7 @@ export async function GET(request: Request) {
         commissionDurationMonths: profile?.commissionDurationMonths ?? null,
         affiliateCompMonthlyQuota: profile?.affiliateCompMonthlyQuota ?? null,
         lsActivatedAt: profile?.lsActivatedAt ?? null,
+        ...buildSubscription(userId),
         ...earnings,
       });
     }
@@ -227,6 +263,7 @@ export async function GET(request: Request) {
         commissionDurationMonths: profile.commissionDurationMonths,
         affiliateCompMonthlyQuota: profile.affiliateCompMonthlyQuota,
         lsActivatedAt: profile.lsActivatedAt,
+        ...buildSubscription(userId),
         ...earnings,
       });
     }

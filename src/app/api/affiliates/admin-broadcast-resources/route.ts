@@ -17,10 +17,12 @@ export const dynamic = "force-dynamic";
  * already get this content in their approval email; this catches up the existing
  * roster. Gated behind affiliates.approve and audit-logged.
  *
- * POST ?dry=1  -> returns { total, lastSent } without sending (for the confirm).
- * POST         -> sends to all affiliates, records a last-sent marker, returns
- *                 { total, sent, failed }. Chosen send type is transactional
- *                 (reach everyone), matching the approval email.
+ * POST ?dry=1        -> returns { total, lastSent } without sending (for the confirm).
+ * POST               -> sends to all affiliates, records a last-sent marker, returns
+ *                       { total, sent, failed }. Chosen send type is transactional
+ *                       (reach everyone), matching the approval email.
+ * POST ?userId=<id>  -> sends to just that one affiliate (per-row "Email resources"
+ *                       action). Does not touch the broadcast marker.
  */
 
 const CONFIG_KEY = "affiliate_resources_broadcast";
@@ -32,14 +34,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const dry = new URL(request.url).searchParams.get("dry") === "1";
+    const params = new URL(request.url).searchParams;
+    const dry = params.get("dry") === "1";
+    const singleUserId = params.get("userId")?.trim() || null;
     const admin = createAdminClient();
 
-    // All current affiliates with a usable email.
-    const { data: profiles, error: profErr } = await admin
+    // Current affiliates with a usable email. When userId is supplied we target
+    // just that one affiliate; otherwise the whole roster.
+    let query = admin
       .from("profiles")
       .select("id,email,affiliate_code")
       .eq("is_affiliate", true);
+    if (singleUserId) query = query.eq("id", singleUserId);
+    const { data: profiles, error: profErr } = await query;
     if (profErr) {
       console.error("admin-broadcast-resources: profiles query failed", profErr);
       return NextResponse.json({ error: "Could not load affiliates" }, { status: 500 });
@@ -47,6 +54,12 @@ export async function POST(request: Request) {
     const affiliates = (profiles ?? []).filter(
       (p) => typeof p.email === "string" && p.email.includes("@"),
     );
+    if (singleUserId && affiliates.length === 0) {
+      return NextResponse.json(
+        { error: "Affiliate not found or has no usable email" },
+        { status: 404 },
+      );
+    }
 
     // Last-sent marker (shown in the confirm dialog).
     let lastSent: string | null = null;
@@ -94,26 +107,29 @@ export async function POST(request: Request) {
       else failed += 1;
     }
 
-    // Record the send so the UI can show "last sent" and guard double-sends.
-    try {
-      await admin.from("app_config").upsert(
-        {
-          key: CONFIG_KEY,
-          value: { sent_at: new Date().toISOString(), total: affiliates.length, sent, failed },
-          updated_at: new Date().toISOString(),
-          updated_by: `admin:${actor.email}`,
-        },
-        { onConflict: "key" },
-      );
-    } catch (err) {
-      console.warn("admin-broadcast-resources: marker write skipped", err);
+    // Record full-roster sends so the UI can show "last sent" and guard
+    // double-sends. A single-affiliate resend does not count as a broadcast.
+    if (!singleUserId) {
+      try {
+        await admin.from("app_config").upsert(
+          {
+            key: CONFIG_KEY,
+            value: { sent_at: new Date().toISOString(), total: affiliates.length, sent, failed },
+            updated_at: new Date().toISOString(),
+            updated_by: `admin:${actor.email}`,
+          },
+          { onConflict: "key" },
+        );
+      } catch (err) {
+        console.warn("admin-broadcast-resources: marker write skipped", err);
+      }
     }
 
     await logAdminAction({
       actor,
-      action: "affiliate.resources.broadcast",
+      action: singleUserId ? "affiliate.resources.send" : "affiliate.resources.broadcast",
       targetType: "affiliates",
-      targetId: "all",
+      targetId: singleUserId ?? "all",
       details: { total: affiliates.length, sent, failed },
     });
 
