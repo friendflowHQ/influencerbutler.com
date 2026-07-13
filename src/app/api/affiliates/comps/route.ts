@@ -110,6 +110,34 @@ async function countIssuedThisMonth(
   return count ?? 0;
 }
 
+/** Escape PostgREST ilike wildcards so an email is matched literally (emails may contain `_`). */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+/**
+ * Has this affiliate ever issued a comp to this recipient email? One comp per
+ * person, for life: this counts EVERY prior grant (active, expired, cancelled),
+ * matched case-insensitively, so an affiliate cannot double-gift the same person.
+ */
+async function hasIssuedToEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  email: string,
+): Promise<boolean> {
+  const { count, error } = await admin
+    .from("comp_grants")
+    .select("id", { count: "exact", head: true })
+    .eq("issued_by_affiliate_id", userId)
+    .ilike("user_email", escapeLike(email));
+  if (error) {
+    // Fail closed: if we cannot confirm this is a first-time recipient, do not issue.
+    console.error("affiliates/comps: duplicate-recipient check failed", error);
+    return true;
+  }
+  return (count ?? 0) > 0;
+}
+
 export async function GET() {
   try {
     const ctx = await resolveAffiliate();
@@ -201,6 +229,15 @@ export async function POST(request: Request) {
     const duration = normalizeAffiliateCompDuration({ unit: body.unit, amount: body.amount });
     if (!duration.ok) {
       return NextResponse.json({ error: duration.error }, { status: 400 });
+    }
+
+    // One comp per person, ever: block a repeat gift to someone this affiliate has
+    // already comped (any prior grant, active/expired/cancelled), before spending quota.
+    if (await hasIssuedToEmail(admin, user.id, recipientEmail)) {
+      return NextResponse.json(
+        { error: "You have already issued a comp to this person. Each person can only be comped once." },
+        { status: 409 },
+      );
     }
 
     // Enforce the monthly quota (recount at commit time to shrink the race window).
