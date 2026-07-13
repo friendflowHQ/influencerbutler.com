@@ -133,6 +133,66 @@ function daysLabel(row: CompRow): string {
   return `${d}d left`;
 }
 
+// Columns the table can be sorted by (click the header). `null`-keyed columns
+// (License key, actions) are not sortable.
+type SortKey =
+  | "user"
+  | "source"
+  | "code"
+  | "months"
+  | "issued"
+  | "expires"
+  | "remaining"
+  | "subscription"
+  | "activated";
+type SortDir = "asc" | "desc";
+
+const COLUMNS: { key: SortKey | null; label: string }[] = [
+  { key: "user", label: "User" },
+  { key: "source", label: "Source" },
+  { key: "code", label: "Code" },
+  { key: "months", label: "Months" },
+  { key: "issued", label: "Issued" },
+  { key: "expires", label: "Expires" },
+  { key: "remaining", label: "Remaining" },
+  { key: "subscription", label: "Subscription" },
+  { key: "activated", label: "Activated" },
+  { key: null, label: "License key" },
+  { key: null, label: "" },
+];
+
+// How "activated" a comp is, for sorting: not-applicable (LS) < not activated < active.
+function activationRank(row: CompRow): number {
+  if (row.source !== "in_house") return 0;
+  if (!row.activatedAt && !row.lastSeenAt) return 1;
+  return 2;
+}
+
+// The comparable value for a row under a given sort column. Returns null when the
+// row has no value for that column; nulls always sort to the end.
+function sortValue(row: CompRow, key: SortKey): string | number | null {
+  switch (key) {
+    case "user":
+      return (row.email ?? row.name ?? "").toLowerCase() || null;
+    case "source":
+      return row.source;
+    case "code":
+      return (row.discountCode ?? "").toLowerCase() || null;
+    case "months":
+      return row.months;
+    case "issued":
+      return row.issuedAt ? new Date(row.issuedAt).getTime() : null;
+    case "expires":
+      return row.expiresAt ? new Date(row.expiresAt).getTime() : null;
+    case "remaining":
+      return row.daysRemaining;
+    case "subscription":
+      return (row.subscriptionStatus ?? "").toLowerCase() || null;
+    case "activated":
+      return activationRank(row);
+  }
+}
+
 // A compact, click-to-copy license key cell. Shows a shortened form; the full
 // key is in the title and copied on click.
 function KeyCell({ value }: { value: string | null }) {
@@ -166,6 +226,8 @@ export default function AdminCompsPage() {
   const [migrationPending, setMigrationPending] = useState(false);
   const [rows, setRows] = useState<CompRow[]>([]);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   // "Grant a comp" form: mints a recipient-bound checkout link.
@@ -233,6 +295,34 @@ export default function AdminCompsPage() {
         return rows;
     }
   }, [rows, filter]);
+
+  // Clicking a header sorts by that column ascending; clicking it again flips
+  // the direction. Sort is applied on top of the active filter.
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    const dir = sortDir === "asc" ? 1 : -1;
+    const key = sortKey;
+    return [...filtered].sort((a, b) => {
+      const av = sortValue(a, key);
+      const bv = sortValue(b, key);
+      // Nulls always land last, regardless of direction.
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [filtered, sortKey, sortDir]);
 
   const cancelNow = async (row: CompRow) => {
     const who = row.email ?? row.name ?? row.lsSubscriptionId;
@@ -611,21 +701,47 @@ export default function AdminCompsPage() {
           <table className="w-full min-w-[1250px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Months</th>
-                <th className="px-4 py-3">Issued</th>
-                <th className="px-4 py-3">Expires</th>
-                <th className="px-4 py-3">Remaining</th>
-                <th className="px-4 py-3">Subscription</th>
-                <th className="px-4 py-3">Activated</th>
-                <th className="px-4 py-3">License key</th>
-                <th className="px-4 py-3"></th>
+                {COLUMNS.map((col, i) =>
+                  col.key ? (
+                    <th
+                      key={i}
+                      className="px-4 py-3"
+                      aria-sort={
+                        sortKey === col.key
+                          ? sortDir === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key as SortKey)}
+                        className="group inline-flex items-center gap-1 uppercase tracking-wider hover:text-slate-700"
+                      >
+                        {col.label}
+                        <span
+                          aria-hidden
+                          className={`text-[9px] leading-none ${
+                            sortKey === col.key
+                              ? "text-slate-600"
+                              : "text-slate-400 opacity-0 group-hover:opacity-100"
+                          }`}
+                        >
+                          {sortKey === col.key ? (sortDir === "asc" ? "▲" : "▼") : "▲"}
+                        </span>
+                      </button>
+                    </th>
+                  ) : (
+                    <th key={i} className="px-4 py-3">
+                      {col.label}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((row) => {
+              {sorted.map((row) => {
                 const busy = busyId === row.lsSubscriptionId;
                 const done = row.state === "cancelled";
                 return (

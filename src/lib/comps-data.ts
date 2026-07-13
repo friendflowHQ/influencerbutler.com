@@ -376,7 +376,9 @@ function buildCompRow(args: {
       const resolved = (userId ? emailByUser.get(userId) : null) ?? str(grant?.user_email) ?? null;
       return isPlaceholderCompEmail(resolved) ? null : resolved;
     })(),
-    name: compNameFromCode(code),
+    // Prefer the name the admin actually typed (stored on the grant) over the
+    // lossy code-derived one; fall back for older/LS rows that have no stored name.
+    name: str(grant?.recipient_name) ?? compNameFromCode(code),
     discountCode: code,
     months,
     monthsSource,

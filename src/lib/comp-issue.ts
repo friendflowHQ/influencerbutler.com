@@ -371,6 +371,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     ls_subscription_id: sentinel,
     user_id: userId,
     user_email: hasRecipient ? email : null,
+    recipient_name: input.name ?? null,
     discount_code: discountCode,
     months,
     months_source: "manual",
