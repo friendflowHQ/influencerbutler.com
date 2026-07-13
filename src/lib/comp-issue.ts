@@ -25,7 +25,7 @@
 import { randomUUID } from "crypto";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
-import { addMonthsUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
+import { addMonthsUtc, addDaysUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
 
@@ -39,6 +39,13 @@ export type IssueCompInput = {
   name?: string | null;
   /** Free-window length in months, or null for a never-expiring (forever) comp. */
   months: number | null;
+  /**
+   * Free-window length in DAYS. When set (>= 1) it takes precedence over months:
+   * expiry is now + days, the tracked grant stores months = null, and the
+   * synthetic code carries a <N>D window. Used for day-granular comps like an
+   * affiliate gifting a prospect a two-week trial.
+   */
+  days?: number | null;
   plan: string;
   /**
    * Devices allowed on the key at once (the license_keys.activation_limit).
@@ -54,6 +61,19 @@ export type IssueCompInput = {
    * a fresh comp takes effect and its own expiry cron only cancels this row.
    */
   allowExisting?: boolean;
+  /**
+   * Optional branded checkout link included in the recipient email, so that when
+   * the prospect upgrades they check out through the issuing affiliate's link and
+   * the affiliate earns the referral commission. See the affiliate comps route.
+   */
+  convertLink?: string | null;
+  /** Optional issuer name used to frame the comp email ("a gift from <name>"). */
+  issuerName?: string | null;
+  /**
+   * When an affiliate issues this comp, their user_id. Recorded on the grant so
+   * the monthly quota can be counted and the admin Comps page can attribute it.
+   */
+  issuedByAffiliateId?: string | null;
 };
 
 export type IssueCompResult =
@@ -132,8 +152,12 @@ async function sendCompEmail(params: {
   to: string;
   key: string;
   months: number | null;
+  days: number | null;
   forever: boolean;
   signInLink: string | null;
+  /** Affiliate branded checkout link (attribution) and issuer name, when gifted. */
+  convertLink?: string | null;
+  issuerName?: string | null;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -147,12 +171,15 @@ async function sendCompEmail(params: {
   ).replace(/\/$/, "");
 
   const durationPhrase =
-    params.forever || params.months == null
+    params.forever || (params.months == null && params.days == null)
       ? "Influencer Butler Pro, free forever"
-      : `${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free`;
+      : params.days != null
+        ? `${params.days} day${params.days === 1 ? "" : "s"} of Influencer Butler Pro, free`
+        : `${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free`;
 
+  const gifted = params.issuerName ? ` from ${params.issuerName}` : "";
   const lines = [
-    `Great news: you have been given ${durationPhrase}.`,
+    `Great news: you have been given ${durationPhrase}${gifted}.`,
     ``,
     `Your license key:`,
     ``,
@@ -167,6 +194,14 @@ async function sendCompEmail(params: {
       `To manage your account on the web, use this sign-in link (it logs you in automatically):`,
       ``,
       `    ${params.signInLink}`,
+    );
+  }
+  if (params.convertLink) {
+    lines.push(
+      ``,
+      `Want to keep Pro when your free time is up? Upgrade any time here:`,
+      ``,
+      `    ${params.convertLink}`,
     );
   }
   lines.push(
@@ -205,12 +240,21 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   const hasRecipient = rawEmail.length > 0;
   const email = hasRecipient ? rawEmail : `comp-${randomUUID()}@${COMP_PLACEHOLDER_DOMAIN}`;
   const forever = input.forever === true;
-  const months = forever ? null : input.months;
+  // Day-granular window (takes precedence over months when set). Forever ignores both.
+  const days =
+    !forever && typeof input.days === "number" && Number.isInteger(input.days) && input.days >= 1
+      ? input.days
+      : null;
+  const months = forever || days != null ? null : input.months;
   const isDailyDeals = input.plan === ADDON_PLAN_DAILY_DEALS;
   const tier = tierForPlan(input.plan);
   if (!tier && !isDailyDeals) return { ok: false, status: 400, error: "Unsupported plan." };
-  if (!forever && (typeof months !== "number" || !Number.isInteger(months) || months < 1)) {
-    return { ok: false, status: 400, error: "Free months must be a whole number, or mark the comp as forever." };
+  if (!forever && days == null && (typeof months !== "number" || !Number.isInteger(months) || months < 1)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Free window must be a whole number of days or months, or mark the comp as forever.",
+    };
   }
 
   // The LS variant id for this plan, stored on the synthetic subscription so
@@ -256,7 +300,11 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   }
 
   const nowIso = new Date().toISOString();
-  const expiresAt = forever ? null : addMonthsUtc(nowIso, months!);
+  const expiresAt = forever
+    ? null
+    : days != null
+      ? addDaysUtc(nowIso, days)
+      : addMonthsUtc(nowIso, months!);
   const sentinel = `comp:${randomUUID()}`;
   const key = randomUUID().toUpperCase();
   const keyHash = hashLicenseKey(key);
@@ -314,7 +362,11 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   // 3) Track the comp. Non-fatal: the grant already works; this drives the list
   //    and the expiry cron.
   const codeSeg = codeNameSegment(input.name, email);
-  const discountCode = forever ? `${codeSeg}FREE${FOREVER_TOKEN}` : `${codeSeg}FREE${months}M`;
+  const discountCode = forever
+    ? `${codeSeg}FREE${FOREVER_TOKEN}`
+    : days != null
+      ? `${codeSeg}FREE${days}D`
+      : `${codeSeg}FREE${months}M`;
   const grantInsert = await svc.from("comp_grants").insert({
     ls_subscription_id: sentinel,
     user_id: userId,
@@ -326,6 +378,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     expires_at: expiresAt,
     source: "in_house",
     license_key_id: licenseKeyId,
+    issued_by_affiliate_id: input.issuedByAffiliateId ?? null,
   });
   if (grantInsert.error) {
     console.error("comp-issue: comp_grants insert failed (grant still active)", grantInsert.error);
@@ -350,7 +403,16 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     } catch (err) {
       console.error("comp-issue: generateLink threw", err);
     }
-    await sendCompEmail({ to: email, key, months, forever, signInLink });
+    await sendCompEmail({
+      to: email,
+      key,
+      months,
+      days,
+      forever,
+      signInLink,
+      convertLink: input.convertLink ?? null,
+      issuerName: input.issuerName ?? null,
+    });
   }
 
   return { ok: true, key, userId, email: hasRecipient ? email : null, expiresAt, activationLimit };

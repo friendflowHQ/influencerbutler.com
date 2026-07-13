@@ -336,7 +336,11 @@ function buildCompRow(args: {
   let state: CompState;
   if (status === "cancelled" || cancelledAt) state = "cancelled";
   else if (forever) state = "forever";
-  else if (months == null || daysRemaining == null) state = "unknown-months";
+  // Unknown only when we cannot tell WHEN it ends. A day-granular in-house comp
+  // carries an explicit expires_at (so daysRemaining is known) but no whole-month
+  // count, so it must not be treated as unknown. LS/legacy rows with months null
+  // also have expires_at null, so daysRemaining null still classifies them here.
+  else if (daysRemaining == null) state = "unknown-months";
   else if (daysRemaining <= 0) state = "expired";
   else if (daysRemaining <= 7) state = "expiring-7";
   else if (daysRemaining <= 30) state = "expiring-30";

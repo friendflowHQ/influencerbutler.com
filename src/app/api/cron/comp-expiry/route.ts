@@ -79,7 +79,10 @@ export async function GET(request: Request) {
   for (const row of result.rows) {
     if (row.state === "cancelled") continue;
     if (row.state === "forever") continue; // never expires, never dunned
-    if (row.state === "unknown-months" || row.months == null || row.daysRemaining == null) {
+    // Only skip when we cannot tell WHEN it ends. Day-granular in-house comps
+    // have an explicit expires_at (daysRemaining known) but months null, so they
+    // must still be cancelled - gate on daysRemaining, not months.
+    if (row.state === "unknown-months" || row.daysRemaining == null) {
       needsMonths.push(row);
       continue;
     }

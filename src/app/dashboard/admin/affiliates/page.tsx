@@ -110,6 +110,7 @@ type RosterRow = {
   reviewedAt: string | null;
   commissionPercent: number | null;
   commissionDurationMonths: number | null;
+  affiliateCompMonthlyQuota: number | null;
   lsActivatedAt: string | null;
 };
 
@@ -609,6 +610,43 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Per-affiliate comp allowance (how many free Pro workspaces they may hand out
+  // per month; null/0 = cannot comp). Edited inline from the Roster Terms cell.
+  const [compRow, setCompRow] = useState<Record<string, LinkRowState>>({});
+  const onSaveCompAllowance = async (
+    userId: string,
+    monthlyQuota: number | null,
+  ): Promise<boolean> => {
+    setCompRow((prev) => ({ ...prev, [userId]: { kind: "working" } }));
+    try {
+      const res = await fetch("/api/affiliates/admin-comp-allowance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, monthlyQuota }),
+      });
+      const json = (await res.json()) as { error?: string; monthlyQuota?: number | null };
+      if (!res.ok) {
+        setCompRow((prev) => ({
+          ...prev,
+          [userId]: { kind: "error", message: json.error ?? `Failed (${res.status})` },
+        }));
+        return false;
+      }
+      const savedQuota = json.monthlyQuota ?? null;
+      setCompRow((prev) => ({ ...prev, [userId]: { kind: "success", message: "Saved." } }));
+      setRoster((prev) =>
+        prev.map((r) =>
+          r.userId === userId ? { ...r, affiliateCompMonthlyQuota: savedQuota } : r,
+        ),
+      );
+      return true;
+    } catch (err) {
+      console.error(err);
+      setCompRow((prev) => ({ ...prev, [userId]: { kind: "error", message: "Network error." } }));
+      return false;
+    }
+  };
+
   // Approve/reject work off a user id + display label so they can be triggered
   // from either the Applications cards or the Roster table.
   const approveUser = async (userId: string, label: string) => {
@@ -844,8 +882,10 @@ export default function AdminAffiliatesPage() {
           setStatusFilter={setStatusFilter}
           rowState={rowState}
           termsRow={termsRow}
+          compRow={compRow}
           genRow={genRow}
           onSaveTerms={onSaveTerms}
+          onSaveCompAllowance={onSaveCompAllowance}
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
           onGenerateCode={onGenerateCode}
@@ -1144,8 +1184,10 @@ function RosterTab({
   setStatusFilter,
   rowState,
   termsRow,
+  compRow,
   genRow,
   onSaveTerms,
+  onSaveCompAllowance,
   onApprove,
   onReject,
   onGenerateCode,
@@ -1161,12 +1203,14 @@ function RosterTab({
   setStatusFilter: (value: RosterFilter) => void;
   rowState: Record<string, RowState>;
   termsRow: Record<string, LinkRowState>;
+  compRow: Record<string, LinkRowState>;
   genRow: Record<string, LinkRowState>;
   onSaveTerms: (
     userId: string,
     commissionPercent: number | null,
     commissionDurationMonths: number | null,
   ) => Promise<boolean>;
+  onSaveCompAllowance: (userId: string, monthlyQuota: number | null) => Promise<boolean>;
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
   onGenerateCode: (row: RosterRow) => void;
@@ -1266,7 +1310,14 @@ function RosterTab({
                       <CodeCell code={r.affiliateCode} />
                     </td>
                     <td className="px-4 py-3">
-                      <TermsCell row={r} state={termsRow[r.userId] ?? { kind: "idle" }} onSave={onSaveTerms} />
+                      <div className="flex flex-col gap-2">
+                        <TermsCell row={r} state={termsRow[r.userId] ?? { kind: "idle" }} onSave={onSaveTerms} />
+                        <CompAllowanceCell
+                          row={r}
+                          state={compRow[r.userId] ?? { kind: "idle" }}
+                          onSave={onSaveCompAllowance}
+                        />
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadges row={r} />
@@ -1590,6 +1641,110 @@ function TermsCell({
           className="w-20 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
         />
       ) : null}
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={save}
+          disabled={working}
+          className="rounded bg-[#f97316] px-2 py-1 text-xs font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
+        >
+          {working ? "…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          disabled={working}
+          className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+      {state.kind === "error" ? (
+        <span className="text-xs text-red-700">{state.message}</span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Inline editor for one affiliate's comp allowance: how many free single-seat
+ * Pro workspaces they may hand out per calendar month. Blank / 0 turns the
+ * ability off. The comp itself is always capped at 2 months and 1 seat, enforced
+ * when the affiliate issues it, so this only controls who may comp and how often.
+ */
+function CompAllowanceCell({
+  row,
+  state,
+  onSave,
+}: {
+  row: RosterRow;
+  state: LinkRowState;
+  onSave: (userId: string, monthlyQuota: number | null) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [quota, setQuota] = useState<string>(
+    row.affiliateCompMonthlyQuota ? String(row.affiliateCompMonthlyQuota) : "",
+  );
+
+  const working = state.kind === "working";
+  const enabled = (row.affiliateCompMonthlyQuota ?? 0) > 0;
+
+  const startEdit = () => {
+    setQuota(row.affiliateCompMonthlyQuota ? String(row.affiliateCompMonthlyQuota) : "");
+    setEditing(true);
+  };
+
+  const save = async () => {
+    const trimmed = quota.trim();
+    const qNum = trimmed === "" ? null : Number(trimmed);
+    if (qNum !== null && (!Number.isInteger(qNum) || qNum < 0)) {
+      window.alert("Comp allowance must be a whole number (0 or blank turns it off).");
+      return;
+    }
+    const ok = await onSave(row.userId, qNum);
+    if (ok) setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            enabled ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {enabled ? `Comps: ${row.affiliateCompMonthlyQuota}/mo` : "Comps: off"}
+        </span>
+        <button
+          type="button"
+          onClick={startEdit}
+          className="text-xs font-medium text-[#c2410c] hover:underline"
+        >
+          Edit
+        </button>
+        {state.kind === "success" ? (
+          <span className="text-xs text-emerald-700">{state.message}</span>
+        ) : null}
+        {state.kind === "error" ? (
+          <span className="text-xs text-red-700">{state.message}</span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          value={quota}
+          onChange={(e) => setQuota(e.target.value)}
+          placeholder="off"
+          className="w-16 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
+        />
+        <span className="text-xs text-slate-500">/mo</span>
+      </div>
       <div className="flex gap-1">
         <button
           type="button"

@@ -42,6 +42,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "affiliates.link", label: "Link Lemon Squeezy affiliate", description: "Manually link a user to their Lemon Squeezy affiliate ID.", domain: "Affiliates", risk: "normal", built: true },
   { key: "affiliates.codes.manage", label: "Manage affiliate codes", description: "Regenerate or rename an affiliate's branded discount code.", domain: "Affiliates", risk: "normal", built: true },
   { key: "affiliates.terms.manage", label: "Set commission terms", description: "Set a custom commission rate and duration per affiliate. Money-sensitive.", domain: "Affiliates", risk: "money", built: true },
+  { key: "affiliates.comps.manage", label: "Set affiliate comp allowance", description: "Let a trusted affiliate hand out limited free Pro workspaces, and set their monthly quota. Money-sensitive.", domain: "Affiliates", risk: "money", built: true },
   { key: "affiliates.tax.view", label: "View & verify tax forms", description: "Review affiliate W-9 / W-8BEN forms, verify or reject them, and reveal a TIN for 1099 prep. Every reveal is audited. Super-admin only.", domain: "Affiliates", risk: "money", built: true, adminOnly: true },
   { key: "affiliates.payout", label: "Pay out affiliates", description: "Disburse owed commissions to affiliates via PayPal. Moves money. Super-admin only.", domain: "Affiliates", risk: "money", built: true, adminOnly: true },
 

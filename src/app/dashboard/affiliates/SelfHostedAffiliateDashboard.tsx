@@ -6,6 +6,7 @@ import SocialShareButtons from "./SocialShareButtons";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
+import CompProspectCard from "./CompProspectCard";
 import { formatUsdFromCents } from "@/lib/affiliates";
 
 /**
@@ -44,6 +45,8 @@ type SelfHostedData = {
   displayName?: string | null;
   taxForm?: TaxFormDetails | null;
   canEditPayout?: boolean;
+  // Comp allowance gate: whether this affiliate may hand out free workspaces.
+  comp?: { enabled: boolean } | null;
 };
 
 type Props = {
@@ -206,6 +209,8 @@ export default function SelfHostedAffiliateDashboard({
       ) : null}
 
       {code ? <LinkBuilder code={code} /> : null}
+
+      {data.comp?.enabled && !readOnly ? <CompProspectCard /> : null}
 
       <AffiliateClickAnalytics endpoint={clicksUrl} />
 

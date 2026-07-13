@@ -159,3 +159,12 @@ export function addMonthsUtc(iso: string, months: number): string {
   target.setUTCDate(Math.min(day, lastDay));
   return target.toISOString();
 }
+
+/**
+ * Adds `days` calendar days to an ISO timestamp and returns the result as an ISO
+ * string. Used for day-granular comps (e.g. an affiliate gifting a prospect a
+ * 14-day free window); month-granular comps use addMonthsUtc instead.
+ */
+export function addDaysUtc(iso: string, days: number): string {
+  return new Date(new Date(iso).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+}

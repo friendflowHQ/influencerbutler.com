@@ -61,6 +61,23 @@ export async function GET() {
       console.warn("me-selfhosted: payouts read skipped", err);
     }
 
+    // Comp allowance gate. Read separately + wrapped so a not-yet-migrated
+    // affiliate_comp_monthly_quota column degrades to "disabled" instead of
+    // 500ing the whole dashboard (prod schema is applied by hand and drifts).
+    let compEnabled = false;
+    try {
+      const { data: comp } = await admin
+        .from("profiles")
+        .select("affiliate_comp_monthly_quota")
+        .eq("id", user.id)
+        .maybeSingle();
+      compEnabled =
+        typeof comp?.affiliate_comp_monthly_quota === "number" &&
+        comp.affiliate_comp_monthly_quota > 0;
+    } catch (err) {
+      console.warn("me-selfhosted: comp allowance read skipped", err);
+    }
+
     // Tax form status for the checklist.
     let taxStatus = "not_submitted";
     let taxFormType: string | null = null;
@@ -90,6 +107,9 @@ export async function GET() {
       paypalEmail: (profile.paypal_email as string | null) ?? null,
       taxStatus,
       taxFormType,
+      // Comp allowance gate: whether this affiliate may hand out free workspaces.
+      // The card fetches /api/affiliates/comps for the quota, usage, and history.
+      comp: { enabled: compEnabled },
     });
   } catch (err) {
     console.error("me-selfhosted error", err);

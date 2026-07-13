@@ -36,6 +36,7 @@ type RosterRow = {
   reviewedAt: string | null;
   commissionPercent: number | null;
   commissionDurationMonths: number | null;
+  affiliateCompMonthlyQuota: number | null;
   lsActivatedAt: string | null;
 };
 
@@ -99,6 +100,7 @@ export async function GET(request: Request) {
       lsAffiliateId: string | null;
       commissionPercent: number | null;
       commissionDurationMonths: number | null;
+      affiliateCompMonthlyQuota: number | null;
       lsActivatedAt: string | null;
     };
     const profileByUser = new Map<string, ProfileInfo>();
@@ -116,8 +118,28 @@ export async function GET(request: Request) {
           typeof row.commission_duration_months === "number"
             ? row.commission_duration_months
             : null,
+        affiliateCompMonthlyQuota: null,
         lsActivatedAt: str(row.ls_activated_at),
       });
+    }
+
+    // Comp allowance is read separately + wrapped so a not-yet-migrated
+    // affiliate_comp_monthly_quota column degrades to "no quotas" instead of
+    // 500ing the whole roster (prod schema is applied by hand and drifts).
+    try {
+      const { data: quotas } = await supabase
+        .from("profiles")
+        .select("id,affiliate_comp_monthly_quota");
+      for (const row of quotas ?? []) {
+        const userId = str(row.id);
+        if (!userId) continue;
+        const existing = profileByUser.get(userId);
+        if (existing && typeof row.affiliate_comp_monthly_quota === "number") {
+          existing.affiliateCompMonthlyQuota = row.affiliate_comp_monthly_quota;
+        }
+      }
+    } catch (err) {
+      console.warn("admin-roster: comp allowance read skipped", err);
     }
 
     // LS earnings, keyed by affiliate id. Degrade gracefully: if LS is down we
@@ -178,6 +200,7 @@ export async function GET(request: Request) {
         reviewedAt: str(row.reviewed_at),
         commissionPercent: profile?.commissionPercent ?? null,
         commissionDurationMonths: profile?.commissionDurationMonths ?? null,
+        affiliateCompMonthlyQuota: profile?.affiliateCompMonthlyQuota ?? null,
         lsActivatedAt: profile?.lsActivatedAt ?? null,
         ...earnings,
       });
@@ -202,6 +225,7 @@ export async function GET(request: Request) {
         reviewedAt: null,
         commissionPercent: profile.commissionPercent,
         commissionDurationMonths: profile.commissionDurationMonths,
+        affiliateCompMonthlyQuota: profile.affiliateCompMonthlyQuota,
         lsActivatedAt: profile.lsActivatedAt,
         ...earnings,
       });
