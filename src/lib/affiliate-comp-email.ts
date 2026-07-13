@@ -154,3 +154,30 @@ export async function sendAffiliateCompAllowanceChangedEmail(params: {
     text,
   });
 }
+
+/**
+ * Brief, gracious note when an admin turns an affiliate's Guest Pass privilege
+ * off. We keep it warm and non-accusatory: passes already handed out keep
+ * running, only the ability to send new ones pauses.
+ */
+export async function sendAffiliateCompRevokedEmail(params: {
+  to: string;
+  name: string | null;
+}): Promise<boolean> {
+  const text = [
+    `A quick note,${greetingName(params.name)}.`,
+    ``,
+    `Your VIP Guest Passes have been paused for now, so the "VIP Guest Passes" card will step out of your dashboard. Nothing else changes: any guests you have already welcomed keep their free time and everything you have earned is safe.`,
+    ``,
+    `This sort of thing comes and goes, and it may well return. If you have any questions, simply reply to this email and a real human will answer.`,
+    ``,
+    `At your service,`,
+    `The Influencer Butler`,
+  ].join("\n");
+
+  return sendViaResend({
+    to: params.to,
+    subject: "Your VIP Guest Passes are paused",
+    text,
+  });
+}

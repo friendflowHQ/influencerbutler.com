@@ -34,6 +34,9 @@ type CompRow = {
   activatedAt: string | null;
   lastSeenAt: string | null;
   seats: number | null;
+  issuedByAffiliateId: string | null;
+  issuedByAffiliateName: string | null;
+  issuedByAffiliateEmail: string | null;
 };
 
 type ListResponse = {
@@ -630,6 +633,12 @@ export default function AdminCompsPage() {
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{row.email ?? "(no email)"}</div>
                       {row.name ? <div className="text-xs text-slate-500">{row.name}</div> : null}
+                      {row.issuedByAffiliateId ? (
+                        <div className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                          Issued by{" "}
+                          {row.issuedByAffiliateName ?? row.issuedByAffiliateEmail ?? "an affiliate"}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <span

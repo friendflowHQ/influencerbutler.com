@@ -4,6 +4,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import {
   sendAffiliateCompWelcomeEmail,
   sendAffiliateCompAllowanceChangedEmail,
+  sendAffiliateCompRevokedEmail,
 } from "@/lib/affiliate-comp-email";
 
 export const runtime = "nodejs";
@@ -118,9 +119,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
-  // Notify the affiliate. Off -> on = the VIP welcome; a change between two live
-  // quotas = the lighter "allowance changed" note. Turning it off is silent.
-  // Best-effort so a mail hiccup never fails the admin's save.
+  // Notify the affiliate. Off -> on = the VIP welcome; on -> off = the paused
+  // note (revoke); a change between two live quotas = the lighter "allowance
+  // changed" note. Best-effort so a mail hiccup never fails the admin's save.
   const prevActive = (previousQuota ?? 0) > 0;
   const nextActive = (monthlyQuota ?? 0) > 0;
   if (recipientEmail) {
@@ -131,6 +132,8 @@ export async function POST(request: Request) {
           name: recipientName,
           quota: monthlyQuota as number,
         });
+      } else if (prevActive && !nextActive) {
+        await sendAffiliateCompRevokedEmail({ to: recipientEmail, name: recipientName });
       } else if (prevActive && nextActive && monthlyQuota !== previousQuota) {
         await sendAffiliateCompAllowanceChangedEmail({
           to: recipientEmail,

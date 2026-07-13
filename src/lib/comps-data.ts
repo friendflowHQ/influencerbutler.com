@@ -64,6 +64,10 @@ export type CompRow = {
   lastSeenAt: string | null;
   /** Devices allowed on the key at once (license_keys.activation_limit), if known. */
   seats: number | null;
+  /** When an affiliate issued this comp: their user id + resolved name/email (else null). */
+  issuedByAffiliateId: string | null;
+  issuedByAffiliateName: string | null;
+  issuedByAffiliateEmail: string | null;
 };
 
 export type CompsResult = {
@@ -163,10 +167,15 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   //    plus grant subscription ids directly (in-house/backfilled comps).
   const grantSubIds: string[] = [];
   const userIdSet = new Set<string>([...compByUser.keys()]);
+  // Affiliates who issued comps: resolved to name/email for the admin Comps page
+  // so the owner can see who handed out each one and cancel them one by one.
+  const affiliateIdSet = new Set<string>();
   for (const [subId, grant] of grantBySub) {
     grantSubIds.push(subId);
     const uid = str(grant.user_id);
     if (uid) userIdSet.add(uid);
+    const affId = str(grant.issued_by_affiliate_id);
+    if (affId) affiliateIdSet.add(affId);
   }
   if (userIdSet.size === 0 && grantSubIds.length === 0) return { rows: [], migrationPending };
 
@@ -205,14 +214,18 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     if (uid) finalUserIds.add(uid);
   }
   const uidArr = [...finalUserIds];
+  // Profiles fetch also covers the issuing affiliates (they may not be comp
+  // recipients themselves), so we can label each comp with who issued it.
+  const profileIdArr = [...new Set<string>([...finalUserIds, ...affiliateIdSet])];
   const emailByUser = new Map<string, string | null>();
+  const affiliateByUser = new Map<string, { name: string | null; email: string | null }>();
   const licenseByUser = new Map<string, LicenseInfo>();
   // license_keys.id -> {key,status}, so a comp can show its OWN minted key
   // (via comp_grants.license_key_id) rather than the user's first key.
   const licenseById = new Map<string, { key: string | null; status: string | null; seats: number | null }>();
-  if (uidArr.length > 0) {
+  if (profileIdArr.length > 0) {
     const [profilesRes, licensesRes] = await Promise.all([
-      svc.from("profiles").select("id,email").in("id", uidArr).limit(ROW_LIMIT),
+      svc.from("profiles").select("id,email,display_name").in("id", profileIdArr).limit(ROW_LIMIT),
       svc
         .from("license_keys")
         .select("id,user_id,status,created_at,key,activation_limit")
@@ -221,7 +234,9 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     ]);
     for (const row of profilesRes.data ?? []) {
       const id = str(row.id);
-      if (id) emailByUser.set(id, str(row.email));
+      if (!id) continue;
+      emailByUser.set(id, str(row.email));
+      affiliateByUser.set(id, { name: str(row.display_name), email: str(row.email) });
     }
     for (const row of licensesRes.data ?? []) {
       const seats = typeof row.activation_limit === "number" ? row.activation_limit : null;
@@ -243,7 +258,9 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     const grant = grantBySub.get(lsSubId);
     const order = userId ? compByUser.get(userId) : undefined;
     if (!grant && !order) continue; // not a comp subscription
-    rows.push(buildCompRow({ lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, licenseById, now }));
+    rows.push(
+      buildCompRow({ lsSubId, sub, grant, order, userId, emailByUser, affiliateByUser, licenseByUser, licenseById, now }),
+    );
     emitted.add(lsSubId);
   }
   for (const [lsSubId, grant] of grantBySub) {
@@ -256,6 +273,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
         order: undefined,
         userId: str(grant.user_id),
         emailByUser,
+        affiliateByUser,
         licenseByUser,
         licenseById,
         now,
@@ -297,11 +315,12 @@ function buildCompRow(args: {
   order: OrderComp | undefined;
   userId: string | null;
   emailByUser: Map<string, string | null>;
+  affiliateByUser: Map<string, { name: string | null; email: string | null }>;
   licenseByUser: Map<string, LicenseInfo>;
   licenseById: Map<string, { key: string | null; status: string | null; seats: number | null }>;
   now: number;
 }): CompRow {
-  const { lsSubId, sub, grant, order, userId, emailByUser, licenseByUser, licenseById, now } = args;
+  const { lsSubId, sub, grant, order, userId, emailByUser, affiliateByUser, licenseByUser, licenseById, now } = args;
 
   const status = sub ? str(sub.status) : null;
   const license = userId ? licenseByUser.get(userId) : undefined;
@@ -376,5 +395,14 @@ function buildCompRow(args: {
     activatedAt: str(grant?.activated_at),
     lastSeenAt: str(grant?.last_seen_at),
     seats: grantLicense?.seats ?? license?.seats ?? null,
+    ...(() => {
+      const affId = str(grant?.issued_by_affiliate_id);
+      const aff = affId ? affiliateByUser.get(affId) : undefined;
+      return {
+        issuedByAffiliateId: affId,
+        issuedByAffiliateName: aff?.name ?? null,
+        issuedByAffiliateEmail: aff?.email ?? null,
+      };
+    })(),
   };
 }

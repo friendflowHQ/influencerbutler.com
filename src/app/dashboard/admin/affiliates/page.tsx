@@ -1705,6 +1705,17 @@ function CompAllowanceCell({
     if (ok) setEditing(false);
   };
 
+  const revoke = async () => {
+    if (
+      !window.confirm(
+        "Revoke this affiliate's comp workspace? They can no longer hand out new free workspaces. Comps they have already issued keep running (cancel those one by one on the Comps page). The affiliate is emailed that their passes are paused.",
+      )
+    ) {
+      return;
+    }
+    await onSave(row.userId, null);
+  };
+
   if (!editing) {
     return (
       <div className="flex flex-col items-start gap-1">
@@ -1715,13 +1726,25 @@ function CompAllowanceCell({
         >
           {enabled ? `Comps: ${row.affiliateCompMonthlyQuota}/mo` : "Comps: off"}
         </span>
-        <button
-          type="button"
-          onClick={startEdit}
-          className="text-xs font-medium text-[#c2410c] hover:underline"
-        >
-          Edit
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={startEdit}
+            className="text-xs font-medium text-[#c2410c] hover:underline"
+          >
+            Edit
+          </button>
+          {enabled ? (
+            <button
+              type="button"
+              onClick={revoke}
+              disabled={working}
+              className="text-xs font-medium text-red-600 hover:underline disabled:opacity-60"
+            >
+              {working ? "…" : "Revoke"}
+            </button>
+          ) : null}
+        </div>
         {state.kind === "success" ? (
           <span className="text-xs text-emerald-700">{state.message}</span>
         ) : null}
