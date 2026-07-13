@@ -64,9 +64,17 @@ async function sendViaResend(params: { to: string; subject: string; text: string
   }
 }
 
-function greetingName(name: string | null | undefined): string {
+/** First name for the greeting (leading token), or null when we have no name. */
+function firstNameOf(name: string | null | undefined): string | null {
   const trimmed = (name ?? "").trim();
-  return trimmed ? ` ${trimmed}` : "";
+  if (!trimmed) return null;
+  return trimmed.split(/\s+/)[0];
+}
+
+/** Butler opener: "<base>, <FirstName>." when we know the name, else "<base>.". */
+function opener(base: string, name: string | null | undefined): string {
+  const first = firstNameOf(name);
+  return first ? `${base}, ${first}.` : `${base}.`;
 }
 
 /**
@@ -81,7 +89,7 @@ export async function sendAffiliateCompWelcomeEmail(params: {
   const dash = `${siteUrl()}/dashboard/affiliates`;
   const passes = params.quota === 1 ? "guest pass" : "guest passes";
   const text = [
-    `A word, if I may,${greetingName(params.name)}.`,
+    opener("A word, if I may", params.name),
     ``,
     `You have been promoted. As one of our most valued affiliates, you now hold a privilege reserved for the few: the VIP Guest Pass. It lets you hand a prospect a free Influencer Butler Pro workspace, on the house, so they can see the magic for themselves long before they ever reach for their wallet.`,
     ``,
@@ -136,7 +144,7 @@ export async function sendAffiliateCompAllowanceChangedEmail(params: {
       ? ` (previously ${params.previousQuota})`
       : "";
   const text = [
-    `A quick note,${greetingName(params.name)}.`,
+    opener("A quick note", params.name),
     ``,
     `Your butler has updated your VIP Guest Pass allowance. You now have ${params.quota} ${passes} per month${previously}. They refresh on the 1st.`,
     ``,
@@ -165,7 +173,7 @@ export async function sendAffiliateCompRevokedEmail(params: {
   name: string | null;
 }): Promise<boolean> {
   const text = [
-    `A quick note,${greetingName(params.name)}.`,
+    opener("A quick note", params.name),
     ``,
     `Your VIP Guest Passes have been paused for now, so the "VIP Guest Passes" card will step out of your dashboard. Nothing else changes: any guests you have already welcomed keep their free time and everything you have earned is safe.`,
     ``,

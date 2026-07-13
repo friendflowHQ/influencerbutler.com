@@ -99,7 +99,22 @@ export async function POST(request: Request) {
           ? before.affiliate_comp_monthly_quota
           : null;
       recipientEmail = typeof before.email === "string" ? before.email : null;
-      recipientName = typeof before.display_name === "string" ? before.display_name : null;
+      recipientName =
+        typeof before.display_name === "string" && before.display_name.trim()
+          ? before.display_name
+          : null;
+    }
+    // Most affiliates have no display_name set; fall back to the name they gave
+    // on their application so the butler email can greet them by first name.
+    if (!recipientName) {
+      const { data: app } = await supabase
+        .from("affiliate_applications")
+        .select("full_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (app && typeof app.full_name === "string" && app.full_name.trim()) {
+        recipientName = app.full_name;
+      }
     }
   } catch (err) {
     console.warn("admin-comp-allowance: pre-read skipped", err);
