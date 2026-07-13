@@ -1,9 +1,5 @@
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
-import {
-  WINDOWS_DOWNLOAD_URL,
-  currentMacDownloadUrl,
-} from "@/lib/desktop-downloads";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
@@ -31,13 +27,19 @@ export async function GET(request: Request) {
   // Redirect happens no matter what. Build it first so every early return
   // still sends the visitor where they expect to go. The destination depends
   // on the requested/detected OS so Mac users no longer land on the Windows
-  // .exe (see resolveDownloadTarget).
+  // .exe (see resolveDownloadTarget). Rather than 302 straight to the installer,
+  // we send visitors to the /downloading interstitial (which auto-starts the
+  // installer AND pitches the free Chrome extension); only the unresolved-OS
+  // case falls through to the /download chooser page.
   const requestUrl = new URL(request.url);
-  const { target: downloadTarget, os: resolvedOs } = await resolveDownloadTarget(
+  const base = publicBaseUrl(h, requestUrl.origin);
+  const { downloadKey, os: resolvedOs } = resolveDownloadTarget(
     requestUrl.searchParams.get("os"),
     userAgent,
-    publicBaseUrl(h, requestUrl.origin),
   );
+  const downloadTarget = downloadKey
+    ? `${base}/downloading?os=${downloadKey}`
+    : `${base}/download`;
   const redirect = NextResponse.redirect(downloadTarget, 302);
   // Never let Vercel's CDN cache the 302 - a cached redirect would skip this
   // function on later clicks and suppress every future notification.
@@ -118,42 +120,36 @@ function publicBaseUrl(h: Headers, fallbackOrigin: string): string {
   return `${proto}://${host}`;
 }
 
-// Picks where the visitor is sent based on an explicit ?os= param (used by the
-// real download buttons, which know exactly which file they want) or, when
+// Picks which build the visitor wants, based on an explicit ?os= param (used by
+// the real download buttons, which know exactly which file they want) or, when
 // absent, the User-Agent. The UA reliably tells us the OS but NOT the Mac CPU
-// architecture, so Mac visitors without an explicit choice go to the /download
-// chooser page rather than guessing arm64 vs x64. Windows stays a direct .exe.
-async function resolveDownloadTarget(
+// architecture, so Mac visitors without an explicit choice get downloadKey=null
+// and land on the /download chooser rather than guessing arm64 vs x64. The
+// actual installer URL is resolved downstream by the /downloading interstitial.
+function resolveDownloadTarget(
   osParam: string | null,
   userAgent: string | null,
-  origin: string,
-): Promise<{ target: string; os: string }> {
+): { downloadKey: "win" | "mac-arm" | "mac-intel" | null; os: string } {
   switch (osParam) {
     case "win":
-      return { target: WINDOWS_DOWNLOAD_URL, os: "windows (explicit)" };
+      return { downloadKey: "win", os: "windows (explicit)" };
     case "mac-arm":
-      return {
-        target: await currentMacDownloadUrl("arm64"),
-        os: "mac apple silicon (explicit)",
-      };
+      return { downloadKey: "mac-arm", os: "mac apple silicon (explicit)" };
     case "mac-intel":
-      return {
-        target: await currentMacDownloadUrl("x64"),
-        os: "mac intel (explicit)",
-      };
+      return { downloadKey: "mac-intel", os: "mac intel (explicit)" };
   }
 
   const ua = (userAgent || "").toLowerCase();
   const isWindows = ua.includes("windows") || ua.includes("win64") || ua.includes("win32");
   if (isWindows) {
-    return { target: WINDOWS_DOWNLOAD_URL, os: "windows (detected)" };
+    return { downloadKey: "win", os: "windows (detected)" };
   }
 
   const isMac = ua.includes("macintosh") || ua.includes("mac os x");
   // Mac and every non-Windows visitor get the chooser so they can pick the
   // right build instead of downloading a Windows installer they can't run.
   return {
-    target: `${origin}/download`,
+    downloadKey: null,
     os: isMac ? "mac (detected, chooser)" : "non-windows (chooser)",
   };
 }
