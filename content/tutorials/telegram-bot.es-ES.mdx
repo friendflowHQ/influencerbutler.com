@@ -28,7 +28,7 @@ De vuelta en InfluencerButler, abre **API Integrations** y pega el token en el c
 
 Abre el canal de Telegram en el que quieres publicar ofertas, o crea uno nuevo. Abre la lista de **Administradores** del canal, elige **Añadir administrador**, busca tu bot por su nombre de usuario y añádelo. Dale al menos el permiso de **Publicar mensajes**.
 
-<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Captura: pantalla de "Administradores" del canal con el bot añadido y "Publicar mensajes" activado ]</div>
+![Pantalla de Administradores del canal, donde eliges Añadir administrador para agregar el bot](/assets/tutorials/telegram-bot/telegram-channel-admins.png)
 
 ## 4. Encuentra tu ID de canal / chat
 
@@ -37,7 +37,7 @@ Hay dos formatos:
 - **Canal público**: usa el identificador público, por ejemplo `@gardenloversdeals`. Es la opción más sencilla.
 - **Canal privado**: usa el ID numérico, que empieza por `-100`, por ejemplo `-1001234567890`. Para encontrarlo, reenvía cualquier mensaje del canal a un bot auxiliar como **@getidsbot**, que responde con el ID numérico.
 
-<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Captura: el ID numérico del chat devuelto por un bot de búsqueda de ID, o el @identificador público en la información del canal ]</div>
+![Panel de información del canal que muestra el @identificador público que sirve como ID de canal / chat](/assets/tutorials/telegram-bot/telegram-channel-id.png)
 
 ## 5. Pega los valores y prueba
 

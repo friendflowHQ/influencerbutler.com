@@ -28,7 +28,7 @@ Back in InfluencerButler, open **API Integrations** and paste the token into the
 
 Open the Telegram channel you want to post deals into, or create a new one. Open the channel's **Administrators** list, choose **Add Admin**, search for your bot by its username, and add it. Give it at least the **Post Messages** permission.
 
-<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Screenshot: Channel "Administrators" screen with the bot added and "Post Messages" enabled ]</div>
+![The channel Administrators screen, where you choose Add Admin to add the posting bot](/assets/tutorials/telegram-bot/telegram-channel-admins.png)
 
 ## 4. Find your Channel / Chat ID
 
@@ -37,7 +37,7 @@ There are two formats:
 - **Public channel**: use the public handle, for example `@gardenloversdeals`. This is the simplest option.
 - **Private channel**: use the numeric ID, which starts with `-100`, for example `-1001234567890`. To find it, forward any message from the channel to a helper bot such as **@getidsbot**, which replies with the numeric ID.
 
-<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Screenshot: The numeric chat ID returned by an ID-lookup bot, or the public @handle in the channel info ]</div>
+![The channel info panel showing the public @handle that serves as the Channel / Chat ID](/assets/tutorials/telegram-bot/telegram-channel-id.png)
 
 ## 5. Paste the values and test
 
