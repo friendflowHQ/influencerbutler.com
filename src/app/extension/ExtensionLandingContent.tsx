@@ -46,6 +46,40 @@ const COMPARISON: Array<{ feature: string; ib: string; others: string }> = [
   { feature: "Syncs with a full automation suite (42+ butlers)", ib: "Yes", others: "No" },
 ];
 
+// Free Chrome extension vs the desktop app. `true`/`false` render a check / x;
+// a string (Price row) renders as plain text. Keeps the capability split
+// unmistakable so nobody expects the extension to auto-post.
+const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boolean | string }> = [
+  { feature: "Product research while you browse (video counts, content gaps, storefront checks)", ext: true, app: true },
+  { feature: "Deal Sites Harvester (turn deal lists into deals)", ext: true, app: true },
+  { feature: "Auto-post deals to Facebook, Instagram, and more", ext: false, app: true },
+  { feature: "Scheduling and autopilot posting", ext: false, app: true },
+  { feature: "Creator Connections auto-outreach", ext: false, app: true },
+  { feature: "Like Butler (auto-like storefronts)", ext: false, app: true },
+  { feature: "Auto video uploads", ext: false, app: true },
+  { feature: "Commission tracking dashboard", ext: false, app: true },
+  { feature: "Deep linking", ext: false, app: true },
+  { feature: "Runs 24/7 unattended", ext: false, app: true },
+  { feature: "Price", ext: "Free", app: "From $39/mo" },
+];
+
+// One table cell for the Extension vs Desktop App grid: green check for yes,
+// muted x for no (both labelled for screen readers), plain text for the Price row.
+function CapabilityCell({ value }: { value: boolean | string }) {
+  if (typeof value === "string") {
+    return <span className="font-semibold text-slate-900">{value}</span>;
+  }
+  return value ? (
+    <span role="img" aria-label="Yes" className="text-lg font-bold text-emerald-600">
+      ✓
+    </span>
+  ) : (
+    <span role="img" aria-label="No" className="text-lg font-bold text-slate-300">
+      ✗
+    </span>
+  );
+}
+
 const FAQ = [
   {
     q: "Is it really free?",
@@ -270,6 +304,49 @@ export default function ExtensionLandingContent() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Extension vs Desktop App */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          Which one do I need?
+        </p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          Extension vs Desktop App
+        </h2>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
+          The free extension finds opportunities while you browse. The desktop app does the
+          automation: posting, outreach, and scheduling. Here is exactly what each one does.
+        </p>
+        <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 font-semibold">Feature</th>
+                <th className="px-4 py-3 text-center font-semibold">Free Extension</th>
+                <th className="px-4 py-3 text-center font-semibold text-[#f97316]">Desktop App (Pro)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {APP_VS_EXTENSION.map((row) => (
+                <tr key={row.feature} className="border-b border-slate-100">
+                  <td className="px-4 py-3 font-medium text-slate-900">{row.feature}</td>
+                  <td className="px-4 py-3 text-center">
+                    <CapabilityCell value={row.ext} />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <CapabilityCell value={row.app} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 max-w-3xl text-xs text-slate-500">
+          In short: use the free extension to research and find products, then add the desktop app
+          when you want to automate posting, outreach, and scheduling. Auto-posting is a desktop-app
+          feature and does not run from the extension.
+        </p>
       </section>
 
       {/* FAQ */}
