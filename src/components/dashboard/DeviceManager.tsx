@@ -6,9 +6,11 @@ import { useCallback, useEffect, useState } from "react";
  * Lists the devices (Lemon Squeezy license instances) a user's keys are
  * activated on, grouped per product when the user holds more than one key
  * (e.g. Team Pro + Daily Deals add-on), and lets them free up a seat.
- * Self-fetching so it can drop into any dashboard page; renders nothing until
- * the list loads and stays quiet (single line) when Lemon Squeezy is
- * unreachable.
+ * In-house comp keys have no Lemon Squeezy instances; their groups carry
+ * desktop check-in stamps (`comp`) and render an activity line instead of a
+ * device list. Self-fetching so it can drop into any dashboard page; renders
+ * nothing until the list loads and stays quiet (single line) when Lemon
+ * Squeezy is unreachable.
  */
 
 type Instance = {
@@ -17,12 +19,19 @@ type Instance = {
   createdAt: string | null;
 };
 
+type CompActivity = {
+  activatedAt: string | null;
+  lastSeenAt: string | null;
+};
+
 type DeviceGroup = {
   lsLicenseKeyId: string;
   label: string | null;
   status: string | null;
   activationLimit: number | null;
+  keyHint: string | null;
   instances: Instance[];
+  comp: CompActivity | null;
 };
 
 type ActivationsResponse = {
@@ -44,11 +53,27 @@ function formatDate(iso: string | null): string | null {
 }
 
 function seatLine(group: DeviceGroup): string {
+  // Comp keys have no per-device instance list; report check-in status instead.
+  if (group.comp) {
+    return group.comp.activatedAt ? "In use" : "Not activated yet";
+  }
   const used = group.instances.length;
   if (group.activationLimit !== null && group.activationLimit > 0) {
     return `${used} of ${group.activationLimit} devices in use`;
   }
   return `${used} ${used === 1 ? "device" : "devices"} in use`;
+}
+
+/** Activity sentence for a comp key group ("Activated June 3, 2026 ..."). */
+function compLine(comp: CompActivity): string {
+  if (!comp.activatedAt) {
+    return "Not activated yet. Download the app and paste this license key to get started.";
+  }
+  const activated = formatDate(comp.activatedAt);
+  const lastSeen = formatDate(comp.lastSeenAt);
+  const parts = [`Activated in the desktop app${activated ? ` on ${activated}` : ""}.`];
+  if (lastSeen) parts.push(`Last check-in ${lastSeen}.`);
+  return parts.join(" ");
 }
 
 export default function DeviceManager() {
@@ -117,7 +142,12 @@ export default function DeviceManager() {
   if (groups.length === 0) return null;
 
   const multiProduct = groups.length > 1;
-  const totalDevices = groups.reduce((n, g) => n + g.instances.length, 0);
+  // An activated comp key counts as one device: its seat is taken even though
+  // Lemon Squeezy has no instance record for it.
+  const totalDevices = groups.reduce(
+    (n, g) => n + (g.comp ? (g.comp.activatedAt ? 1 : 0) : g.instances.length),
+    0,
+  );
 
   const deviceRow = (inst: Instance) => {
     const activated = formatDate(inst.createdAt);
@@ -191,6 +221,11 @@ export default function DeviceManager() {
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 pb-1.5">
               <p className="text-sm font-semibold text-slate-800">
                 {group.label ?? "License"}
+                {group.keyHint ? (
+                  <span className="ml-2 font-mono text-xs font-normal text-slate-400">
+                    {group.keyHint}&hellip;
+                  </span>
+                ) : null}
                 {group.status && group.status !== "active" ? (
                   <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                     {group.status}
@@ -200,7 +235,9 @@ export default function DeviceManager() {
               <span className="text-xs text-slate-500">{seatLine(group)}</span>
             </div>
           ) : null}
-          {group.instances.length === 0 ? (
+          {group.comp ? (
+            <p className="mt-3 text-sm text-slate-600">{compLine(group.comp)}</p>
+          ) : group.instances.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">
               No devices activated yet. Download the app and paste your license key to get started.
             </p>
