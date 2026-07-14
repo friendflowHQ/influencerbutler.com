@@ -424,6 +424,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-group-builder",
+      "title": "Facebook Group Builder: create and grow niche groups on autopilot",
+      "category": "Other",
+      "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Amazon Deals Butler so deals post automatically.",
+      "order": 343,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "focus-mode",
       "title": "Focus Mode: a calmer, ADHD-friendly workspace",
       "category": "Other",
