@@ -156,6 +156,130 @@ const IDEAS: Idea[] = [
   },
 ];
 
+// Engagement-bait posts for Facebook groups. These are comment-driving posts
+// (Reveal / Relatable / Interactive), not feature promos. Each pairs a HUD/butler
+// screenshot with a caption written to pull replies. KEEP CURRENT with new butlers.
+type EngagementIdea = {
+  title: string;
+  feature: string;
+  type: string; // Reveal / Relatable / Interactive (and combos)
+  screenshot: string;
+  caption: string;
+};
+
+const ENGAGEMENT: EngagementIdea[] = [
+  {
+    title: "The Receipts Post",
+    feature: "HUD header: Hours Saved / Money Saved",
+    type: "Reveal",
+    screenshot: `The top HUD bar showing "Hours Saved 93.5h / Money Saved $3,738.51."`,
+    caption:
+      "⏰ I added it up and almost fell out of my chair. 😳\n\n" +
+      "93 HOURS. That's how much time I've saved not manually tapping, refreshing, retagging, and posting this year. That's over TWO FULL WORK WEEKS handed back to me. 💛\n\n" +
+      "We got into this to make content and money, not to be a full-time button-pusher for Amazon.\n\n" +
+      "What would you do with 93 extra hours? Drop it below 👇",
+  },
+  {
+    title: "Brand Outreach Party",
+    feature: "Amazon Butler",
+    type: "Reveal / Relatable",
+    screenshot: "The Amazon Butler panel mid-run, messaging brands in Creator Connections.",
+    caption:
+      "😴 While I was asleep last night, 40 brands got a personalized message from me.\n\n" +
+      "I wrote my pitch ONCE. It rotates the wording so no two brands get the same note, follows up on its own, and paces itself so my account stays safe. I woke up to replies in my inbox.\n\n" +
+      "Raise your hand if you're still copy-pasting the same brand message 50 times a day 🙋‍♀️ (I was too, it nearly broke me lol)",
+  },
+  {
+    title: "Post Everywhere While You Sleep",
+    feature: "Amazon Daily Deals",
+    type: "Reveal (the big flex)",
+    screenshot:
+      "The Daily Deals panel showing scheduled auto-posts going out to Instagram, Threads, Facebook, Telegram, Reddit.",
+    caption:
+      "🌙 Here's what posted for me last night while I was dead asleep:\n\n" +
+      "One deal → Instagram, Threads, Facebook groups AND pages, Telegram, and Reddit. Captions written in MY voice. My promo codes dropped in automatically. All on a schedule.\n\n" +
+      "I did zero clicking. I just woke up to the clicks. 🚀\n\n" +
+      "Comment 😴 if you're tired of manually posting the same deal to one platform at a time.",
+  },
+  {
+    title: "Hidden Money Check",
+    feature: "Earnings Intelligence",
+    type: "Reveal / Interactive",
+    screenshot:
+      "The Earnings panel showing lifetime earnings per product broken out by source (Onsite, CC, Brand deals, Bonus, International).",
+    caption:
+      "💰 Most creators have NO idea which of their old products quietly started paying them again. I sure didn't.\n\n" +
+      "This breaks my lifetime earnings down per product by source, and it resurfaces past winners that came back to life. I found products I'd completely forgotten were still making me money. 👀\n\n" +
+      "What's the one product that's earned you the most all-time? Drop it below 👇",
+  },
+  {
+    title: "Dead Link Check",
+    feature: "Retag Butler",
+    type: "Interactive (drop your link)",
+    screenshot: "A Retag Butler run showing a count of dead links found and replaced.",
+    caption:
+      "💀 DEAD LINK CHECK! 💀 Drop your storefront link below 👇\n\n" +
+      "So many of us have old videos tagged to products Amazon already pulled. Views still coming in, but the link is dead = $0. 😩\n\n" +
+      "Drop your link and I'll show you how many of your old posts are pointing at nothing, then swap in a live product and that content starts earning AGAIN (up to 500 in one pass).\n\n" +
+      "Free to check, and we all win when nobody's leaving money on the table. 💛",
+  },
+  {
+    title: "Brand Hunt Party",
+    feature: "Goldmine Butler",
+    type: "Interactive (highest comment-driver)",
+    screenshot: "The Ads Goldmine results list showing brand names + ASINs pulled from a storefront.",
+    caption:
+      "🔥 BRAND HUNT PARTY! 🔥 Drop your niche below 👇\n\n" +
+      "I'm pulling up creators in your space and grabbing every brand that's ACTIVELY paying them right now, real names, real products, ready for you to pitch.\n\n" +
+      "Comment your niche (beauty, home, fitness, toys, whatever) and I'll reply with a few brands already doing #ad and #partner deals in it. 💛\n\n" +
+      "No more guessing who to email. The receipts are right there. 🙌",
+  },
+  {
+    title: "Inbox Chaos → Calm",
+    feature: "Messenger Butler",
+    type: "Relatable",
+    screenshot:
+      "The Messenger Butler tagged inbox: threads labeled Negotiating / Product selection / Shipped, with ASINs pulled.",
+    caption:
+      "📥 My Amazon inbox used to look like a crime scene. 😅\n\n" +
+      "Now every message is pulled into ONE view, pre-tagged so I instantly see who's Negotiating, who's at Product selection, and what just shipped, with the product's ASIN grabbed for me automatically.\n\n" +
+      "Be honest: how many unread brand messages are sitting in your inbox right now? 👀 No judgment, drop the number 👇",
+  },
+  {
+    title: "How Do You Track Your Collabs?",
+    feature: "Collab Butler",
+    type: "Relatable / Interactive",
+    screenshot:
+      "The Collab Butler board with cards moving through Awaiting shipment → In progress → Submitted → Published → Archived.",
+    caption:
+      "📋 Serious question: how are you tracking your brand deals right now? Spreadsheet? Notes app? Pure vibes and prayer? 🙈\n\n" +
+      "Every brand I message turns into a card automatically and moves itself: shipment → filming → submitted → published → paid. I never re-type a thing, and nothing falls through the cracks.\n\n" +
+      "Tell me your tracking system below, I want to see who else is running on chaos like I used to 😂👇",
+  },
+  {
+    title: "Turn Old Horizontal Videos Vertical",
+    feature: "Video Reload Butler",
+    type: "Reveal / Interactive",
+    screenshot:
+      "The Video Reload Butler panel showing videos being restored, flipped horizontal to vertical, and reloaded to US/CA/UK/AU/SG.",
+    caption:
+      "🎬 That old horizontal video collecting dust? It could be earning again, as a vertical.\n\n" +
+      "This restores videos Amazon deleted, refreshes the titles, flips horizontal to vertical, AND reloads them to the US, Canada, UK, Australia, and Singapore. One old video, five countries, brand new life. 🌎\n\n" +
+      "Who's got a graveyard of old content they never repurposed? 🙋‍♀️ (guilty)",
+  },
+  {
+    title: "What Do You Still Need to Film?",
+    feature: "Content Butler",
+    type: "Relatable",
+    screenshot:
+      "The Content Butler calendar + per-brand coverage matrix showing what's due and what's still needed.",
+    caption:
+      `📅 The scariest question in this business: "wait… what do I still owe brands this month?" 😬\n\n` +
+      "I stopped guessing. Every deliverable sits on a calendar with a per-brand coverage matrix, so I know exactly what I still need to film and when it's due. No more missed deadlines, no more 11pm panic edits.\n\n" +
+      "How many pieces are you behind on right now? Drop it below, let's normalize the chaos 😅👇",
+  },
+];
+
 type Email = { step: string; subject: string; body: string };
 
 const FUNNEL: Email[] = [
@@ -344,6 +468,48 @@ export default function AffiliatePlannerPage() {
                     {copied === idea.feature ? "Copied!" : "Copy caption"}
                   </button>
                 </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900">Facebook engagement posts</h2>
+          <span className="text-xs text-slate-500">{ENGAGEMENT.length} posts</span>
+        </div>
+        <p className="mt-1 text-sm text-slate-600">
+          Comment-driving posts for your Facebook groups: Reveals, Relatable moments, and Interactive
+          prompts. Pair each with the suggested screenshot, then copy the caption straight into your
+          post. Great for warming up an audience before you drop your tracked link.
+        </p>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {ENGAGEMENT.map((post) => (
+            <article
+              key={post.title}
+              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
+                  {post.type}
+                </span>
+                <span className="text-xs font-semibold text-slate-500">{post.feature}</span>
+              </div>
+              <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
+              <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
+                📸 Screenshot: {post.screenshot}
+              </p>
+              <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => copy(`eng-${post.title}`, post.caption)}
+                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                >
+                  {copied === `eng-${post.title}` ? "Copied!" : "Copy caption"}
+                </button>
               </div>
             </article>
           ))}
