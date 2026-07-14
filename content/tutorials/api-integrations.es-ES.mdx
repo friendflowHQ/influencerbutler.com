@@ -1,6 +1,6 @@
 ---
 title: API Integrations: guarda en un solo sitio cada clave de API que Butler usa
-summary: Panel central para conectar Amazon Creators API, Levanta, Archer, Logie, proveedores de deeplinks, OpenAI, YouTube y más - con test-al-arrancar y controles de enrutamiento de afiliados.
+summary: Panel central para conectar Amazon Creators API, Levanta, Archer, Logie, Mavely, proveedores de deeplinks, OpenAI, YouTube y más - con test-al-arrancar y controles de enrutamiento de afiliados.
 category: Other
 ---
 
@@ -42,8 +42,9 @@ Lista completa de proveedores:
 - **Levanta**: red de marcas.
 - **Archer**: red de afiliados.
 - **Logie**: red de afiliados.
+- **Mavely**: red multimarca para ofertas fuera de Amazon (Walmart, Target y un amplio catálogo de marcas). Inicias sesión en vez de pegar una clave. Mira la sección de Mavely más abajo.
 - **Benable**: enlace de referido.
-- **Proveedores de deeplinks**: Influencer Butler (enlaces de marca con un panel de clics integrado), PostTap, Linktw.in, URLGenius, Geniuslink. Elige uno como principal.
+- **Proveedores de deeplinks**: Influencer Butler (enlaces de marca con un panel de clics integrado), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Elige uno como principal.
 
 ## Enrutamiento de afiliados
 
@@ -56,6 +57,23 @@ La sección inferior del panel: **Elige el proveedor con la mayor comisión para
 Debajo del toggle hay una rejilla de checkboxes de qué proveedores participan en el enrutamiento - desmarca uno para excluirlo aunque esté conectado (útil si has conectado un proveedor para pruebas pero aún no quieres usarlo en producción).
 
 Los enlaces de atribución de Levanta / Archer / Logie son un caso especial: se enrutan por el **proveedor de deeplinks** que tengas como principal, sin importar los toggles de enrutamiento. Eso es porque su mecanismo de atribución es independiente del host del enlace.
+
+## Mavely (inicia sesión, sin clave de API)
+
+Mavely es distinto de las otras redes de afiliados: no tiene clave de API que pegar. Monetiza ofertas **fuera de Amazon**, así que es la forma de ganar comisión en Walmart, Target y su amplio catálogo de marcas directamente desde el publicador de ofertas.
+
+En la tarjeta de Mavely:
+
+1. Haz clic en **Iniciar sesión en Mavely**. Se abre una ventana normal de Chrome en el sitio de creadores de Mavely.
+2. Inicia sesión con tu cuenta de Mavely y cierra esa ventana.
+3. De vuelta en el panel, haz clic en **Comprobar estado**. Debería decir "Sesión iniciada en Mavely".
+
+Una vez con la sesión iniciada, tienes dos formas de usarlo:
+
+- **Como tu proveedor de deeplinks**: elige **Mavely** en DeepLink Routing. Ahora, cuando Amazon Deals Butler publique una oferta de Walmart o Target, el enlace será un enlace de Mavely que genera comisión, de forma automática.
+- **Enlaces sueltos**: pega cualquier URL de producto en el campo URL del producto de la tarjeta de Mavely y haz clic en **Crear enlace** para obtener un enlace de Mavely al momento. El botón de enlaces de la extensión de Chrome hace lo mismo para páginas fuera de Amazon.
+
+Tus enlaces de Amazon no se ven afectados: solo los comercios fuera de Amazon pasan por Mavely. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
 
 ## Test al arrancar
 

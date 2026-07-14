@@ -1,6 +1,6 @@
 ---
 title: API Integrations: store every API key Butler uses in one place
-summary: Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more - with test-on-startup and affiliate-routing controls.
+summary: Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, Mavely, deeplink providers, OpenAI, YouTube, and more - with test-on-startup and affiliate-routing controls.
 category: Other
 ---
 
@@ -42,8 +42,9 @@ The full provider list:
 - **Levanta**: brand network.
 - **Archer**: affiliate network.
 - **Logie**: affiliate network.
+- **Mavely**: multi-brand network for non-Amazon deals (Walmart, Target, and a large brand catalog). Sign in instead of pasting a key. See the Mavely section below.
 - **Benable**: referral link.
-- **Deeplink providers**: Influencer Butler (branded links with a built-in click dashboard), PostTap, Linktw.in, URLGenius, Geniuslink. Choose one as primary.
+- **Deeplink providers**: Influencer Butler (branded links with a built-in click dashboard), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Choose one as primary.
 
 ## Affiliate routing
 
@@ -56,6 +57,23 @@ The bottom section of the panel: **Pick the highest-commission provider for each
 Below the toggle is a checkbox grid of which providers participate in routing - uncheck a provider to exclude it even when connected (useful if you've connected a provider for testing but don't want it used in production yet).
 
 Levanta / Archer / Logie attribution links are special-cased: their links route through whatever **deeplink provider** you have set as primary, regardless of routing toggles. That's because their attribution mechanism is independent of the link host.
+
+## Mavely (sign in, no API key)
+
+Mavely is different from the other affiliate networks: it has no API key to paste. It monetizes **non-Amazon** deals, so it's how you earn commission on Walmart, Target, and its large brand catalog straight from the deal poster.
+
+On the Mavely card:
+
+1. Click **Sign in to Mavely**. A normal Chrome window opens on the Mavely creators site.
+2. Log in with your Mavely account, then close that window.
+3. Back in the panel, click **Check status**. It should read "Signed in to Mavely."
+
+Once you're signed in, you have two ways to use it:
+
+- **As your deeplink provider**: pick **Mavely** in DeepLink Routing. Now when Amazon Deals Butler posts a Walmart or Target deal, the link is a commission-earning Mavely link automatically.
+- **One-off links**: paste any product URL into the Mavely card's Product URL box and click **Create Link** to get a single Mavely link on the spot. The Chrome extension's link button does the same for non-Amazon pages.
+
+Your Amazon links are untouched by this: only non-Amazon retailers route through Mavely. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
 
 ## Test on startup
 
