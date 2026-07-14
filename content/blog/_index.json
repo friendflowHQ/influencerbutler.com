@@ -2,6 +2,34 @@
   "version": 1,
   "posts": [
     {
+      "id": "how-to-get-started-with-influencer-butler",
+      "title": "How to Get Started With Influencer Butler (Your First 15 Minutes)",
+      "category": "Growth",
+      "summary": "A friendly first-day walkthrough of Influencer Butler. Download and install the app, sign in with a magic link, connect your Amazon storefront, and let the setup walkthrough run your first butler for you.",
+      "date": "2026-07-15",
+      "author": "The Influencer Butler Team",
+      "readingTime": "9 min read",
+      "keywords": "how to get started with influencer butler, influencer butler setup, influencer butler tutorial, amazon influencer automation, influencer butler download, amazon influencer tools",
+      "image": "/assets/blog/how-to-get-started-with-influencer-butler.png",
+      "imageAlt": "Branded card showing the first fifteen minutes of setting up Influencer Butler",
+      "imagePrompt": "Editorial flat illustration of a friendly butler character welcoming a new content creator at an open laptop, a simple fifteen minute clock and a short checklist floating beside them, warm onboarding mood, clean modern vector style, soft shapes, brand accent color warm orange (#f59e0b) with navy and cream, plenty of negative space, no text, no logos",
+      "order": 1
+    },
+    {
+      "id": "daily-influencer-butler-checklist",
+      "title": "The Daily Influencer Butler Checklist: 10 Minutes a Day to Keep Your Butlers Earning",
+      "category": "Growth",
+      "summary": "A simple morning-midday-evening routine for Influencer Butler users. Clear the Action Queue, confirm your deals went out, review auto-accepted campaigns, and catch pricing errors, all in about ten minutes a day.",
+      "date": "2026-07-14",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "influencer butler checklist, daily amazon influencer routine, amazon influencer daily tasks, automate amazon influencer, action queue, daily commission butler, pricecrash butler",
+      "image": "/assets/blog/daily-influencer-butler-checklist.png",
+      "imageAlt": "Branded checklist card showing a ten minute daily routine for Influencer Butler users",
+      "imagePrompt": "Editorial flat illustration of a content creator with a morning coffee checking off a short daily checklist while friendly butler characters carry deals, charts, and packages in the background, calm productive morning mood, clean modern vector style, soft shapes, brand accent color warm orange (#f59e0b) with navy and cream, plenty of negative space, no text, no logos",
+      "order": 1
+    },
+    {
       "id": "auto-post-daily-deals-facebook-telegram-reddit",
       "title": "How to Auto-Post Amazon Daily Deals to Facebook, Telegram, and Reddit (Beginner's Guide)",
       "category": "Amazon",
