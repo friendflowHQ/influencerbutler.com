@@ -29,6 +29,7 @@ export type EntitlementTier = "free" | "trial" | "pro";
 export const FREE_BUTLER_SLUGS = [
   "like-butler",
   "benable-like-butler",
+  "instagram-like-butler",
   "cc-check",
   "orders-butler",
   "storefront-butler",

@@ -1,0 +1,68 @@
+---
+title: Instagram Like Butler: auto-like the recent posts of accounts you choose
+summary: Add Instagram usernames, set max likes and delay, and Instagram Like Butler likes each account's recent posts and reels on a schedule.
+category: Instagram
+---
+
+> **Free forever.** Instagram Like Butler stays unlocked on every account - trial, paid, expired, or cancelled. No license check, no quota. It's our way of keeping you in the workflow.
+
+## What Instagram Like Butler does
+
+On Instagram, showing up in another creator's notifications is one of the cheapest ways to stay top-of-mind without sending DMs. Instagram Like Butler likes the recent posts and reels of the accounts you specify, on a cadence, with a delay between each like.
+
+The point isn't engagement gaming. It's reciprocity: if you like a creator's or brand's posts consistently, your handle keeps appearing in their activity feed, and that familiarity pays off when you pitch them later.
+
+## Before you start
+
+- **A signed-in Instagram session.** Instagram Like Butler shares the same Chrome sign-in as the other Instagram butlers (Goldmine, Email Collection, Close Friends). If you've signed in for any of them, you're already set. Otherwise the butler opens a window and waits for you to sign in.
+- **1-10 Instagram accounts** of creators or brands in your niche. Enter a username like `@creator`, or paste a profile URL like `instagram.com/creator` - both work.
+
+## Running your first pass
+
+1. Open **Instagram Like Butler** under the Instagram Butler group in the sidebar.
+2. In **Instagram accounts**, type your first username. Click **Add another Instagram account** for more. Each row also takes an optional **Max likes** cap for just that account.
+3. In **Run settings**:
+   - **Max likes per run**: start at the default 10. This is the run-wide budget across all accounts.
+   - **Delay between likes**: 8-12 seconds is safe. Anything faster than 5 seconds invites rate-limiting.
+   - **Recent posts per account**: how many of each account's newest posts to check (default 30).
+4. Keep **👀 Watch it run** on for the first pass so you can see the browser and sign in if asked.
+5. Click **Start Instagram Like Butler**.
+
+A Chrome window opens on each profile, collects the most recent posts, opens each one, and taps like with your configured delay. Posts that are already liked are skipped. Progress shows in the KPI tiles (**Total likes given**, **Likes this run**).
+
+## Tuning over time
+
+- **Max likes per run**: 10 is conservative. With 5 accounts that's still only 10 likes total per run; raise it gradually.
+- **Per-account Max likes**: use the per-row cap to keep one prolific account from eating the whole run budget.
+- **Delay**: keep at 8 seconds minimum. Faster than 5 seconds and Instagram starts to throttle.
+- **Like every recent post**: on, the butler ignores its own history and likes everything it finds; off (recommended), posts liked on a previous run are skipped so your activity looks natural.
+
+## Scheduling
+
+Instagram Like Butler has a built-in scheduler:
+
+1. Set a **start time** and a **repeat interval** (e.g. every 12 hours).
+2. Click **Enable Schedule**.
+
+While the schedule is active, the account list and run settings lock. Click **Stop Schedule** before editing them. Once a day or every 12 hours is plenty - more often risks rate-limiting and rarely adds value.
+
+## Where the data goes
+
+Every like is logged per creator. The **History** table shows liked pieces per account, the top content type (post vs. reel), and recent liked content, with search, time-range chips, CSV download, and per-creator clearing.
+
+## If Instagram blocks the run
+
+Instagram sometimes rate-limits accounts that act too fast. When the butler sees a "please wait a few minutes" or challenge screen, it stops the run cleanly instead of pushing through. Wait a few hours, raise your delay, and run again.
+
+## Common gotchas
+
+- **"Instagram sign-in is required" with Watch it run off**: the sign-in window is hidden in headless mode. Turn on 👀 Watch it run, start again, and sign in in the window that opens.
+- **Scheduler appears stuck**: the account list is locked while a schedule is active. Click Stop Schedule, edit, restart.
+- **An account shows 0 likes after a run**: every recent post was already liked (check the History tab), or the run budget was spent on earlier accounts.
+- **A username is rejected**: enter just the handle (`@creator`) or a profile URL. Post links and hashtag pages aren't accounts.
+
+## Related
+
+- [Like Butler tutorial](/help/tutorials/likebutler) - the same idea for Amazon Creator storefronts.
+- [Instagram Goldmine tutorial](/help/tutorials/instagram-goldmine) - find the creators and brands worth engaging with first.
+- [Instagram Butler tutorial](/help/tutorials/instagram) - when you're ready to move from likes to DMs.

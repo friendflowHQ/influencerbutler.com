@@ -131,6 +131,13 @@ const icons: Record<string, IconRenderer> = {
       <path d="M9 11l1.5 1.5L15 9" stroke="currentColor" />
     </svg>
   ),
+  "instagram-like-butler": (p) => (
+    <svg {...baseProps} {...p}>
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" />
+      <circle cx="18.5" cy="18.5" r="1.2" fill="currentColor" />
+      <circle cx="5.5" cy="5.5" r="1.2" fill="currentColor" />
+    </svg>
+  ),
   "benable-comment-butler": (p) => (
     <svg {...baseProps} {...p}>
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" />

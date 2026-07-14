@@ -360,6 +360,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "instagram-like-butler",
+      "title": "Instagram Like Butler: auto-like the recent posts of accounts you choose",
+      "category": "Instagram",
+      "summary": "Add Instagram usernames, set max likes and delay, and Instagram Like Butler likes each account's recent posts and reels on a schedule.",
+      "order": 245,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "api-integrations",
       "title": "API Integrations: store every API key Butler uses in one place",
       "category": "Other",
