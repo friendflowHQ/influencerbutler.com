@@ -93,11 +93,11 @@ const IDEAS: Idea[] = [
       "Like Butler auto-likes storefront posts on a schedule at a safe pace, so you stop tapping hearts all day. It's free forever, no trial needed. Great first taste of what Butler does:",
   },
   {
-    feature: "Amazon Daily Deals",
+    feature: "Deals Influencer Butler",
     cat: "Content & Deals",
     hook: "Post your deals to 5 platforms on autopilot.",
     caption:
-      "Amazon Daily Deals finds the deals, injects your promo codes, writes the captions, and auto-posts to Instagram, Threads, Facebook groups and pages, Telegram, and Reddit on a schedule. Set it up once and wake up to posted deals:",
+      "Deals Influencer Butler finds the deals, injects your promo codes, writes the captions, and auto-posts to Instagram, Threads, Facebook groups and pages, Telegram, and Reddit on a schedule. Set it up once and wake up to posted deals:",
     visual: "/assets/before_and_after_stress_influencer_butler_vertical.png",
   },
   {
@@ -191,10 +191,10 @@ const ENGAGEMENT: EngagementIdea[] = [
   },
   {
     title: "Post Everywhere While You Sleep",
-    feature: "Amazon Daily Deals",
+    feature: "Deals Influencer Butler",
     type: "Reveal (the big flex)",
     screenshot:
-      "The Daily Deals panel showing scheduled auto-posts going out to Instagram, Threads, Facebook, Telegram, Reddit.",
+      "The Deals Influencer Butler panel showing scheduled auto-posts going out to Instagram, Threads, Facebook, Telegram, Reddit.",
     caption:
       "🌙 Here's what posted for me last night while I was dead asleep:\n\n" +
       "One deal → Instagram, Threads, Facebook groups AND pages, Telegram, and Reddit. Captions written in MY voice. My promo codes dropped in automatically. All on a schedule.\n\n" +
@@ -321,7 +321,7 @@ const CALENDAR: { day: string; focus: string; platform: string }[] = [
   { day: "Day 3", focus: "Free Chrome extension: video counts + content gaps (free forever)", platform: "Reel" },
   { day: "Day 4", focus: "Email 1 to your list", platform: "Email" },
   { day: "Day 5", focus: "Messenger Butler tidy inbox", platform: "Carousel" },
-  { day: "Day 6", focus: "Amazon Daily Deals 5-platform auto-post", platform: "Reel" },
+  { day: "Day 6", focus: "Deals Influencer Butler 5-platform auto-post", platform: "Reel" },
   { day: "Day 7", focus: "Weekend: competitor comparison graphic", platform: "Feed post" },
   { day: "Day 8", focus: "Email 2 to your list", platform: "Email" },
   { day: "Day 9", focus: "Retag Butler found-money angle", platform: "Story" },

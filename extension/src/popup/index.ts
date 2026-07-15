@@ -83,7 +83,7 @@ function wireDealHarvester(locale: Settings["locale"]): void {
     en: {
       heading: "Deal Sites Harvester",
       blurb:
-        "Pull deals from the daily-deal sites you follow and send them into a Daily Deals workspace in the app.",
+        "Pull deals from the daily-deal sites you follow and send them into a Deals Influencer Butler workspace in the app.",
       open: "Open Deal Sites Harvester",
     },
     es: {

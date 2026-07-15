@@ -78,7 +78,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
-        `  3. Set up Amazon Daily Deals to find deals in your niche and post them automatically.`,
+        `  3. Set up the Deals Influencer Butler to find deals in your niche and post them automatically.`,
         ``,
         `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
         ``,

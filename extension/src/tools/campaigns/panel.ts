@@ -30,7 +30,7 @@ export async function renderCampaigns(signals: ProductSignals): Promise<void> {
   section.append(row);
 
   // The accept note is only meaningful for CC/SPCC; the deal hand-off is the
-  // "Push to Daily Deals" button in the Send-to-app section below.
+  // "Push to Deals Influencer Butler" button in the Send-to-app section below.
   const note = el("p", "note");
   note.textContent = flags.cc || flags.spcc ? t().campaignAcceptNote : t().dealPushNote;
   section.append(note);

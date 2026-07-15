@@ -11,7 +11,7 @@ Data Refresh Butler is the scheduler for the two Amazon catalogs that everything
 - The **Creator Connections (CC) campaign catalog** - every active campaign visible to your storefront.
 - The **SPCC catalog** - Sponsored Products for Creators commission rates.
 
-Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence, and Daily Deals all read from these. If they're stale, those workspaces make decisions on old data. Data Refresh Butler is where you set the cadence.
+Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence, and Deals Influencer Butler all read from these. If they're stale, those workspaces make decisions on old data. Data Refresh Butler is where you set the cadence.
 
 It has no runner of its own - it just configures and triggers the catalog
 refresh on the schedule you pick. This is the **only** place catalog refresh and
@@ -25,15 +25,15 @@ ASINs against whatever these refreshes produce.
 
 ## First-run setup (the easy path)
 
-The default setup couples refreshes to your Daily Deals search cadence: CC + SPCC re-download **1 hour before each scheduled Daily Deals search**. If you run Daily Deals, this is the right setup - you don't touch anything else.
+The default setup couples refreshes to your Deals Influencer Butler search cadence: CC + SPCC re-download **1 hour before each scheduled Deals Influencer Butler search**. If you run Deals Influencer Butler, this is the right setup - you don't touch anything else.
 
 1. Open **Data Refresh Butler** under Amazon Butler.
-2. Confirm the coupling chip near the top reads: *"Refreshes 1h before each scheduled Daily Deals search."*
+2. Confirm the coupling chip near the top reads: *"Refreshes 1h before each scheduled Deals Influencer Butler search."*
 3. Done.
 
-## Manual cadence (if you don't use Daily Deals)
+## Manual cadence (if you don't use Deals Influencer Butler)
 
-If Daily Deals isn't running on a schedule, click **Break link** on the coupling chip and set a manual cadence:
+If Deals Influencer Butler isn't running on a schedule, click **Break link** on the coupling chip and set a manual cadence:
 
 1. In **Refresh schedule**, the default is **Custom (daily at 04:00)**. That's plenty for most users; a once-a-day overnight refresh keeps catalogs fresh without hammering Amazon. The hourly presets are aggressive and rarely needed.
 2. **Refresh at this time** lets you anchor the daily refresh to a clock time (defaults to 4:00 AM).
@@ -57,16 +57,16 @@ The CC and SPCC cards each show an explicit **last refresh** date and time (e.g.
 - **Run now** under SPCC - refreshes just the SPCC catalog.
 - **Refresh both**: runs both in sequence.
 
-Useful before a manual Daily Deals search or before reviewing Daily Commission Butler candidates.
+Useful before a manual Deals Influencer Butler search or before reviewing Daily Commission Butler candidates.
 
 ## Common gotchas
 
 - **"Refresh failed: no storefront"**: set your CC Storefront ID in the topbar first.
-- **The coupling chip is missing**: Daily Deals doesn't have an active schedule, so there's nothing to couple to. Set a Daily Deals schedule first, or use manual cadence.
+- **The coupling chip is missing**: Deals Influencer Butler doesn't have an active schedule, so there's nothing to couple to. Set a Deals Influencer Butler schedule first, or use manual cadence.
 - **Catalog stays empty after a refresh**: usually means the underlying cc-check runner hit an Amazon sign-in prompt. Open cc-check, sign in, and rerun.
 
 ## Related
 
 - [CC Check tutorial](/help/tutorials/cc-check) - where you check ASINs and accept campaigns against the catalogs this workspace refreshes.
 - [Daily Commission Butler tutorial](/help/tutorials/dailycommissionbutler) - the main consumer of a fresh CC catalog.
-- [Daily Deals tutorial](/help/tutorials/daily-deals) - the default coupling source.
+- [Deals Influencer Butler tutorial](/help/tutorials/daily-deals) - the default coupling source.

@@ -171,7 +171,7 @@
       "id": "pricecrashbutler",
       "title": "Pricecrash Butler: catch Amazon pricing errors fast",
       "category": "Amazon",
-      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Amazon Daily Deals as drafts or auto-scheduled posts.",
+      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deals Influencer Butler as drafts or auto-scheduled posts.",
       "order": 45,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -185,7 +185,7 @@
     },
     {
       "id": "daily-deals",
-      "title": "Amazon Daily Deals: harvest Amazon deals and post them automatically",
+      "title": "Deals Influencer Butler: harvest Amazon deals and post them automatically",
       "category": "Amazon",
       "summary": "End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.",
       "order": 70,
@@ -243,7 +243,7 @@
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
-      "summary": "Rewrite affiliate links in your already-published Daily Deals, YouTube, Pinterest, and Benable content without re-editing each post.",
+      "summary": "Rewrite affiliate links in your already-published Deals Influencer Butler, YouTube, Pinterest, and Benable content without re-editing each post.",
       "order": 130,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -337,9 +337,9 @@
     },
     {
       "id": "instagram-channel-link",
-      "title": "Find your Instagram channel link for Amazon Deals",
+      "title": "Find your Instagram channel link for Deals Influencer Butler",
       "category": "Instagram",
-      "summary": "Get the desktop URL for your Instagram broadcast channel so Amazon Deals Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
+      "summary": "Get the desktop URL for your Instagram broadcast channel so Deals Influencer Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
       "order": 225,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -379,7 +379,7 @@
       "id": "telegram-bot",
       "title": "Telegram Bot setup: post deals to a Telegram channel",
       "category": "Other",
-      "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Amazon Deals can post automatically.",
+      "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deals Influencer Butler can post automatically.",
       "order": 305,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -435,7 +435,7 @@
       "id": "facebook-group-builder",
       "title": "Facebook Group Builder: create and grow niche groups on autopilot",
       "category": "Other",
-      "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Amazon Deals Butler so deals post automatically.",
+      "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Deals Influencer Butler so deals post automatically.",
       "order": 343,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },

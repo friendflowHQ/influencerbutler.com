@@ -8,7 +8,7 @@ category: Other
 
 Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from four sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), fresh discoveries pulled from the Creators API, and the **Amazon Associates Deals Hub** (the curated deals catalogue, including upcoming deals that haven't started yet). Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's upcoming, a quick win, or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
 
-The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Daily Deals in one click, with the video or photo you already made attached to the post.
+The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Deals Influencer Butler in one click, with the video or photo you already made attached to the post.
 
 ## The Deals Hub source (and upcoming deals)
 
@@ -16,7 +16,7 @@ The Deals Hub is Amazon's own curated list of deals for creators. It is the only
 
 Each Deals Hub row carries a **Status** of Upcoming or Live, the deal schedule, and the deal tags Amazon applies (Best Deal, Prime Exclusive, Creator Favorite).
 
-> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Daily Deals, so you don't post embargoed pricing early.
+> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Deals Influencer Butler, so you don't post embargoed pricing early.
 
 ## Lowest price all year
 
@@ -64,20 +64,20 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
    - **Lowest all year only**: filter to deals that beat the year's lowest price.
 4. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
 5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
-6. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Daily Deals** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+6. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Influencer Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
 
 ## Grab and post in a couple of clicks
 
 You don't have to queue deals one at a time. Tick the checkbox on each row you want (or **Select visible** to grab the whole filtered list), then pick how ready they should be under **Send as**:
 
-- **Drafts to review**: the deals land in the Daily Deals queue as drafts. You review them and choose destinations there before anything posts.
+- **Drafts to review**: the deals land in the Deals Influencer Butler queue as drafts. You review them and choose destinations there before anything posts.
 - **Ready to post**: the deals arrive already targeting your enabled Social Destinations, so they're one click from going out.
 
-Click **Send selected to Daily Deals**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
+Click **Send selected to Deals Influencer Butler**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
 
 ## Hands-off with Deals Hub Auto-Pilot
 
-If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Amazon Deals Butler) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Daily Deals queue your manual sends feed.
+If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Deals Influencer Butler) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Deals Influencer Butler queue your manual sends feed.
 
 ## Customize the table
 
@@ -101,6 +101,6 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 
 ## Related
 
-- [Amazon Daily Deals tutorial](/help/tutorials/daily-deals): where most users send the picks next.
+- [Deals Influencer Butler tutorial](/help/tutorials/daily-deals): where most users send the picks next.
 - [Black Friday Butler tutorial](/help/tutorials/black-friday): same seasonal-radar shape for the BFCM window.
 - [Storefront Butler tutorial](/help/tutorials/storefrontbutler): keeps the "content I already made" source fresh.

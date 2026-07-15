@@ -184,10 +184,10 @@ export const NUDGE_APP_ALARM = "ib-nudge-app";
 export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
 export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
 
-// Daily Deals workspaces the extension can target. This is a hint list for
+// Deals Influencer Butler workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.
 export const DEAL_WORKSPACES: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "default", label: "Amazon Daily Deals (main)" },
+  { key: "default", label: "Deals Influencer Butler (main)" },
   { key: "garden-bargains", label: "Garden Bargains" },
   { key: "prime-day", label: "Prime Day Butler" },
   { key: "black-friday", label: "Black Friday Butler" },

@@ -1,6 +1,6 @@
 ---
 title: Relink Butler: changez de fournisseur d'affiliation sur du contenu publié (beta)
-summary: Réécrivez les liens d'affiliation de vos posts déjà publiés sur Daily Deals, YouTube, Pinterest et Benable sans ré-éditer chaque publication à la main.
+summary: Réécrivez les liens d'affiliation de vos posts déjà publiés sur Deals Influencer Butler, YouTube, Pinterest et Benable sans ré-éditer chaque publication à la main.
 category: Amazon
 ---
 
@@ -23,7 +23,7 @@ L'objectif est le même dans chaque mode : laisser le contenu publié identique,
 
 - **Le nouveau fournisseur d'affiliation configuré** dans **API Integrations**. Ce vers quoi vous basculez doit être prêt d'abord ; Relink Butler y route les nouveaux liens.
 - **Au moins un périmètre de contenu** avec des données :
-  - **Posts Daily Deals** dans l'historique de publication de `daily-deals/`.
+  - **Posts Deals Influencer Butler** dans l'historique de publication de `daily-deals/`.
   - **Vidéos YouTube** uploadées via YouTube Butler.
   - **Pins Pinterest** publiés via Pinterest Butler (quand il sortira).
   - **Listes Benable** publiées via Benable Butler.
@@ -34,12 +34,12 @@ Si vous n'avez pas utilisé le workspace correspondant, ce périmètre n'a rien 
 
 1. Ouvrez **Relink Butler** sous Amazon Butler.
 2. Dans **Mode**, choisissez le type de swap. **Remint provider** est le plus courant - à utiliser quand vous changez de fournisseur.
-3. Dans **Périmètre**, cochez quelles surfaces de contenu réécrire. Daily Deals est coché par défaut ; cochez les autres selon besoin.
+3. Dans **Périmètre**, cochez quelles surfaces de contenu réécrire. Deals Influencer Butler est coché par défaut ; cochez les autres selon besoin.
 4. **Prévisualiser les réécritures**: Relink Butler parcourt chaque périmètre, trouve chaque lien d'affiliation et vous montre un diff côte à côte : ancien lien vs nouveau proposé, par ligne.
 5. Revoyez le diff. Décochez ce qui paraît faux.
 6. Cliquez sur **Appliquer les approuvés** pour valider le swap.
 
-Les swaps Daily Deals + Pinterest se passent dans l'app (juste des mises à jour de bases locales). Les swaps YouTube + Benable requièrent des sessions Chrome car ils éditent du contenu publié à distance - Relink Butler lance Chrome de la même façon que les autres espaces.
+Les swaps Deals Influencer Butler + Pinterest se passent dans l'app (juste des mises à jour de bases locales). Les swaps YouTube + Benable requièrent des sessions Chrome car ils éditent du contenu publié à distance - Relink Butler lance Chrome de la même façon que les autres espaces.
 
 ## Ce que Relink Butler NE fait PAS
 
@@ -49,7 +49,7 @@ Les swaps Daily Deals + Pinterest se passent dans l'app (juste des mises à jour
 
 ## Pièges courants
 
-- **L'aperçu est vide**: généralement le périmètre est vide. Vérifiez que Daily Deals (ou le périmètre concerné) a un historique de publication d'abord.
+- **L'aperçu est vide**: généralement le périmètre est vide. Vérifiez que Deals Influencer Butler (ou le périmètre concerné) a un historique de publication d'abord.
 - **"Nouveau fournisseur non configuré"**: terminez la configuration dans API Integrations avant de lancer. Le mode Remint a besoin de la clé API du nouveau fournisseur pour générer les liens de remplacement.
 - **Les swaps YouTube sont lents**: YouTube n'autorise que ~10 éditions/heure sans rate-limiting. Relink Butler le respecte ; laissez l'exécution prendre son temps.
 

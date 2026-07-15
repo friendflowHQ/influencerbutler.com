@@ -51,7 +51,7 @@ type DeviceInstance = {
 type DeviceGroup = {
   /** Internal LS id of the key this group belongs to (or the comp sentinel). */
   lsLicenseKeyId: string;
-  /** Product label, e.g. "Team Pro" or "Daily Deals Workspace"; null when unknown. */
+  /** Product label, e.g. "Team Pro" or "Deals Influencer Butler Workspace"; null when unknown. */
   label: string | null;
   status: string | null;
   activationLimit: number | null;

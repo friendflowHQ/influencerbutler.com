@@ -264,7 +264,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     console.error("comp-issue: variant resolve failed", { plan: input.plan, variant });
     return { ok: false, status: 500, error: "Server misconfiguration" };
   }
-  const planName = isDailyDeals ? "Daily Deals Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
+  const planName = isDailyDeals ? "Deals Influencer Butler Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
   // Seat limit written to the key: the admin's chosen count when valid, else the
   // plan's default (Solo 1 / Team 10 / Agency 25, Daily Deals add-on 1).
   const planDefaultSeats = isDailyDeals ? 1 : SEAT_LIMIT[tier!];

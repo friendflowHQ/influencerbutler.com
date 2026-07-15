@@ -147,7 +147,7 @@ Before showing command buttons, the extension probes:
   "type": "status",
   "appVersion": "1.0.41",
   "dealWorkspaces": [
-    { "key": "default", "label": "Amazon Daily Deals (main)" },
+    { "key": "default", "label": "Deals Influencer Butler (main)" },
     { "key": "garden-bargains", "label": "Garden Bargains" }
   ]
 }

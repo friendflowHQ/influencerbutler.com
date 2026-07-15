@@ -1,12 +1,12 @@
 ---
 title: "Telegram Bot setup: post deals to a Telegram channel"
-summary: Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Amazon Deals can post automatically.
+summary: Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deals Influencer Butler can post automatically.
 category: Other
 ---
 
 ## What this does
 
-Amazon Deals can post your product images and captions straight into a Telegram channel. To wire it up you connect a Telegram bot on the **API Integrations** panel. You need two values: a **bot token** and the **channel (chat) ID** you want to post into. The whole setup takes about five minutes. Here is the full walkthrough.
+Deals Influencer Butler can post your product images and captions straight into a Telegram channel. To wire it up you connect a Telegram bot on the **API Integrations** panel. You need two values: a **bot token** and the **channel (chat) ID** you want to post into. The whole setup takes about five minutes. Here is the full walkthrough.
 
 ## 1. Create a bot with BotFather
 
@@ -47,7 +47,7 @@ Paste the handle or numeric ID into the **Channel / Chat ID** field, then click 
 
 ## What gets posted
 
-Once connected, Amazon Deals posts to this channel using Telegram's Bot API `sendPhoto` endpoint. Each post carries the product image from your deal row plus a caption built from your post composer template. Nothing is sent until you publish a post, so connecting the bot ahead of time is safe.
+Once connected, Deals Influencer Butler posts to this channel using Telegram's Bot API `sendPhoto` endpoint. Each post carries the product image from your deal row plus a caption built from your post composer template. Nothing is sent until you publish a post, so connecting the bot ahead of time is safe.
 
 ## Common gotchas
 
@@ -58,4 +58,4 @@ Once connected, Amazon Deals posts to this channel using Telegram's Bot API `sen
 ## Related
 
 - [API Integrations](/help/tutorials/api-integrations) is where the Telegram Bot card lives, alongside every other API key Butler uses.
-- [Amazon Deals Butler](/help/tutorials/daily-deals) builds the posts that get sent to this channel.
+- [Deals Influencer Butler](/help/tutorials/daily-deals) builds the posts that get sent to this channel.

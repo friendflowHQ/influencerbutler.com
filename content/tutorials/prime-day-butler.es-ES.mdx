@@ -8,7 +8,7 @@ category: Other
 
 Prime Day Butler es un radar de temporada que muestra productos de Amazon con buenas ofertas desde cuatro fuentes a la vez: contenido que ya publicaste en tu tienda, productos que has comprado de verdad (desde Orders Butler), nuevos descubrimientos de la Creators API y el **Deals Hub de Amazon Associates** (el catálogo de ofertas curado, incluidas ofertas próximas que aún no han empezado). Cada fila se ordena por **ganancias estimadas** (las mayores primero) y se etiqueta con un grupo para que sepas si es próxima, una ganancia rápida o una opción de última hora. Filtras por palabra clave, % de descuento mínimo y precio máximo; la tabla se actualiza y exportas los candidatos a CSV.
 
-La tabla funciona como Orders Butler: una miniatura del producto en cada fila, columnas que puedes arrastrar para reordenar, redimensionar u ocultar (el diseño se recuerda), encabezados que ordenan al hacer clic y un cuadro de filtro por palabra clave o ASIN en vivo. Marca las filas que quieras y envíalas directamente a Daily Deals con un clic, con el vídeo o la foto que ya creaste adjuntos a la publicación.
+La tabla funciona como Orders Butler: una miniatura del producto en cada fila, columnas que puedes arrastrar para reordenar, redimensionar u ocultar (el diseño se recuerda), encabezados que ordenan al hacer clic y un cuadro de filtro por palabra clave o ASIN en vivo. Marca las filas que quieras y envíalas directamente a Deals Influencer Butler con un clic, con el vídeo o la foto que ya creaste adjuntos a la publicación.
 
 ## La fuente Deals Hub (y las ofertas próximas)
 
@@ -16,7 +16,7 @@ El Deals Hub es la lista curada de ofertas de Amazon para creadores. Es la únic
 
 Cada fila del Deals Hub lleva un **Estado** de Próxima o En directo, el calendario de la oferta y las etiquetas que aplica Amazon (Best Deal, Prime Exclusive, Creator Favorite).
 
-> Los precios de las ofertas próximas y las fechas de Prime Day son confidenciales hasta que Amazon las publique. Prime Day Butler marca las filas próximas y te pide confirmación antes de encolar una en Amazon Deals, para que no publiques precios embargados antes de tiempo.
+> Los precios de las ofertas próximas y las fechas de Prime Day son confidenciales hasta que Amazon las publique. Prime Day Butler marca las filas próximas y te pide confirmación antes de encolar una en Deals Influencer Butler, para que no publiques precios embargados antes de tiempo.
 
 ## Precio más bajo del año
 
@@ -64,20 +64,20 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
    - **Solo mínimo del año**: filtra a ofertas que superan el precio más bajo del año.
 4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
 5. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año. Escribe en el cuadro **Filtrar por palabra clave o ASIN** para acotar las filas visibles, o usa los filtros **Estado de la oferta** y **Solo con contenido creado**.
-6. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Amazon Deals** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
+6. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Deals Influencer Butler** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
 
 ## Selecciona y publica en un par de clics
 
 No tienes que encolar las ofertas de una en una. Marca la casilla de cada fila que quieras (o **Seleccionar visibles** para tomar toda la lista filtrada) y luego elige cómo de listas deben quedar en **Enviar como**:
 
-- **Borradores para revisar**: las ofertas llegan a la cola de Daily Deals como borradores. Las revisas y eliges destinos ahí antes de que se publique nada.
+- **Borradores para revisar**: las ofertas llegan a la cola de Deals Influencer Butler como borradores. Las revisas y eliges destinos ahí antes de que se publique nada.
 - **Listas para publicar**: las ofertas llegan ya apuntando a tus Destinos sociales activos, a un clic de salir.
 
-Haz clic en **Enviar seleccionadas a Daily Deals**. Cada oferta lleva su enlace de afiliado o deep link (creado desde tu enrutado de enlaces en Integraciones de API) y el texto, y **el vídeo o la foto que ya creaste para ese producto se adjunta automáticamente**, buscado por ASIN en Video Reload Butler y Photo Reload Butler. Si no hay copia local pero se conoce la fuente, se descarga al momento. Tu vídeo creado se publica en grupos y páginas de Facebook; otros destinos usan la imagen del producto. Las ofertas próximas (confidenciales) se confirman una vez antes de encolarse.
+Haz clic en **Enviar seleccionadas a Deals Influencer Butler**. Cada oferta lleva su enlace de afiliado o deep link (creado desde tu enrutado de enlaces en Integraciones de API) y el texto, y **el vídeo o la foto que ya creaste para ese producto se adjunta automáticamente**, buscado por ASIN en Video Reload Butler y Photo Reload Butler. Si no hay copia local pero se conoce la fuente, se descarga al momento. Tu vídeo creado se publica en grupos y páginas de Facebook; otros destinos usan la imagen del producto. Las ofertas próximas (confidenciales) se confirman una vez antes de encolarse.
 
 ## Sin intervención con el Piloto automático del Deals Hub
 
-Si prefieres no marcar filas, despliega **Piloto automático del Deals Hub** (es el mismo motor compartido con Amazon Deals Butler) y deja que añada ofertas según una programación. Tres reglas independientes cubren ofertas por encima de un porcentaje mínimo de descuento, ofertas con oportunidad de **Creator Connections** y ofertas con oportunidad **SPCC**. Cada regla tiene su propia frecuencia (cada cierto número de minutos, horas o días), una opción de solo activas, un límite por ejecución y una protección de "omitir si se publicó hace X días", y eliges si las coincidencias llegan como borradores para revisar o se programan directamente en la cola de publicación automática. Lo que configures aquí alimenta la misma cola de Daily Deals que tus envíos manuales.
+Si prefieres no marcar filas, despliega **Piloto automático del Deals Hub** (es el mismo motor compartido con Deals Influencer Butler) y deja que añada ofertas según una programación. Tres reglas independientes cubren ofertas por encima de un porcentaje mínimo de descuento, ofertas con oportunidad de **Creator Connections** y ofertas con oportunidad **SPCC**. Cada regla tiene su propia frecuencia (cada cierto número de minutos, horas o días), una opción de solo activas, un límite por ejecución y una protección de "omitir si se publicó hace X días", y eliges si las coincidencias llegan como borradores para revisar o se programan directamente en la cola de publicación automática. Lo que configures aquí alimenta la misma cola de Deals Influencer Butler que tus envíos manuales.
 
 ## Personaliza la tabla
 
@@ -101,6 +101,6 @@ Haz clic en **Buscar tendencias** para traer ofertas actuales de Prime Day desde
 
 ## Relacionado
 
-- [Tutorial de Amazon Daily Deals](/help/tutorials/daily-deals): a donde la mayoría envía las selecciones después.
+- [Tutorial de Deals Influencer Butler](/help/tutorials/daily-deals): a donde la mayoría envía las selecciones después.
 - [Tutorial de Black Friday Butler](/help/tutorials/black-friday): el mismo radar de temporada para la ventana de BFCM.
 - [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler): mantiene fresca la fuente de "contenido que ya hice".

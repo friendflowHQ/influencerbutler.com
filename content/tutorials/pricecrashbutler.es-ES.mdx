@@ -1,6 +1,6 @@
 ---
 title: Pricecrash Butler: captura errores de precio de Amazon al instante
-summary: Escanea Amazon de forma programada en busca de productos con ≥99 % de descuento y envía las capturas a Amazon Daily Deals como borradores o publicaciones programadas automáticamente.
+summary: Escanea Amazon de forma programada en busca de productos con ≥99 % de descuento y envía las capturas a Deals Influencer Butler como borradores o publicaciones programadas automáticamente.
 category: Amazon
 ---
 
@@ -10,7 +10,7 @@ category: Amazon
 
 A veces un vendedor olvida un punto decimal. A veces el equipo de catálogo no marca una alerta. Cuando eso pasa, una aspiradora de $400 aparece a $4 y un creador atento puede publicar la oferta antes de que las defensas automáticas de Amazon o una revisión manual la corrijan.
 
-Pricecrash Butler es ese radar. Corre según un horario, consulta la Amazon Creators API en las categorías que te interesan, filtra cada resultado por porcentaje de descuento y, en cuanto aparece un producto con ≥99 % de descuento, lo envía a **Amazon Daily Deals** como **borrador para revisión** o como **publicación programada automáticamente** que se publica de inmediato (o en tu próxima hora de publicación programada, tú eliges).
+Pricecrash Butler es ese radar. Corre según un horario, consulta la Amazon Creators API en las categorías que te interesan, filtra cada resultado por porcentaje de descuento y, en cuanto aparece un producto con ≥99 % de descuento, lo envía a **Deals Influencer Butler** como **borrador para revisión** o como **publicación programada automáticamente** que se publica de inmediato (o en tu próxima hora de publicación programada, tú eliges).
 
 El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de precio reales, pero puedes bajarlo a 75–85 % para abarcar liquidaciones y sobrantes.
 
@@ -20,7 +20,7 @@ El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de
 2. Elige al menos una **categoría** para escanear. "All" recorre todos los departamentos de Amazon.
 3. (Opcional) En **Mercados para escanear**, marca las regiones de Amazon que quieras recorrer (UK, DE, FR y más). Déjalas todas sin marcar para escanear solo tu mercado principal. Una casilla se desbloquea cuando conectas las credenciales de la API de Creators de esa región en Ajustes: US y CA usan tus credenciales predeterminadas; UK, DE, FR, IT y ES usan tus credenciales EU; y JP, AU e IN usan tus credenciales FE.
 4. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** (elige el momento debajo: **Publicar de inmediato** o **En la próxima hora de publicación programada**) o **Sin entrega**.
-5. Elige qué espacios de ofertas reciben los hallazgos en **Enviar hallazgos a**. Marca tu Amazon Deals Butler base y cualquier espacio de ofertas adicional que hayas añadido. Cada espacio marcado publica el hallazgo en sus propios canales usando su propia plantilla de Crea tu publicación, así un mismo error de precio puede salir a varias audiencias a la vez. Esta fila se oculta cuando eliges Sin entrega.
+5. Elige qué espacios de ofertas reciben los hallazgos en **Enviar hallazgos a**. Marca tu Deals Influencer Butler base y cualquier espacio de ofertas adicional que hayas añadido. Cada espacio marcado publica el hallazgo en sus propios canales usando su propia plantilla de Crea tu publicación, así un mismo error de precio puede salir a varias audiencias a la vez. Esta fila se oculta cuando eliges Sin entrega.
 6. Pulsa **Ejecutar**. Con el campo **Palabras clave señuelo** vacío, el runner recorre cada categoría seleccionada por su nodo raíz de Amazon ordenado por precio ascendente - sin filtro de texto del título, así captura artículos mal tarificados aunque el vendedor no haya escrito "clearance" en la ficha.
 
 ## Palabras clave señuelo
@@ -41,7 +41,7 @@ La Creators API no expone un filtro de "descuento mínimo" del lado del servidor
 
 ## La píldora Pricecrash hype
 
-El texto de la publicación se construye con tu plantilla de **Build Your Post** en Amazon Daily Deals, así que tus píldoras deciden qué publica Pricecrash. Allí hay una píldora arrastrable **Gancho Pricecrash** que inserta una frase de urgencia con el precio real (con los centavos enmascarados), como "¡CORRE! ¡EL VENDEDOR NO SABÍA QUE LO PUSO A $4.xx!". Cuando está en tu texto, reemplaza cualquier píldora de CTA y Gancho. Haz clic en la píldora para abrir su editor de frases: añade tus propias frases, quita o desactiva las que no quieras y elige si las publicaciones las van rotando o todas usan una frase que elijas.
+El texto de la publicación se construye con tu plantilla de **Build Your Post** en Deals Influencer Butler, así que tus píldoras deciden qué publica Pricecrash. Allí hay una píldora arrastrable **Gancho Pricecrash** que inserta una frase de urgencia con el precio real (con los centavos enmascarados), como "¡CORRE! ¡EL VENDEDOR NO SABÍA QUE LO PUSO A $4.xx!". Cuando está en tu texto, reemplaza cualquier píldora de CTA y Gancho. Haz clic en la píldora para abrir su editor de frases: añade tus propias frases, quita o desactiva las que no quieras y elige si las publicaciones las van rotando o todas usan una frase que elijas.
 
 ## Atajos comunes
 
@@ -52,5 +52,5 @@ El texto de la publicación se construye con tu plantilla de **Build Your Post**
 
 ## Relacionado
 
-- [Tutorial de Amazon Daily Deals](/help/tutorials/daily-deals)
+- [Tutorial de Deals Influencer Butler](/help/tutorials/daily-deals)
 - [Tutorial de Orders Butler](/help/tutorials/ordersbutler)

@@ -13,7 +13,7 @@ import { getCache, loadFilters, membership } from "../../catalogue/cache";
 type CampaignFlags = { cc: boolean; spcc: boolean };
 
 // "Send to your butler app" section. When the desktop app is running, its
-// buttons push the current product straight into a workspace (Daily Deals,
+// buttons push the current product straight into a workspace (Deals Influencer Butler,
 // Content Butler) or accept its Creator Connections campaign, all over the
 // local bridge. When the app is not running, every button becomes a targeted
 // upsell: this is the extension-to-subscription funnel.
@@ -72,7 +72,7 @@ function renderConnected(
     });
   };
 
-  // Daily Deals: workspace picker + send.
+  // Deals Influencer Butler: workspace picker + send.
   const workspaces = hud.dealWorkspaces?.length ? hud.dealWorkspaces : DEAL_WORKSPACES;
   const dealRow = el("div", "row");
   const picker = el("select");

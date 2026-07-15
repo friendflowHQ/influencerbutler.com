@@ -18,7 +18,7 @@ import type { DealFinding, Finding } from "../transport/types";
 // It gathers aggregator URLs (curated + saved + pasted), asks the background to
 // fetch and parse them, enriches the products through the Creator API, shows a
 // review list, records the finds to the dashboard, and pushes the selected
-// deals into a Daily Deals workspace in the desktop app.
+// deals into a Deals Influencer Butler workspace in the desktop app.
 
 let D: DealsDict;
 

@@ -11,7 +11,7 @@ Data Refresh Butler es el programador de los dos catálogos de Amazon de los que
 - El **catálogo de campañas Creator Connections (CC)** - todas las campañas activas visibles para tu tienda.
 - El **catálogo SPCC** - tasas de comisión de Sponsored Products for Creators.
 
-Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence y Daily Deals leen de aquí. Si están desactualizados, esos espacios toman decisiones con datos viejos. Data Refresh Butler es donde defines la cadencia.
+Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence y Deals Influencer Butler leen de aquí. Si están desactualizados, esos espacios toman decisiones con datos viejos. Data Refresh Butler es donde defines la cadencia.
 
 No tiene un ejecutor propio - sólo configura y dispara la actualización de
 catálogos según la planificación que elijas. Este es el **único** sitio donde
@@ -26,15 +26,15 @@ actualizaciones producen.
 
 ## Configuración inicial (la ruta fácil)
 
-La configuración por defecto acopla las actualizaciones a la cadencia de búsqueda de Daily Deals: CC + SPCC se vuelven a descargar **1 hora antes de cada búsqueda de Daily Deals programada**. Si usas Daily Deals, esta es la configuración correcta - no toques nada más.
+La configuración por defecto acopla las actualizaciones a la cadencia de búsqueda de Deals Influencer Butler: CC + SPCC se vuelven a descargar **1 hora antes de cada búsqueda de Deals Influencer Butler programada**. Si usas Deals Influencer Butler, esta es la configuración correcta - no toques nada más.
 
 1. Abre **Data Refresh Butler** dentro de Amazon Butler.
-2. Confirma que el chip de acoplamiento cerca de arriba dice: *"Se actualiza 1 h antes de cada búsqueda programada de Daily Deals."*
+2. Confirma que el chip de acoplamiento cerca de arriba dice: *"Se actualiza 1 h antes de cada búsqueda programada de Deals Influencer Butler."*
 3. Listo.
 
-## Cadencia manual (si no usas Daily Deals)
+## Cadencia manual (si no usas Deals Influencer Butler)
 
-Si Daily Deals no se ejecuta con un horario, pulsa **Desvincular** en el chip de acoplamiento y configura una cadencia manual:
+Si Deals Influencer Butler no se ejecuta con un horario, pulsa **Desvincular** en el chip de acoplamiento y configura una cadencia manual:
 
 1. En **Programa de actualización**, el valor por defecto es **Personalizado - diario a las 04:00**. Eso basta para la mayoría; una actualización nocturna una vez al día mantiene los catálogos frescos sin saturar a Amazon. Los preajustes por horas son agresivos y rara vez necesarios.
 2. **Actualizar a esta hora** te permite anclar la actualización diaria a una hora del reloj (por defecto las 4:00 AM).
@@ -58,16 +58,16 @@ Las tarjetas de CC y SPCC muestran una **fecha y hora de última actualización*
 - **Ejecutar ahora** bajo SPCC - actualiza sólo el catálogo SPCC.
 - **Actualizar ambos**: ejecuta ambos en secuencia.
 
-Útil antes de una búsqueda manual de Daily Deals o antes de revisar las candidatas de Daily Commission Butler.
+Útil antes de una búsqueda manual de Deals Influencer Butler o antes de revisar las candidatas de Daily Commission Butler.
 
 ## Tropiezos comunes
 
 - **"Actualización fallida: sin tienda"**: configura primero tu ID de tienda CC en la barra superior.
-- **El chip de acoplamiento no aparece**: Daily Deals no tiene un horario activo, así que no hay nada a lo que acoplarse. Establece un horario de Daily Deals primero, o usa la cadencia manual.
+- **El chip de acoplamiento no aparece**: Deals Influencer Butler no tiene un horario activo, así que no hay nada a lo que acoplarse. Establece un horario de Deals Influencer Butler primero, o usa la cadencia manual.
 - **El catálogo sigue vacío tras una actualización**: normalmente significa que el runner subyacente de cc-check se encontró con un aviso de inicio de sesión de Amazon. Abre cc-check, inicia sesión y vuelve a ejecutar.
 
 ## Relacionado
 
 - [Tutorial de CC Check](/help/tutorials/cc-check) - donde compruebas ASIN y aceptas campañas contra los catálogos que este espacio actualiza.
 - [Tutorial de Daily Commission Butler](/help/tutorials/dailycommissionbutler) - el principal consumidor de un catálogo CC fresco.
-- [Tutorial de Daily Deals](/help/tutorials/daily-deals) - la fuente de acoplamiento por defecto.
+- [Tutorial de Deals Influencer Butler](/help/tutorials/daily-deals) - la fuente de acoplamiento por defecto.

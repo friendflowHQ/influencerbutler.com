@@ -569,7 +569,7 @@ export default function AdminCompsPage() {
               <option value="monthly">Solo Monthly</option>
               <option value="team-monthly">Team Monthly</option>
               <option value="agency-monthly">Agency Monthly</option>
-              <option value="daily-deals-addon">Daily Deals Workspace (add-on)</option>
+              <option value="daily-deals-addon">Deals Influencer Butler Workspace (add-on)</option>
             </select>
           </label>
           <label className="text-sm">

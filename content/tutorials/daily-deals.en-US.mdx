@@ -1,12 +1,12 @@
 ---
-title: Amazon Daily Deals: harvest Amazon deals and post them automatically
+title: Deals Influencer Butler: harvest Amazon deals and post them automatically
 summary: End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.
 category: Amazon
 ---
 
-## What Amazon Daily Deals does
+## What Deals Influencer Butler does
 
-Amazon Daily Deals is the most complete automation in InfluencerButler. It runs a full pipeline in one workspace:
+Deals Influencer Butler is the most complete automation in InfluencerButler. It runs a full pipeline in one workspace:
 
 1. **Harvest**: pulls active Amazon deals matching your filters (discount %, commission floor, price range, keywords, brand).
 2. **Build the post**: wraps each deal in your template with hashtags, affiliate links, and optional AI-generated images.
@@ -19,7 +19,7 @@ You set it up once and it ticks along - most users only revisit it to refine fil
 - **Amazon affiliate tag** configured (Settings → Amazon).
 - **CC Storefront ID** set in the topbar (so commission data is accurate).
 - **At least one social destination** connected in the Social Destinations tab. Telegram is the simplest first destination - the bot setup is a one-time paste.
-- **Data Refresh Butler** active (or coupled by default) - Daily Deals reads from the catalogs Data Refresh Butler maintains.
+- **Data Refresh Butler** active (or coupled by default) - Deals Influencer Butler reads from the catalogs Data Refresh Butler maintains.
 
 ## Running your first harvest
 
@@ -123,7 +123,7 @@ You control how rows are added and when:
 
 Your sheet URL is stored encrypted on your own machine, and only you can write to your sheet.
 
-If you run more than one deals workspace, you do not have to set this up again for each one. Once your columns and options look the way you want, use **Copy this setup to your other deals workspaces** at the bottom of the panel to send the same layout and options to any of your other Amazon Deals workspaces at once. Each workspace keeps its own connected sheet, so your data never crosses over. If your workspace is set to replace its sheet each time, the app asks you to confirm first and names the workspaces it will change, so you never wipe a sheet by accident.
+If you run more than one deals workspace, you do not have to set this up again for each one. Once your columns and options look the way you want, use **Copy this setup to your other deals workspaces** at the bottom of the panel to send the same layout and options to any of your other Deals Influencer Butler workspaces at once. Each workspace keeps its own connected sheet, so your data never crosses over. If your workspace is set to replace its sheet each time, the app asks you to confirm first and names the workspaces it will change, so you never wipe a sheet by accident.
 
 ## Harvest deals from other sites (Deal Sites Harvester)
 
@@ -133,7 +133,7 @@ Creators share long lists of "where to find codes" daily-deal sites (savewithcin
 2. Choose your sites: keep **Include the recommended sites** on, paste any URLs you follow (one per line), and optionally **Save these sites** so they are one click next time.
 3. Click **Harvest deals**. The extension asks your permission to read those sites, reads each one, pulls out every Amazon product, and fills in the title, price, and image from the Creator API when you have it connected.
 4. Review the results table and untick anything you do not want.
-5. Pick a **Daily Deals workspace** and click **Send selected to workspace**. With the desktop app paired (from the extension popup), the deals land in that workspace's Search Deals list, where they sort, filter, and post out on your schedule exactly like deals you harvested from Amazon.
+5. Pick a **Deals Influencer Butler workspace** and click **Send selected to workspace**. With the desktop app paired (from the extension popup), the deals land in that workspace's Search Deals list, where they sort, filter, and post out on your schedule exactly like deals you harvested from Amazon.
 
 Every harvested deal is also saved to your dashboard, so you have a record even before you send it. A few notes:
 
@@ -149,12 +149,12 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 
 - **"No deals match your filters"**: usually a too-narrow filter combo. Drop one filter at a time until results return.
 - **Posts fail silently to Telegram**: bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
-- **Instagram posts go to message requests, not inbox**: that's not a Daily Deals issue; that's Instagram's own routing for accounts you don't follow.
+- **Instagram posts go to message requests, not inbox**: that's not a Deals Influencer Butler issue; that's Instagram's own routing for accounts you don't follow.
 - **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
 
 ## Clones (paid)
 
-Daily Deals supports clones at $24.99/mo each - each clone is a completely independent workspace with its own filters, destinations, and post history. Use clones if you actively run more than one niche; otherwise, presets in a single workspace handle most cases.
+Deals Influencer Butler supports clones at $24.99/mo each - each clone is a completely independent workspace with its own filters, destinations, and post history. Use clones if you actively run more than one niche; otherwise, presets in a single workspace handle most cases.
 
 ## Related
 

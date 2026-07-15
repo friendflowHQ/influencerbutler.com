@@ -177,7 +177,7 @@ export default async function PricingPage({
             Run more than one niche?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-            Stack the Daily Deals Workspace add-on for each extra niche.
+            Stack the Deals Influencer Butler Workspace add-on for each extra niche.
             Independent filters, schedules, queues, and tallies per workspace.
           </p>
         </div>
@@ -187,10 +187,10 @@ export default async function PricingPage({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
-                  Daily Deals Workspace
+                  Deals Influencer Butler Workspace
                 </h3>
                 <p className="text-sm text-slate-600">
-                  One additional Amazon Daily Deals workspace per subscription.
+                  One additional Deals Influencer Butler workspace per subscription.
                 </p>
               </div>
               <div className="text-right">
