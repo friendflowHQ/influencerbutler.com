@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { adminService } from "@/lib/admin-service";
 import { lsApi } from "@/lib/lemonsqueezy";
 
 export const runtime = "nodejs";
@@ -41,6 +42,22 @@ export async function POST(request: Request) {
     );
   }
 
+  // Mark our local row cancelled right away so the admin UI reflects it on the
+  // next lookup, instead of waiting on the (laggy) subscription_cancelled
+  // webhook. Same approach as supersedeStaleTrials in the LS webhook handler.
+  // Best-effort: the LS cancel already succeeded, so don't fail on a write
+  // error. ends_at is left for the webhook to fill in.
+  const svc = adminService();
+  if (svc) {
+    const { error: updateError } = await svc
+      .from("subscriptions")
+      .update({ status: "cancelled" })
+      .eq("ls_subscription_id", id);
+    if (updateError) {
+      console.error("billing/cancel: local subscriptions update failed", updateError);
+    }
+  }
+
   await logAdminAction({
     actor,
     action: "billing.cancel",
@@ -48,5 +65,8 @@ export async function POST(request: Request) {
     targetId: id,
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    message: "Subscription cancelled. Access continues until the end of the billing period.",
+  });
 }

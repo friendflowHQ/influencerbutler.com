@@ -82,6 +82,35 @@ function fmtMoney(total: number | null, currency: string | null): string {
   }
 }
 
+function fmtDate(value: string | null | undefined): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+// Color-codes a status chip so cancelled/expired reads clearly different from
+// active. Used by the subscription, order, and license badges.
+function statusBadgeClass(status: string | null | undefined): string {
+  const s = (status ?? "").toLowerCase();
+  if (["active", "on_trial", "paid", "valid"].includes(s)) {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (["cancelled", "canceled", "expired", "unpaid", "revoked", "refunded"].includes(s)) {
+    return "bg-red-100 text-red-800";
+  }
+  if (["paused", "past_due", "pending"].includes(s)) {
+    return "bg-amber-100 text-amber-800";
+  }
+  return "bg-slate-100 text-slate-700";
+}
+
+// A cancelled/expired subscription has nothing left to cancel.
+function isSubscriptionInactive(status: string | null | undefined): boolean {
+  const s = (status ?? "").toLowerCase();
+  return ["cancelled", "canceled", "expired"].includes(s);
+}
+
 export default function AdminUsersPage() {
   const [perms, setPerms] = useState<Set<string>>(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
@@ -333,13 +362,16 @@ export default function AdminUsersPage() {
                     <div className="flex flex-wrap justify-between gap-2">
                       <div>
                         <span className="font-medium">{s.plan_name ?? "Subscription"}</span>{" "}
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{s.status}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(s.status)}`}>{s.status}</span>
+                        {s.ends_at ? (
+                          <span className="ml-2 text-xs text-slate-500">Access until {fmtDate(s.ends_at)}</span>
+                        ) : null}
                       </div>
                       <span className="font-mono text-xs text-slate-400">{s.ls_subscription_id}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {can("billing.cancel") ? (
-                        <button type="button" onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Cancel</button>
+                        <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
                       ) : null}
                       {can("billing.comp") ? (
                         <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
@@ -363,7 +395,7 @@ export default function AdminUsersPage() {
               <ul className="mt-2 space-y-2">
                 {result.orders!.map((o) => (
                   <li key={o.ls_order_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 p-3 text-sm">
-                    <span>{fmtMoney(o.total, o.currency)} · <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{o.status}</span></span>
+                    <span>{fmtMoney(o.total, o.currency)} · <span className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(o.status)}`}>{o.status}</span></span>
                     {can("billing.refund") ? (
                       <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "refund", lsOrderId: o.ls_order_id }, "Logged.")} className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100">Refund</button>
                     ) : null}
@@ -384,7 +416,7 @@ export default function AdminUsersPage() {
                   <li key={l.ls_license_key_id} className="rounded-lg border border-slate-200 p-3 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-mono text-xs break-all">{l.key}</span>
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{l.status}</span>
+                      <span className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(l.status)}`}>{l.status}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {can("licenses.resend") ? (
