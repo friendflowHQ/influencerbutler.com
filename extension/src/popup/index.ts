@@ -10,6 +10,7 @@ import {
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
 import type { Settings, WatchCondition } from "../storage/schema";
+import { channelAllowed } from "../shared/creator-mode";
 import { resolveLocale, setLocale, t } from "../i18n";
 
 // Popup: page status via the active tab's content script, account sign-in via
@@ -31,11 +32,19 @@ async function init(): Promise<void> {
   ]);
   wireFeedback();
   wireOptions();
-  wireDealHarvester(settings.locale);
-  // Instagram Goldmine launcher: self-hosted build only. The whole call (and its
-  // import-free body) dead-code-eliminates out of the public build, leaving the
-  // card hidden as authored in popup.html.
-  if (IB_IG_ENABLED) wireGoldmine();
+  // The Deal Sites Harvester and Instagram Goldmine are offsite tools (harvest
+  // deals / creators to share off-Amazon). Hide their launcher cards for an
+  // onsite-only creator; "both" and offsite show them as before.
+  if (channelAllowed(settings.creatorMode, "offsite")) {
+    wireDealHarvester(settings.locale);
+    // Instagram Goldmine launcher: self-hosted build only. The whole call (and
+    // its import-free body) dead-code-eliminates out of the public build,
+    // leaving the card hidden as authored in popup.html.
+    if (IB_IG_ENABLED) wireGoldmine();
+  } else {
+    const dealCard = document.getElementById("deal-harvester");
+    if (dealCard) dealCard.hidden = true;
+  }
 }
 
 // Build and wire the Instagram Goldmine card. Constructed entirely in JS (not

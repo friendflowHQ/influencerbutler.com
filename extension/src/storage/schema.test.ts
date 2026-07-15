@@ -18,15 +18,19 @@ describe("migrate", () => {
         commissionRatePct: 7.5, // a user-customized value that must survive
       },
     } as unknown as Partial<StorageShape>;
-    // Simulate the pre-v6 shape: strip the new keys the way old storage lacked them.
+    // Simulate the pre-v6 shape: strip the new keys the way old storage lacked
+    // them (v5 also predates settings.creatorMode, added in v7).
     delete (v5.settings as Record<string, unknown>).campaignRadar;
     delete (v5.settings as { tools: Record<string, unknown> }).tools.campaignRadar;
+    delete (v5.settings as Record<string, unknown>).creatorMode;
 
     const out = migrate(v5);
-    expect(out.schemaVersion).toBe(6);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
     expect(out.settings.commissionRatePct).toBe(7.5);
     expect(out.settings.campaignRadar).toEqual(DEFAULTS.settings.campaignRadar);
     expect(out.settings.tools.campaignRadar).toBe(true);
+    // creatorMode backfills to "both" so an upgraded install stays unfiltered.
+    expect(out.settings.creatorMode).toBe("both");
   });
 
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {

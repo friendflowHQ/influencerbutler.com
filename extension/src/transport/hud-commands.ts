@@ -4,6 +4,8 @@
 // envelopes in docs/extension-local-bridge.md so the desktop receiver and the
 // extension serialize the same thing.
 
+import type { CreatorMode } from "../shared/creator-mode";
+
 export type ProductRef = {
   asin: string;
   marketplace: string;
@@ -94,6 +96,10 @@ export type HudStatus = {
   // Workspaces the app actually has, when it reports them; the extension
   // falls back to DEAL_WORKSPACES otherwise.
   dealWorkspaces?: Array<{ key: string; label: string }>;
+  // Creator channel the user declared in the app ("onsite" | "offsite" |
+  // "both"), so the extension can surface only the relevant tools. Absent on
+  // older app builds; the reader defaults to "both".
+  creatorMode?: CreatorMode;
 };
 
 // What the creator has actually earned on one ASIN, read from the desktop app's

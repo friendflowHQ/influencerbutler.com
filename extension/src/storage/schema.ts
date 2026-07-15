@@ -1,5 +1,6 @@
 import type { Finding, VideoCounts } from "../transport/types";
 import type { LocaleSetting } from "../i18n";
+import type { CreatorMode } from "../shared/creator-mode";
 
 // Everything lives in chrome.storage.local. The license key deliberately
 // never goes to storage.sync so it cannot leave the machine via Chrome sync.
@@ -27,6 +28,10 @@ export type Settings = {
   };
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
+  // Creator channel mirrored from the desktop app over the bridge. Drives which
+  // on-page tools and popup launchers are shown. Defaults to "both" (show
+  // everything) so an install that never connects the app is unfiltered.
+  creatorMode: CreatorMode;
   // The user's own saved list of deal-aggregator URLs for the Deal Sites
   // Harvester, on top of the curated list served from the site.
   dealSources: string[];
@@ -203,7 +208,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 6,
+  schemaVersion: 7,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -223,6 +228,7 @@ export const DEFAULTS: StorageShape = {
     },
     storefrontHandle: null,
     orderHarvestScope: "new",
+    creatorMode: "both",
     dealSources: [],
     locale: "auto",
     tools: {
@@ -272,8 +278,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // integrations slice; v2 -> v3 added firstUseAt + nudges; v3 -> v4 added the
   // watchlist array plus the searchOverlay/campaignMatcher/watchlist tool flags;
   // v4 -> v5 added the priceHistory map; v5 -> v6 added the campaignRadar
-  // thresholds plus the campaignRadar tool flag. Older stored state simply gains
-  // its defaults untouched (an existing user's price history starts empty).
+  // thresholds plus the campaignRadar tool flag; v6 -> v7 added
+  // settings.creatorMode (defaults to "both", so existing users stay
+  // unfiltered until the app reports their channel). Older stored state simply
+  // gains its defaults untouched (an existing user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -304,6 +312,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 6,
+    schemaVersion: 7,
   };
 }

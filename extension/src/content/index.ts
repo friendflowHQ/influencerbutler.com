@@ -32,6 +32,7 @@ import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { guard } from "../shared/guard";
+import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
@@ -112,6 +113,15 @@ async function runForPage(): Promise<void> {
   lastStatus = { pageType, toolSummaries: [] };
   log("content", `page type: ${pageType}`);
 
+  // Creator-mode channel filter (mirrored from the app). onsite tools are the
+  // Amazon on-platform ones (video counts, Butler Approved, campaigns, shot
+  // list, storefront checkup, order scan, upload helper, campaign radar);
+  // offsite is the affiliate/deeplink "My Link" action. Channel-neutral tools
+  // (snapshot, earnings, price history, inline card, score, calculator, HUD
+  // actions, watchlist, search overlay) always run. "both" allows everything.
+  const showOnsite = channelAllowed(settings.creatorMode, "onsite");
+  const showOffsite = channelAllowed(settings.creatorMode, "offsite");
+
   if (pageType === "product") {
     guard("product-tools", () => {
       const carousel = extractCarousel(document, capturedVideoData);
@@ -135,7 +145,7 @@ async function runForPage(): Promise<void> {
       // floating panel).
       guard("inline-card", () => renderInlineCard(signals));
 
-      if (settings.tools.videoCounts) {
+      if (showOnsite && settings.tools.videoCounts) {
         guard("video-counts", () =>
           renderVideoCounts(carousel, capturedVideoUrls, () =>
             extractCarousel(document, capturedVideoData),
@@ -149,7 +159,7 @@ async function runForPage(): Promise<void> {
 
       let approvedRecord: Record<string, boolean> | undefined;
       let approvedFlag = false;
-      if (settings.tools.approved) {
+      if (showOnsite && settings.tools.approved) {
         guard("butler-approved", () => {
           const verdict = evaluateApproved(signals, carousel.counts, settings.approved);
           renderSeal(verdict);
@@ -179,19 +189,21 @@ async function runForPage(): Promise<void> {
       }
 
       // Campaign availability from the locally-cached membership filter.
-      guard("campaigns", () => void renderCampaigns(signals));
+      if (showOnsite) guard("campaigns", () => void renderCampaigns(signals));
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
       // plus the download/trial upsell when the app is not running.
       guard("hud-actions", () => renderHudActions(signals));
 
       // My affiliate/deeplink for this product, plus an optional AI caption.
-      guard("my-link", () => void renderMyLink(signals));
+      // The flagship offsite action (share off-Amazon), so onsite-only creators
+      // do not see it.
+      if (showOffsite) guard("my-link", () => void renderMyLink(signals));
 
       // A product-specific filming plan: the features to show plus best-practice
       // beats and the FTC disclosure. Pairs with Butler Approved (what to film)
       // and My Link (where to send viewers).
-      guard("shot-list", () => renderShotList(signals));
+      if (showOnsite) guard("shot-list", () => renderShotList(signals));
 
       // Watch this product for a restock, an opening video slot, or a price drop.
       if (settings.tools.watchlist) {
@@ -204,12 +216,14 @@ async function runForPage(): Promise<void> {
       // into view, and may arrive via state scripts, rail DOM, or the
       // network hook. Nudge it into view automatically so the user does not
       // have to scroll, then keep polling and rebuild as coverage improves.
-      if (carousel.counts.unknown > 0) {
+      // Only relevant when the onsite video-counts panel is showing.
+      if (showOnsite && settings.tools.videoCounts && carousel.counts.unknown > 0) {
         autoHydrateVideos();
         watchForVideoHydration();
       }
     });
   } else if (pageType === "order-history") {
+    if (!showOnsite) return; // onsite-only page (content gaps, order harvest)
     guard("order-history", () => {
       if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
       if (settings.tools.ordersButler) {
@@ -223,6 +237,7 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {
+    if (!showOnsite) return; // onsite-only page (storefront checkup, matcher)
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
       if (settings.tools.campaignMatcher) {
@@ -232,6 +247,7 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   } else if (pageType === "creator-upload") {
+    if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
       initUploadHelper();
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
@@ -244,6 +260,7 @@ async function runForPage(): Promise<void> {
       }
     });
   } else if (pageType === "campaign-grid") {
+    if (!showOnsite) return; // onsite-only page (Creator Connections radar)
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
         void initCampaignRadar(settings);

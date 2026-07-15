@@ -3,7 +3,9 @@ import {
   BRIDGE_PROBE_TIMEOUT_MS,
   BRIDGE_STATUS_TTL_MS,
 } from "../shared/constants";
+import { normalizeCreatorMode } from "../shared/creator-mode";
 import { log } from "../shared/log";
+import { getSettings, patchSettings } from "../storage/store";
 import type {
   EarningsLookupResult,
   HudCommand,
@@ -68,6 +70,20 @@ export async function getHudStatus(force = false): Promise<HudStatus> {
   }
   const status = await probe();
   cached = { status, at: Date.now() };
+  // Mirror the creator channel into Settings so every surface can read it
+  // synchronously through getSettings() (content router, popup) rather than
+  // awaiting a live probe. Only persist on a real connection and only when it
+  // changed, so a closed app keeps the last-known mode and we avoid churn.
+  if (status.connected && status.creatorMode) {
+    try {
+      const settings = await getSettings();
+      if (settings.creatorMode !== status.creatorMode) {
+        await patchSettings({ creatorMode: status.creatorMode });
+      }
+    } catch {
+      // storage may be unavailable; filtering falls back to the stored default
+    }
+  }
   return status;
 }
 
@@ -113,12 +129,14 @@ function probePort(port: number): Promise<HudStatus | null> {
           type?: string;
           appVersion?: string;
           dealWorkspaces?: Array<{ key: string; label: string }>;
+          creatorMode?: unknown;
         };
         if (frame.type === "hello" || frame.type === "status") {
           done({
             connected: true,
             appVersion: frame.appVersion,
             dealWorkspaces: frame.dealWorkspaces,
+            creatorMode: normalizeCreatorMode(frame.creatorMode),
           });
           return;
         }
