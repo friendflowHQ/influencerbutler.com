@@ -49,6 +49,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,
+        `     (Heads up: Windows may show a "Windows protected your PC" screen. Click More info, then Run anyway. That is normal for brand-new apps.)`,
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { trackEvent, trackFunnel } from "@/lib/analytics-client";
 
 /**
  * Auto-starts the installer download shortly after the interstitial renders,
@@ -15,6 +16,14 @@ export default function DownloadStarter({ url }: { url: string }) {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+    // Derive OS from the artifact URL for funnel attribution.
+    const os = /\.exe(\?|$)/i.test(url)
+      ? "win"
+      : /arm64\.dmg/i.test(url)
+        ? "mac-arm"
+        : /\.dmg/i.test(url)
+          ? "mac-intel"
+          : "unknown";
     // Small delay so the page paints before the browser's download bar appears.
     const timer = setTimeout(() => {
       const anchor = document.createElement("a");
@@ -23,6 +32,9 @@ export default function DownloadStarter({ url }: { url: string }) {
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
+      // Funnel: the installer fetch actually started. GA4 event + unified AE sink.
+      trackEvent("installer_download_started", { os });
+      trackFunnel("installer-downloaded", { os });
     }, 500);
     return () => clearTimeout(timer);
   }, [url]);

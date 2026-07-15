@@ -240,6 +240,45 @@
     }
   }
 
+  // Unified funnel sink (Cloudflare Analytics Engine via the licensing worker),
+  // so download-click sits in the same dataset as installer-downloaded /
+  // first-launch / walkthrough-complete. text/plain keeps it a CORS-simple
+  // request (no preflight) and sendBeacon survives the navigation the click
+  // triggers. GA4 above stays the backstop.
+  var FUNNEL_ENDPOINT = "https://licensing.influencerbutler.com/funnel/track";
+  function funnelId() {
+    try {
+      var id = localStorage.getItem("ib_funnel_id");
+      if (!id) {
+        id =
+          (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+          Math.random().toString(36).slice(2);
+        localStorage.setItem("ib_funnel_id", id);
+      }
+      return id;
+    } catch (e) {
+      return "anon";
+    }
+  }
+  function trackFunnel(event, extra) {
+    try {
+      var body = JSON.stringify({
+        event: event,
+        id: funnelId(),
+        source: (extra && extra.source) || "web",
+        os: extra && extra.os,
+        ts: Date.now(),
+      });
+      if (navigator && typeof navigator.sendBeacon === "function") {
+        navigator.sendBeacon(FUNNEL_ENDPOINT, new Blob([body], { type: "text/plain" }));
+      } else {
+        fetch(FUNNEL_ENDPOINT, { method: "POST", body: body, keepalive: true }).catch(function () {});
+      }
+    } catch (e) {
+      /* never break the page for an analytics call */
+    }
+  }
+
   function trialCtaFrom(anchor) {
     if (!anchor || !anchor.href) return null;
     var url;
@@ -264,7 +303,10 @@
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       var anchor = e.target && e.target.closest ? e.target.closest("a") : null;
       var cta = trialCtaFrom(anchor);
-      if (cta) track("cta_trial_click", cta);
+      if (cta) {
+        track("cta_trial_click", cta);
+        trackFunnel("download-click", { os: cta.os, source: cta.src });
+      }
     },
     true,
   );
