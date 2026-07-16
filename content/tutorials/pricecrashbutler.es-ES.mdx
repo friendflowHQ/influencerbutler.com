@@ -20,7 +20,7 @@ El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de
 2. Elige al menos una **categoría** para escanear. "All" recorre todos los departamentos de Amazon.
 3. (Opcional) En **Mercados para escanear**, marca las regiones de Amazon que quieras recorrer (UK, DE, FR y más). Déjalas todas sin marcar para escanear solo tu mercado principal. Una casilla se desbloquea cuando conectas las credenciales de la API de Creators de esa región en Ajustes: US y CA usan tus credenciales predeterminadas; UK, DE, FR, IT y ES usan tus credenciales EU; y JP, AU e IN usan tus credenciales FE.
 4. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** (elige el momento debajo: **Publicar de inmediato** o **En la próxima hora de publicación programada**) o **Sin entrega**.
-5. Elige qué espacios de ofertas reciben los hallazgos en **Enviar hallazgos a**. Marca tu Deals Influencer Butler base y cualquier espacio de ofertas adicional que hayas añadido. Cada espacio marcado publica el hallazgo en sus propios canales usando su propia plantilla de Crea tu publicación, así un mismo error de precio puede salir a varias audiencias a la vez. Esta fila se oculta cuando eliges Sin entrega.
+5. Elige qué espacios de ofertas reciben los hallazgos en **Enviar hallazgos a**. Marca tu Deals Influencer Butler base y cualquier espacio de ofertas adicional que hayas añadido. Cada espacio marcado entrega el hallazgo en sus propios canales. El texto siempre proviene de tu compositor **Crea tu publicación** de Pricecrash Butler (más abajo), así un mismo error de precio puede salir a varias audiencias a la vez con una voz coherente. Esta fila se oculta cuando eliges Sin entrega.
 6. Pulsa **Ejecutar**. Con el campo **Palabras clave señuelo** vacío, el runner recorre cada categoría seleccionada por su nodo raíz de Amazon ordenado por precio ascendente - sin filtro de texto del título, así captura artículos mal tarificados aunque el vendedor no haya escrito "clearance" en la ficha.
 
 ## Palabras clave señuelo
@@ -39,9 +39,16 @@ Activa la programación automática (1h / 3h / 6h / 12h / 24h) o define tu propi
 
 La Creators API no expone un filtro de "descuento mínimo" del lado del servidor. Pricecrash itera cada categoría con `sortBy: Price:LowToHigh` y filtra después por `savingsPercent`. Los aciertos al 99 % son raros - esa es la idea.
 
-## La píldora Pricecrash hype
+## Crea tu publicación
 
-El texto de la publicación se construye con tu plantilla de **Build Your Post** en Deals Influencer Butler, así que tus píldoras deciden qué publica Pricecrash. Allí hay una píldora arrastrable **Gancho Pricecrash** que inserta una frase de urgencia con el precio real (con los centavos enmascarados), como "¡CORRE! ¡EL VENDEDOR NO SABÍA QUE LO PUSO A $4.xx!". Cuando está en tu texto, reemplaza cualquier píldora de CTA y Gancho. Haz clic en la píldora para abrir su editor de frases: añade tus propias frases, quita o desactiva las que no quieras y elige si las publicaciones las van rotando o todas usan una frase que elijas.
+Pricecrash Butler tiene su propio compositor **Crea tu publicación**, dentro del panel, así cada captura se publica con una voz coherente sin importar qué espacios de ofertas la reciban. Funciona igual que el de Deals Influencer Butler:
+
+- **Arrastra una píldora o haz clic en ella.** Las píldoras con colores de la parte superior insertan valores en tu texto y primer comentario: campos de la oferta (Título, Precio de oferta, Precio anterior, % de descuento, Enlace, Reseñas, Estrellas, Termina en), líneas rotativas (Gancho, Llamada a la acción, Hashtags) y la píldora roja **Urgencia de error de precio**. Arrastra una píldora al editor o haz clic para insertarla donde está el cursor. Las píldoras soltadas se convierten en fichas de color que puedes arrastrar o hacer clic para quitar.
+- **La píldora Imagen.** Suelta la píldora morada **Imagen** y luego haz clic en ella para elegir qué se publica con cada publicación: la foto de **Amazon** de la oferta capturada (por defecto), una imagen que **Subas** o **Ninguna** para una publicación de solo texto.
+- **Urgencia de error de precio.** La píldora roja inserta una frase de urgencia con el precio real (con los centavos enmascarados), como "¡CORRE! ¡EL VENDEDOR NO SABÍA QUE LO PUSO A $4.xx!". Cuando está en tu texto, lleva la publicación.
+- **Variantes.** Añade textos o comentarios alternativos bajo cada editor y elige si las publicaciones rotan entre ellos en orden o al azar, para que tu feed no repita siempre las mismas palabras.
+- **Copiar de otro espacio.** Usa **Copiar texto y comentario de** arriba para traer el texto, el primer comentario y sus variantes desde tu Deals Influencer Butler base o cualquier clon de espacio de ofertas, y ajústalo desde ahí.
+- **Vista previa en vivo.** La vista previa de abajo muestra una captura de ejemplo con tu texto y comentario actuales.
 
 ## Atajos comunes
 

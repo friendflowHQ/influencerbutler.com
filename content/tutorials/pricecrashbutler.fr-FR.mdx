@@ -20,7 +20,7 @@ Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les v
 2. Sélectionnez au moins une **catégorie** à scanner. « All » couvre tous les rayons.
 3. (Facultatif) Sous **Marchés à analyser**, cochez les régions Amazon à parcourir (UK, DE, FR et plus). Laissez tout décoché pour n'analyser que votre marché principal. Une case se débloque une fois que vous connectez les identifiants de l'API Creators de cette région dans les Réglages : US et CA utilisent vos identifiants par défaut ; UK, DE, FR, IT et ES utilisent vos identifiants EU ; et JP, AU et IN utilisent vos identifiants FE.
 4. Choisissez le comportement à la détection : **Brouillon pour relecture**, **Planifier automatiquement** (choisissez le moment en dessous : **Publier tout de suite** ou **À la prochaine heure de publication programmée**) ou **Sans transfert**.
-5. Choisissez quels espaces d'offres reçoivent les trouvailles dans **Envoyer les trouvailles à**. Cochez votre Deals Influencer Butler de base et tout espace d'offres supplémentaire que vous avez ajouté. Chaque espace coché publie la trouvaille sur ses propres canaux avec son propre modèle Composez votre publication, ainsi une même erreur de prix peut toucher plusieurs audiences à la fois. Cette ligne est masquée si vous choisissez Sans transfert.
+5. Choisissez quels espaces d'offres reçoivent les trouvailles dans **Envoyer les trouvailles à**. Cochez votre Deals Influencer Butler de base et tout espace d'offres supplémentaire que vous avez ajouté. Chaque espace coché livre la trouvaille sur ses propres canaux. Le texte provient toujours de votre composeur **Composez votre publication** de Pricecrash Butler (plus bas), ainsi une même erreur de prix peut toucher plusieurs audiences à la fois d'une seule voix cohérente. Cette ligne est masquée si vous choisissez Sans transfert.
 6. Cliquez sur **Lancer**. Avec le champ **Mots-clés appâts** vide, le runner parcourt chaque catégorie sélectionnée par son nœud racine Amazon trié par prix croissant - aucun filtre sur le titre, donc il attrape les articles mal tarifés même si le vendeur n'a jamais écrit « clearance » dans la fiche.
 
 ## Mots-clés appâts
@@ -39,9 +39,16 @@ Activez la planification automatique (1h / 3h / 6h / 12h / 24h) ou définissez v
 
 La Creators API n'expose pas de filtre « remise minimale » côté serveur. Pricecrash itère chaque catégorie avec `sortBy: Price:LowToHigh` et filtre ensuite par `savingsPercent`. Les correspondances à 99 % sont rares - c'est exactement le but.
 
-## La pastille Pricecrash hype
+## Composez votre publication
 
-Le texte de la publication est construit à partir de votre modèle **Build Your Post** dans Deals Influencer Butler, donc vos pastilles décident de ce que Pricecrash publie. On y trouve une pastille déplaçable **Accroche Pricecrash** qui insère une phrase d'urgence avec le vrai prix (centimes masqués), comme « VITE ! LE VENDEUR NE SAVAIT PAS QU'IL L'AVAIT MIS À 4,xx $ ! ». Lorsqu'elle est dans votre texte, elle remplace les pastilles CTA et Accroche. Cliquez sur la pastille pour ouvrir son éditeur de phrases : ajoutez vos propres phrases, supprimez ou désactivez celles que vous ne voulez pas, et choisissez si les publications les font défiler ou utilisent toutes une phrase que vous choisissez.
+Pricecrash Butler a son propre composeur **Composez votre publication**, directement dans le panneau, pour que chaque prise se publie d'une seule voix cohérente, quels que soient les espaces d'offres qui la reçoivent. Il fonctionne exactement comme celui de Deals Influencer Butler :
+
+- **Glissez une pastille, ou cliquez dessus.** Les pastilles colorées en haut insèrent des valeurs dans votre texte et votre premier commentaire : champs de l'offre (Titre, Prix soldé, Ancien prix, % de réduction, Lien, Avis, Étoiles, Se termine dans), lignes rotatives (Accroche, Appel à l'action, Hashtags) et la pastille rouge **Urgence d'erreur de prix**. Glissez une pastille dans l'éditeur, ou cliquez pour l'insérer à l'emplacement du curseur. Les pastilles déposées deviennent des pastilles colorées que vous pouvez déplacer ou cliquer pour retirer.
+- **La pastille Image.** Déposez la pastille violette **Image**, puis cliquez dessus pour choisir ce qui se publie avec chaque publication : la photo **Amazon** de l'offre capturée (par défaut), une image que vous **Importez**, ou **Aucune** pour une publication sans image.
+- **Urgence d'erreur de prix.** La pastille rouge insère une phrase d'urgence avec le vrai prix (centimes masqués), comme « VITE ! LE VENDEUR NE SAVAIT PAS QU'IL L'AVAIT MIS À 4,xx $ ! ». Lorsqu'elle est dans votre texte, elle porte la publication.
+- **Variantes.** Ajoutez des textes ou commentaires alternatifs sous chaque éditeur et choisissez si les publications les font défiler dans l'ordre ou au hasard, pour que votre fil ne répète pas les mêmes mots.
+- **Copier depuis un autre espace.** Utilisez **Copier la légende et le commentaire depuis** en haut pour reprendre le texte, le premier commentaire et leurs variantes depuis votre Deals Influencer Butler de base ou n'importe quel clone d'espace d'offres, puis ajustez.
+- **Aperçu en direct.** L'aperçu en bas montre une prise d'exemple rendue avec votre texte et votre commentaire actuels.
 
 ## Pièges fréquents
 

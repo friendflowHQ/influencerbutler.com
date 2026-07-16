@@ -24,7 +24,7 @@ The threshold is yours - 99% is the default because that's where real pricing er
    - **Draft for review**: safer; sits in Deals Influencer Butler → Search until you approve it.
    - **Auto-schedule**: fastest; drops straight into Deals Influencer Butler → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Deals Influencer Butler posting schedule.
    - **No hand-off**: just log it in the panel; you act manually.
-5. Choose which deals workspaces receive the catches under **Send finds to**. Tick your base Deals Influencer Butler and any extra deals workspaces you have added. Each ticked workspace posts the catch to its own channels using its own Build Your Post template, so one pricing error can go out across several audiences at once. This row is hidden when you pick No hand-off.
+5. Choose which deals workspaces receive the catches under **Send finds to**. Tick your base Deals Influencer Butler and any extra deals workspaces you have added. Each ticked workspace delivers the catch to its own channels. The post copy always comes from your Pricecrash Butler **Build Your Post** composer (see below), so one pricing error can go out across several audiences at once in one consistent voice. This row is hidden when you pick No hand-off.
 6. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
 
 ## Recurring scans
@@ -51,16 +51,25 @@ Paste your own list (comma- or newline-separated) when you want to **narrow** th
 
 If Amazon's API rejects a keyword-less browse for one of your categories (rare - it's usually a stale browse-node mapping), Pricecrash stops the run and tells you which category needs a manual keyword. Add at least one bait keyword for that category or unselect it, then run again.
 
+## Build Your Post
+
+Pricecrash Butler has its own **Build Your Post** composer, right in the panel, so every catch posts in one consistent voice no matter which deals workspaces receive it. It looks and works exactly like the one in Deals Influencer Butler:
+
+- **Drag a pill, or click it.** Color-coded pills across the top drop values into your caption and first comment: deal fields (Title, Sale price, Was price, % off, Link, Reviews, Stars, Ends in), rotating lines (Hook, Call to action, Hashtags), and the red **Price-crash hype** pill. Drag a pill into the editor, or click it to drop it at your cursor. Dropped pills become colored chips you can drag around or click to remove.
+- **The Image pill.** Drop the purple **Image** pill, then click it to choose what publishes with each post: the caught deal's **Amazon** photo (the default), an image you **Upload**, or **None** for a caption-only post.
+- **Price-crash hype.** The red hype pill drops a high-urgency line with the real (cents-masked) sale price, like "HURRY! THE SELLER DIDN'T KNOW THEY LISTED THIS FOR $4.xx!!!". When it is in your caption it carries the post.
+- **Variants.** Add alternate captions or comments under each editor and choose whether posts rotate through them in order or at random, so your feed does not repeat the same wording.
+- **Copy from another workspace.** Use **Copy caption & comment from** at the top to pull the caption, first comment, and their variants from your base Deals Influencer Butler or any deals workspace clone, then tweak from there.
+- **Live preview.** The preview at the bottom shows a sample catch rendered with your current caption and comment.
+
 ## Hand-off to Deals Influencer Butler
 
-Each found deal is written into Deals Influencer Butler' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your **Build Your Post** template in Deals Influencer Butler, so the pills you set there drive exactly what Pricecrash posts say. From there:
+Each found deal is written into Deals Influencer Butler' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your Pricecrash Butler **Build Your Post** composer (above), so the pills you set there drive exactly what Pricecrash posts say. From there:
 
 - **Draft mode**: the post lands with `status: "draft"`. Open Deals Influencer Butler → Search, review, set destinations, hit Publish.
 - **Auto-schedule mode**: the post lands with `status: "scheduled"`. With **Post right away** (the default), Pricecrash publishes it immediately to every enabled destination, so a catch goes out within seconds even when the auto-fire schedule is off. With **On the next scheduled deal post time**, the post waits for your Deals Influencer Butler posting schedule's next run.
 
 The mode and the timing are **per-scan** - flip them between scheduled runs without re-opening Deals Influencer Butler.
-
-**Tip - the Pricecrash hype pill.** In Deals Influencer Butler → Build Your Post there's a draggable **Pricecrash hype** pill that drops in a high-urgency line with the real (cents-masked) sale price, like "HURRY! THE SELLER DIDN'T KNOW THEY LISTED THIS FOR $4.xx!!!". When it's in your caption it replaces any CTA and Hook pills, so the urgency line carries the post. Click the pill to open its line editor: add your own hype lines, remove or disable ones you don't want, and choose whether posts cycle through them or all use one line you pick.
 
 ## Topbar tally
 
