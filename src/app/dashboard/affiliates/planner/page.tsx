@@ -11,14 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type Category = "Amazon Automation" | "Social & Outreach" | "Content & Deals" | "Earnings & Growth";
-
-const CATEGORIES: Category[] = [
-  "Amazon Automation",
-  "Social & Outreach",
-  "Content & Deals",
-  "Earnings & Growth",
-];
+import { BUTLERS, CATEGORIES, type Category } from "./engagementPosts";
 
 type Idea = {
   feature: string;
@@ -156,238 +149,6 @@ const IDEAS: Idea[] = [
   },
 ];
 
-// Engagement-bait posts for Facebook groups. These are comment-driving posts
-// (Reveal / Relatable / Interactive), not feature promos. Each pairs a HUD/butler
-// screenshot with a caption written to pull replies. KEEP CURRENT with new butlers.
-type EngagementIdea = {
-  title: string;
-  feature: string;
-  type: string; // Reveal / Relatable / Interactive (and combos)
-  screenshot: string;
-  caption: string;
-};
-
-const ENGAGEMENT: EngagementIdea[] = [
-  {
-    title: "The Receipts Post",
-    feature: "HUD header: Hours Saved / Money Saved",
-    type: "Reveal",
-    screenshot: `The top HUD bar showing "Hours Saved 93.5h / Money Saved $3,738.51."`,
-    caption:
-      "⏰ I added it up and almost fell out of my chair. 😳\n\n" +
-      "93 HOURS. That's how much time I've saved not manually tapping, refreshing, retagging, and posting this year. That's over TWO FULL WORK WEEKS handed back to me. 💛\n\n" +
-      "We got into this to make content and money, not to be a full-time button-pusher for Amazon.\n\n" +
-      "What would you do with 93 extra hours? Drop it below 👇",
-  },
-  {
-    title: "Brand Outreach Party",
-    feature: "Amazon Butler",
-    type: "Reveal / Relatable",
-    screenshot: "The Amazon Butler panel mid-run, messaging brands in Creator Connections.",
-    caption:
-      "😴 While I was asleep last night, 40 brands got a personalized message from me.\n\n" +
-      "I wrote my pitch ONCE. It rotates the wording so no two brands get the same note, follows up on its own, and paces itself so my account stays safe. I woke up to replies in my inbox.\n\n" +
-      "Raise your hand if you're still copy-pasting the same brand message 50 times a day 🙋‍♀️ (I was too, it nearly broke me lol)",
-  },
-  {
-    title: "Post Everywhere While You Sleep",
-    feature: "Deals Influencer Butler",
-    type: "Reveal (the big flex)",
-    screenshot:
-      "The Deals Influencer Butler panel showing scheduled auto-posts going out to Instagram, Threads, Facebook, Telegram, Reddit.",
-    caption:
-      "🌙 Here's what posted for me last night while I was dead asleep:\n\n" +
-      "One deal → Instagram, Threads, Facebook groups AND pages, Telegram, and Reddit. Captions written in MY voice. My promo codes dropped in automatically. All on a schedule.\n\n" +
-      "I did zero clicking. I just woke up to the clicks. 🚀\n\n" +
-      "Comment 😴 if you're tired of manually posting the same deal to one platform at a time.",
-  },
-  {
-    title: "Hidden Money Check",
-    feature: "Earnings Intelligence",
-    type: "Reveal / Interactive",
-    screenshot:
-      "The Earnings panel showing lifetime earnings per product broken out by source (Onsite, CC, Brand deals, Bonus, International).",
-    caption:
-      "💰 Most creators have NO idea which of their old products quietly started paying them again. I sure didn't.\n\n" +
-      "This breaks my lifetime earnings down per product by source, and it resurfaces past winners that came back to life. I found products I'd completely forgotten were still making me money. 👀\n\n" +
-      "What's the one product that's earned you the most all-time? Drop it below 👇",
-  },
-  {
-    title: "Dead Link Check",
-    feature: "Retag Butler",
-    type: "Interactive (drop your link)",
-    screenshot: "A Retag Butler run showing a count of dead links found and replaced.",
-    caption:
-      "💀 DEAD LINK CHECK! 💀 Drop your storefront link below 👇\n\n" +
-      "So many of us have old videos tagged to products Amazon already pulled. Views still coming in, but the link is dead = $0. 😩\n\n" +
-      "Drop your link and I'll show you how many of your old posts are pointing at nothing, then swap in a live product and that content starts earning AGAIN (up to 500 in one pass).\n\n" +
-      "Free to check, and we all win when nobody's leaving money on the table. 💛",
-  },
-  {
-    title: "Brand Hunt Party",
-    feature: "Goldmine Butler",
-    type: "Interactive (highest comment-driver)",
-    screenshot: "The Ads Goldmine results list showing brand names + ASINs pulled from a storefront.",
-    caption:
-      "🔥 BRAND HUNT PARTY! 🔥 Drop your niche below 👇\n\n" +
-      "I'm pulling up creators in your space and grabbing every brand that's ACTIVELY paying them right now, real names, real products, ready for you to pitch.\n\n" +
-      "Comment your niche (beauty, home, fitness, toys, whatever) and I'll reply with a few brands already doing #ad and #partner deals in it. 💛\n\n" +
-      "No more guessing who to email. The receipts are right there. 🙌",
-  },
-  {
-    title: "Inbox Chaos → Calm",
-    feature: "Messenger Butler",
-    type: "Relatable",
-    screenshot:
-      "The Messenger Butler tagged inbox: threads labeled Negotiating / Product selection / Shipped, with ASINs pulled.",
-    caption:
-      "📥 My Amazon inbox used to look like a crime scene. 😅\n\n" +
-      "Now every message is pulled into ONE view, pre-tagged so I instantly see who's Negotiating, who's at Product selection, and what just shipped, with the product's ASIN grabbed for me automatically.\n\n" +
-      "Be honest: how many unread brand messages are sitting in your inbox right now? 👀 No judgment, drop the number 👇",
-  },
-  {
-    title: "How Do You Track Your Collabs?",
-    feature: "Collab Butler",
-    type: "Relatable / Interactive",
-    screenshot:
-      "The Collab Butler board with cards moving through Awaiting shipment → In progress → Submitted → Published → Archived.",
-    caption:
-      "📋 Serious question: how are you tracking your brand deals right now? Spreadsheet? Notes app? Pure vibes and prayer? 🙈\n\n" +
-      "Every brand I message turns into a card automatically and moves itself: shipment → filming → submitted → published → paid. I never re-type a thing, and nothing falls through the cracks.\n\n" +
-      "Tell me your tracking system below, I want to see who else is running on chaos like I used to 😂👇",
-  },
-  {
-    title: "Turn Old Horizontal Videos Vertical",
-    feature: "Video Reload Butler",
-    type: "Reveal / Interactive",
-    screenshot:
-      "The Video Reload Butler panel showing videos being restored, flipped horizontal to vertical, and reloaded to US/CA/UK/AU/SG.",
-    caption:
-      "🎬 That old horizontal video collecting dust? It could be earning again, as a vertical.\n\n" +
-      "This restores videos Amazon deleted, refreshes the titles, flips horizontal to vertical, AND reloads them to the US, Canada, UK, Australia, and Singapore. One old video, five countries, brand new life. 🌎\n\n" +
-      "Who's got a graveyard of old content they never repurposed? 🙋‍♀️ (guilty)",
-  },
-  {
-    title: "What Do You Still Need to Film?",
-    feature: "Content Butler",
-    type: "Relatable",
-    screenshot:
-      "The Content Butler calendar + per-brand coverage matrix showing what's due and what's still needed.",
-    caption:
-      `📅 The scariest question in this business: "wait… what do I still owe brands this month?" 😬\n\n` +
-      "I stopped guessing. Every deliverable sits on a calendar with a per-brand coverage matrix, so I know exactly what I still need to film and when it's due. No more missed deadlines, no more 11pm panic edits.\n\n" +
-      "How many pieces are you behind on right now? Drop it below, let's normalize the chaos 😅👇",
-  },
-];
-
-// Deals-workspace-specific engagement posts (Deals Influencer Butler / Amazon
-// Daily Deals). Same card shape as ENGAGEMENT, but every post is about the deals
-// pipeline: multi-platform auto-posting, promo-code injection, price crashes,
-// deal harvesting, localized links, Telegram/Reddit, and time saved.
-const DEAL_ENGAGEMENT: EngagementIdea[] = [
-  {
-    title: "The Hours I Got Back",
-    feature: "Deals workspace: schedule",
-    type: "Reveal",
-    screenshot: "The Deals workspace showing today's deals already posted across every platform.",
-    caption:
-      "🛋️ I used to spend 2-3 HOURS every single day hunting deals, writing captions, dropping my codes, and posting them one platform at a time.\n\n" +
-      "Today I spent zero. My deals workspace found the deals, wrote the captions in my voice, dropped my promo codes in, and posted them everywhere on a schedule while I lived my life.\n\n" +
-      "Be honest: how many hours a day are you losing to manual deal posting right now? Drop the number 👇",
-  },
-  {
-    title: "One Deal, Six Platforms",
-    feature: "Deals workspace: multi-platform posting",
-    type: "Reveal (the big flex)",
-    screenshot:
-      "One deal in the workspace fanned out to Instagram, Threads, Facebook groups + pages, Telegram, and Reddit.",
-    caption:
-      "🌐 I posted ONE deal this morning. It went to Instagram, Threads, Facebook groups AND pages, Telegram, and Reddit. Automatically.\n\n" +
-      "Same deal, six audiences, six chances to earn, and I only touched it once.\n\n" +
-      "Which platform are you NOT posting your deals to yet? Drop it below and let's fix that 👇",
-  },
-  {
-    title: "Scared of Reddit?",
-    feature: "Deals workspace: Reddit posting",
-    type: "Relatable / Interactive",
-    screenshot: "The workspace with the Reddit destination toggled on, deals going out to subreddits.",
-    caption:
-      "😅 Raise your hand if Reddit scares you. 🙋‍♀️\n\n" +
-      "I avoided it for a year because the rules felt like a minefield. Now my deals workspace posts my deals to Reddit for me, on a schedule, so I actually show up where buyers go to HUNT for deals.\n\n" +
-      "What platform have you been too intimidated to try? Drop it below 👇",
-  },
-  {
-    title: "My Codes Drop Themselves In",
-    feature: "Deals workspace: promo code injection",
-    type: "Reveal",
-    screenshot: "A deal-post preview with the creator's promo code auto-inserted into the caption.",
-    caption:
-      "🎟️ Confession: I used to forget to add my promo code to half my deal posts. That's just free money I gave away. 😩\n\n" +
-      "Now my code drops into every single deal post automatically. Every platform, every time, no forgetting.\n\n" +
-      "How many posts do you think you've made WITHOUT your code attached? 👀 Be honest 👇",
-  },
-  {
-    title: "It Catches Price Crashes While I Sleep",
-    feature: "Deals workspace: price crash detection",
-    type: "Reveal / Interactive",
-    screenshot: "The workspace flagging a sudden price drop and auto-queuing it as a deal post.",
-    caption:
-      "📉 A product I love crashed 60% in price at 2am. By the time I woke up, my workspace had already caught it and posted it as a deal.\n\n" +
-      "Price crashes don't wait for you to be awake. Now I don't miss them.\n\n" +
-      "What's the best price crash you've ever caught? Drop the % below 👇",
-  },
-  {
-    title: "90 Days of Deals, Zero Missed",
-    feature: "Deals workspace: scheduling",
-    type: "Reveal / Relatable",
-    screenshot: "The workspace calendar showing an unbroken streak of daily deal posts.",
-    caption:
-      "🔥 I've posted deals every single day for 90 days straight. Want to know how many I posted by hand? Zero.\n\n" +
-      "Consistency is what actually grows a deals audience, and consistency is the FIRST thing that dies when you're doing it manually.\n\n" +
-      "What's the longest posting streak you've ever kept up on your own? 👇",
-  },
-  {
-    title: "It Hunts the Deals For Me",
-    feature: "Deals workspace: deal harvesting",
-    type: "Reveal",
-    screenshot: "The workspace pulling fresh deals and ASINs from deal-aggregator sites into the queue.",
-    caption:
-      "🕵️‍♀️ I don't hunt for deals anymore. My workspace scans the deal sites, grabs the products, and lines them up ready to post.\n\n" +
-      "I went from 'what do I even post today??' to a queue that's already full before I open my laptop.\n\n" +
-      "Where do you find your deals right now? Drop your method below 👇",
-  },
-  {
-    title: "Every Country to the Right Store",
-    feature: "Deals workspace: deep-link routing",
-    type: "Reveal",
-    screenshot: "The workspace deep-link routing setting sending US / CA / UK / AU buyers to their local Amazon.",
-    caption:
-      "🌎 Half my audience isn't even in the US. For years, every one of them clicked my link and hit the wrong Amazon store = no commission.\n\n" +
-      "Now my deal links auto-route every follower to THEIR country's store. Same post, more of my clicks actually converting.\n\n" +
-      "How international is your audience? Drop the country mix in the comments 👇",
-  },
-  {
-    title: "My Telegram Runs Itself",
-    feature: "Deals workspace: Telegram posting",
-    type: "Reveal / Interactive",
-    screenshot: "The workspace posting deals into a Telegram deals channel automatically.",
-    caption:
-      "📢 I built a Telegram deals channel and honestly forgot it existed, because it runs itself. Every deal I schedule lands there automatically.\n\n" +
-      "Telegram buyers are RABID for deals and almost no creator is using it. Free real estate.\n\n" +
-      "Are you on Telegram yet? Comment 📢 if you want me to share how I set mine up 👇",
-  },
-  {
-    title: "The Captions Sound Like ME",
-    feature: "Deals workspace: captions in your voice",
-    type: "Relatable / Reveal",
-    screenshot: "Two deal-post captions in the workspace written in the creator's own tone and voice.",
-    caption:
-      "✍️ My biggest fear with automation was sounding like a spam bot. Hard pass.\n\n" +
-      "But my workspace writes each deal caption in MY voice, my slang, my energy. My followers can't tell the difference, and honestly neither could I. 😂\n\n" +
-      "What's a word or phrase your audience knows is 100% YOU? Drop it below 👇",
-  },
-];
-
 type Email = { step: string; subject: string; body: string };
 
 const FUNNEL: Email[] = [
@@ -465,6 +226,7 @@ const ASSETS: { label: string; path: string; note: string }[] = [
 
 export default function AffiliatePlannerPage() {
   const [active, setActive] = useState<Category | "All">("All");
+  const [activeButler, setActiveButler] = useState<string>("All");
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = async (key: string, text: string) => {
@@ -482,6 +244,12 @@ export default function AffiliatePlannerPage() {
     [active],
   );
 
+  const shownButlers = useMemo(
+    () => (activeButler === "All" ? BUTLERS : BUTLERS.filter((b) => b.slug === activeButler)),
+    [activeButler],
+  );
+  const shownPostCount = shownButlers.reduce((sum, b) => sum + b.posts.length, 0);
+
   return (
     <div className="space-y-8">
       <header>
@@ -496,6 +264,23 @@ export default function AffiliatePlannerPage() {
           you are approved. Hooks, captions, an email funnel, a 14-day calendar, and ready-made
           graphics, all in one place.
         </p>
+        <nav className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
+          {[
+            ["#content-ideas", "Content ideas"],
+            ["#engagement", "Engagement posts"],
+            ["#email-funnel", "Email funnel"],
+            ["#calendar", "14-day calendar"],
+            ["#graphics", "Graphics"],
+          ].map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-600 transition hover:border-[#f97316] hover:text-[#f97316]"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
       </header>
 
       <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-5 shadow-sm">
@@ -513,7 +298,7 @@ export default function AffiliatePlannerPage() {
         </Link>
       </section>
 
-      <section>
+      <section id="content-ideas" className="scroll-mt-24">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-900">Content ideas</h2>
           <span className="text-xs text-slate-500">{shown.length} ideas</span>
@@ -582,91 +367,89 @@ export default function AffiliatePlannerPage() {
         </div>
       </section>
 
-      <section>
+      <section id="engagement" className="scroll-mt-24">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-900">Facebook engagement posts</h2>
-          <span className="text-xs text-slate-500">{ENGAGEMENT.length} posts</span>
+          <span className="text-xs text-slate-500">{shownPostCount} posts</span>
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          Comment-driving posts for your Facebook groups: Reveals, Relatable moments, and Interactive
-          prompts. Pair each with the suggested screenshot, then copy the caption straight into your
-          post. Great for warming up an audience before you drop your tracked link.
+          Comment-driving posts for your Facebook groups, 10 per butler. Pick a butler below to see
+          just its posts (Reveals, Relatable moments, and Interactive prompts). Pair each with the
+          suggested screenshot, then copy the caption straight into your post.
         </p>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {ENGAGEMENT.map((post) => (
-            <article
-              key={post.title}
-              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
-                  {post.type}
-                </span>
-                <span className="text-xs font-semibold text-slate-500">{post.feature}</span>
+        <div className="sticky top-0 z-30 mt-4 rounded-xl border border-slate-200 bg-white/90 px-3 py-3 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ButlerChip
+              label={`All butlers (${BUTLERS.length})`}
+              active={activeButler === "All"}
+              onClick={() => setActiveButler("All")}
+            />
+          </div>
+          {CATEGORIES.map((c) => (
+            <div key={c} className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                {c}
+              </span>
+              {BUTLERS.filter((b) => b.cat === c).map((b) => (
+                <ButlerChip
+                  key={b.slug}
+                  label={b.name}
+                  active={activeButler === b.slug}
+                  onClick={() => setActiveButler(b.slug)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 space-y-10">
+          {shownButlers.map((butler) => (
+            <div key={butler.slug} id={butler.slug} className="scroll-mt-40">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
+                <div>
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
+                    {butler.cat}
+                  </span>
+                  <h3 className="mt-1 text-base font-bold text-slate-900">{butler.name}</h3>
+                  <p className="text-xs text-slate-500">{butler.blurb}</p>
+                </div>
+                <span className="whitespace-nowrap text-xs text-slate-400">{butler.posts.length} posts</span>
               </div>
-              <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
-              <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
-                📸 Screenshot: {post.screenshot}
-              </p>
-              <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => copy(`eng-${post.title}`, post.caption)}
-                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
-                >
-                  {copied === `eng-${post.title}` ? "Copied!" : "Copy caption"}
-                </button>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {butler.posts.map((post) => (
+                  <article
+                    key={post.title}
+                    className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
+                        {post.type}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
+                    <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
+                      📸 Screenshot: {post.screenshot}
+                    </p>
+                    <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => copy(`${butler.slug}-${post.title}`, post.caption)}
+                        className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                      >
+                        {copied === `${butler.slug}-${post.title}` ? "Copied!" : "Copy caption"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
-            </article>
+            </div>
           ))}
         </div>
       </section>
 
-      <section>
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-900">Deals workspace posts</h2>
-          <span className="text-xs text-slate-500">{DEAL_ENGAGEMENT.length} posts</span>
-        </div>
-        <p className="mt-1 text-sm text-slate-600">
-          Comment-driving posts built around the deals pipeline: multi-platform auto-posting, promo
-          codes, price crashes, deal hunting, localized links, and the hours it hands back. Perfect
-          for a deals audience on Facebook.
-        </p>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {DEAL_ENGAGEMENT.map((post) => (
-            <article
-              key={post.title}
-              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
-                  {post.type}
-                </span>
-                <span className="text-xs font-semibold text-slate-500">{post.feature}</span>
-              </div>
-              <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
-              <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
-                📸 Screenshot: {post.screenshot}
-              </p>
-              <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => copy(`deal-${post.title}`, post.caption)}
-                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
-                >
-                  {copied === `deal-${post.title}` ? "Copied!" : "Copy caption"}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="email-funnel" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Email funnel starter</h2>
         <p className="mt-1 text-sm text-slate-600">
           A 5-email sequence you can adapt to your voice. Space them 2 to 3 days apart and put your
@@ -694,7 +477,7 @@ export default function AffiliatePlannerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="calendar" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">14-day launch calendar</h2>
         <p className="mt-1 text-sm text-slate-600">
           A starter cadence mixing short video, Stories, carousels, and email. Shift it to fit your
@@ -722,7 +505,7 @@ export default function AffiliatePlannerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="graphics" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Ready-made graphics</h2>
         <p className="mt-1 text-sm text-slate-600">
           Right-click and save any of these to use in your posts. More feature images live in the
@@ -790,6 +573,30 @@ function PillButton({
       >
         {count}
       </span>
+    </button>
+  );
+}
+
+function ButlerChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition ${
+        active
+          ? "border-[#f97316] bg-[#f97316] text-white shadow-sm"
+          : "border-slate-200 bg-white text-slate-600 hover:border-[#f97316] hover:text-[#f97316]"
+      }`}
+    >
+      {label}
     </button>
   );
 }
