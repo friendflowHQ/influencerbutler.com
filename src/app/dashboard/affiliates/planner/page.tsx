@@ -280,6 +280,114 @@ const ENGAGEMENT: EngagementIdea[] = [
   },
 ];
 
+// Deals-workspace-specific engagement posts (Deals Influencer Butler / Amazon
+// Daily Deals). Same card shape as ENGAGEMENT, but every post is about the deals
+// pipeline: multi-platform auto-posting, promo-code injection, price crashes,
+// deal harvesting, localized links, Telegram/Reddit, and time saved.
+const DEAL_ENGAGEMENT: EngagementIdea[] = [
+  {
+    title: "The Hours I Got Back",
+    feature: "Deals workspace: schedule",
+    type: "Reveal",
+    screenshot: "The Deals workspace showing today's deals already posted across every platform.",
+    caption:
+      "🛋️ I used to spend 2-3 HOURS every single day hunting deals, writing captions, dropping my codes, and posting them one platform at a time.\n\n" +
+      "Today I spent zero. My deals workspace found the deals, wrote the captions in my voice, dropped my promo codes in, and posted them everywhere on a schedule while I lived my life.\n\n" +
+      "Be honest: how many hours a day are you losing to manual deal posting right now? Drop the number 👇",
+  },
+  {
+    title: "One Deal, Six Platforms",
+    feature: "Deals workspace: multi-platform posting",
+    type: "Reveal (the big flex)",
+    screenshot:
+      "One deal in the workspace fanned out to Instagram, Threads, Facebook groups + pages, Telegram, and Reddit.",
+    caption:
+      "🌐 I posted ONE deal this morning. It went to Instagram, Threads, Facebook groups AND pages, Telegram, and Reddit. Automatically.\n\n" +
+      "Same deal, six audiences, six chances to earn, and I only touched it once.\n\n" +
+      "Which platform are you NOT posting your deals to yet? Drop it below and let's fix that 👇",
+  },
+  {
+    title: "Scared of Reddit?",
+    feature: "Deals workspace: Reddit posting",
+    type: "Relatable / Interactive",
+    screenshot: "The workspace with the Reddit destination toggled on, deals going out to subreddits.",
+    caption:
+      "😅 Raise your hand if Reddit scares you. 🙋‍♀️\n\n" +
+      "I avoided it for a year because the rules felt like a minefield. Now my deals workspace posts my deals to Reddit for me, on a schedule, so I actually show up where buyers go to HUNT for deals.\n\n" +
+      "What platform have you been too intimidated to try? Drop it below 👇",
+  },
+  {
+    title: "My Codes Drop Themselves In",
+    feature: "Deals workspace: promo code injection",
+    type: "Reveal",
+    screenshot: "A deal-post preview with the creator's promo code auto-inserted into the caption.",
+    caption:
+      "🎟️ Confession: I used to forget to add my promo code to half my deal posts. That's just free money I gave away. 😩\n\n" +
+      "Now my code drops into every single deal post automatically. Every platform, every time, no forgetting.\n\n" +
+      "How many posts do you think you've made WITHOUT your code attached? 👀 Be honest 👇",
+  },
+  {
+    title: "It Catches Price Crashes While I Sleep",
+    feature: "Deals workspace: price crash detection",
+    type: "Reveal / Interactive",
+    screenshot: "The workspace flagging a sudden price drop and auto-queuing it as a deal post.",
+    caption:
+      "📉 A product I love crashed 60% in price at 2am. By the time I woke up, my workspace had already caught it and posted it as a deal.\n\n" +
+      "Price crashes don't wait for you to be awake. Now I don't miss them.\n\n" +
+      "What's the best price crash you've ever caught? Drop the % below 👇",
+  },
+  {
+    title: "90 Days of Deals, Zero Missed",
+    feature: "Deals workspace: scheduling",
+    type: "Reveal / Relatable",
+    screenshot: "The workspace calendar showing an unbroken streak of daily deal posts.",
+    caption:
+      "🔥 I've posted deals every single day for 90 days straight. Want to know how many I posted by hand? Zero.\n\n" +
+      "Consistency is what actually grows a deals audience, and consistency is the FIRST thing that dies when you're doing it manually.\n\n" +
+      "What's the longest posting streak you've ever kept up on your own? 👇",
+  },
+  {
+    title: "It Hunts the Deals For Me",
+    feature: "Deals workspace: deal harvesting",
+    type: "Reveal",
+    screenshot: "The workspace pulling fresh deals and ASINs from deal-aggregator sites into the queue.",
+    caption:
+      "🕵️‍♀️ I don't hunt for deals anymore. My workspace scans the deal sites, grabs the products, and lines them up ready to post.\n\n" +
+      "I went from 'what do I even post today??' to a queue that's already full before I open my laptop.\n\n" +
+      "Where do you find your deals right now? Drop your method below 👇",
+  },
+  {
+    title: "Every Country to the Right Store",
+    feature: "Deals workspace: deep-link routing",
+    type: "Reveal",
+    screenshot: "The workspace deep-link routing setting sending US / CA / UK / AU buyers to their local Amazon.",
+    caption:
+      "🌎 Half my audience isn't even in the US. For years, every one of them clicked my link and hit the wrong Amazon store = no commission.\n\n" +
+      "Now my deal links auto-route every follower to THEIR country's store. Same post, more of my clicks actually converting.\n\n" +
+      "How international is your audience? Drop the country mix in the comments 👇",
+  },
+  {
+    title: "My Telegram Runs Itself",
+    feature: "Deals workspace: Telegram posting",
+    type: "Reveal / Interactive",
+    screenshot: "The workspace posting deals into a Telegram deals channel automatically.",
+    caption:
+      "📢 I built a Telegram deals channel and honestly forgot it existed, because it runs itself. Every deal I schedule lands there automatically.\n\n" +
+      "Telegram buyers are RABID for deals and almost no creator is using it. Free real estate.\n\n" +
+      "Are you on Telegram yet? Comment 📢 if you want me to share how I set mine up 👇",
+  },
+  {
+    title: "The Captions Sound Like ME",
+    feature: "Deals workspace: captions in your voice",
+    type: "Relatable / Reveal",
+    screenshot: "Two deal-post captions in the workspace written in the creator's own tone and voice.",
+    caption:
+      "✍️ My biggest fear with automation was sounding like a spam bot. Hard pass.\n\n" +
+      "But my workspace writes each deal caption in MY voice, my slang, my energy. My followers can't tell the difference, and honestly neither could I. 😂\n\n" +
+      "What's a word or phrase your audience knows is 100% YOU? Drop it below 👇",
+  },
+];
+
 type Email = { step: string; subject: string; body: string };
 
 const FUNNEL: Email[] = [
@@ -509,6 +617,48 @@ export default function AffiliatePlannerPage() {
                   className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
                 >
                   {copied === `eng-${post.title}` ? "Copied!" : "Copy caption"}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900">Deals workspace posts</h2>
+          <span className="text-xs text-slate-500">{DEAL_ENGAGEMENT.length} posts</span>
+        </div>
+        <p className="mt-1 text-sm text-slate-600">
+          Comment-driving posts built around the deals pipeline: multi-platform auto-posting, promo
+          codes, price crashes, deal hunting, localized links, and the hours it hands back. Perfect
+          for a deals audience on Facebook.
+        </p>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {DEAL_ENGAGEMENT.map((post) => (
+            <article
+              key={post.title}
+              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
+                  {post.type}
+                </span>
+                <span className="text-xs font-semibold text-slate-500">{post.feature}</span>
+              </div>
+              <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
+              <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
+                📸 Screenshot: {post.screenshot}
+              </p>
+              <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => copy(`deal-${post.title}`, post.caption)}
+                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                >
+                  {copied === `deal-${post.title}` ? "Copied!" : "Copy caption"}
                 </button>
               </div>
             </article>
