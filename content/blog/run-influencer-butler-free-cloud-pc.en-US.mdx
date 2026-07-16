@@ -4,8 +4,8 @@ summary: A dead-simple, step-by-step guide to running Influencer Butler 24/7 on 
 category: Growth
 date: 2026-07-07
 author: The Influencer Butler Team
-readingTime: 10 min read
-keywords: run influencer butler in the cloud, free aws cloud pc, aws free tier, remote desktop influencer butler, run influencer butler 24/7, free cloud computer for creators
+readingTime: 12 min read
+keywords: run influencer butler in the cloud, free aws cloud pc, aws free tier, remote desktop influencer butler, run influencer butler 24/7, free cloud computer for creators, facebook residential proxy, avoid data center ip detection, static residential proxy for facebook
 image: /assets/blog/run-influencer-butler-free-cloud-pc.png
 imageAlt: Illustration of a free always-on cloud computer running Influencer Butler around the clock
 ---
@@ -32,11 +32,22 @@ Here is what the finished setup looks like: a free cloud computer, always on, ru
 
 ![A free always-on cloud computer running Influencer Butler](/assets/blog/run-influencer-butler-free-cloud-pc.png)
 
+## One thing to know about cloud computers (and the easy fix)
+
+Here is the one honest catch, and the good news is it takes about two minutes to solve.
+
+When Influencer Butler runs on your home computer, it posts from your home internet connection: a normal **residential** connection, like millions of other households. When it runs on a cloud computer, it posts from a **data center** instead. Platforms like Facebook can tell the difference, and posting from a data center can look less like a regular person and more like a bot, even when everything you are doing is perfectly legitimate.
+
+The fix is simple and cheap: a **residential proxy**. Think of it as a little relay that sits on a real home internet connection and passes your posts through it, so to Facebook your cloud computer looks like it is posting from a normal house again. You buy one for a couple of dollars a month, paste it into Influencer Butler once, click **Test Connection**, and you are done. We walk through the exact steps in Step 15 below.
+
+You do not need to understand any of the technical details. Buy it, paste it, test it, forget it.
+
 ## What you need before you start
 
 - A **free** AWS account. AWS is Amazon's cloud service. Signing up is free, though they will ask for a card to verify you are a real person (you will not be charged while you stay inside the free limits, and we will show you how to stay there).
 - About **30 minutes**, once.
 - Your **Influencer Butler login**, the same one you use on your own computer.
+- A cheap **residential proxy** (about $2 to $3 a month). This is the one small ongoing cost that keeps your cloud PC looking like a normal home connection to Facebook. We explained why just above, and we walk through exactly how in Step 15.
 
 That is it. Let's go.
 
@@ -54,7 +65,7 @@ Once you are signed in, you land on the AWS console (a big dashboard with lots o
 
 ![Your free AWS credits and Free Tier balance](/assets/blog/cloud-pc/02-free-credits.png)
 
-> Quick honesty note on the word free: brand-new AWS accounts get free credits (up to $200) that last about six months, and some older accounts get a small computer free for a full year. Either way, this setup is genuinely free to run for months. We will also set up a safety alarm in Step 15 so there are never any surprises.
+> Quick honesty note on the word free: brand-new AWS accounts get free credits (up to $200) that last about six months, and some older accounts get a small computer free for a full year. Either way, this setup is genuinely free to run for months. We will also set up a safety alarm later (see "Keep it free" below) so there are never any surprises.
 
 ## Step 3: Open EC2 (the cloud-computer service)
 
@@ -139,7 +150,24 @@ Open Influencer Butler on the cloud computer and log in with your normal account
 
 ![Influencer Butler running on the cloud PC](/assets/blog/cloud-pc/14-running.png)
 
-## Step 15: The magic part, leave it running
+## Step 15: Turn on your home-style connection (residential proxy)
+
+This is the step that makes your cloud PC look like a normal home computer to Facebook. It takes about two minutes.
+
+**First, buy a residential proxy.** You want a **static residential** proxy (sometimes called an **ISP** proxy), which gives you one steady home-style address that does not keep changing. Steady is exactly what you want here: one account, posting from one consistent home-looking address, is the most natural-looking setup. (Skip the "rotating" residential proxies for this. A constantly changing address looks stranger, not safer, for an account that stays logged in.) Two reliable, budget-friendly options:
+
+- **[Decodo](https://decodo.com/proxies/static-residential-proxies)** (our top pick): static residential addresses from around $1.60 a month, reliable, with a simple dashboard.
+- **[IPRoyal](https://iproyal.com/static-residential-proxies/)** (also great): static residential addresses from around $1.80 a month.
+
+Either one is plenty. Posting uses almost no data, so the smallest plan is fine.
+
+**Then, copy your proxy details.** After you buy, the provider's dashboard shows you a few things: a **host** (an address like `gate.decodo.com`), a **port** (a number like `7000`), and usually a **username** and **password**. Copy them somewhere handy. (Some providers let you skip the username and password by "whitelisting" your cloud PC's address instead. Either way works.)
+
+**Finally, paste them into Influencer Butler.** On the cloud PC, open Influencer Butler, go to **API Integrations**, and find the **Residential Proxy** card. Paste in your host, port, and (if you have them) username and password, then click **Test Connection**. When it turns green and shows a message like "Connected. Egress IP ...", you are set: your posts now leave from a home-style connection. That is the whole job.
+
+*Heads up: the [Decodo](https://decodo.com/proxies/static-residential-proxies) and [IPRoyal](https://iproyal.com/static-residential-proxies/) links above are affiliate links, so we earn a small commission if you sign up through them, at no extra cost to you. We point you to them because they are the cheapest reliable options we found for this exact job.*
+
+## Step 16: The magic part, leave it running
 
 Here is the whole point. When you are done, do **not** shut the cloud computer down. Just **close the Remote Desktop window** (or close your laptop entirely). The cloud computer stays on and keeps running your butlers 24/7.
 
@@ -169,13 +197,15 @@ A host like [Hostwinds](https://clients.hostwinds.com/aff.php?aff=10402) gives y
 
 ## Quick FAQ
 
-**Is it really free?** Yes, for months. New AWS accounts get free credits (up to $200) plus a free usage window, which comfortably covers your cloud computer while you get going. After the credits run out it is a small monthly cost you control (around $44 for the recommended size, less if you stop it when you are not using it), and the alarm from Step 15 warns you long before anything sneaks up.
+**Is it really free?** Yes, for months. New AWS accounts get free credits (up to $200) plus a free usage window, which comfortably covers your cloud computer while you get going. After the credits run out it is a small monthly cost you control (around $44 for the recommended size, less if you stop it when you are not using it), and the billing alarm (see "Keep it free" above) warns you long before anything sneaks up.
 
 **I use a Mac. Can I still do this?** Absolutely. You connect from your Mac using the free Windows App from the App Store, and the cloud computer itself runs Windows so Influencer Butler works perfectly.
 
 **Will it keep running if my laptop dies or loses wifi?** Yes. That is the whole benefit. Your laptop is just a remote control. The cloud computer keeps working on its own.
 
 **Is my login safe on it?** It is your private computer that only you can reach with your password and key file. Keep the password and key file to yourself, limit Remote Desktop to "My IP" in Step 8, and you are in good shape.
+
+**Will Facebook know it is a cloud computer?** Not if you do Step 15. A cloud computer posts from a data center by default, which can look different from a normal home connection. Adding a cheap **residential proxy** (a couple of dollars a month) makes your posts leave from a home-style address again, so everything looks just like it does when you run Influencer Butler on your own computer at home.
 
 **What if I would rather use the computer I already own?** That works too. You can leave your home computer on and remote into it from your phone, with a battery backup so a power outage does not stop it. Here is that setup: [Keep your Butler running while you travel](/blog/keep-your-butler-running-while-traveling).
 
