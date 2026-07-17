@@ -57,6 +57,69 @@ type LookupResult = {
   error?: string;
 };
 
+// One row of the browsable directory (from /api/admin/users/list). Kept lean:
+// the full per-user detail still comes from the lookup tab.
+type DirectoryRow = {
+  kind: "account" | "lead";
+  userId?: string;
+  email: string;
+  name: string | null;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+  isAffiliate: boolean;
+  affiliateCode: string | null;
+  country: string | null;
+  hasProfile: boolean;
+  subStatus: string | null;
+  planName: string | null;
+  endsAt: string | null;
+  renewsAt: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+  cancelFeedback: string | null;
+  leadSource: string | null;
+};
+
+type DirectoryResult = {
+  users: DirectoryRow[];
+  counts: {
+    total: number;
+    accounts: number;
+    leads: number;
+    byStatus: Record<string, number>;
+  };
+  truncated: boolean;
+};
+
+// Client-side filter chips. Each predicate runs over a directory row; matching
+// the affiliates roster pattern (ROSTER_FILTERS + filteredRoster useMemo).
+const DIRECTORY_FILTERS: { key: string; label: string; match: (r: DirectoryRow) => boolean }[] = [
+  { key: "all", label: "All", match: () => true },
+  { key: "active", label: "Active", match: (r) => r.subStatus === "active" },
+  { key: "trial", label: "Trial", match: (r) => r.subStatus === "on_trial" },
+  {
+    key: "cancelled",
+    label: "Cancelled",
+    match: (r) => r.subStatus === "cancelled" || r.subStatus === "canceled",
+  },
+  { key: "past_due", label: "Past due", match: (r) => r.subStatus === "past_due" },
+  { key: "paused", label: "Paused", match: (r) => r.subStatus === "paused" },
+  {
+    key: "none",
+    label: "No subscription",
+    match: (r) => r.kind === "account" && !r.subStatus,
+  },
+  { key: "lead", label: "Leads (no account)", match: (r) => r.kind === "lead" },
+];
+
+type DirectorySort = "newest" | "cancelled" | "email";
+
+// Most recent cancellation first uses the cancel timestamp, falling back to the
+// access-ends date so cancelled rows without a logged reason still sort sensibly.
+function cancelSortKey(r: DirectoryRow): string {
+  return r.cancelledAt ?? r.endsAt ?? "";
+}
+
 function referralText(referral: Referral | null | undefined): string {
   if (!referral) return "none (organic)";
   const who =
@@ -123,6 +186,15 @@ export default function AdminUsersPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [impersonateLink, setImpersonateLink] = useState<string | null>(null);
 
+  // Directory tab state.
+  const [tab, setTab] = useState<"directory" | "lookup">("directory");
+  const [directory, setDirectory] = useState<DirectoryResult | null>(null);
+  const [dirLoading, setDirLoading] = useState(false);
+  const [dirError, setDirError] = useState<string | null>(null);
+  const [dirSearch, setDirSearch] = useState("");
+  const [dirFilter, setDirFilter] = useState("all");
+  const [dirSort, setDirSort] = useState<DirectorySort>("newest");
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -156,8 +228,37 @@ export default function AdminUsersPage() {
     [isAdmin, perms],
   );
 
-  const lookup = async () => {
-    if (!email.trim()) return;
+  // Load the directory once we know the operator is allowed in.
+  useEffect(() => {
+    if (!whoLoaded || forbidden) return;
+    let cancelled = false;
+    (async () => {
+      setDirLoading(true);
+      setDirError(null);
+      try {
+        const res = await fetch("/api/admin/users/list", { cache: "no-store" });
+        const json = (await res.json()) as DirectoryResult & { error?: string };
+        if (cancelled) return;
+        if (!res.ok) {
+          setDirError(json.error ?? `Failed to load users (${res.status})`);
+          return;
+        }
+        setDirectory(json);
+      } catch {
+        if (!cancelled) setDirError("Network error loading users.");
+      } finally {
+        if (!cancelled) setDirLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [whoLoaded, forbidden]);
+
+  const lookup = async (targetEmail?: string) => {
+    const q = (targetEmail ?? email).trim();
+    if (!q) return;
+    if (targetEmail && targetEmail !== email) setEmail(targetEmail);
     setBusy(true);
     setMsg(null);
     setImpersonateLink(null);
@@ -165,7 +266,7 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: q }),
       });
       const json = (await res.json()) as LookupResult;
       if (!res.ok) {
@@ -214,15 +315,54 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Filter + sort the directory client-side (mirrors the affiliates roster).
+  const filteredDirectory = useMemo(() => {
+    const rows = directory?.users ?? [];
+    const q = dirSearch.trim().toLowerCase();
+    const predicate =
+      DIRECTORY_FILTERS.find((f) => f.key === dirFilter)?.match ?? (() => true);
+    const filtered = rows.filter((r) => {
+      if (!predicate(r)) return false;
+      if (!q) return true;
+      return (
+        r.email.toLowerCase().includes(q) ||
+        (r.name ?? "").toLowerCase().includes(q) ||
+        (r.affiliateCode ?? "").toLowerCase().includes(q)
+      );
+    });
+    const sorted = [...filtered];
+    if (dirSort === "email") {
+      sorted.sort((a, b) => a.email.localeCompare(b.email));
+    } else if (dirSort === "cancelled") {
+      sorted.sort((a, b) => cancelSortKey(b).localeCompare(cancelSortKey(a)));
+    } else {
+      // newest by account/lead creation date
+      sorted.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    }
+    return sorted;
+  }, [directory, dirSearch, dirFilter, dirSort]);
+
+  // Open a directory row in the Lookup tab, prefilled and fetched.
+  const openInLookup = useCallback(
+    (row: DirectoryRow) => {
+      if (!row.userId) return; // lead rows have no account to look up
+      setTab("lookup");
+      void lookup(row.email);
+    },
+    // lookup is stable enough for this handler; email state is read at call time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   const header = useMemo(
     () => (
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
           Admin · Users
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">User lookup &amp; fixes</h1>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Users</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Find a user by email to see their account and run support actions you have permission for.
+          Browse everyone (accounts and email-only leads), filter by cancellation and status, and open any user to run support actions.
         </p>
       </header>
     ),
@@ -244,6 +384,45 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       {header}
 
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b border-slate-200">
+        {([
+          { key: "directory", label: "Directory" },
+          { key: "lookup", label: "Lookup" },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
+              tab === t.key
+                ? "border-[#f97316] text-[#f97316]"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "directory" ? (
+        <DirectorySection
+          directory={directory}
+          loading={dirLoading}
+          error={dirError}
+          search={dirSearch}
+          setSearch={setDirSearch}
+          filter={dirFilter}
+          setFilter={setDirFilter}
+          sort={dirSort}
+          setSort={setDirSort}
+          rows={filteredDirectory}
+          onOpen={openInLookup}
+        />
+      ) : null}
+
+      {tab === "lookup" ? (
+      <>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[260px] text-sm">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -262,7 +441,7 @@ export default function AdminUsersPage() {
         </label>
         <button
           type="button"
-          onClick={lookup}
+          onClick={() => void lookup()}
           disabled={busy}
           className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
         >
@@ -436,6 +615,225 @@ export default function AdminUsersPage() {
           </section>
         </div>
       ) : null}
+      </>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Directory tab: browsable, filterable list of every user + email-only lead.
+// ---------------------------------------------------------------------------
+
+function directoryStatusLabel(row: DirectoryRow): string {
+  if (row.kind === "lead") return "lead";
+  return row.subStatus ?? "no subscription";
+}
+
+function DirectorySection({
+  directory,
+  loading,
+  error,
+  search,
+  setSearch,
+  filter,
+  setFilter,
+  sort,
+  setSort,
+  rows,
+  onOpen,
+}: {
+  directory: DirectoryResult | null;
+  loading: boolean;
+  error: string | null;
+  search: string;
+  setSearch: (v: string) => void;
+  filter: string;
+  setFilter: (v: string) => void;
+  sort: DirectorySort;
+  setSort: (v: DirectorySort) => void;
+  rows: DirectoryRow[];
+  onOpen: (row: DirectoryRow) => void;
+}) {
+  const counts = directory?.counts;
+  const cancelledCount =
+    (counts?.byStatus?.cancelled ?? 0) + (counts?.byStatus?.canceled ?? 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Counts summary */}
+      {counts ? (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+          <span>
+            <span className="font-semibold text-slate-900">{counts.accounts}</span> accounts
+          </span>
+          <span>
+            <span className="font-semibold text-slate-900">{cancelledCount}</span> cancelled
+          </span>
+          <span>
+            <span className="font-semibold text-slate-900">{counts.leads}</span> leads
+          </span>
+          {directory?.truncated ? (
+            <span className="text-amber-700">
+              List capped at {counts.accounts} accounts: refine with search.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Search + sort */}
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex-1 min-w-[240px] text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Search email, name or code
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="jane@example.com"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Sort
+          </span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as DirectorySort)}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="newest">Newest</option>
+            <option value="cancelled">Recently cancelled</option>
+            <option value="email">Email (A-Z)</option>
+          </select>
+        </label>
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {DIRECTORY_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setFilter(f.key)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+              filter === f.key
+                ? "border-[#f97316] bg-[#f97316] text-white"
+                : "border-slate-300 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-800">
+          {error}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading users…</p>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="px-3 py-2 font-semibold">User</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
+                <th className="px-3 py-2 font-semibold">Plan</th>
+                <th className="px-3 py-2 font-semibold">Cancelled</th>
+                <th className="px-3 py-2 font-semibold">Affiliate</th>
+                <th className="px-3 py-2 font-semibold">Joined</th>
+                <th className="px-3 py-2 font-semibold">Last seen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">
+                    No users match.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => {
+                  const clickable = Boolean(r.userId);
+                  return (
+                    <tr
+                      key={r.userId ?? `lead:${r.email}`}
+                      onClick={() => onOpen(r)}
+                      className={`border-b border-slate-100 last:border-0 ${
+                        clickable ? "cursor-pointer hover:bg-slate-50" : "opacity-90"
+                      }`}
+                    >
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-slate-900">{r.email}</span>
+                          {r.kind === "lead" ? (
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
+                              lead
+                            </span>
+                          ) : !r.hasProfile ? (
+                            <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-indigo-700">
+                              magic-link only
+                            </span>
+                          ) : null}
+                        </div>
+                        {r.name ? (
+                          <div className="text-xs text-slate-500">{r.name}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(
+                            r.subStatus,
+                          )}`}
+                        >
+                          {directoryStatusLabel(r)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {r.planName ?? (r.leadSource ? `via ${r.leadSource}` : "-")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {r.cancelledAt || r.endsAt ? (
+                          <div>
+                            <div className="text-slate-700">
+                              {r.endsAt ? `ends ${fmtDate(r.endsAt)}` : fmtDate(r.cancelledAt)}
+                            </div>
+                            {r.cancelReason ? (
+                              <div
+                                className="max-w-[220px] truncate text-xs text-slate-500"
+                                title={
+                                  r.cancelFeedback
+                                    ? `${r.cancelReason}: ${r.cancelFeedback}`
+                                    : r.cancelReason
+                                }
+                              >
+                                {r.cancelReason}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">
+                        {r.isAffiliate ? r.affiliateCode ?? "yes" : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">{fmtDate(r.createdAt)}</td>
+                      <td className="px-3 py-2 text-slate-600">{fmtDate(r.lastSignInAt)}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
