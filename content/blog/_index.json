@@ -2,6 +2,20 @@
   "version": 1,
   "posts": [
     {
+      "id": "fix-facebook-notifications-popup",
+      "title": "Facebook's Notifications Popup Is Blocking Your Butler: Here Is the Two-Minute Fix",
+      "category": "Deals",
+      "summary": "If your Facebook butler stops loading or quietly fails to post, a little Chrome popup asking to show notifications is usually the culprit. Here is how to clear it for good, in about two minutes.",
+      "date": "2026-07-17",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "facebook notifications popup, chrome notifications block facebook, influencer butler not posting, facebook butler wont load, chrome user-data-dir profile, singletonlock chrome, influencer butler troubleshooting, facebook permission prompt",
+      "image": "/assets/blog/fix-facebook-notifications-popup.png",
+      "imageAlt": "Illustration of a browser notification permission popup being blocked so a butler can get back to work",
+      "imagePrompt": "Editorial flat illustration of a browser window with a small notification permission popup being firmly blocked by a butler character's raised hand, the page behind it becoming clear and usable again, a relieved problem-solved mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with navy and cream, generous negative space, no text, no logos",
+      "order": 199
+    },
+    {
       "id": "how-to-get-started-with-influencer-butler",
       "title": "How to Get Started With Influencer Butler (Your First 15 Minutes)",
       "category": "Growth",

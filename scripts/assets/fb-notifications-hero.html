@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { margin: 0; padding: 0; }
+      html, body { width: 1600px; height: 1000px; }
+      svg { display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Hero illustration for the "Facebook's notifications popup is blocking your
+      butler" blog post. Editorial flat-vector style in the site palette (warm
+      orange #f59e0b, navy #0f172a, cream), matching cloud-pc-hero.html.
+      Metaphor: the Chrome notification permission prompt floats over the page and
+      blocks it; clicking Block clears it and the butler's work resumes (green
+      check). Rendered to public/assets/blog/fix-facebook-notifications-popup.png
+      by scripts/generate-fb-notifications-hero.mjs (headless Chrome screenshot).
+    -->
+    <svg width="1600" height="1000" viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg" gradientUnits="userSpaceOnUse" cx="820" cy="380" r="1050">
+          <stop offset="0" stop-color="#fffdf8" />
+          <stop offset="0.62" stop-color="#fdf3de" />
+          <stop offset="1" stop-color="#f7e2ba" />
+        </radialGradient>
+        <linearGradient id="org" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f9ad2e" />
+          <stop offset="1" stop-color="#ef8f0d" />
+        </linearGradient>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1e293b" />
+          <stop offset="1" stop-color="#0f172a" />
+        </linearGradient>
+        <path id="spark" d="M0,-12 Q0,0 12,0 Q0,0 0,12 Q0,0 -12,0 Q0,0 0,-12 Z" />
+      </defs>
+
+      <!-- background -->
+      <rect x="0" y="0" width="1600" height="1000" fill="url(#bg)" />
+
+      <!-- faint depth blobs -->
+      <circle cx="230" cy="180" r="150" fill="#fdeecb" opacity="0.6" />
+      <circle cx="1420" cy="800" r="200" fill="#fdeecb" opacity="0.55" />
+
+      <!-- ===== browser window ===== -->
+      <g>
+        <!-- soft shadow under the window -->
+        <ellipse cx="800" cy="700" rx="430" ry="26" fill="#e4d0a4" opacity="0.5" />
+        <!-- chrome / frame -->
+        <rect x="330" y="196" width="940" height="478" rx="24" fill="url(#screen)" />
+        <!-- traffic lights -->
+        <circle cx="368" cy="234" r="7" fill="#ef4444" />
+        <circle cx="392" cy="234" r="7" fill="#f59e0b" />
+        <circle cx="416" cy="234" r="7" fill="#22c55e" />
+        <!-- address bar -->
+        <rect x="452" y="218" width="700" height="32" rx="16" fill="#334155" />
+        <circle cx="474" cy="234" r="7" fill="none" stroke="#94a3b8" stroke-width="2.5" />
+        <rect x="492" y="229" width="150" height="10" rx="5" fill="#64748b" />
+        <!-- page area -->
+        <rect x="352" y="272" width="896" height="380" rx="12" fill="#111c30" />
+      </g>
+
+      <!-- ===== the page behind, working again (right side) ===== -->
+      <g>
+        <!-- butler bowler hat mark (the app doing its job) -->
+        <ellipse cx="1002" cy="450" rx="58" ry="14" fill="#f59e0b" />
+        <path d="M972 450 Q972 396 1002 396 Q1032 396 1032 450 Z" fill="#f59e0b" />
+        <rect x="972" y="435" width="60" height="11" fill="#0f172a" opacity="0.85" />
+        <!-- content lines -->
+        <rect x="906" y="492" width="192" height="11" rx="5.5" fill="#334155" />
+        <rect x="932" y="516" width="140" height="11" rx="5.5" fill="#334155" />
+        <!-- post button, now clickable -->
+        <rect x="936" y="556" width="132" height="46" rx="23" fill="url(#org)" />
+        <text x="1002" y="586" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" fill="#ffffff" letter-spacing="0.5">Post</text>
+        <!-- resolved check -->
+        <circle cx="1140" cy="352" r="30" fill="#22c55e" />
+        <path d="M1126 352 L1136 363 L1156 341" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="1140" cy="352" r="42" fill="none" stroke="#22c55e" stroke-width="2.5" opacity="0.35" />
+      </g>
+
+      <!-- ===== the notification permission popup (top-left, the blocker) ===== -->
+      <g>
+        <!-- drop shadow -->
+        <rect x="396" y="306" width="404" height="238" rx="18" fill="#0b1220" opacity="0.45" />
+        <!-- card -->
+        <rect x="388" y="298" width="404" height="238" rx="18" fill="#ffffff" />
+        <!-- bell icon with a slash (notifications, refused) -->
+        <g>
+          <path d="M432 366 Q432 340 452 336 Q472 340 472 366 L478 380 L426 380 Z" fill="#0f172a" opacity="0.85" />
+          <circle cx="452" cy="331" r="5" fill="#0f172a" opacity="0.85" />
+          <path d="M445 386 Q452 394 459 386" fill="none" stroke="#0f172a" stroke-width="3.5" stroke-linecap="round" opacity="0.85" />
+          <line x1="424" y1="326" x2="480" y2="392" stroke="#ef4444" stroke-width="6" stroke-linecap="round" />
+        </g>
+        <!-- prompt text lines -->
+        <rect x="504" y="336" width="244" height="13" rx="6.5" fill="#334155" />
+        <rect x="504" y="360" width="196" height="13" rx="6.5" fill="#cbd5e1" />
+        <rect x="504" y="384" width="164" height="13" rx="6.5" fill="#cbd5e1" />
+        <!-- buttons: Block (chosen) + Allow (not chosen) -->
+        <rect x="504" y="440" width="140" height="52" rx="26" fill="url(#org)" />
+        <text x="574" y="474" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#ffffff" letter-spacing="0.5">Block</text>
+        <rect x="660" y="440" width="132" height="52" rx="26" fill="none" stroke="#cbd5e1" stroke-width="3" />
+        <rect x="694" y="461" width="64" height="11" rx="5.5" fill="#cbd5e1" />
+        <!-- click ripple on Block -->
+        <circle cx="574" cy="466" r="62" fill="none" stroke="#f59e0b" stroke-width="3" opacity="0.4" />
+        <circle cx="574" cy="466" r="82" fill="none" stroke="#f59e0b" stroke-width="2.5" opacity="0.2" />
+      </g>
+
+      <!-- cursor arrow pointing at Block -->
+      <g transform="translate(596 486)">
+        <path d="M0 0 L0 40 L10 30 L17 46 L27 41 L19 26 L32 25 Z" fill="#0f172a" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+      </g>
+
+      <!-- ===== badges ===== -->
+      <!-- "2 MIN" pill -->
+      <g transform="rotate(-8 300 300)">
+        <rect x="212" y="272" width="176" height="58" rx="29" fill="url(#org)" />
+        <text x="300" y="311" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="#ffffff" letter-spacing="1">2 MIN</text>
+      </g>
+      <!-- "FIXED" circular badge -->
+      <g>
+        <circle cx="1330" cy="252" r="58" fill="url(#org)" />
+        <circle cx="1330" cy="252" r="58" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.45" />
+        <text x="1330" y="263" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="23" font-weight="800" fill="#ffffff">FIXED</text>
+      </g>
+
+      <!-- ===== floating decor ===== -->
+      <!-- sparkles -->
+      <use href="#spark" transform="translate(1236 640) scale(1.2)" fill="#f59e0b" />
+      <use href="#spark" transform="translate(268 640) scale(1.1)" fill="#0f172a" opacity="0.5" />
+      <use href="#spark" transform="translate(1408 470) scale(0.9)" fill="#f59e0b" />
+      <use href="#spark" transform="translate(196 470) scale(0.8)" fill="#0f172a" opacity="0.45" />
+    </svg>
+  </body>
+</html>
