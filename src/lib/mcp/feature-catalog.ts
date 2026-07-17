@@ -83,14 +83,14 @@ export const PRICING_TIERS: PricingTier[] = [
   },
   {
     id: "trial",
-    name: "3-day Pro trial",
+    name: "14-day Pro trial",
     priceUsd: "free",
     cadence: "trial",
     seats: 1,
     highlights: [
-      "Full Pro Solo access for 3 days",
+      "Full Pro Solo access for 14 days",
       "All 40+ butlers unlocked",
-      "Cancel anytime before day 3",
+      "Cancel anytime before day 14",
     ],
     signupUrl: `${BASE}/pricing`,
   },

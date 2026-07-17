@@ -294,7 +294,7 @@ export default function ExtensionLandingContent() {
               Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler stay free
               forever. When you are ready to automate the rest of your influencer business (deal
               posting, Creator Connections outreach, commission tracking, and 40+ other butlers),
-              start a 3-day Pro trial.
+              start a 14-day Pro trial.
             </p>
             <Link
               href="/#pricing"

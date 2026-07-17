@@ -201,7 +201,7 @@ export default function SubscriptionPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Go Pro</h1>
           <p className="mt-2 text-sm text-slate-600">
             Your free-forever butlers and the Chrome extension keep working no matter what. Start a
-            3-day Pro trial to unlock all 40+ automation tools. Cancel anytime.
+            14-day Pro trial to unlock all 40+ automation tools. Cancel anytime.
           </p>
         </section>
 
@@ -236,7 +236,7 @@ export default function SubscriptionPage() {
                   billingCadence === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
                 }
                 features={[...TIER_FEATURES[tier]]}
-                cta={isLoading ? "Starting…" : "Start 3-day Pro trial"}
+                cta={isLoading ? "Starting…" : "Start 14-day Pro trial"}
                 disabled={checkoutLoading !== null}
                 featured={tier === "solo"}
                 onSelect={() => handleStartCheckout(tier)}

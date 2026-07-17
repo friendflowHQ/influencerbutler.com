@@ -6,7 +6,7 @@
  *             "See & Organize" desktop butlers. These stay on regardless of
  *             subscription status - including trials that expired and
  *             subscriptions that were cancelled.
- *   - trial : the full-Pro 3-day tryout. Everything unlocked, then converts.
+ *   - trial : the full-Pro 14-day tryout. Everything unlocked, then converts.
  *   - pro   : Solo / Team / Agency. Everything unlocked, multi-device, support.
  *
  * Site copy (pricing page, feature catalog), the /api/entitlements endpoint,

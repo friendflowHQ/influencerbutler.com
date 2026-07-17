@@ -1,7 +1,7 @@
 # Entitlements spec (desktop app)
 
 This is the contract the Influencer Butler desktop app implements to enforce the
-Free / 3-day trial / Pro tiers. The website owns the source of truth; the app
+Free / 14-day trial / Pro tiers. The website owns the source of truth; the app
 reads it and gates butlers accordingly. Nothing in the website repo enforces the
 desktop butlers - that is this document's job.
 
@@ -76,6 +76,6 @@ the live `freeButlerSlugs` rather than trusting this list, which can drift.
 
 ## Trial send cap
 
-Trial users retain the existing 100 message-sends / 3-day cap (abuse
+Trial users retain the existing 100 message-sends / 14-day cap (abuse
 protection). That cap is enforced where sends are counted today; this spec does
 not change it. The trial still unlocks every butler, it just limits volume.

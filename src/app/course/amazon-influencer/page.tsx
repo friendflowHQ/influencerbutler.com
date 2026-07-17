@@ -178,7 +178,7 @@ export default async function CourseHubPage() {
             href="/go/trial?src=course"
             className="mt-4 inline-flex items-center justify-center rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
           >
-            Start your free 3-day Pro trial
+            Start your free 14-day Pro trial
           </a>
         </div>
       </section>

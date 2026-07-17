@@ -45,7 +45,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Welcome aboard - your 3-day Pro trial is active, with every one of the 40+ butlers unlocked.`,
+        `Welcome aboard - your 14-day Pro trial is active, with every one of the 40+ butlers unlocked.`,
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,
@@ -75,7 +75,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're one day into your 3-day Pro trial - here are the three fastest ways to see real results before it ends:`,
+        `You're one day into your 14-day Pro trial - here are the three fastest ways to see real results before it ends:`,
         ``,
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,

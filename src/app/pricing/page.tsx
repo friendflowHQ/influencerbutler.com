@@ -376,7 +376,7 @@ function Guarantee() {
           />
         </svg>
         <p className="max-w-xl text-sm text-slate-700 sm:text-base">
-          <strong className="font-semibold text-slate-900">3-day Pro trial</strong> on every paid plan,
+          <strong className="font-semibold text-slate-900">14-day Pro trial</strong> on every paid plan,
           plus a free-forever tier with no card. Cancel anytime from your dashboard - no support
           ticket required.
         </p>

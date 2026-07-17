@@ -191,7 +191,7 @@ export default async function BlogPostPage({
               Influencer Butler automates the repetitive parts of running your
               creator business, from accepting Creator Connections campaigns to
               catching price drops and keeping your outreach moving. Try it free
-              for 3 days.
+              for 14 days.
             </p>
             <a
               href="/go/trial?src=blog-post"
@@ -246,7 +246,7 @@ export default async function BlogPostPage({
               Try Influencer Butler
             </h2>
             <p className="mt-3 text-sm text-slate-600">
-              The all-in-one command center for creators and influencers. 3-day free
+              The all-in-one command center for creators and influencers. 14-day free
               trial, cancel anytime.
             </p>
             <Link
