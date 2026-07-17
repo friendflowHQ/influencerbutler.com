@@ -6,6 +6,13 @@
  * drift between the customer-facing copy and the backend.
  */
 
+// Length of the free Pro trial, in days. This mirrors the Lemon Squeezy Pro
+// SKU trial period (LS `trial_ends_at` is authoritative for billing) and the
+// desktop app's local trial clock. The trial-email drip in
+// /api/cron/affiliate-funnel derives all of its send thresholds from this, so
+// a change to the trial length is a one-line change here.
+export const TRIAL_LENGTH_DAYS = 14;
+
 // Per-plan price in cents (used by promo-resolver math).
 export const PRICE_CENTS = {
   solo: { monthly: 3900, annual: 39000 },
@@ -102,7 +109,7 @@ export const FREE_TIER_NAME = "Free forever";
 export const FREE_TIER_TAGLINE = "The whole extension plus See & Organize butlers. No card, no expiry.";
 export const FREE_TIER_FEATURES: readonly string[] = [
   "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
-  "Like Butler & Benable Like Butler: auto-like at a safe pace",
+  "Like Butler, Benable Like Butler & Instagram Like Butler: auto-like at a safe pace",
   "CC Check: grab every ASIN from any page",
   "Orders Butler: pull your full Amazon order history",
   "Storefront Butler: audit your photo & video coverage",

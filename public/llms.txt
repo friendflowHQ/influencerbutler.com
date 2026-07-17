@@ -18,7 +18,7 @@
 
 - Free-forever tier: the Chrome extension plus a set of core tools, no card required.
 - Pro: $39 per month or $390 per year (a 17% saving), unlocks all 40+ tools.
-- Trial: a 3-day Pro trial that unlocks everything; cancel before day 3 to avoid charges.
+- Trial: a 14-day Pro trial that unlocks everything; cancel before day 14 to avoid charges.
 
 ## Platform
 

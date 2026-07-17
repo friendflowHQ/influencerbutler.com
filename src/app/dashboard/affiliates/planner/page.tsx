@@ -35,7 +35,7 @@ const IDEAS: Idea[] = [
     cat: "Amazon Automation",
     hook: "Stop leaving Creator Connections money on the table.",
     caption:
-      "Every hour you don't catch a matching CC campaign is money gone. Daily Commission Butler auto-accepts Creator Connections AND Sponsored Products CC offers from products you already sold, in the background. I woke up to accepted campaigns I never would have caught. Free 3-day trial:",
+      "Every hour you don't catch a matching CC campaign is money gone. Daily Commission Butler auto-accepts Creator Connections AND Sponsored Products CC offers from products you already sold, in the background. I woke up to accepted campaigns I never would have caught. Free 14-day trial:",
     visual: "/assets/before_after_flagship_feature_1.png",
   },
   {
@@ -156,7 +156,7 @@ const FUNNEL: Email[] = [
     step: "Email 1 · Welcome",
     subject: "The tool that gave me my evenings back",
     body:
-      "Open by sharing your own before/after: how many hours a week the Amazon grind used to eat. Introduce Influencer Butler as a desktop app that does the busywork for you. Give them a no-friction first step: the free Chrome extension (no card) via your tracked link, then a soft CTA to the free 3-day trial of the full app.",
+      "Open by sharing your own before/after: how many hours a week the Amazon grind used to eat. Introduce Influencer Butler as a desktop app that does the busywork for you. Give them a no-friction first step: the free Chrome extension (no card) via your tracked link, then a soft CTA to the free 14-day trial of the full app.",
   },
   {
     step: "Email 2 · Problem + agitate",
@@ -178,9 +178,9 @@ const FUNNEL: Email[] = [
   },
   {
     step: "Email 5 · Urgency + CTA",
-    subject: "Last nudge: start your free 3 days",
+    subject: "Last nudge: start your free 14 days",
     body:
-      "Recap the three biggest wins (auto-accept, deal auto-posting, reviving old content). Remind them the trial is free for 3 days and they can cancel before day 3. Strong single CTA to your link.",
+      "Recap the three biggest wins (auto-accept, deal auto-posting, reviving old content). Remind them the trial is free for 14 days and they can cancel before day 14. Strong single CTA to your link.",
   },
 ];
 

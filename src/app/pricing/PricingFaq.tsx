@@ -1,11 +1,11 @@
 const FAQ = [
   {
     q: "What's free forever?",
-    a: "The whole Chrome extension (video counts, content gaps, Butler Approved seals, storefront checks) works with no login. On the desktop app, five See & Organize butlers stay free on every account, even after a trial expires or a subscription is cancelled: Like Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler. No card required.",
+    a: "The whole Chrome extension (video counts, content gaps, Butler Approved seals, storefront checks) works with no login. On the desktop app, six See & Organize butlers stay free on every account, even after a trial expires or a subscription is cancelled: Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler. No card required.",
   },
   {
-    q: "How does the 3-day Pro trial work?",
-    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 3-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 3 and you won't be charged.",
+    q: "How does the 14-day Pro trial work?",
+    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
   },
   {
     q: "Can I cancel anytime?",

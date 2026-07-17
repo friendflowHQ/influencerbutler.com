@@ -6,6 +6,7 @@ import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
 import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
+import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -266,14 +267,19 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
 
 // --- Step C: trial conversion emails --------------------------------------
 
+const TRIAL_DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_TIERS: ReadonlyArray<{
   tier: TrialTier;
   thresholdMs: number;
   sentCol: string;
 }> = [
   // Most-aged first so we send the highest matured tier that's still pending.
-  { tier: "day3", thresholdMs: 72 * 60 * 60 * 1000, sentCol: "trial_email_day3_sent_at" },
-  { tier: "day2", thresholdMs: 48 * 60 * 60 * 1000, sentCol: "trial_email_day2_sent_at" },
+  // Thresholds derive from TRIAL_LENGTH_DAYS: day13/day14 are the "24 hours
+  // left" and "ends tonight" urgency emails, timed to the trial's final days.
+  { tier: "day14", thresholdMs: TRIAL_LENGTH_DAYS * TRIAL_DAY_MS, sentCol: "trial_email_day14_sent_at" },
+  { tier: "day13", thresholdMs: (TRIAL_LENGTH_DAYS - 1) * TRIAL_DAY_MS, sentCol: "trial_email_day13_sent_at" },
+  { tier: "day7", thresholdMs: 7 * TRIAL_DAY_MS, sentCol: "trial_email_day7_sent_at" },
+  { tier: "day3", thresholdMs: 3 * TRIAL_DAY_MS, sentCol: "trial_email_day3_sent_at" },
   { tier: "day1", thresholdMs: 24 * 60 * 60 * 1000, sentCol: "trial_email_day1_sent_at" },
   { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "trial_email_day0_sent_at" },
 ];
@@ -289,8 +295,10 @@ type TrialSubRow = {
   ls_discount_id_annual: string | null;
   trial_email_day0_sent_at: string | null;
   trial_email_day1_sent_at: string | null;
-  trial_email_day2_sent_at: string | null;
   trial_email_day3_sent_at: string | null;
+  trial_email_day7_sent_at: string | null;
+  trial_email_day13_sent_at: string | null;
+  trial_email_day14_sent_at: string | null;
 };
 
 function selectTrialTier(row: TrialSubRow): (typeof TRIAL_TIERS)[number] | null {
@@ -336,7 +344,7 @@ async function fetchUserContact(
 }
 
 async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, number>> {
-  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day2: 0, day3: 0 };
+  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day3: 0, day7: 0, day13: 0, day14: 0 };
 
   const siteUrl =
     process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -350,7 +358,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   const { data, error } = await supabase
     .from("subscriptions")
     .select(
-      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day2_sent_at,trial_email_day3_sent_at",
+      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day3_sent_at,trial_email_day7_sent_at,trial_email_day13_sent_at,trial_email_day14_sent_at",
     )
     .lte("trial_started_at", oldest)
     .limit(PER_RUN_LIMIT);
@@ -369,28 +377,28 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     if (!tier) continue;
 
     // A trial that already converted to paid (early in-app upgrade, or the
-    // natural trial-end charge) must not get the countdown emails: day2 says
-    // "your trial ends in about 24 hours" and day3 says "your trial ends
+    // natural trial-end charge) must not get the countdown emails: day13 says
+    // "your trial ends in about 24 hours" and day14 says "your trial ends
     // today", both wrong for someone already paying. Stamp both columns as
-    // handled so the row stops maturing into them on later runs. day0/day1
-    // stay eligible for 'active' rows - they're onboarding content, and the
-    // pro welcome track deliberately excludes trial converts (see the
-    // pro_started_at comment in the LS webhook), so this is their only
-    // onboarding sequence.
-    if (row.status === "active" && (tier.tier === "day2" || tier.tier === "day3")) {
+    // handled so the row stops maturing into them on later runs. The earlier
+    // onboarding touches (day0/1/3/7) stay eligible for 'active' rows -
+    // they're onboarding content, and the pro welcome track deliberately
+    // excludes trial converts (see the pro_started_at comment in the LS
+    // webhook), so this is their only onboarding sequence.
+    if (row.status === "active" && (tier.tier === "day13" || tier.tier === "day14")) {
       const nowIso = new Date().toISOString();
       await supabase
         .from("subscriptions")
         .update({
-          trial_email_day2_sent_at: row.trial_email_day2_sent_at ?? nowIso,
-          trial_email_day3_sent_at: row.trial_email_day3_sent_at ?? nowIso,
+          trial_email_day13_sent_at: row.trial_email_day13_sent_at ?? nowIso,
+          trial_email_day14_sent_at: row.trial_email_day14_sent_at ?? nowIso,
         })
         .eq("user_id", row.user_id);
       continue;
     }
 
-    // Skip day2 annual-switch upsell if the user is already on annual.
-    if (tier.tier === "day2" && row.ls_variant_id && annualVariant && String(row.ls_variant_id) === annualVariant) {
+    // Skip the day13 annual-switch upsell if the user is already on annual.
+    if (tier.tier === "day13" && row.ls_variant_id && annualVariant && String(row.ls_variant_id) === annualVariant) {
       // Mark as "sent" anyway so we don't keep reconsidering this row every run.
       await supabase
         .from("subscriptions")
@@ -410,10 +418,13 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
       row.status === "on_trial" &&
       (!row.trial_discount_code_monthly || !row.trial_discount_code_annual)
     ) {
-      // trial_ends_at isn't stored on the row; the trial is 3 days (the day3
-      // tier threshold), so reconstruct it from trial_started_at.
+      // trial_ends_at isn't stored on the row; the trial is TRIAL_LENGTH_DAYS
+      // long (matching the LS SKU trial period), so reconstruct it from
+      // trial_started_at.
       const trialEndsAt = row.trial_started_at
-        ? new Date(new Date(row.trial_started_at).getTime() + 72 * 60 * 60 * 1000).toISOString()
+        ? new Date(
+            new Date(row.trial_started_at).getTime() + TRIAL_LENGTH_DAYS * TRIAL_DAY_MS,
+          ).toISOString()
         : null;
       const minted = await mintTrialDiscounts({
         trialEndsAt,

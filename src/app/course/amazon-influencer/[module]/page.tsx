@@ -124,14 +124,14 @@ export default async function CourseModulePage({
             </p>
             <p className="mt-1 text-sm text-slate-600">
               Influencer Butler automates outreach, commission tracking, and posting so you
-              can focus on filming. Try Pro free for 3 days, with no charge if you cancel
-              before day 3.
+              can focus on filming. Try Pro free for 14 days, with no charge if you cancel
+              before day 14.
             </p>
             <a
               href="/go/trial?src=course-module"
               className="mt-4 inline-flex items-center justify-center rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
             >
-              Start your free 3-day Pro trial
+              Start your free 14-day Pro trial
             </a>
           </div>
           <CourseProgress

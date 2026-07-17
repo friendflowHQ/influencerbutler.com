@@ -34,7 +34,7 @@ const ROWS: Row[] = [
   },
   {
     cap: "Entry price",
-    ib: { v: "text", t: "$39/mo (3-day trial)" },
+    ib: { v: "text", t: "$39/mo (14-day trial)" },
     oink: { v: "text", t: "$29.99/mo (free tier)" },
     vue: { v: "text", t: "Free tier + paid" },
     cha: { v: "text", t: "$20/mo" },
@@ -249,7 +249,7 @@ const CAPTIONS: { label: string; text: string }[] = [
   },
   {
     label: "Story / Reel",
-    text: "An extension makes YOU click faster. A butler clicks for you. Influencer Butler is a desktop app that auto-accepts your Creator Connections + Sponsored Products campaigns, tracks every brand collab end to end, and posts your deals across Instagram, Threads, Facebook, Telegram, and Reddit on autopilot. Free 3-day trial.",
+    text: "An extension makes YOU click faster. A butler clicks for you. Influencer Butler is a desktop app that auto-accepts your Creator Connections + Sponsored Products campaigns, tracks every brand collab end to end, and posts your deals across Instagram, Threads, Facebook, Telegram, and Reddit on autopilot. Free 14-day trial.",
   },
   {
     label: "Comparison hook",

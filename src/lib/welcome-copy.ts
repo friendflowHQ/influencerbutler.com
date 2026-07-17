@@ -22,7 +22,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     eyebrow: "You're on the Free forever plan",
     headline: "Welcome to Influencer Butler",
     subhead:
-      "The whole Chrome extension and five See & Organize butlers are free forever, no card required. Here's how to get the most out of them.",
+      "The whole Chrome extension and six See & Organize butlers are free forever, no card required. Here's how to get the most out of them.",
     steps: [
       {
         title: "Add the Chrome extension",
@@ -30,7 +30,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Install the desktop app for the free butlers",
-        body: "Like Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler run free on any account.",
+        body: "Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler run free on any account.",
       },
       {
         title: "Import and organize",
@@ -38,21 +38,21 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Upgrade when you're ready",
-        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 3-day Pro trial.",
+        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial.",
       },
     ],
     callout: {
       title: "Ready for the money engines?",
-      body: "Start a 3-day Pro trial to unlock all 40+ butlers with full Pro access. Cancel anytime before day 3.",
+      body: "Start a 14-day Pro trial to unlock all 40+ butlers with full Pro access. Cancel anytime before day 14.",
       ctaLabel: "See Pro pricing",
       ctaHref: "/pricing",
     },
   },
   trial: {
-    eyebrow: "Your 3-day Pro trial is live",
+    eyebrow: "Your 14-day Pro trial is live",
     headline: "Welcome to Influencer Butler",
     subhead:
-      "You have full access for the next 3 days. Install the desktop app, activate your license key, and start scheduling.",
+      "You have full access for the next 14 days. Install the desktop app, activate your license key, and start scheduling.",
     steps: [
       {
         title: "Download and install the desktop app",
@@ -68,7 +68,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Watch for a 20% discount code",
-        body: "We'll email you a unique 20% off code (and a 30% annual-switch offer) so you can keep going after day 3.",
+        body: "We'll email you a unique 20% off code (and a 30% annual-switch offer) so you can keep going after day 14.",
       },
     ],
     callout: {

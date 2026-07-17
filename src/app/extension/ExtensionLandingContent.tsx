@@ -291,10 +291,10 @@ export default function ExtensionLandingContent() {
             <h3 className="text-lg font-semibold text-slate-900">No desktop app yet?</h3>
             <p className="mt-2 text-sm text-slate-600">
               The extension is free either way, and the desktop app has free butlers too: Like
-              Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler stay free
+              Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler stay free
               forever. When you are ready to automate the rest of your influencer business (deal
               posting, Creator Connections outreach, commission tracking, and 40+ other butlers),
-              start a 3-day Pro trial.
+              start a 14-day Pro trial.
             </p>
             <Link
               href="/#pricing"

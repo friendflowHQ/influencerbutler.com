@@ -127,7 +127,7 @@ export default async function PricingPage({
             Start free, upgrade when you're ready
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            The whole Chrome extension and five See &amp; Organize butlers are free forever. Go Pro
+            The whole Chrome extension and six See &amp; Organize butlers are free forever. Go Pro
             for all 40+ tools, unlimited messages, and priority support. Cancel anytime - no
             questions asked.
           </p>
@@ -136,7 +136,7 @@ export default async function PricingPage({
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
               <span>
                 <strong className="font-semibold">Free forever:</strong>{" "}
-                the whole Chrome extension plus Like Butler, Benable Like Butler, CC Check, Orders
+                the whole Chrome extension plus Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders
                 Butler &amp; Storefront Butler - on every account, even after trial expiry or
                 cancellation.
               </span>
@@ -376,7 +376,7 @@ function Guarantee() {
           />
         </svg>
         <p className="max-w-xl text-sm text-slate-700 sm:text-base">
-          <strong className="font-semibold text-slate-900">3-day Pro trial</strong> on every paid plan,
+          <strong className="font-semibold text-slate-900">14-day Pro trial</strong> on every paid plan,
           plus a free-forever tier with no card. Cancel anytime from your dashboard - no support
           ticket required.
         </p>

@@ -45,7 +45,7 @@ export default function FreeToolsBanner() {
             Free forever, on every account
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            The whole Chrome extension plus five butlers work on every account - trial, paid,
+            The whole Chrome extension plus six butlers work on every account - trial, paid,
             expired, or cancelled. No license check, no quota: Like Butler, Benable Like Butler, CC
             Check, Orders Butler, and Storefront Butler.
           </p>

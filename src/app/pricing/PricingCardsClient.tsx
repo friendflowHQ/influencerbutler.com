@@ -206,7 +206,7 @@ export default function PricingCardsClient({
               effectiveLabel={
                 monthlyEquivalent ? `That's just ${monthlyEquivalent}/month` : undefined
               }
-              trialLabel="3-day Pro trial included - cancel before day 3 to avoid charges."
+              trialLabel="14-day Pro trial included - cancel before day 14 to avoid charges."
               features={[...TIER_FEATURES[tier]]}
               cta="Buy Now!"
               loading={loadingPlan === plan}
