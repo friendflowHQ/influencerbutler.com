@@ -6,7 +6,11 @@ import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { annualSavingsPct } from "@/lib/pricing-constants";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 
-export type TrialTier = "day0" | "day1" | "day2" | "day3";
+// 14-day trial nurture drip. Early touches (day0/1/3/7) are anchored to trial
+// start; the last two (day13/day14) are the "24 hours left" and "ends tonight"
+// urgency emails, timed to land just before the 14-day trial converts. See
+// TRIAL_TIERS in /api/cron/affiliate-funnel/route.ts for the send schedule.
+export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day13" | "day14";
 
 type TierCopy = {
   // Subject can depend on the vars (day3 drops the codes mention when the
@@ -91,7 +95,54 @@ const COPY: Record<TrialTier, TierCopy> = {
       ].join("\n");
     },
   },
-  day2: {
+  day3: {
+    subject: "3 days in: the one butler to run if you haven't yet",
+    build: (v) => {
+      return [
+        `Hi ${v.firstName},`,
+        ``,
+        `You're a few days into your 14-day trial. If you do just one thing this week, make it this: run Orders Butler and let it pull your real Amazon order history.`,
+        ``,
+        `Once it has your real numbers, every other butler gets smarter:`,
+        `  1. Daily Commission Butler accepts the Creator Connections campaigns that match what you actually sell.`,
+        `  2. Earnings Intelligence shows which products truly pay you, returns and all.`,
+        `  3. The AI Keyword Generator targets what's converting in your niche this month.`,
+        ``,
+        `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
+        ``,
+        `Stuck on anything? Reply and a real human will help you get it running.`,
+        ``,
+        COMMUNITY_LINE,
+        ``,
+        `- The Influencer Butler team`,
+      ].join("\n");
+    },
+  },
+  day7: {
+    subject: "Halfway through your trial: the butlers most people keep",
+    build: (v) => {
+      return [
+        `Hi ${v.firstName},`,
+        ``,
+        `You're halfway through your 14-day trial, so here's what people tell us actually earns its place by now:`,
+        ``,
+        `  1. Daily Commission Butler: accepts the right Creator Connections campaigns in the background.`,
+        `  2. Deals Influencer Butler: finds deals in your niche and posts them across your platforms automatically.`,
+        `  3. Messenger Butler: keeps your DMs answered so warm followers don't go cold.`,
+        ``,
+        `If one of those isn't switched on yet, this is a good week to try it. You've still got a full week left to see what it does for your numbers.`,
+        ``,
+        `Tutorials: https://www.influencerbutler.com/help`,
+        ``,
+        `Reply any time. I read every email.`,
+        ``,
+        COMMUNITY_LINE,
+        ``,
+        `- The Influencer Butler team`,
+      ].join("\n");
+    },
+  },
+  day13: {
     subject: "24 hours left: switch to annual and save",
     build: (v) => {
       const url = annualCheckoutUrl(v.subscriptionUrl, v.annualCode);
@@ -125,7 +176,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return lines.join("\n");
     },
   },
-  day3: {
+  day14: {
     subject: (v) =>
       v.monthlyCode || v.annualCode
         ? "Your trial ends today: your discount codes expire at midnight"

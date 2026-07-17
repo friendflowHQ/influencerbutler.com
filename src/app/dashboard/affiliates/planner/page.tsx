@@ -178,7 +178,7 @@ const FUNNEL: Email[] = [
   },
   {
     step: "Email 5 · Urgency + CTA",
-    subject: "Last nudge: start your free 3 days",
+    subject: "Last nudge: start your free 14 days",
     body:
       "Recap the three biggest wins (auto-accept, deal auto-posting, reviving old content). Remind them the trial is free for 14 days and they can cancel before day 14. Strong single CTA to your link.",
   },

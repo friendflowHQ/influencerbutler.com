@@ -6,6 +6,13 @@
  * drift between the customer-facing copy and the backend.
  */
 
+// Length of the free Pro trial, in days. This mirrors the Lemon Squeezy Pro
+// SKU trial period (LS `trial_ends_at` is authoritative for billing) and the
+// desktop app's local trial clock. The trial-email drip in
+// /api/cron/affiliate-funnel derives all of its send thresholds from this, so
+// a change to the trial length is a one-line change here.
+export const TRIAL_LENGTH_DAYS = 14;
+
 // Per-plan price in cents (used by promo-resolver math).
 export const PRICE_CENTS = {
   solo: { monthly: 3900, annual: 39000 },
