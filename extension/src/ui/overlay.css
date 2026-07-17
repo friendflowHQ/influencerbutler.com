@@ -102,6 +102,15 @@
 
 .section > * + * { margin-top: 10px; }
 
+/* Always-visible affiliate disclosure under the "Copy my link" row. Kept plain
+   and readable (not hidden behind an infotip) so the monetization is disclosed
+   up front, per the Chrome Web Store affiliate-disclosure rule. */
+.affiliate-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 /* Inline "i" bubble: keeps explanatory copy out of the way until hovered. */
 .infotip {
   /* No positioning context here: the bubble anchors to the row (h4 / seal /

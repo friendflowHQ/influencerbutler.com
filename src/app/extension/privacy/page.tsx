@@ -7,75 +7,125 @@ export const metadata = {
     "Privacy policy for the Influencer Butler Chrome extension: everything stays local in your browser unless you connect your license key, no tracking, no sale of data.",
 };
 
-const EFFECTIVE_DATE = "July 4, 2026";
+const EFFECTIVE_DATE = "July 17, 2026";
 
 const SECTIONS: Array<{ heading: string; paragraphs: string[]; bullets?: string[] }> = [
   {
     heading: "The short version",
     paragraphs: [
-      "The Influencer Butler Chrome extension works entirely inside your browser. Everything it reads and everything it computes stays on your machine unless you explicitly connect your Influencer Butler license key and leave sync turned on. The extension contains no analytics, no ad trackers, and no third-party data sharing, and we never sell data. Period.",
+      "The Influencer Butler Chrome extension is a free toolkit for Amazon Influencers. It reads the Amazon pages you are already viewing so it can show you video counts, content-gap ideas, opportunity signals, break-even math, and storefront issues, and it can build affiliate links tagged with your own Amazon Associates account. Most of its work happens locally in your browser.",
+      "The extension is published by The Social Media Posse LLC. This policy explains, in full, what the extension collects, how it uses that information, where it is stored, and every party it may be shared with. Where the extension shares data with a third party, that party is named below.",
     ],
   },
   {
-    heading: "What the extension does with Amazon pages",
+    heading: "Affiliate links and monetization (please read)",
     paragraphs: [
-      "The extension reads the content of Amazon pages you are already viewing (product pages, your order history, your storefront) to count and classify product videos, evaluate opportunity criteria, and check your storefront's health. This analysis happens locally in your browser.",
-      "The only times the extension requests additional pages from Amazon are the two scans you trigger yourself with a button click (the order-history scan and the storefront checkup). Those requests use your own Amazon session, run one at a time at a human pace, and their results are processed locally like everything else. The extension never crawls Amazon in the background.",
+      "Influencer Butler is an affiliate-marketing tool. When you click \"Copy my link\" on a product page, the extension builds an Amazon affiliate link so that qualifying purchases can earn a commission. That commission is yours: the link is tagged with the Amazon Associates tag or storefront handle that you entered in the extension's settings. The extension does not use its own or the developer's tag, does not substitute a different tag, and does not redirect your commissions. If you have not entered a tag, the extension returns a plain, untagged link.",
+      "Affiliate links are built only when you ask for one (the \"Copy my link\" button). The extension does not silently rewrite the links already on a page while you browse. You are responsible for adding the affiliate disclosures your own audience and the FTC require (for example, #ad or #CommissionsEarned) to any content where you share these links.",
+      "If you connect optional third-party link providers in Settings (Amazon Associates, Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded links), those providers may also be used to create or shorten your affiliate links. Each provider is described under \"Optional integrations you turn on\" below.",
+    ],
+  },
+  {
+    heading: "What the extension reads from Amazon pages",
+    paragraphs: [
+      "Using content scripts on www.amazon.com, www.amazon.ca, and www.amazon.co.uk, the extension reads pages you are already viewing so it can compute the insights it shows you. Depending on the page, it reads:",
+    ],
+    bullets: [
+      "Product pages: ASIN, marketplace, title, price, availability, brand, category, best-seller rank, image, the \"bought in past month\" figure, and the commission rate shown in your SiteStripe bar. On product pages it also reads Amazon's own video-widget data to classify videos as influencer, brand, or customer.",
+      "Your order history: when you run the order-history scan, it reads your past orders (order id, order date, product, and the price you paid) to find products you have bought that have few or no influencer videos yet.",
+      "Your storefront: when you run the storefront checkup, it reads your storefront's items (content type, title, link, and tagged products) to flag untagged videos and unavailable products.",
+      "Search results and Creator Hub / Creator Connections pages: product tiles, and (on creator pages) your video uploads, tagged products, storefront handle, and any brand campaign details shown to you, so it can match campaigns and surface opportunities.",
+    ],
+  },
+  {
+    heading: "How the extension fetches extra Amazon pages",
+    paragraphs: [
+      "Beyond the pages you open yourself, the extension loads additional Amazon pages in two situations, both using your own signed-in Amazon session:",
+    ],
+    bullets: [
+      "Scans you click: the order-history scan and the storefront checkup fetch pages one at a time, at a human pace, when you press their button.",
+      "Watchlist checks (optional, off unless you add products to a watchlist): on a periodic alarm, the background worker briefly opens the products you are watching in inactive background tabs to read their current stock, price, and video count, then closes the tab. It can show you a desktop notification when a watched item comes back in stock, drops in price, or opens a new opportunity. If you never add a watchlist item, this does not run.",
     ],
   },
   {
     heading: "What is stored, and where",
-    paragraphs: ["Stored only in your browser's local extension storage (chrome.storage.local):"],
-    bullets: [
-      "Your settings (commission rate, thresholds, storefront handle, tool toggles)",
-      "A short-lived cache of product scan results so repeat scans are faster",
-      "A queue of findings waiting to sync (only used when you connect an account)",
-      "Your license key, if you choose to connect one (never placed in Chrome's synced storage, so it does not leave your machine via browser sync)",
-    ],
-  },
-  {
-    heading: "What is transmitted, and only if you opt in",
     paragraphs: [
-      "If you connect your Influencer Butler license key and keep sync enabled, the extension sends your findings to influencerbutler.com over HTTPS so they appear in your dashboard. Findings are product-level data, not personal data:",
+      "Everything below is stored in your browser's local extension storage (chrome.storage.local) on your own device. Nothing is placed in Chrome's synced storage, so none of it leaves your machine through browser sync.",
     ],
     bullets: [
-      "Product scans: ASIN, marketplace, product title, price, video counts by creator type, and Butler Approved criteria results",
-      "Content gaps: ASIN, title, and influencer video count for products from your own order history",
-      "Storefront checkup results: the issue type and the affected video",
-      "Your license key, sent only as the authorization header on those requests, only to influencerbutler.com",
+      "Your settings: commission rate, thresholds, storefront handle, per-country Amazon Associates tags, tool toggles, language, and deal-source list.",
+      "Your Influencer Butler license key, if you connect one, and the masked email the server returns for it (for example e***@gmail.com). The raw license key is stored only on your device.",
+      "API keys and credentials for any optional providers you connect (OpenAI, Amazon Product Advertising API, affiliate networks, link shorteners). These are encrypted on your device and are sent only to the provider they belong to, never to Influencer Butler.",
+      "A short-lived cache of scan results and observed prices so repeat scans are faster, plus your watchlist snapshots and local counters used to detect when a page selector breaks.",
+      "A queue of findings waiting to sync (product scans, content gaps, storefront issues, and order-history results), used only if you connect an account and leave sync on.",
     ],
   },
   {
-    heading: "What is never collected",
+    heading: "What is transmitted to Influencer Butler, and when",
+    paragraphs: [
+      "If you sign in with your Influencer Butler license key, the extension syncs your findings to influencerbutler.com over HTTPS so they appear in your dashboard. Sync is on by default once you sign in; you can turn it off at any time with the sync toggle, and nothing is sent to Influencer Butler if you never sign in. Your license key is sent only as the authorization header on these requests, only to influencerbutler.com. The data synced is:",
+    ],
+    bullets: [
+      "Product scans: ASIN, marketplace, title, price, video counts by creator type, and opportunity-criteria results.",
+      "Content gaps: ASIN, title, order date, and influencer video count for products from your own order history.",
+      "Order-history results: order id, order date, product ASIN and title, and the price you paid, for the orders you scan.",
+      "Storefront checkup results: the storefront URL, the issue type, and the affected item.",
+      "Feedback you submit through the extension: your message, the page you were on, the extension version, and browser type (your license key is attached only if you are signed in).",
+    ],
+  },
+  {
+    heading: "Optional integrations you turn on",
+    paragraphs: [
+      "The extension does not contact these services unless you enter your own credentials for them in Settings. When you do, the extension sends data directly to that provider using your key, and only to that provider. Influencer Butler does not receive that data.",
+    ],
+    bullets: [
+      "OpenAI (api.openai.com): if you connect an OpenAI key, product details are sent to OpenAI to draft a caption when you click the caption button.",
+      "Amazon Product Advertising API: if you connect PA-API keys, the extension can query Amazon's product API using your keys to enrich product data.",
+      "Affiliate networks and link shorteners (Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in): if you connect one, your affiliate link is created or shortened through that provider.",
+      "Influencer Butler branded links (links.influencerbutler.com): if enabled, your affiliate link is shortened into a links.influencerbutler.com link with click analytics, authenticated with your signed-in license key.",
+      "Deal-site harvester: if you use it, the extension fetches the deal-aggregator web pages whose URLs you provide (without sending your cookies) to extract product ASINs.",
+      "Influencer Butler desktop app: if you have the desktop app running and paired, findings can be sent to it over a local connection on your own machine (they do not leave your device).",
+    ],
+  },
+  {
+    heading: "What the extension never does",
     paragraphs: [],
     bullets: [
-      "No browsing history and no tracking of the pages you visit",
-      "No analytics, telemetry, fingerprinting, or advertising identifiers",
-      "No reading of Amazon account credentials, payment details, or personal information from pages",
-      "No data from any site other than amazon.com and influencerbutler.com",
-      "No sale or sharing of data with third parties, ever",
+      "It does not track your general browsing history or the sites you visit outside the hosts listed in this policy.",
+      "It does not use advertising trackers, fingerprinting, or advertising identifiers, and it does not send analytics or telemetry to us (selector-health counters stay on your device).",
+      "It does not read your Amazon password, payment card numbers, or other account credentials.",
+      "It does not sell your data, and it does not share your data with anyone other than the parties named in this policy.",
     ],
   },
   {
-    heading: "Deleting your data",
+    heading: "Parties your data may be shared with",
     paragraphs: [
-      "Click Disconnect in the extension popup to remove your license key and clear the sync queue from your browser. Uninstalling the extension removes all local extension data. Findings already synced to your dashboard belong to your Influencer Butler account: you can review them at influencerbutler.com/dashboard/extension, and you can request deletion of your account data any time at hello@influencerbutler.com.",
+      "In addition to Influencer Butler (The Social Media Posse LLC) and the optional providers you choose to connect, the only other parties involved are our own service providers that operate our dashboard and sign-in: Cloudflare (hosting and edge network for influencerbutler.com and links.influencerbutler.com) and Lemon Squeezy (license verification). We do not sell data to anyone.",
     ],
   },
   {
     heading: "Permissions, explained",
-    paragraphs: ["The extension requests the minimum Chrome permissions it needs:"],
+    paragraphs: ["Here is every permission the extension requests and why:"],
     bullets: [
-      "storage: save your settings, scan cache, and sync queue locally",
-      "alarms: wake the background worker every couple of minutes to send queued findings when sync is on",
-      "Host access to www.amazon.com: read the Amazon pages you visit and run the scans you click",
-      "Host access to www.influencerbutler.com: verify your license key and sync findings to your dashboard",
+      "storage: save your settings, encrypted provider keys, scan cache, watchlist, and sync queue locally.",
+      "alarms: wake the background worker on a schedule to flush queued findings when sync is on, refresh catalog data, and run watchlist checks you have enabled.",
+      "notifications: show the optional watchlist and getting-started notifications described above. None fire unless you opt in.",
+      "tabs: briefly open an Amazon product page in an inactive background tab so its video widget can load during a scan or watchlist check, then close it.",
+      "Host access to Amazon (www.amazon.com, .ca, .co.uk, and the affiliate-program.amazon.* creator pages): read the Amazon pages you visit and run the scans you click.",
+      "Host access to influencerbutler.com and links.influencerbutler.com: verify your license key, sync findings to your dashboard, and create branded links.",
+      "Optional host access requested only when you use the matching feature: the provider hosts above (OpenAI, Amazon PA-API marketplaces, affiliate networks, link shorteners) and, for the deal-site harvester, the specific deal pages you provide.",
+    ],
+  },
+  {
+    heading: "Data retention and deletion",
+    paragraphs: [
+      "Local data stays until you clear it. Click Disconnect in the extension popup to remove your license key and clear the sync queue, and uninstalling the extension removes all of its local data from your browser. Findings already synced to your dashboard belong to your Influencer Butler account: you can review them at influencerbutler.com/dashboard/extension, and you can request deletion of your account data at any time by emailing privacy@influencerbutler.com.",
     ],
   },
   {
     heading: "Changes and contact",
     paragraphs: [
-      `We will update this policy if the extension's behavior changes, and material changes will be called out in the extension's release notes. Questions or deletion requests: hello@influencerbutler.com. Effective date: ${EFFECTIVE_DATE}.`,
+      `We will update this policy whenever the extension's behavior changes, and material changes will be called out in the extension's release notes. Questions: hello@influencerbutler.com. Data and deletion requests: privacy@influencerbutler.com. The Social Media Posse LLC, 3556 S 5600 W #1-478, Salt Lake City, UT 84120. Effective date: ${EFFECTIVE_DATE}.`,
     ],
   },
 ];

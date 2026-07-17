@@ -23,6 +23,7 @@ type Strings = {
   caption: string;
   captionGating: string;
   captionFailed: string;
+  disclosure: string;
 };
 
 const EN: Strings = {
@@ -34,6 +35,8 @@ const EN: Strings = {
   caption: "Draft caption (AI)",
   captionGating: "Connect OpenAI in Settings to draft captions.",
   captionFailed: "Caption failed",
+  disclosure:
+    "This is an affiliate link tagged with your own Amazon Associates account, so qualifying purchases earn you a commission. Add your own #ad or #CommissionsEarned disclosure when you share it.",
 };
 
 const CATALOG: Record<string, Strings> = {
@@ -47,6 +50,8 @@ const CATALOG: Record<string, Strings> = {
     caption: "Redactar pie de foto (IA)",
     captionGating: "Conecta OpenAI en Ajustes para redactar pies de foto.",
     captionFailed: "Fallo al redactar",
+    disclosure:
+      "Este es un enlace de afiliado con tu propia cuenta de Amazon Associates, así que las compras que califiquen te generan una comisión. Añade tu propia divulgación (#ad o #CommissionsEarned) al compartirlo.",
   },
   fr: {
     heading: "Mon lien",
@@ -57,6 +62,8 @@ const CATALOG: Record<string, Strings> = {
     caption: "Rédiger une légende (IA)",
     captionGating: "Connectez OpenAI dans les Réglages pour rédiger des légendes.",
     captionFailed: "Échec de la rédaction",
+    disclosure:
+      "Ceci est un lien d'affiliation associé à votre propre compte Amazon Associates : les achats admissibles vous rapportent une commission. Ajoutez votre propre mention (#ad ou #CommissionsEarned) lorsque vous le partagez.",
   },
 };
 
@@ -126,5 +133,8 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
   });
   row.append(captionBtn);
 
-  section.append(row, out);
+  const disclosure = el("p", "affiliate-note");
+  disclosure.textContent = s.disclosure;
+
+  section.append(row, out, disclosure);
 }

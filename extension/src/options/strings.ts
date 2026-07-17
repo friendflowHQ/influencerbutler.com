@@ -9,6 +9,7 @@ export interface OptionsDict {
   pageTitle: string;
   pageIntro: string;
   securityNote: string;
+  affiliateDisclosure: string;
   runAllTests: string;
   runningTests: string;
   testOnStartup: string;
@@ -74,6 +75,8 @@ const en: OptionsDict = {
     "Connect the same providers the desktop app uses. Paste a key, test it, and the extension uses it while you browse Amazon.",
   securityNote:
     "Your keys stay on this device, encrypted, and are sent only to each provider. They never touch Influencer Butler servers.",
+  affiliateDisclosure:
+    "Affiliate disclosure: Influencer Butler builds affiliate links for the products you choose, tagged with your own Amazon Associates account and any networks you connect here, so qualifying purchases earn you a commission. It never uses our tag or takes a cut.",
   runAllTests: "Run all saved tests",
   runningTests: "Testing every saved integration...",
   testOnStartup: "Test all integrations when the browser starts",
@@ -137,6 +140,8 @@ const es: OptionsDict = {
     "Conecta los mismos proveedores que usa la app de escritorio. Pega una clave, pruébala y la extensión la usa mientras navegas por Amazon.",
   securityNote:
     "Tus claves se quedan en este dispositivo, cifradas, y solo se envían a cada proveedor. Nunca pasan por los servidores de Influencer Butler.",
+  affiliateDisclosure:
+    "Divulgación de afiliados: Influencer Butler crea enlaces de afiliado para los productos que elijas, con tu propia cuenta de Amazon Associates y las redes que conectes aquí, así que las compras que califiquen te generan una comisión. Nunca usa nuestra etiqueta ni se queda con una parte.",
   runAllTests: "Probar todo lo guardado",
   runningTests: "Probando cada integración guardada...",
   testOnStartup: "Probar todas las integraciones al iniciar el navegador",
@@ -200,6 +205,8 @@ const fr: OptionsDict = {
     "Connectez les mêmes fournisseurs que l'app de bureau. Collez une clé, testez-la, et l'extension l'utilise pendant que vous naviguez sur Amazon.",
   securityNote:
     "Vos clés restent sur cet appareil, chiffrées, et ne sont envoyées qu'à chaque fournisseur. Elles ne passent jamais par les serveurs Influencer Butler.",
+  affiliateDisclosure:
+    "Divulgation d'affiliation : Influencer Butler crée des liens d'affiliation pour les produits que vous choisissez, associés à votre propre compte Amazon Associates et aux réseaux que vous connectez ici, afin que les achats admissibles vous rapportent une commission. Il n'utilise jamais notre balise et ne prend aucune commission.",
   runAllTests: "Tester tout ce qui est enregistré",
   runningTests: "Test de chaque intégration enregistrée...",
   testOnStartup: "Tester toutes les intégrations au démarrage du navigateur",

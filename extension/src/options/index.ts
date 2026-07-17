@@ -51,6 +51,7 @@ function renderChrome(): void {
   byId("page-title").textContent = D.pageTitle;
   byId("page-intro").textContent = D.pageIntro;
   byId("security-note").textContent = D.securityNote;
+  byId("affiliate-disclosure").textContent = D.affiliateDisclosure;
   byId("label-startup").textContent = D.testOnStartup;
   byId("label-routing").textContent = D.affiliateRouting;
   byId("label-primary-deeplink").textContent = D.primaryDeeplink;

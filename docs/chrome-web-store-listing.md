@@ -4,6 +4,17 @@ Copy-paste material for the Developer Dashboard listing. Keep this file in
 sync with `extension/static/manifest.json` and the extension's actual
 behavior; reviewers compare the two.
 
+> **2026-07-17 resubmission note.** The 2026-07-09 listing was taken down for
+> two policy reasons: (1) the privacy policy did not comprehensively disclose
+> what the extension collects, uses, and shares; and (2) the extension's use of
+> affiliate programs was not disclosed. This pack has been revised to fix both:
+> the detailed description now describes the affiliate-link feature up front,
+> the extension UI itself discloses it (the "Copy my link" panel and the
+> Settings page), and the privacy policy at `/extension/privacy` now covers the
+> full data flow (order-history sync, background watchlist tabs, notifications,
+> and the optional third-party providers). When you resubmit, paste the revised
+> detailed description below and re-check the Privacy tab answers in this file.
+
 For shipping new **code** (as opposed to editing this listing copy), see
 [chrome-web-store-publishing.md](chrome-web-store-publishing.md): the release is
 automated as `npm run bump` + `npm run release`.
@@ -17,8 +28,9 @@ Free tools for Amazon Influencers on the Amazon pages they already browse:
 shows how many videos a product has and who made them (influencer, brand,
 customer), finds products in the user's own order history with few or no
 influencer videos, evaluates opportunity criteria, calculates break-even
-math, and checks the user's own storefront for untagged videos and
-unavailable tagged products.
+math, checks the user's own storefront for untagged videos and unavailable
+tagged products, and builds Amazon affiliate links (tagged with the user's
+own Amazon Associates account) for products the user chooses to promote.
 
 ## Permission justifications
 
@@ -56,14 +68,24 @@ Declare collected:
 
 - **Authentication information**: the user's Influencer Butler license key,
   stored locally and transmitted only to influencerbutler.com as the
-  authorization header when the user opts in to sync.
-- **Website content**: product-level data read from Amazon pages the user
-  views or scans (ASIN, title, price, video counts, storefront issue types),
-  transmitted to influencerbutler.com only when the user opts in to sync.
+  authorization header when the user is signed in and sync is on. Also any
+  optional third-party provider keys the user enters (OpenAI, PA-API,
+  affiliate networks, link shorteners), which are stored encrypted on the
+  device and sent only to that provider, never to influencerbutler.com.
+- **Website content**: data read from the Amazon pages the user views or
+  scans. This includes product data (ASIN, title, price, video counts,
+  opportunity-criteria results, storefront issue types) and, when the user
+  runs the order-history scan, the user's own order details (order id, order
+  date, product, and the price paid). All of it is transmitted to
+  influencerbutler.com only when the user is signed in and sync is on.
 
-Declare NOT collected: personally identifiable information, health,
-financial and payment information, personal communications, location, web
-history, user activity (clicks, keystrokes), anything from other sites.
+Declare NOT collected: health information, personal communications, location,
+web history (general browsing), and data from sites other than the Amazon and
+provider hosts listed in the manifest. Note: the user's order-history data
+(including prices paid) is disclosed above under "Website content" because it
+is read from the user's own Amazon pages; if the review UI treats this as
+financial/payment information, declare that category too and describe it the
+same way. Do not claim purchase data is uncollected.
 
 Certify all three usage statements (they are true):
 
@@ -123,8 +145,11 @@ Quick profit and break-even calculations using the product's commission rate, so
 Storefront checkup
 Scan your own storefront for untagged videos and unavailable tagged products, and export the results as a CSV to clean up your shop.
 
+Affiliate links, tagged with your own account
+When you click "Copy my link" on a product, the extension builds an Amazon affiliate link so qualifying purchases earn you a commission. The link uses the Amazon Associates tag or storefront handle you enter in the extension's settings, so the commission is yours. You can also connect optional affiliate networks and link shorteners (Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded links) to create or shorten those links. The extension never uses its own tag, never swaps your tag, and never takes a cut.
+
 HOW IT WORKS
-The extension reads the Amazon pages you visit and only fetches additional pages when you explicitly click a scan button. Everything it computes stays on your device unless you choose to connect your Influencer Butler account to sync findings to your dashboard.
+The extension reads the Amazon pages you visit and only fetches additional pages when you explicitly click a scan button (or run optional watchlist checks you turn on). It builds an affiliate link only when you click "Copy my link"; it does not silently rewrite links as you browse. Everything it computes stays on your device unless you choose to connect your Influencer Butler account to sync findings to your dashboard. Full details are in the privacy policy at influencerbutler.com/extension/privacy.
 
 Free to use. Optional sign-in with an Influencer Butler license key unlocks syncing to your dashboard at influencerbutler.com.
 ```
@@ -171,8 +196,11 @@ Remote code: **No, I am not using remote code.** Verified in source: no
 eval/new Function/importScripts/external scripts; esbuild bundles everything.
 Network calls fetch data, not code.
 
-Data usage: check ONLY "Authentication information" (license key) and
-"Website content" (Amazon product data). Certify all three statements true.
+Data usage: check "Authentication information" (license key plus any optional
+provider keys the user enters) and "Website content" (Amazon product data and,
+on the order-history scan, the user's own order details including price paid).
+See the "Data usage disclosures" section above for the order-history nuance.
+Certify all three statements true.
 
 ## Pre-submission checklist
 
