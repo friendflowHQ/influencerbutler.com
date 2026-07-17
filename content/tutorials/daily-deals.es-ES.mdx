@@ -51,6 +51,14 @@ Cuando haces clic en **Iniciar sesión**, la etiqueta muestra **Comprobando** un
 
 Al publicar, Butler agrupa tus destinos por perfil y publica cada grupo desde su propio navegador con sesión iniciada. Si una cuenta cierra la sesión, solo sus destinos esperan a que vuelvas a iniciar sesión. El resto se publica igualmente.
 
+## Respetar los límites de publicación de Facebook
+
+Facebook limita la frecuencia con la que una cuenta puede publicar, y publicar demasiadas ofertas demasiado rápido (sobre todo en varios espacios de Deals con una sola cuenta de Facebook) puede provocar un bloqueo temporal. Butler incluye protecciones.
+
+- **Un límite diario y espaciado.** En el Panel, en **Límites de publicación en Facebook**, define el **máximo de publicaciones de Facebook por día** (contado en todos tus espacios de Deals) y los **minutos entre publicaciones**. Un buen punto de partida es 25 por día, con 20 minutos de diferencia. Cuando alcanzas el límite, las publicaciones de más esperan al día siguiente en lugar de acumularse.
+- **Una fase de calentamiento.** Deja activada la opción **Calentar gradualmente**, sobre todo en una cuenta nueva: Butler empieza más despacio y aumenta hasta tu límite durante unas semanas. El Panel muestra la semana actual y cuántas publicaciones se permiten hoy.
+- **Si aun así Facebook bloquea las publicaciones.** Butler detecta el bloqueo, detiene por su cuenta las publicaciones programadas de Facebook para que el bloqueo no dure más, y muestra un aviso además de enviarte un correo. Si tu página de Facebook tiene otra consideración y sigue publicando, solo se pausan tus grupos y tu perfil. No publiques en Facebook a mano mientras el bloqueo esté activo, ya que puede prolongarlo. Facebook no muestra la fecha de finalización en el propio bloqueo, pero el botón **Abrir Estado de la cuenta** del aviso te lleva a la página que sí la muestra. Las publicaciones se reanudan poco a poco cuando pulsas **Reanudar publicaciones de Facebook** o cuando se levanta el límite por su cuenta.
+
 ## Ajustes con el tiempo
 
 - **percentOffMin** en el preajuste - empieza en 30 %, súbelo a 40-50 % cuando tengas claro qué umbral de descuento engancha a tu audiencia.

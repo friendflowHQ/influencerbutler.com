@@ -51,6 +51,14 @@ When you click **Sign in**, the pill shows **Checking** for a moment. On your **
 
 At posting time, Butler groups your destinations by profile and posts each group from its own signed-in browser. If one account is signed out, only its destinations wait for you to sign back in. The rest still go out.
 
+## Staying within Facebook's posting limits
+
+Facebook limits how often an account can post, and posting too many deals too fast (especially across several Deals workspaces on one Facebook account) can trigger a temporary block. Butler has built-in safeguards.
+
+- **A daily limit and spacing.** On the Dashboard, under **Facebook posting limits**, set the **max Facebook posts per day** (counted across all your Deals workspaces) and the **minutes between posts**. A safe starting point is 25 per day, 20 minutes apart. When you reach the limit, extra posts wait for the next day instead of piling on.
+- **A warm-up ramp.** Leave **Warm up gradually** on, especially on a newer account: Butler starts slower and builds up to your limit over a few weeks. The Dashboard shows the current week and how many posts are allowed today.
+- **If Facebook blocks posting anyway.** Butler notices the block, stops scheduled Facebook posting on its own so the block does not last longer, and shows a banner plus emails you. If your Facebook Page is on a separate standing and still posting, only your groups and profile are paused. Do not post to Facebook by hand while a block is active, as that can extend it. Facebook does not show the end date in the block itself, but the banner's **Open Account Status** button takes you to the page that does. Posting resumes gradually once you click **Resume Facebook posting** or the limit lifts on its own.
+
 ## Tuning over time
 
 - **percentOffMin** in the preset - start at 30%, raise to 40-50% once you have a sense of which discount threshold gets engagement.
