@@ -18,22 +18,32 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Comp plans: Pro monthly tiers plus the Daily Deals Workspace add-on. The free
-// window is expressed in months. (Seat count comes from the tier: Solo 1, Team
-// 10, Agency 25; the add-on is 1.)
+// window is expressed in months OR days. (Seat count comes from the tier: Solo 1,
+// Team 10, Agency 25; the add-on is 1.)
 const ALLOWED_PLANS = new Set(["monthly", "team-monthly", "agency-monthly", "daily-deals-addon"]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MONTHS = 36;
+const MAX_DAYS = 1095; // ~3 years, mirroring the 36-month ceiling.
 const MAX_SEATS = 100;
 
 type Body = {
   email?: unknown;
   name?: unknown;
+  /** Free-window length. Exactly one of months/days is used (days wins). */
   months?: unknown;
+  days?: unknown;
   plan?: unknown;
   seats?: unknown;
   forever?: unknown;
   allowExisting?: unknown;
 };
+
+/** Parse an optional integer field ("", null, undefined -> null; else the number). */
+function optionalInt(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const parsed = typeof value === "number" ? value : Number.parseInt(String(value), 10);
+  return Number.isInteger(parsed) ? parsed : NaN;
+}
 
 export async function POST(request: Request) {
   const actor = await requirePermission("licenses.view", request);
@@ -53,22 +63,30 @@ export async function POST(request: Request) {
   const plan = typeof body.plan === "string" ? body.plan : "monthly";
   const forever = body.forever === true;
   const allowExisting = body.allowExisting === true;
-  const months = forever
-    ? null
-    : typeof body.months === "number"
-      ? body.months
-      : Number.parseInt(String(body.months), 10);
+  // Free window: forever ignores both; otherwise a day window (if given) takes
+  // precedence over months, matching issueInHouseComp's own precedence rule.
+  const days = forever ? null : optionalInt(body.days);
+  const months = forever || (days != null && !Number.isNaN(days)) ? null : optionalInt(body.months);
 
   // Email is optional: omit it to mint an unassigned key the admin hands out.
   // When one IS given, it must be well-formed.
   if (email && !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Enter a valid recipient email." }, { status: 400 });
   }
-  if (!forever && (!Number.isInteger(months) || (months as number) < 1 || (months as number) > MAX_MONTHS)) {
-    return NextResponse.json(
-      { error: `Free months must be a whole number between 1 and ${MAX_MONTHS}, or mark the comp as forever.` },
-      { status: 400 },
-    );
+  if (!forever) {
+    if (days != null) {
+      if (Number.isNaN(days) || days < 1 || days > MAX_DAYS) {
+        return NextResponse.json(
+          { error: `Free days must be a whole number between 1 and ${MAX_DAYS}, or mark the comp as forever.` },
+          { status: 400 },
+        );
+      }
+    } else if (months == null || Number.isNaN(months) || months < 1 || months > MAX_MONTHS) {
+      return NextResponse.json(
+        { error: `Free months must be a whole number between 1 and ${MAX_MONTHS}, or mark the comp as forever.` },
+        { status: 400 },
+      );
+    }
   }
   if (!ALLOWED_PLANS.has(plan)) {
     return NextResponse.json({ error: "Unsupported plan." }, { status: 400 });
@@ -87,7 +105,7 @@ export async function POST(request: Request) {
     seats = parsed;
   }
 
-  const result = await issueInHouseComp({ email, name, months, plan, seats, forever, allowExisting });
+  const result = await issueInHouseComp({ email, name, months, days, plan, seats, forever, allowExisting });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
@@ -96,6 +114,7 @@ export async function POST(request: Request) {
     by: actor.email,
     email: result.email,
     months,
+    days,
     forever,
     seats: result.activationLimit,
     plan,
@@ -106,6 +125,7 @@ export async function POST(request: Request) {
     key: result.key,
     email: result.email,
     months,
+    days,
     forever,
     activationLimit: result.activationLimit,
     expiresAt: result.expiresAt,
