@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
+import CreditReferralTab, { type AffiliateOption } from "./CreditReferralTab";
 
 type SocialHandles = Record<string, string | null | undefined>;
 
@@ -123,7 +124,14 @@ type RosterResponse = {
   error?: string;
 };
 
-type TabKey = "roster" | "applications" | "reconcile" | "owed" | "payouts" | "analytics";
+type TabKey =
+  | "roster"
+  | "applications"
+  | "reconcile"
+  | "credit"
+  | "owed"
+  | "payouts"
+  | "analytics";
 
 type AffiliateMonthly = {
   userId: string;
@@ -781,6 +789,21 @@ export default function AdminAffiliatesPage() {
     });
   }, [roster, search, statusFilter]);
 
+  // Affiliates that can be credited: any roster row that is a live affiliate or
+  // an approved application. Feeds the "Credit affiliate" tab picker.
+  const creditableAffiliates = useMemo<AffiliateOption[]>(
+    () =>
+      roster
+        .filter((r) => r.isAffiliate || r.appStatus === "approved")
+        .map((r) => ({
+          userId: r.userId,
+          name: r.name,
+          email: r.email,
+          affiliateCode: r.affiliateCode,
+        })),
+    [roster],
+  );
+
   const header = useMemo(
     () => (
       <header>
@@ -817,6 +840,7 @@ export default function AdminAffiliatesPage() {
     { key: "roster", label: "Roster", count: roster.length || null },
     { key: "applications", label: "Applications", count: pending.length || null },
     { key: "reconcile", label: "Fix codes", count: null },
+    { key: "credit", label: "Credit affiliate", count: null },
     { key: "owed", label: "Owed", count: null },
     { key: "payouts", label: "Payouts", count: null },
     { key: "analytics", label: "Analytics", count: null },
@@ -1096,6 +1120,8 @@ export default function AdminAffiliatesPage() {
           </section>
         </div>
       ) : null}
+
+      {tab === "credit" ? <CreditReferralTab affiliates={creditableAffiliates} /> : null}
 
       {tab === "owed" ? (
         <section className="space-y-4">
