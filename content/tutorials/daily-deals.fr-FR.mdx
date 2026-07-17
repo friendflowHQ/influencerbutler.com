@@ -90,6 +90,17 @@ L'onglet **Centre de codes promo** fait deux choses : il affiche le **Deals Hub*
 
 **Utiliser un code dans vos légendes.** Dans **Créer votre post**, le menu **Code promo** attache un code aux posts que vous y créez, et un jeton **Code promo** est disponible dans la barre de jetons. Glissez-le dans votre légende (ou saisissez le jeton `{{promoCode}}`) et le code choisi se remplit à la publication. Sans code attaché, le jeton disparaît simplement.
 
+## Produits à toujours publier
+
+Certaines marques offrent une remise permanente au lieu d'échantillons : le produit reste donc une bonne affaire même quand Amazon n'affiche aucune baisse de prix active. L'onglet **Toujours publier** vous permet d'épingler ces produits pour que Butler les publie selon votre planning, à chaque exécution, quoi qu'il arrive.
+
+- **Ajouter un produit** : collez son URL Amazon ou son ASIN, un titre facultatif, la remise à afficher (par exemple « 15% de remise ») et un code promo facultatif. Choisissez la fréquence de publication (chaque jour, ou tous les quelques jours), puis **Ajouter le produit**.
+- **Ajouter depuis Creator Connections** : cliquez pour voir vos campagnes Creator Connections qui offrent une remise supplémentaire au lieu d'échantillons, et ajoutez-en n'importe laquelle en un clic, avec la remise déjà renseignée.
+- **Collez un lot** : un produit par ligne (ASIN ou URL, titre, remise, code promo, cadence en jours) en ajoute plusieurs d'un coup.
+- **Publier maintenant** : met en file d'attente les produits à publier dès maintenant, pour les voir partir sans attendre la prochaine exécution planifiée.
+
+Les produits à toujours publier ignorent volontairement la règle « ne pas republier récemment », car tout l'intérêt est qu'ils continuent d'être publiés. Chacun respecte la cadence que vous définissez, et la remise que vous saisissez apparaît dans la légende via le jeton **Remise** (le jeton `{{discountLabel}}`). Désactivez un produit quand vous voulez avec son interrupteur **Activé**, ou retirez-le.
+
 ## AI Content Butler : images et collages multi-produits
 
 L'onglet **AI Content Butler** transforme vos offres sélectionnées en images prêtes à publier. Choisissez une offre dans **Rechercher des offres**, sélectionnez un style et des destinations, puis cliquez sur Générer ; l'image est enregistrée dans cet espace de travail et peut être jointe à la publication en un clic.
@@ -122,7 +133,7 @@ Vous voulez publier une offre immédiatement sans attendre le planning ? Utilise
 
 Si vous tenez votre propre feuille de calcul d'offres, vous pouvez y envoyer les résultats de Recherche d'offres directement. Ouvrez le panneau **Synchronisation Google Sheet** au-dessus du tableau des résultats et suivez la courte configuration : dans votre Google Sheet, ouvrez Apps Script, collez le script fourni par le panneau, déployez-le en tant qu'application Web avec l'accès réglé sur Tout le monde, puis collez l'URL obtenue dans l'application. La configuration prend environ deux minutes et ne se fait qu'une seule fois.
 
-Une fois connecté, l'application lit les en-têtes de colonnes de votre feuille et les associe automatiquement aux champs d'offre (ID produit vers ASIN, Lien de l'image vers l'image du produit, etc.). Chaque association est affichée dans une grille pour que vous corrigiez celles qui semblent incorrectes, et les colonnes réglées sur « Ne pas remplir » restent intactes.
+Une fois connecté, l'application lit les en-têtes de colonnes de votre feuille et les associe automatiquement aux champs d'offre (ID produit vers ASIN, Lien de l'image vers l'image du produit, etc.). Chaque association est affichée dans une grille pour que vous corrigiez celles qui semblent incorrectes, et les colonnes réglées sur « Ne pas remplir » restent intactes. Connecter une feuille neuve et vide fonctionne aussi : l'application met en place les colonnes d'offre standard dans la ligne 1 pour vous, il n'y a donc rien à saisir à la main.
 
 Vous décidez comment les lignes sont ajoutées et quand :
 

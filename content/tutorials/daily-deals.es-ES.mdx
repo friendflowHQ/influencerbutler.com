@@ -90,6 +90,17 @@ La pestaña **Centro de códigos promocionales** hace dos cosas: muestra el **De
 
 **Usar un código en tus leyendas.** En **Crear tu publicación**, el menú **Código promocional** adjunta un código a las publicaciones que creas allí, y hay una etiqueta **Código promocional** en la bandeja de etiquetas. Arrástrala a tu leyenda (o escribe el token `{{promoCode}}`) y el código elegido se rellena al publicar. Si no hay código adjunto, el token simplemente desaparece.
 
+## Productos de publicación permanente
+
+Algunas marcas ofrecen un descuento continuo en lugar de muestras, así que el producto siempre es una oferta aunque Amazon no muestre una bajada de precio activa. La pestaña **Publicar siempre** te permite fijar esos productos para que Butler los publique según tu programación, en cada ejecución, pase lo que pase.
+
+- **Añadir un producto**: pega su URL de Amazon o su ASIN, un título opcional, el descuento que mostrar (por ejemplo "15% de descuento") y un código promocional opcional. Elige con qué frecuencia debe publicarse (cada día o cada varios días) y pulsa **Añadir producto**.
+- **Añadir desde Creator Connections**: haz clic para ver tus campañas de Creator Connections que dan un descuento adicional en lugar de muestras, y añade cualquiera de ellas con un clic, con el descuento ya rellenado.
+- **Pega un lote**: un producto por línea (ASIN o URL, título, descuento, código promocional, cadencia en días) añade muchos de una vez.
+- **Publicar ahora**: pone en cola los productos que toca publicar ahora mismo, para que los veas salir sin esperar a la próxima ejecución programada.
+
+Los productos de publicación permanente se saltan a propósito la regla de "no volver a publicar hace poco", porque justamente la idea es que sigan publicándose. Cada uno respeta la cadencia que definas, y el descuento que introduzcas aparece en la leyenda mediante la etiqueta **Descuento** (el token `{{discountLabel}}`). Desactiva un producto cuando quieras con su interruptor **Activado**, o quítalo.
+
 ## AI Content Butler: imágenes y collages de varios productos
 
 La pestaña **AI Content Butler** convierte tus ofertas seleccionadas en imágenes listas para publicar. Elige una oferta en **Buscar Ofertas**, escoge un estilo y los destinos, y pulsa Generar; la imagen se guarda en este espacio de trabajo y puede adjuntarse a la publicación con un clic.
@@ -122,7 +133,7 @@ Una oferta en Próximas es un **Borrador** o está **Programada**. Solo las ofer
 
 Si tienes tu propia hoja de cálculo de ofertas, puedes enviar los resultados de Buscar ofertas directamente a ella. Abre el panel **Sincronización con Google Sheet** encima de la tabla de resultados y sigue la configuración breve: en tu Google Sheet, abre Apps Script, pega el script que te da el panel, impleméntalo como aplicación web con el acceso configurado en Cualquier persona y pega la URL resultante de vuelta en la app. La configuración tarda unos dos minutos y solo hay que hacerla una vez.
 
-Tras conectarte, la app lee las cabeceras de columna de tu hoja y las asocia a los campos de oferta automáticamente (ID de producto con ASIN, Enlace de imagen con la imagen del producto, etc.). Cada asociación se muestra en una cuadrícula para que corrijas las que parezcan incorrectas, y las columnas que pongas en "No rellenar" se dejan intactas.
+Tras conectarte, la app lee las cabeceras de columna de tu hoja y las asocia a los campos de oferta automáticamente (ID de producto con ASIN, Enlace de imagen con la imagen del producto, etc.). Cada asociación se muestra en una cuadrícula para que corrijas las que parezcan incorrectas, y las columnas que pongas en "No rellenar" se dejan intactas. Conectar una hoja nueva y vacía también funciona: la app crea las columnas de oferta estándar en la fila 1 por ti, así que no tienes que escribir nada a mano.
 
 Tú controlas cómo se añaden las filas y cuándo:
 
