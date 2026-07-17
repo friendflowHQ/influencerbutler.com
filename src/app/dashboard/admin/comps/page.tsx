@@ -233,7 +233,8 @@ export default function AdminCompsPage() {
   // "Grant a comp" form: mints a recipient-bound checkout link.
   const [grantEmail, setGrantEmail] = useState("");
   const [grantName, setGrantName] = useState("");
-  const [grantMonths, setGrantMonths] = useState("3");
+  const [grantAmount, setGrantAmount] = useState("3");
+  const [grantUnit, setGrantUnit] = useState<"month" | "day">("month");
   const [grantPlan, setGrantPlan] = useState("monthly");
   const [grantForever, setGrantForever] = useState(false);
   const [grantSeats, setGrantSeats] = useState("1");
@@ -388,10 +389,13 @@ export default function AdminCompsPage() {
     setGrantError(null);
     setGrantResult(null);
     setCopied(false);
-    const months = Number(grantMonths.trim());
+    const amount = Number(grantAmount.trim());
     const seats = Number(grantSeats.trim());
-    if (!grantForever && (!Number.isInteger(months) || months < 1 || months > 36)) {
-      setGrantError("Free months must be a whole number between 1 and 36, or mark it forever.");
+    const maxAmount = grantUnit === "day" ? 1095 : 36;
+    if (!grantForever && (!Number.isInteger(amount) || amount < 1 || amount > maxAmount)) {
+      setGrantError(
+        `Free ${grantUnit === "day" ? "days" : "months"} must be a whole number between 1 and ${maxAmount}, or mark it forever.`,
+      );
       return;
     }
     if (!Number.isInteger(seats) || seats < 1 || seats > 100) {
@@ -406,7 +410,8 @@ export default function AdminCompsPage() {
         body: JSON.stringify({
           email: grantEmail.trim() || undefined,
           name: grantName.trim() || undefined,
-          months: grantForever ? null : months,
+          months: grantForever || grantUnit === "day" ? null : amount,
+          days: grantForever || grantUnit === "month" ? null : amount,
           forever: grantForever,
           seats,
           plan: grantPlan,
@@ -538,17 +543,28 @@ export default function AdminCompsPage() {
             />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block font-medium text-slate-700">Free months</span>
-            <input
-              type="number"
-              min={1}
-              max={36}
-              value={grantForever ? "" : grantMonths}
-              disabled={grantForever}
-              placeholder={grantForever ? "Forever" : undefined}
-              onChange={(e) => setGrantMonths(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-            />
+            <span className="mb-1 block font-medium text-slate-700">Free window</span>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={1}
+                max={grantUnit === "day" ? 1095 : 36}
+                value={grantForever ? "" : grantAmount}
+                disabled={grantForever}
+                placeholder={grantForever ? "Forever" : undefined}
+                onChange={(e) => setGrantAmount(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+              />
+              <select
+                value={grantUnit}
+                disabled={grantForever}
+                onChange={(e) => setGrantUnit(e.target.value as "month" | "day")}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="month">Months</option>
+                <option value="day">Days</option>
+              </select>
+            </div>
             <span className="mt-1.5 flex items-center gap-2 text-xs font-normal text-slate-600">
               <input
                 type="checkbox"
