@@ -109,7 +109,7 @@ export const FREE_TIER_NAME = "Free forever";
 export const FREE_TIER_TAGLINE = "The whole extension plus See & Organize butlers. No card, no expiry.";
 export const FREE_TIER_FEATURES: readonly string[] = [
   "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
-  "Like Butler & Benable Like Butler: auto-like at a safe pace",
+  "Like Butler, Benable Like Butler & Instagram Like Butler: auto-like at a safe pace",
   "CC Check: grab every ASIN from any page",
   "Orders Butler: pull your full Amazon order history",
   "Storefront Butler: audit your photo & video coverage",

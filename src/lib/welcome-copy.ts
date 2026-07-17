@@ -22,7 +22,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     eyebrow: "You're on the Free forever plan",
     headline: "Welcome to Influencer Butler",
     subhead:
-      "The whole Chrome extension and five See & Organize butlers are free forever, no card required. Here's how to get the most out of them.",
+      "The whole Chrome extension and six See & Organize butlers are free forever, no card required. Here's how to get the most out of them.",
     steps: [
       {
         title: "Add the Chrome extension",
@@ -30,7 +30,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Install the desktop app for the free butlers",
-        body: "Like Butler, Benable Like Butler, CC Check, Orders Butler, and Storefront Butler run free on any account.",
+        body: "Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler run free on any account.",
       },
       {
         title: "Import and organize",

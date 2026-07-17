@@ -215,7 +215,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       }
       lines.push(
         ``,
-        `Either way, your free-forever butlers (Like Butler, Benable Like Butler, CC Check, Orders Butler, Storefront Butler) and the whole Chrome extension keep working - no card, no expiry.`,
+        `Either way, your free-forever butlers (Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, Storefront Butler) and the whole Chrome extension keep working - no card, no expiry.`,
       );
       lines.push(``, COMMUNITY_LINE, ``, `- The Influencer Butler team`);
       return lines.join("\n");

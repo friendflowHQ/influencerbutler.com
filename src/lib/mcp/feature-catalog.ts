@@ -76,7 +76,7 @@ export const PRICING_TIERS: PricingTier[] = [
     seats: null,
     highlights: [
       "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
-      "Desktop free butlers: Like Butler, Benable Like Butler, CC Check, Orders Butler, Storefront Butler",
+      "Desktop free butlers: Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, Storefront Butler",
       "No card, no expiry",
     ],
     signupUrl: `${BASE}/extension`,
