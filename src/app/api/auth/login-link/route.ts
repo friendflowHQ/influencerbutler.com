@@ -97,7 +97,9 @@ export async function POST(request: Request) {
   }
 
   const svc = adminService();
-  if (svc) {
+  if (!svc) {
+    console.error("auth/login-link: adminService unavailable (service role key missing)");
+  } else {
     const siteUrl =
       process.env.SITE_URL ??
       process.env.NEXT_PUBLIC_SITE_URL ??
@@ -110,8 +112,13 @@ export async function POST(request: Request) {
     });
     const actionLink = data?.properties?.action_link ?? null;
     // generateLink errors for unknown emails; swallow it so we stay generic.
-    if (!error && actionLink) {
-      await sendLinkEmail(email, mode, actionLink);
+    // Log it server-side anyway: the client always sees success, so this is the
+    // only trace of "customer swears they never got the email."
+    if (error || !actionLink) {
+      console.error("auth/login-link: no link generated", { mode, reason: error?.message });
+    } else {
+      const sent = await sendLinkEmail(email, mode, actionLink);
+      if (!sent) console.error("auth/login-link: Resend send failed", { mode });
     }
   }
 

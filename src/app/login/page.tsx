@@ -80,8 +80,8 @@ function LoginForm() {
       }
       setLinkNotice(
         mode === "reset"
-          ? "If that email has an account, we just sent a link to reset your password. Check your inbox."
-          : "If that email has an account, we just sent a sign-in link. Check your inbox.",
+          ? "If that email has an account, we just sent a link to set a new password. Check your inbox."
+          : "If that email has an account, we just sent a sign-in link. Check your inbox. The link logs you straight in, and you can set a password afterwards under Profile.",
       );
     } catch {
       setError("Something went wrong. Please try again.");
@@ -131,28 +131,30 @@ function LoginForm() {
         {loading ? "Logging in..." : "Log in"}
       </button>
 
+      {/* Both options carry equal weight on purpose. Plenty of accounts are
+          created by checkout with no password ever set, so "Forgot your
+          password?" reads as not-for-me to the people who most need it, and
+          they end up looping on sign-in links instead. */}
       <div className="pt-2 text-sm text-slate-600">
-        <p>
-          No password yet, or trouble signing in?{" "}
-          <button
-            type="button"
-            onClick={() => requestLink("signin")}
-            disabled={linkMode !== null}
-            className="font-medium text-[#f97316] hover:text-[#ea580c] disabled:opacity-60"
-          >
-            {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
-          </button>
-        </p>
-        <p className="mt-1">
+        <p className="font-medium text-slate-700">No password yet, or trouble signing in?</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => requestLink("reset")}
             disabled={linkMode !== null}
-            className="font-medium text-slate-500 hover:text-slate-700 disabled:opacity-60"
+            className="rounded-lg border border-slate-300 px-3 py-2 font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-60"
           >
-            {linkMode === "reset" ? "Sending..." : "Forgot your password?"}
+            {linkMode === "reset" ? "Sending..." : "Set or reset my password"}
           </button>
-        </p>
+          <button
+            type="button"
+            onClick={() => requestLink("signin")}
+            disabled={linkMode !== null}
+            className="rounded-lg border border-slate-300 px-3 py-2 font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
+          </button>
+        </div>
       </div>
     </form>
   );
