@@ -35,6 +35,21 @@ A few knobs you should expect to touch after the first run:
 - **Brand priority** in **Settings → Outreach priority**: pin the brands that earn you the most so they always get messaged first when the daily cap kicks in.
 - **Per-brand cooldown** in the targeting card: defaults to 14 days. Lower it to retry brands that didn't reply, raise it to avoid pestering.
 - **Skip already-accepted campaigns** stays on by default - it keeps Amazon Butler from re-messaging a brand whose campaign you already accepted via cc-check.
+- **Campaign value filters** in the **Message Brands** panel: turn on **Only message brands that meet these thresholds** to gate outreach on minimum product price and minimum Creator Connections commission.
+
+## Skip products that don't sell
+
+Tired of samples piling up for listings nobody buys? Two filters in the **Campaign value filters** card screen out dead products before Butler ever asks for one:
+
+- **Minimum product reviews**: a campaign is skipped unless at least one of its products has this many reviews. Amazon doesn't publish sales counts, so review volume is the closest public signal that a listing actually sells. Even a low bar like 10 clears out the never-sold long tail.
+- **Only if the product has a Best Sellers Rank**: Amazon only ranks products that sell. Turn this on and campaigns whose products have no Best Sellers Rank in any category are skipped.
+
+Set both and they must both pass. A campaign with several products passes as soon as one of them clears the bar, so a strong seller isn't blocked by a weak sibling product.
+
+Two things worth knowing:
+
+- These two checks read product data from the **Creators API**, so connect it under **Settings → API Integrations** first. Without it, Butler warns you and simply skips these two checks for that run - your other thresholds still apply.
+- If Butler can't read a product's reviews or rank, it skips that campaign rather than guessing. That's deliberate: the whole point is to not request samples for products you can't verify.
 
 ## Where the work shows up
 
