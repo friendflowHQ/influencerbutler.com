@@ -96,6 +96,11 @@ export default function SignupPage() {
     }
 
     // Confirmation disabled (dev / self-host): the account is already active.
+    // This path never hits /api/auth/callback, so stamp any first-touch
+    // affiliate referral now. Fire-and-forget: attribution must never block
+    // the redirect (keepalive lets it survive the navigation).
+    void fetch("/api/account/capture-ref", { method: "POST", keepalive: true }).catch(() => {});
+
     const selectedPlan = localStorage.getItem("selectedPlan");
     localStorage.removeItem("selectedPlan");
     if (selectedPlan === "monthly" || selectedPlan === "annual") {
