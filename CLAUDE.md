@@ -17,6 +17,16 @@ Also avoid en dashes (Unicode U+2013) unless representing a numeric or date rang
 
 This rule applies to user-facing copy (tutorials, marketing pages, legal docs, emails, dashboard UI strings) and internal code (comments, log strings, error messages) alike. The site was bulk-cleaned of ~2,200 em dashes; please do not reintroduce them.
 
+## Step-by-step tutorials: always cover both Windows and Mac
+
+Any detailed tutorial or troubleshooting walkthrough (blog posts, Help & Tutorials, guides, support emails) that includes OS-specific steps must cover **both Windows and macOS**. That means both variants of anything OS-dependent:
+
+- Shell commands: PowerShell for Windows AND Terminal (bash/zsh) for Mac.
+- File paths: `%APPDATA%` / `$env:APPDATA` maps to `$HOME/Library/Application Support` on Mac; `Program Files` app paths map to `/Applications/<App>.app/Contents/MacOS/<App>`.
+- App lifecycle: Windows system tray vs Mac menu bar / Dock for quitting the app.
+
+Label the variants clearly (e.g. `**On Windows:**` / `**On Mac:**`). Reference example: `content/blog/fix-facebook-notifications-popup.en-US.mdx`. Exception: content explicitly scoped to one OS (e.g. the Windows-only cloud PC guide) can stay single-OS, but say so in the copy.
+
 ## Embedding YouTube videos: also add them to Help & Tutorials
 
 Whenever we embed a YouTube video anywhere (marketing page, feature page, email, dashboard, or the desktop app), also embed it in Help & Tutorials in the matching tutorial section.
