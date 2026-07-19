@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import LinkBuilder from "./LinkBuilder";
 import SocialShareButtons from "./SocialShareButtons";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
+import ReferredSignupsFunnel from "./ReferredSignupsFunnel";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
 import CompProspectCard from "./CompProspectCard";
@@ -213,6 +214,11 @@ export default function SelfHostedAffiliateDashboard({
       {data.comp?.enabled && !readOnly ? <CompProspectCard /> : null}
 
       <AffiliateClickAnalytics endpoint={clicksUrl} />
+
+      {/* Hidden in the admin "view as" dashboard: the default endpoint is
+          scoped to the caller's own referrals and would 403 for an admin. An
+          admin-scoped variant is a follow-up. */}
+      {!readOnly ? <ReferredSignupsFunnel /> : null}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

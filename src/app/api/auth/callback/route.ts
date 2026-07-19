@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { captureSignupReferral } from "@/lib/referral-signup-capture";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -14,6 +16,21 @@ export async function GET(request: Request) {
       if (error) {
         console.error("Supabase auth callback session exchange failed", error);
         return NextResponse.redirect(new URL("/login", url.origin));
+      }
+
+      // All email-confirmed signups (password confirm + magic link) land
+      // here, in the same browser that clicked any affiliate link - so this
+      // is where the first-touch ib_aff_src cookie gets stamped onto the new
+      // profile. Best-effort: the helper swallows every failure and the
+      // internal new-account guard skips ordinary logins of old accounts.
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        await captureSignupReferral({
+          userId: userData.user.id,
+          userCreatedAt: userData.user.created_at ?? null,
+          userEmail: userData.user.email ?? null,
+          cookieStore: await cookies(),
+        });
       }
     }
 
