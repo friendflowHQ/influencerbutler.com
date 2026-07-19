@@ -101,6 +101,21 @@ Certaines marques offrent une remise permanente au lieu d'échantillons : le pro
 
 Les produits à toujours publier ignorent volontairement la règle « ne pas republier récemment », car tout l'intérêt est qu'ils continuent d'être publiés. Chacun respecte la cadence que vous définissez, et la remise que vous saisissez apparaît dans la légende via le jeton **Remise** (le jeton `{{discountLabel}}`). Désactivez un produit quand vous voulez avec son interrupteur **Activé**, ou retirez-le.
 
+## Campagnes récap : une publication, une offre par commentaire
+
+Envie de publier "Top 50 des offres cuisine du jour" en une seule publication et de mettre les offres dans les commentaires ? L'onglet **Campagnes récap** fait exactement cela, sur programmation. Chaque campagne publie une publication Facebook qui contient uniquement le texte de votre campagne (plus une photo facultative que vous téléversez), puis ajoute les offres dessous en commentaires, un produit par commentaire, chacun avec sa photo, son prix, son pourcentage de remise et votre lien affilié.
+
+Pour en créer une :
+
+- **Ajouter une campagne** : donnez-lui un nom et le texte de la publication que vos abonnés verront (par exemple "Top 50 des offres cuisine du jour ! Tous les liens dans les commentaires.").
+- **Mots-clés et nombre** : saisissez les mots-clés à rechercher (un par ligne) et le nombre exact d'offres à inclure. Une campagne réglée sur 20 publie exactement les 20 meilleures trouvées, classées par pourcentage de remise.
+- **Source des offres** : *Recherche fraîche au moment de publier* lance une nouvelle recherche Amazon avec les mots-clés de la campagne juste avant de publier (offres les plus fraîches, quelques minutes de plus). *Depuis les offres déjà récoltées* choisit instantanément parmi les offres que vos recherches ont déjà trouvées.
+- **Heures** : choisissez jusqu'à quatre heures de publication par jour et, si besoin, limitez la campagne à certains jours de la semaine.
+- **Deux récaps par jour** : créez une seconde campagne avec ses propres mots-clés, son propre nombre et une heure plus tardive. Par exemple, cuisine à 9h00 et "Top 20 des trouvailles Amazon en promo aujourd'hui" à 10h00. Chaque campagne ne publie que ses propres offres.
+- **Options de commentaire** : décidez si chaque commentaire inclut la photo du produit et, si vous voulez, écrivez votre propre modèle de commentaire avec des variables comme `{{title}}`, `{{salePrice}}`, `{{percentOff}}` et `{{url}}`.
+
+Les commentaires sont publiés lentement, volontairement, toutes les 20 à 45 secondes, pour que Facebook ne signale pas d'activité rapide. Un récap de 50 offres prend environ 20 à 40 minutes, et les autres publications programmées attendent, donc laissez au moins 45 minutes entre les campagnes. Si Facebook demande de ralentir en cours de route, le récap s'arrête plus tôt et la carte de la campagne indique combien de commentaires sont passés (par exemple "17/50 publiés"). Tout s'enregistre automatiquement pendant que vous tapez, et **Lancer maintenant** déclenche une campagne immédiatement pour tester un petit récap de bout en bout.
+
 ## AI Content Butler : images et collages multi-produits
 
 L'onglet **AI Content Butler** transforme vos offres sélectionnées en images prêtes à publier. Choisissez une offre dans **Rechercher des offres**, sélectionnez un style et des destinations, puis cliquez sur Générer ; l'image est enregistrée dans cet espace de travail et peut être jointe à la publication en un clic.
