@@ -57,6 +57,10 @@ type Props = {
    *  and sets readOnly to hide the tax/payout editors. */
   dataUrl?: string;
   clicksUrl?: string;
+  /** Referred-signups funnel source. Defaults to the caller's own endpoint;
+   *  the admin "view as" page points this at the affiliate-scoped admin
+   *  endpoint so the panel shows there too. */
+  referredSignupsUrl?: string;
   readOnly?: boolean;
   /** When set (admin view) AND the payload's canEditPayout is true, the payout
    *  card stays editable and saves the affiliate's PayPal email here. */
@@ -83,6 +87,7 @@ export default function SelfHostedAffiliateDashboard({
   displayName,
   dataUrl = "/api/affiliates/me-selfhosted",
   clicksUrl = "/api/affiliates/clicks",
+  referredSignupsUrl,
   readOnly = false,
   payoutSaveUrl,
 }: Props) {
@@ -215,10 +220,14 @@ export default function SelfHostedAffiliateDashboard({
 
       <AffiliateClickAnalytics endpoint={clicksUrl} />
 
-      {/* Hidden in the admin "view as" dashboard: the default endpoint is
-          scoped to the caller's own referrals and would 403 for an admin. An
-          admin-scoped variant is a follow-up. */}
-      {!readOnly ? <ReferredSignupsFunnel /> : null}
+      {/* The affiliate's own dashboard uses the default endpoint; the admin
+          "view as" page passes an affiliate-scoped admin endpoint so the
+          panel shows there too (the default one would 403 for an admin). */}
+      {!readOnly || referredSignupsUrl ? (
+        <ReferredSignupsFunnel
+          endpoint={referredSignupsUrl ?? "/api/affiliates/referred-signups"}
+        />
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
