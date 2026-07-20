@@ -19,7 +19,13 @@ import type { VideoCounts } from "../transport/types";
 //    total (strategy "header") until the breakdown hydrates.
 //
 // Strategy layers, most reliable first:
-//  1. State-script JSON aggregated across all creatorType-bearing scripts.
+//  0. State-script `videos` array, classified by aciContentId namespace
+//     (.ive.seller. -> brand, .vse.video. -> influencer, .customer. ->
+//     customer). Ships the FULL list up front, so it does not wait on carousel
+//     hydration and recovers the "Related videos" influencer rail that layers
+//     1-2 miss. Verified live 2026-07-20.
+//  1. State-script JSON aggregated across all creatorType-bearing scripts
+//     (only the mounted card's creatorType hydrates).
 //  2. DOM cards: profile links and bylines in the rendered widget.
 //  3. #videoCount header total; shortfall reported as unclassified.
 
@@ -43,7 +49,7 @@ export type CarouselSource = "upper" | "lower" | "unknown";
 export type CarouselResult = {
   counts: VideoCounts;
   videos: CarouselVideo[];
-  strategy: "json" | "dom" | "header" | "none";
+  strategy: "videoList" | "json" | "dom" | "header" | "none";
 };
 
 export function classifyCreatorType(raw: string): CreatorClass {
@@ -53,6 +59,25 @@ export function classifyCreatorType(raw: string): CreatorClass {
     return "brand";
   }
   if (["customer", "shopper", "reviewer"].some((v) => value.includes(v))) return "customer";
+  return "unknown";
+}
+
+// Classify a video by its Amazon content-id namespace (the `aciContentId` on
+// each entry of the state-script `videos` array). This is the most reliable
+// signal because Amazon ships the FULL video list up front, whereas per-video
+// creatorType only hydrates for the one carousel card currently mounted (so the
+// "Related videos" influencer rail is systematically missed until scrolled).
+//   amzn1.ive.seller.video.*  -> brand   (the listing's own brand/seller videos)
+//   amzn1.vse.video.*         -> influencer (creator "Videos"/"Related videos")
+//   amzn1.ive.influencer.*    -> influencer
+//   *.customer.video/review.* -> customer
+//   anything else             -> unknown (honest; never guessed)
+export function classifyVideoAci(aci: string): CreatorClass {
+  const v = (aci ?? "").trim().toLowerCase();
+  if (!v) return "unknown";
+  if (v.includes(".ive.seller.")) return "brand";
+  if (v.includes(".customer.video.") || v.includes(".customer.review.")) return "customer";
+  if (v.includes(".vse.video.") || v.includes(".ive.influencer.")) return "influencer";
   return "unknown";
 }
 
@@ -81,6 +106,8 @@ export function classifiedCount(result: CarouselResult | null): number {
 // unclassified.
 export function extractCarousel(doc: Document, extras: CarouselResult[] = []): CarouselResult {
   const candidates: CarouselResult[] = [...extras];
+  const fromVideoList = extractFromVideoList(doc);
+  if (fromVideoList) candidates.push(fromVideoList);
   const fromJson = extractFromScripts(doc);
   if (fromJson) candidates.push(fromJson);
   const fromDom = extractFromDom(doc);
@@ -121,6 +148,54 @@ export function extractCarousel(doc: Document, extras: CarouselResult[] = []): C
     return { counts, videos: [], strategy: "header" };
   }
   return best ?? fromDom;
+}
+
+// One aciContentId per video in the state-script `videos` array. Scoped (below)
+// to scripts that also carry `creatorProfile`, i.e. the video-widget payload.
+const ACI_CONTENT_ID_RE = /"aciContentId"\s*:\s*"([^"]+)"/g;
+
+// Strategy 0 (most reliable): the state-script `videos` array. Amazon ships the
+// full list up front with one aciContentId per video, whose namespace is the
+// authoritative creator class (see classifyVideoAci). Unlike creatorType/DOM,
+// this does NOT depend on the lazy carousel hydrating, so it recovers the
+// influencer/creator videos in the "Related videos for this product" rail that
+// the other strategies miss. Verified live 2026-07-20 (B0FF3XWN8H: 3 brand +
+// 5 influencer = 8, matching #videoCount, where creatorType saw only 1).
+function extractFromVideoList(doc: Document): CarouselResult | null {
+  const counts = emptyCounts();
+  const videos: CarouselVideo[] = [];
+  const seenAci = new Set<string>();
+
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const text = script.textContent;
+    // Both markers gate this to the video-widget data script and keep stray
+    // aciContentId references (unrelated widgets) out of the count.
+    if (!text || !text.includes("aciContentId") || !text.includes("creatorProfile")) continue;
+    ACI_CONTENT_ID_RE.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = ACI_CONTENT_ID_RE.exec(text)) !== null) {
+      const aci = match[1];
+      // A video can be listed under more than one group payload (IB_G1/IB_G2);
+      // dedupe by content id so it is counted once.
+      if (!aci || seenAci.has(aci)) continue;
+      seenAci.add(aci);
+      const kind = classifyVideoAci(aci);
+      counts[kind] += 1;
+      counts.total += 1;
+      videos.push({
+        title: null,
+        creatorName: null,
+        creatorType: kind,
+        url: null,
+        // Seller videos live in the image block (upper); vse creator videos in
+        // the related-videos rail (lower).
+        carousel: kind === "brand" ? "upper" : kind === "unknown" ? "unknown" : "lower",
+      });
+    }
+  }
+
+  if (counts.total === 0) return null;
+  return { counts, videos, strategy: "videoList" };
 }
 
 const CREATOR_TYPE_RE = /"creatorType"\s*:\s*"([A-Za-z_ -]+)"/g;

@@ -3,8 +3,30 @@ import {
   carouselSourceFor,
   classifiedCount,
   classifyCreatorType,
+  classifyVideoAci,
   extractFromText,
 } from "./video-carousel";
+
+describe("classifyVideoAci", () => {
+  it("classifies seller/brand content ids", () => {
+    expect(classifyVideoAci("amzn1.ive.seller.video.06916f1ebbbd4c518f2f9339c4758c32")).toBe("brand");
+  });
+
+  it("classifies vse creator ids as influencer", () => {
+    expect(classifyVideoAci("amzn1.vse.video.0f9cd810cfea4600ad66d9e94687cc46")).toBe("influencer");
+    expect(classifyVideoAci("amzn1.ive.influencer.video.abc")).toBe("influencer");
+  });
+
+  it("classifies customer review ids", () => {
+    expect(classifyVideoAci("amzn1.customer.video.abc")).toBe("customer");
+    expect(classifyVideoAci("amzn1.customer.review.abc")).toBe("customer");
+  });
+
+  it("reports unrecognized namespaces as unknown instead of guessing", () => {
+    expect(classifyVideoAci("amzn1.ive.somethingnew.video.x")).toBe("unknown");
+    expect(classifyVideoAci("")).toBe("unknown");
+  });
+});
 
 describe("classifyCreatorType", () => {
   it("classifies influencers", () => {
