@@ -12,16 +12,36 @@ export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // The one-time recovery token from our emailed link. We hold it and only
+  // redeem it (verifyOtp) when the user submits, so email link scanners that
+  // merely GET this page never consume it.
+  const [tokenHash, setTokenHash] = useState<string | null>(null);
 
-  // The recovery link lands here and Supabase establishes a session from the
-  // URL (a ?code= exchange for the PKCE flow, or an auto-detected token hash).
-  // We wait for that session before showing the form.
+  // Two ways to land here:
+  //   1. Our emailed link: /reset-password?token_hash=...&type=recovery. We show
+  //      the form immediately WITHOUT touching the token, and redeem it at
+  //      submit time. This is deliberate: it stops mail-security pre-fetchers
+  //      from burning the single-use token before the human clicks.
+  //   2. A legacy/direct link that already established a session (an auto
+  //      detected token hash in the URL fragment, or a ?code= PKCE exchange).
   useEffect(() => {
     const supabase = createClient();
     let active = true;
 
     const resolve = async () => {
       const url = new URL(window.location.href);
+
+      const hash = url.searchParams.get("token_hash");
+      if (hash) {
+        // Defer verification to submit; showing the form is safe and consumes
+        // nothing.
+        if (active) {
+          setTokenHash(hash);
+          setPhase("ready");
+        }
+        return;
+      }
+
       const code = url.searchParams.get("code");
       if (code) {
         await supabase.auth.exchangeCodeForSession(code).catch(() => null);
@@ -56,6 +76,21 @@ export default function ResetPasswordPage() {
     }
     setPhase("saving");
     const supabase = createClient();
+
+    // Redeem the recovery token now, at the moment the human acts. A failure
+    // here means the token is expired or already spent, so surface the same
+    // "expired link" state rather than a raw error.
+    if (tokenHash) {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        type: "recovery",
+        token_hash: tokenHash,
+      });
+      if (verifyError) {
+        setPhase("invalid");
+        return;
+      }
+    }
+
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
     if (updateError) {
       setError(updateError.message);
