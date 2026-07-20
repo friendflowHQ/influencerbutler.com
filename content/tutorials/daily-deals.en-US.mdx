@@ -31,6 +31,17 @@ The workspace opens to a chip-bar with 10 tabs. The setup flow follows them left
 4. **Scheduler**: turn on the **Post scheduler** and pick a cadence. The defaults are conservative: groups every 1h, pages every 2h, Telegram every 15 min, Reddit/Instagram/Threads off.
 5. Click **Run now** under Harvest to do one search-and-post round so you can see end-to-end behavior before turning on the schedule.
 
+## Harvest deals from Amazon promotion pages
+
+Amazon "spend and save" promotion pages (their web address looks like `amazon.com/promotion/psp/...`) list dozens of qualifying products in one place. On the **Harvest** tab, the **Pull deals from Amazon promotion pages** card lets Butler mine those pages for you. Turn on **Include Amazon promotion deals** and pick where the promotions come from:
+
+- **Find them automatically from my keywords**: Butler checks the products your normal search already finds and, when one belongs to a promotion, follows that promotion and scans the rest of its products too. You paste nothing.
+- **Use the promotion links I paste below**: paste one promotion link per line (handy for a promotion you check every day). Butler scans each one.
+
+You can use either or both. For every product Butler finds on a promotion page, it checks that product's own price and keeps it only when it passes your regular deal filters (price range, minimum percent off, best-deals-only). The promotion itself is never posted, only the individual discounted products on it. Because this reads real product pages, it adds a little time to a search, and it needs you to be signed in to Amazon in the app's browser.
+
+In **Build Your Post**, two new pills come with this: **Promo Name** and **Promo Link**. Drop them into a caption or comment and posts made from a promotion deal will show which promotion the product came from; on ordinary deals they simply disappear.
+
 ## Filter presets
 
 The **active preset** (default named `default`) saves your filter config. You can have multiple presets for different niches - say one for "tech under $50" and one for "home decor under $100" - and swap between them from the Overview tab. Clones (a paid add-on) give each clone its own preset store so you can run multiple niches in parallel with no preset switching.

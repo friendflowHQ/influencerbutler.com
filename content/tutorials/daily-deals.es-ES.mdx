@@ -31,6 +31,17 @@ El espacio se abre con una barra de chips con 10 pestañas. El flujo de configur
 4. **Scheduler**: activa **Post scheduler** y elige una cadencia. Los valores por defecto son conservadores: grupos cada 1 h, páginas cada 2 h, Telegram cada 15 min, Reddit/Instagram/Threads apagados.
 5. Pulsa **Ejecutar ahora** en Harvest para hacer una ronda de búsqueda y publicación de extremo a extremo antes de activar la planificación.
 
+## Recolectar ofertas de las páginas de promoción de Amazon
+
+Las páginas de promoción de Amazon ("gasta y ahorra"; su dirección web se parece a `amazon.com/promotion/psp/...`) reúnen decenas de productos que califican en un solo lugar. En la pestaña **Recolección**, la tarjeta **Extrae ofertas de las páginas de promoción de Amazon** permite que Butler explore esas páginas por ti. Activa **Incluir ofertas de promociones de Amazon** y elige de dónde salen las promociones:
+
+- **Encontrarlas automáticamente a partir de mis palabras clave**: Butler revisa los productos que tu búsqueda normal ya encuentra y, cuando uno pertenece a una promoción, la sigue y explora también el resto de sus productos. No pegas nada.
+- **Usar los enlaces de promoción que pego abajo**: pega un enlace de promoción por línea (útil para una promoción que revisas cada día). Butler explora cada uno.
+
+Puedes usar una opción o ambas. Por cada producto que Butler encuentra en una página de promoción, comprueba el precio propio de ese producto y lo conserva solo cuando pasa tus filtros de ofertas habituales (rango de precios, porcentaje mínimo de descuento, solo mejores ofertas). La promoción en sí nunca se publica, solo los productos individuales con descuento que contiene. Como esto lee páginas de producto reales, añade algo de tiempo a una búsqueda y necesita que hayas iniciado sesión en Amazon en el navegador de la app.
+
+En **Crea tu publicación**, llegan dos pills nuevos con esto: **Nombre de la promoción** y **Enlace de la promoción**. Colócalos en un texto o comentario y las publicaciones hechas a partir de una oferta de promoción mostrarán de qué promoción viene el producto; en las ofertas normales simplemente desaparecen.
+
 ## Preajustes de filtros
 
 El **preajuste activo** (por defecto llamado `default`) guarda tu configuración de filtros. Puedes tener varios preajustes para distintos nichos - por ejemplo, uno para "tecnología por menos de 50 €" y otro para "decoración por menos de 100 €" - y alternarlos desde la pestaña Overview. Los clones (un complemento de pago) dan a cada clon su propio almacén de preajustes para correr varios nichos en paralelo sin tener que cambiar de preajuste.
