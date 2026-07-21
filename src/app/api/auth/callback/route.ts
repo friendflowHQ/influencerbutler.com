@@ -9,29 +9,31 @@ export async function GET(request: Request) {
   const next = url.searchParams.get("next") ?? "/dashboard";
 
   try {
+    const supabase = await createClient();
     if (code) {
-      const supabase = await createClient();
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         console.error("Supabase auth callback session exchange failed", error);
         return NextResponse.redirect(new URL("/login", url.origin));
       }
+    }
 
-      // All email-confirmed signups (password confirm + magic link) land
-      // here, in the same browser that clicked any affiliate link - so this
-      // is where the first-touch ib_aff_src cookie gets stamped onto the new
-      // profile. Best-effort: the helper swallows every failure and the
-      // internal new-account guard skips ordinary logins of old accounts.
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        await captureSignupReferral({
-          userId: userData.user.id,
-          userCreatedAt: userData.user.created_at ?? null,
-          userEmail: userData.user.email ?? null,
-          cookieStore: await cookies(),
-        });
-      }
+    // All email-confirmed signups (password confirm + magic link) land here,
+    // in the same browser that clicked any affiliate link - so this is where
+    // the first-touch ib_aff_src cookie gets stamped onto the new profile.
+    // Runs even without a ?code=: the /login fragment-token lander redirects
+    // here with session cookies already set. Best-effort: the helper swallows
+    // every failure and the internal new-account guard skips ordinary logins
+    // of old accounts.
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) {
+      await captureSignupReferral({
+        userId: userData.user.id,
+        userCreatedAt: userData.user.created_at ?? null,
+        userEmail: userData.user.email ?? null,
+        cookieStore: await cookies(),
+      });
     }
 
     return NextResponse.redirect(new URL(next, url.origin));
