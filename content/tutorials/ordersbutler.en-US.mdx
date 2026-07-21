@@ -26,6 +26,14 @@ The runner opens a Chrome window, logs in (if needed), and walks the orders page
 
 After the first catch-up, leave the scope on **Only new since last run** (the default). Orders Butler walks newest-first and stops as soon as it reaches orders you already have, so a routine sync finishes in seconds instead of re-walking your whole history. Set it to **run daily** in the Schedule card and it adds new orders incrementally. Reach for **All years (full catch-up)** only when you want a full reconciliation.
 
+## Print a checklist PDF
+
+Click **Print checklist (PDF)** in the results toolbar to turn the table into a printable, ADHD-friendly filming checklist with Influencer Butler branding: big checkboxes, one clear action per product (take a photo, film a vertical video, film a horizontal video), commission info, and a "top 3 by payoff" callout so you know what to film first.
+
+- **Scope**: if any rows are checkbox-selected, only those print; otherwise the current filtered view prints.
+- **Style**: pick **Rich cards** (photo, checkboxes, notes line, a few per page) or **Compact list** (one line per product). Your last choice is remembered.
+- **Voiceover scripts**: tick **Include voiceover scripts** to print each product's script from Voiceover Butler under its card. If some products don't have a script yet, the app sends them to Voiceover Butler, walks you through generating and starring scripts, and a floating **Done, print my checklist** button brings you back and creates the PDF. Starred scripts win; your text edits are what print.
+
 ## Where the data lives
 
 Pulled rows live in `{userData}/InfluencerButler/workspaces/preseed/data/orders/*.json`. You never need to touch these files directly, but they're inspectable if something looks wrong.
