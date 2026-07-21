@@ -351,6 +351,12 @@ function emitProductScan(
     priceCents: signals.priceCents,
     currency: signals.currency,
     inStock: signals.inStock,
+    // Product-research signals for the desktop price/rank history store.
+    boughtPastMonth: signals.boughtPastMonth,
+    brand: signals.brand,
+    category: signals.category,
+    bestsellerRank: signals.bestsellerRank,
+    imageUrl: signals.imageUrl,
     counts: carousel.counts,
     approved,
     approvedCriteria,

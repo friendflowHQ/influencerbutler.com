@@ -21,6 +21,15 @@ export type ProductScanFinding = {
   // Availability read off the page, used by the watchlist restock check. The
   // server ignores it; it rides along so the background tab-scan can surface it.
   inStock?: boolean;
+  // Product-research signals scraped alongside price. The desktop bridge banks
+  // these into its durable price/rank time-series so browsing builds Keepa /
+  // Jungle Scout-style history (price + best-seller rank + a real sales proxy).
+  // Optional so older desktop builds and non-product callers stay compatible.
+  boughtPastMonth?: number | null;
+  brand?: string | null;
+  category?: string | null;
+  bestsellerRank?: { rank: number; category: string } | null;
+  imageUrl?: string | null;
   counts: VideoCounts;
   approved: boolean;
   approvedCriteria?: Record<string, boolean>;
