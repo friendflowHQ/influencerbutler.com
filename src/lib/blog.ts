@@ -1,9 +1,10 @@
 /**
  * Summary: Blog loader. Reads the per-post Markdown/MDX files in content/blog/,
  *   plus the _index.json manifest. Used by the public /blog listing and
- *   /blog/[slug] article routes. Mirrors the structure of lib/tutorials.ts but
- *   is self-contained so the live tutorials path is never disturbed. The blog
- *   is English-only for launch (no locale suffix on the files).
+ *   /blog/[slug] article routes. Mirrors the structure of lib/tutorials.ts,
+ *   including its locale handling: each post can ship as <id>.<locale>.mdx for
+ *   en-US, es-ES, and fr-FR, and a missing locale falls back to en-US. Posts
+ *   that only exist in English simply serve English everywhere.
  * Dependencies: node:fs/promises, node:path.
  */
 import { readFile } from "node:fs/promises";
@@ -31,8 +32,26 @@ export type BlogManifest = {
   posts: BlogManifestEntry[];
 };
 
+export const BLOG_LOCALES = ["en-US", "es-ES", "fr-FR"] as const;
+export type BlogLocale = (typeof BLOG_LOCALES)[number];
+export const DEFAULT_BLOG_LOCALE: BlogLocale = "en-US";
+
+export function isBlogLocale(value: string | undefined | null): value is BlogLocale {
+  return !!value && (BLOG_LOCALES as readonly string[]).includes(value);
+}
+
+// Normalize a requested locale to a supported one, defaulting to en-US. Accepts
+// full tags (es-ES) and bare language codes (es, fr) for friendlier URLs.
+export function resolveBlogLocale(requested?: string | null): BlogLocale {
+  if (isBlogLocale(requested)) return requested;
+  const bare = (requested || "").slice(0, 2).toLowerCase();
+  const match = BLOG_LOCALES.find((l) => l.slice(0, 2).toLowerCase() === bare);
+  return match || DEFAULT_BLOG_LOCALE;
+}
+
 export type LoadedBlogPost = {
   id: string;
+  locale: BlogLocale; // the locale actually served (after en-US fallback)
   frontmatter: {
     title?: string;
     summary?: string;
@@ -256,30 +275,50 @@ function renderMarkdown(source: string): string {
   return out.join("\n");
 }
 
-async function readBlogFile(id: string): Promise<string | null> {
+async function readBlogFile(id: string, locale: BlogLocale): Promise<string | null> {
   try {
-    return await readFile(path.join(CONTENT_ROOT, `${id}.en-US.mdx`), "utf8");
+    return await readFile(path.join(CONTENT_ROOT, `${id}.${locale}.mdx`), "utf8");
   } catch {
     return null;
   }
 }
 
-export async function loadBlogPost(id: string): Promise<LoadedBlogPost | null> {
+// Which locales this post actually ships as a file for, en-US first. Used to
+// render the language switcher so we only offer translations that exist.
+export async function availableBlogLocales(id: string): Promise<BlogLocale[]> {
+  if (!/^[a-z0-9][a-z0-9-]{0,80}$/i.test(id)) return [];
+  const present = await Promise.all(
+    BLOG_LOCALES.map(async (locale) => ((await readBlogFile(id, locale)) ? locale : null)),
+  );
+  return present.filter((l): l is BlogLocale => l !== null);
+}
+
+export async function loadBlogPost(
+  id: string,
+  requestedLocale?: string,
+): Promise<LoadedBlogPost | null> {
   // Strict ID guard - no path traversal.
   if (!/^[a-z0-9][a-z0-9-]{0,80}$/i.test(id)) return null;
-  const raw = await readBlogFile(id);
+  const locale = resolveBlogLocale(requestedLocale);
+  let raw = await readBlogFile(id, locale);
+  let resolvedLocale: BlogLocale = locale;
+  // Fall back to English when the requested locale has no translation on disk.
+  if (!raw && locale !== DEFAULT_BLOG_LOCALE) {
+    raw = await readBlogFile(id, DEFAULT_BLOG_LOCALE);
+    resolvedLocale = DEFAULT_BLOG_LOCALE;
+  }
   if (!raw) return null;
   const { frontmatter, body } = parseFrontmatter(raw);
   const html = renderMarkdown(body);
-  return { id, frontmatter, html, raw };
+  return { id, locale: resolvedLocale, frontmatter, html, raw };
 }
 
-export function formatBlogDate(iso: string): string {
+export function formatBlogDate(iso: string, locale: BlogLocale = DEFAULT_BLOG_LOCALE): string {
   // Parse as UTC date-only to avoid timezone drift on the server.
   const parts = iso.split("-").map((n) => parseInt(n, 10));
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return iso;
   const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
