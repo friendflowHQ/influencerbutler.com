@@ -9,7 +9,7 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
-import { getHudStatus, sendHudCommand, lookupEarnings, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
@@ -44,6 +44,14 @@ import {
   testAllIntegrations,
   testIntegration,
 } from "./integrations";
+import {
+  bulkMintBranded,
+  getOwnerPixels,
+  listOwnerLinks,
+  ownerStats,
+  repointOwnerLink,
+  saveOwnerPixels,
+} from "./links";
 import { API_BASE } from "../shared/constants";
 import { getState, patchIntegrationsGlobal } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
@@ -132,6 +140,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "GET_PRICE_HISTORY":
       void getPriceHistory(message.asin, message.marketplace).then(sendResponse);
       return true;
+    case "GET_DESKTOP_HISTORY":
+      void fetchDesktopHistory(message.asin).then(sendResponse);
+      return true;
     case "REQUEST_PAIRING":
       void requestPairing().then(sendResponse);
       return true;
@@ -218,6 +229,29 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "OPENAI_COMPLETE":
       void openaiComplete(message.prompt).then(sendResponse);
+      return true;
+    case "LINK_MINT_BULK":
+      void bulkMintBranded(message.targets).then(sendResponse);
+      return true;
+    case "LINK_STATS":
+      void ownerStats(message.range, { slug: message.slug, traffic: message.traffic }).then(sendResponse);
+      return true;
+    case "LINK_LIST":
+      void listOwnerLinks(message.cursor).then(sendResponse);
+      return true;
+    case "LINK_REPOINT":
+      void repointOwnerLink({
+        slug: message.slug,
+        url: message.url,
+        asin: message.asin,
+        marketplace: message.marketplace,
+      }).then(sendResponse);
+      return true;
+    case "LINK_PIXELS_GET":
+      void getOwnerPixels().then(sendResponse);
+      return true;
+    case "LINK_PIXELS_SAVE":
+      void saveOwnerPixels(message.pixels).then(sendResponse);
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background

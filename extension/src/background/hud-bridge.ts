@@ -7,6 +7,7 @@ import { normalizeCreatorMode } from "../shared/creator-mode";
 import { log } from "../shared/log";
 import { getSettings, patchSettings } from "../storage/store";
 import type {
+  DesktopHistoryResult,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
@@ -381,6 +382,91 @@ function lookupEarningsOnPort(
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Product history (durable desktop store) ──────────────────────────────────
+// Ask the running app for an ASIN's full price/rank history from its durable
+// time-series (the app may in turn backfill from a deep-history provider, at
+// most once per ASIN). The overlay prefers this over the extension's capped
+// local store. Authed with the pairing token because it returns the creator's
+// private research data. Returns paired:false when never connected so the
+// caller silently falls back to the local sparkline.
+
+export async function fetchDesktopHistory(asin: string): Promise<DesktopHistoryResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, points: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchDesktopHistoryOnPort(port, asin, token);
+    if (result) return result;
+  }
+  cached = null;
+  return { ok: false, points: [] };
+}
+
+function fetchDesktopHistoryOnPort(
+  port: number,
+  asin: string,
+  token: string,
+): Promise<DesktopHistoryResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: DesktopHistoryResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    // A first-time backfill can call out to a provider, so allow a little
+    // longer than the pure-local lookups before giving up.
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 6);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          asin?: string;
+          points?: DesktopHistoryResult["points"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "history.backfill", payload: { asin } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, points: [] });
+          return;
+        }
+        if (frame.type === "history.result") {
+          done({
+            ok: frame.ok === true,
+            asin: frame.asin,
+            points: Array.isArray(frame.points) ? frame.points : [],
           });
           return;
         }

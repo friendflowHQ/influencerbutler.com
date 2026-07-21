@@ -121,6 +121,28 @@ export type EarningsLookupResult = {
   message?: string;
 };
 
+// One point of the desktop app's durable price/rank time-series for an ASIN.
+// price is in currency units (not cents); bsr is the best-seller rank.
+export type DesktopHistoryPoint = {
+  capturedAt: string;
+  price: number | null;
+  bsr: number | null;
+  boughtPastMonth: number | null;
+  currency: string | null;
+  inStock: boolean | null;
+  source: string;
+};
+
+// Result of a history.backfill request against the desktop's durable store.
+// `paired` is false when the extension has never connected the app, so the
+// caller can silently fall back to the local capped store.
+export type DesktopHistoryResult = {
+  ok: boolean;
+  paired?: boolean;
+  asin?: string;
+  points: DesktopHistoryPoint[];
+};
+
 // One thing the running app wants to surface in the extension (a butler run
 // finished, earnings synced). Delivered by polling, not push, because an MV3
 // worker cannot hold a socket open.

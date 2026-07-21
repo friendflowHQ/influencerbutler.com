@@ -34,6 +34,10 @@ export interface Dict {
   priceHistoryLow: (amount: string) => string;
   priceHistoryLowest: string;
   priceHistoryNote: string;
+  priceHistoryDesktopNote: string;
+  bsrHistoryTitle: string;
+  bsrHistoryNow: (rank: string) => string;
+  bsrHistoryBest: (rank: string) => string;
   shotListTitle: string;
   shotListShowFeatures: string;
   shotListBeatHook: string;
@@ -534,6 +538,10 @@ const en: Dict = {
   priceHistoryLow: (amount) => `Low ${amount}`,
   priceHistoryLowest: "Lowest yet",
   priceHistoryNote: "Prices seen since you started browsing with the extension.",
+  priceHistoryDesktopNote: "Full history from your Influencer Butler app.",
+  bsrHistoryTitle: "Sales rank history",
+  bsrHistoryNow: (rank) => `Now #${rank}`,
+  bsrHistoryBest: (rank) => `Best #${rank}`,
   shotListTitle: "Shot list",
   shotListShowFeatures: "Show these features on camera:",
   shotListBeatHook: "Hook in the first 3 seconds: the result or the problem it solves",
@@ -1050,6 +1058,10 @@ const es: Dict = {
   priceHistoryLow: (amount) => `Mínimo ${amount}`,
   priceHistoryLowest: "El más bajo hasta ahora",
   priceHistoryNote: "Precios vistos desde que empezaste a navegar con la extensión.",
+  priceHistoryDesktopNote: "Historial completo de tu aplicación Influencer Butler.",
+  bsrHistoryTitle: "Historial de clasificación de ventas",
+  bsrHistoryNow: (rank) => `Ahora nº${rank}`,
+  bsrHistoryBest: (rank) => `Mejor nº${rank}`,
   shotListTitle: "Guion de grabación",
   shotListShowFeatures: "Muestra estas características en cámara:",
   shotListBeatHook: "Gancho en los primeros 3 segundos: el resultado o el problema que resuelve",
@@ -1566,6 +1578,10 @@ const fr: Dict = {
   priceHistoryLow: (amount) => `Plus bas ${amount}`,
   priceHistoryLowest: "Plus bas jamais vu",
   priceHistoryNote: "Prix vus depuis que vous naviguez avec l'extension.",
+  priceHistoryDesktopNote: "Historique complet depuis votre application Influencer Butler.",
+  bsrHistoryTitle: "Historique du classement des ventes",
+  bsrHistoryNow: (rank) => `Maintenant n°${rank}`,
+  bsrHistoryBest: (rank) => `Meilleur n°${rank}`,
   shotListTitle: "Plan de tournage",
   shotListShowFeatures: "Montrez ces caractéristiques à la caméra:",
   shotListBeatHook: "Accroche dans les 3 premières secondes: le résultat ou le problème résolu",

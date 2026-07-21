@@ -15,6 +15,16 @@ import type {
   WatchCondition,
   WatchItem,
 } from "../storage/schema";
+import type {
+  LinkPixel,
+  LinkStatsRange,
+  LinkTrafficFilter,
+  ListResult,
+  PixelsResult,
+  RepointResult,
+  StatsResult,
+} from "../integrations/ib-links-client";
+import type { BrandedMintInput, BulkMintResult } from "../background/links";
 
 type IntegrationsGlobal = IntegrationsState["global"];
 
@@ -57,6 +67,10 @@ export type RuntimeMessage =
   // Read the locally-built price history for a product, for the sparkline on the
   // product panel. Returns points oldest-first (may be empty on a fresh install).
   | { kind: "GET_PRICE_HISTORY"; asin: string; marketplace: string }
+  // Ask the running desktop app for an ASIN's full price/rank history from its
+  // durable time-series (deeper than the local capped store). Routed over the
+  // local bridge; returns paired:false when the app was never connected.
+  | { kind: "GET_DESKTOP_HISTORY"; asin: string }
   // Desktop-app pairing, driven from the popup: ask the app to show a 6-digit
   // code, submit the code the user typed, or forget the stored token.
   | { kind: "REQUEST_PAIRING" }
@@ -120,7 +134,17 @@ export type RuntimeMessage =
   // site cross-origin from the worker (content scripts on instagram.com cannot)
   // and return the first email found on it. The Goldmine page requests the
   // needed host permission before the run.
-  | { kind: "IG_FETCH_BIO_LINK"; url: string };
+  | { kind: "IG_FETCH_BIO_LINK"; url: string }
+  // Link Butler Ledger tab. All license-authed calls to the branded-link worker
+  // run in the background so the license key never reaches the page. Bulk mint
+  // creates a branded link per harvested product; stats/list/repoint/pixels back
+  // the analytics, registry, self-heal, and Doorbell surfaces respectively.
+  | { kind: "LINK_MINT_BULK"; targets: BrandedMintInput[] }
+  | { kind: "LINK_STATS"; range: LinkStatsRange; slug?: string; traffic?: LinkTrafficFilter }
+  | { kind: "LINK_LIST"; cursor?: string | null }
+  | { kind: "LINK_REPOINT"; slug: string; url: string; asin?: string; marketplace?: string }
+  | { kind: "LINK_PIXELS_GET" }
+  | { kind: "LINK_PIXELS_SAVE"; pixels: LinkPixel[] };
 
 export type IgBioLinkResult = { email: string | null };
 
@@ -232,6 +256,16 @@ export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
 export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
 export type { PricePoint };
+export type {
+  LinkPixel,
+  LinkStatsRange,
+  LinkTrafficFilter,
+  ListResult,
+  PixelsResult,
+  RepointResult,
+  StatsResult,
+} from "../integrations/ib-links-client";
+export type { BrandedMintInput, BulkMintResult } from "../background/links";
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);
