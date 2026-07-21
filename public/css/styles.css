@@ -820,6 +820,16 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 }
 .testimonial-author strong { display: block; font-size: 0.9rem; }
 .testimonial-author span { font-size: 0.8rem; color: var(--muted); }
+.testimonial-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+/* Screenshot-style testimonial (real message proof) */
+.testimonial-screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius) - 6px);
+  border: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
 
 /* ================================================================
    FAQ
