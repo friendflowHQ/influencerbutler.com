@@ -184,6 +184,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "share-products-manually",
+      "title": "Share products manually: compliant Stories, posts, and bios",
+      "category": "Amazon",
+      "summary": "How to share your Amazon links by hand on Instagram, Facebook, TikTok, and Pinterest. Add each platform to your Amazon site list first, then disclose on every post. Copy-paste examples included.",
+      "order": 55,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "daily-deals",
       "title": "Deals Influencer Butler: harvest Amazon deals and post them automatically",
       "category": "Amazon",
