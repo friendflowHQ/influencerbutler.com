@@ -424,6 +424,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "product-research-butler",
+      "title": "Product Research: price and sales-rank history for every product you browse",
+      "category": "Other",
+      "summary": "See price history, sales-rank history, estimated monthly sales, and seasonal signals for Amazon products, built automatically from your own browsing with the extension.",
+      "order": 341,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
