@@ -80,8 +80,8 @@ function LoginForm() {
       }
       setLinkNotice(
         mode === "reset"
-          ? "If that email has an account, we just sent a link to set a new password. Check your inbox."
-          : "If that email has an account, we just sent a sign-in link. Check your inbox. The link logs you straight in, and you can set a password afterwards under Profile.",
+          ? "We just sent a link to set your password. Check your inbox."
+          : "We just sent a sign-in link to that address. Check your inbox. The link logs you straight in, and you can set a password afterwards under Profile.",
       );
     } catch {
       setError("Something went wrong. Please try again.");
@@ -155,6 +155,11 @@ function LoginForm() {
             {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
           </button>
         </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Entered your email in the desktop app but never logged in on the website? You may not
+          have an account here yet: use &quot;Email me a sign-in link&quot; and we&apos;ll set one
+          up for you.
+        </p>
       </div>
     </form>
   );
