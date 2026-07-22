@@ -5,6 +5,7 @@ import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner"
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
+import OpenAppButton from "@/components/dashboard/OpenAppButton";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 
 export default async function DashboardLayout({
@@ -37,6 +38,7 @@ export default async function DashboardLayout({
             </div>
             <AdminBadge />
             <DashboardUserEmail />
+            <OpenAppButton />
           </div>
           <AffiliateUpsellBanner />
           <TestimonialAskBanner />
