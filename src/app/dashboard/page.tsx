@@ -6,6 +6,7 @@ import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/Licen
 import DeviceManager from "@/components/dashboard/DeviceManager";
 import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
 import GettingStartedChecklist from "@/components/dashboard/GettingStartedChecklist";
+import { getStatusBadge } from "@/lib/subscription-status";
 
 declare global {
   interface Window {
@@ -26,23 +27,6 @@ type Subscription = {
   renews_at: string | null;
   ends_at: string | null;
 };
-
-function getStatusBadge(status: string): { label: string; className: string } {
-  switch (status) {
-    case "active":
-      return { label: "Active", className: "bg-emerald-100 text-emerald-800" };
-    case "on_trial":
-      return { label: "Free Trial", className: "bg-blue-100 text-blue-800" };
-    case "cancelled":
-      return { label: "Cancelled", className: "bg-slate-200 text-slate-700" };
-    case "past_due":
-      return { label: "Past Due", className: "bg-red-100 text-red-800" };
-    case "paused":
-      return { label: "Paused", className: "bg-yellow-100 text-yellow-800" };
-    default:
-      return { label: status, className: "bg-slate-100 text-slate-700" };
-  }
-}
 
 const ACTIVE_STATUSES = ["active", "on_trial"];
 
@@ -150,6 +134,7 @@ export default function DashboardOverviewPage() {
       : renewalDate
       ? `Renews on ${renewalDate}`
       : null;
+  const statusBadge = subscription ? getStatusBadge(subscription.status) : null;
 
   return (
     <section className="space-y-6">
@@ -174,13 +159,16 @@ export default function DashboardOverviewPage() {
                   {subscription.plan_name ?? "Pro"}
                 </p>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusBadge(subscription.status).className}`}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadge?.className ?? ""}`}
                 >
-                  {getStatusBadge(subscription.status).label}
+                  {statusBadge?.label}
                 </span>
               </div>
               {renewalLine ? (
                 <p className="mt-1 text-sm text-slate-600">{renewalLine}</p>
+              ) : null}
+              {statusBadge?.note ? (
+                <p className="mt-1 text-sm text-slate-500">{statusBadge.note}</p>
               ) : null}
             </>
           ) : (

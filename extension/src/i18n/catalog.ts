@@ -490,6 +490,17 @@ export interface Dict {
   nudgeAppDownloadGeneric: string;
   nudgeAppIntelMac: string;
 
+  // Extension self-update banner (on-page pill) and the popup's update card.
+  updateBannerTitle: string;
+  updateBannerBody: (version: string) => string;
+  updateNow: string;
+  updateRemindLater: string;
+  updateAppliedTitle: string;
+  updateRefreshBody: string;
+  updateRefreshBtn: string;
+  updatePopupHeading: string;
+  updatePopupBody: (current: string, available: string) => string;
+
   // ASIN watchlist (product-page button, search-tile star, popup list).
   watchlist: string;
   watchlistIntro: string;
@@ -1008,6 +1019,18 @@ const en: Dict = {
   nudgeAppDownloadMac: "Download for Mac",
   nudgeAppDownloadGeneric: "Download the desktop app",
   nudgeAppIntelMac: "Using an Intel Mac?",
+
+  updateBannerTitle: "Your Influencer Butler extension has an update waiting.",
+  updateBannerBody: (version) =>
+    `Version ${version} is ready to install. It only takes a second, and your settings are kept.`,
+  updateNow: "Update now",
+  updateRemindLater: "Remind me later",
+  updateAppliedTitle: "Update installed",
+  updateRefreshBody: "Refresh this page to finish switching to the new version.",
+  updateRefreshBtn: "Refresh page",
+  updatePopupHeading: "Update available",
+  updatePopupBody: (current, available) =>
+    `Version ${available} is ready to install (you have ${current}). The extension restarts in a moment; your settings are kept.`,
 
   watchlist: "Watchlist",
   watchlistIntro:
@@ -1529,6 +1552,18 @@ const es: Dict = {
   nudgeAppDownloadGeneric: "Descargar la app de escritorio",
   nudgeAppIntelMac: "¿Usas un Mac con Intel?",
 
+  updateBannerTitle: "Tu extensión de Influencer Butler tiene una actualización pendiente.",
+  updateBannerBody: (version) =>
+    `La versión ${version} está lista para instalarse. Solo toma un segundo y tus ajustes se conservan.`,
+  updateNow: "Actualizar ahora",
+  updateRemindLater: "Recuérdamelo luego",
+  updateAppliedTitle: "Actualización instalada",
+  updateRefreshBody: "Recarga esta página para terminar de pasar a la nueva versión.",
+  updateRefreshBtn: "Recargar la página",
+  updatePopupHeading: "Actualización disponible",
+  updatePopupBody: (current, available) =>
+    `La versión ${available} está lista para instalarse (tienes la ${current}). La extensión se reinicia en un momento; tus ajustes se conservan.`,
+
   watchlist: "Lista de seguimiento",
   watchlistIntro:
     "Recibe un aviso del navegador cuando este producto vuelva a tener stock, se abra un espacio de video de influencer o baje el precio.",
@@ -2048,6 +2083,18 @@ const fr: Dict = {
   nudgeAppDownloadMac: "Télécharger pour Mac",
   nudgeAppDownloadGeneric: "Télécharger l'app de bureau",
   nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
+
+  updateBannerTitle: "Votre extension Influencer Butler a une mise à jour en attente.",
+  updateBannerBody: (version) =>
+    `La version ${version} est prête à être installée. Cela ne prend qu'une seconde et vos réglages sont conservés.`,
+  updateNow: "Mettre à jour",
+  updateRemindLater: "Me le rappeler plus tard",
+  updateAppliedTitle: "Mise à jour installée",
+  updateRefreshBody: "Actualisez cette page pour terminer le passage à la nouvelle version.",
+  updateRefreshBtn: "Actualiser la page",
+  updatePopupHeading: "Mise à jour disponible",
+  updatePopupBody: (current, available) =>
+    `La version ${available} est prête à être installée (vous avez la ${current}). L'extension redémarre dans un instant; vos réglages sont conservés.`,
 
   watchlist: "Liste de suivi",
   watchlistIntro:

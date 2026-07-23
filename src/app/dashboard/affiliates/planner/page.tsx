@@ -3,9 +3,10 @@
 // Affiliate Content Planner: a resource hub affiliates can use to plan and
 // schedule their promo content, even before Lemon Squeezy activates them.
 // Pill-filtered content ideas (mirrors the marketing site's feature pills),
-// plus an email funnel, a 14-day calendar starter, and a ready-asset library.
+// value "comment-to-DM" lead-magnet posts, per-butler engagement posts, an email
+// funnel, a 14-day calendar starter, and a ready-asset library.
 // KEEP CURRENT: when a new butler/feature ships, add a content idea for it.
-// Last reviewed: 2026-07-04
+// Last reviewed: 2026-07-19
 
 import Image from "next/image";
 import Link from "next/link";
@@ -149,6 +150,85 @@ const IDEAS: Idea[] = [
   },
 ];
 
+// Value / lead-magnet posts: teach a framework, then bait a comment keyword.
+// Modeled on the high-reach "here's my content secret + Comment WORD for the free
+// thing" format. The affiliate posts the value, then DMs their tracked link (free
+// extension or trial) to everyone who comments the keyword. NO em dashes (repo rule).
+type ValuePost = {
+  title: string;
+  cat: Category;
+  keyword: string; // the comment-bait word
+  deliver: string; // what to DM when someone comments
+  caption: string;
+};
+
+const VALUE_POSTS: ValuePost[] = [
+  {
+    title: "The 3 kinds of Amazon products that actually rank",
+    cat: "Amazon Automation",
+    keyword: "RANK",
+    deliver: "Reply/DM your tracked link to the free Chrome extension (finds content gaps).",
+    caption:
+      "I used to think I was just bad at Amazon content. My videos would get 200 views and two clicks and I figured people just didn't like my face lol.\n\nNow? I actually get views on the stuff I film, because I stopped filming random products and started filming the RIGHT ones.\n\nHere's the part nobody tells you: on Amazon, the product matters more than the video. If 300 creators already filmed something, you're fighting uphill no matter how good your edit is. If almost nobody has? You rank.\n\nOnce I figured that out I stopped overthinking and just rotate 3 kinds of products:\n\n1. Content gaps: stuff I already own that barely any creators have filmed. Low competition, easy views.\n2. Fresh arrivals: products that just launched, so the field is wide open before everyone piles on.\n3. Proven sellers with weak video: high demand, but the existing clips are all from the brand, not creators. Wide open lane.\n\nThat's the whole shift from 200 views to actually ranking.\n\nWant the free tool I use to spot these gaps in seconds? Comment RANK and I'll send it to you, no charge. 💛",
+  },
+  {
+    title: "3 things that make brands actually reply",
+    cat: "Social & Outreach",
+    keyword: "BRANDS",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Amazon Butler outreach).",
+    caption:
+      "I used to think brands were ignoring me because I was too small. My pitches just... vanished.\n\nTurns out it wasn't my follower count. It was that every message screamed copy-paste, and I gave up after one try.\n\nBrands reply to two things: a note that feels written for THEM, and a creator who follows up. That's the whole secret.\n\nSo I stopped winging it and started rotating 3 kinds of outreach:\n\n1. The specific pitch: name their product, say why it fits your audience. One line of real detail beats a paragraph of template.\n2. The follow-up: most deals live in the second message, the one everyone forgets to send.\n3. The proof drop: a quick line about a product you already sell well, so they see you can move units.\n\nSince I fixed those three, my reply rate isn't even comparable.\n\nI automated the boring parts (rotating the wording, spacing it safely, following up) so I don't do it by hand anymore. Want the tool that does it? Comment BRANDS and I'll send it over. 👇",
+  },
+  {
+    title: "How I found my next 20 videos without brainstorming one",
+    cat: "Content & Deals",
+    keyword: "IDEAS",
+    deliver: "Reply/DM your tracked link to Orders Butler (free order-history pull).",
+    caption:
+      "I used to stare at a blank screen every day wondering what to post. The 'what do I even make today' spiral. If you know, you know. 😮‍💨\n\nThen I stopped trying to invent ideas and realized I was sitting on hundreds of them.\n\nHere's the secret: your best content isn't out there, it's in stuff you already own and already have opinions on. People trust an honest review of a real purchase way more than another trend chase.\n\nSo now I rotate 3 buckets and never run dry:\n\n1. Order history: things I actually bought and forgot I owned. Instant honest reviews.\n2. Still using it: a product from a year ago that held up. Throwback plus proof.\n3. The under-filmed favorite: something I love that barely any creators have covered yet.\n\nI pulled my whole Amazon order history in one click and found my next 20 videos in an afternoon.\n\nWant the free tool that does the pulling for you? Comment IDEAS and I'll send it your way. 💛",
+  },
+  {
+    title: "The 3 numbers I check before I film anything",
+    cat: "Amazon Automation",
+    keyword: "CHECK",
+    deliver: "Reply/DM your tracked link to the free Chrome extension.",
+    caption:
+      "For the longest time I'd pour hours into a video, post it, watch it flop, and never figure out why.\n\nIt wasn't the lighting. It wasn't the hook. It was that I never checked whether the product was even worth filming BEFORE I hit record.\n\nNow I never film blind. I glance at 3 numbers first:\n\n1. Creator video count: how many influencers already filmed it. High = saturated, skip.\n2. Brand vs creator split: 300 videos sounds scary until you see they're all brand clips. That lane is still open.\n3. Content gap in my own catalog: products I own with zero video on them yet, earning nothing.\n\n30 seconds of checking saves me from wasting a whole shoot. It's the single biggest change to my hit rate.\n\nI use a free Chrome extension that shows all 3 the second I land on a product page. Want it? Comment CHECK and I'll send it, free. 👇",
+  },
+  {
+    title: "Why my OLD videos started making money again",
+    cat: "Content & Deals",
+    keyword: "REVIVE",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Retag Butler).",
+    caption:
+      "I used to think a video was dead the second Amazon pulled the product. Months of views, earning me exactly $0 because the link went nowhere.\n\nTurns out that traffic never left. The video was still getting watched, I just had no live product attached to it.\n\nSo instead of chasing new views, I started fixing old ones. Three kinds pay off fast:\n\n1. Dead-link videos: still getting views, product discontinued. Add a live replacement and it earns again overnight.\n2. International gaps: a video that only had a US link, reloaded to Canada, UK, and Australia.\n3. The seasonal repeat: last year's winner, refreshed and re-tagged before the season hits again.\n\nThe found money in my back catalog was honestly bigger than anything new I filmed that month.\n\nWant the tool that finds your dead links and relinks them for you? Comment REVIVE and I'll send it. 💛",
+  },
+  {
+    title: "I stopped guessing which brands pay and did this instead",
+    cat: "Earnings & Growth",
+    keyword: "LEADS",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Goldmine Butler).",
+    caption:
+      "I wasted months pitching brands that were never going to pay a creator. Cold, random, hopeful. Most never replied because they don't even run creator campaigns.\n\nThe shift: stop guessing who might pay, and go straight for the brands already paying OTHER creators.\n\nHere's what I actually look for now, in 3 buckets:\n\n1. Paid-signal storefronts: other creators' picks that show brand-deal signals. If a brand pays them, they'll pay you.\n2. Amazon's own pushes: products Amazon is actively promoting right now, warm demand baked in.\n3. Repeat spenders: brands that show up again and again. They have budget and they keep it flowing.\n\nA warm list of brands that already pay creators beats a cold list of maybes every time.\n\nI use a tool that scans for these signals and hands me the brand names and ASINs. Want it? Comment LEADS and I'll send it over. 👇",
+  },
+  {
+    title: "3 kinds of deal posts that convert (not just get likes)",
+    cat: "Content & Deals",
+    keyword: "DEALS",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Deals Influencer Butler).",
+    caption:
+      "I used to post 'cute find!' products and get a few likes and zero sales. Likes don't pay. Clicks do.\n\nOnce I changed WHAT I post, the same audience started actually buying. Turns out people don't click products, they click deals with a reason to act now.\n\nSo I rotate 3 kinds of deal posts:\n\n1. The live discount: X% off, ends tonight. Urgency does half the selling for you.\n2. The price crash: a genuine glitch or steep drop people can't believe. Screenshots get shared.\n3. The 'I actually use this' deal: a real product you love that happens to be on sale. Trust plus timing.\n\nSame effort, completely different results, because the post gives people a reason to click today.\n\nI auto-post mine to 5 platforms on a schedule so I'm not doing it by hand. Want the tool? Comment DEALS and I'll send it. 💛",
+  },
+  {
+    title: "The paid campaigns I was losing in my sleep",
+    cat: "Amazon Automation",
+    keyword: "MISSED",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Daily Commission Butler).",
+    caption:
+      "I used to lose paid campaigns in my sleep and not even know it. Amazon would drop a Creator Connections offer on a product I already sold, at a great rate, and by the time I logged in it was gone.\n\nThe best offers have the shortest windows. Fastest creator wins. And I was never fast enough by hand.\n\nHere's what I learned about these offers, in 3 parts:\n\n1. They're on stuff you ALREADY sold: warm products, real commission, you just have to say yes in time.\n2. Rate spikes are real: the same product will sometimes jump to a much higher commission for a short window.\n3. Sponsored Products has them too: a second stream of offers most creators never check.\n\nI stopped relying on being fast and let it auto-accept the offers for me in the background, 24/7. I wake up to a list of 'yes, got it.'\n\nWant the tool that catches them? Comment MISSED and I'll send it. 👇",
+  },
+];
+
 type Email = { step: string; subject: string; body: string };
 
 const FUNNEL: Email[] = [
@@ -267,6 +347,7 @@ export default function AffiliatePlannerPage() {
         <nav className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
           {[
             ["#content-ideas", "Content ideas"],
+            ["#value-posts", "Value posts"],
             ["#engagement", "Engagement posts"],
             ["#email-funnel", "Email funnel"],
             ["#calendar", "14-day calendar"],
@@ -361,6 +442,57 @@ export default function AffiliatePlannerPage() {
                     {copied === idea.feature ? "Copied!" : "Copy caption"}
                   </button>
                 </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="value-posts" className="scroll-mt-24">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900">Value posts (comment-to-DM)</h2>
+          <span className="text-xs text-slate-500">{VALUE_POSTS.length} posts</span>
+        </div>
+        <p className="mt-1 text-sm text-slate-600">
+          The highest-reach format on Facebook and Instagram: teach a real framework, then bait a
+          comment for a free resource. You post the value, and every time someone comments the
+          keyword, you reply or DM them your tracked link. Comments boost the post's reach AND hand
+          you a warm lead in one move.
+        </p>
+        <div className="mt-3 rounded-xl border border-[#f97316]/30 bg-orange-50/60 p-3 text-xs text-slate-700">
+          <strong className="font-semibold text-slate-900">How to run it:</strong> post the caption
+          (pair it with a screen recording or before/after graphic), pin your own first comment
+          nudging people to comment the keyword, then DM your tracked link to everyone who does. The
+          free Chrome extension is the easiest yes, the 14-day trial is the upsell.
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          {VALUE_POSTS.map((post) => (
+            <article
+              key={post.title}
+              className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-[#c2410c]">
+                  {post.cat}
+                </span>
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-white">
+                  Comment: {post.keyword}
+                </span>
+              </div>
+              <p className="mt-2 text-base font-semibold text-slate-900">{post.title}</p>
+              <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
+              <p className="mt-3 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
+                📩 On comment: {post.deliver}
+              </p>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => copy(`value-${post.keyword}`, post.caption)}
+                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                >
+                  {copied === `value-${post.keyword}` ? "Copied!" : "Copy caption"}
+                </button>
               </div>
             </article>
           ))}

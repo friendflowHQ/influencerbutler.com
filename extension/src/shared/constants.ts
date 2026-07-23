@@ -25,13 +25,30 @@ export const ENDPOINTS = {
 // the same worker the desktop app's "selfhosted" DeepLink Routing option calls.
 // The extension authenticates each request with the signed-in Lemon Squeezy
 // license key (no separate credential), mirroring SelfHostedLinkClient in the
-// desktop repo. `create` mints/looks up a branded link; `list` is a read-only,
-// paid-gated endpoint used to verify the license and tier without minting.
+// desktop repo. `create` mints/looks up a branded link; `list` is the
+// owner-scoped registry; `stats`/`events` are the Ledger analytics; `repoint`
+// self-heals an already-posted link; `publish` pushes the routing definition so
+// the edge does Passport / Best-Rate / heal at click time; `pixels` saves the
+// account-wide retargeting pixels (the Doorbell).
 export const IB_LINKS_BASE = "https://links.influencerbutler.com";
 export const IB_LINKS_ENDPOINTS = {
   create: `${IB_LINKS_BASE}/api/links`,
   list: `${IB_LINKS_BASE}/api/links/list`,
+  stats: `${IB_LINKS_BASE}/api/links/stats`,
+  events: `${IB_LINKS_BASE}/api/links/events`,
+  repoint: `${IB_LINKS_BASE}/api/links/repoint`,
+  publish: `${IB_LINKS_BASE}/api/links/publish`,
+  pixels: `${IB_LINKS_BASE}/api/links/pixels`,
 } as const;
+
+// Bulk mint from a harvested batch (Deal Sites, Orders Butler, storefront). The
+// worker mints one link per POST, so a bulk run is a capped, paced sequence of
+// creates (there is no batch endpoint), mirroring the desktop mintBulkLinks cap
+// of 100. Paced with jitter like the other harvest loops so it reads like a
+// person creating links, not a burst.
+export const LINK_MINT_BULK_CAP = 100;
+export const LINK_MINT_DELAY_MIN_MS = 250;
+export const LINK_MINT_DELAY_MAX_MS = 600;
 
 // The Start Here onboarding walkthrough (opened on install). The Creator API
 // setup step embeds this YouTube walkthrough (same video as the desktop app's
@@ -183,6 +200,14 @@ export const NUDGE_FB_ALARM = "ib-nudge-fb";
 export const NUDGE_APP_ALARM = "ib-nudge-app";
 export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
 export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
+
+// Extension self-update banner. Chrome stages extension updates itself (and in
+// MV3 applies them shortly after the worker idles); we just record what is
+// pending so the on-page banner and popup card can tell the user. State lives
+// in its own storage key (no schema bump, like the app-notification cursor).
+// "Remind me later" snoozes the banner for the window below.
+export const UPDATE_STORAGE_KEY = "ib-update";
+export const UPDATE_REMIND_MS = 3 * 24 * 60 * 60 * 1000;
 
 // Deals Influencer Butler workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.

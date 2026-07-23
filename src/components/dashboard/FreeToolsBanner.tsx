@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 // Replaces the older single-tool freebie banners (Like Butler, CC Check). This
-// one announces the whole Free forever tier: the Chrome extension plus the five
-// See & Organize butlers. Dismissible per session; no sunset - the free tier is
-// a permanent part of the product now.
+// one announces the whole Free forever tier: the Chrome extension plus the six
+// See & Organize butlers (FREE_BUTLER_SLUGS). Dismissible per session; no sunset
+// - the free tier is a permanent part of the product now.
 const DISMISS_KEY = "ib_freetools_banner_dismissed_v1";
 
 export default function FreeToolsBanner() {
@@ -46,8 +46,8 @@ export default function FreeToolsBanner() {
           </p>
           <p className="mt-1 text-sm text-slate-600">
             The whole Chrome extension plus six butlers work on every account - trial, paid,
-            expired, or cancelled. No license check, no quota: Like Butler, Benable Like Butler, CC
-            Check, Orders Butler, and Storefront Butler.
+            expired, or cancelled. No login, no card, no quota: Like Butler, Benable Like Butler,
+            Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler.
           </p>
         </div>
         <div className="flex items-center gap-2">

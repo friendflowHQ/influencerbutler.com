@@ -15,6 +15,18 @@ behavior; reviewers compare the two.
 > and the optional third-party providers). When you resubmit, paste the revised
 > detailed description below and re-check the Privacy tab answers in this file.
 
+> **2026-07-21 resubmission note (Keyword Spam rejection).** The listing was
+> rejected for "excessive and / or irrelevant keywords". The flagged content was
+> the parenthetical list of provider names in the affiliate paragraph ("Levanta,
+> Archer, Logie, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded
+> links"): naming those brands in the description reads as keyword stuffing. Fix:
+> the affiliate paragraph now describes the optional-integration feature
+> generically ("If you already use an affiliate network or link shortener, you
+> can optionally connect your own account...") without enumerating provider
+> names. Do not reintroduce brand-name lists into the store description; the
+> providers are still surfaced where they belong, in the extension's own
+> Settings UI. Nothing else in the copy changed.
+
 For shipping new **code** (as opposed to editing this listing copy), see
 [chrome-web-store-publishing.md](chrome-web-store-publishing.md): the release is
 automated as `npm run bump` + `npm run release`.
@@ -146,7 +158,7 @@ Storefront checkup
 Scan your own storefront for untagged videos and unavailable tagged products, and export the results as a CSV to clean up your shop.
 
 Affiliate links, tagged with your own account
-When you click "Copy my link" on a product, the extension builds an Amazon affiliate link so qualifying purchases earn you a commission. The link uses the Amazon Associates tag or storefront handle you enter in the extension's settings, so the commission is yours. You can also connect optional affiliate networks and link shorteners (Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded links) to create or shorten those links. The extension never uses its own tag, never swaps your tag, and never takes a cut.
+When you click "Copy my link" on a product, the extension builds an Amazon affiliate link so qualifying purchases earn you a commission. The link uses the Amazon Associates tag or storefront handle you enter in the extension's settings, so the commission is yours. If you already use an affiliate network or link shortener, you can optionally connect your own account for it in Settings to create or shorten those links. The extension never uses its own tag, never swaps your tag, and never takes a cut.
 
 HOW IT WORKS
 The extension reads the Amazon pages you visit and only fetches additional pages when you explicitly click a scan button (or run optional watchlist checks you turn on). It builds an affiliate link only when you click "Copy my link"; it does not silently rewrite links as you browse. Everything it computes stays on your device unless you choose to connect your Influencer Butler account to sync findings to your dashboard. Full details are in the privacy policy at influencerbutler.com/extension/privacy.

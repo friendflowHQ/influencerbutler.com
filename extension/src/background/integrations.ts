@@ -1,6 +1,7 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
+import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
 import type {
@@ -213,6 +214,10 @@ export async function generateAffiliateLink(
       },
       async (providerId) => credsFor(providerId, integrations),
     );
+    // When the resolved link is a branded short url and smart routing is on,
+    // publish its routing definition so the edge does Passport / Best-Rate /
+    // heal at click time. Best-effort: never blocks handing back the link.
+    void maybePublishGeneratedLink(link);
     return { ok: true, url: link };
   } catch {
     return { ok: false, error: "Could not build a link." };

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { trackEvent } from "@/lib/analytics-client";
+import { TierBadge } from "@/components/TierBadge";
 import {
   DISCOUNT_PCT_FIRST,
   DISCOUNT_PCT_RETURNING,
@@ -238,6 +239,9 @@ function FreeTierBand() {
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-600">{FREE_TIER_TAGLINE}</p>
+          <p className="mt-2 text-sm font-semibold text-emerald-800">
+            This is not a free trial. These tools stay free, with no account and no credit card.
+          </p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {FREE_TIER_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2 text-sm text-slate-700">
@@ -338,7 +342,10 @@ function PlanCard(props: PlanCardProps) {
         </span>
       ) : null}
 
-      <h3 className="text-xl font-semibold tracking-tight text-slate-900">{name}</h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{name}</h3>
+        <TierBadge tier="pro" />
+      </div>
       <p className="mt-1 text-sm text-slate-500">{desc}</p>
 
       <div className="mt-6">

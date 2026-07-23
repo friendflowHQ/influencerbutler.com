@@ -6,6 +6,7 @@ import {
   type PageStatus,
   type PairResult,
   type SignInResult,
+  type UpdateStateView,
   type WatchlistResult,
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
@@ -24,6 +25,7 @@ async function init(): Promise<void> {
   setLocale(settings.locale);
   applyStaticI18n();
   await Promise.all([
+    renderUpdateCard(),
     renderPageStatus(),
     renderAccount(),
     renderAppBridge(),
@@ -32,6 +34,9 @@ async function init(): Promise<void> {
   ]);
   wireFeedback();
   wireOptions();
+  // Link Butler (branded-link Ledger) is a neutral tool: creators share links on
+  // every channel, so it shows regardless of onsite/offsite creator mode.
+  wireLinkButler(settings.locale);
   // The Deal Sites Harvester and Instagram Goldmine are offsite tools (harvest
   // deals / creators to share off-Amazon). Hide their launcher cards for an
   // onsite-only creator; "both" and offsite show them as before.
@@ -45,6 +50,24 @@ async function init(): Promise<void> {
     const dealCard = document.getElementById("deal-harvester");
     if (dealCard) dealCard.hidden = true;
   }
+}
+
+// Extension-update card: shown only when Chrome has a newer version staged
+// (and the user has not snoozed it). "Update now" restarts the extension to
+// apply it, which closes this popup; that is expected.
+async function renderUpdateCard(): Promise<void> {
+  const view = await sendToBackground<UpdateStateView>({ kind: "GET_UPDATE_STATE" }).catch(
+    () => null,
+  );
+  if (!view?.due || !view.availableVersion) return; // card stays hidden
+  byId("update-heading").textContent = t().updatePopupHeading;
+  byId("update-blurb").textContent = t().updatePopupBody(view.currentVersion, view.availableVersion);
+  const btn = byId<HTMLButtonElement>("update-apply");
+  btn.textContent = t().updateNow;
+  btn.onclick = () => {
+    void sendToBackground<void>({ kind: "APPLY_UPDATE" }).catch(() => {});
+  };
+  byId("update-card").hidden = false;
 }
 
 // Build and wire the Instagram Goldmine card. Constructed entirely in JS (not
@@ -114,6 +137,38 @@ function wireDealHarvester(locale: Settings["locale"]): void {
   btn.textContent = dict.open;
   btn.onclick = () => {
     void chrome.tabs.create({ url: chrome.runtime.getURL("deals.html") });
+  };
+}
+
+// The Link Butler (Ledger) opens in its own tab, like the harvester. Localized
+// inline so the three strings do not have to live in the shared catalog.
+function wireLinkButler(locale: Settings["locale"]): void {
+  const dict = {
+    en: {
+      heading: "Link Butler",
+      blurb:
+        "See how your branded links are performing, fix a posted link, and manage retargeting pixels.",
+      open: "Open Link Butler",
+    },
+    es: {
+      heading: "Link Butler",
+      blurb:
+        "Mira el rendimiento de tus enlaces de marca, corrige un enlace publicado y gestiona los pixeles de retargeting.",
+      open: "Abrir Link Butler",
+    },
+    fr: {
+      heading: "Link Butler",
+      blurb:
+        "Suivez les performances de vos liens de marque, corrigez un lien publie et gerez les pixels de reciblage.",
+      open: "Ouvrir Link Butler",
+    },
+  }[resolveLocale(locale)];
+  byId("lb-heading").textContent = dict.heading;
+  byId("lb-blurb").textContent = dict.blurb;
+  const btn = byId<HTMLButtonElement>("open-links");
+  btn.textContent = dict.open;
+  btn.onclick = () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("links.html") });
   };
 }
 

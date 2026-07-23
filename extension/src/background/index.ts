@@ -36,6 +36,13 @@ import {
   markFirstUse,
 } from "./nudges";
 import {
+  applyUpdate,
+  checkForUpdate,
+  getUpdateStateView,
+  noteUpdateAvailable,
+  remindUpdateLater,
+} from "./update";
+import {
   buildIntegrationsView,
   generateAffiliateLink,
   maybeTestAllOnStartup,
@@ -66,6 +73,8 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
   void refreshCatalogues();
   void refreshRateCard();
+  // After an update applies, this drops the now-stale "update waiting" record.
+  void getUpdateStateView();
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -77,6 +86,15 @@ chrome.runtime.onStartup.addListener(() => {
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
   // was closed fires on the next launch.
   void ensureNudgeAlarms();
+  // A browser restart applies any staged update; clear the stale record.
+  void getUpdateStateView();
+});
+
+// Chrome fires this when it has downloaded a new extension version. In MV3 it
+// still applies the update on its own once this worker idles (the listener does
+// not defer it); we record it so the banner and popup can tell the user.
+chrome.runtime.onUpdateAvailable.addListener((details) => {
+  void noteUpdateAvailable(details.version);
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -88,6 +106,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
     void refreshRateCard();
+    // Nudge Chrome's updater on the same cadence; it staging a new version
+    // fires onUpdateAvailable above. No-op on unpacked installs.
+    void checkForUpdate();
   }
   if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
   handleNudgeAlarm(alarm.name);
@@ -252,6 +273,18 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "LINK_PIXELS_SAVE":
       void saveOwnerPixels(message.pixels).then(sendResponse);
+      return true;
+    case "GET_UPDATE_STATE":
+      void getUpdateStateView().then(sendResponse);
+      return true;
+    case "UPDATE_REMIND_LATER":
+      void remindUpdateLater().then(() => sendResponse(undefined));
+      return true;
+    case "APPLY_UPDATE":
+      // Respond before reloading: reload() kills this worker immediately, so a
+      // response sent after it would never arrive.
+      sendResponse(undefined);
+      applyUpdate();
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background

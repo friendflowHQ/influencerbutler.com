@@ -144,7 +144,13 @@ export type RuntimeMessage =
   | { kind: "LINK_LIST"; cursor?: string | null }
   | { kind: "LINK_REPOINT"; slug: string; url: string; asin?: string; marketplace?: string }
   | { kind: "LINK_PIXELS_GET" }
-  | { kind: "LINK_PIXELS_SAVE"; pixels: LinkPixel[] };
+  | { kind: "LINK_PIXELS_SAVE"; pixels: LinkPixel[] }
+  // Extension self-update banner: read what Chrome has staged, snooze the
+  // banner, or apply the pending update now (restarts the extension, so the
+  // caller fires and forgets).
+  | { kind: "GET_UPDATE_STATE" }
+  | { kind: "UPDATE_REMIND_LATER" }
+  | { kind: "APPLY_UPDATE" };
 
 export type IgBioLinkResult = { email: string | null };
 
@@ -266,6 +272,7 @@ export type {
   StatsResult,
 } from "../integrations/ib-links-client";
 export type { BrandedMintInput, BulkMintResult } from "../background/links";
+export type { UpdateStateView } from "../background/update";
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);

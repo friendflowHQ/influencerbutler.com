@@ -43,6 +43,12 @@ export interface DealsDict {
   permissionDenied: string;
   nothingSelected: string;
   addUrlsFirst: string;
+  mintLinks: string;
+  minting: string;
+  mintSummary: (minted: number, failed: number) => string;
+  mintCapped: string;
+  copyLinks: string;
+  copied: string;
 }
 
 const en: DealsDict = {
@@ -85,6 +91,13 @@ const en: DealsDict = {
   permissionDenied: "Permission to read those sites was declined.",
   nothingSelected: "Select at least one deal to send.",
   addUrlsFirst: "Add at least one site to harvest.",
+  mintLinks: "Mint branded links",
+  minting: "Minting links...",
+  mintSummary: (minted, failed) =>
+    `Minted ${minted} link${minted === 1 ? "" : "s"}${failed > 0 ? `, ${failed} failed` : ""}.`,
+  mintCapped: "Only the first batch was minted. Mint fewer at a time for the rest.",
+  copyLinks: "Copy all links",
+  copied: "Copied",
 };
 
 const es: DealsDict = {
@@ -127,6 +140,13 @@ const es: DealsDict = {
   permissionDenied: "Se rechazó el permiso para leer esos sitios.",
   nothingSelected: "Selecciona al menos una oferta para enviar.",
   addUrlsFirst: "Añade al menos un sitio para recolectar.",
+  mintLinks: "Crear enlaces de marca",
+  minting: "Creando enlaces...",
+  mintSummary: (minted, failed) =>
+    `Se ${minted === 1 ? "creó" : "crearon"} ${minted} enlace${minted === 1 ? "" : "s"}${failed > 0 ? `, ${failed} con error` : ""}.`,
+  mintCapped: "Solo se creó el primer lote. Crea menos a la vez para el resto.",
+  copyLinks: "Copiar todos los enlaces",
+  copied: "Copiado",
 };
 
 const fr: DealsDict = {
@@ -169,6 +189,13 @@ const fr: DealsDict = {
   permissionDenied: "L'autorisation de lire ces sites a été refusée.",
   nothingSelected: "Sélectionnez au moins une offre à envoyer.",
   addUrlsFirst: "Ajoutez au moins un site à collecter.",
+  mintLinks: "Créer des liens de marque",
+  minting: "Création des liens...",
+  mintSummary: (minted, failed) =>
+    `${minted} lien${minted === 1 ? "" : "s"} créé${minted === 1 ? "" : "s"}${failed > 0 ? `, ${failed} en échec` : ""}.`,
+  mintCapped: "Seul le premier lot a été créé. Créez-en moins à la fois pour le reste.",
+  copyLinks: "Copier tous les liens",
+  copied: "Copié",
 };
 
 export const DEALS_CATALOG: Record<Locale, DealsDict> = { en, es, fr };

@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
@@ -6,6 +6,7 @@ import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
 
 export const runtime = "nodejs";
 
@@ -67,6 +68,7 @@ type SupabaseServiceClient = {
       payload: Record<string, unknown>,
       options?: { onConflict: string },
     ) => Promise<WriteResult>;
+    insert: (payload: Record<string, unknown>) => Promise<WriteResult>;
     update: (payload: Record<string, unknown>) => {
       eq: (column: string, value: string) => UpdateFilter;
     };
@@ -888,6 +890,48 @@ export async function POST(request: Request) {
           })
           .eq("ls_subscription_id", recordId),
       );
+
+      // If this cancellation never went through our in-app funnel (which would
+      // have left a subscription_cancel_reasons row), email a one-question
+      // survey so no churn goes unmeasured. Best-effort: never fail the webhook.
+      try {
+        const alreadySurveyed = await recordExists(
+          supabase,
+          "subscription_cancel_reasons",
+          "subscription_id",
+          recordId,
+        );
+        if (!alreadySurveyed) {
+          const { userId } = await findSubscriptionByLsId(supabase, recordId);
+          const email = getString(attrs.user_email);
+          if (userId && email) {
+            const token = randomUUID();
+            const { error: insertError } = await supabase
+              .from("subscription_cancel_reasons")
+              .insert({
+                user_id: userId,
+                subscription_id: recordId,
+                reason: "unspecified",
+                source: "email",
+                survey_token: token,
+                emailed_at: new Date().toISOString(),
+                offer_shown: false,
+                offer_accepted: false,
+              });
+            if (!insertError) {
+              await sendCancelSurveyEmail({
+                to: email,
+                token,
+                name: firstNameFrom(getString(attrs.user_name)),
+              });
+            } else {
+              console.error("cancel-survey pending insert failed", insertError);
+            }
+          }
+        }
+      } catch (surveyErr) {
+        console.error("cancel-survey email side effect failed", surveyErr);
+      }
     },
 
     subscription_paused: async () => {

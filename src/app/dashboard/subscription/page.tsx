@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
 import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/LicenseKeyDisplay";
 import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
+import { getStatusBadge } from "@/lib/subscription-status";
 import {
   PRICE_CENTS,
   TIER_NAME,
@@ -366,6 +367,9 @@ function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: Subs
             {statusBadge.label}
           </span>
         </div>
+        {statusBadge.note ? (
+          <p className="mt-3 text-sm text-slate-500">{statusBadge.note}</p>
+        ) : null}
       </section>
 
       {licenseKey ? <LicenseKeyDisplay variant="panel" licenseKey={licenseKey} /> : null}
@@ -645,19 +649,3 @@ function PromoCodeField({ value, onChange, open, onToggle }: PromoCodeFieldProps
   );
 }
 
-function getStatusBadge(status: string): { label: string; className: string } {
-  switch (status) {
-    case "active":
-      return { label: "Active", className: "bg-emerald-100 text-emerald-800" };
-    case "on_trial":
-      return { label: "Free Trial", className: "bg-blue-100 text-blue-800" };
-    case "cancelled":
-      return { label: "Cancelled", className: "bg-slate-200 text-slate-700" };
-    case "past_due":
-      return { label: "Past Due", className: "bg-red-100 text-red-800" };
-    case "paused":
-      return { label: "Paused", className: "bg-yellow-100 text-yellow-800" };
-    default:
-      return { label: status, className: "bg-slate-100 text-slate-700" };
-  }
-}

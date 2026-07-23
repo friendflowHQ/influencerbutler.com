@@ -4,6 +4,8 @@ import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
 import {
   sendToBackground,
+  type BrandedMintInput,
+  type BulkMintResult,
   type DealSource,
   type EnrichResult,
   type HarvestResult,
@@ -372,7 +374,75 @@ function renderSend(): HTMLElement {
   });
 
   sendBtn.onclick = () => void sendSelected(picker, sendBtn, status);
+
+  // Mint a branded Influencer Butler link for each selected product. Uses the
+  // creator's per-country tags and (when smart routing is on) publishes routing
+  // so the links route at the edge, exactly like "Copy my link".
+  const mintRow = el("div", "row");
+  const mintBtn = el("button", "ghost");
+  mintBtn.textContent = D.mintLinks;
+  const mintStatus = el("span", "muted small");
+  mintRow.append(mintBtn, mintStatus);
+  const mintOut = el("div");
+  mintOut.id = "mint-out";
+  wrap.append(mintRow, mintOut);
+  mintBtn.onclick = () => void mintSelected(mintBtn, mintStatus, mintOut);
+
   return wrap;
+}
+
+async function mintSelected(
+  btn: HTMLButtonElement,
+  status: HTMLElement,
+  out: HTMLElement,
+): Promise<void> {
+  const selected = rows.filter((r) => r.selected);
+  if (selected.length === 0) {
+    status.textContent = D.nothingSelected;
+    return;
+  }
+  const targets: BrandedMintInput[] = selected.map((r) => ({
+    asin: r.deal.asin,
+    marketplace: r.deal.marketplace,
+    label: r.title ?? undefined,
+  }));
+
+  btn.disabled = true;
+  status.textContent = D.minting;
+  out.replaceChildren();
+  const result = await sendToBackground<BulkMintResult>({ kind: "LINK_MINT_BULK", targets });
+  btn.disabled = false;
+  status.textContent = D.mintSummary(result.minted, result.failed) + (result.capped ? ` ${D.mintCapped}` : "");
+  renderMintedLinks(out, result);
+}
+
+function renderMintedLinks(out: HTMLElement, result: BulkMintResult): void {
+  const urls = result.items.filter((i) => i.ok && i.shortUrl).map((i) => i.shortUrl as string);
+  if (urls.length === 0) return;
+
+  const list = el("ul", "saved-list");
+  for (const url of urls) {
+    const li = el("li");
+    const a = el("a") as HTMLAnchorElement;
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.className = "url";
+    a.textContent = url;
+    li.append(a);
+    list.append(li);
+  }
+  out.append(list);
+
+  const copy = el("button", "ghost small");
+  copy.textContent = D.copyLinks;
+  copy.onclick = () => {
+    void navigator.clipboard.writeText(urls.join("\n")).then(() => {
+      copy.textContent = D.copied;
+      window.setTimeout(() => (copy.textContent = D.copyLinks), 1200);
+    });
+  };
+  out.append(copy);
 }
 
 async function sendSelected(

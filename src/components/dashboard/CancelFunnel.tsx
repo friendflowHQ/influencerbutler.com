@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  REASONS,
+  WOULD_RETURN_OPTIONS,
+  type Reason,
+  type WouldReturn,
+} from "@/lib/cancel-reasons";
 
 type OfferType = "monthly_50_off_3mo" | "yearly_20_off_1yr" | null;
 
@@ -39,27 +45,6 @@ type CancelFunnelProps = {
   onOfferAccepted: () => void;
 };
 
-type Reason =
-  | "too_expensive"
-  | "not_using"
-  | "missing_features"
-  | "found_alternative"
-  | "technical_issues"
-  | "just_testing"
-  | "other";
-
-type ReasonOption = { value: Reason; label: string };
-
-const REASONS: ReasonOption[] = [
-  { value: "too_expensive", label: "Too expensive" },
-  { value: "not_using", label: "Not using it enough" },
-  { value: "missing_features", label: "Missing features I need" },
-  { value: "found_alternative", label: "Found an alternative" },
-  { value: "technical_issues", label: "Technical issues" },
-  { value: "just_testing", label: "Just testing it out" },
-  { value: "other", label: "Other" },
-];
-
 type Step = 1 | 2 | 3 | 4 | 5;
 type Terminal = "cancelled" | "offer_accepted";
 
@@ -92,6 +77,8 @@ export default function CancelFunnel({
   const [step, setStep] = useState<Step>(1);
   const [reason, setReason] = useState<Reason | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [intendedOutcome, setIntendedOutcome] = useState("");
+  const [wouldReturn, setWouldReturn] = useState<WouldReturn | null>(null);
 
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -194,6 +181,8 @@ export default function CancelFunnel({
           subscriptionId,
           reason: reason ?? "unspecified",
           feedback: feedback.trim() || null,
+          intendedOutcome: intendedOutcome.trim() || null,
+          wouldReturn: wouldReturn ?? null,
           offerShown: price?.offerType !== null,
         }),
       });
@@ -291,8 +280,12 @@ export default function CancelFunnel({
             <Step2Reason
               reason={reason}
               feedback={feedback}
+              intendedOutcome={intendedOutcome}
+              wouldReturn={wouldReturn}
               onReason={setReason}
               onFeedback={setFeedback}
+              onIntendedOutcome={setIntendedOutcome}
+              onWouldReturn={setWouldReturn}
               onBack={() => setStep(1)}
               onContinue={() => setStep(3)}
             />
@@ -364,8 +357,12 @@ function Step1Intro({ onContinue, onKeep }: { onContinue: () => void; onKeep: ()
 type Step2Props = {
   reason: Reason | null;
   feedback: string;
+  intendedOutcome: string;
+  wouldReturn: WouldReturn | null;
   onReason: (r: Reason) => void;
   onFeedback: (f: string) => void;
+  onIntendedOutcome: (v: string) => void;
+  onWouldReturn: (v: WouldReturn) => void;
   onBack: () => void;
   onContinue: () => void;
 };
@@ -373,8 +370,12 @@ type Step2Props = {
 function Step2Reason({
   reason,
   feedback,
+  intendedOutcome,
+  wouldReturn,
   onReason,
   onFeedback,
+  onIntendedOutcome,
+  onWouldReturn,
   onBack,
   onContinue,
 }: Step2Props) {
@@ -405,6 +406,45 @@ function Step2Reason({
           </label>
         ))}
       </fieldset>
+      <div>
+        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          What were you hoping to accomplish with Influencer Butler? (optional)
+        </label>
+        <textarea
+          value={intendedOutcome}
+          onChange={(e) => onIntendedOutcome(e.target.value)}
+          rows={2}
+          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none focus:ring-1 focus:ring-[#f97316]"
+          placeholder="e.g. land brand deals, automate outreach, harvest commissions..."
+        />
+      </div>
+      <div>
+        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          How likely are you to come back? (optional)
+        </span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {WOULD_RETURN_OPTIONS.map((o) => (
+            <label
+              key={o.value}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                wouldReturn === o.value
+                  ? "border-[#f97316] bg-[#f97316]/5"
+                  : "border-slate-200 bg-white hover:bg-slate-50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="would-return"
+                value={o.value}
+                checked={wouldReturn === o.value}
+                onChange={() => onWouldReturn(o.value)}
+                className="h-4 w-4 accent-[#f97316]"
+              />
+              <span className="text-slate-700">{o.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
       <div>
         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
           Anything else you&apos;d like us to know? (optional)

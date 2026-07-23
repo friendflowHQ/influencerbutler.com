@@ -1,6 +1,7 @@
 import type { Finding, VideoCounts } from "../transport/types";
 import type { LocaleSetting } from "../i18n";
 import type { CreatorMode } from "../shared/creator-mode";
+import type { LinkPixel } from "../integrations/ib-links-client";
 
 // Everything lives in chrome.storage.local. The license key deliberately
 // never goes to storage.sync so it cannot leave the machine via Chrome sync.
@@ -28,6 +29,15 @@ export type Settings = {
   };
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
+  // Link Butler config for the branded-link Ledger tab. `smartRouting` publishes
+  // a routing definition (Passport / Best-Rate / heal) when a link is minted, so
+  // browser-minted links route at the edge like desktop-minted ones. `pixels`
+  // are the account-wide retargeting pixels (the Doorbell); the worker has no
+  // read endpoint, so the list is kept here for the form and POSTed on save.
+  linkButler: {
+    smartRouting: boolean;
+    pixels: LinkPixel[];
+  };
   // Creator channel mirrored from the desktop app over the bridge. Drives which
   // on-page tools and popup launchers are shown. Defaults to "both" (show
   // everything) so an install that never connects the app is unfiltered.
@@ -208,7 +218,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 7,
+  schemaVersion: 8,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -228,6 +238,7 @@ export const DEFAULTS: StorageShape = {
     },
     storefrontHandle: null,
     orderHarvestScope: "new",
+    linkButler: { smartRouting: false, pixels: [] },
     creatorMode: "both",
     dealSources: [],
     locale: "auto",
@@ -280,8 +291,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // v4 -> v5 added the priceHistory map; v5 -> v6 added the campaignRadar
   // thresholds plus the campaignRadar tool flag; v6 -> v7 added
   // settings.creatorMode (defaults to "both", so existing users stay
-  // unfiltered until the app reports their channel). Older stored state simply
-  // gains its defaults untouched (an existing user's price history starts empty).
+  // unfiltered until the app reports their channel); v7 -> v8 added
+  // settings.linkButler (smart-routing off, no pixels). Older stored state
+  // simply gains its defaults untouched (an existing user's price history
+  // starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -292,6 +305,13 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       campaignRadar: {
         ...DEFAULTS.settings.campaignRadar,
         ...(raw.settings?.campaignRadar ?? {}),
+      },
+      linkButler: {
+        ...structuredClone(DEFAULTS.settings.linkButler),
+        ...(raw.settings?.linkButler ?? {}),
+        pixels: Array.isArray(raw.settings?.linkButler?.pixels)
+          ? raw.settings.linkButler.pixels
+          : [],
       },
       tools: { ...DEFAULTS.settings.tools, ...(raw.settings?.tools ?? {}) },
     },
@@ -312,6 +332,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 7,
+    schemaVersion: 8,
   };
 }

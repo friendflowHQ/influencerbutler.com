@@ -29,6 +29,7 @@ Response `200`:
   "freeButlerSlugs": [
     "like-butler",
     "benable-like-butler",
+    "instagram-like-butler",
     "cc-check",
     "orders-butler",
     "storefront-butler"
@@ -64,7 +65,7 @@ Notes:
 See & Organize butlers that create habit and data lock-in without giving away
 the money engines:
 
-- Like Butler, Benable Like Butler: auto-like at a safe pace
+- Like Butler, Benable Like Butler, Instagram Like Butler: auto-like at a safe pace
 - CC Check: grab every ASIN from any page
 - Orders Butler: pull full Amazon order history
 - Storefront Butler: audit photo / video coverage

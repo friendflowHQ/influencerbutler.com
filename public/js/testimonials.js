@@ -100,6 +100,8 @@
     }
     grid.textContent = "";
     grid.appendChild(frag);
+    // Let the carousel controller rebuild its pagination for the new cards.
+    document.dispatchEvent(new CustomEvent("testimonials:rendered"));
   }
 
   function init() {

@@ -31,6 +31,7 @@ import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
+import { maybeShowUpdateBanner } from "../tools/update-banner";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
@@ -92,6 +93,10 @@ async function main(): Promise<void> {
   // on the first run and shows a timed modal on later visits. Guarded so a
   // failure here never breaks the tools.
   guard("nudges", () => maybeShowNudge());
+  // Extension-update pill (Chrome has a new version staged). Lives in its own
+  // shadow host and runs once per page load, so it belongs here rather than in
+  // runForPage(), which re-runs on SPA navigation.
+  guard("update-banner", () => void maybeShowUpdateBanner());
 }
 
 // The widget's classified data can land well after first render (it only
