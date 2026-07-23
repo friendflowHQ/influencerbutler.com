@@ -2,6 +2,20 @@
   "version": 1,
   "posts": [
     {
+      "id": "products-you-already-own-shoppable-videos",
+      "title": "Stop Guessing What to Film: Your Next Amazon Video Is Already in Your House",
+      "category": "Amazon",
+      "summary": "The beginner-friendly way to find high-demand, low-competition shoppable video ideas using products you already own, with Influencer Butler's Orders Butler.",
+      "date": "2026-07-20",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "amazon influencer program for beginners, what products to film for amazon shoppable videos, how to make money with amazon influencer videos, best products for amazon inspire videos, orders butler, amazon shoppable video ideas",
+      "image": "/assets/blog/products-you-already-own-shoppable-videos.png",
+      "imageAlt": "Illustration of a creator finding a winning shoppable video idea among products they already own at home",
+      "imagePrompt": "Editorial flat illustration of a friendly content creator standing in their own home holding a phone, surrounded by everyday products they already own (a kitchen gadget, a storage bin, a water bottle, headphones), one product glowing with a small upward trend arrow to signal a winning pick, warm encouraging mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
+    },
+    {
       "id": "fix-facebook-notifications-popup",
       "title": "Facebook's Notifications Popup Is Blocking Your Butler: Here Is the Two-Minute Fix",
       "category": "Deals",

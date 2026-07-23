@@ -110,7 +110,24 @@ export async function POST(request: Request) {
       email,
       options: { redirectTo: mode === "reset" ? `${base}/reset-password` : `${base}/dashboard` },
     });
-    const actionLink = data?.properties?.action_link ?? null;
+
+    // We do NOT email Supabase's action_link. That link points at the single-use
+    // /auth/v1/verify endpoint, which email security scanners and link
+    // pre-fetchers (Outlook SafeLinks, antivirus, corporate proxies) burn by
+    // simply GET-ing it, so the real user then sees "link already used". Instead
+    // we email a link to one of our own pages carrying the token_hash and redeem
+    // it with verifyOtp only on a deliberate click/submit a scanner never
+    // performs: reset lands on /reset-password (redeems when the new password is
+    // submitted), sign-in lands on /auth/confirm (redeems on a Confirm button).
+    // hashed_token is returned at runtime but missing from the installed
+    // @supabase/supabase-js property types, which only declare action_link.
+    const hashedToken =
+      (data?.properties as { hashed_token?: string } | undefined)?.hashed_token ?? null;
+    const actionLink = hashedToken
+      ? mode === "reset"
+        ? `${base}/reset-password?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`
+        : `${base}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent("/dashboard")}`
+      : null;
     // generateLink errors for unknown emails; swallow it so we stay generic.
     // Log it server-side anyway: the client always sees success, so this is the
     // only trace of "customer swears they never got the email."
