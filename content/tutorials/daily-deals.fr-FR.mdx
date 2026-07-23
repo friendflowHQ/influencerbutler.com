@@ -31,9 +31,21 @@ L'espace s'ouvre sur une barre de puces de 10 onglets. Le flux de configuration 
 4. **Scheduler**: activez **Post scheduler** et choisissez une cadence. Les défauts sont prudents : groupes toutes les 1 h, pages toutes les 2 h, Telegram toutes les 15 min, Reddit/Instagram/Threads désactivés.
 5. Cliquez sur **Lancer maintenant** sous Harvest pour faire un tour complet de recherche-et-publication avant d'activer la planification.
 
+## Mots-clés de départ par niche
+
+La première fois que vous ouvrez l'onglet **Mots-clés** avec tous les mois vides, Butler vous demande sur quelles niches vous publiez des offres : Auto, Voyage, Maternité et parentalité, Décoration intérieure, Beauté, Fitness, Cuisine, Animaux, Mode, High-tech et gadgets, Santé et bien-être, Alimentation et boissons, Bébés et enfants, Plein air et camping, Bureau et organisation, et Loisirs créatifs. Cochez celles qui vous correspondent et cliquez sur **Ajouter des mots-clés** : chaque mois reçoit environ 20 mots-clés saisonniers prêts à l'emploi par niche. Les fournitures de rentrée arrivent en juillet et août pour Maternité, la déco de fêtes en novembre et décembre, le fitness du Nouvel An en janvier, etc. Les suggestions privilégient les produits d'usage quotidien et les lots multiples qui se vendent bien en promotion, et suivent la langue de l'app (les jeux anglais, espagnol et français sont chacun adaptés à leur propre marketplace Amazon). Vous préférez partir de zéro ? Cliquez sur **Passer, je saisirai les miens**. Vous pouvez rouvrir le sélecteur à tout moment avec **Suggérer des mots-clés par niche** en haut de l'onglet, et le relancer ne duplique jamais des mots-clés déjà présents.
+
 ## Préréglages de filtres
 
 Le **préréglage actif** (par défaut nommé `default`) sauvegarde votre config de filtres. Vous pouvez avoir plusieurs préréglages pour différentes niches - un pour "tech à moins de 50 €" et un pour "déco à moins de 100 €" - et les alterner depuis l'onglet Overview. Les clones (extension payante) donnent à chaque clone son propre stockage de préréglages pour faire tourner plusieurs niches en parallèle sans changer de préréglage.
+
+## Inclure les offres avec un coupon à activer d'un clic
+
+Certains produits Amazon ont un coupon à activer d'un clic (par exemple "Activer le coupon de 17 %", ou un montant fixe de réduction) en plus du prix soldé. Le flux produit d'Amazon ne signale pas les coupons, donc Butler les lit directement sur la page des coupons d'Amazon.
+
+- Dans l'onglet **Filtres d'offres**, ouvrez **Coupons Amazon** et activez **Inclure les offres avec coupon Amazon**. Votre prochaine recherche scanne aussi la page des coupons d'Amazon dans le navigateur Amazon de l'app, chiffre chaque produit avec coupon et ajoute ceux qui passent vos filtres. La première fois, assurez-vous d'être connecté à Amazon dans le navigateur de l'app.
+- Chaque offre avec coupon est ajoutée avec son montant de coupon, pour que vous puissiez la mettre en avant dans une publication. Dans **Créez votre publication**, glissez la pastille **Coupon** (une courte étiquette comme "coupon de 17 %"), la pastille **Prix avec coupon** (le prix après le coupon, comme 19,87 $) ou la pastille **% de réduction du coupon**.
+- Seulement les produits avec coupon ? Activez **Offres avec coupon uniquement** dans les filtres et Butler ne garde que les produits qui ont un coupon à activer d'un clic.
 
 ## Publier depuis plusieurs comptes Facebook
 
@@ -78,6 +90,19 @@ Configurez-la en trois étapes :
 
 Utilisez **Créer maintenant** pour l'exécuter une fois, ou activez l'interrupteur pour qu'il s'exécute après chaque recherche. La ligne d'état affiche la progression et le résumé de la dernière exécution.
 
+## Rotation des listes d'idées : publiez vos listes existantes selon un planning
+
+Vous avez déjà des listes d'idées sur votre vitrine Amazon ? L'onglet **Rotation des listes d'idées** les publie pour vous selon un planning, une à la fois. Il ne publie jamais deux fois la même liste le même jour, pour que votre fil reste varié.
+
+Comment la configurer :
+
+1. **Actualiser mes listes d'idées** : cliquez une fois et Butler analyse votre vitrine et importe toutes vos listes d'idées, chacune avec une case d'activation. Décochez celles que vous ne voulez pas dans la rotation. Il trouve toutes vos listes, que vous les ayez créées à la main ou avec Créer automatiquement.
+2. **Choisissez vos heures et vos jours** : ajoutez les heures de la journée et les jours de la semaine où vous voulez qu'une liste parte.
+3. **Choisissez l'ordre** : **Dans l'ordre** parcourt vos listes de haut en bas ; **Aléatoire** choisit au hasard. Dans les deux cas, aucune liste ne se répète dans une journée. Si vous programmez plus d'heures dans une journée que de listes, les heures en trop sont ignorées et la rotation repart à zéro le lendemain.
+4. **Rédigez le texte** : utilisez votre propre texte avec un **Nom de la liste** et un **Lien de la liste** que vous insérez, ou laissez l'IA en rédiger un pour chaque liste si vous avez une clé OpenAI configurée. Ajoutez une photo par liste en la téléversant, ou laissez l'IA en créer une.
+
+Vos listes sont publiées vers toutes les destinations connectées dans **Destinations sociales**. Utilisez **Publier la prochaine liste maintenant** pour en envoyer une immédiatement et la voir fonctionner. Activez la rotation et Butler s'occupe du reste.
+
 ## Centre de codes promo
 
 L'onglet **Centre de codes promo** fait deux choses : il affiche le **Deals Hub** d'Amazon Associates pour publier des offres organisées, et il garde vos codes promo organisés.
@@ -110,9 +135,10 @@ Pour en créer une :
 - **Ajouter une campagne** : donnez-lui un nom et le texte de la publication que vos abonnés verront (par exemple "Top 50 des offres cuisine du jour ! Tous les liens dans les commentaires.").
 - **Profil de recherche ou mots-clés personnalisés** : choisissez un **Profil de recherche** enregistré (un ensemble nommé de mots-clés et de filtres, comme "Gadgets de cuisine", réutilisable dans plusieurs campagnes) ou restez en Personnalisé et saisissez les mots-clés (un par ligne) et le nombre exact d'offres à inclure. Une campagne réglée sur 20 publie exactement les 20 meilleures trouvées, classées par pourcentage de remise. Enregistrez toute configuration Personnalisée comme profil en un clic ; modifier un profil met à jour toutes les campagnes qui l'utilisent.
 - **Source des offres** : *Recherche fraîche au moment de publier* lance une nouvelle recherche Amazon avec les mots-clés de la campagne juste avant de publier (offres les plus fraîches, quelques minutes de plus). *Depuis les offres déjà récoltées* choisit instantanément parmi les offres que vos recherches ont déjà trouvées.
-- **Heures** : choisissez jusqu'à quatre heures de publication par jour et, si besoin, limitez la campagne à certains jours de la semaine.
+- **Jours et heures** : activez chaque jour où vous voulez publier et définissez les heures propres à ce jour, pour qu'une campagne publie le lundi à 9:00 et le mercredi à 14:00 et 18:00. Chaque jour accepte jusqu'à quatre heures, et des jours différents peuvent publier à des heures différentes.
 - **Deux récaps par jour** : créez une seconde campagne avec ses propres mots-clés, son propre nombre et une heure plus tardive. Par exemple, cuisine à 9h00 et "Top 20 des trouvailles Amazon en promo aujourd'hui" à 10h00. Chaque campagne ne publie que ses propres offres.
 - **Options de commentaire** : décidez si chaque commentaire inclut la photo du produit et, si vous voulez, écrivez votre propre modèle de commentaire avec des variables comme `{{title}}`, `{{salePrice}}`, `{{percentOff}}` et `{{url}}`. Le plateau de pastilles correspond exactement à celui de Composez votre publication, y compris les pastilles orange de bibliothèque (Hook, CTA, Hashtags, Urgence) : cliquez sur une pastille pour modifier ses lignes, glissez-la pour l'utiliser.
+- **Quels groupes** : lorsque Groupes Facebook est une destination, chaque campagne affiche une case pour chaque groupe présent dans Destinations sociales. Laissez-les toutes cochées pour publier dans tous, ou choisissez uniquement ceux où cette campagne doit publier. Deux campagnes peuvent ainsi viser deux groupes différents. Les Pages Facebook vont toujours vers toutes vos pages.
 
 Les commentaires sont publiés lentement, volontairement, toutes les 20 à 45 secondes, pour que Facebook ne signale pas d'activité rapide. Un récap de 50 offres prend environ 20 à 40 minutes, et les autres publications programmées attendent, donc laissez au moins 45 minutes entre les campagnes. Si Facebook demande de ralentir en cours de route, le récap s'arrête plus tôt et la carte de la campagne indique combien de commentaires sont passés (par exemple "17/50 publiés"). Tout s'enregistre automatiquement pendant que vous tapez, et **Lancer maintenant** déclenche une campagne immédiatement pour tester un petit récap de bout en bout.
 

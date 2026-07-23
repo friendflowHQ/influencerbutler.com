@@ -31,9 +31,21 @@ El espacio se abre con una barra de chips con 10 pestañas. El flujo de configur
 4. **Scheduler**: activa **Post scheduler** y elige una cadencia. Los valores por defecto son conservadores: grupos cada 1 h, páginas cada 2 h, Telegram cada 15 min, Reddit/Instagram/Threads apagados.
 5. Pulsa **Ejecutar ahora** en Harvest para hacer una ronda de búsqueda y publicación de extremo a extremo antes de activar la planificación.
 
+## Palabras clave iniciales por nicho
+
+La primera vez que abres la pestaña **Palabras clave** con todos los meses vacíos, Butler te pregunta sobre qué nichos publicas ofertas: Coches y motor, Viajes, Maternidad y crianza, Decoración del hogar, Belleza, Fitness, Cocina, Mascotas, Moda, Tecnología y gadgets, Salud y bienestar, Comida y bebida, Bebés y niños, Aire libre y camping, Oficina y organización, y Manualidades y hobbies. Marca los que encajen y pulsa **Añadir palabras clave**: cada mes recibe unas 20 palabras clave de temporada listas para usar por nicho. El material de vuelta al cole cae en julio y agosto para Maternidad, la decoración navideña en noviembre y diciembre, el fitness de Año Nuevo en enero, etc. Las sugerencias favorecen productos de uso diario y packs múltiples que se venden bien con descuento, y siguen el idioma de la app (los conjuntos en inglés, español y francés están curados para su propio marketplace de Amazon). ¿Prefieres empezar de cero? Pulsa **Omitir, escribiré las mías**. Puedes reabrir el selector cuando quieras con **Sugerir palabras clave por nicho** en la parte superior de la pestaña, y volver a ejecutarlo nunca duplica palabras clave que ya tienes.
+
 ## Preajustes de filtros
 
 El **preajuste activo** (por defecto llamado `default`) guarda tu configuración de filtros. Puedes tener varios preajustes para distintos nichos - por ejemplo, uno para "tecnología por menos de 50 €" y otro para "decoración por menos de 100 €" - y alternarlos desde la pestaña Overview. Los clones (un complemento de pago) dan a cada clon su propio almacén de preajustes para correr varios nichos en paralelo sin tener que cambiar de preajuste.
+
+## Incluir ofertas con un cupón activable con un clic
+
+Algunos productos de Amazon tienen un cupón activable con un clic (por ejemplo "Aplicar cupón del 17 %", o una cantidad fija de descuento) además de cualquier precio de oferta. El feed de productos de Amazon no informa de los cupones, así que Butler los lee directamente de la página de cupones de Amazon.
+
+- En la pestaña **Filtros de ofertas**, abre **Cupones de Amazon** y activa **Incluir ofertas con cupón de Amazon**. Tu próxima búsqueda también escanea la página de cupones de Amazon en el navegador de Amazon de la app, cotiza cada producto con cupón y añade los que pasan tus filtros. La primera vez, asegúrate de haber iniciado sesión en Amazon en el navegador de la app.
+- Cada oferta con cupón se añade con su importe de cupón, para que puedas destacarlo en una publicación. En **Crear tu publicación**, arrastra la ficha **Cupón** (una etiqueta corta como "cupón del 17 %"), la ficha **Precio con cupón** (el precio después del cupón, como 19,87 $) o la ficha **% de descuento del cupón**.
+- ¿Solo productos con cupón? Activa **Solo ofertas con cupón** en los filtros y Butler conserva únicamente los productos que tienen un cupón activable con un clic.
 
 ## Publicar desde más de una cuenta de Facebook
 
@@ -78,6 +90,19 @@ Configúralo en tres pasos:
 
 Usa **Crear ahora** para ejecutarlo una vez, o activa el interruptor para que se ejecute tras cada búsqueda. La línea de estado muestra el progreso y el resumen de la última ejecución.
 
+## Rotación de listas de ideas: publica tus listas existentes según un horario
+
+¿Ya tienes listas de ideas en tu escaparate de Amazon? La pestaña **Rotación de listas de ideas** las publica por ti según un horario, de una en una. Nunca publica la misma lista dos veces el mismo día, para que tu feed se mantenga variado.
+
+Cómo configurarla:
+
+1. **Actualizar mis listas de ideas**: haz clic una vez y Butler escanea tu escaparate e importa todas las listas de ideas que tienes, cada una con una casilla de activación. Desmarca las que no quieras en la rotación. Encuentra todas tus listas, las hayas creado a mano o con Crear automáticamente.
+2. **Elige tus horas y días**: añade las horas del día y los días de la semana en que quieres que salga una lista.
+3. **Elige el orden**: **En orden** recorre tus listas de arriba a abajo; **Aleatorio** elige al azar. En ambos casos, ninguna lista se repite dentro de un día. Si programas más horas en un día que listas tienes, las horas de más se omiten y la rotación empieza de nuevo al día siguiente.
+4. **Escribe el texto**: usa tu propio texto con un **Nombre de la lista** y un **Enlace de la lista** que insertas, o deja que la IA escriba uno para cada lista si tienes una clave de OpenAI configurada. Añade una foto por lista subiéndola, o deja que la IA cree una.
+
+Tus listas se publican en todos los destinos que tienes conectados en **Destinos sociales**. Usa **Publicar la siguiente lista ahora** para enviar una de inmediato y verla funcionar. Activa la rotación y Butler se encarga del resto.
+
 ## Centro de códigos promocionales
 
 La pestaña **Centro de códigos promocionales** hace dos cosas: muestra el **Deals Hub** de Amazon Associates para que publiques ofertas curadas y mantiene tus códigos promocionales organizados.
@@ -110,9 +135,10 @@ Cómo configurarla:
 - **Añadir campaña**: ponle un nombre y el texto de la publicación que verán tus seguidores (por ejemplo "¡Las 50 mejores ofertas de cocina de hoy! Todos los enlaces en los comentarios.").
 - **Perfil de búsqueda o palabras clave personalizadas**: elige un **Perfil de búsqueda** guardado (un conjunto con nombre de palabras clave y filtros, como "Gadgets de cocina", que puedes reutilizar en varias campañas) o quédate en Personalizado y escribe las palabras clave (una por línea) y exactamente cuántas ofertas incluir. Una campaña configurada en 20 publica exactamente las 20 mejores que encuentre, ordenadas por porcentaje de descuento. Guarda cualquier configuración Personalizada como perfil con un clic; editar un perfil actualiza todas las campañas que lo usan.
 - **Origen de las ofertas**: *Búsqueda nueva al publicar* ejecuta una búsqueda de Amazon con las palabras clave de la campaña justo antes de publicar (ofertas más frescas, tarda unos minutos). *Desde ofertas ya recolectadas* elige al instante entre las ofertas que tus búsquedas ya encontraron.
-- **Horas**: elige hasta cuatro horas de publicación al día y, si quieres, limita la campaña a ciertos días de la semana.
+- **Días y horas**: activa cada día en el que quieras publicar y define las horas solo para ese día, de modo que una campaña pueda publicar el lunes a las 9:00 y el miércoles a las 14:00 y 18:00. Cada día admite hasta cuatro horas, y días distintos pueden publicar a horas distintas.
 - **Dos resúmenes al día**: crea una segunda campaña con sus propias palabras clave, su propia cantidad y una hora posterior. Por ejemplo, cocina a las 9:00 y "Los 20 mejores hallazgos de Amazon en oferta hoy" a las 10:00. Cada campaña solo publica sus propias ofertas.
 - **Opciones de comentario**: decide si cada comentario incluye la foto del producto y, si quieres, escribe tu propia plantilla de comentario con variables como `{{title}}`, `{{salePrice}}`, `{{percentOff}}` y `{{url}}`. La bandeja de píldoras coincide exactamente con la de Crea tu publicación, incluidas las píldoras naranjas de biblioteca (Hook, CTA, Hashtags, Urgencia): haz clic en una para editar sus líneas y arrástrala para usarla.
+- **Qué grupos**: cuando Grupos de Facebook es un destino, cada campaña muestra una casilla por cada grupo que tienes en Destinos sociales. Déjalos todos marcados para publicar en todos, o elige solo aquellos en los que debe publicar esta campaña. Así dos campañas pueden apuntar a dos grupos distintos. Las Páginas de Facebook siguen yendo a todas tus páginas.
 
 Los comentarios se publican despacio a propósito, cada 20 a 45 segundos, para que Facebook no marque actividad rápida. Un resumen de 50 ofertas tarda entre 20 y 40 minutos, y las demás publicaciones programadas esperan, así que deja al menos 45 minutos entre campañas. Si Facebook pide ir más despacio a mitad de la ejecución, el resumen se detiene antes y la tarjeta de la campaña muestra cuántos comentarios se publicaron (por ejemplo "publicó 17/50"). Todo se guarda solo mientras escribes, y **Ejecutar ahora** lanza una campaña al momento para que pruebes un resumen pequeño de principio a fin.
 

@@ -31,9 +31,21 @@ The workspace opens to a chip-bar with 10 tabs. The setup flow follows them left
 4. **Scheduler**: turn on the **Post scheduler** and pick a cadence. The defaults are conservative: groups every 1h, pages every 2h, Telegram every 15 min, Reddit/Instagram/Threads off.
 5. Click **Run now** under Harvest to do one search-and-post round so you can see end-to-end behavior before turning on the schedule.
 
+## Starter keywords by niche
+
+The first time you open the **Keywords** tab with every month empty, Butler asks what niches you post deals for: Auto, Travel, Motherhood & Parenting, Home Decor, Beauty, Fitness, Kitchen, Pets, Fashion, Tech & Gadgets, Health & Wellness, Food & Drink, Baby & Kids, Outdoors & Camping, Office & Organization, and Crafts & Hobbies. Check any that fit and click **Add keywords**: every month gets about 20 ready-made seasonal keywords per niche. Back-to-school gear lands in July and August for Motherhood, holiday decor in November and December, New Year fitness in January, and so on. The suggestions favor daily-use products and multi-packs that sell well when discounted, and they match your app language (the English, Spanish, and French sets are each curated for their own Amazon marketplace). Prefer a blank slate? Click **Skip, I'll enter my own**. You can reopen the picker any time with **Suggest keywords by niche** at the top of the Keywords tab, and re-running it never duplicates keywords you already have.
+
 ## Filter presets
 
 The **active preset** (default named `default`) saves your filter config. You can have multiple presets for different niches - say one for "tech under $50" and one for "home decor under $100" - and swap between them from the Overview tab. Clones (a paid add-on) give each clone its own preset store so you can run multiple niches in parallel with no preset switching.
+
+## Include deals with a clippable coupon
+
+Some Amazon products have a clippable coupon (for example "Apply 17% coupon", or a set dollar amount off) on top of any sale price. Amazon's product feed does not report coupons, so Butler reads them from Amazon's coupons page directly.
+
+- On the **Deal Filters** tab, open **Amazon coupons** and turn on **Include Amazon coupon deals**. Your next search also scans Amazon's coupons page in the app's Amazon browser, prices each coupon product, and adds the ones that pass your filters. The first time, make sure you are signed in to Amazon in the app browser.
+- Every coupon deal is added with its coupon amount, so you can feature it in a post. In **Build Your Post**, drag in the **Coupon** pill (a short badge such as "17% coupon"), the **Coupon Price** pill (the price after the coupon, such as $19.87), or the **Coupon % Off** pill.
+- Want coupon products only? Turn on **Only coupon deals** in the filters and Butler keeps just the products that have a clippable coupon.
 
 ## Posting from more than one Facebook account
 
@@ -78,6 +90,19 @@ Set it up in three steps:
 
 Use **Build now** to run it once on demand, or flip the toggle so it runs after every harvest. The status line shows progress and the last run summary.
 
+## Idea List Rotation: post your existing idea lists on a schedule
+
+Already have idea lists on your Amazon storefront? The **Idea List Rotation** tab posts them for you on a schedule, one list at a time. It never posts the same list twice in the same day, so your feed stays varied.
+
+Set it up:
+
+1. **Refresh my idea lists**: click it once and Butler scans your storefront and pulls in every idea list you have, each with an on/off checkbox. Uncheck any you do not want in the rotation. This finds all your lists, whether you built them by hand or with Auto-build.
+2. **Pick your times and days**: add the times of day and the days of the week you want a list to go out.
+3. **Choose the order**: **In order** goes top to bottom through your lists; **Shuffle** picks at random. Either way, no list repeats within a day. If you schedule more times in a day than you have lists, the extra times are skipped and the rotation starts fresh the next day.
+4. **Write the caption**: use your own caption with a **List name** and **List link** you drop in, or let AI write one for each list when you have an OpenAI key set. Add a photo per list by uploading one, or let AI create one.
+
+Your lists post to every destination you have connected under **Social Destinations**. Use **Post the next list now** to send one immediately and see it work. Turn the rotation on and Butler handles the rest.
+
 ## Promo Code Hub
 
 The **Promo Code Hub** tab does two things: it surfaces the Amazon Associates **Deals Hub** so you can post curated deals, and it keeps your promo codes organized.
@@ -110,9 +135,10 @@ Setting one up:
 - **Add campaign**: give it a name and the post text your followers will see (for example "Top 50 kitchen gadget deals today! All links in the comments.").
 - **Search profile or custom keywords**: pick a saved **Search Profile** (a named set of keywords and filters, like "Kitchen Gadgets", that you can reuse across campaigns), or stay on Custom and enter keywords (one per line) plus exactly how many deals to include. A campaign set to 20 posts exactly the top 20 it finds, ranked by percent off. Save any Custom setup as a profile with one click; editing a profile updates every campaign that uses it.
 - **Deal source**: *Fresh search at post time* runs a new Amazon search with the campaign's keywords right before posting (freshest deals, adds a few minutes). *From already harvested deals* picks instantly from the deals your searches already found.
-- **Times**: pick up to four posting times per day, and optionally limit the campaign to certain weekdays.
+- **Days and times**: turn on each day you want to post and set the times just for that day, so one campaign can post Monday at 9:00 and Wednesday at 2:00 and 6:00. Each day can have up to four times, and different days can post at different times.
 - **Two roundups a day**: create a second campaign with its own keywords, its own count, and a later time. For example, kitchen gadgets at 9:00 and "Top 20 Amazon Finds on Sale Today" at 10:00. Each campaign only ever posts its own deals.
 - **Comment options**: choose whether each comment includes the product photo, and optionally write your own comment template with tokens like `{{title}}`, `{{salePrice}}`, `{{percentOff}}`, and `{{url}}`. The pill tray matches Build Your Post exactly, including the orange library pills (Hook, CTA, Hashtags, Urgency): click one to edit its lines, drag it in to use it.
+- **Which groups**: when Facebook Groups is a destination, each campaign shows a checkbox for every group you have in Social Destinations. Leave them all checked to post to every group, or pick just the ones this campaign should post to. That lets two campaigns target two different groups. Facebook Pages still go to all your pages.
 
 Comments post slowly on purpose, about 20 to 45 seconds apart, so Facebook does not flag rapid activity. A 50 deal roundup takes roughly 20 to 40 minutes, and other scheduled posts wait for it, so leave at least 45 minutes between campaigns. If Facebook asks to slow down mid-run, the roundup stops early and the campaign card shows how many comments made it (for example "posted 17/50"). Everything auto-saves as you type, and **Run now** fires a campaign immediately so you can watch a small test roundup end to end.
 
