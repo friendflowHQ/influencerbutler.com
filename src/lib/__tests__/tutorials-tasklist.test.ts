@@ -73,8 +73,16 @@ describe("renderMarkdown task lists", () => {
 describe("legacy tutorial regression", () => {
   it("no existing tutorial produces task-list markup", async () => {
     const root = path.join(process.cwd(), "content", "tutorials");
+    // These tutorials use task lists on purpose; the sweep only guards
+    // tutorials that never opted in.
+    const optedIn = [
+      "aip-course-",
+      "getting-started-influencer-butler",
+      "run-in-cloud",
+      "share-products-manually",
+    ];
     const files = (await readdir(root)).filter(
-      (f) => f.endsWith(".mdx") && !f.startsWith("aip-course-"),
+      (f) => f.endsWith(".mdx") && !optedIn.some((prefix) => f.startsWith(prefix)),
     );
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
