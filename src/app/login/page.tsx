@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,64 +31,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
   const [linkNotice, setLinkNotice] = useState<string | null>(null);
-  const [completing, setCompleting] = useState(false);
   const searchParams = useSearchParams();
-
-  // Magic links (sign-in links, comp welcomes, admin resends) land here:
-  // Supabase's verify redirect carries the session tokens in the URL fragment,
-  // and the middleware bounces logged-out visitors to /login with the fragment
-  // intact. Consume the tokens, set the session, then bounce through the auth
-  // callback so the middleware sees fresh cookies and referral stamping runs.
-  useEffect(() => {
-    const rawHash = window.location.hash;
-    const hash = rawHash.startsWith("#") ? rawHash.slice(1) : rawHash;
-    if (!hash) return;
-    const params = new URLSearchParams(hash);
-
-    const expiredMessage =
-      "That sign-in link is invalid or has already been used. Request a fresh one below.";
-    if (params.get("error") || params.get("error_description")) {
-      setError(expiredMessage);
-      window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      return;
-    }
-
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    if (!accessToken || !refreshToken) return;
-
-    setCompleting(true);
-    const supabase = createClient();
-    const next = resolveNext(searchParams.get("next"));
-    let done = false;
-    const finish = () => {
-      done = true;
-      // Hard redirect so the middleware sees the fresh session cookies; the
-      // callback route also stamps first-touch referrals for new accounts.
-      window.location.href = `/api/auth/callback?next=${encodeURIComponent(next)}`;
-    };
-
-    // Backup path: the browser client may auto-detect the fragment session
-    // slightly after mount.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && !done) finish();
-    });
-
-    void supabase.auth
-      .setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ data, error: sessionError }) => {
-        if (done) return;
-        if (sessionError || !data.session) {
-          setCompleting(false);
-          setError(expiredMessage);
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-          return;
-        }
-        finish();
-      });
-
-    return () => sub.subscription.unsubscribe();
-  }, [searchParams]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -137,8 +80,8 @@ function LoginForm() {
       }
       setLinkNotice(
         mode === "reset"
-          ? "We just sent a link to set your password. Check your inbox."
-          : "We just sent a sign-in link to that address. Check your inbox. The link logs you straight in, and you can set a password afterwards under Profile.",
+          ? "If that email has an account, we just sent a link to set a new password. Check your inbox."
+          : "If that email has an account, we just sent a sign-in link. Check your inbox. The link logs you straight in, and you can set a password afterwards under Profile.",
       );
     } catch {
       setError("Something went wrong. Please try again.");
@@ -146,15 +89,6 @@ function LoginForm() {
       setLinkMode(null);
     }
   };
-
-  if (completing) {
-    return (
-      <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center">
-        <p className="text-sm font-medium text-slate-700">Signing you in...</p>
-        <p className="mt-1 text-xs text-slate-500">One moment while we finish setting up your session.</p>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -221,11 +155,6 @@ function LoginForm() {
             {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
           </button>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          Entered your email in the desktop app but never logged in on the website? You may not
-          have an account here yet: use &quot;Email me a sign-in link&quot; and we&apos;ll set one
-          up for you.
-        </p>
       </div>
     </form>
   );

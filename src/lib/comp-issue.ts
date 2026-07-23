@@ -236,10 +236,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   // so the entitlement (which needs a user_id) still works, skip delivery, and
   // let the admin copy the key and hand it out. hasRecipient gates the email +
   // sign-in link and how the grant/list present it.
-  // Lowercase to match GoTrue's normalization of auth.users emails; otherwise
-  // the profiles row keeps the as-typed casing and every lowercased-email
-  // lookup (LS webhook, comp dedupe, admin tools) misses it.
-  const rawEmail = (input.email ?? "").trim().toLowerCase();
+  const rawEmail = (input.email ?? "").trim();
   const hasRecipient = rawEmail.length > 0;
   const email = hasRecipient ? rawEmail : `comp-${randomUUID()}@${COMP_PLACEHOLDER_DOMAIN}`;
   const forever = input.forever === true;
