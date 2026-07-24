@@ -3,11 +3,19 @@ import {
   DEAL_HARVEST_DELAY_MAX_MS,
   DEAL_HARVEST_DELAY_MIN_MS,
   DEAL_HARVEST_FETCH_TIMEOUT_MS,
+  DEAL_HARVEST_SHORTLINK_CAP,
+  DEAL_HARVEST_SHORTLINK_DELAY_MAX_MS,
+  DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS,
   DEAL_HARVEST_URL_CAP,
   DEAL_SOURCES_STALE_MS,
   ENDPOINTS,
 } from "../shared/constants";
-import { extractDeals, type HarvestedDeal } from "../tools/deal-harvester/extract";
+import {
+  dealFromAmazonUrl,
+  extractDeals,
+  extractShortLinks,
+  type HarvestedDeal,
+} from "../tools/deal-harvester/extract";
 import { log } from "../shared/log";
 import type { DealSource, HarvestResult } from "../shared/messages";
 
@@ -25,6 +33,10 @@ export async function harvestDealSites(urls: string[]): Promise<HarvestResult> {
 
   const byKey = new Map<string, HarvestedDeal>();
   const errors: HarvestResult["errors"] = [];
+  // Amazon short links seen per page, resolved after the page sweep. Value is
+  // the aggregator page the link was found on (first sighting wins) so the
+  // resolved deal is attributed to the right source in the review list.
+  const shortLinks = new Map<string, string>();
   let asinCapHit = false;
 
   for (let i = 0; i < list.length; i++) {
@@ -44,9 +56,41 @@ export async function harvestDealSites(urls: string[]): Promise<HarvestResult> {
           break;
         }
       }
+      for (const link of extractShortLinks(html)) {
+        if (!shortLinks.has(link)) shortLinks.set(link, url);
+      }
     } catch (error) {
       errors.push({ url, error: errorMessage(error) });
       log("deal-harvest", `fetch failed for ${url}`, error);
+    }
+  }
+
+  // Resolve short links (amzn.to / a.co) into real product URLs. Deal sites use
+  // these heavily; without this pass a site whose links are all shortened
+  // yields zero deals. Best-effort per link: a dead or bot-walled link is
+  // skipped, never surfaced as a page error.
+  if (shortLinks.size > 0 && byKey.size < DEAL_HARVEST_ASIN_CAP) {
+    let resolved = 0;
+    for (const [link, sourceUrl] of shortLinks) {
+      if (resolved >= DEAL_HARVEST_SHORTLINK_CAP) {
+        asinCapHit = true;
+        break;
+      }
+      if (byKey.size >= DEAL_HARVEST_ASIN_CAP) {
+        asinCapHit = true;
+        break;
+      }
+      if (resolved > 0) await sleep(shortLinkDelay());
+      resolved += 1;
+      try {
+        const finalUrl = await resolveRedirect(link);
+        const deal = finalUrl ? dealFromAmazonUrl(finalUrl, sourceUrl) : null;
+        if (!deal) continue;
+        const key = `${deal.marketplace}:${deal.asin}`;
+        if (!byKey.has(key)) byKey.set(key, deal);
+      } catch (error) {
+        log("deal-harvest", `short link resolve failed for ${link}`, error);
+      }
     }
   }
 
@@ -56,6 +100,28 @@ export async function harvestDealSites(urls: string[]): Promise<HarvestResult> {
     errors,
     capped: capped || asinCapHit,
   };
+}
+
+// Follow a short link's redirect chain and return the final URL. The body is
+// never read (cancelled as soon as the headers land); only res.url matters.
+async function resolveRedirect(url: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEAL_HARVEST_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      credentials: "omit",
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    try {
+      await res.body?.cancel();
+    } catch {
+      // body already consumed or locked; the URL is still what we came for
+    }
+    return res.url || null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function fetchText(url: string): Promise<string> {
@@ -134,6 +200,13 @@ function jitteredDelay(): number {
   return (
     DEAL_HARVEST_DELAY_MIN_MS +
     Math.random() * (DEAL_HARVEST_DELAY_MAX_MS - DEAL_HARVEST_DELAY_MIN_MS)
+  );
+}
+
+function shortLinkDelay(): number {
+  return (
+    DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS +
+    Math.random() * (DEAL_HARVEST_SHORTLINK_DELAY_MAX_MS - DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS)
   );
 }
 

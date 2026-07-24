@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractDeals } from "./extract";
+import { dealFromAmazonUrl, extractDeals, extractShortLinks } from "./extract";
 import { findingKey } from "../../transport/types";
 import type { DealFinding } from "../../transport/types";
 
@@ -81,6 +81,71 @@ describe("extractDeals", () => {
     const html = `<a href="https://www.google.com/url?q=https://www.amazon.com/dp/B0IIIIIIII&amp;sa=D">Deal 1</a>`;
     const asins = extractDeals(html, "https://docs.google.com/document/d/abc").map((d) => d.asin);
     expect(asins).toContain("B0IIIIIIII");
+  });
+});
+
+describe("extractShortLinks", () => {
+  it("finds amzn.to and a.co links, deduped, order preserved", () => {
+    const html = `
+      <a href="https://amzn.to/3AbCdEf">Deal 1</a>
+      <a href="https://a.co/d/8xYz12Ab">Deal 2</a>
+      <a href="https://amzn.to/3AbCdEf">Deal 1 again</a>
+      <a href="http://amzn.to/4GhIjKl">Deal 3 (http)</a>
+    `;
+    expect(extractShortLinks(html)).toEqual([
+      "https://amzn.to/3AbCdEf",
+      "https://a.co/d/8xYz12Ab",
+      "https://amzn.to/4GhIjKl",
+    ]);
+  });
+
+  it("finds regional short hosts (amzn.eu, amzn.asia)", () => {
+    const html = `
+      <a href="https://amzn.eu/d/aBcD1234">EU</a>
+      <a href="https://amzn.asia/d/eFgH5678">Asia</a>
+    `;
+    expect(extractShortLinks(html)).toEqual([
+      "https://amzn.eu/d/aBcD1234",
+      "https://amzn.asia/d/eFgH5678",
+    ]);
+  });
+
+  it("returns nothing when the page has no short links", () => {
+    const html = `<a href="https://www.amazon.com/dp/B0AAAAAAAA">direct</a>`;
+    expect(extractShortLinks(html)).toEqual([]);
+  });
+});
+
+describe("dealFromAmazonUrl", () => {
+  it("maps a resolved product URL to a deal attributed to the aggregator page", () => {
+    const deal = dealFromAmazonUrl(
+      "https://www.amazon.com/BISSELL-Little-Green/dp/B0016HF5GK?ref_=short_url",
+      "https://savewithcindy.shop/",
+    );
+    expect(deal).toEqual({
+      asin: "B0016HF5GK",
+      marketplace: "amazon.com",
+      sourceUrl: "https://savewithcindy.shop/",
+      promoCode: null,
+    });
+  });
+
+  it("reads the marketplace off a non-US final URL", () => {
+    const deal = dealFromAmazonUrl("https://www.amazon.co.uk/dp/B0BBBBBBBB", "https://x.shop/");
+    expect(deal?.marketplace).toBe("amazon.co.uk");
+  });
+
+  it("returns null for a non-product landing (expired link, bot wall)", () => {
+    expect(dealFromAmazonUrl("https://www.amazon.com/errors/404", "https://x.shop/")).toBeNull();
+    expect(dealFromAmazonUrl("", "https://x.shop/")).toBeNull();
+  });
+
+  it("is stateful-regex safe: two calls in a row both match", () => {
+    // The underlying pattern is a /g/ regex; a stale lastIndex must not make
+    // every second resolution silently miss.
+    const url = "https://www.amazon.com/dp/B0016HF5GK";
+    expect(dealFromAmazonUrl(url, "https://x.shop/")?.asin).toBe("B0016HF5GK");
+    expect(dealFromAmazonUrl(url, "https://x.shop/")?.asin).toBe("B0016HF5GK");
   });
 });
 

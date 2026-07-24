@@ -185,10 +185,52 @@ async function runHarvest(
     }
     renderResultsInto();
     status.textContent = harvestSummary(result);
+    renderPerSite(btn.closest(".card") as HTMLElement | null, unique, result);
   } finally {
     btn.disabled = false;
     btn.textContent = D.harvest;
   }
+}
+
+// Per-site breakdown under the harvest status: every attempted site with its
+// deal count, so a site that fetched fine but yielded nothing is visible
+// instead of silently missing (the usual cause: script-rendered pages).
+function renderPerSite(card: HTMLElement | null, attempted: string[], result: HarvestResult): void {
+  if (!card) return;
+  document.getElementById("per-site-breakdown")?.remove();
+
+  const wrap = el("div");
+  wrap.id = "per-site-breakdown";
+  const h = el("p", "muted small");
+  h.textContent = D.perSiteHeading;
+  wrap.append(h);
+
+  const errorByUrl = new Map(result.errors.map((e) => [e.url, e.error]));
+  const countByUrl = new Map<string, number>();
+  for (const row of rows) {
+    countByUrl.set(row.deal.sourceUrl, (countByUrl.get(row.deal.sourceUrl) ?? 0) + 1);
+  }
+
+  const list = el("ul", "saved-list");
+  for (const url of attempted) {
+    const li = el("li");
+    const site = el("span", "url");
+    site.textContent = hostOf(url);
+    const note = el("span", "muted small");
+    const error = errorByUrl.get(url);
+    const count = countByUrl.get(url) ?? 0;
+    if (error) {
+      note.textContent = ` ${D.perSiteReadError} (${error})`;
+    } else if (count === 0) {
+      note.textContent = ` ${D.perSiteCount(0)}. ${D.perSiteZeroHint}`;
+    } else {
+      note.textContent = ` ${D.perSiteCount(count)}`;
+    }
+    li.append(site, note);
+    list.append(li);
+  }
+  wrap.append(list);
+  card.append(wrap);
 }
 
 function harvestSummary(result: HarvestResult): string {
@@ -462,20 +504,64 @@ async function sendSelected(
   status.textContent = D.sending;
   let sent = 0;
   let lastMessage = "";
+  // Older desktop apps do not know deal.push.batch; when the router answers
+  // "Unknown command" once, fall back to sequential single deal.push for the
+  // rest of the run (the documented compatibility path in
+  // docs/extension-local-bridge.md).
+  let useSinglePush = false;
   for (let i = 0; i < products.length; i += DEAL_PUSH_CHUNK) {
     const chunk = products.slice(i, i + DEAL_PUSH_CHUNK);
-    const result = await sendToBackground<HudCommandResult>({
-      kind: "SEND_HUD_COMMAND",
-      command: { type: "deal.push.batch", workspace, products: chunk },
-    });
-    if (!result.ok) {
-      lastMessage = result.message ?? D.appNotConnected;
+    if (!useSinglePush) {
+      const result = await sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "deal.push.batch", workspace, products: chunk },
+      });
+      if (result.ok) {
+        sent += chunk.length;
+        continue;
+      }
+      if (!/^Unknown command/i.test(result.message ?? "")) {
+        lastMessage = result.message ?? D.appNotConnected;
+        break;
+      }
+      useSinglePush = true;
+    }
+    const single = await sendChunkOneByOne(chunk, workspace);
+    sent += single.sent;
+    if (single.stopped) {
+      lastMessage = single.lastMessage || D.appNotConnected;
       break;
     }
-    sent += chunk.length;
   }
   btn.disabled = false;
   status.textContent = sent > 0 ? `${D.sentToApp} (${sent})` : lastMessage || D.appNotConnected;
+}
+
+// Sequential single-product pushes for desktop apps that predate
+// deal.push.batch. A few consecutive failures means the app side is down (not
+// one bad product), so stop rather than burn hundreds of doomed round trips.
+async function sendChunkOneByOne(
+  chunk: ProductRef[],
+  workspace: string,
+): Promise<{ sent: number; stopped: boolean; lastMessage: string }> {
+  let sent = 0;
+  let consecutiveFailures = 0;
+  let lastMessage = "";
+  for (const product of chunk) {
+    const result = await sendToBackground<HudCommandResult>({
+      kind: "SEND_HUD_COMMAND",
+      command: { type: "deal.push", workspace, product },
+    });
+    if (result.ok) {
+      sent += 1;
+      consecutiveFailures = 0;
+      continue;
+    }
+    consecutiveFailures += 1;
+    lastMessage = result.message ?? "";
+    if (consecutiveFailures >= 5) return { sent, stopped: true, lastMessage };
+  }
+  return { sent, stopped: false, lastMessage };
 }
 
 function toProductRef(row: Row): ProductRef {
@@ -491,11 +577,21 @@ function toProductRef(row: Row): ProductRef {
 }
 
 // Request host permission for the origins of the given URLs, from the current
-// user gesture. Returns true when granted (or nothing new was needed).
+// user gesture. Returns true when granted (or nothing new was needed). Amazon's
+// short-link hosts ride along on every request: deal pages link products
+// through amzn.to / a.co, and the background can only follow those redirects
+// with host permission.
+const SHORT_LINK_ORIGINS = [
+  "https://amzn.to/*",
+  "https://a.co/*",
+  "https://amzn.eu/*",
+  "https://amzn.asia/*",
+];
+
 async function requestOrigins(urls: string[]): Promise<boolean> {
   const origins = [
-    ...new Set(
-      urls
+    ...new Set([
+      ...urls
         .map((u) => {
           try {
             return `${new URL(u).origin}/*`;
@@ -504,7 +600,8 @@ async function requestOrigins(urls: string[]): Promise<boolean> {
           }
         })
         .filter(Boolean),
-    ),
+      ...SHORT_LINK_ORIGINS,
+    ]),
   ];
   if (origins.length === 0) return true;
   try {

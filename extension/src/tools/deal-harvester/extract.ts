@@ -36,6 +36,13 @@ const ABSOLUTE_ASIN_RE =
 // data-asin="ASIN" attributes, used by storefront-style embeds.
 const DATA_ASIN_RE = /data-asin=["']([A-Z0-9]{10})["']/gi;
 
+// Amazon short links (amzn.to, a.co, amzn.eu, amzn.asia). Deal sites use these
+// heavily, and they carry no ASIN in the URL itself: the background must follow
+// the redirect to the real product page URL and extract from there. The token
+// is a short alphanumeric slug, optionally behind a /d/ share prefix.
+const SHORT_LINK_RE =
+  /https?:\/\/(?:amzn\.to|a\.co|amzn\.eu|amzn\.asia)\/(?:d\/)?[A-Za-z0-9]{4,20}/gi;
+
 // Some aggregators render each deal as one element carrying both the ASIN and
 // its promo code as data attributes. When present (any order), we can pair them
 // without a DOM. Host-agnostic because the shape, not the site, is what we key on.
@@ -148,4 +155,40 @@ export function extractDeals(html: string, sourceUrl: string): HarvestedDeal[] {
   const generic = [...byKey.values()];
   const parser = SITE_PARSERS[hostOf(sourceUrl)];
   return parser ? parser(html, sourceUrl, generic) : generic;
+}
+
+/**
+ * Every Amazon short link (amzn.to / a.co / amzn.eu / amzn.asia) on the page,
+ * deduped, original order preserved. Pure and DOM-free like extractDeals; the
+ * background follows each redirect and feeds the final URL to
+ * dealFromAmazonUrl below.
+ */
+export function extractShortLinks(html: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const m of html.matchAll(SHORT_LINK_RE)) {
+    const url = (m[0] as string).replace(/^http:/i, "https:");
+    if (seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
+/**
+ * Turn a fully-resolved Amazon product URL (where a short link landed) into a
+ * HarvestedDeal attributed to the aggregator page it came from. Returns null
+ * when the URL is not an ASIN-bearing Amazon URL (expired link, bot wall
+ * bounce, non-product landing page).
+ */
+export function dealFromAmazonUrl(finalUrl: string, sourceUrl: string): HarvestedDeal | null {
+  ABSOLUTE_ASIN_RE.lastIndex = 0;
+  const m = ABSOLUTE_ASIN_RE.exec(finalUrl);
+  if (!m) return null;
+  return {
+    asin: m[2] as string,
+    marketplace: marketplaceFromHost(m[1] ?? DEFAULT_MARKETPLACE),
+    sourceUrl,
+    promoCode: null,
+  };
 }

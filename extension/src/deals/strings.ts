@@ -30,6 +30,10 @@ export interface DealsDict {
   foundSummary: (n: number) => string;
   errorSummary: (n: number) => string;
   cappedNote: string;
+  perSiteHeading: string;
+  perSiteCount: (n: number) => string;
+  perSiteReadError: string;
+  perSiteZeroHint: string;
   enriching: string;
   sendHeading: string;
   workspaceLabel: string;
@@ -78,6 +82,10 @@ const en: DealsDict = {
   foundSummary: (n) => `Found ${n} deal${n === 1 ? "" : "s"}.`,
   errorSummary: (n) => `${n} site${n === 1 ? "" : "s"} could not be read.`,
   cappedNote: "Results were capped. Harvest fewer sites at a time for full coverage.",
+  perSiteHeading: "Results by site",
+  perSiteCount: (n) => `${n} deal${n === 1 ? "" : "s"}`,
+  perSiteReadError: "could not be read",
+  perSiteZeroHint: "No Amazon product links found. Some sites load their deals with scripts and cannot be read this way.",
   enriching: "Filling in prices and commission...",
   sendHeading: "Send to a workspace",
   workspaceLabel: "Deals Influencer Butler workspace",
@@ -127,6 +135,10 @@ const es: DealsDict = {
   foundSummary: (n) => `Se ${n === 1 ? "encontró" : "encontraron"} ${n} oferta${n === 1 ? "" : "s"}.`,
   errorSummary: (n) => `${n} sitio${n === 1 ? "" : "s"} no se ${n === 1 ? "pudo" : "pudieron"} leer.`,
   cappedNote: "Se limitaron los resultados. Recolecta menos sitios a la vez para cobertura completa.",
+  perSiteHeading: "Resultados por sitio",
+  perSiteCount: (n) => `${n} oferta${n === 1 ? "" : "s"}`,
+  perSiteReadError: "no se pudo leer",
+  perSiteZeroHint: "No se encontraron enlaces de productos de Amazon. Algunos sitios cargan sus ofertas con scripts y no se pueden leer de esta forma.",
   enriching: "Completando precios y comisión...",
   sendHeading: "Enviar a un espacio",
   workspaceLabel: "Espacio de Ofertas Diarias",
@@ -176,6 +188,10 @@ const fr: DealsDict = {
   foundSummary: (n) => `${n} offre${n === 1 ? "" : "s"} trouvée${n === 1 ? "" : "s"}.`,
   errorSummary: (n) => `${n} site${n === 1 ? "" : "s"} n'a pas pu être lu.`,
   cappedNote: "Les résultats ont été limités. Collectez moins de sites à la fois pour une couverture complète.",
+  perSiteHeading: "Résultats par site",
+  perSiteCount: (n) => `${n} offre${n === 1 ? "" : "s"}`,
+  perSiteReadError: "n'a pas pu être lu",
+  perSiteZeroHint: "Aucun lien de produit Amazon trouvé. Certains sites chargent leurs offres avec des scripts et ne peuvent pas être lus de cette façon.",
   enriching: "Ajout des prix et de la commission...",
   sendHeading: "Envoyer vers un espace",
   workspaceLabel: "Espace Offres du Jour",

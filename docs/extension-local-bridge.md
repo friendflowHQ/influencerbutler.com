@@ -186,9 +186,11 @@ as if the user added it there by hand.
 
 **`deal.push.batch`** - same as `deal.push`, but many products into one
 workspace at once, from the Deal Sites Harvester. The extension chunks large
-harvests (200 products per command), so the app should accept a batch and
-return one result. Until the app supports this, the extension falls back to N
-sequential `deal.push` calls.
+harvests (200 products per command); the app accepts a batch and returns one
+result ("Added N of M deal(s) to Deals Influencer Butler."). Desktop apps
+newer than 1.0.51 implement it; when an older app answers "Unknown command",
+the extension falls back to N sequential `deal.push` calls for the rest of
+the run.
 
 ```json
 {

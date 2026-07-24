@@ -148,6 +148,13 @@ export const DEAL_HARVEST_DELAY_MAX_MS = 1800;
 export const DEAL_HARVEST_FETCH_TIMEOUT_MS = 15_000;
 export const DEAL_PUSH_CHUNK = 200;
 export const DEAL_SOURCES_STALE_MS = 20 * 60 * 60 * 1000;
+// Amazon short links (amzn.to / a.co / amzn.eu / amzn.asia) found on a page
+// carry no ASIN in the URL, so each is resolved by following its redirect to
+// the real product URL. Capped per run and paced lighter than page fetches
+// (the redirector is Amazon's own: one hop, no body read).
+export const DEAL_HARVEST_SHORTLINK_CAP = 100;
+export const DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS = 150;
+export const DEAL_HARVEST_SHORTLINK_DELAY_MAX_MS = 400;
 
 // Instagram Goldmine (self-hosted build only). Harvested creator rows are
 // pushed into the desktop app's Pitch / Group Invite butlers in chunks so one
