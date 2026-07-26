@@ -236,6 +236,27 @@ export interface Dict {
   tileInfluencer: (n: number) => string;
   searchOverlayActive: string;
 
+  // Earnings overlay (storefront/Curations badges + breakdown popup)
+  sumEarningsOverlay: string;
+  toolEarningsOverlay: string;
+  earnBadgeTitle: string;
+  earnDetailTitle: string;
+  earnByStore: string;
+  earnByYear: string;
+  earnByMonth: string;
+  earnCampaigns: string;
+  earnOnsite: string;
+  earnOffsite: string;
+  earnScopeThisMarket: string;
+  earnScopeAllStores: string;
+  earnUnits: (n: number) => string;
+  earnOrders: (n: number) => string;
+  earnRate: (pct: number) => string;
+  earnClicks: (n: number) => string;
+  earnViewBreakdown: string;
+  earnNoBreakdown: string;
+  earnClose: string;
+
   // Campaign Radar (Creator Connections campaign grid)
   sumCampaignRadar: string;
   toolCampaignRadar: string;
@@ -750,6 +771,26 @@ const en: Dict = {
   tileProvenEarner: "Proven earner",
   tileInfluencer: (n) => `${n} infl. videos`,
   searchOverlayActive: "Search overlay is active.",
+
+  sumEarningsOverlay: "Earnings overlay",
+  toolEarningsOverlay: "Earnings overlay (storefront badges)",
+  earnBadgeTitle: "What you have earned on this post. Click for the full breakdown.",
+  earnDetailTitle: "Product earnings",
+  earnByStore: "Earnings by store",
+  earnByYear: "Earnings by year",
+  earnByMonth: "Earnings by month",
+  earnCampaigns: "Creator Connections campaigns",
+  earnOnsite: "onsite",
+  earnOffsite: "offsite",
+  earnScopeThisMarket: "This marketplace",
+  earnScopeAllStores: "All stores",
+  earnUnits: (n) => `${n} unit${n === 1 ? "" : "s"}`,
+  earnOrders: (n) => `${n} order${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `rate ${pct}%`,
+  earnClicks: (n) => `${n} click${n === 1 ? "" : "s"}`,
+  earnViewBreakdown: "View breakdown",
+  earnNoBreakdown: "Update the desktop app to see the store, year, month, and campaign breakdown.",
+  earnClose: "Close",
 
   sumCampaignRadar: "Campaign Radar",
   toolCampaignRadar: "Campaign Radar (highlight campaigns)",
@@ -1283,6 +1324,26 @@ const es: Dict = {
   tileInfluencer: (n) => `${n} videos de infl.`,
   searchOverlayActive: "El overlay de búsqueda está activo.",
 
+  sumEarningsOverlay: "Ganancias en tienda",
+  toolEarningsOverlay: "Ganancias en tienda (insignias en el storefront)",
+  earnBadgeTitle: "Lo que has ganado con esta publicación. Haz clic para ver el desglose completo.",
+  earnDetailTitle: "Ganancias del producto",
+  earnByStore: "Ganancias por tienda",
+  earnByYear: "Ganancias por año",
+  earnByMonth: "Ganancias por mes",
+  earnCampaigns: "Campañas de Creator Connections",
+  earnOnsite: "en Amazon",
+  earnOffsite: "fuera de Amazon",
+  earnScopeThisMarket: "Este mercado",
+  earnScopeAllStores: "Todas las tiendas",
+  earnUnits: (n) => `${n} unidad${n === 1 ? "" : "es"}`,
+  earnOrders: (n) => `${n} pedido${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `tasa ${pct}%`,
+  earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnViewBreakdown: "Ver desglose",
+  earnNoBreakdown: "Actualiza la app de escritorio para ver el desglose por tienda, año, mes y campaña.",
+  earnClose: "Cerrar",
+
   sumCampaignRadar: "Radar de campañas",
   toolCampaignRadar: "Radar de campañas (resaltar campañas)",
   campaignRadarActive: "El Radar de campañas está activo.",
@@ -1814,6 +1875,26 @@ const fr: Dict = {
   tileProvenEarner: "Déjà rentable",
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
   searchOverlayActive: "L'overlay de recherche est actif.",
+
+  sumEarningsOverlay: "Gains en boutique",
+  toolEarningsOverlay: "Gains en boutique (badges sur le storefront)",
+  earnBadgeTitle: "Ce que vous avez gagné sur cette publication. Cliquez pour le détail complet.",
+  earnDetailTitle: "Gains du produit",
+  earnByStore: "Gains par boutique",
+  earnByYear: "Gains par année",
+  earnByMonth: "Gains par mois",
+  earnCampaigns: "Campagnes Creator Connections",
+  earnOnsite: "sur Amazon",
+  earnOffsite: "hors Amazon",
+  earnScopeThisMarket: "Ce marché",
+  earnScopeAllStores: "Toutes les boutiques",
+  earnUnits: (n) => `${n} unité${n === 1 ? "" : "s"}`,
+  earnOrders: (n) => `${n} commande${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `taux ${pct}%`,
+  earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnViewBreakdown: "Voir le détail",
+  earnNoBreakdown: "Mettez à jour l'application de bureau pour voir le détail par boutique, année, mois et campagne.",
+  earnClose: "Fermer",
 
   sumCampaignRadar: "Radar de campagnes",
   toolCampaignRadar: "Radar de campagnes (mettre en évidence)",

@@ -5,7 +5,17 @@
 // list, media list) in one paginated feed. Mechanics mirror the desktop
 // repo's storefront-butler-scraper.js (verified live 2026-07-06).
 
-export type ContentType = "video" | "photo" | "idea-list" | "media-list";
+import {
+  STOREFRONT_CARD_SELECTOR,
+  cardContentType,
+  cardTaggedAsins,
+  type StorefrontContentType,
+} from "../../amazon/storefront-cards";
+
+// Re-exported so existing importers keep the local name; the definition and the
+// card-reading helpers now live in amazon/storefront-cards.ts (shared with the
+// live-DOM earnings overlay).
+export type ContentType = StorefrontContentType;
 
 export type HarvestedItem = {
   type: ContentType;
@@ -27,18 +37,6 @@ export type HarvestResult = {
 
 const MAX_PAGES = 500; // ~10k items/feed safety valve, matches the desktop runner
 const PAGE_DELAY_MS = 130;
-const ASIN_RE = /^[A-Z0-9]{10}$/;
-
-const CARD_SELECTOR = "[class*='item-hero-container']";
-
-function typeOf(card: Element): ContentType | null {
-  const c = card.className || "";
-  if (/video-item-hero-container/.test(c)) return "video";
-  if (/photo-item-hero-container/.test(c)) return "photo";
-  if (/list-item-hero-container/.test(c)) return "idea-list";
-  if (/media-list-container/.test(c)) return "media-list";
-  return null;
-}
 
 function creatorFromPath(): string | null {
   const m = location.pathname.match(/\/shop\/([^/?#]+)/);
@@ -46,34 +44,24 @@ function creatorFromPath(): string | null {
 }
 
 function parseCard(card: Element, origin: string): HarvestedItem | null {
-  const type = typeOf(card);
+  const type = cardContentType(card);
   if (!type) return null;
 
   if (type === "video") {
     const actionEl = card.querySelector("[data-video-item-click]");
     let title = "Video";
     let url = "";
-    const tagged = new Set<string>();
     if (actionEl) {
       try {
         const data = JSON.parse(actionEl.getAttribute("data-video-item-click") || "{}");
-        const p = (data.lightboxParams || data) as {
-          title?: string;
-          contentId?: string;
-          productAsin?: string;
-          relatedProducts?: string;
-        };
+        const p = (data.lightboxParams || data) as { title?: string; contentId?: string };
         if (p.title) title = decodeEntities(p.title).slice(0, 120);
         if (p.contentId) url = `${origin}/vdp/${String(p.contentId).trim()}`;
-        for (const raw of [p.productAsin, ...String(p.relatedProducts || "").split(",")]) {
-          const asin = String(raw || "").trim().toUpperCase();
-          if (ASIN_RE.test(asin)) tagged.add(asin);
-        }
       } catch {
         // fall through to an untagged video record
       }
     }
-    return { type, title, url, taggedAsins: [...tagged], productsKnown: true };
+    return { type, title, url, taggedAsins: cardTaggedAsins(card), productsKnown: true };
   }
 
   // Photo / idea-list / media-list: the feed gives a detail link only.
@@ -135,7 +123,7 @@ export async function harvestStorefront(
     if (!html || html.length < 50) break;
 
     const doc = new DOMParser().parseFromString(html, "text/html");
-    for (const card of Array.from(doc.querySelectorAll(CARD_SELECTOR))) {
+    for (const card of Array.from(doc.querySelectorAll(STOREFRONT_CARD_SELECTOR))) {
       const item = parseCard(card, origin);
       if (!item) continue;
       counts[item.type] += 1;

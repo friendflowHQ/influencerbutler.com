@@ -421,6 +421,7 @@ async function renderSettings(): Promise<void> {
     "searchOverlay",
     "campaignMatcher",
     "campaignRadar",
+    "earningsOverlay",
     "watchlist",
   ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);

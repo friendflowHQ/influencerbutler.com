@@ -2,6 +2,8 @@ import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground, type EarningsLookupResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
+import { formatMoney, hasBreakdown } from "../earnings-overlay/model";
+import { renderEarningsDetail } from "../earnings-overlay/detail";
 
 // Your real earnings on this exact product, pulled from the desktop app's Daily
 // Commission Butler ledger over the local bridge. Nothing any competitor shows:
@@ -15,10 +17,15 @@ export function renderProductEarnings(signals: ProductSignals): void {
   // empty-box flicker and no reflow of the sections below.
   const section = addSection(t().earningsTitle);
   section.style.display = "none";
-  void fill(section, signals.asin);
+  void fill(section, signals);
 }
 
-async function fill(section: HTMLElement, asin: string): Promise<void> {
+async function fill(section: HTMLElement, signals: ProductSignals): Promise<void> {
+  const asin = signals.asin;
+  if (!asin) {
+    section.remove();
+    return;
+  }
   let res: EarningsLookupResult;
   try {
     res = await sendToBackground<EarningsLookupResult>({ kind: "LOOKUP_EARNINGS", asins: [asin] });
@@ -44,14 +51,22 @@ async function fill(section: HTMLElement, asin: string): Promise<void> {
   }
   section.append(amounts);
   section.append(el("p", "note", t().earningsNote));
-  section.style.display = "";
-}
 
-// Amounts arrive in whole currency units (not cents). Keep it simple: a symbol
-// for the common creator currencies, ISO code otherwise, always two decimals.
-function formatMoney(amount: number, currency: string): string {
-  const symbol =
-    currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency === "USD" || currency === "CAD" || currency === "AUD" ? "$" : "";
-  const value = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return symbol ? `${symbol}${value}` : `${value} ${currency}`;
+  // When the desktop build sends the rich buckets, offer the full by-store /
+  // year / month / campaign breakdown (the same popup the storefront badges
+  // open). Older builds send only the flat total, so the button is hidden.
+  if (hasBreakdown(earnings)) {
+    const view = el("button", "earn-link", t().earnViewBreakdown) as HTMLButtonElement;
+    view.type = "button";
+    view.addEventListener("click", () => {
+      renderEarningsDetail({
+        title: signals.title,
+        earnings: [earnings],
+        marketplace: signals.marketplace,
+      });
+    });
+    section.append(view);
+  }
+
+  section.style.display = "";
 }

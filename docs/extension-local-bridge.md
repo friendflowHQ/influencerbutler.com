@@ -231,6 +231,74 @@ anonymous users get "start your free trial", both linking to
 `/go/download`. That is the intended conversion path, so the failure mode is a
 feature, not an error.
 
+## Earnings lookup (app to extension, read-only)
+
+The extension asks the running app what the creator actually earned on a batch
+of ASINs, so product pages, search tiles, and the storefront/Curations grid can
+show real earnings against each product. This is authed with the pairing token
+(it returns private earnings) and is read-only. The extension side is built
+(`lookupEarnings` in `extension/src/background/hud-bridge.ts`); the app
+implements the responder against its Daily Commission Butler ledger.
+
+The extension sends:
+
+```json
+{ "type": "earnings.lookup", "payload": { "asins": ["B0CSG3YWR6", "B0EXAMPLE1"] } }
+```
+
+The app replies with one `AsinEarnings` per ASIN it has data for (omit ASINs
+with no earnings, or return them with `"hasEarnings": false`):
+
+```json
+{
+  "type": "earnings.result",
+  "ok": true,
+  "results": [
+    {
+      "asin": "B0CSG3YWR6",
+      "hasEarnings": true,
+      "byCurrency": [{ "currency": "USD", "amount": 139.40, "count": 24 }],
+      "totalCount": 24,
+      "byStore": [
+        { "trackingId": "onamzdavi039-20", "placement": "onsite",  "marketplace": "amazon.com", "currency": "USD", "amount": 127.35, "units": 96, "orders": 18 },
+        { "trackingId": "davi039-20",      "placement": "offsite", "marketplace": "amazon.com", "currency": "USD", "amount": 12.05,  "units": 6,  "orders": 6 }
+      ],
+      "byYear": [
+        { "year": 2026, "currency": "USD", "amount": 75.00, "units": 30, "orders": 18 },
+        { "year": 2025, "currency": "USD", "amount": 23.20, "units": 26, "orders": 0 },
+        { "year": 2024, "currency": "USD", "amount": 41.20, "units": 46, "orders": 0 }
+      ],
+      "byMonth": [
+        { "month": "2026-07", "currency": "USD", "amount": 12.00 }
+      ],
+      "campaigns": [
+        { "name": "Solar Independence", "ratePct": 10, "clicks": 98, "orders": 18, "currency": "USD", "amount": 43.80 }
+      ]
+    }
+  ]
+}
+```
+
+Contract notes:
+
+- `byCurrency` and `totalCount` are REQUIRED and are the flat totals older
+  builds already sent. Amounts are in whole currency units (not cents).
+- `byStore`, `byYear`, `byMonth`, and `campaigns` are OPTIONAL. Fill them so the
+  extension can render the store / year / month / Creator Connections breakdown
+  and scope a storefront's badge to that marketplace. When absent, the extension
+  degrades gracefully to the flat total (a single "$X from N orders" chip).
+- `byStore.placement` is `onsite` (on-Amazon storefront/video sales) or
+  `offsite` (links shared elsewhere). `marketplace` lets the extension scope
+  earnings to the storefront the creator is viewing, so a German storefront does
+  not show worldwide-by-ASIN totals.
+- The gating work is on the app side: these buckets require the ledger to hold
+  Associates report granularity (tracking-id, placement, marketplace, date,
+  units, orders, and Creator Connections campaign rows). Until it does, return
+  only `byCurrency`/`totalCount` and the extension shows flat totals.
+- If the app was never paired the extension does not send this at all; a
+  rejected token yields `{ "type": "auth.error" }` and the extension stays
+  silent (no error surfaced to the user).
+
 ## Versioning
 
 `v` in the envelope starts at 1. The desktop MUST ignore unknown `type`

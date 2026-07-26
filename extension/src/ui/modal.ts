@@ -18,10 +18,18 @@ export type ModalAction = {
 
 export type ModalOptions = {
   title: string;
-  lines: string[];
-  actions: ModalAction[];
+  // Plain paragraphs (the re-engagement nudges). Optional so a rich modal can
+  // supply `body` nodes instead.
+  lines?: string[];
+  // Arbitrary body content (tables, a bar chart, disclosure sections) appended
+  // after any `lines`. Used by the earnings breakdown popup.
+  body?: Node[];
+  actions?: ModalAction[];
   note?: string;
   closeLabel: string;
+  // A wider dialog for content-heavy modals (the earnings breakdown). Default
+  // stays the narrow 380px nudge width.
+  wide?: boolean;
   // Called when the modal is dismissed without taking an action (close button,
   // backdrop, or Esc). Not called when an action button is clicked.
   onDismiss?: () => void;
@@ -36,7 +44,7 @@ export function showModal(opts: ModalOptions): void {
   root.append(style);
 
   const backdrop = el("div", "modal-backdrop");
-  const modal = el("div", "modal");
+  const modal = el("div", opts.wide ? "modal wide" : "modal");
   backdrop.append(modal);
 
   let closed = false;
@@ -70,11 +78,12 @@ export function showModal(opts: ModalOptions): void {
   head.append(dot, el("h3", "modal-title", opts.title));
 
   const body = el("div", "modal-body");
-  for (const line of opts.lines) body.append(el("p", undefined, line));
+  for (const line of opts.lines ?? []) body.append(el("p", undefined, line));
+  if (opts.body) for (const node of opts.body) body.append(node);
   if (opts.note) body.append(el("p", "note", opts.note));
 
   const actions = el("div", "modal-actions");
-  for (const action of opts.actions) {
+  for (const action of opts.actions ?? []) {
     if (action.variant === "link") {
       const link = el("button", "modal-link", action.label) as HTMLButtonElement;
       link.type = "button";
@@ -98,7 +107,8 @@ export function showModal(opts: ModalOptions): void {
     actions.append(btn);
   }
 
-  modal.append(close, head, body, actions);
+  modal.append(close, head, body);
+  if (actions.childElementCount > 0) modal.append(actions);
   backdrop.addEventListener("click", (event) => {
     if (event.target === backdrop) dismiss();
   });

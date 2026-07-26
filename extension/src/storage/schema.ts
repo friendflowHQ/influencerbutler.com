@@ -55,6 +55,7 @@ export type Settings = {
     searchOverlay: boolean;
     campaignMatcher: boolean;
     campaignRadar: boolean;
+    earningsOverlay: boolean;
     watchlist: boolean;
   };
   syncEnabled: boolean;
@@ -251,6 +252,7 @@ export const DEFAULTS: StorageShape = {
       searchOverlay: true,
       campaignMatcher: true,
       campaignRadar: true,
+      earningsOverlay: true,
       watchlist: true,
     },
     syncEnabled: true,

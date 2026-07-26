@@ -25,6 +25,7 @@ import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
 import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
+import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
@@ -248,6 +249,15 @@ async function runForPage(): Promise<void> {
       if (settings.tools.campaignMatcher) {
         initCampaignMatcher("storefront");
         lastStatus.toolSummaries.push({ label: t().sumCampaignMatcher, value: t().ready });
+      }
+      // Per-card earnings badges + breakdown popup (the desktop ledger over the
+      // bridge). Self-gates to paired users with real earnings, so it is a no-op
+      // for everyone else.
+      if (settings.tools.earningsOverlay) {
+        guard("earnings-overlay", () => {
+          void initEarningsOverlay();
+          lastStatus.toolSummaries.push({ label: t().sumEarningsOverlay, value: t().ready });
+        });
       }
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });

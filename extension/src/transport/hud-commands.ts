@@ -105,11 +105,43 @@ export type HudStatus = {
 // What the creator has actually earned on one ASIN, read from the desktop app's
 // Daily Commission Butler ledger over the bridge. Earnings are keyed by ASIN
 // (not marketplace) and can span currencies; amount is in whole currency units.
+//
+// `byCurrency`/`totalCount` are the flat totals every build has always sent. The
+// `byStore`/`byYear`/`byMonth`/`campaigns` buckets are optional: newer desktop
+// builds fill them so the extension can show the full store/year/month/campaign
+// breakdown, and any consumer degrades gracefully to the flat totals when they
+// are absent. All amounts are in whole currency units.
 export type AsinEarnings = {
   asin: string;
   hasEarnings: boolean;
   byCurrency: Array<{ currency: string; amount: number; count: number }>;
   totalCount: number;
+  // Per tracking-id (store) split, tagged onsite (on-Amazon storefront/video) vs
+  // offsite (links shared elsewhere) and by marketplace, so a creator viewing
+  // one storefront can scope earnings to that marketplace instead of the ASIN's
+  // worldwide total (the confusion Cha-Ching's ASIN-only rollup caused).
+  byStore?: Array<{
+    trackingId: string;
+    placement: "onsite" | "offsite";
+    marketplace: string;
+    currency: string;
+    amount: number;
+    units: number;
+    orders: number;
+  }>;
+  byYear?: Array<{ year: number; currency: string; amount: number; units: number; orders: number }>;
+  // month is "YYYY-MM"; used for the earnings-by-month bar chart.
+  byMonth?: Array<{ month: string; currency: string; amount: number }>;
+  // Creator Connections campaign rows for this ASIN: the campaign name, its
+  // commission rate, and the clicks/orders/commission it drove.
+  campaigns?: Array<{
+    name: string;
+    ratePct: number | null;
+    clicks: number | null;
+    orders: number | null;
+    currency: string;
+    amount: number;
+  }>;
 };
 
 // Result of a batched earnings lookup. `paired` is false when the extension has

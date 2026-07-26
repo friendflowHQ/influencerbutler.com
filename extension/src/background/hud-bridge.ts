@@ -379,6 +379,9 @@ function lookupEarningsOnPort(
           return;
         }
         if (frame.type === "earnings.result") {
+          // The whole AsinEarnings[] is forwarded as-is, so the optional
+          // byStore/byYear/byMonth/campaigns buckets a newer app sends reach the
+          // page without any transform here; older apps just omit them.
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],
