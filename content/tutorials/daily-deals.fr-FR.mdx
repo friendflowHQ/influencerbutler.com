@@ -128,14 +128,16 @@ L'onglet **Centre de codes promo** fait deux choses : il affiche le **Deals Hub*
 
 ## Produits à toujours publier
 
-Certaines marques offrent une remise permanente au lieu d'échantillons : le produit reste donc une bonne affaire même quand Amazon n'affiche aucune baisse de prix active. L'onglet **Toujours publier** vous permet d'épingler ces produits pour que Butler les publie selon votre planning, à chaque exécution, quoi qu'il arrive.
+Certaines marques offrent une remise permanente au lieu d'échantillons : le produit reste donc une bonne affaire même quand Amazon n'affiche aucune baisse de prix active. L'onglet **Toujours publier** vous permet d'épingler ces produits et de les publier selon leur propre planning dédié, distinct de vos offres par mots-clés.
 
-- **Ajouter un produit** : collez son URL Amazon ou son ASIN, un titre facultatif, la remise à afficher (par exemple « 15% de remise ») et un code promo facultatif. Choisissez la fréquence de publication (chaque jour, ou tous les quelques jours), puis **Ajouter le produit**.
+Activez-le avec l'interrupteur **Publier mes produits à toujours publier pour moi** en haut, puis définissez **Quand publier** : soit un intervalle simple (chaque jour, tous les quelques jours, ou votre propre nombre d'heures ou de jours), soit des jours de la semaine et des heures précis. La ligne d'état affiche votre prochaine et votre dernière publication, et **👀 Voir l'exécution** garde le navigateur visible pendant la publication pour que vous puissiez regarder.
+
+- **Ajouter un produit** : collez son URL Amazon ou son ASIN, un titre facultatif, la remise à afficher (par exemple « 15% de remise ») et un code promo facultatif, puis **Ajouter le produit**. Par défaut, un produit suit le planning partagé ci-dessus. Passez son **Planning** à **Personnalisé pour ce produit** pour donner à ce produit ses propres jours et heures.
 - **Ajouter depuis Creator Connections** : cliquez pour voir vos campagnes Creator Connections qui offrent une remise supplémentaire au lieu d'échantillons, et ajoutez-en n'importe laquelle en un clic, avec la remise déjà renseignée.
-- **Collez un lot** : un produit par ligne (ASIN ou URL, titre, remise, code promo, cadence en jours) en ajoute plusieurs d'un coup.
-- **Publier maintenant** : met en file d'attente les produits à publier dès maintenant, pour les voir partir sans attendre la prochaine exécution planifiée.
+- **Collez un lot** : un produit par ligne (ASIN ou URL, titre, remise, code promo) en ajoute plusieurs d'un coup.
+- **Publier maintenant** : publie immédiatement tous les produits activés, pour les voir partir sans attendre le planning.
 
-Les produits à toujours publier ignorent volontairement la règle « ne pas republier récemment », car tout l'intérêt est qu'ils continuent d'être publiés. Chacun respecte la cadence que vous définissez, et la remise que vous saisissez apparaît dans la légende via le jeton **Remise** (le jeton `{{discountLabel}}`). Désactivez un produit quand vous voulez avec son interrupteur **Activé**, ou retirez-le.
+Les produits à toujours publier ignorent volontairement la règle « ne pas republier récemment », car tout l'intérêt est qu'ils continuent d'être publiés. La remise que vous saisissez apparaît dans la légende via le jeton **Remise** (le jeton `{{discountLabel}}`). Désactivez un produit quand vous voulez avec son interrupteur **Activé**, ou retirez-le.
 
 ## Campagnes récap : une publication, une offre par commentaire
 
