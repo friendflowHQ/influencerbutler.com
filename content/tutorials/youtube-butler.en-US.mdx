@@ -75,6 +75,12 @@ This is handy when you keep Shorts and long-form on separate channels, or want t
 
 If your account has more than one channel, the Setup Wizard lets you pick a **secondary channel** alongside your primary. Then, in **Settings → Upload settings**, turn on **Post to my secondary channel** and the run uploads to that channel instead. Both channels must be on the same signed-in Google account. Leave the toggle off to keep uploading to your primary channel as usual.
 
+## AI voiceover (translated audio)
+
+The **AI voiceover** card replaces a video's audio with an AI voice speaking a translated version of what's said. Turn it on, pick the language to **dub into**, the **source language**, and a **voice**. On each upload the app transcribes the audio, translates it, and swaps in the AI narration before the video goes to YouTube.
+
+This needs your OpenAI key in **API Integrations** and spends tokens per run. If the target language matches the source, nothing changes. When the key is missing, the app tells you and uploads the original audio instead of quietly skipping the voiceover.
+
 ## Product QR codes
 
 The **Product QR** tab generates a QR code per ASIN that you can overlay on a video before uploading. Useful for shoppable content where viewers can scan instead of clicking through.

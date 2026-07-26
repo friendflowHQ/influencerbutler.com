@@ -75,6 +75,12 @@ Pratique quand vous gardez les Shorts et le format long sur des chaînes sépar�
 
 Si votre compte a plusieurs chaînes, l'Assistant de configuration vous laisse choisir une **chaîne secondaire** en plus de la principale. Ensuite, dans **Réglages → Réglages d'upload**, activez **Publier sur ma chaîne secondaire** et l'exécution uploadera sur cette chaîne. Les deux chaînes doivent être sur le même compte Google connecté. Laissez l'option désactivée pour continuer à uploader sur votre chaîne principale comme d'habitude.
 
+## Voix off IA (audio traduit)
+
+La carte **Voix off IA** remplace l'audio d'une vidéo par une voix IA qui lit une version traduite de ce qui est dit. Activez-la, choisissez la langue de **doublage**, la **langue source** et une **voix**. À chaque upload, l'app transcrit l'audio, le traduit et remplace la narration par l'IA avant que la vidéo parte sur YouTube.
+
+Cela nécessite votre clé OpenAI dans **Intégrations API** et consomme des tokens par exécution. Si la langue cible correspond à la source, rien ne change. Quand la clé manque, l'app vous le signale et uploade l'audio d'origine au lieu d'ignorer la voix en silence.
+
 ## Codes QR produit
 
 L'onglet **Product QR** génère un QR code par ASIN que vous pouvez superposer sur une vidéo avant upload. Utile pour du contenu achetable où les viewers scannent au lieu de cliquer.
