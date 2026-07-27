@@ -456,6 +456,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "delete-posts-comments",
+      "title": "Delete Posts & Comments: bulk-clean your Facebook deal posts",
+      "category": "Other",
+      "summary": "Clear out old deal drops and expired promo comments on a schedule, with a preview, per-run cap, and protect list so nothing important is ever removed.",
+      "order": 344,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "focus-mode",
       "title": "Focus Mode: a calmer, ADHD-friendly workspace",
       "category": "Other",
