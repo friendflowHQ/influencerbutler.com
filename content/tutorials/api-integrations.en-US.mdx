@@ -27,7 +27,7 @@ Nothing required - but each integration is independent, so you can add them one 
 The panel is organized by section. Each section has:
 
 - A **paste-key field** - where you put the credential.
-- A **Test Connection** button - fires a single read-only request against the provider's API to verify the key.
+- A **Test Connection** button - fires a request against the provider's API to verify the key. Most providers get a read-only check; GeniusLink's test also creates one real short link, so a green check proves link creation works, and the minted link is shown so you can open it and see which country store your group routes to.
 - A **status badge** - green when verified, red when invalid, grey when untested.
 
 To add: open the section, paste the key, click Test Connection. If green, you're done - every workspace that uses this provider will pick the key up automatically.
