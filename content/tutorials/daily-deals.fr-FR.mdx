@@ -42,13 +42,22 @@ Les pages de promotion Amazon ("dépensez et économisez" ; leur adresse web res
 - **Les trouver automatiquement à partir de mes mots-clés** : Butler vérifie les produits que votre recherche habituelle trouve déjà et, lorsqu'un produit appartient à une promotion, il la suit et explore aussi le reste de ses produits. Vous ne collez rien.
 - **Utiliser les liens de promotion que je colle ci-dessous** : collez un lien de promotion par ligne (pratique pour une promotion que vous consultez chaque jour). Butler explore chacun.
 
-Vous pouvez utiliser l'une, l'autre ou les deux. Pour chaque produit trouvé sur une page de promotion, Butler vérifie le prix propre du produit et ne le conserve que s'il passe vos filtres d'offres habituels (fourchette de prix, pourcentage de remise minimum, meilleures offres uniquement). La promotion elle-même n'est jamais publiée, seuls les produits remisés qu'elle contient le sont. Comme cela lit de vraies pages produit, cela ajoute un peu de temps à une recherche et nécessite que vous soyez connecté à Amazon dans le navigateur de l'application.
+Vous pouvez utiliser l'une, l'autre ou les deux. Pour chaque produit trouvé sur une page de promotion, Butler vérifie le prix propre du produit et ne le conserve que s'il passe vos filtres d'offres habituels (fourchette de prix, pourcentage de remise minimum, Vraies remises uniquement). La promotion elle-même n'est jamais publiée, seuls les produits remisés qu'elle contient le sont. Comme cela lit de vraies pages produit, cela ajoute un peu de temps à une recherche et nécessite que vous soyez connecté à Amazon dans le navigateur de l'application.
 
 Dans **Composez votre publication**, deux nouvelles pastilles arrivent avec cette option : **Nom de la promotion** et **Lien de la promotion**. Déposez-les dans un texte ou un commentaire : les publications issues d'une offre de promotion indiqueront de quelle promotion vient le produit ; sur les offres ordinaires, elles disparaissent simplement.
 
 ## Préréglages de filtres
 
 Le **préréglage actif** (par défaut nommé `default`) sauvegarde votre config de filtres. Vous pouvez avoir plusieurs préréglages pour différentes niches - un pour "tech à moins de 50 €" et un pour "déco à moins de 100 €" - et les alterner depuis l'onglet Overview. Les clones (extension payante) donnent à chaque clone son propre stockage de préréglages pour faire tourner plusieurs niches en parallèle sans changer de préréglage.
+
+## Vraies remises uniquement, et compléter jusqu'à votre objectif
+
+Deux réglages de la Recette de filtres décident de la sévérité de votre récolte, et ils tirent dans des directions opposées :
+
+- **Vraies remises uniquement** (activé par défaut) ne conserve que les produits avec une vraie démarque : un vrai pourcentage de remise, une économie en montant fixe ou une offre Amazon active. Les produits au prix fort sont écartés pour que vos publications mettent en avant de vraies bonnes affaires. Si vous le désactivez, des produits au prix fort peuvent entrer dans votre file avec une ligne "% de réduction" vide, c'est pourquoi Butler vous demande d'abord confirmation. La plupart des gens le laissent activé.
+- **Compléter jusqu'à votre objectif** (désactivé par défaut) ne compte que lorsque vous définissez le **Nombre max d'offres récoltées**. Si vos filtres trouvent moins d'offres que cet objectif, Butler ajoute les meilleures offres presque retenues jusqu'à l'atteindre. Les offres ajoutées ont déjà passé votre fourchette de prix, vos mots exclus et la protection contre la republication, mais elles peuvent être sous votre pourcentage minimum de remise et sous vos minimums d'avis et d'étoiles, et même sans vraie remise. Activez-le quand atteindre votre quota quotidien de publications compte plus qu'un filtrage strict ; laissez-le désactivé si vous ne voulez jamais d'une offre qui ne respecte pas vos filtres.
+
+En bref : Vraies remises uniquement réduit votre récolte aux vraies démarques, et Compléter jusqu'à votre objectif la remplit à nouveau quand cette réduction vous laisse sous votre objectif.
 
 ## Inclure les offres avec un coupon à activer d'un clic
 

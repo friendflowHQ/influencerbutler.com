@@ -42,13 +42,22 @@ Amazon "spend and save" promotion pages (their web address looks like `amazon.co
 - **Find them automatically from my keywords**: Butler checks the products your normal search already finds and, when one belongs to a promotion, follows that promotion and scans the rest of its products too. You paste nothing.
 - **Use the promotion links I paste below**: paste one promotion link per line (handy for a promotion you check every day). Butler scans each one.
 
-You can use either or both. For every product Butler finds on a promotion page, it checks that product's own price and keeps it only when it passes your regular deal filters (price range, minimum percent off, best-deals-only). The promotion itself is never posted, only the individual discounted products on it. Because this reads real product pages, it adds a little time to a search, and it needs you to be signed in to Amazon in the app's browser.
+You can use either or both. For every product Butler finds on a promotion page, it checks that product's own price and keeps it only when it passes your regular deal filters (price range, minimum percent off, Real discounts only). The promotion itself is never posted, only the individual discounted products on it. Because this reads real product pages, it adds a little time to a search, and it needs you to be signed in to Amazon in the app's browser.
 
 In **Build Your Post**, two new pills come with this: **Promo Name** and **Promo Link**. Drop them into a caption or comment and posts made from a promotion deal will show which promotion the product came from; on ordinary deals they simply disappear.
 
 ## Filter presets
 
 The **active preset** (default named `default`) saves your filter config. You can have multiple presets for different niches - say one for "tech under $50" and one for "home decor under $100" - and swap between them from the Overview tab. Clones (a paid add-on) give each clone its own preset store so you can run multiple niches in parallel with no preset switching.
+
+## Real discounts only, and topping up to your target
+
+Two Filter Recipe settings decide how strict your harvest is, and they pull in opposite directions:
+
+- **Real discounts only** (on by default) keeps only products with a genuine markdown: a real percent off, a flat savings amount, or an active Amazon deal flag. Products listed at full price are dropped so your posts feature real bargains. Turn it off and full-price products can enter your queue with a blank "% Off" line, which is why Butler asks you to confirm first. Most people keep it on.
+- **Top up to reach your target** (off by default) only matters when you set **Max deals harvested**. If your filters find fewer deals than that target, Butler adds the best near-miss deals until you reach it. Topped-up deals already passed your price range, excluded keywords, and repost guard, but they can fall below your Minimum percent off, review, and star minimums, and can even lack a real discount. Turn it on when hitting your daily post count matters more than strict filtering; leave it off if you never want a deal that misses your filters.
+
+In short: Real discounts only trims your harvest down to true markdowns, and Top up to reach your target fills the harvest back up when that trim leaves you short of your target.
 
 ## Include deals with a clippable coupon
 
