@@ -57,6 +57,7 @@ Algunos productos de Amazon tienen un cupón activable con un clic (por ejemplo 
 - En la pestaña **Filtros de ofertas**, abre **Cupones de Amazon** y activa **Incluir ofertas con cupón de Amazon**. Tu próxima búsqueda también escanea la página de cupones de Amazon en el navegador de Amazon de la app, cotiza cada producto con cupón y añade los que pasan tus filtros. La primera vez, asegúrate de haber iniciado sesión en Amazon en el navegador de la app.
 - Cada oferta con cupón se añade con su importe de cupón, para que puedas destacarlo en una publicación. En **Crear tu publicación**, arrastra la ficha **Cupón** (una etiqueta corta como "cupón del 17 %"), la ficha **Precio con cupón** (el precio después del cupón, como 19,87 $) o la ficha **% de descuento del cupón**.
 - ¿Solo productos con cupón? Activa **Solo ofertas con cupón** en los filtros y Butler conserva únicamente los productos que tienen un cupón activable con un clic.
+- ¿No quieres ofertas con cupón? Activa **Excluir ofertas con cupón** y Butler descarta todos los productos que necesitan activar un cupón, así solo quedan las ofertas con rebaja directa de precio. Esto también elimina las ofertas con cupón que llegan por tus búsquedas de palabras clave normales, algo que los interruptores de origen de arriba no pueden hacer. **Solo ofertas con cupón** y **Excluir ofertas con cupón** son opuestos, así que activar uno desactiva el otro.
 
 ## Publicar desde más de una cuenta de Facebook
 
@@ -224,6 +225,7 @@ Las ofertas recolectadas viven en la caché preseed; el historial de publicacion
 - **Las publicaciones a Telegram fallan en silencio**: token del bot revocado o permisos del chat cambiados. Vuelve a pegar el token en Social Destinations.
 - **Las publicaciones de Instagram acaban en solicitudes de mensaje, no en bandeja**: no es un problema de Deals Influencer Butler; es el propio enrutamiento de Instagram para cuentas que no sigues.
 - **El programador parece detenido**: revisa el banner de estado en la pestaña Scheduler. El runner se detiene solo si detecta credenciales malas y reporta el motivo allí.
+- **La misma oferta se publica más de una vez**: la protección **No volver a publicar recientemente** en los Filtros de ofertas retiene una oferta al momento de publicar si ya salió una coincidente dentro de tu ventana. Está activada por defecto con una ventana de 30 días. Si publicas variantes de un producto, marca también **Título del producto** debajo, para que distintas tallas o colores del mismo artículo cuenten como una sola oferta.
 
 ## Clones (de pago)
 

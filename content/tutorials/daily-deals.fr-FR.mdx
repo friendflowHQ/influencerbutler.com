@@ -57,6 +57,7 @@ Certains produits Amazon ont un coupon à activer d'un clic (par exemple "Active
 - Dans l'onglet **Filtres d'offres**, ouvrez **Coupons Amazon** et activez **Inclure les offres avec coupon Amazon**. Votre prochaine recherche scanne aussi la page des coupons d'Amazon dans le navigateur Amazon de l'app, chiffre chaque produit avec coupon et ajoute ceux qui passent vos filtres. La première fois, assurez-vous d'être connecté à Amazon dans le navigateur de l'app.
 - Chaque offre avec coupon est ajoutée avec son montant de coupon, pour que vous puissiez la mettre en avant dans une publication. Dans **Créez votre publication**, glissez la pastille **Coupon** (une courte étiquette comme "coupon de 17 %"), la pastille **Prix avec coupon** (le prix après le coupon, comme 19,87 $) ou la pastille **% de réduction du coupon**.
 - Seulement les produits avec coupon ? Activez **Offres avec coupon uniquement** dans les filtres et Butler ne garde que les produits qui ont un coupon à activer d'un clic.
+- Vous ne voulez pas d'offres avec coupon ? Activez **Exclure les offres avec coupon** et Butler écarte tout produit qui nécessite d'activer un coupon, pour ne garder que les offres avec une vraie baisse de prix. Cela retire aussi les offres avec coupon qui arrivent par vos recherches de mots-clés habituelles, ce que les interrupteurs de source ci-dessus ne peuvent pas faire. **Offres avec coupon uniquement** et **Exclure les offres avec coupon** sont opposés, donc en activer un désactive l'autre.
 
 ## Publier depuis plusieurs comptes Facebook
 
@@ -224,6 +225,7 @@ Les deals récoltés vivent dans le cache preseed ; l'historique des publication
 - **Les publications Telegram échouent silencieusement**: token de bot révoqué ou permissions de salon modifiées. Recollez le token dans Social Destinations.
 - **Les publications Instagram atterrissent dans les demandes de messages, pas dans la boîte de réception**: ce n'est pas un problème de Deals Influencer Butler, c'est le routage d'Instagram pour les comptes que vous ne suivez pas.
 - **Le planificateur semble arrêté**: vérifiez la bannière de statut dans l'onglet Scheduler. Le runner s'arrête tout seul s'il détecte des identifiants invalides et y indique la raison.
+- **La même offre est publiée plusieurs fois**: la protection **Ne pas republier récemment** dans les Filtres d'offres retient une offre au moment de publier si une offre correspondante est déjà partie dans votre fenêtre. Elle est activée par défaut avec une fenêtre de 30 jours. Si vous publiez des variantes d'un produit, cochez aussi **Titre du produit** en dessous, pour que différentes tailles ou couleurs du même article comptent comme une seule offre.
 
 ## Clones (payant)
 

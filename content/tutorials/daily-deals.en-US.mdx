@@ -57,6 +57,7 @@ Some Amazon products have a clippable coupon (for example "Apply 17% coupon", or
 - On the **Deal Filters** tab, open **Amazon coupons** and turn on **Include Amazon coupon deals**. Your next search also scans Amazon's coupons page in the app's Amazon browser, prices each coupon product, and adds the ones that pass your filters. The first time, make sure you are signed in to Amazon in the app browser.
 - Every coupon deal is added with its coupon amount, so you can feature it in a post. In **Build Your Post**, drag in the **Coupon** pill (a short badge such as "17% coupon"), the **Coupon Price** pill (the price after the coupon, such as $19.87), or the **Coupon % Off** pill.
 - Want coupon products only? Turn on **Only coupon deals** in the filters and Butler keeps just the products that have a clippable coupon.
+- Don't want coupon deals at all? Turn on **Exclude coupon deals** and Butler drops every product that needs a coupon clipped, so only straight price-drop deals stay. This also removes coupon deals that arrive through your regular keyword searches, which the harvest-source toggles above cannot. **Only coupon deals** and **Exclude coupon deals** are opposites, so turning one on clears the other.
 
 ## Posting from more than one Facebook account
 
@@ -224,6 +225,7 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 - **Posts fail silently to Telegram**: bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
 - **Instagram posts go to message requests, not inbox**: that's not a Deals Influencer Butler issue; that's Instagram's own routing for accounts you don't follow.
 - **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
+- **The same deal posts more than once**: the **Don't repost recently** guard in the Deal Filters holds a deal at publish time if a matching one already went out inside your window. It is on by default with a 30-day window. If you post product variants, also tick **Product title** under it, so different sizes or colors of the same item count as one deal.
 
 ## Clones (paid)
 
