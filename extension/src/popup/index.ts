@@ -11,6 +11,10 @@ import {
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
 import type { Settings, WatchCondition } from "../storage/schema";
+import {
+  AVAILABILITY_MARKETS,
+  OPTIONAL_MARKET_ORIGINS,
+} from "../background/market-availability";
 import { channelAllowed } from "../shared/creator-mode";
 import { resolveLocale, setLocale, t } from "../i18n";
 
@@ -430,6 +434,39 @@ async function renderSettings(): Promise<void> {
       const current = await getSettings();
       await patchSettings({ tools: { ...current.tools, [tool]: box.checked } });
       if (tool === "watchlist") await renderWatchlist();
+    };
+  }
+
+  // Campaign Radar availability markets. AU is not in the manifest's required
+  // host_permissions, so ticking it requests the amazon.com.au origin first
+  // (rides the optional_host_permissions wildcard); a declined prompt unticks
+  // the box and explains, so the setting never claims a market we cannot fetch.
+  const auDenied = byId("avail-au-denied");
+  for (const market of AVAILABILITY_MARKETS) {
+    const box = byId<HTMLInputElement>(`avail-${market}`);
+    box.checked = settings.availabilityMarkets.includes(market);
+    box.onchange = async () => {
+      const origin = OPTIONAL_MARKET_ORIGINS[market];
+      if (box.checked && origin) {
+        let granted = false;
+        try {
+          granted = await chrome.permissions.request({ origins: [origin] });
+        } catch {
+          granted = false;
+        }
+        auDenied.hidden = granted;
+        if (!granted) {
+          box.checked = false;
+          return;
+        }
+      }
+      const current = await getSettings();
+      const next = current.availabilityMarkets.filter((m) => m !== market);
+      if (box.checked) next.push(market);
+      // Keep the picker's display order, not click order.
+      await patchSettings({
+        availabilityMarkets: AVAILABILITY_MARKETS.filter((m) => next.includes(m)),
+      });
     };
   }
 }

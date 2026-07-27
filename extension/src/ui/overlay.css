@@ -486,6 +486,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   color: #334155;
 }
 .tile-chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.tile-chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .tile-watch {
   display: inline-flex;
   align-items: center;

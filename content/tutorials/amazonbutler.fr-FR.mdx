@@ -28,6 +28,17 @@ En dessous, un suivi de rythme trimestriel indique si vous êtes en bonne voie p
 
 Si votre vitrine n'affiche pas encore d'accès à Creator Connections, Amazon Butler ajoute une note : Creator Connections et Sponsored Products sont sur invitation uniquement et peuvent ne pas être disponibles à votre niveau actuel. Progresser dans les niveaux Star est la façon de les débloquer.
 
+## Uniquement les marques qui livrent dans votre pays
+
+Si vous vivez hors des États-Unis (par exemple au Royaume-Uni, en Australie ou au Canada), une campagne remplie de produits disponibles uniquement aux États-Unis est un effort perdu : votre audience ne peut pas les acheter. La carte **Filtre de disponibilité par pays** dans **Message Brands** règle cela :
+
+1. Choisissez votre pays dans **Pays à vérifier**. Les pays restent grisés tant que la région correspondante de l'API Creators n'est pas connectée dans **Paramètres → Intégrations API** : US, CA, MX et BR utilisent vos identifiants par défaut, le Royaume-Uni et les autres pays européens utilisent les identifiants EU, et AU, JP, SG et IN utilisent les identifiants FE.
+2. Activez **Ne contacter que les marques avec des produits disponibles dans votre pays**.
+
+Pendant une exécution, Butler vérifie les produits de chaque campagne sur la boutique Amazon de ce pays et ignore les marques sans rien d'achetable là-bas, en indiquant la raison dans la liste des ignorés. Une campagne passe dès qu'un produit est disponible. Les verdicts sont mis en cache pendant deux jours, donc les exécutions répétées restent rapides.
+
+Deux mises en garde : la vérification recherche les fiches produit exactes de la campagne, donc un article vendu dans votre pays sous une autre fiche locale peut apparaître comme indisponible. Et comme pour les autres filtres, une campagne que Butler ne peut pas vérifier est ignorée plutôt que devinée.
+
 ## Et après
 
 Une fois la prise de contact en route, configurez **Daily Commission Butler** pour que les campagnes acceptées soient récupérées automatiquement. Ensemble ils ferment la boucle : Amazon Butler trouve les marques, Daily Commission Butler accepte les offres qu'elles proposent.

@@ -27,6 +27,12 @@ export type Settings = {
     minDaysRemaining: number;
     minRemainingBudget: number;
   };
+  // Marketplace codes (US/CA/UK/AU) whose buy-box availability Campaign Radar
+  // checks per campaign product, rendering per-country chips on the grid.
+  // Empty (the default) = feature off, zero extra fetches. Top-level rather
+  // than nested under campaignRadar because patchSettings shallow-merges and
+  // the radar toolbar patches campaignRadar wholesale on every threshold edit.
+  availabilityMarkets: string[];
   storefrontHandle: string | null;
   orderHarvestScope: "new" | "all";
   // Link Butler config for the branded-link Ledger tab. `smartRouting` publishes
@@ -237,6 +243,7 @@ export const DEFAULTS: StorageShape = {
       minDaysRemaining: 7,
       minRemainingBudget: 1000,
     },
+    availabilityMarkets: [],
     storefrontHandle: null,
     orderHarvestScope: "new",
     linkButler: { smartRouting: false, pixels: [] },
@@ -316,6 +323,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
           : [],
       },
       tools: { ...DEFAULTS.settings.tools, ...(raw.settings?.tools ?? {}) },
+      availabilityMarkets: Array.isArray(raw.settings?.availabilityMarkets)
+        ? raw.settings.availabilityMarkets
+        : [],
     },
     auth: { ...DEFAULTS.auth, ...(raw.auth ?? {}) },
     integrations: {

@@ -8,11 +8,25 @@
 
 export type Availability = "available" | "unavailable" | "unknown";
 
-// Market code -> host. Only markets in manifest host_permissions can be fetched.
+// Market code -> host. Only markets the extension holds a host permission for
+// can be fetched: US/CA/UK are in the manifest's required host_permissions; AU
+// is granted at runtime (chrome.permissions.request from the popup's market
+// picker, covered by the optional_host_permissions https://*/* pattern). An
+// ungranted host simply fetch-fails and reads as "unknown".
 const MARKET_HOSTS: Record<string, string> = {
   US: "www.amazon.com",
   CA: "www.amazon.ca",
   UK: "www.amazon.co.uk",
+  AU: "www.amazon.com.au",
+};
+
+// The markets the availability picker offers, in display order.
+export const AVAILABILITY_MARKETS = ["US", "CA", "UK", "AU"] as const;
+
+// Hosts that need a runtime permission grant before they can be fetched (the
+// rest ride the manifest's required host_permissions).
+export const OPTIONAL_MARKET_ORIGINS: Record<string, string> = {
+  AU: "https://www.amazon.com.au/*",
 };
 
 const ASIN_RE = /^[A-Z0-9]{10}$/;

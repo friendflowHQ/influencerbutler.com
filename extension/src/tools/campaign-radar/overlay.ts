@@ -10,6 +10,8 @@ import {
   type OrderAsinsResult,
 } from "../../shared/messages";
 import { readCampaignGrid, daysUntil, type Campaign } from "../../amazon/creator-campaigns";
+import type { Availability } from "../../background/market-availability";
+import { getCachedAvailability, putCachedAvailability } from "./availability-cache";
 import {
   computeCampaignScore,
   meetsRadarThresholds,
@@ -47,13 +49,24 @@ type Row = {
   provenEarner: boolean | null;
   cc: boolean;
   spcc: boolean;
+  // Per-market buy-box availability of the card's first product (US/CA/UK/AU),
+  // resolved lazily viewport-first. null until a lookup lands; no chip is shown
+  // for a card without grid-level ASINs (common on CC Affiliate+ cards).
+  availability: Record<string, Availability> | null;
   score: CampaignScore;
   badgeBody: HTMLElement;
 };
 
+// The viewport observer driving lazy availability lookups. Module-level so a
+// re-init (Amazon rewrites the grid constantly) can disconnect the previous
+// run's observer instead of leaking it against removed nodes.
+let availabilityObserver: IntersectionObserver | null = null;
+
 export async function initCampaignRadar(settings: Settings): Promise<void> {
   // Tear down a prior run (Amazon rewrites the grid as the creator filters), then
   // rebuild cleanly over the current cards.
+  availabilityObserver?.disconnect();
+  availabilityObserver = null;
   for (const host of Array.from(
     document.querySelectorAll(".radar-badge-host, .radar-toolbar-host"),
   )) {
@@ -89,6 +102,7 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
       provenEarner: null,
       cc,
       spcc,
+      availability: null,
       score: computeCampaignScore(inputsFor(campaign, daysRemaining, null, null)),
       badgeBody,
     };
@@ -137,6 +151,19 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
         }
       })
       .catch((error) => log("campaign-radar", "earnings lookup failed", error));
+  }
+
+  // Enrichment 3: per-country buy-box availability of each card's first product,
+  // for the markets the creator picked in the popup (empty = off, zero fetches).
+  // Cache hits render immediately; misses resolve lazily viewport-first because
+  // each probe is a paced cross-marketplace page fetch (300-700ms per market).
+  const availabilityMarkets = [
+    ...new Set(settings.availabilityMarkets.map((m) => m.toUpperCase())),
+  ];
+  if (availabilityMarkets.length > 0) {
+    void enrichAvailability(rows, availabilityMarkets).catch((error) =>
+      log("campaign-radar", "availability lookup failed", error),
+    );
   }
 
   // The toolbar: live thresholds (the differentiator) plus a "passing only"
@@ -237,6 +264,98 @@ function renderBadge(row: Row): void {
   }
   if (row.cc) body.append(el("span", "tile-chip good", t().radarChipCc));
   if (row.spcc) body.append(el("span", "tile-chip good", t().radarChipSpcc));
+
+  // Per-country availability chips (US ✓ / UK ✗ / AU ?), one per market the
+  // creator picked. Only rendered once a lookup or cache hit lands, so a card
+  // without grid-level products simply never grows these chips.
+  if (row.availability) {
+    for (const [code, status] of Object.entries(row.availability)) {
+      const cls =
+        status === "available"
+          ? "tile-chip good"
+          : status === "unavailable"
+            ? "tile-chip bad"
+            : "tile-chip";
+      const chip = el("span", cls, t().radarAvailChip(code, status));
+      chip.title = t().radarAvailTitle(code, status);
+      body.append(chip);
+    }
+  }
+}
+
+// ---- Availability enrichment -------------------------------------------------
+
+// Keep only the requested market codes from a lookup result.
+function pickMarkets(
+  res: Record<string, Availability>,
+  markets: string[],
+): Record<string, Availability> {
+  const out: Record<string, Availability> = {};
+  for (const code of markets) {
+    const status = res[code];
+    if (status) out[code] = status;
+  }
+  return out;
+}
+
+// Resolve per-market availability for each card's FIRST product: cache pass
+// upfront (one storage read, instant chips), then a viewport-first sequential
+// queue for the misses. One product per card keeps the probe cost bounded on
+// large grids; SPCC cards carry exactly one grid-level ASIN anyway, and CC
+// cards without ASINs are skipped entirely (no chip, no fetch).
+async function enrichAvailability(rows: Row[], markets: string[]): Promise<void> {
+  const candidates = rows.filter((r) => r.campaign.asins.length > 0);
+  if (candidates.length === 0) return;
+
+  const firstAsin = (row: Row): string => row.campaign.asins[0]!.toUpperCase();
+  const cached = await getCachedAvailability(candidates.map(firstAsin), markets);
+
+  const pending: Row[] = [];
+  for (const row of candidates) {
+    const hit = cached[firstAsin(row)];
+    if (hit && Object.keys(hit).length > 0) {
+      row.availability = pickMarkets(hit, markets);
+      renderBadge(row);
+    }
+    // Queue when any requested market is still missing a fresh verdict.
+    if (!hit || markets.some((m) => hit[m] === undefined)) pending.push(row);
+  }
+  if (pending.length === 0) return;
+
+  const queue: Row[] = [];
+  let draining = false;
+  const drain = async (): Promise<void> => {
+    if (draining) return;
+    draining = true;
+    try {
+      while (queue.length > 0) {
+        const row = queue.shift();
+        if (!row) break;
+        const asin = firstAsin(row);
+        const res = await sendToBackground<Record<string, Availability>>({
+          kind: "FETCH_MARKET_AVAILABILITY",
+          asin,
+          markets,
+        }).catch(() => ({}) as Record<string, Availability>);
+        row.availability = { ...(row.availability ?? {}), ...pickMarkets(res, markets) };
+        renderBadge(row);
+        void putCachedAvailability(asin, res);
+      }
+    } finally {
+      draining = false;
+    }
+  };
+
+  availabilityObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      availabilityObserver?.unobserve(entry.target);
+      const row = pending.find((r) => r.campaign.el === entry.target);
+      if (row && !queue.includes(row)) queue.push(row);
+    }
+    void drain();
+  });
+  for (const row of pending) availabilityObserver.observe(row.campaign.el);
 }
 
 // Toggle the card highlight based on whether it clears the user's thresholds.

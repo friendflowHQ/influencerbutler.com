@@ -51,6 +51,17 @@ Two things worth knowing:
 - These two checks read product data from the **Creators API**, so connect it under **Settings → API Integrations** first. Without it, Butler warns you and simply skips these two checks for that run - your other thresholds still apply.
 - If Butler can't read a product's reviews or rank, it skips that campaign rather than guessing. That's deliberate: the whole point is to not request samples for products you can't verify.
 
+## Only message brands that ship to your country
+
+If you live outside the US (say the UK, Australia, or Canada), a campaign full of US-only products is wasted effort: your audience can't buy them. The **Country availability filter** card in **Message Brands** fixes that:
+
+1. Pick your country in **Country to check**. Countries are grayed out until the matching Creators API region is connected under **Settings → API Integrations**: US, CA, MX and BR use your default credentials, the UK and other European countries use EU credentials, and AU, JP, SG and IN use FE credentials.
+2. Turn on **Only message brands with products available in your country**.
+
+During a run, Butler checks each campaign's products against that country's Amazon store and skips brands with nothing buyable there, telling you why in the skip list. A campaign passes as soon as one product is available. Verdicts are cached for two days, so repeat runs stay fast.
+
+Two caveats: the check looks up the campaign's exact product listings, so an item sold in your country under a separate local listing can still read as unavailable. And like the filters above, a campaign Butler can't verify is skipped rather than guessed at.
+
 ## Where the work shows up
 
 Once a brand replies, the conversation lives in your normal Amazon Creator Connections inbox. Butler doesn't move messages around - it just opens the conversation. Accepting the offer is still a manual step (or use **Daily Commission Butler** to automate that too).

@@ -139,6 +139,15 @@
         <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
         <label class="row toggle"><input id="tool-campaignMatcher" type="checkbox" /><span data-i18n="toolCampaignMatcher">Campaign matcher</span></label>
         <label class="row toggle"><input id="tool-campaignRadar" type="checkbox" /><span data-i18n="toolCampaignRadar">Campaign Radar (highlight campaigns)</span></label>
+        <div class="row avail-markets">
+          <span class="muted small" data-i18n="popupAvailabilityLabel">Show availability for</span>
+          <label class="avail-market"><input id="avail-US" type="checkbox" /><span>US</span></label>
+          <label class="avail-market"><input id="avail-CA" type="checkbox" /><span>CA</span></label>
+          <label class="avail-market"><input id="avail-UK" type="checkbox" /><span>UK</span></label>
+          <label class="avail-market"><input id="avail-AU" type="checkbox" /><span>AU</span></label>
+        </div>
+        <p class="muted small avail-hint" data-i18n="popupAvailabilityHint">Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.</p>
+        <p id="avail-au-denied" class="muted small" hidden data-i18n="popupAvailabilityAuDenied">Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.</p>
         <label class="row toggle"><input id="tool-earningsOverlay" type="checkbox" /><span data-i18n="toolEarningsOverlay">Earnings overlay (storefront badges)</span></label>
         <label class="row toggle"><input id="tool-watchlist" type="checkbox" /><span data-i18n="toolWatchlist">Watchlist alerts</span></label>
       </section>

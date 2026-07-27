@@ -279,6 +279,11 @@ export interface Dict {
   radarChipBudget: (amount: string) => string;
   radarChipCc: string;
   radarChipSpcc: string;
+  radarAvailChip: (code: string, status: "available" | "unavailable" | "unknown") => string;
+  radarAvailTitle: (code: string, status: "available" | "unavailable" | "unknown") => string;
+  popupAvailabilityLabel: string;
+  popupAvailabilityHint: string;
+  popupAvailabilityAuDenied: string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -813,6 +818,19 @@ const en: Dict = {
   radarChipBudget: (amount) => `${amount} left`,
   radarChipCc: "CC eligible",
   radarChipSpcc: "SPCC eligible",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Available to buy on the ${code} Amazon store`
+      : status === "unavailable"
+        ? `Not available to buy on the ${code} Amazon store`
+        : `Could not check the ${code} Amazon store right now`,
+  popupAvailabilityLabel: "Show availability for",
+  popupAvailabilityHint:
+    "Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.",
+  popupAvailabilityAuDenied:
+    "Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.",
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -1365,6 +1383,19 @@ const es: Dict = {
   radarChipBudget: (amount) => `${amount} restante`,
   radarChipCc: "Elegible CC",
   radarChipSpcc: "Elegible SPCC",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Disponible para comprar en la tienda de Amazon de ${code}`
+      : status === "unavailable"
+        ? `No disponible para comprar en la tienda de Amazon de ${code}`
+        : `No se pudo comprobar la tienda de Amazon de ${code} ahora mismo`,
+  popupAvailabilityLabel: "Mostrar disponibilidad para",
+  popupAvailabilityHint:
+    "Campaign Radar comprueba cada producto de campaña en las tiendas de Amazon de estos países y muestra un distintivo por país.",
+  popupAvailabilityAuDenied:
+    "Australia necesita permiso para leer amazon.com.au. Permítelo cuando Chrome lo pida y vuelve a intentarlo.",
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -1917,6 +1948,19 @@ const fr: Dict = {
   radarChipBudget: (amount) => `${amount} restant`,
   radarChipCc: "Éligible CC",
   radarChipSpcc: "Éligible SPCC",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Disponible à l'achat sur la boutique Amazon ${code}`
+      : status === "unavailable"
+        ? `Indisponible à l'achat sur la boutique Amazon ${code}`
+        : `Impossible de vérifier la boutique Amazon ${code} pour le moment`,
+  popupAvailabilityLabel: "Afficher la disponibilité pour",
+  popupAvailabilityHint:
+    "Campaign Radar vérifie chaque produit de campagne sur les boutiques Amazon de ces pays et affiche une pastille par pays.",
+  popupAvailabilityAuDenied:
+    "L'Australie nécessite l'autorisation de lire amazon.com.au. Autorisez-la quand Chrome le demande, puis réessayez.",
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
