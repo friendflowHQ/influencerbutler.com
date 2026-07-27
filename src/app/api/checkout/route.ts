@@ -163,6 +163,13 @@ export async function POST(request: Request) {
     // order_created webhook reads it back. Best-effort, fire-and-forget.
     void upsertCheckoutGeo(`user:${userId}`, readGeo(request.headers));
 
+    // Meta Pixel browser identifiers, round-tripped through LS custom_data so
+    // the order_created webhook (a server-to-server call with no browser
+    // context) can attach them to the Conversions API Purchase event. Only
+    // present when the pixel is live and unblocked; omit otherwise.
+    const fbp = cookieStore.get("_fbp")?.value;
+    const fbc = cookieStore.get("_fbc")?.value;
+
     const checkoutAttributes: Record<string, unknown> = {
       checkout_data: {
         email,
@@ -172,6 +179,8 @@ export async function POST(request: Request) {
           // Capture the intended affiliate even when LS can't be credited yet
           // (pre-activation gap). order_created persists these onto the order.
           ...affiliateCaptureCustom(resolved.intendedAffiliate),
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
         },
       },
       product_options: {
