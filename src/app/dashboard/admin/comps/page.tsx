@@ -226,6 +226,7 @@ export default function AdminCompsPage() {
   const [migrationPending, setMigrationPending] = useState(false);
   const [rows, setRows] = useState<CompRow[]>([]);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -283,19 +284,38 @@ export default function AdminCompsPage() {
   }, [load]);
 
   const filtered = useMemo(() => {
+    let byState: CompRow[];
     switch (filter) {
       case "needs-months":
-        return rows.filter((r) => r.state === "unknown-months");
+        byState = rows.filter((r) => r.state === "unknown-months");
+        break;
       case "expiring-7":
-        return rows.filter((r) => r.state === "expiring-7");
+        byState = rows.filter((r) => r.state === "expiring-7");
+        break;
       case "expiring-30":
-        return rows.filter((r) => r.state === "expiring-7" || r.state === "expiring-30");
+        byState = rows.filter((r) => r.state === "expiring-7" || r.state === "expiring-30");
+        break;
       case "expired":
-        return rows.filter((r) => r.state === "expired");
+        byState = rows.filter((r) => r.state === "expired");
+        break;
       default:
-        return rows;
+        byState = rows;
     }
-  }, [rows, filter]);
+    const q = search.trim().toLowerCase();
+    if (!q) return byState;
+    return byState.filter((r) =>
+      [
+        r.email,
+        r.name,
+        r.discountCode,
+        r.licenseKey,
+        r.subscriptionStatus,
+        r.source,
+        r.issuedByAffiliateName,
+        r.issuedByAffiliateEmail,
+      ].some((v) => v != null && v.toLowerCase().includes(q)),
+    );
+  }, [rows, filter, search]);
 
   // Clicking a header sorts by that column ascending; clicking it again flips
   // the direction. Sort is applied on top of the active filter.
@@ -701,6 +721,13 @@ export default function AdminCompsPage() {
             {f.label}
           </button>
         ))}
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search email, name, or code"
+          className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+        />
         <span className="ml-auto text-sm text-slate-500">
           {filtered.length} {filtered.length === 1 ? "comp" : "comps"}
         </span>
@@ -711,7 +738,9 @@ export default function AdminCompsPage() {
       ) : fetchError ? (
         <p className="mt-8 text-rose-600">{fetchError}</p>
       ) : filtered.length === 0 ? (
-        <p className="mt-8 text-slate-500">No comps in this view.</p>
+        <p className="mt-8 text-slate-500">
+          {search.trim() ? "No comps match your search." : "No comps in this view."}
+        </p>
       ) : (
         <section className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full min-w-[1250px] text-left text-sm">
