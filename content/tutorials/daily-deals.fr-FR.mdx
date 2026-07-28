@@ -99,6 +99,18 @@ Facebook limite la fréquence à laquelle un compte peut publier, et publier tro
 - **excludeLastMonth**: activé, ne republie aucun deal publié dans les 30 derniers jours. Garde votre feed frais.
 - **Cadences perDestination**: Telegram tolère beaucoup plus de volume qu'Instagram. N'appliquez pas la cadence Telegram de 15 min à Instagram, vous serez rate-limité.
 
+## Ma voix de légende : des légendes qui vous ressemblent
+
+Les légendes automatiques peuvent finir par se ressembler. **Ma voix de légende** (dans **Créez votre publication**, juste sous les variantes de légende) apprend votre façon d'écrire et ajoute des variantes de légende dans votre propre style.
+
+1. Ouvrez **Créez votre publication** et dépliez **Ma voix de légende**.
+2. Collez 2 à 5 publications que vous avez écrites vous-même, telles que vous les publiez vraiment : vos emojis, vos accroches, vos retours à la ligne.
+3. Choisissez combien de variantes générer et cliquez sur **Générer des variantes de légende**.
+
+L'IA étudie vos exemples (votre style d'accroche, vos habitudes d'emojis, votre mise en page et vos signatures) et écrit de nouvelles variantes de légende qui gardent votre voix en utilisant des pastilles pour les parties variables : le lien produit, le prix, la remise et le code promo viennent toujours directement de chaque offre, ils sont donc toujours exacts. Les nouvelles variantes arrivent dans **Autres variantes de légende**, où chaque publication alterne entre elles. Modifiez ou retirez chacune comme une variante écrite par vous ; une nouvelle génération ne remplace que celles que vous n'avez pas retouchées.
+
+Cette fonction utilise votre clé OpenAI depuis **Intégrations API**, la même clé que le générateur de mots-clés IA. Pas de clé connectée ? La section affiche un bouton **Connecter OpenAI** qui vous y emmène.
+
 ## Créer des listes d'idées Amazon automatiquement
 
 Dans l'onglet Harvest, une carte **Créer des listes d'idées Amazon automatiquement** est disponible. Activez-la et, après chaque recherche, Butler crée des listes d'idées Amazon sur votre vitrine à partir des deals que vous venez de récolter. Les listes sont classées pour que les deals actifs dans **Creator Connections** et **Sponsored Products for Creators** passent en premier, plaçant vos produits les plus rentables en tête.
@@ -162,6 +174,7 @@ Pour en créer une :
 - **Deux récaps par jour** : créez une seconde campagne avec ses propres mots-clés, son propre nombre et une heure plus tardive. Par exemple, cuisine à 9h00 et "Top 20 des trouvailles Amazon en promo aujourd'hui" à 10h00. Chaque campagne ne publie que ses propres offres.
 - **Options de commentaire** : décidez si chaque commentaire inclut la photo du produit et, si vous voulez, écrivez votre propre modèle de commentaire avec des variables comme `{{title}}`, `{{salePrice}}`, `{{percentOff}}` et `{{url}}`. Le plateau de pastilles correspond exactement à celui de Composez votre publication, y compris les pastilles orange de bibliothèque (Hook, CTA, Hashtags, Urgence) : cliquez sur une pastille pour modifier ses lignes, glissez-la pour l'utiliser.
 - **Quels groupes** : lorsque Groupes Facebook est une destination, chaque campagne affiche une case pour chaque groupe présent dans Destinations sociales. Laissez-les toutes cochées pour publier dans tous, ou choisissez uniquement ceux où cette campagne doit publier. Deux campagnes peuvent ainsi viser deux groupes différents. Les Pages Facebook vont toujours vers toutes vos pages.
+- **Idea List Amazon** : activez *Créer aussi une Idea List Amazon à partir de chaque récap* et la campagne crée une vraie Idea List sur votre boutique Amazon au moment de publier : les produits du récap, une description et une courte note sur chaque produit. Choisissez *Une nouvelle liste à chaque publication* pour une liste datée à chaque fois, ou *Garder une liste et y ajouter* pour que chaque publication ajoute ses nouvelles offres à la même liste. Cochez *Mettre le lien de la liste dans la publication* pour ajouter le lien balisé de votre liste à la fin du texte. Une chose qu'Amazon ne permet pas : une photo de couverture personnalisée sur une Idea List (la vignette est toujours un collage des images produits), votre photo de campagne apparaît donc uniquement sur la publication Facebook.
 
 Les commentaires sont publiés lentement, volontairement, toutes les 20 à 45 secondes, pour que Facebook ne signale pas d'activité rapide. Un récap de 50 offres prend environ 20 à 40 minutes, et les autres publications programmées attendent, donc laissez au moins 45 minutes entre les campagnes. Si Facebook demande de ralentir en cours de route, le récap s'arrête plus tôt et la carte de la campagne indique combien de commentaires sont passés (par exemple "17/50 publiés"). Tout s'enregistre automatiquement pendant que vous tapez, et **Lancer maintenant** déclenche une campagne immédiatement pour tester un petit récap de bout en bout.
 

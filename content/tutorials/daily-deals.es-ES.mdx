@@ -99,6 +99,18 @@ Facebook limita la frecuencia con la que una cuenta puede publicar, y publicar d
 - **excludeLastMonth**: activado, no vuelve a publicar ofertas posteadas en los últimos 30 días. Mantiene tu feed fresco.
 - **Cadencias perDestination**: Telegram tolera mucho más volumen que Instagram. No apliques la cadencia de 15 min de Telegram a Instagram o te limitarán.
 
+## Mi voz de publicación: textos que suenan como tú
+
+Los textos automáticos pueden empezar a sonar iguales. **Mi voz de publicación** (en **Crea tu publicación**, justo debajo de las variantes de texto) aprende cómo escribes tú y añade variantes de texto con tu propio estilo.
+
+1. Abre **Crea tu publicación** y despliega **Mi voz de publicación**.
+2. Pega de 2 a 5 publicaciones escritas por ti, tal como las publicas de verdad: tus emojis, tus ganchos, tus saltos de línea.
+3. Elige cuántas variantes generar y pulsa **Generar variantes de texto**.
+
+La IA estudia tus ejemplos (tu estilo de gancho, tus hábitos con los emojis, tu estructura y tus despedidas) y escribe nuevas variantes de texto que conservan tu voz usando píldoras para las partes variables: el enlace del producto, el precio, el descuento y el código promocional salen siempre directamente de cada oferta, así que siempre son exactos. Las nuevas variantes aparecen en **Más variantes de texto**, donde cada publicación va rotando entre ellas. Edita o quita cualquiera como si fuera una variante tuya; al volver a generar solo se reemplazan las que no hayas tocado.
+
+Esta función usa tu clave de OpenAI de **Integraciones de API**, la misma clave que el generador de palabras clave con IA. ¿Sin clave conectada? La sección muestra un botón **Conectar OpenAI** que te lleva allí.
+
 ## Crear listas de ideas de Amazon automáticamente
 
 En la pestaña Harvest hay una tarjeta **Crear listas de ideas de Amazon automáticamente**. Actívala y, tras cada búsqueda, Butler crea listas de ideas de Amazon en tu escaparate a partir de las ofertas que acabas de recolectar. Las listas se ordenan para que las ofertas activas en **Creator Connections** y **Sponsored Products for Creators** vayan primero, colocando tus productos más rentables arriba.
@@ -162,6 +174,7 @@ Cómo configurarla:
 - **Dos resúmenes al día**: crea una segunda campaña con sus propias palabras clave, su propia cantidad y una hora posterior. Por ejemplo, cocina a las 9:00 y "Los 20 mejores hallazgos de Amazon en oferta hoy" a las 10:00. Cada campaña solo publica sus propias ofertas.
 - **Opciones de comentario**: decide si cada comentario incluye la foto del producto y, si quieres, escribe tu propia plantilla de comentario con variables como `{{title}}`, `{{salePrice}}`, `{{percentOff}}` y `{{url}}`. La bandeja de píldoras coincide exactamente con la de Crea tu publicación, incluidas las píldoras naranjas de biblioteca (Hook, CTA, Hashtags, Urgencia): haz clic en una para editar sus líneas y arrástrala para usarla.
 - **Qué grupos**: cuando Grupos de Facebook es un destino, cada campaña muestra una casilla por cada grupo que tienes en Destinos sociales. Déjalos todos marcados para publicar en todos, o elige solo aquellos en los que debe publicar esta campaña. Así dos campañas pueden apuntar a dos grupos distintos. Las Páginas de Facebook siguen yendo a todas tus páginas.
+- **Idea List de Amazon**: activa *Crear también una Idea List de Amazon con cada resumen* y la campaña crea una Idea List real en tu escaparate de Amazon al publicar: los productos del resumen, una descripción y una nota breve en cada producto. Elige *Una lista nueva por publicación* para una lista con fecha cada vez, o *Mantener una lista y añadirle* para que cada publicación añada sus ofertas nuevas a la misma lista. Marca *Poner el enlace de la lista en la publicación* para añadir el enlace etiquetado de tu lista al final del texto. Algo que Amazon no permite: una foto de portada personalizada en una Idea List (la miniatura es siempre un collage de las imágenes de los productos), así que tu foto de campaña solo aparece en la publicación de Facebook.
 
 Los comentarios se publican despacio a propósito, cada 20 a 45 segundos, para que Facebook no marque actividad rápida. Un resumen de 50 ofertas tarda entre 20 y 40 minutos, y las demás publicaciones programadas esperan, así que deja al menos 45 minutos entre campañas. Si Facebook pide ir más despacio a mitad de la ejecución, el resumen se detiene antes y la tarjeta de la campaña muestra cuántos comentarios se publicaron (por ejemplo "publicó 17/50"). Todo se guarda solo mientras escribes, y **Ejecutar ahora** lanza una campaña al momento para que pruebes un resumen pequeño de principio a fin.
 

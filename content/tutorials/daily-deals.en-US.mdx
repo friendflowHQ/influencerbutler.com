@@ -99,6 +99,18 @@ Facebook limits how often an account can post, and posting too many deals too fa
 - **excludeLastMonth**: once on, won't re-post any deal that posted in the last 30 days. Keeps your feed feeling fresh.
 - **perDestination cadences**: Telegram tolerates much higher volume than Instagram. Don't apply Telegram's 15-min cadence to Instagram or you'll get rate-limited.
 
+## My Caption Voice: captions that sound like you
+
+Automated captions can start to sound the same. **My Caption Voice** (in **Build Your Post**, just under the caption variants) learns how you write and adds caption variants in your own style.
+
+1. Open **Build Your Post** and expand **My Caption Voice**.
+2. Paste 2 to 5 posts you wrote yourself, the way you actually post them: your emoji, your hooks, your line breaks.
+3. Pick how many variants to generate and click **Generate caption variants**.
+
+The AI studies your examples (your hook style, emoji habits, layout, and sign-offs) and writes new caption variants that keep your voice while using pills for the moving parts: the product link, price, discount, and promo code always come straight from each deal, so they are always exact. The new variants land in **More caption variants**, where every post rotates through them. Edit or remove any of them like a variant you wrote yourself; generating again replaces only the ones you have not touched.
+
+This feature uses your OpenAI key from **API Integrations**, the same key as the AI keyword generator. No key connected? The section shows a **Connect OpenAI** button that takes you there.
+
 ## Auto-build Amazon Idea Lists
 
 On the Harvest tab there is an **Auto-build Amazon Idea Lists** card. Turn it on and, after each search, Butler creates Amazon Idea Lists on your storefront from the deals you just harvested. Lists are ranked so the deals active in **Creator Connections** and **Sponsored Products for Creators** go first, putting your highest-earning products at the top.
@@ -162,6 +174,7 @@ Setting one up:
 - **Two roundups a day**: create a second campaign with its own keywords, its own count, and a later time. For example, kitchen gadgets at 9:00 and "Top 20 Amazon Finds on Sale Today" at 10:00. Each campaign only ever posts its own deals.
 - **Comment options**: choose whether each comment includes the product photo, and optionally write your own comment template with tokens like `{{title}}`, `{{salePrice}}`, `{{percentOff}}`, and `{{url}}`. The pill tray matches Build Your Post exactly, including the orange library pills (Hook, CTA, Hashtags, Urgency): click one to edit its lines, drag it in to use it.
 - **Which groups**: when Facebook Groups is a destination, each campaign shows a checkbox for every group you have in Social Destinations. Leave them all checked to post to every group, or pick just the ones this campaign should post to. That lets two campaigns target two different groups. Facebook Pages still go to all your pages.
+- **Amazon Idea List**: turn on *Also create an Amazon Idea List from each roundup* and the campaign builds a real Idea List on your Amazon storefront at post time: the roundup's products, a description, and a short note on each product. Choose *New list every post* for a fresh, dated list each time, or *Keep one list and add to it* so every post adds its new deals to the same list. Tick *Put the list link in the post* to add the tagged link to your list at the end of the post text. One thing Amazon does not allow: a custom cover photo on an Idea List (the thumbnail is always a collage of the product images), so your uploaded campaign photo appears on the Facebook post only.
 
 Comments post slowly on purpose, about 20 to 45 seconds apart, so Facebook does not flag rapid activity. A 50 deal roundup takes roughly 20 to 40 minutes, and other scheduled posts wait for it, so leave at least 45 minutes between campaigns. If Facebook asks to slow down mid-run, the roundup stops early and the campaign card shows how many comments made it (for example "posted 17/50"). Everything auto-saves as you type, and **Run now** fires a campaign immediately so you can watch a small test roundup end to end.
 
