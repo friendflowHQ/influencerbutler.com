@@ -113,6 +113,12 @@ Note: live Test Connection currently makes a real read-only call for OpenAI and 
 - Every Amazon-side workspace ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) reads from here.
 - [Relink Butler tutorial](/help/tutorials/relink-butler) - uses the affiliate routing config to know what to swap published links to.
 
+## Amazon native deep link
+
+At the top of **DeepLink Routing** is the **Amazon native deep link** switch, on by default. When it's on, every Amazon product link your tools build opens straight in the Amazon app on a phone instead of a mobile browser, which is a smoother tap-to-buy for your shoppers. It's separate from the provider list below: the provider picks the redirect/shortener, while this switch controls the in-app open. Turn it off if you'd rather post plain browser links.
+
+One thing to know: for the link to actually open the app, your Amazon Associates account also needs "Deep linking enabled" in SiteStripe. The switch adds the right link format; your account setting is what tells Amazon to honor it.
+
 ## Per-country affiliate tags
 
 Under **DeepLink Routing** there's a collapsible **Per-country affiliate tags** list. Most of these fill in for you: when you run the Storefront ID check in **Settings**, it reads the associate tags on your Amazon account and populates the matching countries automatically. Re-run the check any time to refresh them. You can still type a tag into any country by hand to override it, and a tag you type is kept. Your US tag defaults to your CC Storefront ID; leave a country blank to skip it.

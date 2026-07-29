@@ -113,6 +113,12 @@ Nota: la prueba de conexión en vivo hace ahora una llamada real de solo lectura
 - Cada espacio del lado Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lee desde aquí.
 - [Tutorial de Relink Butler](/help/tutorials/relink-butler) - usa la config de enrutamiento de afiliados para saber a qué cambiar los enlaces publicados.
 
+## Enlace profundo nativo de Amazon
+
+En la parte superior de **DeepLink Routing** está el interruptor **Enlace profundo nativo de Amazon**, activado por defecto. Cuando está activado, cada enlace de producto de Amazon que crean tus herramientas se abre directamente en la app de Amazon en el móvil en lugar de en el navegador, lo que hace la compra más fluida para tus compradores. Es independiente de la lista de proveedores de abajo: el proveedor elige la redirección/acortador, mientras que este interruptor controla la apertura en la app. Desactívalo si prefieres publicar enlaces normales de navegador.
+
+Ten en cuenta una cosa: para que el enlace abra realmente la app, tu cuenta de Amazon Associates también necesita "Deep linking enabled" en SiteStripe. El interruptor añade el formato de enlace correcto; el ajuste de tu cuenta es lo que le dice a Amazon que lo respete.
+
 ## Etiquetas de afiliado por país
 
 En **DeepLink Routing** hay una lista desplegable **Etiquetas de afiliado por país**. La mayoría se rellenan solas: cuando ejecutas la comprobación de ID de tienda en **Ajustes**, lee las etiquetas de afiliado de tu cuenta de Amazon y completa automáticamente los países correspondientes. Vuelve a ejecutar la comprobación cuando quieras para actualizarlas. Puedes escribir una etiqueta a mano en cualquier país para anularla, y una etiqueta que escribas se conserva. Tu etiqueta de EE. UU. usa por defecto tu ID de tienda CC; deja un país en blanco para omitirlo.
