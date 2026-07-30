@@ -384,6 +384,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "openai-api-setup",
+      "title": "Set up the OpenAI API (it is not ChatGPT)",
+      "category": "Other",
+      "summary": "The AI butlers need an OpenAI API key from platform.openai.com, not a ChatGPT subscription. How to create a key, add billing, and connect it.",
+      "order": 302,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "telegram-bot",
       "title": "Telegram Bot setup: post deals to a Telegram channel",
       "category": "Other",

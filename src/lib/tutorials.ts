@@ -112,8 +112,14 @@ function renderInline(line: string): string {
     return `<img src="${safeSrc}" alt="${alt}" loading="lazy" />`;
   });
   out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text: string, href: string) => {
-    const safeHref = /^https?:\/\//i.test(href) ? href : "#";
-    return `<a href="${safeHref}" rel="noreferrer noopener" target="_blank">${text}</a>`;
+    // Allow absolute http(s) links and root-relative in-app links (e.g. links
+    // to other tutorials like /help/tutorials/...). Anything else falls to "#".
+    const isAbsolute = /^https?:\/\//i.test(href);
+    const isRootRelative = /^\/[A-Za-z0-9]/.test(href);
+    const safeHref = isAbsolute || isRootRelative ? href : "#";
+    // Only external links open in a new tab; internal links stay in-app.
+    const external = isAbsolute ? ' rel="noreferrer noopener" target="_blank"' : "";
+    return `<a href="${safeHref}"${external}>${text}</a>`;
   });
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, "$1<em>$2</em>");

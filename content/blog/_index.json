@@ -2,6 +2,20 @@
   "version": 1,
   "posts": [
     {
+      "id": "openai-api-key-vs-chatgpt",
+      "title": "ChatGPT vs the OpenAI API: Why Your AI Butlers Need a Key (Not a Subscription)",
+      "category": "Growth",
+      "summary": "A ChatGPT Plus subscription will not power Influencer Butler's AI features. The plain-English difference between ChatGPT and the OpenAI API, and how to get the key the app needs.",
+      "date": "2026-07-30",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "chatgpt vs openai api, openai api key, how to get openai api key, influencer butler openai, openai api billing, platform.openai.com",
+      "image": "/assets/blog/openai-api-key-vs-chatgpt.png",
+      "imageAlt": "Illustration contrasting the ChatGPT chat app with an OpenAI API key that powers automation",
+      "imagePrompt": "Editorial flat illustration contrasting two things side by side: on the left a friendly chat-app speech bubble (ChatGPT the chat app), on the right a small key or key-card plugging into a row of little automation robots or butlers (the OpenAI API powering tools), a clear this-not-that comparison mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
+    },
+    {
       "id": "products-you-already-own-shoppable-videos",
       "title": "Stop Guessing What to Film: Your Next Amazon Video Is Already in Your House",
       "category": "Amazon",
