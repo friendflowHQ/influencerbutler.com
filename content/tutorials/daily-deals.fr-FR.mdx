@@ -59,6 +59,16 @@ Deux réglages de la Recette de filtres décident de la sévérité de votre ré
 
 En bref : Vraies remises uniquement réduit votre récolte aux vraies démarques, et Compléter jusqu'à votre objectif la remplit à nouveau quand cette réduction vous laisse sous votre objectif.
 
+## Si une offre change avant sa publication
+
+Les offres sont trouvées à l'avance et publiées selon votre programmation, donc un prix ou une remise peut changer entre le moment où Butler trouve une offre et le moment où elle est réellement publiée. Juste avant la publication de chaque offre, Butler revérifie sa remise, son prix et son stock actuels. Si elle ne répond plus à vos filtres (elle est passée sous votre Pourcentage de remise minimum, sous votre Prix minimum, ou est en rupture de stock), Butler suit le choix que vous avez défini dans **Si une offre change avant sa publication** dans l'onglet Filtres d'offres :
+
+- **La retenir pour vérification** (par défaut) : l'offre passe dans vos Prochaines publications avec une note "l'offre a changé", pour que rien ne soit publié sans que vous le vouliez. Cliquez sur **Publier quand même** pour la publier telle quelle.
+- **L'ignorer discrètement** : l'offre est écartée et rien n'est publié.
+- **La publier avec les données actuelles** : Butler met à jour le texte avec la remise et le prix actuels, puis la publie.
+
+Cela se produit à chaque publication, vous ne publiez donc jamais une offre à 10% qui était à 50% quand elle a été trouvée. Les produits avec une remise permanente Publier toujours ne sont jamais retenus ici.
+
 ## Inclure les offres avec un coupon à activer d'un clic
 
 Certains produits Amazon ont un coupon à activer d'un clic (par exemple "Activer le coupon de 17 %", ou un montant fixe de réduction) en plus du prix soldé. Le flux produit d'Amazon ne signale pas les coupons, donc Butler les lit directement sur la page des coupons d'Amazon.

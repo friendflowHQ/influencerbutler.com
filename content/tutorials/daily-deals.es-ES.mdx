@@ -59,6 +59,16 @@ Dos ajustes de la Receta de filtros deciden lo estricta que es tu recolección, 
 
 En resumen: Solo descuentos reales recorta tu recolección a rebajas auténticas, y Completar hasta tu objetivo vuelve a llenarla cuando ese recorte te deja por debajo de tu objetivo.
 
+## Si una oferta cambia antes de publicarse
+
+Las ofertas se encuentran con antelación y se publican según tu programación, así que un precio o un descuento puede cambiar entre el momento en que Butler encuentra una oferta y el momento en que realmente se publica. Justo antes de publicar cada oferta, Butler vuelve a comprobar su descuento, precio y disponibilidad actuales. Si ya no cumple tus filtros (bajó por debajo de tu Mínimo porcentaje de descuento, cayó por debajo de tu Precio mínimo o se agotó), Butler sigue la opción que elegiste en **Si una oferta cambia antes de publicarse** en la pestaña Filtros de ofertas:
+
+- **Retenerla para revisar** (predeterminado): la oferta pasa a tus Próximas publicaciones con una nota de "la oferta cambió", para que no se publique nada que no querías enviar. Pulsa **Publicar de todos modos** para enviarla tal cual.
+- **Omitirla sin más**: la oferta se descarta y no se publica nada.
+- **Publicarla con los datos actuales**: Butler actualiza el texto con el descuento y el precio actuales y la publica.
+
+Esto ocurre en cada publicación, así que nunca publicas una oferta del 10% que era del 50% cuando se encontró. Los productos con un descuento continuo de Publicar siempre nunca se retienen aquí.
+
 ## Incluir ofertas con un cupón activable con un clic
 
 Algunos productos de Amazon tienen un cupón activable con un clic (por ejemplo "Aplicar cupón del 17 %", o una cantidad fija de descuento) además de cualquier precio de oferta. El feed de productos de Amazon no informa de los cupones, así que Butler los lee directamente de la página de cupones de Amazon.

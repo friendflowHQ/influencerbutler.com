@@ -59,6 +59,16 @@ Two Filter Recipe settings decide how strict your harvest is, and they pull in o
 
 In short: Real discounts only trims your harvest down to true markdowns, and Top up to reach your target fills the harvest back up when that trim leaves you short of your target.
 
+## If a deal changes before it posts
+
+Deals are found ahead of time and posted on your schedule, so a price or discount can change between when Butler finds a deal and when it actually goes out. Right before each deal posts, Butler re-checks its current discount, price, and stock. If it no longer meets your filters (dropped below your Minimum percent off, fell below your Min price, or went out of stock), Butler follows the choice you set in **If a deal changes before it posts** on the Deal Filters tab:
+
+- **Hold it for review** (default): the deal moves to your Upcoming posts with a "deal changed" note, so nothing goes out that you did not mean to send. Click **Post anyway** to send it as is.
+- **Skip it quietly**: the deal is dropped and nothing is posted.
+- **Post it with current numbers**: Butler updates the caption to the current discount and price, then posts it.
+
+This runs on every post, so you never post a 10% off deal that was 50% off when it was found. Products with an ongoing Always-Post discount are never held here.
+
 ## Include deals with a clippable coupon
 
 Some Amazon products have a clippable coupon (for example "Apply 17% coupon", or a set dollar amount off) on top of any sale price. Amazon's product feed does not report coupons, so Butler reads them from Amazon's coupons page directly.
