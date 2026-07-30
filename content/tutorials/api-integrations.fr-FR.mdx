@@ -94,6 +94,10 @@ Les clés d'API sont stockées chiffrées dans `{userData}/InfluencerButler/secu
 ## Pièges courants
 
 - **Test Connection échoue sur un setup qui marchait**: le fournisseur a fait tourner, révoqué ou rate-limité la clé. La barre du haut affiche un badge "API Health" quand ça arrive. Réémettez la clé depuis le tableau de bord du fournisseur, collez ici, retestez.
+- **Le test de la Creators API affiche "failed" mais Amazon la montre active**: c'est presque toujours un décalage de marketplace. Réglez le menu Marketplace sur la région où vous avez créé vos identifiants d'API. Un identifiant US testé contre un marketplace UK ou AU (ou un identifiant international laissé sur amazon.com par défaut) ne passera pas. L'app le détecte maintenant et vous indique à quelle région appartiennent vos identifiants.
+- **Le Partner Tag de la Creators API est rejeté**: ce champ demande votre identifiant de suivi Amazon Associates (comme yourtag-20), pas votre identifiant de vitrine.
+- **Les champs d'identifiants de la Creators API apparaissent vides après un redémarrage**: c'est normal. Les clés enregistrées sont masquées pour des raisons de sécurité. Choisissez simplement votre marketplace et appuyez sur Test Connection. Vous n'avez pas besoin de les recoller.
+- **Une clé Creators API toute neuve échoue juste après sa création**: les clés récemment émises peuvent mettre jusqu'à 24 heures à s'activer côté Amazon. Attendez et retestez.
 - **La clé OpenAI testée verte mais la génération échoue**: différents produits OpenAI utilisent différentes limites. Une clé valide pour completions peut buter sur un souci de billing/quota sur un modèle spécifique. Vérifiez l'onglet billing du tableau de bord OpenAI.
 - **L'OAuth YouTube expire de façon inattendue**: Google renouvelle les tokens OAuth environ chaque année. Relancez le Setup Wizard de YouTube Butler pour rafraîchir.
 - **Le routage d'affiliation a choisi le mauvais fournisseur**: généralement le mauvais fournisseur était coché. Ouvrez la section routage et vérifiez les cases à cocher des fournisseurs participants.
