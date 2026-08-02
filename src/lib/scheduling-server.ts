@@ -23,6 +23,8 @@ export type SchedConfig = {
   decoyMin: number;
   decoyMax: number;
   defaultJoinUrl: string | null;
+  googleRefreshToken: string | null;
+  googleCalendarEmail: string | null;
 };
 
 const DEFAULT_CONFIG: SchedConfig = {
@@ -31,6 +33,8 @@ const DEFAULT_CONFIG: SchedConfig = {
   decoyMin: 2,
   decoyMax: 4,
   defaultJoinUrl: null,
+  googleRefreshToken: null,
+  googleCalendarEmail: null,
 };
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -50,7 +54,7 @@ export async function loadRules(admin: Admin): Promise<AvailabilityRule[]> {
 export async function loadConfig(admin: Admin): Promise<SchedConfig> {
   const { data, error } = await admin
     .from("call_config")
-    .select("booking_horizon_days,lead_time_hours,decoy_min_per_day,decoy_max_per_day,default_join_url")
+    .select("booking_horizon_days,lead_time_hours,decoy_min_per_day,decoy_max_per_day,default_join_url,google_refresh_token,google_calendar_email")
     .eq("id", 1)
     .maybeSingle();
   if (error || !data) return DEFAULT_CONFIG;
@@ -60,6 +64,8 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
     decoyMin: data.decoy_min_per_day ?? DEFAULT_CONFIG.decoyMin,
     decoyMax: data.decoy_max_per_day ?? DEFAULT_CONFIG.decoyMax,
     defaultJoinUrl: data.default_join_url ?? null,
+    googleRefreshToken: data.google_refresh_token ?? null,
+    googleCalendarEmail: data.google_calendar_email ?? null,
   };
 }
 

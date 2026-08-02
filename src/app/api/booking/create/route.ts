@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdmin, validateSlot, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
-import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
+import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
 
 export const runtime = "nodejs";
@@ -49,22 +49,28 @@ export async function POST(request: Request) {
   const v = await validateSlot(admin, type, startMs, Date.now());
   if (!v.ok) return NextResponse.json({ error: v.reason }, { status: 409 });
 
-  // Video link: Zoom if configured, else the fallback link.
-  let joinUrl: string | null = null;
-  let provider: string | null = null;
-  let meetingId: string | null = null;
-  if (isZoomConfigured()) {
-    const z = await createZoomMeeting({ topic: `${ct.label}: ${user.email}`, startMs, minutes: ct.userMinutes });
-    if (z) { joinUrl = z.joinUrl; provider = "zoom"; meetingId = z.meetingId; }
-  }
-  if (!joinUrl) {
-    const cfg = await loadConfig(admin);
-    if (cfg.defaultJoinUrl) { joinUrl = cfg.defaultJoinUrl; provider = "manual"; }
-  }
-
   const topic = (body.topic || "").trim().slice(0, 2000);
   const name = (body.name || "").trim().slice(0, 200) || null;
   const timezone = (body.timezone || "").trim().slice(0, 64) || null;
+
+  // Video link: a Google Meet on the owner's calendar if connected, else the
+  // fallback link the owner set in the admin.
+  const cfg = await loadConfig(admin);
+  let joinUrl: string | null = null;
+  let provider: string | null = null;
+  let meetingId: string | null = null;
+  if (isGoogleConfigured() && cfg.googleRefreshToken) {
+    const m = await createMeetEvent({
+      refreshToken: cfg.googleRefreshToken,
+      summary: `${ct.label} with Influencer Butler`,
+      description: topic || undefined,
+      startMs,
+      endMs: v.userEndMs,
+      attendeeEmail: user.email,
+    });
+    if (m) { joinUrl = m.joinUrl; provider = "google_meet"; meetingId = m.meetingId; }
+  }
+  if (!joinUrl && cfg.defaultJoinUrl) { joinUrl = cfg.defaultJoinUrl; provider = "manual"; }
 
   const { data: bookingId, error } = await admin.rpc("book_call", {
     p_user_id: user.id,

@@ -4,8 +4,9 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getAdmin } from "@/lib/scheduling-server";
+import { getAdmin, loadConfig } from "@/lib/scheduling-server";
 import { sendCancellation, type BookingEmailData } from "@/lib/call-emails";
+import { deleteMeetEvent } from "@/lib/google-meet";
 import type { CallTypeKey } from "@/lib/scheduling";
 
 export const runtime = "nodejs";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
 
   const { data: booking, error: readErr } = await admin
     .from("call_bookings")
-    .select("id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status")
+    .select("id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,meeting_provider,meeting_id")
     .eq("id", id).maybeSingle();
   if (readErr || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (booking.user_id !== user.id) return NextResponse.json({ error: "Not yours" }, { status: 403 });
@@ -50,6 +51,11 @@ export async function POST(request: Request) {
     };
     await sendCancellation(data);
   } catch (e) { console.error("[booking/cancel] email", e); }
+
+  if (booking.meeting_provider === "google_meet" && booking.meeting_id) {
+    try { const cfg = await loadConfig(admin); if (cfg.googleRefreshToken) await deleteMeetEvent(cfg.googleRefreshToken, booking.meeting_id as string); }
+    catch (e) { console.error("[booking/cancel] meet delete", e); }
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -6,9 +6,10 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { getAdmin } from "@/lib/scheduling-server";
+import { getAdmin, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { sendCancellation, type BookingEmailData } from "@/lib/call-emails";
+import { deleteMeetEvent } from "@/lib/google-meet";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   const { data: booking, error: readErr } = await admin
     .from("call_bookings")
-    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status")
+    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,meeting_provider,meeting_id")
     .eq("id", id).maybeSingle();
   if (readErr || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
       };
       await sendCancellation(data);
     } catch (e) { console.error("[scheduling/update] cancel email", e); }
+    if (booking.meeting_provider === "google_meet" && booking.meeting_id) {
+      try { const cfg = await loadConfig(admin); if (cfg.googleRefreshToken) await deleteMeetEvent(cfg.googleRefreshToken, booking.meeting_id as string); }
+      catch (e) { console.error("[scheduling/update] meet delete", e); }
+    }
   }
 
   await logAdminAction({ actor, action: `scheduling.${action}`, targetType: "call_booking", targetId: id, details: patch });

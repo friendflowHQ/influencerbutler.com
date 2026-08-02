@@ -96,8 +96,13 @@ CREATE TABLE IF NOT EXISTS call_config (
   decoy_min_per_day   INT NOT NULL DEFAULT 2,
   decoy_max_per_day   INT NOT NULL DEFAULT 4,
   default_join_url    TEXT,
+  google_refresh_token TEXT,          -- owner's Google OAuth refresh token (Meet)
+  google_calendar_email TEXT,         -- the connected Google account
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Idempotent adds so re-running (or an earlier run without these columns) is safe.
+ALTER TABLE call_config ADD COLUMN IF NOT EXISTS google_refresh_token TEXT;
+ALTER TABLE call_config ADD COLUMN IF NOT EXISTS google_calendar_email TEXT;
 INSERT INTO call_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE call_config ENABLE ROW LEVEL SECURITY;

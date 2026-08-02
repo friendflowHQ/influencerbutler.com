@@ -23,7 +23,12 @@ export async function GET(request: Request) {
     admin.from("call_availability_rules").select("*").order("timezone").order("weekday"),
     admin.from("call_blocks").select("*").gte("ends_at", new Date().toISOString()).order("starts_at").limit(200),
   ]);
-  return NextResponse.json({ config: config.data ?? null, rules: rules.data ?? [], blocks: blocks.data ?? [] });
+  // Never return the refresh token to the client; expose only connection state.
+  const raw = (config.data ?? null) as Record<string, unknown> | null;
+  const googleConnected = !!raw?.google_refresh_token;
+  const googleEmail = (raw?.google_calendar_email as string) ?? null;
+  if (raw) { delete raw.google_refresh_token; delete raw.google_calendar_email; }
+  return NextResponse.json({ config: raw, rules: rules.data ?? [], blocks: blocks.data ?? [], googleConnected, googleEmail });
 }
 
 type Body = {
@@ -68,6 +73,10 @@ export async function POST(request: Request) {
       case "deleteBlock": {
         if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
         await admin.from("call_blocks").delete().eq("id", body.id);
+        break;
+      }
+      case "disconnectGoogle": {
+        await admin.from("call_config").update({ google_refresh_token: null, google_calendar_email: null, updated_at: new Date().toISOString() }).eq("id", 1);
         break;
       }
       default:

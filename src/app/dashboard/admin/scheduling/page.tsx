@@ -45,7 +45,7 @@ export default function SchedulingAdminPage() {
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState("");
   const [tab, setTab] = useState<"calls" | "settings">("calls");
-  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[] } | null>(null);
+  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
 
   const loadList = useCallback(async () => {
     const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
@@ -59,8 +59,17 @@ export default function SchedulingAdminPage() {
     if (res.ok) setSettings(await res.json());
   }, []);
 
+  const [googleMsg, setGoogleMsg] = useState("");
   useEffect(() => { loadList(); }, [loadList]);
   useEffect(() => { if (tab === "settings") loadSettings(); }, [tab, loadSettings]);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("google");
+    if (!p) return;
+    setTab("settings");
+    setGoogleMsg(p === "connected" ? "Google Calendar connected. A Meet link is now created for each booking."
+      : p === "notconfigured" ? "Google OAuth is not configured yet (set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in Vercel)."
+      : "Could not connect Google Calendar. Please try again.");
+  }, []);
 
   const openPrep = useCallback(async (id: string) => {
     const res = await fetch(`/api/admin/scheduling/prep?bookingId=${id}`, { cache: "no-store" });
@@ -125,6 +134,7 @@ export default function SchedulingAdminPage() {
         </>
       )}
 
+      {tab === "settings" && googleMsg && <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">{googleMsg}</div>}
       {tab === "settings" && settings && (
         <div className="space-y-5">
           <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -135,10 +145,25 @@ export default function SchedulingAdminPage() {
                   <label key={k} className="text-sm"><span className="block text-xs text-slate-500">{label}</span>
                     <input type="number" defaultValue={settings.config![k] as number} onBlur={(e) => mutateSettings({ action: "config", config: { [k]: Number(e.target.value) } })} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
                 ))}
-                <label className="col-span-2 text-sm sm:col-span-3"><span className="block text-xs text-slate-500">Fallback join link (used if Zoom is not configured)</span>
-                  <input defaultValue={settings.config.default_join_url || ""} onBlur={(e) => mutateSettings({ action: "config", config: { default_join_url: e.target.value } })} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://zoom.us/j/..." /></label>
+                <label className="col-span-2 text-sm sm:col-span-3"><span className="block text-xs text-slate-500">Fallback join link (used if Google Meet is not connected)</span>
+                  <input defaultValue={settings.config.default_join_url || ""} onBlur={(e) => mutateSettings({ action: "config", config: { default_join_url: e.target.value } })} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" /></label>
               </div>
             )}
+            {/* Google Meet connection */}
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="text-xs font-medium text-slate-500">Google Meet</div>
+              {settings.googleConnected ? (
+                <div className="mt-1 flex items-center gap-3 text-sm">
+                  <span className="text-emerald-700">Connected{settings.googleEmail ? ` as ${settings.googleEmail}` : ""}. A Meet link is created for each booking.</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "disconnectGoogle" })} className="text-xs text-slate-400 hover:text-rose-600">Disconnect</button>
+                </div>
+              ) : (
+                <div className="mt-1 text-sm">
+                  <a href="/api/admin/scheduling/google/connect" className="inline-block rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">Connect Google Calendar</a>
+                  <span className="ml-2 text-xs text-slate-500">Until connected, bookings use the fallback link above.</span>
+                </div>
+              )}
+            </div>
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white p-4">
