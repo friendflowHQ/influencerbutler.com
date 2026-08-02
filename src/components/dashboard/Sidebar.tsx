@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
     ],
   },
   { href: "/dashboard/extension", label: "Extension" },
+  { href: "/dashboard/book", label: "Book a Call" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
 ];
@@ -139,6 +140,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
       { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
       { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
+      { href: "/dashboard/admin/scheduling", label: "Scheduling", perm: "scheduling.view", built: true },
       { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
       { href: "/dashboard/admin/activity", label: "Activity widget", perm: "activity.manage", built: true },
       { href: "/dashboard/admin/testimonials", label: "Testimonials", perm: "testimonials.moderate", built: true },
