@@ -19,6 +19,7 @@ export type PermissionDomain =
   | "Users"
   | "Community"
   | "Support"
+  | "Scheduling"
   | "Catalogue"
   | "Marketing"
   | "Operations"
@@ -77,6 +78,10 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "support.view", label: "View support tickets", description: "See the support ticket queue (bugs, questions, feature requests) and each ticket's reply thread.", domain: "Support", risk: "normal", built: true },
   { key: "support.respond", label: "Respond to & triage tickets", description: "Reply to a customer, change a ticket's status/priority/tags, take over from the bot, mark spam, or resolve.", domain: "Support", risk: "normal", built: true },
 
+  // Scheduling (1:1 support + demo call bookings)
+  { key: "scheduling.view", label: "View call bookings", description: "See upcoming and past 1:1 calls with each customer's prep sheet (subscription + support history).", domain: "Scheduling", risk: "normal", built: true },
+  { key: "scheduling.manage", label: "Manage calls & availability", description: "Set your bookable hours, cancel or reschedule calls, add manual blocks, and edit scheduling settings.", domain: "Scheduling", risk: "normal", built: true },
+
   // Catalogue
   { key: "catalogue.view", label: "View catalogue harvest", description: "See harvest status and history.", domain: "Catalogue", risk: "normal", built: true },
   { key: "catalogue.trigger", label: "Trigger catalogue harvest", description: "Kick off a CC / SPCC catalogue harvest.", domain: "Catalogue", risk: "normal", built: true },
@@ -127,6 +132,7 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Users",
   "Community",
   "Support",
+  "Scheduling",
   "Catalogue",
   "Marketing",
   "Operations",
