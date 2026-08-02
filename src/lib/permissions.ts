@@ -18,6 +18,7 @@ export type PermissionDomain =
   | "Licenses"
   | "Users"
   | "Community"
+  | "Support"
   | "Catalogue"
   | "Marketing"
   | "Operations"
@@ -70,6 +71,12 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "community.moderate", label: "Moderate community Q&A", description: "Hide, restore, or change the status of questions and answers.", domain: "Community", risk: "normal", built: true },
   { key: "community.delete", label: "Delete community Q&A", description: "Permanently delete a question or answer.", domain: "Community", risk: "destructive", built: true },
 
+  // Support (the feedback/bug/feature-request ticket queue backed by the
+  // feedback Worker's D1. The support-bot triages automatically; these gate
+  // the human take-over surface in the admin dashboard.)
+  { key: "support.view", label: "View support tickets", description: "See the support ticket queue (bugs, questions, feature requests) and each ticket's reply thread.", domain: "Support", risk: "normal", built: true },
+  { key: "support.respond", label: "Respond to & triage tickets", description: "Reply to a customer, change a ticket's status/priority/tags, take over from the bot, mark spam, or resolve.", domain: "Support", risk: "normal", built: true },
+
   // Catalogue
   { key: "catalogue.view", label: "View catalogue harvest", description: "See harvest status and history.", domain: "Catalogue", risk: "normal", built: true },
   { key: "catalogue.trigger", label: "Trigger catalogue harvest", description: "Kick off a CC / SPCC catalogue harvest.", domain: "Catalogue", risk: "normal", built: true },
@@ -119,6 +126,7 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Licenses",
   "Users",
   "Community",
+  "Support",
   "Catalogue",
   "Marketing",
   "Operations",

@@ -138,6 +138,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
       { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
+      { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
       { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
       { href: "/dashboard/admin/activity", label: "Activity widget", perm: "activity.manage", built: true },
       { href: "/dashboard/admin/testimonials", label: "Testimonials", perm: "testimonials.moderate", built: true },
