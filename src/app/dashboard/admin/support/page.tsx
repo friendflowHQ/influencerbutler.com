@@ -9,7 +9,7 @@
  * permissions server-side; a 403 renders the "Admin only" state.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type Reply = {
   id: number | string;
@@ -38,12 +38,15 @@ type Ticket = {
   githubIssueUrl: string | null;
   fixCommitSha: string | null;
   resolvedVersion: string | null;
+  resolvedAt: number | null;
   submittedAt: number | null;
   lastTriagedAt: number | null;
   repliedAt: number | null;
   logTail?: string;
   replies?: Reply[];
 };
+
+const REPO_URL = "https://github.com/friendflowHQ/InfluencerButler";
 
 type Bucket = { key: string; label: string; statuses: string[] };
 
@@ -53,6 +56,7 @@ const BUCKETS: Bucket[] = [
   { key: "inProgress", label: "In progress", statuses: ["acked", "clarifying", "patching", "committed", "released"] },
   { key: "resolved", label: "Resolved", statuses: ["fixed"] },
   { key: "spam", label: "Spam", statuses: ["spam"] },
+  { key: "archived", label: "Archived", statuses: ["archived"] },
   { key: "all", label: "All", statuses: [] },
 ];
 
@@ -60,7 +64,7 @@ const PRIORITIES = ["", "P0", "P1", "P2", "P3"];
 
 const STATUS_OPTIONS = [
   "sent", "acked", "clarifying", "waiting_on_user", "user_replied",
-  "patching", "committed", "released", "fixed", "escalated", "spam",
+  "patching", "committed", "released", "fixed", "escalated", "spam", "archived",
 ];
 
 function priorityClasses(p: string): string {
@@ -76,8 +80,70 @@ function statusClasses(s: string): string {
   if (s === "escalated") return "bg-rose-50 text-rose-700";
   if (s === "user_replied" || s === "waiting_on_user") return "bg-amber-50 text-amber-700";
   if (s === "fixed") return "bg-emerald-50 text-emerald-700";
-  if (s === "spam") return "bg-slate-100 text-slate-500";
+  if (s === "spam" || s === "archived") return "bg-slate-100 text-slate-500";
   return "bg-sky-50 text-sky-700";
+}
+
+// Compose the ticket lifecycle into ordered timeline steps for the drawer.
+type Step = { label: string; at: number | null; detail?: ReactNode; done: boolean };
+
+function buildTimeline(t: Ticket): Step[] {
+  const replies = t.replies ?? [];
+  const firstOutbound = replies.find((r) => r.direction === "outbound") || null;
+  const shipNotice = replies.find(
+    (r) => r.direction === "outbound" && /fixed in v/i.test(r.subject || ""),
+  ) || null;
+  const steps: Step[] = [
+    { label: "Submitted", at: t.submittedAt, done: true },
+    {
+      label: "Acknowledged",
+      at: firstOutbound?.sentAt ?? null,
+      detail: firstOutbound ? `by ${firstOutbound.author}` : "no reply yet",
+      done: !!firstOutbound,
+    },
+    {
+      label: "Bot triaged",
+      at: t.lastTriagedAt,
+      detail: t.classification ? `classified ${t.classification} · ${t.priority}` : undefined,
+      done: !!t.lastTriagedAt,
+    },
+  ];
+  if (t.fixCommitSha) {
+    steps.push({
+      label: "Fix committed",
+      at: null,
+      detail: (
+        <a className="text-[#f97316] hover:underline" href={`${REPO_URL}/commit/${t.fixCommitSha}`} target="_blank" rel="noreferrer">
+          {t.fixCommitSha.slice(0, 10)} on main ↗
+        </a>
+      ),
+      done: true,
+    });
+  }
+  steps.push({
+    label: t.resolvedVersion ? `Shipped in v${String(t.resolvedVersion).replace(/^v/i, "")}` : "Shipped in a release",
+    at: t.resolvedAt,
+    detail: t.resolvedVersion ? undefined : "not yet released",
+    done: !!t.resolvedVersion,
+  });
+  steps.push({
+    label: "Customer notified it shipped",
+    at: shipNotice?.sentAt ?? null,
+    detail: shipNotice ? undefined : "pending release",
+    done: !!shipNotice,
+  });
+  return steps;
+}
+
+// One-line release/handling state for the drawer banner.
+function releaseState(t: Ticket): { text: string; tone: string } {
+  if (t.status === "escalated") return { text: "Escalated to you — the bot handed this back", tone: "bg-rose-50 text-rose-700" };
+  if (t.resolvedVersion) return { text: `Shipped in v${String(t.resolvedVersion).replace(/^v/i, "")}`, tone: "bg-emerald-50 text-emerald-700" };
+  if (t.fixCommitSha) return { text: "Fix committed to main — awaiting the next release", tone: "bg-sky-50 text-sky-700" };
+  if (t.status === "spam") return { text: "Marked spam", tone: "bg-slate-100 text-slate-500" };
+  if (t.status === "archived") return { text: "Archived", tone: "bg-slate-100 text-slate-500" };
+  if (["acked", "clarifying", "patching", "committed", "released"].includes(t.status)) return { text: "In progress", tone: "bg-sky-50 text-sky-700" };
+  return { text: "New — not yet worked", tone: "bg-slate-100 text-slate-600" };
 }
 
 function ago(ms: number | null | undefined): string {
@@ -392,6 +458,11 @@ export default function SupportAdminPage() {
 
             {actionMsg && <div className="mt-3 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-600">{actionMsg}</div>}
 
+            {/* Release / handling state banner */}
+            {(() => { const rs = releaseState(selected); return (
+              <div className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${rs.tone}`}>{rs.text}</div>
+            ); })()}
+
             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div><dt className="text-slate-400">Type</dt><dd className="text-slate-700">{selected.classification || selected.type}</dd></div>
               <div><dt className="text-slate-400">Tier</dt><dd className="text-slate-700">{selected.licenseTier || "—"}</dd></div>
@@ -399,10 +470,31 @@ export default function SupportAdminPage() {
               <div><dt className="text-slate-400">Platform</dt><dd className="text-slate-700">{selected.platform || "—"}</dd></div>
               <div><dt className="text-slate-400">App version</dt><dd className="text-slate-700">{selected.appVersion || "—"}</dd></div>
               <div><dt className="text-slate-400">Submitted</dt><dd className="text-slate-700">{fullTime(selected.submittedAt)}</dd></div>
+              <div><dt className="text-slate-400">Last worked by bot</dt><dd className="text-slate-700">{selected.lastTriagedAt ? fullTime(selected.lastTriagedAt) : "not yet"}</dd></div>
+              <div><dt className="text-slate-400">Last reply</dt><dd className="text-slate-700">{selected.repliedAt ? fullTime(selected.repliedAt) : "none"}</dd></div>
+              <div><dt className="text-slate-400">Shipped in</dt><dd className="text-slate-700">{selected.resolvedVersion ? `v${String(selected.resolvedVersion).replace(/^v/i, "")}${selected.resolvedAt ? ` (${fullTime(selected.resolvedAt)})` : ""}` : "—"}</dd></div>
+              {selected.fixCommitSha && <div><dt className="text-slate-400">Branch</dt><dd className="text-slate-700">main</dd></div>}
               {selected.escalatedReason && <div className="col-span-2"><dt className="text-slate-400">Escalated reason</dt><dd className="text-rose-700">{selected.escalatedReason}</dd></div>}
-              {selected.fixCommitSha && <div><dt className="text-slate-400">Fix commit</dt><dd className="font-mono text-xs text-slate-700">{selected.fixCommitSha}</dd></div>}
-              {selected.githubIssueUrl && <div><dt className="text-slate-400">GitHub</dt><dd><a className="text-[#f97316] hover:underline" href={selected.githubIssueUrl} target="_blank" rel="noreferrer">issue ↗</a></dd></div>}
+              {selected.fixCommitSha && <div className="col-span-2"><dt className="text-slate-400">Fix commit</dt><dd><a className="font-mono text-xs text-[#f97316] hover:underline" href={`${REPO_URL}/commit/${selected.fixCommitSha}`} target="_blank" rel="noreferrer">{selected.fixCommitSha.slice(0, 12)} ↗ (see the diff)</a></dd></div>}
+              {selected.githubIssueUrl && <div><dt className="text-slate-400">GitHub</dt><dd><a className="text-[#f97316] hover:underline" href={selected.githubIssueUrl} target="_blank" rel="noreferrer">issue / PR ↗</a></dd></div>}
             </dl>
+
+            {/* Lifecycle timeline */}
+            <section className="mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Lifecycle</h3>
+              <ol className="mt-2 space-y-2">
+                {buildTimeline(selected).map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className={`mt-1 inline-block h-2 w-2 shrink-0 rounded-full ${s.done ? "bg-[#f97316]" : "bg-slate-300"}`} />
+                    <div>
+                      <span className={s.done ? "text-slate-800" : "text-slate-400"}>{s.label}</span>
+                      {s.at && <span className="ml-2 text-xs text-slate-400">{fullTime(s.at)}</span>}
+                      {s.detail && <span className="ml-2 text-xs text-slate-500">{s.detail}</span>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
 
             <section className="mt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</h3>
@@ -467,6 +559,7 @@ export default function SupportAdminPage() {
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "escalated", escalatedReason: "Taken over from the dashboard" }, "Taking over…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Take over</button>
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "spam", classification: "spam" }, "Marking spam…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Mark spam</button>
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "fixed" }, "Resolving…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Resolve</button>
+                <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "archived" }, "Archiving…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Archive</button>
               </div>
             </section>
 
