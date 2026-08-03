@@ -129,6 +129,12 @@ const builds = [
     outfile: path.join(dist, "links.js"),
     format: "iife",
   },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/chat/index.ts")],
+    outfile: path.join(dist, "chat.js"),
+    format: "iife",
+  },
 ];
 
 // Instagram Goldmine bundles are built ONLY for the self-hosted variant, so the

@@ -38,6 +38,9 @@ async function init(): Promise<void> {
   ]);
   wireFeedback();
   wireOptions();
+  // AI Assistant is a neutral help tool for every creator, so it is wired
+  // unconditionally, like Link Butler below.
+  wireChat(settings.locale);
   // Link Butler (branded-link Ledger) is a neutral tool: creators share links on
   // every channel, so it shows regardless of onsite/offsite creator mode.
   wireLinkButler(settings.locale);
@@ -114,6 +117,35 @@ function wireGoldmine(): void {
 // The Deal Sites Harvester opens in its own tab (it needs room for a review
 // table and outlives the popup, which closes on blur). Localized inline so the
 // three strings do not have to live in the shared catalog.
+// The AI Assistant opens in its own tab, like the harvester. Strings are
+// localized inline so they do not have to live in the shared catalog.
+function wireChat(locale: Settings["locale"]): void {
+  const dict = {
+    en: {
+      heading: "AI Assistant",
+      blurb: "Ask setup and how-to questions and get instant answers from our help guides.",
+      open: "Open AI Assistant",
+    },
+    es: {
+      heading: "Asistente de IA",
+      blurb: "Haz preguntas de configuración y guías, y obtén respuestas al instante desde nuestra ayuda.",
+      open: "Abrir el asistente de IA",
+    },
+    fr: {
+      heading: "Assistant IA",
+      blurb: "Posez vos questions de configuration et obtenez des réponses instantanées depuis notre aide.",
+      open: "Ouvrir l'assistant IA",
+    },
+  }[resolveLocale(locale)];
+  byId("chat-heading").textContent = dict.heading;
+  byId("chat-blurb").textContent = dict.blurb;
+  const btn = byId<HTMLButtonElement>("open-chat");
+  btn.textContent = dict.open;
+  btn.onclick = () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("chat.html") });
+  };
+}
+
 function wireDealHarvester(locale: Settings["locale"]): void {
   const dict = {
     en: {

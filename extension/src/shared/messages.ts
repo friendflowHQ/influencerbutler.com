@@ -100,6 +100,7 @@ export type RuntimeMessage =
   | { kind: "GENERATE_AFFILIATE_LINK"; asin: string; marketplace: string; url?: string }
   | { kind: "REWRITE_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
+  | { kind: "AI_CHAT"; messages: AiChatTurn[] }
   // Per-country availability for a tagged product, checked from the worker
   // (cross-marketplace fetch needs the host_permissions CORS bypass).
   | { kind: "FETCH_MARKET_AVAILABILITY"; asin: string; markets: string[] }
@@ -259,6 +260,9 @@ export type HarvestResult = {
 export type IntegrationTestOutcome = { ok: boolean; message: string };
 export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
+
+export type AiChatTurn = { role: "user" | "assistant"; content: string };
+export type AiChatResult = { ok: boolean; reply?: string; error?: string };
 
 export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
 export type { PricePoint };
