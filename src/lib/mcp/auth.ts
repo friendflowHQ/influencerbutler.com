@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/admin";
 export type Principal = {
   userId: string;
   email: string | null;
-  source: "api-key" | "session";
+  source: "api-key" | "session" | "license";
 };
 
 const BEARER_RE = /^Bearer\s+(.+)$/i;

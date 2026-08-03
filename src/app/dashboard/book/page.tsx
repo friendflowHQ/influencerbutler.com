@@ -138,6 +138,20 @@ export default function BookCallPage() {
         <p className="mt-1 text-sm text-slate-500">Times shown in your timezone ({USER_TZ}).</p>
       </div>
 
+      {/* Instant AI concierge - no scheduling, starts right away. */}
+      <a href="/dashboard/ai-concierge"
+        className="block rounded-2xl border border-[#f97316] bg-orange-50 p-4 hover:bg-orange-100">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="font-semibold text-slate-900">Talk to Butler AI now</div>
+            <div className="mt-1 text-sm text-slate-600">Instant, available 24/7. Get a live walkthrough or setup help by voice or text, no waiting for a slot.</div>
+          </div>
+          <span className="shrink-0 rounded-lg bg-[#f97316] px-3 py-2 text-sm font-medium text-white">Start now</span>
+        </div>
+      </a>
+
+      <div className="text-xs uppercase tracking-wide text-slate-400">Or book a call with a human</div>
+
       {/* Call type */}
       <div className="grid gap-3 sm:grid-cols-2">
         <button type="button" onClick={() => setCallType("demo")}
