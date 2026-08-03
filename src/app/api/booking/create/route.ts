@@ -1,9 +1,10 @@
 /**
  * POST /api/booking/create
  * Body: { type:'support'|'demo', startMs:number, timezone?:string, topic?:string, name?:string }
- * Gates support to subscribers, re-validates the slot, mints a Zoom meeting
- * (or falls back to the configured link), books atomically via the book_call
- * RPC, and sends the confirmation (+.ics) + owner notification emails.
+ * Gates support to subscribers, re-validates the slot, creates a Google Meet
+ * link (or falls back to the configured link), books atomically via the
+ * book_call RPC, schedules a Recall.ai recording bot, and sends the
+ * confirmation (+.ics) + owner notification emails.
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -11,6 +12,7 @@ import { getAdmin, validateSlot, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
+import { scheduleBot, isRecallConfigured } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
 
 export const runtime = "nodejs";
@@ -95,6 +97,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not book that time." }, { status: 500 });
   }
 
+  // Schedule a Recall.ai bot to record + transcribe the call. Best-effort: a
+  // failure here never fails a confirmed booking. Only for a real Google Meet
+  // room — the manual fallback link has no room a bot can join, and recording
+  // is skipped entirely when Recall is not configured.
+  let recordingStatus = "none";
+  let recallBotId: string | null = null;
+  if (provider !== "google_meet" || !joinUrl) {
+    recordingStatus = "skipped_no_meet";
+  } else if (isRecallConfigured()) {
+    const bot = await scheduleBot({
+      meetingUrl: joinUrl,
+      joinAtISO: new Date(startMs).toISOString(),
+      botName: "Influencer Butler Notetaker",
+      metadata: { bookingId: String(bookingId) },
+    });
+    if (bot) { recallBotId = bot.id; recordingStatus = "scheduled"; }
+    else recordingStatus = "failed";
+  }
+  if (recordingStatus !== "none") {
+    try {
+      await admin.from("call_bookings")
+        .update({ recall_bot_id: recallBotId, recording_status: recordingStatus })
+        .eq("id", bookingId);
+    } catch (e) { console.error("[booking] recording status update", e); }
+  }
+
   const emailData: BookingEmailData = {
     id: String(bookingId),
     callType: type,
@@ -105,6 +133,7 @@ export async function POST(request: Request) {
     userTimezone: timezone,
     topic: topic || null,
     joinUrl,
+    recorded: recordingStatus === "scheduled",
   };
   // Best-effort: a failed email must not fail a confirmed booking.
   try { await sendBookingConfirmation(emailData); } catch (e) { console.error("[booking] confirm email", e); }

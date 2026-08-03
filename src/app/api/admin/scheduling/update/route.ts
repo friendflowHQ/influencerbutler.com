@@ -10,6 +10,7 @@ import { getAdmin, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { sendCancellation, type BookingEmailData } from "@/lib/call-emails";
 import { deleteMeetEvent } from "@/lib/google-meet";
+import { stopBot } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,14 +32,14 @@ export async function POST(request: Request) {
 
   const { data: booking, error: readErr } = await admin
     .from("call_bookings")
-    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,meeting_provider,meeting_id")
+    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,meeting_provider,meeting_id,recall_bot_id")
     .eq("id", id).maybeSingle();
   if (readErr || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const patch: Record<string, unknown> = {};
   if (action === "complete") patch.status = "completed";
   else if (action === "no_show") patch.status = "no_show";
-  else if (action === "cancel") { patch.status = "cancelled"; patch.cancelled_at = new Date().toISOString(); }
+  else if (action === "cancel") { patch.status = "cancelled"; patch.cancelled_at = new Date().toISOString(); patch.recording_status = "none"; }
   else if (action === "notes") patch.host_notes = String(body.hostNotes ?? "").slice(0, 8000);
   else if (action === "link") patch.join_url = String(body.joinUrl ?? "").slice(0, 500);
   else if (action === "reschedule") {
@@ -67,6 +68,11 @@ export async function POST(request: Request) {
     if (booking.meeting_provider === "google_meet" && booking.meeting_id) {
       try { const cfg = await loadConfig(admin); if (cfg.googleRefreshToken) await deleteMeetEvent(cfg.googleRefreshToken, booking.meeting_id as string); }
       catch (e) { console.error("[scheduling/update] meet delete", e); }
+    }
+    // Stop / remove the recording bot so it never joins a cancelled call.
+    if (booking.recall_bot_id) {
+      try { await stopBot(booking.recall_bot_id as string); }
+      catch (e) { console.error("[scheduling/update] stop bot", e); }
     }
   }
 
