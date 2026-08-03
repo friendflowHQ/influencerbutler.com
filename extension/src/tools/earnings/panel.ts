@@ -2,7 +2,7 @@ import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground, type EarningsLookupResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
-import { formatMoney, hasBreakdown } from "../earnings-overlay/model";
+import { formatMoney, hasBreakdown, scopedCurrencyTotals } from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
 
 // Your real earnings on this exact product, pulled from the desktop app's Daily
@@ -40,8 +40,20 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     return;
   }
 
+  // Scope the headline to the marketplace the creator is viewing when this ASIN
+  // has store rows there, so a foreign product page shows what it earned in that
+  // market rather than the ASIN's worldwide total (the cross-marketplace
+  // confusion Cha-Ching's ASIN-only rollup causes). When the viewed market has no
+  // store rows, fall back to the worldwide total instead of headlining $0.
+  const marketHasStores =
+    Boolean(signals.marketplace) &&
+    (earnings.byStore?.some((s) => s.marketplace === signals.marketplace) ?? false);
+  const totals = marketHasStores
+    ? scopedCurrencyTotals(earnings, "market", signals.marketplace)
+    : earnings.byCurrency;
+
   const amounts = el("div", "counts");
-  for (const c of earnings.byCurrency) {
+  for (const c of totals) {
     if (c.amount <= 0 && c.count <= 0) continue;
     amounts.append(chip("good", t().earningsAmount(formatMoney(c.amount, c.currency), c.count)));
   }
