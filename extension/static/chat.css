@@ -25,5 +25,11 @@
 }
 .chat-input:focus { outline: none; border-color: #f97316; }
 .chat-send { border-radius: 8px; padding: 8px 16px; }
+.chat-voice {
+  border-radius: 8px; padding: 8px 14px; white-space: nowrap;
+  border: 1px solid #f97316; background: #fff; color: #f97316; cursor: pointer;
+}
+.chat-voice:hover { background: #fff7ed; }
+.chat-voice.active { background: #f97316; color: #fff; }
 .chat-footer { margin-top: 8px; color: #94a3b8; font-size: 12px; }
 .chat-footer a { color: #f97316; }

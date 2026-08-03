@@ -101,6 +101,11 @@ export type RuntimeMessage =
   | { kind: "REWRITE_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   | { kind: "AI_CHAT"; messages: AiChatTurn[] }
+  // AI concierge voice: mint an ephemeral Realtime token, run a Realtime tool
+  // call server-side, and save the transcript. Bearer-authed in the background.
+  | { kind: "VOICE_SESSION" }
+  | { kind: "VOICE_TOOL"; name: string; args: Record<string, unknown> }
+  | { kind: "VOICE_TRANSCRIPT"; sessionId: string | null; transcript: string; startedAt: number | null }
   // Per-country availability for a tagged product, checked from the worker
   // (cross-marketplace fetch needs the host_permissions CORS bypass).
   | { kind: "FETCH_MARKET_AVAILABILITY"; asin: string; markets: string[] }
@@ -263,6 +268,16 @@ export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
 export type AiChatTurn = { role: "user" | "assistant"; content: string };
 export type AiChatResult = { ok: boolean; reply?: string; error?: string };
+export type VoiceSessionResult = {
+  ok: boolean;
+  value?: string;
+  model?: string;
+  maxSessionSecs?: number;
+  sessionId?: string | null;
+  error?: string;
+};
+export type VoiceToolResult = { ok: boolean; result?: unknown; error?: string };
+export type VoiceTranscriptResult = { ok: boolean; error?: string };
 
 export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
 export type { PricePoint };
