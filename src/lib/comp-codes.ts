@@ -58,6 +58,12 @@ export function parseCompMonths(code: string | null | undefined): number | null 
 
   const hasFree = c.includes("FREE");
 
+  // 0) Day-granular comps encode a <N>D window (e.g. IVETTEFREE20D). Days are not
+  //    a month count, so report none: the row is tracked purely by its stored
+  //    expires_at. Without this guard the bare-digit fallback in step 4 misreads
+  //    the digits as months (FREE20D would return 20 "months").
+  if (/FREE\d{1,3}D(?![A-Z0-9])/.test(c)) return null;
+
   // 1) Preferred format: FREE<N>M / FREE<N>MO / FREE<N>MONTH(S)  -> N months.
   let m = c.match(/FREE(\d{1,2})M/);
   if (m) return clampMonths(Number(m[1]));
