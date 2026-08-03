@@ -10,7 +10,7 @@
  */
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin } from "@/lib/scheduling-server";
 import { buildInstructions, toRealtimeTools } from "@/lib/ai-concierge/agent";
 import { REALTIME_MODEL, REALTIME_VOICE, MAX_SESSION_SECS, DAILY_SESSION_LIMIT } from "@/lib/ai-concierge/config";
@@ -18,15 +18,18 @@ import { REALTIME_MODEL, REALTIME_VOICE, MAX_SESSION_SECS, DAILY_SESSION_LIMIT }
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Voice concierge is not configured yet." }, { status: 503 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // Dual-mode auth (mirrors the text /chat route) so the desktop app and Chrome
+  // extension can mint a voice session with their license-key bearer, not just
+  // the website's session cookie.
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
+  const user = { id: authed.auth.userId, email: authed.auth.email };
 
   // Per-user daily cap (best-effort; also bounded by the client-side timer).
   const admin = getAdmin();
