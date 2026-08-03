@@ -13,6 +13,8 @@ export const ENDPOINTS = {
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,
   enrich: `${API_BASE}/api/extension/enrich`,
+  // AI concierge text chat (same brain as the website + desktop app).
+  aiChat: `${API_BASE}/api/ai-concierge/chat`,
   // Deal Sites Harvester: sync harvested deals for the dashboard record, and
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
