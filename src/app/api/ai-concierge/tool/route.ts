@@ -8,7 +8,7 @@
  * Dependencies: @/lib/supabase/server, @/lib/ai-concierge/agent, @/lib/mcp/auth.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { executeAgentTool } from "@/lib/ai-concierge/agent";
 import type { Principal } from "@/lib/mcp/auth";
 
@@ -16,9 +16,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // Dual-mode auth so voice tool-calls from the desktop app / extension (which
+  // authenticate with a license-key bearer) resolve the right user, not just
+  // website-cookie sessions.
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
 
   let body: { name?: string; arguments?: Record<string, unknown> };
   try {
@@ -29,7 +31,11 @@ export async function POST(request: Request) {
   const name = typeof body.name === "string" ? body.name : "";
   if (!name) return NextResponse.json({ error: "Missing tool name" }, { status: 400 });
 
-  const principal: Principal = { userId: user.id, email: user.email ?? null, source: "session" };
+  const principal: Principal = {
+    userId: authed.auth.userId,
+    email: authed.auth.email,
+    source: authed.auth.kind === "license" ? "license" : "session",
+  };
   try {
     const result = await executeAgentTool(name, body.arguments ?? {}, principal);
     return NextResponse.json({ result });

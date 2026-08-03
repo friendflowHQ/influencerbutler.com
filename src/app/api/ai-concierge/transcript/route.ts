@@ -8,7 +8,7 @@
  * Dependencies: @/lib/supabase/server, @/lib/scheduling-server, @/lib/ai-notes.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin } from "@/lib/scheduling-server";
 import { summarizeTranscript } from "@/lib/ai-notes";
 
@@ -18,9 +18,11 @@ export const dynamic = "force-dynamic";
 const MAX_TRANSCRIPT = 60_000;
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // Dual-mode auth so desktop/extension voice sessions (license-key bearer) can
+  // save their transcript, not just website-cookie sessions.
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
+  const user = { id: authed.auth.userId, email: authed.auth.email };
 
   let body: { sessionId?: string; mode?: string; transcript?: string; startedAt?: number };
   try {
