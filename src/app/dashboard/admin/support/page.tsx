@@ -508,6 +508,23 @@ export default function SupportAdminPage() {
               </section>
             )}
 
+            {/* Diagnostic logs: the customer's app auto-attaches a redacted log
+                bundle on submit; the worker stores up to 128 KB as log_tail.
+                The list view omits it to stay lean, so it only appears here. */}
+            {selected.logTail && selected.logTail.trim() && (
+              <section className="mt-3">
+                <details>
+                  <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-700">
+                    Diagnostic logs
+                    <span className="ml-1 font-normal normal-case text-slate-400">
+                      ({Math.round(selected.logTail.length / 1024)} KB, auto-attached by the app)
+                    </span>
+                  </summary>
+                  <pre className="mt-1 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">{selected.logTail}</pre>
+                </details>
+              </section>
+            )}
+
             {/* Reply thread */}
             <section className="mt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Conversation</h3>
