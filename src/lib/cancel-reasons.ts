@@ -60,6 +60,22 @@ export function normalizeWouldReturn(value: unknown): WouldReturn | null {
   return WOULD_RETURN_VALUES.has(v) ? (v as WouldReturn) : null;
 }
 
+/**
+ * Win-back drip progress for a cancellation, surfaced in the admin view.
+ * `null` on a row when the winback_* columns aren't present yet (prod schema
+ * lags the migrations folder) - the UI simply shows no win-back badge then.
+ */
+export type WinbackStatus = {
+  /** How many of the 3 drip tiers have been sent. */
+  tiersSent: number;
+  /** Highest tier number sent (1-3), or null if none. */
+  lastTier: number | null;
+  /** The recipient claimed the free-comp offer. */
+  claimed: boolean;
+  /** The re-subscribe discount code minted for this row, if any. */
+  discountCode: string | null;
+};
+
 export type CancellationRow = {
   id: string;
   createdAt: string;
@@ -72,6 +88,7 @@ export type CancellationRow = {
   planName: string | null;
   emailMasked: string | null;
   completed: boolean;
+  winback: WinbackStatus | null;
 };
 
 function str(v: unknown): string | null {
@@ -114,6 +131,43 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
     }
   }
 
+  // Win-back drip progress, fetched separately and best-effort: if the winback_*
+  // columns aren't in the live schema yet (prod applies migrations by hand), this
+  // query errors and we simply leave every row's winback as null.
+  const rowIds = Array.from(new Set(list.map((r) => str(r.id)).filter(Boolean))) as string[];
+  const winbackByRow = new Map<string, WinbackStatus>();
+  if (rowIds.length > 0) {
+    try {
+      const { data: wb, error: wbErr } = await supabase
+        .from("subscription_cancel_reasons")
+        .select(
+          "id,winback_t1_sent_at,winback_t2_sent_at,winback_t3_sent_at,winback_discount_code,winback_comp_claimed_at",
+        )
+        .in("id", rowIds);
+      if (!wbErr) {
+        for (const w of wb ?? []) {
+          const id = str(w.id);
+          if (!id) continue;
+          const tiers = [w.winback_t1_sent_at, w.winback_t2_sent_at, w.winback_t3_sent_at].map((v) =>
+            Boolean(str(v)),
+          );
+          let lastTier: number | null = null;
+          tiers.forEach((sent, i) => {
+            if (sent) lastTier = i + 1;
+          });
+          winbackByRow.set(id, {
+            tiersSent: tiers.filter(Boolean).length,
+            lastTier,
+            claimed: Boolean(str(w.winback_comp_claimed_at)),
+            discountCode: str(w.winback_discount_code),
+          });
+        }
+      }
+    } catch {
+      // Columns not present yet: degrade to no win-back badges.
+    }
+  }
+
   const planBySub = new Map<string, string | null>();
   if (subIds.length > 0) {
     const { data: subs } = await supabase
@@ -147,6 +201,7 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
       planName: subId ? planBySub.get(subId) ?? null : null,
       emailMasked: userId ? maskEmail(emailByUser.get(userId) ?? null) : null,
       completed,
+      winback: winbackByRow.get(str(r.id) ?? "") ?? null,
     };
   });
 }
