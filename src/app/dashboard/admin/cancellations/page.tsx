@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+type WinbackStatus = {
+  tiersSent: number;
+  lastTier: number | null;
+  claimed: boolean;
+  discountCode: string | null;
+};
+
 type Row = {
   id: string;
   createdAt: string;
@@ -14,6 +21,7 @@ type Row = {
   planName: string | null;
   emailMasked: string | null;
   completed: boolean;
+  winback: WinbackStatus | null;
 };
 
 type LabelOption = { value: string; label: string };
@@ -48,6 +56,26 @@ function formatDate(iso: string): string {
 function labelFor(options: LabelOption[], value: string | null): string {
   if (!value) return "";
   return options.find((o) => o.value === value)?.label ?? value;
+}
+
+function WinbackBadge({ winback }: { winback: WinbackStatus | null }) {
+  if (!winback) return null;
+  if (winback.claimed) {
+    return (
+      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+        won back
+      </span>
+    );
+  }
+  if (winback.tiersSent > 0) {
+    return (
+      <span className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+        win-back sent{winback.lastTier ? ` (t${winback.lastTier})` : ""}
+        {winback.discountCode ? ` · ${winback.discountCode}` : ""}
+      </span>
+    );
+  }
+  return null;
 }
 
 function Bar({ label, count, total }: { label: string; count: number; total: number }) {
@@ -198,9 +226,25 @@ export default function AdminCancellationsPage() {
           ) : null}
 
           {/* Detail list */}
-          <h2 className="mt-8 text-sm font-semibold uppercase tracking-wider text-slate-700">
-            Recent cancellations
-          </h2>
+          <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+              Recent cancellations
+            </h2>
+            {(() => {
+              const wonBack = rows.filter((r) => r.winback?.claimed).length;
+              const inFunnel = rows.filter(
+                (r) => r.winback && r.winback.tiersSent > 0 && !r.winback.claimed,
+              ).length;
+              if (wonBack === 0 && inFunnel === 0) return null;
+              return (
+                <span className="text-xs text-slate-500">
+                  Win-back: <span className="font-semibold text-emerald-600">{wonBack} won back</span>
+                  {", "}
+                  {inFunnel} in progress
+                </span>
+              );
+            })()}
+          </div>
           {rows.length === 0 ? (
             <p className="mt-4 text-sm text-slate-500">No cancellation answers yet.</p>
           ) : (
@@ -223,6 +267,7 @@ export default function AdminCancellationsPage() {
                           awaiting reply
                         </span>
                       ) : null}
+                      <WinbackBadge winback={r.winback} />
                     </div>
                     <span className="text-xs text-slate-400">{formatDate(r.createdAt)}</span>
                   </div>
