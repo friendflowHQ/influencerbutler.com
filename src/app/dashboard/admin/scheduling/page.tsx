@@ -9,10 +9,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
 type Booking = {
   id: string; user_email: string; user_name: string | null; call_type: "support" | "demo";
   starts_at: string; user_ends_at: string; user_timezone: string | null; status: string;
   topic: string | null; join_url: string | null; meeting_provider: string | null; host_notes: string | null;
+  recording_status?: string | null; recording_url?: string | null;
+  transcript?: string | null; ai_notes?: AiNotes | null; recorded_at?: string | null;
 };
 type Prep = {
   booking: Booking & { user_id: string | null };
@@ -124,7 +127,7 @@ export default function SchedulingAdminPage() {
                       <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at, b.user_timezone)}</td>
                       <td className="px-3 py-2">{b.call_type}</td>
                       <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
-                      <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span></td>
+                      <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
                       <td className="px-3 py-2 max-w-xs truncate text-slate-500">{b.topic || "—"}</td>
                     </tr>
                   ))}
@@ -246,6 +249,43 @@ export default function SchedulingAdminPage() {
               <h3 className="text-xs font-semibold uppercase text-slate-500">Private notes</h3>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />
               <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "notes", hostNotes: notes })} className="mt-1 rounded-lg bg-slate-800 px-3 py-1 text-xs text-white disabled:opacity-50">Save notes</button>
+            </section>
+
+            <section className="mt-4">
+              <h3 className="text-xs font-semibold uppercase text-slate-500">Recording &amp; notes</h3>
+              {(() => {
+                const st = prep.booking.recording_status || "none";
+                const n = prep.booking.ai_notes || null;
+                if (st === "ready") {
+                  return (
+                    <div className="mt-1 space-y-2">
+                      {prep.booking.recording_url && (
+                        <a href={prep.booking.recording_url} target="_blank" rel="noreferrer" className="inline-block text-sm text-[#f97316] hover:underline">Open recording ↗</a>
+                      )}
+                      {n?.summary && <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{n.summary}</p>}
+                      {n?.keyTopics && n.keyTopics.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Key topics</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.keyTopics.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {n?.actionItems && n.actionItems.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Action items</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.actionItems.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {n?.followUps && n.followUps.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Follow-ups</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.followUps.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {prep.booking.transcript && (
+                        <details className="mt-1"><summary className="cursor-pointer text-xs text-slate-500">Full transcript</summary><pre className="mt-1 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{prep.booking.transcript}</pre></details>
+                      )}
+                    </div>
+                  );
+                }
+                const msg = st === "scheduled" ? "A recording bot is scheduled to join this call."
+                  : st === "recording" ? "Recording in progress."
+                  : st === "processing" ? "Recording finished. Transcript and notes are being prepared."
+                  : st === "failed" ? "Recording could not be captured for this call."
+                  : st === "skipped_no_meet" ? "Not recorded. Connect Google Calendar so calls get a Meet room the bot can join."
+                  : "Not recorded.";
+                return <p className="mt-1 text-sm text-slate-500">{msg}</p>;
+              })()}
             </section>
 
             <section className="mt-4 flex flex-wrap gap-2">

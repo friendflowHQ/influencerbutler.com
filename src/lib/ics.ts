@@ -38,6 +38,7 @@ export function buildIcs(args: {
   summary: string;
   description: string;
   location?: string;
+  conferenceUrl?: string;
   organizerEmail: string;
   organizerName?: string;
   attendeeEmail: string;
@@ -61,6 +62,9 @@ export function buildIcs(args: {
     `SUMMARY:${escapeText(args.summary)}`,
     `DESCRIPTION:${escapeText(args.description)}`,
     args.location ? `LOCATION:${escapeText(args.location)}` : "",
+    // Google Calendar / Gmail render a "Join with Google Meet" button when the
+    // event carries this property (in addition to the plain LOCATION link).
+    args.conferenceUrl ? `X-GOOGLE-CONFERENCE:${escapeText(args.conferenceUrl)}` : "",
     `ORGANIZER;CN=${escapeText(args.organizerName || "Influencer Butler")}:mailto:${args.organizerEmail}`,
     `ATTENDEE;CN=${escapeText(args.attendeeName || args.attendeeEmail)};RSVP=TRUE:mailto:${args.attendeeEmail}`,
     method === "CANCEL" ? "STATUS:CANCELLED" : "STATUS:CONFIRMED",

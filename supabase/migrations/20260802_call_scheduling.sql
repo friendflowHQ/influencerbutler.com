@@ -162,3 +162,20 @@ BEGIN
   RETURN v_id;
 END;
 $$;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Call recording + AI transcript/notes (Project 6). A Recall.ai meeting bot
+-- records each Google Meet; a webhook fills the transcript + AI notes so the
+-- call can be reviewed later. These columns are populated POST-call, never at
+-- booking time, so book_call() above is unchanged. Idempotent adds mirror the
+-- call_config pattern. recording_status:
+--   none | skipped_no_meet | scheduled | recording | processing | ready | failed
+-- ─────────────────────────────────────────────────────────────────────────
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS recall_bot_id    TEXT;
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS recording_status TEXT NOT NULL DEFAULT 'none';
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS recording_url    TEXT;
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS transcript       TEXT;
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS ai_notes         JSONB;
+ALTER TABLE call_bookings ADD COLUMN IF NOT EXISTS recorded_at      TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_call_bookings_recall_bot ON call_bookings(recall_bot_id);
+CREATE INDEX IF NOT EXISTS idx_call_bookings_rec_status ON call_bookings(recording_status, ends_at);

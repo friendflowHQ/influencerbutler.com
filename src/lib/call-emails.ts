@@ -6,10 +6,29 @@
  */
 import { DateTime } from "luxon";
 import { buildIcs, icsBase64 } from "./ics";
+import { bodyToHtml } from "./newsletter";
 import { CALL_TYPES, type CallTypeKey } from "./scheduling";
 
 const FROM = "Influencer Butler <hello@influencerbutler.com>";
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
+const SITE = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+const BOOK_URL = `${SITE}/dashboard/book`;
+
+/**
+ * Turns a plain-text body into email-safe HTML (via the shared bodyToHtml) and
+ * hyperlinks specific phrases. Each phrase is escaped before matching so it
+ * lines up with bodyToHtml's escaped output; the phrases we use ("Book a Call",
+ * a bare https URL) contain no HTML-special characters, so a plain replace is safe.
+ */
+function htmlFrom(text: string, links: { phrase: string; href: string }[]): string {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  let html = bodyToHtml(text);
+  for (const { phrase, href } of links) {
+    const anchor = `<a href="${esc(href)}" style="color:#f97316;text-decoration:underline;">${esc(phrase)}</a>`;
+    html = html.split(esc(phrase)).join(anchor);
+  }
+  return html;
+}
 
 export function ownerNotifyEmail(): string | null {
   const explicit = process.env.SCHEDULING_OWNER_EMAIL?.trim();
@@ -28,18 +47,19 @@ export type BookingEmailData = {
   userTimezone?: string | null;
   topic?: string | null;
   joinUrl?: string | null;
+  recorded?: boolean; // true when a recording bot is scheduled for this call
 };
 
 type Attachment = { filename: string; content: string };
 
-async function sendResend(to: string, subject: string, text: string, attachments?: Attachment[]): Promise<boolean> {
+async function sendResend(to: string, subject: string, text: string, attachments?: Attachment[], html?: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) { console.error("[call-emails] RESEND_API_KEY not set"); return false; }
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: [to], subject, text, ...(attachments?.length ? { attachments } : {}) }),
+      body: JSON.stringify({ from: FROM, to: [to], subject, text, ...(html ? { html } : {}), ...(attachments?.length ? { attachments } : {}) }),
     });
     if (!res.ok) { console.error("[call-emails] resend failed", res.status, await res.text().catch(() => "")); return false; }
     return true;
@@ -69,6 +89,7 @@ function icsAttachment(b: BookingEmailData): Attachment {
     summary: `${ct.label} with Influencer Butler`,
     description: [b.topic ? `Topic: ${b.topic}` : "", b.joinUrl ? `Join: ${b.joinUrl}` : ""].filter(Boolean).join("\n"),
     location: b.joinUrl || undefined,
+    conferenceUrl: b.joinUrl || undefined,
     organizerEmail: ORGANIZER_EMAIL,
     attendeeEmail: b.userEmail,
     attendeeName: b.userName || undefined,
@@ -91,11 +112,16 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     `Need to change it? You can reschedule or cancel from your dashboard under Book a Call.`,
+    b.recorded ? `\nPlease note: this call is recorded and transcribed so we can prepare notes for you to review afterward.` : "",
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].filter((l) => l !== "").join("\n");
-  return sendResend(b.userEmail, `Confirmed: your ${ct.label.toLowerCase()}`, body, [icsAttachment(b)]);
+  const html = htmlFrom(body, [
+    { phrase: "Book a Call", href: BOOK_URL },
+    ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
+  ]);
+  return sendResend(b.userEmail, `Confirmed: your ${ct.label.toLowerCase()}`, body, [icsAttachment(b)], html);
 }
 
 export async function sendOwnerNotification(b: BookingEmailData, prepSummary: string): Promise<boolean> {
@@ -135,7 +161,8 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].join("\n");
-  return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body);
+  const html = htmlFrom(body, b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []);
+  return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, undefined, html);
 }
 
 export async function sendCancellation(b: BookingEmailData): Promise<boolean> {
@@ -162,7 +189,8 @@ export async function sendCancellation(b: BookingEmailData): Promise<boolean> {
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].join("\n");
+  const html = htmlFrom(body, [{ phrase: "Book a Call", href: BOOK_URL }]);
   return sendResend(b.userEmail, `Cancelled: your ${ct.label.toLowerCase()}`, body, [
     { filename: "cancel.ics", content: icsBase64(cancelIcs) },
-  ]);
+  ], html);
 }
