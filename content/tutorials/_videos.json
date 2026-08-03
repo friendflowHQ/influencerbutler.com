@@ -1,0 +1,30 @@
+{
+  "_note": "tutorial-id -> YouTube videoId for the AI-narrated walkthrough. Generated from the desktop app help-videos.json (public videos). Regenerate when new walkthroughs publish.",
+  "videos": {
+    "ai-keyword-generator": "O7MFp8d--YE",
+    "api-integrations": "RdM4F9NyB7c",
+    "benable-butler": "Zh1otu8BaGE",
+    "benable-comment-butler": "EFQco5UQ_qI",
+    "benable-like-butler": "WK5FRSje3qg",
+    "black-friday": "nVjf9eA4-mk",
+    "cc-check": "KhWr6bJPZ-o",
+    "cc-deals": "3q62ifVu-io",
+    "content-butler": "8ESZ60YY8h0",
+    "daily-deals": "HKGjjm76wrI",
+    "delete-posts-comments": "0k7hSllci5w",
+    "facebook-group-builder": "KvhCr37RiCE",
+    "group-invite-butler": "0Db0me3aaS4",
+    "instagram-email": "fOyidT7HXEI",
+    "instagram-goldmine": "d5nzVFOI2lc",
+    "instagram-like-butler": "lak0Ggx3mH0",
+    "photo-reload-butler": "YoJadCTQFFg",
+    "pitchbutler": "l_BlnRpQQOQ",
+    "prime-day-butler": "ED5pVNdqKuQ",
+    "relink-butler": "fN26bxHT-bw",
+    "retag-butler": "3gWuJHgGeds",
+    "storefrontbutler": "q9APiWH0des",
+    "video-reload-butler": "MdPYJyOtwb8",
+    "voiceover-butler": "upRAOn8Ebdk",
+    "youtube-butler": "vK0i1Zj0AKc"
+  }
+}
