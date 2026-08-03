@@ -549,15 +549,24 @@ export default function AdminUsersPage() {
                       <span className="font-mono text-xs text-slate-400">{s.ls_subscription_id}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {can("billing.cancel") ? (
-                        <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
-                      ) : null}
-                      {can("billing.comp") ? (
-                        <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
-                      ) : null}
-                      {can("billing.plan.edit") ? (
-                        <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
-                      ) : null}
+                      {(s.ls_subscription_id ?? "").startsWith("comp:") ? (
+                        // In-house comp: nothing lives in Lemon Squeezy, so the LS
+                        // guided buttons do not apply. Send the admin to the Comps
+                        // page (source of truth) which owns Extend + Cancel now.
+                        <a href={`/dashboard/admin/comps?q=${encodeURIComponent(result.profile?.email ?? "")}`} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Manage comp (in-house)</a>
+                      ) : (
+                        <>
+                          {can("billing.cancel") ? (
+                            <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
+                          ) : null}
+                          {can("billing.comp") ? (
+                            <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
+                          ) : null}
+                          {can("billing.plan.edit") ? (
+                            <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
+                          ) : null}
+                        </>
+                      )}
                     </div>
                   </li>
                 ))}

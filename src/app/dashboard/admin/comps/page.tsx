@@ -283,6 +283,13 @@ export default function AdminCompsPage() {
     void load();
   }, [load]);
 
+  // Prefill the search filter from a ?q= param, so links like the Users page's
+  // "Manage comp" land already filtered to that recipient.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearch(q);
+  }, []);
+
   const filtered = useMemo(() => {
     let byState: CompRow[];
     switch (filter) {
@@ -400,6 +407,35 @@ export default function AdminCompsPage() {
       await load();
     } catch {
       window.alert("Network error saving. Please retry.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const extendComp = async (row: CompRow) => {
+    const who = row.email ?? row.name ?? "this comp";
+    const raw = window.prompt(`Add how many days to ${who} (code ${row.discountCode ?? "?"})?`, "14");
+    if (raw == null) return;
+    const days = Number(raw.trim());
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      window.alert("Enter a whole number of days between 1 and 365.");
+      return;
+    }
+    setBusyId(row.lsSubscriptionId);
+    try {
+      const res = await fetch("/api/admin/comps/extend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lsSubscriptionId: row.lsSubscriptionId, days }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        window.alert(json.error ?? "Could not extend.");
+        return;
+      }
+      await load();
+    } catch {
+      window.alert("Network error extending. Please retry.");
     } finally {
       setBusyId(null);
     }
@@ -868,28 +904,43 @@ export default function AdminCompsPage() {
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {done ? (
-                        <span className="text-xs text-slate-400">done</span>
-                      ) : (
-                        <div className="flex flex-col items-end gap-1">
-                          {row.months != null ? (
-                            <button
-                              onClick={() => void setMonths(row)}
-                              disabled={busy}
-                              className="text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50"
-                            >
-                              edit months
-                            </button>
-                          ) : null}
+                      <div className="flex flex-col items-end gap-1">
+                        {/* Extend is how you revive a lapsed in-house comp, so it
+                            shows even when done (cancelled), unlike the actions below. */}
+                        {row.source === "in_house" ? (
                           <button
-                            onClick={() => void cancelNow(row)}
+                            onClick={() => void extendComp(row)}
                             disabled={busy}
-                            className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                           >
-                            {busy ? "..." : "Cancel now"}
+                            {busy ? "..." : "Extend"}
                           </button>
-                        </div>
-                      )}
+                        ) : null}
+                        {done ? (
+                          row.source === "in_house" ? null : (
+                            <span className="text-xs text-slate-400">done</span>
+                          )
+                        ) : (
+                          <>
+                            {row.months != null ? (
+                              <button
+                                onClick={() => void setMonths(row)}
+                                disabled={busy}
+                                className="text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                              >
+                                edit months
+                              </button>
+                            ) : null}
+                            <button
+                              onClick={() => void cancelNow(row)}
+                              disabled={busy}
+                              className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                              {busy ? "..." : "Cancel now"}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
