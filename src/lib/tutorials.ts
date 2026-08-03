@@ -17,6 +17,8 @@ export type TutorialManifestEntry = {
   /** Course grouping: tutorials sharing a `series` form an ordered course. */
   series?: string;
   seriesOrder?: number;
+  /** YouTube id of the AI-narrated walkthrough, from content/tutorials/_videos.json. */
+  videoId?: string;
 };
 
 export type TutorialManifest = {
@@ -45,6 +47,19 @@ let cachedManifest: TutorialManifest | null = null;
 let cachedManifestAt = 0;
 const MANIFEST_CACHE_MS = 30_000;
 
+// Map of tutorial id -> YouTube videoId for the AI-narrated walkthrough. Kept in
+// a separate _videos.json (generated from the desktop app's help-videos.json) so
+// adding a walkthrough is a one-line data change, not an edit to every MDX file.
+async function readVideoMap(): Promise<Record<string, string>> {
+  try {
+    const raw = await readFile(path.join(CONTENT_ROOT, "_videos.json"), "utf8");
+    const parsed = JSON.parse(raw) as { videos?: Record<string, string> };
+    return parsed && parsed.videos && typeof parsed.videos === "object" ? parsed.videos : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function loadManifest(): Promise<TutorialManifest> {
   if (cachedManifest && Date.now() - cachedManifestAt < MANIFEST_CACHE_MS) {
     return cachedManifest;
@@ -53,6 +68,11 @@ export async function loadManifest(): Promise<TutorialManifest> {
   const parsed = JSON.parse(raw) as TutorialManifest;
   const tutorials = Array.isArray(parsed.tutorials) ? parsed.tutorials : [];
   tutorials.sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Attach the walkthrough videoId to each tutorial that has one.
+  const videoMap = await readVideoMap();
+  for (const t of tutorials) {
+    if (videoMap[t.id]) t.videoId = videoMap[t.id];
+  }
   cachedManifest = { version: parsed.version || 1, tutorials };
   cachedManifestAt = Date.now();
   return cachedManifest;
@@ -274,7 +294,15 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   if (!raw) return null;
 
   const { frontmatter, body } = parseFrontmatter(raw);
-  const html = renderMarkdown(body, { docId: id });
+  // Surface the AI-narrated walkthrough at the top when one exists and the MDX
+  // does not already embed a video (the @youtube renderer handles the markup).
+  let effectiveBody = body;
+  const videoMap = await readVideoMap();
+  const videoId = videoMap[id];
+  if (videoId && !/^@youtube\(/m.test(body)) {
+    effectiveBody = `@youtube(${videoId})\n\n${body}`;
+  }
+  const html = renderMarkdown(effectiveBody, { docId: id });
   return {
     id,
     locale: resolvedLocale,
@@ -326,7 +354,9 @@ export async function loadSearchIndex(requestedLocale?: string): Promise<SearchI
   const entries: SearchIndexEntry[] = [];
   for (const entry of manifest.tutorials) {
     const tutorial = await loadTutorial(entry.id, locale);
-    const text = tutorial ? htmlToText(tutorial.html) : "";
+    let text = tutorial ? htmlToText(tutorial.html) : "";
+    // Let the concierge tell users when a tutorial has a video walkthrough.
+    if (entry.videoId) text += " This tutorial includes a video walkthrough.";
     entries.push({
       id: entry.id,
       title: entry.title,
