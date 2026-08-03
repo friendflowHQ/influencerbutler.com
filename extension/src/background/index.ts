@@ -15,7 +15,12 @@ import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
-import { assistantChat } from "./assistant";
+import {
+  assistantChat,
+  assistantVoiceSession,
+  assistantVoiceTool,
+  assistantVoiceTranscript,
+} from "./assistant";
 import { getDealSources, harvestDealSites } from "./deal-harvest";
 import { handleInstagramMessage } from "./instagram";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
@@ -161,6 +166,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "AI_CHAT":
       void assistantChat(message.messages).then(sendResponse);
+      return true;
+    case "VOICE_SESSION":
+      void assistantVoiceSession().then(sendResponse);
+      return true;
+    case "VOICE_TOOL":
+      void assistantVoiceTool(message.name, message.args).then(sendResponse);
+      return true;
+    case "VOICE_TRANSCRIPT":
+      void assistantVoiceTranscript(message.sessionId, message.transcript, message.startedAt).then(sendResponse);
       return true;
     case "GET_PRICE_HISTORY":
       void getPriceHistory(message.asin, message.marketplace).then(sendResponse);

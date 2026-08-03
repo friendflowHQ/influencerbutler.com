@@ -15,6 +15,12 @@ export const ENDPOINTS = {
   enrich: `${API_BASE}/api/extension/enrich`,
   // AI concierge text chat (same brain as the website + desktop app).
   aiChat: `${API_BASE}/api/ai-concierge/chat`,
+  // AI concierge voice (OpenAI Realtime over WebRTC). The background worker mints
+  // the ephemeral token / runs tool calls / saves the transcript with the license
+  // bearer; the chat page owns the peer connection + mic.
+  voiceSession: `${API_BASE}/api/ai-concierge/session`,
+  voiceTool: `${API_BASE}/api/ai-concierge/tool`,
+  voiceTranscript: `${API_BASE}/api/ai-concierge/transcript`,
   // Deal Sites Harvester: sync harvested deals for the dashboard record, and
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
