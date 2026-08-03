@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
     ],
   },
   { href: "/dashboard/extension", label: "Extension" },
-  { href: "/dashboard/book", label: "Book a Call" },
+  { href: "/dashboard/ai-concierge", label: "AI Assistant" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
 ];

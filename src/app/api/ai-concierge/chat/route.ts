@@ -5,11 +5,12 @@
  * returns the assistant's reply. Uses the cheap Groq/OpenAI resolver, so typing
  * costs a fraction of a cent while voice uses the metered Realtime API.
  *
- * Dependencies: @/lib/supabase/server, @/lib/ai-concierge/{agent,llm},
- * @/lib/mcp/auth.
+ * Auth is dual-mode (resolveAuth): the website session cookie OR a license-key
+ * bearer, so the desktop app + Chrome extension share this one concierge route.
+ * Dependencies: @/lib/license-auth, @/lib/ai-concierge/{agent,llm}, @/lib/mcp/auth.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { buildInstructions, toChatTools, executeAgentTool } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
@@ -28,9 +29,8 @@ export async function POST(request: Request) {
   const provider = resolveTextProvider();
   if (!provider) return NextResponse.json({ error: "Text concierge is not configured yet." }, { status: 503 });
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
 
   let body: { messages?: ChatMsg[] };
   try {
@@ -40,7 +40,11 @@ export async function POST(request: Request) {
   }
   const history = Array.isArray(body.messages) ? body.messages.slice(-MAX_HISTORY) : [];
 
-  const principal: Principal = { userId: user.id, email: user.email ?? null, source: "session" };
+  const principal: Principal = {
+    userId: authed.auth.userId,
+    email: authed.auth.email,
+    source: authed.auth.kind === "license" ? "license" : "session",
+  };
   const messages: Array<Record<string, unknown>> = [
     { role: "system", content: buildInstructions() },
     ...history
