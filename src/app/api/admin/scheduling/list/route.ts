@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const nowIso = new Date().toISOString();
   let q = admin
     .from("call_bookings")
-    .select("id,user_email,user_name,call_type,starts_at,ends_at,user_ends_at,user_timezone,status,topic,join_url,meeting_provider,host_notes,created_at");
+    .select("id,user_email,user_name,call_type,starts_at,ends_at,user_ends_at,user_timezone,status,topic,join_url,meeting_provider,host_notes,created_at,recording_status");
 
   if (scope === "upcoming") q = q.gte("starts_at", nowIso).neq("status", "cancelled").order("starts_at", { ascending: true });
   else if (scope === "past") q = q.lt("starts_at", nowIso).order("starts_at", { ascending: false });

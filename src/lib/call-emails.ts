@@ -47,6 +47,7 @@ export type BookingEmailData = {
   userTimezone?: string | null;
   topic?: string | null;
   joinUrl?: string | null;
+  recorded?: boolean; // true when a recording bot is scheduled for this call
 };
 
 type Attachment = { filename: string; content: string };
@@ -111,6 +112,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     `Need to change it? You can reschedule or cancel from your dashboard under Book a Call.`,
+    b.recorded ? `\nPlease note: this call is recorded and transcribed so we can prepare notes for you to review afterward.` : "",
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,

@@ -37,6 +37,7 @@ export default function BookCallPage() {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [topic, setTopic] = useState("");
   const [name, setName] = useState("");
+  const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<string>("");
   const [confirmed, setConfirmed] = useState<{ joinUrl: string | null } | null>(null);
@@ -125,7 +126,7 @@ export default function BookCallPage() {
         ) : (
           <p className="mt-3 text-sm text-slate-500">Your join link will be emailed to you shortly.</p>
         )}
-        <button type="button" onClick={() => { setConfirmed(null); setSelectedSlot(null); setSelectedDay(null); setTopic(""); }} className="mt-5 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]">Book another</button>
+        <button type="button" onClick={() => { setConfirmed(null); setSelectedSlot(null); setSelectedDay(null); setTopic(""); setConsent(false); }} className="mt-5 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]">Book another</button>
       </div>
     );
   }
@@ -196,8 +197,12 @@ export default function BookCallPage() {
             <span className="text-slate-500">What would you like to cover?</span>
             <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="A sentence or two so we can prepare." />
           </label>
+          <label className="mt-3 flex items-start gap-2 text-xs text-slate-600">
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
+            <span>This call is recorded and transcribed so we can prepare notes for you to review afterward. Check the box to confirm you understand.</span>
+          </label>
           {msg && <div className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{msg}</div>}
-          <button type="button" disabled={submitting} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
+          <button type="button" disabled={submitting || !consent} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
             {submitting ? "Booking…" : "Confirm booking"}
           </button>
         </div>
