@@ -14,8 +14,8 @@ Está pensado para creadores que hacen crecer una comunidad en torno a su tienda
 
 Hacen falta dos cosas:
 
-- **Has iniciado sesión en Facebook dentro de la app.** Group Invite Butler usa la misma sesión de Facebook que Deals Influencer Butler. Si aún no has iniciado sesión, abre primero Deals Influencer Butler e inicia sesión en Facebook allí una vez.
-- **Administras el grupo.** Solo puedes enviar invitaciones por correo en un grupo donde tengas permisos de invitación. Pega la URL de ese grupo en los ajustes.
+- **Has iniciado sesión en Facebook dentro de la app.** Group Invite Butler usa las mismas cuentas de Facebook que Deals Influencer Butler. Si aún no has iniciado sesión, abre primero Deals Influencer Butler e inicia sesión en Facebook allí una vez. Si publicas desde más de una cuenta de Facebook, inicia sesión en cada una allí.
+- **Administras el grupo.** Solo puedes enviar invitaciones por correo en un grupo donde tengas permisos de invitación. Pega la URL de ese grupo en los ajustes y elige la cuenta de Facebook que lo administra (ver más abajo).
 
 ## Llenar la cola de invitaciones
 
@@ -39,6 +39,7 @@ En ambos casos, los correos que **ya fueron invitados** (o que ya están en la c
 En **Ajustes de ejecución**:
 
 - **URL del grupo de Facebook**: el grupo al que invitas a la gente. Obligatorio; Butler no arranca sin ella.
+- **Cuenta de Facebook**: qué cuenta de Facebook con sesión iniciada envía las invitaciones. Por defecto es tu cuenta Predeterminada. Si administras el grupo desde otra cuenta, elígela aquí para que las invitaciones salgan desde la correcta. La lista coincide con las cuentas que configuraste en Deals Influencer Butler.
 - **Segundos entre invitaciones** más **Segundos extra aleatorios**: el intervalo entre cada invitación, más una cantidad al azar encima para que el ritmo parezca natural. Más lento es más seguro.
 - **Invitaciones por día**: un tope diario que se mantiene entre ejecuciones. `0` significa sin tope diario.
 - **Invitaciones por ejecución**: cuántas enviar en una sola ejecución. `0` significa enviar toda la cola.
@@ -74,6 +75,7 @@ Cada ejecución programada envía hasta tu límite de **Invitaciones por ejecuci
 ## Problemas frecuentes
 
 - **No arranca**: comprueba que la URL del grupo de Facebook esté rellenada y que hayas iniciado sesión en Facebook (mediante Deals Influencer Butler).
+- **Dice que no has iniciado sesión, pero sí**: asegúrate de que la **cuenta de Facebook** que elegiste sea una en la que realmente iniciaste sesión en Deals Influencer Butler. Las invitaciones se envían desde esa cuenta exacta, así que elige la que aparece con sesión iniciada allí.
 - **Mi CSV cargó cero correos**: asegúrate de que las direcciones estén en la **primera columna**. Las columnas adicionales y las filas de encabezado se ignoran a propósito, pero si la columna A tiene algo que no son correos, no coincide nada.
 - **Alguien aparece como Enviado y no lo invité en esta ejecución**: es el registro duradero de invitados haciendo su trabajo. Una vez que alguien ha sido invitado, queda marcado para que nunca se le invite dos veces.
 - **Ve despacio al principio**: mucho volumen con intervalos cortos es lo que dispara los límites de Facebook. Empieza con un tope diario modesto y un retardo cómodo, y afloja cuando lo veas funcionar limpio.
