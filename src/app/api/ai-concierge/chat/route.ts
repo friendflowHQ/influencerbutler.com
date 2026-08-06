@@ -52,26 +52,62 @@ export async function POST(request: Request) {
       .map((m) => ({ role: m.role, content: String(m.content || "").slice(0, 4000) })),
   ];
 
+  // One chat/completions call, with a small retry. Groq's Llama tool-calling
+  // intermittently returns a 400 (tool_use_failed) when the model botches a
+  // tool-call generation; regenerating usually succeeds, so we retry rather
+  // than surfacing a hard error. Returns the assistant message, or null if
+  // every attempt failed (caller decides how to degrade).
+  const callModel = async (withTools: boolean): Promise<Choice["message"] | null> => {
+    const attempts = withTools ? 3 : 2;
+    for (let i = 0; i < attempts; i++) {
+      let res: Response;
+      try {
+        res = await fetch(provider.url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${provider.key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: provider.model,
+            temperature: 0.4,
+            messages,
+            ...(withTools ? { tools: toChatTools(), tool_choice: "auto" } : {}),
+          }),
+        });
+      } catch (err) {
+        console.error("[ai-concierge/chat] fetch threw", err);
+        continue;
+      }
+      if (res.ok) {
+        const json = (await res.json().catch(() => null)) as { choices?: Choice[] } | null;
+        const choice = json?.choices?.[0]?.message;
+        if (choice) return choice;
+        console.error("[ai-concierge/chat] ok response had no choice");
+        continue;
+      }
+      // Non-OK: tool_use_failed (400) and transient 429/5xx all land here. Log
+      // and retry; the last iteration falls through to null.
+      console.error(
+        "[ai-concierge/chat]",
+        withTools ? "with-tools" : "no-tools",
+        res.status,
+        (await res.text().catch(() => "")).slice(0, 500),
+      );
+    }
+    return null;
+  };
+
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const res = await fetch(provider.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${provider.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: provider.model,
-          temperature: 0.4,
-          messages,
-          tools: toChatTools(),
-          tool_choice: "auto",
-        }),
-      });
-      if (!res.ok) {
-        console.error("[ai-concierge/chat]", res.status, await res.text().catch(() => ""));
-        return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
+      let choice = await callModel(true);
+      if (!choice) {
+        // The tool-enabled call kept failing (typically Groq tool_use_failed on
+        // this input). Degrade to a plain, no-tools answer so the user still
+        // gets a grounded reply from the persona + catalog instead of an error.
+        choice = await callModel(false);
+        if (!choice) {
+          return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
+        }
+        return NextResponse.json({ reply: choice.content ?? "" });
       }
-      const json = (await res.json()) as { choices?: Choice[] };
-      const choice = json.choices?.[0]?.message;
-      if (!choice) return NextResponse.json({ error: "No reply." }, { status: 502 });
 
       if (choice.tool_calls?.length) {
         // Record the assistant's tool-call turn, then execute each tool.
@@ -87,7 +123,12 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ reply: choice.content ?? "" });
     }
-    return NextResponse.json({ reply: "I ran into a loop working that out. Could you rephrase, or book a human call?" });
+    // Ran out of tool rounds. Make a final no-tools pass so the user still gets
+    // an answer grounded in whatever tool results are already in the thread.
+    const finalChoice = await callModel(false);
+    return NextResponse.json({
+      reply: finalChoice?.content ?? "I ran into a loop working that out. Could you rephrase, or book a human call?",
+    });
   } catch (err) {
     console.error("[ai-concierge/chat] threw", err);
     return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
