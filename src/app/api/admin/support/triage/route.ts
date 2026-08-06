@@ -20,6 +20,7 @@ const PRIORITY_RE = /^P[0-3]$/;
 const ALLOWED_STATUSES = new Set([
   "sent", "acked", "clarifying", "waiting_on_user", "user_replied",
   "patching", "committed", "released", "fixed", "escalated", "spam", "synced",
+  "archived",
 ]);
 const ALLOWED_CLASSIFICATIONS = new Set(["bug", "feature", "question", "spam"]);
 
