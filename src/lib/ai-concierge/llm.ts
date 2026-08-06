@@ -14,7 +14,12 @@ export function resolveTextProvider(): TextProvider | null {
     return {
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: process.env.GROQ_API_KEY,
-      model: TEXT_MODEL_OVERRIDE || "llama-3.3-70b-versatile",
+      // llama-3.3-70b-versatile is deprecated on Groq (decommissions 2026-08-16),
+      // which fails the chat completion with a non-200 and surfaces to the app as
+      // "The assistant is unavailable right now." Default to a currently-supported
+      // Groq model; AI_CONCIERGE_TEXT_MODEL still overrides at runtime (e.g. set it
+      // to openai/gpt-oss-120b if you want a larger model for tool-heavy answers).
+      model: TEXT_MODEL_OVERRIDE || "llama-3.1-8b-instant",
     };
   }
   if (process.env.OPENAI_API_KEY) {
