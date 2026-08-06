@@ -33,3 +33,4 @@
 .chat-voice.active { background: #f97316; color: #fff; }
 .chat-footer { margin-top: 8px; color: #94a3b8; font-size: 12px; }
 .chat-footer a { color: #f97316; }
+.chat-msg-img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin-top: 6px; border: 1px solid #e2e8f0; }

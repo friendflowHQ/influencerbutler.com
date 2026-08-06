@@ -15,7 +15,7 @@
       "category": "Getting Started",
       "summary": "Get a live product walkthrough or setup help right now, by voice or text, from an AI concierge that knows Influencer Butler. Available 24/7, no waiting for a call.",
       "order": 0.7,
-      "locales": ["en-US"]
+      "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
       "id": "aip-course-01-start-here",

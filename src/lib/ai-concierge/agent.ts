@@ -25,6 +25,81 @@ import { tierForSubscriptionStatus } from "@/lib/entitlements";
 export const BOOK_CALL_PATH = "/dashboard/book";
 const SITE = "https://www.influencerbutler.com";
 const SEARCH_RESULT_LIMIT = 4;
+const MAX_HIT_IMAGES = 3;
+
+/**
+ * The desktop app's left menu, in display order, so the model can give exact
+ * click paths ("In the left menu, click API Integrations"). Mirrors the nav in
+ * the desktop repo's renderer/index.html; groups are hub entries that expand
+ * into sub-tools. Update this list when the desktop nav changes.
+ */
+const DESKTOP_NAV: Array<{ label: string; items?: string[] }> = [
+  { label: "Dashboard" },
+  {
+    label: "Amazon Butler",
+    items: [
+      "Message Brands", "Keywords & Filters", "Orders Butler", "Daily Commission Butler",
+      "Storefront Butler", "CC Check", "Campaign Deals", "Campaign Alert Butler",
+      "Brand Release Butler", "Data Refresh Butler", "Like Butler", "Goldmine Butler",
+      "Earnings Intelligence", "Black Friday Butler", "Prime Day Butler",
+      "Video Reload Butler", "Photo Reload Butler", "Retag Butler", "Ads Goldmine",
+      "Product Research", "YouTube Butler",
+    ],
+  },
+  {
+    label: "Instagram Butler",
+    items: [
+      "Instagram Close Friends Butler", "Instagram Message Followers",
+      "Instagram Email Collection", "Instagram Goldmine", "Instagram Like Butler",
+    ],
+  },
+  { label: "Messenger Butler", items: ["Messages", "Templates"] },
+  { label: "Collab Butler" },
+  { label: "Content Butler" },
+  { label: "Pitch Butler" },
+  {
+    label: "Deals Influencer Butler",
+    items: ["Deals Influencer Butler", "Best Seller Butler", "Pricecrash Butler"],
+  },
+  { label: "Social Posting Butler" },
+  {
+    label: "Collage Butler",
+    items: ["Collage Butler", "Keywords & Filters", "Collage Gallery", "Collage Templates"],
+  },
+  { label: "Levanta Butler", items: ["Message Brands", "Email Extractor"] },
+  { label: "Action Queue" },
+  { label: "Pinterest Butler" },
+  { label: "Voiceover Butler" },
+  {
+    label: "Facebook Butler",
+    items: [
+      "Facebook Inviter", "Group Invite Butler", "Facebook Group Builder",
+      "Facebook Message Butler", "Delete Posts & Comments",
+    ],
+  },
+  {
+    label: "Benable Butler",
+    items: ["List Publishing", "Benable Like Butler", "Comment Butler"],
+  },
+  { label: "Link Butler", items: ["Influencer Deeplink Butler", "Relink Butler"] },
+  { label: "Content Planner" },
+  { label: "Sheetsyncer Butler" },
+  { label: "Temu Butler" },
+  { label: "API Integrations" },
+  { label: "Console" },
+  { label: "Feedback" },
+  { label: "AI Assistant" },
+  { label: "Help & Tutorials" },
+  { label: "Settings" },
+];
+
+function navMapLines(): string {
+  return DESKTOP_NAV.map((entry) =>
+    entry.items && entry.items.length
+      ? `- ${entry.label} (group): ${entry.items.join(", ")}`
+      : `- ${entry.label}`,
+  ).join("\n");
+}
 
 /**
  * The system prompt / persona shared by voice and text. Kept factual and short;
@@ -43,9 +118,8 @@ export function buildInstructions(): string {
     "management. The individual tools are called \"butlers.\"",
     "",
     "Your job: give a live product demo and answer setup questions in real time, like a helpful",
-    "pre-sales and onboarding specialist. Be warm, concise, and concrete. Speak in short spoken",
-    "sentences (this is a voice conversation). Ask a clarifying question when the user's goal is",
-    "unclear.",
+    "pre-sales and onboarding specialist. Be warm, concise, and concrete. In voice mode, speak in",
+    "short spoken sentences. Ask a clarifying question when the user's goal is unclear.",
     "",
     "Grounding rules:",
     "- For any specific how-to, setup, or troubleshooting question, CALL the search_help tool and",
@@ -57,9 +131,32 @@ export function buildInstructions(): string {
     "- Never invent features, numbers, or steps. If you are not sure, say so and offer to point them",
     "  to a tutorial or book a human call.",
     "",
+    "Giving directions:",
+    "- When you tell the user how to do something in the desktop app, give the exact click path,",
+    "  starting from the left menu. Example: In the left menu, click API Integrations. Sub-tools",
+    "  live under their group hub, for example: In the left menu, open Instagram Butler, then click",
+    "  Instagram Goldmine.",
+    "- The desktop left menu, in order (a group lists its sub-tools):",
+    navMapLines(),
+    "",
+    "Screenshots:",
+    "- search_help results may include screenshots as images with url and alt. In text chat, when a",
+    "  screenshot shows the screen you are describing, include the single most helpful one by putting",
+    "  its markdown form ![alt](url) on its own line at the end of your answer. Never invent image",
+    "  urls; only use urls returned by search_help.",
+    "- In voice mode, never read out urls. Describe where things are in words instead.",
+    "",
+    "Filing feedback:",
+    "- When the user reports a bug, describes something broken, or wishes for a feature that does",
+    "  not exist, offer to file it with the team for them using submit_feedback.",
+    "- First show a short draft: the type (bug or feature), a one line title, and a one or two",
+    "  sentence description. Ask for an explicit yes. Only call submit_feedback AFTER the user",
+    "  confirms. Never file without confirmation, and never file the same report twice.",
+    "- After filing, confirm it was sent and that the team reads every report and replies by email.",
+    "",
     "Boundaries:",
-    "- You cannot access the user's Amazon or Instagram accounts and cannot perform actions inside",
-    "  their desktop app. You explain and walk them through steps; they do the clicking.",
+    "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
+    "  desktop app for them. Give exact click paths; they do the clicking.",
     "- No financial or investment advice. If asked, say you are not a licensed advisor.",
     "- Never name or compare against specific competitor products by name.",
     "- Do not use em-dashes. Use a colon, comma, or two sentences instead.",
@@ -124,6 +221,28 @@ export const AGENT_TOOLS: AgentTool[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "submit_feedback",
+    description:
+      "File a bug report or feature request with the Influencer Butler team on the user's behalf. Only call this AFTER showing the user a draft (type, title, description) in the conversation and getting an explicit yes.",
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["bug", "feature"],
+          description: "bug for something broken, feature for a request or wish.",
+        },
+        title: { type: "string", description: "Short one line summary, max 200 characters." },
+        description: {
+          type: "string",
+          description: "What happened or what they want, including steps and context from the conversation.",
+        },
+      },
+      required: ["type", "title", "description"],
+      additionalProperties: false,
+    },
+  },
 ];
 
 /** Shape for OpenAI chat/completions `tools`. */
@@ -148,7 +267,15 @@ export function toRealtimeTools() {
 // Tool execution (server-side, with the caller's identity)
 // ---------------------------------------------------------------------------
 
-export type HelpHit = { id: string; title: string; summary: string; url: string; snippet: string };
+export type HelpImage = { url: string; alt: string };
+export type HelpHit = {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  snippet: string;
+  images?: HelpImage[];
+};
 
 /**
  * Rank tutorials against a query with simple term-frequency over
@@ -179,13 +306,22 @@ export async function searchHelp(query: string, locale?: string): Promise<HelpHi
     .sort((a, b) => b.score - a.score)
     .slice(0, SEARCH_RESULT_LIMIT);
 
-  return scored.map(({ e }) => ({
-    id: e.id,
-    title: e.title,
-    summary: e.summary,
-    url: `${SITE}/help/tutorials/${e.id}`,
-    snippet: snippetFor(e.text, terms),
-  }));
+  return scored.map(({ e }) => {
+    const hit: HelpHit = {
+      id: e.id,
+      title: e.title,
+      summary: e.summary,
+      url: `${SITE}/help/tutorials/${e.id}`,
+      snippet: snippetFor(e.text, terms),
+    };
+    // Screenshots come from the tutorial body ( /assets/-only, see tutorials.ts ).
+    // Absolute urls so every chat surface can render them without a base.
+    const images = (e.images || [])
+      .slice(0, MAX_HIT_IMAGES)
+      .map((img) => ({ url: `${SITE}${img.src}`, alt: img.alt }));
+    if (images.length) hit.images = images;
+    return hit;
+  });
 }
 
 function snippetFor(text: string, terms: string[]): string {
@@ -224,6 +360,86 @@ function unwrapMcp(text: string): unknown {
   }
 }
 
+/** Client metadata the chat surfaces may send along (desktop app version etc). */
+export type ClientMeta = { surface?: string; appVersion?: string; platform?: string };
+
+const MAX_REPLY_IMAGES = 4;
+
+/**
+ * Pull ![alt](url) markdown out of the model's reply into a structured images
+ * array (absolute urls, /assets/-only) and strip it from the text, so every
+ * chat surface renders screenshots without a markdown parser. Non-whitelisted
+ * image markdown is dropped entirely.
+ */
+export function extractReplyImages(reply: string): { text: string; images: HelpImage[] } {
+  const images: HelpImage[] = [];
+  const text = reply
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_whole, alt: string, src: string) => {
+      let url = "";
+      if (src.startsWith("/assets/")) url = `${SITE}${src}`;
+      else if (src.startsWith(`${SITE}/assets/`)) url = src;
+      if (!url) return "";
+      if (images.length < MAX_REPLY_IMAGES && !images.some((i) => i.url === url)) {
+        images.push({ url, alt: alt || "" });
+      }
+      return "";
+    })
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { text, images };
+}
+
+/**
+ * File a bug/feature report into the same Cloudflare feedback worker inbox the
+ * desktop Feedback panel submits to, so chat-filed reports land in the standard
+ * support triage flow. Requires FEEDBACK_SHARED_KEY (the worker's x-ib-key).
+ */
+async function submitFeedback(
+  args: Record<string, unknown>,
+  principal: Principal | null,
+  client?: ClientMeta,
+): Promise<unknown> {
+  const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
+  if (!sharedKey) {
+    return { error: "Feedback filing is not configured. Point the user at the Feedback panel in the left menu instead." };
+  }
+  const type = args.type === "feature" ? "feature" : "bug";
+  const title = typeof args.title === "string" ? args.title.trim().slice(0, 200) : "";
+  const description = typeof args.description === "string" ? args.description.trim().slice(0, 7000) : "";
+  if (!title) return { error: "A title is required." };
+
+  const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
+  try {
+    const res = await fetch(`${base}/submit`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-ib-key": sharedKey },
+      body: JSON.stringify({
+        type,
+        title,
+        description: `${description}\n\n[Filed via Butler AI chat${client?.surface ? ` (${client.surface})` : ""}]`,
+        userEmail: principal?.email ?? "",
+        appVersion: client?.appVersion || "",
+        platform: client?.platform || "concierge",
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as { ok?: boolean; id?: string } | null;
+    if (!res.ok || !json?.ok) {
+      console.error("[ai-concierge] submit_feedback failed", res.status, json);
+      return { error: "Could not file the report. Point the user at the Feedback panel in the left menu instead." };
+    }
+    return {
+      ok: true,
+      id: json.id ?? null,
+      note: "Filed. The team reads every report and replies by email when a reply address is on the account.",
+    };
+  } catch (err) {
+    console.error("[ai-concierge] submit_feedback threw", err);
+    return { error: "Could not file the report right now. Point the user at the Feedback panel in the left menu instead." };
+  }
+}
+
 /**
  * Execute one agent tool call and return a JSON-serializable result. `principal`
  * is null for anonymous callers (the account tools then return an auth message).
@@ -232,12 +448,15 @@ export async function executeAgentTool(
   name: string,
   args: Record<string, unknown>,
   principal: Principal | null,
+  client?: ClientMeta,
 ): Promise<unknown> {
   switch (name) {
     case "search_help": {
       const q = typeof args.query === "string" ? args.query : "";
       return { results: await searchHelp(q) };
     }
+    case "submit_feedback":
+      return submitFeedback(args, principal, client);
     case "offer_human_call":
       return {
         bookUrl: `${SITE}${BOOK_CALL_PATH}`,

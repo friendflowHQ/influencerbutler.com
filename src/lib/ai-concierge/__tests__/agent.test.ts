@@ -15,6 +15,9 @@ vi.mock("@/lib/tutorials", () => ({
       category: "Amazon",
       summary: "Find brands paying creators",
       text: "Goldmine Butler scans other creators' storefronts for ad posts and lists brand names and ASINs. To set up Goldmine, open the workspace and enter keywords.",
+      images: [
+        { src: "/assets/tutorials/goldmine/setup.png", alt: "The Goldmine setup screen" },
+      ],
     },
     {
       id: "instagram-butler",
@@ -22,11 +25,20 @@ vi.mock("@/lib/tutorials", () => ({
       category: "Instagram",
       summary: "DM outreach",
       text: "Instagram Butler sends DMs with safe pacing and follow-ups.",
+      images: [],
     },
   ]),
 }));
 
-import { buildInstructions, searchHelp, executeAgentTool, toChatTools, toRealtimeTools, AGENT_TOOLS } from "../agent";
+import {
+  buildInstructions,
+  searchHelp,
+  executeAgentTool,
+  extractReplyImages,
+  toChatTools,
+  toRealtimeTools,
+  AGENT_TOOLS,
+} from "../agent";
 
 describe("buildInstructions", () => {
   it("carries the persona and guardrails", () => {
@@ -38,6 +50,46 @@ describe("buildInstructions", () => {
     // The prompt itself must not contain an em-dash.
     expect(s).not.toContain("—");
   });
+
+  it("includes the left-menu map and directional guidance", () => {
+    const s = buildInstructions();
+    expect(s).toContain("left menu");
+    expect(s).toContain("API Integrations");
+    expect(s).toContain("Instagram Goldmine");
+    expect(s).toContain("exact click path");
+  });
+
+  it("instructs the confirm-first feedback flow", () => {
+    const s = buildInstructions();
+    expect(s).toContain("submit_feedback");
+    expect(s.toLowerCase()).toContain("after the user");
+  });
+});
+
+describe("extractReplyImages", () => {
+  it("lifts /assets/ markdown images out of the reply text", () => {
+    const { text, images } = extractReplyImages(
+      "Click API Integrations in the left menu.\n\n![The setup screen](/assets/tutorials/goldmine/setup.png)",
+    );
+    expect(text).toBe("Click API Integrations in the left menu.");
+    expect(images).toEqual([
+      { url: "https://www.influencerbutler.com/assets/tutorials/goldmine/setup.png", alt: "The setup screen" },
+    ]);
+  });
+
+  it("accepts absolute site urls and drops everything else", () => {
+    const { text, images } = extractReplyImages(
+      "See ![a](https://www.influencerbutler.com/assets/x.png) and ![b](https://evil.example.com/x.png).",
+    );
+    expect(images).toEqual([{ url: "https://www.influencerbutler.com/assets/x.png", alt: "a" }]);
+    expect(text).not.toContain("evil.example.com/x.png)");
+  });
+
+  it("dedupes and caps images", () => {
+    const md = Array.from({ length: 6 }, (_, i) => `![s](/assets/${i % 5}.png)`).join("\n");
+    const { images } = extractReplyImages(md);
+    expect(images.length).toBeLessThanOrEqual(4);
+  });
 });
 
 describe("searchHelp", () => {
@@ -47,6 +99,16 @@ describe("searchHelp", () => {
     expect(hits[0].id).toBe("goldmine-butler");
     expect(hits[0].url).toContain("/help/tutorials/goldmine-butler");
     expect(hits[0].snippet.length).toBeGreaterThan(0);
+  });
+
+  it("surfaces tutorial screenshots as absolute urls", async () => {
+    const hits = await searchHelp("how do I set up goldmine");
+    expect(hits[0].images).toEqual([
+      {
+        url: "https://www.influencerbutler.com/assets/tutorials/goldmine/setup.png",
+        alt: "The Goldmine setup screen",
+      },
+    ]);
   });
 
   it("returns nothing for a too-short or no-match query", async () => {
@@ -75,6 +137,51 @@ describe("executeAgentTool", () => {
     const r = (await executeAgentTool("nope", {}, null)) as { error: string };
     expect(r.error).toMatch(/unknown/i);
   });
+
+  it("submit_feedback reports unconfigured when the shared key is missing", async () => {
+    const prev = process.env.FEEDBACK_SHARED_KEY;
+    delete process.env.FEEDBACK_SHARED_KEY;
+    try {
+      const r = (await executeAgentTool(
+        "submit_feedback",
+        { type: "bug", title: "It broke", description: "Details" },
+        null,
+      )) as { error: string };
+      expect(r.error).toMatch(/not configured/i);
+    } finally {
+      if (prev !== undefined) process.env.FEEDBACK_SHARED_KEY = prev;
+    }
+  });
+
+  it("submit_feedback posts to the worker with the shared key and user email", async () => {
+    const prevKey = process.env.FEEDBACK_SHARED_KEY;
+    process.env.FEEDBACK_SHARED_KEY = "test-shared-key";
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-123" }), { status: 200 }));
+    try {
+      const r = (await executeAgentTool(
+        "submit_feedback",
+        { type: "feature", title: "Add dark mode", description: "Please" },
+        { userId: "u1", email: "user@example.com", source: "license" },
+        { surface: "desktop", appVersion: "1.0.58", platform: "win32" },
+      )) as { ok: boolean; id: string };
+      expect(r.ok).toBe(true);
+      expect(r.id).toBe("fb-123");
+      const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(url).toContain("/submit");
+      expect((init.headers as Record<string, string>)["x-ib-key"]).toBe("test-shared-key");
+      const body = JSON.parse(String(init.body));
+      expect(body.type).toBe("feature");
+      expect(body.userEmail).toBe("user@example.com");
+      expect(body.appVersion).toBe("1.0.58");
+      expect(body.description).toContain("[Filed via Butler AI chat (desktop)]");
+    } finally {
+      fetchSpy.mockRestore();
+      if (prevKey !== undefined) process.env.FEEDBACK_SHARED_KEY = prevKey;
+      else delete process.env.FEEDBACK_SHARED_KEY;
+    }
+  });
 });
 
 describe("tool schemas", () => {
@@ -82,5 +189,13 @@ describe("tool schemas", () => {
     expect(AGENT_TOOLS.find((t) => t.name === "search_help")).toBeTruthy();
     expect(toChatTools()[0]).toHaveProperty("function.name");
     expect(toRealtimeTools()[0]).toHaveProperty("name");
+  });
+
+  it("exposes submit_feedback with the confirm-first contract", () => {
+    const tool = AGENT_TOOLS.find((t) => t.name === "submit_feedback");
+    expect(tool).toBeTruthy();
+    expect(tool?.description).toMatch(/explicit yes/i);
+    const props = (tool?.parameters as { properties: Record<string, unknown> }).properties;
+    expect(Object.keys(props).sort()).toEqual(["description", "title", "type"]);
   });
 });
