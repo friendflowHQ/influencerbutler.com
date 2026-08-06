@@ -312,15 +312,37 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   };
 }
 
+export type SearchIndexImage = { src: string; alt: string };
+
 export type SearchIndexEntry = {
   id: string;
   title: string;
   category: string;
   summary: string;
   text: string;
+  /** Screenshots from the tutorial body (same-origin /assets/ paths only). */
+  images: SearchIndexImage[];
 };
 
 const searchIndexCache = new Map<string, { entries: SearchIndexEntry[]; at: number }>();
+
+// Pull the screenshots out of the rendered tutorial HTML before the tag strip
+// below destroys them. The renderer only ever emits /assets/ srcs (see
+// renderInline's image whitelist), but re-check here so nothing else can leak
+// into the concierge's search results.
+function htmlToImages(html: string): SearchIndexImage[] {
+  const images: SearchIndexImage[] = [];
+  const re = /<img\s+([^>]*?)\/?>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const attrs = m[1];
+    const src = /src="([^"]*)"/.exec(attrs)?.[1] || "";
+    if (!src.startsWith("/assets/")) continue;
+    const alt = /alt="([^"]*)"/.exec(attrs)?.[1] || "";
+    images.push({ src, alt: htmlToText(alt) });
+  }
+  return images;
+}
 
 // Strip the rendered tutorial HTML down to searchable plain text: drop tags,
 // decode the handful of entities our renderer emits, and collapse whitespace.
@@ -363,6 +385,7 @@ export async function loadSearchIndex(requestedLocale?: string): Promise<SearchI
       category: entry.category || "Other",
       summary: entry.summary || "",
       text,
+      images: tutorial ? htmlToImages(tutorial.html) : [],
     });
   }
   searchIndexCache.set(locale, { entries, at: Date.now() });

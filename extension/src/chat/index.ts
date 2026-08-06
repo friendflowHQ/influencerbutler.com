@@ -73,8 +73,25 @@ function main(): void {
   voiceAudio.autoplay = true;
   root.append(intro, suggestWrap, log, inputRow, footer, voiceAudio);
 
-  function addBubble(role: "user" | "assistant" | "error", text: string): HTMLDivElement {
+  function addBubble(
+    role: "user" | "assistant" | "error",
+    text: string,
+    images?: Array<{ url: string; alt: string }>,
+  ): HTMLDivElement {
     const bubble = el("div", `chat-msg ${role}`, text);
+    // Tutorial screenshots the assistant referenced. The background worker
+    // whitelists urls to https://www.influencerbutler.com/assets/ only.
+    for (const img of images || []) {
+      const node = document.createElement("img");
+      node.src = img.url;
+      node.alt = img.alt;
+      node.loading = "lazy";
+      node.className = "chat-msg-img";
+      node.addEventListener("load", () => {
+        log.scrollTop = log.scrollHeight;
+      });
+      bubble.appendChild(node);
+    }
     log.appendChild(bubble);
     log.scrollTop = log.scrollHeight;
     return bubble;
@@ -98,7 +115,7 @@ function main(): void {
       thinking.remove();
       if (res.ok && res.reply) {
         messages.push({ role: "assistant", content: res.reply });
-        addBubble("assistant", res.reply);
+        addBubble("assistant", res.reply, res.images);
       } else {
         addBubble("error", res.error || "The assistant is unavailable right now.");
       }
