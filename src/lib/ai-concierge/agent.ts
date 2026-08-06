@@ -30,75 +30,146 @@ const MAX_HIT_IMAGES = 3;
  * The desktop app's left menu, in display order, so the model can give exact
  * click paths ("In the left menu, click API Integrations"). Mirrors the nav in
  * the desktop repo's renderer/index.html; groups are hub entries that expand
- * into sub-tools. Update this list when the desktop nav changes.
+ * into sub-tools. Each item carries its data-section key in [brackets] in the
+ * rendered map: the start_walkthrough tool's `steps[].section` must use those
+ * keys. Update this list when the desktop nav changes.
  */
-const DESKTOP_NAV: Array<{ label: string; items?: string[] }> = [
-  { label: "Dashboard" },
+type NavLeaf = { label: string; key: string };
+const DESKTOP_NAV: Array<{ label: string; key?: string; items?: NavLeaf[] }> = [
+  { label: "Dashboard", key: "dashboard" },
   {
     label: "Amazon Butler",
     items: [
-      "Message Brands", "Keywords & Filters", "Orders Butler", "Daily Commission Butler",
-      "Storefront Butler", "CC Check", "Campaign Deals", "Campaign Alert Butler",
-      "Brand Release Butler", "Data Refresh Butler", "Like Butler", "Goldmine Butler",
-      "Earnings Intelligence", "Black Friday Butler", "Prime Day Butler",
-      "Video Reload Butler", "Photo Reload Butler", "Retag Butler", "Ads Goldmine",
-      "Product Research", "YouTube Butler",
+      { label: "Message Brands", key: "outreach" },
+      { label: "Keywords & Filters", key: "ai-keyword-generator" },
+      { label: "Orders Butler", key: "orders-butler" },
+      { label: "Daily Commission Butler", key: "harvest" },
+      { label: "Storefront Butler", key: "storefrontbutler" },
+      { label: "CC Check", key: "cc-check" },
+      { label: "Campaign Deals", key: "cc-deals" },
+      { label: "Campaign Alert Butler", key: "campaign-alert-butler" },
+      { label: "Brand Release Butler", key: "brand-release-butler" },
+      { label: "Data Refresh Butler", key: "data-refresh-butler" },
+      { label: "Like Butler", key: "like-butler" },
+      { label: "Goldmine Butler", key: "goldmine-butler" },
+      { label: "Earnings Intelligence", key: "earnings-intelligence" },
+      { label: "Black Friday Butler", key: "black-friday" },
+      { label: "Prime Day Butler", key: "prime-day-butler" },
+      { label: "Video Reload Butler", key: "video-reload-butler" },
+      { label: "Photo Reload Butler", key: "photo-reload-butler" },
+      { label: "Retag Butler", key: "retag-butler" },
+      { label: "Ads Goldmine", key: "ads-goldmine" },
+      { label: "Product Research", key: "product-research" },
+      { label: "YouTube Butler", key: "youtube-butler" },
     ],
   },
   {
     label: "Instagram Butler",
     items: [
-      "Instagram Close Friends Butler", "Instagram Message Followers",
-      "Instagram Email Collection", "Instagram Goldmine", "Instagram Like Butler",
+      { label: "Instagram Close Friends Butler", key: "closefriends-butler" },
+      { label: "Instagram Message Followers", key: "instagram-outreach" },
+      { label: "Instagram Email Collection", key: "instagram-email" },
+      { label: "Instagram Goldmine", key: "instagram-goldmine" },
+      { label: "Instagram Like Butler", key: "instagram-like-butler" },
     ],
   },
-  { label: "Messenger Butler", items: ["Messages", "Templates"] },
-  { label: "Collab Butler" },
-  { label: "Content Butler" },
-  { label: "Pitch Butler" },
+  {
+    label: "Messenger Butler",
+    items: [
+      { label: "Messages", key: "messenger" },
+      { label: "Templates", key: "messenger-templates" },
+    ],
+  },
+  { label: "Collab Butler", key: "collab" },
+  { label: "Content Butler", key: "content-butler" },
+  { label: "Pitch Butler", key: "pitchbutler" },
   {
     label: "Deals Influencer Butler",
-    items: ["Deals Influencer Butler", "Best Seller Butler", "Pricecrash Butler"],
+    items: [
+      { label: "Deals Influencer Butler", key: "daily-deals" },
+      { label: "Best Seller Butler", key: "best-seller-butler" },
+      { label: "Pricecrash Butler", key: "pricecrash-butler" },
+    ],
   },
-  { label: "Social Posting Butler" },
+  { label: "Social Posting Butler", key: "social-posting-butler" },
   {
     label: "Collage Butler",
-    items: ["Collage Butler", "Keywords & Filters", "Collage Gallery", "Collage Templates"],
+    items: [
+      { label: "Collage Butler", key: "collage-butler" },
+      { label: "Keywords & Filters", key: "collage-keywords" },
+      { label: "Collage Gallery", key: "collage-gallery" },
+      { label: "Collage Templates", key: "collage-templates" },
+    ],
   },
-  { label: "Levanta Butler", items: ["Message Brands", "Email Extractor"] },
-  { label: "Action Queue" },
-  { label: "Pinterest Butler" },
-  { label: "Voiceover Butler" },
+  {
+    label: "Levanta Butler",
+    items: [
+      { label: "Message Brands", key: "levanta-message-brands" },
+      { label: "Email Extractor", key: "levanta-email-extractor" },
+    ],
+  },
+  { label: "Action Queue", key: "action-queue" },
+  { label: "Pinterest Butler", key: "pinterest-butler" },
+  { label: "Voiceover Butler", key: "voiceover-butler" },
   {
     label: "Facebook Butler",
     items: [
-      "Facebook Inviter", "Group Invite Butler", "Facebook Group Builder",
-      "Facebook Message Butler", "Delete Posts & Comments",
+      { label: "Facebook Inviter", key: "facebook-influencer" },
+      { label: "Group Invite Butler", key: "group-invite-butler" },
+      { label: "Facebook Group Builder", key: "facebook-group-builder" },
+      { label: "Facebook Message Butler", key: "facebook-message-butler" },
+      { label: "Delete Posts & Comments", key: "delete-posts-comments" },
     ],
   },
   {
     label: "Benable Butler",
-    items: ["List Publishing", "Benable Like Butler", "Comment Butler"],
+    items: [
+      { label: "List Publishing", key: "benable-butler" },
+      { label: "Benable Like Butler", key: "benable-like-butler" },
+      { label: "Comment Butler", key: "benable-comment-butler" },
+    ],
   },
-  { label: "Link Butler", items: ["Influencer Deeplink Butler", "Relink Butler"] },
-  { label: "Content Planner" },
-  { label: "Sheetsyncer Butler" },
-  { label: "Temu Butler" },
-  { label: "API Integrations" },
-  { label: "Console" },
-  { label: "Feedback" },
-  { label: "AI Assistant" },
-  { label: "Help & Tutorials" },
-  { label: "Settings" },
+  {
+    label: "Link Butler",
+    items: [
+      { label: "Influencer Deeplink Butler", key: "link-butler" },
+      { label: "Relink Butler", key: "relink-butler" },
+    ],
+  },
+  { label: "Content Planner", key: "content-planner" },
+  { label: "Sheetsyncer Butler", key: "google-sheets-export" },
+  { label: "Temu Butler", key: "temu" },
+  { label: "API Integrations", key: "api-integrations" },
+  { label: "Console", key: "audit" },
+  { label: "Feedback", key: "feedback" },
+  { label: "AI Assistant", key: "ai-assistant" },
+  { label: "Help & Tutorials", key: "help" },
+  { label: "Settings", key: "settings" },
 ];
 
 function navMapLines(): string {
+  const leaf = (l: { label: string; key?: string }) =>
+    l.key ? `${l.label} [${l.key}]` : l.label;
   return DESKTOP_NAV.map((entry) =>
     entry.items && entry.items.length
-      ? `- ${entry.label} (group): ${entry.items.join(", ")}`
-      : `- ${entry.label}`,
+      ? `- ${entry.label} (group): ${entry.items.map(leaf).join(", ")}`
+      : `- ${leaf(entry)}`,
   ).join("\n");
 }
+
+/**
+ * Curated desktop walkthrough tours (defined in the desktop repo's
+ * renderer/hud/assistant-tours.js). The model prefers one of these ids;
+ * anything else falls back to AI-composed section steps.
+ */
+const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
+  { id: "deals-setup", about: "Deals Influencer Butler filters, post builder, destinations, scheduler" },
+  { id: "deals-harvest", about: "Deals Influencer Butler deal harvest and send" },
+  { id: "api-integrations", about: "API Integrations and DeepLink Routing setup" },
+  { id: "deeplink-mint", about: "Mint a short Butler Link in Link Butler" },
+  { id: "daily-commission-harvest", about: "Daily Commission Butler run and schedule" },
+  { id: "feedback-report", about: "Send feedback from the Feedback panel" },
+];
 
 /**
  * The system prompt / persona shared by voice and text. Kept factual and short;
@@ -140,6 +211,15 @@ export function buildInstructions(): string {
     "  its markdown form ![alt](url) on its own line at the end of your answer. Never invent image",
     "  urls; only use urls returned by search_help.",
     "- In voice mode, never read out urls. Describe where things are in words instead.",
+    "",
+    "Guided walkthroughs (desktop app only):",
+    "- When the desktop app user asks how to do something, for a demo, or for a walkthrough, offer",
+    "  to guide them on screen and call start_walkthrough. The app then navigates to each screen and",
+    "  highlights the control while they click Next. Also give a one or two sentence text answer.",
+    `- Prefer a curated tour when one matches: ${WALKTHROUGH_TOURS.map((t) => `${t.id} (${t.about})`).join("; ")}.`,
+    "- Otherwise compose up to 8 short steps yourself. Each step needs section (a [key] from the",
+    "  menu map above), a short title, and one sentence of body text.",
+    "- Never offer or call start_walkthrough for website or extension users; give written steps.",
     "",
     "Filing feedback:",
     "- When the user reports a bug, describes something broken, or wishes for a feature that does",
@@ -210,6 +290,37 @@ export const AGENT_TOOLS: AgentTool[] = [
     parameters: {
       type: "object",
       properties: { reason: { type: "string", description: "Why a human call is being offered." } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "start_walkthrough",
+    description:
+      "Start an on-screen guided walkthrough in the DESKTOP app: it navigates to each screen and highlights the control while the user clicks Next/Back. Desktop app users only. Pass a curated tourId when one matches the topic; otherwise pass steps composed from the menu map's [section keys].",
+    parameters: {
+      type: "object",
+      properties: {
+        tourId: {
+          type: "string",
+          enum: ["deals-setup", "deals-harvest", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report"],
+          description: "A curated tour id. Preferred when the topic matches.",
+        },
+        steps: {
+          type: "array",
+          maxItems: 8,
+          description: "Fallback when no curated tour fits: short section-level steps.",
+          items: {
+            type: "object",
+            properties: {
+              section: { type: "string", description: "A [section key] from the left-menu map." },
+              title: { type: "string", description: "Short step title." },
+              body: { type: "string", description: "One sentence telling the user what to do here." },
+            },
+            required: ["section", "title", "body"],
+            additionalProperties: false,
+          },
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -355,6 +466,40 @@ function unwrapMcp(text: string): unknown {
 /** Client metadata the chat surfaces may send along (desktop app version etc). */
 export type ClientMeta = { surface?: string; appVersion?: string; platform?: string };
 
+/**
+ * Validated start_walkthrough payload. The desktop resolves tourId against its
+ * curated registry; steps are AI-composed section-level fallbacks. Shared by
+ * the tool executor (ack) and the chat route (which forwards the payload to
+ * the desktop in the response).
+ */
+export type WalkthroughPayload =
+  | { tourId: string }
+  | { steps: Array<{ section: string; title: string; body: string; target?: string }> };
+
+export function sanitizeWalkthroughArgs(raw: unknown): WalkthroughPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const a = raw as Record<string, unknown>;
+  if (typeof a.tourId === "string" && a.tourId.trim()) {
+    return { tourId: a.tourId.trim().slice(0, 60) };
+  }
+  if (Array.isArray(a.steps)) {
+    const steps: Array<{ section: string; title: string; body: string; target?: string }> = [];
+    for (const s of a.steps as Array<Record<string, unknown>>) {
+      if (!s || typeof s !== "object") continue;
+      const section = typeof s.section === "string" ? s.section.trim().slice(0, 60) : "";
+      const title = typeof s.title === "string" ? s.title.slice(0, 120) : "";
+      const body = typeof s.body === "string" ? s.body.slice(0, 500) : "";
+      if (!section || (!title && !body)) continue;
+      const step: { section: string; title: string; body: string; target?: string } = { section, title, body };
+      if (typeof s.target === "string" && s.target.trim()) step.target = s.target.slice(0, 200);
+      steps.push(step);
+      if (steps.length >= 8) break;
+    }
+    if (steps.length) return { steps };
+  }
+  return null;
+}
+
 const MAX_REPLY_IMAGES = 4;
 
 /**
@@ -385,7 +530,10 @@ export function extractReplyImages(reply: string): { text: string; images: HelpI
 /**
  * File a bug/feature report into the same Cloudflare feedback worker inbox the
  * desktop Feedback panel submits to, so chat-filed reports land in the standard
- * support triage flow. Requires FEEDBACK_SHARED_KEY (the worker's x-ib-key).
+ * support triage flow. The worker only enforces the x-ib-key header when it has
+ * FEEDBACK_SHARED_KEY set (today it does not), so the key is optional here too:
+ * when the env var exists we send it, otherwise we submit without it, exactly
+ * like the desktop client.
  */
 async function submitFeedback(
   args: Record<string, unknown>,
@@ -393,19 +541,18 @@ async function submitFeedback(
   client?: ClientMeta,
 ): Promise<unknown> {
   const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
-  if (!sharedKey) {
-    return { error: "Feedback filing is not configured. Point the user at the Feedback panel in the left menu instead." };
-  }
   const type = args.type === "feature" ? "feature" : "bug";
   const title = typeof args.title === "string" ? args.title.trim().slice(0, 200) : "";
   const description = typeof args.description === "string" ? args.description.trim().slice(0, 7000) : "";
   if (!title) return { error: "A title is required." };
 
   const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (sharedKey) headers["x-ib-key"] = sharedKey;
   try {
     const res = await fetch(`${base}/submit`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-ib-key": sharedKey },
+      headers,
       body: JSON.stringify({
         type,
         title,
@@ -446,6 +593,16 @@ export async function executeAgentTool(
     case "search_help": {
       const q = typeof args.query === "string" ? args.query : "";
       return { results: await searchHelp(q) };
+    }
+    case "start_walkthrough": {
+      if (client?.surface !== "desktop") {
+        return { error: "Guided walkthroughs only work in the desktop app. Give written steps instead." };
+      }
+      const payload = sanitizeWalkthroughArgs(args);
+      if (!payload) return { error: "No usable walkthrough steps. Give written steps instead." };
+      // The chat route forwards the payload to the desktop; this ack is what
+      // the model narrates over.
+      return { ok: true, note: "The walkthrough will start on the user's screen. Tell them to follow the Next buttons." };
     }
     case "submit_feedback":
       return submitFeedback(args, principal, client);

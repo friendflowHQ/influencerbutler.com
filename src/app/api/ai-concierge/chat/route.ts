@@ -13,8 +13,8 @@
  */
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
-import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages } from "@/lib/ai-concierge/agent";
-import type { ClientMeta } from "@/lib/ai-concierge/agent";
+import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs } from "@/lib/ai-concierge/agent";
+import type { ClientMeta, WalkthroughPayload } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
 import type { TextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
@@ -85,6 +85,9 @@ export async function POST(request: Request) {
   // mid-conversation. When that happens, fail the whole conversation over to
   // OpenAI (sticky for the remaining rounds) instead of erroring the user.
   let activeProvider = provider;
+  // A start_walkthrough tool call's payload is forwarded to the desktop with
+  // the final reply (the executor only acks). First call wins; desktop only.
+  let walkthrough: WalkthroughPayload | null = null;
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let res = await callProvider(activeProvider);
@@ -110,6 +113,9 @@ export async function POST(request: Request) {
         for (const call of choice.tool_calls) {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(call.function.arguments || "{}"); } catch { /* ignore */ }
+          if (call.function.name === "start_walkthrough" && !walkthrough && client?.surface === "desktop") {
+            walkthrough = sanitizeWalkthroughArgs(args);
+          }
           const result = await executeAgentTool(call.function.name, args, principal, client);
           messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result).slice(0, 8000) });
         }
@@ -117,9 +123,13 @@ export async function POST(request: Request) {
       }
 
       const { text, images } = extractReplyImages(choice.content ?? "");
-      return NextResponse.json({ reply: text, images });
+      return NextResponse.json(walkthrough ? { reply: text, images, walkthrough } : { reply: text, images });
     }
-    return NextResponse.json({ reply: "I ran into a loop working that out. Could you rephrase, or book a human call?", images: [] });
+    return NextResponse.json(
+      walkthrough
+        ? { reply: "The walkthrough is ready. Follow the Next buttons on screen.", images: [], walkthrough }
+        : { reply: "I ran into a loop working that out. Could you rephrase, or book a human call?", images: [] },
+    );
   } catch (err) {
     console.error("[ai-concierge/chat] threw", err);
     return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });
