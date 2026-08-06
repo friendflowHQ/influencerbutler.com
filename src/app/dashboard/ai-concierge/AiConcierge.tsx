@@ -201,7 +201,17 @@ export default function AiConcierge() {
         });
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error && err.name === "NotAllowedError" ? "Microphone access is needed for a voice call. You can type instead." : "Could not start the voice session.");
+      console.error("[ai-concierge] voice start failed", err);
+      const name = err instanceof Error ? err.name : "";
+      setError(
+        name === "NotAllowedError"
+          ? "Microphone access is needed for a voice call. You can type instead."
+          : name === "NotFoundError"
+            ? "No microphone was found. Plug one in or type instead."
+            : name === "NotReadableError"
+              ? "Your microphone is busy or blocked by the system. Close other apps using it, or type instead."
+              : "Could not start the voice session. You can type instead.",
+      );
       teardownVoice();
       setPhase("intro");
     }
