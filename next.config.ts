@@ -17,6 +17,12 @@ const connectSrc = [
   "https://www.google-analytics.com",
   "https://*.analytics.google.com",
   "https://*.googletagmanager.com",
+  // Butler AI voice concierge: the browser exchanges its WebRTC SDP offer
+  // directly with OpenAI Realtime at https://api.openai.com/v1/realtime/calls
+  // using the short-lived ephemeral token our /api/ai-concierge/session mints.
+  // Without this the fetch is blocked by connect-src and the voice session
+  // fails with "Could not start the voice session."
+  "https://api.openai.com",
 ];
 const imgSrc = [
   "'self'",
