@@ -138,17 +138,26 @@ describe("executeAgentTool", () => {
     expect(r.error).toMatch(/unknown/i);
   });
 
-  it("submit_feedback reports unconfigured when the shared key is missing", async () => {
+  it("submit_feedback works without a shared key and omits the x-ib-key header", async () => {
+    // The deployed worker only enforces x-ib-key when it has FEEDBACK_SHARED_KEY
+    // set (today it does not), so the website side must not hard-require it.
     const prev = process.env.FEEDBACK_SHARED_KEY;
     delete process.env.FEEDBACK_SHARED_KEY;
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-nokey" }), { status: 200 }));
     try {
       const r = (await executeAgentTool(
         "submit_feedback",
         { type: "bug", title: "It broke", description: "Details" },
         null,
-      )) as { error: string };
-      expect(r.error).toMatch(/not configured/i);
+      )) as { ok: boolean; id: string };
+      expect(r.ok).toBe(true);
+      expect(r.id).toBe("fb-nokey");
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(init.headers as Record<string, string>).not.toHaveProperty("x-ib-key");
     } finally {
+      fetchSpy.mockRestore();
       if (prev !== undefined) process.env.FEEDBACK_SHARED_KEY = prev;
     }
   });

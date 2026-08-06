@@ -393,7 +393,10 @@ export function extractReplyImages(reply: string): { text: string; images: HelpI
 /**
  * File a bug/feature report into the same Cloudflare feedback worker inbox the
  * desktop Feedback panel submits to, so chat-filed reports land in the standard
- * support triage flow. Requires FEEDBACK_SHARED_KEY (the worker's x-ib-key).
+ * support triage flow. The worker only enforces the x-ib-key header when it has
+ * FEEDBACK_SHARED_KEY set (today it does not), so the key is optional here too:
+ * when the env var exists we send it, otherwise we submit without it, exactly
+ * like the desktop client.
  */
 async function submitFeedback(
   args: Record<string, unknown>,
@@ -401,19 +404,18 @@ async function submitFeedback(
   client?: ClientMeta,
 ): Promise<unknown> {
   const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
-  if (!sharedKey) {
-    return { error: "Feedback filing is not configured. Point the user at the Feedback panel in the left menu instead." };
-  }
   const type = args.type === "feature" ? "feature" : "bug";
   const title = typeof args.title === "string" ? args.title.trim().slice(0, 200) : "";
   const description = typeof args.description === "string" ? args.description.trim().slice(0, 7000) : "";
   if (!title) return { error: "A title is required." };
 
   const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (sharedKey) headers["x-ib-key"] = sharedKey;
   try {
     const res = await fetch(`${base}/submit`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-ib-key": sharedKey },
+      headers,
       body: JSON.stringify({
         type,
         title,
