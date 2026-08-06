@@ -217,17 +217,19 @@ export default function AiConcierge() {
     }
   }, [handleServerEvent, teardownVoice, endVoice]);
 
-  const startText = useCallback(() => {
-    setError("");
-    startedAtRef.current = Date.now();
-    sessionIdRef.current = null;
-    setPhase("text");
-    addEntry("butler", "Hi! I'm Butler AI. Ask me anything about Influencer Butler, or tell me what you want to set up.");
-  }, [addEntry]);
-
   const sendText = useCallback(async () => {
     const q = textInput.trim();
     if (!q || textBusy) return;
+    // Typing works from anywhere: the intro (no consent gate needed for text)
+    // and the ended state (keeps the transcript on screen and continues as a
+    // fresh text session). Only voice needs the mic-consent step.
+    if (phase !== "text") {
+      setError("");
+      startedAtRef.current = Date.now();
+      sessionIdRef.current = null;
+      savedRef.current = false;
+      setPhase("text");
+    }
     setTextInput("");
     addEntry("you", q);
     setTextBusy(true);
@@ -246,7 +248,7 @@ export default function AiConcierge() {
     } finally {
       setTextBusy(false);
     }
-  }, [textInput, textBusy, addEntry]);
+  }, [textInput, textBusy, phase, addEntry]);
 
   const endText = useCallback(async () => {
     setPhase("ended");
@@ -257,6 +259,15 @@ export default function AiConcierge() {
   useEffect(() => () => { teardownVoice(); }, [teardownVoice]);
 
   const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  // One text composer, reused on the intro, in text mode, and after a session
+  // ends, so typing a question always works without any consent gate.
+  const textForm = (
+    <form onSubmit={(e) => { e.preventDefault(); void sendText(); }} className="mt-3 flex gap-2">
+      <input value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder="Ask a question..." className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+      <button type="submit" disabled={textBusy || !textInput.trim()} className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">{textBusy ? "..." : "Send"}</button>
+    </form>
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -272,17 +283,18 @@ export default function AiConcierge() {
       {phase === "intro" && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-600">
-            Talk to Butler AI right now for an instant walkthrough or setup help. It knows the product and can
-            answer questions in real time. It is an AI assistant, not a person, and cannot access your Amazon or
-            Instagram accounts.
+            Ask Butler AI anything about Influencer Butler, or get an instant walkthrough. It knows the product
+            and answers in real time. It is an AI assistant, not a person, and cannot access your Amazon or
+            Instagram accounts. Conversations may be saved so the team can follow up.
           </p>
-          <label className="mt-4 flex items-start gap-2 text-xs text-slate-600">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
-            <span>I understand this is an AI assistant and the conversation may be saved so the team can follow up. Voice needs microphone access.</span>
-          </label>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" disabled={!consent} onClick={startVoice} className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">Start voice chat</button>
-            <button type="button" disabled={!consent} onClick={startText} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Type instead</button>
+          {textForm}
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <p className="text-xs font-medium text-slate-500">Prefer to talk out loud?</p>
+            <label className="mt-2 flex items-start gap-2 text-xs text-slate-600">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
+              <span>I understand voice needs microphone access and this is an AI assistant.</span>
+            </label>
+            <button type="button" disabled={!consent} onClick={startVoice} className="mt-2 rounded-lg border border-[#f97316] px-4 py-2 text-sm font-medium text-[#f97316] hover:bg-orange-50 disabled:opacity-50">Start voice chat</button>
           </div>
         </div>
       )}
@@ -317,12 +329,9 @@ export default function AiConcierge() {
             {entries.length === 0 && phase === "voice" && <p className="text-sm text-slate-400">Listening... start talking.</p>}
           </div>
 
-          {phase === "text" && (
-            <form onSubmit={(e) => { e.preventDefault(); void sendText(); }} className="mt-3 flex gap-2">
-              <input value={textInput} onChange={(e) => setTextInput(e.target.value)} placeholder="Ask a question..." className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-              <button type="submit" disabled={textBusy || !textInput.trim()} className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">{textBusy ? "..." : "Send"}</button>
-            </form>
-          )}
+          {/* The composer stays available after a session ends too: typing
+              continues the conversation as a fresh text session. */}
+          {(phase === "text" || phase === "ended") && textForm}
 
           {phase !== "ended" && (
             <div className="mt-3">
@@ -331,7 +340,7 @@ export default function AiConcierge() {
           )}
           {phase === "ended" && (
             <div className="mt-3">
-              <button type="button" onClick={() => { savedRef.current = false; entriesRef.current = []; setEntries([]); setPhase("intro"); }} className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]">Start again</button>
+              <button type="button" onClick={() => { savedRef.current = false; entriesRef.current = []; setEntries([]); setPhase("intro"); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Start again</button>
             </div>
           )}
         </div>
