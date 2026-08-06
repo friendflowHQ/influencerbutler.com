@@ -35,6 +35,7 @@ import {
   searchHelp,
   executeAgentTool,
   extractReplyImages,
+  sanitizeWalkthroughArgs,
   toChatTools,
   toRealtimeTools,
   AGENT_TOOLS,
@@ -191,11 +192,59 @@ describe("tool schemas", () => {
     expect(toRealtimeTools()[0]).toHaveProperty("name");
   });
 
+  it("exposes start_walkthrough with curated ids + section-step fallback", () => {
+    const tool = AGENT_TOOLS.find((t) => t.name === "start_walkthrough");
+    expect(tool).toBeTruthy();
+    const props = (tool?.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
+    expect(props.tourId.enum).toContain("deals-setup");
+    expect(props).toHaveProperty("steps");
+  });
+
   it("exposes submit_feedback with the confirm-first contract", () => {
     const tool = AGENT_TOOLS.find((t) => t.name === "submit_feedback");
     expect(tool).toBeTruthy();
     expect(tool?.description).toMatch(/explicit yes/i);
     const props = (tool?.parameters as { properties: Record<string, unknown> }).properties;
     expect(Object.keys(props).sort()).toEqual(["description", "title", "type"]);
+  });
+});
+
+describe("guided walkthroughs", () => {
+  it("prompt includes the walkthrough guidance and section keys", () => {
+    const s = buildInstructions();
+    expect(s).toContain("start_walkthrough");
+    expect(s).toContain("desktop app only");
+    expect(s).toContain("[api-integrations]");
+    expect(s).toContain("[daily-deals]");
+    expect(s).not.toContain("\u2014");
+  });
+
+  it("executor gates start_walkthrough to the desktop surface", async () => {
+    const denied = (await executeAgentTool(
+      "start_walkthrough",
+      { tourId: "deals-setup" },
+      null,
+      { surface: "website" },
+    )) as { error: string };
+    expect(denied.error).toMatch(/desktop/i);
+
+    const ok = (await executeAgentTool(
+      "start_walkthrough",
+      { tourId: "deals-setup" },
+      null,
+      { surface: "desktop" },
+    )) as { ok: boolean };
+    expect(ok.ok).toBe(true);
+  });
+
+  it("sanitizeWalkthroughArgs validates tourId and steps", () => {
+    expect(sanitizeWalkthroughArgs({ tourId: " deals-setup " })).toEqual({ tourId: "deals-setup" });
+    expect(sanitizeWalkthroughArgs({ steps: [{ section: "api-integrations", title: "T", body: "B" }] }))
+      .toEqual({ steps: [{ section: "api-integrations", title: "T", body: "B" }] });
+    expect(sanitizeWalkthroughArgs({ steps: [{ section: "", title: "T", body: "B" }] })).toBeNull();
+    expect(sanitizeWalkthroughArgs({})).toBeNull();
+    const many = { steps: Array.from({ length: 20 }, (_, i) => ({ section: `s${i}`, title: "t", body: "b" })) };
+    const clamped = sanitizeWalkthroughArgs(many) as { steps: unknown[] };
+    expect(clamped.steps.length).toBeLessThanOrEqual(8);
   });
 });
