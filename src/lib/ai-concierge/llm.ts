@@ -14,12 +14,13 @@ export function resolveTextProvider(): TextProvider | null {
     return {
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: process.env.GROQ_API_KEY,
-      // llama-3.3-70b-versatile is deprecated on Groq (decommissions 2026-08-16),
-      // which fails the chat completion with a non-200 and surfaces to the app as
-      // "The assistant is unavailable right now." Default to a currently-supported
-      // Groq model; AI_CONCIERGE_TEXT_MODEL still overrides at runtime (e.g. set it
-      // to openai/gpt-oss-120b if you want a larger model for tool-heavy answers).
-      model: TEXT_MODEL_OVERRIDE || "llama-3.1-8b-instant",
+      // llama-3.3-70b-versatile is deprecated on Groq (decommissions 2026-08-16).
+      // Its first replacement, llama-3.1-8b-instant, was too small for this job:
+      // it drifted into random languages (a customer got Korean + Spanish answers
+      // to an English question) and skipped the search_help grounding tool.
+      // openai/gpt-oss-120b is still near-free on Groq and follows the persona's
+      // language + tool rules. AI_CONCIERGE_TEXT_MODEL overrides at runtime.
+      model: TEXT_MODEL_OVERRIDE || "openai/gpt-oss-120b",
       kind: "groq",
     };
   }

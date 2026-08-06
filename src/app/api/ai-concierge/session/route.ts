@@ -63,7 +63,15 @@ export async function POST(request: Request) {
           type: "realtime",
           model: REALTIME_MODEL,
           instructions: buildInstructions(),
-          audio: { output: { voice: REALTIME_VOICE } },
+          // Input transcription ON so the user's own words reach the chat
+          // transcript. Every surface already listens for
+          // conversation.item.input_audio_transcription.completed; without this
+          // the session emits none, so voice chats rendered as assistant-only
+          // bubble runs with the user's side missing.
+          audio: {
+            input: { transcription: { model: "gpt-4o-mini-transcribe" } },
+            output: { voice: REALTIME_VOICE },
+          },
           tools: toRealtimeTools(),
           tool_choice: "auto",
         },
