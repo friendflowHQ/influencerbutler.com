@@ -15,7 +15,8 @@ import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
 import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages } from "@/lib/ai-concierge/agent";
 import type { ClientMeta } from "@/lib/ai-concierge/agent";
-import { resolveTextProvider } from "@/lib/ai-concierge/llm";
+import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
+import type { TextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
 
 export const runtime = "nodejs";
@@ -67,19 +68,34 @@ export async function POST(request: Request) {
       .map((m) => ({ role: m.role, content: String(m.content || "").slice(0, 4000) })),
   ];
 
+  const callProvider = (p: TextProvider) =>
+    fetch(p.url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: p.model,
+        temperature: 0.4,
+        messages,
+        tools: toChatTools(),
+        tool_choice: "auto",
+      }),
+    });
+
+  // Groq's free tier caps tokens-per-minute at 6000; a tool round can trip it
+  // mid-conversation. When that happens, fail the whole conversation over to
+  // OpenAI (sticky for the remaining rounds) instead of erroring the user.
+  let activeProvider = provider;
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const res = await fetch(provider.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${provider.key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: provider.model,
-          temperature: 0.4,
-          messages,
-          tools: toChatTools(),
-          tool_choice: "auto",
-        }),
-      });
+      let res = await callProvider(activeProvider);
+      if (res.status === 429 && activeProvider.kind === "groq") {
+        const fallback = openAiFallbackProvider();
+        if (fallback) {
+          console.warn("[ai-concierge/chat] groq 429, failing over to openai");
+          activeProvider = fallback;
+          res = await callProvider(activeProvider);
+        }
+      }
       if (!res.ok) {
         console.error("[ai-concierge/chat]", res.status, await res.text().catch(() => ""));
         return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });

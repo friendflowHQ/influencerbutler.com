@@ -4,8 +4,8 @@
  *
  * It reuses knowledge that already lives in the repo rather than inventing a new
  * store:
- *   - persona/instructions are built from the same facts as public/llms.txt plus
- *     the curated FEATURE_CATALOG + PRICING_TIERS,
+ *   - persona/instructions stay lean (Groq free-tier TPM is tight); feature and
+ *     pricing facts are fetched on demand via list_features / get_pricing,
  *   - `search_help` grounds "how do I set up X" answers in the tutorial keyword
  *     index (loadSearchIndex, the same index the /help search box uses),
  *   - `list_features` / `get_pricing` / `get_earnings_summary` reuse the MCP
@@ -15,7 +15,6 @@
  * ../mcp/auth, ../scheduling-server, ../entitlements.
  */
 
-import { FEATURE_CATALOG, PRICING_TIERS } from "@/lib/mcp/feature-catalog";
 import { callTool } from "@/lib/mcp/tools";
 import type { Principal } from "@/lib/mcp/auth";
 import { loadSearchIndex } from "@/lib/tutorials";
@@ -107,10 +106,6 @@ function navMapLines(): string {
  * than dumped in here.
  */
 export function buildInstructions(): string {
-  const featureLines = FEATURE_CATALOG.map(
-    (f) => `- ${f.title.split(":")[0].trim()} (${f.tier}): ${f.description}`,
-  ).join("\n");
-
   return [
     "You are Butler AI, the friendly on-demand concierge for Influencer Butler, a desktop app by",
     "The Social Media Posse LLC that helps Amazon creators and influencers automate Creator",
@@ -124,8 +119,8 @@ export function buildInstructions(): string {
     "Grounding rules:",
     "- For any specific how-to, setup, or troubleshooting question, CALL the search_help tool and",
     "  base your answer on what it returns. Do not guess steps.",
-    "- For pricing or plan questions, call get_pricing. For what a feature does, call list_features",
-    "  or rely on the catalog below.",
+    "- For pricing or plan questions, call get_pricing. For what a feature (butler) does and its",
+    "  tier, call list_features.",
     "- When the signed-in user asks about their own earnings or plan, call get_earnings_summary or",
     "  get_subscription. Only share their data with them.",
     "- Never invent features, numbers, or steps. If you are not sure, say so and offer to point them",
@@ -162,9 +157,6 @@ export function buildInstructions(): string {
     "- Do not use em-dashes. Use a colon, comma, or two sentences instead.",
     "- When you cannot help, or the user wants a person, call offer_human_call and let them know they",
     `  can book a human demo or support call at ${SITE}${BOOK_CALL_PATH}.`,
-    "",
-    "Available butlers (name, tier, what it does):",
-    featureLines,
   ].join("\n");
 }
 
