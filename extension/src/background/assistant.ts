@@ -16,7 +16,20 @@ async function licenseKey(): Promise<string | null> {
 // AI concierge text chat. The chat page cannot hold the license key or hit our
 // origin directly, so it sends the conversation here and the worker POSTs
 // /api/ai-concierge/chat with the Bearer license key. Same brain as the website
-// and desktop app; only text comes back.
+// and desktop app; replies may carry tutorial screenshots (whitelisted below).
+
+const IMAGE_URL_PREFIX = "https://www.influencerbutler.com/assets/";
+
+function safeImages(raw: unknown): Array<{ url: string; alt: string }> {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{ url: string; alt: string }> = [];
+  for (const img of raw as Array<{ url?: unknown; alt?: unknown }>) {
+    if (!img || typeof img.url !== "string" || !img.url.startsWith(IMAGE_URL_PREFIX)) continue;
+    out.push({ url: img.url, alt: typeof img.alt === "string" ? img.alt : "" });
+    if (out.length >= 4) break;
+  }
+  return out;
+}
 
 export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResult> {
   const state = await getState();
@@ -27,13 +40,13 @@ export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResul
     const res = await fetch(ENDPOINTS.aiChat, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, client: { surface: "extension" } }),
     });
-    const data = (await res.json().catch(() => null)) as { reply?: string; error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; error?: string } | null;
     if (!res.ok || !data || typeof data.reply !== "string") {
       return { ok: false, error: data?.error || `The assistant is unavailable (HTTP ${res.status}).` };
     }
-    return { ok: true, reply: data.reply };
+    return { ok: true, reply: data.reply, images: safeImages(data.images) };
   } catch {
     return { ok: false, error: "Network error reaching the assistant." };
   }

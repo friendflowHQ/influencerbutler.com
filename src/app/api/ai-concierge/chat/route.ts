@@ -1,9 +1,11 @@
 /**
- * POST /api/ai-concierge/chat  { messages: [{role,content}] }
+ * POST /api/ai-concierge/chat  { messages: [{role,content}], client? }
  * Text-mode Butler AI turn. Prepends the persona, runs a chat/completions loop
  * that executes tool calls server-side (with the signed-in user's identity), and
- * returns the assistant's reply. Uses the cheap Groq/OpenAI resolver, so typing
- * costs a fraction of a cent while voice uses the metered Realtime API.
+ * returns { reply, images } where images are tutorial screenshots the model
+ * referenced (extracted from markdown, /assets/-only). Uses the cheap
+ * Groq/OpenAI resolver, so typing costs a fraction of a cent while voice uses
+ * the metered Realtime API.
  *
  * Auth is dual-mode (resolveAuth): the website session cookie OR a license-key
  * bearer, so the desktop app + Chrome extension share this one concierge route.
@@ -11,7 +13,8 @@
  */
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
-import { buildInstructions, toChatTools, executeAgentTool } from "@/lib/ai-concierge/agent";
+import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages } from "@/lib/ai-concierge/agent";
+import type { ClientMeta } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
 
@@ -25,6 +28,17 @@ type Choice = { message: { content: string | null; tool_calls?: ToolCall[] } };
 const MAX_TOOL_ROUNDS = 4;
 const MAX_HISTORY = 24;
 
+function sanitizeClient(raw: unknown): ClientMeta | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const c = raw as Record<string, unknown>;
+  const pick = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined);
+  return {
+    surface: pick(c.surface, 40),
+    appVersion: pick(c.appVersion, 40),
+    platform: pick(c.platform, 40),
+  };
+}
+
 export async function POST(request: Request) {
   const provider = resolveTextProvider();
   if (!provider) return NextResponse.json({ error: "Text concierge is not configured yet." }, { status: 503 });
@@ -32,13 +46,14 @@ export async function POST(request: Request) {
   const authed = await resolveAuth(request);
   if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
 
-  let body: { messages?: ChatMsg[] };
+  let body: { messages?: ChatMsg[]; client?: unknown };
   try {
-    body = (await request.json()) as { messages?: ChatMsg[] };
+    body = (await request.json()) as { messages?: ChatMsg[]; client?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const history = Array.isArray(body.messages) ? body.messages.slice(-MAX_HISTORY) : [];
+  const client = sanitizeClient(body.client);
 
   const principal: Principal = {
     userId: authed.auth.userId,
@@ -115,13 +130,14 @@ export async function POST(request: Request) {
         for (const call of choice.tool_calls) {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(call.function.arguments || "{}"); } catch { /* ignore */ }
-          const result = await executeAgentTool(call.function.name, args, principal);
+          const result = await executeAgentTool(call.function.name, args, principal, client);
           messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result).slice(0, 8000) });
         }
         continue; // loop for the model to use the tool results
       }
 
-      return NextResponse.json({ reply: choice.content ?? "" });
+      const { text, images } = extractReplyImages(choice.content ?? "");
+      return NextResponse.json({ reply: text, images });
     }
     // Ran out of tool rounds. Make a final no-tools pass so the user still gets
     // an answer grounded in whatever tool results are already in the thread.

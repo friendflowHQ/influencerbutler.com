@@ -14,7 +14,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Role = "you" | "butler";
-type Entry = { id: number; role: Role; text: string };
+type ReplyImage = { url: string; alt: string };
+type Entry = { id: number; role: Role; text: string; images?: ReplyImage[] };
+
+// Only same-origin tutorial screenshots ever render in the transcript.
+const IMAGE_URL_PREFIX = "https://www.influencerbutler.com/assets/";
+
+function safeImages(raw: unknown): ReplyImage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((i): i is ReplyImage => !!i && typeof i.url === "string" && i.url.startsWith(IMAGE_URL_PREFIX))
+    .slice(0, 4)
+    .map((i) => ({ url: i.url, alt: typeof i.alt === "string" ? i.alt : "" }));
+}
 type Phase = "intro" | "connecting" | "voice" | "text" | "ended";
 
 const BOOK_URL = "/dashboard/book";
@@ -42,10 +54,11 @@ export default function AiConcierge() {
   const idRef = useRef(0);
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  const addEntry = useCallback((role: Role, text: string) => {
+  const addEntry = useCallback((role: Role, text: string, images?: ReplyImage[]) => {
     const clean = text.trim();
-    if (!clean) return;
-    const entry = { id: ++idRef.current, role, text: clean };
+    if (!clean && !(images && images.length)) return;
+    const entry: Entry = { id: ++idRef.current, role, text: clean };
+    if (images && images.length) entry.images = images;
     entriesRef.current = [...entriesRef.current, entry];
     setEntries(entriesRef.current);
   }, []);
@@ -213,11 +226,11 @@ export default function AiConcierge() {
       const res = await fetch("/api/ai-concierge/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, client: { surface: "website" } }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error || "The assistant is unavailable."); return; }
-      addEntry("butler", json.reply || "");
+      addEntry("butler", json.reply || "", safeImages(json.images));
     } catch {
       setError("The assistant is unavailable right now.");
     } finally {
@@ -275,7 +288,19 @@ export default function AiConcierge() {
           <div ref={logRef} className="max-h-[52vh] space-y-3 overflow-y-auto">
             {entries.map((e) => (
               <div key={e.id} className={e.role === "you" ? "text-right" : ""}>
-                <span className={`inline-block max-w-[85%] rounded-2xl px-3 py-2 text-sm ${e.role === "you" ? "bg-orange-50 text-[#9a3412]" : "bg-slate-100 text-slate-800"}`}>{e.text}</span>
+                <span className={`inline-block max-w-[85%] rounded-2xl px-3 py-2 text-sm ${e.role === "you" ? "bg-orange-50 text-[#9a3412]" : "bg-slate-100 text-slate-800"}`}>
+                  {e.text}
+                  {e.images?.map((img) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={img.url}
+                      src={img.url}
+                      alt={img.alt}
+                      loading="lazy"
+                      className="mt-2 block max-w-full rounded-lg border border-slate-200"
+                    />
+                  ))}
+                </span>
               </div>
             ))}
             {partial && <div><span className="inline-block max-w-[85%] rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-500">{partial}</span></div>}

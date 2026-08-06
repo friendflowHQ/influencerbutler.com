@@ -267,7 +267,8 @@ export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
 export type AiChatTurn = { role: "user" | "assistant"; content: string };
-export type AiChatResult = { ok: boolean; reply?: string; error?: string };
+export type AiChatImage = { url: string; alt: string };
+export type AiChatResult = { ok: boolean; reply?: string; images?: AiChatImage[]; error?: string };
 export type VoiceSessionResult = {
   ok: boolean;
   value?: string;
