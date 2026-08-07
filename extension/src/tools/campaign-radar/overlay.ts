@@ -245,22 +245,11 @@ function renderBadge(row: Row): void {
   if (row.owned) body.append(el("span", "tile-chip good", t().radarChipOwned));
   if (row.provenEarner) body.append(el("span", "tile-chip good", t().radarChipEarner));
 
-  if (row.campaign.commissionRatePct !== null) {
-    body.append(el("span", "tile-chip", t().radarChipRate(row.campaign.commissionRatePct)));
-  }
-  if (row.daysRemaining !== null) {
-    body.append(
-      el(
-        "span",
-        "tile-chip",
-        row.daysRemaining >= 0
-          ? t().radarChipDays(row.daysRemaining)
-          : t().radarChipEnded,
-      ),
-    );
-  }
-  if (row.campaign.remainingBudgetCents !== null) {
-    body.append(el("span", "tile-chip", t().radarChipBudget(fmtBudget(row.campaign.remainingBudgetCents))));
+  // Rate, days-left, and budget are NOT repeated as chips: the native card
+  // already prints them right above the badge (they still feed the score).
+  // "Ended" is the one derived timing fact the card does not state outright.
+  if (row.daysRemaining !== null && row.daysRemaining < 0) {
+    body.append(el("span", "tile-chip bad", t().radarChipEnded));
   }
   if (row.cc) body.append(el("span", "tile-chip good", t().radarChipCc));
   if (row.spcc) body.append(el("span", "tile-chip good", t().radarChipSpcc));
@@ -374,13 +363,6 @@ function setHighlight(el: HTMLElement, on: boolean): void {
     el.style.outlineOffset = "";
     el.style.borderRadius = "";
   }
-}
-
-// A plain "$1,234" from cents (Creator Connections budgets are shown in whole
-// dollars). Currency symbol assumed USD: the grid does not expose a currency code
-// and this is a display hint, not a computed money value.
-function fmtBudget(cents: number): string {
-  return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
 }
 
 // ---- Toolbar ----------------------------------------------------------------

@@ -273,10 +273,7 @@ export interface Dict {
   radarSortRelevance: string;
   radarChipOwned: string;
   radarChipEarner: string;
-  radarChipRate: (pct: number) => string;
-  radarChipDays: (n: number) => string;
   radarChipEnded: string;
-  radarChipBudget: (amount: string) => string;
   radarChipCc: string;
   radarChipSpcc: string;
   radarAvailChip: (code: string, status: "available" | "unavailable" | "unknown") => string;
@@ -812,10 +809,7 @@ const en: Dict = {
   radarSortRelevance: "Page order",
   radarChipOwned: "You own this",
   radarChipEarner: "You've earned on this",
-  radarChipRate: (pct) => `${pct}% rate`,
-  radarChipDays: (n) => `${n} days left`,
   radarChipEnded: "Ended",
-  radarChipBudget: (amount) => `${amount} left`,
   radarChipCc: "CC eligible",
   radarChipSpcc: "SPCC eligible",
   radarAvailChip: (code, status) =>
@@ -1377,10 +1371,7 @@ const es: Dict = {
   radarSortRelevance: "Orden de la página",
   radarChipOwned: "Ya lo tienes",
   radarChipEarner: "Ya has ganado con esto",
-  radarChipRate: (pct) => `${pct}% de tasa`,
-  radarChipDays: (n) => `${n} días restantes`,
   radarChipEnded: "Finalizada",
-  radarChipBudget: (amount) => `${amount} restante`,
   radarChipCc: "Elegible CC",
   radarChipSpcc: "Elegible SPCC",
   radarAvailChip: (code, status) =>
@@ -1942,10 +1933,7 @@ const fr: Dict = {
   radarSortRelevance: "Ordre de la page",
   radarChipOwned: "Vous l'avez déjà",
   radarChipEarner: "Vous avez déjà gagné dessus",
-  radarChipRate: (pct) => `${pct}% de taux`,
-  radarChipDays: (n) => `${n} jours restants`,
   radarChipEnded: "Terminée",
-  radarChipBudget: (amount) => `${amount} restant`,
   radarChipCc: "Éligible CC",
   radarChipSpcc: "Éligible SPCC",
   radarAvailChip: (code, status) =>
