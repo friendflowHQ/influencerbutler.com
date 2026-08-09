@@ -131,6 +131,32 @@ export async function updateDiscountDuration(
   }
 }
 
+/**
+ * Deletes a discount in Lemon Squeezy. Used when an affiliate's code is
+ * replaced: the old discount must stop being redeemable, otherwise shoppers
+ * keep getting the percent off with no affiliate attribution behind it.
+ * A 404 counts as success (already gone). Best-effort for callers - they
+ * should log but not fail the swap on `{ ok: false }`.
+ */
+export async function deleteDiscount(discountId: string): Promise<{ ok: boolean }> {
+  try {
+    const response = await lsApi(`/discounts/${discountId}`, { method: "DELETE" });
+    if (!response.ok && response.status !== 404) {
+      const text = await response.text().catch(() => "");
+      console.error("LS discount delete failed", {
+        status: response.status,
+        body: text.slice(0, 300),
+        discountId,
+      });
+      return { ok: false };
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error("LS discount delete threw", error);
+    return { ok: false };
+  }
+}
+
 export type DiscountState = {
   exists: boolean;
   percent: number | null;
