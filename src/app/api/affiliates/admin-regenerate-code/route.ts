@@ -49,10 +49,9 @@ type RegenClient = {
         };
       };
     };
-    upsert: (
-      payload: Record<string, unknown>,
-      options?: { onConflict: string },
-    ) => Promise<{ error: unknown }>;
+    update: (payload: Record<string, unknown>) => {
+      eq: (col: string, value: string) => Promise<{ error: unknown }>;
+    };
   };
 };
 
@@ -180,17 +179,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: upsertErr } = await supabase.from("profiles").upsert(
-    {
-      id: userId,
+  // UPDATE, not upsert: profiles.email is NOT NULL and Postgres checks NOT
+  // NULL on the proposed insert row BEFORE on-conflict resolution, so a
+  // partial-payload upsert always 23502s. The row is guaranteed to exist -
+  // we selected it above.
+  const { error: updateErr } = await supabase
+    .from("profiles")
+    .update({
       affiliate_code: generated.code,
       ls_affiliate_discount_id: generated.discountId,
-    },
-    { onConflict: "id" },
-  );
+    })
+    .eq("id", userId);
 
-  if (upsertErr) {
-    console.error("admin-regenerate-code: profile upsert failed", upsertErr);
+  if (updateErr) {
+    console.error("admin-regenerate-code: profile update failed", updateErr);
     return NextResponse.json({ error: "Created discount but could not save it" }, { status: 500 });
   }
 
