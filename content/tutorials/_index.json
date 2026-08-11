@@ -472,6 +472,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-influencer",
+      "title": "Facebook Inviter: turn group reactions into Page followers",
+      "category": "Other",
+      "summary": "Walk the Facebook groups you belong to, open each post's reaction list, and invite those people to follow your Page, with a per-post cap, skip list, and daily schedule.",
+      "order": 343.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "delete-posts-comments",
       "title": "Delete Posts & Comments: bulk-clean your Facebook deal posts",
       "category": "Other",
