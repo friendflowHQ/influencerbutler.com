@@ -85,6 +85,11 @@ export async function POST(request: Request) {
   // mid-conversation. When that happens, fail the whole conversation over to
   // OpenAI (sticky for the remaining rounds) instead of erroring the user.
   let activeProvider = provider;
+  // Set when the model calls start_walkthrough: rides the final reply JSON so
+  // the desktop app can render a Start button / launch the guided tour (the
+  // desktop's sanitizeWalkthrough accepts { tourId }). The web dashboard
+  // ignores the field.
+  let walkthrough: { tourId: string } | null = null;
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let res = await callProvider(activeProvider);
@@ -111,13 +116,16 @@ export async function POST(request: Request) {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(call.function.arguments || "{}"); } catch { /* ignore */ }
           const result = await executeAgentTool(call.function.name, args, principal, client);
+          if (call.function.name === "start_walkthrough" && typeof args.tourId === "string" && args.tourId) {
+            walkthrough = { tourId: args.tourId };
+          }
           messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result).slice(0, 8000) });
         }
         continue; // loop for the model to use the tool results
       }
 
       const { text, images } = extractReplyImages(choice.content ?? "");
-      return NextResponse.json({ reply: text, images });
+      return NextResponse.json(walkthrough ? { reply: text, images, walkthrough } : { reply: text, images });
     }
     return NextResponse.json({ reply: "I ran into a loop working that out. Could you rephrase, or book a human call?", images: [] });
   } catch (err) {

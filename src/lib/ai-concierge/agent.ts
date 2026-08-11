@@ -158,6 +158,14 @@ export function buildInstructions(): string {
     "  confirms. Never file without confirmation, and never file the same report twice.",
     "- After filing, confirm it was sent and that the team reads every report and replies by email.",
     "",
+    "Walkthroughs:",
+    "- When the user is chatting from the desktop app and asks you to set up deal posting for them,",
+    "  or is struggling to configure the Deals Influencer Butler (destinations, schedule, keywords),",
+    "  call start_walkthrough with tourId deals-guided-setup. It opens a wizard that asks a few",
+    "  questions and writes the settings for them. Offer it proactively to strugglers.",
+    "- For show-me-around requests, the other tour ids spotlight the relevant controls step by step.",
+    "- On the website (no desktop app), do not call start_walkthrough; describe the steps instead.",
+    "",
     "Boundaries:",
     "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
     "  desktop app for them. Give exact click paths; they do the clicking.",
@@ -219,6 +227,31 @@ export const AGENT_TOOLS: AgentTool[] = [
     parameters: {
       type: "object",
       properties: { reason: { type: "string", description: "Why a human call is being offered." } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "start_walkthrough",
+    description:
+      "Start a guided walkthrough inside the user's desktop app. Use tourId 'deals-guided-setup' when the user wants deal posting set up for them: it opens a wizard that asks a few questions and writes the settings (keywords, post template, destinations, schedule). The other ids spotlight the relevant controls step by step. Only useful when the user is chatting from the desktop app; on the website, describe the steps instead.",
+    parameters: {
+      type: "object",
+      properties: {
+        tourId: {
+          type: "string",
+          enum: [
+            "deals-guided-setup",
+            "deals-setup",
+            "deals-harvest",
+            "api-integrations",
+            "deeplink-mint",
+            "daily-commission-harvest",
+            "feedback-report",
+          ],
+          description: "Which walkthrough to start.",
+        },
+      },
+      required: ["tourId"],
       additionalProperties: false,
     },
   },
@@ -463,6 +496,19 @@ export async function executeAgentTool(
         bookUrl: `${SITE}${BOOK_CALL_PATH}`,
         note: "Offer to book a human demo or support call from the dashboard under Book a Call.",
       };
+    case "start_walkthrough": {
+      // The walkthrough itself runs client-side in the desktop app: the chat
+      // route attaches { walkthrough: { tourId } } to the reply JSON and the
+      // desktop renders a Start button (voice executes it locally). This
+      // result just tells the model it worked.
+      const tourId = typeof args.tourId === "string" ? args.tourId : "";
+      if (!tourId) return { error: "tourId is required." };
+      return {
+        started: true,
+        tourId,
+        note: "The walkthrough opens in the desktop app. Tell the user it is starting and what it will do.",
+      };
+    }
     case "get_subscription":
       if (!principal) return { error: "The user is not signed in." };
       return getSubscription(principal);

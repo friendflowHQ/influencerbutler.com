@@ -208,6 +208,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "daily-deals-guided-setup",
+      "title": "Guided Setup: let Butler configure deal posting for you",
+      "category": "Amazon",
+      "summary": "Answer a few questions and Butler writes the Daily Deals settings for you: keywords, your post template, your destinations, and the posting schedule.",
+      "order": 71,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "likebutler",
       "title": "Like Butler: auto-like Amazon Creator storefronts you want to stay visible to",
       "category": "Amazon",

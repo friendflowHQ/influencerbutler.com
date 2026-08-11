@@ -138,6 +138,20 @@ describe("executeAgentTool", () => {
     expect(r.error).toMatch(/unknown/i);
   });
 
+  it("start_walkthrough echoes the tourId for the desktop to launch", async () => {
+    const r = (await executeAgentTool("start_walkthrough", { tourId: "deals-guided-setup" }, null)) as {
+      started: boolean;
+      tourId: string;
+    };
+    expect(r.started).toBe(true);
+    expect(r.tourId).toBe("deals-guided-setup");
+  });
+
+  it("start_walkthrough without a tourId errors", async () => {
+    const r = (await executeAgentTool("start_walkthrough", {}, null)) as { error: string };
+    expect(r.error).toMatch(/tourId/);
+  });
+
   it("submit_feedback reports unconfigured when the shared key is missing", async () => {
     const prev = process.env.FEEDBACK_SHARED_KEY;
     delete process.env.FEEDBACK_SHARED_KEY;
