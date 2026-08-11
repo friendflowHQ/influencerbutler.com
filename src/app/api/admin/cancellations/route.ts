@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import {
   listCancellations,
+  loadCancellationDashboard,
   countUnsurveyedEndedSubs,
   REASONS,
   WOULD_RETURN_OPTIONS,
@@ -25,9 +26,10 @@ export async function GET(request: Request) {
   const actor = await requirePermission("reports.view", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [rows, unsurveyed] = await Promise.all([
+  const [rows, unsurveyed, dashboard] = await Promise.all([
     listCancellations(200),
     countUnsurveyedEndedSubs(),
+    loadCancellationDashboard(300),
   ]);
 
   // Only count completed answers in the breakdowns so an unanswered emailed
@@ -52,6 +54,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     admin: { email: actor.email },
     rows,
+    dashboard,
     summary: {
       total: rows.length,
       answered: answered.length,
