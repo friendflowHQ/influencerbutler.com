@@ -6,6 +6,7 @@ import { resolveCommunityAuthors } from "@/lib/community-authors";
 import AuthorChip from "@/components/community/AuthorChip";
 import UpvoteButton from "./UpvoteButton";
 import AnswerForm from "./AnswerForm";
+import ReplyForm from "./ReplyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ type AnswerRow = {
   body: string;
   author_id: string | null;
   author_email: string | null;
+  parent_answer_id: string | null;
   created_at: string;
 };
 
@@ -127,7 +129,7 @@ export default async function QuestionDetailPage({
 
   const answersPromise = (supabase
     .from("community_answers")
-    .select("id, body, author_id, author_email, created_at") as unknown as {
+    .select("id, body, author_id, author_email, parent_answer_id, created_at") as unknown as {
     eq: (c: string, v: string) => {
       eq: (c: string, v: string) => {
         order: (
@@ -190,6 +192,23 @@ export default async function QuestionDetailPage({
     question.author_id,
     ...(answers ?? []).map((a) => a.author_id),
   ]);
+
+  // Group answers into top-level threads + replies. A reply whose parent is
+  // not in the approved result set (e.g. the parent was hidden by a
+  // moderator) falls back to rendering as top-level so it is never dropped.
+  const allAnswers = answers ?? [];
+  const answerIds = new Set(allAnswers.map((a) => a.id));
+  const topLevelAnswers = allAnswers.filter(
+    (a) => !a.parent_answer_id || !answerIds.has(a.parent_answer_id),
+  );
+  const repliesByParent = new Map<string, AnswerRow[]>();
+  for (const a of allAnswers) {
+    if (a.parent_answer_id && answerIds.has(a.parent_answer_id)) {
+      const list = repliesByParent.get(a.parent_answer_id) ?? [];
+      list.push(a);
+      repliesByParent.set(a.parent_answer_id, list);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -262,26 +281,62 @@ export default async function QuestionDetailPage({
             : `${answers?.length} ${(answers?.length ?? 0) === 1 ? "answer" : "answers"}`}
         </h2>
 
-        {answers && answers.length > 0 ? (
+        {topLevelAnswers.length > 0 ? (
           <ul className="mt-3 space-y-3">
-            {answers.map((answer) => (
-              <li
-                key={answer.id}
-                className="rounded-lg border border-slate-200 bg-white p-5"
-              >
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                  <AuthorChip
-                    author={answer.author_id ? authors.get(answer.author_id) : null}
-                    fallbackEmail={answer.author_email}
-                    size="sm"
-                  />
-                  <span className="text-slate-400">{formatDate(answer.created_at)}</span>
-                </div>
-                <p className="mt-3 whitespace-pre-wrap text-sm text-slate-800">
-                  {answer.body}
-                </p>
-              </li>
-            ))}
+            {topLevelAnswers.map((answer) => {
+              const replies = repliesByParent.get(answer.id) ?? [];
+              return (
+                <li
+                  key={answer.id}
+                  className="rounded-lg border border-slate-200 bg-white p-5"
+                >
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                    <AuthorChip
+                      author={answer.author_id ? authors.get(answer.author_id) : null}
+                      fallbackEmail={answer.author_email}
+                      size="sm"
+                    />
+                    <span className="text-slate-400">{formatDate(answer.created_at)}</span>
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-slate-800">
+                    {answer.body}
+                  </p>
+                  <div className="mt-3">
+                    <ReplyForm
+                      questionId={question.id}
+                      parentAnswerId={answer.id}
+                      signedIn={signedIn}
+                    />
+                  </div>
+                  {replies.length > 0 ? (
+                    <ul className="mt-4 space-y-4 border-l-2 border-slate-100 pl-4">
+                      {replies.map((reply) => (
+                        <li key={reply.id}>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <AuthorChip
+                              author={reply.author_id ? authors.get(reply.author_id) : null}
+                              fallbackEmail={reply.author_email}
+                              size="sm"
+                            />
+                            <span className="text-slate-400">{formatDate(reply.created_at)}</span>
+                          </div>
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">
+                            {reply.body}
+                          </p>
+                          <div className="mt-2">
+                            <ReplyForm
+                              questionId={question.id}
+                              parentAnswerId={reply.id}
+                              signedIn={signedIn}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         ) : null}
 
