@@ -7,6 +7,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { maskEmail } from "@/lib/mask-email";
+import { loadComps, type CompRow, type CompState } from "@/lib/comps-data";
 
 export type Reason =
   | "too_expensive"
@@ -204,6 +205,296 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
       winback: winbackByRow.get(str(r.id) ?? "") ?? null,
     };
   });
+}
+
+/** Statuses that mean the user currently has live access. Mirrors comp-issue.ts. */
+const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The win-back comp attached to a cancelled customer, with progress math. */
+export type CompTracking = {
+  /** The comp/discount code on the grant. */
+  code: string | null;
+  /** Free window length in months (null for day-granular / forever / unknown). */
+  months: number | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  /** Whole days since the comp was issued (how far into the free window). */
+  daysIn: number | null;
+  /** Whole days until expiry; negative once past it. */
+  daysLeft: number | null;
+  /** Lifecycle bucket (active / expiring-7 / expiring-30 / expired / ...). */
+  state: CompState;
+  /** True once the recipient actually activated the key in the desktop app. */
+  activated: boolean;
+  activatedAt: string | null;
+  lastSeenAt: string | null;
+};
+
+/** One cancelled customer, enriched with their win-back comp + outcome. */
+export type CancelledCustomerRow = {
+  lsSubscriptionId: string;
+  emailMasked: string | null;
+  planName: string | null;
+  /** When the subscription ended (ends_at), falling back to created_at. */
+  cancelledAt: string;
+  reason: string | null;
+  reasonLabel: string | null;
+  wouldReturn: string | null;
+  /** The auto win-back comp, or null if none has been issued yet. */
+  comp: CompTracking | null;
+  /** True when the user has a live PAID subscription again (not the comp). */
+  reactivated: boolean;
+  /** The win: we comped them AND they came back to a paying plan. */
+  wonBackViaComp: boolean;
+};
+
+/** Aggregate cancellation + win-back metrics for the dashboard header. */
+export type CancellationMetrics = {
+  totalCancelled: number;
+  distinctCustomers: number;
+  compsGranted: number;
+  compsPending: number;
+  compsActivated: number;
+  /** compsActivated / compsGranted (0..1). */
+  compActivationRate: number;
+  reactivations: number;
+  /** reactivations / distinctCustomers (0..1). */
+  reactivationRate: number;
+  wonBackViaComp: number;
+  /** wonBackViaComp / compsGranted (0..1) - the headline win-back conversion. */
+  winBackConversionRate: number;
+  /** Comps expiring soon, not yet reactivated = the reach-out list. */
+  expiring7: number;
+  expiring30: number;
+  /** Comp lapsed without a return = lost. */
+  expiredNoReturn: number;
+  avgDaysIn: number | null;
+  avgDaysLeft: number | null;
+  funnel: { cancelled: number; compSent: number; compActivated: number; wonBack: number };
+};
+
+export type CancellationDashboard = {
+  rows: CancelledCustomerRow[];
+  metrics: CancellationMetrics;
+};
+
+function emptyMetrics(): CancellationMetrics {
+  return {
+    totalCancelled: 0,
+    distinctCustomers: 0,
+    compsGranted: 0,
+    compsPending: 0,
+    compsActivated: 0,
+    compActivationRate: 0,
+    reactivations: 0,
+    reactivationRate: 0,
+    wonBackViaComp: 0,
+    winBackConversionRate: 0,
+    expiring7: 0,
+    expiring30: 0,
+    expiredNoReturn: 0,
+    avgDaysIn: null,
+    avgDaysLeft: null,
+    funnel: { cancelled: 0, compSent: 0, compActivated: 0, wonBack: 0 },
+  };
+}
+
+/**
+ * The cancellation + win-back tracking dashboard. Reads every real cancelled
+ * subscription (excluding our own `comp:` sentinel rows), joins each customer to
+ * their win-back comp (reusing loadComps() so the day/expiry/state/activation
+ * math stays identical to the admin Comps page) and their newest cancel reason,
+ * detects genuine reactivations (a live PAID sub, not the free comp), and rolls
+ * the lot up into per-customer metrics. Service role only.
+ */
+export async function loadCancellationDashboard(limit = 300): Promise<CancellationDashboard> {
+  const supabase = createAdminClient();
+  const now = Date.now();
+
+  const { data: rows } = await supabase
+    .from("subscriptions")
+    .select("ls_subscription_id,user_id,plan_name,created_at,ends_at")
+    .eq("status", "cancelled")
+    .not("ls_subscription_id", "like", "comp:%")
+    .order("ends_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  const list = rows ?? [];
+  if (list.length === 0) return { rows: [], metrics: emptyMetrics() };
+
+  const userIds = Array.from(new Set(list.map((r) => str(r.user_id)).filter(Boolean))) as string[];
+
+  // Comp details reused from loadComps() (indexed by user, newest comp wins).
+  const compByUser = new Map<string, CompRow>();
+  const compsResult = await loadComps(now);
+  for (const c of compsResult?.rows ?? []) {
+    const uid = c.userId;
+    if (!uid) continue;
+    const existing = compByUser.get(uid);
+    if (!existing) {
+      compByUser.set(uid, c);
+      continue;
+    }
+    const a = c.issuedAt ? new Date(c.issuedAt).getTime() : 0;
+    const b = existing.issuedAt ? new Date(existing.issuedAt).getTime() : 0;
+    if (a > b) compByUser.set(uid, c);
+  }
+
+  const emailByUser = new Map<string, string | null>();
+  const reasonByUser = new Map<string, { reason: string | null; wouldReturn: string | null }>();
+  const reactivatedUsers = new Set<string>();
+
+  if (userIds.length > 0) {
+    const [profilesRes, reasonsRes, liveRes] = await Promise.all([
+      supabase.from("profiles").select("id,email").in("id", userIds),
+      supabase
+        .from("subscription_cancel_reasons")
+        .select("user_id,reason,would_return,created_at")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("subscriptions")
+        .select("user_id,status,ls_subscription_id")
+        .in("user_id", userIds)
+        .in("status", LIVE_STATUSES),
+    ]);
+    for (const p of profilesRes.data ?? []) {
+      const id = str(p.id);
+      if (id) emailByUser.set(id, str(p.email));
+    }
+    // Newest-first: keep the first reason we see per user.
+    for (const rr of reasonsRes.data ?? []) {
+      const id = str(rr.user_id);
+      if (!id || reasonByUser.has(id)) continue;
+      reasonByUser.set(id, { reason: str(rr.reason), wouldReturn: str(rr.would_return) });
+    }
+    // A live PAID subscription = a genuine reactivation (the comp's own live row
+    // has a `comp:` sentinel and must not count as "came back").
+    for (const s of liveRes.data ?? []) {
+      const id = str(s.user_id);
+      const lsId = str(s.ls_subscription_id) ?? "";
+      if (id && !lsId.startsWith("comp:")) reactivatedUsers.add(id);
+    }
+  }
+
+  const enriched = list.map((r) => {
+    const userId = str(r.user_id);
+    const comp = userId ? compByUser.get(userId) ?? null : null;
+    const reactivated = userId ? reactivatedUsers.has(userId) : false;
+    const reasonInfo = userId ? reasonByUser.get(userId) ?? null : null;
+    const compTracking: CompTracking | null = comp
+      ? {
+          code: comp.discountCode,
+          months: comp.months,
+          issuedAt: comp.issuedAt,
+          expiresAt: comp.expiresAt,
+          daysIn: comp.issuedAt
+            ? Math.max(0, Math.floor((now - new Date(comp.issuedAt).getTime()) / DAY_MS))
+            : null,
+          daysLeft: comp.daysRemaining,
+          state: comp.state,
+          activated: comp.activatedAt != null,
+          activatedAt: comp.activatedAt,
+          lastSeenAt: comp.lastSeenAt,
+        }
+      : null;
+    const row: CancelledCustomerRow = {
+      lsSubscriptionId: str(r.ls_subscription_id) ?? "",
+      emailMasked: userId ? maskEmail(emailByUser.get(userId) ?? null) : null,
+      planName: str(r.plan_name),
+      cancelledAt: str(r.ends_at) ?? str(r.created_at) ?? "",
+      reason: reasonInfo?.reason ?? null,
+      reasonLabel: reasonInfo?.reason ? reasonLabel(reasonInfo.reason) : null,
+      wouldReturn: reasonInfo?.wouldReturn ?? null,
+      comp: compTracking,
+      reactivated,
+      wonBackViaComp: reactivated && compTracking != null,
+    };
+    return { userId, row };
+  });
+
+  // Sort: wins first, then reactivated, then at-risk (expiring soon), then
+  // pending (no comp yet), then everything else.
+  const rank = (row: CancelledCustomerRow): number => {
+    if (row.wonBackViaComp) return 0;
+    if (row.reactivated) return 1;
+    if (row.comp && (row.comp.state === "expiring-7" || row.comp.state === "expiring-30")) return 2;
+    if (!row.comp) return 3;
+    return 4;
+  };
+  enriched.sort((a, b) => rank(a.row) - rank(b.row));
+
+  return {
+    rows: enriched.map((e) => e.row),
+    metrics: computeCancellationMetrics(enriched),
+  };
+}
+
+/**
+ * Rolls the enriched rows up into dashboard metrics. Customer-level stats (comps,
+ * activation, reactivation) are counted per distinct user so a customer with two
+ * cancelled subscriptions is not double-counted; totalCancelled stays a raw row
+ * count so it reconciles with the Overview "Cancelled" tile.
+ */
+function computeCancellationMetrics(
+  enriched: { userId: string | null; row: CancelledCustomerRow }[],
+): CancellationMetrics {
+  const totalCancelled = enriched.length;
+
+  // Collapse to one entry per user (first seen = highest-ranked after sort).
+  const byUser = new Map<string, CancelledCustomerRow>();
+  let anonSeq = 0;
+  for (const e of enriched) {
+    const key = e.userId ?? `anon:${anonSeq++}`;
+    if (!byUser.has(key)) byUser.set(key, e.row);
+  }
+  const users = [...byUser.values()];
+
+  const distinctCustomers = users.length;
+  const withComp = users.filter((u) => u.comp);
+  const compsGranted = withComp.length;
+  const compsActivated = withComp.filter((u) => u.comp?.activated).length;
+  const reactivations = users.filter((u) => u.reactivated).length;
+  const wonBackViaComp = users.filter((u) => u.wonBackViaComp).length;
+  const compsPending = users.filter((u) => !u.comp && !u.reactivated).length;
+  const expiring7 = users.filter((u) => u.comp?.state === "expiring-7" && !u.reactivated).length;
+  const expiring30 = users.filter((u) => u.comp?.state === "expiring-30" && !u.reactivated).length;
+  const expiredNoReturn = users.filter((u) => u.comp?.state === "expired" && !u.reactivated).length;
+
+  const daysInVals = withComp
+    .map((u) => u.comp?.daysIn)
+    .filter((v): v is number => typeof v === "number");
+  const daysLeftVals = withComp
+    .map((u) => u.comp?.daysLeft)
+    .filter((v): v is number => typeof v === "number");
+  const avg = (vals: number[]): number | null =>
+    vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+  const rate = (n: number, d: number): number => (d > 0 ? n / d : 0);
+
+  return {
+    totalCancelled,
+    distinctCustomers,
+    compsGranted,
+    compsPending,
+    compsActivated,
+    compActivationRate: rate(compsActivated, compsGranted),
+    reactivations,
+    reactivationRate: rate(reactivations, distinctCustomers),
+    wonBackViaComp,
+    winBackConversionRate: rate(wonBackViaComp, compsGranted),
+    expiring7,
+    expiring30,
+    expiredNoReturn,
+    avgDaysIn: avg(daysInVals),
+    avgDaysLeft: avg(daysLeftVals),
+    funnel: {
+      cancelled: distinctCustomers,
+      compSent: compsGranted,
+      compActivated: compsActivated,
+      wonBack: wonBackViaComp,
+    },
+  };
 }
 
 /**
