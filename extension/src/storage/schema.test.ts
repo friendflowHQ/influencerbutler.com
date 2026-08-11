@@ -33,6 +33,19 @@ describe("migrate", () => {
     expect(out.settings.creatorMode).toBe("both");
   });
 
+  it("backfills the storeOverlay tool flag onto v8 state", () => {
+    // A v8 store predates the brand-store overlay: no storeOverlay tool flag.
+    const v8 = {
+      schemaVersion: 8,
+      settings: structuredClone(DEFAULTS.settings),
+    } as unknown as Partial<StorageShape>;
+    delete (v8.settings as { tools: Record<string, unknown> }).tools.storeOverlay;
+
+    const out = migrate(v8);
+    expect(out.schemaVersion).toBe(9);
+    expect(out.settings.tools.storeOverlay).toBe(true);
+  });
+
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {
     const partial = {
       schemaVersion: 6,

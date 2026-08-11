@@ -2,6 +2,7 @@ export type PageType =
   | "product"
   | "order-history"
   | "storefront"
+  | "brand-store"
   | "creator-upload"
   | "campaign-grid"
   | "search"
@@ -20,6 +21,9 @@ export function detectPageType(url: string): PageType {
     return "order-history";
   }
   if (path.startsWith("/shop/")) return "storefront";
+  // A brand's own storefront (the React store builder): /stores/<Brand>/page/<id>.
+  // Distinct from "storefront", which is the creator's own /shop/ page.
+  if (/^\/stores\/(?:.+\/)?page\//.test(path)) return "brand-store";
   // The Creator Hub "Edit Video" page, where products are tagged before submit.
   if (/^\/creatorhub\/video\//.test(path)) return "creator-upload";
   // The Creator Connections campaign browse grid, where Campaign Radar highlights

@@ -28,7 +28,13 @@ export type SelectorId =
   | "searchTilePrice"
   | "searchTileImage"
   | "searchTileLink"
-  | "searchTileSponsored";
+  | "searchTileSponsored"
+  | "storeGrid"
+  | "storeGridTile"
+  | "storeTileLink"
+  | "storeTileTitle"
+  | "storeTileImage"
+  | "storeTileInfo";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -166,6 +172,16 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[data-component-type='sp-sponsored-result']",
     "a[aria-label='View Sponsored information']",
   ],
+  // Brand storefront (/stores/<Brand>/page/<id>): the React store builder.
+  // Class names are hashed CSS modules, so only data-testid is stable.
+  storeGrid: ['[data-testid="product-grid-container"]'],
+  storeGridTile: ['li[data-testid="product-grid-item"]'],
+  // Per-tile (queried within a tile): the overlay anchor and any quick-look
+  // anchor both point at the same /dp/ URL, so first match wins.
+  storeTileLink: ["a[href*='/dp/']"],
+  storeTileTitle: ['[data-testid="product-grid-title"]'],
+  storeTileImage: ['[data-testid="grid-item-image"] img', "img"],
+  storeTileInfo: ['[data-testid="grid-item-info"]'],
 };
 
 type Miss = { id: string; count: number };

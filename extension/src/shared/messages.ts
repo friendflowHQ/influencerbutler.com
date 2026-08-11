@@ -44,6 +44,7 @@ export type PageStatus = {
     | "product"
     | "order-history"
     | "storefront"
+    | "brand-store"
     | "creator-upload"
     | "campaign-grid"
     | "search"

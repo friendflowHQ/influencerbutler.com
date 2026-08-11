@@ -236,6 +236,19 @@ export interface Dict {
   tileInfluencer: (n: number) => string;
   searchOverlayActive: string;
 
+  // Brand-store overlay (/stores/ pages)
+  toolStoreOverlay: string;
+  sumStoreOverlay: string;
+  storeOverlayActive: string;
+  storeCount: (n: number) => string;
+  storeCandidates: (n: number) => string;
+  storeCandidatesOnly: string;
+  storeEnriching: (done: number, total: number) => string;
+  storeEnrichPaused: string;
+  tileVideos: (n: number) => string;
+  tileHeroSlot: string;
+  tileNoCarousel: string;
+
   // Earnings overlay (storefront/Curations badges + breakdown popup)
   sumEarningsOverlay: string;
   toolEarningsOverlay: string;
@@ -333,6 +346,9 @@ export interface Dict {
   sfScanFailed: string;
   sfStopped: string;
   sfDone: (items: number, pages: number, capped: boolean) => string;
+  sfCoverage: (items: number, reported: number) => string;
+  sfStoppedEarly: (reason: string) => string;
+  sfDroppedCards: (n: number) => string;
   sfLabelVideos: string;
   sfLabelPhotos: string;
   sfLabelIdeaLists: string;
@@ -774,6 +790,18 @@ const en: Dict = {
   tileInfluencer: (n) => `${n} infl. videos`,
   searchOverlayActive: "Search overlay is active.",
 
+  toolStoreOverlay: "Brand store overlay",
+  sumStoreOverlay: "Brand store overlay",
+  storeOverlayActive: "Brand store overlay is active.",
+  storeCount: (n) => `${n} products scored`,
+  storeCandidates: (n) => `${n} green-boxed`,
+  storeCandidatesOnly: "Best candidates only",
+  storeEnriching: (done, total) => `Checking product pages ${done} of ${total}...`,
+  storeEnrichPaused: "Amazon paused the checks. Reload the page later to finish.",
+  tileVideos: (n) => `${n} videos`,
+  tileHeroSlot: "Video slot",
+  tileNoCarousel: "No carousel",
+
   sumEarningsOverlay: "Earnings overlay",
   toolEarningsOverlay: "Earnings overlay (storefront badges)",
   earnBadgeTitle: "What you have earned on this post. Click for the full breakdown.",
@@ -877,7 +905,8 @@ const en: Dict = {
   sfRescan: "Rescan",
   sfScanningFeed: "Scanning the feed...",
   sfScanningProgress: (items, pages) => `Scanning the feed... ${items} items across ${pages} pages`,
-  sfOpeningPhotos: (done, total) => `Opening photos and lists... ${done} of ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Opening photos and lists (videos already scanned from the feed)... ${done} of ${total}`,
   sfOpeningProducts: (done, total) => `Opening products... ${done} of ${total}`,
   sfEtaMinLeft: (min) => ` (about ${min} min left)`,
   sfCheckedFirst: (cap) => `Checked the first ${cap} products (storefront has more).`,
@@ -885,6 +914,11 @@ const en: Dict = {
   sfStopped: "Stopped.",
   sfDone: (items, pages, capped) =>
     `Done: ${items} items across ${pages} pages${capped ? " (feed capped)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `Scanned ${items} items; the storefront reports about ${reported} posts.`,
+  sfStoppedEarly: (reason) =>
+    `The feed stopped early (${reason}), so some content may be missing. Rescan to retry.`,
+  sfDroppedCards: (n) => `${n} feed cards had an unrecognized type and were skipped.`,
   sfLabelVideos: "videos",
   sfLabelPhotos: "photos",
   sfLabelIdeaLists: "idea lists",
@@ -1336,6 +1370,18 @@ const es: Dict = {
   tileInfluencer: (n) => `${n} videos de infl.`,
   searchOverlayActive: "El overlay de búsqueda está activo.",
 
+  toolStoreOverlay: "Overlay de tienda de marca",
+  sumStoreOverlay: "Overlay de tienda de marca",
+  storeOverlayActive: "El overlay de tienda de marca está activo.",
+  storeCount: (n) => `${n} productos puntuados`,
+  storeCandidates: (n) => `${n} en recuadro verde`,
+  storeCandidatesOnly: "Solo los mejores candidatos",
+  storeEnriching: (done, total) => `Revisando páginas de producto ${done} de ${total}...`,
+  storeEnrichPaused: "Amazon pausó las revisiones. Recarga la página más tarde para terminar.",
+  tileVideos: (n) => `${n} videos`,
+  tileHeroSlot: "Hueco de video",
+  tileNoCarousel: "Sin carrusel",
+
   sumEarningsOverlay: "Ganancias en tienda",
   toolEarningsOverlay: "Ganancias en tienda (insignias en el storefront)",
   earnBadgeTitle: "Lo que has ganado con esta publicación. Haz clic para ver el desglose completo.",
@@ -1439,7 +1485,8 @@ const es: Dict = {
   sfRescan: "Volver a escanear",
   sfScanningFeed: "Escaneando el feed...",
   sfScanningProgress: (items, pages) => `Escaneando el feed... ${items} elementos en ${pages} páginas`,
-  sfOpeningPhotos: (done, total) => `Abriendo fotos y listas... ${done} de ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Abriendo fotos y listas (los videos ya se escanearon desde el feed)... ${done} de ${total}`,
   sfOpeningProducts: (done, total) => `Abriendo productos... ${done} de ${total}`,
   sfEtaMinLeft: (min) => ` (unos ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Revisados los primeros ${cap} productos (el storefront tiene más).`,
@@ -1447,6 +1494,11 @@ const es: Dict = {
   sfStopped: "Detenido.",
   sfDone: (items, pages, capped) =>
     `Listo: ${items} elementos en ${pages} páginas${capped ? " (feed limitado)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `Escaneados ${items} elementos; el storefront indica unas ${reported} publicaciones.`,
+  sfStoppedEarly: (reason) =>
+    `El feed se detuvo antes de tiempo (${reason}), así que puede faltar contenido. Vuelve a escanear para reintentar.`,
+  sfDroppedCards: (n) => `${n} tarjetas del feed tenían un tipo no reconocido y se omitieron.`,
   sfLabelVideos: "videos",
   sfLabelPhotos: "fotos",
   sfLabelIdeaLists: "listas de ideas",
@@ -1898,6 +1950,18 @@ const fr: Dict = {
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
   searchOverlayActive: "L'overlay de recherche est actif.",
 
+  toolStoreOverlay: "Overlay de boutique de marque",
+  sumStoreOverlay: "Overlay de boutique de marque",
+  storeOverlayActive: "L'overlay de boutique de marque est actif.",
+  storeCount: (n) => `${n} produits notés`,
+  storeCandidates: (n) => `${n} encadrés en vert`,
+  storeCandidatesOnly: "Meilleurs candidats seulement",
+  storeEnriching: (done, total) => `Vérification des pages produit ${done} sur ${total}...`,
+  storeEnrichPaused: "Amazon a suspendu les vérifications. Rechargez la page plus tard pour terminer.",
+  tileVideos: (n) => `${n} vidéos`,
+  tileHeroSlot: "Emplacement vidéo",
+  tileNoCarousel: "Pas de carrousel",
+
   sumEarningsOverlay: "Gains en boutique",
   toolEarningsOverlay: "Gains en boutique (badges sur le storefront)",
   earnBadgeTitle: "Ce que vous avez gagné sur cette publication. Cliquez pour le détail complet.",
@@ -2001,7 +2065,8 @@ const fr: Dict = {
   sfRescan: "Réanalyser",
   sfScanningFeed: "Analyse du flux...",
   sfScanningProgress: (items, pages) => `Analyse du flux... ${items} éléments sur ${pages} pages`,
-  sfOpeningPhotos: (done, total) => `Ouverture des photos et listes... ${done} sur ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Ouverture des photos et listes (vidéos déjà analysées via le flux)... ${done} sur ${total}`,
   sfOpeningProducts: (done, total) => `Ouverture des produits... ${done} sur ${total}`,
   sfEtaMinLeft: (min) => ` (environ ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Les ${cap} premiers produits vérifiés (le storefront en a plus).`,
@@ -2009,6 +2074,11 @@ const fr: Dict = {
   sfStopped: "Arrêté.",
   sfDone: (items, pages, capped) =>
     `Terminé: ${items} éléments sur ${pages} pages${capped ? " (flux limité)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `${items} éléments analysés; le storefront indique environ ${reported} publications.`,
+  sfStoppedEarly: (reason) =>
+    `Le flux s'est arrêté prématurément (${reason}), du contenu peut donc manquer. Relancez l'analyse pour réessayer.`,
+  sfDroppedCards: (n) => `${n} cartes du flux avaient un type non reconnu et ont été ignorées.`,
   sfLabelVideos: "vidéos",
   sfLabelPhotos: "photos",
   sfLabelIdeaLists: "listes d'idées",

@@ -358,6 +358,7 @@ async function renderPageStatus(): Promise<void> {
       "creator-upload": t().uploadHelperReady,
       "campaign-grid": t().campaignRadarActive,
       search: t().searchOverlayActive,
+      "brand-store": t().storeOverlayActive,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
       list.hidden = false;
@@ -455,6 +456,7 @@ async function renderSettings(): Promise<void> {
     "storefront",
     "ordersButler",
     "searchOverlay",
+    "storeOverlay",
     "campaignMatcher",
     "campaignRadar",
     "earningsOverlay",

@@ -59,6 +59,7 @@ export type Settings = {
     storefront: boolean;
     ordersButler: boolean;
     searchOverlay: boolean;
+    storeOverlay: boolean;
     campaignMatcher: boolean;
     campaignRadar: boolean;
     earningsOverlay: boolean;
@@ -225,7 +226,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -257,6 +258,7 @@ export const DEFAULTS: StorageShape = {
       storefront: true,
       ordersButler: true,
       searchOverlay: true,
+      storeOverlay: true,
       campaignMatcher: true,
       campaignRadar: true,
       earningsOverlay: true,
@@ -301,9 +303,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // thresholds plus the campaignRadar tool flag; v6 -> v7 added
   // settings.creatorMode (defaults to "both", so existing users stay
   // unfiltered until the app reports their channel); v7 -> v8 added
-  // settings.linkButler (smart-routing off, no pixels). Older stored state
-  // simply gains its defaults untouched (an existing user's price history
-  // starts empty).
+  // settings.linkButler (smart-routing off, no pixels); v8 -> v9 added the
+  // storeOverlay tool flag (brand-store research overlay, on by default).
+  // Older stored state simply gains its defaults untouched (an existing
+  // user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -344,6 +347,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 8,
+    schemaVersion: 9,
   };
 }

@@ -28,6 +28,7 @@ import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
+import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
@@ -272,6 +273,15 @@ async function runForPage(): Promise<void> {
       if (settings.tools.searchOverlay) {
         void initSearchOverlay(settings);
         lastStatus.toolSummaries.push({ label: t().sumSearchOverlay, value: t().ready });
+      }
+    });
+  } else if (pageType === "brand-store") {
+    // Research overlay on a brand's own storefront. Channel-neutral, like the
+    // search overlay: it scores products, it does not post anywhere.
+    guard("store-overlay", () => {
+      if (settings.tools.storeOverlay) {
+        void initStoreOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumStoreOverlay, value: t().ready });
       }
     });
   } else if (pageType === "campaign-grid") {
