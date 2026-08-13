@@ -153,6 +153,9 @@ export async function GET(request: Request) {
     // present when the pixel is live and unblocked; omit otherwise.
     const fbp = cookieStore.get("_fbp")?.value;
     const fbc = cookieStore.get("_fbc")?.value;
+    // Advertising consent at checkout time. The webhook fires the CAPI Purchase
+    // only when this flag is present, since it has no visitor cookie of its own.
+    const metaConsent = cookieStore.get("ib_ads_consent")?.value === "1";
 
     const checkoutData: Record<string, unknown> = {
       custom: {
@@ -160,6 +163,7 @@ export async function GET(request: Request) {
         // Capture the intended affiliate even when LS can't be credited yet
         // (pre-activation gap). order_created persists these onto the order.
         ...affiliateCaptureCustom(resolved.intendedAffiliate),
+        ...(metaConsent ? { meta_consent: "1" } : {}),
         ...(fbp ? { fbp } : {}),
         ...(fbc ? { fbc } : {}),
       },

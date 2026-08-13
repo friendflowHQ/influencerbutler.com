@@ -19,7 +19,15 @@
 
   var GA_ID = "G-S1TC1QLYNN";
   var STORAGE_KEY = "ibConsent";
-  var CONSENT_VERSION = 1;
+  // Bumped 1 -> 2 when the Meta Pixel was added: "Accept all" now also covers
+  // advertising measurement, so everyone re-consents against the new copy.
+  var CONSENT_VERSION = 2;
+  // First-party cookie mirror of the analytics/advertising choice, so the
+  // SERVER (checkout routes, trial tracker, Meta Conversions API) can gate on
+  // the same consent the browser pixel uses. localStorage is not sent to the
+  // server; this cookie is. Only ever holds a boolean flag, no identifiers.
+  var ADS_COOKIE = "ib_ads_consent";
+  var ADS_COOKIE_MAX_AGE = 60 * 60 * 24 * 400; // ~13 months, matches GA4.
 
   // Stand up dataLayer + gtag immediately so any consent calls below
   // queue correctly even before gtag.js finishes loading.
@@ -76,14 +84,37 @@
     } catch (_) { /* private mode / quota - fail silently */ }
   }
 
+  function writeAdsCookie(granted) {
+    try {
+      var secure = location.protocol === "https:" ? "; Secure" : "";
+      if (granted) {
+        document.cookie =
+          ADS_COOKIE + "=1; Max-Age=" + ADS_COOKIE_MAX_AGE + "; Path=/; SameSite=Lax" + secure;
+      } else {
+        // Expire immediately.
+        document.cookie = ADS_COOKIE + "=; Max-Age=0; Path=/; SameSite=Lax" + secure;
+      }
+    } catch (_) { /* fail silently */ }
+  }
+
   function applyChoice(analytics) {
     gtag("consent", "update", {
       analytics_storage: analytics ? "granted" : "denied",
-      // We never set advertising cookies; keep these denied always.
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      ad_personalization: "denied",
+      // "Accept all" now also covers advertising (the Meta Pixel). Reject and
+      // GPC keep everything denied.
+      ad_storage: analytics ? "granted" : "denied",
+      ad_user_data: analytics ? "granted" : "denied",
+      ad_personalization: analytics ? "granted" : "denied",
     });
+    // Mirror to the server-readable cookie and notify the client-side pixel
+    // (src/components/MetaPixel.tsx + the static-page snippet) so it can load
+    // or stay dormant without a page reload.
+    writeAdsCookie(!!analytics);
+    try {
+      window.dispatchEvent(
+        new CustomEvent("ib-consent-change", { detail: { analytics: !!analytics } }),
+      );
+    } catch (_) { /* older browsers: pixel falls back to next page load */ }
   }
 
   function gpcRequested() {
@@ -108,7 +139,7 @@
     banner.innerHTML =
       '<div class="ib-consent-banner__inner">' +
         '<p class="ib-consent-banner__copy">' +
-          "We use cookies to keep the site running and, with your permission, to measure aggregate traffic. " +
+          "We use cookies to keep the site running and, with your permission, to measure aggregate traffic and support our advertising (including the Meta pixel). " +
           'See our <a href="/legal/cookies">Cookie Policy</a> and <a href="/legal/privacy">Privacy Policy</a>.' +
         "</p>" +
         '<div class="ib-consent-banner__buttons">' +
@@ -163,6 +194,7 @@
     //    no banner, defaults stay denied, no analytics cookies.
     if (gpcRequested()) {
       writeStored(false);
+      writeAdsCookie(false);
       // Defaults already denied; no consent update needed.
       return;
     }
@@ -189,6 +221,7 @@
   window.ibConsent = {
     revoke: function () {
       try { window.localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      writeAdsCookie(false);
       var existing = document.getElementById("ib-consent-banner");
       if (existing) existing.classList.remove("is-hidden");
       else injectBanner();

@@ -94,6 +94,24 @@ export function readMetaCookies(cookieHeader: string | null | undefined): {
   return result;
 }
 
+// True only when the visitor granted advertising consent on the cookie banner
+// (public/js/consent.js sets ib_ads_consent=1 on "Accept all"; Reject and GPC
+// leave it absent). Server-side Conversions API events gate on this so the
+// browser pixel and the server never disagree about consent. The webhook has
+// no visitor cookie, so checkout stamps this decision into LS custom_data
+// instead (see the checkout routes + meta_consent).
+export function hasAdsConsent(cookieHeader: string | null | undefined): boolean {
+  if (!cookieHeader) return false;
+  for (const part of cookieHeader.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() === "ib_ads_consent") {
+      return part.slice(eq + 1).trim() === "1";
+    }
+  }
+  return false;
+}
+
 function hashedOrOmit(value: string | null | undefined): string[] | undefined {
   const trimmed = value?.trim();
   return trimmed ? [sha256Normalized(trimmed)] : undefined;

@@ -21,22 +21,42 @@ const START = "<!-- meta-pixel:start -->";
 const END = "<!-- meta-pixel:end -->";
 
 function pixelBlock(id) {
+  // Consent-gated: the pixel stays dormant until the visitor grants advertising
+  // consent via the cookie banner (public/js/consent.js), which sets the
+  // ib_ads_consent cookie and dispatches "ib-consent-change". No <noscript>
+  // fallback: a no-JS visitor cannot reach the consent banner. The app-router
+  // twin is src/components/MetaPixel.tsx.
   return `${START}
   <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '${id}');
-    fbq('track', 'PageView');
+    (function(){
+      var started=false;
+      function start(){
+        if(started)return;started=true;
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window,document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init','${id}');fbq('track','PageView');
+      }
+      function consented(){
+        try{
+          if(window.ibConsent&&window.ibConsent.get){
+            var c=window.ibConsent.get();
+            if(c&&typeof c.analytics==='boolean')return c.analytics;
+          }
+          return document.cookie.split('; ').indexOf('ib_ads_consent=1')!==-1;
+        }catch(e){return false;}
+      }
+      if(consented())start();
+      window.addEventListener('ib-consent-change',function(e){
+        if(e&&e.detail&&e.detail.analytics)start();
+      });
+    })();
   </script>
-  <noscript><img height="1" width="1" style="display:none" alt=""
-    src="https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1"
-  /></noscript>
   ${END}`;
 }
 

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { captureSignupReferral } from "@/lib/referral-signup-capture";
 import { captureFriendReferral } from "@/lib/referral-program";
-import { sendSignupMetaEvent } from "@/lib/meta-capi";
+import { hasAdsConsent, sendSignupMetaEvent } from "@/lib/meta-capi";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -44,13 +44,15 @@ export async function GET(request: Request) {
         });
         // Meta Conversions API CompleteRegistration for lookalike seeding.
         // The helper's own new-account guard (1 hour) skips ordinary logins;
-        // best-effort and never throws.
-        void sendSignupMetaEvent({
-          userId: userData.user.id,
-          email: userData.user.email ?? null,
-          createdAt: userData.user.created_at ?? null,
-          headers: request.headers,
-        });
+        // gated on advertising consent, best-effort, never throws.
+        if (hasAdsConsent(request.headers.get("cookie"))) {
+          void sendSignupMetaEvent({
+            userId: userData.user.id,
+            email: userData.user.email ?? null,
+            createdAt: userData.user.created_at ?? null,
+            headers: request.headers,
+          });
+        }
       }
     }
 

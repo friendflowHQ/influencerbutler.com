@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { sendSignupMetaEvent } from "@/lib/meta-capi";
+import { hasAdsConsent, sendSignupMetaEvent } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 
@@ -20,6 +20,9 @@ export const runtime = "nodejs";
  */
 export async function POST(request: Request) {
   try {
+    if (!hasAdsConsent(request.headers.get("cookie"))) {
+      return new Response(null, { status: 204 });
+    }
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     if (data.user) {

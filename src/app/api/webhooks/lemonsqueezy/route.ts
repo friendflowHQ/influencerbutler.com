@@ -28,6 +28,7 @@ type LsWebhookPayload = {
       ref_attribution_status?: string;
       fbp?: string;
       fbc?: string;
+      meta_consent?: string;
     };
   };
   data?: {
@@ -661,6 +662,11 @@ export async function POST(request: Request) {
   // there and the Conversions API events match on email/external_id only.
   const metaFbp = getString(payload.meta?.custom_data?.fbp);
   const metaFbc = getString(payload.meta?.custom_data?.fbc);
+  // Advertising consent stamped by the checkout routes. The Conversions API
+  // Purchase/StartTrial events only fire when the buyer consented; renewals
+  // carry no custom_data (so no meta_consent) and are intentionally skipped
+  // rather than sent without a consent record.
+  const metaConsent = getString(payload.meta?.custom_data?.meta_consent) === "1";
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
@@ -743,7 +749,7 @@ export async function POST(request: Request) {
       // moment and a value-0 Purchase would pollute the seed. Renewals fire
       // again on purpose: repeat purchasers are the best seed. No ip/ua here:
       // this request comes from Lemon Squeezy's server, not the buyer.
-      if (typeof attrs.total === "number" && attrs.total > 0) {
+      if (metaConsent && typeof attrs.total === "number" && attrs.total > 0) {
         const buyerName = getString(attrs.user_name);
         const nameSplitIdx = buyerName ? buyerName.indexOf(" ") : -1;
         void sendMetaEvent({
@@ -851,16 +857,19 @@ export async function POST(request: Request) {
         // Meta Conversions API StartTrial: the $0 trial-start order fires no
         // Purchase (see order_created), so this is the trial moment's
         // audience signal. Deterministic event_id (the LS subscription id)
-        // turns webhook retries into a Meta-side dedup.
-        void sendMetaEvent({
-          eventName: "StartTrial",
-          eventId: `trial-${recordId}`,
-          userData: { email: subEmail, externalId: userId, fbp: metaFbp, fbc: metaFbc },
-          customData: {
-            content_name:
-              getString(attrs.product_name) ?? getString(attrs.variant_name) ?? "trial",
-          },
-        });
+        // turns webhook retries into a Meta-side dedup. Gated on the consent
+        // flag stamped at checkout.
+        if (metaConsent) {
+          void sendMetaEvent({
+            eventName: "StartTrial",
+            eventId: `trial-${recordId}`,
+            userData: { email: subEmail, externalId: userId, fbp: metaFbp, fbc: metaFbc },
+            customData: {
+              content_name:
+                getString(attrs.product_name) ?? getString(attrs.variant_name) ?? "trial",
+            },
+          });
+        }
       } else if (status === "active" && !isAddonSubscription) {
         // Direct Pro subscriber: paid from day one, no free trial. Anchor the
         // Pro welcome + nurture sequence (sendProEmails in the affiliate-funnel

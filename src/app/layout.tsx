@@ -49,16 +49,12 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
           rel="stylesheet"
         />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-S1TC1QLYNN');`}
-        </Script>
+        {/* Consent Mode v2 + cookie banner. Sets analytics/advertising signals
+            to "denied" by default, loads gtag.js itself, and (on "Accept all")
+            enables the Meta pixel via the ib-consent-change event + ib_ads_consent
+            cookie. Single consent source shared with the static public/*.html
+            pages, which load the same script. */}
+        <Script src="/js/consent.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
         {children}

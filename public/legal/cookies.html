@@ -48,7 +48,7 @@
         <article class="legal-page">
             <div class="container legal-container">
                 <h1>Cookie Policy</h1>
-                <p class="legal-updated">Last Updated: June 17, 2026</p>
+                <p class="legal-updated">Last Updated: August 13, 2026</p>
 
                 <div class="legal-notice">
                     <p>This Cookie Policy explains what cookies and similar browser-storage technologies the <code>influencerbutler.com</code> website uses, what data they collect, why, and how you can control them. It supplements the <a href="privacy.html">Privacy Policy</a> and forms part of our agreement with you.</p>
@@ -59,12 +59,12 @@
                 <p>A "cookie" is a small text file a website asks your browser to store. Cookies let a site remember information about your visit - for example, that you have already dismissed the consent banner - across page loads and return visits. "Similar technologies" include <code>localStorage</code>, <code>sessionStorage</code>, and pixel tags (1×1 transparent images used for analytics beacons). Throughout this policy, "cookies" includes those similar technologies.</p>
 
                 <h2>2) Our consent model: Google Consent Mode v2</h2>
-                <p>We use <strong>Google Consent Mode v2</strong> with all consent signals defaulted to <code>denied</code>. Before you make a choice on the cookie banner, Google Analytics may send anonymized "consent denied" pings that do not store identifying cookies on your device. After you choose:</p>
+                <p>We use <strong>Google Consent Mode v2</strong> with all consent signals (both analytics and advertising) defaulted to <code>denied</code>. Before you make a choice on the cookie banner, no analytics or advertising cookies are stored and the Meta pixel does not load; Google Analytics may send anonymized "consent denied" pings that do not store identifying cookies on your device. After you choose:</p>
                 <ul>
-                    <li><strong>Accept all</strong>: <code>analytics_storage</code> is set to <code>granted</code>; the standard GA4 cookies described below are set; aggregate analytics flow.</li>
-                    <li><strong>Reject non-essential</strong>: the default-denied state persists; no analytics cookies are written. You can keep using the website with no loss of functionality.</li>
+                    <li><strong>Accept all</strong>: the analytics and advertising signals (<code>analytics_storage</code>, <code>ad_storage</code>, <code>ad_user_data</code>, <code>ad_personalization</code>) are set to <code>granted</code>; the GA4 cookies and the Meta Pixel cookies described below are set.</li>
+                    <li><strong>Reject non-essential</strong>: the default-denied state persists; no analytics or advertising cookies are written and the Meta pixel never loads. You can keep using the website with no loss of functionality.</li>
                 </ul>
-                <p>We never set advertising cookies. <code>ad_storage</code>, <code>ad_user_data</code>, and <code>ad_personalization</code> remain denied at all times, including when you click "Accept all."</p>
+                <p>We also honor the browser <strong>Global Privacy Control</strong> signal as a rejection. Until the Meta Pixel was added, we set no advertising cookies at all; "Accept all" now also enables the Meta Pixel for advertising measurement (see §3.3 and <a href="privacy.html">Privacy Policy §2.3</a>).</p>
 
                 <h2>3) Cookies we set</h2>
                 <h3>3.1 Strictly necessary</h3>
@@ -87,6 +87,13 @@
                             <td>cloudflare.com</td>
                             <td>Bot management and transport-layer security at the CDN edge. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's privacy policy</a>.</td>
                             <td>30 minutes (rolling).</td>
+                        </tr>
+                        <tr>
+                            <td><code>ib_ads_consent</code></td>
+                            <td>HTTP cookie</td>
+                            <td>influencerbutler.com</td>
+                            <td>Records that you chose "Accept all" so our server honors the same advertising consent as your browser (for example, before sending a purchase event to Meta). Holds only a yes flag, no identifiers. Absent unless you accept.</td>
+                            <td>Up to 13 months, or until you revoke consent.</td>
                         </tr>
                         <tr>
                             <td><code>ib_trial_ping</code></td>
@@ -129,7 +136,30 @@
                     </tbody>
                 </table>
 
-                <p>We do not use cookies for advertising, retargeting, cross-site tracking, profile-building, or AI-model training. We do not embed third-party social media trackers, Meta Pixel, TikTok Pixel, or comparable advertising trackers anywhere on the website.</p>
+                <h3>3.3 Advertising (only with your consent)</h3>
+                <p>These are set <strong>only after you click "Accept all"</strong>. If you choose "Reject non-essential" or send a Global Privacy Control signal, the Meta Pixel does not load and none of these cookies are written.</p>
+                <table class="legal-table">
+                    <thead>
+                        <tr><th>Name</th><th>Type</th><th>Set by</th><th>Purpose</th><th>Retention</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>_fbp</code></td>
+                            <td>HTTP cookie</td>
+                            <td>influencerbutler.com (Meta Pixel)</td>
+                            <td>Identifies the browser to Meta so we can measure our Facebook/Instagram ads and build lookalike audiences. See <a href="privacy.html">Privacy Policy §2.3</a>.</td>
+                            <td>90 days.</td>
+                        </tr>
+                        <tr>
+                            <td><code>_fbc</code></td>
+                            <td>HTTP cookie</td>
+                            <td>influencerbutler.com (Meta Pixel)</td>
+                            <td>Stores the Meta click identifier when you arrive from a Facebook/Instagram ad, so a later action can be attributed to that ad. Only set if you arrive with such a click.</td>
+                            <td>90 days.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>Aside from the Meta Pixel above (which runs only with your consent), we do not use cookies for retargeting, cross-site tracking, profile-building, or AI-model training, and we embed no other third-party social-media or advertising trackers (for example, no TikTok Pixel).</p>
 
                 <h2>4) Changing your choice</h2>
                 <p>You can change your cookie choice at any time using either of the following methods:</p>
