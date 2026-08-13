@@ -224,6 +224,10 @@ describe("tool schemas", () => {
     expect(tool).toBeTruthy();
     const props = (tool?.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
     expect(props.tourId.enum).toContain("deals-setup");
+    // The flagship Instagram -> Facebook-group scenario tours must be offerable.
+    expect(props.tourId.enum).toContain("instagram-goldmine-harvest");
+    expect(props.tourId.enum).toContain("group-invite-butler-setup");
+    expect(props.tourId.enum).toContain("ig-to-fb-group");
     expect(props).toHaveProperty("steps");
   });
 
@@ -244,6 +248,16 @@ describe("guided walkthroughs", () => {
     expect(s).toContain("[api-integrations]");
     expect(s).toContain("[daily-deals]");
     expect(s).not.toContain("\u2014");
+  });
+
+  it("tells the model to offer the walkthrough choice at the end of how-to answers", () => {
+    const s = buildInstructions().toLowerCase();
+    expect(s).toContain("walk you through");
+    expect(s).toContain("show you each step");
+    expect(s).toContain("fast-track");
+    // The two overlapping walkthrough blocks were consolidated into one.
+    expect(buildInstructions().match(/Guided walkthroughs/g)?.length ?? 0).toBe(1);
+    expect(buildInstructions()).not.toContain("\nWalkthroughs:\n");
   });
 
   it("executor gates start_walkthrough to the desktop surface", async () => {
