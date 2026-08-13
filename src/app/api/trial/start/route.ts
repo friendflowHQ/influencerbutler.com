@@ -85,7 +85,14 @@ export async function GET(request: Request) {
   const details = { ...collectDetails(request), os: resolvedOs };
   const geo = readGeo(h);
   const source = requestUrl.searchParams.get("src");
-  after(() => sendNotification(details));
+  // The per-click notification email is off by default: these clicks are now
+  // rolled up into the twice-daily digest (src/app/api/cron/daily-digest).
+  // Set TRIAL_CLICK_REALTIME_EMAILS=1 to restore the old one-email-per-click
+  // behaviour. The activity log below always runs so the digest (and the
+  // public social-proof widget) still see every click.
+  if (process.env.TRIAL_CLICK_REALTIME_EMAILS === "1") {
+    after(() => sendNotification(details));
+  }
   // Record the click for the public recent-activity widget (best-effort).
   after(() => logTrialClickActivity({ geo, source }));
 

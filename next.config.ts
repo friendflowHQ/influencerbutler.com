@@ -17,6 +17,10 @@ const connectSrc = [
   "https://www.google-analytics.com",
   "https://*.analytics.google.com",
   "https://*.googletagmanager.com",
+  // The AI concierge voice call POSTs its WebRTC SDP offer straight from the
+  // browser to OpenAI (/v1/realtime/calls) with the minted ephemeral token.
+  // Without this entry the CSP rejects that fetch and voice can never connect.
+  "https://api.openai.com",
 ];
 const imgSrc = [
   "'self'",

@@ -35,6 +35,7 @@ import {
   searchHelp,
   executeAgentTool,
   extractReplyImages,
+  sanitizeWalkthroughArgs,
   toChatTools,
   toRealtimeTools,
   AGENT_TOOLS,
@@ -138,31 +139,26 @@ describe("executeAgentTool", () => {
     expect(r.error).toMatch(/unknown/i);
   });
 
-  it("start_walkthrough echoes the tourId for the desktop to launch", async () => {
-    const r = (await executeAgentTool("start_walkthrough", { tourId: "deals-guided-setup" }, null)) as {
-      started: boolean;
-      tourId: string;
-    };
-    expect(r.started).toBe(true);
-    expect(r.tourId).toBe("deals-guided-setup");
-  });
-
-  it("start_walkthrough without a tourId errors", async () => {
-    const r = (await executeAgentTool("start_walkthrough", {}, null)) as { error: string };
-    expect(r.error).toMatch(/tourId/);
-  });
-
-  it("submit_feedback reports unconfigured when the shared key is missing", async () => {
+  it("submit_feedback works without a shared key and omits the x-ib-key header", async () => {
+    // The deployed worker only enforces x-ib-key when it has FEEDBACK_SHARED_KEY
+    // set (today it does not), so the website side must not hard-require it.
     const prev = process.env.FEEDBACK_SHARED_KEY;
     delete process.env.FEEDBACK_SHARED_KEY;
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-nokey" }), { status: 200 }));
     try {
       const r = (await executeAgentTool(
         "submit_feedback",
         { type: "bug", title: "It broke", description: "Details" },
         null,
-      )) as { error: string };
-      expect(r.error).toMatch(/not configured/i);
+      )) as { ok: boolean; id: string };
+      expect(r.ok).toBe(true);
+      expect(r.id).toBe("fb-nokey");
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(init.headers as Record<string, string>).not.toHaveProperty("x-ib-key");
     } finally {
+      fetchSpy.mockRestore();
       if (prev !== undefined) process.env.FEEDBACK_SHARED_KEY = prev;
     }
   });
@@ -205,11 +201,59 @@ describe("tool schemas", () => {
     expect(toRealtimeTools()[0]).toHaveProperty("name");
   });
 
+  it("exposes start_walkthrough with curated ids + section-step fallback", () => {
+    const tool = AGENT_TOOLS.find((t) => t.name === "start_walkthrough");
+    expect(tool).toBeTruthy();
+    const props = (tool?.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
+    expect(props.tourId.enum).toContain("deals-setup");
+    expect(props).toHaveProperty("steps");
+  });
+
   it("exposes submit_feedback with the confirm-first contract", () => {
     const tool = AGENT_TOOLS.find((t) => t.name === "submit_feedback");
     expect(tool).toBeTruthy();
     expect(tool?.description).toMatch(/explicit yes/i);
     const props = (tool?.parameters as { properties: Record<string, unknown> }).properties;
     expect(Object.keys(props).sort()).toEqual(["description", "title", "type"]);
+  });
+});
+
+describe("guided walkthroughs", () => {
+  it("prompt includes the walkthrough guidance and section keys", () => {
+    const s = buildInstructions();
+    expect(s).toContain("start_walkthrough");
+    expect(s).toContain("desktop app only");
+    expect(s).toContain("[api-integrations]");
+    expect(s).toContain("[daily-deals]");
+    expect(s).not.toContain("\u2014");
+  });
+
+  it("executor gates start_walkthrough to the desktop surface", async () => {
+    const denied = (await executeAgentTool(
+      "start_walkthrough",
+      { tourId: "deals-setup" },
+      null,
+      { surface: "website" },
+    )) as { error: string };
+    expect(denied.error).toMatch(/desktop/i);
+
+    const ok = (await executeAgentTool(
+      "start_walkthrough",
+      { tourId: "deals-setup" },
+      null,
+      { surface: "desktop" },
+    )) as { ok: boolean };
+    expect(ok.ok).toBe(true);
+  });
+
+  it("sanitizeWalkthroughArgs validates tourId and steps", () => {
+    expect(sanitizeWalkthroughArgs({ tourId: " deals-setup " })).toEqual({ tourId: "deals-setup" });
+    expect(sanitizeWalkthroughArgs({ steps: [{ section: "api-integrations", title: "T", body: "B" }] }))
+      .toEqual({ steps: [{ section: "api-integrations", title: "T", body: "B" }] });
+    expect(sanitizeWalkthroughArgs({ steps: [{ section: "", title: "T", body: "B" }] })).toBeNull();
+    expect(sanitizeWalkthroughArgs({})).toBeNull();
+    const many = { steps: Array.from({ length: 20 }, (_, i) => ({ section: `s${i}`, title: "t", body: "b" })) };
+    const clamped = sanitizeWalkthroughArgs(many) as { steps: unknown[] };
+    expect(clamped.steps.length).toBeLessThanOrEqual(8);
   });
 });
