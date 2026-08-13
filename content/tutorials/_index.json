@@ -264,6 +264,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "link-butler",
+      "title": "Link Butler: branded, tracked links that open the shopping app",
+      "category": "Amazon",
+      "summary": "Turn any product link into a branded Calling Card that opens the Amazon app, then see where you posted it, how it is trending, and whether it is still healthy, all in one ledger.",
+      "order": 125,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
