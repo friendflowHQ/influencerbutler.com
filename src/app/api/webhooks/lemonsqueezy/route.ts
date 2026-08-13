@@ -8,6 +8,7 @@ import { logWebhookEvent } from "@/lib/webhook-events";
 import { lsApi } from "@/lib/lemonsqueezy";
 import { rewardReferrerForSubscription } from "@/lib/referral-program";
 import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
+import { sendMetaEvent } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,8 @@ type LsWebhookPayload = {
       ref_affiliate_user_id?: string;
       ref_affiliate_code?: string;
       ref_attribution_status?: string;
+      fbp?: string;
+      fbc?: string;
     };
   };
   data?: {
@@ -653,6 +656,11 @@ export async function POST(request: Request) {
     refAttributionStatusRaw === "live" || refAttributionStatusRaw === "pending"
       ? refAttributionStatusRaw
       : null;
+  // Meta Pixel browser identifiers stamped into checkout custom_data by the
+  // checkout routes. Renewal orders carry no custom_data, so these are null
+  // there and the Conversions API events match on email/external_id only.
+  const metaFbp = getString(payload.meta?.custom_data?.fbp);
+  const metaFbc = getString(payload.meta?.custom_data?.fbc);
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
@@ -727,6 +735,39 @@ export async function POST(request: Request) {
         planLabel:
           getString(firstItem?.variant_name) ?? getString(firstItem?.product_name),
       });
+
+      // Meta Conversions API Purchase for lookalike seeding. Deterministic
+      // event_id (the LS order id) turns LS webhook retries into a Meta-side
+      // dedup (48h window), so no DB guard or new migration is needed. $0
+      // orders (the trial-start order) are skipped: StartTrial covers that
+      // moment and a value-0 Purchase would pollute the seed. Renewals fire
+      // again on purpose: repeat purchasers are the best seed. No ip/ua here:
+      // this request comes from Lemon Squeezy's server, not the buyer.
+      if (typeof attrs.total === "number" && attrs.total > 0) {
+        const buyerName = getString(attrs.user_name);
+        const nameSplitIdx = buyerName ? buyerName.indexOf(" ") : -1;
+        void sendMetaEvent({
+          eventName: "Purchase",
+          eventId: `purchase-${recordId}`,
+          userData: {
+            email: orderEmail,
+            firstName: firstNameFrom(buyerName),
+            lastName:
+              buyerName && nameSplitIdx > 0
+                ? buyerName.slice(nameSplitIdx + 1).trim() || null
+                : null,
+            externalId: userId,
+            fbp: metaFbp,
+            fbc: metaFbc,
+          },
+          customData: {
+            value: attrs.total / 100,
+            currency: (getString(attrs.currency) ?? "USD").toUpperCase(),
+            content_name:
+              getString(firstItem?.variant_name) ?? getString(firstItem?.product_name) ?? "order",
+          },
+        });
+      }
     },
 
     // Mirror LS refunds onto orders.status so the owed-commissions report
@@ -806,6 +847,20 @@ export async function POST(request: Request) {
         if (trialDiscounts) {
           Object.assign(basePayload, trialDiscounts);
         }
+
+        // Meta Conversions API StartTrial: the $0 trial-start order fires no
+        // Purchase (see order_created), so this is the trial moment's
+        // audience signal. Deterministic event_id (the LS subscription id)
+        // turns webhook retries into a Meta-side dedup.
+        void sendMetaEvent({
+          eventName: "StartTrial",
+          eventId: `trial-${recordId}`,
+          userData: { email: subEmail, externalId: userId, fbp: metaFbp, fbc: metaFbc },
+          customData: {
+            content_name:
+              getString(attrs.product_name) ?? getString(attrs.variant_name) ?? "trial",
+          },
+        });
       } else if (status === "active" && !isAddonSubscription) {
         // Direct Pro subscriber: paid from day one, no free trial. Anchor the
         // Pro welcome + nurture sequence (sendProEmails in the affiliate-funnel

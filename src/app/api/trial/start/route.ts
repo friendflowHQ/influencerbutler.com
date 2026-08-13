@@ -1,5 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
+import { readMetaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
@@ -95,6 +97,24 @@ export async function GET(request: Request) {
   }
   // Record the click for the public recent-activity widget (best-effort).
   after(() => logTrialClickActivity({ geo, source }));
+  // Meta Conversions API Lead for lookalike seeding. Placed after the
+  // bot/prefetch/dedup guards above so it inherits their filtering and the
+  // 1-hour per-browser dedup. No email exists at this stage; ip + user agent
+  // + the _fbp cookie are the match keys. No-ops until the Meta env vars are
+  // set (src/lib/meta-capi.ts).
+  after(() =>
+    sendMetaEvent({
+      eventName: "Lead",
+      eventId: randomUUID(),
+      eventSourceUrl: h.get("referer"),
+      userData: {
+        clientIp: h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip"),
+        userAgent,
+        ...readMetaCookies(h.get("cookie")),
+      },
+      customData: { content_name: "trial_download", content_category: resolvedOs ?? "unknown" },
+    }),
+  );
 
   return redirect;
 }

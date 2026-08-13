@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { trackEvent } from "@/lib/analytics-client";
+import { trackEvent, trackMetaEvent } from "@/lib/analytics-client";
 import { TierBadge } from "@/components/TierBadge";
 import {
   DISCOUNT_PCT_FIRST,
@@ -115,6 +115,13 @@ export default function PricingCardsClient({
     // Funnel step: the visitor committed to a plan and we are about to open
     // checkout. Pairs with cta_trial_click / download_page_view upstream.
     trackEvent("checkout_start", { plan, billing });
+    // Meta Pixel pair for lookalike seeding. Random eventID: no server-side
+    // InitiateCheckout exists, but a stable shape keeps dedup possible later.
+    trackMetaEvent(
+      "InitiateCheckout",
+      { content_name: plan, content_category: billing },
+      window.crypto?.randomUUID?.(),
+    );
     try {
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
 

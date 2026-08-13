@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import MetaPixel from "@/components/MetaPixel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ gtag('config', 'G-S1TC1QLYNN');`}
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
         {children}
+        <MetaPixel />
         <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
