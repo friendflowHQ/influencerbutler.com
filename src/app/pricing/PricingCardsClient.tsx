@@ -70,7 +70,11 @@ export default function PricingCardsClient({
 }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
-  const [billing, setBilling] = useState<Interval>("monthly");
+  // Default to annual: it bills the full year up front (cash now) and annual
+  // customers churn far less. The card still shows the "/month" equivalent and
+  // the 14-day trial, so the sticker price stays friendly. Visitors can flip to
+  // monthly with one click.
+  const [billing, setBilling] = useState<Interval>("annual");
   const touchedRef = useRef(false);
 
   useEffect(() => {
