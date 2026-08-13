@@ -138,8 +138,18 @@ function renderConnected(
   );
   grid.append(linkBtn);
 
-  // Pitch this brand: only when the page named a brand. Turns the product into
-  // an outreach lead in Pitch Butler (brand + prospect deal), no browser.
+  // Generate AI photo: ask the desktop app to render a shoppable AI image for
+  // this product with its existing image engine (reusing its ASIN->image cache).
+  const photoBtn = el("button", "btn secondary");
+  photoBtn.textContent = t().generatePhoto;
+  photoBtn.addEventListener("click", () =>
+    run({ type: "photo.generate", product, style: "shoppable" }, t().generatingPhoto),
+  );
+  grid.append(photoBtn);
+
+  // Pitch this brand + Request a sample: only when the page named a brand. Both
+  // turn the product into an outreach lead in Pitch Butler (brand + deal), no
+  // browser. Request-a-sample pre-stages the deal for the free-sample template.
   if (brand && brand.trim()) {
     const pitchBtn = el("button", "btn secondary");
     pitchBtn.textContent = t().pitchThisBrand(brand.trim());
@@ -147,6 +157,13 @@ function renderConnected(
       run({ type: "pitch.add", brand: brand.trim(), product }, t().pitchingBrand),
     );
     grid.append(pitchBtn);
+
+    const sampleBtn = el("button", "btn secondary");
+    sampleBtn.textContent = t().requestSample;
+    sampleBtn.addEventListener("click", () =>
+      run({ type: "sample.request", brand: brand.trim(), product }, t().requestingSample),
+    );
+    grid.append(sampleBtn);
   }
 
   body.append(grid);

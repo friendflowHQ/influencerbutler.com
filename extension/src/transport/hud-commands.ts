@@ -68,7 +68,18 @@ export type HudCommand =
   // Turn the brand of the product being viewed into a Pitch Butler prospect.
   // The desktop resolves/creates the brand and opens a deal; product carries the
   // ASIN context so the pitch links back to what prompted it.
-  | { type: "pitch.add"; brand: string; product?: ProductRef };
+  | { type: "pitch.add"; brand: string; product?: ProductRef }
+  // "Generate AI photo": ask the desktop app to make a shoppable AI image for
+  // this ASIN using its existing multi-provider image engine (OpenAI / Fal /
+  // Ideogram). The desktop reuses its ASIN->image cache so a repeat ask returns
+  // the prior render. `style` picks the look ("shoppable" lifestyle hero,
+  // "collage" multi-shot, "thumbnail" video thumbnail); the desktop defaults it.
+  | { type: "photo.generate"; product: ProductRef; style?: "shoppable" | "collage" | "thumbnail" }
+  // "Request a sample": turn the brand of the product being viewed into a Pitch
+  // Butler deal pre-staged for a free-sample outreach (the free-sample workflow
+  // pill + the sample-request message template), so the creator can send the ask
+  // in one step. product carries the ASIN context the sample request is about.
+  | { type: "sample.request"; brand: string; product?: ProductRef };
 
 export type HudCommandResult = {
   ok: boolean;

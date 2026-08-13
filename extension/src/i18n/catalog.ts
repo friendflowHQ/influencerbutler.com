@@ -309,6 +309,17 @@ export interface Dict {
   popupAvailabilityHint: string;
   popupAvailabilityAuDenied: string;
 
+  // Last Call Butler: campaign fill meter + watch bell + alerts
+  lastCallWatch: string;
+  lastCallWatching: string;
+  lastCallFull: string;
+  lastCallFillUnknown: string;
+  lastCallFillLabel: (pct: number, filled: number, total: number) => string;
+  lastCallCampaignFallback: string;
+  lastCallNotifTitle: string;
+  lastCallNotifNearFull: (name: string, pct: number) => string;
+  lastCallNotifFilled: (name: string) => string;
+
   // Calculator panel
   breakEvenMath: string;
   noPriceForMath: string;
@@ -484,6 +495,10 @@ export interface Dict {
   addingCollab: string;
   pitchThisBrand: (brand: string) => string;
   pitchingBrand: string;
+  generatePhoto: string;
+  generatingPhoto: string;
+  requestSample: string;
+  requestingSample: string;
   pushingDeals: string;
   sendingContent: string;
   checkingCc: string;
@@ -880,6 +895,17 @@ const en: Dict = {
   popupAvailabilityAuDenied:
     "Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.",
 
+  lastCallWatch: "Have the Butler watch this campaign",
+  lastCallWatching: "Butler is watching: Last Call alert is on",
+  lastCallFull: "Full",
+  lastCallFillUnknown: "Fill unknown",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% full: ${filled}/${total}`,
+  lastCallCampaignFallback: "A campaign",
+  lastCallNotifTitle: "Last Call Butler",
+  lastCallNotifNearFull: (name, pct) =>
+    `Last Call: ${name} is ${pct}% full. Accept before it closes.`,
+  lastCallNotifFilled: (name) => `${name} just filled up.`,
+
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
   calcIntro:
@@ -1070,6 +1096,10 @@ const en: Dict = {
   addingCollab: "Adding to Collab Butler...",
   pitchThisBrand: (brand) => `Pitch ${brand}`,
   pitchingBrand: "Adding to Pitch Butler...",
+  generatePhoto: "Generate AI photo",
+  generatingPhoto: "Generating AI photo in your app...",
+  requestSample: "Request a sample",
+  requestingSample: "Setting up your sample request...",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
@@ -1472,6 +1502,17 @@ const es: Dict = {
   popupAvailabilityAuDenied:
     "Australia necesita permiso para leer amazon.com.au. Permítelo cuando Chrome lo pida y vuelve a intentarlo.",
 
+  lastCallWatch: "Que el Butler vigile esta campaña",
+  lastCallWatching: "El Butler está vigilando: alerta de Última Llamada activada",
+  lastCallFull: "Completa",
+  lastCallFillUnknown: "Ocupación desconocida",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% ocupada: ${filled}/${total}`,
+  lastCallCampaignFallback: "Una campaña",
+  lastCallNotifTitle: "Butler de Última Llamada",
+  lastCallNotifNearFull: (name, pct) =>
+    `Última Llamada: ${name} está ${pct}% ocupada. Acepta antes de que se cierre.`,
+  lastCallNotifFilled: (name) => `${name} acaba de completarse.`,
+
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
   calcIntro:
@@ -1662,6 +1703,10 @@ const es: Dict = {
   addingCollab: "Añadiendo a Collab Butler...",
   pitchThisBrand: (brand) => `Contactar a ${brand}`,
   pitchingBrand: "Añadiendo a Pitch Butler...",
+  generatePhoto: "Generar foto con IA",
+  generatingPhoto: "Generando foto con IA en tu app...",
+  requestSample: "Solicitar una muestra",
+  requestingSample: "Preparando tu solicitud de muestra...",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
@@ -2064,6 +2109,17 @@ const fr: Dict = {
   popupAvailabilityAuDenied:
     "L'Australie nécessite l'autorisation de lire amazon.com.au. Autorisez-la quand Chrome le demande, puis réessayez.",
 
+  lastCallWatch: "Demander au Butler de surveiller cette campagne",
+  lastCallWatching: "Le Butler surveille : alerte Dernier Appel activée",
+  lastCallFull: "Complète",
+  lastCallFillUnknown: "Remplissage inconnu",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% remplie : ${filled}/${total}`,
+  lastCallCampaignFallback: "Une campagne",
+  lastCallNotifTitle: "Butler Dernier Appel",
+  lastCallNotifNearFull: (name, pct) =>
+    `Dernier Appel : ${name} est remplie à ${pct}%. Acceptez avant la fermeture.`,
+  lastCallNotifFilled: (name) => `${name} vient de se remplir.`,
+
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
   calcIntro:
@@ -2254,6 +2310,10 @@ const fr: Dict = {
   addingCollab: "Ajout à Collab Butler...",
   pitchThisBrand: (brand) => `Contacter ${brand}`,
   pitchingBrand: "Ajout à Pitch Butler...",
+  generatePhoto: "Générer une photo IA",
+  generatingPhoto: "Génération d'une photo IA dans votre app...",
+  requestSample: "Demander un échantillon",
+  requestingSample: "Préparation de votre demande d'échantillon...",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",
