@@ -52,6 +52,7 @@ Une fenêtre Chrome s'ouvre, parcourt votre boutique, identifie les ASIN indispo
 ## Réglages dans la durée
 
 - **detectParentOnly**: activé, Retag Butler ne signale comme morts que les familles entières d'ASIN parents, pas les variantes enfants. Réduit les faux positifs au prix de manquer quelques vrais swaps.
+- **Taguer aussi le produit parent**: activé par défaut. Quand une correspondance est trouvée, Retag Butler tague à la fois le produit exact et sa fiche parente sur la même pièce, pour que la vignette couvre la variante précise et toute la famille. Désactivez-le si vous ne voulez taguer que la variante exacte. Ignoré sur les corrections parent-seul, où l'objectif est l'inverse.
 - **mobileLens**: utilise le moteur de similarité visuelle d'Amazon (plus lent mais plus malin pour les produits visuellement distincts comme la déco). Désactivé par défaut ; activez-le si la similarité de titre donne des matches faibles dans votre catégorie.
 - **skipRetaggedWithinDays**: 7 par défaut. Une fois une ligne re-taguée, Retag Butler ne la reconsidère pas pendant ce nombre de jours. Évite que vous tourniez en rond.
 - **Planificateur**: fixez une cadence quotidienne ou hebdo pour que Retag Butler tourne tout seul. La combo Auto + planificateur est "set-and-forget" pour les boutiques établies.

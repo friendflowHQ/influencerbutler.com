@@ -52,6 +52,7 @@ A Chrome window opens, walks your storefront, identifies unavailable ASINs, and 
 ## Tuning over time
 
 - **detectParentOnly**: when on, Retag Butler only flags entire parent-ASIN families as dead, not child variants. Reduces false positives at the cost of missing some real swaps.
+- **Also tag the parent product**: on by default. When a match is found, Retag Butler tags both the exact product and its parent listing on the same piece, so the tile covers the specific variation and the whole family. Turn it off if you want only the exact variation tagged. It's skipped on parent-only fixes, where the goal is the reverse.
 - **mobileLens**: uses Amazon's visual-similarity matcher (slower but smarter for visually-distinct products like home decor). Off by default; turn on if title-similarity is giving weak matches in your category.
 - **skipRetaggedWithinDays**: defaults to 7. Once you've retagged a row, Retag Butler won't reconsider it for that many days. Stops you from going in circles.
 - **Scheduler**: set a daily or weekly cadence so Retag Butler runs on its own. The Auto mode + scheduler combo is set-and-forget for established storefronts.
