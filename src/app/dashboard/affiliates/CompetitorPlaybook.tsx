@@ -1,18 +1,18 @@
 "use client";
 
 // Affiliate Competitor Playbook: accurate comparisons affiliates can use to
-// promote Influencer Butler against Oink, Viral Vue, and Cha-Ching Automate.
+// promote Influencer Butler against Oink, Viral Vue, Cha-Ching Automate, and Logie.
 // KEEP CURRENT: update the table/copy when we ship new butlers, and refresh
 // competitor rows weekly. See the app repo's "Keep the affiliate
 // competitor-analysis materials current" note and the weekly scheduled task.
-// Last reviewed: 2026-07-04
+// Last reviewed: 2026-08-13
 
 import Image from "next/image";
 import { useState } from "react";
 
 // Every competitor claim in this file is "as of" this date. Update it every
 // time the rows/copy are re-verified against the competitors' live sites.
-const LAST_REVIEWED = "July 12, 2026";
+const LAST_REVIEWED = "August 13, 2026";
 
 type Verdict = "yes" | "ltd" | "no" | "text";
 
@@ -22,6 +22,7 @@ type Row = {
   oink: { v: Verdict; t?: string };
   vue: { v: Verdict; t?: string };
   cha: { v: Verdict; t?: string };
+  logie: { v: Verdict; t?: string };
 };
 
 const ROWS: Row[] = [
@@ -31,13 +32,15 @@ const ROWS: Row[] = [
     oink: { v: "text", t: "Chrome extension" },
     vue: { v: "text", t: "Extension + web app" },
     cha: { v: "text", t: "Desktop app" },
+    logie: { v: "text", t: "Extension + web portal" },
   },
   {
     cap: "Entry price",
     ib: { v: "text", t: "$39/mo (14-day trial)" },
     oink: { v: "text", t: "$29.99/mo (free tier)" },
-    vue: { v: "text", t: "Free tier + paid" },
+    vue: { v: "text", t: "$39/mo (free tier)" },
     cha: { v: "text", t: "$20/mo" },
+    logie: { v: "text", t: "$0 free / $49.75+/mo" },
   },
   {
     cap: "Number of tools",
@@ -45,6 +48,7 @@ const ROWS: Row[] = [
     oink: { v: "text", t: "40+" },
     vue: { v: "text", t: "Several" },
     cha: { v: "text", t: "1 (video sync)" },
+    logie: { v: "text", t: "AI suite (credit-metered)" },
   },
   {
     cap: "Free browser extension (video counts, gaps, seal, storefront)",
@@ -52,6 +56,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "free tier" },
     vue: { v: "ltd", t: "free tier" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "free tier, score cap 60" },
   },
   {
     cap: "Auto-accept Creator Connections",
@@ -59,6 +64,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "CC scan" },
     vue: { v: "yes", t: "CC" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "CC visibility + reminders" },
   },
   {
     cap: "Automated brand outreach + follow-ups",
@@ -66,6 +72,7 @@ const ROWS: Row[] = [
     oink: { v: "yes" },
     vue: { v: "yes", t: "AI" },
     cha: { v: "no" },
+    logie: { v: "yes", t: "AI" },
   },
   {
     cap: "End-to-end deal lifecycle (outreach to board to inbox to calendar to paid)",
@@ -73,6 +80,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "tracker" },
     vue: { v: "ltd", t: "tracker" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "inbox CRM" },
   },
   {
     cap: "Unified, tagged Amazon inbox",
@@ -80,6 +88,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd" },
     vue: { v: "no" },
     cha: { v: "no" },
+    logie: { v: "yes", t: "Inbox CRM" },
   },
   {
     cap: "Content calendar / coverage matrix",
@@ -87,6 +96,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "scheduler" },
     vue: { v: "no" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "content dashboard" },
   },
   {
     cap: "Revive dead product links in old content",
@@ -94,6 +104,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd" },
     vue: { v: "yes" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "detects broken ASINs" },
   },
   {
     cap: "Re-upload deleted videos",
@@ -101,6 +112,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd" },
     vue: { v: "ltd" },
     cha: { v: "yes", t: "YouTube + 13 intl" },
+    logie: { v: "no" },
   },
   {
     cap: "Re-post photos to international storefronts",
@@ -108,6 +120,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "CA/UK/AU" },
     vue: { v: "no" },
     cha: { v: "no", t: "video only" },
+    logie: { v: "ltd", t: "Amazon CA/UK publish" },
   },
   {
     cap: "Multi-platform deal auto-posting (IG, Threads, FB, Telegram, Reddit)",
@@ -115,6 +128,15 @@ const ROWS: Row[] = [
     oink: { v: "ltd", t: "bulk FB" },
     vue: { v: "no" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "YouTube/Pinterest" },
+  },
+  {
+    cap: "AI product photo / thumbnail generation",
+    ib: { v: "no" },
+    oink: { v: "no" },
+    vue: { v: "no" },
+    cha: { v: "no" },
+    logie: { v: "yes", t: "shoppable photos + thumbnails" },
   },
   {
     cap: "Product research database",
@@ -122,6 +144,7 @@ const ROWS: Row[] = [
     oink: { v: "ltd" },
     vue: { v: "yes", t: "30M+ products" },
     cha: { v: "no" },
+    logie: { v: "ltd", t: "X-Ray search" },
   },
   {
     cap: "Lifetime earnings per product",
@@ -129,6 +152,7 @@ const ROWS: Row[] = [
     oink: { v: "yes" },
     vue: { v: "yes" },
     cha: { v: "no" },
+    logie: { v: "ltd" },
   },
   {
     cap: "Instagram DMs / Close Friends / auto-like",
@@ -136,6 +160,7 @@ const ROWS: Row[] = [
     oink: { v: "no" },
     vue: { v: "no" },
     cha: { v: "no" },
+    logie: { v: "no" },
   },
 ];
 
@@ -175,6 +200,11 @@ const MASCOTS: { emoji: string; name: string; body: string; butler?: boolean }[]
     name: "Cha-Ching Automate",
     body: "The one-trick specialist. Does one job (cross-posting your videos to YouTube and 13+ international Amazon marketplaces) and nothing else.",
   },
+  {
+    emoji: "\u{1F3A8}",
+    name: "Logie",
+    body: "The AI photo studio. Dazzling shoppable images and thumbnails, but every action is metered by credits and your score is capped by tier, and you still run the storefront and the deals yourself.",
+  },
 ];
 
 type Competitor = {
@@ -192,7 +222,7 @@ const COMPETITORS: Competitor[] = [
     name: "Oink",
     tag: "Chrome extension · ~$29.99/mo",
     pitch:
-      "40+ in-browser Amazon tools (cross-checks, earnings tracker, collaboration tracker, brand messaging, auto-scan, bulk Facebook posting, Canada/UK/Australia cross-posting). Free tier and a mature tool set.",
+      "40+ in-browser Amazon tools (cross-checks, earnings tracker, collaboration tracker, brand messaging, auto-scan, bulk Facebook posting, Canada/UK/Australia cross-posting), plus an 'Agent Oink' AI assistant on Pro. Free tier and a mature tool set.",
     credit:
       "Oink is a genuinely capable extension with a free tier and a lower entry price. If someone only lives inside Amazon in their browser, it does a lot.",
     win:
@@ -206,7 +236,7 @@ const COMPETITORS: Competitor[] = [
   },
   {
     name: "Viral Vue",
-    tag: "Extension + web app · free tier + paid",
+    tag: "Extension + web app · $39/mo, free tier",
     pitch:
       "Data-first product research on 30M+ products, plus Creator Connection auto-accept, AI brand-deal outreach, storefront optimizer, profits dashboard, and revive-dead-product tools. “Stop guessing what converts.”",
     credit:
@@ -235,6 +265,22 @@ const COMPETITORS: Competitor[] = [
       "Why rent a one-trick tool when the butler already includes it?",
     ],
     oneliner: "\u{1F3B0} Cha-Ching is one specialist. \u{1F933} Butler is the whole household staff.",
+  },
+  {
+    name: "Logie",
+    tag: "Extension + web portal · $0 free, up to $166/mo (credits)",
+    pitch:
+      "AI-first Amazon suite: X-Ray Super Search, an Opportunity Score + Sales Rank, Creator Connections visibility and reminders, a brand Inbox CRM, sample requests, AI shoppable photos/collages/thumbnails, AI Pinterest posts, auto-publish to YouTube/Pinterest/Amazon CA-UK, smart deep links, and weekly Zoom training. Everything is credit-metered with a per-tier score cap.",
+    credit:
+      "Logie's AI image generation (shoppable photos, collages, thumbnails) is a real, unique strength that Butler does not have today. Its brand Inbox CRM and weekly live training are legit too.",
+    win:
+      "As of our last check, Logie meters nearly every action by credits and caps your Opportunity Score by tier (the free browser intel tops out at 60/100). Influencer Butler runs the whole deal lifecycle end to end, auto-posts your deals across five social platforms, and reaches past Amazon into Instagram, and its browser extension is free with no credits and no score cap.",
+    points: [
+      "Logie charges you credits and caps your score by plan. Butler's free extension is uncapped, no credits, no meter.",
+      "Logie auto-posts to YouTube and Pinterest. Butler posts your deals to Instagram, Threads, Facebook, Telegram, and Reddit too.",
+      "Butler also revives your dead product links and reloads both your videos AND your photos to international storefronts.",
+    ],
+    oneliner: "\u{1F3A8} Logie paints you a pretty photo. \u{1F933} Butler runs the whole business.",
   },
 ];
 
@@ -358,7 +404,7 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
         <span className="font-bold text-slate-400">{"✗"} Not offered (as of last review)</span>
       </p>
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+        <table className="w-full min-w-[880px] border-collapse text-sm">
           <thead>
             <tr>
               <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">
@@ -375,6 +421,9 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
               </th>
               <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">
                 Cha-Ching
+              </th>
+              <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">
+                Logie
               </th>
             </tr>
           </thead>
@@ -393,6 +442,9 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
                 </td>
                 <td className="border border-slate-200 p-2 align-top">
                   <Cell v={r.cha.v} t={r.cha.t} />
+                </td>
+                <td className="border border-slate-200 p-2 align-top">
+                  <Cell v={r.logie.v} t={r.logie.t} />
                 </td>
               </tr>
             ))}
