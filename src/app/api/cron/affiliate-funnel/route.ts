@@ -7,6 +7,7 @@ import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
 import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
+import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
@@ -814,6 +815,10 @@ export async function GET(request: Request) {
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
   const onboarding = await sendFreeOnboardingEmails(supabase);
+  // Monthly affiliate swipe-kit. Guarded by an app_config period check inside
+  // the runner, so on all but the first run of each month this is a single
+  // cheap app_config read that returns "already sent".
+  const swipeKit = await runSwipeKitBroadcast(supabase as unknown as SwipeKitDb, new Date());
   const webhookEventsPruned = await pruneWebhookEvents(supabase);
 
   return NextResponse.json({
@@ -823,6 +828,7 @@ export async function GET(request: Request) {
     trial,
     pro,
     onboarding,
+    swipeKit,
     webhookEventsPruned,
   });
 }

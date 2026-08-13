@@ -146,6 +146,8 @@ const COPY: Record<OnboardingTier, TierCopy> = {
         ``,
         `Read what other creators say: https://www.influencerbutler.com`,
         ``,
+        `P.S. Enjoying the tools? You can earn a 30% recurring commission for a year on everyone you refer. Grab your link in two minutes: https://www.influencerbutler.com/affiliates`,
+        ``,
         COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
