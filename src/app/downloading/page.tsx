@@ -7,6 +7,7 @@ import {
 } from "@/lib/desktop-downloads";
 import DownloadStarter from "./DownloadStarter";
 import DownloadEmailCapture from "./DownloadEmailCapture";
+import NoCardTrialCta from "./NoCardTrialCta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,6 +100,7 @@ export default async function DownloadingPage({
           </p>
           <DownloadStarter url={downloadUrl} />
           <DownloadEmailCapture />
+          {process.env.NO_CARD_TRIAL_ENABLED === "1" ? <NoCardTrialCta /> : null}
         </section>
 
         {/* Step 2: add the free extension while the app installs */}
