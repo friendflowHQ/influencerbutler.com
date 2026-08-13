@@ -6,6 +6,7 @@ import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { rewardReferrerForSubscription } from "@/lib/referral-program";
 import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
 
 export const runtime = "nodejs";
@@ -848,6 +849,14 @@ export async function POST(request: Request) {
       if (!isAddonSubscription && (status === "on_trial" || status === "active")) {
         await supersedeStaleTrials(supabase, userId, recordId);
       }
+
+      // Consumer referral: a direct paid signup (active from day one) by a
+      // referred friend rewards their referrer. Gated + idempotent inside;
+      // best-effort so it never fails the webhook. Trials reward later, on the
+      // subscription_updated -> active conversion below.
+      if (status === "active" && !isAddonSubscription) {
+        await rewardReferrerForSubscription(recordId);
+      }
     },
 
     subscription_updated: async () => {
@@ -875,6 +884,8 @@ export async function POST(request: Request) {
       // analytics stamp; guards inside make it idempotent and trials-only.
       if (getString(attrs.status) === "active") {
         await stampTrialConversion(supabase, recordId);
+        // A referred friend's trial just converted to paid: reward the referrer.
+        await rewardReferrerForSubscription(recordId);
       }
     },
 

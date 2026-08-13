@@ -6,6 +6,7 @@ import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/Licen
 import DeviceManager from "@/components/dashboard/DeviceManager";
 import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
 import GettingStartedChecklist from "@/components/dashboard/GettingStartedChecklist";
+import ReferralCard from "@/components/dashboard/ReferralCard";
 import { getStatusBadge } from "@/lib/subscription-status";
 
 declare global {
@@ -146,6 +147,8 @@ export default function DashboardOverviewPage() {
       <GettingStartedChecklist />
 
       <DiscountCodesCard />
+
+      <ReferralCard />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <article className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
