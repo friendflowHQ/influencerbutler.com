@@ -91,6 +91,24 @@ describe("extractReplyImages", () => {
     const { images } = extractReplyImages(md);
     expect(images.length).toBeLessThanOrEqual(4);
   });
+
+  it("strips orphaned 'here is a screenshot' prose when no image survives", () => {
+    const { text, images } = extractReplyImages(
+      "Open Instagram Goldmine from the left menu.\n\nHere's a screenshot of the Instagram Goldmine butler configuration:\n\nAnd here's a screenshot of the Facebook Message butler configuration:",
+    );
+    expect(images).toEqual([]);
+    expect(text).toBe("Open Instagram Goldmine from the left menu.");
+    expect(text.toLowerCase()).not.toContain("screenshot");
+  });
+
+  it("keeps the screenshot lead-in when a real image is attached", () => {
+    const { text, images } = extractReplyImages(
+      "Here's a screenshot of the setup screen:\n\n![The setup screen](/assets/tutorials/goldmine/setup.png)",
+    );
+    expect(images.length).toBe(1);
+    // Images survived, so the lead-in prose is left untouched.
+    expect(text.toLowerCase()).toContain("screenshot");
+  });
 });
 
 describe("searchHelp", () => {

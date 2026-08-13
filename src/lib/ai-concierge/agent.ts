@@ -216,9 +216,12 @@ export function buildInstructions(): string {
     "",
     "Screenshots:",
     "- search_help results may include screenshots as images with url and alt. In text chat, when a",
-    "  screenshot shows the screen you are describing, include the single most helpful one by putting",
-    "  its markdown form ![alt](url) on its own line at the end of your answer. Never invent image",
-    "  urls; only use urls returned by search_help.",
+    "  screenshot shows the screen you are describing, attach the single most helpful one by putting",
+    "  its markdown form ![alt](url) on its own line at the end of your answer, with no lead-in",
+    "  sentence. Never write \"here is a screenshot\" or otherwise announce an image in prose: either",
+    "  attach the markdown silently or say nothing about screenshots.",
+    "- Never invent image urls; only use urls returned by search_help. If search_help returned no",
+    "  image for the screen, do not mention screenshots at all; offer a guided walkthrough instead.",
     "- In voice mode, never read out urls. Describe where things are in words instead.",
     "",
     "Guided walkthroughs (desktop app only):",
@@ -520,6 +523,26 @@ export function sanitizeWalkthroughArgs(raw: unknown): WalkthroughPayload | null
 const MAX_REPLY_IMAGES = 4;
 
 /**
+ * A line whose whole job is to announce a screenshot ("Here's a screenshot of
+ * the X:", "And here's a screenshot below", "See the screenshot of Y"). When
+ * extractReplyImages kept zero images, these lead-ins point at nothing and are
+ * removed, so the reply never promises an image it did not attach. The persona
+ * also tells the model not to narrate screenshots; this is the safety net for
+ * when it does anyway.
+ */
+const SCREENSHOT_LEADIN_RE =
+  /^\s*(?:and\s+)?(?:here(?:'|’)?s|below\s+is|see)\b[^\n]*\bscreenshots?\b[^\n]*$/i;
+
+function stripOrphanScreenshotProse(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !SCREENSHOT_LEADIN_RE.test(line))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
  * Pull ![alt](url) markdown out of the model's reply into a structured images
  * array (absolute urls, /assets/-only) and strip it from the text, so every
  * chat surface renders screenshots without a markdown parser. Non-whitelisted
@@ -527,7 +550,7 @@ const MAX_REPLY_IMAGES = 4;
  */
 export function extractReplyImages(reply: string): { text: string; images: HelpImage[] } {
   const images: HelpImage[] = [];
-  const text = reply
+  let text = reply
     .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_whole, alt: string, src: string) => {
       let url = "";
       if (src.startsWith("/assets/")) url = `${SITE}${src}`;
@@ -541,6 +564,10 @@ export function extractReplyImages(reply: string): { text: string; images: HelpI
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+  // No screenshot actually survived the whitelist? Then drop any orphaned
+  // "here's a screenshot" prose so the reply does not describe an image the
+  // user will never see (the reported bug).
+  if (images.length === 0) text = stripOrphanScreenshotProse(text);
   return { text, images };
 }
 
