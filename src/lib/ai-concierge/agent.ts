@@ -172,6 +172,12 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
   { id: "instagram-goldmine-harvest", about: "Instagram Goldmine: harvest follower emails from accounts or hashtags" },
   { id: "group-invite-butler-setup", about: "Group Invite Butler: invite harvested people to a Facebook group" },
   { id: "ig-to-fb-group", about: "Full flow: harvest Instagram followers then invite them to a Facebook group" },
+  { id: "facebook-message-setup", about: "Facebook Message Butler: message group or page members and schedule it" },
+  { id: "content-butler-plan", about: "Content Butler: quick-add products and plan them on the calendar" },
+  { id: "messenger-setup", about: "Messenger Butler: harvest conversations and schedule it" },
+  { id: "pitch-butler-setup", about: "Pitch Butler: import brands into the CRM and add them by hand" },
+  { id: "like-butler-setup", about: "Like Butler: like posts on creator storefronts, run and schedule" },
+  { id: "storefront-butler-harvest", about: "Storefront Butler: harvest your storefront products, lists and videos" },
 ];
 
 /**
@@ -325,7 +331,7 @@ export const AGENT_TOOLS: AgentTool[] = [
       properties: {
         tourId: {
           type: "string",
-          enum: ["deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report", "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group"],
+          enum: ["deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report", "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group", "facebook-message-setup", "content-butler-plan", "messenger-setup", "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest"],
           description: "A curated tour id. Preferred when the topic matches.",
         },
         steps: {

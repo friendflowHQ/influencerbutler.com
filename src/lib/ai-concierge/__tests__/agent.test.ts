@@ -228,6 +228,9 @@ describe("tool schemas", () => {
     expect(props.tourId.enum).toContain("instagram-goldmine-harvest");
     expect(props.tourId.enum).toContain("group-invite-butler-setup");
     expect(props.tourId.enum).toContain("ig-to-fb-group");
+    // Per-butler spotlight tours (Phase 2 batch) must also be offerable.
+    expect(props.tourId.enum).toContain("facebook-message-setup");
+    expect(props.tourId.enum).toContain("like-butler-setup");
     expect(props).toHaveProperty("steps");
   });
 
