@@ -6,6 +6,7 @@ import {
   currentMacDownloadUrl,
 } from "@/lib/desktop-downloads";
 import DownloadStarter from "./DownloadStarter";
+import DownloadEmailCapture from "./DownloadEmailCapture";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,6 +98,7 @@ export default async function DownloadingPage({
             the desktop app.
           </p>
           <DownloadStarter url={downloadUrl} />
+          <DownloadEmailCapture />
         </section>
 
         {/* Step 2: add the free extension while the app installs */}

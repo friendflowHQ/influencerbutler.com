@@ -6,6 +6,7 @@ import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
 import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
+import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
@@ -595,6 +596,169 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
   return counts;
 }
 
+// --- Step F: free-app onboarding emails -----------------------------------
+
+// People who downloaded the free desktop app and left their email on the
+// /downloading interstitial (email_subscribers rows with source = 'download-app').
+// They have not entered a card or started a paid trial. This short drip walks
+// them from install -> first win -> the Pro upgrade. Anchored on created_at.
+
+const ONBOARDING_SOURCE = "download-app";
+const ONBOARDING_TIERS: ReadonlyArray<{
+  tier: OnboardingTier;
+  thresholdMs: number;
+  sentCol: string;
+}> = [
+  // Most-aged first so we send the highest matured tier that's still pending.
+  { tier: "day10", thresholdMs: 240 * 60 * 60 * 1000, sentCol: "onboarding_email_day10_sent_at" },
+  { tier: "day5", thresholdMs: 120 * 60 * 60 * 1000, sentCol: "onboarding_email_day5_sent_at" },
+  { tier: "day2", thresholdMs: 48 * 60 * 60 * 1000, sentCol: "onboarding_email_day2_sent_at" },
+  { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "onboarding_email_day0_sent_at" },
+];
+
+type OnboardingRow = {
+  email: string;
+  created_at: string | null;
+  onboarding_email_day0_sent_at: string | null;
+  onboarding_email_day2_sent_at: string | null;
+  onboarding_email_day5_sent_at: string | null;
+  onboarding_email_day10_sent_at: string | null;
+};
+
+function selectOnboardingTier(row: OnboardingRow): (typeof ONBOARDING_TIERS)[number] | null {
+  if (!row.created_at) return null;
+  const createdAt = new Date(row.created_at).getTime();
+  if (!Number.isFinite(createdAt)) return null;
+  const age = Date.now() - createdAt;
+
+  for (const t of ONBOARDING_TIERS) {
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof OnboardingRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+// Has this email already become a trial/paid customer? If so we stamp
+// onboarding_converted_at and stop the free-app nurture (a paying user should
+// not be told to "install the app"). Best-effort: on any lookup error we return
+// false (fail open) and just let the drip continue.
+async function onboardingLeadConverted(supabase: CronClient, email: string): Promise<boolean> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data: profile } = await fetchClient
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    const userId = profile && typeof profile.id === "string" ? profile.id : null;
+    if (!userId) return false;
+
+    const { data: subData } = await supabase
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", userId)
+      .limit(1);
+    if (!Array.isArray(subData) || subData.length === 0) return false;
+    const status = (subData[0] as { status?: string | null }).status ?? "";
+    return status === "active" || status === "on_trial" || status === "past_due" || status === "paused";
+  } catch (err) {
+    console.error("cron: onboarding conversion check threw", err);
+    return false;
+  }
+}
+
+async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<OnboardingTier, number>> {
+  const counts: Record<OnboardingTier, number> = { day0: 0, day2: 0, day5: 0, day10: 0 };
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const base = siteUrl.replace(/\/$/, "");
+  const helpUrl = `${base}/help`;
+  const extensionUrl = `${base}/extension`;
+
+  // Optional static first-timer discount for the day10 upgrade ask. If no code
+  // is configured, day10 sends without a code (still a valid email). Set a
+  // single reusable LS code (e.g. WELCOME15) and FREE_ONBOARDING_DISCOUNT_CODE /
+  // _PERCENT to turn the incentive on - no per-lead LS minting needed.
+  const discountCode = process.env.FREE_ONBOARDING_DISCOUNT_CODE || null;
+  const discountPercent = Number.parseInt(process.env.FREE_ONBOARDING_DISCOUNT_PERCENT ?? "", 10);
+  const pricingUrl = discountCode
+    ? `${base}/pricing?code=${encodeURIComponent(discountCode)}`
+    : `${base}/pricing`;
+
+  // Wrapped so that if the onboarding columns do not exist yet (prod schema lag
+  // before 20260813_free_onboarding_funnel.sql is applied), this step no-ops
+  // instead of breaking the rest of the cron.
+  try {
+    const { data, error } = await supabase
+      .from("email_subscribers")
+      .select(
+        "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at",
+      )
+      .eq("source", ONBOARDING_SOURCE)
+      .is("unsubscribed_at", null)
+      .is("onboarding_converted_at", null)
+      // Exclude rows that already finished the drip (day10 is the last tier) so
+      // the per-run budget goes to leads still in progress.
+      .is("onboarding_email_day10_sent_at", null)
+      .limit(PER_RUN_LIMIT);
+
+    if (error) {
+      // Missing columns on schema lag land here - log and move on.
+      console.error("cron: onboarding query failed (columns may not exist yet)", error);
+      return counts;
+    }
+
+    const rows = (data ?? []) as OnboardingRow[];
+
+    for (const row of rows) {
+      if (!row.email) continue;
+      const tier = selectOnboardingTier(row);
+      if (!tier) continue;
+
+      // Stop nurturing anyone who already became a trial/paid customer.
+      if (await onboardingLeadConverted(supabase, row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ onboarding_converted_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const sent = await sendOnboardingEmail({
+        tier: tier.tier,
+        to: row.email,
+        pricingUrl,
+        helpUrl,
+        extensionUrl,
+        discountCode,
+        discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
+      });
+
+      if (!sent) continue;
+
+      const { error: updateError } = await supabase
+        .from("email_subscribers")
+        .update({ [tier.sentCol]: new Date().toISOString() })
+        .eq("email", row.email);
+
+      if (updateError) {
+        console.error("cron: onboarding update failed", { email: row.email, tier: tier.tier, updateError });
+        continue;
+      }
+
+      counts[tier.tier] += 1;
+    }
+  } catch (err) {
+    console.error("cron: onboarding step threw", err);
+    return counts;
+  }
+
+  return counts;
+}
+
 // --- Step E: housekeeping - prune old webhook delivery logs ----------------
 
 type DeleteClient = {
@@ -649,6 +813,7 @@ export async function GET(request: Request) {
   const emails = await sendTierEmails(supabase);
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
+  const onboarding = await sendFreeOnboardingEmails(supabase);
   const webhookEventsPruned = await pruneWebhookEvents(supabase);
 
   return NextResponse.json({
@@ -657,6 +822,7 @@ export async function GET(request: Request) {
     emails,
     trial,
     pro,
+    onboarding,
     webhookEventsPruned,
   });
 }
