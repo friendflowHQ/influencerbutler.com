@@ -501,6 +501,52 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Roster-level "set this exact code" (e.g. JACKIE -> AIPTOOLKIT) for
+  // affiliates who ask for a specific string instead of their name. Mints the
+  // exact code in Lemon Squeezy (no numbered fallback) and retires the old
+  // discount, so the same replacement warning applies.
+  const onSetCustomCode = async (row: RosterRow) => {
+    const label = row.name ?? row.email ?? row.userId;
+    const replaceNote = row.affiliateCode
+      ? `\n\nThis replaces ${row.affiliateCode}; any link already shared with the old code stops tracking.`
+      : "";
+    const input = window.prompt(
+      `Set a custom code for ${label}.\n\nLetters and numbers only, 2-32 characters (Lemon Squeezy rejects hyphens and spaces).${replaceNote}`,
+      row.affiliateCode ?? "",
+    );
+    if (input === null) return;
+    const code = input.trim().toUpperCase();
+    if (!/^[A-Z0-9]{2,32}$/.test(code)) {
+      setGen(row.userId, {
+        kind: "error",
+        message: "Codes must be 2-32 letters and numbers only.",
+      });
+      return;
+    }
+    if (code === row.affiliateCode) {
+      setGen(row.userId, { kind: "error", message: `${code} is already their code.` });
+      return;
+    }
+    setGen(row.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-regenerate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.userId, customCode: code }),
+      });
+      const json = (await res.json()) as { error?: string; code?: string };
+      if (!res.ok) {
+        setGen(row.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGen(row.userId, { kind: "success", message: `New code ${json.code}.` });
+      setTimeout(() => void loadRoster(), 1500);
+    } catch (err) {
+      console.error(err);
+      setGen(row.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
   const setEmail = (userId: string, state: LinkRowState) =>
     setEmailRow((prev) => ({ ...prev, [userId]: state }));
 
@@ -955,6 +1001,7 @@ export default function AdminAffiliatesPage() {
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
           onGenerateCode={onGenerateCode}
+          onSetCustomCode={onSetCustomCode}
           onEmailResources={onEmailResources}
         />
       ) : null}
@@ -1261,6 +1308,7 @@ function RosterTab({
   onApprove,
   onReject,
   onGenerateCode,
+  onSetCustomCode,
   onEmailResources,
 }: {
   loading: boolean;
@@ -1286,6 +1334,7 @@ function RosterTab({
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
   onGenerateCode: (row: RosterRow) => void;
+  onSetCustomCode: (row: RosterRow) => void;
   onEmailResources: (row: RosterRow) => void;
 }) {
   return (
@@ -1465,6 +1514,16 @@ function RosterTab({
                                 : r.affiliateCode
                                   ? "New code"
                                   : "Generate code"}
+                            </button>
+                          ) : null}
+                          {r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate) ? (
+                            <button
+                              type="button"
+                              onClick={() => onSetCustomCode(r)}
+                              disabled={gen.kind === "working"}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
+                            >
+                              Set custom code
                             </button>
                           ) : null}
                           {gen.kind === "success" ? (

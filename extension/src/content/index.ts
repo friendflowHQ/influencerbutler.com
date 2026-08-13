@@ -20,6 +20,7 @@ import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
+import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
@@ -29,6 +30,7 @@ import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
+import { initTrendRadar } from "../tools/trend-radar/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
@@ -151,6 +153,14 @@ async function runForPage(): Promise<void> {
       // and a one-tap Collab Butler action (injected into the page, not the
       // floating panel).
       guard("inline-card", () => renderInlineCard(signals));
+
+      // Global Marketplace Maximizer: per-market availability, price, estimated
+      // commission, and localized affiliate links so international viewers earn
+      // instead of hitting a dead link. Channel-neutral (research + links);
+      // gated by its own tool flag.
+      if (settings.tools.globalMaximizer) {
+        guard("global-maximizer", () => void renderGlobalMaximizer(signals));
+      }
 
       if (showOnsite && settings.tools.videoCounts) {
         guard("video-counts", () =>
@@ -282,6 +292,16 @@ async function runForPage(): Promise<void> {
       if (settings.tools.storeOverlay) {
         void initStoreOverlay(settings);
         lastStatus.toolSummaries.push({ label: t().sumStoreOverlay, value: t().ready });
+      }
+    });
+  } else if (pageType === "discovery") {
+    // Trend Radar over the Best Sellers / New Releases / Movers & Shakers grids.
+    // Channel-neutral, like the search and brand-store overlays: it scores and
+    // ranks products, it does not post anywhere.
+    guard("trend-radar", () => {
+      if (settings.tools.trendRadar) {
+        void initTrendRadar(settings);
+        lastStatus.toolSummaries.push({ label: t().sumTrendRadar, value: t().ready });
       }
     });
   } else if (pageType === "campaign-grid") {

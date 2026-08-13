@@ -289,7 +289,7 @@ function SiteFooter() {
               Support
             </h4>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li><a href="mailto:hello@influencerbutler.com" className="hover:text-[#f97316]">Contact Us</a></li>
+              <li><Link href="/contact" className="hover:text-[#f97316]">Contact Us</Link></li>
               <li><Link href="/dashboard" className="hover:text-[#f97316]">My Account</Link></li>
             </ul>
           </div>

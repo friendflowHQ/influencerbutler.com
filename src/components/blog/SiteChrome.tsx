@@ -209,12 +209,12 @@ export function SiteFooter() {
               Support
             </h4>
             <div className="space-y-2.5 text-sm">
-              <a
-                href="mailto:hello@influencerbutler.com"
+              <Link
+                href="/contact"
                 className="block text-slate-500 hover:text-orange-500"
               >
                 Contact Us
-              </a>
+              </Link>
               <Link href="/dashboard" className="block text-slate-500 hover:text-orange-500">
                 My Account
               </Link>

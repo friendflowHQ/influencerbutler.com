@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import LinkBuilder from "./LinkBuilder";
 import SocialShareButtons from "./SocialShareButtons";
 import AffiliateClickAnalytics from "./AffiliateClickAnalytics";
@@ -276,9 +277,9 @@ export default function SelfHostedAffiliateDashboard({
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions about a payout?{" "}
-        <a href="mailto:hello@influencerbutler.com" className="font-medium text-[#f97316] hover:text-[#ea580c]">
+        <Link href="/contact" className="font-medium text-[#f97316] hover:text-[#ea580c]">
           Contact our affiliate team
-        </a>
+        </Link>
         .
       </div>
     </div>

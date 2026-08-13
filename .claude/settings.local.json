@@ -21,7 +21,9 @@
       "Bash(sed 's/^/storefront inventory copy: /')",
       "Bash(npx eslint *)",
       "Bash(echo \"exit=$?\")",
-      "Bash(curl -sS -I 'http://localhost:3000/api/checkout/guest?plan=monthly')"
+      "Bash(curl -sS -I 'http://localhost:3000/api/checkout/guest?plan=monthly')",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }

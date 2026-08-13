@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 const FB_ID_RE = /^fb-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ALLOWED_STATUSES = new Set([
   "sent", "acked", "clarifying", "waiting_on_user", "user_replied",
-  "patching", "committed", "released", "fixed", "escalated", "spam", "synced",
+  "patching", "committed", "released", "fixed", "escalated", "spam", "synced", "archived",
 ]);
 
 type ReplyBody = {

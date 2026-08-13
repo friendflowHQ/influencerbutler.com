@@ -185,12 +185,12 @@ function PendingState({
       <PlannerCallout waiting />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
-        Questions? Email{" "}
+        Questions?{" "}
         <Link
-          href="mailto:hello@influencerbutler.com"
+          href="/contact"
           className="font-medium text-[#f97316] hover:text-[#ea580c]"
         >
-          hello@influencerbutler.com
+          Contact us
         </Link>
         .
       </div>

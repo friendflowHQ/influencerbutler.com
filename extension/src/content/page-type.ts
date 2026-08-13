@@ -6,6 +6,7 @@ export type PageType =
   | "creator-upload"
   | "campaign-grid"
   | "search"
+  | "discovery"
   | "other";
 
 export function detectPageType(url: string): PageType {
@@ -37,6 +38,18 @@ export function detectPageType(url: string): PageType {
   // Search results: the /s path with a keyword (k) or department (i) query.
   if (path === "/s" && (parsed.searchParams.has("k") || parsed.searchParams.has("i"))) {
     return "search";
+  }
+  // Discovery grids: Best Sellers (/gp/bestsellers or the pretty .../zgbs/...
+  // slug), New Releases (/gp/new-releases), and Movers & Shakers
+  // (/gp/movers-and-shakers). Trend Radar scores these. The pretty Best Sellers
+  // URL has no /gp/ prefix, so match the /zgbs/ segment too.
+  if (
+    path.startsWith("/gp/bestsellers") ||
+    path.startsWith("/gp/new-releases") ||
+    path.startsWith("/gp/movers-and-shakers") ||
+    /\/zgbs(?:\/|$)/.test(path)
+  ) {
+    return "discovery";
   }
   return "other";
 }

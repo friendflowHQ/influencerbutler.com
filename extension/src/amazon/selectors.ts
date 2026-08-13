@@ -34,7 +34,15 @@ export type SelectorId =
   | "storeTileLink"
   | "storeTileTitle"
   | "storeTileImage"
-  | "storeTileInfo";
+  | "storeTileInfo"
+  | "discoveryGrid"
+  | "discoveryTile"
+  | "discoveryTileLink"
+  | "discoveryTileTitle"
+  | "discoveryTilePrice"
+  | "discoveryTileImage"
+  | "discoveryRankBadge"
+  | "discoveryGainPct";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -182,6 +190,27 @@ const REGISTRY: Record<SelectorId, string[]> = {
   storeTileTitle: ['[data-testid="product-grid-title"]'],
   storeTileImage: ['[data-testid="grid-item-image"] img', "img"],
   storeTileInfo: ['[data-testid="grid-item-info"]'],
+  // Discovery pages: Best Sellers (/gp/bestsellers, .../zgbs/...), New Releases
+  // (/gp/new-releases), and Movers & Shakers (/gp/movers-and-shakers). The p13n
+  // grid is largely server-rendered; tiles carry a duplicated id="gridItemRoot"
+  // (invalid HTML but stable), with older movers layouts falling back to the
+  // faceout node. Verified live 2026-08-11 on /zgbs/beauty.
+  discoveryGrid: [".p13n-desktop-grid", "#zg-ordered-list", '[data-testid="grid-row"]'],
+  discoveryTile: [
+    '[id="gridItemRoot"]',
+    ".zg-grid-general-faceout",
+    "li.zg-item-immersion",
+    ".p13n-sc-uncoverable-faceout",
+  ],
+  // Per-tile (queried within a tile element).
+  discoveryTileLink: ["a[href*='/dp/']"],
+  discoveryTileTitle: ["[class*='p13n-sc-css-line-clamp']", "a.a-link-normal[title]"],
+  discoveryTilePrice: [".a-price .a-offscreen", "[class*='p13n-sc-price']", ".a-color-price"],
+  discoveryTileImage: ["img"],
+  // The rank badge ("#1") on Best Sellers / New Releases tiles.
+  discoveryRankBadge: [".zg-bdg-text", ".zg-badge-text"],
+  // The 24h sales-rank gain on Movers & Shakers tiles (for example "1,234%").
+  discoveryGainPct: [".zg-percent-gainer", "[class*='percentGainer']", "[class*='gainer']"],
 };
 
 type Miss = { id: string; count: number };

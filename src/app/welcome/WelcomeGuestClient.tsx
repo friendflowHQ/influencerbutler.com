@@ -215,13 +215,13 @@ export default function WelcomeGuestClient({ intervalMs = 2000 }: { intervalMs?:
       </div>
 
       <p className="mt-8 text-xs text-slate-500">
-        Questions? Email{" "}
-        <a
-          href="mailto:hello@influencerbutler.com"
+        Questions?{" "}
+        <Link
+          href="/contact"
           className="font-medium text-slate-700 hover:text-[#f97316]"
         >
-          hello@influencerbutler.com
-        </a>
+          Contact us
+        </Link>
         .
       </p>
     </section>
@@ -287,13 +287,13 @@ function LicenseKeyPanel(props: {
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             We couldn&apos;t load your license key on this page. Check the email we sent
             you - it includes a sign-in link to view your key on the dashboard. If you
-            still need help, email{" "}
-            <a
-              href="mailto:hello@influencerbutler.com"
+            still need help,{" "}
+            <Link
+              href="/contact"
               className="font-medium underline hover:text-amber-700"
             >
-              hello@influencerbutler.com
-            </a>
+              contact us
+            </Link>
             .
           </div>
         )}

@@ -663,13 +663,13 @@ export default function AffiliatePlannerPage() {
       </section>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
-        Want a specific angle or graphic made? Email{" "}
-        <a
-          href="mailto:hello@influencerbutler.com"
+        Want a specific angle or graphic made?{" "}
+        <Link
+          href="/contact"
           className="font-medium text-[#f97316] hover:text-[#ea580c]"
         >
-          hello@influencerbutler.com
-        </a>{" "}
+          Contact us
+        </Link>{" "}
         and we will build it for you.
       </div>
     </div>

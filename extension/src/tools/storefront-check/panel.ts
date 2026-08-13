@@ -173,6 +173,21 @@ function render(
     nodes.summary.append(chip("", `${result.counts[type]} ${label[type]}`));
   }
 
+  // Coverage transparency: compare against the storefront's own post count
+  // when we could read it, and call out the two silent-miss cases (pagination
+  // stopping before the feed ran out, and cards of an unrecognized type).
+  if (result.reportedPostCount !== null) {
+    nodes.summary.append(
+      el("p", "note", t().sfCoverage(result.items.length, result.reportedPostCount)),
+    );
+  }
+  if (result.stopReason !== "end-of-feed" && result.stopReason !== "page-cap") {
+    nodes.summary.append(el("p", "note", t().sfStoppedEarly(result.stopReason)));
+  }
+  if (result.droppedCards > 0) {
+    nodes.summary.append(el("p", "note", t().sfDroppedCards(result.droppedCards)));
+  }
+
   // Untagged is any content whose products are known but empty: videos always,
   // and photos/idea-lists/media-lists once the deep-content pass has opened
   // them. Counting video-only made a storefront with untagged photos read as

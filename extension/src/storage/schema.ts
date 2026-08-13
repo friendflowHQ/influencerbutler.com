@@ -60,6 +60,8 @@ export type Settings = {
     ordersButler: boolean;
     searchOverlay: boolean;
     storeOverlay: boolean;
+    trendRadar: boolean;
+    globalMaximizer: boolean;
     campaignMatcher: boolean;
     campaignRadar: boolean;
     earningsOverlay: boolean;
@@ -226,7 +228,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 9,
+  schemaVersion: 10,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -259,6 +261,8 @@ export const DEFAULTS: StorageShape = {
       ordersButler: true,
       searchOverlay: true,
       storeOverlay: true,
+      trendRadar: true,
+      globalMaximizer: true,
       campaignMatcher: true,
       campaignRadar: true,
       earningsOverlay: true,
@@ -304,7 +308,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // settings.creatorMode (defaults to "both", so existing users stay
   // unfiltered until the app reports their channel); v7 -> v8 added
   // settings.linkButler (smart-routing off, no pixels); v8 -> v9 added the
-  // storeOverlay tool flag (brand-store research overlay, on by default).
+  // storeOverlay tool flag (brand-store research overlay, on by default);
+  // v9 -> v10 added the trendRadar tool flag (Best Sellers / New Releases /
+  // Movers & Shakers discovery overlay) and the globalMaximizer tool flag
+  // (per-market availability + international links), both on by default.
   // Older stored state simply gains its defaults untouched (an existing
   // user's price history starts empty).
   return {
@@ -347,6 +354,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 9,
+    schemaVersion: 10,
   };
 }

@@ -48,6 +48,7 @@ export type PageStatus = {
     | "creator-upload"
     | "campaign-grid"
     | "search"
+    | "discovery"
     | "other";
   toolSummaries: Array<{ label: string; value: string }>;
 };

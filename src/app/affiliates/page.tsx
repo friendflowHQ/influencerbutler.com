@@ -301,7 +301,7 @@ export default function AffiliatesLandingPage() {
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
-            <a href="mailto:hello@influencerbutler.com" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</a>
+            <Link href="/contact" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</Link>
             <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
           </div>
         </div>

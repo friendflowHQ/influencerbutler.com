@@ -177,9 +177,13 @@ export default function SupportAdminPage() {
 
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
+  // Per-user history drawer: every ticket this email has ever submitted.
+  const [userView, setUserView] = useState<{ email: string; tickets: Ticket[]; loading: boolean; error: string | null } | null>(null);
   const [actionMsg, setActionMsg] = useState<string>("");
   const [replySubject, setReplySubject] = useState("");
   const [replyBody, setReplyBody] = useState("");
+  // Move the ticket out of the needs-attention buckets once a human has answered.
+  const [replyAdvance, setReplyAdvance] = useState(true);
   const [editPriority, setEditPriority] = useState("P2");
   const [editTags, setEditTags] = useState("");
 
@@ -232,8 +236,34 @@ export default function SupportAdminPage() {
       setEditTags(t.tags || "");
       setReplySubject(`Re: ${t.title || ""}`.slice(0, 180));
       setReplyBody("");
+      setReplyAdvance(true);
     } finally {
       setDetailBusy(false);
+    }
+  }, []);
+
+  // Load every ticket a user has submitted. The Worker's /agent/inbox `q` is a
+  // fuzzy match over title/text/email, so exact-filter on userEmail afterwards
+  // (same pattern as the scheduling prep route).
+  const openUserHistory = useCallback(async (email: string) => {
+    const target = email.trim().toLowerCase();
+    if (!target) return;
+    setUserView({ email, tickets: [], loading: true, error: null });
+    try {
+      const qs = new URLSearchParams({ q: email, limit: "100" });
+      const res = await fetch(`/api/admin/support/list?${qs.toString()}`, { cache: "no-store" });
+      if (res.status === 403) { setForbidden(true); return; }
+      const json = (await res.json()) as { tickets?: Ticket[]; error?: string };
+      if (!res.ok) {
+        setUserView({ email, tickets: [], loading: false, error: json.error || "Failed to load" });
+        return;
+      }
+      const mine = (json.tickets ?? [])
+        .filter((t) => (t.userEmail || "").toLowerCase() === target)
+        .sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
+      setUserView({ email, tickets: mine, loading: false, error: null });
+    } catch (e) {
+      setUserView({ email, tickets: [], loading: false, error: e instanceof Error ? e.message : "Failed to load" });
     }
   }, []);
 
@@ -272,28 +302,37 @@ export default function SupportAdminPage() {
     }
   }, [selected, openTicket, fetchList, fetchCounts]);
 
+  // Statuses where a human reply should hand the ball back to the customer.
+  const replyCanAdvance = !!selected && ["sent", "user_replied", "clarifying", "escalated"].includes(selected.status);
+
   const doReply = useCallback(async () => {
     if (!selected) return;
     if (!replySubject.trim() || !replyBody.trim()) { setActionMsg("Subject and body are required."); return; }
     setDetailBusy(true);
     setActionMsg("Sending reply…");
     try {
+      const advance = replyAdvance && ["sent", "user_replied", "clarifying", "escalated"].includes(selected.status);
       const res = await fetch("/api/admin/support/reply", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: selected.id, subject: replySubject.trim(), body: replyBody.trim() }),
+        body: JSON.stringify({
+          id: selected.id,
+          subject: replySubject.trim(),
+          body: replyBody.trim(),
+          ...(advance ? { advanceStatus: "waiting_on_user" } : {}),
+        }),
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) { setActionMsg(json.error || "Reply failed"); return; }
       setActionMsg("Reply sent.");
       setReplyBody("");
-      await Promise.all([openTicket(selected.id), fetchList()]);
+      await Promise.all([openTicket(selected.id), fetchList(), fetchCounts()]);
     } catch (e) {
       setActionMsg(e instanceof Error ? e.message : "Reply failed");
     } finally {
       setDetailBusy(false);
     }
-  }, [selected, replySubject, replyBody, openTicket, fetchList]);
+  }, [selected, replySubject, replyBody, replyAdvance, openTicket, fetchList, fetchCounts]);
 
   if (forbidden) {
     return (
@@ -428,7 +467,20 @@ export default function SupportAdminPage() {
                   <td className="px-3 py-2 text-slate-600">{t.classification || t.type}</td>
                   <td className="px-3 py-2 text-slate-900">{t.title || "(no title)"}</td>
                   <td className="px-3 py-2 text-slate-500">{t.licenseTier || "—"}</td>
-                  <td className="px-3 py-2 text-slate-500">{t.userEmail || "anon"}</td>
+                  <td className="px-3 py-2 text-slate-500">
+                    {t.userEmail ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openUserHistory(t.userEmail); }}
+                        className="text-left text-slate-500 underline decoration-slate-300 decoration-dotted underline-offset-2 hover:text-[#f97316]"
+                        title={`All tickets from ${t.userEmail}`}
+                      >
+                        {t.userEmail}
+                      </button>
+                    ) : (
+                      "anon"
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-slate-500">{ago(t.submittedAt)}</td>
                 </tr>
               ))
@@ -436,6 +488,77 @@ export default function SupportAdminPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Per-user history drawer: sits under the ticket drawer (z-30 vs z-40),
+          so opening a ticket from the list layers it on top; closing the
+          ticket drops you back on the history. */}
+      {userView && (
+        <div className="fixed inset-0 z-30 flex justify-end bg-slate-900/30" onClick={() => setUserView(null)}>
+          <div
+            className="h-full w-full max-w-xl overflow-y-auto bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">{userView.email}</h2>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  {userView.loading
+                    ? "Loading ticket history…"
+                    : `${userView.tickets.length} ticket${userView.tickets.length === 1 ? "" : "s"} submitted`}
+                </p>
+              </div>
+              <button type="button" onClick={() => setUserView(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+            </div>
+
+            {userView.error && <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{userView.error}</div>}
+
+            {/* Status rollup */}
+            {!userView.loading && userView.tickets.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {Object.entries(
+                  userView.tickets.reduce<Record<string, number>>((acc, t) => {
+                    acc[t.status] = (acc[t.status] ?? 0) + 1;
+                    return acc;
+                  }, {}),
+                ).map(([status, n]) => (
+                  <span key={status} className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${statusClasses(status)}`}>
+                    {status} · {n}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <ol className="mt-4 space-y-2">
+              {userView.loading ? (
+                <li className="py-8 text-center text-sm text-slate-400">Loading…</li>
+              ) : userView.tickets.length === 0 && !userView.error ? (
+                <li className="py-8 text-center text-sm text-slate-400">No tickets found for this user.</li>
+              ) : (
+                userView.tickets.map((t) => (
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onClick={() => openTicket(t.id)}
+                      className="w-full rounded-lg border border-slate-200 p-3 text-left transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${priorityClasses(t.priority)}`}>{t.priority || "P2"}</span>
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${statusClasses(t.status)}`}>{t.status}</span>
+                        <span className="text-xs text-slate-400">{t.classification || t.type}</span>
+                        <span className="ml-auto shrink-0 text-xs text-slate-400">{ago(t.submittedAt)}</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-900">{t.title || "(no title)"}</div>
+                      {t.resolvedVersion && (
+                        <div className="mt-0.5 text-xs text-emerald-600">shipped in v{String(t.resolvedVersion).replace(/^v/i, "")}</div>
+                      )}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ol>
+          </div>
+        </div>
+      )}
 
       {/* Detail drawer */}
       {selected && (
@@ -466,7 +589,23 @@ export default function SupportAdminPage() {
             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div><dt className="text-slate-400">Type</dt><dd className="text-slate-700">{selected.classification || selected.type}</dd></div>
               <div><dt className="text-slate-400">Tier</dt><dd className="text-slate-700">{selected.licenseTier || "—"}</dd></div>
-              <div><dt className="text-slate-400">User</dt><dd className="text-slate-700">{selected.userEmail || "anonymous"}</dd></div>
+              <div>
+                <dt className="text-slate-400">User</dt>
+                <dd className="text-slate-700">
+                  {selected.userEmail ? (
+                    <button
+                      type="button"
+                      onClick={() => { openUserHistory(selected.userEmail); setSelected(null); }}
+                      className="text-left underline decoration-slate-300 decoration-dotted underline-offset-2 hover:text-[#f97316]"
+                      title={`All tickets from ${selected.userEmail}`}
+                    >
+                      {selected.userEmail}
+                    </button>
+                  ) : (
+                    "anonymous"
+                  )}
+                </dd>
+              </div>
               <div><dt className="text-slate-400">Platform</dt><dd className="text-slate-700">{selected.platform || "—"}</dd></div>
               <div><dt className="text-slate-400">App version</dt><dd className="text-slate-700">{selected.appVersion || "—"}</dd></div>
               <div><dt className="text-slate-400">Submitted</dt><dd className="text-slate-700">{fullTime(selected.submittedAt)}</dd></div>
@@ -587,6 +726,12 @@ export default function SupportAdminPage() {
                 <>
                   <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="Subject" />
                   <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
+                  {replyCanAdvance && (
+                    <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                      <input type="checkbox" checked={replyAdvance} onChange={(e) => setReplyAdvance(e.target.checked)} className="rounded border-slate-300" />
+                      Move to waiting_on_user after sending
+                    </label>
+                  )}
                   <button type="button" disabled={detailBusy} onClick={doReply} className="mt-2 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">Send reply</button>
                 </>
               ) : (

@@ -113,7 +113,7 @@ async function sendApprovalEmail(params: {
   lines.push(...affiliateResourcesLines());
 
   lines.push(
-    `Should you require anything further, do write to hello@influencerbutler.com and I shall attend to you promptly.`,
+    `Should you require anything further, do reach us through our contact form at https://www.influencerbutler.com/contact and I shall attend to you promptly.`,
     ``,
     ``,
     `At your service,`,

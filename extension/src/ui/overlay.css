@@ -765,6 +765,25 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   font-size: 12px;
 }
 
+/* Global Marketplace Maximizer: one compact row per marketplace, the
+   availability chip + local price on the left and the "Get link" button on the
+   right. Reuses .chip / .btn from the panel; only the row layout is new. */
+.gmm-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.gmm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gmm-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.gmm-price { font-size: 12px; color: #475569; }
+
 /* Extension-update pill: a compact floating banner near the top of the
    viewport. Own shadow host (like the modal) so panel rebuilds never tear it
    down; floats over the page so Amazon's layout is untouched. */

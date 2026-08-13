@@ -236,6 +236,20 @@ export interface Dict {
   tileInfluencer: (n: number) => string;
   searchOverlayActive: string;
 
+  // Trend Radar (Best Sellers / New Releases / Movers & Shakers grids)
+  toolTrendRadar: string;
+  sumTrendRadar: string;
+  trendRadarActive: string;
+  trendCount: (n: number) => string;
+  trendSortTrending: string;
+  trendSortRank: string;
+  trendFewVideosOnly: string;
+  tileRank: (n: number) => string;
+  tileGain: (pct: number) => string;
+
+  // Global Marketplace Maximizer (product page section)
+  toolGlobalMaximizer: string;
+
   // Brand-store overlay (/stores/ pages)
   toolStoreOverlay: string;
   sumStoreOverlay: string;
@@ -789,6 +803,18 @@ const en: Dict = {
   tileProvenEarner: "Proven earner",
   tileInfluencer: (n) => `${n} infl. videos`,
   searchOverlayActive: "Search overlay is active.",
+
+  toolTrendRadar: "Trend Radar (Best Sellers & Movers)",
+  sumTrendRadar: "Trend Radar",
+  trendRadarActive: "Trend Radar is active.",
+  trendCount: (n) => `${n} products scored`,
+  trendSortTrending: "Rising fastest",
+  trendSortRank: "Best seller rank",
+  trendFewVideosOnly: "Open video slot only",
+  tileRank: (n) => `#${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Global reach (multi-marketplace)",
 
   toolStoreOverlay: "Brand store overlay",
   sumStoreOverlay: "Brand store overlay",
@@ -1370,6 +1396,18 @@ const es: Dict = {
   tileInfluencer: (n) => `${n} videos de infl.`,
   searchOverlayActive: "El overlay de búsqueda está activo.",
 
+  toolTrendRadar: "Radar de Tendencias (Más vendidos y Movers)",
+  sumTrendRadar: "Radar de Tendencias",
+  trendRadarActive: "El Radar de Tendencias está activo.",
+  trendCount: (n) => `${n} productos puntuados`,
+  trendSortTrending: "Los que más suben",
+  trendSortRank: "Ranking de más vendidos",
+  trendFewVideosOnly: "Solo con hueco de video",
+  tileRank: (n) => `N.º ${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Alcance global (multi-tienda)",
+
   toolStoreOverlay: "Overlay de tienda de marca",
   sumStoreOverlay: "Overlay de tienda de marca",
   storeOverlayActive: "El overlay de tienda de marca está activo.",
@@ -1949,6 +1987,18 @@ const fr: Dict = {
   tileProvenEarner: "Déjà rentable",
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
   searchOverlayActive: "L'overlay de recherche est actif.",
+
+  toolTrendRadar: "Radar de Tendances (Meilleures ventes et Movers)",
+  sumTrendRadar: "Radar de Tendances",
+  trendRadarActive: "Le Radar de Tendances est actif.",
+  trendCount: (n) => `${n} produits notés`,
+  trendSortTrending: "Plus fortes hausses",
+  trendSortRank: "Classement des ventes",
+  trendFewVideosOnly: "Créneau vidéo libre seulement",
+  tileRank: (n) => `N° ${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Portée mondiale (multi-boutique)",
 
   toolStoreOverlay: "Overlay de boutique de marque",
   sumStoreOverlay: "Overlay de boutique de marque",

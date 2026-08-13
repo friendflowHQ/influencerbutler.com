@@ -42,8 +42,21 @@ describe("migrate", () => {
     delete (v8.settings as { tools: Record<string, unknown> }).tools.storeOverlay;
 
     const out = migrate(v8);
-    expect(out.schemaVersion).toBe(9);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
     expect(out.settings.tools.storeOverlay).toBe(true);
+  });
+
+  it("backfills the trendRadar tool flag onto v9 state", () => {
+    // A v9 store predates Trend Radar: no trendRadar tool flag.
+    const v9 = {
+      schemaVersion: 9,
+      settings: structuredClone(DEFAULTS.settings),
+    } as unknown as Partial<StorageShape>;
+    delete (v9.settings as { tools: Record<string, unknown> }).tools.trendRadar;
+
+    const out = migrate(v9);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.settings.tools.trendRadar).toBe(true);
   });
 
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {

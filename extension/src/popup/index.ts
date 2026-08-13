@@ -359,6 +359,7 @@ async function renderPageStatus(): Promise<void> {
       "campaign-grid": t().campaignRadarActive,
       search: t().searchOverlayActive,
       "brand-store": t().storeOverlayActive,
+      discovery: t().trendRadarActive,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
       list.hidden = false;
@@ -457,6 +458,8 @@ async function renderSettings(): Promise<void> {
     "ordersButler",
     "searchOverlay",
     "storeOverlay",
+    "trendRadar",
+    "globalMaximizer",
     "campaignMatcher",
     "campaignRadar",
     "earningsOverlay",

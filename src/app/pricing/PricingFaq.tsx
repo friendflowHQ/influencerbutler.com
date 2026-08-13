@@ -13,7 +13,7 @@ const FAQ = [
   },
   {
     q: "Do you offer refunds?",
-    a: "If you're charged unexpectedly or run into a serious issue, email hello@influencerbutler.com within 14 days and we'll make it right.",
+    a: "If you're charged unexpectedly or run into a serious issue, contact us at influencerbutler.com/contact within 14 days and we'll make it right.",
   },
   {
     q: "What payment methods do you accept?",
