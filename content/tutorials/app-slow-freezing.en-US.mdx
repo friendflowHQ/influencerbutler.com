@@ -1,0 +1,64 @@
+---
+title: App feels slow, laggy, or freezes: how to fix it
+summary: Is Influencer Butler dragging, lagging, or freezing up? Turn on Low resource mode, stop butlers from auto-restarting, pause automations, and try Safe Mode. Step-by-step for Windows and Mac.
+category: Other
+---
+
+## Why the app drags or freezes
+
+Influencer Butler runs a lot of butlers inside one window. On a computer that is low on memory, or when several butlers all start at once, the window can start to drag: clicks feel laggy, panels are slow to open, and sometimes the app freezes for a few seconds or stops responding entirely. A heavier butler starting up (like Deals Influencer Butler building your first setup) is a common trigger.
+
+The good news: this is almost always about how hard the app is working at once, not a broken install. A few built-in settings calm it right down. Try them in this order.
+
+## 1. Fully quit and reopen (not just close the window)
+
+Closing the window does not actually quit the app, it just hides it and keeps everything running in the background. A clean restart clears the jam.
+
+- **On Windows:** the X button sends the app to the system tray (the little icons near the clock, bottom-right). To fully quit, click the up-arrow to show hidden icons, right-click the Influencer Butler icon, and choose **Quit**. If the window is frozen and will not respond, press **Ctrl+Shift+Esc** to open Task Manager, select Influencer Butler, and click **End task**. Then reopen from your desktop shortcut.
+- **On Mac:** the red dot only hides the window to the menu bar. To fully quit, click **Influencer Butler** in the menu bar at the top of your screen and choose **Quit Influencer Butler**, or press **Command+Q**. If it is frozen hard, press **Command+Option+Esc**, select Influencer Butler, and click **Force Quit**. Then reopen the app.
+
+## 2. Turn on Low resource mode (the single biggest fix)
+
+This makes your butlers run one at a time instead of all at once, so clicks stop freezing on lighter hardware. It is the same on Windows and Mac:
+
+- In the left sidebar, scroll to the bottom and click **Settings**.
+- Click **Performance** in the settings menu.
+- Under **Low resource mode**, choose **On**.
+
+Leave it on. The default is Auto, which turns it on by itself on small machines, but setting it to On forces the calmer, one-at-a-time behavior every time.
+
+## 3. Stop butlers from auto-restarting into a freeze
+
+Right below Low resource mode, turn off **Resume on restart**. By default, any butlers that were running start themselves again the moment the app reopens. If several fire up at once right after a restart, that is often what triggers the freeze all over again. With it off, you decide what to turn back on, one thing at a time.
+
+## 4. Pause everything if it starts thrashing
+
+If the app is already struggling, stop all the background work instantly:
+
+- At the top of the window there is an **Automations** pill that says **Active**. Click it to switch to **Paused**. That halts all scheduled runs right away (anything you start by hand still works).
+- You can also do this from the tray or menu bar: **On Windows**, right-click the Influencer Butler icon in the system tray; **On Mac**, click the Influencer Butler icon in the menu bar. Choose **Pause all automations**.
+
+Once things are calm, start just one butler on its own and let it finish before turning anything else back on.
+
+## 5. Still dragging? Try Safe Mode
+
+If it is still choppy, Safe Mode runs the app in a simpler display mode that is steadier on some machines. It turns off graphics acceleration, which is a common cause of dragging on both Windows and Mac.
+
+When the app detects a graphics problem, it will offer a **Try Safe Mode** button in a small troubleshooting pop-up. Click it and the app restarts with graphics acceleration off. Updating your graphics driver (Windows) or your system software (Mac) usually fixes the root cause, so it is worth doing that too.
+
+## 6. Free up your computer
+
+The settings above do most of the work, but a busy computer makes everything harder:
+
+- Close other heavy programs while a butler is working: lots of browser tabs, video calls, photo or video editors. They all compete for memory.
+- Check how much memory you have. **On Windows:** press **Ctrl+Shift+Esc**, open the **Performance** tab, and look at Memory. **On Mac:** open **Activity Monitor** (Applications > Utilities), click the **Memory** tab; the Apple menu > **About This Mac** shows your total RAM. Around 2 GB free is usable, 4 GB or more is comfortable.
+- Keep your system up to date. **On Windows:** Start > Settings > Windows Update. **On Mac:** Apple menu > System Settings > General > Software Update.
+- A full computer restart clears memory that individual apps cannot.
+
+## Still stuck, or on a slow computer for good?
+
+If your computer is old or just not very powerful, you can run Influencer Butler on a free, always-on cloud PC so the heavy lifting happens off your machine. See [Run Influencer Butler in the cloud (free 24/7 PC)](/help/tutorials/run-in-cloud).
+
+For a calmer, lower-distraction window in general, see [Focus Mode](/help/tutorials/focus-mode).
+
+If you have worked through these steps and the app still freezes, reply to your support ticket and tell us roughly how much memory your computer has (see step 6) and which butler you were setting up when it froze. That helps us pinpoint it fast.

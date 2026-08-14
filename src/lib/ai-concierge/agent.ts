@@ -413,17 +413,40 @@ export type HelpHit = {
   images?: HelpImage[];
 };
 
+// Generic English filler that carries no topic signal. Without this a whole
+// support ticket dumped in as a query ("still dragging... please help") scores
+// mostly on stopwords, and long tutorials win on sheer length. Only tokens
+// longer than 2 chars reach here, so 1-2 char words ("is", "a") need no entry.
+const SEARCH_STOPWORDS = new Set([
+  "the", "and", "for", "are", "was", "were", "but", "you", "your", "yours",
+  "this", "that", "these", "those", "with", "from", "have", "has", "had",
+  "not", "can", "cant", "cannot", "get", "got", "its", "use", "used", "using",
+  "when", "what", "why", "how", "all", "any", "our", "who", "please", "help",
+  "still", "also", "than", "then", "them", "they", "will", "would", "could",
+  "should", "been", "being", "does", "did", "doing", "into", "just", "like",
+  "some", "more", "most", "very", "much", "only", "able", "about", "after",
+  "before", "dont", "doesnt", "isnt", "wasnt", "here", "there", "where",
+  "which", "while", "because", "now", "out", "off", "one", "two", "set",
+]);
+
 /**
- * Rank tutorials against a query with simple term-frequency over
+ * Rank tutorials against a query with term-frequency over
  * title + summary + category + body, and return the top matches with a short
- * snippet. Reuses the existing lexical index; no embeddings needed.
+ * snippet. Reuses the existing lexical index; no embeddings needed. Terms are
+ * deduped, stopword-filtered, and matched on word boundaries so a noisy query
+ * (like a full support ticket) grounds on the on-topic tutorial rather than the
+ * longest one, and "app" no longer matches inside "applying".
  */
 export async function searchHelp(query: string, locale?: string): Promise<HelpHit[]> {
-  const terms = (query || "")
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 2);
+  const terms = [...new Set(
+    (query || "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length > 2 && !SEARCH_STOPWORDS.has(t)),
+  )];
   if (terms.length === 0) return [];
+
+  const matchers = terms.map((t) => new RegExp(`\\b${t}\\b`, "g"));
 
   const index = await loadSearchIndex(locale);
   const scored = index
@@ -431,9 +454,9 @@ export async function searchHelp(query: string, locale?: string): Promise<HelpHi
       const hay = `${e.title} ${e.summary} ${e.category} ${e.text}`.toLowerCase();
       const titleHay = `${e.title} ${e.summary}`.toLowerCase();
       let score = 0;
-      for (const term of terms) {
-        const inBody = hay.split(term).length - 1;
-        const inTitle = titleHay.split(term).length - 1;
+      for (const re of matchers) {
+        const inBody = (hay.match(re) || []).length;
+        const inTitle = (titleHay.match(re) || []).length;
         score += inBody + inTitle * 5; // weight title/summary hits
       }
       return { e, score };
