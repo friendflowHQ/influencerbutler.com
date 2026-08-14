@@ -520,6 +520,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "app-slow-freezing",
+      "title": "App feels slow, laggy, or freezes: how to fix it",
+      "category": "Other",
+      "summary": "Is Influencer Butler dragging, lagging, or freezing up? Turn on Low resource mode, stop butlers from auto-restarting, pause automations, and try Safe Mode. Step-by-step for Windows and Mac.",
+      "order": 349,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "update-troubleshooting",
       "title": "Update troubleshooting: fix \"Failed to uninstall old application files\"",
       "category": "Other",
