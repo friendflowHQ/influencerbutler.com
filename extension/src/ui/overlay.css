@@ -370,6 +370,19 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   box-shadow: none;
 }
 .btn.secondary:hover { background: #e7edf5; filter: none; }
+.btn.small { padding: 7px 12px; font-size: 12.5px; box-shadow: none; }
+
+/* One-time feature tip (see storage HintsState): a soft card under the feature
+   it explains, with its own act / dismiss buttons. Deliberately quieter than the
+   nudge modal so it informs without interrupting the copy flow. */
+.hint {
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff8f1;
+}
+.hint-body { margin: 0; font-size: 12px; line-height: 1.5; color: #7c2d12; }
+.hint .row { margin-top: 8px; gap: 8px; }
 
 .note { font-size: 12.5px; line-height: 1.5; color: #64748b; margin: 0; }
 /* A checkbox label may reuse .note; keep it readable next to the box. */

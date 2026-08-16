@@ -3,6 +3,7 @@ import {
   type AuthStatus,
   type FeedbackInput,
   type FeedbackResult,
+  type IntegrationsView,
   type PageStatus,
   type PairResult,
   type SignInResult,
@@ -21,6 +22,11 @@ import { resolveLocale, setLocale, t } from "../i18n";
 // Popup: page status via the active tab's content script, account sign-in via
 // the background, settings straight to storage (content scripts pick changes
 // up on the next page view).
+
+// Adapter id of the first-party branded-link provider. Selecting it as the
+// primary deeplink provider is the whole of "turn branded links on": it takes no
+// credentials, only the signed-in license.
+const IB_LINKS = "influencerbutler";
 
 void init();
 
@@ -43,7 +49,7 @@ async function init(): Promise<void> {
   wireChat(settings.locale);
   // Link Butler (branded-link Ledger) is a neutral tool: creators share links on
   // every channel, so it shows regardless of onsite/offsite creator mode.
-  wireLinkButler(settings.locale);
+  void wireLinkButler(settings.locale);
   // The Deal Sites Harvester and Instagram Goldmine are offsite tools (harvest
   // deals / creators to share off-Amazon). Hide their launcher cards for an
   // onsite-only creator; "both" and offsite show them as before.
@@ -177,26 +183,41 @@ function wireDealHarvester(locale: Settings["locale"]): void {
 }
 
 // The Link Butler (Ledger) opens in its own tab, like the harvester. Localized
-// inline so the three strings do not have to live in the shared catalog.
-function wireLinkButler(locale: Settings["locale"]): void {
+// inline so the strings do not have to live in the shared catalog. The card also
+// carries the branded-links switch: this is where a creator signs in, so it is
+// the one place the free short-link feature is guaranteed to be seen, instead of
+// only in a dropdown on the API Integrations page.
+async function wireLinkButler(locale: Settings["locale"]): Promise<void> {
   const dict = {
     en: {
       heading: "Link Butler",
       blurb:
         "See how your branded links are performing, fix a posted link, and manage retargeting pixels.",
       open: "Open Link Butler",
+      brandedLabel: "Copy short branded links",
+      brandedHint:
+        "Copy my link hands you a links.influencerbutler.com short link instead of a long Amazon url. Your affiliate tag stays out of what you post, and clicks are counted. Free on any plan. Turn it off to copy the plain Amazon link.",
+      brandedSignIn: "Connect your license key above to use branded links.",
     },
     es: {
       heading: "Link Butler",
       blurb:
         "Mira el rendimiento de tus enlaces de marca, corrige un enlace publicado y gestiona los pixeles de retargeting.",
       open: "Abrir Link Butler",
+      brandedLabel: "Copiar enlaces cortos de marca",
+      brandedHint:
+        "Copiar mi enlace te da un enlace corto de links.influencerbutler.com en lugar de una url larga de Amazon. Tu etiqueta de afiliado no aparece en lo que publicas y se cuentan los clics. Gratis en cualquier plan. Desactívalo para copiar el enlace normal de Amazon.",
+      brandedSignIn: "Conecta tu clave de licencia arriba para usar enlaces de marca.",
     },
     fr: {
       heading: "Link Butler",
       blurb:
         "Suivez les performances de vos liens de marque, corrigez un lien publie et gerez les pixels de reciblage.",
       open: "Ouvrir Link Butler",
+      brandedLabel: "Copier des liens de marque courts",
+      brandedHint:
+        "Copier mon lien vous donne un lien court links.influencerbutler.com au lieu d'une longue url Amazon. Votre balise d'affiliation reste hors de ce que vous publiez et les clics sont comptes. Gratuit sur toute offre. Desactivez-le pour copier le lien Amazon brut.",
+      brandedSignIn: "Connectez votre cle de licence ci-dessus pour utiliser les liens de marque.",
     },
   }[resolveLocale(locale)];
   byId("lb-heading").textContent = dict.heading;
@@ -205,6 +226,24 @@ function wireLinkButler(locale: Settings["locale"]): void {
   btn.textContent = dict.open;
   btn.onclick = () => {
     void chrome.tabs.create({ url: chrome.runtime.getURL("links.html") });
+  };
+
+  byId("lb-branded-label").textContent = dict.brandedLabel;
+  const box = byId<HTMLInputElement>("lb-branded");
+  const hint = byId("lb-branded-hint");
+  const view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
+  const on = view.global.primaryDeeplinkProvider === IB_LINKS;
+  box.checked = on;
+  // `configured` for this provider means a license key is signed in, which is
+  // the only thing branded links need. Say so rather than letting the toggle
+  // look armed while links would quietly come back plain.
+  const signedIn = Boolean(view.providers.find((p) => p.id === IB_LINKS)?.configured);
+  hint.textContent = signedIn ? dict.brandedHint : dict.brandedSignIn;
+  box.onchange = () => {
+    void sendToBackground({
+      kind: "SET_INTEGRATION_GLOBAL",
+      partial: { primaryDeeplinkProvider: box.checked ? IB_LINKS : null },
+    });
   };
 }
 
