@@ -44,6 +44,7 @@ import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
 import { sendToBackground, type PageStatus, type RuntimeMessage } from "../shared/messages";
 import type { Finding, ProductScanFinding } from "../transport/types";
+import type { CampaignFill } from "../amazon/creator-campaigns";
 
 // Content-script entry: detect the page, run the enabled tools, answer the
 // popup's status requests, and re-run on SPA navigation (the storefront is a
@@ -58,6 +59,12 @@ let capturedVideoData: CarouselResult[] = [];
 // widget's own endpoint with pagination instead of guessing one.
 let capturedVideoUrls: string[] = [];
 let renderedClassified = -1;
+// Campaign fill / capacity captured by the MAIN-world connect-hook
+// (src/content/connect-hook.ts) from the campaign/search API, keyed by
+// campaignId. Merged so a later partial capture (e.g. the SPCC tab) does not
+// drop the Affiliate+ fills. Fed into Campaign Radar's Last Call meter.
+let campaignFills: Record<string, CampaignFill> = {};
+let lastCallRefreshTimer: number | null = null;
 
 void main();
 
@@ -90,6 +97,23 @@ async function main(): Promise<void> {
       }
       log("content", `captured widget payload: ${classifiedCount(result)} classified`);
       rebuildIfImproved();
+    });
+  });
+  // Campaign fill / capacity from the connect-hook (Last Call Butler). Merge the
+  // captured map, forward it to the background so it can alert on watched
+  // campaigns even when the grid is just being browsed, and re-render the radar
+  // so the fill meters appear on the cards.
+  document.addEventListener("ib-ext-campaign-fill", (event) => {
+    guard("campaign-fill-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const fills = (detail as { fills?: unknown })?.fills;
+      if (!fills || typeof fills !== "object") return;
+      campaignFills = { ...campaignFills, ...(fills as Record<string, CampaignFill>) };
+      void sendToBackground({
+        kind: "REPORT_CAMPAIGN_FILLS",
+        fills: campaignFills,
+      }).catch(() => undefined);
+      scheduleLastCallRefresh();
     });
   });
   await runForPage();
@@ -308,11 +332,28 @@ async function runForPage(): Promise<void> {
     if (!showOnsite) return; // onsite-only page (Creator Connections radar)
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
-        void initCampaignRadar(settings);
+        void initCampaignRadar(settings, campaignFills);
         lastStatus.toolSummaries.push({ label: t().sumCampaignRadar, value: t().ready });
       }
     });
   }
+}
+
+// The connect-hook delivers fills asynchronously (after the grid's own
+// campaign/search fetch), which can land after Campaign Radar first rendered.
+// Debounce a re-render so the fill meters appear once the map arrives, without
+// thrashing when Amazon fires several fetches in a row.
+function scheduleLastCallRefresh(): void {
+  if (lastCallRefreshTimer !== null) return;
+  lastCallRefreshTimer = window.setTimeout(() => {
+    lastCallRefreshTimer = null;
+    void (async () => {
+      const settings = await getSettings();
+      if (detectPageType(location.href) !== "campaign-grid") return;
+      if (!settings.tools.campaignRadar || !channelAllowed(settings.creatorMode, "onsite")) return;
+      guard("campaign-radar-fill", () => void initCampaignRadar(settings, campaignFills));
+    })();
+  }, 400);
 }
 
 // Amazon only loads the video widget's classified data once the widget is on

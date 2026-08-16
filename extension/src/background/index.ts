@@ -1,4 +1,6 @@
 import {
+  CAMPAIGN_WATCH_ALARM,
+  CAMPAIGN_WATCH_PERIOD_MINUTES,
   CATALOGUE_ALARM,
   CATALOGUE_PERIOD_MINUTES,
   FACEBOOK_GROUP_URL,
@@ -35,6 +37,14 @@ import {
   removeFromWatchlist,
   setWatchConditions,
 } from "./watchlist";
+import {
+  addCampaignWatch,
+  getCampaignWatchList,
+  handleCampaignFills,
+  handleLastCallNotificationClick,
+  refreshLastCall,
+  removeCampaignWatch,
+} from "./last-call";
 import {
   ensureNudgeAlarms,
   handleNudgeAlarm,
@@ -77,6 +87,9 @@ chrome.runtime.onInstalled.addListener(() => {
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
+  void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
+    periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
+  });
   void refreshCatalogues();
   void refreshRateCard();
   // After an update applies, this drops the now-stale "update waiting" record.
@@ -86,6 +99,9 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
   // Idempotent: re-arm the watchlist alarm for installs that predate it.
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
+  void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
+    periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
+  });
   void refreshCatalogues();
   void refreshRateCard();
   void maybeTestAllOnStartup();
@@ -117,14 +133,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     void checkForUpdate();
   }
   if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
+  if (alarm.name === CAMPAIGN_WATCH_ALARM) void refreshLastCall();
   handleNudgeAlarm(alarm.name);
 });
 
 // A nudge notification was clicked: open its target and record that the user
 // acted (so the matching in-page modal is suppressed).
 chrome.notifications.onClicked.addListener((notificationId) => {
-  // Watchlist alerts open the product directly; anything else is a nudge.
+  // Watchlist alerts open the product directly; Last Call alerts open the
+  // campaign grid; anything else is a nudge.
   if (handleWatchNotificationClick(notificationId)) return;
+  if (handleLastCallNotificationClick(notificationId)) return;
   void handleNudgeNotificationClick(notificationId, openAllowedUrl);
 });
 
@@ -220,6 +239,18 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "IS_WATCHED":
       void isWatched(message.asin, message.marketplace).then(sendResponse);
+      return true;
+    case "CAMPAIGN_WATCH_ADD":
+      void addCampaignWatch(message.item).then(sendResponse);
+      return true;
+    case "CAMPAIGN_WATCH_REMOVE":
+      void removeCampaignWatch(message.campaignId).then(sendResponse);
+      return true;
+    case "CAMPAIGN_WATCH_LIST":
+      void getCampaignWatchList().then(sendResponse);
+      return true;
+    case "REPORT_CAMPAIGN_FILLS":
+      void handleCampaignFills(message.fills, sender.tab?.id).then(() => sendResponse(undefined));
       return true;
     case "HARVEST_DEAL_SITES":
       void harvestDealSites(message.urls).then(sendResponse);

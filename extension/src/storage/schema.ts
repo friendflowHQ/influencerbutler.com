@@ -27,6 +27,12 @@ export type Settings = {
     minDaysRemaining: number;
     minRemainingBudget: number;
   };
+  // Last Call Butler: when a watched Creator Connections campaign crosses this
+  // fill level (creator slots claimed / cap, as a percent), the background poll
+  // fires a "Last Call" notification so the creator can accept before it closes.
+  lastCall: {
+    alertAtPct: number;
+  };
   // Marketplace codes (US/CA/UK/AU) whose buy-box availability Campaign Radar
   // checks per campaign product, rendering per-country chips on the grid.
   // Empty (the default) = feature off, zero extra fetches. Top-level rather
@@ -66,6 +72,7 @@ export type Settings = {
     campaignRadar: boolean;
     earningsOverlay: boolean;
     watchlist: boolean;
+    lastCallButler: boolean;
   };
   syncEnabled: boolean;
   debug: boolean;
@@ -184,6 +191,25 @@ export type WatchItem = {
 // bounded. Oldest entries are kept; adds past the cap are rejected in the UI.
 export const WATCHLIST_CAP = 50;
 
+// One Creator Connections campaign the creator is watching for Last Call: an
+// alert before it fills up. Keyed by the Amazon campaignId. `lastFillPct` and
+// `lastFullyClaimed` are the last observed values, so the poll fires the alert
+// exactly once when the fill first crosses the user's threshold (or the campaign
+// first flips to fully claimed) and stays quiet afterward.
+export type CampaignWatchItem = {
+  campaignId: string;
+  brand: string | null;
+  addedAt: number;
+  lastFillPct: number | null;
+  lastFullyClaimed: boolean | null;
+  notifiedAt: number | null;
+};
+
+// The campaign watchlist is bounded like the product one. The poll opens the
+// grid in a single background tab per cycle regardless of list size, but the cap
+// keeps the stored list and the per-campaign diff work sane.
+export const CAMPAIGN_WATCHLIST_CAP = 50;
+
 // Per-nudge delivery state for the re-engagement prompts (join the Facebook
 // group on day 1, download the free desktop app on day 3). Each nudge reaches
 // the user through two channels: an OS notification (fired by the background on
@@ -220,6 +246,7 @@ export type StorageShape = {
   priceHistory: Record<string, PricePoint[]>;
   orderCursors: Record<string, OrderCursor>;
   watchlist: WatchItem[];
+  campaignWatchlist: CampaignWatchItem[];
   telemetry: { selectorMisses: Record<string, number> };
   // When the extension was first actually used (first content-script run on an
   // Amazon page). Anchors the re-engagement nudge timers; null until first use.
@@ -228,7 +255,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 10,
+  schemaVersion: 11,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -245,6 +272,9 @@ export const DEFAULTS: StorageShape = {
       minCommissionPct: 10,
       minDaysRemaining: 7,
       minRemainingBudget: 1000,
+    },
+    lastCall: {
+      alertAtPct: 90,
     },
     availabilityMarkets: [],
     storefrontHandle: null,
@@ -267,6 +297,7 @@ export const DEFAULTS: StorageShape = {
       campaignRadar: true,
       earningsOverlay: true,
       watchlist: true,
+      lastCallButler: true,
     },
     syncEnabled: true,
     debug: false,
@@ -287,6 +318,7 @@ export const DEFAULTS: StorageShape = {
   priceHistory: {},
   orderCursors: {},
   watchlist: [],
+  campaignWatchlist: [],
   telemetry: { selectorMisses: {} },
   firstUseAt: null,
   nudges: {
@@ -312,8 +344,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // v9 -> v10 added the trendRadar tool flag (Best Sellers / New Releases /
   // Movers & Shakers discovery overlay) and the globalMaximizer tool flag
   // (per-market availability + international links), both on by default.
-  // Older stored state simply gains its defaults untouched (an existing
-  // user's price history starts empty).
+  // v10 -> v11 added Last Call Butler: the lastCallButler tool flag (on by
+  // default), the settings.lastCall.alertAtPct threshold (90%), and the
+  // campaignWatchlist array (empty). Older stored state simply gains its
+  // defaults untouched (an existing user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -324,6 +358,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       campaignRadar: {
         ...DEFAULTS.settings.campaignRadar,
         ...(raw.settings?.campaignRadar ?? {}),
+      },
+      lastCall: {
+        ...DEFAULTS.settings.lastCall,
+        ...(raw.settings?.lastCall ?? {}),
       },
       linkButler: {
         ...structuredClone(DEFAULTS.settings.linkButler),
@@ -352,8 +390,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
     },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
+    campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 10,
+    schemaVersion: 11,
   };
 }

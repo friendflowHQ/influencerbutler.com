@@ -1,4 +1,5 @@
 import type { Finding, VideoCounts } from "../transport/types";
+import type { CampaignFill } from "../amazon/creator-campaigns";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type {
   AsinEarnings,
@@ -134,6 +135,19 @@ export type RuntimeMessage =
   | { kind: "SET_WATCH_CONDITIONS"; asin: string; marketplace: string; notifyOn: WatchCondition[] }
   | { kind: "GET_WATCHLIST" }
   | { kind: "IS_WATCHED"; asin: string; marketplace: string }
+  // Last Call Butler campaign watchlist: watch/unwatch a Creator Connections
+  // campaign (keyed by campaignId) and read the set of watched ids so the grid
+  // overlay can show which cards the Butler is watching. The background poll then
+  // alerts before a watched campaign fills up.
+  | { kind: "CAMPAIGN_WATCH_ADD"; item: CampaignWatchInput }
+  | { kind: "CAMPAIGN_WATCH_REMOVE"; campaignId: string }
+  | { kind: "CAMPAIGN_WATCH_LIST" }
+  // The grid content script forwards the fill map it captured from the
+  // campaign/search API (via the MAIN-world connect-hook) so the background can
+  // evaluate Last Call watches. Fired both when the creator browses the grid and
+  // when the background poll opens it in a tab; the background correlates the
+  // poll's tab by sender id.
+  | { kind: "REPORT_CAMPAIGN_FILLS"; fills: Record<string, CampaignFill> }
   // Deal Sites Harvester: fetch and parse a list of aggregator URLs (the deals
   // page requests the host permission first), and read the curated source list.
   | { kind: "HARVEST_DEAL_SITES"; urls: string[] }
@@ -220,6 +234,14 @@ export type WatchInput = {
 // Returned by the watchlist add/remove/get messages: the full current list,
 // plus atCap on add when the watchlist is full so the UI can explain the block.
 export type WatchlistResult = { items: WatchItem[]; atCap?: boolean };
+
+// What the grid's "watch this campaign" bell sends to add a Last Call watch.
+export type CampaignWatchInput = { campaignId: string; brand: string | null };
+
+// Returned by the campaign watch add/remove/list messages: the set of currently
+// watched campaign ids (for the grid overlay to reflect bell state), plus atCap
+// on add when the campaign watchlist is full.
+export type CampaignWatchListResult = { campaignIds: string[]; atCap?: boolean };
 
 // One normalized Creator API (PA-API) product row. Mirrors the server's
 // EnrichedItem shape in src/lib/paapi.ts, one per (asin, marketplace).

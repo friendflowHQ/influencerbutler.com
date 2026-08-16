@@ -23,6 +23,7 @@ export const apiTransport: FindingTransport = {
     const gaps = batch.filter((f) => f.type === "content_gap");
     const issues = batch.filter((f) => f.type === "storefront_issue");
     const orders = batch.filter((f) => f.type === "order");
+    const deals = batch.filter((f) => f.type === "deal");
     const creators = batch.filter((f) => f.type === "instagram_creator");
 
     const posts: Array<Promise<Response>> = [];
@@ -85,6 +86,27 @@ export const apiTransport: FindingTransport = {
             title: f.title ?? null,
             price_cents: f.priceCents ?? null,
             currency: f.currency ?? "USD",
+            detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+
+    if (deals.length > 0) {
+      posts.push(
+        post(ENDPOINTS.deals, key, {
+          deals: deals.map((f) => ({
+            asin: f.asin,
+            marketplace: f.marketplace,
+            title: f.title ?? null,
+            price_cents: f.priceCents ?? null,
+            list_price_cents: f.listPriceCents ?? null,
+            discount_pct: f.discountPct ?? null,
+            commission_rate_pct: f.commissionRatePct ?? null,
+            currency: f.currency ?? "USD",
+            image_url: f.imageUrl ?? null,
+            source_url: f.sourceUrl,
+            promo_code: f.promoCode ?? null,
             detected_at: f.detectedAt,
           })),
         }),

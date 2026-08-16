@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bandFor,
+  campaignFillPct,
   computeCampaignScore,
   meetsRadarThresholds,
   type CampaignScoreInputs,
@@ -78,6 +79,43 @@ describe("computeCampaignScore", () => {
     const result = computeCampaignScore(strong);
     const sum = Object.values(result.parts).reduce((a, b) => a + b, 0);
     expect(Math.round(sum)).toBe(result.score);
+  });
+
+  it("ranks a nearly-full but open campaign above an identical empty one (Last Call urgency)", () => {
+    const nearlyFull = computeCampaignScore({ ...strong, fillPct: 0.9, fullyClaimed: false });
+    const empty = computeCampaignScore({ ...strong, fillPct: 0, fullyClaimed: false });
+    expect(nearlyFull.score).toBeGreaterThan(empty.score);
+    expect(nearlyFull.parts.urgency).toBeGreaterThan(empty.parts.urgency);
+  });
+
+  it("collapses urgency to zero for a fully claimed campaign", () => {
+    const closed = computeCampaignScore({ ...strong, fillPct: 1, fullyClaimed: true });
+    expect(closed.parts.urgency).toBe(0);
+  });
+
+  it("treats unknown fill as neutral, never a penalty", () => {
+    const withFill = computeCampaignScore({ ...strong, fillPct: 0, fullyClaimed: false });
+    const unknownFill = computeCampaignScore({ ...strong, fillPct: null, fullyClaimed: null });
+    // Unknown (0.5) sits above empty (also 0.5 here) or equal, and always at or
+    // above the empty floor; it must not drag the score down.
+    expect(unknownFill.parts.urgency).toBeGreaterThanOrEqual(withFill.parts.urgency);
+  });
+});
+
+describe("campaignFillPct", () => {
+  it("returns claimed / cap as a 0-1 fraction", () => {
+    expect(campaignFillPct(719, 800)).toBeCloseTo(0.89875, 5);
+    expect(campaignFillPct(0, 800)).toBe(0);
+  });
+
+  it("is null when a count is missing or the cap is zero", () => {
+    expect(campaignFillPct(null, 800)).toBeNull();
+    expect(campaignFillPct(14, null)).toBeNull();
+    expect(campaignFillPct(5, 0)).toBeNull();
+  });
+
+  it("clamps an over-full campaign to 1", () => {
+    expect(campaignFillPct(810, 800)).toBe(1);
   });
 });
 

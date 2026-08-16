@@ -6,13 +6,21 @@ import { patchSettings } from "../../storage/store";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import {
   sendToBackground,
+  type CampaignWatchListResult,
   type EarningsLookupResult,
   type OrderAsinsResult,
 } from "../../shared/messages";
-import { readCampaignGrid, daysUntil, type Campaign } from "../../amazon/creator-campaigns";
+import {
+  readCampaignGrid,
+  daysUntil,
+  applyCampaignFills,
+  type Campaign,
+  type CampaignFill,
+} from "../../amazon/creator-campaigns";
 import type { Availability } from "../../background/market-availability";
 import { getCachedAvailability, putCachedAvailability } from "./availability-cache";
 import {
+  campaignFillPct,
   computeCampaignScore,
   meetsRadarThresholds,
   type CampaignScore,
@@ -55,6 +63,9 @@ type Row = {
   availability: Record<string, Availability> | null;
   score: CampaignScore;
   badgeBody: HTMLElement;
+  // Whether the Butler is watching this campaign for Last Call (the bell state).
+  // Seeded from the background watchlist, flipped optimistically on toggle.
+  watched: boolean;
 };
 
 // The viewport observer driving lazy availability lookups. Module-level so a
@@ -62,7 +73,21 @@ type Row = {
 // run's observer instead of leaking it against removed nodes.
 let availabilityObserver: IntersectionObserver | null = null;
 
-export async function initCampaignRadar(settings: Settings): Promise<void> {
+// Whether Last Call Butler is on for this run, so renderBadge (called from many
+// enrichment callbacks) can decide whether to draw the watch bell without
+// threading settings through every call site. Set at the top of each init.
+let lastCallEnabled = false;
+
+// Init epoch: initCampaignRadar awaits between its teardown and its mounting,
+// so two SPA-triggered runs can interleave and BOTH mount (seen live as two
+// badges per card). Each run takes a ticket; after any await it bails if a
+// newer run has started, leaving exactly one run to decorate the grid.
+let initEpoch = 0;
+
+export async function initCampaignRadar(
+  settings: Settings,
+  fills: Record<string, CampaignFill> = {},
+): Promise<void> {
   // Tear down a prior run (Amazon rewrites the grid as the creator filters), then
   // rebuild cleanly over the current cards.
   availabilityObserver?.disconnect();
@@ -75,6 +100,7 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
   for (const node of Array.from(document.querySelectorAll(`[${DONE_ATTR}]`))) {
     node.removeAttribute(DONE_ATTR);
     setHighlight(node as HTMLElement, false);
+    setDimmed(node as HTMLElement, false);
   }
 
   const campaigns = readCampaignGrid(document).filter((c) => {
@@ -84,9 +110,30 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
   });
   if (campaigns.length === 0) return;
 
+  lastCallEnabled = settings.tools.lastCallButler;
+
+  // Merge the campaign fill / capacity captured from the API (Last Call). Fill is
+  // not in the card DOM, so this is how each card learns how full it is.
+  applyCampaignFills(campaigns, fills);
+
+  const epoch = ++initEpoch;
   const now = new Date();
   const thresholds: RadarThresholds = { ...settings.campaignRadar };
   const loaded = loadFilters(await getCache());
+  if (epoch !== initEpoch) return;
+
+  // Which campaigns the Butler is already watching, so the bells render correct.
+  // A failure here just leaves every bell "off"; the toggle still works.
+  const watchedIds = new Set<string>();
+  if (settings.tools.lastCallButler) {
+    try {
+      const res = await sendToBackground<CampaignWatchListResult>({ kind: "CAMPAIGN_WATCH_LIST" });
+      for (const id of res.campaignIds) watchedIds.add(id);
+    } catch (error) {
+      log("campaign-radar", "watch list read failed", error);
+    }
+  }
+  if (epoch !== initEpoch) return;
 
   const rows: Row[] = campaigns.map((campaign) => {
     const daysRemaining = campaign.endsAt ? daysUntil(campaign.endsAt, now) : null;
@@ -105,10 +152,18 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
       availability: null,
       score: computeCampaignScore(inputsFor(campaign, daysRemaining, null, null)),
       badgeBody,
+      watched: settings.tools.lastCallButler && campaign.campaignId !== null
+        ? watchedIds.has(campaign.campaignId)
+        : false,
     };
-    mountBadge(campaign.el, badgeBody);
+    // Badge onto the stats block so the score sits next to the numbers it
+    // explains; outline/dim/filter target `el`, the full visual card.
+    mountBadge(campaign.detailsEl, badgeBody);
     renderBadge(row);
     applyHighlight(row, thresholds);
+    // A fully claimed campaign can no longer be accepted: dim it so the creator's
+    // eye skips it, and never highlight it as a pick.
+    if (lastCallEnabled && campaign.fullyClaimed === true) setDimmed(campaign.el, true);
     return row;
   });
 
@@ -203,7 +258,7 @@ export async function initCampaignRadar(settings: Settings): Promise<void> {
       applyFilter();
     },
   });
-  mountToolbar(first.campaign.el, toolbar);
+  mountToolbar(rows.map((r) => r.campaign.el), toolbar);
 }
 
 function inputsFor(
@@ -218,6 +273,8 @@ function inputsFor(
     remainingBudgetCents: campaign.remainingBudgetCents,
     owned,
     provenEarner,
+    fillPct: campaignFillPct(campaign.slotsFilled, campaign.slotsTotal),
+    fullyClaimed: campaign.fullyClaimed,
   };
 }
 
@@ -238,7 +295,21 @@ function mountBadge(cardEl: HTMLElement, body: HTMLElement): void {
 function renderBadge(row: Row): void {
   const body = row.badgeBody;
   body.replaceChildren();
-  body.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
+
+  const scoreRow = el("div", "tile-score-row");
+  scoreRow.style.display = "flex";
+  scoreRow.style.alignItems = "center";
+  scoreRow.style.gap = "6px";
+  scoreRow.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
+  // Last Call watch bell: have the Butler alert you before this campaign fills.
+  // Only when the campaign exposes a stable id to key the watch on.
+  if (lastCallEnabled && row.campaign.campaignId) scoreRow.append(renderWatchBell(row));
+  body.append(scoreRow);
+
+  // Last Call fill meter: how full the campaign is (creator slots claimed vs
+  // cap). Fill lives only in the API capture, so a card without it simply shows
+  // no meter. A fully claimed campaign reads "Full" and the card is dimmed.
+  if (lastCallEnabled && row.campaign.slotsTotal !== null) body.append(renderFillMeter(row));
 
   // Personal signals lead: a product you own or have earned on is the strongest
   // reason to take a campaign.
@@ -269,6 +340,107 @@ function renderBadge(row: Row): void {
       chip.title = t().radarAvailTitle(code, status);
       body.append(chip);
     }
+  }
+}
+
+// ---- Last Call: fill meter + watch bell -------------------------------------
+
+// A slim capacity bar plus a label, built with inline styles so it needs no
+// shared stylesheet class. Green until ~75% full, amber approaching full, red
+// when fully claimed. The card is dimmed when the campaign has closed.
+function renderFillMeter(row: Row): HTMLElement {
+  const filled = row.campaign.slotsFilled;
+  const total = row.campaign.slotsTotal;
+  const full = row.campaign.fullyClaimed === true;
+  const pct = campaignFillPct(filled, total);
+  const pctInt = pct === null ? null : Math.round(pct * 100);
+
+  const wrap = el("div", "radar-fill");
+  wrap.style.display = "flex";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "5px";
+  wrap.style.marginTop = "4px";
+
+  const bar = el("div");
+  bar.style.position = "relative";
+  bar.style.width = "48px";
+  bar.style.height = "6px";
+  bar.style.flex = "0 0 auto";
+  bar.style.borderRadius = "999px";
+  bar.style.background = "rgba(0,0,0,0.18)";
+  bar.style.overflow = "hidden";
+  const level = el("div");
+  level.style.height = "100%";
+  level.style.width = `${pctInt ?? 0}%`;
+  level.style.borderRadius = "999px";
+  level.style.background = full ? "#ef4444" : pct !== null && pct >= 0.75 ? "#f59e0b" : "#22c55e";
+  bar.append(level);
+
+  const label = el(
+    "span",
+    "",
+    full
+      ? t().lastCallFull
+      : pctInt === null
+        ? t().lastCallFillUnknown
+        : t().lastCallFillLabel(pctInt, filled ?? 0, total ?? 0),
+  );
+  label.style.fontSize = "11px";
+  label.style.fontWeight = "600";
+  label.style.whiteSpace = "nowrap";
+  label.style.color = full ? "#ef4444" : "inherit";
+
+  wrap.append(bar, label);
+  return wrap;
+}
+
+function renderWatchBell(row: Row): HTMLElement {
+  const btn = el("button", "radar-bell", row.watched ? "🔔" : "🔕");
+  btn.type = "button";
+  btn.title = row.watched ? t().lastCallWatching : t().lastCallWatch;
+  btn.setAttribute("aria-label", btn.title);
+  btn.style.border = "none";
+  btn.style.background = "transparent";
+  btn.style.cursor = "pointer";
+  btn.style.fontSize = "13px";
+  btn.style.lineHeight = "1";
+  btn.style.padding = "0";
+  btn.style.opacity = row.watched ? "1" : "0.6";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void toggleWatch(row);
+  });
+  return btn;
+}
+
+// Optimistically flip the bell, then persist through the background. The
+// background returns the authoritative watched set, so a cap-block or a failure
+// reconciles the UI back to the truth.
+async function toggleWatch(row: Row): Promise<void> {
+  const campaignId = row.campaign.campaignId;
+  if (!campaignId) return;
+  const next = !row.watched;
+  row.watched = next;
+  renderBadge(row);
+  try {
+    const res = await sendToBackground<CampaignWatchListResult>(
+      next
+        ? {
+            kind: "CAMPAIGN_WATCH_ADD",
+            item: { campaignId, brand: row.campaign.brand },
+          }
+        : { kind: "CAMPAIGN_WATCH_REMOVE", campaignId },
+    );
+    const authoritative = res.campaignIds.includes(campaignId);
+    if (authoritative !== row.watched) {
+      row.watched = authoritative;
+      renderBadge(row);
+    }
+  } catch (error) {
+    row.watched = !next;
+    renderBadge(row);
+    log("campaign-radar", "watch toggle failed", error);
   }
 }
 
@@ -353,6 +525,12 @@ function applyHighlight(row: Row, thresholds: RadarThresholds): void {
   setHighlight(row.campaign.el, meetsRadarThresholds(inputs, thresholds));
 }
 
+// Dim a fully claimed campaign card (a closed door), applied as an inline style
+// on the light-DOM card element like the highlight outline.
+function setDimmed(el: HTMLElement, on: boolean): void {
+  el.style.opacity = on ? "0.55" : "";
+}
+
 function setHighlight(el: HTMLElement, on: boolean): void {
   if (on) {
     el.style.outline = HIGHLIGHT_OUTLINE;
@@ -433,14 +611,44 @@ function numberControl(
   return wrap;
 }
 
-// Place the toolbar just above the grid so it spans the campaign cards.
-function mountToolbar(cardEl: HTMLElement, host: HTMLElement): void {
+// Place the toolbar at the top of the grid container so it spans the campaign
+// cards. The container is found structurally (the lowest common ancestor of the
+// first and last card) rather than by counting wrapper levels, because Amazon's
+// wrapper depth is not stable. The host is inserted as a direct child of that
+// container, before the subtree holding the first card, and told to span every
+// column / wrap to its own flex line: mounting it any deeper makes it occupy
+// the first card's cell and shove that card's content into the row below (the
+// mangled first card this replaces).
+function mountToolbar(cardEls: HTMLElement[], host: HTMLElement): void {
   host.style.display = "block";
   host.style.width = "100%";
-  const parent = cardEl.parentElement;
-  if (parent && parent.parentElement) {
-    parent.parentElement.insertBefore(host, parent);
-  } else if (parent) {
-    parent.prepend(host);
+  host.style.gridColumn = "1 / -1";
+  host.style.flex = "1 1 100%";
+  const first = cardEls[0];
+  const last = cardEls[cardEls.length - 1];
+  if (!first || !last) return;
+
+  // Lowest ancestor of the first card that also contains the last card = the
+  // shared grid container (with a single card this is just the card's parent).
+  let grid: HTMLElement | null = first.parentElement;
+  while (grid && !grid.contains(last)) grid = grid.parentElement;
+  if (!grid) return;
+
+  // The grid's direct child whose subtree holds the first card, so the toolbar
+  // lands above the first row of cards.
+  let anchor: HTMLElement = first;
+  while (anchor.parentElement && anchor.parentElement !== grid) anchor = anchor.parentElement;
+
+  // Virtualized grid (verified live 2026-08-16: ReactVirtualized): the cells
+  // are absolutely positioned, so a static child inserted in the container
+  // would simply underlap the first row. Mount above the scrolling grid
+  // element instead so the toolbar gets its own layout space.
+  if (getComputedStyle(anchor).position === "absolute") {
+    const scroller = grid.parentElement;
+    if (scroller && scroller.parentElement) {
+      scroller.parentElement.insertBefore(host, scroller);
+      return;
+    }
   }
+  grid.insertBefore(host, anchor);
 }

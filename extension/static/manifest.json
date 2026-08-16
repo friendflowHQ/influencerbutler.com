@@ -116,6 +116,16 @@
       "js": ["page-hook.js"],
       "run_at": "document_start",
       "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://affiliate-program.amazon.com/p/connect/*",
+        "https://affiliate-program.amazon.ca/p/connect/*",
+        "https://affiliate-program.amazon.co.uk/p/connect/*"
+      ],
+      "js": ["connect-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     }
   ],
   "action": {

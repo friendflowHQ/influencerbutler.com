@@ -27,6 +27,7 @@ export type CampaignScore = {
     budget: number;
     owned: number;
     earner: number;
+    urgency: number;
   };
 };
 
@@ -45,7 +46,23 @@ export type CampaignScoreInputs = {
   // The creator has already earned affiliate commission on this product (from
   // the desktop app ledger). Null when the app was never paired.
   provenEarner: boolean | null;
+  // How full the campaign is: creator slots claimed / cap, as 0-1. Null when the
+  // fill map has not arrived (or Amazon stopped exposing it). Optional so callers
+  // that never had fill data still type-check and read as neutral. This is the
+  // Last Call Butler signal: a nearly-full-but-open campaign is the most urgent.
+  fillPct?: number | null;
+  // The campaign has hit its creator cap and can no longer be accepted. When
+  // true, urgency collapses to zero: there is no point ranking a closed door high.
+  fullyClaimed?: boolean | null;
 };
+
+// Creator slots claimed vs. cap as a 0-1 fraction, or null when either count is
+// missing or the cap is zero. Shared by the overlay meter, the score, and the
+// background Last Call poll so they all read fill the same way.
+export function campaignFillPct(filled: number | null, total: number | null): number | null {
+  if (filled === null || total === null || total <= 0) return null;
+  return clamp01(filled / total);
+}
 
 // The user-tunable floors. This is the differentiator: Oink's highlight
 // thresholds are fixed; ours are these, editable on the options page and live in
@@ -59,12 +76,16 @@ export type RadarThresholds = {
 // Weights sum to 100. Commission dominates because the rate is what actually
 // decides whether a video here earns. "Owned" is weighted heavily too: a product
 // the creator already has on hand is the fastest, most authentic content to make.
+// "Urgency" (how close to full) is the Last Call Butler signal: it never drags a
+// healthy campaign below neutral, it only lifts a nearly-full-but-open one and
+// zeroes out a campaign that has already closed.
 const WEIGHTS = {
-  commission: 40,
-  timing: 15,
-  budget: 10,
-  owned: 25,
-  earner: 10,
+  commission: 35,
+  timing: 12,
+  budget: 8,
+  owned: 22,
+  earner: 8,
+  urgency: 15,
 } as const;
 
 // A commission rate at or above 20% scores full marks on that component; below it
@@ -108,12 +129,21 @@ export function computeCampaignScore(inputs: CampaignScoreInputs): CampaignScore
   const ownedUnit = inputs.owned === null ? 0.5 : inputs.owned ? 1 : 0;
   const earnerUnit = inputs.provenEarner === null ? 0.5 : inputs.provenEarner ? 1 : 0;
 
+  // Urgency (Last Call): a fully claimed campaign is a closed door => 0. Unknown
+  // fill reads neutral (0.5). Otherwise it ranges 0.5 (empty, not urgent) up to
+  // 1.0 (nearly full but still open, grab it now), so fill only ever lifts a
+  // healthy campaign, never sinks it below neutral for being fresh.
+  const fillPct = inputs.fillPct ?? null;
+  const fullyClaimed = inputs.fullyClaimed ?? null;
+  const urgencyUnit = fullyClaimed ? 0 : fillPct === null ? 0.5 : 0.5 + 0.5 * clamp01(fillPct);
+
   const parts = {
     commission: commissionUnit * WEIGHTS.commission,
     timing: timingUnit * WEIGHTS.timing,
     budget: budgetUnit * WEIGHTS.budget,
     owned: ownedUnit * WEIGHTS.owned,
     earner: earnerUnit * WEIGHTS.earner,
+    urgency: urgencyUnit * WEIGHTS.urgency,
   };
 
   const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);

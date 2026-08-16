@@ -206,6 +206,20 @@ export const WATCHLIST_ALARM = "ib-watchlist";
 export const WATCHLIST_PERIOD_MINUTES = 3 * 60;
 export const WATCHLIST_RUN_CAP = 8;
 
+// Last Call Butler. When the creator is watching one or more Creator Connections
+// campaigns, this alarm opens the campaign grid in a single background tab so the
+// MAIN-world connect-hook re-captures how full each campaign is; a watched
+// campaign crossing the user's fill threshold fires a "Last Call" notification.
+// One tab per run regardless of list size (the grid holds every campaign), so
+// the cadence can be tighter than the product watchlist without extra tabs.
+export const CAMPAIGN_WATCH_ALARM = "ib-last-call";
+export const CAMPAIGN_WATCH_PERIOD_MINUTES = 30;
+// The grid page the poll opens: the Affiliate+ opportunities tab (the verified
+// source of the fill fields). A logged-out or ineligible load simply never fires
+// the campaign/search fetch, so the poll no-ops rather than false-alerting.
+export const CAMPAIGN_GRID_URL =
+  "https://affiliate-program.amazon.com/p/connect/requests?status=opportunity&type=affiliate-plus&sortBy=recommended_for_you&campaignStatuses=active%2Cpending&nonFullyClaimedOnly=false";
+
 // Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
 // day 1 invites the user to the Facebook community, day 3 invites them to
 // download the free desktop app. Each fires once via an OS notification (on the
