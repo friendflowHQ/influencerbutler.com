@@ -228,6 +228,19 @@ button[disabled] {
   cursor: default;
 }
 
+/* Inline warning for a setting that is selected but cannot work yet (for
+   example branded links with nobody signed in). Amber, not red: nothing is
+   broken, the feature is just idle until the user acts. */
+.warn {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin: 8px 0 0;
+  font-size: 12.5px;
+}
+
 .muted {
   color: var(--slate-600);
 }

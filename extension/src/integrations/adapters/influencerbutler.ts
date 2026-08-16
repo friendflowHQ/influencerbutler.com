@@ -1,5 +1,6 @@
 import type { IntegrationAdapter, TestResult } from "../types";
 import { withAffiliateTag } from "../url";
+import { LinkNoticeError } from "../link-notice";
 import { listLinks, mintLink } from "../ib-links-client";
 
 // Influencer Butler branded links: the desktop app's "selfhosted" DeepLink
@@ -49,7 +50,15 @@ export const influencerButlerLinkAdapter: IntegrationAdapter = {
   async generateLink(target, creds): Promise<string> {
     const licenseKey = (creds.licenseKey ?? "").trim();
     const tagged = target.tag ? withAffiliateTag(target.url, target.tag) : target.url;
-    if (!licenseKey) return tagged;
+    // Not signed in: nothing can be minted. Raise a notice rather than quietly
+    // returning the tagged url, so the caller still falls back to that working
+    // link but can tell the user why it is not a branded short link.
+    if (!licenseKey) {
+      throw new LinkNoticeError(
+        "signInRequired",
+        "Sign in with your license key to create branded links.",
+      );
+    }
     // Mint (or reuse) a branded short link. Throw on failure so the caller
     // (routing.buildAffiliateLink) falls back to the plain tagged url.
     const result = await mintLink(

@@ -25,6 +25,7 @@ import type {
   RepointResult,
   StatsResult,
 } from "../integrations/ib-links-client";
+import type { LinkNotice } from "../integrations/link-notice";
 import type { BrandedMintInput, BulkMintResult } from "../background/links";
 
 type IntegrationsGlobal = IntegrationsState["global"];
@@ -287,7 +288,16 @@ export type HarvestResult = {
 };
 
 export type IntegrationTestOutcome = { ok: boolean; message: string };
-export type GenerateLinkResult = { ok: boolean; url?: string; error?: string };
+// `notice` explains why the url is not the link the user's setup asked for (for
+// example the branded-link provider is selected but nobody is signed in). The
+// url is still a working affiliate link, so callers copy it either way and just
+// say what happened. See integrations/link-notice.
+export type GenerateLinkResult = {
+  ok: boolean;
+  url?: string;
+  error?: string;
+  notice?: LinkNotice;
+};
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 
 export type AiChatTurn = { role: "user" | "assistant"; content: string };

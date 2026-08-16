@@ -49,7 +49,7 @@ describe("buildAffiliateLink", () => {
   const base = { asin: "B0ABC12345", marketplace: "amazon.com" };
 
   it("returns a plain url when routing is disabled", async () => {
-    const url = await buildAffiliateLink(
+    const { url } = await buildAffiliateLink(
       base,
       { enabled: false, primaryDeeplinkProvider: null, perCountryTags: { US: "t-20" }, storefrontHandle: null },
       noCreds,
@@ -58,7 +58,7 @@ describe("buildAffiliateLink", () => {
   });
 
   it("applies the affiliate tag when enabled with no deeplink provider", async () => {
-    const url = await buildAffiliateLink(
+    const { url } = await buildAffiliateLink(
       base,
       { enabled: true, primaryDeeplinkProvider: null, perCountryTags: { US: "t-20" }, storefrontHandle: null },
       noCreds,
@@ -67,7 +67,7 @@ describe("buildAffiliateLink", () => {
   });
 
   it("wraps through the primary deeplink provider template", async () => {
-    const url = await buildAffiliateLink(
+    const { url } = await buildAffiliateLink(
       base,
       { enabled: true, primaryDeeplinkProvider: "selfhosted", perCountryTags: { US: "t-20" }, storefrontHandle: null },
       async () => ({ linkTemplate: "https://go.me/?url={url}" }),
@@ -78,7 +78,7 @@ describe("buildAffiliateLink", () => {
   });
 
   it("falls back to the tagged url when the provider throws", async () => {
-    const url = await buildAffiliateLink(
+    const { url, notice } = await buildAffiliateLink(
       base,
       { enabled: true, primaryDeeplinkProvider: "selfhosted", perCountryTags: { US: "t-20" }, storefrontHandle: null },
       async () => {
@@ -86,6 +86,25 @@ describe("buildAffiliateLink", () => {
       },
     );
     expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20");
+    expect(notice).toBeUndefined();
+  });
+
+  // Branded links with no license key: still a working tagged url, but the
+  // caller gets a reason so the UI can explain the fallback (the original bug
+  // was that this was silent).
+  it("reports signInRequired when branded links have no license key", async () => {
+    const { url, notice } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: "influencerbutler",
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      noCreds,
+    );
+    expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20");
+    expect(notice).toBe("signInRequired");
   });
 
   it("prefers a participating affiliate network's minted link over the deeplink wrapper", async () => {
@@ -93,7 +112,7 @@ describe("buildAffiliateLink", () => {
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ link: "https://levanta.pxf.io/abc" }), { status: 200 })),
     );
-    const url = await buildAffiliateLink(
+    const { url } = await buildAffiliateLink(
       base,
       {
         enabled: true,
@@ -110,7 +129,7 @@ describe("buildAffiliateLink", () => {
 
   it("falls back to the deeplink wrapper when the network mint fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
-    const url = await buildAffiliateLink(
+    const { url } = await buildAffiliateLink(
       base,
       {
         enabled: true,

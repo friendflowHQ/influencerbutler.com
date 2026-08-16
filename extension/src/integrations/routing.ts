@@ -1,5 +1,6 @@
 import { getAdapter } from "./registry";
 import { canonicalProductUrl, withAffiliateTag } from "./url";
+import { noticeOf, type LinkNotice } from "./link-notice";
 import type { LinkTarget } from "./types";
 
 // Turns a product into the user's affiliate link. Routing applies the correct
@@ -68,13 +69,18 @@ export type RoutingConfig = {
 
 export type BuildLinkInput = { asin: string; marketplace: string; url?: string };
 
+// The resolved link, plus (when there is one) the reason it is not the link the
+// user's setup asked for. `url` is always usable; `notice` exists only so the UI
+// can explain a fallback instead of leaving the user to guess. See link-notice.
+export type BuildLinkResult = { url: string; notice?: LinkNotice };
+
 // Resolve the final link. `getProviderCreds` decrypts a provider's stored
 // credentials (injected so this module stays free of storage/crypto deps).
 export async function buildAffiliateLink(
   input: BuildLinkInput,
   config: RoutingConfig,
   getProviderCreds: (id: string) => Promise<Record<string, string>>,
-): Promise<string> {
+): Promise<BuildLinkResult> {
   const url = input.url || canonicalProductUrl(input.asin, input.marketplace, input.url ?? "");
   const tag = config.enabled
     ? resolveTag(input.marketplace, config.perCountryTags, config.storefrontHandle)
@@ -82,7 +88,7 @@ export async function buildAffiliateLink(
 
   const tagged = tag ? withAffiliateTag(url, tag) : url;
 
-  if (!config.enabled) return tagged;
+  if (!config.enabled) return { url: tagged };
 
   const target: LinkTarget = { asin: input.asin, marketplace: input.marketplace, url, tag };
 
@@ -94,7 +100,7 @@ export async function buildAffiliateLink(
       const minted = await adapter.generateLink(target, await getProviderCreds(networkId));
       // A network only "wins" when it actually produced a different, tracked
       // link; if it fell back to the tagged url, keep trying the next option.
-      if (minted && minted !== tagged) return minted;
+      if (minted && minted !== tagged) return { url: minted };
     } catch {
       // Fall through to the next network / the primary deeplink provider.
     }
@@ -106,14 +112,16 @@ export async function buildAffiliateLink(
     const adapter = getAdapter(providerId);
     if (adapter?.generateLink) {
       try {
-        return await adapter.generateLink(target, await getProviderCreds(providerId));
-      } catch {
-        // A misconfigured provider must never block copying a working link.
-        return tagged;
+        return { url: await adapter.generateLink(target, await getProviderCreds(providerId)) };
+      } catch (error) {
+        // A misconfigured provider must never block copying a working link. Some
+        // fallbacks carry a reason worth showing the user (see link-notice); the
+        // rest fall back just as silently as before.
+        return { url: tagged, notice: noticeOf(error) };
       }
     }
   }
 
   // 3. Plain tagged url.
-  return tagged;
+  return { url: tagged };
 }

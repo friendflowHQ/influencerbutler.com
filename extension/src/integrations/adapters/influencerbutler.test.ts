@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { influencerButlerLinkAdapter as ib } from "./influencerbutler";
+import { LinkNoticeError } from "../link-notice";
 import type { LinkTarget } from "../types";
 
 const target: LinkTarget = {
@@ -31,12 +32,16 @@ describe("influencer butler branded link adapter", () => {
     });
   });
 
-  it("returns the tagged url without a network call when not signed in", async () => {
+  it("raises a signInRequired notice without a network call when not signed in", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const link = await ib.generateLink!(target, {});
-    expect(link).toBe("https://www.amazon.com/dp/B0ABC12345?tag=mytag-20");
+    // The fallback link itself is routing's job (it returns the tagged url);
+    // the adapter's job is to say why, so the UI is not silent about it.
+    await expect(ib.generateLink!(target, {})).rejects.toBeInstanceOf(LinkNoticeError);
+    await expect(ib.generateLink!(target, {})).rejects.toMatchObject({
+      notice: "signInRequired",
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

@@ -17,6 +17,9 @@ export interface OptionsDict {
   primaryDeeplink: string;
   primaryDeeplinkNone: string;
   primaryDeeplinkHint: string;
+  // Shown under the dropdown when the branded-link provider is selected but the
+  // extension has no license key, so every link stays a plain Amazon link.
+  primaryDeeplinkSignIn: string;
   perCountryHeading: string;
   perCountryHint: string;
   addCountry: string;
@@ -86,6 +89,8 @@ const en: OptionsDict = {
   primaryDeeplinkNone: "None (affiliate tag only)",
   primaryDeeplinkHint:
     "This decides what Copy my link hands you. With none selected you get the full Amazon url with your affiliate tag showing in it. Pick Influencer Butler branded links to get a short link instead: your tag stays out of what you post and your clicks are counted. It is free on any plan and needs no setup beyond being signed in.",
+  primaryDeeplinkSignIn:
+    "You are not signed in, so branded links cannot be created yet. Open the Influencer Butler extension popup and enter your license key. Until then your links stay plain Amazon links with your affiliate tag.",
   perCountryHeading: "Affiliate tag per country",
   perCountryHint: "US falls back to your storefront handle when left blank.",
   addCountry: "Add country",
@@ -153,6 +158,8 @@ const es: OptionsDict = {
   primaryDeeplinkNone: "Ninguno (solo etiqueta de afiliado)",
   primaryDeeplinkHint:
     "Esto decide qué te da Copiar mi enlace. Sin ninguno seleccionado obtienes la url completa de Amazon con tu etiqueta de afiliado a la vista. Elige Enlaces de marca de Influencer Butler para obtener un enlace corto: tu etiqueta no aparece en lo que publicas y se cuentan tus clics. Es gratis en cualquier plan y no necesita más configuración que haber iniciado sesión.",
+  primaryDeeplinkSignIn:
+    "No has iniciado sesión, así que todavía no se pueden crear enlaces de marca. Abre la ventana de la extensión Influencer Butler e introduce tu clave de licencia. Hasta entonces, tus enlaces seguirán siendo enlaces normales de Amazon con tu etiqueta de afiliado.",
   perCountryHeading: "Etiqueta de afiliado por país",
   perCountryHint: "EE. UU. usa tu identificador de tienda si lo dejas en blanco.",
   addCountry: "Añadir país",
@@ -220,6 +227,8 @@ const fr: OptionsDict = {
   primaryDeeplinkNone: "Aucun (balise d'affiliation seule)",
   primaryDeeplinkHint:
     "Ce choix determine ce que Copier mon lien vous donne. Sans fournisseur selectionne, vous obtenez l'url Amazon complete avec votre balise d'affiliation visible. Choisissez Liens de marque Influencer Butler pour obtenir un lien court : votre balise reste hors de ce que vous publiez et vos clics sont comptes. C'est gratuit sur toute offre et ne demande aucune configuration au-dela de la connexion.",
+  primaryDeeplinkSignIn:
+    "Vous n'êtes pas connecté, donc les liens de marque ne peuvent pas encore être créés. Ouvrez la fenêtre de l'extension Influencer Butler et saisissez votre clé de licence. D'ici là, vos liens resteront des liens Amazon simples avec votre balise d'affiliation.",
   perCountryHeading: "Balise d'affiliation par pays",
   perCountryHint: "Les États-Unis utilisent votre identifiant de vitrine si laissé vide.",
   addCountry: "Ajouter un pays",
