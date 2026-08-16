@@ -16,6 +16,7 @@ export interface OptionsDict {
   affiliateRouting: string;
   primaryDeeplink: string;
   primaryDeeplinkNone: string;
+  primaryDeeplinkHint: string;
   perCountryHeading: string;
   perCountryHint: string;
   addCountry: string;
@@ -83,6 +84,8 @@ const en: OptionsDict = {
   affiliateRouting: "Rewrite Amazon links through my affiliate setup",
   primaryDeeplink: "Primary deeplink provider",
   primaryDeeplinkNone: "None (affiliate tag only)",
+  primaryDeeplinkHint:
+    "This decides what Copy my link hands you. With none selected you get the full Amazon url with your affiliate tag showing in it. Pick Influencer Butler branded links to get a short link instead: your tag stays out of what you post and your clicks are counted. It is free on any plan and needs no setup beyond being signed in.",
   perCountryHeading: "Affiliate tag per country",
   perCountryHint: "US falls back to your storefront handle when left blank.",
   addCountry: "Add country",
@@ -148,6 +151,8 @@ const es: OptionsDict = {
   affiliateRouting: "Reescribir enlaces de Amazon con mi configuración de afiliado",
   primaryDeeplink: "Proveedor de deeplink principal",
   primaryDeeplinkNone: "Ninguno (solo etiqueta de afiliado)",
+  primaryDeeplinkHint:
+    "Esto decide qué te da Copiar mi enlace. Sin ninguno seleccionado obtienes la url completa de Amazon con tu etiqueta de afiliado a la vista. Elige Enlaces de marca de Influencer Butler para obtener un enlace corto: tu etiqueta no aparece en lo que publicas y se cuentan tus clics. Es gratis en cualquier plan y no necesita más configuración que haber iniciado sesión.",
   perCountryHeading: "Etiqueta de afiliado por país",
   perCountryHint: "EE. UU. usa tu identificador de tienda si lo dejas en blanco.",
   addCountry: "Añadir país",
@@ -213,6 +218,8 @@ const fr: OptionsDict = {
   affiliateRouting: "Réécrire les liens Amazon avec ma configuration d'affiliation",
   primaryDeeplink: "Fournisseur de deeplink principal",
   primaryDeeplinkNone: "Aucun (balise d'affiliation seule)",
+  primaryDeeplinkHint:
+    "Ce choix determine ce que Copier mon lien vous donne. Sans fournisseur selectionne, vous obtenez l'url Amazon complete avec votre balise d'affiliation visible. Choisissez Liens de marque Influencer Butler pour obtenir un lien court : votre balise reste hors de ce que vous publiez et vos clics sont comptes. C'est gratuit sur toute offre et ne demande aucune configuration au-dela de la connexion.",
   perCountryHeading: "Balise d'affiliation par pays",
   perCountryHint: "Les États-Unis utilisent votre identifiant de vitrine si laissé vide.",
   addCountry: "Ajouter un pays",

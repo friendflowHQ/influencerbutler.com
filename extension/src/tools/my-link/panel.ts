@@ -1,6 +1,6 @@
 import { addSection, el } from "../../ui/components";
 import { resolveLocale } from "../../i18n";
-import { getSettings } from "../../storage/store";
+import { getState, patchState } from "../../storage/store";
 import {
   sendToBackground,
   type GenerateLinkResult,
@@ -14,6 +14,11 @@ import type { ProductSignals } from "../../amazon/product-signals";
 // this content script: the background does the provider calls and returns only
 // the finished link or text.
 
+// Adapter id of the first-party branded-link provider (integrations/adapters/
+// influencerbutler). Selecting it as the primary deeplink provider is all it
+// takes to turn branded links on: routing needs no credentials for it.
+const IB_LINKS = "influencerbutler";
+
 type Strings = {
   heading: string;
   copyLink: string;
@@ -24,6 +29,10 @@ type Strings = {
   captionGating: string;
   captionFailed: string;
   disclosure: string;
+  brandedBody: string;
+  brandedTurnOn: string;
+  brandedNotNow: string;
+  brandedOn: string;
 };
 
 const EN: Strings = {
@@ -37,6 +46,11 @@ const EN: Strings = {
   captionFailed: "Caption failed",
   disclosure:
     "This is an affiliate link tagged with your own Amazon Associates account, so qualifying purchases earn you a commission. Add your own #ad or #CommissionsEarned disclosure when you share it.",
+  brandedBody:
+    "Tip: you can copy a short links.influencerbutler.com link instead. It keeps your affiliate tag out of the link you post and counts your clicks. No setup, free on any plan.",
+  brandedTurnOn: "Use branded links",
+  brandedNotNow: "Not now",
+  brandedOn: "Branded links are on. Your next copy will be a short link.",
 };
 
 const CATALOG: Record<string, Strings> = {
@@ -52,6 +66,11 @@ const CATALOG: Record<string, Strings> = {
     captionFailed: "Fallo al redactar",
     disclosure:
       "Este es un enlace de afiliado con tu propia cuenta de Amazon Associates, así que las compras que califiquen te generan una comisión. Añade tu propia divulgación (#ad o #CommissionsEarned) al compartirlo.",
+    brandedBody:
+      "Consejo: puedes copiar un enlace corto de links.influencerbutler.com. Mantiene tu etiqueta de afiliado fuera del enlace que publicas y cuenta tus clics. Sin configuración, gratis en cualquier plan.",
+    brandedTurnOn: "Usar enlaces de marca",
+    brandedNotNow: "Ahora no",
+    brandedOn: "Los enlaces de marca están activos. Tu próxima copia será un enlace corto.",
   },
   fr: {
     heading: "Mon lien",
@@ -64,16 +83,28 @@ const CATALOG: Record<string, Strings> = {
     captionFailed: "Échec de la rédaction",
     disclosure:
       "Ceci est un lien d'affiliation associé à votre propre compte Amazon Associates : les achats admissibles vous rapportent une commission. Ajoutez votre propre mention (#ad ou #CommissionsEarned) lorsque vous le partagez.",
+    brandedBody:
+      "Astuce : vous pouvez copier un lien court links.influencerbutler.com. Il garde votre balise d'affiliation hors du lien que vous publiez et compte vos clics. Sans configuration, gratuit sur toute offre.",
+    brandedTurnOn: "Utiliser les liens de marque",
+    brandedNotNow: "Pas maintenant",
+    brandedOn: "Les liens de marque sont actifs. Votre prochaine copie sera un lien court.",
   },
 };
 
 export async function renderMyLink(signals: ProductSignals): Promise<void> {
   if (!signals.asin) return;
-  const settings = await getSettings();
-  const s = CATALOG[resolveLocale(settings.locale)] ?? EN;
+  const state = await getState();
+  const s = CATALOG[resolveLocale(state.settings.locale)] ?? EN;
   const integrations = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
   const openai = integrations.providers.find((p) => p.id === "openai");
   const openaiReady = Boolean(openai?.configured && openai.lastTest.status === "ok");
+  // The branded-link tip is worth showing only to someone it would actually work
+  // for: signed in (the license is the credential) and not already using it.
+  // `configured` for this provider means "a license key is signed in".
+  const showBrandedHint =
+    state.hints.brandedLinks === null &&
+    integrations.global.primaryDeeplinkProvider !== IB_LINKS &&
+    Boolean(integrations.providers.find((p) => p.id === IB_LINKS)?.configured);
 
   const section = addSection(s.heading);
   const row = el("div", "row");
@@ -137,4 +168,56 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
   disclosure.textContent = s.disclosure;
 
   section.append(row, out, disclosure);
+  if (showBrandedHint) section.append(brandedHint(s));
+}
+
+// One-time tip under the copy row: branded short links exist, are free, and need
+// no setup. It is drawn at most once per install, and either button settles it
+// for good, so copying a link never nags. Turning it on is a single click here
+// rather than a trip to the options page: routing only needs the provider id.
+function brandedHint(s: Strings): HTMLElement {
+  const box = el("div", "hint");
+  const body = el("p", "hint-body", s.brandedBody);
+
+  const actions = el("div", "row");
+  const turnOn = el("button", "btn small") as HTMLButtonElement;
+  turnOn.type = "button";
+  turnOn.textContent = s.brandedTurnOn;
+  const notNow = el("button", "btn secondary small") as HTMLButtonElement;
+  notNow.type = "button";
+  notNow.textContent = s.brandedNotNow;
+  actions.append(turnOn, notNow);
+
+  turnOn.addEventListener("click", () => {
+    turnOn.disabled = true;
+    notNow.disabled = true;
+    void sendToBackground({
+      kind: "SET_INTEGRATION_GLOBAL",
+      partial: { primaryDeeplinkProvider: IB_LINKS },
+    })
+      .then(() => {
+        // Only settle the hint once the setting actually landed, so a failed
+        // write leaves the offer on screen instead of silently swallowing it.
+        void settleHint();
+        box.replaceChildren(el("p", "hint-body", s.brandedOn));
+      })
+      .catch(() => {
+        turnOn.disabled = false;
+        notNow.disabled = false;
+      });
+  });
+
+  notNow.addEventListener("click", () => {
+    void settleHint();
+    box.remove();
+  });
+
+  box.append(body, actions);
+  return box;
+}
+
+async function settleHint(): Promise<void> {
+  await patchState((s) => {
+    s.hints.brandedLinks = Date.now();
+  });
 }

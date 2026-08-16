@@ -55,6 +55,7 @@ function renderChrome(): void {
   byId("label-startup").textContent = D.testOnStartup;
   byId("label-routing").textContent = D.affiliateRouting;
   byId("label-primary-deeplink").textContent = D.primaryDeeplink;
+  byId("hint-primary-deeplink").textContent = D.primaryDeeplinkHint;
   byId("run-all").textContent = D.runAllTests;
 }
 

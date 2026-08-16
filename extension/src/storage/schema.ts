@@ -234,6 +234,20 @@ export const DEFAULT_NUDGE_STATE: NudgeState = {
   actedAt: null,
 };
 
+// One-time in-page hints. Unlike the nudges above these are not timed and have
+// no notification channel: a hint is drawn next to the feature it explains, and
+// the first interaction (act or dismiss) stamps the key so it never shows again.
+// null means "not settled yet", a timestamp means done.
+export type HintsState = {
+  // "Copy my link" tip pointing out free branded short links, shown to a
+  // signed-in creator who is still copying plain tagged Amazon urls.
+  brandedLinks: number | null;
+};
+
+export const DEFAULT_HINTS_STATE: HintsState = {
+  brandedLinks: null,
+};
+
 export type StorageShape = {
   schemaVersion: number;
   settings: Settings;
@@ -252,6 +266,7 @@ export type StorageShape = {
   // Amazon page). Anchors the re-engagement nudge timers; null until first use.
   firstUseAt: number | null;
   nudges: NudgesState;
+  hints: HintsState;
 };
 
 export const DEFAULTS: StorageShape = {
@@ -307,7 +322,15 @@ export const DEFAULTS: StorageShape = {
     global: {
       testOnStartup: false,
       affiliateRoutingEnabled: false,
-      primaryDeeplinkProvider: null,
+      // Branded short links out of the box: free on every plan, no credentials
+      // (the signed-in license is the auth), and it keeps the creator's
+      // affiliate tag out of the url they post. This default reaches FRESH
+      // INSTALLS ONLY. migrate() spreads stored global state over these
+      // defaults, and any patchState writes the whole blob back, so an existing
+      // install has `primaryDeeplinkProvider: null` stored explicitly and keeps
+      // it. Existing users are reached by the one-time hint in the "My link"
+      // panel instead, which asks rather than deciding for them.
+      primaryDeeplinkProvider: "influencerbutler",
       perCountryTags: {},
     },
     providers: {},
@@ -325,6 +348,7 @@ export const DEFAULTS: StorageShape = {
     fbGroup: { ...DEFAULT_NUDGE_STATE },
     appDownload: { ...DEFAULT_NUDGE_STATE },
   },
+  hints: { ...DEFAULT_HINTS_STATE },
 };
 
 export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
@@ -344,10 +368,13 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // v9 -> v10 added the trendRadar tool flag (Best Sellers / New Releases /
   // Movers & Shakers discovery overlay) and the globalMaximizer tool flag
   // (per-market availability + international links), both on by default.
-  // v10 -> v11 added Last Call Butler: the lastCallButler tool flag (on by
-  // default), the settings.lastCall.alertAtPct threshold (90%), and the
-  // campaignWatchlist array (empty). Older stored state simply gains its
-  // defaults untouched (an existing user's price history starts empty).
+  // v10 -> v11 added Last Call Butler (the lastCallButler tool flag, on by
+  // default, the settings.lastCall.alertAtPct threshold at 90%, and the empty
+  // campaignWatchlist array) plus the `hints` map (one-time in-page tips); an
+  // existing user starts with every hint unseen, so the branded-links tip
+  // reaches people who installed before it existed, which is the whole point
+  // of it. Older stored state simply gains its defaults untouched (an
+  // existing user's price history starts empty).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -389,6 +416,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       fbGroup: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.fbGroup ?? {}) },
       appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
     },
+    hints: { ...DEFAULT_HINTS_STATE, ...(raw.hints ?? {}) },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
     priceHistory:

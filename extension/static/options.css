@@ -76,6 +76,15 @@ main {
   margin-top: 10px;
 }
 
+/* Explainer under the primary-deeplink picker. The choice decides what "Copy my
+   link" hands the creator, so the tradeoff is spelled out next to the control
+   rather than left to the provider blurbs further down the page. */
+#hint-primary-deeplink {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  max-width: 62ch;
+}
+
 h2.cat {
   font-size: 13px;
   text-transform: uppercase;
