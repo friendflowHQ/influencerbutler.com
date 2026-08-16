@@ -68,7 +68,7 @@ El historial de outreach por DM se guarda en la caché preseed. Una vez enviado 
 
 ## Tropiezos comunes
 
-- **Banner "Acción bloqueada por Instagram"**: enviaste demasiados DMs demasiado rápido. Butler para y espera. Espera 24-48 horas antes de reanudar, y baja tu cap diario.
+- **Banner "Acción bloqueada por Instagram"**: enviaste demasiados DMs demasiado rápido. Butler detecta el bloqueo, detiene la ejecución y pausa TODOS los envíos de Instagram (mensajes, publicaciones de ofertas, me gusta, cambios de mejores amigos) durante un periodo de descanso para que el bloqueo no empeore; las herramientas de solo recolección siguen funcionando, y recibes un correo. Por defecto el descanso dura 3 días; cámbialo con **Pausa tras un bloqueo de Instagram (días)** en los ajustes de Instagram Butler, y los bloqueos repetidos descansan más tiempo por su cuenta. Los envíos se reanudan automáticamente, o reanuda antes con el botón **Reanudar envíos de Instagram** del aviso del Panel. Cuando se reanude, baja tu cap diario.
 - **El primer DM llega a solicitudes de mensaje, no a bandeja**: Instagram enruta DMs de no-seguidores a "Solicitudes" en vez de la bandeja. Fuera del control de Butler.
 - **Las plantillas se sienten guionizadas**: incluso rotando 5 variaciones se vuelve viejo a escala. Refresca tus variaciones cada 2-3 semanas.
 - **Inicio de sesión manual a mitad de ejecución**: Instagram pide verificación de vez en cuando. Resuélvelo en la ventana de Chrome abierta y pulsa Reanudar.

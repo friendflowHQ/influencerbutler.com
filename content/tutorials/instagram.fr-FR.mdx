@@ -68,7 +68,7 @@ L'historique de DM par run est journalisé dans le cache preseed. Une fois un DM
 
 ## Pièges courants
 
-- **Bannière "Action bloquée par Instagram"**: vous avez envoyé trop de DM trop vite. Butler s'arrête et attend. Patientez 24-48 heures avant de reprendre, et baissez votre cap quotidien.
+- **Bannière "Action bloquée par Instagram"**: vous avez envoyé trop de DM trop vite. Butler détecte le blocage, arrête l'exécution et met en pause TOUS les envois Instagram (messages, publications d'offres, mentions J'aime, changements d'amis proches) pendant une période de repos pour que le blocage n'empire pas ; les outils de collecte seule continuent de fonctionner, et vous recevez un e-mail. Par défaut le repos dure 3 jours ; modifiez-le avec **Pause après un blocage Instagram (jours)** dans les réglages d'Instagram Butler, et les blocages répétés se reposent plus longtemps d'eux-mêmes. Les envois reprennent automatiquement, ou reprenez plus tôt avec le bouton **Reprendre les envois Instagram** de la bannière du Tableau de bord. À la reprise, baissez votre cap quotidien.
 - **Le premier DM arrive dans les demandes de message, pas dans la boîte de réception**: Instagram route les DM des non-abonnés vers "Demandes" plutôt que la boîte. Hors du contrôle de Butler.
 - **Les modèles paraissent scriptés**: même en faisant tourner 5 variantes, ça devient daté à l'échelle. Rafraîchissez vos variantes toutes les 2-3 semaines.
 - **Connexion manuelle en plein run**: Instagram demande parfois une vérification. Résolvez-la dans la fenêtre Chrome lancée, cliquez sur Reprendre.
