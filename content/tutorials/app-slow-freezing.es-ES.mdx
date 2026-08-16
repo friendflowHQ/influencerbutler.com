@@ -1,0 +1,64 @@
+---
+title: La aplicacion va lenta, se traba o se congela: como solucionarlo
+summary: Influencer Butler va lento, se traba o se congela? Activa el Modo de bajos recursos, evita que los butlers se reinicien solos, pausa las automatizaciones y prueba el Modo seguro. Paso a paso para Windows y Mac.
+category: Other
+---
+
+## Por que la aplicacion va lenta o se congela
+
+Influencer Butler ejecuta muchos butlers dentro de una sola ventana. En un equipo con poca memoria, o cuando varios butlers arrancan a la vez, la ventana empieza a ir lenta: los clics tardan, los paneles abren despacio y, a veces, la aplicacion se congela unos segundos o deja de responder por completo. Un butler pesado que arranca (como Deals Influencer Butler montando tu primera configuracion) es un detonante habitual.
+
+La buena noticia: casi siempre es cuestion de cuanto trabaja la aplicacion a la vez, no de una instalacion rota. Unos cuantos ajustes integrados la calman enseguida. Pruebalos en este orden.
+
+## 1. Cierra por completo y vuelve a abrir (no solo cerrar la ventana)
+
+Cerrar la ventana no cierra la aplicacion, solo la oculta y todo sigue funcionando en segundo plano. Un reinicio limpio deshace el atasco.
+
+- **En Windows:** el boton X envia la aplicacion a la bandeja del sistema (los iconos pequenos junto al reloj, abajo a la derecha). Para cerrarla del todo, haz clic en la flecha hacia arriba para mostrar los iconos ocultos, haz clic derecho en el icono de Influencer Butler y elige **Salir**. Si la ventana esta congelada y no responde, pulsa **Ctrl+Shift+Esc** para abrir el Administrador de tareas, selecciona Influencer Butler y haz clic en **Finalizar tarea**. Despues vuelve a abrirla desde el acceso directo del escritorio.
+- **En Mac:** el punto rojo solo oculta la ventana en la barra de menus. Para cerrar del todo, haz clic en **Influencer Butler** en la barra de menus de la parte superior de la pantalla y elige **Salir de Influencer Butler**, o pulsa **Command+Q**. Si esta muy congelada, pulsa **Command+Option+Esc**, selecciona Influencer Butler y haz clic en **Forzar salida**. Despues vuelve a abrir la aplicacion.
+
+## 2. Activa el Modo de bajos recursos (la solucion mas importante)
+
+Hace que tus butlers se ejecuten de uno en uno en vez de todos a la vez, para que los clics dejen de congelarse en equipos mas modestos. Es igual en Windows y Mac:
+
+- En la barra lateral izquierda, baja del todo y haz clic en **Ajustes**.
+- Haz clic en **Rendimiento** en el menu de ajustes.
+- En **Modo de bajos recursos**, elige **Activado**.
+
+Dejalo activado. El valor por defecto es Automatico, que lo activa solo en equipos pequenos, pero ponerlo en Activado fuerza siempre el comportamiento tranquilo de uno en uno.
+
+## 3. Evita que los butlers se reinicien solos y vuelvan a congelar
+
+Justo debajo del Modo de bajos recursos, desactiva **Reanudar al reiniciar**. Por defecto, los butlers que estaban en marcha vuelven a arrancar en cuanto la aplicacion se reabre. Si varios se ponen en marcha a la vez justo despues de un reinicio, eso suele provocar de nuevo la congelacion. Con la opcion desactivada, tu decides que volver a activar, una cosa cada vez.
+
+## 4. Pausa todo si se satura
+
+Si la aplicacion ya esta sufriendo, detén al instante todo el trabajo en segundo plano:
+
+- Arriba en la ventana hay una pastilla de **Automatizaciones** que dice **Activo**. Haz clic para cambiarla a **En pausa**. Eso detiene de inmediato todas las ejecuciones programadas (lo que inicies a mano sigue funcionando).
+- Tambien puedes hacerlo desde la bandeja o la barra de menus: **En Windows**, haz clic derecho en el icono de Influencer Butler en la bandeja del sistema; **En Mac**, haz clic en el icono de Influencer Butler en la barra de menus. Elige **Pausar todas las automatizaciones**.
+
+Cuando este tranquilo, inicia un solo butler y deja que termine antes de volver a activar cualquier otra cosa.
+
+## 5. Sigue lento? Prueba el Modo seguro
+
+Si aun va a tirones, el Modo seguro ejecuta la aplicacion en un modo de pantalla mas simple, mas estable en algunos equipos. Desactiva la aceleracion grafica, una causa habitual de la lentitud tanto en Windows como en Mac.
+
+Cuando la aplicacion detecta un problema grafico, ofrece un boton **Probar Modo seguro** en una pequena ventana de solucion de problemas. Haz clic y la aplicacion se reinicia con la aceleracion grafica desactivada. Actualizar el controlador grafico (Windows) o el software del sistema (Mac) suele resolver la causa de raiz, asi que conviene hacerlo tambien.
+
+## 6. Libera espacio en tu equipo
+
+Los ajustes anteriores hacen casi todo el trabajo, pero un equipo saturado lo complica todo:
+
+- Cierra otros programas pesados mientras un butler trabaja: muchas pestanas del navegador, videollamadas, editores de foto o video. Todos compiten por la memoria.
+- Comprueba cuanta memoria tienes. **En Windows:** pulsa **Ctrl+Shift+Esc**, abre la pestana **Rendimiento** y mira Memoria. **En Mac:** abre el **Monitor de Actividad** (Aplicaciones > Utilidades) y haz clic en la pestana **Memoria**; el menu Apple > **Acerca de este Mac** muestra tu memoria RAM total. Unos 2 GB libres son usables, 4 GB o mas es comodo.
+- Manten el sistema actualizado. **En Windows:** Inicio > Configuracion > Windows Update. **En Mac:** menu Apple > Ajustes del Sistema > General > Actualizacion de software.
+- Reiniciar el equipo por completo libera memoria que las aplicaciones por si solas no pueden.
+
+## Sigues atascado, o tienes un equipo lento de forma permanente?
+
+Si tu equipo es antiguo o simplemente poco potente, puedes ejecutar Influencer Butler en un PC en la nube gratuito y siempre encendido, de modo que el trabajo pesado ocurra fuera de tu maquina. Consulta [Ejecuta Influencer Butler en la nube (PC gratis 24/7)](/help/tutorials/run-in-cloud).
+
+Para una ventana mas tranquila y con menos distracciones en general, consulta [Modo Enfoque](/help/tutorials/focus-mode).
+
+Si has seguido estos pasos y la aplicacion sigue congelandose, responde a tu ticket de soporte e indicanos cuanta memoria tiene tu equipo (mira el paso 6) y que butler estabas configurando cuando se congelo. Eso nos ayuda a localizarlo rapido.

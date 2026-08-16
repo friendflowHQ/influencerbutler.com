@@ -1,0 +1,64 @@
+---
+title: L'application est lente, saccade ou se fige : comment corriger
+summary: Influencer Butler est lent, saccade ou se fige ? Activez le Mode ressources reduites, empechez les butlers de redemarrer seuls, mettez les automatisations en pause et essayez le Mode sans echec. Etape par etape pour Windows et Mac.
+category: Other
+---
+
+## Pourquoi l'application rame ou se fige
+
+Influencer Butler fait tourner beaucoup de butlers dans une seule fenetre. Sur un ordinateur qui manque de memoire, ou quand plusieurs butlers demarrent en meme temps, la fenetre commence a ramer : les clics trainent, les panneaux s'ouvrent lentement et parfois l'application se fige quelques secondes ou ne repond plus du tout. Un butler lourd qui demarre (comme Deals Influencer Butler qui monte votre premiere configuration) est un declencheur frequent.
+
+La bonne nouvelle : c'est presque toujours une question de charge de travail simultanee, pas une installation cassee. Quelques reglages integres la calment tout de suite. Essayez-les dans cet ordre.
+
+## 1. Quittez completement puis rouvrez (pas seulement fermer la fenetre)
+
+Fermer la fenetre ne quitte pas l'application, cela la masque seulement et tout continue de tourner en arriere-plan. Un redemarrage propre debloque la situation.
+
+- **Sous Windows :** le bouton X envoie l'application dans la zone de notification (les petites icones pres de l'horloge, en bas a droite). Pour quitter completement, cliquez sur la fleche vers le haut pour afficher les icones masquees, faites un clic droit sur l'icone Influencer Butler et choisissez **Quitter**. Si la fenetre est figee et ne repond plus, appuyez sur **Ctrl+Shift+Esc** pour ouvrir le Gestionnaire des taches, selectionnez Influencer Butler et cliquez sur **Fin de tache**. Rouvrez ensuite depuis le raccourci du bureau.
+- **Sur Mac :** le point rouge ne fait que masquer la fenetre dans la barre de menus. Pour quitter completement, cliquez sur **Influencer Butler** dans la barre de menus en haut de l'ecran et choisissez **Quitter Influencer Butler**, ou appuyez sur **Command+Q**. Si c'est fige pour de bon, appuyez sur **Command+Option+Esc**, selectionnez Influencer Butler et cliquez sur **Forcer a quitter**. Rouvrez ensuite l'application.
+
+## 2. Activez le Mode ressources reduites (la correction la plus importante)
+
+Il fait tourner vos butlers un a la fois plutot que tous en meme temps, pour que les clics arretent de se figer sur du materiel plus modeste. C'est identique sous Windows et Mac :
+
+- Dans la barre laterale gauche, descendez tout en bas et cliquez sur **Reglages**.
+- Cliquez sur **Performance** dans le menu des reglages.
+- Sous **Mode ressources reduites**, choisissez **Active**.
+
+Laissez-le active. La valeur par defaut est Auto, qui l'active de lui-meme sur les petites machines, mais le mettre sur Active force a chaque fois le comportement calme, un a la fois.
+
+## 3. Empechez les butlers de redemarrer seuls et de refiger l'application
+
+Juste sous le Mode ressources reduites, desactivez **Reprendre au redemarrage**. Par defaut, les butlers qui tournaient redemarrent d'eux-memes des que l'application se rouvre. Si plusieurs se lancent en meme temps juste apres un redemarrage, c'est souvent ce qui declenche a nouveau le blocage. Une fois desactive, c'est vous qui decidez quoi relancer, une chose a la fois.
+
+## 4. Mettez tout en pause si ca sature
+
+Si l'application est deja en difficulte, arretez instantanement tout le travail en arriere-plan :
+
+- En haut de la fenetre, une pastille **Automatisations** indique **Actif**. Cliquez dessus pour passer a **En pause**. Cela arrete aussitot toutes les executions planifiees (ce que vous lancez a la main continue de fonctionner).
+- Vous pouvez aussi le faire depuis la zone de notification ou la barre de menus : **Sous Windows**, faites un clic droit sur l'icone Influencer Butler dans la zone de notification ; **Sur Mac**, cliquez sur l'icone Influencer Butler dans la barre de menus. Choisissez **Mettre toutes les automatisations en pause**.
+
+Une fois le calme revenu, lancez un seul butler et laissez-le finir avant de reactiver quoi que ce soit d'autre.
+
+## 5. Toujours lent ? Essayez le Mode sans echec
+
+Si ca saccade encore, le Mode sans echec fait tourner l'application dans un mode d'affichage plus simple, plus stable sur certaines machines. Il desactive l'acceleration graphique, une cause frequente de lenteur aussi bien sous Windows que sur Mac.
+
+Quand l'application detecte un probleme graphique, elle propose un bouton **Essayer le Mode sans echec** dans une petite fenetre de depannage. Cliquez dessus et l'application redemarre avec l'acceleration graphique desactivee. Mettre a jour le pilote graphique (Windows) ou le logiciel systeme (Mac) corrige generalement la cause de fond, donc cela vaut la peine de le faire aussi.
+
+## 6. Liberez de la place sur votre ordinateur
+
+Les reglages ci-dessus font l'essentiel du travail, mais un ordinateur surcharge complique tout :
+
+- Fermez les autres programmes lourds pendant qu'un butler travaille : beaucoup d'onglets de navigateur, appels video, editeurs de photo ou de video. Ils se disputent tous la memoire.
+- Verifiez votre memoire disponible. **Sous Windows :** appuyez sur **Ctrl+Shift+Esc**, ouvrez l'onglet **Performance** et regardez Memoire. **Sur Mac :** ouvrez le **Moniteur d'activite** (Applications > Utilitaires), cliquez sur l'onglet **Memoire** ; le menu Pomme > **A propos de ce Mac** affiche votre RAM totale. Environ 2 Go libres sont utilisables, 4 Go ou plus est confortable.
+- Gardez votre systeme a jour. **Sous Windows :** Demarrer > Parametres > Windows Update. **Sur Mac :** menu Pomme > Reglages Systeme > General > Mise a jour de logiciels.
+- Un redemarrage complet de l'ordinateur libere de la memoire que les applications seules ne peuvent pas recuperer.
+
+## Toujours bloque, ou un ordinateur lent en permanence ?
+
+Si votre ordinateur est ancien ou simplement peu puissant, vous pouvez faire tourner Influencer Butler sur un PC dans le cloud gratuit et toujours allume, pour que le gros du travail se passe hors de votre machine. Voir [Faire tourner Influencer Butler dans le cloud (PC gratuit 24/7)](/help/tutorials/run-in-cloud).
+
+Pour une fenetre plus calme et moins distrayante en general, voir [Mode Concentration](/help/tutorials/focus-mode).
+
+Si vous avez suivi ces etapes et que l'application se fige encore, repondez a votre ticket d'assistance en nous indiquant environ combien de memoire a votre ordinateur (voir l'etape 6) et quel butler vous configuriez au moment du blocage. Cela nous aide a cibler rapidement.
