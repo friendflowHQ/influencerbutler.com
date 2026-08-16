@@ -249,5 +249,12 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject, text: body });
+  return sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject,
+    text: body,
+    category: `trial_${payload.tier}`,
+    funnel: "trial",
+  });
 }

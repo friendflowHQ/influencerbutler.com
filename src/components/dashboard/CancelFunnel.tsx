@@ -7,7 +7,7 @@ import {
   WOULD_RETURN_OPTIONS,
   type Reason,
   type WouldReturn,
-} from "@/lib/cancel-reasons";
+} from "@/lib/cancel-reasons-shared";
 
 type OfferType = "monthly_50_off_3mo" | "yearly_20_off_1yr" | null;
 

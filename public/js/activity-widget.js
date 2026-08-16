@@ -75,7 +75,11 @@
     var where = locationText(e);
     if (e.kind === "purchase") {
       var who = e.firstName ? e.firstName : "Someone";
-      return who + (where ? " from " + where : "") + " just subscribed";
+      // Purchases get a longer lookback than trial clicks, so only claim
+      // "just" when the purchase is under a day old.
+      var then = new Date(e.createdAt).getTime();
+      var fresh = !isNaN(then) && Date.now() - then < 24 * 60 * 60 * 1000;
+      return who + (where ? " from " + where : "") + (fresh ? " just subscribed" : " recently subscribed");
     }
     // Soft, browsing-level wording for trial-interest events (covers seeded
     // demo activity too): no claim that anything was completed or verified.

@@ -19,8 +19,14 @@ export const dynamic = "force-dynamic";
 
 // Comp plans: Pro monthly tiers plus the Daily Deals Workspace add-on. The free
 // window is expressed in months OR days. (Seat count comes from the tier: Solo 1,
-// Team 10, Agency 25; the add-on is 1.)
-const ALLOWED_PLANS = new Set(["monthly", "team-monthly", "agency-monthly", "daily-deals-addon"]);
+// Duo 3, Team 10, Agency 25; the add-on is 1.)
+const ALLOWED_PLANS = new Set([
+  "monthly",
+  "duo-monthly",
+  "team-monthly",
+  "agency-monthly",
+  "daily-deals-addon",
+]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_MONTHS = 36;
 const MAX_DAYS = 1095; // ~3 years, mirroring the 36-month ceiling.

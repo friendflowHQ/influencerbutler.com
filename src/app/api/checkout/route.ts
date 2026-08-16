@@ -10,6 +10,7 @@ import { appendAffRef, selfHostedAffiliatesEnabled } from "@/lib/affiliate-looku
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  coerceTier,
   readAffiliateSourceCookie,
   readPromoTier,
   writeAffiliateSourceCookieIfMissing,
@@ -29,6 +30,13 @@ type CheckoutRequestBody = {
    * Falls back to the ib_aff_src cookie when not supplied.
    */
   affiliateSource?: string;
+  /**
+   * The welcome tier the pricing page actually rendered to the buyer
+   * ("first" | "returning"). Honored over the live ib_pv cookie so the buyer
+   * is charged the discount they were shown, not one silently downgraded by
+   * the page's own on-mount /api/promo/touch call. See coerceTier in promo.ts.
+   */
+  shownTier?: string;
 };
 
 type LsCheckoutResponse = {
@@ -46,6 +54,7 @@ export async function POST(request: Request) {
       variantId: variantIdFromBody,
       code: rawCode,
       affiliateSource: rawAffiliateSource,
+      shownTier: rawShownTier,
     } = (await request.json()) as CheckoutRequestBody;
 
     const variantResolution = resolveVariantId(plan, variantIdFromBody);
@@ -127,7 +136,10 @@ export async function POST(request: Request) {
     }
 
     const cookieStore = await cookies();
-    const cookieTier = readPromoTier(cookieStore);
+    // Honor the tier the pricing page rendered to the buyer; fall back to the
+    // live cookie only when the client didn't send one (older clients, other
+    // callers). This closes the WELCOME30 -> WELCOME15 downgrade race.
+    const cookieTier = coerceTier(rawShownTier) ?? readPromoTier(cookieStore);
     const typedCode = typeof rawCode === "string" ? rawCode.trim() : "";
     const urlCode =
       (typeof rawAffiliateSource === "string" && rawAffiliateSource.trim().length > 0

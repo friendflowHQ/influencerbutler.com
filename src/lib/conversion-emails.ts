@@ -71,5 +71,7 @@ export async function sendConversionEmail(params: {
     to: params.to,
     subject: copy.subject,
     text: body,
+    category: `conversion_${params.tier}`,
+    funnel: "conversion",
   });
 }

@@ -7,7 +7,7 @@ const COMMISSION_RATE = 0.3;
 // Affiliate commissions cap at this many months per referred customer.
 const COMMISSION_DURATION_MONTHS = 12;
 
-const TIERS: Tier[] = ["solo", "team", "agency"];
+const TIERS: Tier[] = ["solo", "duo", "team", "agency"];
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {

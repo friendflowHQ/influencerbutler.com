@@ -275,5 +275,12 @@ export async function sendWinbackEmail(payload: WinbackEmailPayload): Promise<bo
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject, text: body });
+  return sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject,
+    text: body,
+    category: `winback_${payload.tier}`,
+    funnel: "winback",
+  });
 }

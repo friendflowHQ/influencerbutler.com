@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { adminService } from "@/lib/admin-service";
 import { logAdminAction } from "@/lib/admin-audit";
+import { sendEmail } from "@/lib/email-send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,8 +12,6 @@ type Body = { email?: string };
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function sendMagicLinkEmail(to: string, actionLink: string): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
   const body = [
     `Here is your Influencer Butler sign-in link:`,
     ``,
@@ -22,21 +21,14 @@ async function sendMagicLinkEmail(to: string, actionLink: string): Promise<boole
     ``,
     `- The Influencer Butler team`,
   ].join("\n");
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject: "Your Influencer Butler sign-in link",
-        text: body,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to,
+    subject: "Your Influencer Butler sign-in link",
+    text: body,
+    category: "auth_resend",
+  });
+  return ok;
 }
 
 /** Resends a sign-in magic link to a user. */

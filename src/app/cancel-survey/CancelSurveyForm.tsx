@@ -6,7 +6,7 @@ import {
   WOULD_RETURN_OPTIONS,
   type Reason,
   type WouldReturn,
-} from "@/lib/cancel-reasons";
+} from "@/lib/cancel-reasons-shared";
 
 type LoadState = "checking" | "ready" | "done" | "invalid";
 

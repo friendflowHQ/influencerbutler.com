@@ -35,5 +35,6 @@ export async function sendCancelSurveyEmail(params: {
     to: params.to,
     subject: "Quick question: why did you cancel?",
     text: body,
+    category: "cancel_survey",
   });
 }

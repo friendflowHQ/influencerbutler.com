@@ -237,7 +237,7 @@ export default async function DailyDealsWorkspacePage() {
                   <span className="text-[#f97316]" aria-hidden>
                     ✓
                   </span>
-                  Requires an active Pro Solo / Team / Agency subscription
+                  Requires an active Pro subscription (Solo, Duo, Team, or Agency)
                 </li>
               </ul>
 
@@ -271,7 +271,7 @@ export default async function DailyDealsWorkspacePage() {
             </dt>
             <dd className="mt-2 text-sm text-slate-600">
               Yes. The Deals Influencer Butler Workspace add-on layers on top of your Pro
-              Solo / Team / Agency subscription. If your Pro subscription
+              subscription (Solo, Duo, Team, or Agency). If your Pro subscription
               lapses, the add-on workspace goes read-only (data is preserved)
               until you reactivate Pro.
             </dd>

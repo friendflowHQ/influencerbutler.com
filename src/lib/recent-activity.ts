@@ -53,6 +53,10 @@ export const DEFAULT_ACTIVITY_CONFIG: ActivityConfig = {
 
 const CONFIG_KEY = "activity_widget";
 
+// Purchases are the strongest social proof but far rarer than trial clicks,
+// so the public widget looks further back for them (and plays them first).
+const PURCHASE_LOOKBACK_MINUTES = 7 * 24 * 60;
+
 // Loose service-role client. We hand-roll the minimal surface we use so we
 // don't depend on a generated Database type. Mirrors the casting pattern in
 // src/lib/admin.ts and the lemonsqueezy webhook.
@@ -282,7 +286,12 @@ function toPublic(row: Record<string, unknown>): PublicActivity {
   };
 }
 
-/** Latest non-hidden, non-bot events within the configured window. */
+/**
+ * Latest non-hidden, non-bot events for the public widget. Purchases come
+ * first (with their longer lookback), then trial clicks within the configured
+ * window, capped at maxCount. The widget plays the array in order, so this
+ * ordering is what makes "subscribed" alerts lead the rotation.
+ */
 export async function getPublicRecentActivity(): Promise<{
   enabled: boolean;
   events: PublicActivity[];
@@ -293,21 +302,48 @@ export async function getPublicRecentActivity(): Promise<{
   const db = serviceDb();
   if (!db) return { enabled: true, events: [] };
 
-  const sinceIso = new Date(Date.now() - config.windowMinutes * 60_000).toISOString();
-  try {
-    const { data, error } = await db
+  const now = Date.now();
+  const trialSinceIso = new Date(now - config.windowMinutes * 60_000).toISOString();
+  const purchaseWindowMinutes = Math.max(config.windowMinutes, PURCHASE_LOOKBACK_MINUTES);
+  const purchaseSinceIso = new Date(now - purchaseWindowMinutes * 60_000).toISOString();
+
+  const query = (kind: ActivityKind, sinceIso: string) =>
+    db
       .from("activity_events")
       .select("kind,first_name,city,region,country,created_at")
+      .eq("kind", kind)
       .eq("hidden", false)
       .eq("is_bot", false)
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(config.maxCount);
-    if (error || !data) return { enabled: true, events: [] };
-    return { enabled: true, events: data.map(toPublic) };
+
+  try {
+    const [purchases, trialClicks] = await Promise.all([
+      query("purchase", purchaseSinceIso),
+      query("trial_click", trialSinceIso),
+    ]);
+    const rows = composePublicRows(purchases, trialClicks, config.maxCount);
+    return { enabled: true, events: rows.map(toPublic) };
   } catch {
     return { enabled: true, events: [] };
   }
+}
+
+type KindQueryResult = { data: Array<Record<string, unknown>> | null; error: unknown };
+
+/**
+ * Purchases first (each list arrives newest-first), then trial clicks, capped
+ * at maxCount. A failed per-kind query degrades to an empty list rather than
+ * sinking the whole response. Exported for tests.
+ */
+export function composePublicRows(
+  purchases: KindQueryResult,
+  trialClicks: KindQueryResult,
+  maxCount: number,
+): Array<Record<string, unknown>> {
+  const ok = (r: KindQueryResult) => (r.error || !r.data ? [] : r.data);
+  return [...ok(purchases), ...ok(trialClicks)].slice(0, Math.max(0, maxCount));
 }
 
 /** Recent events for the admin curation list (includes hidden + bot rows). */

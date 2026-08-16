@@ -28,6 +28,7 @@ import { hashLicenseKey } from "@/lib/license-auth";
 import { addMonthsUtc, addDaysUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
+import { sendEmail } from "@/lib/email-send";
 
 export type IssueCompInput = {
   /**
@@ -159,11 +160,6 @@ async function sendCompEmail(params: {
   convertLink?: string | null;
   issuerName?: string | null;
 }): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("comp-issue: RESEND_API_KEY not set - comp email skipped");
-    return;
-  }
   const siteUrl = (
     process.env.SITE_URL ??
     process.env.NEXT_PUBLIC_SITE_URL ??
@@ -211,24 +207,13 @@ async function sendCompEmail(params: {
     `- The Influencer Butler team`,
   );
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [params.to],
-        subject: "Your free Influencer Butler Pro license",
-        text: lines.join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("comp-issue: Resend send failed", { status: res.status, body: text.slice(0, 500) });
-    }
-  } catch (error) {
-    console.error("comp-issue: Resend send threw", error);
-  }
+  await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to: params.to,
+    subject: "Your free Influencer Butler Pro license",
+    text: lines.join("\n"),
+    category: "comp_issue",
+  });
 }
 
 export async function issueInHouseComp(input: IssueCompInput): Promise<IssueCompResult> {

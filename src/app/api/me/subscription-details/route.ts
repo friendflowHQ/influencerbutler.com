@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lsApi, fetchLicenseFromLs, resolveAnnualVariantForMonthly } from "@/lib/lemonsqueezy";
+import {
+  lsApi,
+  fetchLicenseFromLs,
+  resolveAnnualVariantForMonthly,
+  planForVariantId,
+} from "@/lib/lemonsqueezy";
 import { hashLicenseKey } from "@/lib/license-auth";
 
 export const runtime = "nodejs";
@@ -286,11 +291,33 @@ function canUpgradeToAnnual(subscription: Subscription | null): boolean {
   return resolveAnnualVariantForMonthly(subscription.ls_variant_id) != null;
 }
 
+/**
+ * Resolves the canonical plan string for a subscription's variant and whether
+ * the subscription can self-serve switch tiers/cadence. Comp subscriptions
+ * (sentinel "comp:<uuid>" ids), add-ons, unrecognized variants, and non-live
+ * statuses cannot switch.
+ */
+function switchMeta(subscription: Subscription): {
+  currentPlan: string | null;
+  canSwitchPlan: boolean;
+} {
+  const currentPlan = planForVariantId(subscription.ls_variant_id);
+  const live = subscription.status === "active" || subscription.status === "on_trial";
+  const canSwitchPlan =
+    live &&
+    currentPlan != null &&
+    currentPlan !== "daily-deals-addon" &&
+    !subscription.ls_subscription_id.startsWith("comp:");
+  return { currentPlan, canSwitchPlan };
+}
+
 type SubscriptionEntry = {
   subscription: Subscription;
   licenseKey: LicenseKey | null;
   hasLicenseKey: boolean;
   canUpgradeToAnnual: boolean;
+  currentPlan: string | null;
+  canSwitchPlan: boolean;
 };
 
 /**
@@ -373,6 +400,7 @@ export async function GET() {
         licenseKey,
         hasLicenseKey: Boolean(licenseKey),
         canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+        ...switchMeta(subscription),
       });
     }
 
@@ -402,6 +430,7 @@ export async function GET() {
       licenseKey,
       hasLicenseKey: Boolean(licenseKey),
       canUpgradeToAnnual: canUpgradeToAnnual(subscription),
+      ...switchMeta(subscription),
     };
   });
 

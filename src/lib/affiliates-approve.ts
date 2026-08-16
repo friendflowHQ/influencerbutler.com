@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/admin";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
 import { affiliateResourcesLines } from "@/lib/affiliate-resources-email";
+import { sendEmail } from "@/lib/email-send";
 
 export const BRANDED_CODE_PERCENT_OFF = 15;
 
@@ -53,9 +54,6 @@ async function sendApprovalEmail(params: {
   brandedCode: string | null;
   brandedShareLink: string | null;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
-
   const firstName = params.name.split(" ")[0] || "there";
   const lines: string[] = [
     `Dear ${firstName},`,
@@ -120,25 +118,14 @@ async function sendApprovalEmail(params: {
     `The Influencer Butler`,
   );
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <affiliates@influencerbutler.com>",
-        to: [params.to],
-        subject: "At your service: your Influencer Butler affiliate account stands ready",
-        text: lines.join("\n"),
-      }),
-    });
-    return res.ok;
-  } catch (error) {
-    console.error("Approval email send failed", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    to: params.to,
+    subject: "At your service: your Influencer Butler affiliate account stands ready",
+    text: lines.join("\n"),
+    category: "affiliate_approved",
+  });
+  return ok;
 }
 
 function buildBrandedShareLink(code: string): string {

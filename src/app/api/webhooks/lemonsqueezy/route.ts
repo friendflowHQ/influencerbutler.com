@@ -5,9 +5,11 @@ import { verifyWebhookSignature } from "@/lib/webhooks";
 import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
-import { lsApi } from "@/lib/lemonsqueezy";
+import { lsApi, planForVariantId, setLicenseKeyActivationLimit } from "@/lib/lemonsqueezy";
+import { SEAT_LIMIT, tierForPlan } from "@/lib/pricing-constants";
 import { rewardReferrerForSubscription } from "@/lib/referral-program";
 import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
+import { sendEmail } from "@/lib/email-send";
 import { sendMetaEvent } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
@@ -157,12 +159,6 @@ async function sendWelcomeMagicLink(params: {
   to: string;
   actionLink: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("sendWelcomeMagicLink: RESEND_API_KEY not set - magic link email skipped");
-    return false;
-  }
-
   const body = [
     `Welcome to Influencer Butler - your payment is confirmed.`,
     ``,
@@ -177,33 +173,14 @@ async function sendWelcomeMagicLink(params: {
     `- The Influencer Butler team`,
   ].join("\n");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [params.to],
-        subject: "Your Influencer Butler sign-in link",
-        text: body,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("sendWelcomeMagicLink: Resend send failed", {
-        status: res.status,
-        body: text.slice(0, 500),
-      });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("sendWelcomeMagicLink: fetch threw", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to: params.to,
+    subject: "Your Influencer Butler sign-in link",
+    text: body,
+    category: "purchase_welcome",
+  });
+  return ok;
 }
 
 /**
@@ -951,6 +928,55 @@ export async function POST(request: Request) {
         // A referred friend's trial just converted to paid: reward the referrer.
         await rewardReferrerForSubscription(recordId);
       }
+
+      // Seat resync after a plan change: LS does not reliably re-apply the new
+      // product's activation_limit to an existing license key on a variant
+      // swap, so bring the key's device cap in line with the tier ourselves.
+      // Mismatch-gated (zero LS calls in the steady state) and best-effort: a
+      // resync failure must never fail the webhook.
+      try {
+        const plan = planForVariantId(getIdString(attrs.variant_id));
+        const tier = tierForPlan(plan);
+        if (tier) {
+          const expected = SEAT_LIMIT[tier];
+          const { id: subId } = await findSubscriptionByLsId(supabase, recordId);
+          if (subId) {
+            const { data: keys } = await supabase
+              .from("license_keys")
+              .select("ls_license_key_id,status,activation_limit,created_at")
+              .eq("subscription_id", subId);
+            const rows = ((keys ?? []) as {
+              ls_license_key_id?: string | null;
+              status?: string | null;
+              activation_limit?: number | null;
+              created_at?: string | null;
+            }[]).sort(
+              // Newest first, so the fallback below matches "prefer active,
+              // then newest" everywhere else license keys are picked.
+              (a, b) =>
+                new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+            );
+            const active = rows.find((k) => k.status === "active") ?? rows[0];
+            if (
+              active?.ls_license_key_id &&
+              active.activation_limit !== expected
+            ) {
+              const patched = await setLicenseKeyActivationLimit(
+                active.ls_license_key_id,
+                expected,
+              );
+              if (patched) {
+                await supabase
+                  .from("license_keys")
+                  .update({ activation_limit: expected })
+                  .eq("ls_license_key_id", active.ls_license_key_id);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("subscription_updated: seat resync failed", error);
+      }
     },
 
     subscription_cancelled: async () => {
@@ -1255,11 +1281,18 @@ export async function POST(request: Request) {
 
     license_key_updated: async () => {
       if (!recordId) return;
+      // Also resync activation_limit so an LS-side seat change (plan switch,
+      // manual edit in the LS dashboard) self-heals our mirror. Only written
+      // when present in the payload.
+      const updatedLimit = attrs.activation_limit;
       await assertWrite(
         "license_keys.update(license_key_updated)",
         supabase
           .from("license_keys")
-          .update({ status: getString(attrs.status) })
+          .update({
+            status: getString(attrs.status),
+            ...(typeof updatedLimit === "number" ? { activation_limit: updatedLimit } : {}),
+          })
           .eq("ls_license_key_id", recordId),
       );
     },

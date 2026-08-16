@@ -240,7 +240,13 @@ export async function runSwipeKitBroadcast(db: SwipeKitDb, now: Date): Promise<S
       period,
       butlers,
     });
-    const ok = await sendMarketingEmail({ from: SWIPE_KIT_FROM, to: email, subject, text });
+    const ok = await sendMarketingEmail({
+      from: SWIPE_KIT_FROM,
+      to: email,
+      subject,
+      text,
+      category: "affiliate_swipe_kit",
+    });
     if (ok) sent += 1;
   }
 

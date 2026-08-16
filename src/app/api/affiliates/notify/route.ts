@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email-send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,31 +29,23 @@ export async function POST(request: Request) {
 
   const name = body.fullName?.trim() || body.email?.trim() || "Unknown applicant";
 
-  try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <affiliates@influencerbutler.com>",
-        to: [to],
-        subject: `New affiliate application: ${name}`,
-        text: [
-          `New affiliate application submitted.`,
-          ``,
-          `Name: ${body.fullName ?? "-"}`,
-          `Email: ${body.email ?? "-"}`,
-          `User ID: ${body.userId ?? "-"}`,
-          ``,
-          `Full details: Supabase affiliate_applications table.`,
-        ].join("\n"),
-      }),
-    });
-    return NextResponse.json({ ok: true, sent: true });
-  } catch (error) {
-    console.error("Affiliate admin notification failed", error);
+  const { ok: sent } = await sendEmail({
+    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    to,
+    subject: `New affiliate application: ${name}`,
+    text: [
+      `New affiliate application submitted.`,
+      ``,
+      `Name: ${body.fullName ?? "-"}`,
+      `Email: ${body.email ?? "-"}`,
+      `User ID: ${body.userId ?? "-"}`,
+      ``,
+      `Full details: Supabase affiliate_applications table.`,
+    ].join("\n"),
+    category: "affiliate_notify",
+  });
+  if (!sent) {
     return NextResponse.json({ ok: true, sent: false, reason: "send_failed" });
   }
+  return NextResponse.json({ ok: true, sent: true });
 }

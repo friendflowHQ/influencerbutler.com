@@ -16,6 +16,7 @@
  */
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { sendEmail } from "@/lib/email-send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,36 +58,25 @@ async function recordSubscriber(email: string): Promise<void> {
 }
 
 async function sendResumeEmail(email: string, seriesId: string, token: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
   const courseUrl = COURSE_URLS[seriesId];
-  if (!apiKey || !courseUrl) return;
+  // Missing Resend config is a silent skip here (best-effort backup email).
+  if (!process.env.RESEND_API_KEY || !courseUrl) return;
   const link = `${courseUrl}?resume=${token}`;
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [email],
-        subject: "Your course progress is saved: resume anytime",
-        text: [
-          "Your progress in the free Amazon Influencer course is saved.",
-          "",
-          `Resume on any device: ${link}`,
-          "",
-          "Keep this email; the link always brings back your latest saved progress.",
-          "",
-          "Influencer Butler",
-        ].join("\n"),
-      }),
-    });
-    if (!res.ok) console.error("course-progress: resume email failed", res.status);
-  } catch (err) {
-    console.error("course-progress: resume email threw", err);
-  }
+  await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to: email,
+    subject: "Your course progress is saved: resume anytime",
+    text: [
+      "Your progress in the free Amazon Influencer course is saved.",
+      "",
+      `Resume on any device: ${link}`,
+      "",
+      "Keep this email; the link always brings back your latest saved progress.",
+      "",
+      "Influencer Butler",
+    ].join("\n"),
+    category: "course_certificate",
+  });
 }
 
 export async function POST(request: Request) {

@@ -49,6 +49,19 @@ export function resolvePromoCode(tier: PromoTier): string {
   return tier === "first" ? WELCOME_FIRST_CODE : WELCOME_RETURNING_CODE;
 }
 
+/**
+ * Validates an untrusted string (checkout body / query param) into a PromoTier,
+ * or null if it's not one of the two known values. Used so the checkout routes
+ * can honor the tier the pricing page actually *rendered* to the buyer, rather
+ * than re-reading ib_pv at checkout time - by then the page's on-mount
+ * /api/promo/touch call has already set ib_pv, which would silently downgrade a
+ * genuine first-time visitor from WELCOME30 to WELCOME15. "What you see is what
+ * you pay." Falls back to the cookie tier when absent.
+ */
+export function coerceTier(value: string | null | undefined): PromoTier | null {
+  return value === "first" || value === "returning" ? value : null;
+}
+
 export function discountPctFor(tier: PromoTier): number {
   return tier === "first" ? DISCOUNT_PCT_FIRST : DISCOUNT_PCT_RETURNING;
 }

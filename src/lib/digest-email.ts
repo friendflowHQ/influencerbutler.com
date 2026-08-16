@@ -13,6 +13,7 @@ import type {
   DigestSeries,
   LocationCount,
 } from "@/lib/daily-digest";
+import { sendEmail } from "@/lib/email-send";
 
 const FROM = "Influencer Butler <hello@influencerbutler.com>";
 const FALLBACK_RECIPIENT = "thesocialmediaposse@gmail.com";
@@ -372,33 +373,18 @@ function recipients(): string[] {
 }
 
 export async function sendDigest(d: DigestData): Promise<{ ok: boolean; skipped?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
+  if (!process.env.RESEND_API_KEY) {
     console.log("daily-digest: skipped (RESEND_API_KEY not set)");
     return { ok: false, skipped: "not_configured" };
   }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM,
-        to: recipients(),
-        subject: digestSubject(d),
-        html: renderDigestHtml(d),
-        text: renderDigestText(d),
-      }),
-    });
-    if (!res.ok) {
-      console.error("daily-digest: resend send failed", res.status);
-      return { ok: false, skipped: `resend_${res.status}` };
-    }
-    return { ok: true };
-  } catch (err) {
-    console.error("daily-digest: send error", err);
-    return { ok: false, skipped: "error" };
-  }
+  const subject = digestSubject(d);
+  const html = renderDigestHtml(d);
+  const text = renderDigestText(d);
+  const results = await Promise.all(
+    recipients().map((to) =>
+      sendEmail({ from: FROM, to, subject, html, text, category: "daily_digest" }),
+    ),
+  );
+  if (!results.every((r) => r.ok)) return { ok: false, skipped: "send_failed" };
+  return { ok: true };
 }

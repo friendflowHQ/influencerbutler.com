@@ -184,6 +184,9 @@ export default function SupportAdminPage() {
   const [replyBody, setReplyBody] = useState("");
   // Move the ticket out of the needs-attention buckets once a human has answered.
   const [replyAdvance, setReplyAdvance] = useState(true);
+  // AI "Suggest reply": drafts a grounded reply into the box (never auto-sends).
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestReason, setSuggestReason] = useState("");
   const [editPriority, setEditPriority] = useState("P2");
   const [editTags, setEditTags] = useState("");
 
@@ -333,6 +336,42 @@ export default function SupportAdminPage() {
       setDetailBusy(false);
     }
   }, [selected, replySubject, replyBody, replyAdvance, openTicket, fetchList, fetchCounts]);
+
+  // Draft a grounded reply with AI and drop it into the reply box for review.
+  const doSuggest = useCallback(async () => {
+    if (!selected) return;
+    setSuggesting(true);
+    setSuggestReason("");
+    setActionMsg("Drafting a reply…");
+    try {
+      const res = await fetch("/api/admin/support/suggest", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: selected.id }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        subject?: string;
+        body?: string;
+        reason?: string;
+        confidence?: number;
+        action?: string;
+        grounded?: boolean;
+      };
+      if (!res.ok || !json.ok) { setActionMsg(json.error || "Could not draft a reply."); return; }
+      if (json.subject) setReplySubject(json.subject.slice(0, 180));
+      if (json.body) setReplyBody(json.body);
+      const conf = typeof json.confidence === "number" ? ` · ${Math.round(json.confidence * 100)}% sure` : "";
+      const grounded = json.grounded ? "grounded in help articles" : "no matching help article found, review carefully";
+      setSuggestReason(`Draft ready (${grounded}${conf}). Review and edit before sending.`);
+      setActionMsg("Draft ready. Review before sending.");
+    } catch (e) {
+      setActionMsg(e instanceof Error ? e.message : "Could not draft a reply.");
+    } finally {
+      setSuggesting(false);
+    }
+  }, [selected]);
 
   if (forbidden) {
     return (
@@ -724,6 +763,18 @@ export default function SupportAdminPage() {
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reply to customer</h3>
               {selected.userEmail ? (
                 <>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={suggesting || detailBusy}
+                      onClick={doSuggest}
+                      className="rounded-lg border border-[#f97316] px-3 py-1.5 text-sm font-medium text-[#c2410c] hover:bg-orange-50 disabled:opacity-50"
+                    >
+                      {suggesting ? "Drafting…" : "✨ Suggest reply"}
+                    </button>
+                    <span className="text-xs text-slate-400">AI drafts a grounded reply. You review and send.</span>
+                  </div>
+                  {suggestReason && <p className="mt-2 text-xs text-slate-500">{suggestReason}</p>}
                   <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="Subject" />
                   <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
                   {replyCanAdvance && (

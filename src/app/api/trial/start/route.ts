@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
+import { sendEmail } from "@/lib/email-send";
 import { hasAdsConsent, readMetaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
@@ -235,10 +236,9 @@ function decodeHeader(value: string | null): string {
 }
 
 async function sendNotification(d: ClickDetails): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.TRIAL_CLICK_NOTIFICATION_EMAIL || FALLBACK_RECIPIENT;
 
-  if (!apiKey) {
+  if (!process.env.RESEND_API_KEY) {
     console.log("trial/start: skipped (not_configured)");
     return;
   }
@@ -247,40 +247,27 @@ async function sendNotification(d: ClickDetails): Promise<void> {
     .filter((p) => p && p !== "unknown")
     .join(", ");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject: `Free trial click${location ? `: ${location}` : ""}`,
-        text: [
-          `Someone clicked to start their free trial.`,
-          ``,
-          `Location: ${location || "unknown"}`,
-          `Country: ${d.country}`,
-          `Region: ${d.region}`,
-          `City: ${d.city}`,
-          `Coordinates: ${d.latLong}`,
-          `Timezone: ${d.timezone}`,
-          `IP address: ${d.ip}`,
-          ``,
-          `Clicked from page: ${d.referrer}`,
-          `Button / source tag: ${d.source}`,
-          `Sent to download for: ${d.os}`,
-          `Device / browser: ${d.device}`,
-          `Language: ${d.language}`,
-        ].join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      console.error("trial/start: resend send failed", res.status);
-    }
-  } catch (error) {
-    console.error("trial/start: notification error", error);
-  }
+  await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to,
+    subject: `Free trial click${location ? `: ${location}` : ""}`,
+    text: [
+      `Someone clicked to start their free trial.`,
+      ``,
+      `Location: ${location || "unknown"}`,
+      `Country: ${d.country}`,
+      `Region: ${d.region}`,
+      `City: ${d.city}`,
+      `Coordinates: ${d.latLong}`,
+      `Timezone: ${d.timezone}`,
+      `IP address: ${d.ip}`,
+      ``,
+      `Clicked from page: ${d.referrer}`,
+      `Button / source tag: ${d.source}`,
+      `Sent to download for: ${d.os}`,
+      `Device / browser: ${d.device}`,
+      `Language: ${d.language}`,
+    ].join("\n"),
+    category: "trial_start",
+  });
 }

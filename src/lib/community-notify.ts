@@ -211,6 +211,7 @@ export async function notifyCommunityAnswer(params: NotifyParams): Promise<strin
         to: send.to,
         subject: send.subject,
         text: send.text,
+        category: "community_notify",
       });
       if (handled) notified.push(send.to);
     } catch (err) {

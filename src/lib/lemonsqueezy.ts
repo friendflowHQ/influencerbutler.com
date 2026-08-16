@@ -266,6 +266,7 @@ export type VariantResolution =
  *   - "monthly" / "annual"           - legacy aliases, still resolve to
  *                                       Pro Solo Monthly / Annual.
  *   - "solo-monthly" / "solo-annual"
+ *   - "duo-monthly" / "duo-annual"
  *   - "team-monthly" / "team-annual"
  *   - "agency-monthly" / "agency-annual"
  *   - "daily-deals-addon"            - $24.99/mo add-on SKU (no promos).
@@ -275,6 +276,8 @@ const PLAN_ENV_VAR: Record<string, string> = {
   annual: "LEMONSQUEEZY_VARIANT_ANNUAL",
   "solo-monthly": "LEMONSQUEEZY_VARIANT_MONTHLY",
   "solo-annual": "LEMONSQUEEZY_VARIANT_ANNUAL",
+  "duo-monthly": "LEMONSQUEEZY_VARIANT_DUO_MONTHLY",
+  "duo-annual": "LEMONSQUEEZY_VARIANT_DUO_ANNUAL",
   "team-monthly": "LEMONSQUEEZY_VARIANT_TEAM_MONTHLY",
   "team-annual": "LEMONSQUEEZY_VARIANT_TEAM_ANNUAL",
   "agency-monthly": "LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY",
@@ -328,6 +331,8 @@ export function getDiscountableVariantIds(): string[] {
   const ids: (string | undefined)[] = [
     process.env.LEMONSQUEEZY_VARIANT_MONTHLY,
     process.env.LEMONSQUEEZY_VARIANT_ANNUAL,
+    process.env.LEMONSQUEEZY_VARIANT_DUO_MONTHLY,
+    process.env.LEMONSQUEEZY_VARIANT_DUO_ANNUAL,
     process.env.LEMONSQUEEZY_VARIANT_TEAM_MONTHLY,
     process.env.LEMONSQUEEZY_VARIANT_TEAM_ANNUAL,
     process.env.LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY,
@@ -340,9 +345,83 @@ export function getDiscountableVariantIds(): string[] {
 // resolve the "switch to annual" upgrade target for an existing subscription.
 const MONTHLY_TO_ANNUAL_ENV: Record<string, string> = {
   LEMONSQUEEZY_VARIANT_MONTHLY: "LEMONSQUEEZY_VARIANT_ANNUAL",
+  LEMONSQUEEZY_VARIANT_DUO_MONTHLY: "LEMONSQUEEZY_VARIANT_DUO_ANNUAL",
   LEMONSQUEEZY_VARIANT_TEAM_MONTHLY: "LEMONSQUEEZY_VARIANT_TEAM_ANNUAL",
   LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY: "LEMONSQUEEZY_VARIANT_AGENCY_ANNUAL",
 };
+
+// Canonical (tier-prefixed) plan strings, in display order. The bare
+// "monthly"/"annual" aliases are deliberately absent: they share env vars
+// with solo-* and would make the variant-id inverse lookup ambiguous.
+const CANONICAL_PLAN_STRINGS = [
+  "solo-monthly",
+  "solo-annual",
+  "duo-monthly",
+  "duo-annual",
+  "team-monthly",
+  "team-annual",
+  "agency-monthly",
+  "agency-annual",
+  "daily-deals-addon",
+] as const;
+
+export type CanonicalPlanString = (typeof CANONICAL_PLAN_STRINGS)[number];
+
+/**
+ * Inverse of PLAN_ENV_VAR: resolves an LS variant id back to its canonical
+ * plan string ("solo-monthly", "duo-annual", ...). Returns null for unknown
+ * or unconfigured variants. Never returns the bare "monthly"/"annual"
+ * aliases.
+ */
+export function planForVariantId(
+  variantId: string | number | null | undefined,
+): CanonicalPlanString | null {
+  if (variantId == null) return null;
+  const id = String(variantId);
+  if (id.length === 0) return null;
+  for (const plan of CANONICAL_PLAN_STRINGS) {
+    const envVar = PLAN_ENV_VAR[plan];
+    const candidate = envVar ? process.env[envVar] : undefined;
+    if (candidate && candidate === id) return plan;
+  }
+  return null;
+}
+
+/**
+ * Sets a license key's activation_limit via the main LS API. Used by the
+ * webhook seat-resync after a plan change so the key's device cap follows
+ * the new tier. Returns false (and logs) on any API failure.
+ */
+export async function setLicenseKeyActivationLimit(
+  lsLicenseKeyId: string,
+  limit: number,
+): Promise<boolean> {
+  try {
+    const response = await lsApi(`/license-keys/${lsLicenseKeyId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        data: {
+          type: "license-keys",
+          id: lsLicenseKeyId,
+          attributes: { activation_limit: limit },
+        },
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: license activation_limit patch failed", {
+        status: response.status,
+        lsLicenseKeyId,
+        text: text.slice(0, 500),
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("lemonsqueezy: license activation_limit patch threw", error);
+    return false;
+  }
+}
 
 /**
  * Given a subscription's current variant id, returns the same tier's annual

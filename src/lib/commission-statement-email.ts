@@ -12,6 +12,7 @@
 // Lemon Squeezy already credited (30%), and "owed" is the top-up we still pay.
 
 import { bodyToHtml } from "@/lib/newsletter";
+import { sendEmail } from "@/lib/email-send";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
 
@@ -153,38 +154,18 @@ async function sendViaResend(params: {
   to: string;
   subject: string;
   text: string;
+  category: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - commission statement skipped");
-    return false;
-  }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        reply_to: REPLY_TO,
-        to: [params.to],
-        subject: params.subject,
-        text: params.text,
-        html: bodyToHtml(params.text),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("Commission statement send failed", { status: res.status, body: body.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Commission statement send threw", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: FROM_ADDRESS,
+    to: params.to,
+    subject: params.subject,
+    text: params.text,
+    html: bodyToHtml(params.text),
+    replyTo: REPLY_TO,
+    category: params.category,
+  });
+  return ok;
 }
 
 /** Send one affiliate their own statement. No-op (returns false) with no email. */
@@ -200,6 +181,7 @@ export async function sendAffiliateStatement(
     to: statement.email,
     subject: `Your commission statement: ${formatPeriod(period)}`,
     text: buildStatementBody(statement, period),
+    category: "commission_statement",
   });
 }
 
@@ -213,6 +195,7 @@ export async function sendCombinedStatement(
     to: statementInbox(),
     subject: `Affiliate commissions: ${formatPeriod(period)}`,
     text: buildCombinedBody(statements, period, notReady),
+    category: "commission_statement",
   });
 }
 
@@ -274,5 +257,10 @@ export async function sendTaxFormReminder(params: TaxReminderParams): Promise<bo
   const subject = params.missingTax
     ? `Action needed: add your tax form to get your ${amount} commission`
     : `Action needed: add your PayPal email to get your ${amount} commission`;
-  return sendViaResend({ to: params.to, subject, text: buildTaxReminderBody(params) });
+  return sendViaResend({
+    to: params.to,
+    subject,
+    text: buildTaxReminderBody(params),
+    category: "tax_form_reminder",
+  });
 }

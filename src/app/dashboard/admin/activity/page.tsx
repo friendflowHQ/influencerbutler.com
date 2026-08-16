@@ -292,8 +292,10 @@ export default function AdminActivityPage() {
             <p className="mt-1 text-xs text-slate-500">
               Genuine visitor trial clicks and customer purchases only (seeded demo events are
               excluded). This is what real visitors see in the social-proof popup, which now runs on
-              every page of the site, not just the homepage. &quot;Live now&quot; counts the events
-              currently eligible to appear (not hidden, not a bot, within the window above).
+              every page of the site, not just the homepage. Purchases are prioritized: they play
+              first in the popup rotation and use a 7-day lookback (trial clicks keep the window
+              above). &quot;Live now&quot; counts the events currently eligible to appear (not
+              hidden, not a bot, within the window above).
             </p>
             <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
               {realEvents.length === 0 ? (

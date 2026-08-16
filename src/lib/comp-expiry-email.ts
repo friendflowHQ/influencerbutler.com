@@ -4,6 +4,7 @@
 // ADMIN_EMAILS allowlist, else the shared statement inbox) - never the customer.
 
 import { bodyToHtml } from "@/lib/newsletter";
+import { sendEmail } from "@/lib/email-send";
 import { DEFAULT_STATEMENT_INBOX } from "@/lib/commission-statement-email";
 import type { CompRow } from "@/lib/comps-data";
 
@@ -68,36 +69,13 @@ export async function sendCompDigest(params: {
   warn: CompRow[];
   needsMonths: CompRow[];
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - comp digest skipped");
-    return false;
-  }
   const text = buildDigestBody(params);
   const subject = `Comps: ${params.cancelled.length} cancelled, ${params.warn.length} expiring`;
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: compAlertRecipients(),
-        subject,
-        text,
-        html: bodyToHtml(text),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("Comp digest send failed", { status: res.status, body: body.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Comp digest send threw", error);
-    return false;
-  }
+  const html = bodyToHtml(text);
+  const results = await Promise.all(
+    compAlertRecipients().map((to) =>
+      sendEmail({ from: FROM_ADDRESS, to, subject, text, html, category: "comp_expiry" }),
+    ),
+  );
+  return results.every((r) => r.ok);
 }

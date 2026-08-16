@@ -185,6 +185,7 @@ async function sendGiftPassEmail(to: string, key: string): Promise<void> {
     to,
     subject: "Your referral reward: a free month of Pro to gift",
     text,
+    category: "referral_invite",
   });
 }
 

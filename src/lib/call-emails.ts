@@ -8,6 +8,7 @@ import { DateTime } from "luxon";
 import { buildIcs, icsBase64 } from "./ics";
 import { bodyToHtml } from "./newsletter";
 import { CALL_TYPES, type CallTypeKey } from "./scheduling";
+import { sendEmail } from "@/lib/email-send";
 
 const FROM = "Influencer Butler <hello@influencerbutler.com>";
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
@@ -52,18 +53,17 @@ export type BookingEmailData = {
 
 type Attachment = { filename: string; content: string };
 
-async function sendResend(to: string, subject: string, text: string, attachments?: Attachment[], html?: string): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.error("[call-emails] RESEND_API_KEY not set"); return false; }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: [to], subject, text, ...(html ? { html } : {}), ...(attachments?.length ? { attachments } : {}) }),
-    });
-    if (!res.ok) { console.error("[call-emails] resend failed", res.status, await res.text().catch(() => "")); return false; }
-    return true;
-  } catch (err) { console.error("[call-emails] resend threw", err); return false; }
+async function sendResend(to: string, subject: string, text: string, category: string, attachments?: Attachment[], html?: string): Promise<boolean> {
+  const { ok } = await sendEmail({
+    from: FROM,
+    to,
+    subject,
+    text,
+    ...(html ? { html } : {}),
+    ...(attachments?.length ? { attachments } : {}),
+    category,
+  });
+  return ok;
 }
 
 function whenLine(startMs: number, endMs: number, tz: string): string {
@@ -121,7 +121,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     { phrase: "Book a Call", href: BOOK_URL },
     ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
   ]);
-  return sendResend(b.userEmail, `Confirmed: your ${ct.label.toLowerCase()}`, body, [icsAttachment(b)], html);
+  return sendResend(b.userEmail, `Confirmed: your ${ct.label.toLowerCase()}`, body, "booking_confirm", [icsAttachment(b)], html);
 }
 
 export async function sendOwnerNotification(b: BookingEmailData, prepSummary: string): Promise<boolean> {
@@ -141,7 +141,7 @@ export async function sendOwnerNotification(b: BookingEmailData, prepSummary: st
     ``,
     `Full prep sheet: dashboard > Scheduling.`,
   ].join("\n");
-  return sendResend(to, `[Call booked] ${ct.label} — ${b.userEmail}`, body);
+  return sendResend(to, `[Call booked] ${ct.label} — ${b.userEmail}`, body, "booking_owner_notify");
 }
 
 export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Promise<boolean> {
@@ -162,7 +162,7 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     `Your Influencer Butler Team`,
   ].join("\n");
   const html = htmlFrom(body, b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []);
-  return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, undefined, html);
+  return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, "call_reminder", undefined, html);
 }
 
 export async function sendCancellation(b: BookingEmailData): Promise<boolean> {
@@ -190,7 +190,7 @@ export async function sendCancellation(b: BookingEmailData): Promise<boolean> {
     `Your Influencer Butler Team`,
   ].join("\n");
   const html = htmlFrom(body, [{ phrase: "Book a Call", href: BOOK_URL }]);
-  return sendResend(b.userEmail, `Cancelled: your ${ct.label.toLowerCase()}`, body, [
+  return sendResend(b.userEmail, `Cancelled: your ${ct.label.toLowerCase()}`, body, "call_cancellation", [
     { filename: "cancel.ics", content: icsBase64(cancelIcs) },
   ], html);
 }

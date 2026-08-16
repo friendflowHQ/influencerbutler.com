@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { sendEmail } from "@/lib/email-send";
 import { sanitizePermissions } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -68,11 +69,6 @@ async function findUserIdByEmail(supabase: InviteClient, email: string): Promise
 }
 
 async function sendInviteEmail(to: string, actionLink: string): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("staff/invite: RESEND_API_KEY not set - invite email skipped");
-    return false;
-  }
   const body = [
     `You've been added as an assistant on Influencer Butler.`,
     ``,
@@ -84,22 +80,14 @@ async function sendInviteEmail(to: string, actionLink: string): Promise<boolean>
     ``,
     `- The Influencer Butler team`,
   ].join("\n");
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject: "Your Influencer Butler assistant access",
-        text: body,
-      }),
-    });
-    return res.ok;
-  } catch (err) {
-    console.error("staff/invite: Resend send threw", err);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to,
+    subject: "Your Influencer Butler assistant access",
+    text: body,
+    category: "staff_invite",
+  });
+  return ok;
 }
 
 export async function POST(request: Request) {

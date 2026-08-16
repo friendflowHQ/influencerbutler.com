@@ -44,5 +44,11 @@ export async function sendTestimonialEmail(payload: TestimonialEmailPayload): Pr
   const firstName = payload.name.split(" ")[0] || "there";
   const body = buildBody(firstName, payload.feedbackUrl);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: SUBJECT, text: body });
+  return sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject: SUBJECT,
+    text: body,
+    category: "testimonial_request",
+  });
 }

@@ -9,6 +9,8 @@
 // number-agnostic on commission (custom-rate affiliates exist), and it names no
 // competitors, per the repo copy rule.
 
+import { sendEmail } from "@/lib/email-send";
+
 const SITE = "https://www.influencerbutler.com";
 const FROM = "Influencer Butler <affiliates@influencerbutler.com>";
 
@@ -114,20 +116,6 @@ export async function sendAffiliateResourcesEmail(
   subject: string,
   text: string,
 ): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from: FROM, to: [to], subject, text }),
-    });
-    return res.ok;
-  } catch (error) {
-    console.error("affiliate resources email send failed", error);
-    return false;
-  }
+  const { ok } = await sendEmail({ from: FROM, to, subject, text, category: "affiliate_resources" });
+  return ok;
 }

@@ -23,7 +23,25 @@
       "Bash(echo \"exit=$?\")",
       "Bash(curl -sS -I 'http://localhost:3000/api/checkout/guest?plan=monthly')",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(sed 's/^CRON_SECRET=//')",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__navigate",
+      "mcp__claude-in-chrome__find",
+      "mcp__claude-in-chrome__computer",
+      "Bash(git rev-list *)",
+      "Bash(git ls-tree *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(Object.entries\\(p.scripts||{}\\).map\\(\\([k,v]\\)=>k+': '+v\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(git -C .claude/worktrees/amazing-chandrasekhar-1d8838 diff --stat)",
+      "Bash(git -C .claude/worktrees/elated-lumiere-519709 diff --stat)",
+      "Bash(git -C .claude/worktrees/focused-mccarthy-639f69 status --short)",
+      "Bash(git -C .claude/worktrees/stoic-merkle-4297b4 diff --stat)",
+      "Bash(npm test *)",
+      "Bash(git checkout *)",
+      "Bash(rm content/tutorials/app-slow-freezing.en-US.mdx content/tutorials/app-slow-freezing.es-ES.mdx content/tutorials/app-slow-freezing.fr-FR.mdx)",
+      "Bash(git add *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit -m 'feat\\(extension\\): Last Call Butler - campaign fill meters, watch bells, and full-campaign alerts *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit -m 'feat\\(site\\): Pro Duo tier, email analytics, and support sweep \\(bundled\\) *)"
     ]
   }
 }

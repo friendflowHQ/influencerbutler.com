@@ -15,16 +15,25 @@ import { NEWSLETTER_ISSUES, type NewsletterIssue } from "@/lib/newsletter-issues
 const CONFIG_KEY = "newsletter_schedule";
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
 
+export type NewsletterBroadcastRecord = {
+  index: number;
+  id: string; // Resend broadcast id; email_sends rows carry it as broadcast_id
+  subject: string;
+  sentAt: string;
+};
+
 export type NewsletterState = {
   enabled: boolean;
   lastSentIndex: number; // -1 means nothing sent yet
   lastSentAt: string | null;
+  broadcasts: NewsletterBroadcastRecord[];
 };
 
 const DEFAULT_STATE: NewsletterState = {
   enabled: true,
   lastSentIndex: -1,
   lastSentAt: null,
+  broadcasts: [],
 };
 
 type ServiceDb = {
@@ -66,10 +75,23 @@ export async function readNewsletterState(): Promise<NewsletterState> {
       unknown
     >;
     const idx = Number(v.last_sent_index);
+    const rawBroadcasts = Array.isArray(v.broadcasts) ? v.broadcasts : [];
+    const broadcasts: NewsletterBroadcastRecord[] = [];
+    for (const raw of rawBroadcasts) {
+      const b = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+      if (typeof b.id !== "string" || !b.id) continue;
+      broadcasts.push({
+        index: Number.isFinite(Number(b.index)) ? Number(b.index) : -1,
+        id: b.id,
+        subject: typeof b.subject === "string" ? b.subject : "",
+        sentAt: typeof b.sent_at === "string" ? b.sent_at : "",
+      });
+    }
     return {
       enabled: v.enabled !== false,
       lastSentIndex: Number.isFinite(idx) ? idx : -1,
       lastSentAt: typeof v.last_sent_at === "string" ? v.last_sent_at : null,
+      broadcasts,
     };
   } catch {
     return DEFAULT_STATE;
@@ -86,6 +108,12 @@ export async function writeNewsletterState(next: NewsletterState): Promise<boole
         enabled: next.enabled,
         last_sent_index: next.lastSentIndex,
         last_sent_at: next.lastSentAt,
+        broadcasts: next.broadcasts.map((b) => ({
+          index: b.index,
+          id: b.id,
+          subject: b.subject,
+          sent_at: b.sentAt,
+        })),
       },
       updated_at: new Date().toISOString(),
       updated_by: "cron:newsletter",
@@ -112,15 +140,19 @@ export function bodyToHtml(body: string): string {
 
 /**
  * Creates and immediately sends a Resend Broadcast for one issue to the
- * configured audience. Returns true on success. Never throws.
+ * configured audience. Returns the broadcast id on success (so per-recipient
+ * email_sends rows inserted by the Resend webhook can be tied back to the
+ * issue), ok=false on any failure. Never throws.
  */
-export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<boolean> {
+export async function sendNewsletterBroadcast(
+  issue: NewsletterIssue,
+): Promise<{ ok: boolean; broadcastId: string | null }> {
   const apiKey = process.env.RESEND_API_KEY;
   // RESEND_AUDIENCE_ID holds a Resend *segment* id. Resend renamed Audiences to
   // Segments, and the Broadcasts API now targets a segment_id. The env var keeps
   // its historical name so it does not need to be re-added in Vercel.
   const segmentId = process.env.RESEND_AUDIENCE_ID;
-  if (!apiKey || !segmentId) return false;
+  if (!apiKey || !segmentId) return { ok: false, broadcastId: null };
 
   // Resend requires an unsubscribe link in broadcasts; the {{{RESEND_UNSUBSCRIBE_URL}}}
   // placeholder is replaced per-recipient and handles unsubscribes automatically.
@@ -146,13 +178,13 @@ export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<b
     });
     if (!createRes.ok) {
       console.error("newsletter: broadcast create failed", createRes.status);
-      return false;
+      return { ok: false, broadcastId: null };
     }
     const created = (await createRes.json()) as { id?: string; data?: { id?: string } };
     const broadcastId = created.id ?? created.data?.id;
     if (!broadcastId) {
       console.error("newsletter: broadcast create returned no id");
-      return false;
+      return { ok: false, broadcastId: null };
     }
 
     const sendRes = await fetch(`https://api.resend.com/broadcasts/${broadcastId}/send`, {
@@ -162,12 +194,12 @@ export async function sendNewsletterBroadcast(issue: NewsletterIssue): Promise<b
     });
     if (!sendRes.ok) {
       console.error("newsletter: broadcast send failed", sendRes.status);
-      return false;
+      return { ok: false, broadcastId: null };
     }
-    return true;
+    return { ok: true, broadcastId };
   } catch (err) {
     console.error("newsletter: sendNewsletterBroadcast threw", err);
-    return false;
+    return { ok: false, broadcastId: null };
   }
 }
 

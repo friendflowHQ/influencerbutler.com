@@ -22,7 +22,7 @@
  */
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ResolvedSessionAuth = {
   kind: "session";
@@ -101,8 +101,11 @@ async function resolveLicenseBearer(
   if (key.length < LICENSE_KEY_MIN || key.length > LICENSE_KEY_MAX) {
     return { ok: false, status: 401, error: "Invalid license key" };
   }
-  const admin = createAdminClient() as unknown as AdminLookupClient | null;
-  if (!admin) {
+  let admin: AdminLookupClient;
+  try {
+    admin = createAdminClient() as unknown as AdminLookupClient;
+  } catch (err) {
+    console.error("license-auth: service-role client unavailable", err);
     return { ok: false, status: 503, error: "Server misconfigured" };
   }
   const licenseHash = hashLicenseKey(key);

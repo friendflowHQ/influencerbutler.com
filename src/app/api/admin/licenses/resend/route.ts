@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { adminService } from "@/lib/admin-service";
 import { logAdminAction } from "@/lib/admin-audit";
+import { sendEmail } from "@/lib/email-send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,8 +10,6 @@ export const dynamic = "force-dynamic";
 type Body = { lsLicenseKeyId?: string };
 
 async function sendLicenseEmail(to: string, key: string): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
   const body = [
     `Here is your Influencer Butler license key:`,
     ``,
@@ -20,21 +19,14 @@ async function sendLicenseEmail(to: string, key: string): Promise<boolean> {
     ``,
     `- The Influencer Butler team`,
   ].join("\n");
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject: "Your Influencer Butler license key",
-        text: body,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: "Influencer Butler <hello@influencerbutler.com>",
+    to,
+    subject: "Your Influencer Butler license key",
+    text: body,
+    category: "license_resend",
+  });
+  return ok;
 }
 
 /** Emails a license key to its owner. Gated by licenses.resend. */

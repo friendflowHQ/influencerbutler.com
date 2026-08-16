@@ -138,5 +138,12 @@ export async function sendProEmail(payload: ProEmailPayload): Promise<boolean> {
     subscriptionUrl: payload.subscriptionUrl,
   });
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: copy.subject, text: body });
+  return sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject: copy.subject,
+    text: body,
+    category: `pro_${payload.tier}`,
+    funnel: "pro",
+  });
 }

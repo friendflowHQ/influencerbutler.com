@@ -32,7 +32,7 @@ type Props = {
   initialCode: string | null;
 };
 
-const TIER_ORDER: readonly Tier[] = ["solo", "team", "agency"] as const;
+const TIER_ORDER: readonly Tier[] = ["solo", "duo", "team", "agency"] as const;
 
 function formatMoney(cents: number): string {
   return formatMoneyFromDollars(cents / 100);
@@ -133,23 +133,41 @@ export default function PricingCardsClient({
             plan,
             code: codeParam,
             affiliateSource: initialCode ?? undefined,
+            // Charge the tier we actually rendered (WELCOME30 for first-timers),
+            // not one the on-mount promo/touch may have already flipped.
+            shownTier: promoTier,
           }),
         });
-        if (response.status !== 401 && response.ok) {
+        if (response.ok) {
           const payload = (await response.json()) as { checkoutUrl?: string };
           if (payload.checkoutUrl) {
             openCheckout(payload.checkoutUrl);
             return;
           }
+        } else if (response.status === 409) {
+          // Already subscribed: a fresh checkout would mint a second parallel
+          // subscription. Send them to the dashboard switch-plan flow instead.
+          window.location.href = "/dashboard/subscription";
+          return;
+        } else if (response.status !== 401) {
+          const detail = await response
+            .json()
+            .then((body: { error?: string }) => body?.error)
+            .catch(() => undefined);
+          console.error("Pricing checkout failed", { plan, status: response.status, error: detail });
+          setErrorPlan(plan);
+          return;
         }
-        // 401 or missing url - fall through to guest flow.
+        // 401 (stale auth cookie) or ok-but-missing-url - fall through to guest flow.
       }
 
       const affiliateParam =
         initialCode && initialCode.length > 0
           ? `&affiliateSource=${encodeURIComponent(initialCode)}`
           : "";
-      const guestUrl = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}${affiliateParam}`;
+      // Same "what you see is what you pay" tier as the auth path above.
+      const shownTierParam = `&shownTier=${encodeURIComponent(promoTier)}`;
+      const guestUrl = `/api/checkout/guest?plan=${plan}${codeParam ? `&code=${encodeURIComponent(codeParam)}` : ""}${affiliateParam}${shownTierParam}`;
       const guestResponse = await fetch(guestUrl, { headers: { Accept: "application/json" } });
       if (guestResponse.ok) {
         const { checkoutUrl } = (await guestResponse.json()) as { checkoutUrl?: string };
@@ -183,7 +201,7 @@ export default function PricingCardsClient({
 
       <BillingToggle value={billing} onChange={setBilling} />
 
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {TIER_ORDER.map((tier) => {
           const cents = PRICE_CENTS[tier][billing];
           const plan = planStringFor(tier, billing);

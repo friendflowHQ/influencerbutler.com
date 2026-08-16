@@ -7,7 +7,7 @@
  *             subscription status - including trials that expired and
  *             subscriptions that were cancelled.
  *   - trial : the full-Pro 14-day tryout. Everything unlocked, then converts.
- *   - pro   : Solo / Team / Agency. Everything unlocked, multi-device, support.
+ *   - pro   : Solo / Duo / Team / Agency. Everything unlocked, multi-device, support.
  *
  * Site copy (pricing page, feature catalog), the /api/entitlements endpoint,
  * and the desktop app spec (docs/entitlements-spec.md) all read from here so

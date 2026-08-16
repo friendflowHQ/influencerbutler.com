@@ -13,11 +13,12 @@ import {
   TIER_FEATURES,
   annualSavingsPct,
   planStringFor,
+  tierForPlan,
   type Tier,
   type Interval,
 } from "@/lib/pricing-constants";
 
-const TIER_ORDER: readonly Tier[] = ["solo", "team", "agency"] as const;
+const TIER_ORDER: readonly Tier[] = ["solo", "duo", "team", "agency"] as const;
 
 function formatPrice(cents: number): string {
   const dollars = cents / 100;
@@ -51,6 +52,11 @@ type SubscriptionEntry = {
   subscription: Subscription;
   licenseKey: LicenseKey | null;
   canUpgradeToAnnual: boolean;
+  /** Canonical plan string ("solo-monthly", "duo-annual", ...) or null when
+   * the variant is unrecognized (comp keys, stale env vars). */
+  currentPlan?: string | null;
+  /** True when this subscription can self-serve switch tiers/cadence. */
+  canSwitchPlan?: boolean;
 };
 
 export default function SubscriptionPage() {
@@ -221,7 +227,7 @@ export default function SubscriptionPage() {
 
         <BillingToggle value={billingCadence} onChange={setBillingCadence} />
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {TIER_ORDER.map((tier) => {
             const cents = PRICE_CENTS[tier][billingCadence];
             const plan = planStringFor(tier, billingCadence);
@@ -278,7 +284,8 @@ export default function SubscriptionPage() {
           key={entry.subscription.ls_subscription_id}
           subscription={entry.subscription}
           licenseKey={entry.licenseKey}
-          canUpgradeToAnnual={entry.canUpgradeToAnnual}
+          currentPlan={entry.currentPlan ?? null}
+          canSwitchPlan={Boolean(entry.canSwitchPlan)}
         />
       ))}
     </div>
@@ -288,19 +295,18 @@ export default function SubscriptionPage() {
 type SubscriptionCardProps = {
   subscription: Subscription;
   licenseKey: LicenseKey | null;
-  canUpgradeToAnnual: boolean;
+  currentPlan: string | null;
+  canSwitchPlan: boolean;
 };
 
 /**
  * One subscription's management block: plan header + status, its own license
- * key, the switch-to-annual offer, and the cancel funnel. State (upgrading /
+ * key, the switch-plan grid, and the cancel funnel. State (switch funnel /
  * cancel funnel visibility) is local so multiple cards don't share flags, and
- * the upgrade + cancel calls key off this card's ls_subscription_id.
+ * the switch + cancel calls key off this card's ls_subscription_id.
  */
-function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: SubscriptionCardProps) {
-  const [upgrading, setUpgrading] = useState(false);
+function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan }: SubscriptionCardProps) {
   const [showCancelFunnel, setShowCancelFunnel] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const statusBadge = getStatusBadge(subscription.status);
   const renewalDate = subscription.renews_at
@@ -317,33 +323,6 @@ function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: Subs
         day: "numeric",
       })
     : null;
-
-  const handleUpgradeToAnnual = async () => {
-    setUpgrading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/subscription/upgrade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
-      });
-
-      const payload = (await response.json()) as { ok?: boolean; error?: string };
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "Could not switch to annual");
-      }
-
-      // The variant swap lands via the LS webhook; reload to pick up the new
-      // plan name + renewal date once it has been persisted.
-      setTimeout(() => window.location.reload(), 1500);
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Upgrade failed");
-      setUpgrading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -374,30 +353,12 @@ function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: Subs
 
       {licenseKey ? <LicenseKeyDisplay variant="panel" licenseKey={licenseKey} /> : null}
 
-      {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
-
-      {canUpgradeToAnnual ? (
-        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:p-6 shadow-sm">
-          <h2 className="text-lg font-semibold tracking-tight">Switch to annual and save</h2>
-          <p className="mt-1 text-sm text-slate-700">
-            Pay yearly instead of monthly and save {annualSavingsPct("solo")}%.{" "}
-            {subscription.status === "on_trial"
-              ? "You won't be charged until your trial ends, then you'll be billed yearly."
-              : "We'll apply a prorated credit for the rest of this month, so you only pay the difference today."}
-          </p>
-          <button
-            type="button"
-            onClick={handleUpgradeToAnnual}
-            disabled={upgrading}
-            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {upgrading ? "Switching…" : "Switch to annual"}
-          </button>
-        </section>
+      {canSwitchPlan && currentPlan ? (
+        <SwitchPlanSection
+          subscriptionId={subscription.ls_subscription_id}
+          currentPlan={currentPlan}
+          status={subscription.status}
+        />
       ) : null}
 
       {subscription.status === "active" || subscription.status === "on_trial" ? (
@@ -436,6 +397,114 @@ function SubscriptionCard({ subscription, licenseKey, canUpgradeToAnnual }: Subs
         />
       ) : null}
     </div>
+  );
+}
+
+type SwitchPlanSectionProps = {
+  subscriptionId: string;
+  currentPlan: string;
+  status: string;
+};
+
+/**
+ * Self-serve tier/cadence switching for an existing subscription. Renders the
+ * same pricing grid as the no-subscription view, with the current plan's card
+ * disabled. A switch is a Lemon Squeezy variant swap on the same subscription
+ * (same license key, same devices): upgrades invoice the prorated difference
+ * immediately, downgrades leave the proration credit on the account.
+ */
+function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSectionProps) {
+  const currentTier = tierForPlan(currentPlan);
+  const currentCadence: Interval = currentPlan.endsWith("-annual") ? "annual" : "monthly";
+  const [cadence, setCadence] = useState<Interval>(currentCadence);
+  const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSwitch = async (tier: Tier) => {
+    const targetPlan = planStringFor(tier, cadence);
+    setSwitchingPlan(targetPlan);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/subscription/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId, targetPlan }),
+      });
+
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not switch plans");
+      }
+
+      // The variant swap lands via the LS webhook; reload to pick up the new
+      // plan name + renewal date once it has been persisted.
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Plan switch failed");
+      setSwitchingPlan(null);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+      <h2 className="text-lg font-semibold tracking-tight">Switch plan</h2>
+      <p className="mt-1 text-sm text-slate-600">
+        Switching keeps your license key and devices. Upgrades bill the prorated difference
+        today; downgrades apply your credit to future invoices.
+        {status === "on_trial"
+          ? " On a trial, nothing is charged until the trial ends."
+          : ""}
+      </p>
+
+      {error ? (
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-4">
+        <BillingToggle value={cadence} onChange={setCadence} />
+      </div>
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {TIER_ORDER.map((tier) => {
+          const cents = PRICE_CENTS[tier][cadence];
+          const plan = planStringFor(tier, cadence);
+          const isCurrent = tier === currentTier && cadence === currentCadence;
+          const isLoading = switchingPlan === plan;
+          return (
+            <PricingCard
+              key={tier}
+              name={TIER_NAME[tier]}
+              tagline={TIER_TAGLINE[tier]}
+              price={formatPrice(cents)}
+              period={cadence === "monthly" ? "/month" : "/year"}
+              highlight={
+                isCurrent
+                  ? "Current plan"
+                  : cadence === "annual"
+                  ? `Save ${annualSavingsPct(tier)}%`
+                  : undefined
+              }
+              features={[...TIER_FEATURES[tier]]}
+              cta={
+                isCurrent
+                  ? "Current plan"
+                  : isLoading
+                  ? "Switching…"
+                  : `Switch to ${TIER_NAME[tier]}`
+              }
+              disabled={isCurrent || switchingPlan !== null}
+              featured={tier === currentTier}
+              onSelect={() => handleSwitch(tier)}
+            />
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
