@@ -260,6 +260,7 @@ function scoreFor(
       // unknown-neutral: it reads as high demand. Rank 1 -> full, tapering out
       // by ~rank 40. Movers tiles without a rank use their DOM ordinal.
       boughtPastMonth: demandProxyFromRank(tile.rank, settings),
+      reviewCount: null,
       inStock: null,
       membership: { cc: flags.cc, spcc: flags.spcc },
     },

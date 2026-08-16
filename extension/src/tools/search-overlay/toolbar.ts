@@ -21,7 +21,14 @@ export type ToolbarCallbacks = {
   onScanStop: () => void;
 };
 
-export function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
+export type SearchToolbar = {
+  host: HTMLElement;
+  // Progress line for the automatic detail enrichment ("Checking details
+  // 3/12" / the paused notice); empty string clears it.
+  setEnrichStatus: (text: string) => void;
+};
+
+export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   const { host, root } = createInlineShadow("search-toolbar-host");
   const bar = el("div", "search-toolbar");
 
@@ -102,7 +109,16 @@ export function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   stopBtn.addEventListener("click", () => cb.onScanStop());
   scanWrap.append(scanBtn, stopBtn, status);
 
-  bar.append(brand, sortWrap, campaignWrap, priceWrap, scanWrap);
+  // Automatic-enrichment progress, separate from the scan status so the two
+  // never overwrite each other.
+  const enrichStatus = el("span", "search-status");
+
+  bar.append(brand, sortWrap, campaignWrap, priceWrap, scanWrap, enrichStatus);
   root.append(bar);
-  return host;
+  return {
+    host,
+    setEnrichStatus: (text: string) => {
+      enrichStatus.textContent = text;
+    },
+  };
 }

@@ -232,8 +232,16 @@ export interface Dict {
   searchScanMore: (done: number, remaining: number) => string;
   tileCommission: (amount: string) => string;
   tileCampaign: string;
+  tileCampaignRate: (pct: number) => string;
   tileProvenEarner: string;
+  tileEarned: (money: string) => string;
   tileInfluencer: (n: number) => string;
+  tileApproved: string;
+  tileLikelyFit: string;
+  tileDeal: string;
+  tileCoupon: string;
+  searchEnriching: (done: number, total: number) => string;
+  searchEnrichPaused: string;
   searchOverlayActive: string;
 
   // Trend Radar (Best Sellers / New Releases / Movers & Shakers grids)
@@ -815,8 +823,16 @@ const en: Dict = {
   searchScanMore: (done, remaining) => `Scanned ${done}. Click Scan again for ${remaining} more.`,
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
+  tileCampaignRate: (pct) => `Campaign ${pct}%`,
   tileProvenEarner: "Proven earner",
+  tileEarned: (money) => `Earned ${money}`,
   tileInfluencer: (n) => `${n} infl. videos`,
+  tileApproved: "Butler Approved",
+  tileLikelyFit: "Likely fit",
+  tileDeal: "Deal",
+  tileCoupon: "Coupon",
+  searchEnriching: (done, total) => `Checking details ${done}/${total}`,
+  searchEnrichPaused: "Detail checks paused by Amazon, retrying later",
   searchOverlayActive: "Search overlay is active.",
 
   toolTrendRadar: "Trend Radar (Best Sellers & Movers)",
@@ -1422,8 +1438,16 @@ const es: Dict = {
   searchScanMore: (done, remaining) => `Escaneados ${done}. Pulsa Escanear de nuevo para ${remaining} más.`,
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
+  tileCampaignRate: (pct) => `Campaña ${pct}%`,
   tileProvenEarner: "Ya te ha pagado",
+  tileEarned: (money) => `Ganaste ${money}`,
   tileInfluencer: (n) => `${n} videos de infl.`,
+  tileApproved: "Aprobado por Butler",
+  tileLikelyFit: "Buen candidato",
+  tileDeal: "Oferta",
+  tileCoupon: "Cupón",
+  searchEnriching: (done, total) => `Comprobando detalles ${done}/${total}`,
+  searchEnrichPaused: "Amazon pausó la comprobación de detalles, se reintentará más tarde",
   searchOverlayActive: "El overlay de búsqueda está activo.",
 
   toolTrendRadar: "Radar de Tendencias (Más vendidos y Movers)",
@@ -2029,8 +2053,16 @@ const fr: Dict = {
   searchScanMore: (done, remaining) => `${done} analysés. Cliquez de nouveau sur Analyser pour ${remaining} de plus.`,
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
+  tileCampaignRate: (pct) => `Campagne ${pct}%`,
   tileProvenEarner: "Déjà rentable",
+  tileEarned: (money) => `${money} gagnés`,
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
+  tileApproved: "Approuvé par Butler",
+  tileLikelyFit: "Bon candidat",
+  tileDeal: "Promo",
+  tileCoupon: "Coupon",
+  searchEnriching: (done, total) => `Vérification des détails ${done}/${total}`,
+  searchEnrichPaused: "Vérifications suspendues par Amazon, nouvel essai plus tard",
   searchOverlayActive: "L'overlay de recherche est actif.",
 
   toolTrendRadar: "Radar de Tendances (Meilleures ventes et Movers)",

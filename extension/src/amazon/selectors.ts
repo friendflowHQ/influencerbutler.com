@@ -29,6 +29,9 @@ export type SelectorId =
   | "searchTileImage"
   | "searchTileLink"
   | "searchTileSponsored"
+  | "searchTileRating"
+  | "searchTileReviewCount"
+  | "searchTileCoupon"
   | "storeGrid"
   | "storeGridTile"
   | "storeTileLink"
@@ -179,6 +182,28 @@ const REGISTRY: Record<SelectorId, string[]> = {
     ".s-sponsored-label-text",
     "[data-component-type='sp-sponsored-result']",
     "a[aria-label='View Sponsored information']",
+  ],
+  // Star rating on a search tile. `.a-icon-alt` is the visually-hidden text of
+  // the star icon ("4.3 out of 5 stars"); the same class also decorates Prime
+  // and other icons, so callers filter matches by text (queryMatchingText).
+  searchTileRating: [
+    "i.a-icon-star-small .a-icon-alt",
+    "i.a-icon-star-mini .a-icon-alt",
+    "[data-cy='reviews-ratings-slot'] .a-icon-alt",
+    ".a-icon-alt",
+  ],
+  // Review count next to the stars ("(4.9K)" or "1,234"). Callers filter by
+  // text: the underline-text class also styles unrelated links on some tiles.
+  searchTileReviewCount: [
+    "a[href*='#customerReviews'] span.a-size-base",
+    "a[href*='#customerReviews'] span",
+    "span.a-size-base.s-underline-text",
+  ],
+  // A clippable coupon on the tile ("$10.00 off coupon applied" / "Save 5%").
+  searchTileCoupon: [
+    ".s-coupon-unclipped",
+    "[data-component-type='s-coupon-component']",
+    "span[class*='coupon']",
   ],
   // Brand storefront (/stores/<Brand>/page/<id>): the React store builder.
   // Class names are hashed CSS modules, so only data-testid is stable.
