@@ -62,6 +62,9 @@ type ResendEvent = {
     broadcast_id?: string;
     to?: string[] | string;
     subject?: string;
+    click?: { link?: string; ipAddress?: string; userAgent?: string; timestamp?: string };
+    open?: { ipAddress?: string; userAgent?: string; timestamp?: string };
+    bounce?: { type?: string; subType?: string };
   };
 };
 
@@ -156,6 +159,30 @@ export async function POST(request: Request) {
         .from("email_sends")
         .update({ last_event_at: ts })
         .eq("resend_id", emailId);
+
+      // Detailed event log for the drill-down views (which link was clicked,
+      // from what device/IP). Best-effort: a missing table (migration lag,
+      // 42P01) or a duplicate (Svix retry, absorbed by the dedupe index) is
+      // silently fine. Prefer the per-event timestamp when Resend provides
+      // one; Svix redeliveries keep created_at stable but click/open carry
+      // the true occurrence time.
+      const click = data.click ?? {};
+      const open = data.open ?? {};
+      const { error: logError } = await db.from("email_send_events").upsert(
+        {
+          resend_id: emailId,
+          type: type.replace("email.", ""),
+          url: type === "email.clicked" ? click.link ?? "" : "",
+          ip: click.ipAddress ?? open.ipAddress ?? null,
+          user_agent: click.userAgent ?? open.userAgent ?? null,
+          bounce_type: type === "email.bounced" ? data.bounce?.type ?? null : null,
+          occurred_at: click.timestamp ?? open.timestamp ?? ts,
+        },
+        { onConflict: "resend_id,type,occurred_at,url", ignoreDuplicates: true },
+      );
+      if (logError && logError.code !== "42P01") {
+        console.error("resend webhook: event log insert failed", logError);
+      }
     }
 
     if (recipient && (type === "email.bounced" || type === "email.complained")) {

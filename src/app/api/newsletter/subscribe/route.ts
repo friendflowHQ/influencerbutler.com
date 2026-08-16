@@ -13,6 +13,7 @@
  */
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { addToResendAudience } from "@/lib/resend-audience";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,32 +39,6 @@ function serviceDb(): ServiceDb | null {
   return createServerClient(url, key, {
     cookies: { getAll() { return []; }, setAll() { /* stateless */ } },
   }) as unknown as ServiceDb;
-}
-
-/**
- * Best-effort: add the contact to the Resend newsletter segment. Never throws.
- * RESEND_AUDIENCE_ID holds a Resend *segment* id (Resend renamed Audiences to
- * Segments); the current contacts API is POST /contacts with a `segments` array.
- */
-async function addToResendAudience(email: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const segmentId = process.env.RESEND_AUDIENCE_ID;
-  if (!apiKey || !segmentId) return;
-  try {
-    const res = await fetch("https://api.resend.com/contacts", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, unsubscribed: false, segments: [segmentId] }),
-    });
-    if (!res.ok) {
-      console.error("newsletter: Resend contact add failed", res.status);
-    }
-  } catch (err) {
-    console.error("newsletter: Resend contact add threw", err);
-  }
 }
 
 export async function POST(request: Request) {

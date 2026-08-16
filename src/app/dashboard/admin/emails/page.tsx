@@ -6,6 +6,11 @@
 // admin APIs so one slow panel never blocks the rest of the page.
 
 import { useCallback, useEffect, useState } from "react";
+import SendDrawer from "./SendDrawer";
+import CustomerDrawer from "./CustomerDrawer";
+import ContactsSection from "./ContactsSection";
+import CampaignsSection from "./CampaignsSection";
+import SequencesSection from "./SequencesSection";
 
 type FunnelStats = {
   key: string;
@@ -110,6 +115,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function AdminEmailsPage() {
   const [forbidden, setForbidden] = useState(false);
+  const [tab, setTab] = useState<"overview" | "contacts" | "campaigns" | "sequences">("overview");
 
   const [funnels, setFunnels] = useState<FunnelStats[] | null>(null);
 
@@ -124,6 +130,27 @@ export default function AdminEmailsPage() {
   const [page, setPage] = useState(0);
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
+
+  // Drill-down drawers. The send drawer (z-40) stacks above the customer
+  // drawer (z-30), so a send opened from inside the customer view sits on top.
+  const [selectedSendId, setSelectedSendId] = useState<string | null>(null);
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+
+  // Deep link: /dashboard/admin/emails?recipient=<email> auto-opens the
+  // customer drawer and filters the sends table (same idiom as comps ?q=).
+  useEffect(() => {
+    try {
+      const r = new URLSearchParams(window.location.search).get("recipient");
+      if (r) {
+        const email = r.trim().toLowerCase();
+        setCustomerEmail(email);
+        setQueryInput(email);
+        setQuery(email);
+      }
+    } catch {
+      // ignore malformed URLs
+    }
+  }, []);
 
   const handle403 = useCallback((res: Response): boolean => {
     if (res.status === 403) {
@@ -210,6 +237,29 @@ export default function AdminEmailsPage() {
         </p>
       </div>
 
+      {/* Tab switcher */}
+      <div className="mt-6 flex gap-1 border-b border-slate-200">
+        {([
+          { key: "overview", label: "Overview" },
+          { key: "contacts", label: "Contacts" },
+          { key: "campaigns", label: "Campaigns" },
+          { key: "sequences", label: "Sequences" },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
+              tab === t.key
+                ? "border-[#f97316] text-[#f97316]"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {migrationPending ? (
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           The email_sends table is missing. Apply supabase/migrations/20260816_email_sends.sql to
@@ -217,6 +267,8 @@ export default function AdminEmailsPage() {
         </div>
       ) : null}
 
+      {tab === "overview" ? (
+        <>
       {/* Funnel conversions */}
       <section className="mt-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -416,11 +468,27 @@ export default function AdminEmailsPage() {
             </thead>
             <tbody>
               {(sends?.rows ?? []).map((row) => (
-                <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                <tr
+                  key={row.id}
+                  onClick={() => setSelectedSendId(row.id)}
+                  className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
+                >
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-slate-500">
                     {fmtDate(row.created_at)}
                   </td>
-                  <td className="px-4 py-2 text-slate-800">{row.recipient}</td>
+                  <td className="px-4 py-2 text-slate-800">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCustomerEmail(row.recipient);
+                      }}
+                      className="text-left underline decoration-slate-300 decoration-dotted underline-offset-2 hover:text-indigo-600"
+                      title={`Everything about ${row.recipient}`}
+                    >
+                      {row.recipient}
+                    </button>
+                  </td>
                   <td className="max-w-xs truncate px-4 py-2 text-slate-600">{row.subject}</td>
                   <td className="px-4 py-2 font-mono text-xs text-slate-500">{row.category}</td>
                   <td className="px-4 py-2">
@@ -496,6 +564,32 @@ export default function AdminEmailsPage() {
           </div>
         ) : null}
       </section>
+        </>
+      ) : null}
+
+      {tab === "contacts" ? <ContactsSection onOpenCustomer={setCustomerEmail} /> : null}
+      {tab === "campaigns" ? (
+        <CampaignsSection summary={summary} onOpenCustomer={setCustomerEmail} />
+      ) : null}
+      {tab === "sequences" ? <SequencesSection summary={summary} /> : null}
+
+      {customerEmail ? (
+        <CustomerDrawer
+          email={customerEmail}
+          onClose={() => setCustomerEmail(null)}
+          onOpenSend={setSelectedSendId}
+        />
+      ) : null}
+      {selectedSendId ? (
+        <SendDrawer
+          sendId={selectedSendId}
+          onClose={() => setSelectedSendId(null)}
+          onOpenCustomer={(email) => {
+            setCustomerEmail(email);
+            setSelectedSendId(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

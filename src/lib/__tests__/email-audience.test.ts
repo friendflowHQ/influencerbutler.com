@@ -1,0 +1,107 @@
+/**
+ * Summary: Unit tests for the email marketing engine's pure validators - the
+ *   audience parser (which gates who a campaign can reach), the pasted-list
+ *   parser, tag normalization, and the tracking category keys. These are the
+ *   security-relevant, deterministic pieces; the DB-touching resolveAudience /
+ *   send engine are covered by manual QA.
+ * Dependencies: vitest, @/lib/email-audience, @/lib/email-marketing. No env or
+ *   network needed - every function under test is pure.
+ */
+
+import { describe, it, expect } from "vitest";
+import { parseAudience, parseEmailList, normalizeTag } from "@/lib/email-audience";
+import { shortId, campaignCategory, stepCategory } from "@/lib/email-marketing";
+
+describe("normalizeTag", () => {
+  it("lowercases, trims, and hyphenates spaces", () => {
+    expect(normalizeTag("  VIP Leads ")).toBe("vip-leads");
+    expect(normalizeTag("Black Friday 2026")).toBe("black-friday-2026");
+  });
+
+  it("accepts allowed characters and rejects the rest", () => {
+    expect(normalizeTag("webinar_q1")).toBe("webinar_q1");
+    expect(normalizeTag("a")).toBe("a");
+    expect(normalizeTag("")).toBeNull();
+    expect(normalizeTag("!!!")).toBeNull();
+    expect(normalizeTag("-leading-hyphen")).toBeNull(); // must start alphanumeric
+  });
+
+  it("rejects tags longer than 40 characters", () => {
+    expect(normalizeTag("a".repeat(40))).toBe("a".repeat(40));
+    expect(normalizeTag("a".repeat(41))).toBeNull();
+  });
+});
+
+describe("parseEmailList", () => {
+  it("splits on newlines, commas, semicolons, and spaces", () => {
+    const { emails, invalid } = parseEmailList("a@x.com, b@x.com; c@x.com\nd@x.com e@x.com");
+    expect(emails).toEqual(["a@x.com", "b@x.com", "c@x.com", "d@x.com", "e@x.com"]);
+    expect(invalid).toBe(0);
+  });
+
+  it("lowercases and dedupes", () => {
+    const { emails } = parseEmailList("A@X.com\na@x.com\nA@x.COM");
+    expect(emails).toEqual(["a@x.com"]);
+  });
+
+  it("counts invalid entries without including them", () => {
+    const { emails, invalid } = parseEmailList("good@x.com notanemail also-bad other@y.com");
+    expect(emails).toEqual(["good@x.com", "other@y.com"]);
+    expect(invalid).toBe(2);
+  });
+
+  it("respects the cap while still counting the overflow as dropped-not-invalid", () => {
+    const { emails } = parseEmailList("a@x.com b@x.com c@x.com", 2);
+    expect(emails).toHaveLength(2);
+  });
+});
+
+describe("parseAudience", () => {
+  it("accepts all_contacts", () => {
+    expect(parseAudience({ kind: "all_contacts" })).toEqual({ kind: "all_contacts" });
+  });
+
+  it("normalizes a tag audience", () => {
+    expect(parseAudience({ kind: "tag", tag: "VIP Leads" })).toEqual({
+      kind: "tag",
+      tag: "vip-leads",
+    });
+    expect(parseAudience({ kind: "tag", tag: "!!!" })).toBeNull();
+    expect(parseAudience({ kind: "tag" })).toBeNull();
+  });
+
+  it("allow-lists segments", () => {
+    for (const segment of ["trial", "pro", "churned", "newsletter"] as const) {
+      expect(parseAudience({ kind: "segment", segment })).toEqual({ kind: "segment", segment });
+    }
+    expect(parseAudience({ kind: "segment", segment: "admins" })).toBeNull();
+    expect(parseAudience({ kind: "segment" })).toBeNull();
+  });
+
+  it("cleans a pasted audience and rejects an empty one", () => {
+    const parsed = parseAudience({ kind: "pasted", emails: ["A@x.com", "bad", "b@x.com"] });
+    expect(parsed).toEqual({ kind: "pasted", emails: ["a@x.com", "b@x.com"] });
+    expect(parseAudience({ kind: "pasted", emails: ["nope"] })).toBeNull();
+    expect(parseAudience({ kind: "pasted", emails: [] })).toBeNull();
+  });
+
+  it("rejects unknown or malformed shapes", () => {
+    expect(parseAudience(null)).toBeNull();
+    expect(parseAudience("all_contacts")).toBeNull();
+    expect(parseAudience({ kind: "everyone" })).toBeNull();
+    expect(parseAudience({})).toBeNull();
+  });
+});
+
+describe("tracking category keys", () => {
+  const id = "abcdef01-2345-6789-abcd-ef0123456789";
+
+  it("shortId takes the first 8 hex chars, dashless", () => {
+    expect(shortId(id)).toBe("abcdef01");
+  });
+
+  it("builds stable campaign and step categories", () => {
+    expect(campaignCategory(id)).toBe("campaign_abcdef01");
+    expect(stepCategory(id, 3)).toBe("seq_abcdef01_s3");
+  });
+});

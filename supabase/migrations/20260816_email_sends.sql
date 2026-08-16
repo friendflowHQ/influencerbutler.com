@@ -12,6 +12,10 @@
 -- Suppressed skips (address on email_suppressions) are logged with
 -- status = 'suppressed' so they are finally distinguishable from real sends.
 --
+-- Also creates email_send_events (below): the per-event detail log behind the
+-- admin drill-down views (which link was clicked, from what device/IP, the
+-- full delivered/opened/clicked/bounced timeline per send).
+--
 -- NOTE: prod Supabase is applied by hand and lags this folder. Paste this into
 -- the Supabase SQL editor BEFORE deploying the email-send refactor. Logging is
 -- best-effort: a missing table just means no rows; sends are unaffected.
@@ -47,3 +51,30 @@ CREATE INDEX IF NOT EXISTS email_sends_broadcast_idx  ON email_sends (broadcast_
 -- Lock it down: only the service-role key (used by our server routes) may read
 -- or write. Browser anon / authenticated clients get nothing.
 ALTER TABLE email_sends ENABLE ROW LEVEL SECURITY;
+
+-- Per-event detail log for the drill-down views: which link was clicked, from
+-- what device/IP, and the full delivered/opened/clicked/bounced/complained
+-- timeline per send. Keyed by resend_id (not an FK) because events for
+-- broadcast recipients can race the email_sends insert, and resend_id is the
+-- join key the webhook already has in hand. email.sent is NOT logged here;
+-- the email_sends row's created_at covers it.
+CREATE TABLE IF NOT EXISTS email_send_events (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  resend_id   TEXT NOT NULL,
+  type        TEXT NOT NULL,             -- delivered | opened | clicked | bounced | complained
+  url         TEXT NOT NULL DEFAULT '',  -- clicked events only; '' otherwise (NOT NULL so the dedupe key works)
+  ip          TEXT,
+  user_agent  TEXT,
+  bounce_type TEXT,                      -- bounced events only (Resend data.bounce.type)
+  occurred_at TIMESTAMPTZ NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Hard dedupe for Svix retries: an identical redelivery is a no-op insert.
+CREATE UNIQUE INDEX IF NOT EXISTS email_send_events_dedupe_key
+  ON email_send_events (resend_id, type, occurred_at, url);
+CREATE INDEX IF NOT EXISTS email_send_events_resend_idx
+  ON email_send_events (resend_id, occurred_at);
+
+-- Service-role only, same as email_sends.
+ALTER TABLE email_send_events ENABLE ROW LEVEL SECURITY;

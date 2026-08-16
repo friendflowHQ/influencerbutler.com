@@ -89,6 +89,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   // Marketing
   { key: "activity.manage", label: "Manage recent-activity widget", description: "Configure the social-proof popup (window, count, on/off) and hide specific events.", domain: "Marketing", risk: "normal", built: true },
   { key: "testimonials.moderate", label: "Moderate testimonials", description: "Review, approve, hide, edit, reply to, and feature customer testimonials, and set auto-approval.", domain: "Marketing", risk: "normal", built: true },
+  { key: "marketing.send", label: "Send marketing email", description: "Import contacts, tag them, and create and send campaigns and drip sequences to customers and leads.", domain: "Marketing", risk: "destructive", built: true },
 
   // Operations
   { key: "reports.view", label: "View KPIs & reports", description: "Subscription counts, trial funnel, and conversion metrics on the admin overview and growth dashboard.", domain: "Operations", risk: "normal", built: true },

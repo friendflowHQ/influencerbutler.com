@@ -488,6 +488,12 @@ export default function AdminUsersPage() {
 
             {/* Account actions */}
             <div className="mt-4 flex flex-wrap gap-2">
+              <a
+                href={`/dashboard/admin/emails?recipient=${encodeURIComponent(result.profile?.email ?? "")}`}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Email history
+              </a>
               {can("users.resend_auth") ? (
                 <button
                   type="button"

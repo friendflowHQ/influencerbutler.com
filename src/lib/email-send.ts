@@ -22,6 +22,8 @@ export type EmailFunnel =
   | "onboarding"
   | "winback"
   | "newsletter"
+  | "campaign"
+  | "sequence"
   | "transactional";
 
 export type EmailSendInput = {
