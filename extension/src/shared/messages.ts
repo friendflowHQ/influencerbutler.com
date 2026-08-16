@@ -68,6 +68,10 @@ export type RuntimeMessage =
   // product pages and search tiles can show real earnings. Routed to the app
   // over the local bridge; returns paired:false when the app was never connected.
   | { kind: "LOOKUP_EARNINGS"; asins: string[] }
+  // Look up the real Creator Connections commission rate for a batch of ASINs
+  // (server-side join of the CC catalogue), so a campaign chip can show the
+  // actual percent instead of a bare yes/no. Cached a day in the background.
+  | { kind: "LOOKUP_CC_RATES"; asins: string[] }
   // Read the locally-built price history for a product, for the sparkline on the
   // product panel. Returns points oldest-first (may be empty on a fresh install).
   | { kind: "GET_PRICE_HISTORY"; asin: string; marketplace: string }
@@ -263,6 +267,15 @@ export type EnrichedProduct = {
   detailPageUrl: string | null;
   error: string | null;
 };
+
+// One ASIN's best active Creator Connections campaign rate, as served by
+// /api/extension/cc-rates. `endsAt` is the campaign end date when known.
+export type CcRate = { ratePct: number; brand: string | null; endsAt: string | null };
+
+// Response of LOOKUP_CC_RATES: only ASINs with a known active campaign rate
+// appear in `rates`. `ok:false` means the server could not be reached (the
+// caller keeps its plain campaign chip).
+export type CcRatesResult = { ok: boolean; rates: Record<string, CcRate> };
 
 // Response of ENRICH_PRODUCTS. `configured` is false when the user has not
 // stored any Creator API credentials (so the caller can prompt them and fall

@@ -25,6 +25,9 @@ export const ENDPOINTS = {
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
   dealSources: `${API_BASE}/api/extension/deal-sources`,
+  // Real Creator Connections commission rates for a batch of ASINs (built
+  // daily from the CC catalogue). Public like the catalogue endpoint.
+  ccRates: `${API_BASE}/api/extension/cc-rates`,
   // Instagram Goldmine (self-hosted build only): harvested creator + email rows.
   instagramCreators: `${API_BASE}/api/extension/instagram-creators`,
 } as const;

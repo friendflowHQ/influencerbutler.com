@@ -4,17 +4,26 @@ import { t } from "../../i18n";
 import { log } from "../../shared/log";
 import { parseSearchTiles, type SearchTile } from "../../amazon/search-results";
 import { marketplaceFromUrl } from "../../amazon/product-signals";
+import type { DpStaticSignals } from "../../amazon/dp-static";
 import { getRateCard } from "../../rate-card/cache";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
+import { getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents } from "../calculator/model";
+import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
+import { formatMoney, tileTotals } from "../earnings-overlay/model";
+import { renderEarningsDetail } from "../earnings-overlay/detail";
+import type { AsinEarnings } from "../../transport/hud-commands";
 import {
   sendToBackground,
+  type CcRate,
+  type CcRatesResult,
   type EarningsLookupResult,
   type ScanAsinResult,
   type WatchlistResult,
 } from "../../shared/messages";
+import { enrichSearchTiles } from "./enrich";
 import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
 import type { Settings } from "../../storage/schema";
 
@@ -28,30 +37,52 @@ type Row = {
   tile: SearchTile;
   order: number;
   marketplace: string;
+  // Base rate: rate card by category once enrichment supplies one, else the
+  // page-wide default. A known CC campaign rate overrides it (see rateFor).
   ratePct: number;
+  ccRate: CcRate | null;
   commissionCents: number | null;
-  flags: { cc: boolean; spcc: boolean };
+  flags: { cc: boolean; spcc: boolean; deals: boolean };
   influencerVideos: number | null;
+  totalVideos: number | null;
+  // Static product-page signals once enrichment (or the shared cache) has them.
+  dp: DpStaticSignals | null;
+  // inStock from a previous background-tab scan, used until dp arrives.
+  cachedInStock: boolean | null;
   // True once a video scan has been attempted for this tile (success or not),
   // so repeated Scan clicks advance to the next unscanned batch instead of
   // re-scanning the same top rows and silently ignoring the rest of the page.
   scanned: boolean;
   score: ButlerScore;
+  verdict: TileVerdict;
   badgeBody: HTMLElement;
   showWatch: boolean;
   watched: boolean;
-  // True when the desktop app ledger shows the creator has already earned on
-  // this ASIN: turns Amazon search into "find more of what already paid me".
-  provenEarner: boolean;
+  // The desktop app ledger's earnings for this ASIN, when the creator has
+  // already earned on it: turns Amazon search into "find more of what already
+  // paid me", with the real dollars on the chip.
+  earnings: AsinEarnings | null;
 };
 
 let stopScan = false;
 
+// Init epoch + abort: initSearchOverlay awaits between its teardown and its
+// mounting, and Amazon rewrites the URL on every in-page filter/sort, so two
+// SPA-triggered runs can interleave and both mount. Each run takes a ticket;
+// after any await it bails if a newer run started, and the previous run's
+// enrichment/observer dies with its AbortController.
+let initEpoch = 0;
+let controller: AbortController | null = null;
+
 export async function initSearchOverlay(settings: Settings): Promise<void> {
-  // Amazon rewrites the URL when the user applies an in-page filter/sort, which
-  // re-triggers this run. Tear down the prior overlay (toolbar + tile badges)
-  // and clear the done-markers so we rebuild cleanly over the current grid
-  // instead of leaving a stale toolbar and double-badging.
+  controller?.abort();
+  const run = new AbortController();
+  controller = run;
+  const epoch = ++initEpoch;
+
+  // Tear down the prior overlay (toolbar + tile badges) and clear the
+  // done-markers so we rebuild cleanly over the current grid instead of
+  // leaving a stale toolbar and double-badging.
   for (const host of Array.from(
     document.querySelectorAll(".search-toolbar-host, .tile-badge-host"),
   )) {
@@ -69,7 +100,8 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   });
   if (tiles.length === 0) return;
 
-  const [card, cache] = await Promise.all([getRateCard(), getCache()]);
+  const [card, cache, state] = await Promise.all([getRateCard(), getCache(), getState()]);
+  if (epoch !== initEpoch) return;
   const loaded = loadFilters(cache);
   const defaultRate = resolveRatePct({
     liveRatePct: null,
@@ -80,26 +112,40 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
 
   const rows: Row[] = tiles.map((tile, i) => {
     const flags = membership(loaded, tile.asin);
-    const commissionCents =
-      tile.priceCents !== null ? Math.round((tile.priceCents * defaultRate) / 100) : null;
     const badgeBody = el("div", "tile-badge-body");
     const row: Row = {
       tile,
       order: i,
       marketplace,
       ratePct: defaultRate,
-      commissionCents,
-      flags: { cc: flags.cc, spcc: flags.spcc },
+      ccRate: null,
+      commissionCents: null,
+      flags: { cc: flags.cc, spcc: flags.spcc, deals: flags.deals },
       influencerVideos: null,
+      totalVideos: null,
+      dp: null,
+      cachedInStock: null,
       scanned: false,
-      score: scoreFor(tile, defaultRate, flags, null, settings),
+      score: neutralScore(settings),
+      verdict: neutralVerdict(settings),
       badgeBody,
       showWatch: settings.tools.watchlist,
       watched: false,
-      provenEarner: false,
+      earnings: null,
     };
+    // A previous background-tab scan (from any surface) already knows this
+    // product's exact influencer split; use it for free and let the Scan
+    // button skip the row.
+    const cachedScan = state.cache[`${marketplace}:${tile.asin}`];
+    if (cachedScan) {
+      row.influencerVideos = cachedScan.counts.influencer;
+      row.totalVideos = cachedScan.counts.total;
+      row.cachedInStock = cachedScan.inStock;
+      row.scanned = true;
+    }
+    recompute(row, settings);
     mountBadge(tile, badgeBody);
-    renderBadge(row);
+    renderBadge(row, settings);
     return row;
   });
 
@@ -107,35 +153,57 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // repaint their badges so the Watch control reflects state.
   if (settings.tools.watchlist) {
     void sendToBackground<WatchlistResult>({ kind: "GET_WATCHLIST" }).then((res) => {
+      if (epoch !== initEpoch) return;
       const watched = new Set(res.items.map((w) => w.asin.toUpperCase()));
       for (const row of rows) {
         if (watched.has(row.tile.asin)) {
           row.watched = true;
-          renderBadge(row);
+          renderBadge(row, settings);
         }
       }
     });
   }
 
-  // "Proven earner" tint: one batched lookup against the desktop app ledger marks
-  // the tiles the creator has already earned on. Returns instantly when the app
-  // was never paired, so this is a no-op for everyone else.
+  // Real earnings from the desktop app ledger, one batched lookup. Returns
+  // instantly when the app was never paired, so this is a no-op for everyone
+  // else. The full record is kept so the chip can show dollars and open the
+  // breakdown popup.
   void sendToBackground<EarningsLookupResult>({
     kind: "LOOKUP_EARNINGS",
     asins: rows.map((r) => r.tile.asin),
   }).then((res) => {
-    if (!res.ok) return;
-    const earners = new Set(
-      res.results.filter((r) => r.hasEarnings).map((r) => r.asin.toUpperCase()),
-    );
-    if (earners.size === 0) return;
+    if (epoch !== initEpoch || !res.ok) return;
+    const byAsin = new Map(res.results.map((r) => [r.asin.toUpperCase(), r]));
     for (const row of rows) {
-      if (earners.has(row.tile.asin.toUpperCase())) {
-        row.provenEarner = true;
-        renderBadge(row);
+      const earnings = byAsin.get(row.tile.asin.toUpperCase());
+      if (earnings?.hasEarnings) {
+        row.earnings = earnings;
+        renderBadge(row, settings);
       }
     }
   });
+
+  // Real Creator Connections rates for the campaign-flagged tiles, so the
+  // campaign chip shows the actual percent and the commission estimate uses
+  // it. Bloom membership keeps the batch tiny.
+  const campaignAsins = rows
+    .filter((r) => r.flags.cc || r.flags.spcc)
+    .map((r) => r.tile.asin);
+  if (campaignAsins.length > 0) {
+    void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
+      (res) => {
+        if (epoch !== initEpoch || !res.ok) return;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.ccRate = rate;
+            recompute(row, settings);
+            renderBadge(row, settings);
+          }
+        }
+      },
+    );
+  }
 
   // Anchor after the last tile so reordering stays within the results block and
   // never drags a tile past pagination or a footer.
@@ -174,7 +242,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
     for (const row of targets) {
-      if (stopScan) break;
+      if (stopScan || epoch !== initEpoch) break;
       setStatus(t().searchScanning(done + 1, targets.length));
       row.scanned = true;
       try {
@@ -183,10 +251,12 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
           asin: row.tile.asin,
           marketplace,
         });
+        if (epoch !== initEpoch) break;
         if (result.classified && result.counts) {
           row.influencerVideos = result.counts.influencer;
-          row.score = scoreFor(row.tile, row.ratePct, row.flags, row.influencerVideos, settings);
-          renderBadge(row);
+          row.totalVideos = result.counts.total;
+          recompute(row, settings);
+          renderBadge(row, settings);
         }
       } catch (error) {
         log("search-overlay", `scan failed for ${row.tile.asin}`, error);
@@ -201,7 +271,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
   };
 
-  const toolbarHost = renderToolbar({
+  const toolbar = renderToolbar({
     count: rows.length,
     onSort: applySort,
     onFilter: applyFilter,
@@ -211,28 +281,124 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     },
   });
 
-  mountToolbar(first.tile.el, toolbarHost);
+  mountToolbar(first.tile.el, toolbar.host);
   // Lead with the best opportunities.
   applySort("score");
+
+  // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
+  // static /dp/ fetches through the serialized chain. Each arrival upgrades
+  // the tile's rate (real category), score, video count, and verdict. Rows are
+  // never auto re-sorted under the cursor; re-picking a sort in the toolbar
+  // applies the updated scores.
+  void enrichSearchTiles({
+    items: rows.map((r) => ({ asin: r.tile.asin, el: r.tile.el })),
+    origin: location.origin,
+    marketplace,
+    signal: run.signal,
+    onSignals: (asin, signals) => {
+      if (epoch !== initEpoch) return;
+      const row = rows.find((r) => r.tile.asin === asin);
+      if (!row) return;
+      row.dp = signals;
+      const category = signals.category ?? signals.bestsellerRank?.category ?? null;
+      row.ratePct = resolveRatePct({
+        liveRatePct: null,
+        category,
+        card,
+        defaultRatePct: settings.commissionRatePct,
+      });
+      if (row.totalVideos === null) row.totalVideos = signals.totalVideos;
+      // A page with no video carousel at all cannot have influencer videos.
+      if (
+        row.influencerVideos === null &&
+        !signals.upperCarousel &&
+        !signals.lowerCarousel &&
+        !signals.totalVideos
+      ) {
+        row.influencerVideos = 0;
+        row.scanned = true;
+      }
+      recompute(row, settings);
+      renderBadge(row, settings);
+    },
+    onStatus: (done, total, paused) => {
+      if (epoch !== initEpoch) return;
+      if (paused) {
+        toolbar.setEnrichStatus(t().searchEnrichPaused);
+      } else if (done < total) {
+        toolbar.setEnrichStatus(t().searchEnriching(done, total));
+      } else {
+        toolbar.setEnrichStatus("");
+      }
+    },
+  });
 }
 
-function scoreFor(
-  tile: SearchTile,
-  ratePct: number,
-  flags: { cc: boolean; spcc: boolean },
-  influencerVideos: number | null,
-  settings: Settings,
-): ButlerScore {
-  return computeButlerScore(
+// The effective rate for money math: a known CC campaign rate beats the
+// rate-card/base rate (it is what a campaign sale actually pays).
+function rateFor(row: Row): number {
+  return row.ccRate ? row.ccRate.ratePct : row.ratePct;
+}
+
+// Recompute everything derived from the row's signals: commission estimate,
+// Butler Score, and the tile verdict. Callers repaint afterwards.
+function recompute(row: Row, settings: Settings): void {
+  const rate = rateFor(row);
+  row.commissionCents =
+    row.tile.priceCents !== null ? Math.round((row.tile.priceCents * rate) / 100) : null;
+  const inStock = row.dp ? row.dp.inStock : row.cachedInStock;
+  const bought = row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? null;
+  row.score = computeButlerScore(
     {
-      priceCents: tile.priceCents,
-      commissionRatePct: ratePct,
-      influencerVideos,
-      boughtPastMonth: tile.boughtPastMonth,
-      inStock: null,
-      membership: { cc: flags.cc, spcc: flags.spcc },
+      priceCents: row.tile.priceCents,
+      commissionRatePct: rate,
+      influencerVideos: row.influencerVideos,
+      boughtPastMonth: bought,
+      reviewCount: row.tile.reviewCount,
+      inStock,
+      membership: { cc: row.flags.cc, spcc: row.flags.spcc },
     },
     settings,
+  );
+  row.verdict = evaluateTileVerdict(
+    {
+      priceCents: row.tile.priceCents,
+      boughtPastMonth: bought,
+      inStock,
+      influencerVideos: row.influencerVideos,
+      totalVideos: row.totalVideos,
+      anyCarousel: row.dp ? row.dp.upperCarousel || row.dp.lowerCarousel : null,
+    },
+    settings.approved,
+  );
+}
+
+function neutralScore(settings: Settings): ButlerScore {
+  return computeButlerScore(
+    {
+      priceCents: null,
+      commissionRatePct: null,
+      influencerVideos: null,
+      boughtPastMonth: null,
+      reviewCount: null,
+      inStock: null,
+      membership: { cc: false, spcc: false },
+    },
+    settings,
+  );
+}
+
+function neutralVerdict(settings: Settings): TileVerdict {
+  return evaluateTileVerdict(
+    {
+      priceCents: null,
+      boughtPastMonth: null,
+      inStock: null,
+      influencerVideos: null,
+      totalVideos: null,
+      anyCarousel: null,
+    },
+    settings.approved,
   );
 }
 
@@ -259,33 +425,98 @@ function mountBadge(tile: SearchTile, body: HTMLElement): void {
   tile.el.append(host);
 }
 
-function renderBadge(row: Row): void {
+function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
   body.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
-  // Proven earner leads the chips: a product that already paid you is the
-  // strongest buy signal on the page.
-  if (row.provenEarner) {
-    body.append(el("span", "tile-chip good", t().tileProvenEarner));
+  // Verdict first: the yes/no is what the creator scans for.
+  if (row.verdict.state === "approved") {
+    const chip = el("span", "tile-chip good", t().tileApproved);
+    chip.title = verdictTooltip(row, settings);
+    body.append(chip);
+  } else if (row.verdict.state === "likely") {
+    const chip = el("span", "tile-chip", t().tileLikelyFit);
+    chip.title = verdictTooltip(row, settings);
+    body.append(chip);
   }
+  // A product that already paid you is the strongest buy signal on the page:
+  // show the real dollars when the ledger has them.
+  if (row.earnings) body.append(earnedChip(row));
   if (row.commissionCents !== null) {
     body.append(
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
     );
   }
   if (row.flags.cc || row.flags.spcc) {
-    body.append(el("span", "tile-chip good", t().tileCampaign));
+    body.append(
+      el(
+        "span",
+        "tile-chip good",
+        row.ccRate ? t().tileCampaignRate(row.ccRate.ratePct) : t().tileCampaign,
+      ),
+    );
+  } else if (row.flags.deals) {
+    // Only when no campaign chip is up: two green chips in a row read as noise.
+    body.append(el("span", "tile-chip good", t().tileDeal));
   }
+  if (row.tile.hasCoupon) body.append(el("span", "tile-chip", t().tileCoupon));
   if (row.influencerVideos !== null) {
     body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
+  } else if (row.totalVideos !== null) {
+    body.append(el("span", "tile-chip", t().tileVideos(row.totalVideos)));
   }
-  if (row.showWatch) body.append(watchControl(row));
+  if (row.showWatch) body.append(watchControl(row, settings));
+}
+
+// Compact per-criterion tooltip for the verdict chip, reusing the product
+// panel's criterion labels with a pass/fail/unknown mark each.
+function verdictTooltip(row: Row, settings: Settings): string {
+  const approved = settings.approved;
+  const mark = (state: "pass" | "fail" | "unknown"): string =>
+    state === "pass" ? "[ok]" : state === "fail" ? "[x]" : "[?]";
+  return [
+    `${mark(row.verdict.activelySelling)} ${t().critBought(approved.minBoughtPerMonth)}`,
+    `${mark(row.verdict.openSlot)} ${t().critOpenSlot(approved.maxInfluencerVideos + 1)}`,
+    `${mark(row.verdict.inStock)} ${t().critInStock}`,
+    `${mark(row.verdict.priceFloor)} ${t().critPriceFloor(approved.minPrice)}`,
+  ].join("\n");
+}
+
+// The "Earned $X" chip: real ledger dollars for this ASIN, click for the full
+// by-store/year/month/campaign breakdown. Stops propagation so it never
+// activates the tile's own product link.
+function earnedChip(row: Row): HTMLElement {
+  const btn = el("button", "tile-chip good earn-chip");
+  btn.type = "button";
+  const totals = row.earnings
+    ? tileTotals(
+        new Map([[row.tile.asin.toUpperCase(), row.earnings]]),
+        [row.tile.asin],
+        "market",
+        row.marketplace,
+      )
+    : [];
+  const top = totals[0];
+  btn.textContent = top
+    ? t().tileEarned(formatMoney(top.amount, top.currency))
+    : t().tileProvenEarner;
+  btn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!row.earnings) return;
+    renderEarningsDetail({
+      title: row.tile.title,
+      earnings: [row.earnings],
+      marketplace: row.marketplace,
+    });
+  });
+  return btn;
 }
 
 // A small watch toggle on the tile: a star that flips membership without
 // leaving the search page. Stops propagation so it never activates the tile's
 // own product link.
-function watchControl(row: Row): HTMLElement {
+function watchControl(row: Row, settings: Settings): HTMLElement {
   const btn = el("button", `tile-watch${row.watched ? " on" : ""}`);
   btn.type = "button";
   btn.textContent = row.watched ? `${t().watchStar} ${t().watchOn}` : `${t().watchStar} ${t().watchAddShort}`;
@@ -298,7 +529,7 @@ function watchControl(row: Row): HTMLElement {
       btn.disabled = false;
       if (!row.watched && res.atCap) return;
       row.watched = !row.watched;
-      renderBadge(row);
+      renderBadge(row, settings);
     };
     if (row.watched) {
       void sendToBackground<WatchlistResult>({

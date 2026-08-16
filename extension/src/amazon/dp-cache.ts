@@ -1,13 +1,17 @@
-import type { DpStaticSignals } from "../../amazon/dp-static";
+import type { DpStaticSignals } from "./dp-static";
 
-// Per-ASIN cache of the store overlay's static product-page signals, so
-// revisiting a brand store (or seeing the same product on several store tabs)
-// does not refetch its detail page. chrome.storage.local with a day TTL and a
-// size bound, keyed `marketplace:asin` (same shape as the inline-card cache).
+// Per-ASIN cache of static product-page signals, shared by every surface that
+// does tier-1 /dp/ enrichment (brand-store overlay, search overlay). One cache
+// because the scarce resource is the serialized fetch chain, not storage: a
+// product seen on a store page and then in search results must not be fetched
+// twice. chrome.storage.local with a day TTL and a size bound, keyed
+// `marketplace:asin` (same shape as the inline-card cache).
 
 const KEY = "ib-store-enrich";
 const TTL_MS = 24 * 60 * 60 * 1000;
-const MAX_ENTRIES = 300;
+// Two surfaces feed this cache now (store + search), so the bound is roomier
+// than the store-only original.
+const MAX_ENTRIES = 600;
 
 type Entry = { signals: DpStaticSignals; ts: number };
 type Cache = Record<string, Entry>;

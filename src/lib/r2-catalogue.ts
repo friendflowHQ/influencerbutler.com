@@ -78,6 +78,141 @@ function sourceFile(kind: CatalogueKind, latest: LatestPointer): string {
   return `${PREFIX}/${kind}/${rel}`;
 }
 
+// Streams a gzipped NDJSON object from R2 line by line without holding the
+// decompressed file in memory. `onLine` gets each non-empty line; when it
+// returns a promise the stream waits for it (backpressure for chunked
+// flushes), so returning promises only on chunk boundaries keeps per-line
+// overhead near zero.
+async function streamNdjson(
+  key: string,
+  onLine: (line: string) => void | Promise<void>,
+): Promise<void> {
+  const res = await r2Fetch(key);
+  const stream = res.body!.pipeThrough(new DecompressionStream("gzip"));
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let nl = buffer.indexOf("\n");
+    while (nl >= 0) {
+      const line = buffer.slice(0, nl);
+      if (line.trim()) {
+        const wait = onLine(line);
+        if (wait) await wait;
+      }
+      buffer = buffer.slice(nl + 1);
+      nl = buffer.indexOf("\n");
+    }
+  }
+  if (buffer.trim()) {
+    const wait = onLine(buffer);
+    if (wait) await wait;
+  }
+}
+
+export type CcRateRow = {
+  asin: string;
+  ratePct: number;
+  brand: string | null;
+  endsAt: string | null; // ISO, null when the campaign end date is unparseable
+};
+
+// Builds the per-ASIN best-active-campaign-rate rows from the CC catalogue:
+// campaign rows (catalog.ndjson: id, brand, endDate, commissionRate as a
+// percent) joined to the asin-index ({asin, ids}). Streaming with chunked,
+// awaited flushes so the multi-million-row asin-index never accumulates in
+// memory and upserts never pile up concurrently.
+export async function buildCcRates(opts: {
+  onChunk: (rows: CcRateRow[]) => Promise<void>;
+  chunkSize?: number;
+  // Resume support: skip this many already-flushed rate rows before calling
+  // onChunk again. The NDJSON stream order is deterministic for a given
+  // catalogue version, so a timed-out run can pick up where it stopped.
+  skipRows?: number;
+}): Promise<{ version: string; rowCount: number; campaignCount: number }> {
+  const latest = await readLatest("cc");
+  const catalogRel = latest.files.catalog?.url;
+  const indexRel = latest.files.asinIndex?.url;
+  if (!catalogRel || !indexRel) throw new Error("cc latest.json missing catalog/asinIndex files");
+
+  // Pass 1: campaign id -> {rate, brand, endsAt}, active campaigns only. The
+  // campaign list is small (thousands), so an in-memory map is fine.
+  const campaigns = new Map<string, { ratePct: number; brand: string | null; endsAt: string | null }>();
+  const now = Date.now();
+  await streamNdjson(`${PREFIX}/cc/${catalogRel}`, (line) => {
+    let row: {
+      _meta?: unknown;
+      id?: string;
+      brand?: string;
+      endDate?: string | null;
+      commissionRate?: number | null;
+    };
+    try {
+      row = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (row._meta || !row.id || typeof row.commissionRate !== "number") return;
+    let endsAt: string | null = null;
+    if (row.endDate) {
+      const parsed = Date.parse(row.endDate);
+      if (Number.isFinite(parsed)) {
+        // Skip campaigns that ended more than a day ago; a stale rate chip is
+        // worse than no chip.
+        if (parsed < now - 24 * 60 * 60 * 1000) return;
+        endsAt = new Date(parsed).toISOString();
+      }
+    }
+    campaigns.set(row.id, {
+      ratePct: row.commissionRate,
+      brand: row.brand?.trim() || null,
+      endsAt,
+    });
+  });
+
+  // Pass 2: asin-index rows ({asin, ids}) -> best active rate per ASIN. Chunk
+  // flushes return their promise into the stream loop, which awaits them, so
+  // exactly one upsert batch is in flight at a time.
+  const chunkSize = opts.chunkSize ?? 10_000;
+  const skipRows = opts.skipRows ?? 0;
+  let chunk: CcRateRow[] = [];
+  let rowCount = 0;
+  await streamNdjson(`${PREFIX}/cc/${indexRel}`, (line) => {
+    let row: { _meta?: unknown; asin?: string; ids?: string[] };
+    try {
+      row = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (row._meta || !row.asin || !Array.isArray(row.ids)) return;
+    const asin = row.asin.trim().toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(asin)) return;
+    let best: { ratePct: number; brand: string | null; endsAt: string | null } | null = null;
+    for (const id of row.ids) {
+      const c = campaigns.get(id);
+      if (c && (!best || c.ratePct > best.ratePct)) best = c;
+    }
+    if (!best) return;
+    rowCount += 1;
+    // Rows a previous (timed-out) run already flushed: count them but do not
+    // re-upsert.
+    if (rowCount <= skipRows) return;
+    chunk.push({ asin, ratePct: best.ratePct, brand: best.brand, endsAt: best.endsAt });
+    if (chunk.length >= chunkSize) {
+      const out = chunk;
+      chunk = [];
+      return opts.onChunk(out);
+    }
+    return;
+  });
+  if (chunk.length > 0) await opts.onChunk(chunk);
+
+  return { version: latest.version, rowCount, campaignCount: campaigns.size };
+}
+
 export async function buildFilter(kind: CatalogueKind): Promise<BuiltFilter> {
   const latest = await readLatest(kind);
   const key = sourceFile(kind, latest);

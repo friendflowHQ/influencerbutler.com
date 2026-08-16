@@ -25,6 +25,10 @@
       "schedule": "0 4 * * *"
     },
     {
+      "path": "/api/cron/build-cc-rates",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/comp-expiry",
       "schedule": "0 14 * * *"
     },

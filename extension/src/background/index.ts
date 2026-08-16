@@ -17,6 +17,7 @@ import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
+import { lookupCcRates } from "./cc-rates";
 import {
   assistantChat,
   assistantVoiceSession,
@@ -224,6 +225,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "ENRICH_PRODUCTS":
       void enrichProducts(message.asins, message.marketplaces).then(sendResponse);
+      return true;
+    case "LOOKUP_CC_RATES":
+      void lookupCcRates(message.asins).then(sendResponse);
       return true;
     case "ADD_TO_WATCHLIST":
       void addToWatchlist(message.item).then(sendResponse);

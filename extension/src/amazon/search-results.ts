@@ -1,4 +1,4 @@
-import { query, queryAll } from "./selectors";
+import { query, queryAll, queryMatchingText } from "./selectors";
 import { marketplaceFromUrl } from "./product-signals";
 
 // Reads the product tiles off an Amazon search-results page (/s?k=...). Each
@@ -16,11 +16,21 @@ export type SearchTile = {
   href: string | null;
   sponsored: boolean;
   boughtPastMonth: number | null;
+  rating: number | null;
+  reviewCount: number | null;
+  hasCoupon: boolean;
   el: HTMLElement;
 };
 
 const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 const BOUGHT_RE = /([\d,.]+)\s*([Kk])?\+?\s*bought in past month/;
+// "4.3 out of 5 stars" (en), "4,3 de 5 estrellas" (es), "4,3 sur 5 etoiles"
+// (fr), "4,3 von 5 Sternen" (de). A bare leading "4.3" is accepted as a last
+// resort because the icon alt text always leads with the value.
+const RATING_RE = /([\d]+[.,]\d)\s*(?:out of|de|sur|von)\s*5/;
+const RATING_BARE_RE = /^([\d]+[.,]\d)\b/;
+// "(4.9K)", "(123)", "1,234", "4,9 k" - the count sits alone in its span.
+const REVIEW_COUNT_RE = /^\(?\s*([\d][\d,.\s]*)\s*([Kk])?\s*\)?$/;
 
 export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
   const marketplace = marketplaceFromUrl(url);
@@ -40,6 +50,9 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
       href: hrefFor(el, asin, marketplace),
       sponsored: query(el, "searchTileSponsored") !== null,
       boughtPastMonth: extractBought(el),
+      rating: extractRating(el),
+      reviewCount: extractReviewCount(el),
+      hasCoupon: query(el, "searchTileCoupon") !== null,
       el,
     });
   }
@@ -66,6 +79,23 @@ function extractBought(el: HTMLElement): number | null {
   return parseBoughtText(el.textContent ?? "");
 }
 
+function extractRating(el: HTMLElement): number | null {
+  // The star icon's alt class also decorates other icons on the tile, so keep
+  // scanning matches until one parses as a rating instead of trusting the
+  // first hit.
+  const text = queryMatchingText(el, "searchTileRating", (t) => parseRatingText(t) !== null);
+  return text ? parseRatingText(text) : null;
+}
+
+function extractReviewCount(el: HTMLElement): number | null {
+  const text = queryMatchingText(
+    el,
+    "searchTileReviewCount",
+    (t) => parseReviewCountText(t) !== null,
+  );
+  return text ? parseReviewCountText(text) : null;
+}
+
 // Pure parsers (exported for tests): the DOM readers above delegate to these so
 // the price/social-proof logic can be checked without a document.
 export function parsePriceText(text: string): { priceCents: number | null; currency: string } {
@@ -83,6 +113,35 @@ export function parseBoughtText(text: string): number | null {
   const base = parseFloat(match[1].replace(/,/g, ""));
   if (Number.isNaN(base)) return null;
   return Math.round(match[2] ? base * 1000 : base);
+}
+
+// "4.3 out of 5 stars" / "4,3 de 5 estrellas" / "4,3 sur 5 etoiles" -> 4.3.
+// Rejects values outside the 0-5 star range so a stray number never passes as
+// a rating.
+export function parseRatingText(text: string): number | null {
+  const cleaned = text.trim();
+  const match = cleaned.match(RATING_RE) ?? cleaned.match(RATING_BARE_RE);
+  if (!match || !match[1]) return null;
+  const value = parseFloat(match[1].replace(",", "."));
+  if (Number.isNaN(value) || value < 0 || value > 5) return null;
+  return value;
+}
+
+// "(4.9K)" -> 4900, "(123)" -> 123, "1,234" -> 1234, "4,9 k" -> 4900. With a
+// K suffix the separator is a decimal point; without one it is a thousands
+// separator, so digits are kept as-is.
+export function parseReviewCountText(text: string): number | null {
+  const match = text.trim().match(REVIEW_COUNT_RE);
+  if (!match || !match[1]) return null;
+  const raw = match[1].trim();
+  if (match[2]) {
+    const base = parseFloat(raw.replace(/\s/g, "").replace(",", "."));
+    if (Number.isNaN(base)) return null;
+    return Math.round(base * 1000);
+  }
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  return parseInt(digits, 10);
 }
 
 function cleanText(text: string | null | undefined): string | undefined {

@@ -1,6 +1,6 @@
-import { fetchText } from "../../amazon/html-fetch";
-import { extractDpStatic, isBlockedHtml, type DpStaticSignals } from "../../amazon/dp-static";
-import { getCachedDpBatch, setCachedDp } from "./enrich-cache";
+import type { DpStaticSignals } from "../../amazon/dp-static";
+import { getCachedDpBatch } from "../../amazon/dp-cache";
+import { enrichOne } from "../../amazon/dp-enrich";
 import { log } from "../../shared/log";
 
 // Tier-1 enrichment for the store overlay: fetch each tile's product page
@@ -8,7 +8,8 @@ import { log } from "../../shared/log";
 // it. Cache-first so a revisit paints instantly; the misses go through the
 // shared sequential fetcher (2.5-4s jitter) so ~20 products take about a
 // minute the first time. Stops outright on a robot-check page or repeated
-// fetch failures rather than hammering Amazon.
+// fetch failures rather than hammering Amazon. The fetch/parse/cache body
+// lives in src/amazon/dp-enrich.ts, shared with the search overlay.
 
 // Consecutive failed fetches before the run gives up (the throttle observed
 // live manifests as a rejected fetch, not a block page).
@@ -47,26 +48,26 @@ export async function enrichStoreTiles(opts: {
   opts.onProgress(done, misses.length);
   for (const asin of misses) {
     if (opts.signal.aborted) break;
-    let html: string;
-    try {
-      html = await fetchText(`${opts.origin}/dp/${asin}`, opts.signal);
-    } catch (error) {
-      if (opts.signal.aborted) break;
+    const result = await enrichOne({
+      asin,
+      origin: opts.origin,
+      marketplace: opts.marketplace,
+      signal: opts.signal,
+    });
+    if (opts.signal.aborted) break;
+    if (result.blocked) {
+      log("store-overlay", "robot check page; pausing enrichment");
+      return { blocked: true };
+    }
+    if (result.failed) {
       failures += 1;
-      log("store-overlay", `dp fetch failed for ${asin}`, error);
+      log("store-overlay", `dp fetch failed for ${asin}`);
       opts.onProgress(++done, misses.length);
       if (failures >= FAIL_GIVE_UP) return { blocked: true };
       continue;
     }
-    if (isBlockedHtml(html)) {
-      log("store-overlay", "robot check page; pausing enrichment");
-      return { blocked: true };
-    }
     failures = 0;
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const signals = extractDpStatic(doc, html);
-    void setCachedDp(`${opts.marketplace}:${asin}`, signals);
-    opts.onResult({ asin, signals, fromCache: false });
+    opts.onResult({ asin, signals: result.signals, fromCache: false });
     opts.onProgress(++done, misses.length);
   }
   return { blocked: false };
