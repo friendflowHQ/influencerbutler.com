@@ -41,7 +41,11 @@
       "Bash(rm content/tutorials/app-slow-freezing.en-US.mdx content/tutorials/app-slow-freezing.es-ES.mdx content/tutorials/app-slow-freezing.fr-FR.mdx)",
       "Bash(git add *)",
       "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit -m 'feat\\(extension\\): Last Call Butler - campaign fill meters, watch bells, and full-campaign alerts *)",
-      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit -m 'feat\\(site\\): Pro Duo tier, email analytics, and support sweep \\(bundled\\) *)"
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit -m 'feat\\(site\\): Pro Duo tier, email analytics, and support sweep \\(bundled\\) *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge origin/main -m 'Merge origin/main \\(app-slow-freezing tutorial + help-search grounding\\) into consolidation *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge main -m 'Merge branded short-links discovery work \\(local main\\) *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge claude/compassionate-swanson-943915 -m 'Merge branded-links signed-out fallback notice *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit --no-edit)"
     ]
   }
 }

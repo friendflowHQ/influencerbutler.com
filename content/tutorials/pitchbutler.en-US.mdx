@@ -1,6 +1,6 @@
 ---
 title: Pitch Butler: one CRM for every brand pipeline you're working
-summary: Unified registry of brands you're prospecting, pitching, or negotiating with - sent in from Goldmine, Ads Goldmine, and the Levanta extractor, or imported from Creator Connections and Instagram, all in one place. Connect Gmail to send pitches and auto-track replies.
+summary: Unified registry of brands you're prospecting, pitching, or negotiating with - sent in from Goldmine, Ads Goldmine, and the Levanta extractor, or imported from Creator Connections and Instagram, all in one place. Connect Gmail to auto-track replies and pitch status.
 category: Partnerships
 ---
 
@@ -12,7 +12,7 @@ If you're running outreach across Amazon Creator Connections, Levanta, and Insta
 
 Each brand becomes a card. The card moves through stages: **Prospect → Pitched → Replied → Negotiating → Closed**. You log every touchpoint, queue follow-up messages, and search/filter across the whole pipeline. It is a real CRM underneath: a brand is an **account** with its own **contacts** (the people you work with) and **deals** (opportunities with amounts and stages), plus **tasks** with reminders and a **reports** dashboard.
 
-Pitch Butler tracks the pipeline so nothing falls through the cracks. Work it as a list or as a drag-to-advance board, and every message you send from any workspace (Messenger included) rolls up into the brand's history. It can also *send* pitches directly once you connect Gmail (see below), and it auto-advances a brand's stage when a reply lands.
+Pitch Butler tracks the pipeline so nothing falls through the cracks. Work it as a list or as a drag-to-advance board, and every message you send from any workspace (Messenger included) rolls up into the brand's history. Connect Gmail (see below) and it auto-advances a brand's stage, and adds tags, when a reply lands.
 
 ## Before you start
 
@@ -56,7 +56,7 @@ Click any card to open its detail view:
 - **Contacts**: a brand is an account, so add the people you work with (name, role, email, phone). Everything auto-saves as you type.
 - **Deals**: track opportunities as real records, not just a single number. Each deal has a name, amount, stage (Prospect, Qualified, Negotiating, Won, Lost) and an expected close date. The **Pipeline** total above the list sums the amount of every open deal, so it reflects what is actually in play.
 - **Deal value**: a quick single-number estimate for brands you have not built deals for yet. Once a brand has real deals, those take over the pipeline math.
-- **Queue message**: drafts a message in your default template. Type `{{brand}}` and it fills in the brand name when queued; wrap wording choices in `{a|b}` and Pitch Butler picks one so no two pitches read identically. Pitch Butler tracks "queued" as a touchpoint, and sends directly once you connect Gmail (below).
+- **Queue message**: drafts a message in your default template. Type `{{brand}}` and it fills in the brand name when queued; wrap wording choices in `{a|b}` and Pitch Butler picks one so no two pitches read identically. Pitch Butler tracks "queued" as a touchpoint.
 - **Tags**: free-form labels you apply across brands. Useful for filtering (e.g. "hot lead", "seasonal", "spring 2026").
 
 ## Four ways to work: List, Board, Tasks, Reports
@@ -120,17 +120,18 @@ Plus the **Needs follow-up** toggle (see above) for brands that have gone quiet 
 
 Select several cards with their checkboxes to run a **bulk action**: set the same stage across everyone you picked in one click (e.g. move a whole batch of fresh leads to Prospect, or a set of dead ends to Dead).
 
-## Connect Gmail (beta)
+## Connect Gmail
 
-Connect your Gmail account and Pitch Butler can send pitches from your own address, so replies come back to *you* and the thread lives in your normal inbox and Sent folder.
+Connect your Gmail account and Pitch Butler watches your own mailbox for brand replies, so the conversation stays in your normal inbox while your pipeline updates itself.
 
 1. In the Pitch Butler header, click **Connect Gmail**. Your browser opens Google's sign-in; approve the access.
-2. Once connected, pitches you queue can send through Gmail, and **Sync now** scans your recent mail to match replies and sent messages back to the right brand.
+2. Once connected, **Sync now** scans your recent mail (and a background sync runs every 15 minutes) to match replies and sent messages back to the right brand.
 3. When a brand replies, its stage advances to **Replied** automatically, and the **Sent to Pitch Butler** column on your harvest tables updates to match.
+4. Pitch Butler also reads what the reply *says*, the same way Collab Butler reads your Amazon messenger threads. Talk of rates, budgets, or contracts advances the brand to **Negotiating**, and it adds the matching tag when a brand confirms a shipment (**Shipped**), asks you to fill out a signup form (**Form**), offers a **Free Sample**, or you confirm a **Sample Received**. Stages only ever move forward; it never closes or kills a deal on its own.
 
-We ask only for permission to send mail and to read message headers (sender, recipient, subject, date) so we can match replies. We never read message bodies, and nothing but the matched status is stored.
+Reply content is analyzed on your computer only, to set the stage and tags above. Nothing from your inbox is sent anywhere; only the matched status, tags, and a short preview line are stored with the brand.
 
-This feature rolls out gradually: while Google reviews our access request it's limited to invited test accounts, so you may see a "coming soon" note until it reaches you.
+While Google's review of our access request is in progress, two limits apply on Google's side: only Google accounts added as test users in the connected Google Cloud project can approve access, and Google expires the connection roughly weekly, so click **Connect Gmail** again when the header shows it disconnected.
 
 ## Tuning over time
 

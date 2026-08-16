@@ -1,6 +1,6 @@
 ---
 title: Pitch Butler: un solo CRM para cada pipeline de marcas que trabajas
-summary: Registro unificado de marcas que estás prospectando, pitcheando o negociando - enviadas desde Goldmine, Ads Goldmine y el extractor de Levanta, o importadas desde Creator Connections e Instagram, todo en un único sitio. Conecta Gmail para enviar pitches y rastrear respuestas automáticamente.
+summary: Registro unificado de marcas que estás prospectando, pitcheando o negociando - enviadas desde Goldmine, Ads Goldmine y el extractor de Levanta, o importadas desde Creator Connections e Instagram, todo en un único sitio. Conecta Gmail para rastrear automáticamente respuestas y el estado del pitch.
 category: Partnerships
 ---
 
@@ -12,7 +12,7 @@ Si gestionas contacto a través de Amazon Creator Connections, Levanta y DMs de 
 
 Cada marca se convierte en una tarjeta. La tarjeta se mueve por etapas: **Prospect → Pitched → Replied → Negotiating → Closed**. Registras cada interacción, encolas mensajes de seguimiento y buscas/filtras por todo el pipeline. Por dentro es un CRM de verdad: una marca es una **cuenta** con sus propios **contactos** (las personas con las que trabajas) y **acuerdos** (oportunidades con importes y etapas), además de **tareas** con recordatorios y un panel de **informes**.
 
-Pitch Butler lleva el seguimiento del pipeline para que nada caiga por las grietas. Trabájalo como lista o como tablero de arrastrar-para-avanzar, y cada mensaje que envías desde cualquier espacio (Messenger incluido) sube al historial de la marca. También puede *enviar* pitches directamente una vez conectas Gmail (ver abajo), y avanza la etapa de una marca automáticamente cuando llega una respuesta.
+Pitch Butler lleva el seguimiento del pipeline para que nada caiga por las grietas. Trabájalo como lista o como tablero de arrastrar-para-avanzar, y cada mensaje que envías desde cualquier espacio (Messenger incluido) sube al historial de la marca. Conecta Gmail (ver abajo) y avanza la etapa de una marca automáticamente, y añade etiquetas, cuando llega una respuesta.
 
 ## Antes de empezar
 
@@ -56,7 +56,7 @@ Pulsa cualquier tarjeta para abrir su vista de detalle:
 - **Contactos**: una marca es una cuenta, así que añade a las personas con las que trabajas (nombre, cargo, correo, teléfono). Todo se guarda solo mientras escribes.
 - **Acuerdos**: sigue las oportunidades como registros reales, no solo un número. Cada acuerdo tiene nombre, importe, etapa (Prospecto, Cualificado, Negociando, Ganado, Perdido) y una fecha de cierre prevista. El total de **Cartera** sobre la lista suma el importe de cada acuerdo abierto, para que refleje lo que está realmente en juego.
 - **Valor del acuerdo**: una estimación rápida de un solo número para las marcas para las que aún no has creado acuerdos. En cuanto una marca tiene acuerdos reales, esos toman el control del cálculo de la cartera.
-- **Encolar mensaje**: redacta un mensaje en tu plantilla por defecto. Escribe `{{brand}}` y se rellena con el nombre de la marca al encolar; envuelve variantes de texto en `{a|b}` y Pitch Butler elige una, así no hay dos pitches idénticos. Pitch Butler rastrea "encolado" como touchpoint, y envía directamente una vez conectas Gmail (abajo).
+- **Encolar mensaje**: redacta un mensaje en tu plantilla por defecto. Escribe `{{brand}}` y se rellena con el nombre de la marca al encolar; envuelve variantes de texto en `{a|b}` y Pitch Butler elige una, así no hay dos pitches idénticos. Pitch Butler rastrea "encolado" como touchpoint.
 - **Etiquetas**: etiquetas libres que aplicas a las marcas. Útil para filtrar (p. ej. "lead caliente", "estacional", "primavera 2026").
 
 ## Cuatro formas de trabajar: Lista, Tablero, Tareas, Informes
@@ -120,17 +120,18 @@ Además el interruptor **Necesita seguimiento** (ver arriba) para marcas que que
 
 Selecciona varias tarjetas con sus casillas para lanzar una **acción en bloque**: fija la misma etapa en todos los que elegiste de un clic (p. ej. mover un lote de leads nuevos a Prospect, o un conjunto de callejones sin salida a Dead).
 
-## Conectar Gmail (beta)
+## Conectar Gmail
 
-Conecta tu cuenta de Gmail y Pitch Butler puede enviar pitches desde tu propia dirección, así las respuestas vuelven a *ti* y el hilo vive en tu bandeja de entrada y carpeta de Enviados normales.
+Conecta tu cuenta de Gmail y Pitch Butler vigila tu propio buzón en busca de respuestas de marcas, así la conversación se queda en tu bandeja de entrada normal mientras tu pipeline se actualiza solo.
 
 1. En la cabecera de Pitch Butler, pulsa **Conectar Gmail**. Se abre el inicio de sesión de Google; aprueba el acceso.
-2. Una vez conectado, los pitches que encolas pueden enviarse por Gmail, y **Sincronizar ahora** escanea tu correo reciente para emparejar respuestas y mensajes enviados con la marca correcta.
+2. Una vez conectado, **Sincronizar ahora** escanea tu correo reciente (y una sincronización en segundo plano corre cada 15 minutos) para emparejar respuestas y mensajes enviados con la marca correcta.
 3. Cuando una marca responde, su etapa avanza a **Replied** automáticamente, y la columna **Enviado a Pitch Butler** en tus tablas se actualiza.
+4. Pitch Butler también lee lo que *dice* la respuesta, igual que Collab Butler lee tus hilos del messenger de Amazon. Hablar de tarifas, presupuestos o contratos avanza la marca a **Negotiating**, y añade la etiqueta correspondiente cuando una marca confirma un envío (**Shipped**), te pide rellenar un formulario de alta (**Form**), ofrece una **Free Sample** o confirmas un **Sample Received**. Las etapas solo avanzan hacia delante; nunca cierra ni descarta un trato por su cuenta.
 
-Solo pedimos permiso para enviar correo y leer las cabeceras de los mensajes (remitente, destinatario, asunto, fecha) para emparejar respuestas. Nunca leemos el cuerpo de los mensajes, y solo se guarda el estado emparejado.
+El contenido de las respuestas se analiza solo en tu ordenador, para fijar la etapa y las etiquetas de arriba. Nada de tu bandeja de entrada se envía a ningún sitio; solo se guardan con la marca el estado emparejado, las etiquetas y una línea corta de vista previa.
 
-Esta función se despliega de forma gradual: mientras Google revisa nuestra solicitud de acceso está limitada a cuentas de prueba invitadas, así que puedes ver una nota de "próximamente" hasta que te llegue.
+Mientras la revisión de Google de nuestra solicitud de acceso está en curso, aplican dos límites del lado de Google: solo las cuentas de Google añadidas como usuarios de prueba en el proyecto de Google Cloud conectado pueden aprobar el acceso, y Google caduca la conexión aproximadamente cada semana, así que pulsa **Conectar Gmail** de nuevo cuando la cabecera la muestre desconectada.
 
 ## Ajustes con el tiempo
 
