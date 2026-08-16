@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const SUPABASE_AUTH_BASE = "https://khutiiojhafblabtixpp.supabase.co/auth/v1";
 
 // Single source of truth for the Chrome Web Store listing. The site's
-// /extension short link (used across the landing page, footer, help pages, and
-// the desktop app's install buttons) redirects here, so the extension id lives
-// in exactly one place.
+// /extension short link (used across the landing page, top nav, footer, help
+// pages, and the desktop app's install buttons) redirects here, so the
+// extension id lives in exactly one place.
 const CHROME_EXTENSION_URL =
   "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
@@ -82,9 +82,9 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // /extension is the Web Store short link referenced across the landing
-      // page, footer, and help tutorials, so it lands on the live Web Store
-      // listing. Kept non-permanent so the target can be retargeted without a
-      // browser-cached 301 lock-in.
+      // page, top nav, footer, and help tutorials, so it lands on the live Web
+      // Store listing. Kept non-permanent so the target can be retargeted
+      // without a browser-cached 301 lock-in.
       {
         source: "/extension",
         destination: CHROME_EXTENSION_URL,

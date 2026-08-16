@@ -17,6 +17,8 @@ const NAV_LINKS = [
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#pricing", label: "Pricing" },
+  { href: "/download", label: "Download" },
+  { href: "/extension", label: "Extension" },
   { href: "/#faq", label: "FAQ" },
   { href: "/course/amazon-influencer", label: "Free Course" },
   { href: "/blog", label: "Blog", current: true },
@@ -177,6 +179,12 @@ export function SiteFooter() {
               </Link>
               <Link href="/affiliates" className="block text-slate-500 hover:text-orange-500">
                 Affiliates: Earn 30%
+              </Link>
+              <Link href="/download" className="block text-slate-500 hover:text-orange-500">
+                Download the App
+              </Link>
+              <Link href="/extension" className="block text-slate-500 hover:text-orange-500">
+                Chrome Extension: Free
               </Link>
               <Link href="/about" className="block text-slate-500 hover:text-orange-500">
                 About Liz

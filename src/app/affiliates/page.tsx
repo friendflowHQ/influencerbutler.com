@@ -41,6 +41,18 @@ export default function AffiliatesLandingPage() {
               Blog
             </Link>
             <Link
+              href="/download"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Download
+            </Link>
+            <Link
+              href="/extension"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Extension
+            </Link>
+            <Link
               href="/login?next=/dashboard/affiliates"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
@@ -292,6 +304,8 @@ export default function AffiliatesLandingPage() {
             <a href="/#how-it-works" className="text-sm text-slate-500 transition hover:text-[#f97316]">How It Works</a>
             <a href="/#faq" className="text-sm text-slate-500 transition hover:text-[#f97316]">FAQ</a>
             <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates - Earn 30%</Link>
+            <a href="/download" className="text-sm text-slate-500 transition hover:text-[#f97316]">Download the App</a>
+            <a href="/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Chrome Extension: Free</a>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>

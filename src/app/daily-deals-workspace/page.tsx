@@ -52,6 +52,12 @@ export default async function DailyDealsWorkspacePage() {
             <Link href="/blog" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
               Blog
             </Link>
+            <Link href="/download" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              Download
+            </Link>
+            <Link href="/extension" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              Extension
+            </Link>
             <Link
               href={signedIn ? "/dashboard" : "/login"}
               className="font-medium text-slate-700 hover:text-[#f97316]"
@@ -374,6 +380,16 @@ function SiteFooter() {
               <li>
                 <Link href="/affiliates" className="hover:text-[#f97316]">
                   Affiliates - Earn 30%
+                </Link>
+              </li>
+              <li>
+                <Link href="/download" className="hover:text-[#f97316]">
+                  Download the App
+                </Link>
+              </li>
+              <li>
+                <Link href="/extension" className="hover:text-[#f97316]">
+                  Chrome Extension: Free
                 </Link>
               </li>
             </ul>
