@@ -291,7 +291,15 @@ export const DEFAULTS: StorageShape = {
     global: {
       testOnStartup: false,
       affiliateRoutingEnabled: false,
-      primaryDeeplinkProvider: null,
+      // Branded short links out of the box: free on every plan, no credentials
+      // (the signed-in license is the auth), and it keeps the creator's
+      // affiliate tag out of the url they post. This default reaches FRESH
+      // INSTALLS ONLY. migrate() spreads stored global state over these
+      // defaults, and any patchState writes the whole blob back, so an existing
+      // install has `primaryDeeplinkProvider: null` stored explicitly and keeps
+      // it. Existing users are reached by the one-time hint in the "My link"
+      // panel instead, which asks rather than deciding for them.
+      primaryDeeplinkProvider: "influencerbutler",
       perCountryTags: {},
     },
     providers: {},
