@@ -201,7 +201,7 @@ export async function generateAffiliateLink(
           getAdapter(id)?.generateLink,
       );
     });
-    const link = await buildAffiliateLink(
+    const built = await buildAffiliateLink(
       { asin, marketplace, url },
       {
         // Explicit "Copy my link" always applies the affiliate setup; the
@@ -217,8 +217,10 @@ export async function generateAffiliateLink(
     // When the resolved link is a branded short url and smart routing is on,
     // publish its routing definition so the edge does Passport / Best-Rate /
     // heal at click time. Best-effort: never blocks handing back the link.
-    void maybePublishGeneratedLink(link);
-    return { ok: true, url: link };
+    void maybePublishGeneratedLink(built.url);
+    // `notice` rides along so the caller can say why this is a plain link
+    // instead of the branded one the user picked. The link is still good.
+    return { ok: true, url: built.url, notice: built.notice };
   } catch {
     return { ok: false, error: "Could not build a link." };
   }

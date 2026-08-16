@@ -15,6 +15,9 @@ import {
 // requests host permission (from the user's click) before a provider is tested.
 
 const ASSOCIATES = "associates";
+// Branded links authenticate with the signed-in license key instead of a stored
+// credential, so "configured" for this provider means "signed in".
+const IB_LINKS = "influencerbutler";
 
 let D: OptionsDict;
 let view: IntegrationsView;
@@ -82,8 +85,22 @@ function renderGlobals(): void {
     select.append(opt);
   }
   select.value = view.global.primaryDeeplinkProvider ?? "";
-  select.onchange = () =>
+
+  // Branded links selected with nobody signed in is the one provider choice
+  // that silently does nothing: routing keeps handing back plain tagged Amazon
+  // links. Say so here rather than letting the user guess.
+  const warning = byId("primary-deeplink-warning");
+  const syncWarning = (): void => {
+    const needsSignIn = select.value === IB_LINKS && !providerView(IB_LINKS).configured;
+    warning.textContent = needsSignIn ? D.primaryDeeplinkSignIn : "";
+    warning.hidden = !needsSignIn;
+  };
+  syncWarning();
+
+  select.onchange = () => {
+    syncWarning();
     void setGlobal({ primaryDeeplinkProvider: select.value || null });
+  };
 
   const runAll = byId<HTMLButtonElement>("run-all");
   const status = byId("run-all-status");

@@ -16,6 +16,9 @@ export interface OptionsDict {
   affiliateRouting: string;
   primaryDeeplink: string;
   primaryDeeplinkNone: string;
+  // Shown under the dropdown when the branded-link provider is selected but the
+  // extension has no license key, so every link stays a plain Amazon link.
+  primaryDeeplinkSignIn: string;
   perCountryHeading: string;
   perCountryHint: string;
   addCountry: string;
@@ -83,6 +86,8 @@ const en: OptionsDict = {
   affiliateRouting: "Rewrite Amazon links through my affiliate setup",
   primaryDeeplink: "Primary deeplink provider",
   primaryDeeplinkNone: "None (affiliate tag only)",
+  primaryDeeplinkSignIn:
+    "You are not signed in, so branded links cannot be created yet. Open the Influencer Butler extension popup and enter your license key. Until then your links stay plain Amazon links with your affiliate tag.",
   perCountryHeading: "Affiliate tag per country",
   perCountryHint: "US falls back to your storefront handle when left blank.",
   addCountry: "Add country",
@@ -148,6 +153,8 @@ const es: OptionsDict = {
   affiliateRouting: "Reescribir enlaces de Amazon con mi configuración de afiliado",
   primaryDeeplink: "Proveedor de deeplink principal",
   primaryDeeplinkNone: "Ninguno (solo etiqueta de afiliado)",
+  primaryDeeplinkSignIn:
+    "No has iniciado sesión, así que todavía no se pueden crear enlaces de marca. Abre la ventana de la extensión Influencer Butler e introduce tu clave de licencia. Hasta entonces, tus enlaces seguirán siendo enlaces normales de Amazon con tu etiqueta de afiliado.",
   perCountryHeading: "Etiqueta de afiliado por país",
   perCountryHint: "EE. UU. usa tu identificador de tienda si lo dejas en blanco.",
   addCountry: "Añadir país",
@@ -213,6 +220,8 @@ const fr: OptionsDict = {
   affiliateRouting: "Réécrire les liens Amazon avec ma configuration d'affiliation",
   primaryDeeplink: "Fournisseur de deeplink principal",
   primaryDeeplinkNone: "Aucun (balise d'affiliation seule)",
+  primaryDeeplinkSignIn:
+    "Vous n'êtes pas connecté, donc les liens de marque ne peuvent pas encore être créés. Ouvrez la fenêtre de l'extension Influencer Butler et saisissez votre clé de licence. D'ici là, vos liens resteront des liens Amazon simples avec votre balise d'affiliation.",
   perCountryHeading: "Balise d'affiliation par pays",
   perCountryHint: "Les États-Unis utilisent votre identifiant de vitrine si laissé vide.",
   addCountry: "Ajouter un pays",
