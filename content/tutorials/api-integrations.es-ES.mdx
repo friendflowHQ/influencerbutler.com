@@ -46,6 +46,16 @@ Lista completa de proveedores:
 - **Benable**: enlace de referido.
 - **Proveedores de deeplinks**: Influencer Butler (enlaces de marca con un panel de clics integrado), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Elige uno como principal.
 
+## Credenciales de respaldo de la Creator API
+
+Amazon no desbloquea la Creator API hasta que tu cuenta ha hecho suficientes ventas que cualifiquen, así que un influencer recién llegado puede crear credenciales que parecen correctas pero fallan en Test Connection con un error de elegibilidad (HTTP 403). No hace falta esperar: Influencer Butler puede prestarte sus propias credenciales de respaldo.
+
+Cuando un test de la Creators API falla con ese bloqueo de elegibilidad, aparece un botón bajo el resultado: **Usar las credenciales de respaldo de Influencer Butler**. Con un clic, todos los espacios de trabajo que leen datos de producto empiezan a funcionar de inmediato con el juego de respaldo. Antes de pulsarlo, revisa tu Partner Tag: debe ser tu ID de seguimiento de Associates (como tutag-20), no un ID de escaparate, porque un tag incorrecto produce exactamente el mismo error.
+
+Mientras el respaldo está activo, el panel muestra el distintivo **Credenciales de respaldo activas**. Tus propias credenciales siguen guardadas y la aplicación las vuelve a probar en silencio una vez al día. En cuanto Amazon desbloquee tu cuenta, la aplicación vuelve automáticamente a tus credenciales y te avisa con una notificación. También puedes pulsar **Dejar de usar el respaldo** en cualquier momento, o repetir Test Connection tú mismo; un test superado te devuelve a las tuyas al instante.
+
+El respaldo está disponible para cualquier usuario con sesión iniciada, incluidas las pruebas gratuitas. Las consultas de producto hechas con él usan la cuenta de Influencer Butler; tus enlaces y tags de afiliado no se tocan, así que tus comisiones siguen siendo tuyas.
+
 ## Enrutamiento de afiliados
 
 La sección inferior del panel: **Elige el proveedor con la mayor comisión para cada producto**. Cuando este toggle está activado:
@@ -97,7 +107,7 @@ Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-sto
 - **La prueba de la Creators API dice "failed" pero Amazon la muestra activa**: casi siempre es un desajuste de marketplace. Ajusta el desplegable Marketplace a la región donde creaste tus credenciales de API. Una credencial de US probada contra un marketplace de UK o AU (o una credencial internacional dejada en el amazon.com por defecto) no pasará. La app ahora lo detecta y te dice a qué región pertenecen tus credenciales.
 - **La Partner Tag de la Creators API es rechazada**: ese campo necesita tu ID de seguimiento de Amazon Associates (como yourtag-20), no tu ID de escaparate.
 - **Los campos de credenciales de la Creators API aparecen vacíos tras reiniciar**: es lo esperado. Las claves guardadas se ocultan por seguridad. Solo elige tu marketplace y pulsa Test Connection. No necesitas volver a pegarlas.
-- **Una clave nueva de la Creators API falla justo después de crearla**: las claves recién emitidas pueden tardar hasta 24 horas en activarse del lado de Amazon. Espera y vuelve a probar.
+- **Una clave nueva de la Creators API falla justo después de crearla**: las claves recién emitidas pueden tardar hasta 24 horas en activarse del lado de Amazon. Espera y vuelve a probar. Si el fallo es el bloqueo de elegibilidad, usa el botón de credenciales de respaldo (mira la sección de credenciales de respaldo más arriba) en vez de esperar.
 - **La clave de OpenAI da verde pero la generación falla**: distintos productos de OpenAI usan distintos límites. Una clave válida para completions puede chocar con un problema de billing/quota en un modelo específico. Revisa la pestaña de billing del dashboard de OpenAI.
 - **El OAuth de YouTube caduca inesperadamente**: Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
 - **El enrutamiento de afiliados eligió el proveedor equivocado**: normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.

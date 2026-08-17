@@ -46,6 +46,16 @@ La liste complète des fournisseurs :
 - **Benable**: lien d'affiliation.
 - **Fournisseurs de deeplinks** : Influencer Butler (liens de marque avec un tableau de bord de clics intégré), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Choisissez-en un comme principal.
 
+## Identifiants de secours de la Creator API
+
+Amazon ne débloque la Creator API qu'une fois que votre compte a réalisé assez de ventes qualifiantes : un influenceur tout neuf peut donc créer des identifiants qui semblent corrects mais échouent au Test Connection avec une erreur d'éligibilité (HTTP 403). Pas besoin d'attendre : Influencer Butler peut vous prêter ses propres identifiants de secours.
+
+Quand un test de la Creators API échoue avec ce blocage d'éligibilité, un bouton apparaît sous le résultat : **Utiliser les identifiants de secours d'Influencer Butler**. Un clic, et tous les espaces de travail qui lisent des données produit fonctionnent immédiatement via le jeu de secours. Avant de cliquer, vérifiez votre Partner Tag : il doit être votre identifiant de suivi Associates (comme votretag-20), pas un identifiant de vitrine, car un tag incorrect produit exactement la même erreur.
+
+Tant que le secours est actif, le panneau affiche la pastille **Identifiants de secours actifs**. Vos propres identifiants restent enregistrés et l'application les reteste discrètement une fois par jour. Dès qu'Amazon débloque votre compte, l'application rebascule automatiquement sur vos identifiants et vous prévient par une notification. Vous pouvez aussi cliquer sur **Ne plus utiliser le secours** à tout moment, ou relancer Test Connection vous-même ; un test réussi vous rebascule immédiatement.
+
+Le secours est disponible pour tout utilisateur connecté, essais gratuits compris. Les recherches produit effectuées avec lui passent par le compte d'Influencer Butler ; vos liens et tags d'affiliation ne sont pas touchés, vos commissions continuent donc de vous revenir.
+
 ## Routage d'affiliation
 
 La section du bas du panneau : **Choisir le fournisseur avec la plus haute commission pour chaque produit**. Quand ce toggle est activé :
@@ -97,7 +107,7 @@ Les clés d'API sont stockées chiffrées dans `{userData}/InfluencerButler/secu
 - **Le test de la Creators API affiche "failed" mais Amazon la montre active**: c'est presque toujours un décalage de marketplace. Réglez le menu Marketplace sur la région où vous avez créé vos identifiants d'API. Un identifiant US testé contre un marketplace UK ou AU (ou un identifiant international laissé sur amazon.com par défaut) ne passera pas. L'app le détecte maintenant et vous indique à quelle région appartiennent vos identifiants.
 - **Le Partner Tag de la Creators API est rejeté**: ce champ demande votre identifiant de suivi Amazon Associates (comme yourtag-20), pas votre identifiant de vitrine.
 - **Les champs d'identifiants de la Creators API apparaissent vides après un redémarrage**: c'est normal. Les clés enregistrées sont masquées pour des raisons de sécurité. Choisissez simplement votre marketplace et appuyez sur Test Connection. Vous n'avez pas besoin de les recoller.
-- **Une clé Creators API toute neuve échoue juste après sa création**: les clés récemment émises peuvent mettre jusqu'à 24 heures à s'activer côté Amazon. Attendez et retestez.
+- **Une clé Creators API toute neuve échoue juste après sa création**: les clés récemment émises peuvent mettre jusqu'à 24 heures à s'activer côté Amazon. Attendez et retestez. Si l'échec est le blocage d'éligibilité, utilisez le bouton des identifiants de secours (voir la section identifiants de secours plus haut) plutôt que d'attendre.
 - **La clé OpenAI testée verte mais la génération échoue**: différents produits OpenAI utilisent différentes limites. Une clé valide pour completions peut buter sur un souci de billing/quota sur un modèle spécifique. Vérifiez l'onglet billing du tableau de bord OpenAI.
 - **L'OAuth YouTube expire de façon inattendue**: Google renouvelle les tokens OAuth environ chaque année. Relancez le Setup Wizard de YouTube Butler pour rafraîchir.
 - **Le routage d'affiliation a choisi le mauvais fournisseur**: généralement le mauvais fournisseur était coché. Ouvrez la section routage et vérifiez les cases à cocher des fournisseurs participants.

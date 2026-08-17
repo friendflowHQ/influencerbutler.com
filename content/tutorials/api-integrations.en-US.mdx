@@ -46,6 +46,16 @@ The full provider list:
 - **Benable**: referral link.
 - **Deeplink providers**: Influencer Butler (branded links with a built-in click dashboard), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Choose one as primary.
 
+## Creator API backup credentials
+
+Amazon does not unlock the Creator API until your account has made enough qualifying sales, so a brand-new influencer can create credentials that look right but fail Test Connection with an eligibility error (HTTP 403). You do not have to wait it out: Influencer Butler can lend you its own backup credentials.
+
+When a Creators API test fails with that eligibility block, a button appears under the result: **Use Influencer Butler's backup credentials**. One click and every workspace that reads product data starts working right away through the backup set. Before you click it, double check your Partner Tag: it must be your Associates tracking ID (like yourtag-20), not a storefront ID, because a wrong tag produces the exact same error.
+
+While the backup is active the panel shows a **Backup credentials active** chip. Your own credentials stay saved, and the app quietly re-tests them once a day. The moment Amazon unlocks your account, the app switches back to your own credentials automatically and lets you know with a notification. You can also click **Stop using backup** at any time, or re-run Test Connection yourself; a passing test switches you back on the spot.
+
+The backup is available to every signed-in user, including free trials. Product lookups made through it use Influencer Butler's account; your own affiliate links and tags are untouched, so your commissions still track to you.
+
 ## Affiliate routing
 
 The bottom section of the panel: **Pick the highest-commission provider for each product**. When this toggle is on:
@@ -97,7 +107,7 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 - **Creators API test says "failed" but Amazon shows it active**: almost always a marketplace mismatch. Set the Marketplace dropdown to the region where you created your API credentials. A US credential tested against a UK or AU marketplace (or an international credential left on the amazon.com default) will not pass. The app now detects this and tells you which region your credentials belong to.
 - **Creators API Partner Tag rejected**: that field needs your Amazon Associates tracking ID (like yourtag-20), not your storefront ID.
 - **Creators API credential fields look blank after a restart**: that is expected. Saved keys are hidden for security. Just pick your marketplace and press Test Connection. You do not need to re-paste them.
-- **A brand-new Creators API key fails right after you create it**: newly issued keys can take up to 24 hours to activate on Amazon's side. Wait and re-test.
+- **A brand-new Creators API key fails right after you create it**: newly issued keys can take up to 24 hours to activate on Amazon's side. Wait and re-test. If the failure is the eligibility block instead, use the backup credentials button (see the Creator API backup credentials section above) rather than waiting.
 - **OpenAI key tested green but generation fails**: different OpenAI products use different rate limits. A key valid for completions may hit a billing/quota issue on a specific model. Check the OpenAI dashboard's billing tab.
 - **YouTube OAuth expires unexpectedly**: Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
 - **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
