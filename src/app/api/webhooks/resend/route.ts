@@ -78,10 +78,43 @@ const EVENT_COLUMN: Record<string, string> = {
 
 const HANDLED_TYPES = new Set(["email.sent", ...Object.keys(EVENT_COLUMN)]);
 
+// Resolve the Svix signing secret. Prefer the RESEND_WEBHOOK_SECRET env var;
+// fall back to the app_config 'resend_webhook_secret' row so the secret can be
+// set from Supabase (via SQL) when the hosting dashboard is not reachable.
+// Cached briefly since events arrive in bursts.
+let secretCache: { value: string; at: number } | null = null;
+const SECRET_TTL_MS = 5 * 60 * 1000;
+
+async function getWebhookSecret(): Promise<string> {
+  const env = (process.env.RESEND_WEBHOOK_SECRET ?? "").trim();
+  if (env) return env;
+  if (secretCache && Date.now() - secretCache.at < SECRET_TTL_MS) return secretCache.value;
+  let value = "";
+  try {
+    const db = createAdminClient();
+    const { data } = await db
+      .from("app_config")
+      .select("value")
+      .eq("key", "resend_webhook_secret")
+      .maybeSingle();
+    const v = data?.value as unknown;
+    if (typeof v === "string") value = v.trim();
+    else if (v && typeof v === "object" && typeof (v as { secret?: unknown }).secret === "string") {
+      value = (v as { secret: string }).secret.trim();
+    }
+  } catch {
+    value = "";
+  }
+  secretCache = { value, at: Date.now() };
+  return value;
+}
+
 export async function POST(request: Request) {
-  const secret = process.env.RESEND_WEBHOOK_SECRET || "";
+  const secret = await getWebhookSecret();
   if (!secret) {
-    console.error("resend webhook: RESEND_WEBHOOK_SECRET unset - rejecting");
+    console.error(
+      "resend webhook: no signing secret (env RESEND_WEBHOOK_SECRET or app_config resend_webhook_secret) - rejecting",
+    );
     return NextResponse.json({ error: "Not configured" }, { status: 401 });
   }
 
