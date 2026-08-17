@@ -54,7 +54,7 @@ const FILTERS = [
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
-// Default seat count per plan (Solo 1 / Duo 3 / Team 10 / Agency 25, Daily Deals 1).
+// Default seat count per plan (Solo 1 / Trio 3 / Team 10 / Agency 25, Daily Deals 1).
 // Mirrors SEAT_LIMIT server-side; used only to prefill the editable Seats field.
 const PLAN_DEFAULT_SEATS: Record<string, number> = {
   monthly: 1,
@@ -640,7 +640,7 @@ export default function AdminCompsPage() {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
               <option value="monthly">Solo Monthly</option>
-              <option value="duo-monthly">Duo Monthly</option>
+              <option value="duo-monthly">Trio Monthly</option>
               <option value="team-monthly">Team Monthly</option>
               <option value="agency-monthly">Agency Monthly</option>
               <option value="daily-deals-addon">Deals Influencer Butler Workspace (add-on)</option>

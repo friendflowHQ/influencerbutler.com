@@ -53,7 +53,7 @@ export function annualSavingsPct(tier: keyof typeof PRICE_CENTS): number {
 
 // Per-tier label used in the marketing copy. Solo intentionally says
 // "1 device" to underline the upgrade pressure - if the customer wants
-// a 2nd device, they upgrade to Duo.
+// a 2nd device, they upgrade to Trio.
 export const SEAT_COPY = {
   solo: "1 device",
   duo: "Up to 3 devices",
@@ -68,14 +68,16 @@ export type Interval = "monthly" | "annual";
 // price change can't ship without thinking about the user-facing copy.
 export const TIER_NAME: Record<Tier, string> = {
   solo: "Pro Solo",
-  duo: "Pro Duo",
+  // Display name is "Pro Trio" (matches the LS product); the internal tier
+  // key, plan strings, and env vars keep the original "duo"/"DUO" spelling.
+  duo: "Pro Trio",
   team: "Pro Team",
   agency: "Pro Agency",
 };
 
 export const TIER_TAGLINE: Record<Tier, string> = {
   solo: "Full power, 1 device",
-  duo: "For pairs - up to 3 devices",
+  duo: "For small teams - up to 3 devices",
   team: "For creator teams - up to 10 devices",
   agency: "For agencies - up to 25 devices",
 };
@@ -97,7 +99,7 @@ export const TIER_FEATURES: Record<Tier, readonly string[]> = {
     "Shared seat pool",
   ],
   team: [
-    "Everything in Pro Duo",
+    "Everything in Pro Trio",
     "Up to 10 activated devices",
     "Shared seat pool for your team",
     "Priority email support",
