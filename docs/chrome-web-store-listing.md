@@ -119,6 +119,52 @@ Certify all three usage statements (they are true):
   results, the storefront checkup, and the popup.
 - Category: Shopping. Language: English.
 
+## Submitted copy (2026-08-16 listing refresh)
+
+Description refresh staged alongside the new screenshot set. Adds the
+features that shipped in the live 0.1.6 build after the original copy was
+written (Campaign Radar, Deal Sites Harvester, branded short links).
+Deliberately excludes anything not yet published to the store (Last Call
+fill meters, Trend Radar, Global Maximizer, AI photo actions: all landed
+after the 0.1.6 release and wait on the next version bump). Same policy
+constraints as before: no provider brand-name lists (2026-07-21 rejection),
+no competitor names, insights-while-you-browse framing, no automation
+claims.
+
+- Short description: unchanged from 2026-07-09.
+- Screenshots (1280x800, real captures composited into branded frames by
+  `scripts/generate-extension-store-shots.mjs`; raw captures taken with
+  `scripts/capture-hold.mjs` + `scripts/capture-shot.mjs` in a throwaway
+  Edge profile with the unpacked dist build):
+  1. `extension_shot_1_product_page_1280x800.png`: product-page overlay
+     (Butler Approved seal, video counts, product snapshot)
+  2. `extension_shot_2_campaign_radar_1280x800.png`: Creator Connections
+     Affiliate+ grid with Campaign Radar score chips, highlights, watch
+     bells, and Last Call fill meters
+  3. `extension_shot_3_storefront_checkup_1280x800.png`: storefront checkup
+     panel on the creator's own storefront
+  4. `extension_shot_4_popup_1280x800.png`: extension popup + settings
+  5. `extension_shot_5_search_overlay_1280x800.png`: money-signals search
+     overlay (score, $/sale, video count, watch) on a kitchen-gadgets
+     search. NOTE: slides 2 and 5 show 0.1.7 features (Last Call meters,
+     money-first search overlay), so this listing refresh should be
+     submitted together with the 0.1.7 package. (Deal Sites Harvester and
+     Link Butler ledger slides were considered and dropped: both render
+     empty states on a fresh profile.)
+- Detailed description additions (inserted after the "Storefront checkup"
+  section of the 2026-07-09 copy; the rest of that copy is unchanged):
+
+```
+Campaign Radar on Creator Connections
+Browsing the Creator Connections campaign grid? Every campaign card gets an at-a-glance opportunity score plus chips that surface what matters: products you already own, proven earners from your own history, and which marketplaces (US, CA, UK, AU) carry the product. Purely informational: the extension never accepts or declines campaigns for you.
+
+Branded short links with a click ledger
+Sign in free and mint branded short links for the products you promote, then watch clicks by day, country, device, and surface in a simple ledger. If a product goes unavailable, repoint the same short link to a replacement so old posts keep earning.
+
+Deal Sites Harvester
+Collect the deals from deal roundup pages you visit into one organized table, with each product's affiliate link tagged to your own account, ready to review and share.
+```
+
 ## Final submitted copy (2026-07-09)
 
 The exact text pasted into the Developer Dashboard for the first submission.
