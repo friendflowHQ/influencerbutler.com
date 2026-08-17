@@ -205,12 +205,20 @@ export default function AdminBlogPage() {
             scheduled posts go live on their date automatically.
           </p>
         </div>
-        <Link
-          href="/dashboard/admin/blog/new"
-          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#ea580c]"
-        >
-          New post
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/admin/blog/autopilot"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Autopilot
+          </Link>
+          <Link
+            href="/dashboard/admin/blog/new"
+            className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#ea580c]"
+          >
+            New post
+          </Link>
+        </div>
       </div>
 
       {deployNotice ? (

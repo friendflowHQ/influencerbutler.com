@@ -12,19 +12,12 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { generateHeroImage } from "@/lib/blog-hero";
 import { SLUG_RE } from "../../shared";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
-
-// Keep a consistent on-brand look across every hero image. Copied verbatim
-// from scripts/generate-blog-images.mjs; keep the two in sync.
-const STYLE_SUFFIX =
-  " Editorial flat vector illustration, clean and modern, soft rounded shapes, " +
-  "warm and friendly, generous negative space, cohesive palette of warm orange " +
-  "(#f59e0b) with deep navy and soft cream, subtle texture, no text, no words, " +
-  "no letters, no logos, no watermark, 16:9 landscape composition.";
 
 export async function POST(request: Request) {
   const actor = await requirePermission("blog.manage", request);
@@ -48,32 +41,7 @@ export async function POST(request: Request) {
   if (!imagePrompt) return NextResponse.json({ error: "imagePrompt is required" }, { status: 400 });
 
   try {
-    const res = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: `${imagePrompt}${STYLE_SUFFIX}`,
-        size: "1536x1024",
-        quality: "medium",
-        n: 1,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return NextResponse.json(
-        { error: `OpenAI API ${res.status}: ${text.slice(0, 300)}` },
-        { status: 502 },
-      );
-    }
-
-    const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
-    const b64 = json?.data?.[0]?.b64_json;
-    if (!b64) return NextResponse.json({ error: "No image data returned" }, { status: 502 });
+    const b64 = await generateHeroImage(imagePrompt);
 
     await logAdminAction({
       actor,
