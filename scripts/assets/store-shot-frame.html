@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- Chrome Web Store screenshot frame: 1280x800. Tokens ({{HEADLINE}}, {{CAPTION}},
+     {{IMG1}}, {{IMG2}}, {{MODE}}, {{BAR_URL}}) are replaced by
+     scripts/generate-extension-store-shots.mjs, which renders each slide via
+     headless Chrome/Edge at exactly 1280x800. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", -apple-system, system-ui, Arial, sans-serif;
+    background: linear-gradient(135deg, #c2410c 0%, #ea580c 34%, #f97316 62%, #f59e0b 100%);
+    position: relative;
+  }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .5; }
+  .blob1 { width: 460px; height: 460px; background: #fde68a; top: -160px; right: -120px; }
+  .blob2 { width: 420px; height: 420px; background: #7c2d12; bottom: -180px; left: -140px; opacity: .35; }
+  .brand {
+    position: absolute; top: 30px; left: 40px;
+    display: flex; align-items: center; gap: 10px;
+    color: #fff; font-weight: 700; font-size: 20px; letter-spacing: .01em;
+  }
+  .brand img { width: 34px; height: 34px; border-radius: 8px; }
+  .free-pill {
+    position: absolute; top: 32px; right: 40px;
+    background: rgba(255,255,255,.16); border: 1.5px solid rgba(255,255,255,.75);
+    color: #fff; font-weight: 700; font-size: 15px; letter-spacing: .16em;
+    padding: 6px 16px; border-radius: 999px;
+  }
+  .headline {
+    position: absolute; top: 84px; left: 0; right: 0;
+    text-align: center; color: #fff; font-size: 43px; font-weight: 800;
+    line-height: 1.15; padding: 0 90px;
+    text-shadow: 0 2px 14px rgba(124,45,18,.35);
+  }
+  .caption {
+    position: absolute; bottom: 30px; left: 0; right: 0;
+    text-align: center; color: rgba(255,255,255,.95); font-size: 22px;
+    font-weight: 500; line-height: 1.35; padding: 0 120px;
+    text-shadow: 0 1px 8px rgba(124,45,18,.35);
+  }
+  .stage {
+    position: absolute; top: 196px; bottom: 108px; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center; gap: 28px;
+  }
+  .card {
+    background: #fff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(67,20,7,.45);
+  }
+  .browser-bar {
+    height: 34px; background: #f1f5f9; display: flex; align-items: center;
+    gap: 6px; padding: 0 14px; border-bottom: 1px solid #e2e8f0;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #fca5a5; } .dot.y { background: #fcd34d; } .dot.g { background: #86efac; }
+  .urlpill {
+    margin-left: 10px; background: #fff; border: 1px solid #e2e8f0; color: #64748b;
+    font-size: 13px; border-radius: 999px; padding: 3px 14px;
+  }
+  .shotwrap { position: relative; overflow: hidden; }
+  .shotwrap img { position: absolute; }
+  /* wide mode: one big browser card */
+  .mode-wide .card { width: 1010px; }
+  .mode-wide .shotwrap { width: 1010px; height: 420px; }
+  .mode-wide .shotwrap img { width: 1010px; left: 0; top: 0; }
+  /* duo mode: two tall cards side by side (extension pages / popup crops) */
+  .mode-duo .card { width: 400px; }
+  .mode-duo .shotwrap { width: 400px; height: 462px; }
+  .mode-duo .shotwrap img { width: 400px; left: 0; top: 0; }
+</style>
+</head>
+<body class="mode-{{MODE}}">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="brand"><img src="{{LOGO}}" alt=""> Influencer Butler</div>
+  <div class="free-pill">FREE</div>
+  <div class="headline">{{HEADLINE}}</div>
+  <div class="stage">
+    <div class="card">
+      <div class="browser-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="urlpill">{{BAR_URL}}</span></div>
+      <div class="shotwrap"><img src="{{IMG1}}" style="{{IMG1_STYLE}}"></div>
+    </div>
+    <!--CARD2-->
+  </div>
+  <div class="caption">{{CAPTION}}</div>
+</body>
+</html>
