@@ -1,17 +1,29 @@
 /**
- * Reads the CC / SPCC catalogue from the influencerbutler R2 bucket via the
- * Cloudflare API (Bearer token, no S3 signing needed) and builds an ASIN
- * membership Bloom filter by streaming the gzipped NDJSON line by line, so a
- * 700 MB uncompressed index never lands in memory.
+ * Reads the CC / SPCC catalogue from the influencerbutler R2 bucket and
+ * builds an ASIN membership Bloom filter by streaming the gzipped NDJSON line
+ * by line, so a 700 MB uncompressed index never lands in memory.
+ *
+ * The bucket is published on a public custom domain
+ * (influencerbutler.influencerbutler.com), which is the same distribution
+ * channel the desktop app's snapshot sync reads (its DEFAULT_BASE_URL in
+ * integrations/cc-campaigns/snapshotSync.js), so reads go there first with no
+ * credentials. The authenticated Cloudflare API path is kept as a fallback
+ * for a future private bucket; note the prod R2_READ_TOKEN was found to be a
+ * placeholder in 2026-08 (every authenticated read 400s), which is why the
+ * catalogue filters had never been built until the public path was added.
  *
  * Env:
- *   CLOUDFLARE_ACCOUNT_ID  the R2 account id
- *   R2_READ_TOKEN          a Cloudflare API token with R2 object read
+ *   IB_CATALOGUE_PUBLIC_BASE  override for the public bucket domain
+ *   CLOUDFLARE_ACCOUNT_ID     the R2 account id (API fallback only)
+ *   R2_READ_TOKEN             a Cloudflare API token with R2 object read
  */
 import { buildBloomStreaming, type SerializedBloom } from "./bloom";
 
 const BUCKET = "influencerbutler";
 const PREFIX = "dcb/catalogues";
+const PUBLIC_BASE = (
+  process.env.IB_CATALOGUE_PUBLIC_BASE || "https://influencerbutler.influencerbutler.com"
+).replace(/\/+$/, "");
 const ASIN_RE = /"asin"\s*:\s*"([A-Z0-9]{10})"/;
 
 export type CatalogueKind = "cc" | "spcc" | "deals";
@@ -29,7 +41,13 @@ export type BuiltFilter = {
   bloom: SerializedBloom;
 };
 
+// The public custom domain needs no configuration, so catalogue reads are
+// always possible; kept for the crons' skip checks.
 export function r2Configured(): boolean {
+  return true;
+}
+
+function apiConfigured(): boolean {
   return Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.R2_READ_TOKEN);
 }
 
@@ -38,10 +56,27 @@ function objectUrl(key: string): string {
   return `https://api.cloudflare.com/client/v4/accounts/${acct}/r2/buckets/${BUCKET}/objects/${key}`;
 }
 
+// Fetches an object: public domain first, authenticated API as fallback.
+// Returns the Response as-is (callers decide how to treat 404 vs error).
+async function r2FetchResponse(key: string): Promise<Response> {
+  let pub: Response | null = null;
+  try {
+    pub = await fetch(`${PUBLIC_BASE}/${key}`);
+  } catch {
+    pub = null;
+  }
+  if (pub && pub.ok) return pub;
+  if (apiConfigured()) {
+    return fetch(objectUrl(key), {
+      headers: { Authorization: `Bearer ${process.env.R2_READ_TOKEN}` },
+    });
+  }
+  if (pub) return pub;
+  throw new Error(`R2 read ${key} failed: public fetch error and no API fallback`);
+}
+
 async function r2Fetch(key: string): Promise<Response> {
-  const res = await fetch(objectUrl(key), {
-    headers: { Authorization: `Bearer ${process.env.R2_READ_TOKEN}` },
-  });
+  const res = await r2FetchResponse(key);
   if (!res.ok || !res.body) {
     throw new Error(`R2 read ${key} failed: ${res.status}`);
   }
@@ -53,14 +88,11 @@ export async function readLatest(kind: CatalogueKind): Promise<LatestPointer> {
   return (await res.json()) as LatestPointer;
 }
 
-// Reads a small JSON object from R2, returning null when R2 is not configured
-// or the object does not exist yet (404). Used for the rate card (a few KB),
-// which needs neither the streaming nor the Bloom path.
+// Reads a small JSON object from R2, returning null when the object does not
+// exist yet (404). Used for the rate card (a few KB), which needs neither the
+// streaming nor the Bloom path.
 export async function r2ReadJson<T>(key: string): Promise<T | null> {
-  if (!r2Configured()) return null;
-  const res = await fetch(objectUrl(key), {
-    headers: { Authorization: `Bearer ${process.env.R2_READ_TOKEN}` },
-  });
+  const res = await r2FetchResponse(key);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`R2 read ${key} failed: ${res.status}`);
   return (await res.json()) as T;
