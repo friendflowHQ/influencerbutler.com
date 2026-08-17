@@ -58,6 +58,9 @@ function objectUrl(key: string): string {
 
 // Fetches an object: public domain first, authenticated API as fallback.
 // Returns the Response as-is (callers decide how to treat 404 vs error).
+// A clean public 404 is authoritative ("not published yet") and is returned
+// without consulting the API: falling back there would let a broken token
+// (the 2026-08 placeholder incident) turn every soft-fail 404 into a 500.
 async function r2FetchResponse(key: string): Promise<Response> {
   let pub: Response | null = null;
   try {
@@ -65,7 +68,7 @@ async function r2FetchResponse(key: string): Promise<Response> {
   } catch {
     pub = null;
   }
-  if (pub && pub.ok) return pub;
+  if (pub && (pub.ok || pub.status === 404)) return pub;
   if (apiConfigured()) {
     return fetch(objectUrl(key), {
       headers: { Authorization: `Bearer ${process.env.R2_READ_TOKEN}` },
