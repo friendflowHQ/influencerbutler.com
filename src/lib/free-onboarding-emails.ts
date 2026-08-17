@@ -16,10 +16,13 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type OnboardingTier = "day0" | "day2" | "day5" | "day10";
 
-type OnboardingVars = {
+export type OnboardingVars = {
   firstName: string;
   pricingUrl: string; // /pricing (optionally with a ?code= first-timer discount)
   helpUrl: string;
@@ -28,7 +31,7 @@ type OnboardingVars = {
   discountPercent: number;
 };
 
-type TierCopy = {
+export type TierCopy = {
   subject: string | ((vars: OnboardingVars) => string);
   build: (vars: OnboardingVars) => string;
 };
@@ -40,7 +43,7 @@ const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP
 const FREE_BUTLERS =
   "Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler";
 
-const COPY: Record<OnboardingTier, TierCopy> = {
+export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
   day0: {
     subject: "Your Influencer Butler setup guide (3 minutes)",
     build: (v) =>
@@ -169,7 +172,7 @@ export type OnboardingEmailPayload = {
 };
 
 export async function sendOnboardingEmail(payload: OnboardingEmailPayload): Promise<boolean> {
-  const copy = COPY[payload.tier];
+  const copy = ONBOARDING_COPY[payload.tier];
   const firstName = (payload.name ?? "").split(" ")[0] || "there";
 
   const vars: OnboardingVars = {
@@ -183,12 +186,28 @@ export async function sendOnboardingEmail(payload: OnboardingEmailPayload): Prom
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "onboarding",
+    tier: payload.tier,
+    vars: vars as unknown as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
     from: FROM_ADDRESS,
     to: payload.to,
-    subject,
-    text: body,
+    subject: resolved.subject,
+    text: resolved.body,
     category: `onboarding_${payload.tier}`,
     funnel: "onboarding",
   });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [payload.to], resolved.applyTag, "funnel:onboarding");
+    } catch (err) {
+      console.error("free-onboarding-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }
