@@ -85,3 +85,60 @@ export async function enrollForTagAdded(
     console.error("email-marketing: enrollForTagAdded threw", err);
   }
 }
+
+/**
+ * Tag-on-send: ensures each address is a contact (email_subscribers) and, when
+ * a tag is given, unions it onto their existing tags without replacing them.
+ * Used by the campaign materializer so a send can grow and segment the list in
+ * one step. Best-effort: a missing table/column just no-ops. Also fires
+ * tag_added sequence auto-enrollment for the tag, matching the contacts API.
+ */
+export async function tagRecipientsAsContacts(
+  db: SupabaseClient,
+  emails: string[],
+  tag: string | null,
+  source: string,
+): Promise<void> {
+  if (emails.length === 0) return;
+  try {
+    for (const slice of chunk(emails, CHUNK)) {
+      const { data: existing, error: readErr } = await db
+        .from("email_subscribers")
+        .select("email, tags")
+        .in("email", slice);
+      if (readErr) return; // table/column missing: degrade to no-op
+
+      const existingByEmail = new Map<string, string[]>();
+      for (const row of existing ?? []) {
+        if (typeof row.email !== "string") continue;
+        existingByEmail.set(
+          row.email.toLowerCase(),
+          Array.isArray(row.tags)
+            ? row.tags.filter((t: unknown): t is string => typeof t === "string")
+            : [],
+        );
+      }
+
+      const fresh = slice.filter((e) => !existingByEmail.has(e));
+      if (fresh.length > 0) {
+        const rows = fresh.map((email) => ({ email, source, tags: tag ? [tag] : [] }));
+        const { error: insertErr } = await db.from("email_subscribers").insert(rows);
+        if (insertErr) console.error("email-marketing: contact insert failed", insertErr);
+      }
+
+      if (tag) {
+        for (const [email, tags] of existingByEmail) {
+          if (tags.includes(tag)) continue;
+          const { error: updErr } = await db
+            .from("email_subscribers")
+            .update({ tags: [...tags, tag] })
+            .eq("email", email);
+          if (updErr) console.error("email-marketing: contact tag union failed", { email, updErr });
+        }
+      }
+    }
+    if (tag) await enrollForTagAdded(db, tag, emails);
+  } catch (err) {
+    console.error("email-marketing: tagRecipientsAsContacts threw", err);
+  }
+}

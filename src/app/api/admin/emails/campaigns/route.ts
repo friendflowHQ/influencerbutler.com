@@ -20,7 +20,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { EMAIL_RE, parseAudience, type Audience } from "@/lib/email-audience";
+import { EMAIL_RE, normalizeTag, parseAudience, type Audience } from "@/lib/email-audience";
 import { MARKETING_FROM, campaignCategory } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { isMissingTable } from "@/lib/growth-goals";
@@ -44,6 +44,8 @@ type CampaignRow = {
   created_by: string;
   created_at: string;
   sent_at: string | null;
+  apply_tag?: string | null;
+  save_contacts?: boolean | null;
 };
 
 type RecipientCounts = { queued: number; sent: number; skipped: number; failed: number };
@@ -54,6 +56,52 @@ function getDb(): SupabaseClient | null {
   } catch {
     return null;
   }
+}
+
+/** Postgres undefined_column: the 20260818 tag-on-send migration is not applied yet. */
+function undefinedColumn(error: unknown): boolean {
+  return (
+    typeof error === "object" && error !== null && (error as { code?: string }).code === "42703"
+  );
+}
+
+/**
+ * Parses the optional tag-on-send fields. Returns an error string only when a
+ * non-empty tag is malformed. save_contacts is implied whenever a tag is set
+ * (tags live on the contact row).
+ */
+function parseTagFields(
+  raw: { applyTag?: unknown; saveContacts?: unknown },
+): { apply_tag: string | null; save_contacts: boolean } | { error: string } {
+  let apply_tag: string | null = null;
+  if (typeof raw.applyTag === "string" && raw.applyTag.trim().length > 0) {
+    const t = normalizeTag(raw.applyTag);
+    if (!t) return { error: "Invalid tag" };
+    apply_tag = t;
+  }
+  const save_contacts = raw.saveContacts === true || apply_tag !== null;
+  return { apply_tag, save_contacts };
+}
+
+/**
+ * Inserts a campaign, retrying without the tag-on-send columns if that
+ * migration is not applied yet (so campaign creation never hard-breaks in the
+ * deploy-before-migration window).
+ */
+async function insertCampaign(
+  db: SupabaseClient,
+  baseRow: Record<string, unknown>,
+  tagFields: { apply_tag: string | null; save_contacts: boolean },
+): Promise<{ id: string | null; error: unknown }> {
+  let res = await db
+    .from("email_campaigns")
+    .insert({ ...baseRow, ...tagFields })
+    .select("id")
+    .single();
+  if (res.error && undefinedColumn(res.error)) {
+    res = await db.from("email_campaigns").insert(baseRow).select("id").single();
+  }
+  return { id: res.data?.id ?? null, error: res.error };
 }
 
 function emptyCounts(): RecipientCounts {
@@ -166,7 +214,14 @@ export async function POST(request: Request) {
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  let body: { name?: unknown; subject?: unknown; body?: unknown; audience?: unknown };
+  let body: {
+    name?: unknown;
+    subject?: unknown;
+    body?: unknown;
+    audience?: unknown;
+    applyTag?: unknown;
+    saveContacts?: unknown;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -177,12 +232,16 @@ export async function POST(request: Request) {
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
+  const tagFields = parseTagFields(body);
+  if ("error" in tagFields) {
+    return NextResponse.json({ error: tagFields.error }, { status: 400 });
+  }
 
-  const { data, error } = await db
-    .from("email_campaigns")
-    .insert({ ...validated.fields, status: "draft", created_by: actor.email })
-    .select("id")
-    .single();
+  const { id, error } = await insertCampaign(
+    db,
+    { ...validated.fields, status: "draft", created_by: actor.email },
+    tagFields,
+  );
   if (error) {
     if (isMissingTable(error)) {
       return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
@@ -191,7 +250,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: data.id });
+  return NextResponse.json({ ok: true, id });
 }
 
 export async function PATCH(request: Request) {
@@ -210,6 +269,8 @@ export async function PATCH(request: Request) {
     audience?: unknown;
     scheduledAt?: unknown;
     toEmail?: unknown;
+    applyTag?: unknown;
+    saveContacts?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -246,12 +307,34 @@ export async function PATCH(request: Request) {
     if ("error" in validated) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
-    if (Object.keys(validated.fields).length === 0) {
+    const updateValues: Record<string, unknown> = { ...validated.fields };
+    if (body.applyTag !== undefined || body.saveContacts !== undefined) {
+      const tagFields = parseTagFields(body);
+      if ("error" in tagFields) {
+        return NextResponse.json({ error: tagFields.error }, { status: 400 });
+      }
+      updateValues.apply_tag = tagFields.apply_tag;
+      updateValues.save_contacts = tagFields.save_contacts;
+    }
+    if (Object.keys(updateValues).length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
-    const { error } = await db.from("email_campaigns").update(validated.fields).eq("id", id);
-    if (error) {
-      console.error("admin emails/campaigns: update failed", error);
+    const first = await db.from("email_campaigns").update(updateValues).eq("id", id);
+    let updateError: unknown = first.error;
+    if (first.error && undefinedColumn(first.error)) {
+      // 20260818 not applied yet: save the core fields, skip tag-on-send.
+      const core = { ...updateValues };
+      delete core.apply_tag;
+      delete core.save_contacts;
+      if (Object.keys(core).length > 0) {
+        const retry = await db.from("email_campaigns").update(core).eq("id", id);
+        updateError = retry.error;
+      } else {
+        updateError = null;
+      }
+    }
+    if (updateError) {
+      console.error("admin emails/campaigns: update failed", updateError);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
@@ -313,23 +396,23 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "duplicate") {
-    const { data, error } = await db
-      .from("email_campaigns")
-      .insert({
+    const { id: newId, error } = await insertCampaign(
+      db,
+      {
         name: `${campaign.name} copy`.slice(0, 200),
         subject: campaign.subject,
         body: campaign.body,
         audience: campaign.audience,
         status: "draft",
         created_by: actor.email,
-      })
-      .select("id")
-      .single();
+      },
+      { apply_tag: campaign.apply_tag ?? null, save_contacts: campaign.save_contacts === true },
+    );
     if (error) {
       console.error("admin emails/campaigns: duplicate failed", error);
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
-    return NextResponse.json({ ok: true, id: data.id });
+    return NextResponse.json({ ok: true, id: newId });
   }
 
   if (action === "test") {
