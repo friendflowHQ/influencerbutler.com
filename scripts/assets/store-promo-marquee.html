@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- Chrome Web Store marquee promo tile: 1400x560. Rendered headless at exactly
+     1400x560. Right side shows the product-page listing screenshot in a card. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1400px; height: 560px; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", -apple-system, system-ui, Arial, sans-serif;
+    background: linear-gradient(120deg, #c2410c 0%, #ea580c 38%, #f97316 66%, #f59e0b 100%);
+    position: relative;
+  }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
+  .blob1 { width: 420px; height: 420px; background: #fde68a; top: -150px; right: -100px; }
+  .blob2 { width: 380px; height: 380px; background: #7c2d12; bottom: -160px; left: -120px; opacity: .35; }
+  .left {
+    position: absolute; top: 0; bottom: 0; left: 70px; width: 620px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 52px; height: 52px; border-radius: 12px; box-shadow: 0 8px 20px rgba(124,45,18,.4); }
+  .brand span { color: #fff; font-weight: 700; font-size: 26px; }
+  h1 {
+    margin-top: 26px; color: #fff; font-size: 46px; font-weight: 800; line-height: 1.12;
+    letter-spacing: -.01em; text-shadow: 0 2px 14px rgba(124,45,18,.35);
+  }
+  .sub {
+    margin-top: 16px; color: rgba(255,255,255,.95); font-size: 21px; font-weight: 500; line-height: 1.4;
+    text-shadow: 0 1px 8px rgba(124,45,18,.3);
+  }
+  .pill {
+    margin-top: 24px; align-self: flex-start;
+    background: #fff; color: #c2410c; font-weight: 800; font-size: 16px;
+    letter-spacing: .18em; padding: 9px 26px; border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(124,45,18,.35);
+  }
+  .shotcard {
+    position: absolute; right: -60px; top: 90px; width: 700px; height: 268px;
+    background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 30px 70px rgba(67,20,7,.5);
+    transform: rotate(2deg);
+  }
+  .shotcard img { display: block; width: 700px; margin-top: -112px; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="left">
+    <div class="brand"><img src="../../public/assets/influencer-butler-logo.png" alt=""><span>Influencer Butler</span></div>
+    <h1>Know what's worth filming before you film it</h1>
+    <div class="sub">Butler Approved seals, video competition, break-even math, and campaign intel on every Amazon page you browse.</div>
+    <div class="pill">FREE</div>
+  </div>
+  <div class="shotcard"><img src="../../public/assets/extension/extension_shot_1_product_page_1280x800.png" alt=""></div>
+</body>
+</html>

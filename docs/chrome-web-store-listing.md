@@ -121,6 +121,14 @@ Certify all three usage statements (they are true):
 
 ## Submitted copy (2026-08-16 listing refresh)
 
+SUBMITTED FOR REVIEW 2026-08-17 together with the 0.1.7 package (zip built
+from feat/search-money-signals commit a8aa85c: money-first search overlay +
+the sort-visibility fix). Promo tiles are no longer blank: this submission
+added `extension_promo_small_440x280.png` and
+`extension_promo_marquee_1400x560.png` (both 24-bit PNG no alpha, rendered
+from `scripts/assets/store-promo-small.html` / `store-promo-marquee.html`
+with the same headless-Edge pattern as the screenshots).
+
 Description refresh staged alongside the new screenshot set. Adds the
 features that shipped in the live 0.1.6 build after the original copy was
 written (Campaign Radar, Deal Sites Harvester, branded short links).
