@@ -1,6 +1,6 @@
 ---
 title: YouTube Butler: uploadez les vidéos de votre boutique Amazon vers YouTube avec liens d'affiliation
-summary: Cross-postez vos vidéos achetables Amazon sur YouTube avec liens d'affiliation en description ou commentaire épinglé, détection Shorts automatique incluse.
+summary: Mettez toute votre boutique Amazon sur YouTube avec une configuration guidée, des titres et descriptions par IA, des liens d'affiliation, des miniatures et une programmation quotidienne automatique.
 category: Amazon
 ---
 
@@ -8,12 +8,19 @@ category: Amazon
 
 YouTube Butler prend les vidéos de votre boutique Amazon (synchronisées par Storefront Butler) et les upload sur votre chaîne YouTube en vidéos classiques ou en Shorts. Chaque upload obtient :
 
-- Un titre et une description que vous contrôlez via un modèle.
-- Des liens Amazon avec votre tag d'affiliation dans la description ou en commentaire épinglé.
-- Une détection automatique du format YouTube Shorts (vertical, ≤60 secondes) vs paysage.
+- Un titre, une description, des hashtags et des mots-clés de recherche, rédigés par IA ou depuis un modèle que vous contrôlez.
+- Des liens Amazon avec votre tag d'affiliation dans la description ou en commentaire épinglé, avec le produit parent optionnellement lié aussi.
+- Une miniature capturée depuis la vidéo (ou générée par IA).
+- Une détection automatique du format YouTube Shorts (vertical ou carré, 3 minutes ou moins) vs paysage, avec des options pour éviter complètement les Shorts.
 - Une image de code QR optionnelle à utiliser en overlay produit.
 
-L'objectif est de transformer votre catalogue de boutique Amazon en un fil de contenu YouTube sans ré-éditer chaque clip.
+L'objectif est de transformer votre catalogue de boutique Amazon en un fil de contenu YouTube sans ré-éditer chaque clip. Avec la programmation quotidienne activée, même une boutique de 4 000 vidéos se met en ligne toute seule, un lot par jour, jusqu'à la fin du catalogue.
+
+## Configuration guidée : la façon la plus rapide de démarrer
+
+Nouveau sur YouTube Butler ? Cliquez sur **Configuration guidée** en haut de l'espace (ou répondez à la bannière qui apparaît quand rien n'est encore configuré). Elle vous guide dans l'ordre : importer vos vidéos, vous connecter à YouTube, éviter les Shorts, les titres par IA, les miniatures, les liens, les hashtags, les liens par pays et votre programmation quotidienne, puis met en file et lance votre premier lot.
+
+Choisissez **Voie rapide** pour répondre à environ quatre questions et garder la configuration recommandée, ou **Pas à pas** pour parcourir chaque option avec une explication. Vous pouvez la fermer à tout moment ; elle se souvient de votre étape et propose de reprendre. Vous pouvez aussi demander à l'Assistant IA de vous guider.
 
 ## Avant de commencer
 
@@ -47,19 +54,28 @@ Vous ne le faites qu'une fois. Au succès, l'onglet du wizard affiche une banni�
 
 YouTube Butler parcourt la file avec des délais intégrés contre le rate-limit. L'onglet **Upload Log** diffuse chaque résultat. Un lot de 10 prend généralement 15-25 minutes selon la taille des fichiers.
 
-## Règles de rate-limit YouTube
+## Plafond quotidien et mises en ligne quotidiennes automatiques
 
-Les nouvelles chaînes (moins de 30 jours, moins de ~50 abonnés) sont rate-limitées agressivement. YouTube Butler a des délais intégrés prudents pour cette raison - **ne les désactivez pas**. Quelques ordres de grandeur :
+YouTube limite le nombre de vidéos qu'une chaîne peut publier par jour, et les nouvelles chaînes sont signalées si elles publient trop vite. Deux réglages dans **Réglages → Réglages d'upload** s'en occupent :
 
-- **Première semaine** : 3-5 uploads/jour.
-- **Semaines 2-4** : 10-15/jour.
-- **Après 30 jours** : 20-30/jour est tenable ; 50/jour attire l'attention.
+- **Nombre maximum de mises en ligne par jour** : Butler compte vos uploads des dernières 24 heures et arrête chaque session au plafond. 25 par jour convient à la plupart des chaînes ; les nouvelles devraient commencer à 10. L'option **Ménager les nouvelles chaînes** abaisse automatiquement le plafond pendant les premières semaines.
+- **Mettre en ligne automatiquement chaque jour** : active une programmation quotidienne qui lance une session par jour jusqu'à ce que toutes les vidéos en file soient publiées. Mettez tout votre catalogue en file une fois, laissez l'application ouverte, et Butler avance jour après jour. La pastille d'état affiche la progression, par exemple « 212 sur 4 000 au total ».
 
-Restez à ≤15 uploads par session même sur les chaînes plus anciennes ; YouTube tolère mieux les lots qu'un goutte-à-goutte continu si vous mettez en file la nuit et laissez les délais faire le travail.
+Si YouTube annonce la limite quotidienne atteinte en cours d'exécution, Butler termine la session du jour et garde les vidéos restantes en file pour demain au lieu de les marquer en échec. Les vidéos interrompues par une fermeture inattendue sont remises en file automatiquement à l'exécution suivante.
 
-## Le détecteur Shorts automatique
+## Le détecteur Shorts automatique, et comment éviter les Shorts
 
-Les vidéos verticales (plus hautes que larges) ET ≤60 secondes sont uploadées en Shorts automatiquement. Les Shorts ont un fil différent dans l'algo YouTube, donc ça compte - vous ne taguez rien à la main.
+Les vidéos verticales ou carrées ET de 3 minutes ou moins sont uploadées en Shorts automatiquement. Les Shorts ont un fil différent dans l'algo YouTube, donc ça compte - vous ne taguez rien à la main.
+
+La plupart des vidéos de boutique sont verticales : sans correction, tout votre catalogue finirait sur l'étagère Shorts. Le réglage **Éviter les Shorts** (Réglages → Traitement vidéo) offre trois choix :
+
+- **Convertir les vidéos verticales en paysage** (recommandé) : les complète en 1920x1080 pour les publier comme vidéos classiques.
+- **Prolonger les vidéos au-delà de 3 minutes** : garde le format vertical et ajoute une fin jusqu'à dépasser la limite des Shorts.
+- **Désactivé** : publie tel quel ; les clips verticaux deviennent des Shorts avec le hashtag #Shorts.
+
+## Titres, descriptions, hashtags et mots-clés par IA
+
+Activez **Titres et descriptions par IA** (Réglages) et l'IA rédige pour chaque vidéo un titre optimisé pour la recherche, une description avec accroche, un appel à l'action, vos liens d'affiliation et des hashtags, plus 10-15 mots-clés de recherche. Cela utilise votre clé OpenAI depuis Intégrations API et coûte environ un dixième de centime par vidéo (environ 4 dollars pour 4 000 vidéos). Chaque vidéo n'est rédigée qu'une seule fois, donc les ré-exécutions sont gratuites, et un plafond de dépenses mensuel borne la facture. En cas d'échec, vos modèles prennent le relais : les mises en ligne ne s'arrêtent jamais.
 
 ## Publier uniquement des Shorts, ou uniquement des vidéos classiques
 
@@ -110,3 +126,8 @@ Si vos spectateurs viennent de plusieurs pays, le réglage **Liens par pays** (�
 - **Lien unique avec redirection** : un lien qui redirige chaque spectateur vers la boutique de son pays automatiquement (utilise votre fournisseur DeepLink).
 
 Saisissez d'abord vos balises d'affiliation par pays dans [Intégrations API](/help/tutorials/api-integrations). Un pays sans balise est ignoré, vous ne publiez donc jamais un lien qui ne rapporte rien.
+
+Deux extras pour les audiences internationales :
+
+- **Ajouter une ligne d'achat en langue locale à chaque lien de pays** : les liens par pays reçoivent un appel à l'action local, comme « France (Achetez ici) ».
+- **Traduire mon titre et ma description dans la langue de la voix off IA** : quand vous doublez l'audio avec la voix off IA, le titre, la description et les mots-clés sont publiés dans la même langue, pour une mise en ligne cohérente à l'international. Les titres rédigés par IA suivent automatiquement la langue de la voix off.

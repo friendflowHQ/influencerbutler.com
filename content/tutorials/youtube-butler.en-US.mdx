@@ -1,6 +1,6 @@
 ---
 title: YouTube Butler: upload Amazon storefront videos to YouTube with affiliate links
-summary: Cross-post your shoppable Amazon videos to YouTube with affiliate links in the description or pinned comment, including automatic Shorts detection.
+summary: Load your whole Amazon storefront to YouTube with a guided setup, AI titles and descriptions, affiliate links, thumbnails, and an automatic daily upload schedule.
 category: Amazon
 ---
 
@@ -8,12 +8,19 @@ category: Amazon
 
 YouTube Butler takes the videos from your Amazon storefront (synced by Storefront Butler) and uploads them to your YouTube channel as either regular videos or Shorts. Each upload gets:
 
-- A title and description you control via a template.
-- Affiliate-tagged Amazon links in the description or pinned comment.
-- Automatic detection of YouTube Shorts format (vertical, ≤60 seconds) vs regular landscape.
+- A title, description, hashtags, and search tags, written by AI or from a template you control.
+- Affiliate-tagged Amazon links in the description or pinned comment, with the parent product optionally linked too.
+- A thumbnail captured from the video (or an AI-generated one).
+- Automatic detection of YouTube Shorts format (vertical or square, 3 minutes or less) vs regular landscape, with options to avoid Shorts entirely.
 - A QR code image option for product-overlay use.
 
-The point is to turn your Amazon storefront catalog into a YouTube content feed without re-editing each clip.
+The point is to turn your Amazon storefront catalog into a YouTube content feed without re-editing each clip. With the daily schedule on, even a 4,000-video storefront uploads itself, a batch a day, until the whole catalog is live.
+
+## Guided Setup: the fastest way to start
+
+New to YouTube Butler? Click **Guided Setup** at the top of the workspace (or answer the banner that appears when nothing is set up yet). It walks you through everything in order: bringing in your videos, signing in to YouTube, avoiding Shorts, AI titles, thumbnails, links, hashtags, country links, and your daily upload schedule, then queues and starts your first batch.
+
+Pick **Fast Track** to answer about four questions and get the recommended setup, or **Step by step** to walk every option with an explanation. You can close it any time; it remembers where you were and offers to resume. You can also ask the AI Assistant to walk you through it.
 
 ## Before you start
 
@@ -47,19 +54,28 @@ You only do this once. After it succeeds, the wizard tab shows a green "Setup co
 
 YouTube Butler runs through the queue with built-in rate-limit delays. The **Upload Log** tab streams each result. A batch of 10 typically takes 15-25 minutes depending on file size.
 
-## YouTube rate-limit rules
+## Daily cap and automatic daily uploads
 
-New YouTube channels (under 30 days, under ~50 subscribers) are rate-limited aggressively. YouTube Butler has conservative built-in delays for this reason - **don't disable them**. Some rules of thumb:
+YouTube limits how many videos a channel can upload per day, and new channels get flagged for uploading too fast. Two settings in **Settings → Upload settings** handle this for you:
 
-- **First week**: 3-5 uploads/day.
-- **Weeks 2-4**: 10-15/day.
-- **After 30 days**: 20-30/day is sustainable; 50/day starts to attract attention.
+- **Max uploads per day**: Butler counts your uploads over the last 24 hours and stops each session at the cap. 25 a day suits most channels; new channels should start at 10. The **Ease in new channels** option automatically lowers the cap during a channel's first weeks.
+- **Upload automatically every day**: turns on a daily schedule that runs a session once a day until every queued video is uploaded. Queue your whole catalog once, leave the app running, and Butler works through it day after day. The status pill shows campaign progress, like "212 of 4,000 total".
 
-Stick to ≤15 uploads per session even on older channels; YouTube tolerates batches better than a steady drip if you queue overnight and let the delays do the work.
+If YouTube itself says the daily limit is reached mid-run, Butler ends the day's session and keeps the remaining videos queued for tomorrow instead of failing them. Videos interrupted by a crash or force-quit are requeued automatically on the next run.
 
-## The Shorts auto-detector
+## The Shorts auto-detector, and how to avoid Shorts
 
-Videos that are vertical (taller than wide) AND ≤60 seconds get uploaded as Shorts automatically. Shorts get a different feed in YouTube's algorithm, so this matters - you don't manually flag anything.
+Videos that are vertical or square AND 3 minutes or less get uploaded as Shorts automatically. Shorts get a different feed in YouTube's algorithm, so this matters - you don't manually flag anything.
+
+Most storefront videos are vertical, so without a fix your whole catalog would land on the Shorts shelf. The **Avoid Shorts** setting (Settings → Video Processing) gives you three choices:
+
+- **Convert vertical videos to landscape** (recommended): pads them to 1920x1080 so they upload as regular videos.
+- **Extend videos past 3 minutes**: keeps the vertical look and adds an outro until the video clears the Shorts limit.
+- **Off**: uploads as-is; vertical clips become Shorts with a #Shorts hashtag.
+
+## AI titles, descriptions, hashtags, and tags
+
+Turn on **AI titles and descriptions** (Settings) and AI writes a search-friendly title, a description with a hook, a call to action, your affiliate links, and hashtags, plus 10-15 search tags, for every video. It uses your OpenAI key from API Integrations and costs about a tenth of a cent per video (roughly $4 for 4,000 videos). Each video is only ever written once, so re-runs are free, and a monthly spend cap keeps the bill bounded. If anything fails, your templates are used instead, so uploads never stop.
 
 ## Post only Shorts, or only regular videos
 
@@ -110,3 +126,8 @@ If your viewers come from more than one country, the **Marketplace links** setti
 - **Single redirect link**: one link that forwards each viewer to their country's store automatically (uses your DeepLink provider).
 
 Enter your per-country associate tags first in [API Integrations](/help/tutorials/api-integrations). A country with no tag is left out, so you never post a link that earns nothing.
+
+Two extras for international audiences:
+
+- **Add a native-language shop line for each country link**: country links get a local call to action, like "France (Achetez ici)".
+- **Translate my title and description to the AI voiceover language**: when you dub the audio with AI voiceover, the title, description, and tags post in the same language, so international stores and viewers see a consistent upload. AI-written titles follow the voiceover language automatically.

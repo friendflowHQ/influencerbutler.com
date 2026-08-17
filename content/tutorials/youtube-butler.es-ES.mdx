@@ -1,6 +1,6 @@
 ---
 title: YouTube Butler: sube vídeos de tu tienda de Amazon a YouTube con enlaces de afiliado
-summary: Cross-postea tus vídeos comprables de Amazon en YouTube con enlaces de afiliado en la descripción o en un comentario fijado, incluyendo detección automática de Shorts.
+summary: Sube toda tu tienda de Amazon a YouTube con una configuración guiada, títulos y descripciones con IA, enlaces de afiliado, miniaturas y una programación diaria automática.
 category: Amazon
 ---
 
@@ -8,12 +8,19 @@ category: Amazon
 
 YouTube Butler toma los vídeos de tu tienda de Amazon (sincronizados por Storefront Butler) y los sube a tu canal de YouTube como vídeos normales o Shorts. Cada subida lleva:
 
-- Un título y una descripción que controlas vía plantilla.
-- Enlaces de Amazon con tag de afiliado en la descripción o en un comentario fijado.
-- Detección automática de formato YouTube Shorts (vertical, ≤60 segundos) vs panorámico.
+- Un título, descripción, hashtags y etiquetas de búsqueda, escritos por IA o desde una plantilla que controlas.
+- Enlaces de Amazon con tag de afiliado en la descripción o en un comentario fijado, con el producto padre opcionalmente enlazado también.
+- Una miniatura capturada del vídeo (o una generada con IA).
+- Detección automática de formato YouTube Shorts (vertical o cuadrado, 3 minutos o menos) vs panorámico, con opciones para evitar los Shorts por completo.
 - Una imagen de código QR opcional para usar como overlay de producto.
 
-El objetivo es convertir tu catálogo de tienda de Amazon en un feed de contenido en YouTube sin re-editar cada clip.
+El objetivo es convertir tu catálogo de tienda de Amazon en un feed de contenido en YouTube sin re-editar cada clip. Con la programación diaria activada, incluso una tienda de 4.000 vídeos se sube sola, una tanda al día, hasta completar el catálogo.
+
+## Configuración guiada: la forma más rápida de empezar
+
+¿Nuevo en YouTube Butler? Pulsa **Configuración guiada** arriba en el espacio (o responde al banner que aparece cuando aún no hay nada configurado). Te lleva por todo en orden: traer tus vídeos, iniciar sesión en YouTube, evitar Shorts, títulos con IA, miniaturas, enlaces, hashtags, enlaces por país y tu programación diaria, y luego pone en cola y lanza tu primera tanda.
+
+Elige **Vía rápida** para responder unas cuatro preguntas y quedarte con la configuración recomendada, o **Paso a paso** para recorrer cada opción con su explicación. Puedes cerrarla en cualquier momento; recuerda dónde estabas y ofrece continuar. También puedes pedirle al Asistente de IA que te guíe.
 
 ## Antes de empezar
 
@@ -47,19 +54,28 @@ Sólo lo haces una vez. Tras el éxito, la pestaña del wizard muestra un banner
 
 YouTube Butler recorre la cola con retardos integrados contra el rate-limit. La pestaña **Upload Log** transmite cada resultado. Un lote de 10 suele tardar 15-25 minutos según el tamaño.
 
-## Reglas de rate-limit de YouTube
+## Límite diario y subidas diarias automáticas
 
-Los canales nuevos (menos de 30 días, menos de ~50 suscriptores) tienen rate-limit agresivo. YouTube Butler tiene retardos integrados conservadores por esto - **no los desactives**. Reglas de orientación:
+YouTube limita cuántos vídeos puede subir un canal al día, y a los canales nuevos los marcan por subir demasiado rápido. Dos ajustes en **Ajustes → Ajustes de subida** se encargan de esto:
 
-- **Primera semana**: 3-5 subidas/día.
-- **Semanas 2-4**: 10-15/día.
-- **Tras 30 días**: 20-30/día es sostenible; 50/día empieza a llamar la atención.
+- **Máximo de subidas por día**: Butler cuenta tus subidas de las últimas 24 horas y detiene cada sesión al llegar al límite. 25 al día va bien para la mayoría; los canales nuevos deberían empezar con 10. La opción **Suavizar canales nuevos** baja el límite automáticamente durante las primeras semanas del canal.
+- **Subir automáticamente cada día**: activa una programación diaria que ejecuta una sesión al día hasta subir todos los vídeos en cola. Pon todo tu catálogo en cola una vez, deja la app abierta y Butler lo recorre día tras día. El indicador de estado muestra el progreso, por ejemplo "212 de 4.000 en total".
 
-Mantén ≤15 subidas por sesión incluso en canales más antiguos; YouTube tolera mejor lotes que un goteo continuo si los pones en cola por la noche y dejas que los retardos hagan el trabajo.
+Si YouTube dice que se alcanzó el límite diario a mitad de ejecución, Butler termina la sesión del día y mantiene los vídeos restantes en cola para mañana en lugar de marcarlos como fallidos. Los vídeos interrumpidos por un cierre inesperado se vuelven a poner en cola automáticamente en la siguiente ejecución.
 
-## El detector automático de Shorts
+## El detector automático de Shorts, y cómo evitarlos
 
-Los vídeos verticales (más altos que anchos) Y ≤60 segundos se suben como Shorts automáticamente. Los Shorts tienen un feed distinto en el algoritmo de YouTube, así que esto importa - no marcas nada a mano.
+Los vídeos verticales o cuadrados Y de 3 minutos o menos se suben como Shorts automáticamente. Los Shorts tienen un feed distinto en el algoritmo de YouTube, así que esto importa - no marcas nada a mano.
+
+La mayoría de los vídeos de tienda son verticales, así que sin un ajuste todo tu catálogo acabaría en el estante de Shorts. El ajuste **Evitar Shorts** (Ajustes → Procesado de vídeo) te da tres opciones:
+
+- **Convertir vídeos verticales a horizontal** (recomendado): los rellena a 1920x1080 para que se suban como vídeos normales.
+- **Alargar los vídeos a más de 3 minutos**: mantiene el formato vertical y añade un cierre hasta superar el límite de Shorts.
+- **Desactivado**: sube tal cual; los clips verticales se vuelven Shorts con el hashtag #Shorts.
+
+## Títulos, descripciones, hashtags y etiquetas con IA
+
+Activa **Títulos y descripciones con IA** (Ajustes) y la IA escribe un título optimizado para búsquedas, una descripción con gancho, una llamada a la acción, tus enlaces de afiliado y hashtags, más 10-15 etiquetas de búsqueda, para cada vídeo. Usa tu clave de OpenAI de Integraciones de API y cuesta alrededor de una décima de céntimo por vídeo (unos 4 dólares por 4.000 vídeos). Cada vídeo solo se escribe una vez, así que las repeticiones son gratis, y un límite de gasto mensual mantiene la factura acotada. Si algo falla, se usan tus plantillas, así que las subidas nunca se detienen.
 
 ## Publicar solo Shorts, o solo vídeos normales
 
@@ -110,3 +126,8 @@ Si tus espectadores son de varios países, el ajuste **Enlaces por país** (junt
 - **Enlace único con redirección**: un enlace que reenvía a cada espectador a la tienda de su país automáticamente (usa tu proveedor de DeepLink).
 
 Introduce primero tus etiquetas de afiliado por país en [Integraciones de API](/help/tutorials/api-integrations). Un país sin etiqueta se omite, así nunca publicas un enlace que no genera nada.
+
+Dos extras para audiencias internacionales:
+
+- **Añadir una línea de compra en el idioma nativo a cada enlace de país**: los enlaces por país llevan una llamada a la acción local, como "France (Achetez ici)".
+- **Traducir mi título y descripción al idioma de la voz en off con IA**: cuando doblas el audio con voz en off de IA, el título, la descripción y las etiquetas se publican en el mismo idioma, así las tiendas y espectadores internacionales ven una subida coherente. Los títulos escritos por IA siguen el idioma de la voz en off automáticamente.
