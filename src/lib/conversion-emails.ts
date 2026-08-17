@@ -1,5 +1,8 @@
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ConversionTier = "1h" | "3d" | "5d";
 
@@ -10,7 +13,7 @@ type TierCopy = {
   finalSell: string;
 };
 
-const COPY: Record<ConversionTier, TierCopy> = {
+export const CONVERSION_COPY: Record<ConversionTier, TierCopy> = {
   "1h": {
     subject: "A little welcome gift: 20% off your first month",
     leadLine:
@@ -37,25 +40,23 @@ const COPY: Record<ConversionTier, TierCopy> = {
   },
 };
 
-export async function sendConversionEmail(params: {
-  tier: ConversionTier;
-  to: string;
-  name: string;
-  code: string;
-  checkoutUrl?: string;
-}): Promise<boolean> {
-  const copy = COPY[params.tier];
-  const firstName = params.name.split(" ")[0] || "there";
-  const checkoutUrl =
-    params.checkoutUrl ??
-    `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(params.code)}`;
+export function conversionSubject(tier: ConversionTier): string {
+  return CONVERSION_COPY[tier].subject;
+}
 
-  const body = [
+export function buildConversionBody(
+  tier: ConversionTier,
+  firstName: string,
+  code: string,
+  checkoutUrl: string,
+): string {
+  const copy = CONVERSION_COPY[tier];
+  return [
     `Hi ${firstName},`,
     ``,
     copy.leadLine,
     ``,
-    copy.offerLine.replace("{CODE}", params.code),
+    copy.offerLine.replace("{CODE}", code),
     ``,
     `Grab it here: ${checkoutUrl}`,
     ``,
@@ -65,13 +66,45 @@ export async function sendConversionEmail(params: {
     ``,
     `- The Influencer Butler team`,
   ].join("\n");
+}
 
-  return sendMarketingEmail({
+export async function sendConversionEmail(params: {
+  tier: ConversionTier;
+  to: string;
+  name: string;
+  code: string;
+  checkoutUrl?: string;
+}): Promise<boolean> {
+  const firstName = params.name.split(" ")[0] || "there";
+  const checkoutUrl =
+    params.checkoutUrl ??
+    `https://www.influencerbutler.com/pricing?code=${encodeURIComponent(params.code)}`;
+
+  const subject = conversionSubject(params.tier);
+  const body = buildConversionBody(params.tier, firstName, params.code, checkoutUrl);
+
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "conversion",
+    tier: params.tier,
+    vars: { firstName, code: params.code, checkoutUrl } as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
     from: "Influencer Butler <affiliates@influencerbutler.com>",
     to: params.to,
-    subject: copy.subject,
-    text: body,
+    subject: resolved.subject,
+    text: resolved.body,
     category: `conversion_${params.tier}`,
     funnel: "conversion",
   });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [params.to], resolved.applyTag, "funnel:conversion");
+    } catch (err) {
+      console.error("conversion-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }

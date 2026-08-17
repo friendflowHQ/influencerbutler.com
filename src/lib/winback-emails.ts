@@ -17,6 +17,9 @@
 import crypto from "node:crypto";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const FROM_ADDRESS = "Influencer Butler <support@influencerbutler.com>";
 
@@ -98,7 +101,7 @@ const HELP_URL = "https://www.influencerbutler.com/help";
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 const SIGNOFF = "- The Influencer Butler team";
 
-type WinbackVars = {
+export type WinbackVars = {
   firstName: string;
   isTechnical: boolean;
   // Comp segment:
@@ -109,12 +112,12 @@ type WinbackVars = {
   checkoutUrl: string;
 };
 
-type TierCopy = {
+export type TierCopy = {
   subject: string | ((vars: WinbackVars) => string);
   build: (vars: WinbackVars) => string;
 };
 
-const COPY: Record<WinbackSegment, Record<WinbackTier, TierCopy>> = {
+export const WINBACK_COPY: Record<WinbackSegment, Record<WinbackTier, TierCopy>> = {
   comp: {
     t1: {
       subject: "We made Influencer Butler a lot easier to get going",
@@ -259,7 +262,7 @@ export type WinbackEmailPayload = {
 };
 
 export async function sendWinbackEmail(payload: WinbackEmailPayload): Promise<boolean> {
-  const copy = COPY[payload.segment][payload.tier];
+  const copy = WINBACK_COPY[payload.segment][payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
   const discountCode = payload.discountCode ?? "";
 
@@ -275,12 +278,29 @@ export async function sendWinbackEmail(payload: WinbackEmailPayload): Promise<bo
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({
+  const tierKey = `${payload.segment}_${payload.tier}`;
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "winback",
+    tier: tierKey,
+    vars: vars as unknown as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
     from: FROM_ADDRESS,
     to: payload.to,
-    subject,
-    text: body,
+    subject: resolved.subject,
+    text: resolved.body,
     category: `winback_${payload.tier}`,
     funnel: "winback",
   });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [payload.to], resolved.applyTag, "funnel:winback");
+    } catch (err) {
+      console.error("winback-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }

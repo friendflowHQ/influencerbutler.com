@@ -114,7 +114,7 @@ export const PRICING_TIERS: PricingTier[] = [
   },
   {
     id: "duo-monthly",
-    name: "Pro Duo Monthly",
+    name: "Pro Trio Monthly",
     priceUsd: 69,
     cadence: "monthly",
     seats: 3,
@@ -123,7 +123,7 @@ export const PRICING_TIERS: PricingTier[] = [
   },
   {
     id: "duo-annual",
-    name: "Pro Duo Annual",
+    name: "Pro Trio Annual",
     priceUsd: 690,
     cadence: "annual",
     seats: 3,
@@ -136,7 +136,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 129,
     cadence: "monthly",
     seats: 10,
-    highlights: ["Everything in Pro Duo", "Up to 10 activated devices", "Priority email support"],
+    highlights: ["Everything in Pro Trio", "Up to 10 activated devices", "Priority email support"],
     signupUrl: `${BASE}/pricing`,
   },
   {
@@ -145,7 +145,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 1290,
     cadence: "annual",
     seats: 10,
-    highlights: ["Everything in Pro Duo", "Up to 10 devices", "Save 17% vs monthly"],
+    highlights: ["Everything in Pro Trio", "Up to 10 devices", "Save 17% vs monthly"],
     signupUrl: `${BASE}/pricing`,
   },
   {

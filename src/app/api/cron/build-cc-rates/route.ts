@@ -82,6 +82,10 @@ export async function GET(request: Request) {
     let flushed = skipRows;
     const built = await buildCcRates({
       skipRows,
+      // 5k rows keeps each upsert statement well under the Postgres statement
+      // timeout even with 5M rows of PK index behind it (10k chunks were
+      // observed timing out during the 2026-08-17 initial build).
+      chunkSize: 5000,
       onChunk: async (rows) => {
         const { error } = await admin.from("extension_cc_rates").upsert(
           rows.map((r) => ({

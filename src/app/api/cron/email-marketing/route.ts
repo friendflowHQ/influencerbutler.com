@@ -25,6 +25,8 @@ import {
   campaignCategory,
   stepCategory,
   enrollEmails,
+  tagRecipientsAsContacts,
+  shortId,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { logSuppressedSkip } from "@/lib/email-send";
@@ -116,9 +118,11 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
     if (isMissingTable(flipErr)) return;
   }
 
+  // select * so the optional apply_tag / save_contacts columns come through
+  // when present and are simply absent (no error) before that migration lands.
   const { data, error } = await db
     .from("email_campaigns")
-    .select("id, audience")
+    .select("*")
     .eq("status", "sending")
     .is("materialized_at", null)
     .order("created_at", { ascending: true })
@@ -128,7 +132,12 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
     return;
   }
 
-  for (const row of (data ?? []) as { id: string; audience: unknown }[]) {
+  for (const row of (data ?? []) as {
+    id: string;
+    audience: unknown;
+    apply_tag?: string | null;
+    save_contacts?: boolean | null;
+  }[]) {
     const audience = parseAudience(row.audience);
     if (!audience) {
       // Unusable audience payload: park the campaign as cancelled instead of
@@ -154,6 +163,18 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
         .from("email_campaign_recipients")
         .upsert(rows, { onConflict: "campaign_id,email", ignoreDuplicates: true });
       if (upsertErr) reportError("recipient upsert", upsertErr);
+    }
+
+    // Tag-on-send: optionally add these recipients to Contacts and tag them.
+    // Runs once per campaign (materialization is once-per-campaign) and is
+    // best-effort, so a failure here never blocks the send.
+    if (row.apply_tag || row.save_contacts) {
+      await tagRecipientsAsContacts(
+        db,
+        emails,
+        row.apply_tag ?? null,
+        `campaign:${shortId(row.id)}`,
+      );
     }
 
     const stamp: Record<string, unknown> = { materialized_at: new Date().toISOString() };

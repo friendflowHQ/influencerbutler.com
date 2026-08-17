@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 // Comp plans: Pro monthly tiers plus the Daily Deals Workspace add-on. The free
 // window is expressed in months OR days. (Seat count comes from the tier: Solo 1,
-// Duo 3, Team 10, Agency 25; the add-on is 1.)
+// Trio 3, Team 10, Agency 25; the add-on is 1.)
 const ALLOWED_PLANS = new Set([
   "monthly",
   "duo-monthly",

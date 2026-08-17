@@ -5,6 +5,9 @@
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { annualSavingsPct } from "@/lib/pricing-constants";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // 14-day trial nurture drip. Early touches (day0/1/3/7) are anchored to trial
 // start; the last two (day13/day14) are the "24 hours left" and "ends tonight"
@@ -12,14 +15,14 @@ import { sendMarketingEmail } from "@/lib/marketing-email";
 // TRIAL_TIERS in /api/cron/affiliate-funnel/route.ts for the send schedule.
 export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day13" | "day14";
 
-type TierCopy = {
+export type TierCopy = {
   // Subject can depend on the vars (day3 drops the codes mention when the
   // user has no codes).
   subject: string | ((vars: TrialVars) => string);
   build: (vars: TrialVars) => string;
 };
 
-type TrialVars = {
+export type TrialVars = {
   firstName: string;
   monthlyCode: string | null;
   annualCode: string | null;
@@ -41,7 +44,7 @@ function annualCheckoutUrl(base: string, code: string | null): string {
   return `${base}?code=${encodeURIComponent(code)}&plan=annual`;
 }
 
-const COPY: Record<TrialTier, TierCopy> = {
+export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
   day0: {
     subject: "Welcome to Influencer Butler: your Pro trial is live",
     build: (v) => {
@@ -235,7 +238,7 @@ export type TrialEmailPayload = {
 };
 
 export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolean> {
-  const copy = COPY[payload.tier];
+  const copy = TRIAL_COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
   const vars: TrialVars = {
@@ -249,12 +252,28 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "trial",
+    tier: payload.tier,
+    vars: vars as unknown as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
     from: FROM_ADDRESS,
     to: payload.to,
-    subject,
-    text: body,
+    subject: resolved.subject,
+    text: resolved.body,
     category: `trial_${payload.tier}`,
     funnel: "trial",
   });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [payload.to], resolved.applyTag, "funnel:trial");
+    } catch (err) {
+      console.error("trial-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }

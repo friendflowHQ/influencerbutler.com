@@ -9,9 +9,25 @@ import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
+import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * Applies admin day_offset overrides to a funnel's tier thresholds and re-sorts
+ * most-aged-first, so an edited step reschedules while unedited steps keep their
+ * exact code timing. Returns a fresh array (the module TIERS consts are const).
+ */
+function withOverrides<T extends { tier: string; thresholdMs: number }>(
+  base: ReadonlyArray<T>,
+  funnel: string,
+  overrides: Map<string, FunnelOverride>,
+): T[] {
+  return base
+    .map((t) => ({ ...t, thresholdMs: tierThresholdMs(overrides, funnel, t.tier, t.thresholdMs) }) as T)
+    .sort((a, b) => b.thresholdMs - a.thresholdMs);
+}
 
 // --- Constants ------------------------------------------------------------
 
@@ -150,13 +166,16 @@ async function hasPurchased(supabase: CronClient, userId: string): Promise<boole
   return false;
 }
 
-function selectTier(row: ApprovedAppRow): (typeof TIERS)[number] | null {
+function selectTier(
+  row: ApprovedAppRow,
+  tiers: ReadonlyArray<(typeof TIERS)[number]>,
+): (typeof TIERS)[number] | null {
   if (!row.reviewed_at) return null;
   const approvedAt = new Date(row.reviewed_at).getTime();
   if (!Number.isFinite(approvedAt)) return null;
   const age = Date.now() - approvedAt;
 
-  for (const t of TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof ApprovedAppRow];
     if (sent) continue;
@@ -169,8 +188,12 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
   const counts: Record<ConversionTier, number> = { "1h": 0, "3d": 0, "5d": 0 };
 
   // Pull approved applications that have at least one pending tier (reviewed
-  // more than 1h ago, which is the smallest threshold).
-  const oldestPossible = new Date(Date.now() - TIERS[TIERS.length - 1].thresholdMs).toISOString();
+  // longer ago than the smallest effective threshold).
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(TIERS, "conversion", overrides);
+  const oldestPossible = new Date(
+    Date.now() - Math.min(...tiers.map((t) => t.thresholdMs)),
+  ).toISOString();
 
   const { data, error } = await supabase
     .from("affiliate_applications")
@@ -190,7 +213,7 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
   const rows = (data ?? []) as ApprovedAppRow[];
 
   for (const row of rows) {
-    const tier = selectTier(row);
+    const tier = selectTier(row, tiers);
     if (!tier) continue;
 
     // Skip if the affiliate has already purchased.
@@ -303,13 +326,16 @@ type TrialSubRow = {
   trial_email_day14_sent_at: string | null;
 };
 
-function selectTrialTier(row: TrialSubRow): (typeof TRIAL_TIERS)[number] | null {
+function selectTrialTier(
+  row: TrialSubRow,
+  tiers: ReadonlyArray<(typeof TRIAL_TIERS)[number]>,
+): (typeof TRIAL_TIERS)[number] | null {
   if (!row.trial_started_at) return null;
   const startedAt = new Date(row.trial_started_at).getTime();
   if (!Number.isFinite(startedAt)) return null;
   const age = Date.now() - startedAt;
 
-  for (const t of TRIAL_TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof TrialSubRow];
     if (sent) continue;
@@ -354,8 +380,10 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   const { monthlyPercent, annualPercent } = trialDiscountPercents();
   const annualVariant = process.env.LEMONSQUEEZY_VARIANT_ANNUAL ?? null;
 
-  // Pull trial rows that are at least day0-old (5 min) and still active or on trial.
-  const oldest = new Date(Date.now() - TRIAL_TIERS[TRIAL_TIERS.length - 1].thresholdMs).toISOString();
+  // Pull trial rows older than the smallest effective threshold, still active or on trial.
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(TRIAL_TIERS, "trial", overrides);
+  const oldest = new Date(Date.now() - Math.min(...tiers.map((t) => t.thresholdMs))).toISOString();
 
   const { data, error } = await supabase
     .from("subscriptions")
@@ -375,7 +403,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   for (const row of rows) {
     if (row.status !== "on_trial" && row.status !== "active") continue;
 
-    const tier = selectTrialTier(row);
+    const tier = selectTrialTier(row, tiers);
     if (!tier) continue;
 
     // A trial that already converted to paid (early in-app upgrade, or the
@@ -519,13 +547,16 @@ type ProSubRow = {
   pro_email_day10_sent_at: string | null;
 };
 
-function selectProTier(row: ProSubRow): (typeof PRO_TIERS)[number] | null {
+function selectProTier(
+  row: ProSubRow,
+  tiers: ReadonlyArray<(typeof PRO_TIERS)[number]>,
+): (typeof PRO_TIERS)[number] | null {
   if (!row.pro_started_at) return null;
   const startedAt = new Date(row.pro_started_at).getTime();
   if (!Number.isFinite(startedAt)) return null;
   const age = Date.now() - startedAt;
 
-  for (const t of PRO_TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof ProSubRow];
     if (sent) continue;
@@ -542,7 +573,9 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
   const subscriptionUrl = `${siteUrl.replace(/\/$/, "")}/dashboard/subscription`;
 
   // Pull direct-subscriber rows that are at least day0-old (5 min).
-  const oldest = new Date(Date.now() - PRO_TIERS[PRO_TIERS.length - 1].thresholdMs).toISOString();
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(PRO_TIERS, "pro", overrides);
+  const oldest = new Date(Date.now() - Math.min(...tiers.map((t) => t.thresholdMs))).toISOString();
 
   const { data, error } = await supabase
     .from("subscriptions")
@@ -565,7 +598,7 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
     // "thanks for subscribing" follow-ups.
     if (row.status !== "active") continue;
 
-    const tier = selectProTier(row);
+    const tier = selectProTier(row, tiers);
     if (!tier) continue;
 
     const contact = await fetchUserContact(supabase, row.user_id);
@@ -626,13 +659,16 @@ type OnboardingRow = {
   onboarding_email_day10_sent_at: string | null;
 };
 
-function selectOnboardingTier(row: OnboardingRow): (typeof ONBOARDING_TIERS)[number] | null {
+function selectOnboardingTier(
+  row: OnboardingRow,
+  tiers: ReadonlyArray<(typeof ONBOARDING_TIERS)[number]>,
+): (typeof ONBOARDING_TIERS)[number] | null {
   if (!row.created_at) return null;
   const createdAt = new Date(row.created_at).getTime();
   if (!Number.isFinite(createdAt)) return null;
   const age = Date.now() - createdAt;
 
-  for (const t of ONBOARDING_TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof OnboardingRow];
     if (sent) continue;
@@ -689,6 +725,9 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
     ? `${base}/pricing?code=${encodeURIComponent(discountCode)}`
     : `${base}/pricing`;
 
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(ONBOARDING_TIERS, "onboarding", overrides);
+
   // Wrapped so that if the onboarding columns do not exist yet (prod schema lag
   // before 20260813_free_onboarding_funnel.sql is applied), this step no-ops
   // instead of breaking the rest of the cron.
@@ -716,7 +755,7 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
 
     for (const row of rows) {
       if (!row.email) continue;
-      const tier = selectOnboardingTier(row);
+      const tier = selectOnboardingTier(row, tiers);
       if (!tier) continue;
 
       // Stop nurturing anyone who already became a trial/paid customer.

@@ -6,7 +6,33 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import FunnelStepEditor, { type FunnelStep } from "./FunnelStepEditor";
+
 type Trigger = null | { kind: "tag_added"; tag: string } | { kind: "source"; source: string };
+
+type SystemFunnel = {
+  funnel: string;
+  name: string;
+  description: string;
+  vars: string[];
+  entered: number | null;
+  converted: number | null;
+  convertedLabel: string | null;
+  steps: FunnelStep[];
+};
+
+type SystemSequencesResponse = {
+  funnels: SystemFunnel[];
+  unsubscribes: number;
+  migrationPending: boolean;
+};
+
+type EditingFunnelStep = {
+  funnel: string;
+  funnelName: string;
+  vars: string[];
+  step: FunnelStep;
+};
 
 type SequenceStep = {
   id: string;
@@ -80,6 +106,11 @@ export default function SequencesSection({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
 
+  // Built-in funnels (system sequences)
+  const [systemData, setSystemData] = useState<SystemSequencesResponse | null>(null);
+  const [systemError, setSystemError] = useState<string | null>(null);
+  const [editingFunnelStep, setEditingFunnelStep] = useState<EditingFunnelStep | null>(null);
+
   // Editor state
   const [editing, setEditing] = useState<null | "new" | Sequence>(null);
   const [name, setName] = useState("");
@@ -116,9 +147,24 @@ export default function SequencesSection({
     }
   }, []);
 
+  const refetchSystem = useCallback(async () => {
+    setSystemError(null);
+    try {
+      const res = await fetch("/api/admin/emails/system-sequences", { cache: "no-store" });
+      if (!res.ok) {
+        setSystemError(`Could not load built-in funnels (HTTP ${res.status}).`);
+        return;
+      }
+      setSystemData((await res.json()) as SystemSequencesResponse);
+    } catch {
+      setSystemError("Could not load built-in funnels. Check your connection and try again.");
+    }
+  }, []);
+
   useEffect(() => {
     void refetch();
-  }, [refetch]);
+    void refetchSystem();
+  }, [refetch, refetchSystem]);
 
   async function readError(res: Response, fallback: string): Promise<string> {
     try {
@@ -282,6 +328,21 @@ export default function SequencesSection({
     if (!cat) return "-";
     const base = Math.max(cat.delivered, cat.sent);
     return `${cat.sent.toLocaleString("en-US")} sent / ${pct(cat.opened, base)} open / ${pct(cat.clicked, base)} click`;
+  }
+
+  // Same open%/click% shape as stepStats, joined by the funnel step's category.
+  function funnelStepStats(
+    category: string,
+  ): { text: string; stats?: { sent: number; openPct: string; clickPct: string } } {
+    const cat = summary?.categories.find((c) => c.key === category);
+    if (!cat) return { text: "-" };
+    const base = Math.max(cat.delivered, cat.sent);
+    const openPct = pct(cat.opened, base);
+    const clickPct = pct(cat.clicked, base);
+    return {
+      text: `${cat.sent.toLocaleString("en-US")} sent / ${openPct} open / ${clickPct} click`,
+      stats: { sent: cat.sent, openPct, clickPct },
+    };
   }
 
   // ----- Editor view -----
@@ -477,6 +538,93 @@ export default function SequencesSection({
         </div>
       ) : null}
 
+      {/* ----- Built-in funnels ----- */}
+      <div className="mb-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Built-in funnels
+          </h2>
+          {systemData ? (
+            <span className="text-xs text-slate-500">
+              {systemData.unsubscribes.toLocaleString("en-US")} total unsubscribes across all email
+              (global, not per-funnel).
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Your automated funnels. Click a step to view or edit its copy.
+        </p>
+
+        {systemError ? <p className="mt-3 text-sm text-rose-600">{systemError}</p> : null}
+
+        {systemData?.migrationPending ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Apply 20260819_funnel_overrides.sql to edit built-in funnel copy. Funnels still display
+            with code defaults below.
+          </div>
+        ) : null}
+
+        <div className="mt-3 space-y-4">
+          {(systemData?.funnels ?? []).map((funnel) => (
+            <div key={funnel.funnel} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-slate-800">{funnel.name}</h3>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                  System
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500">{funnel.description}</p>
+              {funnel.entered != null ? (
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {funnel.entered.toLocaleString("en-US")} entered
+                  {funnel.converted != null
+                    ? ` / ${funnel.converted.toLocaleString("en-US")} ${funnel.convertedLabel ?? "converted"}`
+                    : ""}
+                </p>
+              ) : null}
+
+              <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+                {funnel.steps.map((step) => {
+                  const s = funnelStepStats(step.category);
+                  return (
+                    <button
+                      key={step.tier}
+                      type="button"
+                      onClick={() =>
+                        setEditingFunnelStep({
+                          funnel: funnel.funnel,
+                          funnelName: funnel.name,
+                          vars: funnel.vars,
+                          step,
+                        })
+                      }
+                      className="flex w-full flex-wrap items-baseline justify-between gap-2 rounded-lg px-2 py-1 text-left text-sm transition hover:bg-slate-50"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-slate-700">
+                        {step.isOverridden ? (
+                          <span
+                            className="mr-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-indigo-500 align-middle"
+                            title="Customized copy"
+                          />
+                        ) : null}
+                        <span className="font-medium">{step.label}:</span> {step.subjectPreview}
+                      </span>
+                      <span className="text-xs text-slate-500">{s.text}</span>
+                    </button>
+                  );
+                })}
+                {funnel.steps.length === 0 ? (
+                  <p className="text-sm text-slate-500">No steps.</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {!systemData && !systemError ? (
+            <div className="h-24 animate-pulse rounded-xl bg-slate-100" />
+          ) : null}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Sequences</h2>
         <button
@@ -632,6 +780,21 @@ export default function SequencesSection({
         ) : null}
         {loading ? <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> : null}
       </div>
+
+      {editingFunnelStep ? (
+        <FunnelStepEditor
+          funnelKey={editingFunnelStep.funnel}
+          funnelName={editingFunnelStep.funnelName}
+          funnelVars={editingFunnelStep.vars}
+          step={editingFunnelStep.step}
+          canEdit={true}
+          stats={funnelStepStats(editingFunnelStep.step.category).stats}
+          onClose={() => setEditingFunnelStep(null)}
+          onSaved={() => {
+            void refetchSystem();
+          }}
+        />
+      ) : null}
     </section>
   );
 }

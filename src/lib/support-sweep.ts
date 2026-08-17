@@ -4,8 +4,12 @@
  * Pulls the "needs attention" pile from the feedback Worker, drafts a grounded
  * reply for each clear-cut ticket (grounded in the real tutorial index via
  * searchHelp), auto-sends only the safe how-to answers, and returns a report
- * the recap email renders. Everything risky (bugs, cancellations, refunds, low
- * confidence, ungrounded) is left for a human and listed under "needs you".
+ * the recap email renders. Bugs, anonymous auto-reports, and low-confidence or
+ * ungrounded drafts are routed to the engineering autopilot (a scheduled local
+ * Claude task that investigates, fixes, and replies): they get tagged
+ * "autopilot-queue" and listed in the report's autopilotQueue bucket. Only
+ * sensitive topics (refund/cancel/legal) and true dead ends land in "needs you"
+ * for the owner.
  *
  * Safety posture: sends ONLY when SUPPORT_SWEEP_ENABLED === "true". With it
  * unset the sweep runs in shadow mode (drafts, never sends) so the owner can
@@ -122,6 +126,8 @@ export type SweepReport = {
   autoSent: AutoSentItem[];
   drafts: DraftItem[];
   needsYou: NeedsYouItem[];
+  /** Bugs, anonymous auto-reports, and held drafts queued for the engineering autopilot. */
+  autopilotQueue: NeedsYouItem[];
   openByStatus: Record<string, number>;
   oldestAgeHrs: number | null;
   errors: string[];
@@ -289,18 +295,22 @@ async function sendAutoReply(t: WorkerTicket, draft: DraftResult): Promise<boole
 
   // Best-effort marker so auto-handled tickets are distinguishable from human
   // replies. If the worker rejects the tag update the reply still stands.
+  await tagTicket(t, "auto-answered");
+  return true;
+}
+
+/** Best-effort: add a tag to a ticket without disturbing existing tags. */
+async function tagTicket(t: WorkerTicket, tag: string): Promise<void> {
   const existing = (t.tags || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (!existing.includes("auto-answered")) {
-    const tagged = await callSupportWorker(`/agent/tickets/${encodeURIComponent(t.id)}/triage`, {
-      method: "POST",
-      body: { tags: [...existing, "auto-answered"].join(", ") },
-    });
-    if (!tagged.ok) console.error("[support-sweep] tag update failed for", t.id, tagged.error);
-  }
-  return true;
+  if (existing.includes(tag)) return;
+  const tagged = await callSupportWorker(`/agent/tickets/${encodeURIComponent(t.id)}/triage`, {
+    method: "POST",
+    body: { tags: [...existing, tag].join(", ") },
+  });
+  if (!tagged.ok) console.error("[support-sweep] tag update failed for", t.id, tagged.error);
 }
 
 // ---------------------------------------------------------------------------
@@ -326,6 +336,32 @@ function pushNeedsYou(
   });
 }
 
+/**
+ * Route a ticket to the engineering autopilot: list it in the report and (when
+ * mutations are allowed) tag it "autopilot-queue" so the scheduled autopilot
+ * task can find it even between sweeps.
+ */
+async function pushAutopilot(
+  report: SweepReport,
+  t: WorkerTicket,
+  age: number | null,
+  reason: string,
+  mutate: boolean,
+): Promise<void> {
+  report.autopilotQueue.push({
+    id: t.id,
+    title: t.title || "(no title)",
+    priority: t.priority || "",
+    status: t.status || "",
+    classification: t.classification ?? null,
+    userEmail: (t.userEmail || "").trim() || null,
+    ageHrs: age,
+    reason,
+    deepLink: deepLink(t.id),
+  });
+  if (mutate) await tagTicket(t, "autopilot-queue");
+}
+
 function draftItem(t: WorkerTicket, draft: DraftResult): DraftItem {
   return {
     id: t.id,
@@ -348,6 +384,7 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
     autoSent: [],
     drafts: [],
     needsYou: [],
+    autopilotQueue: [],
     openByStatus: {},
     oldestAgeHrs: null,
     errors: [],
@@ -381,7 +418,13 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
 
     const email = (full.userEmail || "").trim();
     if (!email) {
-      pushNeedsYou(report, full, age, "Anonymous ticket, no address to reply to");
+      await pushAutopilot(
+        report,
+        full,
+        age,
+        "Anonymous auto-report, queued for the engineering autopilot",
+        !dryRun,
+      );
       continue;
     }
 
@@ -407,7 +450,13 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
       report.errors.push(`draft ${full.id}: ${err instanceof Error ? err.message : "error"}`);
     }
     if (!draft) {
-      pushNeedsYou(report, full, age, "Could not draft a reply (AI unavailable)");
+      await pushAutopilot(
+        report,
+        full,
+        age,
+        "Could not draft a reply (AI unavailable), autopilot will pick it up",
+        !dryRun,
+      );
       continue;
     }
 
@@ -422,15 +471,15 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
 
     if (!canAuto) {
       const why = emDash
-        ? "Draft needed a style fix, held for review"
+        ? "Draft needed a style fix"
         : !draft.grounded
-          ? "No matching help article, needs a human"
+          ? "No matching help article"
           : draft.classification !== "question"
-            ? `Looks like a ${draft.classification}, needs a human`
+            ? `Looks like a ${draft.classification}`
             : draft.confidence < minConfidence()
               ? `Low confidence (${Math.round(draft.confidence * 100)}%)`
-              : draft.reason || "Held for review";
-      pushNeedsYou(report, full, age, why);
+              : draft.reason || "Held";
+      await pushAutopilot(report, full, age, `${why}, queued for the autopilot`, !dryRun);
       continue;
     }
 
@@ -441,8 +490,8 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
     }
 
     if (sends >= maxSends()) {
+      // Cap reached: hold as a draft; the next sweep sends it. Not an owner item.
       report.drafts.push(draftItem(full, draft));
-      pushNeedsYou(report, full, age, "Auto-answer ready but the per-run send cap was reached");
       continue;
     }
 
@@ -460,7 +509,7 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
     } else {
       report.errors.push(`send ${full.id} failed`);
       report.drafts.push(draftItem(full, draft));
-      pushNeedsYou(report, full, age, "Auto-send failed, needs a human");
+      await pushAutopilot(report, full, age, "Auto-send failed, autopilot will retry", !dryRun);
     }
   }
 
@@ -500,17 +549,6 @@ export function sampleSweepReport(): SweepReport {
     ],
     needsYou: [
       {
-        id: id(3),
-        title: "App crashes when I open Daily Deals",
-        priority: "P1",
-        status: "escalated",
-        classification: "bug",
-        userEmail: "creator3@example.com",
-        ageHrs: 14.2,
-        reason: "Looks like a bug, needs a human",
-        deepLink: `${SITE}/dashboard/admin/support?ticket=${id(3)}`,
-      },
-      {
         id: id(4),
         title: "I want a refund for last month",
         priority: "P2",
@@ -520,6 +558,19 @@ export function sampleSweepReport(): SweepReport {
         ageHrs: 3.1,
         reason: "Sensitive topic (refund/cancel/legal), needs a human",
         deepLink: `${SITE}/dashboard/admin/support?ticket=${id(4)}`,
+      },
+    ],
+    autopilotQueue: [
+      {
+        id: id(3),
+        title: "App crashes when I open Daily Deals",
+        priority: "P1",
+        status: "escalated",
+        classification: "bug",
+        userEmail: "creator3@example.com",
+        ageHrs: 14.2,
+        reason: "Looks like a bug, queued for the autopilot",
+        deepLink: `${SITE}/dashboard/admin/support?ticket=${id(3)}`,
       },
     ],
     openByStatus: { escalated: 3, waiting_on_user: 2, user_replied: 1 },

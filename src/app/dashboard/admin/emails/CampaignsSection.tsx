@@ -5,6 +5,7 @@
 // test-sending, scheduling, and sending.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import CampaignDrawer from "./CampaignDrawer";
 
 type Audience =
   | { kind: "all_contacts" }
@@ -27,6 +28,8 @@ type Campaign = {
   sent_at: string | null;
   category: string;
   counts: CampaignCounts;
+  apply_tag?: string | null;
+  save_contacts?: boolean | null;
 };
 
 type CampaignsResponse = { campaigns: Campaign[]; migrationPending: boolean };
@@ -93,7 +96,7 @@ function parseEmails(input: string): string[] {
 
 export default function CampaignsSection({
   summary,
-  onOpenCustomer: _onOpenCustomer,
+  onOpenCustomer,
 }: {
   summary: { categories: SummaryCategory[] } | null;
   onOpenCustomer: (email: string) => void;
@@ -102,6 +105,7 @@ export default function CampaignsSection({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Composer state. draftId tracks the persisted campaign id once a "new"
   // draft has been saved, so follow-up saves PATCH instead of POSTing again.
@@ -116,6 +120,8 @@ export default function CampaignsSection({
     "trial" | "pro" | "churned" | "newsletter"
   >("trial");
   const [pastedText, setPastedText] = useState("");
+  const [applyTag, setApplyTag] = useState("");
+  const [saveContacts, setSaveContacts] = useState(false);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [composerBusy, setComposerBusy] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -201,6 +207,8 @@ export default function CampaignsSection({
       setAudienceTag("");
       setAudienceSegment("trial");
       setPastedText("");
+      setApplyTag("");
+      setSaveContacts(false);
     } else {
       setName(campaign.name);
       setSubject(campaign.subject);
@@ -210,6 +218,8 @@ export default function CampaignsSection({
       setAudienceTag(a.kind === "tag" ? a.tag : "");
       setAudienceSegment(a.kind === "segment" ? a.segment : "trial");
       setPastedText(a.kind === "pasted" ? a.emails.join("\n") : "");
+      setApplyTag(campaign.apply_tag ?? "");
+      setSaveContacts(campaign.save_contacts === true);
     }
   }
 
@@ -221,11 +231,19 @@ export default function CampaignsSection({
     setComposerNotice(null);
     try {
       const audience = buildAudience();
+      const tagField = applyTag.trim();
       if (draftId === null) {
         const res = await fetch("/api/admin/emails/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, subject, body, audience }),
+          body: JSON.stringify({
+            name,
+            subject,
+            body,
+            audience,
+            applyTag: tagField,
+            saveContacts,
+          }),
         });
         if (!res.ok) {
           setComposerError(await readError(res, "Could not save the draft"));
@@ -238,7 +256,16 @@ export default function CampaignsSection({
       const res = await fetch("/api/admin/emails/campaigns", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: draftId, action: "update", name, subject, body, audience }),
+        body: JSON.stringify({
+          id: draftId,
+          action: "update",
+          name,
+          subject,
+          body,
+          audience,
+          applyTag: tagField,
+          saveContacts,
+        }),
       });
       if (!res.ok) {
         setComposerError(await readError(res, "Could not save the draft"));
@@ -468,6 +495,35 @@ export default function CampaignsSection({
             </p>
           ) : null}
 
+          {/* Tag-on-send: grow and segment the list from this campaign. */}
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="apply-tag">
+              Tag recipients (optional)
+            </label>
+            <input
+              id="apply-tag"
+              type="text"
+              value={applyTag}
+              onChange={(e) => setApplyTag(e.target.value)}
+              placeholder="e.g. august-blast"
+              className="mt-1 w-64 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Adds this tag to everyone this campaign reaches, on top of any existing tags. Setting
+              a tag automatically saves recipients to Contacts.
+            </p>
+            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={saveContacts || applyTag.trim().length > 0}
+                disabled={applyTag.trim().length > 0}
+                onChange={(e) => setSaveContacts(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Save recipients to Contacts
+            </label>
+          </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
             <button
               type="button"
@@ -593,7 +649,14 @@ export default function CampaignsSection({
               return (
                 <tr key={c.id} className="border-b border-slate-50 last:border-0">
                   <td className="max-w-xs truncate px-4 py-2 font-medium text-slate-800">
-                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => setDetailId(c.id)}
+                      className="text-left hover:text-indigo-600"
+                      title="View campaign details"
+                    >
+                      {c.name}
+                    </button>
                   </td>
                   <td className="px-4 py-2">
                     <span
@@ -672,6 +735,17 @@ export default function CampaignsSection({
         <p className="mt-2 text-xs text-slate-500">
           Sending campaigns are processed in batches every 5 minutes.
         </p>
+      ) : null}
+
+      {detailId ? (
+        <CampaignDrawer
+          campaignId={detailId}
+          onClose={() => setDetailId(null)}
+          onOpenCustomer={(email) => {
+            onOpenCustomer(email);
+            setDetailId(null);
+          }}
+        />
       ) : null}
     </section>
   );
