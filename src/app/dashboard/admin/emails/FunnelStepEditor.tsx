@@ -2,8 +2,8 @@
 
 // Right-side drawer for editing one step of a built-in email funnel. Mirrors
 // SendDrawer's markup (z-40 backdrop that closes on click, max-w-2xl white
-// panel). Saves override copy for a single step, or resets it back to the code
-// default. Timing is code-scheduled and not editable here.
+// panel). Saves override copy, tag-on-send, and timing (day offset) for a
+// single step, or resets it back to the code default.
 
 import { useState } from "react";
 
@@ -43,6 +43,7 @@ export default function FunnelStepEditor({
   const [subject, setSubject] = useState(step.subject);
   const [body, setBody] = useState(step.body);
   const [applyTag, setApplyTag] = useState(step.apply_tag ?? "");
+  const [dayOffset, setDayOffset] = useState(String(step.day_offset));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [migrationPending, setMigrationPending] = useState(false);
@@ -54,7 +55,15 @@ export default function FunnelStepEditor({
     try {
       const payload =
         action === "save"
-          ? { funnel: funnelKey, tier: step.tier, action, subject, body, applyTag }
+          ? {
+              funnel: funnelKey,
+              tier: step.tier,
+              action,
+              subject,
+              body,
+              applyTag,
+              dayOffset: dayOffset.trim() === "" ? null : Number(dayOffset),
+            }
           : { funnel: funnelKey, tier: step.tier, action };
       const res = await fetch("/api/admin/emails/system-sequences", {
         method: "PATCH",
@@ -127,9 +136,25 @@ export default function FunnelStepEditor({
           </button>
         </div>
 
-        <p className="mt-2 text-sm text-slate-500">
-          Sends ~day {step.day_offset} of the funnel. Timing is code-scheduled (not editable yet).
-        </p>
+        <div className="mt-3">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Timing (days after the funnel starts)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={365}
+            value={dayOffset}
+            onChange={(e) => setDayOffset(e.target.value)}
+            readOnly={!canEdit}
+            disabled={!canEdit}
+            className="mt-1 w-28 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Whole days after the anchor (trial start, cancellation, etc.). Takes effect on the next
+            cron run. The very first touch normally sends within minutes: leave it at 0.
+          </p>
+        </div>
 
         {stats ? (
           <p className="mt-1 text-xs text-slate-400">

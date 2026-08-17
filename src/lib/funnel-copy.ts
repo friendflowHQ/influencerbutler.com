@@ -74,6 +74,21 @@ export async function getFunnelOverrides(): Promise<Map<string, FunnelOverride>>
   return cache;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Effective age threshold (ms) for a funnel step: the admin's day_offset
+ * override when set, else the code default. Used by the funnel crons so an
+ * unedited step keeps its exact code schedule. */
+export function tierThresholdMs(
+  overrides: Map<string, FunnelOverride>,
+  funnel: string,
+  tier: string,
+  defaultMs: number,
+): number {
+  const ov = overrides.get(`${funnel}:${tier}`);
+  return ov && ov.dayOffset != null ? ov.dayOffset * DAY_MS : defaultMs;
+}
+
 export type ResolvedCopy = { subject: string; body: string; applyTag: string | null };
 
 /** Merges an override (if any) over the code defaults, rendering override

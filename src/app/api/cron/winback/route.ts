@@ -23,6 +23,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { getDiscountableVariantIds } from "@/lib/lemonsqueezy";
+import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
 import {
   sendWinbackEmail,
   resolveSegment,
@@ -30,6 +31,7 @@ import {
   winbackDiscountPercent,
   WINBACK_DISCOUNT_MONTHS,
   type WinbackTier,
+  type WinbackSegment,
 } from "@/lib/winback-emails";
 
 export const runtime = "nodejs";
@@ -72,9 +74,21 @@ function isAuthorized(request: Request): boolean {
   return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
 }
 
-/** Highest matured tier whose sent column is still null, or null if none due. */
-function dueTier(row: CancelRow, ageMs: number): { tier: WinbackTier; sentCol: string } | null {
-  for (const t of TIERS) {
+/** Highest matured tier whose sent column is still null, or null if none due.
+ * Honors admin day_offset overrides per segment (comp_t1..discount_t3), falling
+ * back to the code thresholds; re-sorts by effective threshold so an edited
+ * offset still picks the strongest matured tier. */
+function dueTier(
+  row: CancelRow,
+  ageMs: number,
+  segment: string,
+  overrides: Map<string, FunnelOverride>,
+): { tier: WinbackTier; sentCol: string } | null {
+  const eff = TIERS.map((t) => ({
+    ...t,
+    thresholdMs: tierThresholdMs(overrides, "winback", `${segment}_${t.tier}`, t.thresholdMs),
+  })).sort((a, b) => b.thresholdMs - a.thresholdMs);
+  for (const t of eff) {
     if (ageMs < t.thresholdMs) continue;
     if (row[t.sentCol as keyof CancelRow]) continue;
     return { tier: t.tier, sentCol: t.sentCol };
@@ -109,11 +123,17 @@ export async function GET(request: Request) {
   }
 
   const rows = (data ?? []) as CancelRow[];
+  const overrides = await getFunnelOverrides();
 
   // Dedupe by user: rows are newest-first, so the first row per user is the most
   // recent cancellation and the one we drip off. A user with no user_id is skipped.
   const seenUsers = new Set<string>();
-  const candidates: { row: CancelRow; tier: WinbackTier; sentCol: string }[] = [];
+  const candidates: {
+    row: CancelRow;
+    tier: WinbackTier;
+    sentCol: string;
+    segment: WinbackSegment;
+  }[] = [];
   for (const row of rows) {
     if (!row.user_id || seenUsers.has(row.user_id)) continue;
     seenUsers.add(row.user_id);
@@ -123,8 +143,9 @@ export async function GET(request: Request) {
     if (!row.created_at) continue;
     const ageMs = now - new Date(row.created_at).getTime();
     if (!Number.isFinite(ageMs)) continue;
-    const due = dueTier(row, ageMs);
-    if (due) candidates.push({ row, tier: due.tier, sentCol: due.sentCol });
+    const segment = resolveSegment(row.reason);
+    const due = dueTier(row, ageMs, segment, overrides);
+    if (due) candidates.push({ row, tier: due.tier, sentCol: due.sentCol, segment });
   }
 
   if (candidates.length === 0) {
@@ -164,7 +185,7 @@ export async function GET(request: Request) {
   let sent = 0;
   let skipped = 0;
 
-  for (const { row, tier, sentCol } of candidates) {
+  for (const { row, tier, sentCol, segment } of candidates) {
     if (sent >= PER_RUN_LIMIT) break;
     const userId = row.user_id as string;
 
@@ -177,8 +198,6 @@ export async function GET(request: Request) {
       skipped += 1;
       continue;
     }
-
-    const segment = resolveSegment(row.reason);
 
     // Discount segment offer tiers (t2/t3) need a code. Reuse the stored one, or
     // mint it once and persist immediately so a later retry never double-mints.
