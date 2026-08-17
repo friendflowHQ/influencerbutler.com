@@ -2,6 +2,7 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { log } from "../../shared/log";
+import { queryAll } from "../../amazon/selectors";
 import { parseSearchTiles, type SearchTile } from "../../amazon/search-results";
 import { marketplaceFromUrl } from "../../amazon/product-signals";
 import type { DpStaticSignals } from "../../amazon/dp-static";
@@ -205,20 +206,55 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     );
   }
 
-  // Anchor after the last tile so reordering stays within the results block and
-  // never drags a tile past pagination or a footer.
+  // Anchor before the first tile so applySort packs the sorted block at the
+  // top of the results, where the user is looking. Anchoring after the last
+  // tile looked like a no-op: dedup-skipped sponsored duplicates and mid-grid
+  // ad widgets stayed pinned above the fold while the real tiles reshuffled
+  // below it. Reordering still stays within the results block, above
+  // pagination and the footer.
   const first = rows[0];
   const last = rows[rows.length - 1];
   if (!first || !last) return;
   const parent = first.tile.el.parentElement;
   const anchor = document.createComment("ib-search-anchor");
-  last.tile.el.after(anchor);
+  first.tile.el.before(anchor);
+
+  const rowAsins = new Set(rows.map((r) => r.tile.asin));
+
+  // Amazon renders sponsored duplicates of tiles we already scored (and
+  // hydrates more in after load, above the sorted block). The parser skips
+  // them, so left visible they show the stale pre-sort order at the top of
+  // the page; hide them instead. Rows themselves are never touched here.
+  const hideStrayDupes = (): void => {
+    if (!parent) return;
+    for (const tileEl of queryAll<HTMLElement>(parent, "searchResultTile")) {
+      if (tileEl.getAttribute(DONE_ATTR)) continue;
+      const asin = (tileEl.getAttribute("data-asin") ?? "").trim().toUpperCase();
+      if (rowAsins.has(asin)) tileEl.style.display = "none";
+    }
+  };
 
   const applySort = (key: SortKey): void => {
     if (!parent) return;
+    hideStrayDupes();
+    // Tiles Amazon inserted above the block since init would keep the sorted
+    // rows pinned below them; repin the anchor above the current top tile.
+    const top = queryAll<HTMLElement>(parent, "searchResultTile").find(
+      (tileEl) => tileEl.style.display !== "none",
+    );
+    if (top && top !== anchor.nextSibling) top.before(anchor);
     const sorted = [...rows].sort(comparator(key));
     for (const row of sorted) parent.insertBefore(row.tile.el, anchor);
   };
+
+  // Sponsored duplicates hydrate in after init (observed live: the whole first
+  // row can be late-injected dupes); hide them as they land so the sorted
+  // block stays on top.
+  if (parent) {
+    const dupeWatch = new MutationObserver(() => hideStrayDupes());
+    dupeWatch.observe(parent, { childList: true });
+    run.signal.addEventListener("abort", () => dupeWatch.disconnect(), { once: true });
+  }
 
   const applyFilter = (state: FilterState): void => {
     for (const row of rows) {

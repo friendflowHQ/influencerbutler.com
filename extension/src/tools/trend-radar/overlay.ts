@@ -154,7 +154,9 @@ export async function initTrendRadar(settings: Settings): Promise<void> {
   const parent = first.reorderEl.parentElement;
   const canReorder = parent !== null && rows.every((r) => r.reorderEl.parentElement === parent);
   const anchor = document.createComment("ib-trend-anchor");
-  if (canReorder) last.reorderEl.after(anchor);
+  // Before the first tile, not after the last: sorted tiles pack ahead of any
+  // non-row grid children, so the new order is visible at the top of the page.
+  if (canReorder) first.reorderEl.before(anchor);
 
   const applySort = (key: TrendSortKey): void => {
     if (!canReorder || !parent) return;
