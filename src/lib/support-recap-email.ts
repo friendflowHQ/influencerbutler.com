@@ -1,9 +1,12 @@
 // Support recap email: presentation + send.
 //
 // Turns a SweepReport (from support-sweep.ts) into a Gmail-safe HTML email (plus
-// a plain-text fallback) and sends it to the owner inbox via Resend after every
-// sweep. Same house style as digest-email.ts: pure HTML/CSS tables, no remote
-// assets, no em dashes.
+// a plain-text fallback) and sends it to the owner inbox via Resend. Quiet runs
+// are NOT emailed: the recap goes out only when something genuinely needs the
+// owner (sensitive tickets) or the run hit errors. Bugs and auto-reports are
+// handled by the scheduled engineering autopilot and only appear as a muted
+// context section when an email does go out. Same house style as
+// digest-email.ts: pure HTML/CSS tables, no remote assets, no em dashes.
 
 import type {
   SweepReport,
@@ -120,6 +123,8 @@ export function recapSubject(report: SweepReport): string {
   const need = report.needsYou.length;
   const sent = report.autoSent.length;
   const bits = [`${need} need${need === 1 ? "s" : ""} you`];
+  if (report.autopilotQueue.length > 0)
+    bits.push(`${report.autopilotQueue.length} with the autopilot`);
   if (sent > 0) bits.push(`${sent} auto-answered`);
   else if (report.drafts.length > 0) bits.push(`${report.drafts.length} draft${report.drafts.length === 1 ? "" : "s"} ready`);
   const flag = need > 0 ? "\u{1F534} " : "✅ ";
@@ -139,9 +144,9 @@ export function renderSupportRecapHtml(report: SweepReport): string {
   <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
     <tr>
       ${statTile("Needs you", String(needN), needN > 0 ? C.red : C.green, needN > 0 ? C.redBg : C.greenBg)}
+      ${statTile("Autopilot", String(report.autopilotQueue.length), C.blue, C.blueBg)}
       ${statTile("Auto-answered", String(report.autoSent.length), C.green, C.greenBg)}
-      ${statTile("Drafts held", String(report.drafts.length), C.amber, C.amberBg)}
-      ${statTile("Oldest open", age(report.oldestAgeHrs), C.blue, C.blueBg)}
+      ${statTile("Oldest open", age(report.oldestAgeHrs), C.amber, C.amberBg)}
     </tr>
   </table>`;
 
@@ -178,13 +183,20 @@ export function renderSupportRecapHtml(report: SweepReport): string {
           ${sectionHeader("\u{1F534} Still needs YOU")}
           ${needsYouTable(report.needsYou)}
 
+          ${
+            report.autopilotQueue.length > 0
+              ? sectionHeader("\u{1F916} With the engineering autopilot (no action needed)") +
+                needsYouTable(report.autopilotQueue)
+              : ""
+          }
+
           ${autoSection}
           ${draftSection}
           ${statusFooter(report)}
           ${errorNote}
 
           <div style="font-size:11px;color:${C.sub};margin-top:22px;border-top:1px solid ${C.line};padding-top:14px;">
-            You get this after every support sweep (a few times a day in business hours). Click any ticket to open it in the admin dashboard.
+            You only get this email when a ticket genuinely needs you (or a sweep hit errors). Everything else is handled automatically. Click any ticket to open it in the admin dashboard.
           </div>
 
         </td></tr>
@@ -205,6 +217,11 @@ export function renderSupportRecapText(report: SweepReport): string {
   else
     for (const t of report.needsYou)
       lines.push(`  [${t.priority || "-"}] ${t.title} (${age(t.ageHrs)}) - ${t.reason}\n    ${t.deepLink}`);
+  if (report.autopilotQueue.length) {
+    lines.push(``, `With the engineering autopilot (no action needed):`);
+    for (const t of report.autopilotQueue)
+      lines.push(`  [${t.priority || "-"}] ${t.title} (${age(t.ageHrs)}) - ${t.reason}`);
+  }
   if (report.autoSent.length) {
     lines.push(``, `Handled automatically:`);
     for (const t of report.autoSent) lines.push(`  ${t.title} -> ${t.userEmail}`);
@@ -231,6 +248,12 @@ export async function sendSupportRecap(
   if (!process.env.RESEND_API_KEY) {
     console.log("support-recap: skipped (RESEND_API_KEY not set)");
     return { ok: false, skipped: "not_configured" };
+  }
+  // Quiet run: nothing needs the owner and nothing went wrong. No email. The
+  // autopilot queue and auto-sent replies are all visible in the dashboard.
+  if (report.needsYou.length === 0 && report.errors.length === 0) {
+    console.log("support-recap: skipped (quiet run, nothing needs the owner)");
+    return { ok: true, skipped: "quiet" };
   }
   const subject = recapSubject(report);
   const html = renderSupportRecapHtml(report);

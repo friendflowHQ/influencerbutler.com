@@ -77,6 +77,7 @@ export async function GET(request: Request) {
     autoSent: report.autoSent.length,
     drafts: report.drafts.length,
     needsYou: report.needsYou.length,
+    autopilotQueue: report.autopilotQueue.length,
     errors: report.errors,
   });
 }
