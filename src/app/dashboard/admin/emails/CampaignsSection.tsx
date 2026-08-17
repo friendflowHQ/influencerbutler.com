@@ -5,6 +5,7 @@
 // test-sending, scheduling, and sending.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import CampaignDrawer from "./CampaignDrawer";
 
 type Audience =
   | { kind: "all_contacts" }
@@ -95,7 +96,7 @@ function parseEmails(input: string): string[] {
 
 export default function CampaignsSection({
   summary,
-  onOpenCustomer: _onOpenCustomer,
+  onOpenCustomer,
 }: {
   summary: { categories: SummaryCategory[] } | null;
   onOpenCustomer: (email: string) => void;
@@ -104,6 +105,7 @@ export default function CampaignsSection({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Composer state. draftId tracks the persisted campaign id once a "new"
   // draft has been saved, so follow-up saves PATCH instead of POSTing again.
@@ -647,7 +649,14 @@ export default function CampaignsSection({
               return (
                 <tr key={c.id} className="border-b border-slate-50 last:border-0">
                   <td className="max-w-xs truncate px-4 py-2 font-medium text-slate-800">
-                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => setDetailId(c.id)}
+                      className="text-left hover:text-indigo-600"
+                      title="View campaign details"
+                    >
+                      {c.name}
+                    </button>
                   </td>
                   <td className="px-4 py-2">
                     <span
@@ -726,6 +735,17 @@ export default function CampaignsSection({
         <p className="mt-2 text-xs text-slate-500">
           Sending campaigns are processed in batches every 5 minutes.
         </p>
+      ) : null}
+
+      {detailId ? (
+        <CampaignDrawer
+          campaignId={detailId}
+          onClose={() => setDetailId(null)}
+          onOpenCustomer={(email) => {
+            onOpenCustomer(email);
+            setDetailId(null);
+          }}
+        />
       ) : null}
     </section>
   );
