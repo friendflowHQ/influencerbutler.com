@@ -39,3 +39,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# cloudflare wrangler local state
+.wrangler/
+
+# local scratch capture output
+outputs-horse-channel/

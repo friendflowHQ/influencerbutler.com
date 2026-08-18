@@ -67,6 +67,10 @@
     {
       "path": "/api/cron/blog-autogen",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/calibrate-sales-curves",
+      "schedule": "0 5 * * *"
     }
   ]
 }

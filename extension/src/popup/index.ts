@@ -452,6 +452,11 @@ async function renderAccount(): Promise<void> {
     const toggle = byId<HTMLInputElement>("sync-toggle");
     toggle.checked = settings.syncEnabled;
     toggle.onchange = () => void patchSettings({ syncEnabled: toggle.checked });
+
+    // Opt-in (off by default): contribute product facts to the shared catalogue.
+    const contribute = byId<HTMLInputElement>("contribute-toggle");
+    contribute.checked = settings.contributeCatalogue;
+    contribute.onchange = () => void patchSettings({ contributeCatalogue: contribute.checked });
     byId("sync-status").textContent =
       status.queueDepth > 0
         ? t().findingsWaiting(status.queueDepth)

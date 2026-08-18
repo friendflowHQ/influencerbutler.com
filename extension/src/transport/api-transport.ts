@@ -46,6 +46,31 @@ export const apiTransport: FindingTransport = {
         }),
       );
     }
+    // Shared product-catalogue contribution (opt-in, OFF by default). Only when
+    // the user has turned it on do the research signals (best-seller rank,
+    // bought-past-month, category, brand) leave the machine for the pool; with
+    // it off, nothing here is transmitted. Only send observations that carry a
+    // real market signal, so we never write empty rows.
+    if (state.settings.contributeCatalogue && scans.length > 0) {
+      const items = scans
+        .filter((f) => f.bestsellerRank != null || f.boughtPastMonth != null || f.priceCents != null)
+        .map((f) => ({
+          asin: f.asin,
+          marketplace: f.marketplace,
+          captured_at: f.scannedAt,
+          price_cents: f.priceCents ?? null,
+          currency: f.currency ?? "USD",
+          bsr_rank: f.bestsellerRank?.rank ?? null,
+          bsr_category: f.bestsellerRank?.category ?? null,
+          bought_past_month: f.boughtPastMonth ?? null,
+          category_label: f.category ?? null,
+          brand: f.brand ?? null,
+          source: "browse",
+        }));
+      if (items.length > 0) {
+        posts.push(post(ENDPOINTS.market, key, { items }));
+      }
+    }
     if (gaps.length > 0) {
       posts.push(
         post(ENDPOINTS.gaps, key, {

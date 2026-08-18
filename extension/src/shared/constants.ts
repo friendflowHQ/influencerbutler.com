@@ -30,6 +30,9 @@ export const ENDPOINTS = {
   ccRates: `${API_BASE}/api/extension/cc-rates`,
   // Instagram Goldmine (self-hosted build only): harvested creator + email rows.
   instagramCreators: `${API_BASE}/api/extension/instagram-creators`,
+  // Shared product catalogue ("internal Keepa"): POST contributes product facts
+  // (opt-in), GET reads pooled price/rank history + estimated monthly sales.
+  market: `${API_BASE}/api/extension/market`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),

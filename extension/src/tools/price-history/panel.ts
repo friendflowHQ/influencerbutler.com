@@ -1,7 +1,7 @@
 import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { formatCents } from "../calculator/model";
-import { sendToBackground, type PricePoint } from "../../shared/messages";
+import { sendToBackground, type MarketResult, type PricePoint } from "../../shared/messages";
 import type { DesktopHistoryResult } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 
@@ -33,9 +33,11 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     return;
   }
 
-  // Ask both stores in parallel; the desktop lookup silently no-ops when the
-  // app was never paired or is not running.
-  const [desktop, local] = await Promise.all([
+  // Ask all three sources in parallel. Desktop (durable, deepest) and local
+  // (capped, per-install) cover the personal history; the shared catalogue adds
+  // pooled community history plus the estimated-sales figure, and each silently
+  // no-ops when unavailable (app not paired, signed out, or migration pending).
+  const [desktop, local, market] = await Promise.all([
     sendToBackground<DesktopHistoryResult>({ kind: "GET_DESKTOP_HISTORY", asin }).catch(
       () => null,
     ),
@@ -44,9 +46,16 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
       asin,
       marketplace: signals.marketplace,
     }).catch(() => null),
+    sendToBackground<MarketResult>({
+      kind: "GET_MARKET",
+      asin,
+      marketplace: signals.marketplace,
+    }).catch(() => null),
   ]);
 
   const desktopPoints = desktop && desktop.ok && Array.isArray(desktop.points) ? desktop.points : [];
+  const pool = market && market.ok ? market.product : null;
+  const poolTrend = pool && Array.isArray(pool.trend) ? pool.trend : [];
 
   // Price series: desktop first (price is in currency units → cents), local
   // fallback. Two points minimum before we draw anything.
@@ -59,23 +68,49 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     at: p.at,
     value: p.cents,
   }));
+  // Pooled community price series from the shared catalogue, used as a fallback
+  // when the personal stores are thin so a product the user just opened can
+  // still show a trend the community has already built.
+  const poolPrice: Sample[] = poolTrend
+    .filter((p) => p.priceCents !== null && Number.isFinite(p.priceCents))
+    .map((p) => ({ at: Date.parse(p.capturedAt), value: p.priceCents as number }))
+    .filter((s) => Number.isFinite(s.at))
+    .sort((a, b) => a.at - b.at);
   const fromDesktop = desktopPrice.length >= 2;
-  const price = fromDesktop ? desktopPrice : localPrice;
+  const price =
+    fromDesktop ? desktopPrice : localPrice.length >= 2 ? localPrice : poolPrice;
 
-  // Sales-rank series only exists on the desktop side (the local store is
-  // price-only). Lower rank = better, so the sparkline is drawn inverted.
-  const rank: Sample[] = desktopPoints
+  // Sales-rank series: desktop first, then the pooled catalogue. Lower rank =
+  // better, so the sparkline is drawn inverted.
+  const desktopRank: Sample[] = desktopPoints
     .filter((p) => p.bsr !== null && Number.isFinite(p.bsr))
     .map((p) => ({ at: Date.parse(p.capturedAt), value: p.bsr as number }))
     .filter((s) => Number.isFinite(s.at))
     .sort((a, b) => a.at - b.at);
+  const poolRank: Sample[] = poolTrend
+    .filter((p) => p.bsrRank !== null && Number.isFinite(p.bsrRank))
+    .map((p) => ({ at: Date.parse(p.capturedAt), value: p.bsrRank as number }))
+    .filter((s) => Number.isFinite(s.at))
+    .sort((a, b) => a.at - b.at);
+  const rank = desktopRank.length >= 2 ? desktopRank : poolRank;
 
   const hasPrice = price.length >= 2;
   const hasRank = rank.length >= 2;
-  if (!hasPrice && !hasRank) {
+  // The estimate and the real demand figure are worth showing even for a product
+  // with no trend yet, so the panel opens when any of the four signals exists.
+  const hasEstimate = pool != null && pool.estMonthlySales != null;
+  const hasBought = pool != null && pool.boughtPastMonth != null;
+  if (!hasPrice && !hasRank && !hasEstimate && !hasBought) {
     section.remove();
     return;
   }
+  // The pooled catalogue supplied at least one signal not present in the personal
+  // stores: note the source so the number's provenance is clear.
+  const usingPool =
+    (!fromDesktop && localPrice.length < 2 && poolPrice.length >= 2) ||
+    (desktopRank.length < 2 && poolRank.length >= 2) ||
+    hasEstimate ||
+    hasBought;
 
   if (hasPrice) {
     const currency = signals.currency || "USD";
@@ -109,7 +144,39 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     section.append(summary);
   }
 
-  section.append(el("p", "note", fromDesktop ? t().priceHistoryDesktopNote : t().priceHistoryNote));
+  // Estimated monthly sales + Amazon's own "bought in past month" figure, both
+  // from the shared catalogue. The estimate is labeled honestly as modeled (or
+  // calibrated once its category curve was fit from real co-captured data).
+  if (hasEstimate || hasBought) {
+    const heading = el("p", "note", t().salesEstTitle);
+    heading.style.marginTop = "8px";
+    heading.style.fontWeight = "600";
+    section.append(heading);
+
+    const summary = el("div", "counts");
+    if (hasEstimate) {
+      summary.append(chip("", t().salesEstValue((pool as NonNullable<typeof pool>).estMonthlySales!.toLocaleString())));
+      summary.append(
+        chip(
+          (pool as NonNullable<typeof pool>).estimateCalibrated ? "good" : "",
+          (pool as NonNullable<typeof pool>).estimateCalibrated ? t().salesEstCalibrated : t().salesEstModeled,
+        ),
+      );
+    }
+    if (hasBought) {
+      summary.append(
+        chip("good", t().boughtPastMonthChip((pool as NonNullable<typeof pool>).boughtPastMonth!.toLocaleString())),
+      );
+    }
+    section.append(summary);
+  }
+
+  const noteText = fromDesktop
+    ? t().priceHistoryDesktopNote
+    : usingPool
+      ? t().marketPoolNote
+      : t().priceHistoryNote;
+  section.append(el("p", "note", noteText));
   section.style.display = "";
 }
 

@@ -80,6 +80,11 @@ export type RuntimeMessage =
   // durable time-series (deeper than the local capped store). Routed over the
   // local bridge; returns paired:false when the app was never connected.
   | { kind: "GET_DESKTOP_HISTORY"; asin: string }
+  // Read pooled data for a product from the shared catalogue ("internal Keepa"):
+  // latest snapshot, price/rank trend, real bought-past-month, and an estimated
+  // monthly-sales figure. Routed through the worker so it carries the license
+  // key; available to any signed-in user regardless of whether they contribute.
+  | { kind: "GET_MARKET"; asin: string; marketplace: string }
   // Desktop-app pairing, driven from the popup: ask the app to show a 6-digit
   // code, submit the code the user typed, or forget the stored token.
   | { kind: "REQUEST_PAIRING" }
@@ -286,6 +291,37 @@ export type EnrichResult = {
   configured: boolean;
   items: Array<{ asin: string; results: EnrichedProduct[] }>;
   error?: string;
+};
+
+// One point in a shared-catalogue price/rank trend (oldest-first on read).
+export type MarketTrendPoint = { capturedAt: string; priceCents: number | null; bsrRank: number | null };
+
+// Pooled shared-catalogue data for one product. estMonthlySales is modeled from
+// bsrRank via the per-category curve (null when there is no usable rank);
+// estimateCalibrated is true once that category's curve was fit from real data
+// rather than a seed. boughtPastMonth is Amazon's own real demand figure.
+export type MarketProduct = {
+  asin: string;
+  marketplace: string;
+  priceCents: number | null;
+  currency: string;
+  bsrRank: number | null;
+  bsrCategory: string | null;
+  boughtPastMonth: number | null;
+  categoryLabel: string | null;
+  brand: string | null;
+  capturedAt: string;
+  estMonthlySales: number | null;
+  estimateCalibrated: boolean;
+  trend: MarketTrendPoint[];
+};
+
+// Response of GET_MARKET. product is null when the pool has nothing for the ASIN
+// yet (fresh catalogue), or when the migration is not applied (migrationPending).
+export type MarketResult = {
+  ok: boolean;
+  migrationPending?: boolean;
+  product: MarketProduct | null;
 };
 
 // One curated aggregator site the harvester offers in its picker.

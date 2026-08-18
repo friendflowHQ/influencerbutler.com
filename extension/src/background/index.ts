@@ -19,6 +19,7 @@ import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
+import { getMarket } from "./market";
 import {
   assistantChat,
   assistantVoiceSession,
@@ -208,6 +209,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "GET_DESKTOP_HISTORY":
       void fetchDesktopHistory(message.asin).then(sendResponse);
+      return true;
+    case "GET_MARKET":
+      void getMarket(message.asin, message.marketplace).then(sendResponse);
       return true;
     case "REQUEST_PAIRING":
       void requestPairing().then(sendResponse);

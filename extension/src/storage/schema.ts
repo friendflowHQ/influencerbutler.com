@@ -76,6 +76,12 @@ export type Settings = {
     ideaListOverlay: boolean;
   };
   syncEnabled: boolean;
+  // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
+  // rank, "bought in past month", category, brand) the extension already reads
+  // to the shared product catalogue, so the whole community sees real demand and
+  // price/rank history. Never personal data. Gated at the transport: when off,
+  // these fields are never transmitted. Requires syncEnabled + a signed-in key.
+  contributeCatalogue: boolean;
   debug: boolean;
 };
 
@@ -271,7 +277,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 12,
+  schemaVersion: 13,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -317,6 +323,7 @@ export const DEFAULTS: StorageShape = {
       ideaListOverlay: true,
     },
     syncEnabled: true,
+    contributeCatalogue: false,
     debug: false,
   },
   auth: { licenseKey: null, email: null, verifiedAt: null },
@@ -378,7 +385,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // of it. Older stored state simply gains its defaults untouched (an
   // existing user's price history starts empty). v11 -> v12 added the
   // ideaListOverlay tool flag (money signals on Idea List detail pages, on
-  // by default); the tools shallow-merge backfills it.
+  // by default); the tools shallow-merge backfills it. v12 -> v13 added
+  // settings.contributeCatalogue (shared product-catalogue contribution,
+  // OFF by default); the settings shallow-merge backfills it, so every
+  // existing user stays opted OUT until they turn it on.
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -425,6 +435,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 12,
+    schemaVersion: 13,
   };
 }

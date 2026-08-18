@@ -45,7 +45,20 @@
       "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge origin/main -m 'Merge origin/main \\(app-slow-freezing tutorial + help-search grounding\\) into consolidation *)",
       "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge main -m 'Merge branded short-links discovery work \\(local main\\) *)",
       "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com merge claude/compassionate-swanson-943915 -m 'Merge branded-links signed-out fallback notice *)",
-      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit --no-edit)"
+      "Bash(git -c user.name=FriendFlow -c user.email=129754775+friendflowHQ@users.noreply.github.com commit --no-edit)",
+      "Bash(npx vitest *)",
+      "Read(//c/Users/eliza/OneDrive/Documents/GitHub/InfluencerButler/workers/asin-lookup/**)",
+      "Bash(npx wrangler *)",
+      "mcp__claude-in-chrome__browser_batch",
+      "Bash(npx tsc *)",
+      "Bash(node esbuild.mjs)",
+      "mcp__claude-in-chrome__read_page",
+      "Bash(git worktree *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(gh pr *)",
+      "Bash(git check-ignore *)",
+      "Bash(git fetch *)"
     ]
   }
 }

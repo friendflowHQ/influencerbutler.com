@@ -38,6 +38,12 @@ export interface Dict {
   bsrHistoryTitle: string;
   bsrHistoryNow: (rank: string) => string;
   bsrHistoryBest: (rank: string) => string;
+  salesEstTitle: string;
+  salesEstValue: (n: string) => string;
+  salesEstModeled: string;
+  salesEstCalibrated: string;
+  boughtPastMonthChip: (n: string) => string;
+  marketPoolNote: string;
   shotListTitle: string;
   shotListShowFeatures: string;
   shotListBeatHook: string;
@@ -67,6 +73,8 @@ export interface Dict {
   startFreeTrial: string;
   connectedAs: string;
   syncToggleLabel: string;
+  contributeToggleLabel: string;
+  contributeBlurb: string;
   disconnect: string;
   settingsHeading: string;
   languageLabel: string;
@@ -632,6 +640,12 @@ const en: Dict = {
   bsrHistoryTitle: "Sales rank history",
   bsrHistoryNow: (rank) => `Now #${rank}`,
   bsrHistoryBest: (rank) => `Best #${rank}`,
+  salesEstTitle: "Estimated monthly sales",
+  salesEstValue: (n) => `~${n}/mo`,
+  salesEstModeled: "Modeled from best-seller rank",
+  salesEstCalibrated: "Calibrated from real data",
+  boughtPastMonthChip: (n) => `${n}+ bought/mo`,
+  marketPoolNote: "From the shared Influencer Butler catalogue.",
   shotListTitle: "Shot list",
   shotListShowFeatures: "Show these features on camera:",
   shotListBeatHook: "Hook in the first 3 seconds: the result or the problem it solves",
@@ -660,6 +674,9 @@ const en: Dict = {
   startFreeTrial: "Start a free trial",
   connectedAs: "Connected as",
   syncToggleLabel: "Sync findings to my dashboard",
+  contributeToggleLabel: "Contribute to the shared product catalogue",
+  contributeBlurb:
+    "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) are pooled, never personal data, so everyone sees real demand and price history.",
   disconnect: "Disconnect",
   settingsHeading: "Settings",
   languageLabel: "Language",
@@ -1250,6 +1267,12 @@ const es: Dict = {
   bsrHistoryTitle: "Historial de clasificación de ventas",
   bsrHistoryNow: (rank) => `Ahora nº${rank}`,
   bsrHistoryBest: (rank) => `Mejor nº${rank}`,
+  salesEstTitle: "Ventas mensuales estimadas",
+  salesEstValue: (n) => `~${n}/mes`,
+  salesEstModeled: "Estimado a partir del ranking de ventas",
+  salesEstCalibrated: "Calibrado con datos reales",
+  boughtPastMonthChip: (n) => `${n}+ comprados/mes`,
+  marketPoolNote: "Del catálogo compartido de Influencer Butler.",
   shotListTitle: "Guion de grabación",
   shotListShowFeatures: "Muestra estas características en cámara:",
   shotListBeatHook: "Gancho en los primeros 3 segundos: el resultado o el problema que resuelve",
@@ -1278,6 +1301,9 @@ const es: Dict = {
   startFreeTrial: "Empieza una prueba gratis",
   connectedAs: "Conectado como",
   syncToggleLabel: "Sincronizar hallazgos con mi panel",
+  contributeToggleLabel: "Contribuir al catálogo de productos compartido",
+  contributeBlurb:
+    "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) se agrupan, nunca datos personales, para que todos vean la demanda real y el historial de precios.",
   disconnect: "Desconectar",
   settingsHeading: "Ajustes",
   languageLabel: "Idioma",
@@ -1868,6 +1894,12 @@ const fr: Dict = {
   bsrHistoryTitle: "Historique du classement des ventes",
   bsrHistoryNow: (rank) => `Maintenant n°${rank}`,
   bsrHistoryBest: (rank) => `Meilleur n°${rank}`,
+  salesEstTitle: "Ventes mensuelles estimées",
+  salesEstValue: (n) => `~${n}/mois`,
+  salesEstModeled: "Estimé d'après le classement des ventes",
+  salesEstCalibrated: "Calibré sur des données réelles",
+  boughtPastMonthChip: (n) => `${n}+ achetés/mois`,
+  marketPoolNote: "Issu du catalogue partagé Influencer Butler.",
   shotListTitle: "Plan de tournage",
   shotListShowFeatures: "Montrez ces caractéristiques à la caméra:",
   shotListBeatHook: "Accroche dans les 3 premières secondes: le résultat ou le problème résolu",
@@ -1896,6 +1928,9 @@ const fr: Dict = {
   startFreeTrial: "Démarrer un essai gratuit",
   connectedAs: "Connecté en tant que",
   syncToggleLabel: "Synchroniser les découvertes avec mon tableau de bord",
+  contributeToggleLabel: "Contribuer au catalogue de produits partagé",
+  contributeBlurb:
+    "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle et l'historique des prix.",
   disconnect: "Déconnecter",
   settingsHeading: "Paramètres",
   languageLabel: "Langue",
