@@ -71,6 +71,12 @@ export function unsubscribeFooterText(email: string): string {
   return `\n\nDon't want these emails? Unsubscribe: ${unsubscribeUrl(email)}`;
 }
 
+/** HTML footer appended to marketing emails that carry an HTML body. */
+export function unsubscribeFooterHtml(email: string): string {
+  const url = unsubscribeUrl(email);
+  return `<p style="font-size:12px;color:#9ca3af;margin-top:24px;">Don't want these emails? <a href="${url}" style="color:#9ca3af;">Unsubscribe</a>.</p>`;
+}
+
 /**
  * RFC 8058 headers so Gmail / Apple Mail render a native one-click Unsubscribe
  * button and can POST to the endpoint without the recipient opening the page.

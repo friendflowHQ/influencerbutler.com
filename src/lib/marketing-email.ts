@@ -14,6 +14,7 @@
 import {
   isEmailSuppressed,
   unsubscribeFooterText,
+  unsubscribeFooterHtml,
   unsubscribeHeaders,
 } from "@/lib/email-unsubscribe";
 import { sendEmail, logSuppressedSkip, type EmailFunnel } from "@/lib/email-send";
@@ -23,6 +24,12 @@ export type MarketingEmail = {
   to: string;
   subject: string;
   text: string;
+  /** Optional HTML body. When set, the unsubscribe footer is appended to it
+   * too so the HTML rendering stays compliant. */
+  html?: string;
+  /** Optional Resend attachments (base64). Inline images carry content_id and
+   * are referenced from the HTML body via cid:. */
+  attachments?: { filename: string; content: string; content_type?: string; content_id?: string }[];
   /** Stable per-template key, e.g. 'trial_day0'. Shows up in the admin log. */
   category: string;
   funnel?: EmailFunnel;
@@ -52,6 +59,8 @@ export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean
     to: email.to,
     subject: email.subject,
     text: email.text + unsubscribeFooterText(email.to),
+    ...(email.html ? { html: email.html + unsubscribeFooterHtml(email.to) } : {}),
+    ...(email.attachments?.length ? { attachments: email.attachments } : {}),
     headers: unsubscribeHeaders(email.to),
     category: email.category,
     funnel: email.funnel,

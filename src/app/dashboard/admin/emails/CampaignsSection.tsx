@@ -4,8 +4,61 @@
 // and engagement stats, plus a composer for drafting, previewing the audience,
 // test-sending, scheduling, and sending.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent as ReactClipboardEvent,
+  type DragEvent as ReactDragEvent,
+} from "react";
 import CampaignDrawer from "./CampaignDrawer";
+
+// Attachments / inline images the operator adds to a campaign. They travel as
+// base64 in the save request and are stored on the campaign row. Caps mirror
+// the server (src/lib/email-attachments.ts): stay under Vercel's ~4.5 MB body
+// limit, so ~3 MB of raw files total.
+type CampaignMedia = { id: string; filename: string; contentType: string; b64: string; size: number };
+const MAX_ATTACHMENTS = 5;
+const MAX_INLINE_IMAGES = 5;
+const MAX_ITEM_BYTES = 3 * 1024 * 1024;
+const MAX_TOTAL_MEDIA_BYTES = 3 * 1024 * 1024;
+
+// Stored media shape on a campaign row: { filename, content (base64), contentType? }.
+type StoredMedia = { filename: string; content: string; contentType?: string };
+
+function readFileToB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Approx raw bytes from a base64 string, for sizing stored media on load. */
+function b64Bytes(b64: string): number {
+  const len = b64.length;
+  if (len === 0) return 0;
+  const pad = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
+  return Math.floor((len * 3) / 4) - pad;
+}
+
+function toMedia(stored: StoredMedia[] | undefined | null): CampaignMedia[] {
+  return (stored ?? []).map((m, i) => ({
+    id: `stored-${i}-${m.filename}`,
+    filename: m.filename,
+    contentType: m.contentType || "application/octet-stream",
+    b64: m.content,
+    size: b64Bytes(m.content),
+  }));
+}
 
 type Audience =
   | { kind: "all_contacts" }
@@ -28,8 +81,8 @@ type Campaign = {
   sent_at: string | null;
   category: string;
   counts: CampaignCounts;
-  apply_tag?: string | null;
-  save_contacts?: boolean | null;
+  attachments?: StoredMedia[] | null;
+  inline_images?: StoredMedia[] | null;
 };
 
 type CampaignsResponse = { campaigns: Campaign[]; migrationPending: boolean };
@@ -120,14 +173,15 @@ export default function CampaignsSection({
     "trial" | "pro" | "churned" | "newsletter"
   >("trial");
   const [pastedText, setPastedText] = useState("");
-  const [applyTag, setApplyTag] = useState("");
-  const [saveContacts, setSaveContacts] = useState(false);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [composerBusy, setComposerBusy] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [testEmail, setTestEmail] = useState("");
   const [scheduleAt, setScheduleAt] = useState("");
+  const [attachments, setAttachments] = useState<CampaignMedia[]>([]);
+  const [inlineImages, setInlineImages] = useState<CampaignMedia[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refetch = useCallback(async () => {
@@ -157,6 +211,87 @@ export default function CampaignsSection({
     if (audienceKind === "pasted") return { kind: "pasted", emails: parseEmails(pastedText) };
     return { kind: "all_contacts" };
   }
+
+  // Read dropped/picked/pasted files into base64 media, enforcing the same caps
+  // the server re-checks. `attachment` files download; `inline` images embed in
+  // the email body.
+  const ingestFiles = useCallback(
+    async (files: File[], kind: "attachment" | "inline") => {
+      if (!files.length) return;
+      const existing = kind === "attachment" ? attachments : inlineImages;
+      const max = kind === "attachment" ? MAX_ATTACHMENTS : MAX_INLINE_IMAGES;
+      let runningTotal = [...attachments, ...inlineImages].reduce((n, m) => n + m.size, 0);
+      const added: CampaignMedia[] = [];
+      for (const file of files) {
+        if (kind === "inline" && !file.type.startsWith("image/")) continue;
+        if (existing.length + added.length >= max) {
+          setComposerError(`You can add at most ${max} ${kind === "attachment" ? "files" : "images"}.`);
+          break;
+        }
+        if (file.size > MAX_ITEM_BYTES) {
+          setComposerError(`"${file.name}" is too large (max 3 MB per file).`);
+          continue;
+        }
+        if (runningTotal + file.size > MAX_TOTAL_MEDIA_BYTES) {
+          setComposerError("Attachments are too large together (max 3 MB total).");
+          break;
+        }
+        try {
+          const b64 = await readFileToB64(file);
+          if (!b64) continue;
+          added.push({
+            id: crypto.randomUUID(),
+            filename: file.name || (kind === "inline" ? "image.png" : "attachment"),
+            contentType: file.type || "application/octet-stream",
+            b64,
+            size: file.size,
+          });
+          runningTotal += file.size;
+        } catch {
+          setComposerError(`Could not read "${file.name}".`);
+        }
+      }
+      if (added.length) {
+        if (kind === "attachment") setAttachments((p) => [...p, ...added]);
+        else setInlineImages((p) => [...p, ...added]);
+      }
+    },
+    [attachments, inlineImages],
+  );
+
+  const onBodyPaste = useCallback(
+    (e: ReactClipboardEvent<HTMLTextAreaElement>) => {
+      const imgs: File[] = [];
+      for (const item of Array.from(e.clipboardData.items)) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const f = item.getAsFile();
+          if (f) imgs.push(f);
+        }
+      }
+      if (imgs.length) {
+        e.preventDefault();
+        void ingestFiles(imgs, "inline");
+      }
+    },
+    [ingestFiles],
+  );
+
+  const onComposerDrop = useCallback(
+    (e: ReactDragEvent<HTMLElement>) => {
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (!files.length) return;
+      e.preventDefault();
+      void ingestFiles(files, "attachment");
+    },
+    [ingestFiles],
+  );
+
+  const removeAttachment = useCallback((id: string) => {
+    setAttachments((p) => p.filter((m) => m.id !== id));
+  }, []);
+  const removeInlineImage = useCallback((id: string) => {
+    setInlineImages((p) => p.filter((m) => m.id !== id));
+  }, []);
 
   // Debounced audience preview whenever the audience inputs change while the
   // composer is open.
@@ -207,8 +342,8 @@ export default function CampaignsSection({
       setAudienceTag("");
       setAudienceSegment("trial");
       setPastedText("");
-      setApplyTag("");
-      setSaveContacts(false);
+      setAttachments([]);
+      setInlineImages([]);
     } else {
       setName(campaign.name);
       setSubject(campaign.subject);
@@ -218,8 +353,8 @@ export default function CampaignsSection({
       setAudienceTag(a.kind === "tag" ? a.tag : "");
       setAudienceSegment(a.kind === "segment" ? a.segment : "trial");
       setPastedText(a.kind === "pasted" ? a.emails.join("\n") : "");
-      setApplyTag(campaign.apply_tag ?? "");
-      setSaveContacts(campaign.save_contacts === true);
+      setAttachments(toMedia(campaign.attachments));
+      setInlineImages(toMedia(campaign.inline_images));
     }
   }
 
@@ -231,45 +366,39 @@ export default function CampaignsSection({
     setComposerNotice(null);
     try {
       const audience = buildAudience();
-      const tagField = applyTag.trim();
+      const mediaPayload = {
+        attachments: attachments.map((m) => ({ filename: m.filename, content: m.b64, contentType: m.contentType })),
+        inlineImages: inlineImages.map((m) => ({ filename: m.filename, content: m.b64, contentType: m.contentType })),
+      };
       if (draftId === null) {
         const res = await fetch("/api/admin/emails/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            subject,
-            body,
-            audience,
-            applyTag: tagField,
-            saveContacts,
-          }),
+          body: JSON.stringify({ name, subject, body, audience, ...mediaPayload }),
         });
         if (!res.ok) {
           setComposerError(await readError(res, "Could not save the draft"));
           return null;
         }
-        const { id } = (await res.json()) as { ok: boolean; id: string };
+        const { id, mediaUnsaved } = (await res.json()) as { ok: boolean; id: string; mediaUnsaved?: boolean };
         setDraftId(id);
+        if (mediaUnsaved) {
+          setComposerError("Draft saved, but attachments could not be stored: apply the 20260818_email_campaign_attachments migration to prod.");
+        }
         return id;
       }
       const res = await fetch("/api/admin/emails/campaigns", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: draftId,
-          action: "update",
-          name,
-          subject,
-          body,
-          audience,
-          applyTag: tagField,
-          saveContacts,
-        }),
+        body: JSON.stringify({ id: draftId, action: "update", name, subject, body, audience, ...mediaPayload }),
       });
       if (!res.ok) {
         setComposerError(await readError(res, "Could not save the draft"));
         return null;
+      }
+      const { mediaUnsaved } = (await res.json()) as { ok: boolean; mediaUnsaved?: boolean };
+      if (mediaUnsaved) {
+        setComposerError("Draft saved, but attachments could not be stored: apply the 20260818_email_campaign_attachments migration to prod.");
       }
       return draftId;
     } catch {
@@ -382,7 +511,11 @@ export default function CampaignsSection({
           </button>
         </div>
 
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div
+          className="mt-3 rounded-xl border border-slate-200 bg-white p-4"
+          onDrop={onComposerDrop}
+          onDragOver={(e) => e.preventDefault()}
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-slate-500">Name (internal)</label>
@@ -411,10 +544,86 @@ export default function CampaignsSection({
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
+              onPaste={onBodyPaste}
               rows={14}
               placeholder="Write the email body..."
               className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
             />
+
+            {/* Attachments + inline images */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                Attach file
+              </button>
+              <span className="text-xs text-slate-400">
+                Drag-drop files here, or paste an image to embed it in the email. Max 3 MB total.
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length) void ingestFiles(files, "attachment");
+                  e.target.value = "";
+                }}
+              />
+            </div>
+
+            {attachments.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {attachments.map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700"
+                  >
+                    <span className="max-w-[180px] truncate" title={m.filename}>
+                      {m.filename}
+                    </span>
+                    <span className="text-slate-400">{fmtBytes(m.size)}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(m.id)}
+                      aria-label={`Remove ${m.filename}`}
+                      className="text-slate-400 hover:text-rose-600"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {inlineImages.length > 0 ? (
+              <div className="mt-2">
+                <p className="text-xs text-slate-500">Inline images (embedded in the email body):</p>
+                <ul className="mt-1 flex flex-wrap gap-2">
+                  {inlineImages.map((m) => (
+                    <li key={m.id} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`data:${m.contentType};base64,${m.b64}`}
+                        alt={m.filename}
+                        className="h-16 w-16 rounded-lg border border-slate-200 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeInlineImage(m.id)}
+                        aria-label={`Remove ${m.filename}`}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-xs text-slate-500 shadow-sm hover:text-rose-600"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -494,35 +703,6 @@ export default function CampaignsSection({
               ) : null}
             </p>
           ) : null}
-
-          {/* Tag-on-send: grow and segment the list from this campaign. */}
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="apply-tag">
-              Tag recipients (optional)
-            </label>
-            <input
-              id="apply-tag"
-              type="text"
-              value={applyTag}
-              onChange={(e) => setApplyTag(e.target.value)}
-              placeholder="e.g. august-blast"
-              className="mt-1 w-64 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Adds this tag to everyone this campaign reaches, on top of any existing tags. Setting
-              a tag automatically saves recipients to Contacts.
-            </p>
-            <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={saveContacts || applyTag.trim().length > 0}
-                disabled={applyTag.trim().length > 0}
-                onChange={(e) => setSaveContacts(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              Save recipients to Contacts
-            </label>
-          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
             <button

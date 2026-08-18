@@ -34,7 +34,9 @@ export type EmailSendInput = {
   html?: string;
   replyTo?: string;
   headers?: Record<string, string>;
-  attachments?: { filename: string; content: string }[];
+  // content is base64. content_type/content_id are optional Resend fields;
+  // content_id marks an inline image referenced from the HTML body via cid:.
+  attachments?: { filename: string; content: string; content_type?: string; content_id?: string }[];
   /** Stable per-template key, e.g. 'trial_day0', 'login_link'. */
   category: string;
   funnel?: EmailFunnel;
