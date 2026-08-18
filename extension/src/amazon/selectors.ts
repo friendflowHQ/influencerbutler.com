@@ -45,7 +45,14 @@ export type SelectorId =
   | "discoveryTilePrice"
   | "discoveryTileImage"
   | "discoveryRankBadge"
-  | "discoveryGainPct";
+  | "discoveryGainPct"
+  | "ideaListGrid"
+  | "ideaListTile"
+  | "ideaListTileLink"
+  | "ideaListTileTitle"
+  | "ideaListTileBrand"
+  | "ideaListTilePrice"
+  | "ideaListTileImage";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -236,6 +243,31 @@ const REGISTRY: Record<SelectorId, string[]> = {
   discoveryRankBadge: [".zg-bdg-text", ".zg-badge-text"],
   // The 24h sales-rank gain on Movers & Shakers tiles (for example "1,234%").
   discoveryGainPct: [".zg-percent-gainer", "[class*='percentGainer']", "[class*='gainer']"],
+  // Idea List detail pages (/shop/<handle>/list/<LISTID>), served by
+  // aip-storefront-service. Verified live 2026-08-18 on a public list: the
+  // grid is #list-item-container and each product is a div.single-list-item
+  // whose data-asin holds amzn1.asin.<ASIN> (the inner single-product-item
+  // div carries the bare ASIN).
+  ideaListGrid: [
+    "#list-item-container",
+    ".list-spv-item-container",
+    "[data-csa-c-painter='influencer-idea-list-products']",
+  ],
+  ideaListTile: [
+    ".single-list-item[data-asin]",
+    "[data-csa-c-component='ASIN-Widget']",
+    ".single-product-item[data-asin]",
+  ],
+  // Per-tile (queried within a tile element).
+  ideaListTileLink: ["a.single-product-item-link", "a[href*='/dp/']"],
+  ideaListTileTitle: [".product-title-text", "a.a-link-normal[title]"],
+  ideaListTileBrand: [".product-brand-text"],
+  ideaListTilePrice: [
+    ".product-price-container .a-price .a-offscreen",
+    ".a-price .a-offscreen",
+    ".a-price",
+  ],
+  ideaListTileImage: ["img.product-image", "img"],
 };
 
 type Miss = { id: string; count: number };

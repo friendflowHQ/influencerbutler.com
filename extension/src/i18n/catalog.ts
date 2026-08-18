@@ -248,6 +248,9 @@ export interface Dict {
   toolTrendRadar: string;
   sumTrendRadar: string;
   trendRadarActive: string;
+  toolIdeaList: string;
+  sumIdeaList: string;
+  ideaListActive: string;
   trendCount: (n: number) => string;
   trendSortTrending: string;
   trendSortRank: string;
@@ -838,6 +841,9 @@ const en: Dict = {
   toolTrendRadar: "Trend Radar (Best Sellers & Movers)",
   sumTrendRadar: "Trend Radar",
   trendRadarActive: "Trend Radar is active.",
+  toolIdeaList: "Idea List money signals",
+  sumIdeaList: "Idea List overlay",
+  ideaListActive: "Idea List signals are active.",
   trendCount: (n) => `${n} products scored`,
   trendSortTrending: "Rising fastest",
   trendSortRank: "Best seller rank",
@@ -1453,6 +1459,9 @@ const es: Dict = {
   toolTrendRadar: "Radar de Tendencias (Más vendidos y Movers)",
   sumTrendRadar: "Radar de Tendencias",
   trendRadarActive: "El Radar de Tendencias está activo.",
+  toolIdeaList: "Señales de dinero en Idea Lists",
+  sumIdeaList: "Overlay de Idea List",
+  ideaListActive: "Las señales de Idea List están activas.",
   trendCount: (n) => `${n} productos puntuados`,
   trendSortTrending: "Los que más suben",
   trendSortRank: "Ranking de más vendidos",
@@ -2068,6 +2077,9 @@ const fr: Dict = {
   toolTrendRadar: "Radar de Tendances (Meilleures ventes et Movers)",
   sumTrendRadar: "Radar de Tendances",
   trendRadarActive: "Le Radar de Tendances est actif.",
+  toolIdeaList: "Signaux d'argent sur les Idea Lists",
+  sumIdeaList: "Overlay Idea List",
+  ideaListActive: "Les signaux Idea List sont actifs.",
   trendCount: (n) => `${n} produits notés`,
   trendSortTrending: "Plus fortes hausses",
   trendSortRank: "Classement des ventes",

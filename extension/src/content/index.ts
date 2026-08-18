@@ -31,6 +31,7 @@ import { initUploadHelper } from "../tools/upload-helper/panel";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
+import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
@@ -326,6 +327,16 @@ async function runForPage(): Promise<void> {
       if (settings.tools.trendRadar) {
         void initTrendRadar(settings);
         lastStatus.toolSummaries.push({ label: t().sumTrendRadar, value: t().ready });
+      }
+    });
+  } else if (pageType === "idea-list") {
+    // Money signals over an Idea List's products. Channel-neutral, like the
+    // search and brand-store overlays: it scores products, it does not post
+    // anywhere.
+    guard("idea-list-overlay", () => {
+      if (settings.tools.ideaListOverlay) {
+        void initIdeaListOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumIdeaList, value: t().ready });
       }
     });
   } else if (pageType === "campaign-grid") {

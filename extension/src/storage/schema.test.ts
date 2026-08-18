@@ -59,6 +59,19 @@ describe("migrate", () => {
     expect(out.settings.tools.trendRadar).toBe(true);
   });
 
+  it("backfills the ideaListOverlay tool flag onto v11 state", () => {
+    // A v11 store predates the Idea List overlay: no ideaListOverlay flag.
+    const v11 = {
+      schemaVersion: 11,
+      settings: structuredClone(DEFAULTS.settings),
+    } as unknown as Partial<StorageShape>;
+    delete (v11.settings as { tools: Record<string, unknown> }).tools.ideaListOverlay;
+
+    const out = migrate(v11);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.settings.tools.ideaListOverlay).toBe(true);
+  });
+
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {
     const partial = {
       schemaVersion: 6,

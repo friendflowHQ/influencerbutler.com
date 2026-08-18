@@ -7,6 +7,7 @@ export type PageType =
   | "campaign-grid"
   | "search"
   | "discovery"
+  | "idea-list"
   | "other";
 
 export function detectPageType(url: string): PageType {
@@ -20,6 +21,12 @@ export function detectPageType(url: string): PageType {
   if (/\/(?:dp|gp\/product)\/[A-Z0-9]{10}(?:[/?]|$)/.test(path)) return "product";
   if (path.startsWith("/gp/css/order-history") || path.startsWith("/your-orders")) {
     return "order-history";
+  }
+  // An Idea List detail page (/shop/<handle>/list/<LISTID>) before the
+  // storefront match that would otherwise swallow it; legacy /ideas/ URLs
+  // 404 as of 2026-08-18 but route here in case Amazon revives them.
+  if (/^\/shop\/[^/]+\/list(?:\/|$)/.test(path) || path.startsWith("/ideas/")) {
+    return "idea-list";
   }
   if (path.startsWith("/shop/")) return "storefront";
   // A brand's own storefront (the React store builder): /stores/<Brand>/page/<id>.
