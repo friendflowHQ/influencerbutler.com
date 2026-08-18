@@ -114,6 +114,14 @@ export const CATALOGUE_STALE_MS = 20 * 60 * 60 * 1000;
 export const RATE_CARD_BASE = `${API_BASE}/api/extension/rate-card`;
 export const RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
 
+// Remote operational flags (kill switch + selector overrides). Polled far more
+// often than the daily feeds so a tool misbehaving in the wild can be disabled
+// site-wide within the half hour, without a Chrome Web Store review. Checked on
+// the frequent sync alarm but only actually re-fetched once past the stale
+// window, so the cost is one small cached GET every ~30 min per active browser.
+export const FLAGS_BASE = `${API_BASE}/api/extension/flags`;
+export const FLAGS_STALE_MS = 30 * 60 * 1000;
+
 // Sync queue.
 export const SYNC_ALARM = "ib-sync";
 export const SYNC_PERIOD_MINUTES = 2;

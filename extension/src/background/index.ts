@@ -15,6 +15,7 @@ import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, requ
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard } from "./rate-card";
+import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
@@ -93,6 +94,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshFlags();
   // After an update applies, this drops the now-stale "update waiting" record.
   void getUpdateStateView();
 });
@@ -105,6 +107,7 @@ chrome.runtime.onStartup.addListener(() => {
   });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshFlags();
   void maybeTestAllOnStartup();
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
   // was closed fires on the next launch.
@@ -125,6 +128,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     void flush();
     // Reverse channel: pick up anything the paired app wants to show the creator.
     void pollAppNotifications();
+    // Operational flags ride the frequent sync alarm (self-throttled to one
+    // fetch per stale window) so a remote kill switch reaches the browser in
+    // minutes, not on the daily catalogue cadence.
+    void refreshFlags();
   }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();

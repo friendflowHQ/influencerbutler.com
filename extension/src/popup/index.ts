@@ -11,6 +11,7 @@ import {
   type WatchlistResult,
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
+import { getFlags } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
 import {
   AVAILABILITY_MARKETS,
@@ -379,6 +380,21 @@ function wireFeedback(): void {
 async function renderPageStatus(): Promise<void> {
   const text = byId("page-status-text");
   const list = byId("page-status-list");
+  // An admin notice from the operational flags feed (for example, "We paused
+  // the storefront check while Amazon settles a layout change"), shown above
+  // the page status so a user knows why a tool went quiet.
+  const notice = byId("page-status-notice");
+  try {
+    const flags = await getFlags();
+    if (flags?.notice) {
+      notice.textContent = flags.notice;
+      notice.hidden = false;
+    } else {
+      notice.hidden = true;
+    }
+  } catch {
+    notice.hidden = true;
+  }
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url?.includes("amazon.com")) {

@@ -270,6 +270,29 @@ const REGISTRY: Record<SelectorId, string[]> = {
   ideaListTileImage: ["img.product-image", "img"],
 };
 
+// Remote selector overrides (from the operational flags feed). When Amazon
+// shuffles its DOM and a selector list stops matching in the wild, the site
+// can push a corrected list here as config, so the fix ships in minutes
+// instead of a Chrome Web Store review. An override fully replaces the built-in
+// list for that id; content scripts call applySelectorOverrides() once at
+// startup before running any tool. Unknown ids are ignored (a stale override
+// for a renamed id is harmless).
+let overrides: Partial<Record<SelectorId, string[]>> = {};
+
+export function applySelectorOverrides(map: Record<string, string[]>): void {
+  const next: Partial<Record<SelectorId, string[]>> = {};
+  for (const [id, sels] of Object.entries(map)) {
+    if (!(id in REGISTRY) || !Array.isArray(sels)) continue;
+    const clean = sels.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim());
+    if (clean.length) next[id as SelectorId] = clean;
+  }
+  overrides = next;
+}
+
+function selectorsFor(id: SelectorId): string[] {
+  return overrides[id] ?? REGISTRY[id];
+}
+
 type Miss = { id: string; count: number };
 const misses = new Map<string, number>();
 
@@ -277,7 +300,7 @@ export function query<T extends Element = HTMLElement>(
   doc: ParentNode,
   id: SelectorId,
 ): T | null {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       const found = doc.querySelector<Element>(sel);
       if (found) return found as T;
@@ -299,7 +322,7 @@ export function queryMatchingText(
   id: SelectorId,
   test: (text: string) => boolean,
 ): string | null {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       for (const el of Array.from(doc.querySelectorAll(sel))) {
         const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -317,7 +340,7 @@ export function queryAll<T extends Element = HTMLElement>(
   doc: ParentNode,
   id: SelectorId,
 ): T[] {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       const found = doc.querySelectorAll<Element>(sel);
       if (found.length > 0) return Array.from(found) as T[];

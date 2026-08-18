@@ -7,7 +7,8 @@ import {
   type CarouselResult,
 } from "../amazon/video-carousel";
 import { extractSignals, type ProductSignals } from "../amazon/product-signals";
-import { query } from "../amazon/selectors";
+import { query, applySelectorOverrides } from "../amazon/selectors";
+import { getFlags } from "../flags/cache";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
@@ -146,6 +147,24 @@ async function runForPage(): Promise<void> {
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
   log("content", `page type: ${pageType}`);
+
+  // Remote operational flags win over the user's own settings: they are the
+  // site's kill switch for when a tool misbehaves in the wild. Apply selector
+  // overrides (config-level DOM repairs) before any tool queries the page,
+  // force off any remotely-disabled tool, and bail entirely on a hard kill.
+  const flags = await getFlags();
+  if (flags) {
+    applySelectorOverrides(flags.selectorOverrides);
+    if (flags.disableAll) {
+      log("content", "all tools disabled by remote flag");
+      return;
+    }
+    for (const tool of flags.disabledTools) {
+      if (tool in settings.tools) {
+        (settings.tools as Record<string, boolean>)[tool] = false;
+      }
+    }
+  }
 
   // Creator-mode channel filter (mirrored from the app). onsite tools are the
   // Amazon on-platform ones (video counts, Butler Approved, campaigns, shot
