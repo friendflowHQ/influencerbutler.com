@@ -20,10 +20,12 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { EMAIL_RE, normalizeTag, parseAudience, type Audience } from "@/lib/email-audience";
+import { EMAIL_RE, parseAudience, type Audience } from "@/lib/email-audience";
 import { MARKETING_FROM, campaignCategory } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { isMissingTable } from "@/lib/growth-goals";
+import { intakeAttachments, type NormalizedAttachment } from "@/lib/email-attachments";
+import { buildCampaignEmail } from "@/lib/campaign-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,9 +46,20 @@ type CampaignRow = {
   created_by: string;
   created_at: string;
   sent_at: string | null;
-  apply_tag?: string | null;
-  save_contacts?: boolean | null;
+  attachments?: NormalizedAttachment[] | null;
+  inline_images?: NormalizedAttachment[] | null;
 };
+
+// A write that references the attachments/inline_images columns fails with one
+// of these when the 20260818 migration has not been applied yet. We retry the
+// write without the media columns so campaign editing keeps working, and flag
+// mediaUnsaved so the UI can nudge the operator to apply the migration.
+function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42703" || error.code === "PGRST204") return true;
+  const m = (error.message || "").toLowerCase();
+  return m.includes("column") && (m.includes("does not exist") || m.includes("schema cache"));
+}
 
 type RecipientCounts = { queued: number; sent: number; skipped: number; failed: number };
 
@@ -56,52 +69,6 @@ function getDb(): SupabaseClient | null {
   } catch {
     return null;
   }
-}
-
-/** Postgres undefined_column: the 20260818 tag-on-send migration is not applied yet. */
-function undefinedColumn(error: unknown): boolean {
-  return (
-    typeof error === "object" && error !== null && (error as { code?: string }).code === "42703"
-  );
-}
-
-/**
- * Parses the optional tag-on-send fields. Returns an error string only when a
- * non-empty tag is malformed. save_contacts is implied whenever a tag is set
- * (tags live on the contact row).
- */
-function parseTagFields(
-  raw: { applyTag?: unknown; saveContacts?: unknown },
-): { apply_tag: string | null; save_contacts: boolean } | { error: string } {
-  let apply_tag: string | null = null;
-  if (typeof raw.applyTag === "string" && raw.applyTag.trim().length > 0) {
-    const t = normalizeTag(raw.applyTag);
-    if (!t) return { error: "Invalid tag" };
-    apply_tag = t;
-  }
-  const save_contacts = raw.saveContacts === true || apply_tag !== null;
-  return { apply_tag, save_contacts };
-}
-
-/**
- * Inserts a campaign, retrying without the tag-on-send columns if that
- * migration is not applied yet (so campaign creation never hard-breaks in the
- * deploy-before-migration window).
- */
-async function insertCampaign(
-  db: SupabaseClient,
-  baseRow: Record<string, unknown>,
-  tagFields: { apply_tag: string | null; save_contacts: boolean },
-): Promise<{ id: string | null; error: unknown }> {
-  let res = await db
-    .from("email_campaigns")
-    .insert({ ...baseRow, ...tagFields })
-    .select("id")
-    .single();
-  if (res.error && undefinedColumn(res.error)) {
-    res = await db.from("email_campaigns").insert(baseRow).select("id").single();
-  }
-  return { id: res.data?.id ?? null, error: res.error };
 }
 
 function emptyCounts(): RecipientCounts {
@@ -215,12 +182,8 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
   let body: {
-    name?: unknown;
-    subject?: unknown;
-    body?: unknown;
-    audience?: unknown;
-    applyTag?: unknown;
-    saveContacts?: unknown;
+    name?: unknown; subject?: unknown; body?: unknown; audience?: unknown;
+    attachments?: unknown; inlineImages?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -232,16 +195,23 @@ export async function POST(request: Request) {
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
-  const tagFields = parseTagFields(body);
-  if ("error" in tagFields) {
-    return NextResponse.json({ error: tagFields.error }, { status: 400 });
-  }
 
-  const { id, error } = await insertCampaign(
-    db,
-    { ...validated.fields, status: "draft", created_by: actor.email },
-    tagFields,
-  );
+  const media = intakeAttachments(body);
+  if (!media.ok) return NextResponse.json({ error: media.error }, { status: 400 });
+  const hasMedia = media.attachments.length > 0 || media.inlineImages.length > 0;
+
+  const baseRow = { ...validated.fields, status: "draft", created_by: actor.email };
+  let mediaUnsaved = false;
+  let { data, error } = await db
+    .from("email_campaigns")
+    .insert({ ...baseRow, attachments: media.attachments, inline_images: media.inlineImages })
+    .select("id")
+    .single();
+  if (error && isMissingColumn(error)) {
+    // Media columns not migrated yet: still let the draft save.
+    ({ data, error } = await db.from("email_campaigns").insert(baseRow).select("id").single());
+    mediaUnsaved = hasMedia;
+  }
   if (error) {
     if (isMissingTable(error)) {
       return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
@@ -249,8 +219,9 @@ export async function POST(request: Request) {
     console.error("admin emails/campaigns: insert failed", error);
     return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
+  if (!data) return NextResponse.json({ error: "Insert failed" }, { status: 500 });
 
-  return NextResponse.json({ ok: true, id });
+  return NextResponse.json({ ok: true, id: data.id, ...(mediaUnsaved ? { mediaUnsaved: true } : {}) });
 }
 
 export async function PATCH(request: Request) {
@@ -269,8 +240,8 @@ export async function PATCH(request: Request) {
     audience?: unknown;
     scheduledAt?: unknown;
     toEmail?: unknown;
-    applyTag?: unknown;
-    saveContacts?: unknown;
+    attachments?: unknown;
+    inlineImages?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -307,37 +278,34 @@ export async function PATCH(request: Request) {
     if ("error" in validated) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
-    const updateValues: Record<string, unknown> = { ...validated.fields };
-    if (body.applyTag !== undefined || body.saveContacts !== undefined) {
-      const tagFields = parseTagFields(body);
-      if ("error" in tagFields) {
-        return NextResponse.json({ error: tagFields.error }, { status: 400 });
-      }
-      updateValues.apply_tag = tagFields.apply_tag;
-      updateValues.save_contacts = tagFields.save_contacts;
-    }
-    if (Object.keys(updateValues).length === 0) {
+    // Media is only intaken when the client sent at least one of the arrays,
+    // so a plain field edit never rewrites (or clears) stored attachments.
+    const sentMedia = body.attachments !== undefined || body.inlineImages !== undefined;
+    const media = intakeAttachments(body);
+    if (!media.ok) return NextResponse.json({ error: media.error }, { status: 400 });
+    if (Object.keys(validated.fields).length === 0 && !sentMedia) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
-    const first = await db.from("email_campaigns").update(updateValues).eq("id", id);
-    let updateError: unknown = first.error;
-    if (first.error && undefinedColumn(first.error)) {
-      // 20260818 not applied yet: save the core fields, skip tag-on-send.
-      const core = { ...updateValues };
-      delete core.apply_tag;
-      delete core.save_contacts;
-      if (Object.keys(core).length > 0) {
-        const retry = await db.from("email_campaigns").update(core).eq("id", id);
-        updateError = retry.error;
-      } else {
-        updateError = null;
-      }
+    const hasMedia = media.attachments.length > 0 || media.inlineImages.length > 0;
+
+    let mediaUnsaved = false;
+    let { error } = await db
+      .from("email_campaigns")
+      .update(
+        sentMedia
+          ? { ...validated.fields, attachments: media.attachments, inline_images: media.inlineImages }
+          : validated.fields,
+      )
+      .eq("id", id);
+    if (error && sentMedia && isMissingColumn(error)) {
+      ({ error } = await db.from("email_campaigns").update(validated.fields).eq("id", id));
+      mediaUnsaved = hasMedia;
     }
-    if (updateError) {
-      console.error("admin emails/campaigns: update failed", updateError);
+    if (error) {
+      console.error("admin emails/campaigns: update failed", error);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ...(mediaUnsaved ? { mediaUnsaved: true } : {}) });
   }
 
   if (action === "send") {
@@ -396,23 +364,32 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "duplicate") {
-    const { id: newId, error } = await insertCampaign(
-      db,
-      {
-        name: `${campaign.name} copy`.slice(0, 200),
-        subject: campaign.subject,
-        body: campaign.body,
-        audience: campaign.audience,
-        status: "draft",
-        created_by: actor.email,
-      },
-      { apply_tag: campaign.apply_tag ?? null, save_contacts: campaign.save_contacts === true },
-    );
+    const copy = {
+      name: `${campaign.name} copy`.slice(0, 200),
+      subject: campaign.subject,
+      body: campaign.body,
+      audience: campaign.audience,
+      status: "draft",
+      created_by: actor.email,
+    };
+    let { data, error } = await db
+      .from("email_campaigns")
+      .insert({
+        ...copy,
+        attachments: campaign.attachments ?? [],
+        inline_images: campaign.inline_images ?? [],
+      })
+      .select("id")
+      .single();
+    if (error && isMissingColumn(error)) {
+      ({ data, error } = await db.from("email_campaigns").insert(copy).select("id").single());
+    }
     if (error) {
       console.error("admin emails/campaigns: duplicate failed", error);
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
-    return NextResponse.json({ ok: true, id: newId });
+    if (!data) return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+    return NextResponse.json({ ok: true, id: data.id });
   }
 
   if (action === "test") {
@@ -421,11 +398,18 @@ export async function PATCH(request: Request) {
     if (!toEmail || !EMAIL_RE.test(toEmail)) {
       return NextResponse.json({ error: "A valid toEmail is required" }, { status: 400 });
     }
+    const built = buildCampaignEmail({
+      body: campaign.body,
+      attachments: campaign.attachments ?? [],
+      inlineImages: campaign.inline_images ?? [],
+    });
     const ok = await sendMarketingEmail({
       from: MARKETING_FROM,
       to: toEmail,
       subject: campaign.subject,
-      text: campaign.body,
+      text: built.text,
+      html: built.html,
+      attachments: built.attachments,
       category: "campaign_test",
       funnel: "campaign",
     });

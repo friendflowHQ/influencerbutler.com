@@ -25,13 +25,13 @@ import {
   campaignCategory,
   stepCategory,
   enrollEmails,
-  tagRecipientsAsContacts,
-  shortId,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { logSuppressedSkip } from "@/lib/email-send";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
+import { buildCampaignEmail } from "@/lib/campaign-email";
+import type { NormalizedAttachment } from "@/lib/email-attachments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -118,11 +118,9 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
     if (isMissingTable(flipErr)) return;
   }
 
-  // select * so the optional apply_tag / save_contacts columns come through
-  // when present and are simply absent (no error) before that migration lands.
   const { data, error } = await db
     .from("email_campaigns")
-    .select("*")
+    .select("id, audience")
     .eq("status", "sending")
     .is("materialized_at", null)
     .order("created_at", { ascending: true })
@@ -132,12 +130,7 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
     return;
   }
 
-  for (const row of (data ?? []) as {
-    id: string;
-    audience: unknown;
-    apply_tag?: string | null;
-    save_contacts?: boolean | null;
-  }[]) {
+  for (const row of (data ?? []) as { id: string; audience: unknown }[]) {
     const audience = parseAudience(row.audience);
     if (!audience) {
       // Unusable audience payload: park the campaign as cancelled instead of
@@ -165,18 +158,6 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
       if (upsertErr) reportError("recipient upsert", upsertErr);
     }
 
-    // Tag-on-send: optionally add these recipients to Contacts and tag them.
-    // Runs once per campaign (materialization is once-per-campaign) and is
-    // best-effort, so a failure here never blocks the send.
-    if (row.apply_tag || row.save_contacts) {
-      await tagRecipientsAsContacts(
-        db,
-        emails,
-        row.apply_tag ?? null,
-        `campaign:${shortId(row.id)}`,
-      );
-    }
-
     const stamp: Record<string, unknown> = { materialized_at: new Date().toISOString() };
     if (emails.length === 0) {
       // Nothing to send: close the campaign immediately.
@@ -196,13 +177,35 @@ async function materializeCampaigns(db: SupabaseClient, summary: Summary): Promi
 // (b) Send campaign recipients
 // ---------------------------------------------------------------------------
 
+type SendingCampaign = {
+  id: string;
+  subject: string;
+  body: string;
+  attachments?: NormalizedAttachment[] | null;
+  inline_images?: NormalizedAttachment[] | null;
+};
+
 async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Promise<void> {
-  const { data, error } = await db
+  // Prefer the media columns; fall back to the base columns when the 20260818
+  // migration has not been applied so the send engine keeps draining.
+  const withMedia = await db
     .from("email_campaigns")
-    .select("id, subject, body")
+    .select("id, subject, body, attachments, inline_images")
     .eq("status", "sending")
     .not("materialized_at", "is", null)
     .order("created_at", { ascending: true });
+  let rows = withMedia.data as SendingCampaign[] | null;
+  let error = withMedia.error;
+  if (error) {
+    const base = await db
+      .from("email_campaigns")
+      .select("id, subject, body")
+      .eq("status", "sending")
+      .not("materialized_at", "is", null)
+      .order("created_at", { ascending: true });
+    rows = base.data as SendingCampaign[] | null;
+    error = base.error;
+  }
   if (error) {
     reportError("sending campaigns query", error);
     return;
@@ -211,8 +214,13 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
   // One shared budget across every sending campaign, oldest first.
   let budget = CAMPAIGN_PER_RUN;
 
-  for (const campaign of (data ?? []) as { id: string; subject: string; body: string }[]) {
+  for (const campaign of (rows ?? []) as SendingCampaign[]) {
     if (budget <= 0) break;
+    const built = buildCampaignEmail({
+      body: campaign.body,
+      attachments: campaign.attachments ?? [],
+      inlineImages: campaign.inline_images ?? [],
+    });
 
     const { data: recipients, error: recErr } = await db
       .from("email_campaign_recipients")
@@ -248,7 +256,9 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
         from: MARKETING_FROM,
         to: email,
         subject: campaign.subject,
-        text: campaign.body,
+        text: built.text,
+        html: built.html,
+        attachments: built.attachments,
         category: campaignCategory(campaign.id),
         funnel: "campaign",
       });
