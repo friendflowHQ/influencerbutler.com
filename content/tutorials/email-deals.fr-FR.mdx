@@ -1,0 +1,62 @@
+---
+title: Email Deals : transformez les e-mails de bons plans des vendeurs en publications programmées
+summary: Connectez une boîte de réception avec un mot de passe d'application, choisissez les expéditeurs à surveiller, et les codes promo et prix qu'ils vous envoient par e-mail arrivent dans un tableau filtrable prêt à partir vers le Planificateur de bons plans.
+category: Amazon
+---
+
+## Ce que fait Email Deals
+
+Les vendeurs envoient des bons plans par e-mail tous les jours : codes promo, prix remisés, dates de fin et liens vers des produits Amazon. Email Deals lit ces e-mails pour vous. Connectez un compte e-mail, ajoutez les adresses des vendeurs à surveiller, et chaque bon plan envoyé arrive dans un tableau au sein de Deals Influencer Butler, décomposé en code promo, prix remisé, prix d'origine, pourcentage de réduction, avis, étoiles, date de fin et lien produit. De là, vous envoyez ceux qui vous plaisent au Planificateur de bons plans, ou vous laissez l'envoi automatique s'en charger.
+
+Vous le trouverez dans l'onglet **Email Deals** de Deals Influencer Butler. Chaque espace de travail Amazon Deals, y compris les clones que vous avez ajoutés, garde sa propre configuration Email Deals : chaque espace peut donc surveiller une boîte de réception et des expéditeurs différents.
+
+## Étape 1 : connectez votre boîte de réception
+
+Email Deals se connecte à votre compte de messagerie via IMAP avec un **mot de passe d'application**, un mot de passe distinct de 16 caractères que votre fournisseur de messagerie génère pour une seule application. Votre mot de passe habituel n'est jamais utilisé, et le mot de passe d'application est stocké chiffré sur cet ordinateur. Il ne quitte jamais votre machine, sauf pour la connexion à votre serveur de messagerie.
+
+Gmail et Yahoo exigent un mot de passe d'application (ils refusent les mots de passe habituels venant d'applications) :
+
+1. Activez la validation en deux étapes sur votre compte e-mail si ce n'est pas déjà fait. Les mots de passe d'application ne sont disponibles qu'avec la validation en deux étapes active.
+2. Créez un mot de passe d'application dans les paramètres de sécurité de votre compte. Sur Gmail : Compte Google, puis **Sécurité**, puis **Validation en deux étapes**, puis **Mots de passe des applications**. Sur Yahoo : **Sécurité du compte**, puis **Générer un mot de passe d'application**.
+3. Copiez le mot de passe de 16 caractères affiché. Il n'est montré qu'une seule fois.
+
+Ensuite, dans la carte **Compte e-mail** :
+
+1. Saisissez votre **Adresse e-mail**.
+2. Collez le **Mot de passe d'application**.
+3. Vérifiez le **Serveur IMAP**. Il est pré-rempli avec `imap.gmail.com` ; Yahoo utilise `imap.mail.yahoo.com`. Le **Port** par défaut, 993, convient à presque tous les fournisseurs.
+4. Cliquez sur **Tester** pour confirmer que la connexion fonctionne, puis sur **Connecter**.
+
+La pastille d'état passe à **Connecté en tant que** votre adresse. Tout fournisseur proposant IMAP fonctionne de la même façon ; seul le nom du serveur change.
+
+## Étape 2 : ajoutez les expéditeurs à surveiller
+
+Dans **Expéditeurs vendeurs à surveiller**, ajoutez une adresse e-mail par ligne, par exemple l'adresse d'un contact vendeur ou celle de la newsletter de bons plans d'une marque. Seuls les e-mails de ces expéditeurs sont analysés. Tout le reste de votre boîte de réception est ignoré : vos e-mails personnels ne sont jamais lus.
+
+## Étape 3 : réglez la vérification quotidienne
+
+La carte **Vérification quotidienne** lance la collecte pour vous :
+
+- Activez **Vérifier mes e-mails chaque jour** et choisissez une heure. La carte affiche la prochaine vérification programmée et un résumé de la dernière (combien de nouveaux bons plans issus de combien d'e-mails).
+- Utilisez **Vérifier maintenant** à tout moment pour lancer une collecte immédiate, ce qui est aussi le moyen le plus rapide de confirmer que tout est bien branché.
+
+Note pour les clones : quand vous créez un nouveau clone Amazon Deals, il copie les expéditeurs et les filtres de l'espace de travail d'origine, mais la vérification quotidienne démarre désactivée pour qu'un clone tout neuf ne collecte jamais avant que vous soyez prêt.
+
+## Étape 4 : filtrez ce qui compte comme publiable
+
+La carte **Filtres de bons plans** décide quels bons plans collectés comptent comme publiables : prix minimum et maximum, pourcentage de réduction minimum, nombre d'avis minimum, étoiles minimum, mots du titre à exiger ou à exclure, et un interrupteur **Uniquement les bons plans avec code promo**. Le tableau en dessous montre toujours tout ce qui a été collecté ; les lignes qui échouent à vos filtres sont estompées plutôt que masquées, vous pouvez donc toujours en envoyer une manuellement si elle vous intéresse.
+
+Si vous avez déjà réglé vos filtres dans l'onglet Rechercher des bons plans, cliquez sur **Copier les filtres de Rechercher des bons plans** et les mêmes limites s'appliquent ici en un clic.
+
+## Étape 5 : envoyez des bons plans au Planificateur
+
+Chaque bon plan collecté apparaît dans le tableau **Bons plans e-mail collectés** avec son code promo, ses prix, son pourcentage de réduction et sa date de fin. Pour en publier :
+
+1. Cochez les lignes voulues, ou cliquez sur **Sélectionner les conformes** pour sélectionner tout ce qui passe vos filtres.
+2. Cliquez sur **Envoyer la sélection au Planificateur**. Les bons plans rejoignent la file du Planificateur de bons plans et sont publiés avec votre modèle, vos destinations et votre planning habituels.
+
+Les lignes envoyées passent du statut **Nouveau** à **Envoyé**, vous savez donc toujours ce qui est déjà parti. Les lignes indésirables se suppriment avec **Supprimer la sélection**.
+
+## Optionnel : l'envoi automatique
+
+Activez **Envoyer automatiquement au Planificateur les bons plans qui passent les filtres** et chaque vérification quotidienne se termine en envoyant les bons plans conformes directement dans la file du Planificateur, sans aucun clic. C'est désactivé par défaut pour que vous puissiez relire les premières collectes avant de lui faire confiance. Avec l'envoi automatique actif, la boucle est entièrement autonome : le vendeur envoie un code promo le matin, la vérification quotidienne le récupère, et le Planificateur le publie vers vos destinations.

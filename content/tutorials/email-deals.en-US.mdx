@@ -1,0 +1,62 @@
+---
+title: Email Deals: turn seller deal emails into scheduled posts
+summary: Connect an inbox with an app password, pick which seller senders to watch, and the promo codes and prices they email you land in a filterable table ready to send to the Deals Scheduler.
+category: Amazon
+---
+
+## What Email Deals does
+
+Sellers email deals every day: promo codes, discounted prices, end dates, and Amazon product links. Email Deals reads those emails for you. Connect an email account, add the seller addresses you want to watch, and every deal they send lands in a table inside Deals Influencer Butler, parsed into promo code, deal price, original price, percent off, reviews, stars, end date, and the product link. From there you send the ones you like to the Deals Scheduler, or let auto-send do it for you.
+
+You will find it as the **Email Deals** tab inside Deals Influencer Butler. Each Amazon Deals workspace, including any clones you have added, keeps its own Email Deals setup, so every workspace can watch a different inbox and different senders.
+
+## Step 1: connect your inbox
+
+Email Deals signs in to your mail account over IMAP using an **app password**, a separate 16-character password your email provider generates just for one app. Your normal password is never used, and the app password is stored encrypted on this computer. It never leaves your machine except to sign in to your mail server.
+
+Gmail and Yahoo both require an app password (they refuse normal passwords from apps):
+
+1. Turn on 2-step verification for your email account if it is not already on. App passwords are only available once 2-step verification is active.
+2. Create an app password in your account's security settings. On Gmail: Google Account, then **Security**, then **2-Step Verification**, then **App passwords**. On Yahoo: **Account Security**, then **Generate app password**.
+3. Copy the 16-character password it shows you. It is only shown once.
+
+Then in the **Email account** card:
+
+1. Enter your **Email address**.
+2. Paste the **App password**.
+3. Check the **IMAP server**. It is pre-filled with `imap.gmail.com`; Yahoo uses `imap.mail.yahoo.com`. The default **Port** 993 is right for almost every provider.
+4. Click **Test** to confirm the sign-in works, then **Connect**.
+
+The status chip switches to **Connected as** your address. Any provider that offers IMAP works the same way; only the server name changes.
+
+## Step 2: add the seller senders to watch
+
+In **Seller senders to watch**, add one email address per line, for example the address a seller contact or a brand's deals newsletter sends from. Only mail from these senders is checked. Everything else in your inbox is ignored, so your personal mail is never read.
+
+## Step 3: set the daily check
+
+The **Daily check** card runs the harvest for you:
+
+- Turn on **Check my email every day** and pick a time. The card shows the next scheduled check and a summary of the last one (how many new deals came out of how many emails).
+- Use **Check now** any time to run a harvest immediately, which is also the quickest way to confirm everything is wired up.
+
+Note for clones: when you create a new Amazon Deals clone, it copies the senders and filters from the workspace it was cloned from, but the daily check starts switched off so a fresh clone never harvests before you are ready.
+
+## Step 4: filter what counts as postable
+
+The **Deal filters** card decides which harvested deals count as postable: min and max price, min percent off, min reviews, min stars, title words to require or exclude, and a **Promo code deals only** switch. The table below always shows everything harvested; rows that fail your filters are dimmed rather than hidden, so you can still send one manually if you want it.
+
+If you already tuned filters in the Search Deals tab, click **Copy filters from Search Deals** and the same limits are applied here in one click.
+
+## Step 5: send deals to the Scheduler
+
+Every harvested deal appears in the **Harvested email deals** table with its promo code, prices, percent off, and end date. To post some:
+
+1. Tick the rows you want, or click **Select passing** to select everything that passes your filters.
+2. Click **Send selected to Scheduler**. The deals join the Deals Scheduler queue and post through your normal template, destinations, and schedule.
+
+Sent rows switch their status from **New** to **Sent**, so you always know what has already gone out. Rows you do not want can be removed with **Delete selected**.
+
+## Optional: auto-send
+
+Turn on **Auto-send deals that pass the filters to the Scheduler** and every daily check finishes by sending the passing deals straight into the Scheduler queue, no clicks needed. It is off by default so you can review the first few harvests before trusting it. With auto-send on, the whole loop is hands-free: the seller emails a promo code in the morning, the daily check picks it up, and the Scheduler posts it to your destinations.

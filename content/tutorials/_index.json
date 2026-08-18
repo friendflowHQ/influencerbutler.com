@@ -216,6 +216,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "email-deals",
+      "title": "Email Deals: turn seller deal emails into scheduled posts",
+      "category": "Amazon",
+      "summary": "Connect an inbox with an app password, pick which seller senders to watch, and the promo codes and prices they email you land in a filterable table ready to send to the Deals Scheduler.",
+      "order": 72,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "likebutler",
       "title": "Like Butler: auto-like Amazon Creator storefronts you want to stay visible to",
       "category": "Amazon",
