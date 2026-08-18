@@ -1,0 +1,62 @@
+---
+title: Email Deals: convierte los correos de ofertas de vendedores en publicaciones programadas
+summary: Conecta una bandeja de entrada con una contraseña de aplicación, elige qué remitentes vigilar, y los códigos promocionales y precios que te envían por correo aterrizan en una tabla filtrable lista para enviar al Programador de Ofertas.
+category: Amazon
+---
+
+## Qué hace Email Deals
+
+Los vendedores envían ofertas por correo todos los días: códigos promocionales, precios rebajados, fechas de fin y enlaces a productos de Amazon. Email Deals lee esos correos por ti. Conecta una cuenta de correo, añade las direcciones de los vendedores que quieres vigilar, y cada oferta que envíen aterriza en una tabla dentro de Deals Influencer Butler, desglosada en código promocional, precio de oferta, precio original, porcentaje de descuento, reseñas, estrellas, fecha de fin y el enlace al producto. Desde ahí envías las que te gusten al Programador de Ofertas, o dejas que el envío automático lo haga por ti.
+
+La encontrarás como la pestaña **Email Deals** dentro de Deals Influencer Butler. Cada espacio de trabajo de Amazon Deals, incluidos los clones que hayas añadido, mantiene su propia configuración de Email Deals, así que cada espacio puede vigilar una bandeja de entrada y unos remitentes distintos.
+
+## Paso 1: conecta tu bandeja de entrada
+
+Email Deals inicia sesión en tu cuenta de correo por IMAP usando una **contraseña de aplicación**, una contraseña independiente de 16 caracteres que tu proveedor de correo genera solo para una aplicación. Tu contraseña normal nunca se usa, y la contraseña de aplicación se guarda cifrada en este ordenador. Nunca sale de tu equipo salvo para iniciar sesión en tu servidor de correo.
+
+Gmail y Yahoo exigen una contraseña de aplicación (rechazan las contraseñas normales desde aplicaciones):
+
+1. Activa la verificación en dos pasos en tu cuenta de correo si aún no está activa. Las contraseñas de aplicación solo están disponibles con la verificación en dos pasos activada.
+2. Crea una contraseña de aplicación en los ajustes de seguridad de tu cuenta. En Gmail: Cuenta de Google, luego **Seguridad**, luego **Verificación en dos pasos**, luego **Contraseñas de aplicaciones**. En Yahoo: **Seguridad de la cuenta**, luego **Generar contraseña de aplicación**.
+3. Copia la contraseña de 16 caracteres que te muestra. Solo se muestra una vez.
+
+Después, en la tarjeta **Cuenta de correo**:
+
+1. Introduce tu **Dirección de correo**.
+2. Pega la **Contraseña de aplicación**.
+3. Revisa el **Servidor IMAP**. Viene pre-rellenado con `imap.gmail.com`; Yahoo usa `imap.mail.yahoo.com`. El **Puerto** por defecto, 993, es correcto para casi todos los proveedores.
+4. Pulsa **Probar** para confirmar que el inicio de sesión funciona y luego **Conectar**.
+
+El indicador de estado cambia a **Conectado como** tu dirección. Cualquier proveedor que ofrezca IMAP funciona igual; solo cambia el nombre del servidor.
+
+## Paso 2: añade los remitentes a vigilar
+
+En **Remitentes de vendedores a vigilar**, añade una dirección de correo por línea, por ejemplo la dirección desde la que escribe un contacto de vendedor o el boletín de ofertas de una marca. Solo se revisa el correo de estos remitentes. Todo lo demás de tu bandeja de entrada se ignora, así que tu correo personal nunca se lee.
+
+## Paso 3: configura la comprobación diaria
+
+La tarjeta **Comprobación diaria** ejecuta la recolección por ti:
+
+- Activa **Comprobar mi correo cada día** y elige una hora. La tarjeta muestra la próxima comprobación programada y un resumen de la última (cuántas ofertas nuevas salieron de cuántos correos).
+- Usa **Comprobar ahora** en cualquier momento para lanzar una recolección inmediata, que además es la forma más rápida de confirmar que todo está bien conectado.
+
+Nota para los clones: cuando creas un clon nuevo de Amazon Deals, copia los remitentes y los filtros del espacio de trabajo del que fue clonado, pero la comprobación diaria empieza desactivada para que un clon recién creado nunca recolecte antes de que estés listo.
+
+## Paso 4: filtra qué cuenta como publicable
+
+La tarjeta **Filtros de ofertas** decide qué ofertas recolectadas cuentan como publicables: precio mínimo y máximo, porcentaje de descuento mínimo, reseñas mínimas, estrellas mínimas, palabras del título a exigir o excluir, y un interruptor de **Solo ofertas con código promocional**. La tabla de abajo siempre muestra todo lo recolectado; las filas que no pasan tus filtros se atenúan en lugar de ocultarse, así que aún puedes enviar una manualmente si la quieres.
+
+Si ya ajustaste los filtros en la pestaña Buscar Ofertas, pulsa **Copiar filtros de Buscar Ofertas** y los mismos límites se aplican aquí con un clic.
+
+## Paso 5: envía ofertas al Programador
+
+Cada oferta recolectada aparece en la tabla **Ofertas de correo recolectadas** con su código promocional, precios, porcentaje de descuento y fecha de fin. Para publicar algunas:
+
+1. Marca las filas que quieras, o pulsa **Seleccionar aptas** para seleccionar todo lo que pasa tus filtros.
+2. Pulsa **Enviar selección al Programador**. Las ofertas entran en la cola del Programador de Ofertas y se publican con tu plantilla, destinos y horario habituales.
+
+Las filas enviadas cambian su estado de **Nueva** a **Enviada**, así que siempre sabes qué ha salido ya. Las filas que no quieras se eliminan con **Eliminar selección**.
+
+## Opcional: envío automático
+
+Activa **Enviar automáticamente al Programador las ofertas que pasen los filtros** y cada comprobación diaria termina enviando las ofertas aptas directamente a la cola del Programador, sin clics. Viene desactivado por defecto para que puedas revisar las primeras recolecciones antes de confiar en él. Con el envío automático activado, el ciclo completo es manos libres: el vendedor envía un código promocional por la mañana, la comprobación diaria lo recoge, y el Programador lo publica en tus destinos.
