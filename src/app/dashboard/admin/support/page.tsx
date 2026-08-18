@@ -9,7 +9,16 @@
  * permissions server-side; a 403 renders the "Admin only" state.
  */
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent as ReactClipboardEvent,
+  type DragEvent as ReactDragEvent,
+  type ReactNode,
+} from "react";
 
 type Reply = {
   id: number | string;
@@ -47,6 +56,31 @@ type Ticket = {
 };
 
 const REPO_URL = "https://github.com/friendflowHQ/InfluencerButler";
+
+// Reply attachments / pasted images. These travel as base64 in the reply POST,
+// so the caps here mirror the server route (which re-validates): the JSON body
+// must stay under Vercel's ~4.5 MB request limit, and base64 inflates bytes by
+// ~33%, so 3 MB of raw files is the practical ceiling.
+type ReplyMedia = { id: string; filename: string; contentType: string; b64: string; size: number };
+const MAX_ATTACHMENTS = 5;
+const MAX_INLINE_IMAGES = 5;
+const MAX_ITEM_BYTES = 3 * 1024 * 1024;
+const MAX_TOTAL_MEDIA_BYTES = 3 * 1024 * 1024;
+
+function readFileToB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type Bucket = { key: string; label: string; statuses: string[] };
 
@@ -189,6 +223,10 @@ export default function SupportAdminPage() {
   const [suggestReason, setSuggestReason] = useState("");
   const [editPriority, setEditPriority] = useState("P2");
   const [editTags, setEditTags] = useState("");
+  // Reply media: files attach as downloads; pasted images embed inline (cid:).
+  const [replyAttachments, setReplyAttachments] = useState<ReplyMedia[]>([]);
+  const [replyInlineImages, setReplyInlineImages] = useState<ReplyMedia[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const activeBucket = useMemo(() => BUCKETS.find((b) => b.key === bucket) ?? BUCKETS[0], [bucket]);
 
@@ -240,6 +278,8 @@ export default function SupportAdminPage() {
       setReplySubject(`Re: ${t.title || ""}`.slice(0, 180));
       setReplyBody("");
       setReplyAdvance(true);
+      setReplyAttachments([]);
+      setReplyInlineImages([]);
     } finally {
       setDetailBusy(false);
     }
@@ -308,6 +348,78 @@ export default function SupportAdminPage() {
   // Statuses where a human reply should hand the ball back to the customer.
   const replyCanAdvance = !!selected && ["sent", "user_replied", "clarifying", "escalated"].includes(selected.status);
 
+  // Read dropped/picked/pasted files into base64 media, enforcing the same caps
+  // the server route re-checks. `attachment` files download; `inline` images
+  // embed in the email body.
+  const ingestFiles = useCallback(async (files: File[], kind: "attachment" | "inline") => {
+    if (!files.length) return;
+    const existing = kind === "attachment" ? replyAttachments : replyInlineImages;
+    const max = kind === "attachment" ? MAX_ATTACHMENTS : MAX_INLINE_IMAGES;
+    let runningTotal = [...replyAttachments, ...replyInlineImages].reduce((n, m) => n + m.size, 0);
+    const added: ReplyMedia[] = [];
+    for (const file of files) {
+      if (kind === "inline" && !file.type.startsWith("image/")) continue;
+      if (existing.length + added.length >= max) {
+        setActionMsg(`You can attach at most ${max} ${kind === "attachment" ? "files" : "images"}.`);
+        break;
+      }
+      if (file.size > MAX_ITEM_BYTES) {
+        setActionMsg(`"${file.name}" is too large (max 3 MB per file).`);
+        continue;
+      }
+      if (runningTotal + file.size > MAX_TOTAL_MEDIA_BYTES) {
+        setActionMsg("Attachments are too large together (max 3 MB total).");
+        break;
+      }
+      try {
+        const b64 = await readFileToB64(file);
+        if (!b64) continue;
+        added.push({
+          id: crypto.randomUUID(),
+          filename: file.name || (kind === "inline" ? "image.png" : "attachment"),
+          contentType: file.type || "application/octet-stream",
+          b64,
+          size: file.size,
+        });
+        runningTotal += file.size;
+      } catch {
+        setActionMsg(`Could not read "${file.name}".`);
+      }
+    }
+    if (added.length) {
+      if (kind === "attachment") setReplyAttachments((p) => [...p, ...added]);
+      else setReplyInlineImages((p) => [...p, ...added]);
+    }
+  }, [replyAttachments, replyInlineImages]);
+
+  const onReplyPaste = useCallback((e: ReactClipboardEvent<HTMLTextAreaElement>) => {
+    const imgs: File[] = [];
+    for (const item of Array.from(e.clipboardData.items)) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const f = item.getAsFile();
+        if (f) imgs.push(f);
+      }
+    }
+    if (imgs.length) {
+      e.preventDefault();
+      void ingestFiles(imgs, "inline");
+    }
+  }, [ingestFiles]);
+
+  const onReplyDrop = useCallback((e: ReactDragEvent<HTMLElement>) => {
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (!files.length) return;
+    e.preventDefault();
+    void ingestFiles(files, "attachment");
+  }, [ingestFiles]);
+
+  const removeAttachment = useCallback((id: string) => {
+    setReplyAttachments((p) => p.filter((m) => m.id !== id));
+  }, []);
+  const removeInlineImage = useCallback((id: string) => {
+    setReplyInlineImages((p) => p.filter((m) => m.id !== id));
+  }, []);
+
   const doReply = useCallback(async () => {
     if (!selected) return;
     if (!replySubject.trim() || !replyBody.trim()) { setActionMsg("Subject and body are required."); return; }
@@ -323,19 +435,27 @@ export default function SupportAdminPage() {
           subject: replySubject.trim(),
           body: replyBody.trim(),
           ...(advance ? { advanceStatus: "waiting_on_user" } : {}),
+          ...(replyAttachments.length
+            ? { attachments: replyAttachments.map((m) => ({ filename: m.filename, content: m.b64, contentType: m.contentType })) }
+            : {}),
+          ...(replyInlineImages.length
+            ? { inlineImages: replyInlineImages.map((m) => ({ filename: m.filename, content: m.b64, contentType: m.contentType })) }
+            : {}),
         }),
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) { setActionMsg(json.error || "Reply failed"); return; }
       setActionMsg("Reply sent.");
       setReplyBody("");
+      setReplyAttachments([]);
+      setReplyInlineImages([]);
       await Promise.all([openTicket(selected.id), fetchList(), fetchCounts()]);
     } catch (e) {
       setActionMsg(e instanceof Error ? e.message : "Reply failed");
     } finally {
       setDetailBusy(false);
     }
-  }, [selected, replySubject, replyBody, replyAdvance, openTicket, fetchList, fetchCounts]);
+  }, [selected, replySubject, replyBody, replyAdvance, replyAttachments, replyInlineImages, openTicket, fetchList, fetchCounts]);
 
   // Draft a grounded reply with AI and drop it into the reply box for review.
   const doSuggest = useCallback(async () => {
@@ -759,7 +879,11 @@ export default function SupportAdminPage() {
             </section>
 
             {/* Reply */}
-            <section className="mt-4 rounded-xl border border-slate-200 p-3">
+            <section
+              className="mt-4 rounded-xl border border-slate-200 p-3"
+              onDrop={selected.userEmail ? onReplyDrop : undefined}
+              onDragOver={selected.userEmail ? (e) => e.preventDefault() : undefined}
+            >
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reply to customer</h3>
               {selected.userEmail ? (
                 <>
@@ -776,7 +900,65 @@ export default function SupportAdminPage() {
                   </div>
                   {suggestReason && <p className="mt-2 text-xs text-slate-500">{suggestReason}</p>}
                   <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="Subject" />
-                  <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
+                  <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} onPaste={onReplyPaste} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
+
+                  {/* Attach files / paste images */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Attach file
+                    </button>
+                    <span className="text-xs text-slate-400">Drag-drop files here, or paste an image to embed it in the email. Max 3 MB total.</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length) void ingestFiles(files, "attachment");
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+
+                  {replyAttachments.length > 0 && (
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {replyAttachments.map((m) => (
+                        <li key={m.id} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700">
+                          <span className="max-w-[180px] truncate" title={m.filename}>{m.filename}</span>
+                          <span className="text-slate-400">{formatBytes(m.size)}</span>
+                          <button type="button" onClick={() => removeAttachment(m.id)} aria-label={`Remove ${m.filename}`} className="text-slate-400 hover:text-rose-600">✕</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {replyInlineImages.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-slate-500">Inline images (embedded in the email body):</p>
+                      <ul className="mt-1 flex flex-wrap gap-2">
+                        {replyInlineImages.map((m) => (
+                          <li key={m.id} className="relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={`data:${m.contentType};base64,${m.b64}`} alt={m.filename} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeInlineImage(m.id)}
+                              aria-label={`Remove ${m.filename}`}
+                              className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-xs text-slate-500 shadow-sm hover:text-rose-600"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {replyCanAdvance && (
                     <label className="mt-2 flex items-center gap-2 text-sm text-slate-600">
                       <input type="checkbox" checked={replyAdvance} onChange={(e) => setReplyAdvance(e.target.checked)} className="rounded border-slate-300" />
