@@ -24,7 +24,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
-const DEAD_KEY_STATUSES = new Set(["revoked", "disabled", "expired", "cancelled"]);
+// "revoked" is the only status our own flows write as a deliberate kill switch
+// (the admin licenses.revoke route). Every other dead-looking value
+// (disabled, inactive, expired, cancelled) is a Lemon Squeezy mirror: LS keeps
+// a subscription's key disabled/inactive until the first payment clears, so a
+// legitimate on_trial customer's key can carry one. Those keys are judged
+// instead by the live-subscription check below, which is the real entitlement
+// gate: a genuinely churned customer has no live subscription and still fails.
+const DEAD_KEY_STATUSES = new Set(["revoked"]);
 
 export async function POST(request: Request) {
   const secret = process.env.LICENSING_WORKER_SECRET;

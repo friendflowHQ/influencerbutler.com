@@ -214,6 +214,96 @@ export async function deactivateLicenseInstance(
   }
 }
 
+/**
+ * A license key resolved from Lemon Squeezy's public License API validate
+ * endpoint, which (unlike the main API) needs no API key and accepts the bare
+ * key value. We keep the record even when LS reports valid=false, because the
+ * caller only needs identity: LS keeps a subscription's key inactive/disabled
+ * until the first payment clears, so a legitimate trial customer's key reads
+ * "not valid" here while still belonging to a real account.
+ */
+export type LsValidatedLicense = {
+  lsLicenseKeyId: string;
+  key: string;
+  status: string;
+  activationLimit: number | null;
+  activationsCount: number | null;
+  customerEmail: string | null;
+};
+
+type LsValidateResponse = {
+  license_key?: {
+    id?: number | string | null;
+    key?: string | null;
+    status?: string | null;
+    activation_limit?: number | null;
+    activation_usage?: number | null;
+  } | null;
+  meta?: {
+    store_id?: number | string | null;
+    customer_email?: string | null;
+  } | null;
+};
+
+/**
+ * Resolves a bare license key via LS's public License API validate endpoint.
+ * Returns null when LS does not know the key at all, or (when
+ * LEMONSQUEEZY_STORE_ID is set) when the key belongs to a different store.
+ * Validate does not consume an activation. This endpoint speaks plain
+ * application/json, so it gets a dedicated fetch instead of lsApi.
+ */
+export async function validateLicenseWithLs(
+  licenseKey: string,
+): Promise<LsValidatedLicense | null> {
+  const key = licenseKey.trim();
+  if (!key) return null;
+  try {
+    const response = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ license_key: key }),
+    });
+    // The body carries the key record on both 200 (valid) and 400 (invalid /
+    // inactive / disabled), so we parse regardless of the HTTP status. Only a
+    // 5xx or a network throw is a real failure.
+    if (response.status >= 500) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: license validate failed", {
+        status: response.status,
+        text: text.slice(0, 500),
+      });
+      return null;
+    }
+    const payload = (await response.json().catch(() => null)) as LsValidateResponse | null;
+    const lk = payload?.license_key;
+    if (!lk?.id || !lk.key) return null;
+
+    const expectedStore = process.env.LEMONSQUEEZY_STORE_ID;
+    const metaStore = payload?.meta?.store_id;
+    if (expectedStore && metaStore != null && String(metaStore) !== String(expectedStore)) {
+      console.warn("lemonsqueezy: validate key belongs to a different store", {
+        metaStore: String(metaStore),
+      });
+      return null;
+    }
+
+    return {
+      lsLicenseKeyId: String(lk.id),
+      key: lk.key,
+      status: lk.status ?? "inactive",
+      activationLimit: lk.activation_limit ?? null,
+      activationsCount: lk.activation_usage ?? null,
+      customerEmail: payload?.meta?.customer_email ?? null,
+    };
+  } catch (error) {
+    console.error("lemonsqueezy: license validate threw", error);
+    return null;
+  }
+}
+
 /** LS subscription statuses that represent a live, billing-capable sub. */
 const LIVE_SUB_STATUSES = new Set(["active", "on_trial", "past_due"]);
 
