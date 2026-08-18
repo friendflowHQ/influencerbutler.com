@@ -236,6 +236,7 @@ function scoreFor(row: Row, settings: Settings): ButlerScore {
       influencerVideos: row.influencerVideos,
       boughtPastMonth: row.dp?.boughtPastMonth ?? null,
       inStock: row.dp ? row.dp.inStock : null,
+      reviewCount: null,
       membership: { cc: row.flags.cc, spcc: row.flags.spcc },
     },
     settings,
