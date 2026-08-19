@@ -81,9 +81,10 @@ export async function POST(request: Request) {
       }),
     });
 
-  // Groq's free tier caps tokens-per-minute at 6000; a tool round can trip it
-  // mid-conversation. When that happens, fail the whole conversation over to
-  // OpenAI (sticky for the remaining rounds) instead of erroring the user.
+  // Groq's free tier is flaky mid-conversation: a tokens-per-minute 429, or a
+  // transient 5xx/timeout on any tool round, can surface to the user as
+  // "assistant unavailable". When that happens, fail the whole conversation
+  // over to OpenAI (sticky for the remaining rounds) instead of erroring out.
   let activeProvider = provider;
   // A start_walkthrough tool call's payload is forwarded to the desktop with
   // the final reply (the executor only acks). First call wins; desktop only.
@@ -91,10 +92,14 @@ export async function POST(request: Request) {
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let res = await callProvider(activeProvider);
-      if (res.status === 429 && activeProvider.kind === "groq") {
+      // Fail over on ANY non-OK Groq response (429, 5xx, gateway timeouts), not
+      // just the tokens-per-minute 429 — a passing Groq hiccup should retry on
+      // OpenAI rather than reach the user as "unavailable". No-op when Groq is
+      // the only configured provider (openAiFallbackProvider returns null).
+      if (!res.ok && activeProvider.kind === "groq") {
         const fallback = openAiFallbackProvider();
         if (fallback) {
-          console.warn("[ai-concierge/chat] groq 429, failing over to openai");
+          console.warn(`[ai-concierge/chat] groq ${res.status}, failing over to openai`);
           activeProvider = fallback;
           res = await callProvider(activeProvider);
         }
