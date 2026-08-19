@@ -23,12 +23,9 @@
     color: #fff; font-weight: 700; font-size: 20px; letter-spacing: .01em;
   }
   .brand img { width: 34px; height: 34px; border-radius: 8px; }
-  .free-pill {
-    position: absolute; top: 32px; right: 40px;
-    background: rgba(255,255,255,.16); border: 1.5px solid rgba(255,255,255,.75);
-    color: #fff; font-weight: 700; font-size: 15px; letter-spacing: .16em;
-    padding: 6px 16px; border-radius: 999px;
-  }
+  /* NOTE: no FREE/NEW/#1-style badge here. The 2026-08-19 rejection (Red
+     Nickel) flagged badge keywords in listing images; see
+     docs/chrome-web-store-listing.md. */
   .headline {
     position: absolute; top: 84px; left: 0; right: 0;
     text-align: center; color: #fff; font-size: 43px; font-weight: 800;
@@ -75,7 +72,6 @@
   <div class="blob blob1"></div>
   <div class="blob blob2"></div>
   <div class="brand"><img src="{{LOGO}}" alt=""> Influencer Butler</div>
-  <div class="free-pill">FREE</div>
   <div class="headline">{{HEADLINE}}</div>
   <div class="stage">
     <div class="card">
