@@ -160,6 +160,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "filled-campaign-recovery",
+      "title": "Filled campaign recovery: pitch brands to reopen a slot",
+      "category": "Amazon",
+      "summary": "Find Creator Connections campaigns that filled up before you could join, but feature products you already made content for, then message the brand with proof and ask them to open another slot.",
+      "order": 31,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "cc-deals",
       "title": "Campaign Deals: track on-sale items in your Creator Connections campaigns",
       "category": "Amazon",
