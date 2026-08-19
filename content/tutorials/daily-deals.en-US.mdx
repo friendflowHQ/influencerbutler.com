@@ -137,6 +137,15 @@ The AI studies your examples (your hook style, emoji habits, layout, and sign-of
 
 This feature uses your OpenAI key from **API Integrations**, the same key as the AI keyword generator. No key connected? The section shows a **Connect OpenAI** button that takes you there.
 
+## Caption by deal type
+
+Different deals deserve different wording: a straight price drop, a coupon code to type at checkout, a clippable coupon, or a mix of them. **Caption by deal type** (in **Build Your Post**, under the caption variants) gives you a separate caption box for each style, so you can write them once and edit any one without touching the others.
+
+There are seven boxes: **Price drop**, **Code**, **Coupon**, **Price drop + code**, **Price drop + coupon**, **Coupon + code**, and **Price drop + coupon + code**. You do not have to fill them all. Write captions only for the styles you care about and leave the rest empty.
+
+How Butler picks a box: for each product it checks whether the product has a price drop, a coupon code, and a clippable coupon, then uses the box that matches that exact combination. If that box is empty, Butler falls back to the closest box you did fill, and if none apply it uses your main **Post caption**. So the boxes never fight your main caption: they only take over when a deal matches one you wrote. Every box takes the same pills as your main caption (title, link, price, percent off, promo code, and the rest), and the live **Preview** shows which box a deal will use.
+
+If a deal ends up with no caption at all (no matching box, an empty main caption, and no variants), Butler posts a basic caption (percent off and the product title) and the preview shows a note telling you so, with a shortcut to connect OpenAI or add a caption.
 ## Auto-build Amazon Idea Lists
 
 On the Harvest tab there is an **Auto-build Amazon Idea Lists** card. Turn it on and, after each search, Butler creates Amazon Idea Lists on your storefront from the deals you just harvested. Lists are ranked so the deals active in **Creator Connections** and **Sponsored Products for Creators** go first, putting your highest-earning products at the top.

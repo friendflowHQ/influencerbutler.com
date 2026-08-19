@@ -137,6 +137,15 @@ La IA estudia tus ejemplos (tu estilo de gancho, tus hábitos con los emojis, tu
 
 Esta función usa tu clave de OpenAI de **Integraciones de API**, la misma clave que el generador de palabras clave con IA. ¿Sin clave conectada? La sección muestra un botón **Conectar OpenAI** que te lleva allí.
 
+## Título por tipo de oferta
+
+Cada oferta merece un texto distinto: una bajada de precio, un código para escribir al pagar, un cupón para activar o una mezcla de ellos. **Título por tipo de oferta** (en **Crea tu publicación**, debajo de las variantes de texto) te da un cuadro de texto distinto para cada estilo, para que los escribas una vez y edites cualquiera sin tocar los demás.
+
+Hay siete cuadros: **Bajada de precio**, **Código**, **Cupón**, **Bajada de precio + código**, **Bajada de precio + cupón**, **Cupón + código** y **Bajada de precio + cupón + código**. No tienes que rellenarlos todos. Escribe textos solo para los estilos que te interesen y deja el resto vacíos.
+
+Cómo elige Butler un cuadro: en cada producto revisa si tiene una bajada de precio, un código de cupón y un cupón para activar, y usa el cuadro que coincide con esa combinación exacta. Si ese cuadro está vacío, Butler recurre al cuadro más parecido que sí rellenaste, y si ninguno aplica usa tu **texto principal**. Así los cuadros nunca compiten con tu texto principal: solo toman el mando cuando una oferta coincide con uno que escribiste. Cada cuadro admite las mismas píldoras que tu texto principal (nombre, enlace, precio, porcentaje de descuento, código y las demás), y la **Vista previa** en vivo muestra qué cuadro usará cada oferta.
+
+Si una oferta acaba sin ningún texto (ningún cuadro coincide, el texto principal está vacío y no hay variantes), Butler publica un texto básico (porcentaje de descuento y nombre del producto) y la vista previa muestra un aviso que te lo indica, con un acceso para conectar OpenAI o añadir un texto.
 ## Crear listas de ideas de Amazon automáticamente
 
 En la pestaña Harvest hay una tarjeta **Crear listas de ideas de Amazon automáticamente**. Actívala y, tras cada búsqueda, Butler crea listas de ideas de Amazon en tu escaparate a partir de las ofertas que acabas de recolectar. Las listas se ordenan para que las ofertas activas en **Creator Connections** y **Sponsored Products for Creators** vayan primero, colocando tus productos más rentables arriba.
