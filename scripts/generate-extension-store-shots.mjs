@@ -77,8 +77,10 @@ const SLIDES = [
     caption:
       "Toggle every tool, set your commission rate and hourly value, and sync findings to the desktop app.",
     // Popup column is the left 531px of the 1600px capture; scaling the full
-    // image to 1205px wide maps that column onto the 400px card.
-    img1Style: "width:1205px;top:0;left:0;",
+    // image to 1205px wide maps that column onto the 400px card. top:-60 crops
+    // the popup's own header row: its FREE plan pill is a banned badge keyword
+    // in listing images (2026-08-19 rejection).
+    img1Style: "width:1205px;top:-60px;left:0;",
     img2Style: "width:1205px;top:-100px;left:0;",
   },
   {

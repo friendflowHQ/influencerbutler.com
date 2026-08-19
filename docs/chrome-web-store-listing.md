@@ -27,6 +27,20 @@ behavior; reviewers compare the two.
 > providers are still surfaced where they belong, in the extension's own
 > Settings UI. Nothing else in the copy changed.
 
+> **2026-08-19 resubmission note (image badge rejection, ref "Red Nickel").**
+> The 2026-08-17 submission (0.1.7 + listing refresh) was rejected under
+> "Ensuring Responsible Marketing and Monetization - Impersonation and
+> Intellectual Property" for the marquee and small promo tile images: both
+> carried a "FREE" pill, and listing images must not use badge or text with
+> keywords such as "recommended", "premium", "free", "#1", "new". Fix: the
+> FREE pill was removed from every image template
+> (scripts/assets/store-shot-frame.html, store-promo-small.html,
+> store-promo-marquee.html) and all seven images were re-rendered; the popup
+> screenshot's crop was also shifted to hide the popup UI's own FREE plan
+> pill. Saying "free" in the text description is fine (the approved copy
+> does); it is IMAGES that must stay badge-free. Do not reintroduce
+> promotional badges into listing images.
+
 For shipping new **code** (as opposed to editing this listing copy), see
 [chrome-web-store-publishing.md](chrome-web-store-publishing.md): the release is
 automated as `npm run bump` + `npm run release`.
