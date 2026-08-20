@@ -30,10 +30,14 @@ type TaxFormDetails = {
   rejectedReason: string | null;
 };
 
+type Adjustment = { amountCents: number; note: string | null; createdAt: string | null };
+
 type SelfHostedData = {
   brandedCode: string | null;
   createdAt: string | null;
   owedCents: number;
+  adjustmentCents?: number;
+  adjustments?: Adjustment[];
   grossCents: number;
   orderCount: number;
   ratePercent: number;
@@ -233,7 +237,7 @@ export default function SelfHostedAffiliateDashboard({
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Unpaid earnings"
-          value={formatUsdFromCents(data.owedCents)}
+          value={formatUsdFromCents(data.owedCents + (data.adjustmentCents ?? 0))}
           hint="Paid monthly via PayPal"
           tooltip="Paid monthly via PayPal. A month's earnings clear after a short hold (about 30 days, to cover any refunds), then pay out on or around the 1st of the following month, once your balance reaches $10. PayPal fees are not covered, so the amount that lands may be slightly less."
         />
@@ -245,6 +249,22 @@ export default function SelfHostedAffiliateDashboard({
           hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
         />
       </section>
+
+      {data.adjustments && data.adjustments.length > 0 ? (
+        <section className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-orange-800">
+            Adjustments included in your unpaid earnings
+          </h3>
+          <ul className="mt-3 space-y-2">
+            {data.adjustments.map((a, i) => (
+              <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-orange-200 bg-white p-3 text-sm">
+                <span className="text-slate-700">{a.note || "Commission adjustment"}</span>
+                <span className="font-semibold text-slate-900">{formatUsdFromCents(a.amountCents)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchDiscountState } from "@/lib/lemonsqueezy-discounts";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +81,14 @@ export async function GET() {
   }
 
   if (!row) return NextResponse.json({ codes: [] });
+
+  // No-stacking: a customer who already redeemed an affiliate/welcome discount
+  // at checkout is not eligible for a second (member) discount, and dangling one
+  // here generates "can I use my other discount too?" tickets. Suppress the
+  // personal codes entirely for them.
+  if (await hasRedeemedDiscount(admin, userData.user.id)) {
+    return NextResponse.json({ codes: [] });
+  }
 
   // Cheap pre-filter: long-converted or long-cancelled subscribers have no
   // live trial codes, so skip the LS round-trips for the common case.

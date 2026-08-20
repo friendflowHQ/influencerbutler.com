@@ -18,6 +18,11 @@ import {
   type CommissionOrder,
   type CommissionLine,
 } from "@/lib/affiliate-commissions";
+import {
+  loadOpenAdjustmentsByUser,
+  sumAdjustmentsCents,
+  type AdjustmentRow,
+} from "@/lib/affiliate-adjustments";
 
 /** One affiliate's monthly commission summary, ready for UI or email. */
 export type AffiliateStatement = {
@@ -31,8 +36,14 @@ export type AffiliateStatement = {
   orderCount: number;
   grossCents: number;
   lsPaidCents: number;
+  /** Order-derived top-up owed. This is what the automated PayPal disburse pays. */
   owedCents: number;
   lines: CommissionLine[];
+  /** Open manual/make-whole adjustments owed on top of the order lines. Kept
+   *  separate from owedCents so the automated disburse never double-pays them
+   *  (they settle via their own ad-hoc payout). */
+  adjustmentCents: number;
+  adjustments: AdjustmentRow[];
 };
 
 export type CommissionLoadResult = {
@@ -133,6 +144,13 @@ export async function loadAffiliateCommissions(opts: {
     else ordersByAffiliate.set(affUserId, [co]);
   }
 
+  // Open (unpaid) manual/make-whole adjustments, grouped by affiliate. Best-effort
+  // (table may lag prod). A period filter keeps a monthly statement to that
+  // month's adjustments, matching how order lines are period-filtered.
+  const adjustmentsByUser = await loadOpenAdjustmentsByUser(
+    createAdminClient() as unknown as Parameters<typeof loadOpenAdjustmentsByUser>[0],
+  );
+
   const wantUsers = opts.userIds ? new Set(opts.userIds) : null;
   const statements: AffiliateStatement[] = [];
   let hasCustomRates = false;
@@ -157,7 +175,18 @@ export async function loadAffiliateCommissions(opts: {
 
     const affOrders = ordersByAffiliate.get(userId) ?? [];
     const owed = computeAffiliateOwed(terms, affOrders, allOrders);
-    if (opts.onlyOwed && owed.owedCents <= 0) continue;
+
+    const openAdj = adjustmentsByUser.get(userId) ?? [];
+    const periodAdj = opts.period
+      ? openAdj.filter(
+          (a) => a.period === opts.period || (!a.period && monthKeyOf(a.createdAt) === opts.period),
+        )
+      : openAdj;
+    const adjustmentCents = sumAdjustmentsCents(periodAdj);
+
+    // onlyOwed keeps an affiliate only when they have money outstanding, counting
+    // both the order top-up and any adjustment.
+    if (opts.onlyOwed && owed.owedCents + adjustmentCents <= 0) continue;
 
     statements.push({
       userId,
@@ -172,10 +201,14 @@ export async function loadAffiliateCommissions(opts: {
       lsPaidCents: owed.lsPaidCents,
       owedCents: owed.owedCents,
       lines: owed.lines,
+      adjustmentCents,
+      adjustments: periodAdj,
     });
   }
 
-  statements.sort((a, b) => b.owedCents - a.owedCents);
+  statements.sort(
+    (a, b) => b.owedCents + b.adjustmentCents - (a.owedCents + a.adjustmentCents),
+  );
   return { statements, hasCustomRates };
 }
 

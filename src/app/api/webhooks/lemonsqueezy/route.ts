@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { mintTrialDiscounts } from "@/lib/trial-discounts";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
 import { lsApi, planForVariantId, setLicenseKeyActivationLimit } from "@/lib/lemonsqueezy";
@@ -823,12 +824,23 @@ export async function POST(request: Request) {
       if (isTrial && !isAddonSubscription) {
         basePayload.trial_started_at = new Date().toISOString();
 
-        const trialDiscounts = await mintTrialDiscounts({
-          trialEndsAt,
-          userId,
-        });
-        if (trialDiscounts) {
-          Object.assign(basePayload, trialDiscounts);
+        // No-stacking: do not mint a member trial discount when the customer
+        // already redeemed one at checkout. The referring-affiliate stamp on
+        // this very delivery is the most reliable signal (the trial-start order
+        // may not have landed yet); hasRedeemedDiscount also catches a
+        // welcome/promo code once the order row exists.
+        const alreadyDiscounted =
+          Boolean(refAffiliateUserId || refAffiliateCode) ||
+          (await hasRedeemedDiscount(supabase, userId));
+
+        if (!alreadyDiscounted) {
+          const trialDiscounts = await mintTrialDiscounts({
+            trialEndsAt,
+            userId,
+          });
+          if (trialDiscounts) {
+            Object.assign(basePayload, trialDiscounts);
+          }
         }
 
         // Meta Conversions API StartTrial: the $0 trial-start order fires no

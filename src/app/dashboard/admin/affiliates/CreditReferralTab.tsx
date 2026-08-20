@@ -48,6 +48,259 @@ function AffiliatePicker({
   );
 }
 
+function dollarsToCents(v: string): number | null {
+  const n = Number.parseFloat(v.replace(/[$,\s]/g, ""));
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
+
+function fmtCents(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+type MakeWholeResult = {
+  adjustmentId: string | null;
+  makeWhole: { amountCents: number; perBillingCents: number; billings: number } | null;
+  affiliate: { code: string | null; ratePercent: number } | null;
+  lsDeepLink: string;
+  instructions: string;
+  migrationPending: boolean;
+};
+
+/**
+ * Records a deeper loyalty discount for a referred customer and the affiliate
+ * make-whole in one step, then (after the operator sends PayPal) marks the
+ * make-whole paid so it reconciles into 1099 / Xero. The actual LS price change
+ * and PayPal transfer stay manual; this card records + reconciles them.
+ */
+function LoyaltyMakeWholeCard() {
+  const [email, setEmail] = useState("");
+  const [subId, setSubId] = useState("");
+  const [currentPrice, setCurrentPrice] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [note, setNote] = useState("");
+  const [state, setState] = useState<FormState>({ kind: "idle" });
+  const [result, setResult] = useState<MakeWholeResult | null>(null);
+  const [paid, setPaid] = useState(false);
+  const [payState, setPayState] = useState<FormState>({ kind: "idle" });
+
+  const submit = async () => {
+    const referredPriceCents = dollarsToCents(currentPrice);
+    const newPriceCents = dollarsToCents(newPrice);
+    if (referredPriceCents == null || newPriceCents == null) {
+      setState({ kind: "error", message: "Enter valid current and new prices." });
+      return;
+    }
+    setState({ kind: "working" });
+    setResult(null);
+    setPaid(false);
+    setPayState({ kind: "idle" });
+    try {
+      const res = await fetch("/api/admin/billing/loyalty-discount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim() || null,
+          lsSubscriptionId: subId.trim() || null,
+          referredPriceCents,
+          newPriceCents,
+          note: note.trim() || null,
+        }),
+      });
+      const json = (await res.json()) as MakeWholeResult & { error?: string };
+      if (!res.ok) {
+        setState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setResult(json);
+      const mw = json.makeWhole;
+      const detail = [
+        mw && mw.amountCents > 0
+          ? `Make-whole owed: ${fmtCents(mw.amountCents)} (${json.affiliate?.ratePercent ?? 0}% x ${mw.billings} billing${mw.billings === 1 ? "" : "s"})`
+          : "No affiliate make-whole owed.",
+        json.instructions,
+      ].join("\n");
+      setState({
+        kind: "success",
+        message: json.migrationPending
+          ? "Recorded, but the discount tables are not applied in prod yet (apply the 20260820 migration)."
+          : "Recorded. Apply the price in Lemon Squeezy, then mark the make-whole paid below.",
+        detail,
+      });
+    } catch (err) {
+      console.error(err);
+      setState({ kind: "error", message: "Network error." });
+    }
+  };
+
+  const markPaid = async () => {
+    if (!result?.adjustmentId) return;
+    setPayState({ kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-makewhole-pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adjustmentId: result.adjustmentId }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string; alreadyPaid?: boolean };
+      if (!res.ok) {
+        setPayState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setPaid(true);
+      setPayState({
+        kind: "success",
+        message: json.alreadyPaid ? "Already recorded as paid." : "Make-whole recorded as paid.",
+      });
+    } catch (err) {
+      console.error(err);
+      setPayState({ kind: "error", message: "Network error." });
+    }
+  };
+
+  const disabled =
+    state.kind === "working" ||
+    (!email.trim() && !subId.trim()) ||
+    !currentPrice.trim() ||
+    !newPrice.trim();
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-lg font-semibold text-slate-900">Loyalty discount + affiliate make-whole</h3>
+      <p className="mt-1 text-sm text-slate-600">
+        Honor a deeper discount for a referred customer without shorting the affiliate. Records the
+        discount and the commission difference the affiliate is owed at the price they referred at.
+        You still lower the price in Lemon Squeezy and send the PayPal yourself; this tracks and
+        reconciles both.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="lmw-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Customer email
+          </label>
+          <input
+            id="lmw-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="customer@example.com"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">Or use a subscription id below.</p>
+        </div>
+        <div>
+          <label htmlFor="lmw-sub" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            LS subscription id (optional)
+          </label>
+          <input
+            id="lmw-sub"
+            type="text"
+            value={subId}
+            onChange={(e) => setSubId(e.target.value)}
+            placeholder="2423265"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+        <div>
+          <label htmlFor="lmw-cur" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Current price (what they pay now)
+          </label>
+          <input
+            id="lmw-cur"
+            inputMode="decimal"
+            value={currentPrice}
+            onChange={(e) => setCurrentPrice(e.target.value)}
+            placeholder="331.50"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">The net the affiliate referred them at.</p>
+        </div>
+        <div>
+          <label htmlFor="lmw-new" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            New price (target)
+          </label>
+          <input
+            id="lmw-new"
+            inputMode="decimal"
+            value={newPrice}
+            onChange={(e) => setNewPrice(e.target.value)}
+            placeholder="273.00"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="lmw-note" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Note (shown to the affiliate)
+          </label>
+          <input
+            id="lmw-note"
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Goodwill discount for a support issue."
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={submit}
+          disabled={disabled}
+          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+        >
+          {state.kind === "working" ? "Recording…" : "Record discount + make-whole"}
+        </button>
+      </div>
+
+      {state.kind === "success" ? (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <p className="font-medium">{state.message}</p>
+          {state.detail ? (
+            <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-emerald-900">
+              {state.detail}
+            </pre>
+          ) : null}
+          {result?.lsDeepLink ? (
+            <a href={result.lsDeepLink} target="_blank" rel="noreferrer" className="mt-2 inline-block font-semibold underline">
+              Open the subscription in Lemon Squeezy
+            </a>
+          ) : null}
+          {result?.adjustmentId && result.makeWhole && result.makeWhole.amountCents > 0 ? (
+            <div className="mt-3 border-t border-emerald-200 pt-3">
+              <p className="text-xs">
+                After you PayPal the affiliate {fmtCents(result.makeWhole.amountCents)}, record it so it
+                counts toward their 1099 / Xero:
+              </p>
+              <button
+                type="button"
+                onClick={markPaid}
+                disabled={payState.kind === "working" || paid}
+                className="mt-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-900 disabled:opacity-60"
+              >
+                {paid ? "Marked paid" : payState.kind === "working" ? "Recording…" : "Mark make-whole paid (PayPal sent)"}
+              </button>
+              {payState.kind === "error" ? (
+                <p className="mt-2 text-xs text-red-700">{payState.message}</p>
+              ) : null}
+              {payState.kind === "success" ? (
+                <p className="mt-2 text-xs text-emerald-700">{payState.message}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {state.kind === "error" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {state.message}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 function CompCard({ affiliates }: { affiliates: AffiliateOption[] }) {
   const [affiliate, setAffiliate] = useState("");
   const [email, setEmail] = useState("");
@@ -403,9 +656,11 @@ export default function CreditReferralTab({ affiliates }: { affiliates: Affiliat
         </p>
       </div>
 
+      <LoyaltyMakeWholeCard />
+
       {options.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm">
-          No affiliates loaded yet. Open the Roster tab first.
+          No affiliates loaded yet. Open the Roster tab first to use the comp / attribute tools.
         </div>
       ) : (
         <>

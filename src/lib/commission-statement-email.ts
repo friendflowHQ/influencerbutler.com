@@ -78,14 +78,27 @@ export function buildStatementBody(statement: AffiliateStatement, period: string
       );
     }
   }
+  // Manual/make-whole adjustments (e.g. a customer given a deeper discount, where
+  // we top you up to what you were referred at). The note explains each one.
+  if (statement.adjustments.length > 0) {
+    lines.push("");
+    lines.push("Adjustments this month:");
+    for (const a of statement.adjustments) {
+      lines.push(`  ${formatUsdFromCents(a.amountCents)}  ${a.note ?? ""}`.trimEnd());
+    }
+  }
   lines.push("");
-  lines.push(`Total earned this month: ${formatUsdFromCents(earnedCents(statement))}`);
+  lines.push(`Total earned this month: ${formatUsdFromCents(earnedCents(statement) + statement.adjustmentCents)}`);
   // During the transition off Lemon Squeezy, some renewals may still have been
   // credited by LS; only mention it when there's actually a nonzero amount.
   if (statement.lsPaidCents > 0) {
     lines.push(`Already credited by Lemon Squeezy: ${formatUsdFromCents(statement.lsPaidCents)}`);
   }
-  lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents)}`);
+  lines.push(`Order commissions owed: ${formatUsdFromCents(statement.owedCents)}`);
+  if (statement.adjustmentCents > 0) {
+    lines.push(`Adjustments owed: ${formatUsdFromCents(statement.adjustmentCents)}`);
+  }
+  lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents + statement.adjustmentCents)}`);
   lines.push("");
   lines.push(
     "We pay via PayPal monthly. Earnings for a month clear after a short hold (about 30 days, to cover any refunds) and pay out on or around the 1st of the following month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less. Make sure your tax form and PayPal email are set in your dashboard. Questions? Just reply to this email.",
@@ -119,13 +132,20 @@ export function buildCombinedBody(
   let totalEarned = 0;
   let totalLs = 0;
   let totalBlocked = 0;
+  let totalAdjust = 0;
   for (const s of statements) {
     const who = s.fullName || s.email || s.affiliateCode || s.userId;
     lines.push(`${who}${s.affiliateCode ? ` (${s.affiliateCode})` : ""} - rate ${s.ratePercent}%`);
     lines.push(
-      `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s))}, ` +
-        `owed via PayPal ${formatUsdFromCents(s.owedCents)}`,
+      `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s) + s.adjustmentCents)}, ` +
+        `owed via PayPal ${formatUsdFromCents(s.owedCents + s.adjustmentCents)}`,
     );
+    if (s.adjustmentCents > 0) {
+      lines.push(
+        `  includes ${formatUsdFromCents(s.adjustmentCents)} in adjustments/make-whole ` +
+          `(pay via the "Mark make-whole paid" action, not the Owed disburse)`,
+      );
+    }
     const blocked = notReady?.get(s.userId);
     if (blocked) {
       lines.push(`  NOT PAYABLE YET: missing ${notReadyReason(blocked)} (reminder sent)`);
@@ -135,18 +155,22 @@ export function buildCombinedBody(
     totalOwed += s.owedCents;
     totalEarned += earnedCents(s);
     totalLs += s.lsPaidCents;
+    totalAdjust += s.adjustmentCents;
   }
   lines.push("----------------------------------------");
-  lines.push(`Total earned: ${formatUsdFromCents(totalEarned)}`);
+  lines.push(`Total earned: ${formatUsdFromCents(totalEarned + totalAdjust)}`);
   if (totalLs > 0) {
     lines.push(`Total already credited by Lemon Squeezy: ${formatUsdFromCents(totalLs)}`);
   }
-  lines.push(`Total owed this month: ${formatUsdFromCents(totalOwed)}`);
+  lines.push(`Total order commissions owed: ${formatUsdFromCents(totalOwed)}`);
+  if (totalAdjust > 0) {
+    lines.push(`Total adjustments / make-whole owed: ${formatUsdFromCents(totalAdjust)}`);
+  }
   if (totalBlocked > 0) {
     lines.push(`Total not yet payable (missing tax form / PayPal): ${formatUsdFromCents(totalBlocked)}`);
   }
   lines.push("");
-  lines.push('Disburse each affiliate via PayPal in the Owed tab (or mark paid if you paid another way).');
+  lines.push('Disburse order commissions via PayPal in the Owed tab (or mark paid if you paid another way). Adjustments / make-whole are recorded separately via their "Mark make-whole paid" action.');
   return lines.join("\n");
 }
 

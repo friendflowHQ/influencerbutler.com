@@ -5,6 +5,7 @@ import { sendConversionEmail, type ConversionTier } from "@/lib/conversion-email
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
 import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
@@ -446,7 +447,10 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     // missing while the trial is running.
     if (
       row.status === "on_trial" &&
-      (!row.trial_discount_code_monthly || !row.trial_discount_code_annual)
+      (!row.trial_discount_code_monthly || !row.trial_discount_code_annual) &&
+      // No-stacking: don't back-fill a member code for a customer who already
+      // redeemed an affiliate/welcome discount at checkout.
+      !(await hasRedeemedDiscount(supabase, row.user_id))
     ) {
       // trial_ends_at isn't stored on the row; the trial is TRIAL_LENGTH_DAYS
       // long (matching the LS SKU trial period), so reconstruct it from

@@ -97,6 +97,14 @@ export async function GET() {
       brandedCode: (profile.affiliate_code as string | null) ?? null,
       createdAt: (profile.created_at as string | null) ?? null,
       owedCents: stmt?.owedCents ?? 0,
+      // Manual/make-whole adjustments owed on top of the order commissions, with
+      // the note explaining each (e.g. a customer given a deeper discount).
+      adjustmentCents: stmt?.adjustmentCents ?? 0,
+      adjustments: (stmt?.adjustments ?? []).map((a) => ({
+        amountCents: a.amountCents,
+        note: a.note,
+        createdAt: a.createdAt,
+      })),
       grossCents: stmt?.grossCents ?? 0,
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,

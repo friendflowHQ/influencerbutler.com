@@ -712,7 +712,8 @@ function PromoCodeField({ value, onChange, open, onToggle }: PromoCodeFieldProps
       <p className="mt-2 text-xs text-slate-500">
         {value
           ? "Your discount will be applied at checkout."
-          : "Enter a creator's code for a discount on your first month."}
+          : "Enter a creator's code for a discount on your first month."}{" "}
+        One discount per account: if you used a referral or welcome code, it&apos;s already applied.
       </p>
     </section>
   );

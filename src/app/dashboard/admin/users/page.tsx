@@ -45,6 +45,15 @@ type Referral = {
   attributedAt: string | null;
 };
 
+type Pricing = {
+  planLabel: string | null;
+  listCents: number | null;
+  netCents: number | null;
+  appliedCode: string | null;
+  discountCents: number | null;
+  alreadyDiscounted: boolean;
+};
+
 type LookupResult = {
   found: boolean;
   userId?: string;
@@ -54,6 +63,7 @@ type LookupResult = {
   licenses?: License[];
   staff?: { role?: string; permissions?: string[]; is_active?: boolean } | null;
   referral?: Referral | null;
+  pricing?: Pricing | null;
   error?: string;
 };
 
@@ -118,6 +128,19 @@ type DirectorySort = "newest" | "cancelled" | "email";
 // access-ends date so cancelled rows without a logged reason still sort sensibly.
 function cancelSortKey(r: DirectoryRow): string {
   return r.cancelledAt ?? r.endsAt ?? "";
+}
+
+// Guardrail for price-lowering actions on a referred customer: reducing their
+// price shrinks the referring affiliate's commission (commission is 30% of the
+// net actually charged), and discounts do not stack. Returns true when there is
+// no affiliate to protect, or the operator confirms.
+function affiliateImpactOk(referral: Referral | null | undefined): boolean {
+  if (!referral) return true;
+  const who =
+    referral.affiliateName || referral.affiliateEmail || referral.code || "an affiliate";
+  return window.confirm(
+    `This customer was referred by ${who}. Reducing their price reduces that affiliate's commission, and discounts do not stack. If you honor a deeper discount, use the make-whole tool to compensate the affiliate. Continue?`,
+  );
 }
 
 function referralText(referral: Referral | null | undefined): string {
@@ -486,6 +509,45 @@ export default function AdminUsersPage() {
               ) : null}
             </div>
 
+            {/* Pricing + discount insight: shows the list price, any discount
+                already redeemed, and a no-stacking warning so an operator does
+                not grant a second discount (or silently cut an affiliate's
+                commission) without knowing. */}
+            {result.pricing && (result.pricing.listCents != null || result.pricing.alreadyDiscounted) ? (
+              <div
+                className={`mt-3 rounded-lg border px-3 py-2 text-sm ${
+                  result.pricing.alreadyDiscounted
+                    ? "border-amber-300 bg-amber-50 text-amber-900"
+                    : "border-slate-200 bg-slate-50 text-slate-700"
+                }`}
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-medium">{result.pricing.planLabel ?? "Plan"}</span>
+                  {result.pricing.listCents != null ? (
+                    <span>List {fmtMoney(result.pricing.listCents, "USD")}</span>
+                  ) : null}
+                  {result.pricing.netCents != null ? (
+                    <span>: last charge {fmtMoney(result.pricing.netCents, "USD")}</span>
+                  ) : null}
+                  {result.pricing.appliedCode ? (
+                    <span>
+                      : code <span className="font-mono">{result.pricing.appliedCode}</span>
+                      {result.pricing.discountCents != null
+                        ? ` (-${fmtMoney(result.pricing.discountCents, "USD")})`
+                        : ""}
+                    </span>
+                  ) : null}
+                </div>
+                {result.pricing.alreadyDiscounted ? (
+                  <p className="mt-1 text-xs">
+                    Already discounted or referred. Discounts do not stack (one per account).
+                    Confirm the exact rate in Lemon Squeezy before granting another, and use the
+                    make-whole tool if you lower a referred customer&apos;s price.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {/* Account actions */}
             <div className="mt-4 flex flex-wrap gap-2">
               <a
@@ -566,10 +628,10 @@ export default function AdminUsersPage() {
                             <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
                           ) : null}
                           {can("billing.comp") ? (
-                            <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
+                            <button type="button" onClick={() => { if (!affiliateImpactOk(result.referral)) return; void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
                           ) : null}
                           {can("billing.plan.edit") ? (
-                            <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
+                            <button type="button" onClick={() => { if (!affiliateImpactOk(result.referral)) return; void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
                           ) : null}
                         </>
                       )}
