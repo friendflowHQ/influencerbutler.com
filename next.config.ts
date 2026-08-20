@@ -71,6 +71,8 @@ const nextConfig: NextConfig = {
       { source: "/email-sequences", destination: "/email-sequences.html" },
       { source: "/unsubscribe", destination: "/unsubscribe.html" },
       { source: "/features/:slug", destination: "/features/:slug.html" },
+      { source: "/compare/:slug", destination: "/compare/:slug.html" },
+      { source: "/guides/:slug", destination: "/guides/:slug.html" },
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
       { source: "/legal/eula", destination: "/legal/eula.html" },

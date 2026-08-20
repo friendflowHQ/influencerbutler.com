@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.influencerbutler.com/</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -14,7 +14,7 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/blog</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
@@ -331,6 +331,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.influencerbutler.com/blog/instagram-bio-affiliate-clicks</loc>
+    <lastmod>2026-08-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.influencerbutler.com/blog/instagram-close-friends-marketing</loc>
     <lastmod>2026-05-16</lastmod>
     <changefreq>monthly</changefreq>
@@ -339,6 +345,18 @@
   <url>
     <loc>https://www.influencerbutler.com/blog/instagram-dm-outreach-playbook</loc>
     <lastmod>2026-06-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/blog/instagram-reels-affiliate-marketing</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/blog/instagram-story-selling-tactics</loc>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -517,74 +535,122 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.influencerbutler.com/compare/cha-ching-review</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/cha-ching-vs-logie-vs-influencer-butler</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/fluencer-fruit-alternatives</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/influencer-butler-vs-oink</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/influencer-butler-vs-viral-vue</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/logie-extension-review</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/oink-alternatives</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/compare/oink-vs-campaign-finder-vs-influencer-butler</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-01-start-here</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-02-what-is-the-amazon-influencer-program</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-03-requirements-and-applying</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-04-onsite-video-approval</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-05-filming-review-videos</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-06-upload-and-optimize</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-07-build-your-storefront</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-08-reports-and-analytics</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-09-first-30-days</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-10-scaling-and-automation</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/course/amazon-influencer/aip-course-11-faq</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -596,13 +662,13 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/extension</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/extension/privacy</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -871,8 +937,80 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-brand-outreach-tips</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-brand-pitch-email-templates</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-brand-pitch-examples</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-creator-connections-tips</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-deal-post-examples</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/amazon-deal-post-templates</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/best-amazon-affiliate-commission-tracker-tools</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/best-amazon-creator-connections-auto-accept-tools</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/best-amazon-influencer-tools-for-beginners</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/best-amazon-influencer-tools-for-instagram-creators</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/how-to-auto-accept-amazon-creator-connections</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/guides/how-to-track-amazon-affiliate-commissions</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.influencerbutler.com/landing</loc>
-    <lastmod>2026-08-16</lastmod>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -897,6 +1035,42 @@
   <url>
     <loc>https://www.influencerbutler.com/stop-messaging-brands</loc>
     <lastmod>2026-08-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools/affiliate-link-builder</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools/amazon-affiliate-earnings-calculator</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools/amazon-sales-estimator</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools/engagement-rate-calculator</loc>
+    <lastmod>2026-08-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/tools/hashtag-generator</loc>
+    <lastmod>2026-08-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

@@ -20,6 +20,12 @@ const ROOT_PAGES = {
 };
 const LEGAL_DEFAULTS = { priority: "0.3", changefreq: "monthly" };
 const FEATURE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
+// Long-tail SEO landing pages. /compare/* = named commercial comparisons,
+// /guides/* = category roundups and how-to guides. New files in these folders
+// are picked up automatically (mirrors the /compare/:slug and /guides/:slug
+// wildcard rewrites in next.config.ts), so no per-page edit is needed here.
+const COMPARE_DEFAULTS = { priority: "0.8", changefreq: "weekly" };
+const GUIDE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -42,6 +48,12 @@ function mapToCanonical(relPath) {
 
   const feature = posix.match(/^features\/([^/]+)\.html$/);
   if (feature) return { url: `/features/${feature[1]}`, ...FEATURE_DEFAULTS };
+
+  const compare = posix.match(/^compare\/([^/]+)\.html$/);
+  if (compare) return { url: `/compare/${compare[1]}`, ...COMPARE_DEFAULTS };
+
+  const guide = posix.match(/^guides\/([^/]+)\.html$/);
+  if (guide) return { url: `/guides/${guide[1]}`, ...GUIDE_DEFAULTS };
 
   return null;
 }
@@ -85,6 +97,32 @@ async function main() {
     changefreq: "monthly",
     priority: "0.3",
   });
+
+  // The free tools live on public Next routes (src/app/tools), not static
+  // .html pages, so the walk above never sees them. Emit the /tools hub plus
+  // one URL per tool. Keep this slug list in sync with
+  // src/app/tools/_components/toolsMeta.ts.
+  const TOOL_SLUGS = [
+    "amazon-affiliate-earnings-calculator",
+    "amazon-sales-estimator",
+    "engagement-rate-calculator",
+    "hashtag-generator",
+    "affiliate-link-builder",
+  ];
+  entries.push({
+    loc: `${SITE_ORIGIN}/tools`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "weekly",
+    priority: "0.8",
+  });
+  for (const slug of TOOL_SLUGS) {
+    entries.push({
+      loc: `${SITE_ORIGIN}/tools/${slug}`,
+      lastmod: fmtDate(new Date()),
+      changefreq: "weekly",
+      priority: "0.7",
+    });
+  }
 
   // Blog is a public Next route (src/app/blog), not a static .html page, so
   // the walk above never sees it. Pull the post list from the blog manifest
