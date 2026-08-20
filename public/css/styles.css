@@ -130,19 +130,45 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 2rem;
+  gap: 1.25rem;
+  padding: 0.85rem 1.5rem;
 }
-.logo { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.25rem; }
+.logo { display: flex; align-items: center; gap: 0.55rem; font-weight: 700; font-size: 1.25rem; flex: 0 0 auto; }
+#site-header .logo { font-size: 1.15rem; }
 .logo-img { width: 40px; height: 40px; object-fit: contain; }
-.nav-menu { display: flex; gap: 2rem; align-items: center; }
-.nav-link { font-size: 0.95rem; font-weight: 500; color: var(--muted); transition: color var(--transition); }
+.nav-menu { display: flex; gap: 1.35rem; align-items: center; }
+.nav-link { font-size: 0.9rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color var(--transition); }
 .nav-link:hover { color: var(--brand); }
-.nav-cta { margin-left: 1rem; }
+.nav-cta { margin-left: 0; white-space: nowrap; flex: 0 0 auto; }
 .hamburger { display: none; flex-direction: column; gap: 5px; width: 28px; padding: 4px 0; }
 .hamburger span { display: block; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s ease; }
 .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+/* Collapse the nav to a hamburger before the full link row would crowd or wrap.
+   The content width is capped at --max-w (1200px), so below ~1180px the row of
+   links no longer fits comfortably and the mobile menu takes over. */
+@media (max-width: 1180px) {
+  .hamburger { display: flex; }
+  .nav-menu {
+    position: fixed;
+    top: 62px;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem 2rem;
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transform: translateY(-120%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+  }
+  .nav-menu.open { transform: translateY(0); }
+}
 
 /* ================================================================
    HERO
@@ -1072,23 +1098,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
 
 @media (max-width: 768px) {
   .container { padding-left: 1.25rem; padding-right: 1.25rem; }
-  .hamburger { display: flex; }
-  .nav-menu {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background: var(--bg);
-    flex-direction: column;
-    padding: 1.5rem 2rem;
-    gap: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    transform: translateY(-120%);
-    transition: transform 0.3s ease;
-    z-index: 999;
-  }
-  .nav-menu.open { transform: translateY(0); }
+  /* Hamburger + slide-down nav-menu are defined in the max-width:1180px block. */
   .nav-cta { display: none; }
   .hero { padding: 6rem 0 3rem; }
   h1 { font-size: 2.1rem; }
