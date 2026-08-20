@@ -49,6 +49,17 @@ export default function LinkBuilderPage() {
           This tags your own links for your own analytics. It is separate from the Influencer Butler
           affiliate program, which uses its own referral links.
         </p>
+
+        <h2 className="mt-8 text-2xl font-bold tracking-tight text-slate-900">
+          Want branded short links with click tracking?
+        </h2>
+        <p className="mt-4 text-slate-600">
+          Switch the link type to <strong>Influencer Butler DeepLink</strong> above to preview branded{" "}
+          <strong>links.influencerbutler.com</strong> links. Inside the app you pick Influencer Butler as
+          your provider under DeepLink Routing, and every link your tools build becomes a short branded
+          link you own, with a Link Performance dashboard showing real clicks by day, country, and
+          device. Your affiliate tag is preserved, and it is free on every plan.
+        </p>
       </section>
 
       <RelatedTools currentSlug={SLUG} />
