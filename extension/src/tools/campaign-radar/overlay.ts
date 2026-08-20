@@ -1,11 +1,13 @@
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
-import { t } from "../../i18n";
+import { t, getLocale } from "../../i18n";
 import { log } from "../../shared/log";
 import { patchSettings } from "../../storage/store";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import {
   sendToBackground,
+  type CampaignBriefResult,
+  type CampaignBriefSignals,
   type CampaignWatchListResult,
   type EarningsLookupResult,
   type OrderAsinsResult,
@@ -22,11 +24,13 @@ import { getCachedAvailability, putCachedAvailability } from "./availability-cac
 import {
   campaignFillPct,
   computeCampaignScore,
+  computeCampaignConfidence,
   meetsRadarThresholds,
   type CampaignScore,
   type CampaignScoreInputs,
   type RadarThresholds,
 } from "./score";
+import { openCampaignBrief } from "./campaign-brief-panel";
 import type { Settings } from "../../storage/schema";
 
 // Campaign Radar overlay: score and highlight the campaigns on the Creator
@@ -78,6 +82,10 @@ let availabilityObserver: IntersectionObserver | null = null;
 // threading settings through every call site. Set at the top of each init.
 let lastCallEnabled = false;
 
+// Whether Campaign Butler ("The Butler's Brief") is on for this run, so the
+// badge can decide whether to draw the "Brief" button. Set at the top of init.
+let campaignButlerEnabled = false;
+
 // Init epoch: initCampaignRadar awaits between its teardown and its mounting,
 // so two SPA-triggered runs can interleave and BOTH mount (seen live as two
 // badges per card). Each run takes a ticket; after any await it bails if a
@@ -111,6 +119,7 @@ export async function initCampaignRadar(
   if (campaigns.length === 0) return;
 
   lastCallEnabled = settings.tools.lastCallButler;
+  campaignButlerEnabled = settings.tools.campaignButler;
 
   // Merge the campaign fill / capacity captured from the API (Last Call). Fill is
   // not in the card DOM, so this is how each card learns how full it is.
@@ -304,6 +313,8 @@ function renderBadge(row: Row): void {
   // Last Call watch bell: have the Butler alert you before this campaign fills.
   // Only when the campaign exposes a stable id to key the watch on.
   if (lastCallEnabled && row.campaign.campaignId) scoreRow.append(renderWatchBell(row));
+  // Campaign Butler: open the on-demand "Butler's Brief" for this campaign.
+  if (campaignButlerEnabled) scoreRow.append(renderBriefButton(row));
   body.append(scoreRow);
 
   // Last Call fill meter: how full the campaign is (creator slots claimed vs
@@ -442,6 +453,86 @@ async function toggleWatch(row: Row): Promise<void> {
     renderBadge(row);
     log("campaign-radar", "watch toggle failed", error);
   }
+}
+
+// ---- Campaign Butler: The Butler's Brief ------------------------------------
+
+// The "Brief" chip on a card badge. Opens the on-demand advisory panel. Kept
+// visually quiet (a small outlined pill) so it sits beside the score without
+// competing with it.
+function renderBriefButton(row: Row): HTMLElement {
+  const btn = el("button", "radar-brief-btn", t().campaignBriefButton);
+  btn.type = "button";
+  btn.title = t().campaignBriefTitle;
+  btn.style.border = "1px solid #fb923c";
+  btn.style.background = "transparent";
+  btn.style.color = "#c2410c";
+  btn.style.cursor = "pointer";
+  btn.style.fontSize = "11px";
+  btn.style.fontWeight = "700";
+  btn.style.lineHeight = "1";
+  btn.style.padding = "3px 8px";
+  btn.style.borderRadius = "999px";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openBrief(row);
+  });
+  return btn;
+}
+
+// Assemble the campaign's signals (with the locally-computed score + confidence)
+// and open the panel. The demand lookup and the reasoning prose happen in the
+// background/server; here we only gather what the card already knows.
+function openBrief(row: Row): void {
+  const campaign = row.campaign;
+  const inputs = inputsFor(campaign, row.daysRemaining, row.owned, row.provenEarner);
+  const confidence = computeCampaignConfidence(inputs, {
+    hasCcStats: campaign.stats !== null,
+    hasDemand: campaign.asins.length > 0,
+  });
+
+  const signals: CampaignBriefSignals = {
+    brand: campaign.brand,
+    commissionRatePct: campaign.commissionRatePct,
+    remainingBudgetCents: campaign.remainingBudgetCents,
+    daysRemaining: row.daysRemaining,
+    slotsFilled: campaign.slotsFilled,
+    slotsTotal: campaign.slotsTotal,
+    fullyClaimed: campaign.fullyClaimed,
+    score: row.score.score,
+    band: row.score.band,
+    confidence,
+    ccStats: campaign.stats,
+    asins: campaign.asins,
+    // The Creator Connections Affiliate+ grid is the US marketplace; the card
+    // ASINs are amazon.com products, so the catalogue read targets that store.
+    marketplace: "amazon.com",
+    locale: getLocale(),
+  };
+
+  // Wire "Accept campaign" to the card's own native accept button when present.
+  const acceptBtn = campaign.el.querySelector<HTMLElement>(
+    '[data-testid$="-campaign-card-accept-btn"]',
+  );
+
+  openCampaignBrief({
+    brand: campaign.brand,
+    score: row.score,
+    confidence,
+    locale: getLocale(),
+    request: () =>
+      sendToBackground<CampaignBriefResult>({ kind: "GET_CAMPAIGN_BRIEF", signals }),
+    onAccept: acceptBtn ? () => acceptBtn.click() : null,
+    watched: row.watched,
+    onToggleWatch:
+      campaign.campaignId !== null
+        ? async () => {
+            await toggleWatch(row);
+            return row.watched;
+          }
+        : null,
+  });
 }
 
 // ---- Availability enrichment -------------------------------------------------

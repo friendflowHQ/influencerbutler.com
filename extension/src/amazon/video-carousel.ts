@@ -37,6 +37,22 @@ export type CarouselVideo = {
   url: string | null;
   // Which on-page carousel the video came from (see carouselSourceFor).
   carousel: CarouselSource;
+  // Stable Amazon content id (the `aciContentId`, e.g. amzn1.vse.video.<id>),
+  // when the state-script `videos` array was the source. This is the durable
+  // identity used to track a video across page loads and days; null when only
+  // creatorType/DOM data was available.
+  contentId: string | null;
+  // 1-based rank within its carousel as observed, best-effort; null when the
+  // source did not preserve a trustworthy order.
+  position: number | null;
+  // Publish date (ISO) when the widget payload exposes one. Parsing is gated on
+  // live verification of the payload, so this stays undefined until that lands;
+  // the landscape aggregates omit every date-based section when it is absent,
+  // rather than fabricating a timeline.
+  publishedAt?: string | null;
+  // Video duration in seconds when the payload exposes one. Same verification
+  // gate as publishedAt; the "typical length" section is omitted when absent.
+  durationSec?: number | null;
 };
 
 export type CreatorClass = "influencer" | "brand" | "customer" | "unknown";
@@ -165,6 +181,8 @@ function extractFromVideoList(doc: Document): CarouselResult | null {
   const counts = emptyCounts();
   const videos: CarouselVideo[] = [];
   const seenAci = new Set<string>();
+  // 1-based rank within each carousel, assigned in payload order.
+  const perCarousel: Partial<Record<CarouselSource, number>> = {};
 
   for (const script of Array.from(doc.querySelectorAll("script"))) {
     const text = script.textContent;
@@ -182,6 +200,14 @@ function extractFromVideoList(doc: Document): CarouselResult | null {
       const kind = classifyVideoAci(aci);
       counts[kind] += 1;
       counts.total += 1;
+      const carousel: CarouselSource =
+        kind === "brand" ? "upper" : kind === "unknown" ? "unknown" : "lower";
+      // durationSeconds sits inside the same video object; scope the search to
+      // this object (up to the next aciContentId) so it never grabs a sibling's.
+      // Verified live 2026-08-18: present on brand/hero videos; creator videos in
+      // this rail often omit it, so it stays null and the length stat degrades.
+      const nextIdx = text.indexOf('"aciContentId"', match.index + aci.length);
+      const objectText = text.slice(match.index, nextIdx === -1 ? match.index + 2500 : nextIdx);
       videos.push({
         title: null,
         creatorName: null,
@@ -189,7 +215,13 @@ function extractFromVideoList(doc: Document): CarouselResult | null {
         url: null,
         // Seller videos live in the image block (upper); vse creator videos in
         // the related-videos rail (lower).
-        carousel: kind === "brand" ? "upper" : kind === "unknown" ? "unknown" : "lower",
+        carousel,
+        // The aciContentId IS the stable identity; keep it so the video can be
+        // tracked across page loads (Phase 2) and deduped by content id.
+        contentId: aci,
+        // 1-based rank within its carousel, in payload order (Amazon's own).
+        position: (perCarousel[carousel] = (perCarousel[carousel] ?? 0) + 1),
+        durationSec: readDurationSeconds(objectText),
       });
     }
   }
@@ -205,6 +237,11 @@ const CREATOR_NAME_RE = /"(?:creatorName|profileName|publicName)"\s*:\s*"((?:[^"
 // unrelated "url" field. Best-effort: used for the CSV export link.
 const VIDEO_URL_RE =
   /"(?:videoUrl|vdpUrl|videoPageUrl|shareUrl)"\s*:\s*"(https?:(?:[^"\\]|\\.){0,300}?)"/g;
+// Per-video length in seconds (Amazon's `durationSeconds`), verified live
+// 2026-08-18. Present on brand/hero videos in the state script and, when a
+// product's widget serves an ajax payload, on creator videos too. Used for the
+// "typical length" stat, which stays hidden until enough real durations exist.
+const DURATION_RE = /"durationSeconds"\s*:\s*(\d{1,5})/g;
 
 function extractFromScripts(doc: Document): CarouselResult | null {
   // Different state scripts hold DIFFERENT video sets (related videos in one,
@@ -258,6 +295,10 @@ function accumulateFromText(
   // otherwise a positional map would attach wrong links, so we drop them.
   const urls = allMatches(text, VIDEO_URL_RE);
   const alignedUrls = urls.length === types.length ? urls : [];
+  // Durations only map to videos safely when there is exactly one per video,
+  // same discipline as urls; otherwise a positional map would misattach lengths.
+  const durations = allMatches(text, DURATION_RE);
+  const alignedDurations = durations.length === types.length ? durations : [];
 
   const fingerprint = types.join("|") + "::" + titles.join("|");
   if (seenPayloads.has(fingerprint)) return;
@@ -267,12 +308,19 @@ function accumulateFromText(
     const kind = classifyCreatorType(raw);
     counts[kind] += 1;
     counts.total += 1;
+    const durationRaw = alignedDurations[index];
     videos.push({
       title: decodeJsonString(titles[index] ?? null),
       creatorName: decodeJsonString(names[index] ?? null),
       creatorType: kind,
       url: decodeJsonString(alignedUrls[index] ?? null),
       carousel: source,
+      // This strategy does not carry the aciContentId; identity falls back to a
+      // hash of name/title downstream (see the video_id derivation).
+      contentId: null,
+      // 1-based rank in payload order within this payload's carousel.
+      position: index + 1,
+      durationSec: durationRaw ? Number(durationRaw) : null,
     });
   }
 }
@@ -285,6 +333,7 @@ function extractFromDom(doc: Document): CarouselResult {
   const videos: CarouselVideo[] = [];
   const cards = queryAll(widget, "videoCards");
   const brandName = normalizeBrand(query(doc, "productByline")?.textContent ?? "");
+  let cardIndex = 0;
 
   for (const card of cards) {
     const creatorLink = query(card, "videoCardCreatorLink");
@@ -317,6 +366,9 @@ function extractFromDom(doc: Document): CarouselResult {
       // The related-videos widget is the lower rail; the brand hero video lives
       // in the image block, which is not part of this widget's cards.
       carousel: "lower",
+      // DOM cards do not expose the aciContentId; identity falls back downstream.
+      contentId: null,
+      position: (cardIndex += 1),
     });
   }
 
@@ -339,6 +391,12 @@ export function readHeaderCount(doc: ParentNode): number | null {
   const source = el?.getAttribute("data-video-count") ?? el?.textContent ?? "";
   const match = source.match(/\d+/);
   return match ? parseInt(match[0], 10) : null;
+}
+
+// First `durationSeconds` value inside a single video object's text, or null.
+function readDurationSeconds(objectText: string): number | null {
+  const match = objectText.match(/"durationSeconds"\s*:\s*(\d{1,5})/);
+  return match ? Number(match[1]) : null;
 }
 
 function emptyCounts(): VideoCounts {

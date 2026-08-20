@@ -206,6 +206,23 @@ button[disabled] { opacity: 0.6; cursor: default; }
 }
 .watchlist-cond input { width: auto; accent-color: var(--orange); }
 button.ghost.small { margin-top: 0; padding: 2px 9px; font-size: 12px; }
+/* Text-only button that opens a product from a saved list. */
+button.linklike {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--orange);
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+button.linklike:hover { filter: brightness(0.9); }
 
 /* Campaign Radar availability market picker (indented under the Radar toggle). */
 .avail-markets { margin-left: 22px; flex-wrap: wrap; }

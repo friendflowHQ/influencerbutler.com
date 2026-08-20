@@ -3,6 +3,7 @@ import {
   bandFor,
   campaignFillPct,
   computeCampaignScore,
+  computeCampaignConfidence,
   meetsRadarThresholds,
   type CampaignScoreInputs,
   type RadarThresholds,
@@ -156,5 +157,51 @@ describe("meetsRadarThresholds", () => {
       provenEarner: null,
     };
     expect(meetsRadarThresholds(partial, thresholds)).toBe(true);
+  });
+});
+
+describe("computeCampaignConfidence", () => {
+  const empty: CampaignScoreInputs = {
+    commissionRatePct: null,
+    daysRemaining: null,
+    remainingBudgetCents: null,
+    owned: null,
+    provenEarner: null,
+  };
+
+  it("is 0 when nothing is known", () => {
+    expect(computeCampaignConfidence(empty)).toBe(0);
+  });
+
+  it("is 100 when every signal is present", () => {
+    const full: CampaignScoreInputs = {
+      commissionRatePct: 15,
+      daysRemaining: 20,
+      remainingBudgetCents: 5_000_00,
+      owned: true,
+      provenEarner: true,
+      fillPct: 0.5,
+      fullyClaimed: false,
+    };
+    expect(computeCampaignConfidence(full, { hasDemand: true, hasCcStats: true })).toBe(100);
+  });
+
+  it("weights commission most heavily among the core signals", () => {
+    const rateOnly = computeCampaignConfidence({ ...empty, commissionRatePct: 15 });
+    const budgetOnly = computeCampaignConfidence({ ...empty, remainingBudgetCents: 5_000_00 });
+    expect(rateOnly).toBeGreaterThan(budgetOnly);
+  });
+
+  it("rises when our catalogue demand backs the read", () => {
+    const base = computeCampaignConfidence({ ...empty, commissionRatePct: 15 });
+    const withDemand = computeCampaignConfidence(
+      { ...empty, commissionRatePct: 15 },
+      { hasDemand: true },
+    );
+    expect(withDemand).toBeGreaterThan(base);
+  });
+
+  it("treats a lone fully-claimed flag as a present fill signal", () => {
+    expect(computeCampaignConfidence({ ...empty, fullyClaimed: true })).toBeGreaterThan(0);
   });
 });

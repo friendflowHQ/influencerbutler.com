@@ -685,7 +685,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .pricing h2 { margin-bottom: 0.5rem; }
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-top: 3rem;
   align-items: start;
@@ -1064,6 +1064,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
   .hero-visual { order: -1; max-width: 500px; margin: 0 auto; }
   .feature-grid { grid-template-columns: repeat(3, 1fr); }
   .pain-grid { grid-template-columns: repeat(2, 1fr); }
+  .pricing-grid { grid-template-columns: repeat(2, 1fr); }
   .spotlight { grid-template-columns: 1fr; gap: 2rem; }
   .spotlight.reverse { direction: ltr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }

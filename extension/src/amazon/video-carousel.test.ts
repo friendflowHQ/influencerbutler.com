@@ -94,6 +94,30 @@ describe("extractFromText", () => {
       "https://www.amazon.com/vdp/2",
     ]);
   });
+
+  it("captures durationSeconds when one aligns to each video", () => {
+    // Verified live 2026-08-18: the widget payload carries durationSeconds.
+    const withDurations = JSON.stringify({
+      videos: [
+        { creatorType: "Influencer", title: "A", durationSeconds: 21 },
+        { creatorType: "Vendor", title: "B", durationSeconds: 52 },
+      ],
+    });
+    const result = extractFromText(withDurations);
+    expect(result?.videos.map((v) => v.durationSec)).toEqual([21, 52]);
+  });
+
+  it("drops durations when they do not align one-per-video", () => {
+    // Only one duration for two videos: a positional map would misattach it.
+    const misaligned = JSON.stringify({
+      videos: [
+        { creatorType: "Influencer", title: "A", durationSeconds: 21 },
+        { creatorType: "Vendor", title: "B" },
+      ],
+    });
+    const result = extractFromText(misaligned);
+    expect(result?.videos.map((v) => v.durationSec)).toEqual([null, null]);
+  });
 });
 
 describe("carouselSourceFor", () => {

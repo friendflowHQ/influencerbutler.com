@@ -33,6 +33,14 @@ export const ENDPOINTS = {
   // Shared product catalogue ("internal Keepa"): POST contributes product facts
   // (opt-in), GET reads pooled price/rank history + estimated monthly sales.
   market: `${API_BASE}/api/extension/market`,
+  // Campaign Butler: POST one campaign's signals + demand, get a butler-voiced
+  // brief (verdict / why-take / what-to-film / best product / audiences). The
+  // score + confidence are computed locally; this only writes the prose.
+  campaignBrief: `${API_BASE}/api/extension/campaign-brief`,
+  // Shared video-placement catalogue: POST contributes which creator videos hold
+  // a product's carousel (opt-in, same consent as market), GET reads the
+  // longitudinal per-video "passport" (presence, rotation, daily visibility).
+  videoIntel: `${API_BASE}/api/extension/video-intel`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),

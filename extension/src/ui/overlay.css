@@ -462,6 +462,93 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 
 .progress { font-size: 12.5px; color: #64748b; margin: 0; }
 
+/* Video landscape: aggregate competitor-parity stats inside the video panel. */
+.ls-tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.ls-tile {
+  flex: 1 1 calc(50% - 4px);
+  min-width: 118px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.ls-tile .ls-val { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+.ls-tile .ls-lab { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+.ls-sublabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 2px 0 0;
+}
+.ls-conc { display: grid; gap: 6px; }
+.ls-conc-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 22px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.ls-conc-name { color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-conc-track { background: #f1f5f9; border-radius: 999px; height: 8px; overflow: hidden; }
+.ls-conc-fill { height: 100%; background: linear-gradient(90deg, #fb923c, #c2410c); border-radius: 999px; }
+.ls-conc-count { color: #64748b; text-align: right; }
+.ls-mix { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #f1f5f9; }
+.ls-mix-seg { height: 100%; }
+.ls-mix-seg.influencer { background: #fb923c; }
+.ls-mix-seg.brand { background: #60a5fa; }
+.ls-mix-seg.customer { background: #94a3b8; }
+.ls-mix-seg.unknown { background: #e2e8f0; }
+.ls-pulse { display: flex; align-items: flex-end; gap: 3px; height: 44px; }
+.ls-pulse-bar { flex: 1; background: linear-gradient(180deg, #fdba74, #c2410c); border-radius: 3px 3px 0 0; min-height: 2px; }
+.ls-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.ls-badge.upper { background: #eff6ff; color: #1d4ed8; }
+.ls-badge.lower { background: #fff7ed; color: #c2410c; }
+.ls-card-head { display: flex; align-items: center; gap: 6px; }
+
+/* Per-video passport (longitudinal placement history). */
+.pp-toggle {
+  background: none;
+  border: none;
+  color: #c2410c;
+  font-weight: 600;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+}
+.pp-toggle:hover { text-decoration: underline; }
+.pp-body { margin-top: 8px; display: grid; gap: 8px; }
+.pp-metrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-metric {
+  flex: 1 1 calc(50% - 3px);
+  min-width: 96px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.pp-metric .pp-val { font-size: 15px; font-weight: 800; color: #0f172a; }
+.pp-metric .pp-lab { font-size: 10.5px; color: #64748b; }
+.pp-strip { display: flex; align-items: flex-end; gap: 1px; height: 34px; }
+.pp-day { flex: 1; border-radius: 1px; min-width: 1px; }
+.pp-day.visible { background: linear-gradient(180deg, #34d399, #15803d); min-height: 3px; }
+.pp-day.nodata {
+  height: 100%;
+  background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 2px, #e2e8f0 2px, #e2e8f0 4px);
+}
+.pp-snap { display: grid; gap: 4px; }
+.pp-snap-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #334155; }
+.pp-snap-row .pp-asin { font-family: ui-monospace, monospace; color: #0f172a; }
+
 .badge-inline {
   display: inline-flex;
   align-items: center;
@@ -534,6 +621,107 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .tile-watch:hover { border-color: #fed7aa; color: #c2410c; }
 .tile-watch.on { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .tile-watch[disabled] { opacity: 0.55; cursor: default; }
+
+/* Per-tile "..." action menu trigger (styled like a round chip button). */
+.tile-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+}
+.tile-menu-btn:hover { border-color: #fed7aa; color: #c2410c; background: #fff7ed; }
+
+/* The pop-out menu itself, in its own fixed-position shadow host. */
+.tile-menu {
+  min-width: 200px;
+  max-width: 260px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  padding: 6px;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #334155;
+}
+.tile-menu-section { display: flex; flex-direction: column; }
+.tile-menu-section + .tile-menu-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+.tile-menu-heading {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  padding: 2px 8px 4px;
+}
+.tile-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+.tile-menu-item:hover { background: #f8fafc; color: #c2410c; }
+.tile-menu-item.has-sub::after { content: " \203A"; color: #94a3b8; float: right; }
+.tile-menu-item.tile-menu-cta { color: #c2410c; font-weight: 800; }
+.tile-menu-sub {
+  margin: 2px 0 2px 6px;
+  padding-left: 6px;
+  border-left: 2px solid #f1f5f9;
+}
+.tile-menu-sub-item { font-weight: 500; font-size: 12.5px; padding: 6px 8px; }
+.tile-menu-newlist { display: flex; gap: 4px; padding: 4px 4px 2px; }
+.tile-menu-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12.5px;
+}
+.tile-menu-create {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid #fed7aa;
+  border-radius: 7px;
+  background: #fff7ed;
+  color: #c2410c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tile-menu-locked { padding: 4px 8px; font-size: 12px; color: #64748b; }
+.tile-menu-status {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 
 /* Search toolbar: a full-width bar above the grid. Wraps on narrow layouts. */
 .search-toolbar {
@@ -902,3 +1090,49 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 }
 
 .update-banner-close:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Video Money: the reshoot summary card above the Creator Hub manage list. Its
+   own inline shadow host, so it can be torn down on re-init and pagination. */
+.vmoney-panel {
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+.vmoney-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.vmoney-title { font-weight: 700; font-size: 14px; }
+.vmoney-count { color: #64748b; font-size: 12px; }
+.vmoney-export { margin-left: auto; }
+.vmoney-note {
+  margin: 0 0 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+}
+.vmoney-group { margin-top: 10px; }
+.vmoney-group-title { margin: 0; font-size: 12px; font-weight: 700; color: #334155; }
+.vmoney-group-hint { display: block; font-size: 11px; color: #94a3b8; margin: 1px 0 4px; }
+.vmoney-rows { display: flex; flex-direction: column; gap: 3px; }
+.vmoney-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+.vmoney-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vmoney-row-value { color: #15803d; font-weight: 600; font-variant-numeric: tabular-nums; }

@@ -53,6 +53,20 @@ export type Campaign = {
   slotsFilled: number | null;
   slotsTotal: number | null;
   fullyClaimed: boolean | null;
+  // Conversion stats (orders / sales / ROAS) captured from the same API record,
+  // when Amazon exposes them. Usually null: the Campaign Butler brief is
+  // estimator-first and falls back to our catalogue demand. See connect-hook.
+  stats: CampaignStats | null;
+};
+
+// Conversion stats a Creator Connections campaign record MIGHT carry, captured
+// by the MAIN-world connect-hook alongside fill. Every field is nullable and
+// often the whole object is null (unverified that Amazon exposes these).
+export type CampaignStats = {
+  ordersLast30: number | null;
+  salesLast30Cents: number | null;
+  roas: number | null;
+  ordersTotal: number | null;
 };
 
 // Campaign fill / capacity captured from the campaign/search API by the
@@ -63,6 +77,10 @@ export type CampaignFill = {
   accepted: number | null;
   required: number | null;
   fullyClaimed: boolean | null;
+  // Conversion stats captured from the same record, when present. Optional so an
+  // older capture (or the Last Call poll, which only cares about fill) still
+  // type-checks; absent reads as "no stats".
+  stats?: CampaignStats | null;
 };
 
 // Merge a { campaignId -> fill } map (from the API capture) onto DOM-parsed
@@ -78,6 +96,7 @@ export function applyCampaignFills(
     c.slotsFilled = fill.accepted;
     c.slotsTotal = fill.required;
     c.fullyClaimed = fill.fullyClaimed;
+    c.stats = fill.stats ?? null;
   }
 }
 
@@ -243,6 +262,7 @@ export function parseCampaignCard(el: HTMLElement): Campaign | null {
     slotsFilled: null,
     slotsTotal: null,
     fullyClaimed: null,
+    stats: null,
   };
 }
 
@@ -388,6 +408,7 @@ export function readCampaignGridByTestId(root: ParentNode): Campaign[] {
       slotsFilled: null,
       slotsTotal: null,
       fullyClaimed: null,
+      stats: null,
     });
   }
   return out;

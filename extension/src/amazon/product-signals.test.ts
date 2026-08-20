@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchParentAsin, parseBestsellerRank } from "./product-signals";
+import { matchParentAsin, parseBestsellerRank, parseVariationAsins } from "./product-signals";
 
 describe("matchParentAsin", () => {
   it("pulls the parent ASIN out of twister JSON", () => {
@@ -10,6 +10,25 @@ describe("matchParentAsin", () => {
   it("returns null when absent or malformed", () => {
     expect(matchParentAsin("no marker here")).toBeNull();
     expect(matchParentAsin('"parentAsin":"tooShort"')).toBeNull();
+  });
+});
+
+describe("parseVariationAsins", () => {
+  it("collects every child ASIN keyed in the twister display data", () => {
+    const text =
+      'var x = {"dimensionValuesDisplayData":{"B0ABCDEFG1":["Red","S"],"B0ABCDEFG2":["Blue","M"],"B0ABCDEFG3":["Green","L"]},"parentAsin":"B0PARENT001"};';
+    expect(parseVariationAsins(text).sort()).toEqual(["B0ABCDEFG1", "B0ABCDEFG2", "B0ABCDEFG3"]);
+  });
+
+  it("returns empty when there is no twister block", () => {
+    expect(parseVariationAsins('{"parentAsin":"B0DZ6SLJQ3"}')).toEqual([]);
+    expect(parseVariationAsins("nothing here")).toEqual([]);
+  });
+
+  it("does not pick up ASIN-like values that are not keys", () => {
+    // Only the object keys (child ASINs) should be collected, not array values.
+    const text = '{"dimensionValuesDisplayData":{"B0KEYAAAA1":["ABCDEFGHIJ"]}}';
+    expect(parseVariationAsins(text)).toEqual(["B0KEYAAAA1"]);
   });
 });
 

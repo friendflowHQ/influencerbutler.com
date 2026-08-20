@@ -6,6 +6,7 @@ import {
   extractFromText,
   type CarouselResult,
 } from "../amazon/video-carousel";
+import { deriveCreatorId, deriveVideoId } from "../amazon/video-identity";
 import { extractSignals, type ProductSignals } from "../amazon/product-signals";
 import { query, applySelectorOverrides } from "../amazon/selectors";
 import { getFlags } from "../flags/cache";
@@ -29,6 +30,7 @@ import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
+import { initVideoMoney } from "../tools/video-money/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
@@ -36,6 +38,7 @@ import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
+import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { maybeShowUpdateBanner } from "../tools/update-banner";
 import { guard } from "../shared/guard";
@@ -208,8 +211,11 @@ async function runForPage(): Promise<void> {
 
       if (showOnsite && settings.tools.videoCounts) {
         guard("video-counts", () =>
-          renderVideoCounts(carousel, capturedVideoUrls, () =>
-            extractCarousel(document, capturedVideoData),
+          renderVideoCounts(
+            carousel,
+            capturedVideoUrls,
+            () => extractCarousel(document, capturedVideoData),
+            settings.tools.videoLandscape,
           ),
         );
         lastStatus.toolSummaries.push({
@@ -271,6 +277,10 @@ async function runForPage(): Promise<void> {
         guard("watchlist", () => void renderWatchButton(signals));
       }
 
+      // Add this product (or every variation) to a named list. Free, channel-
+      // neutral; the only surface that offers "Add all variations".
+      guard("product-lists", () => void renderProductListsPanel(signals));
+
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
       // The video widget's classified data only hydrates once it scrolls
@@ -321,6 +331,14 @@ async function runForPage(): Promise<void> {
     guard("upload-helper", () => {
       initUploadHelper();
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
+    });
+  } else if (pageType === "creator-manage") {
+    if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
+    guard("video-money", () => {
+      if (settings.tools.videoMoney) {
+        void initVideoMoney(settings);
+        lastStatus.toolSummaries.push({ label: t().sumVideoMoney, value: t().ready });
+      }
     });
   } else if (pageType === "search") {
     guard("search-overlay", () => {
@@ -459,6 +477,26 @@ function emitProductScan(
       };
     });
   }
+  // De-identified per-video placement observations for the opt-in video pool.
+  // Attached to every scan; api-transport only forwards them when the user has
+  // turned catalogue contribution on. Videos we cannot identify are dropped.
+  const videos = carousel.videos
+    .map((v) => {
+      const videoId = deriveVideoId(v);
+      if (!videoId) return null;
+      return {
+        videoId,
+        creatorId: deriveCreatorId(v),
+        creatorName: v.creatorName,
+        creatorType: v.creatorType,
+        carousel: v.carousel,
+        position: v.position,
+        title: v.title,
+        url: v.url,
+      };
+    })
+    .filter((v): v is NonNullable<typeof v> => v !== null);
+
   const finding: ProductScanFinding = {
     type: "product_scan",
     asin: signals.asin,
@@ -474,6 +512,7 @@ function emitProductScan(
     bestsellerRank: signals.bestsellerRank,
     imageUrl: signals.imageUrl,
     counts: carousel.counts,
+    videos: videos.length > 0 ? videos : undefined,
     approved,
     approvedCriteria,
     scannedAt: new Date().toISOString(),

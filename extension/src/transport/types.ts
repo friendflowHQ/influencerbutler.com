@@ -11,6 +11,21 @@ export type VideoCounts = {
   unknown: number;
 };
 
+// One creator video observed in a product's carousel at scan time. Rides along
+// on the product_scan finding so the opt-in video-placement pool (video-intel)
+// can record which videos hold which carousels over time. De-identified: only
+// placement facts, never personal data.
+export type VideoObservation = {
+  videoId: string;
+  creatorId: string | null;
+  creatorName: string | null;
+  creatorType: "influencer" | "brand" | "customer" | "unknown";
+  carousel: "upper" | "lower" | "unknown";
+  position: number | null;
+  title: string | null;
+  url: string | null;
+};
+
 export type ProductScanFinding = {
   type: "product_scan";
   asin: string;
@@ -31,6 +46,9 @@ export type ProductScanFinding = {
   bestsellerRank?: { rank: number; category: string } | null;
   imageUrl?: string | null;
   counts: VideoCounts;
+  // Per-video carousel placements observed at scan time. Only sent to the pool
+  // when the user has opted in to catalogue contribution; ignored otherwise.
+  videos?: VideoObservation[];
   approved: boolean;
   approvedCriteria?: Record<string, boolean>;
   scannedAt: string;

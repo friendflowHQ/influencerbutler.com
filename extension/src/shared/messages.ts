@@ -13,6 +13,7 @@ import type {
   IntegrationsState,
   IntegrationTestResult,
   PricePoint,
+  ProductList,
   WatchCondition,
   WatchItem,
 } from "../storage/schema";
@@ -48,6 +49,7 @@ export type PageStatus = {
     | "storefront"
     | "brand-store"
     | "creator-upload"
+    | "creator-manage"
     | "campaign-grid"
     | "search"
     | "discovery"
@@ -85,6 +87,14 @@ export type RuntimeMessage =
   // monthly-sales figure. Routed through the worker so it carries the license
   // key; available to any signed-in user regardless of whether they contribute.
   | { kind: "GET_MARKET"; asin: string; marketplace: string }
+  // Batched sibling of GET_MARKET: one round trip for a whole page of ASINs (the
+  // search overlay wants a market read per tile). The endpoint already accepts up
+  // to 50 comma-joined ASINs; this returns them all so the overlay does not fire
+  // one message per card.
+  | { kind: "GET_MARKET_BATCH"; asins: string[]; marketplace: string }
+  // Per-video "passport" read from the shared video-placement pool: presence,
+  // rotation, and daily visibility for one creator video over 90 days.
+  | { kind: "GET_VIDEO_INTEL"; videoId: string; marketplace: string }
   // Desktop-app pairing, driven from the popup: ask the app to show a 6-digit
   // code, submit the code the user typed, or forget the stored token.
   | { kind: "REQUEST_PAIRING" }
@@ -146,6 +156,21 @@ export type RuntimeMessage =
   | { kind: "SET_WATCH_CONDITIONS"; asin: string; marketplace: string; notifyOn: WatchCondition[] }
   | { kind: "GET_WATCHLIST" }
   | { kind: "IS_WATCHED"; asin: string; marketplace: string }
+  // Product lists ("Add to List"): user-named collections, local-only, driven
+  // from the tile menu and the popup. ADD accepts either an existing listId or a
+  // newListName to create-and-add in one call.
+  | { kind: "GET_PRODUCT_LISTS" }
+  | { kind: "CREATE_PRODUCT_LIST"; name: string }
+  | { kind: "RENAME_PRODUCT_LIST"; id: string; name: string }
+  | { kind: "DELETE_PRODUCT_LIST"; id: string }
+  | { kind: "ADD_TO_PRODUCT_LIST"; listId?: string; newListName?: string; item: ProductListInput }
+  | {
+      kind: "ADD_MANY_TO_PRODUCT_LIST";
+      listId?: string;
+      newListName?: string;
+      items: ProductListInput[];
+    }
+  | { kind: "REMOVE_FROM_PRODUCT_LIST"; listId: string; asin: string; marketplace: string }
   // Last Call Butler campaign watchlist: watch/unwatch a Creator Connections
   // campaign (keyed by campaignId) and read the set of watched ids so the grid
   // overlay can show which cards the Butler is watching. The background poll then
@@ -159,6 +184,12 @@ export type RuntimeMessage =
   // when the background poll opens it in a tab; the background correlates the
   // poll's tab by sender id.
   | { kind: "REPORT_CAMPAIGN_FILLS"; fills: Record<string, CampaignFill> }
+  // Campaign Butler: build the on-demand "Butler's Brief" for one campaign. The
+  // overlay computes the score + confidence locally and sends the campaign
+  // signals; the worker looks up our catalogue demand for the campaign's ASINs
+  // and POSTs everything to /api/extension/campaign-brief for the reasoning
+  // prose, then returns the sections plus the resolved demand.
+  | { kind: "GET_CAMPAIGN_BRIEF"; signals: CampaignBriefSignals }
   // Deal Sites Harvester: fetch and parse a list of aggregator URLs (the deals
   // page requests the host permission first), and read the curated source list.
   | { kind: "HARVEST_DEAL_SITES"; urls: string[] }
@@ -246,6 +277,29 @@ export type WatchInput = {
 // plus atCap on add when the watchlist is full so the UI can explain the block.
 export type WatchlistResult = { items: WatchItem[]; atCap?: boolean };
 
+// What "Add to List" sends. imageUrl/title are optional because a search tile
+// has less than a product page; the store fills nulls where absent.
+export type ProductListInput = {
+  asin: string;
+  marketplace: string;
+  title?: string | null;
+  imageUrl?: string | null;
+};
+
+// Returned by every product-list message: the full current set of lists, plus
+// caps (atCap when there are already PRODUCT_LISTS_CAP lists, atItemCap when the
+// target list is full) and listId (the created/affected list) so the tile menu
+// can confirm "added to <name>".
+export type ProductListsResult = {
+  lists: ProductList[];
+  atCap?: boolean;
+  atItemCap?: boolean;
+  listId?: string;
+  // Set by the batch add (ADD_MANY_TO_PRODUCT_LIST): how many items actually
+  // landed after dedup + the item cap, so the UI can say "Added N variations".
+  added?: number;
+};
+
 // What the grid's "watch this campaign" bell sends to add a Last Call watch.
 export type CampaignWatchInput = { campaignId: string; brand: string | null };
 
@@ -253,6 +307,72 @@ export type CampaignWatchInput = { campaignId: string; brand: string | null };
 // watched campaign ids (for the grid overlay to reflect bell state), plus atCap
 // on add when the campaign watchlist is full.
 export type CampaignWatchListResult = { campaignIds: string[]; atCap?: boolean };
+
+// Campaign Butler ("The Butler's Brief"). What the grid overlay sends for one
+// campaign: the DOM/API signals plus the locally-computed score, band, and
+// confidence (all deterministic), so the server only writes the prose. ccStats
+// are the captured Creator Connections conversion numbers when Amazon exposed
+// them (usually null: the brief is estimator-first).
+export type CampaignCcStats = {
+  ordersLast30: number | null;
+  salesLast30Cents: number | null;
+  roas: number | null;
+  ordersTotal: number | null;
+};
+
+export type CampaignBriefSignals = {
+  brand: string | null;
+  commissionRatePct: number | null;
+  remainingBudgetCents: number | null;
+  daysRemaining: number | null;
+  slotsFilled: number | null;
+  slotsTotal: number | null;
+  fullyClaimed: boolean | null;
+  score: number;
+  band: "hot" | "warm" | "cool";
+  confidence: number;
+  ccStats: CampaignCcStats | null;
+  asins: string[];
+  marketplace: string;
+  locale?: string | null;
+};
+
+// Our catalogue's demand read for the campaign's standout product, resolved by
+// the worker and returned so the panel can render the real units/revenue numbers
+// (the "Pick of the shelf" figures) itself rather than trusting the model.
+export type CampaignBriefDemand = {
+  asin: string;
+  estMonthlySales: number | null;
+  estMonthlyRevenueCents: number | null;
+  boughtPastMonth: number | null;
+  priceCents: number | null;
+  category: string | null;
+  calibrated: boolean;
+};
+
+// The prose sections the server model wrote (mirror of CampaignBriefSections in
+// src/lib/campaign-brief.ts). null when no LLM key is configured or the call
+// failed, so the panel falls back to the local score breakdown.
+export type CampaignBriefSections = {
+  verdictWord: string;
+  whyTake: string[];
+  whatToFilm: string[];
+  pickReason: string | null;
+  onAmazon: string;
+  offAmazon: string[];
+  audiences: string[];
+};
+
+// Returned by GET_CAMPAIGN_BRIEF. sections is the model's prose (or null on a
+// miss); demand is the resolved standout-product estimate (or null when no ASIN
+// was in the catalogue). migrationPending mirrors the market read.
+export type CampaignBriefResult = {
+  ok: boolean;
+  migrationPending?: boolean;
+  sections: CampaignBriefSections | null;
+  demand: CampaignBriefDemand | null;
+  error?: string;
+};
 
 // One normalized Creator API (PA-API) product row. Mirrors the server's
 // EnrichedItem shape in src/lib/paapi.ts, one per (asin, marketplace).
@@ -322,6 +442,58 @@ export type MarketResult = {
   ok: boolean;
   migrationPending?: boolean;
   product: MarketProduct | null;
+};
+
+// Response of GET_MARKET_BATCH. `products` holds one entry per ASIN the pool
+// knows about (ASINs with nothing yet are simply absent, so the array can be
+// shorter than the request). Empty + ok:false on a network miss or an unapplied
+// migration, so the caller keeps its plain badges.
+export type MarketBatchResult = {
+  ok: boolean;
+  migrationPending?: boolean;
+  products: MarketProduct[];
+};
+
+// One day in a video's 90-day visibility series. "no_data" means no contributor
+// observed the product that day: distinct from the video being absent.
+export type VideoIntelDay = {
+  day: string;
+  status: "visible" | "no_data";
+  asinCount: number;
+};
+
+// One current placement of the video (per ASIN), from the latest snapshot.
+export type VideoIntelSnapshot = {
+  asin: string;
+  carousel: string;
+  position: number | null;
+  creatorName: string | null;
+  creatorType: string;
+  title: string | null;
+  videoUrl: string | null;
+  lastObservedAt: string | null;
+};
+
+// Response of GET_VIDEO_INTEL: the per-video passport. Longitudinal metrics are
+// null while `collecting` is true (not enough distinct days have accrued yet),
+// so the UI shows an honest "collecting" state instead of a fabricated number.
+export type VideoIntelResult = {
+  ok: boolean;
+  migrationPending?: boolean;
+  collecting: boolean;
+  firstSeen: string | null;
+  daysTracked: number;
+  activeDays: number;
+  productReach: number;
+  upperShare: number | null;
+  lowerShare: number | null;
+  presenceRate: number | null;
+  rotationRate: number | null;
+  stability: number | null;
+  activeDayStrength: number | null;
+  series: VideoIntelDay[];
+  snapshot: VideoIntelSnapshot[];
+  lastObserved: string | null;
 };
 
 // One curated aggregator site the harvester offers in its picker.

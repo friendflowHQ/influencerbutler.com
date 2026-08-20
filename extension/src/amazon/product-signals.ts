@@ -22,6 +22,9 @@ export type ProductSignals = {
   // The variation parent ASIN (from the twister JSON), when this listing is a
   // child variation; null for standalone products.
   parentAsin: string | null;
+  // Every child (sibling) ASIN of this listing's variation family, from the
+  // twister JSON. Empty for a standalone product. Used by "Add all variations".
+  variationAsins: string[];
   // The most specific "#N in <category>" bestseller rank, when present.
   bestsellerRank: { rank: number; category: string } | null;
   imageUrl: string | null;
@@ -44,6 +47,7 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     commissionRatePct: extractCommissionRate(doc),
     category: extractCategory(doc),
     parentAsin: extractParentAsin(doc),
+    variationAsins: extractVariationAsins(doc),
     bestsellerRank: extractBestsellerRank(doc),
     imageUrl: extractImage(doc),
   };
@@ -66,6 +70,54 @@ export function extractParentAsin(doc: Document): string | null {
     if (found) return found;
   }
   return null;
+}
+
+// The twister keys its per-variation display data by child ASIN:
+// "dimensionValuesDisplayData":{ "B0ABC12345":[...], "B0XYZ98765":[...] }.
+// Collect those ASIN keys to enumerate a listing's sibling variations.
+const VARIATION_BLOCK_KEY = '"dimensionValuesDisplayData"';
+const ASIN_KEY_RE = /"([A-Z0-9]{10})"\s*:/g;
+
+// Pure parser (exported for tests): every child ASIN in the twister block.
+export function parseVariationAsins(text: string): string[] {
+  const at = text.indexOf(VARIATION_BLOCK_KEY);
+  if (at < 0) return [];
+  const braceStart = text.indexOf("{", at + VARIATION_BLOCK_KEY.length);
+  if (braceStart < 0) return [];
+  // Walk to the matching close brace (bounded so a malformed blob cannot spin).
+  let depth = 0;
+  let end = -1;
+  const limit = Math.min(text.length, braceStart + 200_000);
+  for (let i = braceStart; i < limit; i++) {
+    const ch = text[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end < 0) return [];
+  const block = text.slice(braceStart, end + 1);
+  const asins = new Set<string>();
+  ASIN_KEY_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = ASIN_KEY_RE.exec(block)) !== null) {
+    if (match[1]) asins.add(match[1]);
+  }
+  return [...asins];
+}
+
+export function extractVariationAsins(doc: Document): string[] {
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const text = script.textContent;
+    if (!text || !text.includes(VARIATION_BLOCK_KEY)) continue;
+    const asins = parseVariationAsins(text);
+    if (asins.length > 0) return asins;
+  }
+  return [];
 }
 
 // Best Sellers Rank reads like "#1,234 in Beauty (See Top 100 in Beauty) #5 in

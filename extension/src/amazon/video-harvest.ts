@@ -141,7 +141,11 @@ export async function harvestVideos(
 
 // A video's identity for dedupe across pages and against the seed. Same video
 // re-served on the next page (or already captured passively) collapses to one.
+// The aciContentId is the strongest signal when present (the same video can
+// otherwise appear once from the state-script list with no title/name and again
+// from a network payload with them, which the composite key would not collapse).
 function videoKey(v: CarouselVideo): string {
+  if (v.contentId) return `aci:${v.contentId.toLowerCase()}`;
   return [
     v.carousel,
     v.creatorType,

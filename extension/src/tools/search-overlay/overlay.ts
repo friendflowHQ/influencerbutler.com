@@ -11,7 +11,7 @@ import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
-import { formatCents } from "../calculator/model";
+import { formatCents, formatCompactMoney } from "../calculator/model";
 import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
 import { formatMoney, tileTotals } from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
@@ -21,11 +21,16 @@ import {
   type CcRate,
   type CcRatesResult,
   type EarningsLookupResult,
+  type MarketBatchResult,
+  type MarketProduct,
   type ScanAsinResult,
   type WatchlistResult,
 } from "../../shared/messages";
 import { enrichSearchTiles } from "./enrich";
 import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
+import { mountTileMenuButton, type HudRef } from "./tile-menu";
+import type { AuthStatus } from "../../shared/messages";
+import type { HudStatus } from "../../transport/hud-commands";
 import type { Settings } from "../../storage/schema";
 
 // Marks a tile as already decorated so an SPA rebuild does not double-badge it.
@@ -63,6 +68,14 @@ type Row = {
   // already earned on it: turns Amazon search into "find more of what already
   // paid me", with the real dollars on the chip.
   earnings: AsinEarnings | null;
+  // Shared-catalogue ("internal Keepa") data for this ASIN: estimated monthly
+  // sales, BSR rank/category, real bought-past-month. Null until the batched
+  // GET_MARKET_BATCH returns (and stays null when the pool has nothing yet).
+  market: MarketProduct | null;
+  // Shared desktop-app connection state (one object for all rows). The per-tile
+  // action menu reads it live when opened, so it reflects the latest bridge
+  // status even though the button was mounted before GET_HUD_STATUS resolved.
+  hud: HudRef;
 };
 
 let stopScan = false;
@@ -111,6 +124,11 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     defaultRatePct: settings.commissionRatePct,
   });
 
+  // One shared connection object for the whole page's tile menus. Updated in
+  // place when GET_HUD_STATUS / GET_AUTH_STATUS resolve below; the menus read it
+  // live, so no repaint is needed when it flips.
+  const hud: HudRef = { connected: false, signedIn: false };
+
   const rows: Row[] = tiles.map((tile, i) => {
     const flags = membership(loaded, tile.asin);
     const badgeBody = el("div", "tile-badge-body");
@@ -133,6 +151,8 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       showWatch: settings.tools.watchlist,
       watched: false,
       earnings: null,
+      market: null,
+      hud,
     };
     // A previous background-tab scan (from any surface) already knows this
     // product's exact influencer split; use it for free and let the Scan
@@ -179,6 +199,41 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
       const earnings = byAsin.get(row.tile.asin.toUpperCase());
       if (earnings?.hasEarnings) {
         row.earnings = earnings;
+        renderBadge(row, settings);
+      }
+    }
+  });
+
+  // Desktop-app connection + sign-in state, once for the whole page, so the
+  // per-tile action menu can offer the app actions (or the upsell) without a
+  // lookup per open. Updates the shared `hud` object in place; menus read it
+  // live, so there is nothing to repaint.
+  void Promise.all([
+    sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
+    sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
+  ]).then(([hudStatus, auth]) => {
+    if (epoch !== initEpoch) return;
+    hud.connected = hudStatus.connected;
+    hud.signedIn = auth.signedIn;
+  });
+
+  // Shared-catalogue read for the whole page in one round trip: estimated
+  // monthly sales/revenue + BSR rank per tile. No-op for signed-out users and
+  // when the migration is unapplied (the worker returns nothing), so the tiles
+  // just keep their other chips. boughtPastMonth from the pool also feeds the
+  // score before the per-tile /dp/ enrichment lands.
+  void sendToBackground<MarketBatchResult>({
+    kind: "GET_MARKET_BATCH",
+    asins: rows.map((r) => r.tile.asin),
+    marketplace,
+  }).then((res) => {
+    if (epoch !== initEpoch || !res.ok) return;
+    const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
+    for (const row of rows) {
+      const product = byAsin.get(row.tile.asin.toUpperCase());
+      if (product) {
+        row.market = product;
+        recompute(row, settings);
         renderBadge(row, settings);
       }
     }
@@ -376,6 +431,17 @@ function rateFor(row: Row): number {
   return row.ccRate ? row.ccRate.ratePct : row.ratePct;
 }
 
+// Estimated monthly revenue in cents: modeled units x price. Prefer the live
+// search-tile price (what the shopper sees now) over the pooled snapshot price.
+// Null when there is no estimate or no price to multiply by.
+function revenueCentsFor(row: Row): number | null {
+  const units = row.market?.estMonthlySales;
+  if (units == null) return null;
+  const priceCents = row.tile.priceCents ?? row.market?.priceCents ?? null;
+  if (priceCents == null) return null;
+  return Math.round(units * priceCents);
+}
+
 // Recompute everything derived from the row's signals: commission estimate,
 // Butler Score, and the tile verdict. Callers repaint afterwards.
 function recompute(row: Row, settings: Settings): void {
@@ -383,7 +449,8 @@ function recompute(row: Row, settings: Settings): void {
   row.commissionCents =
     row.tile.priceCents !== null ? Math.round((row.tile.priceCents * rate) / 100) : null;
   const inStock = row.dp ? row.dp.inStock : row.cachedInStock;
-  const bought = row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? null;
+  const bought =
+    row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? row.market?.boughtPastMonth ?? null;
   row.score = computeButlerScore(
     {
       priceCents: row.tile.priceCents,
@@ -444,6 +511,8 @@ function comparator(key: SortKey): (a: Row, b: Row) => number {
       return (a, b) => b.score.score - a.score.score;
     case "commission":
       return (a, b) => (b.commissionCents ?? -1) - (a.commissionCents ?? -1);
+    case "revenue":
+      return (a, b) => (revenueCentsFor(b) ?? -1) - (revenueCentsFor(a) ?? -1);
     case "price-asc":
       return (a, b) => (a.tile.priceCents ?? Infinity) - (b.tile.priceCents ?? Infinity);
     case "price-desc":
@@ -483,6 +552,21 @@ function renderBadge(row: Row, settings: Settings): void {
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
     );
   }
+  // Estimated monthly revenue (modeled sales x price) from the shared catalogue:
+  // the "is this product actually big?" signal, matching what shoppers see on a
+  // best-seller page but never on search. Honest tooltip: modeled vs calibrated.
+  const revenueCents = revenueCentsFor(row);
+  if (revenueCents !== null && row.market) {
+    const chip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revenueCents, row.tile.currency)));
+    chip.title = row.market.estimateCalibrated ? t().salesEstCalibrated : t().salesEstModeled;
+    body.append(chip);
+  }
+  // Best-seller rank + its category, straight from the pooled snapshot.
+  if (row.market?.bsrRank != null) {
+    body.append(
+      el("span", "tile-chip", t().tileBsr(row.market.bsrRank.toLocaleString(), row.market.bsrCategory)),
+    );
+  }
   if (row.flags.cc || row.flags.spcc) {
     body.append(
       el(
@@ -502,6 +586,20 @@ function renderBadge(row: Row, settings: Settings): void {
     body.append(el("span", "tile-chip", t().tileVideos(row.totalVideos)));
   }
   if (row.showWatch) body.append(watchControl(row, settings));
+  // The "..." action menu: Add to list / Copy link / Open page always, plus the
+  // desktop-bridge actions when the app is paired (else an upsell). Mounted last
+  // so it sits at the end of the chip row.
+  mountTileMenuButton(
+    body,
+    {
+      asin: row.tile.asin,
+      marketplace: row.marketplace,
+      title: row.tile.title,
+      imageUrl: row.tile.imageUrl,
+      href: row.tile.href,
+    },
+    row.hud,
+  );
 }
 
 // Compact per-criterion tooltip for the verdict chip, reusing the product

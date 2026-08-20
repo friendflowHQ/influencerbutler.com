@@ -17,6 +17,7 @@ const goodSignals: ProductSignals = {
   commissionRatePct: null,
   category: null,
   parentAsin: null,
+  variationAsins: [],
   bestsellerRank: null,
   imageUrl: null,
 };

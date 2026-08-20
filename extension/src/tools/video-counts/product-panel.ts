@@ -1,10 +1,18 @@
 import { addSection, chip, collapsible, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { classifiedCount, type CarouselResult, type CarouselVideo } from "../../amazon/video-carousel";
+import { computeLandscape } from "../../amazon/video-landscape";
 import { query } from "../../amazon/selectors";
 import { harvestVideos, type VideoHarvestResult } from "../../amazon/video-harvest";
 import type { VideoCounts } from "../../transport/types";
 import { buildVideoCsv, downloadCsv } from "./video-csv";
+import { renderLandscape } from "./landscape-panel";
+import { renderVideoPassport } from "./passport-panel";
+
+// Marketplace host for pool reads, e.g. "amazon.com" / "amazon.co.uk".
+function currentMarketplace(): string {
+  return location.hostname.replace(/^www\./, "").toLowerCase();
+}
 
 const POLL_TRIES = 12;
 const POLL_INTERVAL_MS = 1200;
@@ -17,6 +25,7 @@ export function renderVideoCounts(
   result: CarouselResult,
   endpoints: string[] = [],
   reextract?: () => CarouselResult,
+  showLandscape = false,
 ): void {
   const section = addSection(t().videoCompetition);
 
@@ -50,13 +59,31 @@ export function renderVideoCounts(
     summary.textContent = t().videosTotalVia(result.counts.total, result.strategy === "json");
     section.append(summary);
 
-    renderInfluencerList(section, result.videos, result.counts.influencer);
+    renderInfluencerList(
+      section,
+      result.videos,
+      result.counts.influencer,
+      showLandscape ? currentMarketplace() : null,
+    );
+  }
+
+  // Video landscape: the aggregate competitor-parity view. It only renders once
+  // we actually have classified videos to aggregate (not the header-only pending
+  // state), and Deep Scan re-renders it from the fuller harvested set. The host
+  // is created either way so the harvest handler always has somewhere to draw.
+  let landscapeHost: HTMLElement | undefined;
+  if (showLandscape) {
+    landscapeHost = el("div");
+    section.append(landscapeHost);
+    if (result.videos.length > 0) {
+      renderLandscape(landscapeHost, computeLandscape(result.videos, result.counts.total));
+    }
   }
 
   // Deep Scan is only worth offering when Amazon claims more videos than we
   // have classified so far (the shortfall lives in counts.unknown).
   if (result.counts.unknown > 0) {
-    renderDeepScan(section, result, endpoints, reextract);
+    renderDeepScan(section, result, endpoints, reextract, landscapeHost);
   }
 }
 
@@ -64,6 +91,9 @@ function renderInfluencerList(
   section: HTMLElement,
   videos: CarouselVideo[],
   influencerCount: number,
+  // When set (video landscape on), each row can expand into its placement
+  // passport, read from the shared pool for this marketplace.
+  passportMarketplace: string | null = null,
 ): void {
   const influencers = videos.filter(
     (v) => v.creatorType === "influencer" && (v.creatorName || v.title),
@@ -78,7 +108,10 @@ function renderInfluencerList(
   const list = el("ul", "list");
   for (const video of shown) {
     const item = el("li");
-    item.append(el("span", "t", video.creatorName ?? t().influencerFallback));
+    const head = el("div", "ls-card-head");
+    head.append(el("span", "t", video.creatorName ?? t().influencerFallback));
+    if (passportMarketplace) attachPassport(head, item, video, passportMarketplace);
+    item.append(head);
     if (video.title) item.append(el("span", "", video.title.slice(0, 70)));
     list.append(item);
   }
@@ -88,11 +121,39 @@ function renderInfluencerList(
   }
 }
 
+// A lazy "placement history" toggle on a creator-video row: the passport is only
+// fetched (one pool read) the first time the row is expanded.
+function attachPassport(
+  head: HTMLElement,
+  item: HTMLElement,
+  video: CarouselVideo,
+  marketplace: string,
+): void {
+  const toggle = el("button", "pp-toggle") as HTMLButtonElement;
+  toggle.type = "button";
+  toggle.textContent = t().passportOpen;
+  const body = el("div", "pp-body");
+  body.style.display = "none";
+  let loaded = false;
+  toggle.addEventListener("click", () => {
+    const open = body.style.display === "none";
+    body.style.display = open ? "grid" : "none";
+    toggle.textContent = open ? t().passportClose : t().passportOpen;
+    if (open && !loaded) {
+      loaded = true;
+      renderVideoPassport(body, video, marketplace);
+    }
+  });
+  head.append(toggle);
+  item.append(body);
+}
+
 function renderDeepScan(
   section: HTMLElement,
   seed: CarouselResult,
   endpoints: string[],
   reextract?: () => CarouselResult,
+  landscapeHost?: HTMLElement,
 ): void {
   // The header top-up already made counts.total authoritative (Amazon's own
   // #videoCount), so it is the target the harvest counts up toward.
@@ -139,6 +200,14 @@ function renderDeepScan(
       .then((hydrated) => harvestVideos(endpoints, hydrated, headerTotal, onProgress, signal))
       .then((harvest) => {
         renderHarvest(results, harvest);
+        // Refresh the landscape from the fuller harvested set (Amazon's own
+        // #videoCount is the authoritative total when present).
+        if (landscapeHost) {
+          renderLandscape(
+            landscapeHost,
+            computeLandscape(harvest.videos, harvest.headerTotal ?? harvest.counts.total),
+          );
+        }
         const classified = harvest.counts.total;
         const total = Math.max(harvest.headerTotal ?? classified, classified);
         progress.textContent = t().deepScanDone(classified, total);

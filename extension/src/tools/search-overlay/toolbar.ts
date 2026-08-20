@@ -8,7 +8,7 @@ import logoUrl from "../../../static/icons/icon-48.png";
 // kick off the optional per-tile video scan. Pure UI: every action calls back
 // into the overlay, which owns the row model and the DOM reordering.
 
-export type SortKey = "score" | "commission" | "price-asc" | "price-desc" | "relevance";
+export type SortKey = "score" | "commission" | "revenue" | "price-asc" | "price-desc" | "relevance";
 export type FilterState = { campaignOnly: boolean; minPriceCents: number | null };
 
 export type ToolbarCallbacks = {
@@ -45,6 +45,7 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   const sortOptions: Array<[SortKey, string]> = [
     ["score", t().sortScore],
     ["commission", t().sortCommission],
+    ["revenue", t().sortRevenue],
     ["price-asc", t().sortPriceAsc],
     ["price-desc", t().sortPriceDesc],
     ["relevance", t().sortRelevance],

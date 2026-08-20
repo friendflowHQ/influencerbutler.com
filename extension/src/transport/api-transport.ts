@@ -71,6 +71,32 @@ export const apiTransport: FindingTransport = {
         posts.push(post(ENDPOINTS.market, key, { items }));
       }
     }
+    // Shared video-placement contribution (same opt-in as the market pool). One
+    // item per scanned product carrying the creator videos in its carousel, so
+    // the pool can track placement over days. Only scans that actually captured
+    // videos are sent; with the opt-in off, nothing here is transmitted.
+    if (state.settings.contributeCatalogue && scans.length > 0) {
+      const videoItems = scans
+        .filter((f) => f.videos && f.videos.length > 0)
+        .map((f) => ({
+          asin: f.asin,
+          marketplace: f.marketplace,
+          observed_at: f.scannedAt,
+          videos: (f.videos ?? []).map((v) => ({
+            video_id: v.videoId,
+            creator_id: v.creatorId,
+            creator_name: v.creatorName,
+            creator_type: v.creatorType,
+            carousel: v.carousel,
+            position: v.position,
+            title: v.title,
+            video_url: v.url,
+          })),
+        }));
+      if (videoItems.length > 0) {
+        posts.push(post(ENDPOINTS.videoIntel, key, { items: videoItems }));
+      }
+    }
     if (gaps.length > 0) {
       posts.push(
         post(ENDPOINTS.gaps, key, {

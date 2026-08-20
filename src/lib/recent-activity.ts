@@ -57,6 +57,12 @@ const CONFIG_KEY = "activity_widget";
 // so the public widget looks further back for them (and plays them first).
 const PURCHASE_LOOKBACK_MINUTES = 7 * 24 * 60;
 
+// Purchases lead the rotation, but only up to this many, so a busy sales week
+// can't fill every slot and crowd out the trial-click "checking out" cards.
+// The rest of maxCount goes to trial clicks (with purchases backfilling if
+// there aren't enough trial clicks to fill the widget).
+const PURCHASE_LEAD = 2;
+
 // Loose service-role client. We hand-roll the minimal surface we use so we
 // don't depend on a generated Database type. Mirrors the casting pattern in
 // src/lib/admin.ts and the lemonsqueezy webhook.
@@ -333,9 +339,12 @@ export async function getPublicRecentActivity(): Promise<{
 type KindQueryResult = { data: Array<Record<string, unknown>> | null; error: unknown };
 
 /**
- * Purchases first (each list arrives newest-first), then trial clicks, capped
- * at maxCount. A failed per-kind query degrades to an empty list rather than
- * sinking the whole response. Exported for tests.
+ * Purchases lead (up to PURCHASE_LEAD of them, newest-first), then trial clicks
+ * fill the remaining slots, then any leftover purchases backfill if there aren't
+ * enough trial clicks. Capped at maxCount. This keeps subscriptions up front as
+ * the strongest proof while guaranteeing the "checking out" trial-click cards
+ * still appear even during a busy sales week. A failed per-kind query degrades
+ * to an empty list rather than sinking the whole response. Exported for tests.
  */
 export function composePublicRows(
   purchases: KindQueryResult,
@@ -343,7 +352,13 @@ export function composePublicRows(
   maxCount: number,
 ): Array<Record<string, unknown>> {
   const ok = (r: KindQueryResult) => (r.error || !r.data ? [] : r.data);
-  return [...ok(purchases), ...ok(trialClicks)].slice(0, Math.max(0, maxCount));
+  const cap = Math.max(0, maxCount);
+  const buys = ok(purchases);
+  const trials = ok(trialClicks);
+
+  const lead = buys.slice(0, PURCHASE_LEAD);
+  const backfill = buys.slice(PURCHASE_LEAD);
+  return [...lead, ...trials, ...backfill].slice(0, cap);
 }
 
 /** Recent events for the admin curation list (includes hidden + bot rows). */

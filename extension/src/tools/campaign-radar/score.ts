@@ -157,6 +157,38 @@ export function bandFor(score: number): CampaignScoreBand {
   return "cool";
 }
 
+// Extra signals (beyond the score inputs) that raise the Butler's confidence in
+// its read of a campaign: whether our catalogue had the standout product's
+// demand, and whether Amazon exposed real conversion stats for the campaign.
+export type CampaignConfidenceExtras = {
+  hasDemand: boolean;
+  hasCcStats: boolean;
+};
+
+// How sure the Butler is of a campaign read, 0-100. This is NOT the score: it is
+// data completeness. A campaign whose commission, budget, runway, fill, and
+// product demand are all known is read with high confidence; one where the grid
+// surfaced only a commission rate is a low-confidence read even if that rate is
+// great. Weights sum to 100 and each present signal contributes its weight, so
+// the panel can say "83/100, 70 confidence" the way the competitor does, but
+// honestly derived from what we actually had rather than invented by the model.
+export function computeCampaignConfidence(
+  inputs: CampaignScoreInputs,
+  extras?: Partial<CampaignConfidenceExtras>,
+): number {
+  const signals: ReadonlyArray<readonly [boolean, number]> = [
+    [inputs.commissionRatePct !== null, 30],
+    [inputs.remainingBudgetCents !== null, 15],
+    [inputs.daysRemaining !== null, 15],
+    [(inputs.fillPct ?? null) !== null || (inputs.fullyClaimed ?? null) !== null, 10],
+    [inputs.owned !== null || inputs.provenEarner !== null, 10],
+    [Boolean(extras?.hasDemand), 12],
+    [Boolean(extras?.hasCcStats), 8],
+  ];
+  const raw = signals.reduce((sum, [ok, w]) => sum + (ok ? w : 0), 0);
+  return Math.round(Math.min(100, raw));
+}
+
 // Whether a campaign clears every user-set floor. The overlay highlights (draws
 // the "pink border" equivalent on) only campaigns that pass, and the toolbar's
 // "meets my thresholds" filter uses the same test. A null signal is treated as

@@ -92,6 +92,24 @@ export function formatCents(cents: number, currency = "USD"): string {
   return `${symbol}${(cents / 100).toFixed(2)}`;
 }
 
+// Whole-dollar money, compacted for large figures (e.g. estimated monthly
+// revenue on a search tile): $980, $26K, $1.4M. No cents: these are estimates,
+// so false precision would only mislead.
+export function formatCompactMoney(cents: number, currency = "USD"): string {
+  if (!Number.isFinite(cents)) return "n/a";
+  const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
+  const dollars = Math.round(cents / 100);
+  if (dollars >= 1_000_000) {
+    const m = dollars / 1_000_000;
+    return `${symbol}${m >= 10 ? Math.round(m) : m.toFixed(1)}M`;
+  }
+  if (dollars >= 1_000) {
+    const k = dollars / 1_000;
+    return `${symbol}${k >= 10 ? Math.round(k) : k.toFixed(1)}K`;
+  }
+  return `${symbol}${dollars.toLocaleString()}`;
+}
+
 function clampPct(pct: number): number {
   return Math.min(100, Math.max(0, pct));
 }

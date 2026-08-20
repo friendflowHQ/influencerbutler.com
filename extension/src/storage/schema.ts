@@ -60,6 +60,7 @@ export type Settings = {
   locale: LocaleSetting;
   tools: {
     videoCounts: boolean;
+    videoLandscape: boolean;
     approved: boolean;
     calculator: boolean;
     storefront: boolean;
@@ -74,13 +75,25 @@ export type Settings = {
     watchlist: boolean;
     lastCallButler: boolean;
     ideaListOverlay: boolean;
+    // Campaign Butler: the on-demand "Butler's Brief" panel on Creator
+    // Connections campaigns (score + confidence + AI reasoning). Backfilled to
+    // true for existing users by the tools shallow-merge in migrate().
+    campaignButler: boolean;
+    // Video Money: per-row earnings / EPV / live-rate / demand badges plus a
+    // reshoot panel on the Creator Hub "Manage videos" list. Backfilled to true
+    // for existing users by the tools shallow-merge in migrate().
+    videoMoney: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
-  // rank, "bought in past month", category, brand) the extension already reads
-  // to the shared product catalogue, so the whole community sees real demand and
-  // price/rank history. Never personal data. Gated at the transport: when off,
-  // these fields are never transmitted. Requires syncEnabled + a signed-in key.
+  // rank, "bought in past month", category, brand) AND de-identified video
+  // placement observations (which creator videos hold a product's carousel, and
+  // where) the extension already reads, to the shared catalogue, so the whole
+  // community sees real demand, price/rank history, and video competition over
+  // time. Never personal data. Gated at the transport: when off, none of these
+  // are transmitted. Requires syncEnabled + a signed-in key. Widening what this
+  // shares is a user-facing disclosure change (see contributeBlurb), not a
+  // silent addition, and rides the same pending legal review as the catalogue.
   contributeCatalogue: boolean;
   debug: boolean;
 };
@@ -198,6 +211,31 @@ export type WatchItem = {
 // bounded. Oldest entries are kept; adds past the cap are rejected in the UI.
 export const WATCHLIST_CAP = 50;
 
+// One product saved into a user-named list ("Add to List"). Lighter than a
+// WatchItem: lists are just curated collections for research/planning, with no
+// background polling, so they carry only what a card needs to render + reopen.
+export type ProductListItem = {
+  asin: string;
+  marketplace: string;
+  title: string | null;
+  imageUrl: string | null;
+  addedAt: number;
+};
+
+// A user-named collection of products. `id` is a stable local id (not an ASIN),
+// so two lists can hold the same product and a rename never moves items.
+export type ProductList = {
+  id: string;
+  name: string;
+  createdAt: number;
+  items: ProductListItem[];
+};
+
+// Bounds mirroring the watchlist's: enough for real research use without letting
+// local storage grow unbounded. Adds past a cap are rejected in the UI.
+export const PRODUCT_LISTS_CAP = 30;
+export const PRODUCT_LIST_ITEMS_CAP = 200;
+
 // One Creator Connections campaign the creator is watching for Last Call: an
 // alert before it fills up. Keyed by the Amazon campaignId. `lastFillPct` and
 // `lastFullyClaimed` are the last observed values, so the poll fires the alert
@@ -268,6 +306,8 @@ export type StorageShape = {
   orderCursors: Record<string, OrderCursor>;
   watchlist: WatchItem[];
   campaignWatchlist: CampaignWatchItem[];
+  // User-named product collections ("Add to List"). Local-only, no server sync.
+  productLists: ProductList[];
   telemetry: { selectorMisses: Record<string, number> };
   // When the extension was first actually used (first content-script run on an
   // Amazon page). Anchors the re-engagement nudge timers; null until first use.
@@ -277,7 +317,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 13,
+  schemaVersion: 16,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -307,6 +347,7 @@ export const DEFAULTS: StorageShape = {
     locale: "auto",
     tools: {
       videoCounts: true,
+      videoLandscape: true,
       approved: true,
       calculator: true,
       storefront: true,
@@ -321,6 +362,8 @@ export const DEFAULTS: StorageShape = {
       watchlist: true,
       lastCallButler: true,
       ideaListOverlay: true,
+      campaignButler: true,
+      videoMoney: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -351,6 +394,7 @@ export const DEFAULTS: StorageShape = {
   orderCursors: {},
   watchlist: [],
   campaignWatchlist: [],
+  productLists: [],
   telemetry: { selectorMisses: {} },
   firstUseAt: null,
   nudges: {
@@ -388,7 +432,14 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // by default); the tools shallow-merge backfills it. v12 -> v13 added
   // settings.contributeCatalogue (shared product-catalogue contribution,
   // OFF by default); the settings shallow-merge backfills it, so every
-  // existing user stays opted OUT until they turn it on.
+  // existing user stays opted OUT until they turn it on. v13 -> v14 added the
+  // productLists array ("Add to List" collections); an existing user starts
+  // with no lists, reconciled below like the watchlist. v14 -> v15 added the
+  // videoLandscape tool flag (aggregate video-intelligence panel on product
+  // pages, on by default); the tools shallow-merge backfills it. v15 -> v16
+  // added the videoMoney tool flag (per-row money signals + reshoot panel on
+  // the Creator Hub "Manage videos" list, on by default); the tools
+  // shallow-merge backfills it.
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -433,8 +484,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     hints: { ...DEFAULT_HINTS_STATE, ...(raw.hints ?? {}) },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
+    productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 13,
+    schemaVersion: 16,
   };
 }

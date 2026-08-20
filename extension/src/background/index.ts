@@ -19,7 +19,9 @@ import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
-import { getMarket } from "./market";
+import { getMarket, getMarketBatch } from "./market";
+import { getVideoIntel } from "./video-intel";
+import { fetchCampaignBrief } from "./campaign-brief";
 import {
   assistantChat,
   assistantVoiceSession,
@@ -40,6 +42,15 @@ import {
   removeFromWatchlist,
   setWatchConditions,
 } from "./watchlist";
+import {
+  addManyToProductList,
+  addToProductList,
+  createProductList,
+  deleteProductList,
+  getProductLists,
+  removeFromProductList,
+  renameProductList,
+} from "./product-lists";
 import {
   addCampaignWatch,
   getCampaignWatchList,
@@ -213,6 +224,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace).then(sendResponse);
       return true;
+    case "GET_MARKET_BATCH":
+      void getMarketBatch(message.asins, message.marketplace).then(sendResponse);
+      return true;
+    case "GET_VIDEO_INTEL":
+      void getVideoIntel(message.videoId, message.marketplace).then(sendResponse);
+      return true;
     case "REQUEST_PAIRING":
       void requestPairing().then(sendResponse);
       return true;
@@ -255,6 +272,37 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "IS_WATCHED":
       void isWatched(message.asin, message.marketplace).then(sendResponse);
       return true;
+    case "GET_PRODUCT_LISTS":
+      void getProductLists().then(sendResponse);
+      return true;
+    case "CREATE_PRODUCT_LIST":
+      void createProductList(message.name).then(sendResponse);
+      return true;
+    case "RENAME_PRODUCT_LIST":
+      void renameProductList(message.id, message.name).then(sendResponse);
+      return true;
+    case "DELETE_PRODUCT_LIST":
+      void deleteProductList(message.id).then(sendResponse);
+      return true;
+    case "ADD_TO_PRODUCT_LIST":
+      void addToProductList({
+        listId: message.listId,
+        newListName: message.newListName,
+        item: message.item,
+      }).then(sendResponse);
+      return true;
+    case "ADD_MANY_TO_PRODUCT_LIST":
+      void addManyToProductList({
+        listId: message.listId,
+        newListName: message.newListName,
+        items: message.items,
+      }).then(sendResponse);
+      return true;
+    case "REMOVE_FROM_PRODUCT_LIST":
+      void removeFromProductList(message.listId, message.asin, message.marketplace).then(
+        sendResponse,
+      );
+      return true;
     case "CAMPAIGN_WATCH_ADD":
       void addCampaignWatch(message.item).then(sendResponse);
       return true;
@@ -266,6 +314,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "REPORT_CAMPAIGN_FILLS":
       void handleCampaignFills(message.fills, sender.tab?.id).then(() => sendResponse(undefined));
+      return true;
+    case "GET_CAMPAIGN_BRIEF":
+      void fetchCampaignBrief(message.signals).then(sendResponse);
       return true;
     case "HARVEST_DEAL_SITES":
       void harvestDealSites(message.urls).then(sendResponse);

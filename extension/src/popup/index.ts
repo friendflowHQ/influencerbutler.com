@@ -6,6 +6,7 @@ import {
   type IntegrationsView,
   type PageStatus,
   type PairResult,
+  type ProductListsResult,
   type SignInResult,
   type UpdateStateView,
   type WatchlistResult,
@@ -42,6 +43,7 @@ async function init(): Promise<void> {
     renderAppBridge(),
     renderSettings(),
     renderWatchlist(),
+    renderProductLists(),
   ]);
   wireFeedback();
   wireOptions();
@@ -411,6 +413,7 @@ async function renderPageStatus(): Promise<void> {
       "order-history": t().orderScanReady,
       storefront: t().storefrontCheckupReady,
       "creator-upload": t().uploadHelperReady,
+      "creator-manage": t().sumVideoMoney,
       "campaign-grid": t().campaignRadarActive,
       search: t().searchOverlayActive,
       "brand-store": t().storeOverlayActive,
@@ -513,6 +516,7 @@ async function renderSettings(): Promise<void> {
 
   for (const tool of [
     "videoCounts",
+    "videoLandscape",
     "approved",
     "calculator",
     "storefront",
@@ -646,6 +650,70 @@ async function renderWatchlist(): Promise<void> {
       conds.append(label);
     }
     li.append(conds);
+    list.append(li);
+  }
+}
+
+// "My lists" card: the user-named product collections built from the search
+// overlay's action menu. Read-only management here (open a product, remove an
+// item, delete a list); adding happens on-page.
+async function renderProductLists(): Promise<void> {
+  const card = byId("lists-card");
+  const list = byId("lists-list");
+  const empty = byId("lists-empty");
+
+  const { lists } = await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" });
+  list.replaceChildren();
+  empty.hidden = lists.length > 0;
+  card.hidden = false;
+
+  for (const pl of lists) {
+    const li = document.createElement("li");
+
+    const head = document.createElement("div");
+    head.className = "watchlist-head";
+    const title = document.createElement("span");
+    title.className = "watchlist-title";
+    title.textContent = `${pl.name} · ${t().popupListItems(pl.items.length)}`;
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "ghost small";
+    del.textContent = t().popupListDelete;
+    del.onclick = async () => {
+      await sendToBackground<ProductListsResult>({ kind: "DELETE_PRODUCT_LIST", id: pl.id });
+      await renderProductLists();
+    };
+    head.append(title, del);
+    li.append(head);
+
+    for (const item of pl.items) {
+      const row = document.createElement("div");
+      row.className = "watchlist-conds";
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "linklike small";
+      open.textContent = item.title ?? item.asin;
+      open.onclick = () => {
+        const url = `https://www.${item.marketplace}/dp/${item.asin}`;
+        void sendToBackground<void>({ kind: "OPEN_URL", url });
+      };
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "ghost small";
+      remove.textContent = t().watchRemoveShort;
+      remove.onclick = async () => {
+        await sendToBackground<ProductListsResult>({
+          kind: "REMOVE_FROM_PRODUCT_LIST",
+          listId: pl.id,
+          asin: item.asin,
+          marketplace: item.marketplace,
+        });
+        await renderProductLists();
+      };
+      row.append(open, remove);
+      li.append(row);
+    }
+
     list.append(li);
   }
 }

@@ -4,6 +4,7 @@ export type PageType =
   | "storefront"
   | "brand-store"
   | "creator-upload"
+  | "creator-manage"
   | "campaign-grid"
   | "search"
   | "discovery"
@@ -34,6 +35,10 @@ export function detectPageType(url: string): PageType {
   if (/^\/stores\/(?:.+\/)?page\//.test(path)) return "brand-store";
   // The Creator Hub "Edit Video" page, where products are tagged before submit.
   if (/^\/creatorhub\/video\//.test(path)) return "creator-upload";
+  // The Creator Hub "Manage videos" list, where a creator reviews every video's
+  // performance. Video Money badges each row with earnings, EPV, the live
+  // commission rate, and demand. Distinct path from the /video/ edit page above.
+  if (/^\/creatorhub\/manage(?:\/|$)/.test(path)) return "creator-manage";
   // The Creator Connections campaign browse grid, where Campaign Radar highlights
   // campaigns. Verified 2026-07-10 on a live account: it lives on the associates
   // host (affiliate-program.amazon.*) under /p/connect/requests (and /p/connect/home

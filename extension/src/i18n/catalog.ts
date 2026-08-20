@@ -87,6 +87,7 @@ export interface Dict {
   storefrontHandlePlaceholder: string;
   toolsHeading: string;
   toolVideoCounts: string;
+  toolVideoLandscape: string;
   toolApproved: string;
   toolCalculator: string;
   toolStorefront: string;
@@ -196,6 +197,45 @@ export interface Dict {
   shareSummaryHeading: string;
   shareTopCreators: string;
 
+  // Video landscape (aggregate competitor-parity stats)
+  videoLandscape: string;
+  lsStatKnown: string;
+  lsStatPlaced: string;
+  lsStatCreators: string;
+  lsStatRepeat: string;
+  lsContentMixLabel: string;
+  lsConcentrationLabel: string;
+  lsConcentrationShare: (pct: number) => string;
+  lsTopStrengthLabel: string;
+  lsUpper: string;
+  lsLower: string;
+  lsPulseLabel: (dated: number, total: number) => string;
+  lsNewIn30: (n: number) => string;
+  lsDatesUnavailable: string;
+  lsTypicalLengthLabel: string;
+  lsLengthBand: (median: string, low: string, high: string) => string;
+  lsLengthMedian: (median: string) => string;
+  lsDurationsUnavailable: string;
+
+  // Per-video passport (longitudinal placement history)
+  passportOpen: string;
+  passportClose: string;
+  passportLoading: string;
+  passportUnidentified: string;
+  passportUnavailable: string;
+  passportNoData: string;
+  passportNoDataDay: string;
+  passportCollecting: (days: number) => string;
+  passportSinceFirstSeen: (date: string) => string;
+  passportPresence: string;
+  passportStability: string;
+  passportStrength: string;
+  passportReach: string;
+  passportActiveDays: string;
+  passportUpperLower: (upper: number, lower: number) => string;
+  passportCurrentSnapshot: string;
+  passportLastObserved: (date: string) => string;
+
   // Butler Approved panel
   butlerApproved: string;
   approvedYes: string;
@@ -228,6 +268,7 @@ export interface Dict {
   searchSortLabel: string;
   sortScore: string;
   sortCommission: string;
+  sortRevenue: string;
   sortPriceAsc: string;
   sortPriceDesc: string;
   sortRelevance: string;
@@ -248,6 +289,34 @@ export interface Dict {
   tileLikelyFit: string;
   tileDeal: string;
   tileCoupon: string;
+  // Estimated monthly revenue (modeled sales x price) and best-seller rank,
+  // shown per search tile from the shared catalogue. Revenue tooltip reuses
+  // salesEstModeled / salesEstCalibrated.
+  tileRevenue: (money: string) => string;
+  tileBsr: (rank: string, category: string | null) => string;
+  // Per-tile action menu (the "..." button on a search card).
+  tileMenuLabel: string;
+  tileMenuAddToList: string;
+  tileMenuNewList: string;
+  tileMenuNewListPlaceholder: string;
+  tileMenuCreate: string;
+  tileMenuAddedTo: (name: string) => string;
+  tileMenuListFull: string;
+  tileMenuListsCapped: string;
+  tileMenuCopyLink: string;
+  tileMenuCopied: string;
+  tileMenuLinkFailed: string;
+  tileMenuOpenPage: string;
+  tileMenuAppLocked: string;
+  tileMenuWorking: string;
+  // Product-page "Add to list" panel (incl. Add all variations).
+  listPanelHeading: string;
+  listPanelIntro: string;
+  listPanelNewOption: string;
+  listPanelAddProduct: string;
+  listPanelAddVariations: (n: number) => string;
+  listPanelAddedCount: (n: number, name: string) => string;
+  listPanelNothingNew: string;
   searchEnriching: (done: number, total: number) => string;
   searchEnrichPaused: string;
   searchOverlayActive: string;
@@ -303,6 +372,28 @@ export interface Dict {
   earnNoBreakdown: string;
   earnClose: string;
 
+  // Video Money (Creator Hub "Manage videos" list: per-row badges + reshoot panel)
+  sumVideoMoney: string;
+  vmPanelTitle: string;
+  vmVideoCount: (n: number) => string;
+  vmEarnedTitle: string;
+  vmEpv: (money: string) => string;
+  vmProjected: (money: string) => string;
+  vmRateLive: (pct: number) => string;
+  vmRateEnding: (pct: number) => string;
+  vmBought: (n: number) => string;
+  vmCoolingChip: string;
+  vmProjectionNote: string;
+  vmTopEarners: string;
+  vmBestEpv: string;
+  vmReshoot: string;
+  vmReshootHint: string;
+  vmDrafts: string;
+  vmDraftsHint: string;
+  vmCooling: string;
+  vmCoolingHint: string;
+  vmExport: string;
+
   // Campaign Radar (Creator Connections campaign grid)
   sumCampaignRadar: string;
   toolCampaignRadar: string;
@@ -338,6 +429,27 @@ export interface Dict {
   lastCallNotifTitle: string;
   lastCallNotifNearFull: (name: string, pct: number) => string;
   lastCallNotifFilled: (name: string) => string;
+
+  // Campaign Butler: "The Butler's Brief" per-campaign advisory panel
+  campaignBriefButton: string;
+  campaignBriefTitle: string;
+  campaignBriefLoading: string;
+  campaignBriefConfidence: (n: number) => string;
+  campaignBriefWhy: string;
+  campaignBriefFilm: string;
+  campaignBriefPick: string;
+  campaignBriefPickEst: (units: string, revenue: string) => string;
+  campaignBriefOnAmazon: string;
+  campaignBriefOffAmazon: string;
+  campaignBriefAudience: string;
+  campaignBriefAccept: string;
+  campaignBriefCopy: string;
+  campaignBriefCopied: string;
+  campaignBriefClose: string;
+  campaignBriefError: string;
+  campaignBriefVerdictHot: string;
+  campaignBriefVerdictWarm: string;
+  campaignBriefVerdictCool: string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -605,6 +717,10 @@ export interface Dict {
   watchNotifPriceDrop: (name: string) => string;
   popupWatchlistHeading: string;
   popupWatchlistEmpty: string;
+  popupListsHeading: string;
+  popupListsEmpty: string;
+  popupListItems: (n: number) => string;
+  popupListDelete: string;
   watchCondBackInStock: string;
   watchCondSlotOpens: string;
   watchCondPriceDrop: string;
@@ -676,7 +792,7 @@ const en: Dict = {
   syncToggleLabel: "Sync findings to my dashboard",
   contributeToggleLabel: "Contribute to the shared product catalogue",
   contributeBlurb:
-    "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) are pooled, never personal data, so everyone sees real demand and price history.",
+    "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) and which creator videos are placed on a product's carousel are pooled, never personal data, so everyone sees real demand, price history, and video competition over time.",
   disconnect: "Disconnect",
   settingsHeading: "Settings",
   languageLabel: "Language",
@@ -689,6 +805,7 @@ const en: Dict = {
   storefrontHandlePlaceholder: "e.g. influencerbutler",
   toolsHeading: "Tools",
   toolVideoCounts: "Video counts",
+  toolVideoLandscape: "Video landscape",
   toolApproved: "Butler Approved seal",
   toolCalculator: "Profit calculator",
   toolStorefront: "Storefront checks",
@@ -800,6 +917,43 @@ const en: Dict = {
   shareSummaryHeading: "Product video competition (via Influencer Butler)",
   shareTopCreators: "Top creators:",
 
+  videoLandscape: "Video landscape",
+  lsStatKnown: "Known videos",
+  lsStatPlaced: "Currently placed",
+  lsStatCreators: "Unique creators",
+  lsStatRepeat: "Repeat creators",
+  lsContentMixLabel: "Content mix by creator type",
+  lsConcentrationLabel: "Creator concentration",
+  lsConcentrationShare: (pct) => `Top 5 creators hold ${pct}% of the videos`,
+  lsTopStrengthLabel: "Top videos by carousel position (proxy)",
+  lsUpper: "Upper",
+  lsLower: "Lower",
+  lsPulseLabel: (dated, total) => `Publishing pulse (${dated} of ${total} dated)`,
+  lsNewIn30: (n) => `${n} new in the last 30 days`,
+  lsDatesUnavailable: "Publish dates are not exposed by this listing, so publishing cadence is unavailable.",
+  lsTypicalLengthLabel: "Typical length",
+  lsLengthBand: (median, low, high) => `Median ${median} (typical ${low} to ${high})`,
+  lsLengthMedian: (median) => `Median ${median}`,
+  lsDurationsUnavailable: "Video lengths are not exposed by this listing.",
+
+  passportOpen: "Placement history",
+  passportClose: "Hide history",
+  passportLoading: "Loading placement history...",
+  passportUnidentified: "This video cannot be tracked yet.",
+  passportUnavailable: "Placement history is not available yet.",
+  passportNoData: "No placement history recorded for this video yet.",
+  passportNoDataDay: "no data",
+  passportCollecting: (days) => `Collecting daily placement evidence: ${days} of 90 days recorded`,
+  passportSinceFirstSeen: (date) => `since first seen ${date}`,
+  passportPresence: "Presence rate",
+  passportStability: "Placement stability",
+  passportStrength: "Active-day strength",
+  passportReach: "Product reach",
+  passportActiveDays: "Days observed",
+  passportUpperLower: (upper, lower) => `Upper ${upper}% / Lower ${lower}%`,
+  passportCurrentSnapshot: "Current placement",
+  passportLastObserved: (date) => `Last observed ${date}`,
+
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
   approvedNo: "Not Butler Approved yet",
@@ -831,6 +985,7 @@ const en: Dict = {
   searchSortLabel: "Sort:",
   sortScore: "Best Butler Score",
   sortCommission: "Highest commission",
+  sortRevenue: "Estimated revenue",
   sortPriceAsc: "Price: low to high",
   sortPriceDesc: "Price: high to low",
   sortRelevance: "Amazon relevance",
@@ -851,6 +1006,29 @@ const en: Dict = {
   tileLikelyFit: "Likely fit",
   tileDeal: "Deal",
   tileCoupon: "Coupon",
+  tileRevenue: (money) => `~${money}/mo`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileMenuLabel: "More actions",
+  tileMenuAddToList: "Add to list",
+  tileMenuNewList: "New list",
+  tileMenuNewListPlaceholder: "List name",
+  tileMenuCreate: "Create",
+  tileMenuAddedTo: (name) => `Saved to ${name}`,
+  tileMenuListFull: "That list is full.",
+  tileMenuListsCapped: "You have the maximum number of lists.",
+  tileMenuCopyLink: "Copy link",
+  tileMenuCopied: "Copied",
+  tileMenuLinkFailed: "Could not build a link",
+  tileMenuOpenPage: "Open product page",
+  tileMenuAppLocked: "Open the app to send this product.",
+  tileMenuWorking: "Working...",
+  listPanelHeading: "Product lists",
+  listPanelIntro: "Save this product (or all its variations) to one of your lists.",
+  listPanelNewOption: "New list...",
+  listPanelAddProduct: "Add this product",
+  listPanelAddVariations: (n) => `Add all ${n} variations`,
+  listPanelAddedCount: (n, name) => `Added ${n} to ${name}`,
+  listPanelNothingNew: "Already in that list.",
   searchEnriching: (done, total) => `Checking details ${done}/${total}`,
   searchEnrichPaused: "Detail checks paused by Amazon, retrying later",
   searchOverlayActive: "Search overlay is active.",
@@ -902,6 +1080,27 @@ const en: Dict = {
   earnNoBreakdown: "Update the desktop app to see the store, year, month, and campaign breakdown.",
   earnClose: "Close",
 
+  sumVideoMoney: "Video Money",
+  vmPanelTitle: "Video Money",
+  vmVideoCount: (n) => `${n} video${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Your real earnings from this video's product(s). Click for the breakdown.",
+  vmEpv: (money) => `${money}/1k views`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Pays ${pct}% now`,
+  vmRateEnding: (pct) => `${pct}% ending soon`,
+  vmBought: (n) => `${n.toLocaleString()} bought/mo`,
+  vmCoolingChip: "Demand cooling",
+  vmProjectionNote: "Connect the desktop app to see real earnings. Showing projections for now.",
+  vmTopEarners: "Top earners",
+  vmBestEpv: "Best per view",
+  vmReshoot: "Reshoot these",
+  vmReshootHint: "Hot commission, low views",
+  vmDrafts: "Finish your draft",
+  vmDraftsHint: "Unpublished videos earn nothing",
+  vmCooling: "Cooling / retire",
+  vmCoolingHint: "Falling demand or ended campaign",
+  vmExport: "Export CSV",
+
   sumCampaignRadar: "Campaign Radar",
   toolCampaignRadar: "Campaign Radar (highlight campaigns)",
   campaignRadarActive: "Campaign Radar is active.",
@@ -944,6 +1143,26 @@ const en: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Last Call: ${name} is ${pct}% full. Accept before it closes.`,
   lastCallNotifFilled: (name) => `${name} just filled up.`,
+
+  campaignBriefButton: "Brief",
+  campaignBriefTitle: "The Butler's Brief",
+  campaignBriefLoading: "The Butler is reading this campaign...",
+  campaignBriefConfidence: (n) => `${n} confidence`,
+  campaignBriefWhy: "Why I'd take this",
+  campaignBriefFilm: "What to film",
+  campaignBriefPick: "Pick of the shelf",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} units/month, ${revenue}/month`,
+  campaignBriefOnAmazon: "On Amazon",
+  campaignBriefOffAmazon: "Off Amazon too",
+  campaignBriefAudience: "Who it's for",
+  campaignBriefAccept: "Accept campaign",
+  campaignBriefCopy: "Copy brief",
+  campaignBriefCopied: "Copied",
+  campaignBriefClose: "Close",
+  campaignBriefError: "The Butler couldn't write a full brief right now. Here's the score breakdown.",
+  campaignBriefVerdictHot: "Worth accepting",
+  campaignBriefVerdictWarm: "Worth a look",
+  campaignBriefVerdictCool: "Probably pass",
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -1232,6 +1451,10 @@ const en: Dict = {
   watchNotifPriceDrop: (name) => `The price dropped on ${name}.`,
   popupWatchlistHeading: "Watchlist",
   popupWatchlistEmpty: "No products watched yet. Open a product and click Watch.",
+  popupListsHeading: "My lists",
+  popupListsEmpty: "No lists yet. Add a product to a list from the search overlay's action menu.",
+  popupListItems: (n) => (n === 1 ? "1 product" : `${n} products`),
+  popupListDelete: "Delete list",
   watchCondBackInStock: "Back in stock",
   watchCondSlotOpens: "Video slot opens",
   watchCondPriceDrop: "Price drop",
@@ -1303,7 +1526,7 @@ const es: Dict = {
   syncToggleLabel: "Sincronizar hallazgos con mi panel",
   contributeToggleLabel: "Contribuir al catálogo de productos compartido",
   contributeBlurb:
-    "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) se agrupan, nunca datos personales, para que todos vean la demanda real y el historial de precios.",
+    "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) y qué videos de creadores aparecen en el carrusel de un producto se agrupan, nunca datos personales, para que todos vean la demanda real, el historial de precios y la competencia de videos a lo largo del tiempo.",
   disconnect: "Desconectar",
   settingsHeading: "Ajustes",
   languageLabel: "Idioma",
@@ -1316,6 +1539,7 @@ const es: Dict = {
   storefrontHandlePlaceholder: "p. ej. influencerbutler",
   toolsHeading: "Herramientas",
   toolVideoCounts: "Recuento de videos",
+  toolVideoLandscape: "Panorama de videos",
   toolApproved: "Sello Butler Approved",
   toolCalculator: "Calculadora de ganancias",
   toolStorefront: "Chequeos del storefront",
@@ -1427,6 +1651,43 @@ const es: Dict = {
   shareSummaryHeading: "Competencia de videos del producto (vía Influencer Butler)",
   shareTopCreators: "Creadores principales:",
 
+  videoLandscape: "Panorama de videos",
+  lsStatKnown: "Videos conocidos",
+  lsStatPlaced: "Colocados ahora",
+  lsStatCreators: "Creadores únicos",
+  lsStatRepeat: "Creadores recurrentes",
+  lsContentMixLabel: "Mezcla por tipo de creador",
+  lsConcentrationLabel: "Concentración de creadores",
+  lsConcentrationShare: (pct) => `Los 5 principales tienen el ${pct}% de los videos`,
+  lsTopStrengthLabel: "Mejores videos por posición en el carrusel (aproximado)",
+  lsUpper: "Superior",
+  lsLower: "Inferior",
+  lsPulseLabel: (dated, total) => `Ritmo de publicación (${dated} de ${total} con fecha)`,
+  lsNewIn30: (n) => `${n} nuevos en los últimos 30 días`,
+  lsDatesUnavailable: "Este listado no expone las fechas de publicación, así que el ritmo de publicación no está disponible.",
+  lsTypicalLengthLabel: "Duración típica",
+  lsLengthBand: (median, low, high) => `Mediana ${median} (típico de ${low} a ${high})`,
+  lsLengthMedian: (median) => `Mediana ${median}`,
+  lsDurationsUnavailable: "Este listado no expone la duración de los videos.",
+
+  passportOpen: "Historial de colocación",
+  passportClose: "Ocultar historial",
+  passportLoading: "Cargando historial de colocación...",
+  passportUnidentified: "Este video aún no se puede rastrear.",
+  passportUnavailable: "El historial de colocación aún no está disponible.",
+  passportNoData: "Aún no hay historial de colocación para este video.",
+  passportNoDataDay: "sin datos",
+  passportCollecting: (days) => `Recopilando evidencia diaria de colocación: ${days} de 90 días registrados`,
+  passportSinceFirstSeen: (date) => `desde que se vio por primera vez el ${date}`,
+  passportPresence: "Tasa de presencia",
+  passportStability: "Estabilidad de colocación",
+  passportStrength: "Fuerza en días activos",
+  passportReach: "Alcance de productos",
+  passportActiveDays: "Días observados",
+  passportUpperLower: (upper, lower) => `Superior ${upper}% / Inferior ${lower}%`,
+  passportCurrentSnapshot: "Colocación actual",
+  passportLastObserved: (date) => `Visto por última vez el ${date}`,
+
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
   approvedNo: "Todavía no es Butler Approved",
@@ -1458,6 +1719,7 @@ const es: Dict = {
   searchSortLabel: "Ordenar:",
   sortScore: "Mejor Butler Score",
   sortCommission: "Mayor comisión",
+  sortRevenue: "Ingresos estimados",
   sortPriceAsc: "Precio: de menor a mayor",
   sortPriceDesc: "Precio: de mayor a menor",
   sortRelevance: "Relevancia de Amazon",
@@ -1478,6 +1740,29 @@ const es: Dict = {
   tileLikelyFit: "Buen candidato",
   tileDeal: "Oferta",
   tileCoupon: "Cupón",
+  tileRevenue: (money) => `~${money}/mes`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileMenuLabel: "Más acciones",
+  tileMenuAddToList: "Añadir a lista",
+  tileMenuNewList: "Nueva lista",
+  tileMenuNewListPlaceholder: "Nombre de la lista",
+  tileMenuCreate: "Crear",
+  tileMenuAddedTo: (name) => `Guardado en ${name}`,
+  tileMenuListFull: "Esa lista está llena.",
+  tileMenuListsCapped: "Ya tienes el máximo de listas.",
+  tileMenuCopyLink: "Copiar enlace",
+  tileMenuCopied: "Copiado",
+  tileMenuLinkFailed: "No se pudo crear un enlace",
+  tileMenuOpenPage: "Abrir página del producto",
+  tileMenuAppLocked: "Abre la app para enviar este producto.",
+  tileMenuWorking: "Trabajando...",
+  listPanelHeading: "Listas de productos",
+  listPanelIntro: "Guarda este producto (o todas sus variaciones) en una de tus listas.",
+  listPanelNewOption: "Nueva lista...",
+  listPanelAddProduct: "Añadir este producto",
+  listPanelAddVariations: (n) => `Añadir las ${n} variaciones`,
+  listPanelAddedCount: (n, name) => `Se añadieron ${n} a ${name}`,
+  listPanelNothingNew: "Ya está en esa lista.",
   searchEnriching: (done, total) => `Comprobando detalles ${done}/${total}`,
   searchEnrichPaused: "Amazon pausó la comprobación de detalles, se reintentará más tarde",
   searchOverlayActive: "El overlay de búsqueda está activo.",
@@ -1529,6 +1814,27 @@ const es: Dict = {
   earnNoBreakdown: "Actualiza la app de escritorio para ver el desglose por tienda, año, mes y campaña.",
   earnClose: "Cerrar",
 
+  sumVideoMoney: "Dinero por vídeo",
+  vmPanelTitle: "Dinero por vídeo",
+  vmVideoCount: (n) => `${n} vídeo${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Tus ganancias reales del producto de este vídeo. Haz clic para ver el desglose.",
+  vmEpv: (money) => `${money}/1k vistas`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Paga ${pct}% ahora`,
+  vmRateEnding: (pct) => `${pct}% termina pronto`,
+  vmBought: (n) => `${n.toLocaleString()} comprados/mes`,
+  vmCoolingChip: "Demanda bajando",
+  vmProjectionNote: "Conecta la app de escritorio para ver ganancias reales. Por ahora mostramos proyecciones.",
+  vmTopEarners: "Los que más ganan",
+  vmBestEpv: "Mejor por vista",
+  vmReshoot: "Vuelve a grabar estos",
+  vmReshootHint: "Comisión alta, pocas vistas",
+  vmDrafts: "Termina tu borrador",
+  vmDraftsHint: "Los vídeos sin publicar no ganan nada",
+  vmCooling: "Enfriándose / retirar",
+  vmCoolingHint: "Demanda a la baja o campaña terminada",
+  vmExport: "Exportar CSV",
+
   sumCampaignRadar: "Radar de campañas",
   toolCampaignRadar: "Radar de campañas (resaltar campañas)",
   campaignRadarActive: "El Radar de campañas está activo.",
@@ -1571,6 +1877,26 @@ const es: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Última Llamada: ${name} está ${pct}% ocupada. Acepta antes de que se cierre.`,
   lastCallNotifFilled: (name) => `${name} acaba de completarse.`,
+
+  campaignBriefButton: "Informe",
+  campaignBriefTitle: "El informe del Butler",
+  campaignBriefLoading: "El Butler está analizando esta campaña...",
+  campaignBriefConfidence: (n) => `${n} de confianza`,
+  campaignBriefWhy: "Por qué la aceptaría",
+  campaignBriefFilm: "Qué grabar",
+  campaignBriefPick: "La mejor opción del catálogo",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} unidades/mes, ${revenue}/mes`,
+  campaignBriefOnAmazon: "En Amazon",
+  campaignBriefOffAmazon: "Fuera de Amazon también",
+  campaignBriefAudience: "Para quién es",
+  campaignBriefAccept: "Aceptar campaña",
+  campaignBriefCopy: "Copiar informe",
+  campaignBriefCopied: "Copiado",
+  campaignBriefClose: "Cerrar",
+  campaignBriefError: "El Butler no pudo redactar un informe completo ahora mismo. Aquí tienes el desglose de la puntuación.",
+  campaignBriefVerdictHot: "Vale la pena aceptar",
+  campaignBriefVerdictWarm: "Merece un vistazo",
+  campaignBriefVerdictCool: "Probablemente no",
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -1859,6 +2185,10 @@ const es: Dict = {
   watchNotifPriceDrop: (name) => `Bajó el precio de ${name}.`,
   popupWatchlistHeading: "Lista de seguimiento",
   popupWatchlistEmpty: "Aún no sigues productos. Abre un producto y pulsa Seguir.",
+  popupListsHeading: "Mis listas",
+  popupListsEmpty: "Aún no tienes listas. Añade un producto a una lista desde el menú de acciones del overlay de búsqueda.",
+  popupListItems: (n) => (n === 1 ? "1 producto" : `${n} productos`),
+  popupListDelete: "Eliminar lista",
   watchCondBackInStock: "Vuelve a stock",
   watchCondSlotOpens: "Se abre espacio de video",
   watchCondPriceDrop: "Baja de precio",
@@ -1930,7 +2260,7 @@ const fr: Dict = {
   syncToggleLabel: "Synchroniser les découvertes avec mon tableau de bord",
   contributeToggleLabel: "Contribuer au catalogue de produits partagé",
   contributeBlurb:
-    "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle et l'historique des prix.",
+    "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) et quelles vidéos de créateurs figurent dans le carrousel d'un produit sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle, l'historique des prix et la concurrence vidéo au fil du temps.",
   disconnect: "Déconnecter",
   settingsHeading: "Paramètres",
   languageLabel: "Langue",
@@ -1943,6 +2273,7 @@ const fr: Dict = {
   storefrontHandlePlaceholder: "p. ex. influencerbutler",
   toolsHeading: "Outils",
   toolVideoCounts: "Comptage de vidéos",
+  toolVideoLandscape: "Panorama vidéo",
   toolApproved: "Sceau Butler Approved",
   toolCalculator: "Calculateur de profit",
   toolStorefront: "Vérifications du storefront",
@@ -2054,6 +2385,43 @@ const fr: Dict = {
   shareSummaryHeading: "Concurrence vidéo du produit (via Influencer Butler)",
   shareTopCreators: "Principaux créateurs:",
 
+  videoLandscape: "Panorama vidéo",
+  lsStatKnown: "Vidéos connues",
+  lsStatPlaced: "Placées actuellement",
+  lsStatCreators: "Créateurs uniques",
+  lsStatRepeat: "Créateurs récurrents",
+  lsContentMixLabel: "Répartition par type de créateur",
+  lsConcentrationLabel: "Concentration des créateurs",
+  lsConcentrationShare: (pct) => `Les 5 premiers détiennent ${pct}% des vidéos`,
+  lsTopStrengthLabel: "Meilleures vidéos par position dans le carrousel (approx.)",
+  lsUpper: "Supérieur",
+  lsLower: "Inférieur",
+  lsPulseLabel: (dated, total) => `Rythme de publication (${dated} sur ${total} datées)`,
+  lsNewIn30: (n) => `${n} nouvelles au cours des 30 derniers jours`,
+  lsDatesUnavailable: "Cette fiche n'expose pas les dates de publication, le rythme de publication est donc indisponible.",
+  lsTypicalLengthLabel: "Durée typique",
+  lsLengthBand: (median, low, high) => `Médiane ${median} (typique de ${low} à ${high})`,
+  lsLengthMedian: (median) => `Médiane ${median}`,
+  lsDurationsUnavailable: "Cette fiche n'expose pas la durée des vidéos.",
+
+  passportOpen: "Historique de placement",
+  passportClose: "Masquer l'historique",
+  passportLoading: "Chargement de l'historique de placement...",
+  passportUnidentified: "Cette vidéo ne peut pas encore être suivie.",
+  passportUnavailable: "L'historique de placement n'est pas encore disponible.",
+  passportNoData: "Aucun historique de placement enregistré pour cette vidéo pour l'instant.",
+  passportNoDataDay: "aucune donnée",
+  passportCollecting: (days) => `Collecte de preuves de placement quotidiennes: ${days} sur 90 jours enregistrés`,
+  passportSinceFirstSeen: (date) => `depuis la première apparition le ${date}`,
+  passportPresence: "Taux de présence",
+  passportStability: "Stabilité du placement",
+  passportStrength: "Force des jours actifs",
+  passportReach: "Portée produits",
+  passportActiveDays: "Jours observés",
+  passportUpperLower: (upper, lower) => `Supérieur ${upper}% / Inférieur ${lower}%`,
+  passportCurrentSnapshot: "Placement actuel",
+  passportLastObserved: (date) => `Vu pour la dernière fois le ${date}`,
+
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",
   approvedNo: "Pas encore Butler Approved",
@@ -2085,6 +2453,7 @@ const fr: Dict = {
   searchSortLabel: "Trier :",
   sortScore: "Meilleur Butler Score",
   sortCommission: "Commission la plus élevée",
+  sortRevenue: "Revenu estimé",
   sortPriceAsc: "Prix : croissant",
   sortPriceDesc: "Prix : décroissant",
   sortRelevance: "Pertinence Amazon",
@@ -2105,6 +2474,29 @@ const fr: Dict = {
   tileLikelyFit: "Bon candidat",
   tileDeal: "Promo",
   tileCoupon: "Coupon",
+  tileRevenue: (money) => `~${money}/mois`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileMenuLabel: "Plus d'actions",
+  tileMenuAddToList: "Ajouter à une liste",
+  tileMenuNewList: "Nouvelle liste",
+  tileMenuNewListPlaceholder: "Nom de la liste",
+  tileMenuCreate: "Créer",
+  tileMenuAddedTo: (name) => `Enregistré dans ${name}`,
+  tileMenuListFull: "Cette liste est pleine.",
+  tileMenuListsCapped: "Vous avez atteint le nombre maximal de listes.",
+  tileMenuCopyLink: "Copier le lien",
+  tileMenuCopied: "Copié",
+  tileMenuLinkFailed: "Impossible de créer un lien",
+  tileMenuOpenPage: "Ouvrir la page produit",
+  tileMenuAppLocked: "Ouvrez l'app pour envoyer ce produit.",
+  tileMenuWorking: "En cours...",
+  listPanelHeading: "Listes de produits",
+  listPanelIntro: "Enregistrez ce produit (ou toutes ses variantes) dans une de vos listes.",
+  listPanelNewOption: "Nouvelle liste...",
+  listPanelAddProduct: "Ajouter ce produit",
+  listPanelAddVariations: (n) => `Ajouter les ${n} variantes`,
+  listPanelAddedCount: (n, name) => `${n} ajoutés à ${name}`,
+  listPanelNothingNew: "Déjà dans cette liste.",
   searchEnriching: (done, total) => `Vérification des détails ${done}/${total}`,
   searchEnrichPaused: "Vérifications suspendues par Amazon, nouvel essai plus tard",
   searchOverlayActive: "L'overlay de recherche est actif.",
@@ -2156,6 +2548,27 @@ const fr: Dict = {
   earnNoBreakdown: "Mettez à jour l'application de bureau pour voir le détail par boutique, année, mois et campagne.",
   earnClose: "Fermer",
 
+  sumVideoMoney: "Revenus par vidéo",
+  vmPanelTitle: "Revenus par vidéo",
+  vmVideoCount: (n) => `${n} vidéo${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Vos gains réels sur le produit de cette vidéo. Cliquez pour le détail.",
+  vmEpv: (money) => `${money}/1k vues`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Paie ${pct}% maintenant`,
+  vmRateEnding: (pct) => `${pct}% bientôt fini`,
+  vmBought: (n) => `${n.toLocaleString()} achetés/mois`,
+  vmCoolingChip: "Demande en baisse",
+  vmProjectionNote: "Connectez l'application de bureau pour voir les gains réels. Projections affichées pour l'instant.",
+  vmTopEarners: "Meilleurs revenus",
+  vmBestEpv: "Meilleur par vue",
+  vmReshoot: "À refilmer",
+  vmReshootHint: "Commission élevée, peu de vues",
+  vmDrafts: "Terminez votre brouillon",
+  vmDraftsHint: "Les vidéos non publiées ne rapportent rien",
+  vmCooling: "En refroidissement / à retirer",
+  vmCoolingHint: "Demande en baisse ou campagne terminée",
+  vmExport: "Exporter CSV",
+
   sumCampaignRadar: "Radar de campagnes",
   toolCampaignRadar: "Radar de campagnes (mettre en évidence)",
   campaignRadarActive: "Le Radar de campagnes est actif.",
@@ -2198,6 +2611,26 @@ const fr: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Dernier Appel : ${name} est remplie à ${pct}%. Acceptez avant la fermeture.`,
   lastCallNotifFilled: (name) => `${name} vient de se remplir.`,
+
+  campaignBriefButton: "Fiche",
+  campaignBriefTitle: "La fiche du Butler",
+  campaignBriefLoading: "Le Butler analyse cette campagne...",
+  campaignBriefConfidence: (n) => `${n} de confiance`,
+  campaignBriefWhy: "Pourquoi je la prendrais",
+  campaignBriefFilm: "Quoi filmer",
+  campaignBriefPick: "Le meilleur choix du catalogue",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} unités/mois, ${revenue}/mois`,
+  campaignBriefOnAmazon: "Sur Amazon",
+  campaignBriefOffAmazon: "Hors Amazon aussi",
+  campaignBriefAudience: "Pour qui",
+  campaignBriefAccept: "Accepter la campagne",
+  campaignBriefCopy: "Copier la fiche",
+  campaignBriefCopied: "Copié",
+  campaignBriefClose: "Fermer",
+  campaignBriefError: "Le Butler n'a pas pu rédiger une fiche complète pour le moment. Voici le détail du score.",
+  campaignBriefVerdictHot: "À accepter",
+  campaignBriefVerdictWarm: "Vaut un coup d'oeil",
+  campaignBriefVerdictCool: "Plutôt à laisser",
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
@@ -2486,6 +2919,10 @@ const fr: Dict = {
   watchNotifPriceDrop: (name) => `Le prix a baissé sur ${name}.`,
   popupWatchlistHeading: "Liste de suivi",
   popupWatchlistEmpty: "Aucun produit suivi pour l'instant. Ouvrez un produit et cliquez sur Suivre.",
+  popupListsHeading: "Mes listes",
+  popupListsEmpty: "Aucune liste pour l'instant. Ajoutez un produit à une liste depuis le menu d'actions de l'overlay de recherche.",
+  popupListItems: (n) => (n === 1 ? "1 produit" : `${n} produits`),
+  popupListDelete: "Supprimer la liste",
   watchCondBackInStock: "De retour en stock",
   watchCondSlotOpens: "Créneau vidéo libre",
   watchCondPriceDrop: "Baisse de prix",

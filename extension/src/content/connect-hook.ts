@@ -16,10 +16,24 @@
 // each campaign object holds numberOfCreatorsAccepted, numberOfCreatorsRequired,
 // and fullyClaimed. See docs / memory "CC campaign fill API".
 
+// Conversion stats a campaign record MIGHT carry (orders / sales / ROAS). These
+// are the "proof shoppers are buying" numbers a competitor leans on. Unverified:
+// we do not know Amazon actually exposes them on this record, so every field is
+// nullable and the Campaign Butler brief is estimator-first (it falls back to our
+// own catalogue demand). Best-effort capture from the same record we already
+// walk for fill, so it costs nothing extra when the fields are absent.
+type CampaignStats = {
+  ordersLast30: number | null;
+  salesLast30Cents: number | null;
+  roas: number | null;
+  ordersTotal: number | null;
+};
+
 type Fill = {
   accepted: number | null;
   required: number | null;
   fullyClaimed: boolean | null;
+  stats: CampaignStats | null;
 };
 
 (() => {
@@ -47,6 +61,39 @@ type Fill = {
 
   const toNum = (v: unknown): number | null => (typeof v === "number" && isFinite(v) ? v : null);
 
+  // Best-effort read of the first present numeric field among candidate key
+  // names, on the record or a nested performance/stats/metrics object. The exact
+  // Creator Connections field names for conversion are unverified, so we probe a
+  // handful; a miss simply leaves the stat null (estimator-first fallback).
+  const nested = (rec: Record<string, unknown>): Record<string, unknown>[] => {
+    const out = [rec];
+    for (const k of ["performance", "stats", "metrics", "campaignStats", "summary"]) {
+      const v = rec[k];
+      if (v && typeof v === "object") out.push(v as Record<string, unknown>);
+    }
+    return out;
+  };
+  const pickNum = (rec: Record<string, unknown>, keys: string[]): number | null => {
+    for (const obj of nested(rec)) {
+      for (const k of keys) {
+        const n = toNum(obj[k]);
+        if (n !== null) return n;
+      }
+    }
+    return null;
+  };
+  const readStats = (rec: Record<string, unknown>): CampaignStats | null => {
+    const ordersLast30 = pickNum(rec, ["ordersLast30Days", "ordersLast30", "recentOrders", "orders30d"]);
+    const salesDollars = pickNum(rec, ["salesLast30Days", "salesLast30", "recentSales", "salesAmount", "revenueLast30"]);
+    const roas = pickNum(rec, ["roas", "returnOnAdSpend", "roasLast30"]);
+    const ordersTotal = pickNum(rec, ["totalOrders", "ordersTotal", "lifetimeOrders", "numberOfOrders"]);
+    const salesLast30Cents = salesDollars === null ? null : Math.round(salesDollars * 100);
+    if (ordersLast30 === null && salesLast30Cents === null && roas === null && ordersTotal === null) {
+      return null;
+    }
+    return { ordersLast30, salesLast30Cents, roas, ordersTotal };
+  };
+
   const buildMap = (text: string): Record<string, Fill> | null => {
     let json: unknown;
     try {
@@ -63,9 +110,10 @@ type Fill = {
       const accepted = toNum(rec.numberOfCreatorsAccepted);
       const required = toNum(rec.numberOfCreatorsRequired);
       const fullyClaimed = typeof rec.fullyClaimed === "boolean" ? rec.fullyClaimed : null;
-      // Only publish records that actually carry fill data.
-      if (accepted === null && required === null && fullyClaimed === null) continue;
-      map[id] = { accepted, required, fullyClaimed };
+      const stats = readStats(rec);
+      // Only publish records that actually carry fill or conversion data.
+      if (accepted === null && required === null && fullyClaimed === null && stats === null) continue;
+      map[id] = { accepted, required, fullyClaimed, stats };
     }
     return Object.keys(map).length ? map : null;
   };

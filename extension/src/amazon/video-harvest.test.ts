@@ -124,6 +124,8 @@ describe("harvestVideos", () => {
           creatorType: "influencer",
           url: null,
           carousel: "lower",
+          contentId: null,
+          position: null,
         },
       ],
       strategy: "json",
