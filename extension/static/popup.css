@@ -40,6 +40,16 @@ body {
   color: transparent;
 }
 
+.ver {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--slate-600);
+  /* The brand wrapper clips its gradient to text, which would make child text
+     transparent; force a solid fill so the version stays readable. */
+  -webkit-text-fill-color: var(--slate-600);
+}
+
 .tag {
   font-size: 10px;
   font-weight: 700;
