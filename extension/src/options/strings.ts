@@ -152,7 +152,7 @@ const en: OptionsDict = {
   walmartLink: "Walmart affiliate links",
   walmartLinkNone: "None (plain Walmart links)",
   walmartLinkHint:
-    "Which provider mints your Walmart links when you Copy my link on a Walmart product. Connect one below first.",
+    "Which provider mints your Walmart links when you Copy my link on a Walmart product. New to this? Join Walmart Creator at creator.walmart.com (no follower minimum, Impact-backed), then connect it below.",
   fieldAccountSid: "Account SID",
   fieldAuthToken: "Auth token",
   fieldCampaignId: "Campaign id",
@@ -238,7 +238,7 @@ const es: OptionsDict = {
   walmartLink: "Enlaces de afiliado de Walmart",
   walmartLinkNone: "Ninguno (enlaces de Walmart sin seguimiento)",
   walmartLinkHint:
-    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. Conecta uno abajo primero.",
+    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. ¿Nuevo en esto? Únete a Walmart Creator en creator.walmart.com (sin mínimo de seguidores, con tecnología de Impact) y luego conéctalo abajo.",
   fieldAccountSid: "Account SID",
   fieldAuthToken: "Auth token",
   fieldCampaignId: "Id de campaña",
@@ -324,7 +324,7 @@ const fr: OptionsDict = {
   walmartLink: "Liens d'affiliation Walmart",
   walmartLinkNone: "Aucun (liens Walmart simples)",
   walmartLinkHint:
-    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Connectez-en un ci-dessous d'abord.",
+    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Nouveau ? Rejoignez Walmart Creator sur creator.walmart.com (sans minimum d'abonnés, propulsé par Impact), puis connectez-le ci-dessous.",
   fieldAccountSid: "Account SID",
   fieldAuthToken: "Jeton d'authentification",
   fieldCampaignId: "Id de campagne",

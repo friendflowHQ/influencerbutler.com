@@ -3,6 +3,7 @@ import { log } from "../../shared/log";
 import {
   sendToBackground,
   type GenerateLinkResult,
+  type IntegrationsView,
   type MarketProduct,
   type MarketResult,
 } from "../../shared/messages";
@@ -64,7 +65,7 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
   const status = el("span", "muted small");
   const btn = el("button", "btn wm-link-btn") as HTMLButtonElement;
   btn.type = "button";
-  btn.textContent = "Copy Walmart affiliate link";
+  btn.textContent = "Copy Walmart link";
   btn.addEventListener("click", () => {
     btn.disabled = true;
     void sendToBackground<GenerateLinkResult>({
@@ -90,6 +91,30 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
       });
   });
   section.append(btn, status);
+
+  // Whether the creator has connected a Walmart link provider. When not, the
+  // button still copies a working /ip/ link, but we say the link is not yet
+  // commission-tracked and offer a one-click path to set one up (Walmart
+  // Creator at creator.walmart.com is the no-minimum, Impact-backed option).
+  void sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" })
+    .then((view) => {
+      const providerId = view.global.walmartLinkProvider;
+      const configured = Boolean(providerId && view.providers.find((p) => p.id === providerId)?.configured);
+      if (configured) {
+        btn.textContent = "Copy Walmart affiliate link";
+        return;
+      }
+      const setup = el("button", "link-inline") as HTMLButtonElement;
+      setup.type = "button";
+      setup.textContent = "Set up Walmart affiliate links";
+      setup.addEventListener("click", () => void sendToBackground({ kind: "OPEN_OPTIONS" }));
+      const note = el("div", "muted small");
+      note.append(document.createTextNode("Links are not commission-tracked yet. "), setup);
+      section.append(note);
+    })
+    .catch(() => {
+      // Integrations unavailable: leave the neutral "Copy Walmart link" label.
+    });
 
   // Fill the chips async: rate card + pooled market data.
   void (async () => {
