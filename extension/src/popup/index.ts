@@ -36,6 +36,7 @@ async function init(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
+  showVersion();
   await Promise.all([
     renderUpdateCard(),
     renderPageStatus(),
@@ -66,6 +67,13 @@ async function init(): Promise<void> {
     const dealCard = document.getElementById("deal-harvester");
     if (dealCard) dealCard.hidden = true;
   }
+}
+
+// Stamp the running extension version into the header, read from the manifest
+// so it always matches the installed build (no hardcoded string to drift).
+function showVersion(): void {
+  const el = document.getElementById("ext-version");
+  if (el) el.textContent = `v${chrome.runtime.getManifest().version}`;
 }
 
 // Extension-update card: shown only when Chrome has a newer version staged

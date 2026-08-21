@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Free tools for Amazon Influencers: video counts, content gaps in your orders, Butler Approved seals, and storefront checks.",
   "permissions": ["storage", "alarms", "notifications", "tabs"],
   "host_permissions": [
