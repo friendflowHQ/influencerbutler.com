@@ -86,12 +86,17 @@ export type RuntimeMessage =
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
   // key; available to any signed-in user regardless of whether they contribute.
-  | { kind: "GET_MARKET"; asin: string; marketplace: string }
+  | { kind: "GET_MARKET"; asin: string; marketplace: string; retailer?: "amazon" | "walmart" }
   // Batched sibling of GET_MARKET: one round trip for a whole page of ASINs (the
   // search overlay wants a market read per tile). The endpoint already accepts up
   // to 50 comma-joined ASINs; this returns them all so the overlay does not fire
   // one message per card.
-  | { kind: "GET_MARKET_BATCH"; asins: string[]; marketplace: string }
+  | {
+      kind: "GET_MARKET_BATCH";
+      asins: string[];
+      marketplace: string;
+      retailer?: "amazon" | "walmart";
+    }
   // Per-video "passport" read from the shared video-placement pool: presence,
   // rotation, and daily visibility for one creator video over 90 days.
   | { kind: "GET_VIDEO_INTEL"; videoId: string; marketplace: string }
@@ -440,6 +445,12 @@ export type MarketProduct = {
   estMonthlySales: number | null;
   estimateCalibrated: boolean;
   trend: MarketTrendPoint[];
+  // Walmart-only (absent/null on Amazon rows): Walmart has no BSR, so the
+  // estimate is review-velocity based and carries an explicit confidence; the
+  // raw review count rides along for the demand chip.
+  estimateConfidence?: "low" | "medium";
+  numReviews?: number | null;
+  retailer?: "amazon" | "walmart";
 };
 
 // Response of GET_MARKET. product is null when the pool has nothing for the ASIN

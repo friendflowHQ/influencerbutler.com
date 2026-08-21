@@ -423,6 +423,11 @@ async function getWalmartMarket(url: URL) {
       marketplace: row.marketplace,
       priceCents: row.price_cents,
       currency: row.currency,
+      // Amazon-only fields, null for Walmart so the shared MarketProduct shape
+      // is honestly satisfied.
+      bsrRank: null,
+      bsrCategory: null,
+      boughtPastMonth: null,
       numReviews: row.num_reviews,
       retailerRank: row.retailer_rank,
       categoryLabel: row.category_label,

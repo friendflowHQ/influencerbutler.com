@@ -14,7 +14,7 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
-import { refreshRateCard } from "./rate-card";
+import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
 import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
@@ -106,6 +106,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshWalmartRateCard();
   void refreshFlags();
   // After an update applies, this drops the now-stale "update waiting" record.
   void getUpdateStateView();
@@ -119,6 +120,7 @@ chrome.runtime.onStartup.addListener(() => {
   });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshWalmartRateCard();
   void refreshFlags();
   void maybeTestAllOnStartup();
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
@@ -148,6 +150,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
     void refreshRateCard();
+    void refreshWalmartRateCard();
     // Nudge Chrome's updater on the same cadence; it staging a new version
     // fires onUpdateAvailable above. No-op on unpacked installs.
     void checkForUpdate();
@@ -222,10 +225,10 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void fetchDesktopHistory(message.asin).then(sendResponse);
       return true;
     case "GET_MARKET":
-      void getMarket(message.asin, message.marketplace).then(sendResponse);
+      void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
       return true;
     case "GET_MARKET_BATCH":
-      void getMarketBatch(message.asins, message.marketplace).then(sendResponse);
+      void getMarketBatch(message.asins, message.marketplace, message.retailer).then(sendResponse);
       return true;
     case "GET_VIDEO_INTEL":
       void getVideoIntel(message.videoId, message.marketplace).then(sendResponse);

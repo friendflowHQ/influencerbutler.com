@@ -1,5 +1,17 @@
-import { RATE_CARD_BASE, RATE_CARD_STALE_MS } from "../shared/constants";
-import { getRateCard, setRateCard, type RateCardRow } from "../rate-card/cache";
+import {
+  RATE_CARD_BASE,
+  RATE_CARD_STALE_MS,
+  WALMART_RATE_CARD_BASE,
+  WALMART_RATE_CARD_STALE_MS,
+} from "../shared/constants";
+import {
+  getRateCard,
+  setRateCard,
+  getWalmartRateCard,
+  setWalmartRateCard,
+  type RateCardRow,
+  type StoredRateCard,
+} from "../rate-card/cache";
 import { log, warn } from "../shared/log";
 
 // Refreshes the Associates rate card from the site, at most daily. Sends
@@ -54,5 +66,39 @@ export async function refreshRateCard(): Promise<void> {
     log("rate-card", `refreshed -> ${data.version}`);
   } catch (error) {
     log("rate-card", "refresh failed", error);
+  }
+}
+
+// Walmart's commission schedule (Impact category rates). Served as a static
+// in-code table, so unlike Amazon it is always available (never notBuilt) and
+// changes only when we bump its version. Same daily cadence + ETag flow.
+export async function refreshWalmartRateCard(): Promise<void> {
+  const existing = await getWalmartRateCard();
+  if (existing && Date.now() - existing.fetchedAt < WALMART_RATE_CARD_STALE_MS) return;
+
+  try {
+    const headers: Record<string, string> = {};
+    if (existing) headers["If-None-Match"] = `"rate-${existing.marketplace}-${existing.version}"`;
+
+    const res = await fetch(WALMART_RATE_CARD_BASE, { headers });
+    if (res.status === 304) {
+      if (existing) await setWalmartRateCard({ ...existing, fetchedAt: Date.now() });
+      return;
+    }
+    if (!res.ok) return;
+
+    const data = (await res.json()) as Partial<StoredRateCard>;
+    if (!data.version || !Array.isArray(data.rows)) return;
+
+    await setWalmartRateCard({
+      marketplace: data.marketplace ?? "walmart.com",
+      version: data.version,
+      defaultRatePct: data.defaultRatePct ?? null,
+      rows: data.rows,
+      fetchedAt: Date.now(),
+    });
+    log("rate-card", `walmart refreshed -> ${data.version}`);
+  } catch (error) {
+    log("rate-card", "walmart refresh failed", error);
   }
 }
