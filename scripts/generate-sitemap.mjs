@@ -17,6 +17,7 @@ const ROOT_PAGES = {
   "email-sequences.html": { url: "/email-sequences", priority: "0.7", changefreq: "weekly" },
   "stop-messaging-brands.html": { url: "/stop-messaging-brands", priority: "0.7", changefreq: "weekly" },
   "best-amazon-influencer-tools.html": { url: "/best-amazon-influencer-tools", priority: "0.8", changefreq: "weekly" },
+  "for-agencies.html": { url: "/for-agencies", priority: "0.8", changefreq: "weekly" },
 };
 const LEGAL_DEFAULTS = { priority: "0.3", changefreq: "monthly" };
 const FEATURE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };

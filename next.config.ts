@@ -73,6 +73,7 @@ const nextConfig: NextConfig = {
       { source: "/features/:slug", destination: "/features/:slug.html" },
       { source: "/compare/:slug", destination: "/compare/:slug.html" },
       { source: "/guides/:slug", destination: "/guides/:slug.html" },
+      { source: "/for-agencies", destination: "/for-agencies.html" },
       { source: "/for-agencies/:slug", destination: "/for-agencies/:slug.html" },
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
