@@ -1,4 +1,10 @@
-import { ADAPTERS, CATEGORY_ORDER, DEEPLINK_PROVIDER_IDS, getAdapter } from "../integrations/registry";
+import {
+  ADAPTERS,
+  CATEGORY_ORDER,
+  DEEPLINK_PROVIDER_IDS,
+  WALMART_LINK_PROVIDER_IDS,
+  getAdapter,
+} from "../integrations/registry";
 import type { IntegrationAdapter, IntegrationCategory } from "../integrations/types";
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
 import { resolveLocale } from "../i18n";
@@ -59,6 +65,8 @@ function renderChrome(): void {
   byId("label-routing").textContent = D.affiliateRouting;
   byId("label-primary-deeplink").textContent = D.primaryDeeplink;
   byId("hint-primary-deeplink").textContent = D.primaryDeeplinkHint;
+  byId("label-walmart-link").textContent = D.walmartLink;
+  byId("hint-walmart-link").textContent = D.walmartLinkHint;
   byId("run-all").textContent = D.runAllTests;
 }
 
@@ -102,6 +110,25 @@ function renderGlobals(): void {
     syncWarning();
     void setGlobal({ primaryDeeplinkProvider: select.value || null });
   };
+
+  // Walmart affiliate link provider (mirrors the primary-deeplink select). The
+  // user picks which connected provider mints their Walmart links.
+  const wmSelect = byId<HTMLSelectElement>("walmart-link");
+  wmSelect.replaceChildren();
+  const wmNone = document.createElement("option");
+  wmNone.value = "";
+  wmNone.textContent = D.walmartLinkNone;
+  wmSelect.append(wmNone);
+  for (const id of WALMART_LINK_PROVIDER_IDS) {
+    const adapter = getAdapter(id);
+    if (!adapter) continue;
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = label(adapter.labelKey);
+    wmSelect.append(opt);
+  }
+  wmSelect.value = view.global.walmartLinkProvider ?? "";
+  wmSelect.onchange = () => void setGlobal({ walmartLinkProvider: wmSelect.value || null });
 
   const runAll = byId<HTMLButtonElement>("run-all");
   const status = byId("run-all-status");
@@ -159,6 +186,7 @@ function categoryLabel(category: IntegrationCategory): string {
     affiliateTag: D.catAffiliateTag,
     deeplink: D.catDeeplink,
     affiliateNetwork: D.catAffiliateNetwork,
+    walmartLink: D.catWalmartLink,
   };
   return map[category];
 }

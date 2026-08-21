@@ -1,13 +1,20 @@
 // Small URL helpers shared by the deeplink adapters and the routing module.
 // Kept separate so adapters and routing can both import them without a cycle.
+import type { Retailer } from "../shared/retailer";
 
-// Canonical short product url for an ASIN on a marketplace, for example
-// https://www.amazon.com/dp/B012345678. Falls back to the given url when there
-// is no ASIN.
-export function canonicalProductUrl(asin: string, marketplace: string, fallback: string): string {
-  if (!asin) return fallback;
+// Canonical short product url for a product id on a marketplace. Amazon:
+// https://www.amazon.com/dp/B012345678. Walmart: https://www.walmart.com/ip/123.
+// Falls back to the given url when there is no id.
+export function canonicalProductUrl(
+  id: string,
+  marketplace: string,
+  fallback: string,
+  retailer: Retailer = "amazon",
+): string {
+  if (!id) return fallback;
   const domain = marketplace.startsWith("www.") ? marketplace : `www.${marketplace}`;
-  return `https://${domain}/dp/${asin}`;
+  const path = retailer === "walmart" ? "ip" : "dp";
+  return `https://${domain}/${path}/${id}`;
 }
 
 // Add or replace the Amazon Associates tag on a product url.

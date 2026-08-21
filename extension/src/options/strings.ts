@@ -43,6 +43,7 @@ export interface OptionsDict {
   catAffiliateTag: string;
   catDeeplink: string;
   catAffiliateNetwork: string;
+  catWalmartLink: string;
   // Provider labels (referenced by adapter.labelKey)
   provOpenai: string;
   provCreatorsApi: string;
@@ -57,6 +58,10 @@ export interface OptionsDict {
   provArcher: string;
   provLogie: string;
   provBenable: string;
+  provImpact: string;
+  provImpactDesc: string;
+  provWalmartCreator: string;
+  provWalmartCreatorDesc: string;
   // Field labels (referenced by field.labelKey)
   fieldApiKey: string;
   fieldApiSecret: string;
@@ -71,6 +76,16 @@ export interface OptionsDict {
   fieldMarketplace: string;
   fieldLinkTemplate: string;
   fieldReferralUrl: string;
+  fieldAccountSid: string;
+  fieldAuthToken: string;
+  fieldCampaignId: string;
+  fieldAdId: string;
+  fieldSubId: string;
+  fieldPublisherId: string;
+  // Walmart affiliate link provider select
+  walmartLink: string;
+  walmartLinkNone: string;
+  walmartLinkHint: string;
 }
 
 const en: OptionsDict = {
@@ -113,6 +128,7 @@ const en: OptionsDict = {
   catAffiliateTag: "Affiliate tags",
   catDeeplink: "Deeplink providers",
   catAffiliateNetwork: "Affiliate networks",
+  catWalmartLink: "Walmart affiliate links",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Amazon Associates tags",
@@ -127,6 +143,22 @@ const en: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
+  provImpact: "Impact",
+  provImpactDesc:
+    "Walmart's affiliate network. Enter your Impact Account SID, Auth Token, and the Walmart campaign and ad ids to mint tracked goto.walmart.com links.",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "The Walmart Creator program. Enter your publisher, campaign, and ad ids to mint tracked goto.walmart.com links.",
+  walmartLink: "Walmart affiliate links",
+  walmartLinkNone: "None (plain Walmart links)",
+  walmartLinkHint:
+    "Which provider mints your Walmart links when you Copy my link on a Walmart product. Connect one below first.",
+  fieldAccountSid: "Account SID",
+  fieldAuthToken: "Auth token",
+  fieldCampaignId: "Campaign id",
+  fieldAdId: "Ad id",
+  fieldSubId: "Sub id (optional)",
+  fieldPublisherId: "Publisher id",
   fieldApiKey: "API key",
   fieldApiSecret: "API secret",
   fieldGroupId: "Group id",
@@ -182,6 +214,7 @@ const es: OptionsDict = {
   catAffiliateTag: "Etiquetas de afiliado",
   catDeeplink: "Proveedores de deeplink",
   catAffiliateNetwork: "Redes de afiliados",
+  catWalmartLink: "Enlaces de afiliado de Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Etiquetas de Amazon Associates",
@@ -196,6 +229,22 @@ const es: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
+  provImpact: "Impact",
+  provImpactDesc:
+    "La red de afiliados de Walmart. Introduce tu Account SID e Auth Token de Impact y los ids de campaña y anuncio de Walmart para crear enlaces goto.walmart.com con seguimiento.",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "El programa Walmart Creator. Introduce tus ids de publisher, campaña y anuncio para crear enlaces goto.walmart.com con seguimiento.",
+  walmartLink: "Enlaces de afiliado de Walmart",
+  walmartLinkNone: "Ninguno (enlaces de Walmart sin seguimiento)",
+  walmartLinkHint:
+    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. Conecta uno abajo primero.",
+  fieldAccountSid: "Account SID",
+  fieldAuthToken: "Auth token",
+  fieldCampaignId: "Id de campaña",
+  fieldAdId: "Id de anuncio",
+  fieldSubId: "Sub id (opcional)",
+  fieldPublisherId: "Id de publisher",
   fieldApiKey: "Clave de API",
   fieldApiSecret: "Secreto de API",
   fieldGroupId: "Id de grupo",
@@ -251,6 +300,7 @@ const fr: OptionsDict = {
   catAffiliateTag: "Balises d'affiliation",
   catDeeplink: "Fournisseurs de deeplink",
   catAffiliateNetwork: "Réseaux d'affiliation",
+  catWalmartLink: "Liens d'affiliation Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   provAssociates: "Balises Amazon Associates",
@@ -265,6 +315,22 @@ const fr: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
+  provImpact: "Impact",
+  provImpactDesc:
+    "Le réseau d'affiliation de Walmart. Saisissez votre Account SID et Auth Token Impact ainsi que les ids de campagne et d'annonce Walmart pour créer des liens goto.walmart.com suivis.",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "Le programme Walmart Creator. Saisissez vos ids de publisher, de campagne et d'annonce pour créer des liens goto.walmart.com suivis.",
+  walmartLink: "Liens d'affiliation Walmart",
+  walmartLinkNone: "Aucun (liens Walmart simples)",
+  walmartLinkHint:
+    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Connectez-en un ci-dessous d'abord.",
+  fieldAccountSid: "Account SID",
+  fieldAuthToken: "Jeton d'authentification",
+  fieldCampaignId: "Id de campagne",
+  fieldAdId: "Id d'annonce",
+  fieldSubId: "Sub id (facultatif)",
+  fieldPublisherId: "Id de publisher",
   fieldApiKey: "Clé API",
   fieldApiSecret: "Secret API",
   fieldGroupId: "Id de groupe",

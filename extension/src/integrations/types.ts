@@ -13,19 +13,25 @@ export type DeeplinkProviderId =
 
 export type AffiliateNetworkId = "levanta" | "archer" | "logie" | "benable";
 
+// Walmart affiliate link providers. Walmart runs entirely through Impact, so
+// both mint a goto.walmart.com tracking link; the user picks one in options.
+export type WalmartLinkId = "impact" | "walmartCreator";
+
 export type IntegrationId =
   | "openai"
   | "creatorsApi"
   | "associates"
   | DeeplinkProviderId
-  | AffiliateNetworkId;
+  | AffiliateNetworkId
+  | WalmartLinkId;
 
 export type IntegrationCategory =
   | "ai"
   | "productData"
   | "affiliateTag"
   | "deeplink"
-  | "affiliateNetwork";
+  | "affiliateNetwork"
+  | "walmartLink";
 
 export type FieldSpec = {
   name: string;
@@ -39,10 +45,13 @@ export type FieldSpec = {
 export type TestResult = { ok: boolean; message: string };
 
 export type LinkTarget = {
+  // The retailer's product id: an Amazon ASIN or a Walmart item id. Named `asin`
+  // for back-compat across the adapters; on Walmart it holds the item id.
   asin: string;
-  marketplace: string; // for example "amazon.com"
+  marketplace: string; // for example "amazon.com" / "walmart.com"
   url: string; // canonical product url
   tag?: string; // resolved affiliate tag for this marketplace, if any
+  retailer?: "amazon" | "walmart"; // defaults to "amazon" when absent
 };
 
 export type IntegrationAdapter = {

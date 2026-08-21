@@ -14,9 +14,17 @@
  * leaves this process. See src/lib/paapi.ts and src/lib/creator-api-creds.ts.
  */
 import { resolveLicenseOnly } from "@/lib/license-auth";
-import { ASIN_RE, jsonWithCors, migrationPendingResponse, optionsResponse } from "@/lib/extension-api";
+import {
+  ASIN_RE,
+  WALMART_ITEM_ID_RE,
+  parseRetailer,
+  jsonWithCors,
+  migrationPendingResponse,
+  optionsResponse,
+} from "@/lib/extension-api";
 import { loadDecryptedCreds } from "@/lib/creator-api-creds";
 import { getItems, GET_ITEMS_MAX, type EnrichedItem } from "@/lib/paapi";
+import { loadWalmartCreds, lookupItems, WALMART_LOOKUP_MAX } from "@/lib/walmart-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +50,9 @@ export async function POST(request: Request) {
   } catch {
     return jsonWithCors({ error: "Invalid JSON" }, 400);
   }
+
+  const retailer = parseRetailer((body as { retailer?: unknown })?.retailer);
+  if (retailer === "walmart") return enrichWalmart(body);
 
   // Accept { asins: [...] } (batch) or legacy { asin }. Dedupe, uppercase, and
   // keep only valid ASINs.
@@ -83,6 +94,43 @@ export async function POST(request: Request) {
     }
   }
 
-  const items = asins.map((asin) => ({ asin, results: byAsin.get(asin) ?? [] }));
+  const items = asins.map((asin) => ({ id: asin, asin, results: byAsin.get(asin) ?? [] }));
+  return jsonWithCors({ ok: true, configured: true, items });
+}
+
+/**
+ * Walmart enrichment. Unlike Amazon (per-user Associates keys, per-marketplace
+ * fan-out), Walmart is a single first-party publisher credential in server env,
+ * so there is one lookup with no marketplace filter. Item ids are numeric.
+ * Envelope matches the Amazon path: items:[{ id, asin, results }]; `asin`
+ * carries the item id so the extension's existing reader stays retailer-blind.
+ */
+async function enrichWalmart(body: unknown) {
+  const rawIds = Array.isArray((body as { itemIds?: unknown })?.itemIds)
+    ? (body as { itemIds: unknown[] }).itemIds
+    : Array.isArray((body as { asins?: unknown })?.asins)
+      ? (body as { asins: unknown[] }).asins
+      : [(body as { itemId?: unknown })?.itemId ?? (body as { asin?: unknown })?.asin];
+  const ids = [
+    ...new Set(
+      rawIds
+        .filter((a): a is string | number => typeof a === "string" || typeof a === "number")
+        .map((a) => String(a).trim())
+        .filter((a) => WALMART_ITEM_ID_RE.test(a)),
+    ),
+  ].slice(0, WALMART_LOOKUP_MAX);
+  if (ids.length === 0) return jsonWithCors({ error: "No valid Walmart item ids" }, 400);
+
+  const creds = loadWalmartCreds();
+  if (!creds) return jsonWithCors({ ok: true, configured: false, items: [] });
+
+  const rows = await lookupItems(creds, ids);
+  const byId = new Map<string, EnrichedItem>();
+  for (const row of rows) if (row.itemId) byId.set(row.itemId, row);
+  const items = ids.map((id) => ({
+    id,
+    asin: id,
+    results: byId.has(id) ? [byId.get(id) as EnrichedItem] : [],
+  }));
   return jsonWithCors({ ok: true, configured: true, items });
 }

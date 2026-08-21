@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.7",
-  "description": "Free tools for Amazon Influencers: video counts, content gaps in your orders, Butler Approved seals, and storefront checks.",
+  "version": "0.1.8",
+  "description": "Free tools for Amazon and Walmart Influencers: money signals, video counts, content gaps in your orders, Butler Approved seals, and storefront checks.",
   "permissions": ["storage", "alarms", "notifications", "tabs"],
   "host_permissions": [
     "https://www.amazon.com/*",
@@ -11,6 +11,7 @@
     "https://affiliate-program.amazon.com/*",
     "https://affiliate-program.amazon.ca/*",
     "https://affiliate-program.amazon.co.uk/*",
+    "https://www.walmart.com/*",
     "https://www.influencerbutler.com/*",
     "https://links.influencerbutler.com/*"
   ],
@@ -42,7 +43,9 @@
     "https://linktw.in/*",
     "https://app.levanta.io/*",
     "https://api.archeraffiliates.com/*",
-    "https://api.logie.ai/*"
+    "https://api.logie.ai/*",
+    "https://api.impact.com/*",
+    "https://goto.walmart.com/*"
   ],
   "options_ui": {
     "page": "options.html",
@@ -99,7 +102,14 @@
         "https://www.amazon.co.uk/gp/bestsellers*",
         "https://www.amazon.co.uk/gp/new-releases*",
         "https://www.amazon.co.uk/gp/movers-and-shakers*",
-        "https://www.amazon.co.uk/*/zgbs/*"
+        "https://www.amazon.co.uk/*/zgbs/*",
+        "https://www.walmart.com/ip/*",
+        "https://www.walmart.com/search*",
+        "https://www.walmart.com/browse/*",
+        "https://www.walmart.com/cp/*",
+        "https://www.walmart.com/seller/*",
+        "https://www.walmart.com/brand/*",
+        "https://www.walmart.com/orders*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

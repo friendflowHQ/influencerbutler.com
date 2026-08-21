@@ -12,6 +12,12 @@
  * browser (see src/lib/creator-api-creds.ts for the at-rest vault).
  */
 import { createHash, createHmac } from "node:crypto";
+import { emptyEnrichedItem, type EnrichedItem } from "./enriched-item";
+
+// Re-exported so existing importers (the enrich route) keep resolving the type
+// from here. The canonical definition now lives in enriched-item.ts so the
+// Amazon and Walmart clients share one retailer-agnostic shape.
+export type { EnrichedItem } from "./enriched-item";
 
 export const PAAPI_RESOURCES = [
   "ItemInfo.Title",
@@ -163,47 +169,13 @@ export type PaapiCreds = {
   secretKey: string;
 };
 
-export type EnrichedItem = {
-  marketplace: string;
-  asin: string | null;
-  found: boolean;
-  title: string | null;
-  brand: string | null;
-  priceDisplay: string | null;
-  priceCents: number | null;
-  currency: string | null;
-  availability: string | null;
-  primeEligible: boolean | null;
-  binding: string | null;
-  browseNode: string | null;
-  imageUrl: string | null;
-  detailPageUrl: string | null;
-  error: string | null;
-};
-
 function emptyItem(
   marketplace: string,
   error: string | null,
   found = false,
   asin: string | null = null,
 ): EnrichedItem {
-  return {
-    marketplace,
-    asin,
-    found,
-    title: null,
-    brand: null,
-    priceDisplay: null,
-    priceCents: null,
-    currency: null,
-    availability: null,
-    primeEligible: null,
-    binding: null,
-    browseNode: null,
-    imageUrl: null,
-    detailPageUrl: null,
-    error,
-  };
+  return emptyEnrichedItem({ retailer: "amazon", marketplace, error, found, id: asin });
 }
 
 type RawItem = {
@@ -229,9 +201,12 @@ type RawItem = {
 function normalizeItem(marketplaceHost: string, item: RawItem): EnrichedItem {
   const listing = item.Offers?.Listings?.[0];
   const priceAmount = listing?.Price?.Amount;
+  const asin = item.ASIN ? item.ASIN.toUpperCase() : null;
   return {
+    retailer: "amazon",
     marketplace: marketplaceHost,
-    asin: item.ASIN ? item.ASIN.toUpperCase() : null,
+    asin,
+    itemId: asin,
     found: true,
     title: item.ItemInfo?.Title?.DisplayValue ?? null,
     brand:
@@ -247,6 +222,8 @@ function normalizeItem(marketplaceHost: string, item: RawItem): EnrichedItem {
     browseNode: item.BrowseNodeInfo?.BrowseNodes?.[0]?.DisplayName ?? null,
     imageUrl: item.Images?.Primary?.Medium?.URL ?? null,
     detailPageUrl: item.DetailPageURL ?? null,
+    numReviews: null,
+    retailerRank: null,
     error: null,
   };
 }

@@ -19,18 +19,27 @@ import { resolveAuth, resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   ASIN_RE,
+  WALMART_ITEM_ID_RE,
   EXT_MAX_BATCH,
   EXT_TITLE_MAX,
   MARKETPLACE_RE,
+  parseRetailer,
   cleanString,
   clampInt,
   isMissingTableError,
+  isMissingColumnError,
   jsonWithCors,
   migrationPendingResponse,
   optionsResponse,
   parseTimestamp,
 } from "@/lib/extension-api";
-import { estMonthlySales, seedCurveFor, type SalesCurve } from "@/lib/market-estimate";
+import {
+  estMonthlySales,
+  estMonthlySalesFromReviews,
+  seedCurveFor,
+  type SalesCurve,
+} from "@/lib/market-estimate";
+import { WALMART_MARKETPLACE } from "@/lib/walmart-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +68,28 @@ type HistoryRow = {
   contributor_user_id: string;
 };
 
+// Walmart observations carry no BSR/bought-past-month; instead they log review
+// count and Walmart's own rank (when present) plus the generic retailer/item_id
+// columns the migration adds. The item id is ALSO written to `asin` (the table's
+// PK column, NOT NULL): marketplace 'walmart.com' namespaces it away from real
+// ASINs, so the existing (asin, marketplace) key and its upsert conflict target
+// serve both retailers with no primary-key surgery on the lagging prod schema.
+type WalmartHistoryRow = {
+  retailer: "walmart";
+  item_id: string;
+  asin: string;
+  marketplace: string;
+  captured_at: string;
+  price_cents: number | null;
+  currency: string;
+  num_reviews: number | null;
+  retailer_rank: number | null;
+  category_label: string | null;
+  brand: string | null;
+  source: string;
+  contributor_user_id: string;
+};
+
 export async function POST(request: Request) {
   const auth = await resolveLicenseOnly(request);
   if (!auth.ok) return jsonWithCors({ error: auth.error }, auth.status);
@@ -75,14 +106,38 @@ export async function POST(request: Request) {
   }
 
   const rows: HistoryRow[] = [];
+  const wmRows: WalmartHistoryRow[] = [];
   for (const raw of items) {
     const item = raw as Record<string, unknown>;
-    const asin = typeof item.asin === "string" ? item.asin.toUpperCase() : "";
     const marketplace = typeof item.marketplace === "string" ? item.marketplace.toLowerCase() : "";
     const capturedAt = parseTimestamp(item.captured_at);
-    if (!ASIN_RE.test(asin) || !MARKETPLACE_RE.test(marketplace) || !capturedAt) continue;
+    if (!MARKETPLACE_RE.test(marketplace) || !capturedAt) continue;
     const source =
       typeof item.source === "string" && SOURCES.has(item.source) ? item.source : "browse";
+
+    if (parseRetailer(item.retailer) === "walmart") {
+      const itemId = typeof item.item_id === "string" ? item.item_id : String(item.asin ?? "");
+      if (!WALMART_ITEM_ID_RE.test(itemId)) continue;
+      wmRows.push({
+        retailer: "walmart",
+        item_id: itemId,
+        asin: itemId,
+        marketplace,
+        captured_at: capturedAt,
+        price_cents: clampInt(item.price_cents, 0, 100_000_000),
+        currency: cleanString(item.currency, 3) ?? "USD",
+        num_reviews: clampInt(item.num_reviews, 0, 100_000_000),
+        retailer_rank: clampInt(item.retailer_rank, 1, 100_000_000),
+        category_label: cleanString(item.category_label, EXT_TITLE_MAX),
+        brand: cleanString(item.brand, EXT_TITLE_MAX),
+        source,
+        contributor_user_id: auth.auth.userId,
+      });
+      continue;
+    }
+
+    const asin = typeof item.asin === "string" ? item.asin.toUpperCase() : "";
+    if (!ASIN_RE.test(asin)) continue;
     rows.push({
       asin,
       marketplace,
@@ -98,50 +153,94 @@ export async function POST(request: Request) {
       contributor_user_id: auth.auth.userId,
     });
   }
-  if (rows.length === 0) {
+  if (rows.length === 0 && wmRows.length === 0) {
     return jsonWithCors({ error: "No valid items in batch" }, 400);
   }
 
   const admin = createAdminClient();
-  const { error: histError } = await admin.from("product_market_history").insert(rows);
-  if (histError) {
-    if (isMissingTableError(histError)) return migrationPendingResponse();
-    console.error("extension/market: history insert failed", histError);
-    return jsonWithCors({ error: "Could not save observations" }, 500);
-  }
-
-  // Upsert the current snapshot. Keep the newest observation per (asin,
-  // marketplace) within this batch so we do not thrash the row order.
-  const latestByKey = new Map<string, HistoryRow>();
-  for (const row of rows) {
-    const key = `${row.asin}:${row.marketplace}`;
-    const prev = latestByKey.get(key);
-    if (!prev || row.captured_at > prev.captured_at) latestByKey.set(key, row);
-  }
   const now = new Date().toISOString();
-  const snapshots = Array.from(latestByKey.values()).map((row) => ({
-    asin: row.asin,
-    marketplace: row.marketplace,
-    price_cents: row.price_cents,
-    currency: row.currency,
-    bsr_rank: row.bsr_rank,
-    bsr_category: row.bsr_category,
-    bought_past_month: row.bought_past_month,
-    category_label: row.category_label,
-    brand: row.brand,
-    captured_at: row.captured_at,
-    updated_at: now,
-  }));
-  const { error: latestError } = await admin
-    .from("product_market_latest")
-    .upsert(snapshots, { onConflict: "asin,marketplace" });
-  if (latestError) {
-    // History already landed; a snapshot failure is non-fatal (reads fall back
-    // to the history log), so log and still report success for the append.
-    console.error("extension/market: latest upsert failed", latestError);
+
+  // Amazon path: unchanged columns + (asin, marketplace) conflict target, so it
+  // keeps working even before the Walmart migration is applied to prod.
+  if (rows.length > 0) {
+    const { error: histError } = await admin.from("product_market_history").insert(rows);
+    if (histError) {
+      if (isMissingTableError(histError)) return migrationPendingResponse();
+      console.error("extension/market: history insert failed", histError);
+      return jsonWithCors({ error: "Could not save observations" }, 500);
+    }
+    const latestByKey = new Map<string, HistoryRow>();
+    for (const row of rows) {
+      const key = `${row.asin}:${row.marketplace}`;
+      const prev = latestByKey.get(key);
+      if (!prev || row.captured_at > prev.captured_at) latestByKey.set(key, row);
+    }
+    const snapshots = Array.from(latestByKey.values()).map((row) => ({
+      asin: row.asin,
+      marketplace: row.marketplace,
+      price_cents: row.price_cents,
+      currency: row.currency,
+      bsr_rank: row.bsr_rank,
+      bsr_category: row.bsr_category,
+      bought_past_month: row.bought_past_month,
+      category_label: row.category_label,
+      brand: row.brand,
+      captured_at: row.captured_at,
+      updated_at: now,
+    }));
+    const { error: latestError } = await admin
+      .from("product_market_latest")
+      .upsert(snapshots, { onConflict: "asin,marketplace" });
+    if (latestError) {
+      // History already landed; a snapshot failure is non-fatal (reads fall back
+      // to the history log), so log and still report success for the append.
+      console.error("extension/market: latest upsert failed", latestError);
+    }
   }
 
-  return jsonWithCors({ ok: true, recorded: rows.length });
+  // Walmart path: writes the retailer/item_id/num_reviews/retailer_rank columns
+  // the migration adds, upserting on the new (retailer, item_id, marketplace)
+  // index. On a prod schema without the migration, the missing columns/index
+  // surface as a missing-column error, which we report as migrationPending
+  // rather than a hard failure.
+  if (wmRows.length > 0) {
+    const { error: wmHistError } = await admin.from("product_market_history").insert(wmRows);
+    if (wmHistError) {
+      if (isMissingTableError(wmHistError) || isMissingColumnError(wmHistError)) {
+        return migrationPendingResponse();
+      }
+      console.error("extension/market: walmart history insert failed", wmHistError);
+      return jsonWithCors({ error: "Could not save observations" }, 500);
+    }
+    const wmLatestByKey = new Map<string, WalmartHistoryRow>();
+    for (const row of wmRows) {
+      const key = `${row.item_id}:${row.marketplace}`;
+      const prev = wmLatestByKey.get(key);
+      if (!prev || row.captured_at > prev.captured_at) wmLatestByKey.set(key, row);
+    }
+    const wmSnapshots = Array.from(wmLatestByKey.values()).map((row) => ({
+      retailer: row.retailer,
+      item_id: row.item_id,
+      asin: row.asin,
+      marketplace: row.marketplace,
+      price_cents: row.price_cents,
+      currency: row.currency,
+      num_reviews: row.num_reviews,
+      retailer_rank: row.retailer_rank,
+      category_label: row.category_label,
+      brand: row.brand,
+      captured_at: row.captured_at,
+      updated_at: now,
+    }));
+    const { error: wmLatestError } = await admin
+      .from("product_market_latest")
+      .upsert(wmSnapshots, { onConflict: "asin,marketplace" });
+    if (wmLatestError) {
+      console.error("extension/market: walmart latest upsert failed", wmLatestError);
+    }
+  }
+
+  return jsonWithCors({ ok: true, recorded: rows.length + wmRows.length });
 }
 
 export async function GET(request: Request) {
@@ -149,6 +248,9 @@ export async function GET(request: Request) {
   if (!auth.ok) return jsonWithCors({ error: auth.error }, auth.status);
 
   const url = new URL(request.url);
+  const retailer = parseRetailer(url.searchParams.get("retailer"));
+  if (retailer === "walmart") return getWalmartMarket(url);
+
   const marketplace = (url.searchParams.get("marketplace") ?? "amazon.com").toLowerCase();
   if (!MARKETPLACE_RE.test(marketplace)) {
     return jsonWithCors({ error: "Invalid marketplace" }, 400);
@@ -235,5 +337,105 @@ export async function GET(request: Request) {
 
   // Pooled catalogue data carries no per-user content, so it is safe to cache
   // at the edge by URL (same pattern as the catalogue route).
+  return jsonWithCors({ ok: true, products }, 200);
+}
+
+/**
+ * Walmart read path. Walmart has no BSR, so the monthly-sales estimate comes
+ * from review-count velocity across the pooled history (see market-estimate).
+ * Reads the generic retailer/item_id columns the migration adds; soft-fails as
+ * migrationPending until it is applied.
+ */
+async function getWalmartMarket(url: URL) {
+  const marketplace = (url.searchParams.get("marketplace") ?? WALMART_MARKETPLACE).toLowerCase();
+  if (!MARKETPLACE_RE.test(marketplace)) {
+    return jsonWithCors({ error: "Invalid marketplace" }, 400);
+  }
+  // Accept ?ids= (generic) or ?asins= (the extension's shared param name).
+  const ids = (url.searchParams.get("ids") ?? url.searchParams.get("asins") ?? "")
+    .split(",")
+    .map((a) => a.trim())
+    .filter((a) => WALMART_ITEM_ID_RE.test(a));
+  const uniqueIds = Array.from(new Set(ids)).slice(0, EXT_MAX_BATCH);
+  if (uniqueIds.length === 0) {
+    return jsonWithCors({ error: "ids must be a comma-separated list of 1-50 Walmart item ids" }, 400);
+  }
+
+  const admin = createAdminClient();
+
+  const { data: latestRows, error: latestError } = await admin
+    .from("product_market_latest")
+    .select("item_id, marketplace, price_cents, currency, num_reviews, retailer_rank, category_label, brand, captured_at")
+    .eq("retailer", "walmart")
+    .eq("marketplace", marketplace)
+    .in("item_id", uniqueIds);
+  if (latestError) {
+    if (isMissingTableError(latestError) || isMissingColumnError(latestError)) {
+      return migrationPendingResponse();
+    }
+    console.error("extension/market: walmart latest read failed", latestError);
+    return jsonWithCors({ error: "Could not load market data" }, 500);
+  }
+
+  const { data: historyRows, error: historyError } = await admin
+    .from("product_market_history")
+    .select("item_id, captured_at, price_cents, num_reviews")
+    .eq("retailer", "walmart")
+    .eq("marketplace", marketplace)
+    .in("item_id", uniqueIds)
+    .order("captured_at", { ascending: false })
+    .limit(uniqueIds.length * TREND_POINTS);
+  if (historyError) {
+    console.error("extension/market: walmart history read failed", historyError);
+  }
+
+  type WmTrendPoint = { capturedAt: string; priceCents: number | null; numReviews: number | null };
+  const trendByItem = new Map<string, WmTrendPoint[]>();
+  for (const row of historyRows ?? []) {
+    const list = trendByItem.get(row.item_id) ?? [];
+    if (list.length < TREND_POINTS) {
+      list.push({ capturedAt: row.captured_at, priceCents: row.price_cents, numReviews: row.num_reviews });
+      trendByItem.set(row.item_id, list);
+    }
+  }
+
+  const products = (latestRows ?? []).map((row) => {
+    // History came back newest-first; reverse to oldest-first for charting.
+    const trend = (trendByItem.get(row.item_id) ?? []).slice().reverse();
+    // Review velocity between the oldest and newest observation carrying a count.
+    const withReviews = trend.filter((p) => typeof p.numReviews === "number");
+    const oldest = withReviews[0];
+    const newest = withReviews[withReviews.length - 1];
+    let spanDays: number | null = null;
+    if (oldest && newest && oldest !== newest) {
+      spanDays = (new Date(newest.capturedAt).getTime() - new Date(oldest.capturedAt).getTime()) / 86_400_000;
+    }
+    const estimate = estMonthlySalesFromReviews(
+      oldest?.numReviews ?? row.num_reviews,
+      newest?.numReviews ?? row.num_reviews,
+      spanDays,
+    );
+    return {
+      retailer: "walmart" as const,
+      // `asin` aliases the item id so the extension's shared reader stays blind.
+      asin: row.item_id,
+      itemId: row.item_id,
+      marketplace: row.marketplace,
+      priceCents: row.price_cents,
+      currency: row.currency,
+      numReviews: row.num_reviews,
+      retailerRank: row.retailer_rank,
+      categoryLabel: row.category_label,
+      brand: row.brand,
+      capturedAt: row.captured_at,
+      estMonthlySales: estimate.est,
+      // Walmart estimates are never curve-calibrated; confidence is explicit so
+      // the overlay can label it a rough estimate.
+      estimateCalibrated: false,
+      estimateConfidence: estimate.confidence,
+      trend: trend.map((p) => ({ capturedAt: p.capturedAt, priceCents: p.priceCents, bsrRank: null })),
+    };
+  });
+
   return jsonWithCors({ ok: true, products }, 200);
 }

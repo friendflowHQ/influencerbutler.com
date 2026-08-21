@@ -1,4 +1,4 @@
-export const EXT_VERSION = "0.1.1";
+export const EXT_VERSION = "0.1.7";
 
 export const API_BASE = "https://www.influencerbutler.com";
 
@@ -124,6 +124,27 @@ export const CATALOGUE_STALE_MS = 20 * 60 * 60 * 1000;
 // on the same alarm as the catalogue.
 export const RATE_CARD_BASE = `${API_BASE}/api/extension/rate-card`;
 export const RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Walmart's affiliate commission schedule (Impact category rates), served as a
+// static in-code table in the same shape as the Amazon rate card so the
+// extension reuses its category matcher. Refreshed on the same daily alarm.
+export const WALMART_RATE_CARD_BASE = `${API_BASE}/api/extension/walmart-rate-card`;
+export const WALMART_RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Walmart affiliate onsite commission defaults by category, the offline fallback
+// for the calculator (mirrors COMMISSION_DEFAULTS). Starting points, not a
+// promise of what Walmart/Impact pays.
+export const WALMART_COMMISSION_DEFAULTS: ReadonlyArray<{ key: string; label: string; ratePct: number }> = [
+  { key: "default", label: "Most categories", ratePct: 1 },
+  { key: "home", label: "Home and garden", ratePct: 4 },
+  { key: "beauty", label: "Beauty", ratePct: 4 },
+  { key: "baby", label: "Baby", ratePct: 4 },
+  { key: "toys", label: "Toys", ratePct: 4 },
+  { key: "fashion", label: "Clothing and accessories", ratePct: 4 },
+  { key: "sports", label: "Sports and outdoors", ratePct: 4 },
+  { key: "electronics", label: "Electronics", ratePct: 1 },
+  { key: "grocery", label: "Grocery", ratePct: 1 },
+];
 
 // Remote operational flags (kill switch + selector overrides). Polled far more
 // often than the daily feeds so a tool misbehaving in the wild can be disabled

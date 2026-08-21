@@ -63,11 +63,19 @@ export type RoutingConfig = {
   // Participating affiliate-network ids that can mint their own attribution
   // link, in priority order. Tried before the primary deeplink provider.
   affiliateNetworks?: string[];
+  // The chosen Walmart link provider ("impact" | "walmartCreator"), used for
+  // Walmart products. Amazon products ignore it.
+  walmartLinkProvider?: string | null;
   perCountryTags: Record<string, string>;
   storefrontHandle: string | null;
 };
 
-export type BuildLinkInput = { asin: string; marketplace: string; url?: string };
+export type BuildLinkInput = {
+  asin: string;
+  marketplace: string;
+  url?: string;
+  retailer?: "amazon" | "walmart";
+};
 
 // The resolved link, plus (when there is one) the reason it is not the link the
 // user's setup asked for. `url` is always usable; `notice` exists only so the UI
@@ -81,6 +89,32 @@ export async function buildAffiliateLink(
   config: RoutingConfig,
   getProviderCreds: (id: string) => Promise<Record<string, string>>,
 ): Promise<BuildLinkResult> {
+  const retailer = input.retailer ?? "amazon";
+
+  // Walmart runs entirely through its own link provider (Impact / Walmart
+  // Creator): no per-country Associates tag, no deeplink wrapper. Mint via the
+  // chosen provider, falling back to the plain /ip/ url on any failure.
+  if (retailer === "walmart") {
+    const wmUrl =
+      input.url || canonicalProductUrl(input.asin, input.marketplace, input.url ?? "", "walmart");
+    const providerId = config.enabled ? config.walmartLinkProvider : null;
+    if (!providerId) return { url: wmUrl };
+    const adapter = getAdapter(providerId);
+    if (!adapter?.generateLink) return { url: wmUrl };
+    const target: LinkTarget = {
+      asin: input.asin,
+      marketplace: input.marketplace,
+      url: wmUrl,
+      retailer: "walmart",
+    };
+    try {
+      const minted = await adapter.generateLink(target, await getProviderCreds(providerId));
+      return { url: minted || wmUrl };
+    } catch (error) {
+      return { url: wmUrl, notice: noticeOf(error) };
+    }
+  }
+
   const url = input.url || canonicalProductUrl(input.asin, input.marketplace, input.url ?? "");
   const tag = config.enabled
     ? resolveTag(input.marketplace, config.perCountryTags, config.storefrontHandle)

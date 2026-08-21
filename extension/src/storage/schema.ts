@@ -83,6 +83,11 @@ export type Settings = {
     // reshoot panel on the Creator Hub "Manage videos" list. Backfilled to true
     // for existing users by the tools shallow-merge in migrate().
     videoMoney: boolean;
+    // Master gate for all Walmart.com support (the neutral overlays run on
+    // Walmart pages when this is on). Lets a user turn Walmart off without
+    // touching their Amazon overlays. Backfilled to true by the tools
+    // shallow-merge in migrate().
+    walmart: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -150,6 +155,9 @@ export type IntegrationsState = {
     affiliateRoutingEnabled: boolean;
     // Which deeplink provider wraps generated links (adapter id), or null.
     primaryDeeplinkProvider: string | null;
+    // Which Walmart link provider mints Walmart affiliate links ("impact" |
+    // "walmartCreator"), or null when the creator has not chosen one yet.
+    walmartLinkProvider: string | null;
     // Amazon Associates tag per marketplace country code, for example
     // { US: "mytag-20", UK: "mytag-21" }. US defaults to the storefront handle.
     perCountryTags: Record<string, string>;
@@ -317,7 +325,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 16,
+  schemaVersion: 17,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -364,6 +372,7 @@ export const DEFAULTS: StorageShape = {
       ideaListOverlay: true,
       campaignButler: true,
       videoMoney: true,
+      walmart: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -383,6 +392,9 @@ export const DEFAULTS: StorageShape = {
       // it. Existing users are reached by the one-time hint in the "My link"
       // panel instead, which asks rather than deciding for them.
       primaryDeeplinkProvider: "influencerbutler",
+      // No Walmart provider until the creator connects one (fresh installs and
+      // existing users alike start null; the global shallow-merge backfills it).
+      walmartLinkProvider: null,
       perCountryTags: {},
     },
     providers: {},
@@ -439,7 +451,11 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // pages, on by default); the tools shallow-merge backfills it. v15 -> v16
   // added the videoMoney tool flag (per-row money signals + reshoot panel on
   // the Creator Hub "Manage videos" list, on by default); the tools
-  // shallow-merge backfills it.
+  // shallow-merge backfills it. v16 -> v17 added Walmart.com support: the
+  // tools.walmart master gate (on by default, backfilled by the tools
+  // shallow-merge) and integrations.global.walmartLinkProvider (null until the
+  // creator connects Impact or Walmart Creator, backfilled by the global
+  // shallow-merge).
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -487,6 +503,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 16,
+    schemaVersion: 17,
   };
 }

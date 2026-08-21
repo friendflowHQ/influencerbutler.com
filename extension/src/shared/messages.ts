@@ -121,7 +121,13 @@ export type RuntimeMessage =
   | { kind: "SET_INTEGRATION_GLOBAL"; partial: Partial<IntegrationsGlobal> }
   | { kind: "TEST_INTEGRATION"; id: string }
   | { kind: "TEST_ALL_INTEGRATIONS" }
-  | { kind: "GENERATE_AFFILIATE_LINK"; asin: string; marketplace: string; url?: string }
+  | {
+      kind: "GENERATE_AFFILIATE_LINK";
+      asin: string;
+      marketplace: string;
+      url?: string;
+      retailer?: "amazon" | "walmart";
+    }
   | { kind: "REWRITE_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   | { kind: "AI_CHAT"; messages: AiChatTurn[] }

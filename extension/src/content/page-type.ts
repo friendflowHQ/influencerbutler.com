@@ -1,3 +1,9 @@
+import { retailerFromHost, type Retailer } from "../shared/retailer";
+
+// Retailer-neutral page classes. The same overlay handles a class regardless of
+// retailer (a "search" grid is a search grid on Amazon or Walmart); a few
+// classes are Amazon-only (creator-upload/manage, campaign-grid, idea-list) and
+// are simply never emitted for Walmart.
 export type PageType =
   | "product"
   | "order-history"
@@ -11,6 +17,23 @@ export type PageType =
   | "idea-list"
   | "other";
 
+// The retailer for a URL, or null when it is neither Amazon nor Walmart (so a
+// caller can skip a page the extension has no adapter for).
+export function detectRetailerForUrl(url: string): Retailer | null {
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return null;
+  }
+  const bare = host.replace(/^www\./, "").toLowerCase();
+  const isAmazon = bare === "amazon.com" || /(^|\.)amazon\.[a-z.]+$/.test(bare);
+  const isWalmart = bare === "walmart.com" || bare.endsWith(".walmart.com");
+  if (isWalmart) return "walmart";
+  if (isAmazon) return "amazon";
+  return null;
+}
+
 export function detectPageType(url: string): PageType {
   let parsed: URL;
   try {
@@ -18,6 +41,12 @@ export function detectPageType(url: string): PageType {
   } catch {
     return "other";
   }
+  return retailerFromHost(parsed.hostname) === "walmart"
+    ? detectWalmartPageType(parsed)
+    : detectAmazonPageType(parsed);
+}
+
+function detectAmazonPageType(parsed: URL): PageType {
   const path = parsed.pathname;
   if (/\/(?:dp|gp\/product)\/[A-Z0-9]{10}(?:[/?]|$)/.test(path)) return "product";
   if (path.startsWith("/gp/css/order-history") || path.startsWith("/your-orders")) {
@@ -63,5 +92,26 @@ export function detectPageType(url: string): PageType {
   ) {
     return "discovery";
   }
+  return "other";
+}
+
+// Walmart URL shapes mapped onto the neutral page classes so the Amazon overlays
+// can be reused. Walmart has no analog for creator-upload/manage, campaign-grid,
+// or idea-list, so those are never returned here.
+function detectWalmartPageType(parsed: URL): PageType {
+  const path = parsed.pathname;
+  // Product: /ip/<slug>/<itemId> or /ip/<itemId>. The item id is the trailing
+  // numeric segment.
+  if (/^\/ip\/(?:[^/]+\/)?\d{3,15}(?:[/?]|$)/.test(path)) return "product";
+  // Order history.
+  if (path.startsWith("/orders")) return "order-history";
+  // Search results: /search with a keyword query (Walmart uses ?q=).
+  if (path === "/search" && parsed.searchParams.has("q")) return "search";
+  // Browse / category grids: /browse/... and /cp/... (category pages). Trend
+  // Radar scores these like Amazon's best-seller grids.
+  if (path.startsWith("/browse/") || path.startsWith("/cp/")) return "discovery";
+  // Seller and brand pages: a grid of one seller's / brand's items, handled by
+  // the store overlay like an Amazon brand store.
+  if (path.startsWith("/seller/") || path.startsWith("/brand/")) return "brand-store";
   return "other";
 }

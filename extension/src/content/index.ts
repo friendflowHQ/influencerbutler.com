@@ -1,4 +1,9 @@
-import { detectPageType, type PageType } from "./page-type";
+import { detectPageType, detectRetailerForUrl, type PageType } from "./page-type";
+import {
+  extractSignals as extractWalmartSignals,
+  extractWalmartProduct,
+} from "../walmart/product-signals";
+import { initWalmartProduct, initWalmartSearch } from "../tools/walmart-overlay/overlay";
 import {
   carouselSourceFor,
   classifiedCount,
@@ -146,10 +151,32 @@ function rebuildIfImproved(): void {
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
   const pageType = detectPageType(currentUrl);
+  const retailer = detectRetailerForUrl(currentUrl) ?? "amazon";
   const settings = await getSettings();
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
-  log("content", `page type: ${pageType}`);
+  log("content", `page type: ${pageType} (${retailer})`);
+
+  // Walmart.com. The neutral page classes (product / search / discovery /
+  // brand-store) are driven by the src/walmart extractors, which read Walmart's
+  // __NEXT_DATA__ JSON. Gated by the master Walmart setting. The Amazon
+  // extractors are never run against a Walmart page.
+  if (retailer === "walmart") {
+    if (!settings.tools.walmart) {
+      log("content", "walmart support disabled by setting");
+      return;
+    }
+    if (pageType === "product") {
+      guard("walmart-product", () => {
+        const signals = extractWalmartSignals(document, currentUrl);
+        const product = extractWalmartProduct(document, currentUrl);
+        initWalmartProduct(signals, product);
+      });
+    } else if (pageType === "search" || pageType === "discovery" || pageType === "brand-store") {
+      guard("walmart-search", () => initWalmartSearch(document));
+    }
+    return;
+  }
 
   // Remote operational flags win over the user's own settings: they are the
   // site's kill switch for when a tool misbehaves in the wild. Apply selector

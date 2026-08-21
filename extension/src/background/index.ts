@@ -358,7 +358,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void testAllIntegrations().then(sendResponse);
       return true;
     case "GENERATE_AFFILIATE_LINK":
-      void generateAffiliateLink(message.asin, message.marketplace, message.url).then(sendResponse);
+      void generateAffiliateLink(message.asin, message.marketplace, message.url, message.retailer).then(
+        sendResponse,
+      );
       return true;
     case "REWRITE_LINK":
       void rewriteLink(message.url).then(sendResponse);

@@ -1,6 +1,7 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
+import { retailerFromHost } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
@@ -186,9 +187,12 @@ export async function generateAffiliateLink(
   asin: string,
   marketplace: string,
   url?: string,
+  retailer?: "amazon" | "walmart",
 ): Promise<GenerateLinkResult> {
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
+    // Retailer is explicit when the caller knows it, else derived from the host.
+    const resolvedRetailer = retailer ?? retailerFromHost(marketplace);
     // Affiliate networks that are enabled, take part in routing, have saved
     // credentials, and can mint their own link. Tried before the deeplink
     // wrapper (see buildAffiliateLink), in registry order.
@@ -202,13 +206,14 @@ export async function generateAffiliateLink(
       );
     });
     const built = await buildAffiliateLink(
-      { asin, marketplace, url },
+      { asin, marketplace, url, retailer: resolvedRetailer },
       {
         // Explicit "Copy my link" always applies the affiliate setup; the
         // global toggle only governs automatic rewriting (see rewriteLink).
         enabled: true,
         primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
         affiliateNetworks,
+        walmartLinkProvider: integrations.global.walmartLinkProvider,
         perCountryTags: integrations.global.perCountryTags,
         storefrontHandle: settings.storefrontHandle,
       },

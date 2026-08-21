@@ -76,6 +76,62 @@ export function estMonthlySales(bsrRank: number | null | undefined, curve: Sales
   return Math.round(raw);
 }
 
+export type ReviewVelocityEstimate = {
+  est: number | null;
+  confidence: "low" | "medium";
+};
+
+// Roughly what share of buyers leave a review. Used to scale review growth back
+// up to a sales figure. This is a coarse industry rule of thumb (~1-3%); the
+// estimate is surfaced as low/medium confidence precisely because this constant
+// is an assumption, not a fitted value.
+const REVIEW_RATE = 0.02;
+
+// Coarse lifetime-sales bands by absolute review count, damped to a monthly
+// figure, for the single-observation fallback (no velocity yet). Deliberately
+// conservative and always flagged "low" confidence.
+function monthlyFromAbsoluteReviews(reviews: number): number | null {
+  if (!Number.isFinite(reviews) || reviews < 1) return null;
+  // lifetime sales ~ reviews / REVIEW_RATE, spread over an assumed ~24-month
+  // shelf life, floored so a handful of reviews still reads as "some" sales.
+  const lifetime = reviews / REVIEW_RATE;
+  return Math.max(1, Math.round(lifetime / 24));
+}
+
+/**
+ * Estimate monthly sales for a retailer with no BSR (Walmart) from the change
+ * in review count between two observations. The primary signal is review
+ * velocity: reviews accrue as a fraction of sales, so monthly review growth
+ * divided by the review rate approximates monthly sales. Falls back to an
+ * absolute-review-count band when there is only one observation (no span yet).
+ *
+ * `oldReviews`/`newReviews` are the review counts at the ends of the window;
+ * `spanDays` is the gap between them. Returns { est, confidence }; confidence is
+ * "medium" when a real positive-growth span drove the number, "low" for the
+ * single-observation fallback (or when growth is flat/negative).
+ */
+export function estMonthlySalesFromReviews(
+  oldReviews: number | null | undefined,
+  newReviews: number | null | undefined,
+  spanDays: number | null | undefined,
+): ReviewVelocityEstimate {
+  const now = typeof newReviews === "number" && Number.isFinite(newReviews) ? newReviews : null;
+  const then = typeof oldReviews === "number" && Number.isFinite(oldReviews) ? oldReviews : null;
+  const span = typeof spanDays === "number" && Number.isFinite(spanDays) ? spanDays : null;
+
+  // Real span with positive growth -> velocity estimate, medium confidence.
+  if (now != null && then != null && span != null && span >= 1 && now > then) {
+    const monthlyReviewGrowth = ((now - then) * 30) / span;
+    const est = Math.max(1, Math.round(monthlyReviewGrowth / REVIEW_RATE));
+    return { est, confidence: "medium" };
+  }
+
+  // Otherwise fall back to the absolute count (single observation, or flat /
+  // shrinking reviews), always low confidence.
+  const basis = now ?? then;
+  return { est: basis != null ? monthlyFromAbsoluteReviews(basis) : null, confidence: "low" };
+}
+
 /**
  * Fit a power-law curve from co-captured (rank, sales) observations via
  * ordinary least squares in log-log space. Returns null if there are too few
