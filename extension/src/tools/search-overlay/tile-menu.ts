@@ -25,6 +25,7 @@ export type TileMenuTarget = {
   title: string | null;
   imageUrl: string | null;
   href: string | null;
+  retailer?: "amazon" | "walmart";
 };
 
 // Read live at open time so the menu reflects the latest bridge/auth state even
@@ -177,6 +178,7 @@ function buildFreeSection(target: TileMenuTarget, setStatus: (t: string) => void
         kind: "GENERATE_AFFILIATE_LINK",
         asin: target.asin,
         marketplace: target.marketplace,
+        retailer: target.retailer,
       }).then(async (res) => {
         if (res.ok && res.url) {
           try {
@@ -195,7 +197,8 @@ function buildFreeSection(target: TileMenuTarget, setStatus: (t: string) => void
   // Open the product page (where every analytics panel renders).
   section.append(
     menuItem(t().tileMenuOpenPage, () => {
-      const url = target.href ?? `https://www.${target.marketplace}/dp/${target.asin}`;
+      const path = target.retailer === "walmart" ? "ip" : "dp";
+      const url = target.href ?? `https://www.${target.marketplace}/${path}/${target.asin}`;
       void sendToBackground<void>({ kind: "OPEN_URL", url });
       closeMenu();
     }),

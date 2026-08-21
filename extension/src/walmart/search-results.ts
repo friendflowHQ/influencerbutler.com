@@ -51,6 +51,23 @@ function textOf(el: Element | null): string {
 
 const NUMERIC_ID_RE = /^\d{3,15}$/;
 const IP_HREF_ID_RE = /\/ip\/(?:[^/]+\/)?(\d{3,15})/;
+const PRICE_SEL = '[data-automation-id="product-price"]';
+
+// The reorderable grid cell for a tile: the ancestor that is a direct child of
+// the results grid (its parent holds two or more price-bearing tiles). The
+// shared overlay reorders and hides tiles by this element, so it must be a real
+// grid sibling, not the inner [data-item-id] node (Walmart wraps each tile in
+// its own single-child div). Falls back to the node itself for a lone tile.
+function reorderCell(node: HTMLElement): HTMLElement {
+  let cur: HTMLElement = node;
+  for (let i = 0; i < 6 && cur.parentElement; i++) {
+    const parent = cur.parentElement;
+    const tileKids = Array.from(parent.children).filter((c) => c.querySelector(PRICE_SEL)).length;
+    if (tileKids >= 2) return cur;
+    cur = parent;
+  }
+  return node;
+}
 
 // Resolve a tile's numeric Walmart item id. data-item-id is sometimes Walmart's
 // alphanumeric GraphQL id, so prefer the anchor's link-identifier, then a
@@ -70,9 +87,7 @@ function resolveItemId(tile: HTMLElement): string | null {
 export function parseSearchTiles(root: ParentNode): SearchTile[] {
   const tiles: SearchTile[] = [];
   const seen = new Set<string>();
-  for (const priceEl of Array.from(
-    root.querySelectorAll<HTMLElement>('[data-automation-id="product-price"]'),
-  )) {
+  for (const priceEl of Array.from(root.querySelectorAll<HTMLElement>(PRICE_SEL))) {
     const tile = priceEl.closest<HTMLElement>("[data-item-id]");
     if (!tile) continue;
     const itemId = resolveItemId(tile);
@@ -93,7 +108,9 @@ export function parseSearchTiles(root: ParentNode): SearchTile[] {
       rating: parseWalmartRating(ratingText),
       reviewCount: parseWalmartReviewCount(textOf(tile.querySelector('[data-testid="product-reviews"]'))),
       hasCoupon: false,
-      el: tile,
+      // The reorderable grid cell, so the shared overlay can sort/hide it in
+      // place without reparenting it out of its wrapper.
+      el: reorderCell(tile),
     });
   }
   return tiles;

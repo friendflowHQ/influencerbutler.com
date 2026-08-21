@@ -19,6 +19,11 @@ export type ToolbarCallbacks = {
   // resolves when done or stopped.
   onScanStart: (setStatus: (text: string) => void) => Promise<void>;
   onScanStop: () => void;
+  // Controls that only apply to a retailer with the underlying feature. Default
+  // true (Amazon); Walmart passes false to hide the video Scan and the
+  // campaign-eligible filter, which it has no data for.
+  showScan?: boolean;
+  showCampaignFilter?: boolean;
 };
 
 export type SearchToolbar = {
@@ -114,7 +119,11 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   // never overwrite each other.
   const enrichStatus = el("span", "search-status");
 
-  bar.append(brand, sortWrap, campaignWrap, priceWrap, scanWrap, enrichStatus);
+  bar.append(brand, sortWrap);
+  if (cb.showCampaignFilter !== false) bar.append(campaignWrap);
+  bar.append(priceWrap);
+  if (cb.showScan !== false) bar.append(scanWrap);
+  bar.append(enrichStatus);
   root.append(bar);
   return {
     host,

@@ -3,7 +3,8 @@ import {
   extractSignals as extractWalmartSignals,
   extractWalmartProduct,
 } from "../walmart/product-signals";
-import { initWalmartProduct, initWalmartSearch } from "../tools/walmart-overlay/overlay";
+import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
+import { retailerModule } from "../retailers/module";
 import {
   carouselSourceFor,
   classifiedCount,
@@ -173,7 +174,12 @@ async function runForPage(): Promise<void> {
         initWalmartProduct(signals, product);
       });
     } else if (pageType === "search" || pageType === "discovery" || pageType === "brand-store") {
-      guard("walmart-search", () => initWalmartSearch(document));
+      // Walmart grids reuse the exact Amazon search overlay (Butler Score badge,
+      // sort/filter toolbar, per-tile menu) via the Walmart RetailerModule; the
+      // Amazon-only data sources are skipped by the module's capability flags.
+      if (settings.tools.searchOverlay) {
+        guard("walmart-search", () => initSearchOverlay(settings, retailerModule("walmart")));
+      }
     }
     return;
   }

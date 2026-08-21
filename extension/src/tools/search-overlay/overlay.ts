@@ -3,11 +3,10 @@ import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { log } from "../../shared/log";
 import { queryAll } from "../../amazon/selectors";
-import { parseSearchTiles, type SearchTile } from "../../amazon/search-results";
-import { marketplaceFromUrl } from "../../amazon/product-signals";
+import { type SearchTile } from "../../amazon/search-results";
 import type { DpStaticSignals } from "../../amazon/dp-static";
-import { getRateCard } from "../../rate-card/cache";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
+import { retailerModule, type RetailerModule } from "../../retailers/module";
 import { getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
@@ -43,6 +42,7 @@ type Row = {
   tile: SearchTile;
   order: number;
   marketplace: string;
+  retailer: "amazon" | "walmart";
   // Base rate: rate card by category once enrichment supplies one, else the
   // page-wide default. A known CC campaign rate overrides it (see rateFor).
   ratePct: number;
@@ -88,11 +88,15 @@ let stopScan = false;
 let initEpoch = 0;
 let controller: AbortController | null = null;
 
-export async function initSearchOverlay(settings: Settings): Promise<void> {
+export async function initSearchOverlay(
+  settings: Settings,
+  module: RetailerModule = retailerModule("amazon"),
+): Promise<void> {
   controller?.abort();
   const run = new AbortController();
   controller = run;
   const epoch = ++initEpoch;
+  const caps = module.capabilities;
 
   // Tear down the prior overlay (toolbar + tile badges) and clear the
   // done-markers so we rebuild cleanly over the current grid instead of
@@ -106,22 +110,27 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     tile.removeAttribute(DONE_ATTR);
   }
 
-  const marketplace = marketplaceFromUrl(location.href);
-  const tiles = parseSearchTiles(document, location.href).filter((tile) => {
+  const marketplace = module.marketplaceFor(location.href);
+  const tiles = module.parseSearchTiles(document, location.href).filter((tile) => {
     if (tile.el.getAttribute(DONE_ATTR)) return false;
     tile.el.setAttribute(DONE_ATTR, "1");
     return true;
   });
   if (tiles.length === 0) return;
 
-  const [card, cache, state] = await Promise.all([getRateCard(), getCache(), getState()]);
+  const [card, cache, state] = await Promise.all([
+    module.getRateCard(),
+    caps.catalogueBloom ? getCache() : Promise.resolve(null),
+    getState(),
+  ]);
   if (epoch !== initEpoch) return;
-  const loaded = loadFilters(cache);
+  // Campaign/deal membership only exists on Amazon; Walmart tiles carry no flags.
+  const loaded = cache ? loadFilters(cache) : null;
   const defaultRate = resolveRatePct({
     liveRatePct: null,
     category: null,
     card,
-    defaultRatePct: settings.commissionRatePct,
+    defaultRatePct: module.defaultRatePct(settings),
   });
 
   // One shared connection object for the whole page's tile menus. Updated in
@@ -130,12 +139,13 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   const hud: HudRef = { connected: false, signedIn: false };
 
   const rows: Row[] = tiles.map((tile, i) => {
-    const flags = membership(loaded, tile.asin);
+    const flags = loaded ? membership(loaded, tile.asin) : { cc: false, spcc: false, deals: false };
     const badgeBody = el("div", "tile-badge-body");
     const row: Row = {
       tile,
       order: i,
       marketplace,
+      retailer: module.retailer,
       ratePct: defaultRate,
       ccRate: null,
       commissionCents: null,
@@ -188,21 +198,23 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // Real earnings from the desktop app ledger, one batched lookup. Returns
   // instantly when the app was never paired, so this is a no-op for everyone
   // else. The full record is kept so the chip can show dollars and open the
-  // breakdown popup.
-  void sendToBackground<EarningsLookupResult>({
-    kind: "LOOKUP_EARNINGS",
-    asins: rows.map((r) => r.tile.asin),
-  }).then((res) => {
-    if (epoch !== initEpoch || !res.ok) return;
-    const byAsin = new Map(res.results.map((r) => [r.asin.toUpperCase(), r]));
-    for (const row of rows) {
-      const earnings = byAsin.get(row.tile.asin.toUpperCase());
-      if (earnings?.hasEarnings) {
-        row.earnings = earnings;
-        renderBadge(row, settings);
+  // breakdown popup. Amazon only: the desktop ledger does not track Walmart.
+  if (caps.earnings) {
+    void sendToBackground<EarningsLookupResult>({
+      kind: "LOOKUP_EARNINGS",
+      asins: rows.map((r) => r.tile.asin),
+    }).then((res) => {
+      if (epoch !== initEpoch || !res.ok) return;
+      const byAsin = new Map(res.results.map((r) => [r.asin.toUpperCase(), r]));
+      for (const row of rows) {
+        const earnings = byAsin.get(row.tile.asin.toUpperCase());
+        if (earnings?.hasEarnings) {
+          row.earnings = earnings;
+          renderBadge(row, settings);
+        }
       }
-    }
-  });
+    });
+  }
 
   // Desktop-app connection + sign-in state, once for the whole page, so the
   // per-tile action menu can offer the app actions (or the upsell) without a
@@ -226,6 +238,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     kind: "GET_MARKET_BATCH",
     asins: rows.map((r) => r.tile.asin),
     marketplace,
+    retailer: module.retailer,
   }).then((res) => {
     if (epoch !== initEpoch || !res.ok) return;
     const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
@@ -242,9 +255,9 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // Real Creator Connections rates for the campaign-flagged tiles, so the
   // campaign chip shows the actual percent and the commission estimate uses
   // it. Bloom membership keeps the batch tiny.
-  const campaignAsins = rows
-    .filter((r) => r.flags.cc || r.flags.spcc)
-    .map((r) => r.tile.asin);
+  const campaignAsins = caps.ccRates
+    ? rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin)
+    : [];
   if (campaignAsins.length > 0) {
     void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
       (res) => {
@@ -281,7 +294,9 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // them, so left visible they show the stale pre-sort order at the top of
   // the page; hide them instead. Rows themselves are never touched here.
   const hideStrayDupes = (): void => {
-    if (!parent) return;
+    // Amazon-only: Walmart's parser already dedupes and the grid injects no
+    // late sponsored duplicates of scored tiles.
+    if (!parent || !caps.hideStrayDupes) return;
     for (const tileEl of queryAll<HTMLElement>(parent, "searchResultTile")) {
       if (tileEl.getAttribute(DONE_ATTR)) continue;
       const asin = (tileEl.getAttribute("data-asin") ?? "").trim().toUpperCase();
@@ -289,7 +304,30 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     }
   };
 
+  // Walmart's grid nests each tile in its own wrapper across several sub-grids,
+  // so tiles cannot be packed above a single anchor without reparenting them.
+  // Sort within each grid instead (rows grouped by their cell's parent),
+  // re-appending each group's cells in sorted order. No anchor, no reparenting.
+  const applyGroupedSort = (key: SortKey): void => {
+    const groups = new Map<HTMLElement, Row[]>();
+    for (const row of rows) {
+      const grid = row.tile.el.parentElement;
+      if (!grid) continue;
+      const list = groups.get(grid) ?? [];
+      list.push(row);
+      groups.set(grid, list);
+    }
+    for (const [grid, group] of groups) {
+      group.sort(comparator(key));
+      for (const row of group) grid.appendChild(row.tile.el);
+    }
+  };
+
   const applySort = (key: SortKey): void => {
+    if (caps.sortStrategy === "grouped") {
+      applyGroupedSort(key);
+      return;
+    }
     if (!parent) return;
     hideStrayDupes();
     // Tiles Amazon inserted above the block since init would keep the sorted
@@ -305,7 +343,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // Sponsored duplicates hydrate in after init (observed live: the whole first
   // row can be late-injected dupes); hide them as they land so the sorted
   // block stays on top.
-  if (parent) {
+  if (parent && caps.hideStrayDupes) {
     const dupeWatch = new MutationObserver(() => hideStrayDupes());
     dupeWatch.observe(parent, { childList: true });
     run.signal.addEventListener("abort", () => dupeWatch.disconnect(), { once: true });
@@ -370,9 +408,11 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     onScanStop: () => {
       stopScan = true;
     },
+    showScan: caps.videoScan,
+    showCampaignFilter: caps.campaignFilter,
   });
 
-  mountToolbar(first.tile.el, toolbar.host);
+  mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities.
   applySort("score");
 
@@ -380,7 +420,9 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // static /dp/ fetches through the serialized chain. Each arrival upgrades
   // the tile's rate (real category), score, video count, and verdict. Rows are
   // never auto re-sorted under the cursor; re-picking a sort in the toolbar
-  // applies the updated scores.
+  // applies the updated scores. Amazon-only: Walmart has no /dp/ static page
+  // to enrich from (its money data comes from the pooled catalogue + rate card).
+  if (!caps.dpEnrich) return;
   void enrichSearchTiles({
     items: rows.map((r) => ({ asin: r.tile.asin, el: r.tile.el })),
     origin: location.origin,
@@ -597,6 +639,7 @@ function renderBadge(row: Row, settings: Settings): void {
       title: row.tile.title,
       imageUrl: row.tile.imageUrl,
       href: row.tile.href,
+      retailer: row.retailer,
     },
     row.hud,
   );
@@ -682,10 +725,11 @@ function watchControl(row: Row, settings: Settings): HTMLElement {
 }
 
 // Place the toolbar just above the whole results slot so it spans the grid.
-function mountToolbar(tileEl: HTMLElement, host: HTMLElement): void {
+// `slot` is resolved per retailer by the module (Amazon's .s-main-slot,
+// Walmart's item-stack), so the bar lands above the right grid container.
+function mountToolbar(slot: Element | null, host: HTMLElement): void {
   host.style.display = "block";
   host.style.width = "100%";
-  const slot = tileEl.closest(".s-main-slot") ?? tileEl.parentElement;
   if (slot && slot.parentElement) {
     slot.parentElement.insertBefore(host, slot);
   } else if (slot) {
