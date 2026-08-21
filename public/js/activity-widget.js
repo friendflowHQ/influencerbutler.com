@@ -106,7 +106,7 @@
         "background:#fff7ed}" +
       ".ib-activity__body{min-width:0;padding-right:14px}" +
       ".ib-activity__msg{color:#111827;font-weight:600}" +
-      ".ib-activity__time{color:#9ca3af;font-size:11.5px;margin-top:3px}" +
+      ".ib-activity__time{color:#6b7280;font-size:11.5px;margin-top:3px}" +
       ".ib-activity__close{position:absolute;top:7px;right:9px;border:0;background:none;" +
         "cursor:pointer;color:#9ca3af;font-size:17px;line-height:1;padding:2px}" +
       ".ib-activity__close:hover{color:#4b5563}";
