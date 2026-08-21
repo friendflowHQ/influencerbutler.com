@@ -26,6 +26,10 @@ const FEATURE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
 // wildcard rewrites in next.config.ts), so no per-page edit is needed here.
 const COMPARE_DEFAULTS = { priority: "0.8", changefreq: "weekly" };
 const GUIDE_DEFAULTS = { priority: "0.7", changefreq: "weekly" };
+// Agency landing pages under /for-agencies/*, linked from cold outreach and
+// indexable. New files in the folder are picked up automatically (mirrors the
+// /for-agencies/:slug wildcard rewrite in next.config.ts).
+const AGENCY_DEFAULTS = { priority: "0.8", changefreq: "weekly" };
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -54,6 +58,9 @@ function mapToCanonical(relPath) {
 
   const guide = posix.match(/^guides\/([^/]+)\.html$/);
   if (guide) return { url: `/guides/${guide[1]}`, ...GUIDE_DEFAULTS };
+
+  const agency = posix.match(/^for-agencies\/([^/]+)\.html$/);
+  if (agency) return { url: `/for-agencies/${agency[1]}`, ...AGENCY_DEFAULTS };
 
   return null;
 }

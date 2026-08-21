@@ -66,15 +66,22 @@ export function unsubscribeUrl(email: string): string {
   return `${siteUrl()}/api/email/unsubscribe?e=${e}&t=${t}`;
 }
 
+// Business legal name + physical postal address. CAN-SPAM (and equivalents)
+// require a valid physical address in every commercial email, so it rides in
+// the same footer as the unsubscribe link. Kept in one constant so the text and
+// HTML footers can never drift apart.
+export const POSTAL_ADDRESS =
+  "The Social Media Posse LLC (Influencer Butler), 3556 S 5600 W, West Valley City, UT 84120-2815, United States";
+
 /** Plain-text footer appended to every marketing email body. */
 export function unsubscribeFooterText(email: string): string {
-  return `\n\nDon't want these emails? Unsubscribe: ${unsubscribeUrl(email)}`;
+  return `\n\n${POSTAL_ADDRESS}\n\nDon't want these emails? Unsubscribe: ${unsubscribeUrl(email)}`;
 }
 
 /** HTML footer appended to marketing emails that carry an HTML body. */
 export function unsubscribeFooterHtml(email: string): string {
   const url = unsubscribeUrl(email);
-  return `<p style="font-size:12px;color:#9ca3af;margin-top:24px;">Don't want these emails? <a href="${url}" style="color:#9ca3af;">Unsubscribe</a>.</p>`;
+  return `<p style="font-size:12px;color:#9ca3af;margin-top:24px;">${POSTAL_ADDRESS}<br /><br />Don't want these emails? <a href="${url}" style="color:#9ca3af;">Unsubscribe</a>.</p>`;
 }
 
 /**
