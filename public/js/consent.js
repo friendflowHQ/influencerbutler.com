@@ -168,8 +168,8 @@
         "border:0;border-radius:8px;cursor:pointer;font:inherit;padding:9px 14px;" +
         "font-weight:600;letter-spacing:0.01em;" +
       "}" +
-      ".ib-consent-banner__btn--primary{background:#3b82f6;color:#fff}" +
-      ".ib-consent-banner__btn--primary:hover{background:#2563eb}" +
+      ".ib-consent-banner__btn--primary{background:#1d4ed8;color:#fff}" +
+      ".ib-consent-banner__btn--primary:hover{background:#1e40af}" +
       ".ib-consent-banner__btn--secondary{background:transparent;color:#e2e8f0;border:1px solid #475569}" +
       ".ib-consent-banner__btn--secondary:hover{background:rgba(255,255,255,0.06)}" +
       "@media (max-width:480px){" +
