@@ -135,6 +135,10 @@ export async function POST(request: Request) {
     locale: str(b.locale, 12),
   };
 
-  const sections = await generateCampaignBrief(input);
-  return jsonWithCors({ ok: true, sections });
+  // `diag` is a short, non-sensitive reason the brief was empty (e.g. "groq-400",
+  // "no-provider", "groq-parse-fail"); null on success. It rides in the response
+  // and the server logs so an empty brief can be diagnosed without guessing.
+  const { sections, diag } = await generateCampaignBrief(input);
+  if (!sections) console.warn("[campaign-brief] empty brief", { diag, brand: input.brand });
+  return jsonWithCors({ ok: true, sections, diag });
 }

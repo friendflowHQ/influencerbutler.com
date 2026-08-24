@@ -349,6 +349,15 @@ function renderBody(body: HTMLElement, opts: CampaignBriefOpen, res: CampaignBri
     note.style.color = "#6b7280";
     note.style.margin = "12px 0 10px";
     body.append(note, scoreBreakdown(opts.score));
+    // Surface the server's reason code (e.g. "groq-400", "no-provider") in small
+    // muted text so an empty brief is diagnosable in the wild, not a blank miss.
+    if (res.diag) {
+      const diag = el("div", "", `Reason: ${res.diag}`);
+      diag.style.fontSize = "11px";
+      diag.style.color = "#9ca3af";
+      diag.style.marginTop = "8px";
+      body.append(diag);
+    }
     return;
   }
 

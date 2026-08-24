@@ -81,6 +81,16 @@ export function isCampaignBriefConfigured(): boolean {
   return resolveTextProvider() !== null;
 }
 
+// The outcome of a brief generation attempt. On success `sections` is set and
+// `diag` is null. On any miss `sections` is null and `diag` is a short,
+// non-sensitive reason ("no-provider", "groq-400", "openai-500", "groq-empty",
+// "groq-parse-fail", "groq-threw", ...) so the route and logs can say WHY the
+// brief was empty instead of collapsing every failure into a blank fallback.
+export type CampaignBriefOutcome = {
+  sections: CampaignBriefSections | null;
+  diag: string | null;
+};
+
 const SYSTEM_PROMPT = [
   "You are Campaign Butler, the campaign advisor inside Influencer Butler (an app",
   "for Amazon influencers). A creator is looking at one Amazon Creator Connections",
@@ -189,21 +199,31 @@ function normalize(raw: unknown): CampaignBriefSections {
 }
 
 /**
- * Generate the butler's brief for one campaign. Returns null when no LLM key is
- * configured or the call fails; the caller then shows the local score breakdown.
+ * Generate the butler's brief for one campaign. Never throws: returns a
+ * CampaignBriefOutcome whose `sections` is null (with a `diag` reason) when no
+ * LLM key is configured or the call fails, so the caller shows the local score
+ * breakdown and the route can report why.
  */
 export async function generateCampaignBrief(
   input: CampaignBriefInput,
-): Promise<CampaignBriefSections | null> {
+): Promise<CampaignBriefOutcome> {
   const provider = resolveTextProvider();
   if (!provider) {
     console.warn("[campaign-brief] no GROQ_API_KEY / OPENAI_API_KEY configured");
-    return null;
+    return { sections: null, diag: "no-provider" };
   }
   const model = process.env.CAMPAIGN_BRIEF_MODEL?.trim() || provider.model;
   const userPrompt = buildUserPrompt(input);
 
-  const call = async (url: string, key: string, mdl: string): Promise<CampaignBriefSections | null> => {
+  // One provider attempt. Resolves to sections on success, or sections:null with
+  // a diag reason on a non-retryable miss (400/500, empty reply, unparseable
+  // JSON). A 429 rejects instead, so the caller's catch does the rate failover.
+  const call = async (
+    url: string,
+    key: string,
+    mdl: string,
+    kind: "groq" | "openai",
+  ): Promise<CampaignBriefOutcome> => {
     const res = await fetch(url, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -218,37 +238,44 @@ export async function generateCampaignBrief(
       }),
     });
     if (!res.ok) {
-      console.error("[campaign-brief] chat", res.status, await res.text().catch(() => ""));
-      return res.status === 429 ? Promise.reject(new Error("rate")) : null;
+      const detail = await res.text().catch(() => "");
+      console.error("[campaign-brief] chat", kind, mdl, res.status, detail.slice(0, 300));
+      if (res.status === 429) return Promise.reject(new Error("rate"));
+      return { sections: null, diag: `${kind}-${res.status}` };
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const content = json.choices?.[0]?.message?.content;
-    if (!content) return null;
-    return normalize(JSON.parse(content));
+    if (!content) return { sections: null, diag: `${kind}-empty` };
+    try {
+      return { sections: normalize(JSON.parse(content)), diag: null };
+    } catch {
+      console.error("[campaign-brief] unparseable JSON", kind, mdl, content.slice(0, 200));
+      return { sections: null, diag: `${kind}-parse-fail` };
+    }
   };
 
   // Groq is tried first when configured. It can miss two ways: a 429 throws
   // ("rate"), while any other non-OK status (400/500, an empty reply, etc.)
-  // resolves to null. Both should fall over to OpenAI when that key exists, so
-  // the fallback runs on a null primary as well as on a throw. Without this, a
-  // persistent Groq 400 (e.g. a decommissioned model id) would silently return
-  // no brief even though OPENAI_API_KEY is set.
+  // resolves with sections:null + a diag. Both should fall over to OpenAI when
+  // that key exists, so the fallback runs on a null-sections primary as well as
+  // on a throw. Without this, a persistent Groq 400 (e.g. a decommissioned model
+  // id) would silently return no brief even though OPENAI_API_KEY is set.
   const fallback = provider.kind === "groq" ? openAiFallbackProvider() : null;
   try {
-    const primary = await call(provider.url, provider.key, model);
-    if (primary) return primary;
-    if (fallback) return await call(fallback.url, fallback.key, fallback.model);
-    return null;
+    const primary = await call(provider.url, provider.key, model, provider.kind);
+    if (primary.sections) return primary;
+    if (fallback) return await call(fallback.url, fallback.key, fallback.model, fallback.kind);
+    return primary;
   } catch (err) {
     if (fallback) {
       try {
-        return await call(fallback.url, fallback.key, fallback.model);
+        return await call(fallback.url, fallback.key, fallback.model, fallback.kind);
       } catch (err2) {
         console.error("[campaign-brief] fallback threw", err2);
-        return null;
+        return { sections: null, diag: "openai-threw" };
       }
     }
     console.error("[campaign-brief] threw", err);
-    return null;
+    return { sections: null, diag: provider.kind === "groq" ? "groq-threw" : "openai-threw" };
   }
 }

@@ -102,13 +102,13 @@ export async function fetchCampaignBrief(
       }),
     });
     const data = (await res.json().catch(() => null)) as
-      | { ok?: boolean; sections?: CampaignBriefSections | null; error?: string }
+      | { ok?: boolean; sections?: CampaignBriefSections | null; error?: string; diag?: string | null }
       | null;
     if (!res.ok || !data || !data.ok) {
       const error = res.status === 429 ? "Slow down a moment, then try again." : "Could not reach Campaign Butler.";
-      return { ok: false, migrationPending, sections: null, demand, error: data?.error ?? error };
+      return { ok: false, migrationPending, sections: null, demand, error: data?.error ?? error, diag: data?.diag ?? `http-${res.status}` };
     }
-    return { ok: true, migrationPending, sections: data.sections ?? null, demand };
+    return { ok: true, migrationPending, sections: data.sections ?? null, demand, diag: data.diag ?? null };
   } catch {
     return { ...EMPTY, migrationPending, demand, error: "Network error reaching Campaign Butler." };
   }

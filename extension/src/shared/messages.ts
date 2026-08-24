@@ -396,6 +396,10 @@ export type CampaignBriefResult = {
   sections: CampaignBriefSections | null;
   demand: CampaignBriefDemand | null;
   error?: string;
+  // Short, non-sensitive reason the prose was empty (from the server, e.g.
+  // "groq-400" or "no-provider"), surfaced under the fallback so an empty brief
+  // can be diagnosed in the wild. Null/absent on success.
+  diag?: string | null;
 };
 
 // One normalized Creator API (PA-API) product row. Mirrors the server's
