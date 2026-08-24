@@ -798,9 +798,10 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 
 /* Campaign Radar mounts its toolbar into Amazon's narrow opportunity column,
    where the default wrap drops every control onto its own line (vertical
-   stack). Keep the radar controls on a single horizontal row and let the row
-   scroll if the column is too tight, rather than wrapping. */
-.radar-toolbar { flex-wrap: nowrap; overflow-x: auto; }
+   stack). Size the bar to its own content and never wrap, so the controls
+   stay on one horizontal row that extends rightward into the empty space
+   past the narrow column, with no scrollbar. */
+.radar-toolbar { flex-wrap: nowrap; width: max-content; max-width: none; }
 .radar-toolbar .search-brand,
 .radar-toolbar .search-control { flex: 0 0 auto; }
 .radar-toolbar .search-control-label,
