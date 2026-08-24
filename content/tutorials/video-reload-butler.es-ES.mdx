@@ -207,6 +207,13 @@ Cuando tu teléfono no está en la misma Wi-Fi (por ejemplo, estás fuera con da
 
 En ambos casos obtienes el vídeo terminado con marca de agua, el mismo archivo que se publicó en Amazon, no una copia sin procesar.
 
+## Ganadores primero + títulos renovados
+
+Dos interruptores opcionales en los filtros hacen más inteligente una recarga:
+
+- **Ganadores primero: recargar solo vídeos cuyos productos generaron comisiones**. La ejecución omite cualquier vídeo salvo que uno de sus productos etiquetados haya generado una comisión dentro de la ventana de búsqueda (365 días por defecto), usando los datos de ganancias que ya están en tu ordenador. Combinado con el Máximo por ejecución, dedica toda la ejecución a tus ganadores probados en lugar de subidas antiguas al azar. Clasifica por ganancias conocidas: un vídeo que este butler nunca ha procesado puede no tener coincidencia de ganancias todavía, así que amplía la ventana o apaga el interruptor cuando quieras un barrido completo.
+- **Renovar el título al recargar**. Amazon a veces desprioriza una republicación que reconoce como idéntica, así que una recarga funciona mejor con un cambio real de metadatos. Esto reescribe cada título con un gancho nuevo antes de republicar. El estilo integrado no necesita clave de API; el estilo con IA usa tu clave de Anthropic y recurre a los ganchos integrados si la reescritura falla. Cuando no es posible reescribir, se conserva el título original.
+
 ## Dónde van los datos
 
 Los logs por ejecución aterrizan en la fila video-reload-butler del panel Video Log. Los ficheros de vídeo originales se descargan a un directorio temporal durante la conversión y se limpian tras cada ejecución.

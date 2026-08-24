@@ -75,6 +75,13 @@ Les correspondances ne sont pas publiées au hasard. Chacune apparaît dans le *
 - **Ignorer les doublons** : correspondance par titre, ASIN, titre et ASIN, ou "déjà publiée sur ce marketplace" pour qu'une exécution ne republie jamais la même image.
 - **Conserver l'original s'il a été ajouté au cours des N derniers jours** : avec la suppression avant republication activée, cela protège les photos récemment ajoutées contre la suppression.
 
+## Gagnants d'abord + titres rafraîchis
+
+Deux interrupteurs optionnels dans les filtres rendent un rechargement plus intelligent :
+
+- **Gagnants d'abord : ne recharger que les photos dont les produits ont généré des commissions**. L'exécution ignore toute photo sauf si l'un de ses produits identifiés a généré une commission dans la fenêtre de recherche (365 jours par défaut), d'après les données de gains déjà sur votre ordinateur. Combiné au Max par exécution, cela consacre toute l'exécution à vos valeurs sûres plutôt qu'à de vieux envois au hasard. Le classement suit les gains connus : une photo que ce butler n'a jamais traitée peut ne pas encore avoir de correspondance de gains, alors élargissez la fenêtre ou désactivez l'interrupteur pour un balayage complet.
+- **Rafraîchir le titre lors du rechargement**. Amazon déprioritise parfois une republication qu'il reconnaît comme identique, un rechargement fonctionne donc mieux avec un vrai changement de métadonnées. Ceci réécrit chaque titre avec une nouvelle accroche avant la republication. Le style intégré ne nécessite aucune clé API ; le style IA utilise votre clé Anthropic et revient aux accroches intégrées si la réécriture échoue. Quand aucune réécriture n'est possible, le titre original est conservé.
+
 ## Où vont les données
 
 Les journaux de chaque exécution arrivent dans le Journal photos. Les fichiers photo originaux sont enregistrés sur votre ordinateur avant toute suppression, donc un rechargement peut toujours remettre une photo.

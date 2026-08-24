@@ -207,6 +207,13 @@ Quand votre téléphone n'est pas sur le même Wi-Fi (par exemple vous êtes deh
 
 Dans les deux cas, vous obtenez la vidéo terminée avec filigrane, le même fichier que celui publié sur Amazon, pas une copie brute.
 
+## Gagnants d'abord + titres rafraîchis
+
+Deux interrupteurs optionnels dans les filtres rendent un rechargement plus intelligent :
+
+- **Gagnants d'abord : ne recharger que les vidéos dont les produits ont généré des commissions**. L'exécution ignore toute vidéo sauf si l'un de ses produits identifiés a généré une commission dans la fenêtre de recherche (365 jours par défaut), d'après les données de gains déjà sur votre ordinateur. Combiné au Max par exécution, cela consacre toute l'exécution à vos valeurs sûres plutôt qu'à de vieux envois au hasard. Le classement suit les gains connus : une vidéo que ce butler n'a jamais traitée peut ne pas encore avoir de correspondance de gains, alors élargissez la fenêtre ou désactivez l'interrupteur pour un balayage complet.
+- **Rafraîchir le titre lors du rechargement**. Amazon déprioritise parfois une republication qu'il reconnaît comme identique, un rechargement fonctionne donc mieux avec un vrai changement de métadonnées. Ceci réécrit chaque titre avec une nouvelle accroche avant la republication. Le style intégré ne nécessite aucune clé API ; le style IA utilise votre clé Anthropic et revient aux accroches intégrées si la réécriture échoue. Quand aucune réécriture n'est possible, le titre original est conservé.
+
 ## Où vont les données
 
 Les logs par exécution arrivent dans la ligne video-reload-butler du panneau Video Log. Les fichiers vidéo originaux sont téléchargés dans un dossier temporaire pendant la conversion et nettoyés après chaque exécution.

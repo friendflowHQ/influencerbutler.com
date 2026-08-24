@@ -75,6 +75,13 @@ Las coincidencias no se publican por suposición. Cada una aparece en el **Regis
 - **Omitir duplicados**: coincide por título, ASIN, título y ASIN, o "ya publicada en ese marketplace" para que una ejecución nunca vuelva a publicar la misma imagen.
 - **Conservar el original si se añadió en los últimos N días**: con eliminar antes de volver a publicar activado, esto protege de la eliminación las fotos añadidas recientemente.
 
+## Ganadores primero + títulos renovados
+
+Dos interruptores opcionales en los filtros hacen más inteligente una recarga:
+
+- **Ganadores primero: recargar solo fotos cuyas productos generaron comisiones**. La ejecución omite cualquier foto salvo que uno de sus productos etiquetados haya generado una comisión dentro de la ventana de búsqueda (365 días por defecto), usando los datos de ganancias que ya están en tu ordenador. Combinado con el Máximo por ejecución, dedica toda la ejecución a tus ganadores probados en lugar de subidas antiguas al azar. Clasifica por ganancias conocidas: una foto que este butler nunca ha procesado puede no tener coincidencia de ganancias todavía, así que amplía la ventana o apaga el interruptor cuando quieras un barrido completo.
+- **Renovar el título al recargar**. Amazon a veces desprioriza una republicación que reconoce como idéntica, así que una recarga funciona mejor con un cambio real de metadatos. Esto reescribe cada título con un gancho nuevo antes de republicar. El estilo integrado no necesita clave de API; el estilo con IA usa tu clave de Anthropic y recurre a los ganchos integrados si la reescritura falla. Cuando no es posible reescribir, se conserva el título original.
+
 ## Adónde van los datos
 
 Los registros de cada ejecución van al Registro de fotos. Los archivos de foto originales se guardan en tu equipo antes de cualquier eliminación, así que una recarga siempre puede reponer una foto.

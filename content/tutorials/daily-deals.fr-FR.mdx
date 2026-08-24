@@ -313,3 +313,7 @@ Si vous avez des abonnés dans plusieurs pays, la commande **Liens par pays** da
 - **Lien unique avec redirection** : un lien qui redirige chaque acheteur vers la boutique de son pays automatiquement (utilise votre fournisseur DeepLink).
 
 Définissez une valeur par défaut pour toutes les publications, ou modifiez-la par publication depuis la file des publications. Saisissez d'abord vos balises d'affiliation par pays dans [Intégrations API](/help/tutorials/api-integrations). Un pays sans balise est ignoré, vous ne publiez donc jamais un lien qui ne rapporte rien.
+
+### Routage Butler Links pour des clics mesurables
+
+Si vous n'avez pas configuré de fournisseur DeepLink intelligent, les offres partent normalement en liens Amazon à simple balise, et ces clics sont invisibles pour Earnings Intelligence. La case **Router les liens d'offres via Butler Links** dans le même groupe Liens par pays (activée par défaut) donne à chaque offre envoyée un Butler Link gratuit, afin que le Ledger et le nouveau rapport Fuite de conversion puissent afficher les clics, l'EPC et ce que vous coûtent les offres expirées, offre par offre. Désactivez-la si vous préférez des liens à simple balise.

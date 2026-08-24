@@ -207,6 +207,13 @@ When your phone is not on the same Wi-Fi (for example you are out and about on c
 
 Either way, you get the finished, watermarked video, the same file that was posted to Amazon, not a raw copy.
 
+## Winners first + fresh titles
+
+Two optional switches in the filters make a reload run smarter:
+
+- **Winners first: only reload videos whose products earned commissions**. The run skips any video unless one of its tagged products earned a commission inside the lookback window (default 365 days), using the earnings data already on your computer. Combined with the per-run Max, this spends the whole run on your proven earners instead of random old uploads. It ranks by earnings where known: a video this butler has never processed may have no earnings match yet, so widen the lookback or turn the switch off when you want a full sweep.
+- **Refresh the title on reload**. Amazon sometimes deprioritizes a re-post it recognizes as identical, so a reload lands best with a real metadata change. This rewrites each title with a fresh hook before reposting. The built-in style needs no API key; the AI style uses your Anthropic key and falls back to the built-in hooks if the rewrite fails. When no rewrite is possible, the original title is kept.
+
 ## Where the data goes
 
 Per-run logs land in the video-reload-butler row of the Video Log panel. Original video files are downloaded to a temp dir during conversion and cleaned up after each run.
