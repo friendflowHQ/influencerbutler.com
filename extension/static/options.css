@@ -249,16 +249,27 @@ button[disabled] {
   font-size: 12.5px;
 }
 
-.test-msg {
+/* Test Connection result: a full-width callout below the actions row so a long
+   provider error (or a success note) is readable and actionable, not squeezed
+   into the button row as tiny inline text. */
+.test-result {
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin: 10px 0 0;
   font-size: 12.5px;
+  border: 1px solid transparent;
 }
 
-.test-msg.ok {
-  color: var(--green);
+.test-result.ok {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
 }
 
-.test-msg.fail {
-  color: var(--red);
+.test-result.fail {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
 }
 
 .tag-grid {

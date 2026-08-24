@@ -267,11 +267,18 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   const testBtn = document.createElement("button");
   testBtn.className = "primary";
   testBtn.textContent = D.testBtn;
-  const msg = document.createElement("span");
-  msg.className = "test-msg";
+  // Test result shown as its own callout block BELOW the actions row (not as
+  // cramped inline text), so a long provider error is easy to read and act on.
+  const msg = document.createElement("div");
+  msg.className = "test-result";
+  msg.hidden = true;
+  const setMsg = (text: string, status: "ok" | "fail" | "") => {
+    msg.textContent = text || "";
+    msg.className = "test-result" + (status ? ` ${status}` : "");
+    msg.hidden = !text;
+  };
   if (pv.lastTest.message) {
-    msg.textContent = pv.lastTest.message;
-    msg.classList.add(pv.lastTest.status === "ok" ? "ok" : "fail");
+    setMsg(pv.lastTest.message, pv.lastTest.status === "ok" ? "ok" : "fail");
   }
   actions.append(saveBtn, testBtn);
   // "Show me where" opens the provider's own credentials page in a new tab, so
@@ -284,8 +291,8 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       window.open(adapter.credentialsUrl, "_blank", "noopener,noreferrer");
     actions.append(whereBtn);
   }
-  actions.append(msg);
   block.append(actions);
+  block.append(msg);
 
   const collectValues = (): Record<string, string> => {
     const values: Record<string, string> = {};
@@ -313,14 +320,12 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   testBtn.onclick = async () => {
     testBtn.disabled = true;
     testBtn.textContent = D.testing;
-    msg.textContent = "";
-    msg.className = "test-msg";
+    setMsg("", "");
     // Persist first so the tested credentials are the ones on screen.
     if (adapter.hosts.length) {
       const granted = await requestOrigins(adapter.hosts);
       if (!granted) {
-        msg.textContent = D.permissionDenied;
-        msg.classList.add("fail");
+        setMsg(D.permissionDenied, "fail");
         testBtn.disabled = false;
         testBtn.textContent = D.testBtn;
         return;
@@ -337,8 +342,7 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       kind: "TEST_INTEGRATION",
       id: adapter.id,
     });
-    msg.textContent = outcome.message;
-    msg.classList.add(outcome.ok ? "ok" : "fail");
+    setMsg(outcome.message, outcome.ok ? "ok" : "fail");
     head.replaceChild(makeBadge(outcome.ok ? "ok" : "fail"), head.lastChild as Node);
     testBtn.disabled = false;
     testBtn.textContent = D.testBtn;

@@ -179,6 +179,20 @@ button[disabled] { opacity: 0.6; cursor: default; }
 .toggle { font-size: 13px; color: var(--slate-900); }
 .toggle input { width: auto; }
 
+/* Tool subgroup headings (Walmart / Amazon: product pages / ...) inside the
+   Settings card, so the long tool list scans by platform and purpose. */
+.tool-group {
+  margin: 12px 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate-600);
+}
+.tool-group:first-of-type { margin-top: 6px; }
+/* An indented sub-toggle (e.g. Video landscape under Video counts). */
+.row.toggle.tool-sub { margin-left: 22px; }
+
 .foot {
   display: flex;
   justify-content: space-between;

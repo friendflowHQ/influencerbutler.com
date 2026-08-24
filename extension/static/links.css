@@ -210,3 +210,32 @@
   flex: 1;
   font-size: 13px;
 }
+
+/* Signed-out connect gate: an inline license-key form on the Link Butler page. */
+.connect-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0 0;
+}
+
+.connect-input {
+  flex: 1;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.connect-input:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: 0;
+  border-color: transparent;
+}
+
+.error {
+  color: var(--red);
+  font-size: 12.5px;
+  margin: 8px 0 0;
+}

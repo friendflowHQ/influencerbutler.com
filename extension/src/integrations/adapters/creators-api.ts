@@ -42,11 +42,30 @@ export const PAAPI_HOST_PATTERNS: string[] = Object.values(ENDPOINTS).map(
   (e) => `https://${e.host}/*`,
 );
 
+const DEFAULT_DOMAIN = "www.amazon.com";
 const DEFAULT_ENDPOINT = { host: "webservices.amazon.com", region: "us-east-1" };
 
-function endpointFor(marketplace: string): { host: string; region: string; domain: string } {
-  const domain = marketplace.startsWith("www.") ? marketplace : `www.${marketplace}`;
-  const match = ENDPOINTS[domain] ?? DEFAULT_ENDPOINT;
+// Normalize a user-entered marketplace into a `www.`-prefixed Amazon domain that
+// matches the ENDPOINTS keys. Accepts a bare host (amazon.com), a www. host, a
+// pasted store URL, the aliases us/usa, or a blank field (the field is optional,
+// so blank means US). Mirrors the desktop app's marketplace handling and closes
+// the bug where an empty value became the invalid Marketplace param "www.".
+export function normalizeMarketplace(value: string | null | undefined): string {
+  const trimmed = String(value ?? "").trim().toLowerCase();
+  if (!trimmed || trimmed === "us" || trimmed === "usa") return DEFAULT_DOMAIN;
+  const host = trimmed.replace(/^https?:\/\//, "").split("/")[0];
+  if (!host) return DEFAULT_DOMAIN;
+  return host.startsWith("www.") ? host : `www.${host}`;
+}
+
+function endpointFor(
+  marketplace: string | null | undefined,
+): { host: string; region: string; domain: string } {
+  const domain = normalizeMarketplace(marketplace);
+  const match = ENDPOINTS[domain];
+  // Unknown store: fall back to a fully-consistent US config so the Marketplace
+  // body param, Host, and Region never disagree.
+  if (!match) return { ...DEFAULT_ENDPOINT, domain: DEFAULT_DOMAIN };
   return { ...match, domain };
 }
 
@@ -57,7 +76,7 @@ async function test(creds: Record<string, string>): Promise<TestResult> {
   if (!accessKey || !secretKey || !partnerTag) {
     return { ok: false, message: "Enter your access key, secret key, and partner tag." };
   }
-  const { host, region, domain } = endpointFor(creds.marketplace ?? "www.amazon.com");
+  const { host, region, domain } = endpointFor(creds.marketplace);
   const body = JSON.stringify({
     Keywords: "gift",
     SearchIndex: "All",

@@ -527,6 +527,7 @@ async function renderSettings(): Promise<void> {
     void patchSettings({ storefrontHandle: storefront.value.trim() || null });
 
   for (const tool of [
+    "walmart",
     "videoCounts",
     "videoLandscape",
     "approved",

@@ -6,6 +6,12 @@ export type LinksDict = {
   pageTitle: string;
   pageIntro: string;
   signedOut: string;
+  connectHeading: string;
+  connectPlaceholder: string;
+  connectButton: string;
+  connectError: string;
+  noKeyYet: string;
+  startTrial: string;
 
   // Ledger
   ledgerHeading: string;
@@ -71,7 +77,13 @@ const EN: LinksDict = {
   pageTitle: "Link Butler",
   pageIntro:
     "Your branded Influencer Butler links: see how they are performing, fix a posted link, and manage smart routing.",
-  signedOut: "Sign in with your license key from the extension popup to use the Link Butler.",
+  signedOut: "Connect your Influencer Butler license key to open your Link Butler.",
+  connectHeading: "Connect Link Butler",
+  connectPlaceholder: "License key",
+  connectButton: "Connect",
+  connectError: "That license key did not verify. Check it and try again.",
+  noKeyYet: "No key yet?",
+  startTrial: "Start a free trial",
 
   ledgerHeading: "The Ledger",
   rangeToday: "Today",
@@ -135,7 +147,13 @@ const ES: LinksDict = {
   pageTitle: "Link Butler",
   pageIntro:
     "Tus enlaces de marca de Influencer Butler: mira su rendimiento, corrige un enlace publicado y gestiona el enrutamiento inteligente.",
-  signedOut: "Inicia sesion con tu clave de licencia desde el popup de la extension para usar Link Butler.",
+  signedOut: "Conecta tu clave de licencia de Influencer Butler para abrir tu Link Butler.",
+  connectHeading: "Conectar Link Butler",
+  connectPlaceholder: "Clave de licencia",
+  connectButton: "Conectar",
+  connectError: "Esa clave de licencia no se pudo verificar. Revisala e intenta de nuevo.",
+  noKeyYet: "No tienes clave?",
+  startTrial: "Empieza una prueba gratis",
 
   ledgerHeading: "El Libro",
   rangeToday: "Hoy",
@@ -199,7 +217,13 @@ const FR: LinksDict = {
   pageTitle: "Link Butler",
   pageIntro:
     "Vos liens de marque Influencer Butler : suivez leurs performances, corrigez un lien publie et gerez le routage intelligent.",
-  signedOut: "Connectez-vous avec votre cle de licence depuis le popup de l'extension pour utiliser Link Butler.",
+  signedOut: "Connectez votre cle de licence Influencer Butler pour ouvrir votre Link Butler.",
+  connectHeading: "Connecter Link Butler",
+  connectPlaceholder: "Cle de licence",
+  connectButton: "Connecter",
+  connectError: "Cette cle de licence n'a pas pu etre verifiee. Verifiez-la et reessayez.",
+  noKeyYet: "Pas encore de cle ?",
+  startTrial: "Demarrer un essai gratuit",
 
   ledgerHeading: "Le Registre",
   rangeToday: "Aujourd'hui",

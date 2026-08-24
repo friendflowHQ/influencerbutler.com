@@ -86,6 +86,14 @@ export interface Dict {
   storefrontHandleLabel: string;
   storefrontHandlePlaceholder: string;
   toolsHeading: string;
+  groupWalmart: string;
+  groupCrossPlatform: string;
+  groupAmazonProduct: string;
+  groupAmazonResearch: string;
+  groupAmazonCampaigns: string;
+  groupAmazonEarnings: string;
+  toolWalmart: string;
+  toolWalmartHint: string;
   toolVideoCounts: string;
   toolVideoLandscape: string;
   toolApproved: string;
@@ -805,6 +813,15 @@ const en: Dict = {
   storefrontHandleLabel: "My storefront handle",
   storefrontHandlePlaceholder: "e.g. influencerbutler",
   toolsHeading: "Tools",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon & Walmart",
+  groupAmazonProduct: "Amazon: product pages",
+  groupAmazonResearch: "Amazon: research & discovery",
+  groupAmazonCampaigns: "Amazon: campaigns & storefront",
+  groupAmazonEarnings: "Amazon: earnings & alerts",
+  toolWalmart: "Walmart support",
+  toolWalmartHint:
+    "Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.",
   toolVideoCounts: "Video counts",
   toolVideoLandscape: "Video landscape",
   toolApproved: "Butler Approved seal",
@@ -1541,6 +1558,15 @@ const es: Dict = {
   storefrontHandleLabel: "Mi usuario de storefront",
   storefrontHandlePlaceholder: "p. ej. influencerbutler",
   toolsHeading: "Herramientas",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon y Walmart",
+  groupAmazonProduct: "Amazon: paginas de producto",
+  groupAmazonResearch: "Amazon: investigacion y descubrimiento",
+  groupAmazonCampaigns: "Amazon: campanas y storefront",
+  groupAmazonEarnings: "Amazon: ganancias y alertas",
+  toolWalmart: "Soporte de Walmart",
+  toolWalmartHint:
+    "Activa las senales de dinero y los overlays en Walmart.com. El overlay de resultados de busqueda (abajo) tambien funciona en las cuadriculas de Walmart.",
   toolVideoCounts: "Recuento de videos",
   toolVideoLandscape: "Panorama de videos",
   toolApproved: "Sello Butler Approved",
@@ -2277,6 +2303,15 @@ const fr: Dict = {
   storefrontHandleLabel: "Mon pseudo de storefront",
   storefrontHandlePlaceholder: "p. ex. influencerbutler",
   toolsHeading: "Outils",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon et Walmart",
+  groupAmazonProduct: "Amazon : pages produit",
+  groupAmazonResearch: "Amazon : recherche et découverte",
+  groupAmazonCampaigns: "Amazon : campagnes et storefront",
+  groupAmazonEarnings: "Amazon : gains et alertes",
+  toolWalmart: "Prise en charge de Walmart",
+  toolWalmartHint:
+    "Active les signaux de revenus et les overlays sur Walmart.com. L'overlay des résultats de recherche (ci-dessous) fonctionne aussi sur les grilles Walmart.",
   toolVideoCounts: "Comptage de vidéos",
   toolVideoLandscape: "Panorama vidéo",
   toolApproved: "Sceau Butler Approved",

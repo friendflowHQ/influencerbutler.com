@@ -17,7 +17,7 @@ import { REQUEST_TIMEOUT_MS, firstString, obj, providerError, str, taggedUrlFor 
 // Known-good product ASINs for the read-only connection tests, matching the
 // desktop app's test calls.
 const LEVANTA_TEST_ASIN = "B003IX0AT2";
-const ARCHER_TEST_ASIN = "B0CMCKV5N2";
+const ARCHER_TEST_ASIN = "B0CH1N88Y7";
 
 function marketplaceOf(value: unknown, fallback = "amazon.com"): string {
   return str(value) || fallback;
@@ -126,16 +126,18 @@ const levantaAdapter: IntegrationAdapter = {
 
 const ARCHER_BASE = "https://api.archeraffiliates.com";
 
-// Archer is dual-mode: either a long-lived token/API key, or a username +
-// password exchanged for a bearer token at /token. Resolve a bearer for a set
-// of credentials, or throw with a user-facing reason.
+// Archer sign-in is username + password exchanged for a bearer token at
+// /token. A previously saved long-lived token/API key still short-circuits
+// (the options UI no longer collects one, but stored credentials keep
+// working). Resolve a bearer for a set of credentials, or throw with a
+// user-facing reason.
 async function archerBearer(creds: Record<string, string>): Promise<string> {
   const token = firstString(creds.token, creds.accessToken, creds.apiKey);
   if (token) return token;
   const username = str(creds.username);
   const password = str(creds.password);
   if (!username || !password) {
-    throw new Error("Enter an Archer token, or a username and password.");
+    throw new Error("Enter your Archer username and password.");
   }
   const body = new URLSearchParams({ grant_type: "password", username, password }).toString();
   const res = await fetch(`${ARCHER_BASE}/token`, {
@@ -160,14 +162,13 @@ const archerAdapter: IntegrationAdapter = {
   hosts: ["https://api.archeraffiliates.com/*"],
   credentialsUrl: PROVIDER_CREDENTIALS_URLS.archer,
   fields: [
-    { name: "token", labelKey: "fieldToken", type: "password", optional: true },
-    { name: "username", labelKey: "fieldUsername", type: "text", optional: true },
-    { name: "password", labelKey: "fieldPassword", type: "password", optional: true },
+    { name: "username", labelKey: "fieldUsername", type: "text" },
+    { name: "password", labelKey: "fieldPassword", type: "password" },
     { name: "marketplace", labelKey: "fieldMarketplace", type: "text", placeholder: "amazon.com", optional: true },
   ],
   async test(creds): Promise<TestResult> {
     if (!firstString(creds.token, creds.accessToken, creds.apiKey) && !(str(creds.username) && str(creds.password))) {
-      return { ok: false, message: "Enter an Archer token, or a username and password." };
+      return { ok: false, message: "Enter your Archer username and password." };
     }
     let bearer: string;
     try {

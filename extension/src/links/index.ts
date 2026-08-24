@@ -9,6 +9,7 @@ import {
   type ListResult,
   type PixelsResult,
   type RepointResult,
+  type SignInResult,
   type StatsResult,
 } from "../shared/messages";
 
@@ -33,10 +34,64 @@ async function init(): Promise<void> {
 
   const auth = await sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" });
   if (!auth.signedIn) {
-    root().replaceChildren(note(D.signedOut));
+    renderSignedOut();
     return;
   }
   await render();
+}
+
+// Signed-out gate: an inline connect form so the user can enter their license
+// key right here instead of being sent to hunt for the popup. Uses the same
+// SIGN_IN background message the popup does; the key never persists on this page.
+// On success it re-renders straight into the Ledger.
+function renderSignedOut(): void {
+  const card = section(D.connectHeading);
+  card.append(note(D.signedOut));
+
+  const row = el("div", "connect-row");
+  const input = el("input", "connect-input") as HTMLInputElement;
+  input.type = "password";
+  input.autocomplete = "off";
+  input.placeholder = D.connectPlaceholder;
+  const btn = el("button", "primary", D.connectButton) as HTMLButtonElement;
+  row.append(input, btn);
+  card.append(row);
+
+  const error = el("p", "error");
+  error.hidden = true;
+  card.append(error);
+
+  const trial = el("p", "muted small");
+  trial.append(document.createTextNode(`${D.noKeyYet} `));
+  const link = el("a") as HTMLAnchorElement;
+  link.href = "https://www.influencerbutler.com/pricing";
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = D.startTrial;
+  trial.append(link);
+  card.append(trial);
+
+  const submit = async (): Promise<void> => {
+    const licenseKey = input.value.trim();
+    if (!licenseKey) return;
+    btn.disabled = true;
+    error.hidden = true;
+    const result = await sendToBackground<SignInResult>({ kind: "SIGN_IN", licenseKey });
+    btn.disabled = false;
+    if (result.ok) {
+      await render();
+    } else {
+      error.textContent = result.error ?? D.connectError;
+      error.hidden = false;
+    }
+  };
+  btn.onclick = () => void submit();
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") void submit();
+  });
+
+  root().replaceChildren(card);
+  input.focus();
 }
 
 async function render(): Promise<void> {
