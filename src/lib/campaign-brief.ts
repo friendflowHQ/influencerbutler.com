@@ -227,12 +227,19 @@ export async function generateCampaignBrief(
     return normalize(JSON.parse(content));
   };
 
+  // Groq is tried first when configured. It can miss two ways: a 429 throws
+  // ("rate"), while any other non-OK status (400/500, an empty reply, etc.)
+  // resolves to null. Both should fall over to OpenAI when that key exists, so
+  // the fallback runs on a null primary as well as on a throw. Without this, a
+  // persistent Groq 400 (e.g. a decommissioned model id) would silently return
+  // no brief even though OPENAI_API_KEY is set.
+  const fallback = provider.kind === "groq" ? openAiFallbackProvider() : null;
   try {
-    return await call(provider.url, provider.key, model);
+    const primary = await call(provider.url, provider.key, model);
+    if (primary) return primary;
+    if (fallback) return await call(fallback.url, fallback.key, fallback.model);
+    return null;
   } catch (err) {
-    // Groq's free tier can 429 mid-day; fall over to OpenAI when that key exists,
-    // mirroring the concierge's live failover.
-    const fallback = provider.kind === "groq" ? openAiFallbackProvider() : null;
     if (fallback) {
       try {
         return await call(fallback.url, fallback.key, fallback.model);

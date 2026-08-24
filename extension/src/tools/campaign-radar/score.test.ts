@@ -5,6 +5,7 @@ import {
   computeCampaignScore,
   computeCampaignConfidence,
   meetsRadarThresholds,
+  visibleBreakdownParts,
   type CampaignScoreInputs,
   type RadarThresholds,
 } from "./score";
@@ -65,6 +66,18 @@ describe("computeCampaignScore", () => {
     expect(notOwned.parts.owned).toBe(0);
   });
 
+  it("carries the resolved personal signals through, mirroring the inputs", () => {
+    expect(computeCampaignScore(strong).signals).toEqual({ owned: true, provenEarner: true });
+    expect(computeCampaignScore({ ...strong, owned: false, provenEarner: false }).signals).toEqual({
+      owned: false,
+      provenEarner: false,
+    });
+    expect(computeCampaignScore({ ...strong, owned: null, provenEarner: null }).signals).toEqual({
+      owned: null,
+      provenEarner: null,
+    });
+  });
+
   it("clamps an expired campaign's negative days to zero timing", () => {
     const expired = computeCampaignScore({ ...strong, daysRemaining: -5 });
     expect(expired.parts.timing).toBe(0);
@@ -100,6 +113,37 @@ describe("computeCampaignScore", () => {
     // Unknown (0.5) sits above empty (also 0.5 here) or equal, and always at or
     // above the empty floor; it must not drag the score down.
     expect(unknownFill.parts.urgency).toBeGreaterThanOrEqual(withFill.parts.urgency);
+  });
+});
+
+describe("visibleBreakdownParts", () => {
+  const keys = (inputs: CampaignScoreInputs): string[] =>
+    visibleBreakdownParts(computeCampaignScore(inputs)).map(([k]) => k);
+
+  it("shows the personal-signal chips only when the signal is genuinely true", () => {
+    expect(keys({ ...strong, owned: true, provenEarner: true })).toEqual(
+      expect.arrayContaining(["owned", "earner"]),
+    );
+  });
+
+  it("hides an unknown personal signal instead of claiming it (the 'You own it +11' bug)", () => {
+    const shown = keys({ ...strong, owned: null, provenEarner: null });
+    // The neutral half still counts toward the score, but must not be surfaced
+    // as a factual claim that the creator owns / has earned on the product.
+    expect(shown).not.toContain("owned");
+    expect(shown).not.toContain("earner");
+  });
+
+  it("hides a personal signal the creator explicitly lacks", () => {
+    const shown = keys({ ...strong, owned: false, provenEarner: false });
+    expect(shown).not.toContain("owned");
+    expect(shown).not.toContain("earner");
+  });
+
+  it("orders visible parts largest contribution first", () => {
+    const parts = visibleBreakdownParts(computeCampaignScore(strong));
+    const points = parts.map(([, v]) => v);
+    expect([...points].sort((a, b) => b - a)).toEqual(points);
   });
 });
 

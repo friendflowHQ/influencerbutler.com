@@ -7,6 +7,8 @@ import type {
   HudCommand,
   HudCommandResult,
   HudStatus,
+  OutreachKeywordsResult,
+  OutreachRecord,
   PairResult,
 } from "../transport/hud-commands";
 import type {
@@ -82,6 +84,11 @@ export type RuntimeMessage =
   // durable time-series (deeper than the local capped store). Routed over the
   // local bridge; returns paired:false when the app was never connected.
   | { kind: "GET_DESKTOP_HISTORY"; asin: string }
+  // Ask the running desktop app which brands the creator messaged with the
+  // "Message Brands" tool and the keyword that surfaced each, so the Creator
+  // Connections Messages widget can badge each conversation with its keyword.
+  // Routed over the local bridge; returns paired:false when never connected.
+  | { kind: "FETCH_OUTREACH_KEYWORDS" }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -160,6 +167,12 @@ export type RuntimeMessage =
   // key so the content script never handles the secret. `marketplaces` filters
   // to the storefront's own marketplace so each ASIN comes back as one row.
   | { kind: "ENRICH_PRODUCTS"; asins: string[]; marketplaces?: string[] }
+  // Batch enrichment for the popup's Watchlist / My Lists rows: for each ref the
+  // background merges local CC/SPCC bloom membership, the real CC commission
+  // rate, and (when needsImage) a Creator API image/title lookup, writing the
+  // fetched image/title back into the watchlist / product-list store so a later
+  // open is instant. One round-trip for the whole visible set.
+  | { kind: "ENRICH_ROWS"; refs: RowEnrichRef[] }
   // ASIN watchlist: add/remove a product and read the current list. The
   // background poller checks each on an alarm and notifies on a change.
   | { kind: "ADD_TO_WATCHLIST"; item: WatchInput }
@@ -424,6 +437,32 @@ export type EnrichResult = {
   error?: string;
 };
 
+// One popup row to enrich. `source`/`listId` tell the background where to write
+// a fetched image/title back; `needsImage` is true only when the stored row is
+// missing an image or title, so an already-complete row skips the server call
+// but still gets CC/SPCC/rate from the local catalogue.
+export type RowEnrichRef = {
+  asin: string;
+  marketplace: string;
+  source: "watchlist" | "list";
+  listId?: string;
+  needsImage: boolean;
+};
+
+// Per-ASIN result of ENRICH_ROWS. cc/spcc are bloom membership; ratePct is the
+// real CC commission when the ASIN is in an active campaign (null otherwise);
+// imageUrl/title are filled only when a Creator API lookup ran and found them.
+export type RowBadge = {
+  cc: boolean;
+  spcc: boolean;
+  ratePct: number | null;
+  imageUrl: string | null;
+  title: string | null;
+};
+
+// Response of ENRICH_ROWS, keyed by upper-cased ASIN.
+export type RowBadgesResult = { badges: Record<string, RowBadge> };
+
 // One point in a shared-catalogue price/rank trend (oldest-first on read).
 export type MarketTrendPoint = { capturedAt: string; priceCents: number | null; bsrRank: number | null };
 
@@ -553,7 +592,16 @@ export type VoiceSessionResult = {
 export type VoiceToolResult = { ok: boolean; result?: unknown; error?: string };
 export type VoiceTranscriptResult = { ok: boolean; error?: string };
 
-export type { AsinEarnings, EarningsLookupResult, HudCommand, HudCommandResult, HudStatus, PairResult };
+export type {
+  AsinEarnings,
+  EarningsLookupResult,
+  HudCommand,
+  HudCommandResult,
+  HudStatus,
+  OutreachKeywordsResult,
+  OutreachRecord,
+  PairResult,
+};
 export type { PricePoint };
 export type {
   LinkPixel,

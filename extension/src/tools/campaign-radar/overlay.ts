@@ -645,7 +645,7 @@ type ToolbarCallbacks = {
 
 function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   const { host, root } = createInlineShadow("radar-toolbar-host");
-  const bar = el("div", "search-toolbar");
+  const bar = el("div", "search-toolbar radar-toolbar");
 
   const brand = el("div", "search-brand");
   brand.append(el("span", "search-count", t().radarCount(cb.count)));

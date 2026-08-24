@@ -8,7 +8,7 @@ import {
   type HudCommandResult,
   type ProductListsResult,
 } from "../../shared/messages";
-import type { HudCommand, ProductRef } from "../../transport/hud-commands";
+import type { HudCommand, IdeaListRef, ProductRef } from "../../transport/hud-commands";
 
 // The per-tile "..." action menu: the search-card equivalent of the product
 // page's "Send to your app" panel (tools/hud-actions/panel.ts). It surfaces the
@@ -29,8 +29,11 @@ export type TileMenuTarget = {
 };
 
 // Read live at open time so the menu reflects the latest bridge/auth state even
-// though the button was mounted before GET_HUD_STATUS resolved.
-export type HudRef = { connected: boolean; signedIn: boolean };
+// though the button was mounted before GET_HUD_STATUS resolved. `ideaLists`
+// carries the app's known Amazon Idea Lists (status.ideaLists) so the "Add to
+// Idea List" submenu can offer real targets; absent or empty means the submenu
+// offers "New list" only.
+export type HudRef = { connected: boolean; signedIn: boolean; ideaLists?: IdeaListRef[] };
 
 // The one desktop-bridge action set a search tile can offer. The product page
 // panel offers more (deal workspaces, campaign accept, pitch/sample), but those
@@ -307,5 +310,76 @@ function buildAppSection(
       }),
     );
   }
+
+  // Add to Amazon Idea List: expands inline into the app's known lists plus a
+  // "new list" name row, mirroring the free section's "Add to list" expander.
+  // The product lands in the desktop Idea List Butler's queue; the butler
+  // publishes it on its schedule.
+  const addToIdeaList = menuItem(t().tileMenuAddToIdeaList, () => {}, "has-sub");
+  const sub = el("div", "tile-menu-sub");
+  sub.style.display = "none";
+  addToIdeaList.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const open = sub.style.display !== "none";
+    sub.style.display = open ? "none" : "block";
+    if (!open) populateIdeaLists(sub, product, hud, setStatus);
+  });
+  section.append(addToIdeaList, sub);
+
   return section;
+}
+
+function populateIdeaLists(
+  sub: HTMLElement,
+  product: ProductRef,
+  hud: HudRef,
+  setStatus: (t: string) => void,
+): void {
+  sub.replaceChildren();
+
+  const queueFor = (target: { listId?: string; newListTitle?: string }): void => {
+    setStatus(t().tileMenuWorking);
+    void sendToBackground<HudCommandResult>({
+      kind: "SEND_HUD_COMMAND",
+      command: { type: "idealist.push", product, target },
+    }).then((res) => {
+      setStatus(res.ok ? (res.message ?? t().sentToApp) : (res.message ?? t().couldNotReachApp));
+    });
+  };
+
+  for (const list of hud.ideaLists ?? []) {
+    sub.append(
+      menuItem(list.title, () => queueFor({ listId: list.listId }), "tile-menu-sub-item"),
+    );
+  }
+
+  // "New list" row: inline name input + Create, same controls as product lists.
+  const newRow = el("div", "tile-menu-newlist");
+  const input = el("input", "tile-menu-input") as HTMLInputElement;
+  input.type = "text";
+  input.placeholder = t().tileMenuNewListPlaceholder;
+  input.maxLength = 100;
+  const create = el("button", "tile-menu-create");
+  create.type = "button";
+  create.textContent = t().tileMenuCreate;
+  const submit = (): void => {
+    const name = input.value.trim();
+    if (!name) return;
+    queueFor({ newListTitle: name });
+  };
+  create.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    submit();
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submit();
+    }
+  });
+  input.addEventListener("click", (event) => event.stopPropagation());
+  newRow.append(input, create);
+  sub.append(newRow);
 }

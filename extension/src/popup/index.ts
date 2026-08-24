@@ -7,6 +7,9 @@ import {
   type PageStatus,
   type PairResult,
   type ProductListsResult,
+  type RowBadge,
+  type RowBadgesResult,
+  type RowEnrichRef,
   type SignInResult,
   type UpdateStateView,
   type WatchlistResult,
@@ -587,6 +590,79 @@ async function renderSettings(): Promise<void> {
   }
 }
 
+// A rendered row waiting on its enrichment: the thumbnail to fill, the title to
+// upgrade from a bare ASIN, and the chip strip to populate. `ref` carries the
+// batch request (and where a fetched image/title is written back).
+type RowHandle = {
+  ref: RowEnrichRef;
+  thumb: HTMLImageElement;
+  title: HTMLElement;
+  signals: HTMLElement;
+};
+
+// A 34px product thumbnail; renders a neutral placeholder box until (or unless)
+// an image URL is known. A broken image URL falls back to the placeholder.
+function makeThumb(imageUrl: string | null, alt: string): HTMLImageElement {
+  const img = document.createElement("img");
+  img.className = imageUrl ? "row-thumb" : "row-thumb placeholder";
+  img.loading = "lazy";
+  img.alt = alt;
+  if (imageUrl) img.src = imageUrl;
+  img.onerror = () => {
+    img.removeAttribute("src");
+    img.classList.add("placeholder");
+  };
+  return img;
+}
+
+function setThumb(img: HTMLImageElement, imageUrl: string): void {
+  img.src = imageUrl;
+  img.classList.remove("placeholder");
+}
+
+function makeChip(kind: "cc" | "spcc", label: string): HTMLElement {
+  const span = document.createElement("span");
+  span.className = `row-chip ${kind}`;
+  span.textContent = label;
+  return span;
+}
+
+function makeRatePill(label: string): HTMLElement {
+  const span = document.createElement("span");
+  span.className = "row-rate";
+  span.textContent = label;
+  return span;
+}
+
+// Paint one row's badge: fill the image, upgrade a bare-ASIN title, and lay out
+// the CC / SPCC / commission chips (in that order, matching Orders Butler).
+function applyRowBadge(handle: RowHandle, badge: RowBadge): void {
+  if (badge.imageUrl) setThumb(handle.thumb, badge.imageUrl);
+  if (badge.title && handle.title.dataset.hasTitle !== "1") {
+    handle.title.textContent = badge.title;
+    handle.title.dataset.hasTitle = "1";
+  }
+  handle.signals.replaceChildren();
+  if (badge.cc) handle.signals.append(makeChip("cc", t().radarChipCc));
+  if (badge.spcc) handle.signals.append(makeChip("spcc", t().radarChipSpcc));
+  if (badge.ratePct != null) handle.signals.append(makeRatePill(t().tileCampaignRate(badge.ratePct)));
+}
+
+// One batch round-trip for a card's rows, then patch each in place. Runs after
+// the card is drawn so the list is interactive immediately; nodes detached by a
+// re-render before this resolves are simply patched off-screen (harmless).
+async function enrichRowHandles(handles: RowHandle[]): Promise<void> {
+  if (handles.length === 0) return;
+  const { badges } = await sendToBackground<RowBadgesResult>({
+    kind: "ENRICH_ROWS",
+    refs: handles.map((h) => h.ref),
+  });
+  for (const handle of handles) {
+    const badge = badges[handle.ref.asin.toUpperCase()];
+    if (badge) applyRowBadge(handle, badge);
+  }
+}
+
 // The Watchlist card: the products the background poller is watching, each with
 // per-condition toggles and a remove. Hidden entirely when the watchlist tool
 // is off, so a user who does not want it never sees the card.
@@ -612,14 +688,17 @@ async function renderWatchlist(): Promise<void> {
     { key: "price_drop", label: t().watchCondPriceDrop },
   ];
 
+  const handles: RowHandle[] = [];
   for (const item of items) {
     const li = document.createElement("li");
 
     const head = document.createElement("div");
     head.className = "watchlist-head";
+    const thumb = makeThumb(item.imageUrl ?? null, item.title ?? item.asin);
     const title = document.createElement("span");
     title.className = "watchlist-title";
     title.textContent = item.title ?? item.asin;
+    if (item.title) title.dataset.hasTitle = "1";
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "ghost small";
@@ -632,8 +711,23 @@ async function renderWatchlist(): Promise<void> {
       });
       await renderWatchlist();
     };
-    head.append(title, remove);
+    head.append(thumb, title, remove);
     li.append(head);
+
+    const signals = document.createElement("div");
+    signals.className = "row-signals";
+    li.append(signals);
+    handles.push({
+      ref: {
+        asin: item.asin,
+        marketplace: item.marketplace,
+        source: "watchlist",
+        needsImage: !(item.imageUrl && item.title),
+      },
+      thumb,
+      title,
+      signals,
+    });
 
     const conds = document.createElement("div");
     conds.className = "watchlist-conds";
@@ -665,6 +759,8 @@ async function renderWatchlist(): Promise<void> {
     li.append(conds);
     list.append(li);
   }
+
+  void enrichRowHandles(handles);
 }
 
 // "My lists" card: the user-named product collections built from the search
@@ -680,6 +776,7 @@ async function renderProductLists(): Promise<void> {
   empty.hidden = lists.length > 0;
   card.hidden = false;
 
+  const handles: RowHandle[] = [];
   for (const pl of lists) {
     const li = document.createElement("li");
 
@@ -701,15 +798,19 @@ async function renderProductLists(): Promise<void> {
 
     for (const item of pl.items) {
       const row = document.createElement("div");
-      row.className = "watchlist-conds";
+      row.className = "list-item-row";
+      const thumb = makeThumb(item.imageUrl, item.title ?? item.asin);
       const open = document.createElement("button");
       open.type = "button";
       open.className = "linklike small";
       open.textContent = item.title ?? item.asin;
+      if (item.title) open.dataset.hasTitle = "1";
       open.onclick = () => {
         const url = `https://www.${item.marketplace}/dp/${item.asin}`;
         void sendToBackground<void>({ kind: "OPEN_URL", url });
       };
+      const signals = document.createElement("div");
+      signals.className = "row-signals";
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "ghost small";
@@ -723,12 +824,26 @@ async function renderProductLists(): Promise<void> {
         });
         await renderProductLists();
       };
-      row.append(open, remove);
+      row.append(thumb, open, signals, remove);
       li.append(row);
+      handles.push({
+        ref: {
+          asin: item.asin,
+          marketplace: item.marketplace,
+          source: "list",
+          listId: pl.id,
+          needsImage: !(item.imageUrl && item.title),
+        },
+        thumb,
+        title: open,
+        signals,
+      });
     }
 
     list.append(li);
   }
+
+  void enrichRowHandles(handles);
 }
 
 function bindNumber(

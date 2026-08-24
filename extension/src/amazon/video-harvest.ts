@@ -1,6 +1,7 @@
 import {
   carouselSourceFor,
   extractFromText,
+  tallyVideos,
   type CarouselResult,
   type CarouselSource,
   type CarouselVideo,
@@ -193,13 +194,7 @@ function readNextToken(text: string): string | null {
 
 // source === null totals every carousel; otherwise only that carousel.
 function countBySource(videos: CarouselVideo[], source: CarouselSource | null): VideoCounts {
-  const counts: VideoCounts = { total: 0, influencer: 0, brand: 0, customer: 0, unknown: 0 };
-  for (const v of videos) {
-    if (source !== null && v.carousel !== source) continue;
-    counts[v.creatorType] += 1;
-    counts.total += 1;
-  }
-  return counts;
+  return tallyVideos(source === null ? videos : videos.filter((v) => v.carousel === source));
 }
 
 async function fetchText(url: string, signal: AbortSignal): Promise<string | null> {

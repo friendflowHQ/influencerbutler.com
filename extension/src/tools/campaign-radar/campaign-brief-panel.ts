@@ -1,6 +1,7 @@
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
+import { visibleBreakdownParts } from "./score";
 import type { CampaignScore, CampaignScoreBand } from "./score";
 import type {
   CampaignBriefDemand,
@@ -146,10 +147,7 @@ function scoreBreakdown(score: CampaignScore): HTMLElement {
   wrap.style.display = "flex";
   wrap.style.flexWrap = "wrap";
   wrap.style.gap = "6px";
-  const entries = (Object.keys(score.parts) as Array<keyof CampaignScore["parts"]>)
-    .map((k) => [k, score.parts[k]] as const)
-    .filter(([, v]) => v > 0)
-    .sort((a, b) => b[1] - a[1]);
+  const entries = visibleBreakdownParts(score);
   for (const [k, v] of entries) {
     const chip = el("span", "", `${labels[k]} +${Math.round(v)}`);
     chip.style.fontSize = "12px";

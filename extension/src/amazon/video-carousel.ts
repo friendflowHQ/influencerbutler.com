@@ -114,6 +114,141 @@ export function classifiedCount(result: CarouselResult | null): number {
   return result.counts.total - result.counts.unknown;
 }
 
+// Per-carousel view of a result's observed videos. Derived on demand from the
+// video list (never stored on CarouselResult) because the #videoCount header
+// top-up later inflates counts.total without adding videos: that shortfall has
+// no known side, so it stays out of every side bucket here and the UI reports
+// it as unclassified. counts.total can therefore exceed
+// upper.total + lower.total + unknown.total.
+export type CarouselBreakdown = {
+  upper: VideoCounts;
+  lower: VideoCounts;
+  unknown: VideoCounts;
+};
+
+// Tally a set of videos into VideoCounts (creatorType "unknown" lands in
+// counts.unknown). Shared with the Deep Scan harvest's per-side rows.
+export function tallyVideos(videos: CarouselVideo[]): VideoCounts {
+  const counts = emptyCounts();
+  for (const video of videos) {
+    counts[video.creatorType] += 1;
+    counts.total += 1;
+  }
+  return counts;
+}
+
+export function carouselBreakdown(result: CarouselResult | null): CarouselBreakdown {
+  const sides: CarouselBreakdown = {
+    upper: emptyCounts(),
+    lower: emptyCounts(),
+    unknown: emptyCounts(),
+  };
+  if (!result) return sides;
+  for (const video of result.videos) {
+    const bucket = sides[video.carousel];
+    bucket[video.creatorType] += 1;
+    bucket.total += 1;
+  }
+  return sides;
+}
+
+// Whether the brand has the upper (image-block) influencer carousel turned on.
+// When it is on, a new creator video can land in the top slot next to the
+// gallery, which is the higher-earning placement; influencers appearing only in
+// the lower rail means the brand has not enabled it.
+//  - "on":      an influencer video was observed in the upper carousel. Only
+//               marker/URL-tagged sources can produce upper+influencer (the
+//               videoList side heuristic never does), so no false positives.
+//  - "off":     the upper carousel has videos but no influencers, while the
+//               lower rail does have influencer videos.
+//  - "unknown": not enough data either way (header-only, empty, or the upper
+//               rail has not been observed yet).
+export type UpperSlotState = "on" | "off" | "unknown";
+
+export function upperInfluencerSlot(result: CarouselResult | null): UpperSlotState {
+  const sides = carouselBreakdown(result);
+  if (sides.upper.influencer > 0) return "on";
+  if (sides.upper.total > 0 && sides.lower.influencer > 0) return "off";
+  return "unknown";
+}
+
+// Combine competing extraction candidates into one result that keeps BOTH
+// carousels. The sources see different rails (the videoList state script ships
+// the upper hero ids up front; the ajax payloads carry the lower rail), so
+// picking a single winner used to discard whichever rail the loser saw.
+//
+// The merge is per-side winner-take-all, NOT a video-level union: videoList
+// videos carry a contentId but no names, json/network videos names but no
+// contentId, so the same video seen by two sources can never be matched and a
+// union would double count a whole rail. Taking one source per side makes
+// within-side double counting structurally impossible. Cross-side overlap (a
+// video served in both carousels by different sources) is caught by the
+// headerTotal guard: when the merged total exceeds Amazon's own #videoCount,
+// the merge is abandoned in favor of the plain best candidate.
+export function mergeCarouselCandidates(
+  candidates: CarouselResult[],
+  headerTotal: number | null,
+): CarouselResult | null {
+  let base: CarouselResult | null = null;
+  for (const candidate of candidates) {
+    if (
+      !base ||
+      classifiedCount(candidate) > classifiedCount(base) ||
+      (classifiedCount(candidate) === classifiedCount(base) &&
+        candidate.counts.total > base.counts.total)
+    ) {
+      base = candidate;
+    }
+  }
+  if (!base || candidates.length < 2) return base;
+
+  const winnerFor = (side: "upper" | "lower"): CarouselResult | null => {
+    let winner: CarouselResult | null = null;
+    let winnerClassified = -1;
+    let winnerTotal = -1;
+    for (const candidate of candidates) {
+      let classified = 0;
+      let total = 0;
+      for (const video of candidate.videos) {
+        if (video.carousel !== side) continue;
+        total += 1;
+        if (video.creatorType !== "unknown") classified += 1;
+      }
+      if (total === 0) continue;
+      if (
+        classified > winnerClassified ||
+        (classified === winnerClassified && total > winnerTotal)
+      ) {
+        winner = candidate;
+        winnerClassified = classified;
+        winnerTotal = total;
+      }
+    }
+    return winner;
+  };
+
+  const upperFrom = winnerFor("upper");
+  const lowerFrom = winnerFor("lower");
+  // Nothing to gain: every side's best view already lives in the base result.
+  if ((upperFrom === base || upperFrom === null) && (lowerFrom === base || lowerFrom === null)) {
+    return base;
+  }
+
+  const videos: CarouselVideo[] = [];
+  if (upperFrom) videos.push(...upperFrom.videos.filter((v) => v.carousel === "upper"));
+  if (lowerFrom) videos.push(...lowerFrom.videos.filter((v) => v.carousel === "lower"));
+  // Side-unknown videos only from the base candidate; taking them from several
+  // sources would reintroduce the double-count risk the per-side rule avoids.
+  videos.push(...base.videos.filter((v) => v.carousel === "unknown"));
+
+  const counts = tallyVideos(videos);
+  if (headerTotal !== null && counts.total > headerTotal) return base;
+  // Keep the base's strategy label: consumers branch on "json"/"header"/"dom"
+  // (panel wording, scan cache), so no new enum value is introduced.
+  return { counts, videos, strategy: base.strategy };
+}
+
+
 // Amazon serves several widget variants (state scripts, hero + rail DOM)
 // and none is reliably present, so extract from every source available,
 // including any network payloads the page hook captured (extras), and keep
@@ -129,19 +264,11 @@ export function extractCarousel(doc: Document, extras: CarouselResult[] = []): C
   const fromDom = extractFromDom(doc);
   candidates.push(fromDom);
 
-  let best: CarouselResult | null = null;
-  for (const candidate of candidates) {
-    if (
-      !best ||
-      classifiedCount(candidate) > classifiedCount(best) ||
-      (classifiedCount(candidate) === classifiedCount(best) &&
-        candidate.counts.total > best.counts.total)
-    ) {
-      best = candidate;
-    }
-  }
-
   const headerTotal = readHeaderCount(doc);
+  // Merge per-side winners across candidates so both carousels survive (the
+  // old single-winner pick discarded the upper hero list whenever the lower
+  // rail payload classified more videos, and vice versa).
+  let best = mergeCarouselCandidates(candidates, headerTotal);
   if (best && best.counts.total > 0) {
     if (headerTotal !== null && headerTotal > best.counts.total) {
       best = {

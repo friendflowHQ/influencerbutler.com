@@ -11,7 +11,7 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
-import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
@@ -19,6 +19,7 @@ import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
+import { enrichRows } from "./row-enrich";
 import { getMarket, getMarketBatch } from "./market";
 import { getVideoIntel } from "./video-intel";
 import { fetchCampaignBrief } from "./campaign-brief";
@@ -224,6 +225,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "GET_DESKTOP_HISTORY":
       void fetchDesktopHistory(message.asin).then(sendResponse);
       return true;
+    case "FETCH_OUTREACH_KEYWORDS":
+      void fetchOutreachKeywords().then(sendResponse);
+      return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
       return true;
@@ -259,6 +263,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "LOOKUP_CC_RATES":
       void lookupCcRates(message.asins).then(sendResponse);
+      return true;
+    case "ENRICH_ROWS":
+      void enrichRows(message.refs).then(sendResponse);
       return true;
     case "ADD_TO_WATCHLIST":
       void addToWatchlist(message.item).then(sendResponse);

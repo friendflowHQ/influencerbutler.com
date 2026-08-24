@@ -39,6 +39,22 @@ export type RetagIssue = {
   issueType: "untagged" | "over_tagged" | "unavailable_product";
 };
 
+// Where a captured product should land in the user's Amazon Idea Lists:
+// either an existing list (durable amzn1.ideas id, offered from the app's
+// status.ideaLists) or a new list by title (the desktop creates it once the
+// group reaches Amazon's 2-product minimum).
+export type IdeaListTarget = {
+  listId?: string;
+  newListTitle?: string;
+};
+
+// One Amazon Idea List the desktop app knows about (from its storefront
+// discovery pass or its own publishes), offered as a capture target.
+export type IdeaListRef = {
+  listId: string;
+  title: string;
+};
+
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
   // Batch push of harvested deals into one Deals Influencer Butler workspace, from the Deal
@@ -79,7 +95,14 @@ export type HudCommand =
   // Butler deal pre-staged for a free-sample outreach (the free-sample workflow
   // pill + the sample-request message template), so the creator can send the ask
   // in one step. product carries the ASIN context the sample request is about.
-  | { type: "sample.request"; brand: string; product?: ProductRef };
+  | { type: "sample.request"; brand: string; product?: ProductRef }
+  // "Add to Idea List": queue the product in the desktop Idea List Butler for
+  // its target list. The desktop publishes on its schedule (or Run now); the
+  // command itself is a pure data write and is idempotent per
+  // (asin, marketplace, target).
+  | { type: "idealist.push"; product: ProductRef; target: IdeaListTarget }
+  // Batch form of idealist.push (many products, each with its own target).
+  | { type: "idealist.push.batch"; items: Array<{ product: ProductRef; target: IdeaListTarget }> };
 
 export type HudCommandResult = {
   ok: boolean;
@@ -111,6 +134,10 @@ export type HudStatus = {
   // "both"), so the extension can surface only the relevant tools. Absent on
   // older app builds; the reader defaults to "both".
   creatorMode?: CreatorMode;
+  // Amazon Idea Lists the app knows about (durable id + title), offered as
+  // targets by the "Add to Idea List" capture menu. Absent on older app
+  // builds; the menu then offers "New list" only.
+  ideaLists?: IdeaListRef[];
 };
 
 // What the creator has actually earned on one ASIN, read from the desktop app's
@@ -204,4 +231,28 @@ export type NotifyPollResult = {
   ok: boolean;
   entries: AppNotification[];
   cursor: number;
+};
+
+// One brand the creator messaged with the desktop "Message Brands" tool, and the
+// search keyword that surfaced it. Read from the app's sent-records ledger over
+// the bridge so the Creator Connections Messages widget can show which keyword
+// each conversation came from. `keyword` is the most recent one; `keywords`
+// lists every distinct keyword the brand was messaged under, newest-first, for
+// the chip's hover tooltip. `brandKey` is the app's own lowercased brand name;
+// the extension re-normalizes `brand` itself, so exact parity is not required.
+export type OutreachRecord = {
+  brand: string;
+  brandKey: string;
+  keyword: string;
+  keywords: string[];
+  lastSentAt: number;
+};
+
+// Result of an outreach.lookup request against the desktop sent-records ledger.
+// `paired` is false when the extension has never connected the app, so the
+// caller stays silent (no chips) rather than erroring.
+export type OutreachKeywordsResult = {
+  ok: boolean;
+  paired?: boolean;
+  records: OutreachRecord[];
 };

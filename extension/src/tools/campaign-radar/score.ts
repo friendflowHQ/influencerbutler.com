@@ -29,6 +29,14 @@ export type CampaignScore = {
     earner: number;
     urgency: number;
   };
+  // The resolved personal signals, carried through so the UI can tell a genuine
+  // "owns it" (true) from the neutral half it awards when the signal is simply
+  // unknown (null). Without this the panel cannot distinguish +22 (owns) from
+  // +11 (unknown) and would mislabel the unknown case as "You own it".
+  signals: {
+    owned: boolean | null;
+    provenEarner: boolean | null;
+  };
 };
 
 export type CampaignScoreInputs = {
@@ -148,7 +156,33 @@ export function computeCampaignScore(inputs: CampaignScoreInputs): CampaignScore
 
   const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);
   const score = Math.round(raw);
-  return { score, band: bandFor(score), parts };
+  return {
+    score,
+    band: bandFor(score),
+    parts,
+    signals: { owned: inputs.owned, provenEarner: inputs.provenEarner },
+  };
+}
+
+// The parts to surface in the "why is it good" breakdown, largest contribution
+// first. Every part with points is shown EXCEPT the two personal signals, which
+// make a factual claim about the creator ("You own it", "Proven earner") and so
+// are shown only when the signal is genuinely true, never for the neutral half
+// awarded when the signal is unknown (order history never synced / app never
+// paired). The non-personal parts report a weighted contribution, not a claim,
+// so their neutral halves are fine to show.
+export type BreakdownPart = readonly [key: keyof CampaignScore["parts"], points: number];
+
+export function visibleBreakdownParts(score: CampaignScore): BreakdownPart[] {
+  return (Object.keys(score.parts) as Array<keyof CampaignScore["parts"]>)
+    .map((k) => [k, score.parts[k]] as const)
+    .filter(([k, v]) => {
+      if (v <= 0) return false;
+      if (k === "owned") return score.signals.owned === true;
+      if (k === "earner") return score.signals.provenEarner === true;
+      return true;
+    })
+    .sort((a, b) => b[1] - a[1]);
 }
 
 export function bandFor(score: number): CampaignScoreBand {

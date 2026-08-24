@@ -149,12 +149,19 @@ Before showing command buttons, the extension probes:
   "dealWorkspaces": [
     { "key": "default", "label": "Deals Influencer Butler (main)" },
     { "key": "garden-bargains", "label": "Garden Bargains" }
+  ],
+  "ideaLists": [
+    { "listId": "amzn1.ideas.ZY4SIJ6VID6", "title": "Garden Picks" }
   ]
 }
 ```
 
 `dealWorkspaces` is the app's real workspace list (including the user's own
-niche clones); the extension falls back to a static hint list if absent. If
+niche clones); the extension falls back to a static hint list if absent.
+`ideaLists` is the set of Amazon Idea Lists the app's Idea List Butler knows
+about (from its storefront discovery pass and its own publishes, capped at 50);
+the extension's "Add to Idea List" menu offers them as targets and degrades to
+"New list" only when the field is absent (older app builds). If
 the app requires pairing (the handshake above), it MAY instead reply
 `{ "type": "needs-pairing" }` and the extension will prompt the user for the
 code. The `Origin` check (`chrome-extension://<id>`) is the security boundary
@@ -221,6 +228,41 @@ shape.
 
 ```json
 { "type": "collaboration.add", "product": { "asin": "...", "marketplace": "amazon.com" } }
+```
+
+**`idealist.push`** - queue the product in the desktop Idea List Butler for an
+Amazon Idea List. `target` names either an existing list by its durable
+`listId` (offered from the status frame's `ideaLists`) or a new list by
+`newListTitle`; exactly one of the two should be set. Pure data write and
+idempotent per (asin, marketplace, target): a repeat push refreshes the queued
+row instead of duplicating it. The butler publishes the queue on its schedule
+(or the user's "Publish queue now"); note Amazon requires at least 2 products
+before a NEW list can be created, so a lone product queued for a new list is
+held (visible in the app's panel) until a second one arrives.
+
+```json
+{
+  "type": "idealist.push",
+  "product": { "asin": "B0016HF5GK", "marketplace": "amazon.com", "title": "..." },
+  "target": { "listId": "amzn1.ideas.ZY4SIJ6VID6" }
+}
+```
+
+```json
+{ "type": "idealist.push", "product": { "asin": "..." , "marketplace": "amazon.com" }, "target": { "newListTitle": "Garden Picks" } }
+```
+
+**`idealist.push.batch`** - batch form: many products, each with its own
+`target`, in one frame. Returns one result with `added`, `total`, `skipped`
+counts ("Queued N of M product(s) for Idea List Butler.").
+
+```json
+{
+  "type": "idealist.push.batch",
+  "items": [
+    { "product": { "asin": "...", "marketplace": "amazon.com" }, "target": { "newListTitle": "Garden Picks" } }
+  ]
+}
 ```
 
 ### When the app is not running
@@ -298,6 +340,57 @@ Contract notes:
 - If the app was never paired the extension does not send this at all; a
   rejected token yields `{ "type": "auth.error" }` and the extension stays
   silent (no error surfaced to the user).
+
+## Outreach keywords (app to extension, read-only)
+
+The extension asks the running app which brands the creator messaged with the
+"Message Brands" tool (Amazon Butler outreach) and the search keyword that
+surfaced each one, so the Creator Connections Messages widget can badge every
+conversation with its keyword. Authed with the pairing token (it returns the
+creator's private outreach ledger) and read-only. The extension side is built
+(`fetchOutreachKeywords` in `extension/src/background/hud-bridge.ts`); the app
+implements the responder against its durable sent-records ledger
+(`sent_records.jsonl`, via `scripts/runtime/exporter.js` `readRecords()`).
+
+The extension sends (no payload fields; the app returns the whole ledger,
+collapsed per brand):
+
+```json
+{ "type": "outreach.lookup", "payload": {} }
+```
+
+The app replies with one record per brand it has messaged, keeping the most
+recent keyword and the full keyword history:
+
+```json
+{
+  "type": "outreach.result",
+  "ok": true,
+  "records": [
+    {
+      "brand": "MARCHWAY",
+      "brandKey": "marchway",
+      "keyword": "phone case",
+      "keywords": ["phone case", "camping gear"],
+      "lastSentAt": 1756056300000
+    }
+  ]
+}
+```
+
+Contract notes:
+
+- Only `result === "sent"` rows with both a brand and a keyword are included.
+- `brandKey` is the app's lowercased brand name; the extension re-normalizes the
+  `brand` field itself before matching against the Amazon conversation name, so
+  exact parity between `brandKey` and the extension's key is not required.
+- `keyword` is the most recently used keyword (max `lastSentAt`); `keywords`
+  lists every distinct keyword the brand was messaged under, newest-first, for
+  the chip's hover tooltip.
+- `lastSentAt` is epoch milliseconds.
+- If the app was never paired the extension does not send this at all; a
+  rejected token yields `{ "type": "auth.error" }` and the extension stays
+  silent (no chips shown).
 
 ## Versioning
 

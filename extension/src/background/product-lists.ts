@@ -177,6 +177,26 @@ export async function addManyToProductList(input: {
   return { lists: state.productLists, atCap, atItemCap, listId, added };
 }
 
+// Fill in a list item's image/title once, from the Creator API lookup the popup
+// runs on open. Only nulls are written, so metadata captured when the product
+// was added on-page is never overwritten by a later enrichment.
+export async function backfillProductListItem(
+  listId: string,
+  asin: string,
+  marketplace: string,
+  patch: { imageUrl?: string | null; title?: string | null },
+): Promise<void> {
+  const upper = asin.toUpperCase();
+  await patchState((s) => {
+    const list = findList(s.productLists, listId);
+    if (!list) return;
+    const item = list.items.find((it) => it.asin === upper && it.marketplace === marketplace);
+    if (!item) return;
+    if (!item.imageUrl && patch.imageUrl) item.imageUrl = patch.imageUrl;
+    if (!item.title && patch.title) item.title = patch.title;
+  });
+}
+
 export async function removeFromProductList(
   listId: string,
   asin: string,

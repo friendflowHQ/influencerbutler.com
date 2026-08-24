@@ -6,6 +6,72 @@ import type { LinkPixel } from "../integrations/ib-links-client";
 // Everything lives in chrome.storage.local. The license key deliberately
 // never goes to storage.sync so it cannot leave the machine via Chrome sync.
 
+// Voiceover Butler (extension edition): the enum values mirror the desktop
+// app's Voiceover Butler workspace so a creator moving between the two sees
+// the same choices. The prompt directives for each value live in
+// src/tools/my-link/voiceover-prompt.ts.
+export type VoiceoverVideoType =
+  | "social-hook"
+  | "tutorial"
+  | "unboxing"
+  | "problem-solution"
+  | "edu-story"
+  | "product-setup";
+export type VoiceoverHookStyle =
+  | "joke-pun"
+  | "relatable"
+  | "30-day-review"
+  | "tired-of"
+  | "bold-claim"
+  | "question"
+  | "surprise-reveal"
+  | "custom";
+export type VoiceoverPacing = "slow" | "standard" | "fast";
+export type VoiceoverDisclosureKey =
+  | "honest-paid-sample"
+  | "affiliate-link"
+  | "free-pr-sample"
+  | "none";
+
+// The creator's own fit and styling, injected into the prompt only when the
+// product classifies as apparel/beauty so scripts can ground sizing in the
+// creator's real measurements ("I'm 5'6 and wear a medium").
+export type VoiceoverAboutMe = {
+  height: string;
+  topSize: string;
+  bustSize: string;
+  dressSize: string;
+  pantSize: string;
+  shoeSize: string;
+  hairColor: string;
+  eyeColor: string;
+  skinTone: string;
+  preferredColors: string;
+  preferredStyles: string;
+};
+
+export type VoiceoverDefaults = {
+  // Spoken length in seconds; clamped to 5-120 on save and again at prompt time.
+  lengthSeconds: number;
+  videoType: VoiceoverVideoType;
+  hookStyle: VoiceoverHookStyle;
+  // Used verbatim as the opening line when hookStyle is "custom".
+  hookCustom: string;
+  pacing: VoiceoverPacing;
+  disclosureKey: VoiceoverDisclosureKey;
+};
+
+export type VoiceoverSettings = {
+  tone: string;
+  niche: string;
+  audience: string;
+  defaults: VoiceoverDefaults;
+  aboutMe: VoiceoverAboutMe;
+  // Brand names a script must never mention, stored parsed (not the raw comma
+  // string). Enforced as a prompt constraint and post-checked on the output.
+  brandDenylist: string[];
+};
+
 export type Settings = {
   commissionRatePct: number;
   categoryKey: string;
@@ -33,6 +99,11 @@ export type Settings = {
   lastCall: {
     alertAtPct: number;
   };
+  // Voiceover Butler: creator profile, script defaults, About Me apparel
+  // block, and brand denylist behind the "Draft voiceover (AI)" button in the
+  // My Link panel. The options page writes this whole object at once (never a
+  // partial nested patch) because patchSettings shallow-merges.
+  voiceover: VoiceoverSettings;
   // Marketplace codes (US/CA/UK/AU) whose buy-box availability Campaign Radar
   // checks per campaign product, rendering per-country chips on the grid.
   // Empty (the default) = feature off, zero extra fetches. Top-level rather
@@ -83,6 +154,12 @@ export type Settings = {
     // reshoot panel on the Creator Hub "Manage videos" list. Backfilled to true
     // for existing users by the tools shallow-merge in migrate().
     videoMoney: boolean;
+    // Brand Keywords: badge each Creator Connections Messages conversation with
+    // the search keyword the desktop "Message Brands" tool used to find that
+    // brand (read from the app over the bridge). Self-gates to paired users with
+    // outreach history, so it is a no-op for everyone else. Backfilled to true
+    // for existing users by the tools shallow-merge in migrate().
+    brandKeywords: boolean;
     // Master gate for all Walmart.com support (the neutral overlays run on
     // Walmart pages when this is on). Lets a user turn Walmart off without
     // touching their Amazon overlays. Backfilled to true by the tools
@@ -210,6 +287,10 @@ export type WatchItem = {
   asin: string;
   marketplace: string;
   title: string | null;
+  // Product thumbnail, backfilled once from the Creator API when the popup
+  // first renders the row (older items predate this field, so it may be absent
+  // on read and is treated as null). Never overwritten once a real value lands.
+  imageUrl: string | null;
   addedAt: number;
   notifyOn: WatchCondition[];
   last: WatchSnapshot | null;
@@ -326,7 +407,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 18,
+  schemaVersion: 20,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -346,6 +427,33 @@ export const DEFAULTS: StorageShape = {
     },
     lastCall: {
       alertAtPct: 90,
+    },
+    voiceover: {
+      tone: "",
+      niche: "",
+      audience: "",
+      defaults: {
+        lengthSeconds: 30,
+        videoType: "social-hook",
+        hookStyle: "relatable",
+        hookCustom: "",
+        pacing: "standard",
+        disclosureKey: "honest-paid-sample",
+      },
+      aboutMe: {
+        height: "",
+        topSize: "",
+        bustSize: "",
+        dressSize: "",
+        pantSize: "",
+        shoeSize: "",
+        hairColor: "",
+        eyeColor: "",
+        skinTone: "",
+        preferredColors: "",
+        preferredStyles: "",
+      },
+      brandDenylist: [],
     },
     availabilityMarkets: [],
     storefrontHandle: null,
@@ -373,6 +481,7 @@ export const DEFAULTS: StorageShape = {
       ideaListOverlay: true,
       campaignButler: true,
       videoMoney: true,
+      brandKeywords: true,
       walmart: true,
     },
     syncEnabled: true,
@@ -460,7 +569,12 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // providers with session-based ones: the Impact provider is gone (a stored
   // "impact" selection resets to null and its saved credentials are dropped),
   // and Walmart Creator no longer takes publisher/campaign/ad ids, so its
-  // stale stored credentials are cleared and its test badge reset.
+  // stale stored credentials are cleared and its test badge reset. v18 -> v19
+  // added settings.voiceover (Voiceover Butler creator profile, script
+  // defaults, About Me apparel block, brand denylist), deep-merged below
+  // because patchSettings shallow-merges nested blocks. v19 -> v20 added the
+  // brandKeywords tool flag (keyword chips on the Creator Connections Messages
+  // widget, on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -491,6 +605,21 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
         ...DEFAULTS.settings.lastCall,
         ...(raw.settings?.lastCall ?? {}),
       },
+      voiceover: {
+        ...structuredClone(DEFAULTS.settings.voiceover),
+        ...(raw.settings?.voiceover ?? {}),
+        defaults: {
+          ...DEFAULTS.settings.voiceover.defaults,
+          ...(raw.settings?.voiceover?.defaults ?? {}),
+        },
+        aboutMe: {
+          ...DEFAULTS.settings.voiceover.aboutMe,
+          ...(raw.settings?.voiceover?.aboutMe ?? {}),
+        },
+        brandDenylist: Array.isArray(raw.settings?.voiceover?.brandDenylist)
+          ? raw.settings.voiceover.brandDenylist
+          : [],
+      },
       linkButler: {
         ...structuredClone(DEFAULTS.settings.linkButler),
         ...(raw.settings?.linkButler ?? {}),
@@ -519,6 +648,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 18,
+    schemaVersion: 20,
   };
 }

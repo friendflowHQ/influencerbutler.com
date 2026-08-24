@@ -125,6 +125,65 @@ describe("migrate", () => {
     expect(migrate(v17).integrations.global.walmartLinkProvider).toBe("walmartCreator");
   });
 
+  it("backfills settings.voiceover onto v18 state and keeps partial overrides", () => {
+    // A v18 store predates Voiceover Butler: no voiceover block at all.
+    const v18 = {
+      schemaVersion: 18,
+      settings: structuredClone(DEFAULTS.settings),
+    } as unknown as Partial<StorageShape>;
+    delete (v18.settings as Record<string, unknown>).voiceover;
+
+    const out = migrate(v18);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.settings.voiceover).toEqual(DEFAULTS.settings.voiceover);
+
+    // A store with only some voiceover keys saved (e.g. a future partial
+    // write) keeps them while the deep-merge fills the rest.
+    const partial = {
+      schemaVersion: 18,
+      settings: {
+        ...structuredClone(DEFAULTS.settings),
+        voiceover: {
+          tone: "dry humor",
+          defaults: { lengthSeconds: 60 },
+          brandDenylist: ["Dyson"],
+        } as never,
+      },
+    } as unknown as Partial<StorageShape>;
+
+    const merged = migrate(partial);
+    expect(merged.settings.voiceover.tone).toBe("dry humor");
+    expect(merged.settings.voiceover.defaults.lengthSeconds).toBe(60);
+    expect(merged.settings.voiceover.defaults.videoType).toBe("social-hook");
+    expect(merged.settings.voiceover.aboutMe.height).toBe("");
+    expect(merged.settings.voiceover.brandDenylist).toEqual(["Dyson"]);
+  });
+
+  it("carries a legacy watchlist item that predates WatchItem.imageUrl through migration", () => {
+    // WatchItem.imageUrl was added after launch; an older stored item has no
+    // such field. Migration must pass the item through untouched (the popup
+    // treats an absent imageUrl as null and backfills it on the next open).
+    const legacy = {
+      schemaVersion: 12,
+      watchlist: [
+        {
+          asin: "B0BTYNCCWJ",
+          marketplace: "amazon.com",
+          title: null,
+          addedAt: 1,
+          notifyOn: ["back_in_stock"],
+          last: null,
+        },
+      ],
+    } as unknown as Partial<StorageShape>;
+
+    const out = migrate(legacy);
+    expect(out.watchlist).toHaveLength(1);
+    expect(out.watchlist[0]?.asin).toBe("B0BTYNCCWJ");
+    // The field is simply absent on the legacy row, not falsely populated.
+    expect(out.watchlist[0]?.imageUrl).toBeUndefined();
+  });
+
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {
     const partial = {
       schemaVersion: 6,

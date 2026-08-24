@@ -66,10 +66,10 @@ export interface OptionsDict {
   fieldApiKey: string;
   fieldApiSecret: string;
   fieldGroupId: string;
-  fieldToken: string;
   fieldUsername: string;
   fieldPassword: string;
   fieldModel: string;
+  recommendedSuffix: string;
   fieldAccessKey: string;
   fieldSecretKey: string;
   fieldPartnerTag: string;
@@ -80,6 +80,62 @@ export interface OptionsDict {
   walmartLink: string;
   walmartLinkNone: string;
   walmartLinkHint: string;
+  // Voiceover Butler section
+  voHeading: string;
+  voIntro: string;
+  voProfileGroup: string;
+  voTone: string;
+  voTonePlaceholder: string;
+  voNiche: string;
+  voNichePlaceholder: string;
+  voAudience: string;
+  voAudiencePlaceholder: string;
+  voDefaultsGroup: string;
+  voLength: string;
+  voLengthCustom: string;
+  voVideoType: string;
+  voVtSocialHook: string;
+  voVtTutorial: string;
+  voVtUnboxing: string;
+  voVtProblemSolution: string;
+  voVtEduStory: string;
+  voVtProductSetup: string;
+  voHookStyle: string;
+  voHookJokePun: string;
+  voHookRelatable: string;
+  voHook30Day: string;
+  voHookTiredOf: string;
+  voHookBoldClaim: string;
+  voHookQuestion: string;
+  voHookSurprise: string;
+  voHookCustomOption: string;
+  voHookCustomLine: string;
+  voHookCustomPlaceholder: string;
+  voPacing: string;
+  voPaceSlow: string;
+  voPaceStandard: string;
+  voPaceFast: string;
+  voDisclosure: string;
+  voDiscHonestPaid: string;
+  voDiscAffiliate: string;
+  voDiscFreePr: string;
+  voDiscNone: string;
+  voAboutGroup: string;
+  voAboutHint: string;
+  voHeight: string;
+  voTopSize: string;
+  voBustSize: string;
+  voDressSize: string;
+  voPantSize: string;
+  voShoeSize: string;
+  voHairColor: string;
+  voEyeColor: string;
+  voSkinTone: string;
+  voPreferredColors: string;
+  voPreferredStyles: string;
+  voDenyGroup: string;
+  voDenyLabel: string;
+  voDenyHint: string;
 }
 
 const en: OptionsDict = {
@@ -150,16 +206,74 @@ const en: OptionsDict = {
   fieldApiKey: "API key",
   fieldApiSecret: "API secret",
   fieldGroupId: "Group id",
-  fieldToken: "Token or API key",
   fieldUsername: "Username or email",
   fieldPassword: "Password",
-  fieldModel: "Model (optional)",
+  fieldModel: "Model",
+  recommendedSuffix: "(recommended)",
   fieldAccessKey: "Access key",
   fieldSecretKey: "Secret key",
   fieldPartnerTag: "Partner tag",
   fieldMarketplace: "Marketplace (optional)",
   fieldLinkTemplate: "Link pattern",
   fieldReferralUrl: "Referral link",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Draft spoken video scripts on any Amazon product page with the Draft voiceover (AI) button in the My link panel. It uses your own OpenAI key from the AI section above. These settings shape every script.",
+  voProfileGroup: "Creator profile",
+  voTone: "Tone",
+  voTonePlaceholder: "Friendly, dry humor, high energy...",
+  voNiche: "Niche",
+  voNichePlaceholder: "Home organization, budget beauty...",
+  voAudience: "Target audience",
+  voAudiencePlaceholder: "Busy moms, college students...",
+  voDefaultsGroup: "Script defaults",
+  voLength: "Script length (seconds)",
+  voLengthCustom: "Custom",
+  voVideoType: "Video type",
+  voVtSocialHook: "Social media hook & script",
+  voVtTutorial: "Tutorial",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problem / solution",
+  voVtEduStory: "Educational & storytelling",
+  voVtProductSetup: "Product setup / introduction",
+  voHookStyle: "Opening hook",
+  voHookJokePun: "Joke or pun",
+  voHookRelatable: "Relatable scenario",
+  voHook30Day: "30-day review",
+  voHookTiredOf: "Tired of [problem]?",
+  voHookBoldClaim: "Bold claim or stat",
+  voHookQuestion: "Direct question",
+  voHookSurprise: "Surprise reveal",
+  voHookCustomOption: "Custom",
+  voHookCustomLine: "Custom hook line",
+  voHookCustomPlaceholder: "Your exact opening line",
+  voPacing: "Pacing",
+  voPaceSlow: "Slow & contemplative",
+  voPaceStandard: "Standard",
+  voPaceFast: "Fast & punchy",
+  voDisclosure: "FTC disclosure",
+  voDiscHonestPaid: "Honest paid sample",
+  voDiscAffiliate: "Affiliate link",
+  voDiscFreePr: "Free PR sample",
+  voDiscNone: "No disclosure (organic)",
+  voAboutGroup: "About Me: fit & styling",
+  voAboutHint:
+    'Only used when the product looks like clothing, shoes, or beauty: the script can ground sizing in your own fit (for example "I\'m 5\'6 and wear a medium"). Leave blank to skip.',
+  voHeight: "Height",
+  voTopSize: "Top size",
+  voBustSize: "Bust size",
+  voDressSize: "Dress size",
+  voPantSize: "Pant size",
+  voShoeSize: "Shoe size",
+  voHairColor: "Hair color",
+  voEyeColor: "Eye color",
+  voSkinTone: "Skin tone / undertone",
+  voPreferredColors: "Preferred colors",
+  voPreferredStyles: "Preferred styles",
+  voDenyGroup: "Brand denylist",
+  voDenyLabel: "Brands to never mention (comma separated)",
+  voDenyHint:
+    "Scripts are told to avoid these brand names, and every draft is checked afterward: if one slips through you get a warning under the script.",
 };
 
 const es: OptionsDict = {
@@ -230,16 +344,74 @@ const es: OptionsDict = {
   fieldApiKey: "Clave de API",
   fieldApiSecret: "Secreto de API",
   fieldGroupId: "Id de grupo",
-  fieldToken: "Token o clave de API",
   fieldUsername: "Usuario o correo",
   fieldPassword: "Contraseña",
-  fieldModel: "Modelo (opcional)",
+  fieldModel: "Modelo",
+  recommendedSuffix: "(recomendado)",
   fieldAccessKey: "Clave de acceso",
   fieldSecretKey: "Clave secreta",
   fieldPartnerTag: "Etiqueta de socio",
   fieldMarketplace: "Mercado (opcional)",
   fieldLinkTemplate: "Patrón de enlace",
   fieldReferralUrl: "Enlace de referido",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Redacta guiones de voz para vídeos en cualquier página de producto de Amazon con el botón Redactar guion de voz (IA) del panel Mi enlace. Usa tu propia clave de OpenAI de la sección IA de arriba. Estos ajustes dan forma a cada guion.",
+  voProfileGroup: "Perfil de creador",
+  voTone: "Tono",
+  voTonePlaceholder: "Cercano, humor seco, mucha energía...",
+  voNiche: "Nicho",
+  voNichePlaceholder: "Organización del hogar, belleza económica...",
+  voAudience: "Audiencia objetivo",
+  voAudiencePlaceholder: "Madres ocupadas, estudiantes...",
+  voDefaultsGroup: "Valores por defecto del guion",
+  voLength: "Duración del guion (segundos)",
+  voLengthCustom: "Personalizada",
+  voVideoType: "Tipo de vídeo",
+  voVtSocialHook: "Gancho y guion para redes",
+  voVtTutorial: "Tutorial",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problema / solución",
+  voVtEduStory: "Educativo y narrativo",
+  voVtProductSetup: "Preparación / presentación del producto",
+  voHookStyle: "Gancho de apertura",
+  voHookJokePun: "Broma o juego de palabras",
+  voHookRelatable: "Escena cotidiana",
+  voHook30Day: "Reseña a 30 días",
+  voHookTiredOf: "¿Cansado de [problema]?",
+  voHookBoldClaim: "Afirmación o dato llamativo",
+  voHookQuestion: "Pregunta directa",
+  voHookSurprise: "Revelación sorpresa",
+  voHookCustomOption: "Personalizado",
+  voHookCustomLine: "Frase de gancho personalizada",
+  voHookCustomPlaceholder: "Tu frase de apertura exacta",
+  voPacing: "Ritmo",
+  voPaceSlow: "Lento y contemplativo",
+  voPaceStandard: "Estándar",
+  voPaceFast: "Rápido y directo",
+  voDisclosure: "Divulgación FTC",
+  voDiscHonestPaid: "Muestra pagada honesta",
+  voDiscAffiliate: "Enlace de afiliado",
+  voDiscFreePr: "Muestra de PR gratuita",
+  voDiscNone: "Sin divulgación (orgánico)",
+  voAboutGroup: "Sobre mí: talla y estilo",
+  voAboutHint:
+    'Solo se usa cuando el producto parece ropa, calzado o belleza: el guion puede basar las tallas en tu propio cuerpo (por ejemplo "mido 1,68 y uso la talla M"). Déjalo en blanco para omitirlo.',
+  voHeight: "Estatura",
+  voTopSize: "Talla de camiseta",
+  voBustSize: "Talla de pecho",
+  voDressSize: "Talla de vestido",
+  voPantSize: "Talla de pantalón",
+  voShoeSize: "Talla de calzado",
+  voHairColor: "Color de pelo",
+  voEyeColor: "Color de ojos",
+  voSkinTone: "Tono de piel / subtono",
+  voPreferredColors: "Colores preferidos",
+  voPreferredStyles: "Estilos preferidos",
+  voDenyGroup: "Lista de marcas prohibidas",
+  voDenyLabel: "Marcas que nunca se deben mencionar (separadas por comas)",
+  voDenyHint:
+    "Se indica a los guiones que eviten estas marcas y cada borrador se revisa después: si alguna se cuela, verás un aviso debajo del guion.",
 };
 
 const fr: OptionsDict = {
@@ -310,16 +482,74 @@ const fr: OptionsDict = {
   fieldApiKey: "Clé API",
   fieldApiSecret: "Secret API",
   fieldGroupId: "Id de groupe",
-  fieldToken: "Jeton ou clé API",
   fieldUsername: "Nom d'utilisateur ou e-mail",
   fieldPassword: "Mot de passe",
-  fieldModel: "Modèle (facultatif)",
+  fieldModel: "Modèle",
+  recommendedSuffix: "(recommandé)",
   fieldAccessKey: "Clé d'accès",
   fieldSecretKey: "Clé secrète",
   fieldPartnerTag: "Balise partenaire",
   fieldMarketplace: "Place de marché (facultatif)",
   fieldLinkTemplate: "Modèle de lien",
   fieldReferralUrl: "Lien de parrainage",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Rédigez des scripts voix off sur n'importe quelle page produit Amazon avec le bouton Rédiger un script voix off (IA) du panneau Mon lien. Il utilise votre propre clé OpenAI de la section IA ci-dessus. Ces réglages façonnent chaque script.",
+  voProfileGroup: "Profil de créateur",
+  voTone: "Ton",
+  voTonePlaceholder: "Chaleureux, humour pince-sans-rire, très énergique...",
+  voNiche: "Niche",
+  voNichePlaceholder: "Organisation de la maison, beauté petit budget...",
+  voAudience: "Audience cible",
+  voAudiencePlaceholder: "Mamans débordées, étudiants...",
+  voDefaultsGroup: "Réglages par défaut du script",
+  voLength: "Durée du script (secondes)",
+  voLengthCustom: "Personnalisée",
+  voVideoType: "Type de vidéo",
+  voVtSocialHook: "Accroche et script pour les réseaux",
+  voVtTutorial: "Tutoriel",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problème / solution",
+  voVtEduStory: "Éducatif et narratif",
+  voVtProductSetup: "Installation / présentation du produit",
+  voHookStyle: "Accroche d'ouverture",
+  voHookJokePun: "Blague ou jeu de mots",
+  voHookRelatable: "Scène du quotidien",
+  voHook30Day: "Bilan après 30 jours",
+  voHookTiredOf: "Fatigué de [problème] ?",
+  voHookBoldClaim: "Affirmation ou statistique forte",
+  voHookQuestion: "Question directe",
+  voHookSurprise: "Révélation surprise",
+  voHookCustomOption: "Personnalisée",
+  voHookCustomLine: "Phrase d'accroche personnalisée",
+  voHookCustomPlaceholder: "Votre phrase d'ouverture exacte",
+  voPacing: "Rythme",
+  voPaceSlow: "Lent et contemplatif",
+  voPaceStandard: "Standard",
+  voPaceFast: "Rapide et percutant",
+  voDisclosure: "Mention FTC",
+  voDiscHonestPaid: "Échantillon rémunéré honnête",
+  voDiscAffiliate: "Lien d'affiliation",
+  voDiscFreePr: "Échantillon PR gratuit",
+  voDiscNone: "Sans mention (organique)",
+  voAboutGroup: "À propos de moi : taille et style",
+  voAboutHint:
+    'Utilisé seulement quand le produit ressemble à un vêtement, une chaussure ou un produit de beauté : le script peut appuyer les tailles sur votre propre morphologie (par exemple "je mesure 1,68 m et porte du M"). Laissez vide pour ignorer.',
+  voHeight: "Taille (stature)",
+  voTopSize: "Taille de haut",
+  voBustSize: "Tour de poitrine",
+  voDressSize: "Taille de robe",
+  voPantSize: "Taille de pantalon",
+  voShoeSize: "Pointure",
+  voHairColor: "Couleur de cheveux",
+  voEyeColor: "Couleur des yeux",
+  voSkinTone: "Carnation / sous-ton",
+  voPreferredColors: "Couleurs préférées",
+  voPreferredStyles: "Styles préférés",
+  voDenyGroup: "Liste de marques interdites",
+  voDenyLabel: "Marques à ne jamais mentionner (séparées par des virgules)",
+  voDenyHint:
+    "Les scripts reçoivent la consigne d'éviter ces marques et chaque brouillon est vérifié ensuite : si l'une d'elles passe, un avertissement s'affiche sous le script.",
 };
 
 export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };

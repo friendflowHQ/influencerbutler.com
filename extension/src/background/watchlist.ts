@@ -56,6 +56,7 @@ export async function addToWatchlist(input: WatchInput): Promise<WatchlistResult
       asin,
       marketplace: input.marketplace,
       title: input.title,
+      imageUrl: null,
       addedAt: Date.now(),
       notifyOn,
       last: null,
@@ -86,6 +87,22 @@ export async function setWatchConditions(
     if (item) item.notifyOn = clean;
   });
   return { items: state.watchlist };
+}
+
+// Fill in an item's image/title once, from the Creator API lookup the popup
+// runs on open. Only nulls are written, so a real title captured at add time is
+// never clobbered by a later (possibly emptier) enrichment.
+export async function backfillWatchItem(
+  asin: string,
+  marketplace: string,
+  patch: { imageUrl?: string | null; title?: string | null },
+): Promise<void> {
+  await patchState((s) => {
+    const item = s.watchlist[findIndex(s.watchlist, asin, marketplace)];
+    if (!item) return;
+    if (!item.imageUrl && patch.imageUrl) item.imageUrl = patch.imageUrl;
+    if (!item.title && patch.title) item.title = patch.title;
+  });
 }
 
 // Alarm handler: check up to WATCHLIST_RUN_CAP items, least-recently checked

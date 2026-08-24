@@ -13,6 +13,7 @@ import type {
   HudCommandResult,
   HudStatus,
   NotifyPollResult,
+  OutreachKeywordsResult,
   PairResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
@@ -131,6 +132,7 @@ function probePort(port: number): Promise<HudStatus | null> {
           appVersion?: string;
           dealWorkspaces?: Array<{ key: string; label: string }>;
           creatorMode?: unknown;
+          ideaLists?: Array<{ listId?: unknown; title?: unknown }>;
         };
         if (frame.type === "hello" || frame.type === "status") {
           done({
@@ -138,6 +140,13 @@ function probePort(port: number): Promise<HudStatus | null> {
             appVersion: frame.appVersion,
             dealWorkspaces: frame.dealWorkspaces,
             creatorMode: normalizeCreatorMode(frame.creatorMode),
+            // Idea List capture targets; absent on older app builds. Kept to
+            // well-shaped rows so a malformed frame cannot poison the menu.
+            ideaLists: Array.isArray(frame.ideaLists)
+              ? frame.ideaLists
+                  .filter((l) => typeof l?.listId === "string" && typeof l?.title === "string")
+                  .map((l) => ({ listId: l.listId as string, title: l.title as string }))
+              : undefined,
           });
           return;
         }
@@ -385,6 +394,86 @@ function lookupEarningsOnPort(
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Outreach keywords (brand -> searched keyword) ────────────────────────────
+// Ask the running app which brands the creator messaged with the "Message
+// Brands" tool and the search keyword that surfaced each one, so the Creator
+// Connections Messages widget can badge every conversation with its keyword.
+// Read-only; authed with the pairing token because it returns the creator's
+// private outreach ledger. Returns paired:false when never connected so the
+// caller stays silent (no chips) instead of erroring.
+
+export async function fetchOutreachKeywords(): Promise<OutreachKeywordsResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, records: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchOutreachKeywordsOnPort(port, token);
+    if (result) return result;
+  }
+  cached = null;
+  return { ok: false, records: [] };
+}
+
+function fetchOutreachKeywordsOnPort(
+  port: number,
+  token: string,
+): Promise<OutreachKeywordsResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: OutreachKeywordsResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          records?: OutreachKeywordsResult["records"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "outreach.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, records: [] });
+          return;
+        }
+        if (frame.type === "outreach.result") {
+          done({
+            ok: frame.ok === true,
+            records: Array.isArray(frame.records) ? frame.records : [],
           });
           return;
         }

@@ -6,10 +6,12 @@ import {
 import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
 import { retailerModule } from "../retailers/module";
 import {
+  carouselBreakdown,
   carouselSourceFor,
   classifiedCount,
   extractCarousel,
   extractFromText,
+  upperInfluencerSlot,
   type CarouselResult,
 } from "../amazon/video-carousel";
 import { deriveCreatorId, deriveVideoId } from "../amazon/video-identity";
@@ -43,6 +45,7 @@ import { initTrendRadar } from "../tools/trend-radar/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
+import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
@@ -70,6 +73,10 @@ let capturedVideoData: CarouselResult[] = [];
 // widget's own endpoint with pagination instead of guessing one.
 let capturedVideoUrls: string[] = [];
 let renderedClassified = -1;
+// Coverage fingerprint of the render, so a payload that improves carousel-side
+// resolution or creator names WITHOUT raising the classified count (same
+// videos, better data) still triggers a rebuild.
+let renderedFingerprint = "";
 // Campaign fill / capacity captured by the MAIN-world connect-hook
 // (src/content/connect-hook.ts) from the campaign/search API, keyed by
 // campaignId. Merged so a later partial capture (e.g. the SPCC tab) does not
@@ -140,10 +147,29 @@ async function main(): Promise<void> {
 
 // The widget's classified data can land well after first render (it only
 // loads once the video section is on screen). Whenever a better source
-// appears, rebuild the panel from scratch.
+// appears, rebuild the panel from scratch. "Better" means more classified
+// videos OR (at no loss of classification) improved coverage: side resolution
+// for the upper/lower split, or creator names for the influencer list.
+function coverageFingerprint(result: CarouselResult): string {
+  const sides = carouselBreakdown(result);
+  const named = result.videos.filter((v) => v.creatorName).length;
+  return [
+    classifiedCount(result),
+    sides.upper.total,
+    sides.upper.influencer,
+    sides.lower.total,
+    sides.lower.influencer,
+    named,
+  ].join("|");
+}
+
 function rebuildIfImproved(): void {
   const probe = extractCarousel(document, capturedVideoData);
-  if (classifiedCount(probe) > renderedClassified) {
+  const classified = classifiedCount(probe);
+  if (
+    classified > renderedClassified ||
+    (classified === renderedClassified && coverageFingerprint(probe) !== renderedFingerprint)
+  ) {
     removeHost();
     void runForPage();
   }
@@ -184,6 +210,12 @@ async function runForPage(): Promise<void> {
     return;
   }
 
+  // Brand Keywords owns a persistent MutationObserver on the Messages widget, so
+  // unlike the once-per-view tools it must be explicitly torn down on every SPA
+  // navigation. Tear it down here up front; the campaign-grid branch below
+  // re-inits it when we are (still) on Creator Connections.
+  teardownBrandKeywords();
+
   // Remote operational flags win over the user's own settings: they are the
   // site's kill switch for when a tool misbehaves in the wild. Apply selector
   // overrides (config-level DOM repairs) before any tool queries the page,
@@ -215,7 +247,23 @@ async function runForPage(): Promise<void> {
     guard("product-tools", () => {
       const carousel = extractCarousel(document, capturedVideoData);
       renderedClassified = classifiedCount(carousel);
+      renderedFingerprint = coverageFingerprint(carousel);
       const signals = extractSignals(document, currentUrl);
+
+      // Whether more video data is still expected to arrive: unclassified
+      // videos, an unresolved upper-influencer-slot verdict, a lower rail we
+      // have not seen at all, or influencers counted without names. Drives both
+      // the panel's "reading" state and the auto-hydration below.
+      const breakdown = carouselBreakdown(carousel);
+      const namedInfluencers = carousel.videos.some(
+        (v) => v.creatorType === "influencer" && v.creatorName,
+      );
+      const videosPending =
+        carousel.counts.total > 0 &&
+        (carousel.counts.unknown > 0 ||
+          upperInfluencerSlot(carousel) === "unknown" ||
+          breakdown.lower.total === 0 ||
+          (carousel.counts.influencer > 0 && !namedInfluencers));
 
       // Identity card first: the ASINs, category, rank, and rate at a glance.
       guard("product-snapshot", () => renderProductSnapshot(signals));
@@ -249,6 +297,7 @@ async function runForPage(): Promise<void> {
             capturedVideoUrls,
             () => extractCarousel(document, capturedVideoData),
             settings.tools.videoLandscape,
+            videosPending,
           ),
         );
         lastStatus.toolSummaries.push({
@@ -320,8 +369,11 @@ async function runForPage(): Promise<void> {
       // into view, and may arrive via state scripts, rail DOM, or the
       // network hook. Nudge it into view automatically so the user does not
       // have to scroll, then keep polling and rebuild as coverage improves.
+      // videosPending covers more than counts.unknown: the videoList strategy
+      // can classify everything it sees while the lower rail (and its
+      // upper/lower resolution and creator names) has not hydrated at all.
       // Only relevant when the onsite video-counts panel is showing.
-      if (showOnsite && settings.tools.videoCounts && carousel.counts.unknown > 0) {
+      if (showOnsite && settings.tools.videoCounts && videosPending) {
         autoHydrateVideos();
         watchForVideoHydration();
       }
@@ -416,6 +468,12 @@ async function runForPage(): Promise<void> {
         void initCampaignRadar(settings, campaignFills);
         lastStatus.toolSummaries.push({ label: t().sumCampaignRadar, value: t().ready });
       }
+    });
+    // Keyword chips on the floating Messages widget. Independent of the grid
+    // (the widget may be the only thing the user opens) and self-gating: a no-op
+    // unless the app is paired and has "Message Brands" outreach history.
+    guard("brand-keywords", () => {
+      if (settings.tools.brandKeywords) initBrandKeywords(settings);
     });
   }
 }
@@ -563,6 +621,7 @@ function watchSpaNavigation(): void {
     capturedVideoData = [];
     capturedVideoUrls = [];
     renderedClassified = -1;
+    renderedFingerprint = "";
     removeHost();
     void runForPage();
   };

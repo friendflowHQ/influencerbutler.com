@@ -8,7 +8,20 @@ import {
 import type { IntegrationAdapter, IntegrationCategory } from "../integrations/types";
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
 import { resolveLocale } from "../i18n";
-import { getSettings } from "../storage/store";
+import { getSettings, patchSettings } from "../storage/store";
+import type {
+  Settings,
+  VoiceoverDisclosureKey,
+  VoiceoverHookStyle,
+  VoiceoverPacing,
+  VoiceoverSettings,
+  VoiceoverVideoType,
+} from "../storage/schema";
+import {
+  LENGTH_MAX_SECONDS,
+  LENGTH_MIN_SECONDS,
+  clampLength,
+} from "../tools/my-link/voiceover-prompt";
 import {
   sendToBackground,
   type IntegrationsView,
@@ -27,16 +40,18 @@ const IB_LINKS = "influencerbutler";
 
 let D: OptionsDict;
 let view: IntegrationsView;
+let settings: Settings;
 
 void init();
 
 async function init(): Promise<void> {
-  const settings = await getSettings();
+  settings = await getSettings();
   D = OPTIONS_CATALOG[resolveLocale(settings.locale)];
   view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
   renderChrome();
   renderGlobals();
   renderCategories();
+  renderVoiceover();
 }
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -191,6 +206,271 @@ function categoryLabel(category: IntegrationCategory): string {
   return map[category];
 }
 
+// Voiceover Butler settings: the first feature-settings section on this page
+// (everything above is API integrations). Non-secret feature config, so it
+// writes chrome.storage.local directly via patchSettings like the popup does,
+// with no background message. The Save handler always writes the WHOLE
+// voiceover object: patchSettings shallow-merges, so a partial nested patch
+// would drop sibling keys (see the warning in storage/schema.ts).
+function renderVoiceover(): void {
+  const root = byId("voiceover");
+  root.replaceChildren();
+  const vo = settings.voiceover;
+
+  const heading = document.createElement("h2");
+  heading.className = "cat";
+  heading.textContent = D.voHeading;
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.textContent = D.voIntro;
+  card.append(intro);
+
+  const group = (title: string): HTMLElement => {
+    const block = document.createElement("div");
+    block.className = "provider";
+    const head = document.createElement("div");
+    head.className = "provider-head";
+    const name = document.createElement("span");
+    name.className = "provider-name";
+    name.textContent = title;
+    head.append(name);
+    block.append(head);
+    card.append(block);
+    return block;
+  };
+
+  const textField = (
+    parent: HTMLElement,
+    labelText: string,
+    value: string,
+    placeholder = "",
+  ): HTMLInputElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.value = value;
+    input.placeholder = placeholder;
+    wrap.append(span, input);
+    parent.append(wrap);
+    return input;
+  };
+
+  const selectField = (
+    parent: HTMLElement,
+    labelText: string,
+    options: Array<[string, string]>,
+    value: string,
+  ): HTMLSelectElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    const select = document.createElement("select");
+    for (const [optValue, optLabel] of options) {
+      const option = document.createElement("option");
+      option.value = optValue;
+      option.textContent = optLabel;
+      select.append(option);
+    }
+    select.value = value;
+    wrap.append(span, select);
+    parent.append(wrap);
+    return select;
+  };
+
+  // Creator profile
+  const profile = group(D.voProfileGroup);
+  const toneInput = textField(profile, D.voTone, vo.tone, D.voTonePlaceholder);
+  const nicheInput = textField(profile, D.voNiche, vo.niche, D.voNichePlaceholder);
+  const audienceInput = textField(profile, D.voAudience, vo.audience, D.voAudiencePlaceholder);
+
+  // Script defaults
+  const defaults = group(D.voDefaultsGroup);
+
+  const lengthLabel = document.createElement("p");
+  lengthLabel.className = "muted small";
+  lengthLabel.textContent = D.voLength;
+  defaults.append(lengthLabel);
+  const chipRow = document.createElement("div");
+  chipRow.className = "chip-row";
+  defaults.append(chipRow);
+  const PRESET_LENGTHS = [15, 20, 30, 60];
+  const customNumber = document.createElement("input");
+  customNumber.type = "number";
+  customNumber.min = String(LENGTH_MIN_SECONDS);
+  customNumber.max = String(LENGTH_MAX_SECONDS);
+  customNumber.value = String(vo.defaults.lengthSeconds);
+  // A stored preset value selects its chip; anything else is a custom length.
+  let lengthChoice: number | "custom" = PRESET_LENGTHS.includes(vo.defaults.lengthSeconds)
+    ? vo.defaults.lengthSeconds
+    : "custom";
+  const chipButtons = new Map<number | "custom", HTMLButtonElement>();
+  const syncChips = (): void => {
+    for (const [choice, btn] of chipButtons) {
+      btn.className = choice === lengthChoice ? "ghost chip active" : "ghost chip";
+    }
+    customNumber.hidden = lengthChoice !== "custom";
+  };
+  const addChip = (choice: number | "custom", text: string): void => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = text;
+    btn.onclick = () => {
+      lengthChoice = choice;
+      syncChips();
+      if (choice === "custom") customNumber.focus();
+    };
+    chipButtons.set(choice, btn);
+    chipRow.append(btn);
+  };
+  for (const preset of PRESET_LENGTHS) addChip(preset, String(preset));
+  addChip("custom", D.voLengthCustom);
+  chipRow.append(customNumber);
+  syncChips();
+
+  const videoTypeSelect = selectField(
+    defaults,
+    D.voVideoType,
+    [
+      ["social-hook", D.voVtSocialHook],
+      ["tutorial", D.voVtTutorial],
+      ["unboxing", D.voVtUnboxing],
+      ["problem-solution", D.voVtProblemSolution],
+      ["edu-story", D.voVtEduStory],
+      ["product-setup", D.voVtProductSetup],
+    ],
+    vo.defaults.videoType,
+  );
+  const hookSelect = selectField(
+    defaults,
+    D.voHookStyle,
+    [
+      ["joke-pun", D.voHookJokePun],
+      ["relatable", D.voHookRelatable],
+      ["30-day-review", D.voHook30Day],
+      ["tired-of", D.voHookTiredOf],
+      ["bold-claim", D.voHookBoldClaim],
+      ["question", D.voHookQuestion],
+      ["surprise-reveal", D.voHookSurprise],
+      ["custom", D.voHookCustomOption],
+    ],
+    vo.defaults.hookStyle,
+  );
+  const hookCustomInput = textField(
+    defaults,
+    D.voHookCustomLine,
+    vo.defaults.hookCustom,
+    D.voHookCustomPlaceholder,
+  );
+  const syncHookCustom = (): void => {
+    (hookCustomInput.parentElement as HTMLElement).hidden = hookSelect.value !== "custom";
+  };
+  syncHookCustom();
+  hookSelect.onchange = syncHookCustom;
+  const pacingSelect = selectField(
+    defaults,
+    D.voPacing,
+    [
+      ["slow", D.voPaceSlow],
+      ["standard", D.voPaceStandard],
+      ["fast", D.voPaceFast],
+    ],
+    vo.defaults.pacing,
+  );
+  const disclosureSelect = selectField(
+    defaults,
+    D.voDisclosure,
+    [
+      ["honest-paid-sample", D.voDiscHonestPaid],
+      ["affiliate-link", D.voDiscAffiliate],
+      ["free-pr-sample", D.voDiscFreePr],
+      ["none", D.voDiscNone],
+    ],
+    vo.defaults.disclosureKey,
+  );
+
+  // About Me: fit & styling
+  const about = group(D.voAboutGroup);
+  const aboutHint = document.createElement("p");
+  aboutHint.className = "muted small";
+  aboutHint.textContent = D.voAboutHint;
+  about.append(aboutHint);
+  const aboutFields: Array<[keyof VoiceoverSettings["aboutMe"], string]> = [
+    ["height", D.voHeight],
+    ["topSize", D.voTopSize],
+    ["bustSize", D.voBustSize],
+    ["dressSize", D.voDressSize],
+    ["pantSize", D.voPantSize],
+    ["shoeSize", D.voShoeSize],
+    ["hairColor", D.voHairColor],
+    ["eyeColor", D.voEyeColor],
+    ["skinTone", D.voSkinTone],
+    ["preferredColors", D.voPreferredColors],
+    ["preferredStyles", D.voPreferredStyles],
+  ];
+  const aboutInputs = new Map<keyof VoiceoverSettings["aboutMe"], HTMLInputElement>();
+  for (const [key, labelText] of aboutFields) {
+    aboutInputs.set(key, textField(about, labelText, vo.aboutMe[key]));
+  }
+
+  // Brand denylist
+  const deny = group(D.voDenyGroup);
+  const denyInput = textField(deny, D.voDenyLabel, vo.brandDenylist.join(", "));
+  const denyHint = document.createElement("p");
+  denyHint.className = "muted small";
+  denyHint.textContent = D.voDenyHint;
+  deny.append(denyHint);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = D.save;
+  actions.append(saveBtn);
+  card.append(actions);
+
+  saveBtn.onclick = async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = D.saving;
+    const aboutMe = {} as VoiceoverSettings["aboutMe"];
+    for (const [key, input] of aboutInputs) aboutMe[key] = input.value.trim();
+    const voiceover: VoiceoverSettings = {
+      tone: toneInput.value.trim(),
+      niche: nicheInput.value.trim(),
+      audience: audienceInput.value.trim(),
+      defaults: {
+        lengthSeconds:
+          lengthChoice === "custom" ? clampLength(Number(customNumber.value)) : lengthChoice,
+        videoType: videoTypeSelect.value as VoiceoverVideoType,
+        hookStyle: hookSelect.value as VoiceoverHookStyle,
+        hookCustom: hookCustomInput.value.trim(),
+        pacing: pacingSelect.value as VoiceoverPacing,
+        disclosureKey: disclosureSelect.value as VoiceoverDisclosureKey,
+      },
+      aboutMe,
+      brandDenylist: denyInput.value
+        .split(",")
+        .map((b) => b.trim())
+        .filter(Boolean),
+    };
+    settings = await patchSettings({ voiceover });
+    // Reflect the clamp back so the field shows what was actually saved.
+    customNumber.value = String(settings.voiceover.defaults.lengthSeconds);
+    saveBtn.disabled = false;
+    saveBtn.textContent = D.saved;
+    window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
+  };
+
+  root.append(heading, card);
+}
+
 function makeBadge(status: "ok" | "fail" | "untested"): HTMLElement {
   const badge = document.createElement("span");
   badge.className = `badge ${status}`;
@@ -221,7 +501,7 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   }
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.
-  const inputs = new Map<string, HTMLInputElement>();
+  const inputs = new Map<string, HTMLInputElement | HTMLSelectElement>();
   if (adapter.id === ASSOCIATES) {
     block.append(renderTagGrid(pv, inputs));
   } else {
@@ -230,6 +510,30 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       wrap.className = "field";
       const span = document.createElement("span");
       span.textContent = label(field.labelKey);
+      if (field.type === "select") {
+        const select = document.createElement("select");
+        const stored = (pv.values[field.name] ?? "").trim();
+        for (const opt of field.options ?? []) {
+          const option = document.createElement("option");
+          option.value = opt.value;
+          option.textContent = opt.recommended ? `${opt.value} ${D.recommendedSuffix}` : opt.value;
+          if (opt.recommended && !stored) option.selected = true;
+          select.append(option);
+        }
+        // A previously typed custom value stays selectable so saving the form
+        // never silently swaps the user's model.
+        if (stored && !(field.options ?? []).some((o) => o.value === stored)) {
+          const custom = document.createElement("option");
+          custom.value = stored;
+          custom.textContent = stored;
+          select.append(custom);
+        }
+        if (stored) select.value = stored;
+        wrap.append(span, select);
+        block.append(wrap);
+        inputs.set(field.name, select);
+        continue;
+      }
       const input = document.createElement("input");
       input.type = field.type === "password" ? "password" : "text";
       input.autocomplete = "off";
@@ -351,7 +655,7 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   return block;
 }
 
-function renderTagGrid(pv: IntegrationView, inputs: Map<string, HTMLInputElement>): HTMLElement {
+function renderTagGrid(pv: IntegrationView, inputs: Map<string, HTMLInputElement | HTMLSelectElement>): HTMLElement {
   const wrap = document.createElement("div");
   const hint = document.createElement("p");
   hint.className = "muted small";
@@ -401,7 +705,7 @@ function renderTagGrid(pv: IntegrationView, inputs: Map<string, HTMLInputElement
 
 // Rebuild the country->tag map from the current grid rows into the inputs map
 // the save handler reads. Keyed by country code, skipping blank rows.
-function rebuildTagInputs(grid: HTMLElement, inputs: Map<string, HTMLInputElement>): void {
+function rebuildTagInputs(grid: HTMLElement, inputs: Map<string, HTMLInputElement | HTMLSelectElement>): void {
   inputs.clear();
   const cells = Array.from(grid.querySelectorAll("input"));
   for (let i = 0; i + 1 < cells.length; i += 2) {

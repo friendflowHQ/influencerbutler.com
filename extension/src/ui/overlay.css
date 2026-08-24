@@ -360,6 +360,21 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   white-space: pre-wrap;
 }
 
+/* My link inline sign-in: license-key field plus Connect on one row, shown
+   only when a copy comes back needing a signed-in license. */
+.connect-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.connect-row input {
+  flex: 1 1 160px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+}
+.connect-row input:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: transparent; }
+
 .btn {
   border: 0;
   border-radius: 10px;
@@ -604,6 +619,31 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 /* The clickable "Earned $X" chip (a button styled like .tile-chip). */
 .earn-chip { font: inherit; font-size: 11.5px; cursor: pointer; }
 .earn-chip:hover { filter: brightness(0.97); }
+
+/* Brand Keywords chip: the search keyword the "Message Brands" tool used to
+   find this brand, dropped next to a Creator Connections Messages conversation.
+   Orange accent so it reads as ours (matches .tile-score.hot). The leading glyph
+   is a small magnifier; the label is the keyword text. */
+.bkw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font: 700 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  vertical-align: middle;
+  cursor: default;
+}
+.bkw-chip .bkw-glyph { flex: none; font-size: 10px; opacity: 0.9; }
+.bkw-chip .bkw-kw {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tile-watch {
   display: inline-flex;
   align-items: center;
@@ -755,6 +795,16 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .search-control input.search-price { width: 72px; }
 .search-check { cursor: pointer; }
 .search-check input { width: 15px; height: 15px; accent-color: #f97316; cursor: pointer; }
+
+/* Campaign Radar mounts its toolbar into Amazon's narrow opportunity column,
+   where the default wrap drops every control onto its own line (vertical
+   stack). Keep the radar controls on a single horizontal row and let the row
+   scroll if the column is too tight, rather than wrapping. */
+.radar-toolbar { flex-wrap: nowrap; overflow-x: auto; }
+.radar-toolbar .search-brand,
+.radar-toolbar .search-control { flex: 0 0 auto; }
+.radar-toolbar .search-control-label,
+.radar-toolbar .search-count { white-space: nowrap; }
 .search-scan { gap: 8px; margin-left: auto; }
 .search-scan .btn { padding: 7px 12px; font-size: 12.5px; }
 .search-status { font-size: 12px; color: #64748b; }

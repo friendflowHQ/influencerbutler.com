@@ -35,13 +35,18 @@ export type IntegrationCategory =
   | "affiliateNetwork"
   | "walmartLink";
 
+// Option values (model ids and the like) are shown verbatim; only the
+// "(recommended)" suffix is localized by the options page.
+export type FieldOption = { value: string; recommended?: boolean };
+
 export type FieldSpec = {
   name: string;
   // Label/help are i18n keys resolved by the options page (src/options/strings).
   labelKey: string;
-  type: "password" | "text";
+  type: "password" | "text" | "select";
   placeholder?: string;
   optional?: boolean;
+  options?: FieldOption[]; // for type "select"
 };
 
 export type TestResult = { ok: boolean; message: string };

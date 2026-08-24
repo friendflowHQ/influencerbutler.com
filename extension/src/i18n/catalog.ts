@@ -181,6 +181,13 @@ export interface Dict {
   chipCustomer: (n: number) => string;
   chipUnclassified: (n: number) => string;
   videosTotalVia: (total: number, viaPageData: boolean) => string;
+  // Upper/lower split view + the upper influencer slot indicator.
+  carouselReading: (label: string) => string;
+  upperSlotOn: string;
+  upperSlotOff: string;
+  upperSlotChecking: string;
+  upperSlotUnknown: string;
+  upperSlotInfo: string;
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
   influencerVideosMore: (n: number) => string;
@@ -600,7 +607,7 @@ export interface Dict {
   noCampaign: string;
   ccAvailable: string;
   spccAvailable: string;
-  campaignAcceptNote: string;
+  campaignConnectNote: string;
   dealAvailable: string;
   dealPushNote: string;
 
@@ -638,6 +645,10 @@ export interface Dict {
   generatingPhoto: string;
   requestSample: string;
   requestingSample: string;
+  addToIdeaList: string;
+  addingToIdeaList: string;
+  ideaListNewListOption: string;
+  tileMenuAddToIdeaList: string;
   pushingDeals: string;
   sendingContent: string;
   checkingCc: string;
@@ -909,6 +920,15 @@ const en: Dict = {
   chipUnclassified: (n) => `${n} unclassified`,
   videosTotalVia: (total, viaPageData) =>
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
+  carouselReading: (label) => `${label}: reading video data...`,
+  upperSlotOn:
+    "Upper influencer carousel: on. Influencer videos can land in the top slot by the image gallery.",
+  upperSlotOff:
+    "Upper influencer carousel: off. Influencer videos only appear in the lower rail on this listing.",
+  upperSlotChecking: "Upper influencer carousel: checking...",
+  upperSlotUnknown: "Upper influencer carousel: unknown",
+  upperSlotInfo:
+    "When a brand turns on the upper influencer carousel, a creator video can be placed right next to the image gallery - the best-earning video slot on the listing. Off means your video would only show in the lower Product Videos rail.",
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
   influencerVideosMore: (n) => `+${n} more`,
@@ -1334,7 +1354,7 @@ const en: Dict = {
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
-  campaignAcceptNote: "Accept it from the Send to your butler app section below (the app confirms and accepts).",
+  campaignConnectNote: "Open the Influencer Butler app to accept this campaign (the app confirms and accepts).",
   dealAvailable: "Deal available",
   dealPushNote: "Push it to Deals Influencer Butler from the Send to your butler app section below.",
 
@@ -1376,6 +1396,10 @@ const en: Dict = {
   generatingPhoto: "Generating AI photo in your app...",
   requestSample: "Request a sample",
   requestingSample: "Setting up your sample request...",
+  addToIdeaList: "Add to Idea List",
+  addingToIdeaList: "Queuing for Idea List Butler...",
+  ideaListNewListOption: "New Idea List...",
+  tileMenuAddToIdeaList: "Add to Amazon Idea List",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
@@ -1654,6 +1678,15 @@ const es: Dict = {
   chipUnclassified: (n) => `${n} sin clasificar`,
   videosTotalVia: (total, viaPageData) =>
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
+  carouselReading: (label) => `${label}: leyendo datos de video...`,
+  upperSlotOn:
+    "Carrusel superior de influencers: activado. Los videos de influencers pueden ocupar el espacio superior junto a la galería de imágenes.",
+  upperSlotOff:
+    "Carrusel superior de influencers: desactivado. En esta ficha los videos de influencers solo aparecen en el carrusel inferior.",
+  upperSlotChecking: "Carrusel superior de influencers: comprobando...",
+  upperSlotUnknown: "Carrusel superior de influencers: desconocido",
+  upperSlotInfo:
+    "Cuando una marca activa el carrusel superior de influencers, un video de creador puede colocarse junto a la galería de imágenes: el espacio de video que más gana en la ficha. Desactivado significa que tu video solo aparecería en el carrusel inferior de Videos del producto.",
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
   influencerVideosMore: (n) => `+${n} más`,
@@ -2079,7 +2112,7 @@ const es: Dict = {
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
-  campaignAcceptNote: "Acéptala desde la sección Send to your butler app de abajo (la app confirma y acepta).",
+  campaignConnectNote: "Abre la app Influencer Butler para aceptar esta campaña (la app confirma y acepta).",
   dealAvailable: "Oferta disponible",
   dealPushNote: "Envíala a Deals Influencer Butler desde la sección Send to your butler app de abajo.",
 
@@ -2121,6 +2154,10 @@ const es: Dict = {
   generatingPhoto: "Generando foto con IA en tu app...",
   requestSample: "Solicitar una muestra",
   requestingSample: "Preparando tu solicitud de muestra...",
+  addToIdeaList: "Añadir a Idea List",
+  addingToIdeaList: "Poniendo en cola para Idea List Butler...",
+  ideaListNewListOption: "Nueva Idea List...",
+  tileMenuAddToIdeaList: "Añadir a una Idea List de Amazon",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
@@ -2399,6 +2436,15 @@ const fr: Dict = {
   chipUnclassified: (n) => `${n} non classées`,
   videosTotalVia: (total, viaPageData) =>
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
+  carouselReading: (label) => `${label} : lecture des données vidéo...`,
+  upperSlotOn:
+    "Carrousel supérieur d'influenceurs : activé. Les vidéos d'influenceurs peuvent occuper l'emplacement du haut, à côté de la galerie d'images.",
+  upperSlotOff:
+    "Carrousel supérieur d'influenceurs : désactivé. Sur cette fiche, les vidéos d'influenceurs n'apparaissent que dans le carrousel inférieur.",
+  upperSlotChecking: "Carrousel supérieur d'influenceurs : vérification...",
+  upperSlotUnknown: "Carrousel supérieur d'influenceurs : inconnu",
+  upperSlotInfo:
+    "Quand une marque active le carrousel supérieur d'influenceurs, une vidéo de créateur peut être placée juste à côté de la galerie d'images : l'emplacement vidéo le plus rentable de la fiche. Désactivé signifie que votre vidéo n'apparaîtrait que dans le carrousel inférieur des vidéos du produit.",
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
   influencerVideosMore: (n) => `+${n} de plus`,
@@ -2824,7 +2870,7 @@ const fr: Dict = {
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
-  campaignAcceptNote: "Acceptez-la depuis la section Send to your butler app ci-dessous (l'app confirme et accepte).",
+  campaignConnectNote: "Ouvrez l'app Influencer Butler pour accepter cette campagne (l'app confirme et accepte).",
   dealAvailable: "Offre disponible",
   dealPushNote: "Envoyez-la vers Deals Influencer Butler depuis la section Send to your butler app ci-dessous.",
 
@@ -2866,6 +2912,10 @@ const fr: Dict = {
   generatingPhoto: "Génération d'une photo IA dans votre app...",
   requestSample: "Demander un échantillon",
   requestingSample: "Préparation de votre demande d'échantillon...",
+  addToIdeaList: "Ajouter à une Idea List",
+  addingToIdeaList: "Mise en file pour Idea List Butler...",
+  ideaListNewListOption: "Nouvelle Idea List...",
+  tileMenuAddToIdeaList: "Ajouter à une Idea List Amazon",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",

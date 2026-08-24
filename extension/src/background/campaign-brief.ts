@@ -1,6 +1,8 @@
 import { ENDPOINTS } from "../shared/constants";
-import { getState } from "../storage/store";
+import { getIntegration, getState } from "../storage/store";
 import { getMarketBatch } from "./market";
+import { openaiComplete } from "./integrations";
+import { buildBriefPrompt, parseBriefSections } from "../tools/campaign-radar/brief-prompt";
 import type {
   CampaignBriefDemand,
   CampaignBriefResult,
@@ -40,6 +42,21 @@ function pickStandout(products: MarketProduct[]): CampaignBriefDemand | null {
   };
 }
 
+// When the creator has connected their own OpenAI key in API Integrations, write
+// the brief with it directly (their key, their cost) instead of our server. The
+// prose is built and parsed locally; a miss (not connected, OpenAI error, or an
+// unparseable reply) returns null so the caller falls back to the server route.
+async function tryLocalOpenAiBrief(
+  signals: CampaignBriefSignals,
+  demand: CampaignBriefDemand | null,
+): Promise<CampaignBriefSections | null> {
+  const openai = await getIntegration("openai");
+  if (!openai.credentialsEnc) return null; // no BYO key: use the server route
+  const res = await openaiComplete(buildBriefPrompt(signals, demand));
+  if (!res.ok || !res.text) return null;
+  return parseBriefSections(res.text);
+}
+
 export async function fetchCampaignBrief(
   signals: CampaignBriefSignals,
 ): Promise<CampaignBriefResult> {
@@ -58,6 +75,11 @@ export async function fetchCampaignBrief(
     if (market.migrationPending) migrationPending = true;
     demand = pickStandout(market.products);
   }
+
+  // BYO key first: write the prose with the creator's own OpenAI integration.
+  // Only when they have not connected one do we spend our server's model budget.
+  const local = await tryLocalOpenAiBrief(signals, demand);
+  if (local) return { ok: true, migrationPending, sections: local, demand };
 
   try {
     const res = await fetch(ENDPOINTS.campaignBrief, {

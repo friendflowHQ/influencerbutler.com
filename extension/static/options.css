@@ -272,6 +272,41 @@ button[disabled] {
   color: #991b1b;
 }
 
+/* Voiceover Butler length presets: preset-seconds chips plus a Custom chip
+   that reveals a small number input. Reuses the ghost button look; the active
+   chip fills orange like a primary button. */
+.chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.chip-row button.chip {
+  padding: 6px 12px;
+}
+
+.chip-row button.chip.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+  font-weight: 600;
+}
+
+.chip-row input[type="number"] {
+  width: 90px;
+  font-size: 14px;
+  padding: 7px 9px;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+}
+
+.chip-row input[type="number"]:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: -1px;
+}
+
 .tag-grid {
   display: grid;
   grid-template-columns: 1fr 2fr auto;

@@ -6,6 +6,17 @@ import type { IntegrationAdapter, TestResult } from "../types";
 const BASE = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4o-mini";
 
+// Curated picks so users never have to know model names. The recommended one
+// must stay in sync with DEFAULT_MODEL (cheap and solid for short copy tasks).
+const MODEL_OPTIONS = [
+  { value: DEFAULT_MODEL, recommended: true },
+  { value: "gpt-4o" },
+  { value: "gpt-4.1-mini" },
+  { value: "gpt-4.1" },
+  { value: "gpt-5-mini" },
+  { value: "gpt-5" },
+];
+
 async function test(creds: Record<string, string>): Promise<TestResult> {
   const apiKey = (creds.apiKey ?? "").trim();
   if (!apiKey) return { ok: false, message: "Paste your OpenAI API key first." };
@@ -53,7 +64,7 @@ export const openaiAdapter: IntegrationAdapter = {
   hosts: ["https://api.openai.com/*"],
   fields: [
     { name: "apiKey", labelKey: "fieldApiKey", type: "password", placeholder: "sk-..." },
-    { name: "model", labelKey: "fieldModel", type: "text", placeholder: DEFAULT_MODEL, optional: true },
+    { name: "model", labelKey: "fieldModel", type: "select", options: MODEL_OPTIONS, optional: true },
   ],
   test,
   complete,

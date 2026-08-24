@@ -1,6 +1,12 @@
-import { addSection, chip, collapsible, el } from "../../ui/components";
+import { addSection, chip, collapsible, el, infoTip } from "../../ui/components";
 import { t } from "../../i18n";
-import { classifiedCount, type CarouselResult, type CarouselVideo } from "../../amazon/video-carousel";
+import {
+  carouselBreakdown,
+  classifiedCount,
+  upperInfluencerSlot,
+  type CarouselResult,
+  type CarouselVideo,
+} from "../../amazon/video-carousel";
 import { computeLandscape } from "../../amazon/video-landscape";
 import { query } from "../../amazon/selectors";
 import { harvestVideos, type VideoHarvestResult } from "../../amazon/video-harvest";
@@ -26,6 +32,9 @@ export function renderVideoCounts(
   endpoints: string[] = [],
   reextract?: () => CarouselResult,
   showLandscape = false,
+  // More video data is still expected (lower rail not hydrated, sides or
+  // names unresolved): render "reading" states instead of implying zeros.
+  pending = false,
 ): void {
   const section = addSection(t().videoCompetition);
 
@@ -40,24 +49,42 @@ export function renderVideoCounts(
   }
 
   if (result.strategy === "header") {
-    const pending = el("p", "note");
-    pending.textContent = t().videosPending(result.counts.total);
-    section.append(pending);
+    const note = el("p", "note");
+    note.textContent = t().videosPending(result.counts.total);
+    section.append(note);
+    renderUpperSlotIndicator(section, result, pending);
   } else {
-    const counts = el("div", "counts");
-    counts.append(
-      chip("influencer", t().chipInfluencer(result.counts.influencer)),
-      chip("brand", t().chipBrand(result.counts.brand)),
-      chip("customer", t().chipCustomer(result.counts.customer)),
-    );
-    if (result.counts.unknown > 0) {
-      counts.append(chip("", t().chipUnclassified(result.counts.unknown)));
+    const sides = carouselBreakdown(result);
+    if (sides.upper.total + sides.lower.total === 0) {
+      // No carousel-side data at all (an untagged payload): fall back to the
+      // aggregate chips rather than two empty side rows.
+      const counts = el("div", "counts");
+      counts.append(
+        chip("influencer", t().chipInfluencer(result.counts.influencer)),
+        chip("brand", t().chipBrand(result.counts.brand)),
+        chip("customer", t().chipCustomer(result.counts.customer)),
+      );
+      if (result.counts.unknown > 0) {
+        counts.append(chip("", t().chipUnclassified(result.counts.unknown)));
+      }
+      section.append(counts);
+    } else {
+      // The split view: who owns each carousel. An empty side still being read
+      // shows as "reading" rather than a misleading zero.
+      section.append(carouselSideRow(t().upperCarousel, sides.upper, pending));
+      section.append(carouselSideRow(t().lowerCarousel, sides.lower, pending));
+      if (result.counts.unknown > 0) {
+        const rest = el("div", "counts");
+        rest.append(chip("", t().chipUnclassified(result.counts.unknown)));
+        section.append(rest);
+      }
     }
-    section.append(counts);
 
     const summary = el("p", "note");
     summary.textContent = t().videosTotalVia(result.counts.total, result.strategy === "json");
     section.append(summary);
+
+    renderUpperSlotIndicator(section, result, pending);
 
     renderInfluencerList(
       section,
@@ -327,6 +354,35 @@ function renderHarvest(container: HTMLElement, harvest: VideoHarvestResult): voi
   });
   exportRow.append(csvBtn, copyBtn);
   container.append(exportRow);
+}
+
+// One carousel side in the passive split view. While hydration is still
+// pending, an empty side renders as "reading" instead of a zero row that the
+// arriving data would contradict seconds later.
+function carouselSideRow(label: string, counts: VideoCounts, pending: boolean): HTMLElement {
+  if (counts.total === 0 && pending) {
+    return el("p", "note", t().carouselReading(label));
+  }
+  return sourceRow(label, counts);
+}
+
+// Whether the brand has influencer videos enabled in the upper (image-block)
+// carousel: the money signal. When it is on, a new creator video can land in
+// the top slot next to the gallery instead of only the lower rail.
+function renderUpperSlotIndicator(
+  section: HTMLElement,
+  result: CarouselResult,
+  pending: boolean,
+): void {
+  const state = upperInfluencerSlot(result);
+  if (state === "unknown") {
+    section.append(el("p", "note", pending ? t().upperSlotChecking : t().upperSlotUnknown));
+    return;
+  }
+  const seal = el("div", state === "on" ? "seal pass" : "seal warn");
+  seal.textContent = state === "on" ? t().upperSlotOn : t().upperSlotOff;
+  seal.append(infoTip(t().upperSlotInfo));
+  section.append(seal);
 }
 
 function sourceRow(label: string, counts: VideoCounts): HTMLElement {

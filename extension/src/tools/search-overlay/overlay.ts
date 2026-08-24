@@ -227,6 +227,7 @@ export async function initSearchOverlay(
     if (epoch !== initEpoch) return;
     hud.connected = hudStatus.connected;
     hud.signedIn = auth.signedIn;
+    hud.ideaLists = hudStatus.ideaLists;
   });
 
   // Shared-catalogue read for the whole page in one round trip: estimated
