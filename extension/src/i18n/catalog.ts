@@ -636,6 +636,7 @@ export interface Dict {
   checkingSpcc: string;
   sentToApp: string;
   couldNotReachApp: string;
+  connectAppToPair: string;
   connectedToApp: (version: string) => string;
   upsellSignedIn: string;
   upsellSignedOut: string;
@@ -1364,6 +1365,8 @@ const en: Dict = {
   checkingSpcc: "Checking Sponsored Products...",
   sentToApp: "Sent to your app.",
   couldNotReachApp: "Could not reach the app. Is it still running?",
+  connectAppToPair:
+    "Connect the app first: open the extension popup and pair with the 6-digit code.",
   connectedToApp: (version) =>
     `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`,
   upsellSignedIn:
@@ -2098,6 +2101,8 @@ const es: Dict = {
   checkingSpcc: "Comprobando Sponsored Products...",
   sentToApp: "Enviado a tu app.",
   couldNotReachApp: "No se pudo contactar la app. ¿Sigue abierta?",
+  connectAppToPair:
+    "Conecta la app primero: abre la ventana de la extensión y vincula con el código de 6 dígitos.",
   connectedToApp: (version) =>
     `Conectado a tu app de Influencer Butler${version}. La aceptación usa tu catálogo local de Creator Connections.`,
   upsellSignedIn:
@@ -2832,6 +2837,8 @@ const fr: Dict = {
   checkingSpcc: "Vérification de Sponsored Products...",
   sentToApp: "Envoyé à votre app.",
   couldNotReachApp: "Impossible de joindre l'app. Est-elle toujours ouverte?",
+  connectAppToPair:
+    "Connectez l'app d'abord : ouvrez la fenetre de l'extension et associez avec le code a 6 chiffres.",
   connectedToApp: (version) =>
     `Connecté à votre app Influencer Butler${version}. L'acceptation utilise votre catalogue Creator Connections local.`,
   upsellSignedIn:

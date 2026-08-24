@@ -64,12 +64,26 @@ function renderConnected(
   const run = (command: HudCommand, pending: string) => {
     status.textContent = pending;
     disableAll(body, true);
-    void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command }).then((result) => {
-      disableAll(body, false);
-      status.textContent = result.ok
-        ? (result.message ?? t().sentToApp)
-        : (result.message ?? t().couldNotReachApp);
-    });
+    void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command })
+      .then((result) => {
+        disableAll(body, false);
+        if (result.ok) {
+          status.textContent = result.message ?? t().sentToApp;
+        } else if (result.needsPairing) {
+          // The app answered but the extension is not paired, so the command was
+          // never sent. Without this, an unpaired click just looked like nothing
+          // happened. Point the user at the popup pairing flow.
+          status.textContent = t().connectAppToPair;
+        } else {
+          status.textContent = result.message ?? t().couldNotReachApp;
+        }
+      })
+      // A rejected sendMessage (routine when the MV3 service worker was
+      // terminated mid-request) must not leave the buttons stuck disabled.
+      .catch(() => {
+        disableAll(body, false);
+        status.textContent = t().couldNotReachApp;
+      });
   };
 
   // Deals Influencer Butler: workspace picker + send.

@@ -2,7 +2,11 @@
 // built on WebCrypto (HMAC-SHA256 + SHA-256). PA-API is the only AWS-signed
 // service the extension talks to, so this covers exactly its shape: a POST with
 // an empty query string and the fixed signed-header set
-// content-encoding;host;x-amz-date;x-amz-target.
+// content-encoding;content-type;host;x-amz-date;x-amz-target. Every header we
+// send must be in the signed set: PA-API rejects a request whose content-type
+// is sent but unsigned with a misleading "Access Key ID ... invalid" error.
+// This set matches the server signer in src/lib/paapi.ts, which is validated
+// against AWS's published SigV4 vectors.
 
 // TextEncoder yields a Uint8Array whose backing buffer is typed as
 // ArrayBufferLike; wrapping in a fresh Uint8Array pins it to ArrayBuffer so it
@@ -55,10 +59,14 @@ export type SignParams = {
 export async function signPaapi(p: SignParams): Promise<SignedRequest> {
   const dateStamp = p.amzDate.slice(0, 8);
   const contentEncoding = "amz-1.0";
-  const signedHeaders = "content-encoding;host;x-amz-date;x-amz-target";
+  const contentType = "application/json; charset=utf-8";
+  // Signed headers must be lowercased and sorted, and must cover every header we
+  // actually send (see the note at the top of this file).
+  const signedHeaders = "content-encoding;content-type;host;x-amz-date;x-amz-target";
 
   const canonicalHeaders =
     `content-encoding:${contentEncoding}\n` +
+    `content-type:${contentType}\n` +
     `host:${p.host}\n` +
     `x-amz-date:${p.amzDate}\n` +
     `x-amz-target:${p.target}\n`;
@@ -95,7 +103,7 @@ export async function signPaapi(p: SignParams): Promise<SignedRequest> {
     url: `https://${p.host}${p.path}`,
     headers: {
       "content-encoding": contentEncoding,
-      "content-type": "application/json; charset=utf-8",
+      "content-type": contentType,
       host: p.host,
       "x-amz-date": p.amzDate,
       "x-amz-target": p.target,
