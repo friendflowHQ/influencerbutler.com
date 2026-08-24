@@ -11,6 +11,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NEWSLETTER_ISSUES, type NewsletterIssue } from "@/lib/newsletter-issues";
+import { POSTAL_ADDRESS } from "@/lib/email-unsubscribe";
 
 const CONFIG_KEY = "newsletter_schedule";
 const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
@@ -156,11 +157,14 @@ export async function sendNewsletterBroadcast(
 
   // Resend requires an unsubscribe link in broadcasts; the {{{RESEND_UNSUBSCRIBE_URL}}}
   // placeholder is replaced per-recipient and handles unsubscribes automatically.
+  // The physical postal address rides alongside it to satisfy CAN-SPAM, matching
+  // the campaign/funnel footer in email-unsubscribe.ts (same POSTAL_ADDRESS).
   const unsubHtml =
     '<p style="margin:18px 0 0;font-size:12px;color:#9ca3af;">' +
-    '<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#9ca3af;">Unsubscribe</a></p>';
+    POSTAL_ADDRESS +
+    '<br><br><a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#9ca3af;">Unsubscribe</a></p>';
   const html = bodyToHtml(issue.body) + unsubHtml;
-  const text = `${issue.body}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`;
+  const text = `${issue.body}\n\n${POSTAL_ADDRESS}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`;
 
   try {
     const createRes = await fetch("https://api.resend.com/broadcasts", {

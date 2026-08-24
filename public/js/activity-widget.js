@@ -12,6 +12,7 @@
   "use strict";
 
   var DISMISS_KEY = "ibActivityDismissed";
+  var POS_KEY = "ibActivityPos"; // rotating start offset, persisted across page loads
   var FIRST_DELAY_MS = 2500; // let the page settle before the first card
   var CYCLE_MS = 6000; // time each event stays up
 
@@ -47,6 +48,22 @@
     try {
       window.sessionStorage.setItem(DISMISS_KEY, "1");
     } catch (_) { /* private mode - ignore */ }
+  }
+
+  // Where in the event list to open this page load. Persisted and advanced by one
+  // each load so consecutive pages continue through the rotation instead of
+  // restarting on the same (often oldest, purchase-first) card every time. Without
+  // this, a visitor clicking around faster than the full cycle only ever sees the
+  // one or two leading cards and never reaches the fresher "checking out" events.
+  function nextStartIndex(len) {
+    if (len <= 1) return 0;
+    var pos = 0;
+    try {
+      var raw = parseInt(window.sessionStorage.getItem(POS_KEY), 10);
+      if (!isNaN(raw) && raw >= 0) pos = raw;
+      window.sessionStorage.setItem(POS_KEY, String((pos + 1) % len));
+    } catch (_) { /* private mode - start at 0, no persistence */ }
+    return pos % len;
   }
 
   function timeAgo(iso) {
@@ -148,7 +165,7 @@
   function run(events) {
     injectStyles();
     var root = buildCard();
-    var i = 0;
+    var i = nextStartIndex(events.length);
     function step() {
       if (!document.body.contains(root)) return;
       render(root, events[i]);

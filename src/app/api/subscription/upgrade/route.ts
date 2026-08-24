@@ -205,16 +205,30 @@ export async function POST(request: Request) {
 
     // Swap the variant. LS prorates by default; see invoiceImmediately above
     // for when the prorated charge lands.
+    const swapAttributes: Record<string, unknown> = {
+      variant_id: Number(newVariantId),
+      invoice_immediately: invoiceImmediately,
+    };
+
+    // Lemon Squeezy re-validates trial_ends_at on every subscription update and
+    // rejects the whole swap with a 422 ("The trial ends at field must be a date
+    // after ...") whenever an active subscription still carries the (now past)
+    // trial date it was created with. Since our funnel is trial-then-paid, that
+    // stale date is present on essentially every converted subscription, so the
+    // swap failed for them all. Clearing it on an active sub sidesteps the
+    // validation; a still-on_trial sub keeps its valid future trial date
+    // untouched so we never cut a live trial short.
+    if (status === "active") {
+      swapAttributes.trial_ends_at = null;
+    }
+
     const patchResponse = await lsApi(`/subscriptions/${subscriptionId}`, {
       method: "PATCH",
       body: JSON.stringify({
         data: {
           type: "subscriptions",
           id: subscriptionId,
-          attributes: {
-            variant_id: Number(newVariantId),
-            invoice_immediately: invoiceImmediately,
-          },
+          attributes: swapAttributes,
         },
       }),
     });
