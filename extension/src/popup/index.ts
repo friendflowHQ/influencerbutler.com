@@ -407,7 +407,11 @@ async function renderPageStatus(): Promise<void> {
   }
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !tab.url?.includes("amazon.com")) {
+    // Amazon and Walmart are both supported; the content script answers
+    // GET_PAGE_STATUS on either. Any other host has no tools to report.
+    const onSupportedSite =
+      tab?.url?.includes("amazon.com") || tab?.url?.includes("walmart.com");
+    if (!tab?.id || !onSupportedSite) {
       text.textContent = t().openAmazonToStart;
       return;
     }

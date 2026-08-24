@@ -826,7 +826,7 @@ const en: Dict = {
   footerHelp: "Help",
   footerDashboard: "My dashboard",
 
-  openAmazonToStart: "Open an Amazon product page, your orders, or your storefront to get started.",
+  openAmazonToStart: "Open an Amazon or Walmart product page, your orders, or your storefront to get started.",
   noToolsOnPage: "This Amazon page has no butler tools. Try a product page.",
   productToolsActive: "Product page tools are active.",
   orderScanReady: "Order history scan is ready.",
@@ -1562,7 +1562,7 @@ const es: Dict = {
   footerHelp: "Ayuda",
   footerDashboard: "Mi panel",
 
-  openAmazonToStart: "Abre una página de producto de Amazon, tus pedidos o tu storefront para empezar.",
+  openAmazonToStart: "Abre una página de producto de Amazon o Walmart, tus pedidos o tu storefront para empezar.",
   noToolsOnPage: "Esta página de Amazon no tiene herramientas del butler. Prueba una página de producto.",
   productToolsActive: "Las herramientas de la página de producto están activas.",
   orderScanReady: "El escaneo del historial de pedidos está listo.",
@@ -2298,7 +2298,7 @@ const fr: Dict = {
   footerHelp: "Aide",
   footerDashboard: "Mon tableau de bord",
 
-  openAmazonToStart: "Ouvrez une page produit Amazon, vos commandes ou votre storefront pour commencer.",
+  openAmazonToStart: "Ouvrez une page produit Amazon ou Walmart, vos commandes ou votre storefront pour commencer.",
   noToolsOnPage: "Cette page Amazon n'a pas d'outils butler. Essayez une page produit.",
   productToolsActive: "Les outils de la page produit sont actifs.",
   orderScanReady: "L'analyse de l'historique de commandes est prête.",
