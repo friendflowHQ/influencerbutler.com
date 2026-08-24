@@ -1,40 +1,106 @@
-import { describe, expect, it } from "vitest";
-import { __test } from "./adapters/walmart-link";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { walmartLinkAdapters } from "./adapters/walmart-link";
+import { looksSignedOutUrl } from "./walmart-creator-mint";
 import { buildAffiliateLink, type RoutingConfig } from "./routing";
 import { canonicalProductUrl } from "./url";
+import type { LinkTarget } from "./types";
 
-const { buildImpactDeepLink } = __test;
+const mavely = walmartLinkAdapters.find((a) => a.id === "mavely")!;
 
-describe("buildImpactDeepLink", () => {
-  it("wraps the destination url in an Impact goto.walmart.com link", () => {
-    const link = buildImpactDeepLink("https://www.walmart.com/ip/10450114", {
-      publisherId: "1234567",
-      campaignId: "2003851",
-      adId: "9",
-    });
-    expect(link).toBe(
-      "https://goto.walmart.com/c/1234567/2003851/9?u=https%3A%2F%2Fwww.walmart.com%2Fip%2F10450114",
+const target: LinkTarget = {
+  asin: "10450114",
+  marketplace: "walmart.com",
+  url: "https://www.walmart.com/ip/10450114",
+  retailer: "walmart",
+};
+
+const jsonResponse = (status: number, body: unknown): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("mavelyAdapter.generateLink", () => {
+  it("posts the createAffiliateLink mutation with the session cookie and returns the short link", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, { data: { createAffiliateLink: { link: "https://mave.ly/abc123" } } }),
     );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const link = await mavely.generateLink!(target, {});
+    expect(link).toBe("https://mave.ly/abc123");
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://creators.joinmavely.com/api/graphql");
+    expect(init.method).toBe("POST");
+    expect(init.credentials).toBe("include");
+    const body = JSON.parse(String(init.body)) as { query: string; variables: { url: string } };
+    expect(body.query).toContain("createAffiliateLink");
+    expect(body.variables).toEqual({ url: target.url });
   });
 
-  it("adds subId1 when a subId is given", () => {
-    const link = buildImpactDeepLink("https://www.walmart.com/ip/10450114", {
-      publisherId: "1",
-      campaignId: "2",
-      adId: "3",
-      subId: "ext",
+  it("raises the signInRequired notice on a 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+    await expect(mavely.generateLink!(target, {})).rejects.toMatchObject({
+      notice: "signInRequired",
     });
-    expect(link).toContain("subId1=ext");
   });
 
-  it("falls back to the plain destination when ids are missing", () => {
-    expect(
-      buildImpactDeepLink("https://www.walmart.com/ip/10450114", {
-        publisherId: "",
-        campaignId: "2",
-        adId: "3",
-      }),
-    ).toBe("https://www.walmart.com/ip/10450114");
+  it("raises the signInRequired notice on an unauth-looking GraphQL error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse(200, { errors: [{ message: "Not signed in" }] })),
+    );
+    await expect(mavely.generateLink!(target, {})).rejects.toMatchObject({
+      notice: "signInRequired",
+    });
+  });
+
+  it("throws a plain error on any other GraphQL error or a missing link", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse(200, { errors: [{ message: "rate limited" }] })),
+    );
+    await expect(mavely.generateLink!(target, {})).rejects.toThrow("rate limited");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse(200, { data: { createAffiliateLink: {} } })),
+    );
+    await expect(mavely.generateLink!(target, {})).rejects.toThrow("no link");
+  });
+});
+
+describe("mavelyAdapter.test", () => {
+  it("reports the signed-in session's email", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse(200, { user: { email: "creator@example.com" } })),
+    );
+    const outcome = await mavely.test({});
+    expect(outcome.ok).toBe(true);
+    expect(outcome.message).toContain("creator@example.com");
+  });
+
+  it("asks the user to sign in when the session is empty", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, {})));
+    const outcome = await mavely.test({});
+    expect(outcome.ok).toBe(false);
+    expect(outcome.message).toContain("creators.joinmavely.com");
+  });
+});
+
+describe("looksSignedOutUrl", () => {
+  it("flags the Walmart sign-in surfaces and nothing else", () => {
+    expect(looksSignedOutUrl("https://identity.walmart.com/account/login?x=1")).toBe(true);
+    expect(looksSignedOutUrl("https://www.walmart.com/account/login")).toBe(true);
+    expect(looksSignedOutUrl("https://creator.walmart.com/sign-in")).toBe(true);
+    expect(looksSignedOutUrl("https://creator.walmart.com/")).toBe(false);
+    expect(looksSignedOutUrl("https://creator.walmart.com/home")).toBe(false);
   });
 });
 
@@ -54,21 +120,37 @@ describe("buildAffiliateLink (Walmart)", () => {
     enabled: true,
     primaryDeeplinkProvider: null,
     affiliateNetworks: [],
-    walmartLinkProvider: "impact",
+    walmartLinkProvider: "mavely",
     perCountryTags: {},
     storefrontHandle: null,
   };
-  const creds = async () => ({ accountSid: "1234567", campaignId: "2003851", adId: "9" });
+  const creds = async () => ({});
 
   it("mints a Walmart link via the chosen provider, ignoring Amazon tags", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(200, { data: { createAffiliateLink: { link: "https://mave.ly/abc123" } } }),
+      ),
+    );
     const result = await buildAffiliateLink(
-      { asin: "10450114", marketplace: "walmart.com", url: "https://www.walmart.com/ip/10450114", retailer: "walmart" },
+      { asin: "10450114", marketplace: "walmart.com", url: target.url, retailer: "walmart" },
       config,
       creds,
     );
-    expect(result.url).toBe(
-      "https://goto.walmart.com/c/1234567/2003851/9?u=https%3A%2F%2Fwww.walmart.com%2Fip%2F10450114",
+    expect(result.url).toBe("https://mave.ly/abc123");
+    expect(result.notice).toBeUndefined();
+  });
+
+  it("falls back to the plain /ip/ url with a notice when the provider needs a sign-in", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+    const result = await buildAffiliateLink(
+      { asin: "10450114", marketplace: "walmart.com", retailer: "walmart" },
+      config,
+      creds,
     );
+    expect(result.url).toBe("https://www.walmart.com/ip/10450114");
+    expect(result.notice).toBe("signInRequired");
   });
 
   it("returns the plain /ip/ url when no Walmart provider is chosen", async () => {

@@ -1,141 +1,172 @@
 import type { IntegrationAdapter, TestResult } from "../types";
-import { REQUEST_TIMEOUT_MS, obj, providerError, str } from "../adapter-utils";
+import { REQUEST_TIMEOUT_MS, obj, str } from "../adapter-utils";
+import { LinkNoticeError } from "../link-notice";
+import { looksSignedOutUrl, mintWalmartCreatorLink } from "../walmart-creator-mint";
 
-// Walmart affiliate link providers. Walmart's affiliate program runs entirely
-// through Impact, so both providers here mint a goto.walmart.com tracking link;
-// the difference is which credentials the creator has. The user picks ONE in
-// options (integrations.global.walmartLinkProvider), mirroring how the primary
-// deeplink provider is chosen. routing.ts calls the chosen provider's
-// generateLink for Walmart products and falls back to the plain /ip/ url.
+// Walmart affiliate link providers, mirroring the desktop app: both are
+// session-based with no credential fields. The user signs in to the provider's
+// site in this browser, and the extension mints links from that session.
 //
-// Both build Impact's documented deep-link format client-side (no per-link
-// network round-trip), which wraps any destination url via the `u` parameter:
-//   https://goto.walmart.com/c/<publisherId>/<campaignId>/<adId>?u=<encoded url>
-// Impact also offers a server "create deep link" API, but the vanity format is
-// what the creator's link tool emits and needs no request per link.
+// - Walmart Creator drives the signed-in creator.walmart.com portal in a
+//   background tab and returns the real walmrt.us short link the portal mints
+//   (see ../walmart-creator-mint).
+// - Mavely posts one GraphQL mutation to creators.joinmavely.com with the
+//   session cookie and returns the mave.ly short link. There is no API key;
+//   the HttpOnly session cookie rides along because the host is granted.
 //
-// NOTE: the exact publisher/campaign/ad ids come from the creator's own Impact
-// (or Walmart Creator) account; the fields collect them. Confirm the account's
-// link template before relying on attribution in production.
-
-const GOTO_BASE = "https://goto.walmart.com/c";
-
-// Build an Impact deep link wrapping the destination url. Falls back to the
-// plain destination when the required ids are missing, so a half-configured
-// provider never blocks copying a working link.
-function buildImpactDeepLink(
-  dest: string,
-  ids: { publisherId: string; campaignId: string; adId: string; subId?: string },
-): string {
-  if (!ids.publisherId || !ids.campaignId || !ids.adId || !dest) return dest;
-  const params = new URLSearchParams({ u: dest });
-  if (ids.subId) params.set("subId1", ids.subId);
-  return `${GOTO_BASE}/${encodeURIComponent(ids.publisherId)}/${encodeURIComponent(ids.campaignId)}/${encodeURIComponent(ids.adId)}?${params.toString()}`;
-}
+// The user picks ONE in options (integrations.global.walmartLinkProvider),
+// mirroring how the primary deeplink provider is chosen. routing.ts calls the
+// chosen provider's generateLink for Walmart products and falls back to the
+// plain /ip/ url (with a signInRequired notice where it applies) on any throw.
 
 // ---------------------------------------------------------------------------
-// Impact (impact.com) - the direct publisher path
+// Walmart Creator (creator.walmart.com) - portal session, walmrt.us links
 // ---------------------------------------------------------------------------
 
-const IMPACT_API_BASE = "https://api.impact.com";
-
-const impactAdapter: IntegrationAdapter = {
-  id: "impact",
-  labelKey: "provImpact",
-  category: "walmartLink",
-  descriptionKey: "provImpactDesc",
-  hosts: ["https://api.impact.com/*", "https://goto.walmart.com/*"],
-  credentialsUrl: "https://app.impact.com/",
-  fields: [
-    { name: "accountSid", labelKey: "fieldAccountSid", type: "text" },
-    { name: "authToken", labelKey: "fieldAuthToken", type: "password" },
-    { name: "campaignId", labelKey: "fieldCampaignId", type: "text" },
-    { name: "adId", labelKey: "fieldAdId", type: "text" },
-    { name: "subId", labelKey: "fieldSubId", type: "text", optional: true },
-  ],
-  async test(creds): Promise<TestResult> {
-    const accountSid = str(creds.accountSid);
-    const authToken = str(creds.authToken);
-    if (!accountSid || !authToken) {
-      return { ok: false, message: "Enter your Impact Account SID and Auth Token." };
-    }
-    // Read-only: list the publisher's campaigns. Impact uses HTTP Basic auth
-    // with the Account SID as username and the Auth Token as password.
-    const basic =
-      typeof btoa === "function"
-        ? btoa(`${accountSid}:${authToken}`)
-        : Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-    let res: Response;
-    try {
-      res = await fetch(`${IMPACT_API_BASE}/Mediapartners/${encodeURIComponent(accountSid)}/Campaigns?PageSize=1`, {
-        method: "GET",
-        headers: { Authorization: `Basic ${basic}`, Accept: "application/json" },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-    } catch {
-      return { ok: false, message: "Could not reach Impact. Are you online?" };
-    }
-    if (res.ok) return { ok: true, message: "Connected to Impact." };
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, message: "Impact rejected those credentials. Check your Account SID and Auth Token." };
-    }
-    return { ok: false, message: await providerError(res, `Impact returned ${res.status}.`) };
-  },
-  async generateLink(target, creds): Promise<string> {
-    // target.url is the canonical Walmart /ip/ url; wrap it as an Impact link.
-    return buildImpactDeepLink(target.url, {
-      publisherId: str(creds.accountSid),
-      campaignId: str(creds.campaignId),
-      adId: str(creds.adId),
-      subId: str(creds.subId) || undefined,
-    });
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Walmart Creator (creator.walmart.com) - the creator-program path
-// ---------------------------------------------------------------------------
+const CREATOR_HOME = "https://creator.walmart.com/";
 
 const walmartCreatorAdapter: IntegrationAdapter = {
   id: "walmartCreator",
   labelKey: "provWalmartCreator",
   category: "walmartLink",
   descriptionKey: "provWalmartCreatorDesc",
-  hosts: ["https://goto.walmart.com/*"],
-  credentialsUrl: "https://creator.walmart.com/",
-  fields: [
-    { name: "publisherId", labelKey: "fieldPublisherId", type: "text" },
-    { name: "campaignId", labelKey: "fieldCampaignId", type: "text" },
-    { name: "adId", labelKey: "fieldAdId", type: "text" },
-    { name: "subId", labelKey: "fieldSubId", type: "text", optional: true },
-  ],
-  async test(creds): Promise<TestResult> {
-    const publisherId = str(creds.publisherId);
-    const campaignId = str(creds.campaignId);
-    const adId = str(creds.adId);
-    if (!publisherId || !campaignId || !adId) {
-      return { ok: false, message: "Enter your Walmart Creator publisher, campaign, and ad ids." };
+  // identity.walmart.com is where a signed-out portal fetch redirects; without
+  // that host granted the redirect hop fails CORS and reads as "offline".
+  hosts: ["https://creator.walmart.com/*", "https://identity.walmart.com/*"],
+  credentialsUrl: CREATOR_HOME,
+  fields: [],
+  async test(): Promise<TestResult> {
+    let res: Response;
+    try {
+      res = await fetch(CREATOR_HOME, {
+        credentials: "include",
+        redirect: "follow",
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch {
+      return { ok: false, message: "Could not reach creator.walmart.com. Are you online?" };
     }
-    // No public verification endpoint; validate that a link can be formed. The
-    // real check is that a minted link redirects correctly, which the creator
-    // can confirm by opening one.
-    const preview = buildImpactDeepLink("https://www.walmart.com/", { publisherId, campaignId, adId });
-    if (preview.startsWith(GOTO_BASE)) {
-      return { ok: true, message: "Saved. Walmart Creator links will route through goto.walmart.com." };
+    if (looksSignedOutUrl(res.url || "")) {
+      return {
+        ok: false,
+        message:
+          "Sign in to Walmart Creator at creator.walmart.com in this browser, then test again.",
+      };
     }
-    return { ok: false, message: "Those ids do not form a valid link. Double-check them." };
+    if (!res.ok) {
+      return { ok: false, message: `creator.walmart.com returned ${res.status}. Try again in a minute.` };
+    }
+    return { ok: true, message: "Signed in. Walmart links will mint as walmrt.us short links." };
   },
-  async generateLink(target, creds): Promise<string> {
-    return buildImpactDeepLink(target.url, {
-      publisherId: str(creds.publisherId),
-      campaignId: str(creds.campaignId),
-      adId: str(creds.adId),
-      subId: str(creds.subId) || undefined,
-    });
+  async generateLink(target): Promise<string> {
+    return mintWalmartCreatorLink(target.url);
   },
 };
 
-export const walmartLinkAdapters: IntegrationAdapter[] = [impactAdapter, walmartCreatorAdapter];
+// ---------------------------------------------------------------------------
+// Mavely (creators.joinmavely.com) - session cookie, mave.ly links
+// ---------------------------------------------------------------------------
 
-// Exported for unit testing the deep-link construction without a live account.
-export const __test = { buildImpactDeepLink };
+const MAVELY_ORIGIN = "https://creators.joinmavely.com";
+const MAVELY_GRAPHQL_URL = `${MAVELY_ORIGIN}/api/graphql`;
+const MAVELY_SESSION_URL = `${MAVELY_ORIGIN}/api/auth/session`;
+const MAVELY_SIGNIN_MSG =
+  "Sign in to Mavely at creators.joinmavely.com in this browser, then try again.";
+const MAVELY_UNAUTH_RE = /unauth|not.?signed|forbidden/i;
+
+// Verbatim from the Mavely creators web app bundle, matching the desktop app's
+// integrations/mavelyClient.js.
+const CREATE_AFFILIATE_LINK_MUTATION = `mutation createAffiliateLink($url: String!) {
+  createAffiliateLink(url: $url) {
+    id
+    link
+    metaTitle
+    metaDescription
+    metaImage
+    metaUrl
+    metaSiteName
+    brand { id name slug }
+    originalUrl
+    canonicalLink
+    attributionUrl
+  }
+}`;
+
+const mavelyAdapter: IntegrationAdapter = {
+  id: "mavely",
+  labelKey: "provMavely",
+  category: "walmartLink",
+  descriptionKey: "provMavelyDesc",
+  hosts: ["https://creators.joinmavely.com/*"],
+  credentialsUrl: `${MAVELY_ORIGIN}/`,
+  fields: [],
+  async test(): Promise<TestResult> {
+    let res: Response;
+    try {
+      res = await fetch(MAVELY_SESSION_URL, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch {
+      return { ok: false, message: "Could not reach Mavely. Are you online?" };
+    }
+    if (!res.ok) return { ok: false, message: MAVELY_SIGNIN_MSG };
+    let session: Record<string, unknown> = {};
+    try {
+      session = obj(await res.json());
+    } catch {
+      // An empty body means no session; fall through to the sign-in message.
+    }
+    const email = str(obj(session.user).email);
+    const signedIn = Boolean(email || session.userId || session.token);
+    if (!signedIn) return { ok: false, message: MAVELY_SIGNIN_MSG };
+    return {
+      ok: true,
+      message: email ? `Connected to Mavely as ${email}.` : "Connected to Mavely.",
+    };
+  },
+  async generateLink(target): Promise<string> {
+    let res: Response;
+    try {
+      res = await fetch(MAVELY_GRAPHQL_URL, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: CREATE_AFFILIATE_LINK_MUTATION,
+          variables: { url: target.url },
+        }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch {
+      throw new Error("Could not reach Mavely.");
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new LinkNoticeError("signInRequired", MAVELY_SIGNIN_MSG);
+    }
+    if (!res.ok) throw new Error(`Mavely returned ${res.status}.`);
+    let data: Record<string, unknown> = {};
+    try {
+      data = obj(await res.json());
+    } catch {
+      throw new Error("Mavely returned an unreadable response.");
+    }
+    const errors = Array.isArray(data.errors) ? data.errors : [];
+    if (errors.length) {
+      const message = errors
+        .map((e) => str(obj(e).message))
+        .filter(Boolean)
+        .join("; ");
+      if (MAVELY_UNAUTH_RE.test(message)) {
+        throw new LinkNoticeError("signInRequired", MAVELY_SIGNIN_MSG);
+      }
+      throw new Error(message || "Mavely could not create a link.");
+    }
+    const link = str(obj(obj(data.data).createAffiliateLink).link);
+    if (!link) throw new Error("Mavely returned no link.");
+    return link;
+  },
+};
+
+export const walmartLinkAdapters: IntegrationAdapter[] = [walmartCreatorAdapter, mavelyAdapter];

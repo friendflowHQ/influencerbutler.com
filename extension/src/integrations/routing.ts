@@ -63,7 +63,7 @@ export type RoutingConfig = {
   // Participating affiliate-network ids that can mint their own attribution
   // link, in priority order. Tried before the primary deeplink provider.
   affiliateNetworks?: string[];
-  // The chosen Walmart link provider ("impact" | "walmartCreator"), used for
+  // The chosen Walmart link provider ("walmartCreator" | "mavely"), used for
   // Walmart products. Amazon products ignore it.
   walmartLinkProvider?: string | null;
   perCountryTags: Record<string, string>;
@@ -91,8 +91,8 @@ export async function buildAffiliateLink(
 ): Promise<BuildLinkResult> {
   const retailer = input.retailer ?? "amazon";
 
-  // Walmart runs entirely through its own link provider (Impact / Walmart
-  // Creator): no per-country Associates tag, no deeplink wrapper. Mint via the
+  // Walmart runs entirely through its own link provider (Walmart Creator /
+  // Mavely): no per-country Associates tag, no deeplink wrapper. Mint via the
   // chosen provider, falling back to the plain /ip/ url on any failure.
   if (retailer === "walmart") {
     const wmUrl =

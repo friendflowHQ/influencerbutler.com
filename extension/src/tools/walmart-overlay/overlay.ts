@@ -18,7 +18,7 @@ import { getState } from "../../storage/store";
 // the shared Amazon search overlay via the Walmart RetailerModule (see
 // content/index.ts); this panel is the product-page counterpart, showing price,
 // social proof, the rate-card commission, the pooled monthly-revenue estimate,
-// and a Copy affiliate link button (Impact / Walmart Creator).
+// and a Copy affiliate link button (Walmart Creator / Mavely).
 
 const WALMART_MARKETPLACE = "walmart.com";
 const MODULE = retailerModule("walmart");
@@ -82,7 +82,12 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
           return;
         }
         void navigator.clipboard?.writeText(res.url).then(() => {
-          status.textContent = res.notice ? "Copied (plain link)." : "Copied!";
+          status.textContent =
+            res.notice === "signInRequired"
+              ? "Copied plain link. Sign in to your Walmart link provider to get tracked links."
+              : res.notice
+                ? "Copied (plain link)."
+                : "Copied!";
         });
       })
       .catch(() => {
@@ -95,7 +100,7 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
   // Whether the creator has connected a Walmart link provider. When not, the
   // button still copies a working /ip/ link, but we say the link is not yet
   // commission-tracked and offer a one-click path to set one up (Walmart
-  // Creator at creator.walmart.com is the no-minimum, Impact-backed option).
+  // Creator at creator.walmart.com has no follower minimum; Mavely works too).
   void sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" })
     .then((view) => {
       const providerId = view.global.walmartLinkProvider;

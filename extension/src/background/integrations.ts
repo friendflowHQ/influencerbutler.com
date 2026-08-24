@@ -60,7 +60,12 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
         ? Object.values(integrations.global.perCountryTags).some((v) => v.trim())
         : adapter.id === IB_LINKS
           ? Boolean(creds.licenseKey)
-          : Boolean(state?.credentialsEnc);
+          : adapter.fields.length === 0
+            ? // Session-based providers (the Walmart link providers) store no
+              // credentials; Save or a passing Test marks them enabled, and that
+              // is what "set up" means for them.
+              (state?.enabled ?? false)
+            : Boolean(state?.credentialsEnc);
     providers.push({
       id: adapter.id,
       enabled: state?.enabled ?? false,

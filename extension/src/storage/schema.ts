@@ -155,8 +155,9 @@ export type IntegrationsState = {
     affiliateRoutingEnabled: boolean;
     // Which deeplink provider wraps generated links (adapter id), or null.
     primaryDeeplinkProvider: string | null;
-    // Which Walmart link provider mints Walmart affiliate links ("impact" |
-    // "walmartCreator"), or null when the creator has not chosen one yet.
+    // Which Walmart link provider mints Walmart affiliate links
+    // ("walmartCreator" | "mavely"), or null when the creator has not chosen
+    // one yet.
     walmartLinkProvider: string | null;
     // Amazon Associates tag per marketplace country code, for example
     // { US: "mytag-20", UK: "mytag-21" }. US defaults to the storefront handle.
@@ -325,7 +326,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 17,
+  schemaVersion: 18,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -455,7 +456,26 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // tools.walmart master gate (on by default, backfilled by the tools
   // shallow-merge) and integrations.global.walmartLinkProvider (null until the
   // creator connects Impact or Walmart Creator, backfilled by the global
-  // shallow-merge).
+  // shallow-merge). v17 -> v18 replaced the credential-based Walmart link
+  // providers with session-based ones: the Impact provider is gone (a stored
+  // "impact" selection resets to null and its saved credentials are dropped),
+  // and Walmart Creator no longer takes publisher/campaign/ad ids, so its
+  // stale stored credentials are cleared and its test badge reset.
+  const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
+  delete migratedProviders.impact;
+  if (migratedProviders.walmartCreator) {
+    migratedProviders.walmartCreator = {
+      ...migratedProviders.walmartCreator,
+      credentialsEnc: null,
+      lastTest: { status: "untested", at: null, message: null },
+    };
+  }
+  const migratedGlobal = {
+    ...structuredClone(DEFAULTS.integrations.global),
+    ...(raw.integrations?.global ?? {}),
+    perCountryTags: { ...(raw.integrations?.global?.perCountryTags ?? {}) },
+  };
+  if (migratedGlobal.walmartLinkProvider === "impact") migratedGlobal.walmartLinkProvider = null;
   return {
     ...structuredClone(DEFAULTS),
     ...raw,
@@ -485,12 +505,8 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     },
     auth: { ...DEFAULTS.auth, ...(raw.auth ?? {}) },
     integrations: {
-      global: {
-        ...structuredClone(DEFAULTS.integrations.global),
-        ...(raw.integrations?.global ?? {}),
-        perCountryTags: { ...(raw.integrations?.global?.perCountryTags ?? {}) },
-      },
-      providers: { ...(raw.integrations?.providers ?? {}) },
+      global: migratedGlobal,
+      providers: migratedProviders,
     },
     telemetry: { selectorMisses: { ...(raw.telemetry?.selectorMisses ?? {}) } },
     nudges: {
@@ -503,6 +519,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 17,
+    schemaVersion: 18,
   };
 }

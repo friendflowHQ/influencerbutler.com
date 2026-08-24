@@ -72,6 +72,59 @@ describe("migrate", () => {
     expect(out.settings.tools.ideaListOverlay).toBe(true);
   });
 
+  it("drops the Impact Walmart provider and stale Walmart Creator creds on v17 state", () => {
+    const v17 = {
+      schemaVersion: 17,
+      integrations: {
+        global: {
+          ...structuredClone(DEFAULTS.integrations.global),
+          walmartLinkProvider: "impact",
+        },
+        providers: {
+          impact: {
+            enabled: true,
+            credentialsEnc: { iv: "iv", ct: "ct" },
+            lastTest: { status: "ok", at: 1, message: "Connected to Impact." },
+            routingParticipates: true,
+          },
+          walmartCreator: {
+            enabled: true,
+            credentialsEnc: { iv: "iv2", ct: "ct2" },
+            lastTest: { status: "ok", at: 2, message: "Saved." },
+            routingParticipates: true,
+          },
+        },
+      },
+    } as unknown as Partial<StorageShape>;
+
+    const out = migrate(v17);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    // The Impact provider no longer exists; the selection resets to "none".
+    expect(out.integrations.global.walmartLinkProvider).toBeNull();
+    expect(out.integrations.providers.impact).toBeUndefined();
+    // Walmart Creator is now session-based: its stored manual ids are cleared
+    // and its badge resets, but the row itself (enabled flag) survives.
+    const creator = out.integrations.providers.walmartCreator!;
+    expect(creator.credentialsEnc).toBeNull();
+    expect(creator.lastTest.status).toBe("untested");
+    expect(creator.enabled).toBe(true);
+  });
+
+  it("keeps a stored walmartCreator selection through the v18 migration", () => {
+    const v17 = {
+      schemaVersion: 17,
+      integrations: {
+        global: {
+          ...structuredClone(DEFAULTS.integrations.global),
+          walmartLinkProvider: "walmartCreator",
+        },
+        providers: {},
+      },
+    } as unknown as Partial<StorageShape>;
+
+    expect(migrate(v17).integrations.global.walmartLinkProvider).toBe("walmartCreator");
+  });
+
   it("preserves a user's partial campaignRadar overrides and fills the rest", () => {
     const partial = {
       schemaVersion: 6,

@@ -58,10 +58,10 @@ export interface OptionsDict {
   provArcher: string;
   provLogie: string;
   provBenable: string;
-  provImpact: string;
-  provImpactDesc: string;
   provWalmartCreator: string;
   provWalmartCreatorDesc: string;
+  provMavely: string;
+  provMavelyDesc: string;
   // Field labels (referenced by field.labelKey)
   fieldApiKey: string;
   fieldApiSecret: string;
@@ -76,12 +76,6 @@ export interface OptionsDict {
   fieldMarketplace: string;
   fieldLinkTemplate: string;
   fieldReferralUrl: string;
-  fieldAccountSid: string;
-  fieldAuthToken: string;
-  fieldCampaignId: string;
-  fieldAdId: string;
-  fieldSubId: string;
-  fieldPublisherId: string;
   // Walmart affiliate link provider select
   walmartLink: string;
   walmartLinkNone: string;
@@ -143,22 +137,16 @@ const en: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
-  provImpact: "Impact",
-  provImpactDesc:
-    "Walmart's affiliate network. Enter your Impact Account SID, Auth Token, and the Walmart campaign and ad ids to mint tracked goto.walmart.com links.",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
-    "The Walmart Creator program. Enter your publisher, campaign, and ad ids to mint tracked goto.walmart.com links.",
+    "The Walmart Creator program. Sign in at creator.walmart.com in this browser and the butler mints real walmrt.us short links from your session. No ids or API keys needed.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Mavely link minting. Sign in at creators.joinmavely.com in this browser and your Walmart links mint as mave.ly short links. There is no API key.",
   walmartLink: "Walmart affiliate links",
   walmartLinkNone: "None (plain Walmart links)",
   walmartLinkHint:
-    "Which provider mints your Walmart links when you Copy my link on a Walmart product. New to this? Join Walmart Creator at creator.walmart.com (no follower minimum, Impact-backed), then connect it below.",
-  fieldAccountSid: "Account SID",
-  fieldAuthToken: "Auth token",
-  fieldCampaignId: "Campaign id",
-  fieldAdId: "Ad id",
-  fieldSubId: "Sub id (optional)",
-  fieldPublisherId: "Publisher id",
+    "Which provider mints your Walmart links when you Copy my link on a Walmart product. Both work from a signed-in browser session: join Walmart Creator at creator.walmart.com (no follower minimum) or Mavely at creators.joinmavely.com, sign in there, then pick it here.",
   fieldApiKey: "API key",
   fieldApiSecret: "API secret",
   fieldGroupId: "Group id",
@@ -229,22 +217,16 @@ const es: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
-  provImpact: "Impact",
-  provImpactDesc:
-    "La red de afiliados de Walmart. Introduce tu Account SID e Auth Token de Impact y los ids de campaña y anuncio de Walmart para crear enlaces goto.walmart.com con seguimiento.",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
-    "El programa Walmart Creator. Introduce tus ids de publisher, campaña y anuncio para crear enlaces goto.walmart.com con seguimiento.",
+    "El programa Walmart Creator. Inicia sesión en creator.walmart.com en este navegador y el butler crea enlaces cortos walmrt.us reales desde tu sesión. Sin ids ni claves de API.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Creación de enlaces con Mavely. Inicia sesión en creators.joinmavely.com en este navegador y tus enlaces de Walmart se crean como enlaces cortos mave.ly. No hay clave de API.",
   walmartLink: "Enlaces de afiliado de Walmart",
   walmartLinkNone: "Ninguno (enlaces de Walmart sin seguimiento)",
   walmartLinkHint:
-    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. ¿Nuevo en esto? Únete a Walmart Creator en creator.walmart.com (sin mínimo de seguidores, con tecnología de Impact) y luego conéctalo abajo.",
-  fieldAccountSid: "Account SID",
-  fieldAuthToken: "Auth token",
-  fieldCampaignId: "Id de campaña",
-  fieldAdId: "Id de anuncio",
-  fieldSubId: "Sub id (opcional)",
-  fieldPublisherId: "Id de publisher",
+    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. Ambos funcionan con una sesión iniciada en el navegador: únete a Walmart Creator en creator.walmart.com (sin mínimo de seguidores) o a Mavely en creators.joinmavely.com, inicia sesión allí y elígelo aquí.",
   fieldApiKey: "Clave de API",
   fieldApiSecret: "Secreto de API",
   fieldGroupId: "Id de grupo",
@@ -315,22 +297,16 @@ const fr: OptionsDict = {
   provArcher: "Archer",
   provLogie: "Logie",
   provBenable: "Benable",
-  provImpact: "Impact",
-  provImpactDesc:
-    "Le réseau d'affiliation de Walmart. Saisissez votre Account SID et Auth Token Impact ainsi que les ids de campagne et d'annonce Walmart pour créer des liens goto.walmart.com suivis.",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
-    "Le programme Walmart Creator. Saisissez vos ids de publisher, de campagne et d'annonce pour créer des liens goto.walmart.com suivis.",
+    "Le programme Walmart Creator. Connectez-vous sur creator.walmart.com dans ce navigateur et le butler crée de vrais liens courts walmrt.us depuis votre session. Aucun id ni clé API.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Création de liens avec Mavely. Connectez-vous sur creators.joinmavely.com dans ce navigateur et vos liens Walmart deviennent des liens courts mave.ly. Il n'y a pas de clé API.",
   walmartLink: "Liens d'affiliation Walmart",
   walmartLinkNone: "Aucun (liens Walmart simples)",
   walmartLinkHint:
-    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Nouveau ? Rejoignez Walmart Creator sur creator.walmart.com (sans minimum d'abonnés, propulsé par Impact), puis connectez-le ci-dessous.",
-  fieldAccountSid: "Account SID",
-  fieldAuthToken: "Jeton d'authentification",
-  fieldCampaignId: "Id de campagne",
-  fieldAdId: "Id d'annonce",
-  fieldSubId: "Sub id (facultatif)",
-  fieldPublisherId: "Id de publisher",
+    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Les deux fonctionnent avec une session connectée dans le navigateur : rejoignez Walmart Creator sur creator.walmart.com (sans minimum d'abonnés) ou Mavely sur creators.joinmavely.com, connectez-vous, puis choisissez-le ici.",
   fieldApiKey: "Clé API",
   fieldApiSecret: "Secret API",
   fieldGroupId: "Id de groupe",

@@ -13,9 +13,11 @@ export type DeeplinkProviderId =
 
 export type AffiliateNetworkId = "levanta" | "archer" | "logie" | "benable";
 
-// Walmart affiliate link providers. Walmart runs entirely through Impact, so
-// both mint a goto.walmart.com tracking link; the user picks one in options.
-export type WalmartLinkId = "impact" | "walmartCreator";
+// Walmart affiliate link providers. Both are session-based (no credential
+// fields): Walmart Creator mints walmrt.us links from the signed-in
+// creator.walmart.com portal, Mavely mints mave.ly links from the signed-in
+// creators.joinmavely.com session. The user picks one in options.
+export type WalmartLinkId = "walmartCreator" | "mavely";
 
 export type IntegrationId =
   | "openai"
