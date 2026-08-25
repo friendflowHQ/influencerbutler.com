@@ -52,7 +52,7 @@ import { maybeShowNudge } from "../tools/nudges/prompts";
 import { maybeShowUpdateBanner } from "../tools/update-banner";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
-import { setDebug, log } from "../shared/log";
+import { setDebug, log, warn } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
@@ -87,6 +87,14 @@ let lastCallRefreshTimer: number | null = null;
 void main();
 
 async function main(): Promise<void> {
+  // Re-injection guard. The background injects content.js into tabs that were
+  // already open when the extension installed/updated (chrome does not do this
+  // for us), so a tab that later reloads under the manifest, or a double
+  // injection during a race, must not boot a second instance in the same frame.
+  const g = window as unknown as { __ibExtLoaded?: boolean };
+  if (g.__ibExtLoaded) return;
+  g.__ibExtLoaded = true;
+
   const settings = await getSettings();
   setDebug(settings.debug);
   watchSpaNavigation();
@@ -418,6 +426,11 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
     });
   } else if (pageType === "creator-manage") {
+    warn("video-money", "creator-manage reached", {
+      showOnsite,
+      videoMoney: settings.tools.videoMoney,
+      creatorMode: settings.creatorMode,
+    });
     if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
     guard("video-money", () => {
       if (settings.tools.videoMoney) {

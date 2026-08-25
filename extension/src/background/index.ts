@@ -11,7 +11,7 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
-import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchBrandEnrichment, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
@@ -99,7 +99,36 @@ import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 // influencerbutler.com. Receives findings from content scripts, queues them,
 // and flushes on a steady alarm plus opportunistically on arrival.
 
+// Chrome does not inject content scripts into tabs that were already open when
+// the extension installs or updates, so those tabs show nothing until the user
+// reloads (the popup even says "reload to activate"). On install/update, inject
+// content.js into every already-open tab that matches the content script's own
+// match patterns. The content script guards against a double boot in one frame
+// (see main() in content/index.ts), so injecting a tab that later reloads under
+// the manifest is safe. Best-effort: a tab we cannot script (e.g. it navigated
+// away) is skipped silently.
+async function injectIntoOpenTabs(): Promise<void> {
+  const matches = chrome.runtime.getManifest().content_scripts?.[0]?.matches;
+  if (!matches || matches.length === 0) return;
+  let tabs: chrome.tabs.Tab[];
+  try {
+    tabs = await chrome.tabs.query({ url: matches });
+  } catch {
+    return;
+  }
+  for (const tab of tabs) {
+    if (typeof tab.id !== "number") continue;
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
+    } catch {
+      // Discarded tab, restricted page, or a mid-navigation race: leave it for
+      // the manifest to inject on the tab's next load.
+    }
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
+  void injectIntoOpenTabs();
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
@@ -228,6 +257,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "FETCH_OUTREACH_KEYWORDS":
       void fetchOutreachKeywords().then(sendResponse);
+      return true;
+    case "FETCH_BRAND_ENRICHMENT":
+      void fetchBrandEnrichment(message.brands).then(sendResponse);
       return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
