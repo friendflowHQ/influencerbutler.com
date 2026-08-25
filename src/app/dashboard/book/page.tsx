@@ -27,6 +27,16 @@ function fmtDayLabel(ms: number): string {
 function fmtTime(ms: number): string {
   return new Intl.DateTimeFormat("en-US", { timeZone: USER_TZ, hour: "numeric", minute: "2-digit" }).format(new Date(ms));
 }
+// Human-friendly zone name (e.g. "Central Time") derived from Intl itself, so it
+// stays current for any IANA zone worldwide with no lookup table. Falls back to the
+// raw IANA id for exotic zones or if Intl throws.
+function tzFriendly(): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: USER_TZ, timeZoneName: "longGeneric" }).formatToParts(new Date(0));
+    return parts.find((p) => p.type === "timeZoneName")?.value || USER_TZ;
+  } catch { return USER_TZ; }
+}
+const USER_TZ_LABEL = `${tzFriendly()} (${USER_TZ})`;
 
 export default function BookCallPage() {
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
@@ -135,7 +145,7 @@ export default function BookCallPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Book a call</h1>
-        <p className="mt-1 text-sm text-slate-500">Times shown in your timezone ({USER_TZ}).</p>
+        <p className="mt-1 text-sm text-slate-500">Times shown in your timezone: {USER_TZ_LABEL}.</p>
       </div>
 
       {/* Instant AI concierge - no scheduling, starts right away. */}
@@ -201,7 +211,7 @@ export default function BookCallPage() {
       {selectedSlot && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="text-sm text-slate-700">
-            {callType === "support" ? "Support call" : "Demo call"} on <strong>{fmtDayLabel(selectedSlot.startMs)}</strong> at <strong>{fmtTime(selectedSlot.startMs)}</strong> ({USER_TZ})
+            {callType === "support" ? "Support call" : "Demo call"} on <strong>{fmtDayLabel(selectedSlot.startMs)}</strong> at <strong>{fmtTime(selectedSlot.startMs)}</strong> ({tzFriendly()})
           </div>
           <label className="mt-3 block text-sm">
             <span className="text-slate-500">Your name (optional)</span>
