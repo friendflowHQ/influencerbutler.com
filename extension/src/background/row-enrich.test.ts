@@ -33,7 +33,7 @@ function product(over: Partial<EnrichedProduct>): EnrichedProduct {
     marketplace: over.marketplace ?? "amazon.com",
     found: over.found ?? true,
     title: over.title ?? null,
-    brand: null,
+    brand: over.brand ?? null,
     priceDisplay: null,
     priceCents: null,
     currency: null,
@@ -124,6 +124,46 @@ describe("enrichRows", () => {
       imageUrl: "https://img/x.jpg",
       title: "Swim trunks",
     });
+  });
+
+  it("enriches a Link Butler row (cc/rate/image/title/brand) without persisting it", async () => {
+    membershipMock.mockReturnValue({ cc: true, spcc: false, deals: false });
+    lookupCcRatesMock.mockResolvedValue({
+      ok: true,
+      rates: { EEEEEEEEEE: { ratePct: 8, brand: null, endsAt: null } },
+    });
+    enrichProductsMock.mockResolvedValue({
+      ok: true,
+      configured: true,
+      items: [
+        {
+          asin: "EEEEEEEEEE",
+          results: [
+            product({
+              asin: "EEEEEEEEEE",
+              title: "Trail runners",
+              brand: "Acme",
+              imageUrl: "https://img/e.jpg",
+            }),
+          ],
+        },
+      ],
+    });
+
+    const { badges } = await enrichRows([
+      { asin: "EEEEEEEEEE", marketplace: "amazon.com", source: "link", needsImage: true },
+    ]);
+
+    expect(badges.EEEEEEEEEE).toMatchObject({
+      cc: true,
+      ratePct: 8,
+      imageUrl: "https://img/e.jpg",
+      title: "Trail runners",
+      brand: "Acme",
+    });
+    // A "link" row is never written back to a local store.
+    expect(backfillWatchItemMock).not.toHaveBeenCalled();
+    expect(backfillProductListItemMock).not.toHaveBeenCalled();
   });
 
   it("skips invalid ASINs entirely", async () => {

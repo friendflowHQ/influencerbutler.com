@@ -145,6 +145,99 @@
   color: #444;
 }
 
+/* Product thumbnail + campaign signals (shared by Top links and My links).
+   Ported from the popup so both surfaces read the same. */
+.row-thumb {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #eee;
+  border: 1px solid #e2e2e2;
+}
+
+.row-thumb.placeholder {
+  background: #eee;
+}
+
+.cell-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-text {
+  word-break: break-all;
+}
+
+.row-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.row-chip,
+.row-rate,
+.mkt-pill {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.row-chip.cc {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.row-chip.spcc {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.row-rate {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.mkt-pill {
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 700;
+}
+
+/* Registry filter bar */
+.reg-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.reg-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.reg-select {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
 /* Registry */
 .reg-list {
   list-style: none;
@@ -153,14 +246,38 @@
 }
 
 .reg-item {
+  display: flex;
+  gap: 10px;
   border-bottom: 1px solid #eee;
-  padding: 8px 0;
+  padding: 10px 0;
+}
+
+.reg-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.reg-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.reg-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: #666;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 .reg-main {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .reg-label {
@@ -172,6 +289,7 @@
   color: #444;
   font-size: 12px;
   word-break: break-all;
+  margin-top: 2px;
 }
 
 .reg-repointed {

@@ -35,6 +35,7 @@ export type LinksDict = {
   registryHeading: string;
   registryIntro: string;
   noLinks: string;
+  noMatches: string;
   loadMore: string;
   repoint: string;
   repointPrompt: string;
@@ -45,6 +46,26 @@ export type LinksDict = {
   repointBadUrl: string;
   repointedNote: (when: string) => string;
   openLink: string;
+
+  // Product + campaign enrichment (shared by Top links and My links)
+  chipCc: string;
+  chipSpcc: string;
+  campaignRate: (pct: number) => string;
+  untitledLink: string;
+
+  // Filters (My links)
+  filterSearchPlaceholder: string;
+  filterCampaign: string;
+  filterCampaignAll: string;
+  filterCampaignCc: string;
+  filterCampaignSpcc: string;
+  filterCampaignAny: string;
+  filterMarketplace: string;
+  filterMarketplaceAll: string;
+  filterHealth: string;
+  filterHealthAll: string;
+  filterHealthRepointed: string;
+  filterHealthOriginal: string;
 
   // Pixels
   pixelsHeading: string;
@@ -106,6 +127,7 @@ const EN: LinksDict = {
   registryIntro:
     "Every branded link on your account. Repoint one to send every already-posted copy to a new target.",
   noLinks: "No branded links yet. Mint one from a product page or a harvest.",
+  noMatches: "No links match these filters.",
   loadMore: "Load more",
   repoint: "Repoint",
   repointPrompt: "New target URL for this link:",
@@ -116,6 +138,24 @@ const EN: LinksDict = {
   repointBadUrl: "That is not a valid URL.",
   repointedNote: (when) => `Repointed ${when}`,
   openLink: "Open",
+
+  chipCc: "Creator Connections",
+  chipSpcc: "SPCC",
+  campaignRate: (pct) => `${pct}% commission`,
+  untitledLink: "Untitled link",
+
+  filterSearchPlaceholder: "Search label, title, ASIN, or URL",
+  filterCampaign: "Campaign",
+  filterCampaignAll: "All campaigns",
+  filterCampaignCc: "Creator Connections",
+  filterCampaignSpcc: "SPCC",
+  filterCampaignAny: "Any campaign",
+  filterMarketplace: "Marketplace",
+  filterMarketplaceAll: "All marketplaces",
+  filterHealth: "Health",
+  filterHealthAll: "All",
+  filterHealthRepointed: "Repointed or healed",
+  filterHealthOriginal: "Original",
 
   pixelsHeading: "Retargeting pixels (Doorbell)",
   pixelsIntro:
@@ -176,6 +216,7 @@ const ES: LinksDict = {
   registryIntro:
     "Todos los enlaces de marca de tu cuenta. Redirige uno para enviar cada copia ya publicada a un nuevo destino.",
   noLinks: "Aun no hay enlaces de marca. Crea uno desde una pagina de producto o una recoleccion.",
+  noMatches: "Ningun enlace coincide con estos filtros.",
   loadMore: "Cargar mas",
   repoint: "Redirigir",
   repointPrompt: "Nueva URL de destino para este enlace:",
@@ -186,6 +227,24 @@ const ES: LinksDict = {
   repointBadUrl: "Esa no es una URL valida.",
   repointedNote: (when) => `Redirigido ${when}`,
   openLink: "Abrir",
+
+  chipCc: "Creator Connections",
+  chipSpcc: "SPCC",
+  campaignRate: (pct) => `${pct}% de comision`,
+  untitledLink: "Enlace sin titulo",
+
+  filterSearchPlaceholder: "Buscar etiqueta, titulo, ASIN o URL",
+  filterCampaign: "Campana",
+  filterCampaignAll: "Todas las campanas",
+  filterCampaignCc: "Creator Connections",
+  filterCampaignSpcc: "SPCC",
+  filterCampaignAny: "Cualquier campana",
+  filterMarketplace: "Mercado",
+  filterMarketplaceAll: "Todos los mercados",
+  filterHealth: "Estado",
+  filterHealthAll: "Todos",
+  filterHealthRepointed: "Redirigido o reparado",
+  filterHealthOriginal: "Original",
 
   pixelsHeading: "Pixeles de retargeting (Doorbell)",
   pixelsIntro:
@@ -246,6 +305,7 @@ const FR: LinksDict = {
   registryIntro:
     "Tous les liens de marque de votre compte. Redirigez-en un pour envoyer chaque copie deja publiee vers une nouvelle cible.",
   noLinks: "Aucun lien de marque pour l'instant. Creez-en un depuis une page produit ou une collecte.",
+  noMatches: "Aucun lien ne correspond a ces filtres.",
   loadMore: "Charger plus",
   repoint: "Rediriger",
   repointPrompt: "Nouvelle URL cible pour ce lien :",
@@ -256,6 +316,24 @@ const FR: LinksDict = {
   repointBadUrl: "Ce n'est pas une URL valide.",
   repointedNote: (when) => `Redirige ${when}`,
   openLink: "Ouvrir",
+
+  chipCc: "Creator Connections",
+  chipSpcc: "SPCC",
+  campaignRate: (pct) => `${pct}% de commission`,
+  untitledLink: "Lien sans titre",
+
+  filterSearchPlaceholder: "Rechercher un libelle, titre, ASIN ou URL",
+  filterCampaign: "Campagne",
+  filterCampaignAll: "Toutes les campagnes",
+  filterCampaignCc: "Creator Connections",
+  filterCampaignSpcc: "SPCC",
+  filterCampaignAny: "N'importe quelle campagne",
+  filterMarketplace: "Marche",
+  filterMarketplaceAll: "Tous les marches",
+  filterHealth: "Etat",
+  filterHealthAll: "Tous",
+  filterHealthRepointed: "Redirige ou repare",
+  filterHealthOriginal: "Original",
 
   pixelsHeading: "Pixels de reciblage (Doorbell)",
   pixelsIntro:

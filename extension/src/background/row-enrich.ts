@@ -39,7 +39,7 @@ export async function enrichRows(refs: RowEnrichRef[]): Promise<RowBadgesResult>
 
   for (const asin of asins) {
     const m = membership(loaded, asin);
-    badges[asin] = { cc: m.cc, spcc: m.spcc, ratePct: null, imageUrl: null, title: null };
+    badges[asin] = { cc: m.cc, spcc: m.spcc, ratePct: null, imageUrl: null, title: null, brand: null };
   }
 
   // Real commission % only for CC members (mirrors cc-rates.ts's own rule that
@@ -76,6 +76,7 @@ export async function enrichRows(refs: RowEnrichRef[]): Promise<RowBadgesResult>
         if (!best) continue;
         if (best.imageUrl) badge.imageUrl = best.imageUrl;
         if (best.title) badge.title = best.title;
+        if (best.brand) badge.brand = best.brand;
       }
     }
   }

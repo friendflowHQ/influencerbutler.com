@@ -9,9 +9,13 @@ import {
   type ListResult,
   type PixelsResult,
   type RepointResult,
+  type RowBadge,
+  type RowBadgesResult,
+  type RowEnrichRef,
   type SignInResult,
   type StatsResult,
 } from "../shared/messages";
+import type { LinkRow } from "../integrations/ib-links-client";
 
 // The Link Butler (Ledger) page. Opened from the extension popup in its own tab.
 // It reads the branded-link worker through the background (the license key never
@@ -180,20 +184,55 @@ async function loadLedger(): Promise<void> {
     thead.append(htr);
     table.append(thead);
     const tbody = el("tbody");
+    // Handles for the async enrichment pass: fill each thumbnail and CC/SPCC/rate
+    // strip once the batch returns, keyed by the row's ASIN.
+    const handles: Array<{ asin: string; thumb: HTMLImageElement; signals: HTMLElement }> = [];
     for (const link of s.topLinks) {
       const tr = el("tr");
-      tr.append(linkCell(link.shortUrl, link.label || link.slug));
+
+      // Link cell: product thumbnail + the short link.
+      const linkTd = el("td", "link");
+      const wrap = el("div", "cell-link");
+      const thumb = makeThumb(null, link.label || link.slug);
+      const a = el("a") as HTMLAnchorElement;
+      a.href = link.shortUrl;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = link.label || link.slug;
+      wrap.append(thumb, a);
+      linkTd.append(wrap);
+      tr.append(linkTd);
+
       const clicks = el("td", "num");
       clicks.textContent = String(link.clicks);
       tr.append(clicks);
+
+      // Target cell: the ASIN/host, with the campaign signals below it.
       const target = el("td", "target");
-      target.textContent = link.asin || hostOf(link.targetUrl ?? "");
+      const targetText = el("div", "target-text");
+      targetText.textContent = link.asin || hostOf(link.targetUrl ?? "");
+      const signals = el("div", "row-signals");
+      target.append(targetText, signals);
       tr.append(target);
+
       tbody.append(tr);
+      handles.push({ asin: (link.asin ?? "").toUpperCase(), thumb, signals });
     }
     table.append(tbody);
     scroll.append(table);
     holder.append(scroll);
+
+    // Enrich after the table is drawn so it is interactive immediately.
+    void enrichLinks(
+      s.topLinks.map((l) => ({ asin: l.asin, marketplace: marketplaceOf(null, l.targetUrl) })),
+    ).then((badges) => {
+      for (const h of handles) {
+        const badge = badges[h.asin];
+        if (!badge) continue;
+        if (badge.imageUrl) setThumb(h.thumb, badge.imageUrl);
+        fillSignals(h.signals, badge);
+      }
+    });
   }
 
   const breakdowns = el("div", "breakdowns");
@@ -261,11 +300,34 @@ function breakdown(title: string, rows: Array<{ label: string; clicks: number }>
 
 // ---- Registry ---------------------------------------------------------------
 
+// Accumulated registry state. The worker pages the list by cursor; we keep every
+// loaded row plus its enrichment badge so the filter bar can narrow the loaded
+// set client-side and "Load more" keeps pulling further pages.
+let regRows: LinkRow[] = [];
+let regBadges: Record<string, RowBadge> = {};
+let regCursor: string | null = null;
+const regFilter = {
+  q: "",
+  campaign: "all" as "all" | "cc" | "spcc" | "any",
+  marketplace: "all",
+  health: "all" as "all" | "repointed" | "original",
+};
+
 function renderRegistry(): HTMLElement {
+  // Reset state on a fresh page render so a re-render never doubles the list.
+  regRows = [];
+  regBadges = {};
+  regCursor = null;
+  regFilter.q = "";
+  regFilter.campaign = "all";
+  regFilter.marketplace = "all";
+  regFilter.health = "all";
+
   const card = section(D.registryHeading);
   const intro = el("p", "muted small");
   intro.textContent = D.registryIntro;
   card.append(intro);
+  card.append(buildRegFilterBar());
   const holder = el("div");
   holder.id = "registry-holder";
   holder.append(note(D.loading));
@@ -273,77 +335,239 @@ function renderRegistry(): HTMLElement {
   return card;
 }
 
+// The search + campaign + marketplace + health controls. Each re-runs the
+// client-side filter over the already-loaded rows.
+function buildRegFilterBar(): HTMLElement {
+  const bar = el("div", "reg-filter-bar");
+
+  const search = el("input", "reg-search") as HTMLInputElement;
+  search.type = "search";
+  search.placeholder = D.filterSearchPlaceholder;
+  search.oninput = () => {
+    regFilter.q = search.value.trim().toLowerCase();
+    renderRegistryList();
+  };
+
+  const campaign = selectFrom("reg-select", [
+    ["all", D.filterCampaignAll],
+    ["cc", D.filterCampaignCc],
+    ["spcc", D.filterCampaignSpcc],
+    ["any", D.filterCampaignAny],
+  ]);
+  campaign.onchange = () => {
+    regFilter.campaign = campaign.value as typeof regFilter.campaign;
+    renderRegistryList();
+  };
+
+  const marketplace = el("select", "reg-select") as HTMLSelectElement;
+  marketplace.id = "reg-mkt-select";
+  rebuildMarketplaceOptions(marketplace);
+  marketplace.onchange = () => {
+    regFilter.marketplace = marketplace.value;
+    renderRegistryList();
+  };
+
+  const health = selectFrom("reg-select", [
+    ["all", D.filterHealthAll],
+    ["repointed", D.filterHealthRepointed],
+    ["original", D.filterHealthOriginal],
+  ]);
+  health.onchange = () => {
+    regFilter.health = health.value as typeof regFilter.health;
+    renderRegistryList();
+  };
+
+  bar.append(search, campaign, marketplace, health);
+  return bar;
+}
+
+// Populate the marketplace dropdown with "All" plus the distinct marketplaces
+// present in the loaded rows, preserving the current selection when still valid.
+function rebuildMarketplaceOptions(select: HTMLSelectElement): void {
+  const current = select.value || "all";
+  const hosts = new Set<string>();
+  for (const link of regRows) {
+    const host = marketplaceOf(link.marketplace, link.targetUrl);
+    if (host) hosts.add(host);
+  }
+  select.replaceChildren();
+  const allOpt = el("option") as HTMLOptionElement;
+  allOpt.value = "all";
+  allOpt.textContent = D.filterMarketplaceAll;
+  select.append(allOpt);
+  for (const host of Array.from(hosts).sort()) {
+    const opt = el("option") as HTMLOptionElement;
+    opt.value = host;
+    opt.textContent = MARKETPLACE_CODE[host] ? `${MARKETPLACE_CODE[host]} (${host})` : host;
+    select.append(opt);
+  }
+  select.value = current === "all" || hosts.has(current) ? current : "all";
+}
+
 async function loadRegistry(cursor: string | null, replace: boolean): Promise<void> {
   const holder = document.getElementById("registry-holder");
   if (!holder) return;
-  if (replace) holder.replaceChildren(note(D.loading));
+  if (replace) {
+    regRows = [];
+    regBadges = {};
+    regCursor = null;
+    holder.replaceChildren(note(D.loading));
+  }
 
   const result = await sendToBackground<ListResult>({ kind: "LINK_LIST", cursor });
   if (!result.ok) {
-    holder.replaceChildren(note(result.code === "upgrade_required" ? D.upgradeNeeded : D.couldNotLoad));
+    if (replace) {
+      holder.replaceChildren(note(result.code === "upgrade_required" ? D.upgradeNeeded : D.couldNotLoad));
+    }
     return;
   }
-  if (replace) holder.replaceChildren();
-  // Drop any prior "load more" button before appending the next page.
-  holder.querySelector(".load-more")?.remove();
 
-  if (result.links.length === 0 && replace) {
+  regRows.push(...result.links);
+  regCursor = result.nextCursor ?? null;
+
+  const mktSelect = document.getElementById("reg-mkt-select") as HTMLSelectElement | null;
+  if (mktSelect) rebuildMarketplaceOptions(mktSelect);
+
+  renderRegistryList();
+
+  // Enrich this page's ASINs, merge into the shared badge map, then repaint so
+  // thumbnails, chips, and any active campaign/search filter reflect the data.
+  const badges = await enrichLinks(
+    result.links.map((l) => ({ asin: l.asin, marketplace: marketplaceOf(l.marketplace, l.targetUrl) })),
+  );
+  Object.assign(regBadges, badges);
+  renderRegistryList();
+}
+
+// Draw the filtered registry rows plus the "Load more" control. Rebuilt whenever
+// a page loads, enrichment lands, or a filter changes.
+function renderRegistryList(): void {
+  const holder = document.getElementById("registry-holder");
+  if (!holder) return;
+  holder.replaceChildren();
+
+  if (regRows.length === 0) {
     holder.append(note(D.noLinks));
     return;
   }
 
-  let list = holder.querySelector<HTMLElement>(".reg-list");
-  if (!list) {
-    list = el("ul", "reg-list");
+  const filtered = regRows.filter(matchesFilter);
+  if (filtered.length === 0) {
+    holder.append(note(D.noMatches));
+  } else {
+    const list = el("ul", "reg-list");
+    for (const link of filtered) list.append(regItem(link));
     holder.append(list);
   }
-  for (const link of result.links) {
-    const li = el("li", "reg-item");
 
-    const main = el("div", "reg-main");
-    const a = el("a", "reg-short") as HTMLAnchorElement;
-    a.href = link.shortUrl;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = link.shortUrl.replace(/^https?:\/\//, "");
-    main.append(a);
-    if (link.label) {
-      const label = el("span", "reg-label");
-      label.textContent = link.label;
-      main.append(label);
-    }
-    li.append(main);
-
-    const target = el("div", "reg-target");
-    target.textContent = link.targetUrl ?? "";
-    li.append(target);
-
-    if (link.repointedAt) {
-      const badge = el("span", "reg-repointed");
-      badge.textContent = D.repointedNote(new Date(link.repointedAt).toLocaleDateString());
-      li.append(badge);
-    }
-
-    const actions = el("div", "reg-actions");
-    const repointBtn = el("button", "ghost small");
-    repointBtn.textContent = D.repoint;
-    const status = el("span", "muted small");
-    repointBtn.onclick = () => void doRepoint(link.slug, link.asin, link.marketplace, status);
-    actions.append(repointBtn, status);
-    li.append(actions);
-
-    list.append(li);
-  }
-
-  if (result.nextCursor) {
+  if (regCursor) {
     const more = el("button", "ghost load-more");
     more.textContent = D.loadMore;
     more.onclick = () => {
-      more.remove();
-      void loadRegistry(result.nextCursor, false);
+      more.disabled = true;
+      void loadRegistry(regCursor, false);
     };
     holder.append(more);
   }
+}
+
+function matchesFilter(link: LinkRow): boolean {
+  const asin = (link.asin ?? "").toUpperCase();
+  const badge = regBadges[asin];
+
+  if (regFilter.q) {
+    const hay = [link.label ?? "", badge?.title ?? "", link.asin ?? "", link.targetUrl ?? ""]
+      .join(" ")
+      .toLowerCase();
+    if (!hay.includes(regFilter.q)) return false;
+  }
+
+  if (regFilter.campaign !== "all") {
+    const cc = badge?.cc ?? false;
+    const spcc = badge?.spcc ?? false;
+    if (regFilter.campaign === "cc" && !cc) return false;
+    if (regFilter.campaign === "spcc" && !spcc) return false;
+    if (regFilter.campaign === "any" && !cc && !spcc) return false;
+  }
+
+  if (regFilter.marketplace !== "all" && marketplaceOf(link.marketplace, link.targetUrl) !== regFilter.marketplace) {
+    return false;
+  }
+
+  if (regFilter.health === "repointed" && !link.repointedAt) return false;
+  if (regFilter.health === "original" && link.repointedAt) return false;
+
+  return true;
+}
+
+// One rich registry row: product thumbnail, title (enriched or fallback), a
+// brand / ASIN / marketplace sub-line, the short link and raw target, the
+// CC / SPCC / commission signals, and the repoint action.
+function regItem(link: LinkRow): HTMLElement {
+  const li = el("li", "reg-item");
+  const asin = (link.asin ?? "").toUpperCase();
+  const badge = regBadges[asin];
+
+  const thumb = makeThumb(badge?.imageUrl ?? null, link.label || link.slug);
+
+  const body = el("div", "reg-body");
+
+  const title = el("div", "reg-title");
+  title.textContent = badge?.title || link.label || link.asin || D.untitledLink;
+  body.append(title);
+
+  const host = marketplaceOf(link.marketplace, link.targetUrl);
+  const subParts: string[] = [];
+  if (badge?.brand) subParts.push(badge.brand);
+  if (link.asin) subParts.push(link.asin);
+  const pill = mktPill(host);
+  if (subParts.length || pill) {
+    const sub = el("div", "reg-sub");
+    if (subParts.length) sub.append(document.createTextNode(subParts.join(" · ")));
+    if (pill) {
+      if (subParts.length) sub.append(document.createTextNode(" "));
+      sub.append(pill);
+    }
+    body.append(sub);
+  }
+
+  const main = el("div", "reg-main");
+  const a = el("a", "reg-short") as HTMLAnchorElement;
+  a.href = link.shortUrl;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = link.shortUrl.replace(/^https?:\/\//, "");
+  main.append(a);
+  body.append(main);
+
+  if (link.targetUrl) {
+    const target = el("div", "reg-target");
+    target.textContent = link.targetUrl;
+    body.append(target);
+  }
+
+  if (badge && (badge.cc || badge.spcc || badge.ratePct != null)) {
+    const signals = el("div", "row-signals");
+    fillSignals(signals, badge);
+    body.append(signals);
+  }
+
+  if (link.repointedAt) {
+    const rep = el("span", "reg-repointed");
+    rep.textContent = D.repointedNote(new Date(link.repointedAt).toLocaleDateString());
+    body.append(rep);
+  }
+
+  const actions = el("div", "reg-actions");
+  const repointBtn = el("button", "ghost small");
+  repointBtn.textContent = D.repoint;
+  const status = el("span", "muted small");
+  repointBtn.onclick = () => void doRepoint(link.slug, link.asin, link.marketplace, status);
+  actions.append(repointBtn, status);
+  body.append(actions);
+
+  li.append(thumb, body);
+  return li;
 }
 
 async function doRepoint(
@@ -512,15 +736,119 @@ function subHeading(text: string): HTMLElement {
   return el("h3", "sub", text);
 }
 
-function linkCell(href: string, text: string): HTMLElement {
-  const td = el("td", "link");
-  const a = el("a") as HTMLAnchorElement;
-  a.href = href;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.textContent = text;
-  td.append(a);
-  return td;
+// ---- Product + campaign enrichment ------------------------------------------
+//
+// The Top links table and the My links registry both show a product thumbnail,
+// title, brand, and the CC / SPCC / commission signals the popup already renders.
+// All of it comes from one background call (ENRICH_ROWS -> enrichRows): CC/SPCC
+// membership from the local bloom filters, commission from the cc-rates join,
+// and image/title/brand from the Creator API. Link rows are never persisted
+// (source "link"), and a signed-out or unconfigured user still gets the chips.
+
+const ASIN_RE = /^[A-Z0-9]{10}$/;
+
+// Compact marketplace codes for the flag pill, keyed by the bare Amazon host
+// (the same form the link record and CREATOR_API_MARKETPLACES use).
+const MARKETPLACE_CODE: Record<string, string> = {
+  "amazon.com": "US",
+  "amazon.co.uk": "UK",
+  "amazon.ca": "CA",
+  "amazon.com.au": "AU",
+  "amazon.de": "DE",
+  "amazon.fr": "FR",
+  "amazon.it": "IT",
+  "amazon.es": "ES",
+  "amazon.co.jp": "JP",
+  "amazon.in": "IN",
+  "amazon.com.mx": "MX",
+};
+
+// The marketplace (bare hostname, e.g. "amazon.co.uk") for a link: its own field
+// when present, else derived from the target URL host. Empty when neither is an
+// Amazon host, in which case image enrichment simply finds nothing for the row.
+function marketplaceOf(marketplace: string | null | undefined, targetUrl: string | null | undefined): string {
+  if (marketplace) return marketplace;
+  const host = hostOf(targetUrl ?? "");
+  return host.includes("amazon.") ? host : "";
+}
+
+// Batch-enrich links by ASIN + marketplace, de-duplicated by ASIN. Returns an
+// ASIN-keyed badge map; a failed round-trip yields an empty map so callers keep
+// their plain rows.
+async function enrichLinks(rows: Array<{ asin: string | null; marketplace: string }>): Promise<Record<string, RowBadge>> {
+  const refs: RowEnrichRef[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const asin = (r.asin ?? "").toUpperCase();
+    if (!ASIN_RE.test(asin) || seen.has(asin)) continue;
+    seen.add(asin);
+    refs.push({ asin, marketplace: r.marketplace, source: "link", needsImage: true });
+  }
+  if (refs.length === 0) return {};
+  try {
+    const { badges } = await sendToBackground<RowBadgesResult>({ kind: "ENRICH_ROWS", refs });
+    return badges;
+  } catch {
+    return {};
+  }
+}
+
+// A 34px product thumbnail; a neutral placeholder box until (or unless) an image
+// URL is known. A broken URL falls back to the placeholder.
+function makeThumb(imageUrl: string | null, alt: string): HTMLImageElement {
+  const img = document.createElement("img");
+  img.className = imageUrl ? "row-thumb" : "row-thumb placeholder";
+  img.loading = "lazy";
+  img.alt = alt;
+  if (imageUrl) img.src = imageUrl;
+  img.onerror = () => {
+    img.removeAttribute("src");
+    img.classList.add("placeholder");
+  };
+  return img;
+}
+
+function setThumb(img: HTMLImageElement, imageUrl: string): void {
+  img.src = imageUrl;
+  img.classList.remove("placeholder");
+}
+
+function makeChip(kind: "cc" | "spcc", label: string): HTMLElement {
+  return el("span", `row-chip ${kind}`, label);
+}
+
+function makeRatePill(label: string): HTMLElement {
+  return el("span", "row-rate", label);
+}
+
+// A small marketplace flag (US / UK / DE ...). Null for a non-Amazon or unknown
+// host so the caller can omit it.
+function mktPill(host: string): HTMLElement | null {
+  if (!host) return null;
+  const pill = el("span", "mkt-pill", MARKETPLACE_CODE[host] ?? host.replace(/^www\./, ""));
+  pill.title = host;
+  return pill;
+}
+
+// Fill a signals strip from a badge: CC, SPCC, then commission (Orders Butler
+// order). Clears the strip first so a re-render never stacks duplicates.
+function fillSignals(strip: HTMLElement, badge: RowBadge): void {
+  strip.replaceChildren();
+  if (badge.cc) strip.append(makeChip("cc", D.chipCc));
+  if (badge.spcc) strip.append(makeChip("spcc", D.chipSpcc));
+  if (badge.ratePct != null) strip.append(makeRatePill(D.campaignRate(badge.ratePct)));
+}
+
+// Build a <select> from [value, label] pairs.
+function selectFrom(className: string, options: ReadonlyArray<readonly [string, string]>): HTMLSelectElement {
+  const select = el("select", className) as HTMLSelectElement;
+  for (const [value, label] of options) {
+    const opt = el("option") as HTMLOptionElement;
+    opt.value = value;
+    opt.textContent = label;
+    select.append(opt);
+  }
+  return select;
 }
 
 function note(text: string): HTMLElement {
