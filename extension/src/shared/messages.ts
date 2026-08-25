@@ -400,6 +400,10 @@ export type CampaignBriefResult = {
   // "groq-400" or "no-provider"), surfaced under the fallback so an empty brief
   // can be diagnosed in the wild. Null/absent on success.
   diag?: string | null;
+  // Whether the creator has connected their own OpenAI key in API Integrations.
+  // Lets the fallback UI tell "no key: connect one" apart from "key connected
+  // but the brief still failed: check it". Non-secret; only the boolean travels.
+  openaiConnected?: boolean;
 };
 
 // One normalized Creator API (PA-API) product row. Mirrors the server's

@@ -49,9 +49,9 @@ function pickStandout(products: MarketProduct[]): CampaignBriefDemand | null {
 async function tryLocalOpenAiBrief(
   signals: CampaignBriefSignals,
   demand: CampaignBriefDemand | null,
+  connected: boolean,
 ): Promise<CampaignBriefSections | null> {
-  const openai = await getIntegration("openai");
-  if (!openai.credentialsEnc) return null; // no BYO key: use the server route
+  if (!connected) return null; // no BYO key: use the server route
   const res = await openaiComplete(buildBriefPrompt(signals, demand));
   if (!res.ok || !res.text) return null;
   return parseBriefSections(res.text);
@@ -62,7 +62,13 @@ export async function fetchCampaignBrief(
 ): Promise<CampaignBriefResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
-  if (!key) return { ...EMPTY, error: "Sign in to use Campaign Butler." };
+
+  // Whether the creator connected their own OpenAI key. Read once: it gates the
+  // BYO path below and, on a fallback, tells the panel which nudge to show.
+  const openai = await getIntegration("openai");
+  const openaiConnected = !!openai.credentialsEnc;
+
+  if (!key) return { ...EMPTY, openaiConnected, error: "Sign in to use Campaign Butler." };
 
   // Resolve the standout product's demand first, so the brief can talk about
   // real units/revenue. A miss (fresh catalogue, no grid-level ASINs, or an
@@ -78,8 +84,8 @@ export async function fetchCampaignBrief(
 
   // BYO key first: write the prose with the creator's own OpenAI integration.
   // Only when they have not connected one do we spend our server's model budget.
-  const local = await tryLocalOpenAiBrief(signals, demand);
-  if (local) return { ok: true, migrationPending, sections: local, demand };
+  const local = await tryLocalOpenAiBrief(signals, demand, openaiConnected);
+  if (local) return { ok: true, migrationPending, sections: local, demand, openaiConnected };
 
   try {
     const res = await fetch(ENDPOINTS.campaignBrief, {
@@ -106,10 +112,10 @@ export async function fetchCampaignBrief(
       | null;
     if (!res.ok || !data || !data.ok) {
       const error = res.status === 429 ? "Slow down a moment, then try again." : "Could not reach Campaign Butler.";
-      return { ok: false, migrationPending, sections: null, demand, error: data?.error ?? error, diag: data?.diag ?? `http-${res.status}` };
+      return { ok: false, migrationPending, sections: null, demand, openaiConnected, error: data?.error ?? error, diag: data?.diag ?? `http-${res.status}` };
     }
-    return { ok: true, migrationPending, sections: data.sections ?? null, demand, diag: data.diag ?? null };
+    return { ok: true, migrationPending, sections: data.sections ?? null, demand, openaiConnected, diag: data.diag ?? null };
   } catch {
-    return { ...EMPTY, migrationPending, demand, error: "Network error reaching Campaign Butler." };
+    return { ...EMPTY, migrationPending, demand, openaiConnected, error: "Network error reaching Campaign Butler." };
   }
 }

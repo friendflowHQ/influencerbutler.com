@@ -3,6 +3,7 @@ import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { visibleBreakdownParts } from "./score";
 import type { CampaignScore, CampaignScoreBand } from "./score";
+import { sendToBackground } from "../../shared/messages";
 import type {
   CampaignBriefDemand,
   CampaignBriefResult,
@@ -158,6 +159,32 @@ function scoreBreakdown(score: CampaignScore): HTMLElement {
     chip.style.color = "#374151";
     wrap.append(chip);
   }
+  return wrap;
+}
+
+// On a fallback the prose is missing because no LLM was reachable. The Butler
+// tries the creator's own OpenAI key first, so the most effective fix is to
+// connect one. Nudge toward it, opening the extension's settings page (the same
+// OPEN_OPTIONS route the header gear uses; options render in their own tab, not
+// inline). When a key is already connected, the miss is the key's, so point
+// them to check it rather than telling them to connect one they already have.
+function connectPrompt(connected: boolean): HTMLElement {
+  const wrap = el("div");
+  wrap.style.marginTop = "12px";
+
+  const hint = el("div", "", connected ? t().campaignBriefKeyErrorHint : t().campaignBriefConnectHint);
+  hint.style.fontSize = "12px";
+  hint.style.lineHeight = "1.45";
+  hint.style.color = "#374151";
+  hint.style.marginBottom = "8px";
+
+  const btn = actionButton(connected ? t().campaignBriefOpenSettingsBtn : t().campaignBriefConnectBtn, false);
+  btn.addEventListener("click", () => {
+    void sendToBackground({ kind: "OPEN_OPTIONS" });
+    closeCampaignBrief();
+  });
+
+  wrap.append(hint, btn);
   return wrap;
 }
 
@@ -349,6 +376,7 @@ function renderBody(body: HTMLElement, opts: CampaignBriefOpen, res: CampaignBri
     note.style.color = "#6b7280";
     note.style.margin = "12px 0 10px";
     body.append(note, scoreBreakdown(opts.score));
+    body.append(connectPrompt(res.openaiConnected === true));
     // Surface the server's reason code (e.g. "groq-400", "no-provider") in small
     // muted text so an empty brief is diagnosable in the wild, not a blank miss.
     if (res.diag) {

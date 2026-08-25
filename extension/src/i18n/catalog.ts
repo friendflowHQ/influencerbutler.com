@@ -462,6 +462,10 @@ export interface Dict {
   campaignBriefCopied: string;
   campaignBriefClose: string;
   campaignBriefError: string;
+  campaignBriefConnectHint: string;
+  campaignBriefKeyErrorHint: string;
+  campaignBriefConnectBtn: string;
+  campaignBriefOpenSettingsBtn: string;
   campaignBriefVerdictHot: string;
   campaignBriefVerdictWarm: string;
   campaignBriefVerdictCool: string;
@@ -1198,6 +1202,10 @@ const en: Dict = {
   campaignBriefCopied: "Copied",
   campaignBriefClose: "Close",
   campaignBriefError: "The Butler couldn't write a full brief right now. Here's the score breakdown.",
+  campaignBriefConnectHint: "Connect your own OpenAI API key and the Butler writes a full brief every time.",
+  campaignBriefKeyErrorHint: "Your connected OpenAI key couldn't finish this brief. Check the key in Settings.",
+  campaignBriefConnectBtn: "Connect OpenAI",
+  campaignBriefOpenSettingsBtn: "Open settings",
   campaignBriefVerdictHot: "Worth accepting",
   campaignBriefVerdictWarm: "Worth a look",
   campaignBriefVerdictCool: "Probably pass",
@@ -1956,6 +1964,10 @@ const es: Dict = {
   campaignBriefCopied: "Copiado",
   campaignBriefClose: "Cerrar",
   campaignBriefError: "El Butler no pudo redactar un informe completo ahora mismo. Aquí tienes el desglose de la puntuación.",
+  campaignBriefConnectHint: "Conecta tu propia clave de API de OpenAI y el Butler redactará un informe completo cada vez.",
+  campaignBriefKeyErrorHint: "Tu clave de OpenAI conectada no pudo terminar este informe. Revísala en Ajustes.",
+  campaignBriefConnectBtn: "Conectar OpenAI",
+  campaignBriefOpenSettingsBtn: "Abrir ajustes",
   campaignBriefVerdictHot: "Vale la pena aceptar",
   campaignBriefVerdictWarm: "Merece un vistazo",
   campaignBriefVerdictCool: "Probablemente no",
@@ -2714,6 +2726,10 @@ const fr: Dict = {
   campaignBriefCopied: "Copié",
   campaignBriefClose: "Fermer",
   campaignBriefError: "Le Butler n'a pas pu rédiger une fiche complète pour le moment. Voici le détail du score.",
+  campaignBriefConnectHint: "Connectez votre propre clé d'API OpenAI et le Butler rédigera une fiche complète à chaque fois.",
+  campaignBriefKeyErrorHint: "Votre clé OpenAI connectée n'a pas pu terminer cette fiche. Vérifiez-la dans les Réglages.",
+  campaignBriefConnectBtn: "Connecter OpenAI",
+  campaignBriefOpenSettingsBtn: "Ouvrir les réglages",
   campaignBriefVerdictHot: "À accepter",
   campaignBriefVerdictWarm: "Vaut un coup d'oeil",
   campaignBriefVerdictCool: "Plutôt à laisser",
