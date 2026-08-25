@@ -18,17 +18,18 @@ export async function GET(request: Request) {
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  const [config, rules, blocks] = await Promise.all([
+  const [config, rules, blocks, recurringBlocks] = await Promise.all([
     admin.from("call_config").select("*").eq("id", 1).maybeSingle(),
     admin.from("call_availability_rules").select("*").order("timezone").order("weekday"),
     admin.from("call_blocks").select("*").gte("ends_at", new Date().toISOString()).order("starts_at").limit(200),
+    admin.from("call_recurring_blocks").select("*").order("weekday").order("start_min"),
   ]);
   // Never return the refresh token to the client; expose only connection state.
   const raw = (config.data ?? null) as Record<string, unknown> | null;
   const googleConnected = !!raw?.google_refresh_token;
   const googleEmail = (raw?.google_calendar_email as string) ?? null;
   if (raw) { delete raw.google_refresh_token; delete raw.google_calendar_email; }
-  return NextResponse.json({ config: raw, rules: rules.data ?? [], blocks: blocks.data ?? [], googleConnected, googleEmail });
+  return NextResponse.json({ config: raw, rules: rules.data ?? [], blocks: blocks.data ?? [], recurringBlocks: recurringBlocks.data ?? [], googleConnected, googleEmail });
 }
 
 type Body = {
@@ -36,6 +37,7 @@ type Body = {
   config?: Partial<{ booking_horizon_days: number; lead_time_hours: number; decoy_min_per_day: number; decoy_max_per_day: number; default_join_url: string }>;
   rule?: { weekday: number; start_min: number; end_min: number; timezone: string; effective_from?: string | null; effective_to?: string | null };
   block?: { starts_at: string; ends_at: string; label?: string };
+  recurringBlock?: { weekday: number; start_min: number; end_min: number; timezone: string; label?: string };
   id?: string;
 };
 
@@ -75,6 +77,16 @@ export async function POST(request: Request) {
         await admin.from("call_blocks").delete().eq("id", body.id);
         break;
       }
+      case "addRecurringBlock": {
+        if (!body.recurringBlock) return NextResponse.json({ error: "Missing recurringBlock" }, { status: 400 });
+        await admin.from("call_recurring_blocks").insert(body.recurringBlock);
+        break;
+      }
+      case "deleteRecurringBlock": {
+        if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+        await admin.from("call_recurring_blocks").delete().eq("id", body.id);
+        break;
+      }
       case "disconnectGoogle": {
         await admin.from("call_config").update({ google_refresh_token: null, google_calendar_email: null, updated_at: new Date().toISOString() }).eq("id", 1);
         break;
@@ -87,6 +99,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
-  await logAdminAction({ actor, action: `scheduling.settings.${body.action}`, targetType: "call_config", targetId: body.id ?? null, details: (body.config || body.rule || body.block || {}) as Record<string, unknown> });
+  await logAdminAction({ actor, action: `scheduling.settings.${body.action}`, targetType: "call_config", targetId: body.id ?? null, details: (body.config || body.rule || body.block || body.recurringBlock || {}) as Record<string, unknown> });
   return NextResponse.json({ ok: true });
 }

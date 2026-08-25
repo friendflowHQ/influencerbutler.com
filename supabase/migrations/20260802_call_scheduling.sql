@@ -58,15 +58,16 @@ ALTER TABLE call_availability_rules ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS call_rules_no_anon ON call_availability_rules;
 CREATE POLICY call_rules_no_anon ON call_availability_rules FOR ALL USING (false) WITH CHECK (false);
 
--- Seed: Mon-Fri 10:00-17:00 (600-1020 min). Eastern through 2026-08-16, then
--- Denver (Mountain). 3-5pm is decoy-blocked by the engine, not here.
+-- Seed: Mon-Fri, Eastern through 2026-08-16 (10:00-17:00), then Denver
+-- (Mountain) 10:00-14:00 so every call ends by 2:00pm, leaving a buffer before
+-- the 2:15pm school pickup. Decoys are engine-computed, not seeded here.
 INSERT INTO call_availability_rules (weekday, start_min, end_min, timezone, effective_from, effective_to)
 SELECT wd, 600, 1020, 'America/New_York', NULL, DATE '2026-08-16'
 FROM generate_series(1,5) AS wd
 WHERE NOT EXISTS (SELECT 1 FROM call_availability_rules WHERE timezone='America/New_York' AND weekday=wd);
 
 INSERT INTO call_availability_rules (weekday, start_min, end_min, timezone, effective_from, effective_to)
-SELECT wd, 600, 1020, 'America/Denver', DATE '2026-08-16', NULL
+SELECT wd, 600, 840, 'America/Denver', DATE '2026-08-16', NULL
 FROM generate_series(1,5) AS wd
 WHERE NOT EXISTS (SELECT 1 FROM call_availability_rules WHERE timezone='America/Denver' AND weekday=wd);
 

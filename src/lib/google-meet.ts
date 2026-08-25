@@ -11,7 +11,14 @@
  */
 import { randomUUID } from "crypto";
 
-const SCOPE = "https://www.googleapis.com/auth/calendar.events";
+// calendar.events: create the per-booking Meet event. calendar.freebusy: read
+// the owner's busy blocks so booked/personal time (pickup, deep-work) hides
+// slots. Widening this requires the owner to reconnect ("Connect Google
+// Calendar") so the new scope is granted; prompt:"consent" below forces it.
+const SCOPE = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.freebusy",
+].join(" ");
 
 export function isGoogleConfigured(): boolean {
   return !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
@@ -67,7 +74,9 @@ export async function exchangeCode(code: string, origin: string): Promise<{ refr
   } catch (err) { console.error("[google] exchange threw", err); return null; }
 }
 
-async function accessTokenFrom(refreshToken: string): Promise<string | null> {
+/** Mint a short-lived access token from the stored refresh token. Exported so
+ *  the free/busy reader (google-calendar.ts) reuses the same OAuth client. */
+export async function accessTokenFrom(refreshToken: string): Promise<string | null> {
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",

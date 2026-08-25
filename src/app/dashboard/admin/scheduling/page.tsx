@@ -30,6 +30,7 @@ type Prep = {
 };
 type Rule = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null };
 type Block = { id: string; starts_at: string; ends_at: string; label: string | null };
+type RecurringBlock = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; label: string | null };
 type Config = { booking_horizon_days: number; lead_time_hours: number; decoy_min_per_day: number; decoy_max_per_day: number; default_join_url: string | null };
 
 const REPO = "https://github.com/friendflowHQ/InfluencerButler";
@@ -48,7 +49,7 @@ export default function SchedulingAdminPage() {
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState("");
   const [tab, setTab] = useState<"calls" | "settings">("calls");
-  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
+  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
 
   const loadList = useCallback(async () => {
     const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
@@ -171,7 +172,7 @@ export default function SchedulingAdminPage() {
 
           <section className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-sm font-semibold text-slate-700">Weekly availability</h2>
-            <p className="mt-1 text-xs text-slate-500">Windows per weekday + timezone, with effective-date ranges (the Eastern to Mountain move is two sets of rows). 3-5pm and a few random blocks are decoy-held automatically.</p>
+            <p className="mt-1 text-xs text-slate-500">Windows per weekday + timezone, with effective-date ranges (the Eastern to Mountain move is two sets of rows). A few random blocks inside each window are decoy-held automatically.</p>
             <ul className="mt-2 divide-y divide-slate-100 text-sm">
               {settings.rules.map((r) => (
                 <li key={r.id} className="flex items-center justify-between py-1.5">
@@ -194,6 +195,21 @@ export default function SchedulingAdminPage() {
               ))}
             </ul>
             <AddBlock onAdd={(block) => mutateSettings({ action: "addBlock", block })} />
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-700">Weekly protected time (recurring)</h2>
+            <p className="mt-1 text-xs text-slate-500">Always-on holds that repeat every week (deep-work focus, standing personal time). Slots overlapping these never appear. For flexible or one-off time, use your connected Google Calendar or the manual blocks above.</p>
+            <ul className="mt-2 divide-y divide-slate-100 text-sm">
+              {(settings.recurringBlocks ?? []).length === 0 && <li className="py-1.5 text-slate-400">None.</li>}
+              {(settings.recurringBlocks ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between py-1.5">
+                  <span className="text-slate-700">{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone}{r.label ? ` · ${r.label}` : ""}</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteRecurringBlock", id: r.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
+                </li>
+              ))}
+            </ul>
+            <AddRecurringBlock defaultTz={settings.rules[0]?.timezone || "America/Denver"} onAdd={(recurringBlock) => mutateSettings({ action: "addRecurringBlock", recurringBlock })} />
           </section>
         </div>
       )}
@@ -311,6 +327,29 @@ function AddBlock({ onAdd }: { onAdd: (b: { starts_at: string; ends_at: string; 
       <label className="text-xs text-slate-500">End<input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
       <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Break" /></label>
       <button type="button" disabled={!start || !end} onClick={() => { onAdd({ starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(), label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add block</button>
+    </div>
+  );
+}
+
+function toMin(hhmmStr: string): number { const [h, m] = hhmmStr.split(":").map(Number); return (h || 0) * 60 + (m || 0); }
+
+function AddRecurringBlock({ defaultTz, onAdd }: { defaultTz: string; onAdd: (b: { weekday: number; start_min: number; end_min: number; timezone: string; label: string }) => void }) {
+  const [weekday, setWeekday] = useState(1);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [label, setLabel] = useState("");
+  const valid = start !== "" && end !== "" && toMin(end) > toMin(start);
+  return (
+    <div className="mt-3 flex flex-wrap items-end gap-2">
+      <label className="text-xs text-slate-500">Day
+        <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm">
+          {WD.map((d, i) => <option key={i} value={i}>{d}</option>)}
+        </select>
+      </label>
+      <label className="text-xs text-slate-500">Start<input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">End<input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Deep work" /></label>
+      <button type="button" disabled={!valid} onClick={() => { onAdd({ weekday, start_min: toMin(start), end_min: toMin(end), timezone: defaultTz, label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add protected time</button>
     </div>
   );
 }

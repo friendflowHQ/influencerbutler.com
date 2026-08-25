@@ -11,11 +11,15 @@ import {
   computeDaySlots,
   horizonDates,
   decoyBusyRanges,
+  recurringBlockBusyRanges,
   type AvailabilityRule,
   type BusyRange,
   type CallTypeKey,
+  type RecurringBlock,
   type Slot,
 } from "@/lib/scheduling";
+import { isGoogleConfigured } from "@/lib/google-meet";
+import { freeBusy } from "@/lib/google-calendar";
 
 export type SchedConfig = {
   bookingHorizonDays: number;
@@ -51,6 +55,35 @@ export async function loadRules(admin: Admin): Promise<AvailabilityRule[]> {
   return (data ?? []) as AvailabilityRule[];
 }
 
+/** Weekly always-on protected blocks (owner deep-work / standing personal time). */
+export async function loadRecurringBlocks(admin: Admin): Promise<RecurringBlock[]> {
+  const { data, error } = await admin
+    .from("call_recurring_blocks")
+    .select("weekday,start_min,end_min,timezone");
+  // Table is applied by hand in prod; if it's not there yet, degrade to none.
+  if (error) { console.error("[scheduling] loadRecurringBlocks", error.message); return []; }
+  return (data ?? []) as RecurringBlock[];
+}
+
+// Short-lived cache of the owner's Google busy ranges, keyed by the connected
+// token + hour-rounded window, so repeated slot requests don't hit Google on
+// every page load. Per server instance; safe to be approximate.
+const GBUSY_TTL_MS = 60_000;
+const gBusyCache = new Map<string, { at: number; ranges: BusyRange[] }>();
+
+async function googleBusyCached(refreshToken: string, fromMs: number, toMs: number): Promise<BusyRange[]> {
+  const hour = 3600_000;
+  const qMin = Math.floor(fromMs / hour) * hour;
+  const qMax = Math.ceil(toMs / hour) * hour;
+  const key = `${refreshToken.slice(-12)}:${qMin}:${qMax}`;
+  const hit = gBusyCache.get(key);
+  const now = Date.now();
+  if (hit && now - hit.at < GBUSY_TTL_MS) return hit.ranges;
+  const ranges = await freeBusy({ refreshToken, timeMinMs: qMin, timeMaxMs: qMax });
+  gBusyCache.set(key, { at: now, ranges });
+  return ranges;
+}
+
 export async function loadConfig(admin: Admin): Promise<SchedConfig> {
   const { data, error } = await admin
     .from("call_config")
@@ -69,8 +102,18 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
   };
 }
 
-/** Confirmed bookings + manual blocks overlapping [fromMs, toMs], as busy ranges. */
-export async function loadBusy(admin: Admin, fromMs: number, toMs: number): Promise<BusyRange[]> {
+/**
+ * Everything that makes the owner busy in [fromMs, toMs], as UTC busy ranges:
+ * confirmed bookings, one-off manual blocks, weekly recurring protected blocks,
+ * and (when connected) the owner's Google Calendar free/busy. Google is folded
+ * in here so both availability listing and booking re-validation subtract it.
+ */
+export async function loadBusy(
+  admin: Admin,
+  fromMs: number,
+  toMs: number,
+  opts?: { googleRefreshToken?: string | null },
+): Promise<BusyRange[]> {
   const fromIso = new Date(fromMs).toISOString();
   const toIso = new Date(toMs).toISOString();
   const busy: BusyRange[] = [];
@@ -87,6 +130,17 @@ export async function loadBusy(admin: Admin, fromMs: number, toMs: number): Prom
     .lt("starts_at", toIso)
     .gt("ends_at", fromIso);
   if (!m.error) for (const r of m.data ?? []) busy.push({ startMs: Date.parse(r.starts_at as string), endMs: Date.parse(r.ends_at as string) });
+
+  // Weekly recurring protected blocks, expanded across the window.
+  const recurring = await loadRecurringBlocks(admin);
+  if (recurring.length) busy.push(...recurringBlockBusyRanges(recurring, fromMs, toMs));
+
+  // Owner's Google Calendar busy (best-effort; empty on any failure).
+  const token = opts?.googleRefreshToken;
+  if (token && isGoogleConfigured()) {
+    try { busy.push(...(await googleBusyCached(token, fromMs, toMs))); }
+    catch (e) { console.error("[scheduling] google busy", e); }
+  }
   return busy;
 }
 
@@ -101,7 +155,7 @@ export async function availabilityForType(admin: Admin, callType: CallTypeKey, n
   const dates = horizonDates(nowMs, config.bookingHorizonDays, walkTz);
   const rangeStart = nowMs;
   const rangeEnd = nowMs + (config.bookingHorizonDays + 1) * 86_400_000;
-  const busy = await loadBusy(admin, rangeStart, rangeEnd);
+  const busy = await loadBusy(admin, rangeStart, rangeEnd, { googleRefreshToken: config.googleRefreshToken });
   const decoyOpts = { minPerDay: config.decoyMin, maxPerDay: config.decoyMax };
 
   const out: DaySlots[] = [];
@@ -138,7 +192,7 @@ export async function validateSlot(
   const walkTz = rules[0]?.timezone || "UTC";
   const isoDate = new Intl.DateTimeFormat("en-CA", { timeZone: walkTz, year: "numeric", month: "2-digit", day: "2-digit" })
     .format(date); // YYYY-MM-DD
-  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000);
+  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000, { googleRefreshToken: config.googleRefreshToken });
   const slots = computeDaySlots({
     dateISO: isoDate,
     callType,

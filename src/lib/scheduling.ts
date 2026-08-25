@@ -45,6 +45,15 @@ export type AvailabilityRule = {
 
 export type BusyRange = { startMs: number; endMs: number };
 
+/** An always-on weekly protected block (owner deep-work, standing personal
+ *  time). Expanded across the horizon into busy ranges, like decoys. */
+export type RecurringBlock = {
+  weekday: number;   // 0=Sun..6=Sat
+  start_min: number; // minutes from local midnight
+  end_min: number;
+  timezone: string;  // IANA
+};
+
 export type Slot = {
   startMs: number;    // block start (UTC)
   endMs: number;      // block end (UTC, incl. buffer)
@@ -193,6 +202,32 @@ export function computeDaySlots(args: {
     slots.push({ startMs, endMs, userEndMs });
   }
   return slots;
+}
+
+/**
+ * Expand weekly recurring blocks into UTC busy ranges that overlap [fromMs,
+ * toMs]. Each block is materialized per matching calendar day in its own zone,
+ * so DST is handled the same way as availability windows.
+ */
+export function recurringBlockBusyRanges(blocks: RecurringBlock[], fromMs: number, toMs: number): BusyRange[] {
+  if (fromMs >= toMs) return [];
+  const out: BusyRange[] = [];
+  for (const block of blocks) {
+    const tz = block.timezone;
+    // Walk calendar days in the block's zone, padding a day each side so a
+    // block spanning midnight (in UTC terms) near the range edges is caught.
+    let day = DateTime.fromMillis(fromMs, { zone: tz }).startOf("day").minus({ days: 1 });
+    const last = DateTime.fromMillis(toMs, { zone: tz }).startOf("day").plus({ days: 1 });
+    for (; day <= last; day = day.plus({ days: 1 })) {
+      if (luxonToDbWeekday(day.weekday) !== block.weekday) continue;
+      const dateISO = day.toISODate();
+      if (!dateISO) continue;
+      const startMs = localMinToUtcMs(dateISO, block.start_min, tz);
+      const endMs = localMinToUtcMs(dateISO, block.end_min, tz);
+      if (endMs > startMs && startMs < toMs && endMs > fromMs) out.push({ startMs, endMs });
+    }
+  }
+  return out;
 }
 
 /** ISO date strings (in `tz`) from today through `horizonDays` ahead. */
