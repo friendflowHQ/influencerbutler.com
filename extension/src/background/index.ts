@@ -76,6 +76,7 @@ import {
 import {
   buildIntegrationsView,
   generateAffiliateLink,
+  clearIntegration,
   maybeTestAllOnStartup,
   openaiComplete,
   saveIntegration,
@@ -360,6 +361,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SET_INTEGRATION_GLOBAL":
       void patchIntegrationsGlobal(message.partial).then(sendResponse);
+      return true;
+    case "CLEAR_INTEGRATION":
+      void clearIntegration(message.id).then(sendResponse);
       return true;
     case "TEST_INTEGRATION":
       void testIntegration(message.id).then(sendResponse);

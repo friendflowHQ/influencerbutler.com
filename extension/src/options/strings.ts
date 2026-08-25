@@ -33,6 +33,9 @@ export interface OptionsDict {
   showMeWhere: string;
   participatesLabel: string;
   secretSavedPlaceholder: string;
+  storedBadge: string;
+  clearKeys: string;
+  clearKeysConfirm: string;
   statusOk: string;
   statusFail: string;
   statusUntested: string;
@@ -47,6 +50,7 @@ export interface OptionsDict {
   // Provider labels (referenced by adapter.labelKey)
   provOpenai: string;
   provCreatorsApi: string;
+  creatorsApiHint: string;
   provAssociates: string;
   provInfluencerButler: string;
   provInfluencerButlerDesc: string;
@@ -168,7 +172,10 @@ const en: OptionsDict = {
   saved: "Saved",
   showMeWhere: "Show me where",
   participatesLabel: "Use in affiliate routing",
-  secretSavedPlaceholder: "Saved. Leave blank to keep it.",
+  secretSavedPlaceholder: "Key stored. Leave blank to keep it, or paste a new key to replace it.",
+  storedBadge: "Stored",
+  clearKeys: "Clear saved keys",
+  clearKeysConfirm: "Remove the saved keys for this provider? You will need to paste them again to use it.",
   statusOk: "Connected",
   statusFail: "Not working",
   statusUntested: "Not tested",
@@ -181,6 +188,8 @@ const en: OptionsDict = {
   catWalmartLink: "Walmart affiliate links",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Use the Access Key and Secret Key from Associates Central: Tools: Product Advertising API. Not an AWS or IAM key, and not the newer Creators-API client id or secret.",
   provAssociates: "Amazon Associates tags",
   provInfluencerButler: "Influencer Butler branded links",
   provInfluencerButlerDesc:
@@ -306,7 +315,10 @@ const es: OptionsDict = {
   saved: "Guardado",
   showMeWhere: "Muéstrame dónde",
   participatesLabel: "Usar en el enrutado de afiliados",
-  secretSavedPlaceholder: "Guardada. Déjalo en blanco para conservarla.",
+  secretSavedPlaceholder: "Clave guardada. Déjalo en blanco para conservarla, o pega una nueva clave para reemplazarla.",
+  storedBadge: "Guardada",
+  clearKeys: "Borrar claves guardadas",
+  clearKeysConfirm: "¿Quitar las claves guardadas de este proveedor? Tendrás que volver a pegarlas para usarlo.",
   statusOk: "Conectado",
   statusFail: "No funciona",
   statusUntested: "Sin probar",
@@ -319,6 +331,8 @@ const es: OptionsDict = {
   catWalmartLink: "Enlaces de afiliado de Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Usa la Access Key y la Secret Key de Associates Central: Herramientas: Product Advertising API. No una clave de AWS o IAM, ni el nuevo client id o secret de la Creators API.",
   provAssociates: "Etiquetas de Amazon Associates",
   provInfluencerButler: "Enlaces de marca de Influencer Butler",
   provInfluencerButlerDesc:
@@ -444,7 +458,10 @@ const fr: OptionsDict = {
   saved: "Enregistré",
   showMeWhere: "Montrez-moi où",
   participatesLabel: "Utiliser dans le routage d'affiliation",
-  secretSavedPlaceholder: "Enregistrée. Laissez vide pour la conserver.",
+  secretSavedPlaceholder: "Clé enregistrée. Laissez vide pour la conserver, ou collez une nouvelle clé pour la remplacer.",
+  storedBadge: "Enregistrée",
+  clearKeys: "Effacer les clés enregistrées",
+  clearKeysConfirm: "Supprimer les clés enregistrées de ce fournisseur ? Vous devrez les recoller pour l'utiliser.",
   statusOk: "Connecté",
   statusFail: "Ne fonctionne pas",
   statusUntested: "Non testé",
@@ -457,6 +474,8 @@ const fr: OptionsDict = {
   catWalmartLink: "Liens d'affiliation Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Utilisez l'Access Key et la Secret Key depuis Associates Central : Outils : Product Advertising API. Pas une clé AWS ou IAM, ni le nouveau client id ou secret de la Creators API.",
   provAssociates: "Balises Amazon Associates",
   provInfluencerButler: "Liens de marque Influencer Butler",
   provInfluencerButlerDesc:

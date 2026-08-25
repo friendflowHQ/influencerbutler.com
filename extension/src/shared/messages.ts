@@ -131,6 +131,9 @@ export type RuntimeMessage =
       routingParticipates?: boolean;
     }
   | { kind: "SET_INTEGRATION_GLOBAL"; partial: Partial<IntegrationsGlobal> }
+  // Wipe a provider's stored credentials ("Clear saved keys"), so a user can
+  // deliberately remove an old key instead of guessing whether it is still saved.
+  | { kind: "CLEAR_INTEGRATION"; id: string }
   | { kind: "TEST_INTEGRATION"; id: string }
   | { kind: "TEST_ALL_INTEGRATIONS" }
   | {
@@ -452,7 +455,10 @@ export type EnrichResult = {
 export type RowEnrichRef = {
   asin: string;
   marketplace: string;
-  source: "watchlist" | "list";
+  // "link" rows come from the Link Butler registry/ledger. They carry no listId
+  // and are never persisted (link records live in the external links worker, not
+  // a local store), so a "link" ref skips the write-back that watchlist/list use.
+  source: "watchlist" | "list" | "link";
   listId?: string;
   needsImage: boolean;
 };
@@ -466,6 +472,7 @@ export type RowBadge = {
   ratePct: number | null;
   imageUrl: string | null;
   title: string | null;
+  brand: string | null;
 };
 
 // Response of ENRICH_ROWS, keyed by upper-cased ASIN.

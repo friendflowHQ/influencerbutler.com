@@ -65,7 +65,12 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
               // credentials; Save or a passing Test marks them enabled, and that
               // is what "set up" means for them.
               (state?.enabled ?? false)
-            : Boolean(state?.credentialsEnc);
+            : // "Configured" means a stored credential actually decrypts to a
+              // value, not merely that a blob exists. After an update that resets
+              // the wrapping key the blob is present but unreadable (credsFor
+              // returns {}); reporting that as unconfigured prompts a clean
+              // re-entry instead of showing an empty field that claims "Saved".
+              adapter.fields.some((f) => (creds[f.name] ?? "").trim() !== "");
     providers.push({
       id: adapter.id,
       enabled: state?.enabled ?? false,
@@ -129,13 +134,30 @@ export async function saveIntegration(
     if (incoming === undefined) continue;
     const trimmed = incoming.trim();
     if (field.type === "password" && trimmed === "") continue; // keep stored secret
-    merged[field.name] = trimmed;
+    // Per-field cleanup (for example strip a leading "@" from a partner tag) so a
+    // pasted value is stored in the canonical form the provider expects.
+    merged[field.name] = field.normalize ? field.normalize(trimmed) : trimmed;
   }
   const credentialsEnc = await encryptFields(merged);
   await patchIntegration(id, (s) => {
     s.credentialsEnc = credentialsEnc;
     if (enabled !== undefined) s.enabled = enabled;
     if (routingParticipates !== undefined) s.routingParticipates = routingParticipates;
+  });
+  return viewFor(id);
+}
+
+// Wipe a provider's stored credentials (the options page "Clear saved keys"
+// button). Nulls the encrypted blob, disables the provider so nothing keeps
+// using a half-removed credential, and resets the test badge. Lets a user who is
+// unsure whether an old key is still saved deliberately start clean.
+export async function clearIntegration(id: string): Promise<IntegrationView> {
+  const adapter = getAdapter(id);
+  if (!adapter) throw new Error(`unknown integration: ${id}`);
+  await patchIntegration(id, (s) => {
+    s.credentialsEnc = null;
+    s.enabled = false;
+    s.lastTest = { status: "untested", at: null, message: null };
   });
   return viewFor(id);
 }

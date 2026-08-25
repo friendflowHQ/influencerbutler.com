@@ -539,6 +539,15 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       input.autocomplete = "off";
       if (field.type === "password") {
         input.placeholder = pv.configured ? D.secretSavedPlaceholder : field.placeholder ?? "";
+        // A password box is never pre-filled, so a stored key otherwise looks like
+        // an empty field. A "Stored" chip on the label makes it obvious the key is
+        // still saved and the blank box is expected.
+        if (pv.configured) {
+          const chip = document.createElement("span");
+          chip.className = "stored-chip";
+          chip.textContent = D.storedBadge;
+          span.append(" ", chip);
+        }
       } else {
         input.value = pv.values[field.name] ?? "";
         input.placeholder = field.placeholder ?? "";
@@ -594,6 +603,28 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     whereBtn.onclick = () =>
       window.open(adapter.credentialsUrl, "_blank", "noopener,noreferrer");
     actions.append(whereBtn);
+  }
+  // "Clear saved keys": wipe a stored credential the user is unsure about (for
+  // example when an update left the fields looking blank). Only shown when a
+  // secret is actually stored, and only for providers that keep a secret field.
+  const hasSecretField = adapter.fields.some((f) => f.type === "password");
+  if (hasSecretField && pv.configured) {
+    const clearBtn = document.createElement("button");
+    clearBtn.className = "ghost";
+    clearBtn.textContent = D.clearKeys;
+    clearBtn.onclick = async () => {
+      if (!window.confirm(D.clearKeysConfirm)) return;
+      clearBtn.disabled = true;
+      const updated = await sendToBackground<IntegrationView>({
+        kind: "CLEAR_INTEGRATION",
+        id: adapter.id,
+      });
+      replaceProviderView(updated);
+      // Re-render this card so the emptied state (no "Stored" chip, reset badge,
+      // no Clear button) shows immediately.
+      block.replaceWith(renderProvider(adapter));
+    };
+    actions.append(clearBtn);
   }
   block.append(actions);
   block.append(msg);

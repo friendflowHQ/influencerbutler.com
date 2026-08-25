@@ -258,6 +258,25 @@ button[disabled] {
   margin: 10px 0 0;
   font-size: 12.5px;
   border: 1px solid transparent;
+  /* Guidance can span a few lines (a next step, then Amazon's own message);
+     preserve the line breaks instead of collapsing them into one run. */
+  white-space: pre-wrap;
+}
+
+/* Small "Stored" tag next to a password field label, so a saved-but-blank
+   secret box reads as intentional rather than empty. */
+.stored-chip {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--slate-100);
+  color: var(--slate-600);
+  border: 1px solid var(--slate-200);
+  vertical-align: middle;
 }
 
 .test-result.ok {

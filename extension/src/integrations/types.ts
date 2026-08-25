@@ -47,6 +47,10 @@ export type FieldSpec = {
   placeholder?: string;
   optional?: boolean;
   options?: FieldOption[]; // for type "select"
+  // Optional cleanup applied to a saved value before it is stored (for example
+  // stripping a leading "@" and stray spaces from a partner tag). Runs after the
+  // generic trim in saveIntegration, so it only sees an already-trimmed value.
+  normalize?: (value: string) => string;
 };
 
 export type TestResult = { ok: boolean; message: string };

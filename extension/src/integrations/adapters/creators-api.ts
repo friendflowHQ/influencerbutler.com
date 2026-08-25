@@ -45,6 +45,18 @@ export const PAAPI_HOST_PATTERNS: string[] = Object.values(ENDPOINTS).map(
 const DEFAULT_DOMAIN = "www.amazon.com";
 const DEFAULT_ENDPOINT = { host: "webservices.amazon.com", region: "us-east-1" };
 
+// Clean a pasted partner tag. A real Associates tracking id looks like `tag-20`
+// with no leading `@` and no spaces; people routinely paste an `@handle` or a
+// value with a stray space/line break. We strip a leading `@` and every
+// whitespace character (tags never contain spaces) so a pasted `@littleprettyl-20`
+// still connects. Case is preserved: tracking ids are case-sensitive.
+export function normalizePartnerTag(value: string | null | undefined): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/^@+/, "")
+    .replace(/\s+/g, "");
+}
+
 // Normalize a user-entered marketplace into a `www.`-prefixed Amazon domain that
 // matches the ENDPOINTS keys. Accepts a bare host (amazon.com), a www. host, a
 // pasted store URL, the aliases us/usa, or a blank field (the field is optional,
@@ -69,13 +81,72 @@ function endpointFor(
   return { ...match, domain };
 }
 
+// A local sanity check on the pasted keys, run before we ever hit Amazon. The two
+// most common support tickets on this card are (a) pasting the newer Creators-API
+// OAuth client id / an AWS-IAM key into the Access key box and (b) a secret that
+// got a space or line break on paste. Both come back from Amazon as the misleading
+// "The Access Key ID ... invalid.", so naming the real cause up front saves a
+// confusing round-trip. PA-API access keys are 20 uppercase alphanumerics (usually
+// starting AKIA/ASIA); the secret is a 40-char token.
+export function precheckCredentials(accessKey: string, secretKey: string): string | null {
+  if (/\s/.test(accessKey)) {
+    return "Your access key has a space or line break in it. Re-copy just the key, with no surrounding text.";
+  }
+  if (/\s/.test(secretKey)) {
+    return "Your secret key has a space or line break in it. Re-copy just the secret, with no surrounding text.";
+  }
+  // The newer Amazon Creators API issues an OAuth client id like
+  // "amzn1.application-oa2-client..."; it is not a PA-API access key and Amazon
+  // rejects it as an invalid Access Key ID. Any dot is a strong tell here.
+  if (/^amzn1\./i.test(accessKey) || accessKey.includes(".")) {
+    return "This looks like a Creators-API client id, not a Product Advertising API access key. This card needs the Access Key and Secret Key from Associates Central: Tools: Product Advertising API.";
+  }
+  if (accessKey.length < 16 || accessKey.length > 32) {
+    return "That access key is not the length of a Product Advertising API key (about 20 characters). Copy the Access Key from Associates Central: Tools: Product Advertising API, not an AWS or IAM key.";
+  }
+  if (secretKey.length < 30) {
+    return "That secret key looks too short. Copy the full Secret Key (about 40 characters) from Associates Central: Tools: Product Advertising API.";
+  }
+  return null;
+}
+
+// Map Amazon's own error (status + PA-API error code + message) to a plain next
+// step. Amazon returns the same misleading "Access Key ID ... invalid" for several
+// distinct causes, so we key off the code/message and tell the user which one it
+// is. Returns null when we have no better wording than Amazon's own message.
+export function guidanceFor(status: number, code: string, message: string): string | null {
+  const c = code.toLowerCase();
+  const m = message.toLowerCase();
+  // Clock skew is checked before the signature branch: Amazon phrases an expired
+  // request as "Signature expired ...", which would otherwise be mistaken for a
+  // wrong secret key.
+  if (c.includes("requestexpired") || m.includes("expired") || m.includes("skewed") || m.includes("timestamp") || m.includes("too far")) {
+    return "Your computer clock looks out of sync, so Amazon rejected the request time. Turn on automatic date and time, then try again.";
+  }
+  if (c.includes("unrecognizedclient") || m.includes("access key id") || m.includes("security token")) {
+    return "Amazon does not recognize this access key. Re-copy the Access Key and Secret Key from Associates Central: Tools: Product Advertising API (not an AWS or IAM key, and not the newer Creators-API client id or secret), and check for stray spaces.";
+  }
+  if (c.includes("incompletesignature") || c.includes("signaturedoesnotmatch") || m.includes("signature")) {
+    return "The request signature did not match, which almost always means the secret key is wrong or was cut off. Paste the full Secret Key again.";
+  }
+  if (c.includes("invalidpartnertag") || m.includes("partner tag") || m.includes("not registered")) {
+    return "Amazon did not accept the partner tag. Use your Associates tracking id (like tag-20) with no '@', and make sure it belongs to this marketplace.";
+  }
+  if (status === 429 || c.includes("toomanyrequests") || c.includes("throttl")) {
+    return "Amazon throttled the request. The keys may be valid, but a new Product Advertising API account has to make a few qualifying sales before Amazon returns data. Try again later.";
+  }
+  return null;
+}
+
 async function test(creds: Record<string, string>): Promise<TestResult> {
   const accessKey = (creds.accessKey ?? "").trim();
   const secretKey = (creds.secretKey ?? "").trim();
-  const partnerTag = (creds.partnerTag ?? "").trim();
+  const partnerTag = normalizePartnerTag(creds.partnerTag);
   if (!accessKey || !secretKey || !partnerTag) {
     return { ok: false, message: "Enter your access key, secret key, and partner tag." };
   }
+  const precheck = precheckCredentials(accessKey, secretKey);
+  if (precheck) return { ok: false, message: precheck };
   const { host, region, domain } = endpointFor(creds.marketplace);
   const body = JSON.stringify({
     Keywords: "gift",
@@ -100,7 +171,13 @@ async function test(creds: Record<string, string>): Promise<TestResult> {
     });
     const res = await fetch(signed.url, { method: "POST", headers: signed.headers, body: signed.body });
     if (res.ok) return { ok: true, message: "Connected to the Amazon Product Advertising API." };
-    const detail = await readError(res);
+    const { code, detail } = await readError(res);
+    const guidance = guidanceFor(res.status, code, detail);
+    if (guidance) {
+      // Lead with the actionable step, but keep Amazon's own wording below it so
+      // nothing is hidden and a rare error stays diagnosable.
+      return { ok: false, message: detail ? `${guidance}\n\nAmazon said: ${detail}` : guidance };
+    }
     if (res.status === 401 || res.status === 403) {
       return { ok: false, message: detail || "Amazon rejected those credentials." };
     }
@@ -117,12 +194,25 @@ async function test(creds: Record<string, string>): Promise<TestResult> {
   }
 }
 
-async function readError(res: Response): Promise<string> {
+// Pull both the PA-API error code and human message out of a failed response.
+// PA-API business errors arrive as { Errors: [{ Code, Message }] }, but AWS-level
+// auth failures (the "Access Key ID ... invalid" case) arrive as
+// { __type: "...#UnrecognizedClientException", message: "..." }, so we read both
+// shapes.
+async function readError(res: Response): Promise<{ code: string; detail: string }> {
   try {
-    const data = (await res.json()) as { Errors?: Array<{ Message?: string }>; message?: string };
-    return data.Errors?.[0]?.Message ?? data.message ?? "";
+    const data = (await res.json()) as {
+      Errors?: Array<{ Code?: string; Message?: string }>;
+      __type?: string;
+      message?: string;
+      Message?: string;
+    };
+    const first = data.Errors?.[0];
+    const code = first?.Code ?? data.__type ?? "";
+    const detail = first?.Message ?? data.message ?? data.Message ?? "";
+    return { code, detail };
   } catch {
-    return "";
+    return { code: "", detail: "" };
   }
 }
 
@@ -131,13 +221,25 @@ export const creatorsApiAdapter: IntegrationAdapter = {
   labelKey: "provCreatorsApi",
   category: "productData",
   hosts: PAAPI_HOST_PATTERNS,
+  // The card is named "Creators API" to match the desktop app, but it is really
+  // the Product Advertising API v5: it needs the Access Key + Secret Key from
+  // Associates Central, not the newer Creators-API client id/secret. Spelling
+  // that out prevents the wrong-credential paste that Amazon reports as an
+  // invalid Access Key ID.
+  descriptionKey: "creatorsApiHint",
   // Access key, secret key, and partner tag all live on the Associates
   // credentials page, same destination as the desktop app's "Show me where".
   credentialsUrl: ASSOCIATES_CREDENTIALS_URL,
   fields: [
     { name: "accessKey", labelKey: "fieldAccessKey", type: "password" },
     { name: "secretKey", labelKey: "fieldSecretKey", type: "password" },
-    { name: "partnerTag", labelKey: "fieldPartnerTag", type: "text", placeholder: "mytag-20" },
+    {
+      name: "partnerTag",
+      labelKey: "fieldPartnerTag",
+      type: "text",
+      placeholder: "mytag-20",
+      normalize: normalizePartnerTag,
+    },
     { name: "marketplace", labelKey: "fieldMarketplace", type: "text", placeholder: "www.amazon.com", optional: true },
   ],
   test,
