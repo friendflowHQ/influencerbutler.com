@@ -596,6 +596,7 @@ export default function SupportAdminPage() {
         <table className="min-w-full divide-y divide-slate-100 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
+              <th className="px-3 py-2">Ticket</th>
               <th className="px-3 py-2">Priority</th>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Type</th>
@@ -607,9 +608,9 @@ export default function SupportAdminPage() {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {loading ? (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400">Loading…</td></tr>
             ) : tickets.length === 0 ? (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400">No tickets in this view.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400">No tickets in this view.</td></tr>
             ) : (
               tickets.map((t) => (
                 <tr
@@ -617,6 +618,7 @@ export default function SupportAdminPage() {
                   onClick={() => openTicket(t.id)}
                   className={`cursor-pointer hover:bg-slate-50 ${selected?.id === t.id ? "bg-orange-50/50" : ""}`}
                 >
+                  <td className="px-3 py-2 font-mono text-xs text-slate-400" title={t.id}>{t.id}</td>
                   <td className="px-3 py-2">
                     <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${priorityClasses(t.priority)}`}>{t.priority || "P2"}</span>
                   </td>
