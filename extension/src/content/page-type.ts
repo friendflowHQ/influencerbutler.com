@@ -14,6 +14,7 @@ export type PageType =
   | "campaign-grid"
   | "search"
   | "discovery"
+  | "deals"
   | "idea-list"
   | "other";
 
@@ -91,6 +92,17 @@ function detectAmazonPageType(parsed: URL): PageType {
     /\/zgbs(?:\/|$)/.test(path)
   ) {
     return "discovery";
+  }
+  // Today's Deals grid (/deals and its filter tabs: Lightning Deals, Outlet,
+  // Coupons, and the category filters all render this one React grid and keep
+  // the /deals pathname). /coupons redirects into it (verified 2026-08-25:
+  // /coupons -> /deals?bubble-id=deals-collection-coupons), but a direct visit
+  // is matched here too in case the rewrite has not happened yet. The deals
+  // overlay scores every tile like search, sourcing ASINs from the MAIN-world
+  // deals hook since the grid carries none in the DOM. Distinct from a singular
+  // /deal/<id> single-deal page, which is not matched here.
+  if (path === "/deals" || path.startsWith("/deals/") || path.startsWith("/coupons")) {
+    return "deals";
   }
   return "other";
 }

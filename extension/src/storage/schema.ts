@@ -146,6 +146,11 @@ export type Settings = {
     watchlist: boolean;
     lastCallButler: boolean;
     ideaListOverlay: boolean;
+    // Deals overlay: money-signal badges on the Today's Deals grid
+    // (amazon.com/deals). Same scoring as the search overlay, sourcing ASINs
+    // from the MAIN-world deals hook. On by default; backfilled to true for
+    // existing users by the tools shallow-merge in migrate().
+    dealsOverlay: boolean;
     // Campaign Butler: the on-demand "Butler's Brief" panel on Creator
     // Connections campaigns (score + confidence + AI reasoning). Backfilled to
     // true for existing users by the tools shallow-merge in migrate().
@@ -407,7 +412,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 20,
+  schemaVersion: 21,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -479,6 +484,7 @@ export const DEFAULTS: StorageShape = {
       watchlist: true,
       lastCallButler: true,
       ideaListOverlay: true,
+      dealsOverlay: true,
       campaignButler: true,
       videoMoney: true,
       brandKeywords: true,
@@ -574,7 +580,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // defaults, About Me apparel block, brand denylist), deep-merged below
   // because patchSettings shallow-merges nested blocks. v19 -> v20 added the
   // brandKeywords tool flag (keyword chips on the Creator Connections Messages
-  // widget, on by default); the tools shallow-merge backfills it.
+  // widget, on by default); the tools shallow-merge backfills it. v20 -> v21
+  // added the dealsOverlay tool flag (money signals on the Today's Deals grid,
+  // on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -648,6 +656,6 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 20,
+    schemaVersion: 21,
   };
 }

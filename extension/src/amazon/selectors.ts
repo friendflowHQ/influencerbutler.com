@@ -52,7 +52,10 @@ export type SelectorId =
   | "ideaListTileTitle"
   | "ideaListTileBrand"
   | "ideaListTilePrice"
-  | "ideaListTileImage";
+  | "ideaListTileImage"
+  | "dealsGrid"
+  | "dealsTile"
+  | "dealsTileImage";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -268,6 +271,23 @@ const REGISTRY: Record<SelectorId, string[]> = {
     ".a-price",
   ],
   ideaListTileImage: ["img.product-image", "img"],
+  // Today's Deals grid (amazon.com/deals*). The grid container is a stable
+  // data-testid; the product cards are hashed CSS-module classes that Amazon
+  // A/B tests, so the tile list is a best-effort set of fallbacks and is meant
+  // to be corrected live via a remote selector override if it drifts. Verified
+  // container 2026-08-25: [data-testid='discount-asin-grid']. The tiles carry
+  // NO ASIN in the DOM, so the overlay joins them to the deals-hook feed by
+  // image; dealsTile is used only to find each card element to badge and, as a
+  // last resort, for positional order.
+  dealsGrid: ["[data-testid='discount-asin-grid']", "[data-testid='virtualized-grid']"],
+  dealsTile: [
+    "[data-testid^='deal-card']",
+    "[data-testid*='DealCard']",
+    "[class*='DealGridItem']",
+    "[class*='GridItem']",
+    "div[class*='dealCard']",
+  ],
+  dealsTileImage: ["img"],
 };
 
 // Remote selector overrides (from the operational flags feed). When Amazon
@@ -350,6 +370,24 @@ export function queryAll<T extends Element = HTMLElement>(
   }
   recordMiss(id);
   return [];
+}
+
+// The nearest ancestor-or-self of `el` matching any selector for `id`, across
+// the ordered fallback list (and any remote override). Used where a caller has
+// a leaf element (e.g. a tile's <img>) and needs the card container it lives in.
+export function closest<T extends Element = HTMLElement>(
+  el: Element,
+  id: SelectorId,
+): T | null {
+  for (const sel of selectorsFor(id)) {
+    try {
+      const found = el.closest(sel);
+      if (found) return found as T;
+    } catch {
+      // skip an invalid selector strategy
+    }
+  }
+  return null;
 }
 
 function recordMiss(id: string): void {

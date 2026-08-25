@@ -440,6 +440,7 @@ async function renderPageStatus(): Promise<void> {
       search: t().searchOverlayActive,
       "brand-store": t().storeOverlayActive,
       discovery: t().trendRadarActive,
+      deals: t().dealsOverlayActive,
       "idea-list": t().ideaListActive,
     }[status.pageType];
     if (status.toolSummaries.length > 0) {
@@ -548,6 +549,7 @@ async function renderSettings(): Promise<void> {
     "storeOverlay",
     "trendRadar",
     "ideaListOverlay",
+    "dealsOverlay",
     "globalMaximizer",
     "campaignMatcher",
     "campaignRadar",

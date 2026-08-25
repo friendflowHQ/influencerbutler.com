@@ -55,6 +55,7 @@ export type PageStatus = {
     | "campaign-grid"
     | "search"
     | "discovery"
+    | "deals"
     | "idea-list"
     | "other";
   toolSummaries: Array<{ label: string; value: string }>;

@@ -344,6 +344,9 @@ export interface Dict {
   toolIdeaList: string;
   sumIdeaList: string;
   ideaListActive: string;
+  toolDealsOverlay: string;
+  sumDealsOverlay: string;
+  dealsOverlayActive: string;
   trendCount: (n: number) => string;
   trendSortTrending: string;
   trendSortRank: string;
@@ -1085,6 +1088,9 @@ const en: Dict = {
   toolIdeaList: "Idea List money signals",
   sumIdeaList: "Idea List overlay",
   ideaListActive: "Idea List signals are active.",
+  toolDealsOverlay: "Today's Deals money signals",
+  sumDealsOverlay: "Deals overlay",
+  dealsOverlayActive: "Deals signals are active.",
   trendCount: (n) => `${n} products scored`,
   trendSortTrending: "Rising fastest",
   trendSortRank: "Best seller rank",
@@ -1851,6 +1857,9 @@ const es: Dict = {
   toolIdeaList: "Señales de dinero en Idea Lists",
   sumIdeaList: "Overlay de Idea List",
   ideaListActive: "Las señales de Idea List están activas.",
+  toolDealsOverlay: "Señales de dinero en Ofertas del Día",
+  sumDealsOverlay: "Overlay de ofertas",
+  dealsOverlayActive: "Las señales de ofertas están activas.",
   trendCount: (n) => `${n} productos puntuados`,
   trendSortTrending: "Los que más suben",
   trendSortRank: "Ranking de más vendidos",
@@ -2617,6 +2626,9 @@ const fr: Dict = {
   toolIdeaList: "Signaux d'argent sur les Idea Lists",
   sumIdeaList: "Overlay Idea List",
   ideaListActive: "Les signaux Idea List sont actifs.",
+  toolDealsOverlay: "Signaux d'argent sur les Offres du jour",
+  sumDealsOverlay: "Overlay des offres",
+  dealsOverlayActive: "Les signaux des offres sont actifs.",
   trendCount: (n) => `${n} produits notés`,
   trendSortTrending: "Plus fortes hausses",
   trendSortRank: "Classement des ventes",

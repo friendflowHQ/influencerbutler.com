@@ -42,6 +42,7 @@ import { initVideoMoney } from "../tools/video-money/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
+import { initDealsOverlay } from "../tools/deals-overlay/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
@@ -57,6 +58,7 @@ import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
 import { sendToBackground, type PageStatus, type RuntimeMessage } from "../shared/messages";
+import { setDealsFeed, dealsFeedSize, type DealsFeedItem } from "../amazon/deals-feed";
 import type { Finding, ProductScanFinding } from "../transport/types";
 import type { CampaignFill } from "../amazon/creator-campaigns";
 
@@ -140,6 +142,22 @@ async function main(): Promise<void> {
         fills: campaignFills,
       }).catch(() => undefined);
       scheduleLastCallRefresh();
+    });
+  });
+  // Deal records from the deals-hook (Today's Deals grid). The grid carries no
+  // ASIN in the DOM, so the overlay cannot render until this feed arrives.
+  // Accumulate it and re-run the page so the deals overlay rebuilds over the now
+  // -identifiable tiles; debounced because the grid fires several batches as it
+  // pages in and filters.
+  document.addEventListener("ib-ext-deals-feed", (event) => {
+    guard("deals-feed-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const items = (detail as { items?: unknown })?.items;
+      if (!Array.isArray(items)) return;
+      const before = dealsFeedSize();
+      setDealsFeed(items as DealsFeedItem[]);
+      // Only a genuinely new ASIN warrants a rebuild; a repeat batch is a no-op.
+      if (dealsFeedSize() > before) scheduleDealsRefresh();
     });
   });
   await runForPage();
@@ -464,6 +482,17 @@ async function runForPage(): Promise<void> {
         lastStatus.toolSummaries.push({ label: t().sumTrendRadar, value: t().ready });
       }
     });
+  } else if (pageType === "deals") {
+    // Money signals over the Today's Deals grid. Channel-neutral, like the
+    // search and discovery overlays. ASINs come from the deals-hook feed, so
+    // this is a no-op on the first run (before the feed lands) and rebuilds
+    // when the ib-ext-deals-feed listener re-runs the page.
+    guard("deals-overlay", () => {
+      if (settings.tools.dealsOverlay) {
+        void initDealsOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumDealsOverlay, value: t().ready });
+      }
+    });
   } else if (pageType === "idea-list") {
     // Money signals over an Idea List's products. Channel-neutral, like the
     // search and brand-store overlays: it scores products, it does not post
@@ -506,6 +535,26 @@ function scheduleLastCallRefresh(): void {
       guard("campaign-radar-fill", () => void initCampaignRadar(settings, campaignFills));
     })();
   }, 400);
+}
+
+// The deals-hook delivers ASINs asynchronously (after the grid's own product
+// fetch), and pages more in as the user scrolls or switches filter tabs, each
+// landing after the overlay first rendered. Debounce a re-run so the badges
+// appear (and extend to newly paged tiles) without thrashing when several
+// batches fire together.
+let dealsRefreshTimer: number | null = null;
+
+function scheduleDealsRefresh(): void {
+  if (dealsRefreshTimer !== null) return;
+  dealsRefreshTimer = window.setTimeout(() => {
+    dealsRefreshTimer = null;
+    void (async () => {
+      if (detectPageType(location.href) !== "deals") return;
+      const settings = await getSettings();
+      if (!settings.tools.dealsOverlay) return;
+      guard("deals-overlay-refresh", () => void initDealsOverlay(settings));
+    })();
+  }, 500);
 }
 
 // Amazon only loads the video widget's classified data once the widget is on

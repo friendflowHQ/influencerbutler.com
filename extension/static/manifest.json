@@ -74,6 +74,8 @@
         "https://www.amazon.com/gp/new-releases*",
         "https://www.amazon.com/gp/movers-and-shakers*",
         "https://www.amazon.com/*/zgbs/*",
+        "https://www.amazon.com/deals*",
+        "https://www.amazon.com/coupons*",
         "https://www.amazon.ca/dp/*",
         "https://www.amazon.ca/*/dp/*",
         "https://www.amazon.ca/gp/product/*",
@@ -89,6 +91,8 @@
         "https://www.amazon.ca/gp/new-releases*",
         "https://www.amazon.ca/gp/movers-and-shakers*",
         "https://www.amazon.ca/*/zgbs/*",
+        "https://www.amazon.ca/deals*",
+        "https://www.amazon.ca/coupons*",
         "https://www.amazon.co.uk/dp/*",
         "https://www.amazon.co.uk/*/dp/*",
         "https://www.amazon.co.uk/gp/product/*",
@@ -104,6 +108,8 @@
         "https://www.amazon.co.uk/gp/new-releases*",
         "https://www.amazon.co.uk/gp/movers-and-shakers*",
         "https://www.amazon.co.uk/*/zgbs/*",
+        "https://www.amazon.co.uk/deals*",
+        "https://www.amazon.co.uk/coupons*",
         "https://www.walmart.com/ip/*",
         "https://www.walmart.com/search*",
         "https://www.walmart.com/browse/*",
@@ -138,6 +144,19 @@
         "https://affiliate-program.amazon.co.uk/p/connect/*"
       ],
       "js": ["connect-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.amazon.com/deals*",
+        "https://www.amazon.com/coupons*",
+        "https://www.amazon.ca/deals*",
+        "https://www.amazon.ca/coupons*",
+        "https://www.amazon.co.uk/deals*",
+        "https://www.amazon.co.uk/coupons*"
+      ],
+      "js": ["deals-hook.js"],
       "run_at": "document_start",
       "world": "MAIN"
     }
