@@ -256,3 +256,33 @@ export type OutreachKeywordsResult = {
   paired?: boolean;
   records: OutreachRecord[];
 };
+
+// One brand's Creator Connections signal, resolved by the desktop app against
+// the global CC brand index (not the creator's own ledger), so the Messages
+// widget can badge an *inbound* conversation the creator never pitched. `brand`
+// echoes the display name the extension queried, so the two sides join on the
+// same normalized key without depending on the app's own casing. Every numeric
+// field is nullable: the app returns what the index knows and null for the rest,
+// and a record with no rate and no cadence carries no chip.
+export type BrandEnrichmentRecord = {
+  brand: string;
+  bestRatePct: number | null;
+  slotsOpen: number | null;
+  // Renewal cadence from the app's campaign history: "renews" (runs repeatedly),
+  // "occasional", or "one-shot". null when the index has too little history.
+  cadence: string | null;
+  // Coarse verdict from the same signal ("strong" | "risky" | ...), used only to
+  // tint the chip. null when unknown.
+  verdict: string | null;
+  distinctCampaigns: number | null;
+  latestEndsInDays: number | null;
+};
+
+// Result of a brand.enrichment request. `paired` is false when the app was never
+// connected, so the caller stays silent (no chips) rather than erroring. Records
+// are returned only for brands the global index knows; unknown brands are absent.
+export type BrandEnrichmentResult = {
+  ok: boolean;
+  paired?: boolean;
+  records: BrandEnrichmentRecord[];
+};

@@ -3,6 +3,8 @@ import type { CampaignFill } from "../amazon/creator-campaigns";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type {
   AsinEarnings,
+  BrandEnrichmentRecord,
+  BrandEnrichmentResult,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
@@ -90,6 +92,11 @@ export type RuntimeMessage =
   // Connections Messages widget can badge each conversation with its keyword.
   // Routed over the local bridge; returns paired:false when never connected.
   | { kind: "FETCH_OUTREACH_KEYWORDS" }
+  // Batch-resolve a set of brand names (read from the Messages inbox) against the
+  // desktop app's global CC brand index, so *inbound* conversations the creator
+  // never pitched can still show a rate/cadence chip. Routed over the local
+  // bridge; returns paired:false when never connected.
+  | { kind: "FETCH_BRAND_ENRICHMENT"; brands: string[] }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -242,7 +249,12 @@ export type RuntimeMessage =
   // caller fires and forgets).
   | { kind: "GET_UPDATE_STATE" }
   | { kind: "UPDATE_REMIND_LATER" }
-  | { kind: "APPLY_UPDATE" };
+  | { kind: "APPLY_UPDATE" }
+  // Post-update "What's New" notice: read what changed in the running version
+  // (changelog highlights + the user's own resolved bug reports), and dismiss it
+  // (advances the stored "last shown version" so both surfaces stop showing it).
+  | { kind: "GET_WHATS_NEW" }
+  | { kind: "DISMISS_WHATS_NEW" };
 
 export type IgBioLinkResult = { email: string | null };
 
@@ -610,6 +622,8 @@ export type VoiceTranscriptResult = { ok: boolean; error?: string };
 
 export type {
   AsinEarnings,
+  BrandEnrichmentRecord,
+  BrandEnrichmentResult,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
@@ -630,6 +644,7 @@ export type {
 } from "../integrations/ib-links-client";
 export type { BrandedMintInput, BulkMintResult } from "../background/links";
 export type { UpdateStateView } from "../background/update";
+export type { WhatsNewView, ResolvedBug } from "../background/whats-new";
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);

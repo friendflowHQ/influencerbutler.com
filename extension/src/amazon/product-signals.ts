@@ -1,4 +1,5 @@
 import { query, queryMatchingText } from "./selectors";
+import { parseBoughtCount, parseBoughtFromBody } from "./bought-badge";
 
 // Reads the non-video signals off a product page: identity, price,
 // availability, social proof. Accepts any Document so fetched pages from the
@@ -31,7 +32,6 @@ export type ProductSignals = {
 };
 
 const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
-const BOUGHT_RE = /([\d,.]+)\s*([Kk])?\+?\s*bought in past month/;
 const COMMISSION_RE = /commission\s*rate[:\s]*([\d.]+)\s*%/i;
 const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 
@@ -42,7 +42,7 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     title: cleanText(query(doc, "productTitle")?.textContent) ?? null,
     ...extractPrice(doc),
     inStock: extractInStock(doc),
-    boughtPastMonth: extractBoughtPastMonth(doc),
+    boughtPastMonth: extractBoughtPastMonth(doc, marketplaceFromUrl(url)),
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
     commissionRatePct: extractCommissionRate(doc),
     category: extractCategory(doc),
@@ -222,14 +222,20 @@ export function extractInStock(doc: Document): boolean {
   return query(doc, "addToCart") !== null;
 }
 
-export function extractBoughtPastMonth(doc: Document): number | null {
-  const container = query(doc, "boughtPastMonth");
-  const text = cleanText(container?.textContent) ?? cleanText(doc.body?.textContent?.slice(0, 200000)) ?? "";
-  const match = text.match(BOUGHT_RE);
-  if (!match || !match[1]) return null;
-  const base = parseFloat(match[1].replace(/,/g, ""));
-  if (Number.isNaN(base)) return null;
-  return Math.round(match[2] ? base * 1000 : base);
+// Reads Amazon's "X bought in past month" social-proof badge. The dedicated
+// social-proofing container is parsed structurally (locale-neutral: the count
+// is read from the "N+"/"NK+" shape or a localized phrase), so it works on any
+// marketplace. When that container is absent, a whole-body scan falls back to a
+// known phrase for `host` (English by default), which never grabs a stray page
+// number. Returns a floored count capped at 1,000,000, or null when absent.
+export function extractBoughtPastMonth(doc: Document, host?: string): number | null {
+  const container = cleanText(query(doc, "boughtPastMonth")?.textContent);
+  if (container) {
+    const fromContainer = parseBoughtCount(container);
+    if (fromContainer !== null) return fromContainer;
+  }
+  const body = cleanText(doc.body?.textContent?.slice(0, 200000)) ?? "";
+  return parseBoughtFromBody(body, host ?? null);
 }
 
 function cleanText(text: string | null | undefined): string | undefined {

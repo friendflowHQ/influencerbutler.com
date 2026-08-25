@@ -1,12 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { buildMaps, lookupKeyword, normalizeBrand } from "./normalize";
-import type { OutreachRecord } from "./types";
+import {
+  buildEnrichmentMap,
+  buildMaps,
+  hasEnrichmentSignal,
+  lookupBrand,
+  lookupKeyword,
+  normalizeBrand,
+} from "./normalize";
+import type { BrandEnrichmentRecord, OutreachRecord } from "./types";
 
 function record(over: Partial<OutreachRecord> & { brand: string; keyword: string }): OutreachRecord {
   return {
     brandKey: over.brand.toLowerCase(),
     keywords: [over.keyword],
     lastSentAt: 0,
+    ...over,
+  };
+}
+
+function enrich(over: Partial<BrandEnrichmentRecord> & { brand: string }): BrandEnrichmentRecord {
+  return {
+    bestRatePct: null,
+    slotsOpen: null,
+    cadence: null,
+    verdict: null,
+    distinctCampaigns: null,
+    latestEndsInDays: null,
     ...over,
   };
 }
@@ -67,5 +86,47 @@ describe("buildMaps + lookupKeyword", () => {
   it("skips records without a keyword", () => {
     const map = buildMaps([record({ brand: "Empty", keyword: "" })]);
     expect(lookupKeyword(map, "Empty")).toBeNull();
+  });
+});
+
+describe("hasEnrichmentSignal", () => {
+  it("is true with a positive rate", () => {
+    expect(hasEnrichmentSignal(enrich({ brand: "LUCKFOX", bestRatePct: 12 }))).toBe(true);
+  });
+
+  it("is true with a cadence but no rate", () => {
+    expect(hasEnrichmentSignal(enrich({ brand: "LUCKFOX", cadence: "renews" }))).toBe(true);
+  });
+
+  it("is false with neither rate nor cadence", () => {
+    expect(hasEnrichmentSignal(enrich({ brand: "LUCKFOX" }))).toBe(false);
+    expect(hasEnrichmentSignal(enrich({ brand: "LUCKFOX", bestRatePct: 0 }))).toBe(false);
+  });
+});
+
+describe("buildEnrichmentMap + lookupBrand", () => {
+  it("resolves an inbound brand by normalized name", () => {
+    const map = buildEnrichmentMap([enrich({ brand: "LUCKFOX", bestRatePct: 12, cadence: "renews" })]);
+    const hit = lookupBrand(map, "LUCKFOX");
+    expect(hit?.bestRatePct).toBe(12);
+    expect(hit?.cadence).toBe("renews");
+  });
+
+  it("matches despite a trademark symbol on the page", () => {
+    const map = buildEnrichmentMap([enrich({ brand: "OCOOPA", bestRatePct: 8 })]);
+    expect(lookupBrand(map, "OCOOPA®")?.bestRatePct).toBe(8);
+  });
+
+  it("drops records with no usable signal", () => {
+    const map = buildEnrichmentMap([enrich({ brand: "Nothing" })]);
+    expect(lookupBrand(map, "Nothing")).toBeNull();
+  });
+
+  it("keeps the higher rate on a brand collision", () => {
+    const map = buildEnrichmentMap([
+      enrich({ brand: "Retabolic", bestRatePct: 5 }),
+      enrich({ brand: "Retabolic", bestRatePct: 15 }),
+    ]);
+    expect(lookupBrand(map, "Retabolic")?.bestRatePct).toBe(15);
   });
 });

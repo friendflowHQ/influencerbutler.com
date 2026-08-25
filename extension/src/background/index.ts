@@ -73,6 +73,7 @@ import {
   noteUpdateAvailable,
   remindUpdateLater,
 } from "./update";
+import { getWhatsNewView, markWhatsNewSeen, noteInstall } from "./whats-new";
 import {
   buildIntegrationsView,
   generateAffiliateLink,
@@ -127,7 +128,10 @@ async function injectIntoOpenTabs(): Promise<void> {
   }
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+  // Record the install/update so the post-update "What's New" notice knows
+  // whether (and what) to announce. A fresh install announces nothing.
+  void noteInstall(details.reason, details.previousVersion);
   void injectIntoOpenTabs();
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
@@ -448,6 +452,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       // response sent after it would never arrive.
       sendResponse(undefined);
       applyUpdate();
+      return true;
+    case "GET_WHATS_NEW":
+      void getWhatsNewView().then(sendResponse);
+      return true;
+    case "DISMISS_WHATS_NEW":
+      void markWhatsNewSeen().then(() => sendResponse(undefined));
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background

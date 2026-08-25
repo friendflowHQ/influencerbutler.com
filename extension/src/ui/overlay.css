@@ -644,6 +644,19 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Inbound-brand variant: a brand that only messaged the creator (never pitched)
+   gets its Creator Connections signal (rate + cadence) in a cooler teal so it
+   reads apart from the orange keyword chip. A "risky" cadence tints amber. */
+.bkw-chip.bkw-chip-enrich {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+.bkw-chip.bkw-chip-enrich.bkw-chip-risky {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
 .tile-watch {
   display: inline-flex;
   align-items: center;
@@ -1141,6 +1154,124 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 }
 
 .update-banner-close:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Post-update "What's New" card: bottom-right corner, its own closed shadow
+   host so an SPA panel rebuild never tears it down. z-index sits just under the
+   modal (2147483001) and above the panel. */
+.whats-new-card {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 16px 16px 14px;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e7ecf3;
+  border-radius: 14px;
+  font: 13px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.06);
+  animation: ib-modal-fade 0.15s ease;
+}
+
+.whats-new-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 22px; /* clear the close button */
+}
+
+.whats-new-head .dot {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.whats-new-headtext {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.whats-new-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #ea580c, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.whats-new-meta {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.whats-new-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.whats-new-heading {
+  margin: 0 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.whats-new-list li {
+  font-size: 12.5px;
+  color: #334155;
+}
+
+.whats-new-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.whats-new-actions .btn {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.whats-new-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.whats-new-close:hover { background: #e2e8f0; color: #0f172a; }
 
 /* Video Money: the reshoot summary card above the Creator Hub manage list. Its
    own inline shadow host, so it can be torn down on re-init and pagination. */

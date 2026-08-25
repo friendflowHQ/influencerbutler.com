@@ -15,7 +15,7 @@ import {
   type CarouselResult,
 } from "../amazon/video-carousel";
 import { deriveCreatorId, deriveVideoId } from "../amazon/video-identity";
-import { extractSignals, type ProductSignals } from "../amazon/product-signals";
+import { extractSignals, marketplaceFromUrl, type ProductSignals } from "../amazon/product-signals";
 import { query, applySelectorOverrides } from "../amazon/selectors";
 import { getFlags } from "../flags/cache";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
@@ -51,9 +51,10 @@ import { renderWatchButton } from "../tools/watchlist/panel";
 import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { maybeShowUpdateBanner } from "../tools/update-banner";
+import { maybeShowWhatsNew } from "../tools/whats-new";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
-import { setDebug, log, warn } from "../shared/log";
+import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
@@ -169,6 +170,9 @@ async function main(): Promise<void> {
   // shadow host and runs once per page load, so it belongs here rather than in
   // runForPage(), which re-runs on SPA navigation.
   guard("update-banner", () => void maybeShowUpdateBanner());
+  // Post-update "What's New" card (an update just installed): its own shadow
+  // host, once per page load, same reasoning as the update pill above.
+  guard("whats-new", () => void maybeShowWhatsNew());
 }
 
 // The widget's classified data can land well after first render (it only
@@ -406,11 +410,12 @@ async function runForPage(): Promise<void> {
     });
   } else if (pageType === "order-history") {
     if (!showOnsite) return; // onsite-only page (content gaps, order harvest)
+    const marketplace = marketplaceFromUrl(location.href);
     guard("order-history", () => {
-      if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
+      if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold, marketplace);
       if (settings.tools.ordersButler) {
-        initOrdersButler("amazon.com");
-        initOrderVideoCounts("amazon.com");
+        initOrdersButler(marketplace);
+        initOrderVideoCounts(marketplace);
       }
       if (settings.tools.campaignMatcher) {
         initCampaignMatcher("orders");
@@ -444,7 +449,7 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
     });
   } else if (pageType === "creator-manage") {
-    warn("video-money", "creator-manage reached", {
+    log("video-money", "creator-manage reached", {
       showOnsite,
       videoMoney: settings.tools.videoMoney,
       creatorMode: settings.creatorMode,

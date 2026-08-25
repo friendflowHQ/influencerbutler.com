@@ -1,5 +1,6 @@
 import { query, queryAll, queryMatchingText } from "./selectors";
 import { marketplaceFromUrl } from "./product-signals";
+import { parseBoughtFromBody } from "./bought-badge";
 
 // Reads the product tiles off an Amazon search-results page (/s?k=...). Each
 // tile keeps the fields the search overlay needs to score and sort: identity,
@@ -23,7 +24,6 @@ export type SearchTile = {
 };
 
 const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
-const BOUGHT_RE = /([\d,.]+)\s*([Kk])?\+?\s*bought in past month/;
 // "4.3 out of 5 stars" (en), "4,3 de 5 estrellas" (es), "4,3 sur 5 etoiles"
 // (fr), "4,3 von 5 Sternen" (de). A bare leading "4.3" is accepted as a last
 // resort because the icon alt text always leads with the value.
@@ -49,7 +49,7 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
       imageUrl: query<HTMLImageElement>(el, "searchTileImage")?.getAttribute("src") ?? null,
       href: hrefFor(el, asin, marketplace),
       sponsored: query(el, "searchTileSponsored") !== null,
-      boughtPastMonth: extractBought(el),
+      boughtPastMonth: extractBought(el, marketplace),
       rating: extractRating(el),
       reviewCount: extractReviewCount(el),
       hasCoupon: query(el, "searchTileCoupon") !== null,
@@ -75,8 +75,8 @@ function extractPrice(el: HTMLElement): { priceCents: number | null; currency: s
   return parsePriceText(cleanText(query(el, "searchTilePrice")?.textContent) ?? "");
 }
 
-function extractBought(el: HTMLElement): number | null {
-  return parseBoughtText(el.textContent ?? "");
+function extractBought(el: HTMLElement, marketplace: string): number | null {
+  return parseBoughtFromBody(el.textContent ?? "", marketplace);
 }
 
 function extractRating(el: HTMLElement): number | null {
@@ -107,12 +107,11 @@ export function parsePriceText(text: string): { priceCents: number | null; curre
   return { priceCents: whole * 100 + cents, currency };
 }
 
+// Kept for callers/tests: reads the "bought in past month" count from a blob of
+// tile text via the shared marketplace-aware parser (host unknown -> tries every
+// known phrase). See bought-badge.ts for the normalization.
 export function parseBoughtText(text: string): number | null {
-  const match = text.match(BOUGHT_RE);
-  if (!match || !match[1]) return null;
-  const base = parseFloat(match[1].replace(/,/g, ""));
-  if (Number.isNaN(base)) return null;
-  return Math.round(match[2] ? base * 1000 : base);
+  return parseBoughtFromBody(text, null);
 }
 
 // "4.3 out of 5 stars" / "4,3 de 5 estrellas" / "4,3 sur 5 etoiles" -> 4.3.

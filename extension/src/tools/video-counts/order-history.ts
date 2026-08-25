@@ -31,7 +31,7 @@ type Loaded = Partial<Record<CatalogueKind, LoadedFilter>>;
 
 const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
 
-export function initOrderHistory(contentGapThreshold: number): void {
+export function initOrderHistory(contentGapThreshold: number, marketplace: string): void {
   const items = findOrderItems();
   if (items.length === 0) return;
 
@@ -117,7 +117,15 @@ export function initOrderHistory(contentGapThreshold: number): void {
       stopBtn.style.display = "inline-block";
       abort = new AbortController();
       try {
-        await scanBatch(batch, contentGapThreshold, ccFilters, progress, gaps, abort.signal);
+        await scanBatch(
+          batch,
+          contentGapThreshold,
+          ccFilters,
+          progress,
+          gaps,
+          abort.signal,
+          marketplace,
+        );
       } finally {
         button.disabled = false;
         stopBtn.style.display = "none";
@@ -158,6 +166,7 @@ async function scanBatch(
   progress: HTMLElement,
   gaps: GapRow[],
   signal: AbortSignal,
+  marketplace: string,
 ): Promise<void> {
   const state = await getState();
 
@@ -170,24 +179,24 @@ async function scanBatch(
     // just the image-block total (#videoCount): the creator breakdown hydrates
     // client-side and never appears in fetched documents. So a fetched page
     // yields either "N videos, makeup unknown" or the certain signal: zero.
-    let counts = readCache(state.cache, item.asin);
-    let inStock = state.cache[cacheKey(item.asin)]?.inStock ?? true;
+    let counts = readCache(state.cache, item.asin, marketplace);
+    let inStock = state.cache[cacheKey(item.asin, marketplace)]?.inStock ?? true;
     let classified = counts !== null;
     // Cached hits came from a real product visit, so a carousel existed then.
     // "No upper carousel" is only asserted from a fresh fetch (strategy none).
     let noCarousel = false;
     if (!counts) {
       try {
-        const doc = await fetchDoc(productUrl(item.asin), signal);
+        const doc = await fetchDoc(productUrl(item.asin, marketplace), signal);
         const carousel = extractCarousel(doc);
-        const signals = extractSignals(doc, productUrl(item.asin));
+        const signals = extractSignals(doc, productUrl(item.asin, marketplace));
         counts = carousel.counts;
         inStock = signals.inStock;
         noCarousel = carousel.strategy === "none" && carousel.counts.total === 0;
         classified = carousel.strategy === "json" || carousel.strategy === "dom";
         if (classified) {
           await patchState((s) => {
-            s.cache[cacheKey(item.asin)] = {
+            s.cache[cacheKey(item.asin, marketplace)] = {
               counts: carousel.counts,
               title: item.title,
               inStock: signals.inStock,
@@ -223,7 +232,7 @@ async function scanBatch(
     gaps.push({
       asin: item.asin,
       title: item.title,
-      url: productUrl(item.asin),
+      url: productUrl(item.asin, marketplace),
       reason,
       influencerVideos: counts.influencer,
       totalVideos: counts.total,
@@ -234,7 +243,7 @@ async function scanBatch(
     const finding: ContentGapFinding = {
       type: "content_gap",
       asin: item.asin,
-      marketplace: "amazon.com",
+      marketplace,
       title: item.title.slice(0, 200),
       gapType: counts.influencer === 0 ? "no_influencer_video" : "low_influencer_video",
       influencerVideoCount: counts.influencer,
@@ -283,16 +292,23 @@ function checkbox(text: string): { wrap: HTMLElement; input: HTMLInputElement } 
   return { wrap, input };
 }
 
-function productUrl(asin: string): string {
-  return `https://www.amazon.com/dp/${asin}`;
+// The order-history page and the product it fetches share a marketplace, so the
+// scan is same-origin (no cross-origin host permission needed) and the finding
+// is attributed to the marketplace the user is actually on.
+function productUrl(asin: string, marketplace: string): string {
+  return `https://www.${marketplace}/dp/${asin}`;
 }
 
-function cacheKey(asin: string): string {
-  return `amazon.com:${asin}`;
+function cacheKey(asin: string, marketplace: string): string {
+  return `${marketplace}:${asin}`;
 }
 
-function readCache(cache: Record<string, CachedScan>, asin: string): VideoCounts | null {
-  const hit = cache[cacheKey(asin)];
+function readCache(
+  cache: Record<string, CachedScan>,
+  asin: string,
+  marketplace: string,
+): VideoCounts | null {
+  const hit = cache[cacheKey(asin, marketplace)];
   if (hit && Date.now() - hit.ts < SCAN_CACHE_TTL_MS) return hit.counts;
   return null;
 }

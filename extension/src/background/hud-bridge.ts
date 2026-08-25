@@ -7,6 +7,7 @@ import { normalizeCreatorMode } from "../shared/creator-mode";
 import { log } from "../shared/log";
 import { getSettings, patchSettings } from "../storage/store";
 import type {
+  BrandEnrichmentResult,
   DesktopHistoryResult,
   EarningsLookupResult,
   HudCommand,
@@ -471,6 +472,87 @@ function fetchOutreachKeywordsOnPort(
           return;
         }
         if (frame.type === "outreach.result") {
+          done({
+            ok: frame.ok === true,
+            records: Array.isArray(frame.records) ? frame.records : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Brand enrichment (inbound brands -> CC signal) ───────────────────────────
+// Ask the running app to resolve a batch of brand names (read from the Messages
+// inbox) against the global CC brand index, so an *inbound* conversation the
+// creator never pitched can still show a commission-rate/cadence chip. Read-only
+// and authed like the outreach lookup. Returns paired:false when never connected
+// so the caller stays silent (no chips) instead of erroring.
+
+export async function fetchBrandEnrichment(brands: string[]): Promise<BrandEnrichmentResult> {
+  const list = Array.from(new Set(brands.map((b) => (b ?? "").trim()).filter(Boolean)));
+  if (list.length === 0) return { ok: true, records: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, records: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchBrandEnrichmentOnPort(port, token, list);
+    if (result) return result;
+  }
+  return { ok: false, records: [] };
+}
+
+function fetchBrandEnrichmentOnPort(
+  port: number,
+  token: string,
+  brands: string[],
+): Promise<BrandEnrichmentResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: BrandEnrichmentResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          records?: BrandEnrichmentResult["records"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "brand.enrichment", payload: { brands } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, records: [] });
+          return;
+        }
+        if (frame.type === "brand.enrichment.result") {
           done({
             ok: frame.ok === true,
             records: Array.isArray(frame.records) ? frame.records : [],

@@ -1,0 +1,34 @@
+{
+  "lastUpdated": "2026-08-25",
+  "releases": [
+    {
+      "version": "0.1.9",
+      "date": "August 25, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "What's New: after the extension updates, you now get a quick note of what changed, right on the page and in the popup, including any issues you reported that we fixed",
+            "Campaign Butler: a per-campaign verdict panel that tells you at a glance whether a Creator Connections campaign is worth your time",
+            "Last Call Butler: a fill meter and a watch bell so you can jump on campaigns before they fill up"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Connect buttons in the popup stay in view, and the two-step sync is easier to follow",
+            "Amazon Creators API (PA-API) Test Connection now explains exactly what went wrong instead of failing silently",
+            "The extension now activates on tabs you already had open when it installs or updates, so you do not have to reload"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Link Butler now shows the product and campaign behind each branded link",
+            "Book a call shows a friendly timezone name next to the technical id"
+          ]
+        }
+      ]
+    }
+  ]
+}

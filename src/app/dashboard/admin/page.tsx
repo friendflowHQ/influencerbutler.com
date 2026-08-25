@@ -18,6 +18,7 @@ type OverviewResponse = {
   pendingAffiliates?: number | null;
   pendingTestimonials?: number | null;
   pendingCommunity?: number | null;
+  newExtensionFeedback?: number | null;
   webhookErrors24h?: number | null;
   error?: string;
 };
@@ -202,6 +203,7 @@ export default function AdminOverviewPage() {
     { label: "Affiliate applications", count: data?.pendingAffiliates, href: "/dashboard/admin/affiliates" },
     { label: "Testimonials to review", count: data?.pendingTestimonials, href: "/dashboard/admin/testimonials" },
     { label: "Community posts to review", count: data?.pendingCommunity, href: "/dashboard/admin/community" },
+    { label: "New extension feedback", count: data?.newExtensionFeedback, href: "/dashboard/admin/extension-feedback" },
     { label: "Webhook errors (24h)", count: data?.webhookErrors24h, href: "/dashboard/admin/webhooks" },
   ].filter((t) => t.count !== undefined);
 

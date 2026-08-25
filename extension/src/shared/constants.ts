@@ -9,6 +9,11 @@ export const ENDPOINTS = {
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,
   orders: `${API_BASE}/api/extension/orders`,
   feedback: `${API_BASE}/api/extension/feedback`,
+  // Read side of the Feedback Butler: the signed-in user's own bug reports that
+  // have since been marked resolved, so the "What's New" notice can show
+  // "issues you reported that we fixed". License Bearer required (anonymous
+  // feedback has no identifier to key on); returns an empty list otherwise.
+  feedbackResolved: `${API_BASE}/api/extension/feedback/resolved`,
   // Creator API (PA-API) credential vault + product enrichment. The vault only
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,
@@ -280,6 +285,15 @@ export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first
 // "Remind me later" snoozes the banner for the window below.
 export const UPDATE_STORAGE_KEY = "ib-update";
 export const UPDATE_REMIND_MS = 3 * 24 * 60 * 60 * 1000;
+
+// Post-update "What's New" notice. Chrome applies extension updates silently,
+// so after one lands we show what changed (from the bundled changelog.json plus
+// the user's own resolved bug reports) as a corner card on the next retailer
+// page and a card in the popup. State is a single "last shown version" in its
+// own storage key (no schema bump, like UPDATE_STORAGE_KEY above): the notice
+// shows while the running version is ahead of it, and dismissing from either
+// surface advances it so both stop.
+export const WHATS_NEW_STORAGE_KEY = "ib-whatsnew";
 
 // Deals Influencer Butler workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.

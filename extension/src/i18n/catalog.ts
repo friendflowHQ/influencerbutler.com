@@ -63,6 +63,12 @@ export interface Dict {
 
   // Popup: static chrome
   tagFree: string;
+  // Left-hand section nav labels for cards whose headings are set in JS.
+  navUpdate: string;
+  navWhatsNew: string;
+  navAiAssistant: string;
+  navDeals: string;
+  navLinkButler: string;
   thisPageHeading: string;
   checkingTab: string;
   accountHeading: string;
@@ -729,6 +735,14 @@ export interface Dict {
   updatePopupHeading: string;
   updatePopupBody: (current: string, available: string) => string;
 
+  // Post-update "What's New" notice (on-page corner card + popup card).
+  whatsNewTitle: string;
+  whatsNewFeaturesHeading: string;
+  whatsNewFixesHeading: string;
+  whatsNewReportedHeading: string;
+  whatsNewOtherHeading: string;
+  whatsNewDismiss: string;
+
   // ASIN watchlist (product-page button, search-tile star, popup list).
   watchlist: string;
   watchlistIntro: string;
@@ -808,6 +822,11 @@ const en: Dict = {
   inlineConnectCreatorApi: "Connect the Creator API for live cross-country availability",
 
   tagFree: "Free",
+  navUpdate: "Update",
+  navWhatsNew: "What's new",
+  navAiAssistant: "AI Assistant",
+  navDeals: "Deal Harvester",
+  navLinkButler: "Link Butler",
   thisPageHeading: "This page",
   checkingTab: "Checking the current tab...",
   accountHeading: "Account",
@@ -1497,6 +1516,13 @@ const en: Dict = {
   updatePopupBody: (current, available) =>
     `Version ${available} is ready to install (you have ${current}). The extension restarts in a moment; your settings are kept.`,
 
+  whatsNewTitle: "What's new",
+  whatsNewFeaturesHeading: "New features",
+  whatsNewFixesHeading: "Bug fixes",
+  whatsNewReportedHeading: "Issues you reported that we fixed",
+  whatsNewOtherHeading: "Other notable changes",
+  whatsNewDismiss: "Got it",
+
   watchlist: "Watchlist",
   watchlistIntro:
     "Get a browser alert when this product comes back in stock, an influencer video slot opens, or the price drops.",
@@ -1577,6 +1603,11 @@ const es: Dict = {
   inlineConnectCreatorApi: "Conecta la Creator API para disponibilidad en varios países",
 
   tagFree: "Gratis",
+  navUpdate: "Actualizar",
+  navWhatsNew: "Novedades",
+  navAiAssistant: "Asistente IA",
+  navDeals: "Recolector de ofertas",
+  navLinkButler: "Link Butler",
   thisPageHeading: "Esta página",
   checkingTab: "Comprobando la pestaña actual...",
   accountHeading: "Cuenta",
@@ -2266,6 +2297,13 @@ const es: Dict = {
   updatePopupBody: (current, available) =>
     `La versión ${available} está lista para instalarse (tienes la ${current}). La extensión se reinicia en un momento; tus ajustes se conservan.`,
 
+  whatsNewTitle: "Novedades",
+  whatsNewFeaturesHeading: "Nuevas funciones",
+  whatsNewFixesHeading: "Correcciones",
+  whatsNewReportedHeading: "Problemas que reportaste y ya corregimos",
+  whatsNewOtherHeading: "Otros cambios destacados",
+  whatsNewDismiss: "Entendido",
+
   watchlist: "Lista de seguimiento",
   watchlistIntro:
     "Recibe un aviso del navegador cuando este producto vuelva a tener stock, se abra un espacio de video de influencer o baje el precio.",
@@ -2346,6 +2384,11 @@ const fr: Dict = {
   inlineConnectCreatorApi: "Connectez la Creator API pour la disponibilité multi-pays",
 
   tagFree: "Gratuit",
+  navUpdate: "Mise à jour",
+  navWhatsNew: "Nouveautés",
+  navAiAssistant: "Assistant IA",
+  navDeals: "Collecteur d'offres",
+  navLinkButler: "Link Butler",
   thisPageHeading: "Cette page",
   checkingTab: "Vérification de l'onglet actuel...",
   accountHeading: "Compte",
@@ -3034,6 +3077,13 @@ const fr: Dict = {
   updatePopupHeading: "Mise à jour disponible",
   updatePopupBody: (current, available) =>
     `La version ${available} est prête à être installée (vous avez la ${current}). L'extension redémarre dans un instant; vos réglages sont conservés.`,
+
+  whatsNewTitle: "Nouveautés",
+  whatsNewFeaturesHeading: "Nouvelles fonctionnalités",
+  whatsNewFixesHeading: "Corrections",
+  whatsNewReportedHeading: "Problèmes que vous avez signalés et corrigés",
+  whatsNewOtherHeading: "Autres changements notables",
+  whatsNewDismiss: "Compris",
 
   watchlist: "Liste de suivi",
   watchlistIntro:

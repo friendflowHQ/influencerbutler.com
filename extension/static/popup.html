@@ -27,6 +27,7 @@
       <nav class="side-nav" aria-label="Jump to section">
         <ul>
           <li data-nav-for="update-card" hidden><a href="#update-card" data-i18n="navUpdate">Update</a></li>
+          <li data-nav-for="whats-new-card" hidden><a href="#whats-new-card" data-i18n="navWhatsNew">What's new</a></li>
           <li><a href="#page-status" data-i18n="thisPageHeading">This page</a></li>
           <li><a href="#account" data-i18n="accountHeading">Account</a></li>
           <li><a href="#app-bridge" data-i18n="appBridgeHeading">Desktop app</a></li>
@@ -53,6 +54,13 @@
         <h2 id="update-heading">Update available</h2>
         <p id="update-blurb" class="muted small"></p>
         <button id="update-apply" class="primary">Update now</button>
+      </section>
+
+      <section id="whats-new-card" class="card" hidden>
+        <h2 id="whats-new-heading" data-i18n="whatsNewTitle">What's new</h2>
+        <p id="whats-new-meta" class="muted small"></p>
+        <div id="whats-new-sections"></div>
+        <button id="whats-new-dismiss" class="primary" data-i18n="whatsNewDismiss">Got it</button>
       </section>
 
       <section id="page-status" class="card">
@@ -152,7 +160,7 @@
         <p class="muted small" id="lb-branded-hint"></p>
       </section>
 
-      <section class="card">
+      <section id="settings-card" class="card">
         <h2 data-i18n="settingsHeading">Settings</h2>
         <div class="grid">
           <label class="wide"><span data-i18n="languageLabel">Language</span>
@@ -181,27 +189,27 @@
         </div>
         <h3 data-i18n="toolsHeading">Tools</h3>
 
-        <h4 class="tool-group" data-i18n="groupWalmart">Walmart</h4>
+        <h4 id="grp-walmart" class="tool-group" data-i18n="groupWalmart">Walmart</h4>
         <label class="row toggle"><input id="tool-walmart" type="checkbox" /><span data-i18n="toolWalmart">Walmart support</span></label>
         <p class="muted small" data-i18n="toolWalmartHint">Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.</p>
 
-        <h4 class="tool-group" data-i18n="groupCrossPlatform">Amazon &amp; Walmart</h4>
+        <h4 id="grp-cross" class="tool-group" data-i18n="groupCrossPlatform">Amazon &amp; Walmart</h4>
         <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
 
-        <h4 class="tool-group" data-i18n="groupAmazonProduct">Amazon: product pages</h4>
+        <h4 id="grp-product" class="tool-group" data-i18n="groupAmazonProduct">Amazon: product pages</h4>
         <label class="row toggle"><input id="tool-videoCounts" type="checkbox" /><span data-i18n="toolVideoCounts">Video counts</span></label>
         <label class="row toggle tool-sub"><input id="tool-videoLandscape" type="checkbox" /><span data-i18n="toolVideoLandscape">Video landscape</span></label>
         <label class="row toggle"><input id="tool-approved" type="checkbox" /><span data-i18n="toolApproved">Butler Approved seal</span></label>
         <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span data-i18n="toolCalculator">Profit calculator</span></label>
         <label class="row toggle"><input id="tool-globalMaximizer" type="checkbox" /><span data-i18n="toolGlobalMaximizer">Global reach (multi-marketplace)</span></label>
 
-        <h4 class="tool-group" data-i18n="groupAmazonResearch">Amazon: research &amp; discovery</h4>
+        <h4 id="grp-research" class="tool-group" data-i18n="groupAmazonResearch">Amazon: research &amp; discovery</h4>
         <label class="row toggle"><input id="tool-storeOverlay" type="checkbox" /><span data-i18n="toolStoreOverlay">Brand store overlay</span></label>
         <label class="row toggle"><input id="tool-trendRadar" type="checkbox" /><span data-i18n="toolTrendRadar">Trend Radar (Best Sellers &amp; Movers)</span></label>
         <label class="row toggle"><input id="tool-ideaListOverlay" type="checkbox" /><span data-i18n="toolIdeaList">Idea List money signals</span></label>
         <label class="row toggle"><input id="tool-dealsOverlay" type="checkbox" /><span data-i18n="toolDealsOverlay">Today's Deals money signals</span></label>
 
-        <h4 class="tool-group" data-i18n="groupAmazonCampaigns">Amazon: campaigns &amp; storefront</h4>
+        <h4 id="grp-campaigns" class="tool-group" data-i18n="groupAmazonCampaigns">Amazon: campaigns &amp; storefront</h4>
         <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span data-i18n="toolStorefront">Storefront checks</span></label>
         <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span data-i18n="toolOrdersButler">Orders Butler (sync order history)</span></label>
         <label class="row toggle"><input id="tool-campaignMatcher" type="checkbox" /><span data-i18n="toolCampaignMatcher">Campaign matcher</span></label>
@@ -216,7 +224,7 @@
         <p class="muted small avail-hint" data-i18n="popupAvailabilityHint">Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.</p>
         <p id="avail-au-denied" class="muted small" hidden data-i18n="popupAvailabilityAuDenied">Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.</p>
 
-        <h4 class="tool-group" data-i18n="groupAmazonEarnings">Amazon: earnings &amp; alerts</h4>
+        <h4 id="grp-earnings" class="tool-group" data-i18n="groupAmazonEarnings">Amazon: earnings &amp; alerts</h4>
         <label class="row toggle"><input id="tool-earningsOverlay" type="checkbox" /><span data-i18n="toolEarningsOverlay">Earnings overlay (storefront badges)</span></label>
         <label class="row toggle"><input id="tool-watchlist" type="checkbox" /><span data-i18n="toolWatchlist">Watchlist alerts</span></label>
       </section>
@@ -233,7 +241,7 @@
         <ul id="lists-list" class="watchlist"></ul>
       </section>
 
-      <section class="card">
+      <section id="feedback-card" class="card">
         <h2 data-i18n="feedbackHeading">Feedback Butler</h2>
         <p class="muted small" data-i18n="feedbackBlurb">Found a bug or want a feature? Tell us. No account needed.</p>
         <div class="grid">

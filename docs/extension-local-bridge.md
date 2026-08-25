@@ -392,6 +392,63 @@ Contract notes:
   rejected token yields `{ "type": "auth.error" }` and the extension stays
   silent (no chips shown).
 
+## Brand enrichment (app to extension, read-only)
+
+The inbound counterpart to the outreach lookup. Outreach keywords only cover
+brands the creator outbound-messaged; most Creator Connections inbox
+conversations are *inbound* opportunities the creator never pitched. For those,
+the extension asks the app to resolve a batch of brand names (read from the
+Messages inbox) against the GLOBAL CC brand index, so the widget can still badge
+the conversation with a commission-rate / cadence chip. Authed with the pairing
+token and read-only. The extension side is built (`fetchBrandEnrichment` in
+`extension/src/background/hud-bridge.ts`); the app implements the responder
+(`createBrandEnrichmentHandler`) over `brandIndex.getBrandRecord` (rate, slots,
+window) plus `brandCampaignHistory.deriveRenewalSignal` (cadence, verdict) when
+any local history exists.
+
+The extension sends the display names it read from the inbox:
+
+```json
+{ "type": "brand.enrichment", "payload": { "brands": ["LUCKFOX", "OCOOPA"] } }
+```
+
+The app replies with one record per brand the global index knows (unknown brands
+are simply absent):
+
+```json
+{
+  "type": "brand.enrichment.result",
+  "ok": true,
+  "records": [
+    {
+      "brand": "LUCKFOX",
+      "bestRatePct": 12,
+      "slotsOpen": 3,
+      "cadence": "renews",
+      "verdict": "strong",
+      "distinctCampaigns": 4,
+      "latestEndsInDays": 6
+    }
+  ]
+}
+```
+
+Contract notes:
+
+- `brand` echoes the queried display name, so the extension joins on the same
+  normalized key without depending on the app's own casing.
+- Every numeric field is nullable: the app returns what the index knows and null
+  for the rest. A record with neither a positive `bestRatePct` nor a `cadence`
+  carries no chip, so the app omits it.
+- `cadence` is `"renews" | "occasional" | "one-shot"` (or null when unknown);
+  `verdict` is `"strong" | "worth-considering" | "risky"` (or null). Both come
+  from the local renewal signal and are null for a cold inbound brand, which then
+  shows the rate alone.
+- `latestEndsInDays` is a day count (may be negative if a window just closed).
+- The batch is deduped and capped (100 brands) on the app side.
+- If the app was never paired the extension does not send this at all; a rejected
+  token yields `{ "type": "auth.error" }` and the extension stays silent.
+
 ## Versioning
 
 `v` in the envelope starts at 1. The desktop MUST ignore unknown `type`

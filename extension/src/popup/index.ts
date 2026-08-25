@@ -13,6 +13,7 @@ import {
   type SignInResult,
   type UpdateStateView,
   type WatchlistResult,
+  type WhatsNewView,
 } from "../shared/messages";
 import { getSettings, patchSettings } from "../storage/store";
 import { getFlags } from "../flags/cache";
@@ -42,6 +43,7 @@ async function init(): Promise<void> {
   showVersion();
   await Promise.all([
     renderUpdateCard(),
+    renderWhatsNewCard(),
     renderPageStatus(),
     renderAccount(),
     renderAppBridge(),
@@ -70,6 +72,68 @@ async function init(): Promise<void> {
     const dealCard = document.getElementById("deal-harvester");
     if (dealCard) dealCard.hidden = true;
   }
+  // The left-hand section nav is wired last, once every card's visibility has
+  // settled, so the nav mirrors exactly which cards are on screen.
+  wireSectionNav();
+  syncNavVisibility();
+}
+
+// Left-hand section navigation. Each nav link points at a card (or a tool-group
+// heading) by id; clicking scrolls it into view inside the bounded pane, and an
+// IntersectionObserver keeps the link for the section currently in view marked
+// active. The nav is authored statically in popup.html; this only wires it.
+function wireSectionNav(): void {
+  const nav = document.querySelector<HTMLElement>(".side-nav");
+  const pane = document.getElementById("popup-pane");
+  if (!nav || !pane) return;
+
+  const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'));
+
+  // Click to scroll (smooth), without adding a #hash to the URL.
+  nav.addEventListener("click", (event) => {
+    const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
+    if (!anchor) return;
+    event.preventDefault();
+    const target = document.getElementById(decodeURIComponent(anchor.hash.slice(1)));
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // Scrollspy: highlight the nav link for whichever observed section sits nearest
+  // the top of the pane.
+  const byTarget = new Map<string, HTMLAnchorElement>();
+  const targets: HTMLElement[] = [];
+  for (const link of links) {
+    const el = document.getElementById(decodeURIComponent(link.hash.slice(1)));
+    if (!el) continue;
+    byTarget.set(el.id, link);
+    targets.push(el);
+  }
+
+  const visible = new Set<string>();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      }
+      // Pick the first observed target (document order) that is currently visible.
+      const activeId = targets.find((el) => visible.has(el.id))?.id;
+      for (const [id, link] of byTarget) link.classList.toggle("active", id === activeId);
+    },
+    { root: pane, rootMargin: "0px 0px -70% 0px", threshold: 0 },
+  );
+  for (const el of targets) observer.observe(el);
+}
+
+// Keep each nav item in sync with its card's visibility: cards that get hidden
+// at runtime (update card, deal harvester for onsite-only creators, an empty
+// watchlist) should not leave a dead link in the nav. Items without a
+// data-nav-for target are always shown.
+function syncNavVisibility(): void {
+  for (const li of Array.from(document.querySelectorAll<HTMLLIElement>(".side-nav li[data-nav-for]"))) {
+    const target = document.getElementById(li.dataset.navFor ?? "");
+    li.hidden = !target || target.hidden;
+  }
 }
 
 // Stamp the running extension version into the header, read from the manifest
@@ -97,13 +161,64 @@ async function renderUpdateCard(): Promise<void> {
   byId("update-card").hidden = false;
 }
 
+// Post-update "What's New" card: shown only when the extension has updated and
+// the notice has not been dismissed yet. Lists what changed in the running
+// version (all changelog sections plus any of the user's own resolved bug
+// reports); "Got it" dismisses it on every surface. Mirrors the corner card
+// that shows on retailer pages, sharing one stored "last shown version".
+async function renderWhatsNewCard(): Promise<void> {
+  const view = await sendToBackground<WhatsNewView>({ kind: "GET_WHATS_NEW" }).catch(() => null);
+  if (!view?.show) return;
+  const hasContent =
+    view.features.length || view.fixes.length || view.other.length || view.reportedBugs.length;
+  if (!hasContent) return; // card stays hidden; the on-page driver self-heals
+
+  byId("whats-new-heading").textContent = t().whatsNewTitle;
+  byId("whats-new-meta").textContent = view.date ? `v${view.version} - ${view.date}` : `v${view.version}`;
+
+  const sections = byId("whats-new-sections");
+  sections.replaceChildren();
+  if (view.features.length) sections.append(whatsNewSection(t().whatsNewFeaturesHeading, view.features));
+  if (view.fixes.length) sections.append(whatsNewSection(t().whatsNewFixesHeading, view.fixes));
+  if (view.reportedBugs.length) {
+    sections.append(whatsNewSection(t().whatsNewReportedHeading, view.reportedBugs.map((b) => b.summary)));
+  }
+  if (view.other.length) sections.append(whatsNewSection(t().whatsNewOtherHeading, view.other));
+
+  const btn = byId<HTMLButtonElement>("whats-new-dismiss");
+  btn.textContent = t().whatsNewDismiss;
+  btn.onclick = () => {
+    void sendToBackground<void>({ kind: "DISMISS_WHATS_NEW" }).catch(() => {});
+    byId("whats-new-card").hidden = true;
+    syncNavVisibility();
+  };
+  byId("whats-new-card").hidden = false;
+}
+
+// One labelled group of bullet points in the popup's What's New card.
+function whatsNewSection(heading: string, items: string[]): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "whats-new-group";
+  const h = document.createElement("h3");
+  h.textContent = heading;
+  const ul = document.createElement("ul");
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    ul.append(li);
+  }
+  wrap.append(h, ul);
+  return wrap;
+}
+
 // Build and wire the Instagram Goldmine card. Constructed entirely in JS (not
 // in popup.html) so the public build's popup markup is byte-for-byte unchanged;
 // this whole function dead-code-eliminates out when IB_IG_ENABLED is false. It
 // opens in its own tab (it needs room for the config + results table and
 // outlives the popup).
 function wireGoldmine(): void {
-  const main = document.querySelector("main");
+  // Cards now live inside the scrolling pane, not directly under <main>.
+  const main = document.getElementById("popup-pane") ?? document.querySelector("main");
   const anchor = document.getElementById("deal-harvester");
   if (!main) return;
 

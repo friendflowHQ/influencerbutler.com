@@ -171,6 +171,18 @@ export async function GET(request: Request) {
     );
   }
 
+  if (hasPerm(actor, "support.view")) {
+    jobs.push(
+      (async () => {
+        // New (untriaged) Chrome-extension feedback. Null until the
+        // 20260708_extension_feedback migration is applied in prod.
+        body.newExtensionFeedback = await safeCount(supabase, "extension_feedback", (b) =>
+          b.eq("status", "new"),
+        );
+      })(),
+    );
+  }
+
   if (hasPerm(actor, "webhooks.view")) {
     jobs.push(
       (async () => {
