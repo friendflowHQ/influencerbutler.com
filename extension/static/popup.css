@@ -13,6 +13,10 @@
 
 body {
   width: 340px;
+  /* Never let a stray wide child stretch the popup or add a sideways scrollbar:
+     the layout is designed for 340px, so clip anything that tries to exceed it. */
+  max-width: 340px;
+  overflow-x: hidden;
   margin: 0;
   font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--slate-900);
@@ -133,7 +137,16 @@ p { margin: 4px 0; }
 .stats li b { font-variant-numeric: tabular-nums; }
 
 .row { display: flex; gap: 8px; align-items: center; margin: 8px 0 0; }
-.row input[type="password"], .row input[type="text"] { flex: 1; }
+/* min-width:0 lets the field shrink to share the row instead of overflowing and
+   pushing the button (Connect / Pair) out of view. */
+.row input[type="password"], .row input[type="text"] { flex: 1; min-width: 0; }
+/* The license key is long, but we only ever show masked dots, so the field
+   needs no more than a modest width. Cap it (and keep it able to shrink) so
+   Connect always sits beside it, visible without any horizontal scrolling. */
+#license-input { flex: 0 1 200px; max-width: 200px; }
+/* The desktop-app pairing field only ever holds a 6-digit code, so keep it
+   short with Pair right beside it, no need to scroll sideways. */
+#app-code-input { flex: 0 1 120px; max-width: 120px; }
 
 input[type="password"], input[type="text"], input[type="number"], select, textarea {
   border: 1px solid var(--slate-200);

@@ -24,6 +24,31 @@
     </header>
 
     <main>
+      <nav class="side-nav" aria-label="Jump to section">
+        <ul>
+          <li data-nav-for="update-card" hidden><a href="#update-card" data-i18n="navUpdate">Update</a></li>
+          <li><a href="#page-status" data-i18n="thisPageHeading">This page</a></li>
+          <li><a href="#account" data-i18n="accountHeading">Account</a></li>
+          <li><a href="#app-bridge" data-i18n="appBridgeHeading">Desktop app</a></li>
+          <li><a href="#ai-assistant-card" data-i18n="navAiAssistant">AI Assistant</a></li>
+          <li data-nav-for="deal-harvester"><a href="#deal-harvester" data-i18n="navDeals">Deal Harvester</a></li>
+          <li><a href="#link-butler" data-i18n="navLinkButler">Link Butler</a></li>
+          <li><a href="#settings-card" data-i18n="settingsHeading">Settings</a>
+            <ul>
+              <li><a href="#grp-walmart" data-i18n="groupWalmart">Walmart</a></li>
+              <li><a href="#grp-cross" data-i18n="groupCrossPlatform">Amazon &amp; Walmart</a></li>
+              <li><a href="#grp-product" data-i18n="groupAmazonProduct">Product pages</a></li>
+              <li><a href="#grp-research" data-i18n="groupAmazonResearch">Research</a></li>
+              <li><a href="#grp-campaigns" data-i18n="groupAmazonCampaigns">Campaigns</a></li>
+              <li><a href="#grp-earnings" data-i18n="groupAmazonEarnings">Earnings</a></li>
+            </ul>
+          </li>
+          <li data-nav-for="watchlist-card"><a href="#watchlist-card" data-i18n="popupWatchlistHeading">Watchlist</a></li>
+          <li data-nav-for="lists-card"><a href="#lists-card" data-i18n="popupListsHeading">My lists</a></li>
+          <li><a href="#feedback-card" data-i18n="feedbackHeading">Feedback</a></li>
+        </ul>
+      </nav>
+      <div class="pane" id="popup-pane">
       <section id="update-card" class="card" hidden>
         <h2 id="update-heading">Update available</h2>
         <p id="update-blurb" class="muted small"></p>
@@ -60,6 +85,7 @@
             <span data-i18n="syncToggleLabel">Sync findings to my dashboard</span>
           </label>
           <p id="sync-status" class="muted small"></p>
+          <p class="muted small" data-i18n="syncDashboardHint">Findings upload to your web dashboard on their own. No desktop app is needed for this.</p>
           <label class="row toggle">
             <input id="contribute-toggle" type="checkbox" />
             <span data-i18n="contributeToggleLabel">Contribute to the shared product catalogue</span>
@@ -71,6 +97,9 @@
 
       <section id="app-bridge" class="card">
         <h2 data-i18n="appBridgeHeading">Desktop app</h2>
+        <p id="app-next-step" class="notice" hidden data-i18n="appNextStepHint">
+          You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.
+        </p>
         <p id="app-bridge-text" class="muted small" data-i18n="appBridgeBlurb">
           Connect the Influencer Butler desktop app to accept campaigns and send
           products to your butlers straight from Amazon.
@@ -225,6 +254,7 @@
           <span id="fb-status" class="muted small"></span>
         </div>
       </section>
+      </div>
     </main>
 
     <footer class="foot">

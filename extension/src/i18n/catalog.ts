@@ -73,6 +73,7 @@ export interface Dict {
   startFreeTrial: string;
   connectedAs: string;
   syncToggleLabel: string;
+  syncDashboardHint: string;
   contributeToggleLabel: string;
   contributeBlurb: string;
   disconnect: string;
@@ -680,6 +681,7 @@ export interface Dict {
   obSentToContentButler: (n: number) => string;
   appBridgeHeading: string;
   appBridgeBlurb: string;
+  appNextStepHint: string;
   appConnect: string;
   appEnterCode: string;
   appCodePlaceholder: string;
@@ -814,6 +816,8 @@ const en: Dict = {
   startFreeTrial: "Start a free trial",
   connectedAs: "Connected as",
   syncToggleLabel: "Sync findings to my dashboard",
+  syncDashboardHint:
+    "Findings upload to your web dashboard on their own. No desktop app is needed for this.",
   contributeToggleLabel: "Contribute to the shared product catalogue",
   contributeBlurb:
     "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) and which creator videos are placed on a product's carousel are pooled, never personal data, so everyone sees real demand, price history, and video competition over time.",
@@ -1438,6 +1442,8 @@ const en: Dict = {
   appBridgeHeading: "Desktop app",
   appBridgeBlurb:
     "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
+  appNextStepHint:
+    "You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.",
   appConnect: "Connect the desktop app",
   appEnterCode: "Enter the 6-digit code showing in the desktop app:",
   appCodePlaceholder: "123456",
@@ -1576,6 +1582,8 @@ const es: Dict = {
   startFreeTrial: "Empieza una prueba gratis",
   connectedAs: "Conectado como",
   syncToggleLabel: "Sincronizar hallazgos con mi panel",
+  syncDashboardHint:
+    "Los hallazgos se suben a tu panel web por su cuenta. No necesitas la app de escritorio para esto.",
   contributeToggleLabel: "Contribuir al catálogo de productos compartido",
   contributeBlurb:
     "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) y qué videos de creadores aparecen en el carrusel de un producto se agrupan, nunca datos personales, para que todos vean la demanda real, el historial de precios y la competencia de videos a lo largo del tiempo.",
@@ -2200,6 +2208,8 @@ const es: Dict = {
   appBridgeHeading: "App de escritorio",
   appBridgeBlurb:
     "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
+  appNextStepHint:
+    "Ya estás sincronizado con tu panel. Para también aceptar campañas y enviar productos a tus butlers, conecta la app de escritorio abajo. Este paso es opcional.",
   appConnect: "Conectar la app de escritorio",
   appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
   appCodePlaceholder: "123456",
@@ -2338,6 +2348,8 @@ const fr: Dict = {
   startFreeTrial: "Démarrer un essai gratuit",
   connectedAs: "Connecté en tant que",
   syncToggleLabel: "Synchroniser les découvertes avec mon tableau de bord",
+  syncDashboardHint:
+    "Les découvertes se chargent d'elles-mêmes sur votre tableau de bord web. L'app de bureau n'est pas nécessaire pour cela.",
   contributeToggleLabel: "Contribuer au catalogue de produits partagé",
   contributeBlurb:
     "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) et quelles vidéos de créateurs figurent dans le carrousel d'un produit sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle, l'historique des prix et la concurrence vidéo au fil du temps.",
@@ -2962,6 +2974,8 @@ const fr: Dict = {
   appBridgeHeading: "App de bureau",
   appBridgeBlurb:
     "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
+  appNextStepHint:
+    "Vous êtes synchronisé avec votre tableau de bord. Pour aussi accepter des campagnes et envoyer des produits à vos butlers, connectez l'app de bureau ci-dessous. Cette étape est facultative.",
   appConnect: "Connecter l'app de bureau",
   appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
   appCodePlaceholder: "123456",

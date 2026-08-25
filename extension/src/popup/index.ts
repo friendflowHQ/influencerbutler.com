@@ -290,7 +290,14 @@ async function renderAppBridge(): Promise<void> {
     pairing.hidden = state !== "pairing";
     connected.hidden = state !== "connected";
   };
-  show((await isPairedLocal()) ? "connected" : "disconnected");
+  const paired = await isPairedLocal();
+  show(paired ? "connected" : "disconnected");
+
+  // Guide freshly-connected users to the (optional) next step: once they've
+  // linked a license but haven't paired the desktop app, surface a hint so the
+  // two separate connections don't get conflated.
+  const auth = await sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" });
+  byId("app-next-step").hidden = !(auth.signedIn && !paired);
 
   byId<HTMLButtonElement>("app-connect-btn").onclick = async () => {
     status.textContent = t().appRequestingCode;
