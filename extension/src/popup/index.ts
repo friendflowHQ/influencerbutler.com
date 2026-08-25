@@ -780,7 +780,12 @@ async function renderProductLists(): Promise<void> {
   const list = byId("lists-list");
   const empty = byId("lists-empty");
 
-  const { lists } = await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" });
+  // Default to an empty result: sendToBackground resolves to undefined if the
+  // background channel closes without a response, and an unguarded destructure
+  // would crash the popup on load.
+  const { lists } = (await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" })) ?? {
+    lists: [],
+  };
   list.replaceChildren();
   empty.hidden = lists.length > 0;
   card.hidden = false;

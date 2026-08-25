@@ -31,7 +31,17 @@ function findList(lists: ProductList[], id: string): ProductList | undefined {
 }
 
 export async function getProductLists(): Promise<ProductListsResult> {
-  return { lists: (await getState()).productLists };
+  // Never reject. The background router replies via `.then(sendResponse)` with
+  // no catch, so a thrown getState() (e.g. an invalidated extension context or
+  // a storage read error) would leave the message channel to close with an
+  // undefined response, crashing the caller's `{ lists }` destructure. Always
+  // resolve to a valid shape; migrate() already guarantees productLists is an
+  // array, and an empty list is the right fallback on any failure.
+  try {
+    return { lists: (await getState()).productLists };
+  } catch {
+    return { lists: [] };
+  }
 }
 
 export async function createProductList(name: string): Promise<ProductListsResult> {

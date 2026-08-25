@@ -17,7 +17,12 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
 
   // List picker: existing lists plus a "New list..." entry that reveals a name
   // input. Matches the tile menu's create-or-pick behavior.
-  const { lists } = await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" });
+  // Default to an empty result: sendToBackground resolves to undefined if the
+  // background channel closes without a response, and an unguarded destructure
+  // would crash the panel.
+  const { lists } = (await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" })) ?? {
+    lists: [],
+  };
   const NEW = "__new__";
   const picker = el("select") as HTMLSelectElement;
   for (const list of lists) {
