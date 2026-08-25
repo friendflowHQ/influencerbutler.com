@@ -97,42 +97,82 @@ export type ManageRow = {
 };
 
 const VIDEO_LINK_RE = /\/creatorhub\/video\/([^/?#]+)/;
+const VDP_LINK_RE = /\/vdp\/([^/?#]+)/;
+// The preview image's id is the raw contentId (32 hex chars); guard against
+// picking up an unrelated element id.
+const CONTENT_ID_RE = /^[0-9a-f]{16,}$/i;
 
-// Reads the manage-list rows from the live DOM. Anchored on the per-row link to
-// the Edit Video page (`/creatorhub/video/<contentId>`), which is the stable
-// signal: the "Manage"/"Edit draft" control always links there. Title and views
-// are read from the same row, best-effort. Selectors are deliberately loose so a
-// React markup revision degrades (fewer signals) rather than breaking.
+// Reads the manage-list rows from the live DOM. Amazon's 2026 Creator Hub
+// rebuild dropped the per-row `/creatorhub/video/<id>` link (the "Manage"
+// control is now a JS `a-button`), so anchoring on that alone found nothing.
+// Each video row now exposes its contentId in two stable places: a
+// `/vdp/<contentId>` thumbnail link (the same URL shape the storefront harvest
+// keys on, so it joins cleanly) and a `<img class="cp-video-library-preview"
+// id="<contentId>">`. Anchor on both, keep the legacy `/creatorhub/video/` link
+// as a fallback, and dedupe by contentId. Selectors stay loose so a further
+// markup revision degrades rather than breaks.
 export function readManageRows(doc: Document): ManageRow[] {
   const rows: ManageRow[] = [];
   const seen = new Set<string>();
-  const anchors = Array.from(
-    doc.querySelectorAll<HTMLAnchorElement>('a[href*="/creatorhub/video/"]'),
-  );
-  for (const anchor of anchors) {
-    const contentId = (anchor.getAttribute("href") ?? "").match(VIDEO_LINK_RE)?.[1]?.trim();
-    if (!contentId || seen.has(contentId)) continue;
-    const row = rowContainerFor(anchor);
-    if (!row) continue;
-    seen.add(contentId);
+
+  const push = (contentId: string | null | undefined, seed: HTMLElement): void => {
+    const id = contentId?.trim();
+    if (!id || seen.has(id)) return;
+    const row = manageRowContainer(seed);
+    if (!row) return;
+    seen.add(id);
     rows.push({
       el: row,
-      contentId,
+      contentId: id,
       title: rowTitle(row),
       status: rowStatus(row),
       views: rowViews(row),
     });
+  };
+
+  // Primary: the per-row VDP thumbnail link (joins to the storefront index).
+  for (const a of Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href*="/vdp/"]'))) {
+    push((a.getAttribute("href") ?? "").match(VDP_LINK_RE)?.[1], a);
+  }
+  // Secondary: the preview image carries the contentId as its id (covers rows
+  // whose link markup differs).
+  for (const img of Array.from(doc.querySelectorAll<HTMLElement>("img.cp-video-library-preview[id]"))) {
+    if (CONTENT_ID_RE.test(img.id)) push(img.id, img);
+  }
+  // Legacy: the old Edit Video anchor, in case Amazon reverts the markup.
+  for (const a of Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href*="/creatorhub/video/"]'))) {
+    push((a.getAttribute("href") ?? "").match(VIDEO_LINK_RE)?.[1], legacyRowContainer(a) ?? a);
   }
   return rows;
 }
 
-// Climb from the per-row link to the closest ancestor that looks like a table
-// row (or list item), so a badge and the metric read scope to one video.
-function rowContainerFor(anchor: HTMLElement): HTMLElement | null {
+// Climb from a per-row seed (VDP link or preview image) to the row container:
+// the largest ancestor that still holds exactly one preview image, so the badge
+// and metric reads scope to a single video and never merge two rows. Returns
+// early once the ancestor also encloses the row's action controls.
+function manageRowContainer(seed: HTMLElement): HTMLElement | null {
+  let best: HTMLElement = seed;
+  let node: HTMLElement | null = seed.parentElement;
+  for (let i = 0; i < 10 && node; i += 1) {
+    // Stop before the container swallows the next video.
+    if (node.querySelectorAll("img.cp-video-library-preview").length > 1) break;
+    best = node;
+    if (
+      node.querySelector(
+        "[id='cp-video-library-manage-button'],[id='cp-video-library-delete-button'],.cp-video-library-manage-button",
+      )
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return best;
+}
+
+// Legacy row climb for the old `/creatorhub/video/` anchor markup.
+function legacyRowContainer(anchor: HTMLElement): HTMLElement | null {
   const row = anchor.closest<HTMLElement>('[role="row"], tr, li');
   if (row) return row;
-  // No semantic row: walk up a few levels to a container that holds more than
-  // just the link (a real row has the thumbnail, title, and metric cells).
   let node: HTMLElement | null = anchor.parentElement;
   for (let i = 0; i < 5 && node; i += 1) {
     if (node.querySelectorAll("*").length > 6) return node;
@@ -148,14 +188,22 @@ function rowStatus(row: HTMLElement): ManageRowStatus {
   return "other";
 }
 
-// The row's video title. Prefer the anchor/heading nearest the thumbnail; fall
-// back to the longest text node that is not a metric or a status word.
+// The row's video title, best-effort. Try a text-bearing VDP/edit link, then a
+// title-ish element, then a heading. The overlay also falls back to the
+// storefront harvest's title, so a null here is not fatal.
 function rowTitle(row: HTMLElement): string | null {
-  const link = row.querySelector<HTMLElement>('a[href*="/creatorhub/video/"]');
-  const linkText = link?.textContent?.trim();
-  if (linkText && linkText.length > 1 && !/^manage$|^edit draft$/i.test(linkText)) {
-    return linkText.slice(0, 200);
+  const links = Array.from(
+    row.querySelectorAll<HTMLElement>('a[href*="/vdp/"], a[href*="/creatorhub/video/"]'),
+  );
+  for (const link of links) {
+    const text = link.textContent?.trim();
+    if (text && text.length > 1 && !/^manage$|^edit draft$/i.test(text)) {
+      return text.slice(0, 200);
+    }
   }
+  const titled = row.querySelector<HTMLElement>('[id*="title" i], [class*="title" i]');
+  const titledText = titled?.textContent?.trim();
+  if (titledText && titledText.length > 1) return titledText.slice(0, 200);
   const heading = row.querySelector<HTMLElement>("h1, h2, h3, h4, h5, strong");
   const headingText = heading?.textContent?.trim();
   return headingText ? headingText.slice(0, 200) : null;

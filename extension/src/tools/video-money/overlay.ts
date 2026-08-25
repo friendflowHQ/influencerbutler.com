@@ -36,6 +36,7 @@ import {
 } from "../../shared/messages";
 import type { AsinEarnings } from "../../transport/hud-commands";
 import type { Settings } from "../../storage/schema";
+import { log } from "../../shared/log";
 
 // Video Money on the Creator Hub "Manage videos" list (/creatorhub/manage).
 // Amazon shows views per video but hides money per video: this badges each row
@@ -73,19 +74,22 @@ export async function initVideoMoney(settings: Settings): Promise<void> {
   rowObserver = null;
   teardown();
 
-  const rows = await waitForRows(run.signal);
-  if (run.signal.aborted || rows.length === 0) return;
+  // Give the SPA table a chance to hydrate, but never give up if it is slow: the
+  // row observer installed below decorates rows whenever they render (initial
+  // load, a late XHR, or pagination), so a slow first paint no longer means no
+  // badges. Only an abort (a newer run superseded us) stops us here.
+  const initialRows = await waitForRows(run.signal);
+  log("video-money", `initVideoMoney initialRows=${initialRows.length} aborted=${run.signal.aborted}`);
+  if (run.signal.aborted) return;
 
   const marketplace = marketplaceFromUrl(location.href);
 
-  // Resolve every row to its tagged ASINs with one storefront harvest pass,
-  // joined by contentId. Off the storefront page the handle comes from the
-  // header link or the stored setting.
-  const handle = readStorefrontHandle(document) ?? settings.storefrontHandle;
-  const resolved = handle ? await harvestIndex(handle) : { asins: new Map(), titles: new Map() };
-  const index = resolved.asins;
-  const titleIndex = resolved.titles;
-  if (run.signal.aborted) return;
+  // Each row's tagged ASINs come from one storefront harvest, joined by
+  // contentId. That harvest pages Amazon's feed and is slow, so it must NOT
+  // block the badges: start with empty indexes, render immediately, and let the
+  // background pass (below) fill them in and re-enrich the rows.
+  const index = new Map<string, string[]>();
+  const titleIndex = new Map<string, string>();
 
   // Accumulating state: badges + data grow as the user pages through the list
   // and as the batched lookups return.
@@ -188,8 +192,48 @@ export async function initVideoMoney(settings: Settings): Promise<void> {
     recompute();
   };
 
-  decorate();
+  // Install the observer first so rows that render after this point are caught,
+  // then decorate whatever is already present. Neither waits on the harvest, so
+  // the panel and per-row badge shells appear at once.
   watchRows(run.signal, decorate);
+  decorate();
+
+  // Background: resolve the storefront handle and harvest the contentId -> ASIN
+  // index, then attach ASINs to the already-mounted rows and fire the money
+  // lookups. A slow or empty harvest no longer hides the overlay.
+  void enrichFromStorefront(run.signal, settings, index, titleIndex, states, fetchFor, recompute);
+}
+
+// Fills the contentId -> ASIN/title indexes from one storefront harvest, then
+// re-derives each mounted row's ASINs and fans out its money lookups. Runs off
+// the render path so the badges never wait on the feed paging.
+async function enrichFromStorefront(
+  signal: AbortSignal,
+  settings: Settings,
+  index: Map<string, string[]>,
+  titleIndex: Map<string, string>,
+  states: Map<string, RowState>,
+  fetchFor: (asins: string[]) => void,
+  recompute: () => void,
+): Promise<void> {
+  const handle = readStorefrontHandle(document) ?? settings.storefrontHandle;
+  log("video-money", `enrichFromStorefront handle=${handle ?? "none"}`);
+  if (!handle) return;
+  const resolved = await harvestIndex(handle);
+  if (signal.aborted) return;
+  for (const [id, asins] of resolved.asins) index.set(id, asins);
+  for (const [id, title] of resolved.titles) titleIndex.set(id, title);
+
+  const seen: string[] = [];
+  for (const [contentId, state] of states) {
+    const asins = index.get(contentId) ?? [];
+    state.input.asins = asins;
+    if (!state.input.title) state.input.title = titleIndex.get(contentId) ?? null;
+    seen.push(...asins);
+  }
+  log("video-money", `enrichFromStorefront harvested=${resolved.asins.size} asins=${seen.length}`);
+  fetchFor([...new Set(seen)]);
+  recompute();
 }
 
 async function waitForRows(signal: AbortSignal): Promise<ManageRow[]> {
@@ -243,11 +287,10 @@ function mountBadge(row: ManageRow, body: HTMLElement): void {
   const wrap = el("div", "tile-badge");
   wrap.append(body);
   root.append(wrap);
-  // Prefer to sit under the row's title so the chips read next to the video
-  // they describe; fall back to the row element itself.
-  const title = row.el.querySelector<HTMLElement>('a[href*="/creatorhub/video/"]');
-  const slot = title?.parentElement ?? row.el;
-  slot.append(host);
+  // Place the chips on their own line directly beneath the video's row so they
+  // read next to the video they describe. Fall back to appending inside the row.
+  host.style.display = "block";
+  if (!row.el.insertAdjacentElement("afterend", host)) row.el.append(host);
 }
 
 function renderRowBadge(
