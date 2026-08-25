@@ -34,11 +34,51 @@ type EmailAggregate = {
   complained: number;
 };
 
+type TrackingStatus =
+  | "ok"
+  | "no_data"
+  | "no_secret"
+  | "no_events"
+  | "no_engagement_tracking"
+  | "clicks_untracked";
+
+type TrackingHealth = {
+  webhookConfigured: boolean;
+  status: TrackingStatus;
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+};
+
 type SummaryResponse = {
   days: number;
   categories: EmailAggregate[];
   funnels: EmailAggregate[];
   migrationPending?: boolean;
+  tracking?: TrackingHealth;
+};
+
+// Human-facing explanation + fix for each unhealthy tracking state, so a bare
+// 0% open rate is never mistaken for real engagement. Keyed by the status the
+// summary API computes; "ok" / "no_data" get no banner.
+const TRACKING_MESSAGES: Record<string, { title: string; body: string }> = {
+  no_secret: {
+    title: "Open and click tracking is not recording",
+    body: "The Resend webhook signing secret is not set, so open and click events are rejected before they can be counted. Add the endpoint https://www.influencerbutler.com/api/webhooks/resend in Resend (Webhooks), then set RESEND_WEBHOOK_SECRET in Vercel.",
+  },
+  no_events: {
+    title: "No delivery, open, or click events are being received",
+    body: "Emails are sending, but no Resend events are reaching the app in this window. Confirm the webhook endpoint https://www.influencerbutler.com/api/webhooks/resend exists in Resend (Webhooks), is subscribed to email.opened and email.clicked, and that RESEND_WEBHOOK_SECRET is set in Vercel.",
+  },
+  no_engagement_tracking: {
+    title: "Deliveries are tracked, but no opens or clicks",
+    body: "The webhook is working (deliveries land), but no opens or clicks are recorded. Turn on Open Tracking and Click Tracking for influencerbutler.com in the Resend dashboard (Domains): without them Resend never injects the tracking pixel or wraps links.",
+  },
+  clicks_untracked: {
+    title: "Opens are tracked, but no clicks are being recorded",
+    body: "Opens record fine, yet not a single click has come through: almost always the webhook is not subscribed to email.clicked. In Resend (Webhooks) open the endpoint https://www.influencerbutler.com/api/webhooks/resend and confirm email.clicked is in its event list. Also check that Click Tracking is on for influencerbutler.com under Domains.",
+  },
 };
 
 type IssueStats = {
@@ -227,6 +267,10 @@ export default function AdminEmailsPage() {
 
   const totalPages = sends ? Math.max(1, Math.ceil(sends.total / sends.pageSize)) : 1;
   const migrationPending = Boolean(summary?.migrationPending || sends?.migrationPending);
+  const trackingWarning =
+    !migrationPending && summary?.tracking && summary.tracking.status in TRACKING_MESSAGES
+      ? TRACKING_MESSAGES[summary.tracking.status]
+      : null;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -264,6 +308,13 @@ export default function AdminEmailsPage() {
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           The email_sends table is missing. Apply supabase/migrations/20260816_email_sends.sql to
           prod, then set up the Resend webhook (RESEND_WEBHOOK_SECRET) to start collecting data.
+        </div>
+      ) : null}
+
+      {trackingWarning ? (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="font-semibold">{trackingWarning.title}</p>
+          <p className="mt-1">{trackingWarning.body}</p>
         </div>
       ) : null}
 

@@ -642,6 +642,11 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
 // them from install -> first win -> the Pro upgrade. Anchored on created_at.
 
 const ONBOARDING_SOURCE = "download-app";
+// After this many consecutive failed sends we stop retrying a lead and mark it
+// abandoned, so one permanently-undeliverable address can't loop forever (a
+// single dead address once logged 5,251 failed sends). A later success resets
+// the count, so transient Resend hiccups don't burn through the budget.
+const MAX_ONBOARDING_SEND_FAILURES = 5;
 const ONBOARDING_TIERS: ReadonlyArray<{
   tier: OnboardingTier;
   thresholdMs: number;
@@ -661,6 +666,7 @@ type OnboardingRow = {
   onboarding_email_day2_sent_at: string | null;
   onboarding_email_day5_sent_at: string | null;
   onboarding_email_day10_sent_at: string | null;
+  onboarding_send_failures: number | null;
 };
 
 function selectOnboardingTier(
@@ -739,11 +745,14 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
     const { data, error } = await supabase
       .from("email_subscribers")
       .select(
-        "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at",
+        "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at,onboarding_send_failures",
       )
       .eq("source", ONBOARDING_SOURCE)
       .is("unsubscribed_at", null)
       .is("onboarding_converted_at", null)
+      // Leads that failed too many times are parked, so a dead address can't
+      // hog the per-run budget forever.
+      .is("onboarding_abandoned_at", null)
       // Exclude rows that already finished the drip (day10 is the last tier) so
       // the per-run budget goes to leads still in progress.
       .is("onboarding_email_day10_sent_at", null)
@@ -781,11 +790,31 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
         discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
       });
 
-      if (!sent) continue;
+      if (!sent) {
+        // Only a successful send stamps the tier, so without this a permanently
+        // undeliverable address would be re-picked and re-sent every run
+        // forever. Count the failure; once it crosses the cap, park the lead so
+        // it drops out of the pool. A transient failure below the cap just waits
+        // for the next run.
+        const failures = (row.onboarding_send_failures ?? 0) + 1;
+        const patch: Record<string, unknown> = { onboarding_send_failures: failures };
+        if (failures >= MAX_ONBOARDING_SEND_FAILURES) {
+          patch.onboarding_abandoned_at = new Date().toISOString();
+        }
+        const { error: failError } = await supabase
+          .from("email_subscribers")
+          .update(patch)
+          .eq("email", row.email);
+        if (failError) {
+          console.error("cron: onboarding failure-count update failed", { email: row.email, failError });
+        }
+        continue;
+      }
 
       const { error: updateError } = await supabase
         .from("email_subscribers")
-        .update({ [tier.sentCol]: new Date().toISOString() })
+        // A good send clears any prior transient-failure streak on this lead.
+        .update({ [tier.sentCol]: new Date().toISOString(), onboarding_send_failures: 0 })
         .eq("email", row.email);
 
       if (updateError) {
