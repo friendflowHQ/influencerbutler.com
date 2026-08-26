@@ -176,38 +176,54 @@ export function buildFounderSnapshotEmail(data: FounderSnapshotData): {
   </td></tr>
 </table>`.trim();
 
-  // Plain-text fallback.
+  // Plain-text body. This is the version we actually send: Gmail reliably
+  // delivers plain text to the inbox, whereas the heavy HTML dashboard version
+  // gets silently spam-filtered. Arrows (up/down) and bullets render fine in
+  // proportional fonts; we avoid space-aligned columns, which do not.
   const textLines: string[] = [
-    `INFLUENCER BUTLER // FOUNDER SNAPSHOT`,
-    `The funnel converts. Now feed it.`,
+    `INFLUENCER BUTLER  //  FOUNDER SNAPSHOT`,
+    `"The funnel converts. Now feed it."`,
     `Reporting period: ${data.periodLabel}`,
     ``,
     `THE VITAL SIGNS`,
+    `--------------------------------`,
   ];
   for (const k of data.kpis) {
-    const d =
-      k.delta === null
-        ? ""
-        : ` (${k.delta >= 0 ? "+" : ""}${Math.round(k.delta * 100)}% MoM)`;
-    textLines.push(`  ${k.label}: ${k.value}${d}`);
+    let d = "";
+    if (k.delta !== null) {
+      const pct = Math.round(k.delta * 100);
+      const arrow = pct > 0 ? "▲" : pct < 0 ? "▼" : "";
+      d = pct === 0 ? "  (flat MoM)" : `  (${arrow} ${Math.abs(pct)}% MoM)`;
+    }
+    textLines.push(`  • ${k.label}: ${k.value}${d}`);
   }
   if (data.affiliates) {
     textLines.push(
       ``,
       `AFFILIATES`,
-      `  ${data.affiliates.producing} of ${data.affiliates.total} producing, ${data.affiliates.dormant} dormant.`,
-      `  Commission owed: ${formatMoneyCents(data.affiliates.owedCents)}`,
+      `--------------------------------`,
+      `  • ${data.affiliates.producing} of ${data.affiliates.total} affiliates producing, ${data.affiliates.dormant} dormant`,
+      `  • Commission owed: ${formatMoneyCents(data.affiliates.owedCents)}`,
     );
   }
   if (data.traffic) {
+    const td = data.traffic.activeUsersDelta;
+    const tArrow = td === null ? "" : td > 0 ? " ▲" : td < 0 ? " ▼" : "";
+    const tPct = td === null ? "" : `${tArrow} ${Math.abs(Math.round(td * 100))}%`;
     textLines.push(
       ``,
       `TRAFFIC (last 28 days)`,
-      `  ${formatInt(data.traffic.activeUsers)} active users, ${formatInt(data.traffic.newUsers)} new`,
-      ...data.traffic.channels.slice(0, 6).map((c) => `    ${c.channel}: ${formatInt(c.sessions)}`),
+      `--------------------------------`,
+      `  • ${formatInt(data.traffic.activeUsers)} active users${tPct ? `  (${tPct})` : ""}, ${formatInt(data.traffic.newUsers)} new`,
+      `  Where visitors come from:`,
+      ...data.traffic.channels.slice(0, 6).map((c) => `      ${c.channel}: ${formatInt(c.sessions)}`),
     );
   }
-  textLines.push(``, `Numbers pulled live on ${data.generatedLabel}.`);
+  textLines.push(
+    ``,
+    `--------------------------------`,
+    `Numbers pulled live on ${data.generatedLabel} from your own subscriptions, orders, affiliate, and analytics data. Open the admin Growth dashboard for the full picture.`,
+  );
 
   return { subject, html, text: textLines.join("\n") };
 }

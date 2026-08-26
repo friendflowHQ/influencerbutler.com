@@ -174,12 +174,14 @@ export async function GET(request: Request) {
     return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 
+  // Send PLAIN TEXT only (no html): Gmail silently spam-filters the heavy HTML
+  // dashboard version, but delivers the plain-text version to the inbox. The
+  // html is still built for ?preview=1 (a visual reference), just not emailed.
   const { ok, id } = await sendEmail({
     from: FROM_ADDRESS,
     to,
     subject,
     text,
-    html,
     category: "founder_snapshot",
   });
 
