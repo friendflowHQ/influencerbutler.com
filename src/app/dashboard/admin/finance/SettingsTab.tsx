@@ -21,6 +21,13 @@ type Settings = {
   paypalSenderFeePerPayoutCents: number;
   utahUseTaxRatePercent: number;
   useTaxDefaultForSoftware: "review" | "na";
+  payerName: string;
+  payerAddress1: string;
+  payerCity: string;
+  payerRegion: string;
+  payerPostal: string;
+  payerEin: string;
+  payerPhone: string;
 };
 
 type Props = { onSettingsChanged: () => void };
@@ -135,6 +142,18 @@ export default function SettingsTab({ onSettingsChanged }: Props) {
     </label>
   );
 
+  const text = (key: keyof Settings, label: string, width = "w-48") => (
+    <label className="text-xs text-slate-600">
+      {label}
+      <input
+        type="text"
+        value={settings[key] as string}
+        onChange={(e) => setSettings({ ...settings, [key]: e.target.value })}
+        className={`mt-1 block ${width} rounded-lg border border-slate-300 px-3 py-2 text-sm`}
+      />
+    </label>
+  );
+
   return (
     <div className="mt-6 max-w-3xl space-y-6">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
@@ -220,6 +239,23 @@ export default function SettingsTab({ onSettingsChanged }: Props) {
               default for new hosting expenses
             </span>
           </label>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">1099 payer identity</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Your business as the filer on affiliate 1099-NEC forms. The EIN is required before any
+          1099 export (9 digits).
+        </p>
+        <div className="mt-3 flex flex-wrap gap-4">
+          {text("payerName", "Business name", "w-64")}
+          {text("payerEin", "EIN (9 digits)", "w-40")}
+          {text("payerAddress1", "Street address", "w-64")}
+          {text("payerCity", "City", "w-40")}
+          {text("payerRegion", "State", "w-20")}
+          {text("payerPostal", "ZIP", "w-28")}
+          {text("payerPhone", "Phone (optional)", "w-40")}
         </div>
       </div>
 

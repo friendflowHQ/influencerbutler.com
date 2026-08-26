@@ -36,6 +36,15 @@ export type FinanceSettings = {
   utahUseTaxRatePercent: number;
   /** Default use-tax state for new software/hosting expenses. */
   useTaxDefaultForSoftware: "review" | "na";
+  // 1099 payer identity (the filer). EIN must be set before any 1099 export.
+  payerName: string;
+  payerAddress1: string;
+  payerCity: string;
+  payerRegion: string;
+  payerPostal: string;
+  /** 9-digit EIN, digits only. Empty until entered. */
+  payerEin: string;
+  payerPhone: string;
 };
 
 export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
@@ -54,7 +63,20 @@ export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   // West Valley City combined state + local rate (confirm exact local rate).
   utahUseTaxRatePercent: 7.25,
   useTaxDefaultForSoftware: "review",
+  payerName: "The Social Media Posse LLC",
+  payerAddress1: "3556 S 5600 W",
+  payerCity: "West Valley City",
+  payerRegion: "UT",
+  payerPostal: "84120-2815",
+  payerEin: "",
+  payerPhone: "",
 };
+
+/** Trim a string setting and cap its length; non-strings become "". */
+function cleanString(value: unknown, fallback: string, maxLen = 120): string {
+  if (typeof value !== "string") return fallback;
+  return value.trim().slice(0, maxLen);
+}
 
 const CONFIG_KEY = "finance";
 
@@ -92,6 +114,17 @@ export function normalizeFinanceSettings(raw: unknown): FinanceSettings {
     ),
     utahUseTaxRatePercent: clampNumber(r.utahUseTaxRatePercent, d.utahUseTaxRatePercent, 0, 15),
     useTaxDefaultForSoftware: r.useTaxDefaultForSoftware === "na" ? "na" : "review",
+    payerName: cleanString(r.payerName, d.payerName),
+    payerAddress1: cleanString(r.payerAddress1, d.payerAddress1),
+    payerCity: cleanString(r.payerCity, d.payerCity),
+    payerRegion: cleanString(r.payerRegion, d.payerRegion, 2) || d.payerRegion,
+    payerPostal: cleanString(r.payerPostal, d.payerPostal, 10),
+    // EIN: keep only if exactly 9 digits, else empty (blocks export until set).
+    payerEin: (() => {
+      const digits = cleanString(r.payerEin, "", 20).replace(/\D/g, "");
+      return digits.length === 9 ? digits : "";
+    })(),
+    payerPhone: cleanString(r.payerPhone, d.payerPhone, 20),
   };
 }
 

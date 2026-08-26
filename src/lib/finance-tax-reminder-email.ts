@@ -83,3 +83,58 @@ export async function sendTaxReminder(input: TaxReminderInput): Promise<boolean>
   }
   return anyOk;
 }
+
+export type Reminder1099Input = {
+  taxYear: number;
+  dueDate: string; // YYYY-MM-DD (Jan 31)
+  daysOut: number;
+  reportableCount: number;
+  unfiledCount: number;
+  missingFormsCount: number;
+  totalCents: number;
+};
+
+/** Plain-text 1099 reminder body. Pure, so it can be unit-tested. */
+export function build1099ReminderBody(input: Reminder1099Input): string {
+  const lines: string[] = [];
+  lines.push(
+    `1099-NEC forms for ${input.taxYear} are due to the IRS and to recipients by ${input.dueDate} (${input.daysOut} day${input.daysOut === 1 ? "" : "s"} away).`,
+  );
+  lines.push("");
+  lines.push(`Reportable US affiliates (paid over the threshold): ${input.reportableCount}`);
+  lines.push(`Total nonemployee compensation: ${formatUsdFromCents(input.totalCents)}`);
+  lines.push(`Not yet marked filed: ${input.unfiledCount}`);
+  if (input.missingFormsCount > 0) {
+    lines.push(
+      `Still missing a verified tax form (cannot be filed yet): ${input.missingFormsCount}. Nudge them from the 1099s tab.`,
+    );
+  }
+  lines.push("");
+  lines.push(
+    "Export the provider or IRIS CSV and file from the 1099s tab. Remember recipient copies are due the same day.",
+  );
+  lines.push("");
+  lines.push("Finance dashboard (1099s tab):");
+  lines.push(ADMIN_FINANCE_URL);
+  return lines.join("\n");
+}
+
+/** Send the 1099 reminder to the owner recipients. Returns true if any sent. */
+export async function send1099Reminder(input: Reminder1099Input): Promise<boolean> {
+  const subject = `1099-NEC due ${input.dueDate}: ${input.reportableCount} affiliate${input.reportableCount === 1 ? "" : "s"} to file`;
+  const text = build1099ReminderBody(input);
+  const html = bodyToHtml(text);
+  let anyOk = false;
+  for (const to of recipients()) {
+    const { ok } = await sendEmail({
+      from: FROM_ADDRESS,
+      to,
+      subject,
+      text,
+      html,
+      category: "finance_1099_reminder",
+    });
+    anyOk = anyOk || ok;
+  }
+  return anyOk;
+}
