@@ -89,12 +89,6 @@ function readFileToB64(file: File): Promise<string> {
   });
 }
 
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 type Bucket = { key: string; label: string; statuses: string[] };
 
 const BUCKETS: Bucket[] = [
