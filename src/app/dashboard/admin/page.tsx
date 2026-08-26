@@ -140,7 +140,7 @@ function TrialFunnelSection() {
         </table>
       </div>
       <p className="mt-2 text-xs text-slate-400">
-        Cohort conversion counts a conversion in the week the trial STARTED; the current week's
+        Cohort conversion counts a conversion in the week the trial STARTED; the current week&apos;s
         trials are still in progress.
       </p>
     </section>
