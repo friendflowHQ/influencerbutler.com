@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import SelfHostedAffiliateDashboard from "@/app/dashboard/affiliates/SelfHostedAffiliateDashboard";
+import TaxActionBar from "./TaxActionBar";
 
 /**
  * Admin "view as affiliate" page. Renders the real affiliate dashboard in
@@ -27,6 +28,8 @@ export default function AdminAffiliateViewPage() {
         <strong>Admin preview - read only.</strong> This is exactly what this affiliate sees in their
         own dashboard. Nothing here is editable.
       </div>
+
+      <TaxActionBar userId={userId} />
 
       <SelfHostedAffiliateDashboard
         readOnly

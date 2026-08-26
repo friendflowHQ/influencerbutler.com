@@ -93,7 +93,10 @@ body {
 main {
   padding: 10px 10px 10px 8px;
   display: grid;
-  grid-template-columns: 88px 1fr; /* compact left nav + content pane */
+  /* minmax(0, 1fr) so the pane can never grow past the space left of the nav:
+     a plain 1fr track has a min-content floor, and wide card content (number
+     inputs side by side) was pushing the pane into sideways scrolling. */
+  grid-template-columns: 88px minmax(0, 1fr); /* compact left nav + content pane */
   gap: 8px;
   align-items: start;
 }
@@ -104,8 +107,12 @@ main {
   position: sticky;
   top: 0;
   align-self: start;
-  max-height: 540px;
+  /* 480px keeps header + main + footer under Chrome's 600px popup height cap;
+     taller and the whole body scrolls too, stacking a second scrollbar that
+     steals width and clips the cards. */
+  max-height: 480px;
   overflow-y: auto;
+  overflow-x: hidden;
   font-size: 11px;
 }
 .side-nav ul {
@@ -141,8 +148,9 @@ main {
 
 /* Bounded content pane: the cards scroll here while the nav stays put. */
 .pane {
-  max-height: 540px;
+  max-height: 480px; /* match .side-nav: stay under Chrome's 600px popup cap */
   overflow-y: auto;
+  overflow-x: hidden;
   display: grid;
   gap: 10px;
   padding-right: 2px;
@@ -213,6 +221,9 @@ input[type="password"], input[type="text"], input[type="number"], select, textar
   padding: 7px 9px;
   font: inherit;
   width: 100%;
+  /* Fields shrink to their column instead of holding their intrinsic width,
+     which was forcing the whole pane to scroll sideways. */
+  min-width: 0;
   background: #fff;
 }
 
@@ -244,7 +255,9 @@ button.ghost { background: transparent; color: var(--slate-600); border: 1px sol
 button.ghost:hover { color: var(--red); border-color: var(--red); }
 button[disabled] { opacity: 0.6; cursor: default; }
 
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* minmax(0, 1fr) columns: number inputs and selects have wide intrinsic
+   minimums that would otherwise stretch the card sideways. */
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .grid label { display: grid; gap: 3px; font-size: 12px; color: var(--slate-600); }
 .grid label.wide { grid-column: 1 / -1; }
 

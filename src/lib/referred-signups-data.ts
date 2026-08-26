@@ -46,19 +46,44 @@ export async function loadReferredSignups(
       ),
     }));
 
+  // id + ref_channel let the derivation attach a lead source (web/extension/
+  // desktop) to each event. id is used only to join a channel onto this
+  // account's subscription events; it is never returned to the client.
+  const toProfileRows = (rows: Record<string, unknown>[]): ReferredProfileRow[] =>
+    rows.map((r) => ({
+      created_at: (r.created_at as string | null) ?? null,
+      ref_captured_at: (r.ref_captured_at as string | null) ?? null,
+      user_id: (r.id as string | null) ?? null,
+      ref_channel: (r.ref_channel as ReferredProfileRow["ref_channel"]) ?? null,
+    }));
+
   let profileRows: ReferredProfileRow[] = [];
   const { data: signupData, error: signupErr } = await admin
     .from("profiles")
-    .select("created_at,ref_captured_at")
+    .select("id,ref_channel,created_at,ref_captured_at")
     .eq("ref_affiliate_user_id", affiliateUserId)
     .order("ref_captured_at", { ascending: false })
     .limit(200);
   if (signupErr) {
-    // Most likely the ref_* columns don't exist in prod yet.
-    console.warn("referred-signups: signups read skipped", signupErr);
-    migrationPending = true;
+    // ref_channel lands after the ref_* columns (migration 20260826). Retry
+    // without it so a prod that has ref_* but not ref_channel still loads;
+    // those events fall back to a "web" label in the derivation.
+    console.warn("referred-signups: full signups read failed, retrying reduced", signupErr);
+    const { data: reducedData, error: reducedErr } = await admin
+      .from("profiles")
+      .select("id,created_at,ref_captured_at")
+      .eq("ref_affiliate_user_id", affiliateUserId)
+      .order("ref_captured_at", { ascending: false })
+      .limit(200);
+    if (reducedErr) {
+      // Most likely the ref_* columns don't exist in prod yet.
+      console.warn("referred-signups: signups read skipped", reducedErr);
+      migrationPending = true;
+    } else {
+      profileRows = toProfileRows((reducedData ?? []) as Record<string, unknown>[]);
+    }
   } else {
-    profileRows = (signupData ?? []) as ReferredProfileRow[];
+    profileRows = toProfileRows((signupData ?? []) as Record<string, unknown>[]);
   }
 
   let subRows: ReferredSubscriptionRow[] = [];

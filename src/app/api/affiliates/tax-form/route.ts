@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptTin, tinLastFour, taxKeyConfigured } from "@/lib/tax-crypto";
 import { certificationTextFor, type TaxFormType } from "@/lib/tax-certification";
+import { sendTaxFormSubmittedAlert } from "@/lib/tax-review-reminder-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -179,6 +180,13 @@ export async function POST(request: Request) {
       firstValue(request.headers.get("x-real-ip"));
     const userAgent = request.headers.get("user-agent");
 
+    // For the admin alert below: whether this replaces an earlier submission.
+    const { data: prevForm } = await admin
+      .from("affiliate_tax_forms")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     // Encrypt + store the TIN in the service-role-only table (upsert on user_id).
     if (rawTin) {
       const enc = encryptTin(rawTin);
@@ -256,6 +264,24 @@ export async function POST(request: Request) {
     });
     if (eventErr) {
       console.error("tax-form POST: audit event insert failed", eventErr);
+    }
+
+    // Alert the admin so the form gets reviewed promptly (payouts are blocked on
+    // verification). Best-effort: an email failure must not fail the submission.
+    try {
+      await sendTaxFormSubmittedAlert({
+        userId: user.id,
+        name: legalName,
+        email: user.email ?? null,
+        formType,
+        country: s(body.country),
+        tinLast4,
+        tinKind,
+        submittedAt: nowIso,
+        isResubmit: Boolean(prevForm),
+      });
+    } catch (alertErr) {
+      console.error("tax-form POST: admin alert failed", alertErr);
     }
 
     return NextResponse.json({ ok: true, status: "submitted" });

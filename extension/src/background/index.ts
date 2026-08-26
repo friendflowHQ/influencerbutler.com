@@ -11,6 +11,7 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
+import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchBrandEnrichment, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
@@ -228,6 +229,11 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SIGN_OUT":
       void signOut().then(() => sendResponse(undefined));
+      return true;
+    case "CAPTURE_AFFILIATE_CODE":
+      void captureAffiliateReferral(message.code, message.source).then(() =>
+        sendResponse(undefined),
+      );
       return true;
     case "FLUSH_QUEUE":
       void flush().then(() => sendResponse(undefined));

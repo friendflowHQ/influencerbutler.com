@@ -68,6 +68,11 @@ export type RuntimeMessage =
   | { kind: "GET_AUTH_STATUS" }
   | { kind: "SIGN_IN"; licenseKey: string }
   | { kind: "SIGN_OUT" }
+  // Sent by the site-referral content script when it reads an affiliate code
+  // (from the ib_aff_src cookie or a ?code= param) on an influencerbutler.com
+  // page. The background stores it first-touch so a later license activation can
+  // credit the affiliate. Fire-and-forget: the content script does not wait.
+  | { kind: "CAPTURE_AFFILIATE_CODE"; code: string; source: string | null }
   | { kind: "FLUSH_QUEUE" }
   | { kind: "GET_PAGE_STATUS" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }

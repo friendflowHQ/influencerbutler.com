@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
 import CreditReferralTab, { type AffiliateOption } from "./CreditReferralTab";
+import TaxTasksBanner from "./TaxTasksBanner";
 
 type SocialHandles = Record<string, string | null | undefined>;
 
@@ -1152,6 +1153,8 @@ export default function AdminAffiliatesPage() {
           <span className="text-sm text-red-700">{broadcast.message}</span>
         ) : null}
       </div>
+
+      <TaxTasksBanner onChanged={loadRoster} />
 
       <nav className="flex flex-wrap gap-2 border-b border-slate-200">
         {tabs.map((t) => {

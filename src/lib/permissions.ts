@@ -23,6 +23,7 @@ export type PermissionDomain =
   | "Catalogue"
   | "Marketing"
   | "Operations"
+  | "Finance"
   | "Staff";
 
 export type PermissionDef = {
@@ -97,6 +98,10 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "webhooks.view", label: "View webhook log", description: "Recent Lemon Squeezy webhook deliveries and processing errors.", domain: "Operations", risk: "normal", built: true },
   { key: "audit.view", label: "View admin audit log", description: "Read the append-only log of admin and assistant actions. Super-admin only.", domain: "Operations", risk: "normal", built: true, adminOnly: true },
 
+  // Finance (super-admin only; every route additionally requires an email 2FA code)
+  { key: "finance.view", label: "View finance dashboard", description: "Revenue recognition, bank payouts, expenses, tax planning, and the P&L report. Requires an email 2FA code. Super-admin only.", domain: "Finance", risk: "money", built: true, adminOnly: true },
+  { key: "finance.manage", label: "Manage finance records", description: "Record bank payouts, add or edit expenses, run the order backfill, and change finance settings. Super-admin only.", domain: "Finance", risk: "money", built: true, adminOnly: true },
+
   // Staff (super-admin only)
   { key: "staff.manage", label: "Manage assistants", description: "Invite assistants and set their permissions. Super-admin only.", domain: "Staff", risk: "destructive", built: true, adminOnly: true },
 ] as const;
@@ -138,5 +143,6 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Catalogue",
   "Marketing",
   "Operations",
+  "Finance",
   "Staff",
 ];

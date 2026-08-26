@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   deriveReferredSignups,
-  REFERRED_EVENTS_CAP,
+  REFERRED_EVENTS_MAX,
   type ReferredProfileRow,
   type ReferredSubscriptionRow,
 } from "../referred-signups";
@@ -174,9 +174,9 @@ describe("deriveReferredSignups events", () => {
     );
 
     expect(events.map((e) => e.type)).toEqual(["trial_converted", "trial_started", "signup"]);
-    // Anonymous by design: only type + timestamp.
+    // Anonymous by design: only type + timestamp + a channel label.
     for (const event of events) {
-      expect(Object.keys(event).sort()).toEqual(["at", "type"]);
+      expect(Object.keys(event).sort()).toEqual(["at", "channel", "type"]);
     }
   });
 
@@ -190,7 +190,7 @@ describe("deriveReferredSignups events", () => {
       ],
       [],
     );
-    expect(events).toEqual([{ type: "signup", at: "2026-07-04T00:00:00.000Z" }]);
+    expect(events).toEqual([{ type: "signup", at: "2026-07-04T00:00:00.000Z", channel: "web" }]);
   });
 
   it("only emits a cancelled event when status is cancelled AND ends_at exists", () => {
@@ -202,20 +202,20 @@ describe("deriveReferredSignups events", () => {
         sub({ user_id: "u3", status: "cancelled", ends_at: "2026-07-15T00:00:00.000Z" }),
       ],
     );
-    expect(events).toEqual([{ type: "cancelled", at: "2026-07-15T00:00:00.000Z" }]);
+    expect(events).toEqual([{ type: "cancelled", at: "2026-07-15T00:00:00.000Z", channel: "web" }]);
   });
 
-  it("caps the feed at the newest REFERRED_EVENTS_CAP events", () => {
+  it("caps the feed at the newest REFERRED_EVENTS_MAX events", () => {
+    const base = Date.parse("2026-06-01T00:00:00.000Z");
     const profiles: ReferredProfileRow[] = [];
-    for (let i = 1; i <= 30; i++) {
-      profiles.push(
-        profile({ ref_captured_at: `2026-06-${String(i).padStart(2, "0")}T00:00:00.000Z` }),
-      );
+    for (let i = 0; i < REFERRED_EVENTS_MAX + 5; i++) {
+      profiles.push(profile({ ref_captured_at: new Date(base + i * 60_000).toISOString() }));
     }
     const { events } = deriveReferredSignups(profiles, []);
-    expect(events).toHaveLength(REFERRED_EVENTS_CAP);
-    expect(events[0].at).toBe("2026-06-30T00:00:00.000Z");
-    expect(events[events.length - 1].at).toBe("2026-06-11T00:00:00.000Z");
+    expect(events).toHaveLength(REFERRED_EVENTS_MAX);
+    // Newest first, and the oldest 5 are dropped by the cap.
+    expect(Date.parse(events[0].at)).toBeGreaterThan(Date.parse(events[events.length - 1].at));
+    expect(events[0].at).toBe(new Date(base + (REFERRED_EVENTS_MAX + 4) * 60_000).toISOString());
   });
 
   it("skips rows with unparseable timestamps instead of emitting Invalid Date events", () => {
@@ -224,5 +224,111 @@ describe("deriveReferredSignups events", () => {
       [sub({ user_id: "u1", trial_started_at: "also-bad" })],
     );
     expect(events).toEqual([]);
+  });
+});
+
+describe("deriveReferredSignups lead source (channel)", () => {
+  it("labels the signup event with the profile's channel", () => {
+    const { events } = deriveReferredSignups(
+      [
+        profile({ user_id: "u1", ref_channel: "extension", ref_captured_at: "2026-07-01T00:00:00.000Z" }),
+        profile({ user_id: "u2", ref_channel: "web", ref_captured_at: "2026-07-02T00:00:00.000Z" }),
+      ],
+      [],
+    );
+    const byUser = Object.fromEntries(events.map((e) => [e.at, e.channel]));
+    expect(byUser["2026-07-01T00:00:00.000Z"]).toBe("extension");
+    expect(byUser["2026-07-02T00:00:00.000Z"]).toBe("web");
+  });
+
+  it("joins the profile channel onto that account's subscription events", () => {
+    const { events } = deriveReferredSignups(
+      [profile({ user_id: "u1", ref_channel: "extension", ref_captured_at: "2026-07-01T00:00:00.000Z" })],
+      [
+        sub({
+          user_id: "u1",
+          status: "active",
+          trial_started_at: "2026-07-03T00:00:00.000Z",
+          trial_converted_at: "2026-07-06T00:00:00.000Z",
+        }),
+      ],
+    );
+    // Every event for this account wears the account's captured source.
+    for (const event of events) expect(event.channel).toBe("extension");
+  });
+
+  it("defaults to web when the channel is absent or the account was a direct checkout", () => {
+    const { events } = deriveReferredSignups(
+      // No ref_channel (pre-migration) and no matching profile for the sub user.
+      [profile({ user_id: "u1", ref_captured_at: "2026-07-01T00:00:00.000Z" })],
+      [sub({ user_id: "u2", status: "active", pro_started_at: "2026-07-02T00:00:00.000Z" })],
+    );
+    for (const event of events) expect(event.channel).toBe("web");
+  });
+
+  it("counts signups by source", () => {
+    const { insights } = deriveReferredSignups(
+      [
+        profile({ user_id: "u1", ref_channel: "extension" }),
+        profile({ user_id: "u2", ref_channel: "extension" }),
+        profile({ user_id: "u3", ref_channel: "web" }),
+        profile({ user_id: "u4", ref_channel: null }), // legacy -> web
+      ],
+      [],
+    );
+    expect(insights.bySource).toEqual({ web: 2, extension: 2, desktop: 0 });
+  });
+});
+
+describe("deriveReferredSignups conversion rates and momentum", () => {
+  it("computes funnel conversion percentages, null when the denominator is 0", () => {
+    const { insights } = deriveReferredSignups(
+      [profile(), profile(), profile(), profile()], // 4 signups
+      [
+        sub({ user_id: "u1", status: "active", trial_started_at: "2026-07-02T00:00:00.000Z", trial_converted_at: "2026-07-05T00:00:00.000Z" }),
+        sub({ user_id: "u2", status: "on_trial", trial_started_at: "2026-07-03T00:00:00.000Z" }),
+      ],
+    );
+    // 2 trials / 4 signups = 50%; 1 paid / 2 trials = 50%.
+    expect(insights.conversionRates.signupToTrial).toBe(50);
+    expect(insights.conversionRates.trialToPaid).toBe(50);
+
+    const { insights: none } = deriveReferredSignups([], []);
+    expect(none.conversionRates.signupToTrial).toBeNull();
+    expect(none.conversionRates.trialToPaid).toBeNull();
+  });
+
+  it("buckets signups and conversions into this vs last calendar month", () => {
+    const now = Date.parse("2026-08-15T00:00:00.000Z");
+    const { insights } = deriveReferredSignups(
+      [
+        profile({ ref_captured_at: "2026-08-10T00:00:00.000Z" }), // this month
+        profile({ ref_captured_at: "2026-07-20T00:00:00.000Z" }), // last month
+        profile({ ref_captured_at: "2026-06-01T00:00:00.000Z" }), // older, ignored
+      ],
+      [
+        // Converted this month.
+        sub({ user_id: "u1", status: "active", trial_started_at: "2026-08-01T00:00:00.000Z", trial_converted_at: "2026-08-05T00:00:00.000Z" }),
+        // Direct pro start last month.
+        sub({ user_id: "u2", status: "active", pro_started_at: "2026-07-10T00:00:00.000Z" }),
+      ],
+      now,
+    );
+    expect(insights.thisMonth).toEqual({ signups: 1, conversions: 1 });
+    expect(insights.lastMonth).toEqual({ signups: 1, conversions: 1 });
+  });
+
+  it("handles the December to January month rollover", () => {
+    const now = Date.parse("2026-01-15T00:00:00.000Z");
+    const { insights } = deriveReferredSignups(
+      [
+        profile({ ref_captured_at: "2026-01-05T00:00:00.000Z" }), // this month
+        profile({ ref_captured_at: "2025-12-20T00:00:00.000Z" }), // last month
+      ],
+      [],
+      now,
+    );
+    expect(insights.thisMonth.signups).toBe(1);
+    expect(insights.lastMonth.signups).toBe(1);
   });
 });

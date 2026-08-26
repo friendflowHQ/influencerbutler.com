@@ -201,6 +201,23 @@ export type AuthState = {
   verifiedAt: number | null;
 };
 
+// The affiliate who referred this install, captured first-touch from the
+// ib_aff_src cookie / ?code= param on an influencerbutler.com visit (see the
+// site-referral content script). Kept durably here - unlike the 30-day web
+// cookie - so that when the user later connects a license key, the extension
+// can hand the code to /api/extension/auth/check and the affiliate is credited
+// even weeks later or on another device. First-touch: never overwritten once
+// set, so the first affiliate a user encountered wins.
+export type AffiliateReferralState = {
+  // The branded affiliate code, as captured (upper-cased by the site).
+  code: string;
+  // When it was captured (epoch ms). Sent to the server as the causal floor for
+  // back-attributing already-paid orders.
+  capturedAt: number;
+  // Where it came from ("cookie" | "param"), for debugging only.
+  source: string | null;
+};
+
 // Third-party API integrations (OpenAI, Amazon Creators API, deeplink
 // providers, affiliate networks) configured on the options page. Credentials
 // are encrypted at rest with AES-GCM (see src/integrations/crypto.ts) and never
@@ -392,6 +409,9 @@ export type StorageShape = {
   schemaVersion: number;
   settings: Settings;
   auth: AuthState;
+  // The referring affiliate (first-touch), or null if none captured. See
+  // AffiliateReferralState.
+  affiliate: AffiliateReferralState | null;
   integrations: IntegrationsState;
   queue: Finding[];
   lastSyncAt: number | null;
@@ -412,7 +432,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 21,
+  schemaVersion: 22,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -495,6 +515,7 @@ export const DEFAULTS: StorageShape = {
     debug: false,
   },
   auth: { licenseKey: null, email: null, verifiedAt: null },
+  affiliate: null,
   integrations: {
     global: {
       testOnStartup: false,
@@ -582,7 +603,11 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // brandKeywords tool flag (keyword chips on the Creator Connections Messages
   // widget, on by default); the tools shallow-merge backfills it. v20 -> v21
   // added the dealsOverlay tool flag (money signals on the Today's Deals grid,
-  // on by default); the tools shallow-merge backfills it.
+  // on by default); the tools shallow-merge backfills it. v21 -> v22 added the
+  // top-level `affiliate` slice (the referring affiliate captured on the site,
+  // for extension-carried attribution); an existing user starts with null and
+  // gains a code the first time they revisit influencerbutler.com with an
+  // affiliate cookie set.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -641,6 +666,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
         : [],
     },
     auth: { ...DEFAULTS.auth, ...(raw.auth ?? {}) },
+    affiliate: normalizeAffiliate(raw.affiliate),
     integrations: {
       global: migratedGlobal,
       providers: migratedProviders,
@@ -656,6 +682,21 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 21,
+    schemaVersion: 22,
   };
+}
+
+// Coerce a stored affiliate slice back to a valid AffiliateReferralState or
+// null. Defensive: a malformed value (from a tampered storage or a partial
+// write) must never break sign-in, which reads code/capturedAt off it.
+function normalizeAffiliate(
+  raw: AffiliateReferralState | null | undefined,
+): AffiliateReferralState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const code = typeof raw.code === "string" ? raw.code.trim() : "";
+  if (!code) return null;
+  const capturedAt =
+    typeof raw.capturedAt === "number" && Number.isFinite(raw.capturedAt) ? raw.capturedAt : 0;
+  const source = typeof raw.source === "string" ? raw.source : null;
+  return { code, capturedAt, source };
 }

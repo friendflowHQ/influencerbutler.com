@@ -86,11 +86,27 @@ export async function captureSignupReferral(args: {
         ref_affiliate_user_id: owner.affiliateUserId,
         ref_affiliate_code: owner.code.toUpperCase(),
         ref_captured_at: new Date().toISOString(),
+        ref_channel: "web",
       },
       { onConflict: "id" },
     );
     if (writeErr) {
-      console.warn("signup-referral: profiles upsert skipped", writeErr);
+      // A pre-20260826 prod lacks ref_channel; retry without it so the
+      // referral is still stamped (the funnel then labels it "web" anyway).
+      console.warn("signup-referral: profiles upsert retrying without ref_channel", writeErr);
+      const { error: retryErr } = await admin.from("profiles").upsert(
+        {
+          id: args.userId,
+          email: args.userEmail ?? null,
+          ref_affiliate_user_id: owner.affiliateUserId,
+          ref_affiliate_code: owner.code.toUpperCase(),
+          ref_captured_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      );
+      if (retryErr) {
+        console.warn("signup-referral: profiles upsert skipped", retryErr);
+      }
     }
   } catch (err) {
     console.warn("signup-referral: capture skipped", err);

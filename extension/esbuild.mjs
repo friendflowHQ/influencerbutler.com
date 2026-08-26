@@ -119,6 +119,12 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/content/site-referral.ts")],
+    outfile: path.join(dist, "site-referral.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/popup/index.ts")],
     outfile: path.join(dist, "popup.js"),
     format: "iife",

@@ -357,6 +357,11 @@
       "js": ["deals-hook.js"],
       "run_at": "document_start",
       "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.influencerbutler.com/*"],
+      "js": ["site-referral.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
