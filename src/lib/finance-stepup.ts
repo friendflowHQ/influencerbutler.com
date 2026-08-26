@@ -20,7 +20,10 @@ const RESEND_THROTTLE_SECONDS = 60;
 const MAX_ATTEMPTS = 5;
 const VERIFY_WINDOW_HOURS = 12;
 
-const FROM_ADDRESS = "Influencer Butler <no-reply@influencerbutler.com>";
+// hello@ is the app's established transactional sender (welcome, login link,
+// license resend, staff invite). A no-reply@ address has no sending reputation
+// and gets spam-filtered, so step-up codes never arrived. Use hello@.
+const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
 
 function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");

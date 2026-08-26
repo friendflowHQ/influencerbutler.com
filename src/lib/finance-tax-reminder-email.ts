@@ -7,7 +7,9 @@ import { sendEmail } from "@/lib/email-send";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { TaxSetAside } from "@/lib/finance-tax";
 
-const FROM_ADDRESS = "Influencer Butler <no-reply@influencerbutler.com>";
+// hello@ is the app's established transactional sender; no-reply@ has no
+// sending reputation and gets spam-filtered.
+const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
 const ADMIN_FINANCE_URL = "https://www.influencerbutler.com/dashboard/admin/finance";
 
 /** Owner recipients: FINANCE_DIGEST_INBOX, else ADMIN_EMAILS. */
