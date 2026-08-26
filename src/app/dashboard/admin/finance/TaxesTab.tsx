@@ -8,7 +8,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { usd, shortDate, todayIso } from "./format";
 
-type SetAside = { seTaxCents: number; federalCents: number; utahCents: number; totalCents: number };
+type SetAside = {
+  seTaxCents: number;
+  socialSecurityCents: number;
+  medicareCents: number;
+  federalCents: number;
+  utahCents: number;
+  totalCents: number;
+};
 
 type QuarterRow = {
   quarter: number;
@@ -32,6 +39,8 @@ type TaxResponse = {
   quarters?: QuarterRow[];
   useTaxOwedYearCents?: number;
   utahUseTaxRatePercent?: number;
+  seYear?: { seTaxCents: number; socialSecurityCents: number; medicareCents: number };
+  seTaxEducation?: string;
   morEducation?: string;
 };
 
@@ -160,6 +169,33 @@ export default function TaxesTab() {
         </div>
       ) : null}
 
+      {data?.taxMode === "passthrough" && data.seYear && data.seYear.seTaxCents > 0 ? (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
+          <p className="font-semibold">Self-employment tax (Social Security + Medicare)</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-white/70 px-3 py-2">
+              <p className="text-xs text-indigo-700">Social Security (12.4%)</p>
+              <p className="text-lg font-semibold">{usd(data.seYear.socialSecurityCents)}</p>
+            </div>
+            <div className="rounded-lg bg-white/70 px-3 py-2">
+              <p className="text-xs text-indigo-700">Medicare (2.9%)</p>
+              <p className="text-lg font-semibold">{usd(data.seYear.medicareCents)}</p>
+            </div>
+            <div className="rounded-lg bg-white/70 px-3 py-2">
+              <p className="text-xs text-indigo-700">Total SE tax (15.3%)</p>
+              <p className="text-lg font-semibold">{usd(data.seYear.seTaxCents)}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-indigo-800">{data.seTaxEducation}</p>
+          <p className="mt-2 text-xs text-indigo-700">
+            Where + when: paid together with your federal income tax as one quarterly estimated
+            payment at irs.gov/payments (Direct Pay, reason &quot;Estimated Tax&quot;), due Apr 15,
+            Jun 15, Sep 15, and Jan 15. Reported on Schedule SE with your Form 1040 at year end. Not
+            a separate bill.
+          </p>
+        </div>
+      ) : null}
+
       {data && (data.useTaxOwedYearCents ?? 0) > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-semibold">
@@ -176,9 +212,10 @@ export default function TaxesTab() {
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
         <p className="font-semibold text-slate-900">Where to pay</p>
         <p className="mt-1">
-          Federal: IRS Direct Pay (choose &quot;Estimated tax&quot;) at irs.gov/payments. Utah:
-          Taxpayer Access Point at tap.utah.gov. Email reminders go out 7 days and 1 day before each
-          deadline.
+          Federal (income tax AND self-employment tax together, as one payment): IRS Direct Pay
+          (choose &quot;Estimated tax&quot;) at irs.gov/payments. Utah: Taxpayer Access Point at
+          tap.utah.gov. Utah use tax (if any) goes on your Utah sales/use tax return, not here. Email
+          reminders go out 7 days and 1 day before each deadline.
         </p>
       </div>
     </div>

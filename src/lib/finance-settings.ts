@@ -54,7 +54,10 @@ export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   lsPayoutNetDelayDays: 14,
   refundHoldDays: 30,
   taxMode: "passthrough",
-  federalRatePercent: 22,
+  // Conservative default effective federal rate for a small pass-through after
+  // the standard deduction (a marginal bracket like 22% overstates it). Adjust
+  // in Settings to match your bracket.
+  federalRatePercent: 12,
   utahRatePercent: 4.55,
   seTaxRatePercent: 15.3,
   seTaxBasePercent: 92.35,

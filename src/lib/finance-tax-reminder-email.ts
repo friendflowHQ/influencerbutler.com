@@ -43,13 +43,17 @@ export function buildTaxReminderBody(input: TaxReminderInput): string {
   lines.push("");
   lines.push("Recommended set-aside (planning estimate, not tax advice):");
   if (input.taxMode === "passthrough" && input.setAside.seTaxCents > 0) {
-    lines.push(`  Self-employment tax: ${formatUsdFromCents(input.setAside.seTaxCents)}`);
+    lines.push(
+      `  Self-employment tax: ${formatUsdFromCents(input.setAside.seTaxCents)}  (Social Security ${formatUsdFromCents(input.setAside.socialSecurityCents)} + Medicare ${formatUsdFromCents(input.setAside.medicareCents)})`,
+    );
   }
   lines.push(`  Federal income tax: ${formatUsdFromCents(input.setAside.federalCents)}`);
   lines.push(`  Utah income tax: ${formatUsdFromCents(input.setAside.utahCents)}`);
   lines.push(`  Total: ${formatUsdFromCents(input.setAside.totalCents)}`);
   lines.push("");
-  lines.push("Pay federal at https://www.irs.gov/payments (Estimated tax) and Utah at https://tap.utah.gov.");
+  lines.push(
+    "Self-employment tax is not a separate bill: pay it together with federal income tax as one estimated payment at https://www.irs.gov/payments (Estimated tax). Pay Utah at https://tap.utah.gov.",
+  );
   lines.push("");
   if (input.useTaxOwedCents && input.useTaxOwedCents > 0) {
     lines.push(

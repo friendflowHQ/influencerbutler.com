@@ -57,10 +57,24 @@ export function daysUntil(today: string, dueDate: string): number {
 export type TaxSetAside = {
   /** Self-employment tax (passthrough mode only, else 0). */
   seTaxCents: number;
+  /** Social Security portion of SE tax (12.4% of the 15.3%). */
+  socialSecurityCents: number;
+  /** Medicare portion of SE tax (2.9% of the 15.3%). */
+  medicareCents: number;
   federalCents: number;
   utahCents: number;
   totalCents: number;
 };
+
+// SE tax split. The 15.3% is 12.4% Social Security + 2.9% Medicare. The Social
+// Security 12.4% only applies up to the annual wage base (2025: $176,100;
+// indexed yearly); Medicare 2.9% has no cap. Below the wage base both apply in
+// full, which is the case for the modest profits this tool plans for.
+export const SS_SHARE = 12.4 / 15.3;
+export const SS_WAGE_BASE_NOTE = "$176,100 for 2025 (indexed yearly)";
+
+export const SE_TAX_EDUCATION =
+  "Self-employment tax is Social Security (12.4%) + Medicare (2.9%) = 15.3%, charged on 92.35% of net profit. As a sole-proprietor LLC you pay it yourself (an employee would split it with an employer), and it applies from the first dollar of profit, which is why the effective rate looks high. You do NOT pay it separately: it is added to your federal quarterly estimated payment (IRS Direct Pay) on the same dates as income tax, and reconciled on Schedule SE with your Form 1040. Half of it is deductible, which this estimate already applies. It funds your future Social Security and Medicare benefits.";
 
 /**
  * Recommended set-aside on a period's net profit (cents). Passthrough: SE tax
@@ -70,18 +84,35 @@ export type TaxSetAside = {
  * payroll system, not here. Losses set aside nothing.
  */
 export function computeTaxSetAside(netProfitCents: number, settings: FinanceSettings): TaxSetAside {
-  if (netProfitCents <= 0) return { seTaxCents: 0, federalCents: 0, utahCents: 0, totalCents: 0 };
+  const zero: TaxSetAside = {
+    seTaxCents: 0,
+    socialSecurityCents: 0,
+    medicareCents: 0,
+    federalCents: 0,
+    utahCents: 0,
+    totalCents: 0,
+  };
+  if (netProfitCents <= 0) return zero;
 
   if (settings.taxMode === "scorp") {
     const federal = Math.round((netProfitCents * settings.scorpDistributionRatePercent) / 100);
     const utah = Math.round((netProfitCents * settings.utahRatePercent) / 100);
-    return { seTaxCents: 0, federalCents: federal, utahCents: utah, totalCents: federal + utah };
+    return { ...zero, federalCents: federal, utahCents: utah, totalCents: federal + utah };
   }
 
   const seBase = Math.round((netProfitCents * settings.seTaxBasePercent) / 100);
   const seTax = Math.round((seBase * settings.seTaxRatePercent) / 100);
+  const socialSecurity = Math.round(seTax * SS_SHARE);
+  const medicare = seTax - socialSecurity; // remainder, so the split sums exactly
   const federalBase = Math.max(0, netProfitCents - Math.round(seTax / 2));
   const federal = Math.round((federalBase * settings.federalRatePercent) / 100);
   const utah = Math.round((netProfitCents * settings.utahRatePercent) / 100);
-  return { seTaxCents: seTax, federalCents: federal, utahCents: utah, totalCents: seTax + federal + utah };
+  return {
+    seTaxCents: seTax,
+    socialSecurityCents: socialSecurity,
+    medicareCents: medicare,
+    federalCents: federal,
+    utahCents: utah,
+    totalCents: seTax + federal + utah,
+  };
 }

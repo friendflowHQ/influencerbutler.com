@@ -143,7 +143,13 @@ describe("finance-tax", () => {
     const seBase = Math.round((1000000 * 92.35) / 100);
     const seTax = Math.round((seBase * 15.3) / 100);
     expect(result.seTaxCents).toBe(seTax);
-    const federal = Math.round((1000000 - Math.round(seTax / 2)) * 0.22);
+    // SE tax splits into Social Security (12.4/15.3) + Medicare (remainder).
+    const ss = Math.round(seTax * (12.4 / 15.3));
+    expect(result.socialSecurityCents).toBe(ss);
+    expect(result.medicareCents).toBe(seTax - ss);
+    expect(result.socialSecurityCents + result.medicareCents).toBe(seTax);
+    // Federal uses the configured rate (default 12%).
+    const federal = Math.round((1000000 - Math.round(seTax / 2)) * (s.federalRatePercent / 100));
     expect(result.federalCents).toBe(federal);
     expect(result.utahCents).toBe(Math.round(1000000 * 0.0455));
     expect(result.totalCents).toBe(seTax + federal + result.utahCents);

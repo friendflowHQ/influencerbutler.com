@@ -16,6 +16,7 @@ import {
   daysUntil,
   computeTaxSetAside,
   MOR_EDUCATION,
+  SE_TAX_EDUCATION,
 } from "@/lib/finance-tax";
 
 export const runtime = "nodejs";
@@ -62,6 +63,16 @@ export async function GET(request: Request) {
     (sum: number, q) => sum + ((q as { useTaxOwedCents?: number }).useTaxOwedCents ?? 0),
     0,
   );
+  const seYear = quarters.reduce(
+    (acc: { seTaxCents: number; socialSecurityCents: number; medicareCents: number }, q) => {
+      const s = (q as { setAside: { seTaxCents: number; socialSecurityCents: number; medicareCents: number } }).setAside;
+      acc.seTaxCents += s.seTaxCents;
+      acc.socialSecurityCents += s.socialSecurityCents;
+      acc.medicareCents += s.medicareCents;
+      return acc;
+    },
+    { seTaxCents: 0, socialSecurityCents: 0, medicareCents: 0 },
+  );
 
   const upcoming = nextDeadline(today);
   return NextResponse.json({
@@ -78,6 +89,8 @@ export async function GET(request: Request) {
     quarters,
     useTaxOwedYearCents,
     utahUseTaxRatePercent: settings.utahUseTaxRatePercent,
+    seYear,
+    seTaxEducation: SE_TAX_EDUCATION,
     nextDeadline: upcoming.quarter,
     morEducation: MOR_EDUCATION,
   });
