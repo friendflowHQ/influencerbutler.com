@@ -224,6 +224,59 @@ export async function sendCombinedStatement(
 }
 
 // -------------------------------------------------------------------------
+// Payment-sent receipt
+//
+// Sent to an affiliate the moment a PayPal payout to them actually SUCCEEDS
+// (from applyPayoutStatus, so it fires exactly once whether the payout was
+// disbursed by the admin button or the auto-pay cron). Transactional: it
+// confirms money we sent, so it uses the same direct-to-Resend path.
+// -------------------------------------------------------------------------
+
+export type PaymentSentParams = {
+  to: string;
+  name: string | null;
+  amountCents: number;
+  paypalEmail: string | null;
+};
+
+/** Receipt body (plain text). */
+export function buildPaymentSentBody(params: PaymentSentParams): string {
+  const first = params.name?.split(" ")[0] || "there";
+  const lines: string[] = [];
+  lines.push(`Hi ${first},`);
+  lines.push("");
+  lines.push(
+    `We've just sent you ${formatUsdFromCents(params.amountCents)} in Influencer Butler affiliate commission via PayPal` +
+      `${params.paypalEmail ? ` to ${params.paypalEmail}` : ""}.`,
+  );
+  lines.push("");
+  lines.push(
+    "It can take a little while to land depending on PayPal. Receiving and currency-conversion fees are not covered by us, so the amount that arrives may be slightly less.",
+  );
+  lines.push("");
+  lines.push(`See your full history any time: ${DASHBOARD_URL}`);
+  lines.push("");
+  lines.push("Thanks for spreading the word.");
+  lines.push("");
+  lines.push("- The Influencer Butler team");
+  return lines.join("\n");
+}
+
+/** Send an affiliate a "you've been paid" receipt. No-op (false) with no email. */
+export async function sendAffiliatePaymentSent(params: PaymentSentParams): Promise<boolean> {
+  if (!params.to) {
+    console.error("sendAffiliatePaymentSent: no recipient email");
+    return false;
+  }
+  return sendViaResend({
+    to: params.to,
+    subject: `You've been paid ${formatUsdFromCents(params.amountCents)} in affiliate commission`,
+    text: buildPaymentSentBody(params),
+    category: "payout_paid",
+  });
+}
+
+// -------------------------------------------------------------------------
 // Tax-form / payout reminder
 //
 // Sent to an affiliate who has earned commission but cannot be paid yet

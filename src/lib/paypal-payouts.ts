@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 import { applyClawbacks } from "@/lib/affiliate-commissions";
+import { sendAffiliatePaymentSent } from "@/lib/commission-statement-email";
 import { createPayoutBatch, paypalConfigured } from "@/lib/paypal";
 
 export function payoutMinimumCents(): number {
@@ -28,6 +29,8 @@ export type PayoutRow = {
   id: string;
   user_id: string;
   status: string;
+  /** Amount sent, for the affiliate receipt email (optional; re-read if absent). */
+  gross_cents?: number | null;
   order_ids: PayoutOrderRef[] | null;
   /** Clawback adjustment ids this payout settles (optional; may be absent if the
    *  column is not selected or not migrated yet). */
@@ -149,6 +152,44 @@ export async function applyPayoutStatus(
         .eq("id", adjId)
         .is("reconciled_at", null);
       if (error) console.error("applyPayoutStatus: adjustment reconcile failed", adjId, error);
+    }
+
+    // Receipt: tell the affiliate they've been paid. Best-effort and wrapped so
+    // an email hiccup never blocks reconciliation. Fires once per payout because
+    // the ledger-status early-return above stops this branch running twice.
+    try {
+      let amountCents = typeof row.gross_cents === "number" ? row.gross_cents : 0;
+      if (amountCents <= 0) {
+        const { data: pay } = await supabase
+          .from("affiliate_payouts")
+          .select("gross_cents")
+          .eq("id", row.id)
+          .maybeSingle();
+        if (typeof pay?.gross_cents === "number") amountCents = pay.gross_cents;
+      }
+      if (amountCents > 0) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("email,paypal_email")
+          .eq("id", row.user_id)
+          .maybeSingle();
+        const to = typeof prof?.email === "string" ? prof.email : null;
+        if (to) {
+          const { data: app } = await supabase
+            .from("affiliate_applications")
+            .select("full_name")
+            .eq("user_id", row.user_id)
+            .maybeSingle();
+          await sendAffiliatePaymentSent({
+            to,
+            name: typeof app?.full_name === "string" ? app.full_name : null,
+            amountCents,
+            paypalEmail: typeof prof?.paypal_email === "string" ? prof.paypal_email : null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("applyPayoutStatus: payment-sent email failed", row.id, err);
     }
     return;
   }

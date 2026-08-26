@@ -32,6 +32,7 @@ import {
   type NotReadyMap,
 } from "@/lib/commission-statement-email";
 import { sendTaxReminderOnce } from "@/lib/tax-reminder";
+import { loadReadiness } from "@/lib/affiliate-readiness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,46 +56,6 @@ function settledPeriod(): string {
   // Subtract two months on a UTC date; the Date object normalizes year rollover.
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 2, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-/** Owed affiliate userId -> whether they can be paid yet. */
-type Readiness = { taxVerified: boolean; hasPaypal: boolean };
-
-/** Look up tax-form + PayPal readiness for the given affiliate userIds. */
-async function loadReadiness(userIds: string[]): Promise<Map<string, Readiness>> {
-  const out = new Map<string, Readiness>();
-  if (userIds.length === 0) return out;
-  const db = createAdminClient() as unknown as {
-    from: (table: string) => {
-      select: (cols: string) => {
-        in: (col: string, values: string[]) => Promise<{ data: Record<string, unknown>[] | null }>;
-      };
-    };
-  } | null;
-  if (!db) return out;
-  for (const id of userIds) out.set(id, { taxVerified: false, hasPaypal: false });
-  try {
-    const { data: tax } = await db
-      .from("affiliate_tax_forms")
-      .select("user_id,status")
-      .in("user_id", userIds);
-    for (const row of tax ?? []) {
-      const uid = typeof row.user_id === "string" ? row.user_id : null;
-      if (uid && out.has(uid)) out.get(uid)!.taxVerified = row.status === "verified";
-    }
-    const { data: profs } = await db
-      .from("profiles")
-      .select("id,paypal_email")
-      .in("id", userIds);
-    for (const row of profs ?? []) {
-      const uid = typeof row.id === "string" ? row.id : null;
-      const email = typeof row.paypal_email === "string" ? row.paypal_email.trim() : "";
-      if (uid && out.has(uid)) out.get(uid)!.hasPaypal = email.length > 0;
-    }
-  } catch (error) {
-    console.error("loadReadiness failed", error);
-  }
-  return out;
 }
 
 type ConfigClient = {
