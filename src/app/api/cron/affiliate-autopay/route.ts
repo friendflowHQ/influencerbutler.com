@@ -27,6 +27,8 @@ import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 import { loadReadiness, partitionAutopay } from "@/lib/affiliate-readiness";
 import { disburseAffiliate, payoutMinimumCents } from "@/lib/paypal-payouts";
 import { sendPayoutsDueDigest, type PayoutDigestRow } from "@/lib/payout-digest-email";
+import { isAutopayArmed, autopayCapCents, autopayPeriod } from "@/lib/affiliate-autopay-state";
+import { sendTaxReminderOnce } from "@/lib/tax-reminder";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
 
 export const runtime = "nodejs";
@@ -41,46 +43,8 @@ function isAuthorized(request: Request): boolean {
   return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
 }
 
-function currentPeriod(): string {
-  const now = new Date();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-function capCents(): number {
-  const raw = Number(process.env.AFFILIATE_AUTOPAY_CAP_CENTS);
-  return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 20000; // $200 default
-}
-
-/**
- * Whether auto-pay may move money. The env var AFFILIATE_AUTOPAY_ENABLED="true"
- * is a hard override; otherwise the dashboard toggle (stored in app_config under
- * affiliate_autopay_armed) decides, so the owner can arm/disarm without touching
- * Vercel. Defaults to shadow (false) when neither is set.
- */
-async function isArmed(): Promise<boolean> {
-  if (process.env.AFFILIATE_AUTOPAY_ENABLED === "true") return true;
-  const db = createAdminClient() as unknown as {
-    from: (t: string) => {
-      select: (c: string) => {
-        eq: (k: string, v: string) => {
-          maybeSingle: () => Promise<{ data: Record<string, unknown> | null }>;
-        };
-      };
-    };
-  } | null;
-  if (!db) return false;
-  try {
-    const { data } = await db
-      .from("app_config")
-      .select("value")
-      .eq("key", "affiliate_autopay_armed")
-      .maybeSingle();
-    const v = (data?.value ?? null) as { armed?: boolean } | null;
-    return v?.armed === true;
-  } catch {
-    return false;
-  }
-}
+// isArmed / capCents / period now live in affiliate-autopay-state (shared with
+// the toggle route and the on-tax-verify auto-release).
 
 function displayName(s: AffiliateStatement): string {
   return s.fullName || s.email || s.affiliateCode || s.userId;
@@ -135,9 +99,10 @@ export async function GET(request: Request) {
   }
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
-  const period = currentPeriod();
-  const armed = await isArmed();
-  const cap = capCents();
+  const admin = createAdminClient();
+  const period = autopayPeriod();
+  const armed = await isAutopayArmed(admin);
+  const cap = autopayCapCents();
   const min = payoutMinimumCents();
 
   if (!dry && (await alreadyRan(period))) {
@@ -156,7 +121,6 @@ export async function GET(request: Request) {
   });
 
   const rows: PayoutDigestRow[] = [];
-  const admin = createAdminClient();
 
   // Auto-pay the eligible, under-cap affiliates (only when armed and not a dry run).
   let paidCount = 0;
@@ -225,6 +189,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, dry: true, armed, period, cap, min, rows });
   }
 
+  // Nudge affiliates who are payable NOW but not set up (missing tax form /
+  // PayPal), based on their current cleared balance. sendTaxReminderOnce is
+  // throttled to one email per affiliate per month, so it dedupes with the
+  // monthly commission-statements reminder rather than double-emailing.
+  let remindersSent = 0;
+  for (const nr of notReady) {
+    const to = nr.statement.email;
+    if (!to) continue;
+    const owed = nr.statement.owedCents + nr.statement.adjustmentCents;
+    const sent = await sendTaxReminderOnce(admin, nr.statement.userId, {
+      to,
+      name: nr.statement.fullName,
+      owedCents: owed,
+      missingTax: nr.missingTax,
+      missingPaypal: nr.missingPaypal,
+    });
+    if (sent) remindersSent += 1;
+  }
+
   const digestSent = await sendPayoutsDueDigest(rows, { armed, period, capCents: cap });
 
   await markRan(period, {
@@ -235,6 +218,7 @@ export async function GET(request: Request) {
     paidCount,
     paidCents,
     failedCount: failed.length,
+    remindersSent,
     digestSent,
   });
 
@@ -247,6 +231,7 @@ export async function GET(request: Request) {
     paidCents,
     heldOverCap: heldOverCap.length,
     notReady: notReady.length,
+    remindersSent,
     failed,
     digestSent,
   });

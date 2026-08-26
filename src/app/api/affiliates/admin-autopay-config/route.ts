@@ -9,19 +9,13 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { AUTOPAY_ARMED_KEY, autopayCapCents, isAutopayArmed } from "@/lib/affiliate-autopay-state";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KEY = "affiliate_autopay_armed";
-
 type ConfigClient = {
   from: (t: string) => {
-    select: (c: string) => {
-      eq: (k: string, v: string) => {
-        maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
-      };
-    };
     upsert: (
       payload: Record<string, unknown>,
       options?: { onConflict: string },
@@ -29,32 +23,17 @@ type ConfigClient = {
   };
 };
 
-function capCents(): number {
-  const raw = Number(process.env.AFFILIATE_AUTOPAY_CAP_CENTS);
-  return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 20000;
-}
-
-async function readArmed(db: ConfigClient): Promise<boolean> {
-  try {
-    const { data } = await db.from("app_config").select("value").eq("key", KEY).maybeSingle();
-    const v = (data?.value ?? null) as { armed?: boolean } | null;
-    return v?.armed === true;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET(request: Request) {
   const actor = await requirePermission("affiliates.view", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const db = createAdminClient() as unknown as ConfigClient | null;
+  const db = createAdminClient();
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  // Env var forces armed on regardless of the toggle; surface that so the UI can
-  // explain why the switch is locked.
+  // isAutopayArmed already folds in the env override; surface envForced separately
+  // so the UI can explain a locked switch.
   const envForced = process.env.AFFILIATE_AUTOPAY_ENABLED === "true";
-  const dbArmed = await readArmed(db);
-  return NextResponse.json({ armed: envForced || dbArmed, envForced, capCents: capCents() });
+  const armed = await isAutopayArmed(db);
+  return NextResponse.json({ armed, envForced, capCents: autopayCapCents() });
 }
 
 export async function POST(request: Request) {
@@ -75,7 +54,7 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
   const { error } = await db.from("app_config").upsert(
     {
-      key: KEY,
+      key: AUTOPAY_ARMED_KEY,
       value: { armed, updated_by: actor.email ?? null },
       updated_at: nowIso,
       updated_by: actor.email ?? "admin",
@@ -91,7 +70,7 @@ export async function POST(request: Request) {
     actor,
     action: "affiliate.autopay.toggle",
     targetType: "system",
-    targetId: KEY,
+    targetId: AUTOPAY_ARMED_KEY,
     details: { armed },
   });
 
