@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { AUTOPAY_ARMED_KEY, autopayCapCents, isAutopayArmed } from "@/lib/affiliate-autopay-state";
+import { crossSiteBlocked } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const blocked = crossSiteBlocked(request);
+  if (blocked) return blocked;
+
   const actor = await requirePermission("affiliates.payout", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 

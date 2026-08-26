@@ -8,6 +8,7 @@ import {
   isLastDayOfLocalMonth,
   buildTaxReviewReminderBody,
   buildTaxFormSubmittedBody,
+  submittedAlertSubject,
   type TaxReviewReminderInput,
 } from "../tax-review-reminder-email";
 
@@ -125,5 +126,14 @@ describe("buildTaxFormSubmittedBody", () => {
   it("flags resubmissions", () => {
     const body = buildTaxFormSubmittedBody({ ...input, isResubmit: true });
     expect(body).toContain("re-submitted");
+  });
+});
+
+describe("submittedAlertSubject", () => {
+  it("names the form type but never the affiliate's legal name", () => {
+    const subject = submittedAlertSubject("W-9");
+    expect(subject).toBe("Tax form submitted (W-9)");
+    expect(subject).not.toContain("Beth");
+    expect(subject).not.toContain("Samantha");
   });
 });

@@ -5,6 +5,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 import { disburseAffiliate, payoutMinimumCents } from "@/lib/paypal-payouts";
 import { isAutopayArmed, autopayCapCents, autopayPeriod } from "@/lib/affiliate-autopay-state";
+import { crossSiteBlocked } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,9 @@ type Body = {
 };
 
 export async function POST(request: Request) {
+  const blocked = crossSiteBlocked(request);
+  if (blocked) return blocked;
+
   const actor = await requirePermission("affiliates.tax.view", request);
   if (!actor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 import { loadPendingTaxForms } from "@/lib/tax-review-pending";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 
@@ -40,8 +41,22 @@ export async function GET(request: Request) {
         });
       }
     } catch (error) {
-      console.error("admin-tax-pending: commissions load failed", error);
+      console.error("admin-tax-pending: commissions load failed", {
+        code: (error as { code?: string } | null)?.code ?? null,
+      });
     }
+  }
+
+  // Audit reads that actually surface affiliate PII (name/address/tin_last4),
+  // not the quiet empty-list poll the dashboard fires on every mount.
+  if (pending.length > 0) {
+    await logAdminAction({
+      actor,
+      action: "affiliate.tax.list",
+      targetType: userIdFilter ? "user" : "affiliate_tax_forms",
+      targetId: userIdFilter ?? "pending",
+      details: { count: pending.length, filtered: Boolean(userIdFilter) },
+    });
   }
 
   return NextResponse.json({

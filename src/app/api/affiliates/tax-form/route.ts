@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptTin, tinLastFour, taxKeyConfigured } from "@/lib/tax-crypto";
 import { certificationTextFor, type TaxFormType } from "@/lib/tax-certification";
 import { sendTaxFormSubmittedAlert } from "@/lib/tax-review-reminder-email";
+import { logDbError } from "@/lib/log-db-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,7 +73,7 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      console.error("tax-form GET: query failed", error);
+      logDbError("tax-form GET: query failed", error);
       return NextResponse.json({ error: "Could not load tax form" }, { status: 500 });
     }
 
@@ -217,7 +218,7 @@ export async function POST(request: Request) {
         { onConflict: "user_id" },
       );
       if (tinErr) {
-        console.error("tax-form POST: tin upsert failed", tinErr);
+        logDbError("tax-form POST: tin upsert failed", tinErr);
         return NextResponse.json({ error: "Could not save tax form" }, { status: 500 });
       }
     }
@@ -257,7 +258,7 @@ export async function POST(request: Request) {
     );
 
     if (formErr) {
-      console.error("tax-form POST: form upsert failed", formErr);
+      logDbError("tax-form POST: form upsert failed", formErr);
       return NextResponse.json({ error: "Could not save tax form" }, { status: 500 });
     }
 
@@ -279,7 +280,7 @@ export async function POST(request: Request) {
       submitted_at: nowIso,
     });
     if (eventErr) {
-      console.error("tax-form POST: audit event insert failed", eventErr);
+      logDbError("tax-form POST: audit event insert failed", eventErr);
     }
 
     // Alert the admin so the form gets reviewed promptly (payouts are blocked on

@@ -28,8 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
-.env*.local
+# env files: ignore every variant, keep the checked-in template.
+.env*
+!.env.example
+.dev.vars
 
 # vercel
 .vercel

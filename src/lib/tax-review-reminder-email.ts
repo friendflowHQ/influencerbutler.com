@@ -180,8 +180,17 @@ export function buildTaxFormSubmittedBody(input: TaxFormSubmittedInput): string 
 }
 
 /** Alert the owner that a tax form just landed. Returns true if any sent. */
+/**
+ * Subject for the submitted alert. Deliberately excludes the affiliate's legal
+ * name: subjects persist to email_sends.subject, which is readable with the
+ * assistant-grantable reports.view permission. The name stays in the body only.
+ */
+export function submittedAlertSubject(formType: string): string {
+  return `Tax form submitted (${formType})`;
+}
+
 export async function sendTaxFormSubmittedAlert(input: TaxFormSubmittedInput): Promise<boolean> {
-  const subject = `Tax form submitted: ${input.name} (${input.formType})`;
+  const subject = submittedAlertSubject(input.formType);
   const text = buildTaxFormSubmittedBody(input);
   const html = bodyToHtml(text);
   let anyOk = false;

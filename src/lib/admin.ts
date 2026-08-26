@@ -76,22 +76,30 @@ export async function getSessionUser(): Promise<AdminSession | null> {
     },
   ) as unknown as {
     auth: {
-      getSession: () => Promise<{
-        data: { session: { user?: { id?: string; email?: string | null } } | null };
+      getUser: () => Promise<{
+        data: { user: { id?: string; email?: string | null } | null };
+        error: unknown;
       }>;
     };
   };
 
   try {
+    // SECURITY: getUser() revalidates the JWT against the Supabase Auth server.
+    // Never use getSession() here - it only decodes the cookie and checks
+    // expiry, so a forged cookie carrying an ADMIN_EMAILS address would pass
+    // and hand the caller full admin. This gate backs requirePermission,
+    // getAdminSession, resolveActor, and /api/admin/whoami.
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const userId = session?.user?.id ?? null;
-    const email = session?.user?.email ?? null;
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error) return null;
+    const userId = user?.id ?? null;
+    const email = user?.email ?? null;
     if (!userId || !email) return null;
     return { userId, email };
   } catch (error) {
-    console.error("getSessionUser: auth.getSession threw", error);
+    console.error("getSessionUser: auth.getUser threw", error);
     return null;
   }
 }
