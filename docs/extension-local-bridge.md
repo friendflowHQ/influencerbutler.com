@@ -3,9 +3,11 @@
 Spec for the Influencer Butler desktop app (separate repo) to receive findings
 from the Chrome extension in real time, so things the user spots while
 browsing Amazon surface as HUD action items without a round trip through the
-website. The extension side is already built and abstracted: implementing
-this spec and flipping `local-transport.ts` from stub to live is the only
-extension change needed (`extension/src/transport/local-transport.ts`).
+website. Both sides are shipped and live: the extension transport is
+`extension/src/transport/local-transport.ts` plus
+`extension/src/background/hud-bridge.ts`, and the desktop server is
+`app/extension-bridge/ws-server.js` in the desktop repo. This doc describes
+the protocol as implemented.
 
 The website API channel (`/api/extension/*`) stays as-is; the bridge is an
 additional, independent channel. The extension prefers the bridge when it is
@@ -24,21 +26,30 @@ available and falls back to the API.
 ## Pairing handshake
 
 The extension cannot read files on disk, so pairing uses a short code shown
-in the HUD:
+in the HUD. It is two round trips driven from the extension popup, each on
+its own short-lived socket:
 
-1. Extension connects and sends `{ "type": "hello", "clientId": "<random stable id>" }`.
-2. Desktop shows a one-time 6-digit pairing code in the HUD ("Chrome
-   extension wants to connect").
-3. The user types the code into the extension popup; extension sends
-   `{ "type": "pair", "code": "123456", "clientId": "<same id>" }`.
+1. The user clicks Connect in the popup; the extension sends
+   `{ "type": "pair.request", "clientId": "<random stable id>" }`.
+2. Desktop generates a one-time 6-digit code, keyed to that clientId, shows
+   it in the HUD, and replies `{ "type": "pair.pending", "expiresInMs": 120000 }`.
+3. The user types the code into the popup; the extension sends
+   `{ "type": "pair", "clientId": "<same id>", "code": "123456" }`
+   (an optional `label` names the pairing).
 4. Desktop replies `{ "type": "paired", "token": "<32-byte hex>" }` and
-   persists (clientId, token). Extension stores the token in
-   `chrome.storage.local`.
-5. On reconnect the extension sends `{ "type": "auth", "token": "<hex>" }`
-   and the desktop replies `{ "type": "authed" }` or closes the socket.
+   persists (clientId, token) in its pairing store. Extension stores the
+   token in `chrome.storage.local`.
+5. On a wrong code, missing pairing request, or too many attempts, desktop
+   replies `{ "type": "pair.error", "message": "<short line>" }` instead
+   (`attemptsLeft` is included on wrong-code errors). The socket stays open;
+   the message is shown verbatim in the popup.
+6. On reconnect the extension sends `{ "type": "auth", "token": "<hex>" }`
+   and the desktop replies `{ "type": "authed" }` or
+   `{ "type": "auth.error", "message": "Not paired." }`.
 
-Codes expire after 2 minutes; 5 wrong codes close the socket. Unpairing from
-either side deletes the token.
+Codes expire after 2 minutes; after 5 wrong attempts the pending code is
+burned and the user must click Connect to start over. Unpairing from either
+side deletes the token.
 
 ## Message envelope
 
@@ -149,16 +160,26 @@ Before showing command buttons, the extension probes:
   "dealWorkspaces": [
     { "key": "default", "label": "Deals Influencer Butler (main)" },
     { "key": "garden-bargains", "label": "Garden Bargains" }
-  ]
+  ],
+  "creatorMode": "both",
+  "paired": false
 }
 ```
 
 `dealWorkspaces` is the app's real workspace list (including the user's own
-niche clones); the extension falls back to a static hint list if absent. If
-the app requires pairing (the handshake above), it MAY instead reply
-`{ "type": "needs-pairing" }` and the extension will prompt the user for the
-code. The `Origin` check (`chrome-extension://<id>`) is the security boundary
-for loopback; pairing is optional hardening.
+niche clones); the extension falls back to a static hint list if absent.
+`creatorMode` is the channel the user declared in the desktop app
+(`"onsite"`, `"offsite"`, or `"both"`); `paired` reports whether the socket's
+clientId (if any) already holds a token.
+
+The probe is unauthenticated by design: it drives the install/upsell funnel
+and leaks nothing. There is no separate `needs-pairing` frame; instead, a
+command sent without auth gets its normal result frame with
+`"ok": false, "needsPairing": true` (e.g.
+`{ "type": "command.result", "ok": false, "needsPairing": true, "message": "Connect the extension to the app first." }`)
+and the extension then prompts the user to pair. The `Origin` check
+(`chrome-extension://<id>`) plus loopback binding is the transport security
+boundary; pairing gates every command on top of it.
 
 ### Command frames
 
