@@ -74,6 +74,11 @@ export const SEED_RECURRING: SeedRecurring[] = [
   // Tello renews around the 28th; last recorded renewal 2026-07-28, so the
   // recurring template picks up from the 2026-08-28 renewal onward.
   { vendor: "Tello", category: "utilities", amountCents: 1456, startsOn: "2026-08-28", dayOfMonth: 28, note: "Phone plan (5 GB, unlimited min/text), seeded from Tello order history" },
+  // Claude was not in the cost sheet (empty column) but is a real recurring
+  // expense: from the Claude billing screen it settled at $214.90/mo on the
+  // 24th since April 2026. Recurring from April captures the history and
+  // projects forward; edit the amount if it changes.
+  { vendor: "Claude", category: "software_hosting", amountCents: 21490, startsOn: "2026-04-01", dayOfMonth: 24, note: "Claude subscription (from Claude billing, ~$214.90/mo since April 2026); adjust if the amount changed" },
 ];
 
 function slug(vendor: string): string {
