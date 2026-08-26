@@ -1246,6 +1246,9 @@ export async function POST(request: Request) {
     },
 
     affiliate_activated: async () => {
+      // Legacy path: new affiliates onboard self-hosted (AFFILIATE_SELF_HOSTED,
+      // default on) and never touch the LS portal, but LS still delivers this
+      // event for affiliates activated in its own system, so keep it working.
       if (!recordId) return;
 
       const rawEmail =
@@ -1339,17 +1342,36 @@ export async function POST(request: Request) {
         );
       }
 
-      await assertWrite(
-        "profiles.upsert(affiliate_activated)",
-        supabase.from("profiles").upsert(
-          {
+      // Split update/insert instead of upsert: profiles.email is NOT NULL and
+      // Postgres validates the proposed insert row BEFORE on-conflict
+      // resolution, so an email-less upsert 23502s even when the row already
+      // exists. The update side must NOT carry email (the account email may
+      // have changed since the affiliate application); the insert side must
+      // (fresh row for an auth-only or application-only match).
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profileRow) {
+        await assertWrite(
+          "profiles.update(affiliate_activated)",
+          supabase
+            .from("profiles")
+            .update({ is_affiliate: true, ls_affiliate_id: recordId })
+            .eq("id", userId),
+        );
+      } else {
+        await assertWrite(
+          "profiles.insert(affiliate_activated)",
+          supabase.from("profiles").insert({
             id: userId,
+            email,
             is_affiliate: true,
             ls_affiliate_id: recordId,
-          },
-          { onConflict: "id" },
-        ),
-      );
+          }),
+        );
+      }
 
       // LS exposes no activation timestamp, so stamp our own the FIRST time we
       // learn they are active. The is(null) guard keeps the original date if
