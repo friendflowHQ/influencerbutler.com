@@ -161,6 +161,7 @@ describe("captureSignupReferral happy path", () => {
       ref_affiliate_user_id: "affiliate-id",
       ref_affiliate_code: "SAMANTHA",
       ref_captured_at: NOW.toISOString(),
+      ref_channel: "web",
     });
     expect(id).toBe("new-user-id");
   });
@@ -176,6 +177,7 @@ describe("captureSignupReferral happy path", () => {
       ref_affiliate_user_id: "affiliate-id",
       ref_affiliate_code: "SAMANTHA",
       ref_captured_at: NOW.toISOString(),
+      ref_channel: "web",
     });
   });
 
