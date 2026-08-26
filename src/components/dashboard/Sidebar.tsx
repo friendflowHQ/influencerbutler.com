@@ -137,6 +137,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     const items = [
       { href: "/dashboard/admin", label: "Overview", perm: "reports.view", built: true },
       { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/finance", label: "Finance", perm: "finance.view", built: true },
       { href: "/dashboard/admin/emails", label: "Emails", perm: "reports.view", built: true },
       { href: "/dashboard/admin/blog", label: "Blog", perm: "blog.manage", built: true },
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },

@@ -174,6 +174,13 @@ function TaxFormEditor({
     if (signatureMismatch) return setError("Your signature must match your legal name exactly.");
     if (!certified) return setError("You must certify the form to submit it.");
     if (isUsPerson && !tin.trim()) return setError("Enter your SSN or EIN.");
+    // The IRS needs a mailing address on the 1099 (W-9) / W-8BEN, so it is
+    // required here, not optional.
+    if (!address1.trim()) return setError("Enter your street address.");
+    if (!city.trim()) return setError("Enter your city.");
+    if (isUsPerson && !region.trim()) return setError("Enter your state.");
+    if (isUsPerson && !postalCode.trim()) return setError("Enter your ZIP code.");
+    if (!country.trim()) return setError("Enter your country.");
     setSubmitting(true);
     try {
       const res = await fetch("/api/affiliates/tax-form", {
@@ -284,7 +291,7 @@ function TaxFormEditor({
           </Field>
         ) : null}
 
-        <Field label="Address">
+        <Field label="Address (the IRS requires this on your tax form)">
           <input className={inputCls} placeholder="Street address" value={address1} onChange={(e) => setAddress1(e.target.value)} />
           <input className={`${inputCls} mt-2`} placeholder="Apt, suite (optional)" value={address2} onChange={(e) => setAddress2(e.target.value)} />
           <div className="mt-2 grid grid-cols-2 gap-2">

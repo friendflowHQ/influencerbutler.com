@@ -18,6 +18,7 @@ export type PendingTaxForm = {
   formType: string | null;
   legalName: string | null;
   country: string | null;
+  address: string | null;
   tinLast4: string | null;
   tinKind: string | null;
   submittedAt: string | null;
@@ -179,6 +180,13 @@ export default function TaxTasksBanner({ onChanged }: { onChanged?: () => void }
                 Submitted {formatDateShort(p.submittedAt)}
               </span>
               <span className="text-xs text-slate-600">Payable {formatUsd(p.payableCents)}</span>
+              <span
+                className={`text-xs ${p.address ? "text-slate-600" : "font-semibold text-red-700"}`}
+              >
+                {p.address
+                  ? `${p.address}${p.country ? `, ${p.country}` : ""}`
+                  : "No address on file (needed for the 1099)"}
+              </span>
               <div className="ml-auto flex items-center gap-2">
                 {state.kind === "success" ? (
                   <span className="text-xs font-medium text-emerald-700">{state.message}</span>

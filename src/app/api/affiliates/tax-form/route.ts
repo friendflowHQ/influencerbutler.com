@@ -155,6 +155,22 @@ export async function POST(request: Request) {
         );
       }
     }
+    // A mailing address is required on both the W-9 (it goes on the 1099-NEC we
+    // file) and the W-8BEN (permanent residence address). US filers also need
+    // state + ZIP; some countries have no region/postal, so W-8 leaves those
+    // optional.
+    if (!s(body.addressLine1)) {
+      return NextResponse.json({ error: "Street address is required" }, { status: 400 });
+    }
+    if (!s(body.city)) {
+      return NextResponse.json({ error: "City is required" }, { status: 400 });
+    }
+    if (!s(body.country)) {
+      return NextResponse.json({ error: "Country is required" }, { status: 400 });
+    }
+    if (formType === "W-9" && (!s(body.region) || !s(body.postalCode))) {
+      return NextResponse.json({ error: "State and ZIP code are required" }, { status: 400 });
+    }
     const tinKind = s(body.tinKind);
     if (!tinKind || !TIN_KINDS.has(tinKind)) {
       return NextResponse.json({ error: "Select a valid taxpayer ID type" }, { status: 400 });

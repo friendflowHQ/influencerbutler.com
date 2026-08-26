@@ -518,6 +518,51 @@ async function supersedeStaleTrials(
  * never affect webhook processing. An empty redemption result is an accepted
  * loss - the redemption record can lag the order webhook by a moment.
  */
+/**
+ * Best-effort capture of the Lemon Squeezy money breakdown (USD cents) onto
+ * the order row, for the admin Finance dashboard. Never throws and swallows
+ * column-missing errors (42703): prod migrations are applied by hand, so this
+ * must not break order processing while the finance migration is pending.
+ */
+async function captureOrderMoneyBreakdown(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+  attrs: Record<string, unknown>,
+): Promise<void> {
+  const cents = (value: unknown): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
+
+  const currency = getString(attrs.currency)?.toUpperCase() ?? null;
+  // Prefer the *_usd fields; fall back to the raw fields only for USD orders.
+  const usdFallback = (usd: unknown, raw: unknown): number | null =>
+    cents(usd) ?? (currency === "USD" ? cents(raw) : null);
+
+  const payload: Record<string, unknown> = {};
+  const subtotal = usdFallback(attrs.subtotal_usd, attrs.subtotal);
+  const tax = usdFallback(attrs.tax_usd, attrs.tax);
+  const total = usdFallback(attrs.total_usd, attrs.total);
+  const refunded = usdFallback(attrs.refunded_amount_usd, attrs.refunded_amount);
+  if (subtotal !== null) payload.subtotal_usd_cents = subtotal;
+  if (tax !== null) payload.tax_usd_cents = tax;
+  if (total !== null) payload.total_usd_cents = total;
+  if (refunded !== null) payload.refunded_usd_cents = refunded;
+  const refundedAt = getString(attrs.refunded_at);
+  if (refundedAt) payload.refunded_at = refundedAt;
+  if (Object.keys(payload).length === 0) return;
+
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update(payload)
+      .eq("ls_order_id", lsOrderId);
+    if (error && error.code !== "42703") {
+      console.error("captureOrderMoneyBreakdown: update failed", error, { lsOrderId });
+    }
+  } catch (error) {
+    console.error("captureOrderMoneyBreakdown: update threw", error, { lsOrderId });
+  }
+}
+
 async function captureOrderDiscount(
   supabase: SupabaseServiceClient,
   lsOrderId: string,
@@ -694,6 +739,7 @@ export async function POST(request: Request) {
 
       // Analytics only - never throws, never blocks order processing.
       await captureOrderDiscount(supabase, recordId, attrs.discount_total);
+      await captureOrderMoneyBreakdown(supabase, recordId, attrs);
 
       if (lsCustomerId) {
         await assertWrite(
@@ -784,6 +830,16 @@ export async function POST(request: Request) {
           .update({ status: getString(attrs.status) ?? "refunded" })
           .eq("ls_order_id", recordId),
       );
+
+      // Finance enrichment: refunded amount + timestamp (best-effort).
+      await captureOrderMoneyBreakdown(supabase, recordId, {
+        ...attrs,
+        // A full refund without an explicit amount refunds the whole total.
+        refunded_amount_usd:
+          attrs.refunded_amount_usd ??
+          (getString(attrs.status) === "refunded" ? attrs.total_usd : undefined),
+        refunded_at: attrs.refunded_at ?? new Date().toISOString(),
+      });
 
       const affiliateUserId =
         typeof existingOrder?.ref_affiliate_user_id === "string"
@@ -1171,6 +1227,7 @@ export async function POST(request: Request) {
       // A successful payment on a trial subscription is also its conversion
       // moment (belt-and-braces alongside subscription_updated).
       await captureOrderDiscount(supabase, renewalOrderId, attrs.discount_total);
+      await captureOrderMoneyBreakdown(supabase, renewalOrderId, attrs);
       if (lsSubscriptionId) {
         await stampTrialConversion(supabase, lsSubscriptionId);
       }

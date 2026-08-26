@@ -87,6 +87,18 @@ export default function TaxActionBar({ userId }: { userId: string }) {
           <span> - payable {formatUsd(pending.payableCents)}</span>
         ) : null}
         . They cannot be paid until you verify it.
+        <div className="mt-0.5 text-xs">
+          {pending.address ? (
+            <span>
+              Address: {pending.address}
+              {pending.country ? `, ${pending.country}` : ""}
+            </span>
+          ) : (
+            <span className="font-semibold text-red-700">
+              No address on file - needed for the 1099. Consider rejecting with a note to add it.
+            </span>
+          )}
+        </div>
       </div>
       <div className="ml-auto flex items-center gap-2">
         {state.kind === "success" ? (

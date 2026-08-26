@@ -13,6 +13,8 @@ export type PendingTaxForm = {
   formType: string | null;
   legalName: string | null;
   country: string | null;
+  /** Mailing address as one display line (needed on the 1099-NEC), or null if the affiliate skipped it. */
+  address: string | null;
   tinLast4: string | null;
   tinKind: string | null;
   submittedAt: string | null;
@@ -41,7 +43,9 @@ export async function loadPendingTaxForms(): Promise<PendingTaxForm[]> {
   try {
     const { data: forms, error } = await db
       .from("affiliate_tax_forms")
-      .select("user_id,form_type,legal_name,country,tin_last4,tin_kind,submitted_at")
+      .select(
+        "user_id,form_type,legal_name,country,address_line1,address_line2,city,region,postal_code,tin_last4,tin_kind,submitted_at",
+      )
       .eq("status", "submitted");
     if (error) {
       console.error("loadPendingTaxForms: forms query failed", error);
@@ -52,6 +56,13 @@ export async function loadPendingTaxForms(): Promise<PendingTaxForm[]> {
     for (const row of forms ?? []) {
       const userId = str(row.user_id);
       if (!userId) continue;
+      const address = [
+        [str(row.address_line1), str(row.address_line2)].filter(Boolean).join(" "),
+        str(row.city),
+        [str(row.region), str(row.postal_code)].filter(Boolean).join(" "),
+      ]
+        .filter(Boolean)
+        .join(", ");
       rows.push({
         userId,
         name: null,
@@ -59,6 +70,7 @@ export async function loadPendingTaxForms(): Promise<PendingTaxForm[]> {
         formType: str(row.form_type),
         legalName: str(row.legal_name),
         country: str(row.country),
+        address: address.length > 0 ? address : null,
         tinLast4: str(row.tin_last4),
         tinKind: str(row.tin_kind),
         submittedAt: str(row.submitted_at),
