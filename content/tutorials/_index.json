@@ -288,6 +288,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "foyer-butler",
+      "title": "Foyer Butler: one shoppable link for your bio",
+      "category": "Amazon",
+      "summary": "Build a hosted link-in-bio page from your tracked Butler Links, publish it at your own handle, and see every tap and sale in your Ledger.",
+      "order": 127,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
