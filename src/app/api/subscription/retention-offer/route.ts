@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -92,7 +93,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { data: ownRow } = await userClient
+    // The subscriptions table has RLS enabled with no SELECT policy, so the
+    // anon/ssr user client reads back empty even for the owner's own rows.
+    // Read the ownership row with the service-role client, still keyed by both
+    // ls_subscription_id and the authenticated user_id so a caller can only
+    // confirm a subscription that is actually theirs.
+    const admin = createAdminClient();
+    const { data: ownRow } = await admin
       .from("subscriptions")
       .select("id,user_id,ls_subscription_id,ls_variant_id")
       .eq("ls_subscription_id", subscriptionId)
