@@ -17,7 +17,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How do taxes work?",
-    a: "Because we pay you directly, you complete your tax form in your affiliate dashboard: a W-9 if you're in the US, or a W-8BEN / W-8BEN-E if you're outside the US. Your taxpayer ID is encrypted and used only to prepare your 1099. If you're a US affiliate earning $600 or more in a calendar year, we issue your 1099-NEC. Non-US affiliates provide a W-8BEN and are responsible for reporting income in their own country; US withholding may apply depending on your tax treaty.",
+    a: "Because we pay you directly, you complete your tax form in your affiliate dashboard: a W-9 if you're in the US, or a W-8BEN / W-8BEN-E if you're outside the US. Your taxpayer ID is encrypted and used only to prepare your 1099. If you're a US affiliate earning at or above the IRS reporting threshold in a calendar year ($600 through 2025, rising to $2,000 for payments made in 2026 and later), we issue your 1099-NEC. Non-US affiliates provide a W-8BEN and are responsible for reporting income in their own country; US withholding may apply depending on your tax treaty.",
   },
   {
     q: "What if my referral cancels or refunds?",
