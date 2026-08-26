@@ -1,10 +1,16 @@
-import { ENDPOINTS, EXT_VERSION } from "../shared/constants";
+import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
 import type { FeedbackInput, FeedbackResult } from "../shared/messages";
 
 // Sends a single feedback submission to the site. Attaches the license key as
 // a Bearer token when the user has connected one, so signed-in feedback is
 // attributed; anonymous feedback is fully supported (the endpoint allows it).
+
+// The reported version is read from the running manifest rather than a source
+// constant, so it can never drift from the build the user actually has.
+export function extensionVersion(): string {
+  return chrome.runtime.getManifest().version;
+}
 
 export async function sendFeedback(input: FeedbackInput): Promise<FeedbackResult> {
   const message = input.message?.trim() ?? "";
@@ -22,7 +28,7 @@ export async function sendFeedback(input: FeedbackInput): Promise<FeedbackResult
         feedback_type: input.feedbackType,
         message,
         page_url: input.pageUrl ?? null,
-        ext_version: EXT_VERSION,
+        ext_version: extensionVersion(),
         browser: "chrome",
       }),
     });
