@@ -68,3 +68,25 @@ export async function callSupportWorker<T = unknown>(
 
   return { ok: true, status: res.status, data: (payload ?? {}) as T };
 }
+
+/**
+ * Fetch a binary /agent/* path (e.g. an attachment stream) with the bot bearer
+ * and return the raw upstream Response so the caller can pipe the body through.
+ * Returns null when the bearer is unconfigured or the fetch fails at transport
+ * level (the caller maps that to a 500 / 502). Unlike callSupportWorker this
+ * does NOT parse JSON - it is for streaming stored attachment bytes.
+ */
+export async function fetchSupportWorkerRaw(path: string): Promise<Response | null> {
+  const token = process.env.SUPPORT_BOT_TOKEN;
+  if (!token) return null;
+  const url = `${workerBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  try {
+    return await fetch(url, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("fetchSupportWorkerRaw fetch failed", err);
+    return null;
+  }
+}
