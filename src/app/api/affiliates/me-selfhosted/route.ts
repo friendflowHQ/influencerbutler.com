@@ -108,6 +108,12 @@ export async function GET() {
       grossCents: stmt?.grossCents ?? 0,
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,
+      // Breakdown of the outstanding owed for refund/chargeback safety: what is
+      // cleared and safe to pay now, what is still in the 14-day clearing buffer,
+      // and (for annual subs) what has not been recognized yet.
+      payableCents: stmt?.payableCents ?? 0,
+      clearingCents: stmt?.clearingCents ?? 0,
+      upcomingCents: stmt?.upcomingCents ?? 0,
       // null = lifetime (custom deals like Samantha); a number = capped window.
       // When there's no statement yet, a default affiliate is capped at 12 months.
       durationMonths: stmt ? stmt.durationMonths : 12,

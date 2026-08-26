@@ -478,6 +478,22 @@ export function planForVariantId(
 }
 
 /**
+ * Billing cadence for an LS variant id, derived from its canonical plan string.
+ * 'year' for any *-annual plan, 'month' for any *-monthly plan, null for unknown
+ * or non-recurring variants (e.g. the Daily Deals add-on). Used by the affiliate
+ * commission engine to amortize annual commissions.
+ */
+export function billingIntervalForVariantId(
+  variantId: string | number | null | undefined,
+): "month" | "year" | null {
+  const plan = planForVariantId(variantId);
+  if (!plan) return null;
+  if (plan.endsWith("-annual")) return "year";
+  if (plan.endsWith("-monthly")) return "month";
+  return null;
+}
+
+/**
  * Sets a license key's activation_limit via the main LS API. Used by the
  * webhook seat-resync after a plan change so the key's device cap follows
  * the new tier. Returns false (and logs) on any API failure.

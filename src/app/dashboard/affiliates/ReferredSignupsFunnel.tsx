@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReferredEvent, ReferredFunnel } from "@/lib/referred-signups";
+import type { ReferredEvent, ReferredFunnel, ReferredInsights } from "@/lib/referred-signups";
 
 /**
  * "Referred signups" funnel panel for the self-hosted affiliate dashboard.
@@ -14,6 +14,7 @@ type Payload = {
   migrationPending: boolean;
   funnel: ReferredFunnel;
   events: ReferredEvent[];
+  insights?: ReferredInsights;
 };
 
 const EMPTY_FUNNEL: ReferredFunnel = {
@@ -138,6 +139,34 @@ export default function ReferredSignupsFunnel({
             />
           </div>
 
+          {data?.insights && funnel.paid > 0 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <InsightStat
+                label="Avg. days to convert"
+                value={
+                  data.insights.avgDaysToConvert === null
+                    ? "-"
+                    : `${data.insights.avgDaysToConvert} days`
+                }
+                hint="Trial start to paid"
+              />
+              <InsightStat
+                label="Avg. time subscribed"
+                value={
+                  data.insights.avgDaysSubscribed === null
+                    ? "-"
+                    : `${data.insights.avgDaysSubscribed} days`
+                }
+                hint="For those who have cancelled"
+              />
+              <InsightStat
+                label="Plan mix"
+                value={`${data.insights.planMix.monthly} monthly / ${data.insights.planMix.annual} annual`}
+                hint="Among paying referrals"
+              />
+            </div>
+          ) : null}
+
           {isEmpty ? (
             <p className="mt-5 text-sm text-slate-500">
               No referred signups yet - share your link!
@@ -173,6 +202,16 @@ export default function ReferredSignupsFunnel({
         </>
       )}
     </section>
+  );
+}
+
+function InsightStat({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 text-lg font-bold tracking-tight text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
+    </article>
   );
 }
 

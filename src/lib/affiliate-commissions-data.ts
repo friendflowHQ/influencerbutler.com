@@ -7,7 +7,9 @@
 import { createAdminClient } from "@/lib/admin";
 import {
   buildFirstOrderByBuyer,
+  computeAffiliateEarnedCents,
   computeAffiliateOwed,
+  computeAffiliatePayable,
   monthKeyOf,
   orderEconomics,
   orderInPeriod,
@@ -15,9 +17,12 @@ import {
   recentMonthLabels,
   resolveRatePercent,
   type AffiliateTerms,
+  type BillingInterval,
   type CommissionOrder,
   type CommissionLine,
+  type PayableLine,
 } from "@/lib/affiliate-commissions";
+import { billingIntervalForVariantId } from "@/lib/lemonsqueezy";
 import {
   loadOpenAdjustmentsByUser,
   sumAdjustmentsCents,
@@ -38,6 +43,19 @@ export type AffiliateStatement = {
   lsPaidCents: number;
   /** Order-derived top-up owed. This is what the automated PayPal disburse pays. */
   owedCents: number;
+  /** All-time earned commission (full rate on every commissionable order,
+   *  including already-paid/reconciled ones). Outstanding = owedCents; this is
+   *  the lifetime total the admin roster shows. */
+  earnedCents: number;
+  /** Of the outstanding owed, the portion recognized AND past the 14-day
+   *  clearing buffer: safe to disburse now (annual amortized 1/12 per month). */
+  payableCents: number;
+  /** Recognized but still inside the clearing buffer (not payable yet). */
+  clearingCents: number;
+  /** Not yet recognized: future amortization periods of annual commissions. */
+  upcomingCents: number;
+  /** Per-order payable detail, for the incremental PayPal disburse path. */
+  payableLines: PayableLine[];
   lines: CommissionLine[];
   /** Open manual/make-whole adjustments owed on top of the order lines. Kept
    *  separate from owedCents so the automated disburse never double-pays them
@@ -85,6 +103,8 @@ export async function loadAffiliateCommissions(opts: {
   const supabase = createAdminClient() as unknown as LoadClient | null;
   if (!supabase) return null;
 
+  const nowMs = Date.now();
+
   const { data: profiles, error: profilesErr } = await supabase
     .from("profiles")
     .select(
@@ -107,31 +127,58 @@ export async function loadAffiliateCommissions(opts: {
   const { data: rawOrders, error: ordersErr } = await supabase
     .from("orders")
     .select(
-      "ls_order_id,user_id,total,currency,status,attribution_status,reconciled_at,ref_affiliate_user_id,created_at",
+      "ls_order_id,user_id,total,currency,status,attribution_status,reconciled_at,reconciled_amount_cents,ref_affiliate_user_id,created_at",
     );
   if (ordersErr) {
     console.error("loadAffiliateCommissions: orders query failed", ordersErr);
     return null;
   }
 
+  // Per-buyer billing cadence, so annual charges can be amortized. Best-effort:
+  // subscriptions has ls_variant_id, which maps to a monthly/annual plan. A read
+  // error (or unconfigured variant) degrades that buyer to monthly (single
+  // recognition), which matches the pre-amortization behavior.
+  const intervalByBuyer = new Map<string, BillingInterval>();
+  try {
+    const { data: subs } = await supabase
+      .from("subscriptions")
+      .select("user_id,ls_variant_id");
+    for (const row of subs ?? []) {
+      const uid = str(row.user_id);
+      if (!uid) continue;
+      const interval = billingIntervalForVariantId(row.ls_variant_id as string | number | null);
+      if (interval) intervalByBuyer.set(uid, interval);
+    }
+  } catch (err) {
+    console.warn("loadAffiliateCommissions: subscription interval read skipped", err);
+  }
+
   // Normalize orders once. Keep the referring affiliate on each row so we can
   // group, but build the full set too (unfiltered) for per-buyer window anchors.
+  // paidByOrder tracks what has already been reconciled (paid) per order, so the
+  // payable buckets can net it out (supports partial annual amortization).
   const allOrders: CommissionOrder[] = [];
   const ordersByAffiliate = new Map<string, CommissionOrder[]>();
+  const paidByOrder = new Map<string, number>();
   const bounds = opts.period ? periodBounds(opts.period) : null;
   for (const row of rawOrders ?? []) {
     const lsOrderId = str(row.ls_order_id);
     if (!lsOrderId) continue;
+    const buyerUserId = str(row.user_id);
     const co: CommissionOrder = {
       lsOrderId,
-      buyerUserId: str(row.user_id),
+      buyerUserId,
       totalCents: typeof row.total === "number" ? row.total : 0,
       currency: str(row.currency),
       status: str(row.status),
       attributionStatus: str(row.attribution_status),
       reconciledAt: str(row.reconciled_at),
       createdAt: str(row.created_at),
+      billingInterval: buyerUserId ? intervalByBuyer.get(buyerUserId) ?? null : null,
     };
+    const paidCents =
+      typeof row.reconciled_amount_cents === "number" ? row.reconciled_amount_cents : 0;
+    if (paidCents > 0) paidByOrder.set(lsOrderId, paidCents);
     allOrders.push(co);
 
     const affUserId = str(row.ref_affiliate_user_id);
@@ -175,6 +222,15 @@ export async function loadAffiliateCommissions(opts: {
 
     const affOrders = ordersByAffiliate.get(userId) ?? [];
     const owed = computeAffiliateOwed(terms, affOrders, allOrders);
+    const earnedCents = computeAffiliateEarnedCents(terms, affOrders, allOrders);
+    // Recognition/clearing buckets for the outstanding (unreconciled) orders.
+    const payable = computeAffiliatePayable(
+      terms,
+      affOrders.filter((o) => !o.reconciledAt),
+      paidByOrder,
+      nowMs,
+      allOrders,
+    );
 
     const openAdj = adjustmentsByUser.get(userId) ?? [];
     const periodAdj = opts.period
@@ -200,6 +256,11 @@ export async function loadAffiliateCommissions(opts: {
       grossCents: owed.grossCents,
       lsPaidCents: owed.lsPaidCents,
       owedCents: owed.owedCents,
+      earnedCents,
+      payableCents: payable.payableCents,
+      clearingCents: payable.clearingCents,
+      upcomingCents: payable.upcomingCents,
+      payableLines: payable.lines,
       lines: owed.lines,
       adjustmentCents,
       adjustments: periodAdj,

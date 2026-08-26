@@ -82,6 +82,8 @@ type OwedAffiliate = {
   orderCount: number;
   grossCents: number;
   owedCents: number;
+  payableCents?: number;
+  clearingCents?: number;
   orders: OwedOrder[];
 };
 
@@ -90,6 +92,27 @@ type OwedResponse = {
   commissionPercent?: number;
   verifyAgainstLs?: boolean;
   affiliates?: OwedAffiliate[];
+  error?: string;
+};
+
+// Attribution gap: referred conversions whose ORDER was never attributed, so the
+// affiliate is owed but the Owed tab cannot see it until the order is stamped.
+type GapAffiliate = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  ratePercent: number;
+  orderCount: number;
+  grossCents: number;
+  owedCents: number;
+  orders: OwedOrder[];
+};
+
+type GapResponse = {
+  admin?: { email: string };
+  verifyBeforePaying?: boolean;
+  affiliates?: GapAffiliate[];
   error?: string;
 };
 
@@ -300,6 +323,13 @@ export default function AdminAffiliatesPage() {
   const [owedError, setOwedError] = useState<string | null>(null);
   const [owedRow, setOwedRow] = useState<Record<string, LinkRowState>>({});
 
+  // Attribution-gap state (referred conversions whose orders were never stamped).
+  const [gap, setGap] = useState<GapAffiliate[]>([]);
+  const [gapLoading, setGapLoading] = useState(true);
+  const [gapError, setGapError] = useState<string | null>(null);
+  const [gapRow, setGapRow] = useState<Record<string, LinkRowState>>({});
+  const [gapAllState, setGapAllState] = useState<LinkRowState>({ kind: "idle" });
+
   // Per-row state for the roster "Generate new code" action.
   const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
 
@@ -407,6 +437,29 @@ export default function AdminAffiliatesPage() {
     }
   }, []);
 
+  const loadGap = useCallback(async () => {
+    setGapLoading(true);
+    setGapError(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as GapResponse;
+      if (!res.ok) {
+        setGapError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setGap(json.affiliates ?? []);
+    } catch (err) {
+      console.error(err);
+      setGapError("Network error loading the attribution gap.");
+    } finally {
+      setGapLoading(false);
+    }
+  }, []);
+
   // Roster + applications load eagerly (applications powers the tab badge and is
   // a cheap DB read). Reconcile and owed each hit Lemon Squeezy, so they load
   // lazily the first time their tab is opened.
@@ -425,8 +478,9 @@ export default function AdminAffiliatesPage() {
     if (tab === "owed" && !owedLoaded.current) {
       owedLoaded.current = true;
       void loadOwed();
+      void loadGap();
     }
-  }, [tab, loadReconcile, loadOwed]);
+  }, [tab, loadReconcile, loadOwed, loadGap]);
 
   const setRow = (userId: string, state: RowState) =>
     setRowState((prev) => ({ ...prev, [userId]: state }));
@@ -618,9 +672,10 @@ export default function AdminAffiliatesPage() {
   // requires a verified tax form + PayPal email, and reconciles the orders only
   // once PayPal confirms the payout succeeded (webhook / poller).
   const onDisburse = async (aff: OwedAffiliate) => {
+    const payable = aff.payableCents ?? aff.owedCents;
     if (
       !window.confirm(
-        `Send ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId} via PayPal now?\n\nThis pays the affiliate directly. Their tax form must be verified and a PayPal email on file. The exact amount is recomputed at send. Orders are marked paid only once PayPal confirms success.`,
+        `Send ${formatCents(payable, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId} via PayPal now?\n\nThis pays only the cleared, recognized commission (annual plans are paid a month at a time; anything inside the 14-day hold waits). Their tax form must be verified and a PayPal email on file. The exact amount is recomputed at send. Orders are marked paid only once PayPal confirms success.`,
       )
     ) {
       return;
@@ -661,6 +716,95 @@ export default function AdminAffiliatesPage() {
     } catch (err) {
       console.error(err);
       setOwedState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const setGapRowState = (userId: string, state: LinkRowState) =>
+    setGapRow((prev) => ({ ...prev, [userId]: state }));
+
+  // Attribute one affiliate's gap orders: stamps them attribution_status='pending'
+  // so they appear in the Owed report and become payable. Refreshes both the gap
+  // and the owed lists on success.
+  const onAttributeGap = async (aff: GapAffiliate) => {
+    if (
+      !window.confirm(
+        `Attribute ${aff.orderCount} order${aff.orderCount === 1 ? "" : "s"} (${formatCents(
+          aff.grossCents,
+          aff.orders[0]?.currency ?? null,
+        )} gross) to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nThese are paid orders from customers this affiliate referred, whose orders were never attributed. This credits them ${formatCents(
+          aff.owedCents,
+          aff.orders[0]?.currency ?? null,
+        )} and moves the orders into the Owed report so you can pay them.`,
+      )
+    ) {
+      return;
+    }
+    setGapRowState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId }),
+      });
+      const json = (await res.json()) as { error?: string; stampedCount?: number };
+      if (!res.ok) {
+        setGapRowState(aff.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGapRowState(aff.userId, {
+        kind: "success",
+        message: `Attributed ${json.stampedCount ?? 0} orders. They now show in the Owed report.`,
+      });
+      setTimeout(() => {
+        void loadGap();
+        void loadOwed();
+        void loadRoster();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setGapRowState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  // Attribute EVERY detected gap order across all affiliates in one action.
+  const onAttributeGapAll = async () => {
+    const totalOrders = gap.reduce((s, a) => s + a.orderCount, 0);
+    const totalOwed = gap.reduce((s, a) => s + a.owedCents, 0);
+    if (
+      !window.confirm(
+        `Attribute all ${totalOrders} gap order${totalOrders === 1 ? "" : "s"} across ${
+          gap.length
+        } affiliate${gap.length === 1 ? "" : "s"}?\n\nThis credits roughly ${formatUsd(
+          totalOwed,
+        )} in total and moves every order into the Owed report. You still pay each affiliate from the Owed / Payouts tabs.`,
+      )
+    ) {
+      return;
+    }
+    setGapAllState({ kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      const json = (await res.json()) as { error?: string; stampedCount?: number };
+      if (!res.ok) {
+        setGapAllState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGapAllState({
+        kind: "success",
+        message: `Attributed ${json.stampedCount ?? 0} orders. They now show in the Owed report.`,
+      });
+      setTimeout(() => {
+        void loadGap();
+        void loadOwed();
+        void loadRoster();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setGapAllState({ kind: "error", message: "Network error." });
     }
   };
 
@@ -1189,6 +1333,131 @@ export default function AdminAffiliatesPage() {
             </p>
           </div>
 
+          {/* Attribution gap: referred conversions whose orders were never stamped. */}
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                  Attribution gap
+                </p>
+                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                  Referred conversions not yet attributed
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  These are paid customers an affiliate referred (from their signup link) whose orders
+                  were never stamped, so they do not yet appear above. Attribute them to credit the
+                  affiliate their {""}
+                  full rate and move the orders into the Owed report. Verify before paying: an old or
+                  partial refund may not be reflected here.
+                </p>
+              </div>
+              {gap.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={onAttributeGapAll}
+                  disabled={gapAllState.kind === "working"}
+                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60"
+                >
+                  {gapAllState.kind === "working" ? "Working…" : "Attribute all"}
+                </button>
+              ) : null}
+            </div>
+
+            {gapAllState.kind === "success" ? (
+              <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                {gapAllState.message}
+              </p>
+            ) : null}
+            {gapAllState.kind === "error" ? (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {gapAllState.message}
+              </p>
+            ) : null}
+
+            {gapLoading ? (
+              <div className="mt-4 h-16 animate-pulse rounded-xl border border-amber-200 bg-white/70" />
+            ) : gapError ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                {gapError}
+              </div>
+            ) : gap.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-white/70 p-4 text-center text-sm text-slate-500">
+                No unattributed referred conversions. Every referred paid order is accounted for. ✨
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {gap.map((aff) => {
+                  const state = gapRow[aff.userId] ?? { kind: "idle" };
+                  const working = state.kind === "working";
+                  const currency = aff.orders[0]?.currency ?? null;
+                  return (
+                    <li
+                      key={aff.userId}
+                      className="rounded-xl border border-amber-200 bg-white/80 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 break-words">
+                            {aff.fullName ?? "(no name)"}
+                          </p>
+                          <p className="text-xs text-slate-500 break-all">
+                            {aff.email ?? "(no email)"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
+                            {aff.orderCount} order{aff.orderCount === 1 ? "" : "s"} ·{" "}
+                            {formatCents(aff.grossCents, currency)} gross · {aff.ratePercent}% rate
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <p className="text-base font-bold text-amber-700">
+                            {formatCents(aff.owedCents, currency)} would be owed
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => onAttributeGap(aff)}
+                            disabled={working}
+                            className="rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+                          >
+                            {working ? "Working…" : "Attribute"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
+                          {aff.orderCount} unattributed order{aff.orderCount === 1 ? "" : "s"}
+                        </summary>
+                        <ul className="mt-2 space-y-1 rounded-lg bg-amber-50/70 p-3 text-xs text-slate-600">
+                          {aff.orders.map((o) => (
+                            <li key={o.lsOrderId} className="flex flex-wrap justify-between gap-2">
+                              <span className="break-all">Order {o.lsOrderId}</span>
+                              <span>
+                                {formatCents(o.totalCents, o.currency)}
+                                {o.createdAt ? ` · ${formatDate(o.createdAt)}` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+
+                      {state.kind === "success" ? (
+                        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                          {state.message}
+                        </p>
+                      ) : null}
+                      {state.kind === "error" ? (
+                        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                          {state.message}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
           {owedLoading ? (
             <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
           ) : owedError ? (
@@ -1227,6 +1496,14 @@ export default function AdminAffiliatesPage() {
                         <p className="text-lg font-bold text-indigo-700">
                           {formatCents(aff.owedCents, currency)} owed
                         </p>
+                        {typeof aff.payableCents === "number" ? (
+                          <p className="-mt-1 text-xs text-slate-500">
+                            {formatCents(aff.payableCents, currency)} payable now
+                            {aff.clearingCents && aff.clearingCents > 0
+                              ? ` · ${formatCents(aff.clearingCents, currency)} clearing`
+                              : ""}
+                          </p>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => onDisburse(aff)}
@@ -1370,8 +1647,8 @@ function RosterTab({
 
       {!lsAvailable && !loading ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Lemon Squeezy earnings are unavailable right now, so money columns show &quot;-&quot;.
-          Everything else is up to date.
+          Lemon Squeezy link status is unavailable right now, so the Linked/Unlinked badges may be
+          stale. Earnings are computed from our own orders and are unaffected.
         </div>
       ) : null}
 
@@ -1563,8 +1840,11 @@ function RosterTab({
       )}
 
       <p className="text-xs text-slate-400">
-        Paid out is derived as total earned minus unpaid balance from Lemon Squeezy. LS does not
-        expose an exact last-payout date, so amounts are shown instead of a date.
+        Earnings are computed from our own referred orders (self-hosted program), not Lemon Squeezy.
+        Total earned is the full promised rate on every referred order; Owed is what is still
+        outstanding (plus any make-whole adjustments); Paid out is total earned minus owed. See the
+        Owed and Payouts tabs to pay, and the Attribution gap section under Owed for referred
+        conversions whose orders were never attributed.
       </p>
     </div>
   );

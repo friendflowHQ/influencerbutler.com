@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { resolveRatePercent } from "@/lib/affiliate-commissions";
+import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,6 +80,10 @@ type OwedAffiliate = {
   orderCount: number;
   grossCents: number;
   owedCents: number;
+  /** Of the owed, what is cleared + recognized and safe to disburse now. */
+  payableCents: number;
+  /** Recognized but still inside the 14-day clearing buffer. */
+  clearingCents: number;
   orders: OwedOrder[];
 };
 
@@ -190,6 +195,8 @@ export async function GET(request: Request) {
           orderCount: 0,
           grossCents: 0,
           owedCents: 0,
+          payableCents: 0,
+          clearingCents: 0,
           orders: [],
         };
         byAffiliate.set(affUserId, entry);
@@ -208,7 +215,28 @@ export async function GET(request: Request) {
     const affiliates = [...byAffiliate.values()].map((a) => ({
       ...a,
       owedCents: Math.round((a.grossCents * a.ratePercent) / 100),
+      payableCents: 0,
+      clearingCents: 0,
     }));
+
+    // Overlay the engine's recognition/clearing split so the tab shows what is
+    // actually safe to disburse now (annual amortized, past the 14-day clear)
+    // versus what is still clearing. Best-effort: on failure the tab still shows
+    // the owed totals, just without the payable/clearing split.
+    try {
+      const commissions = await loadAffiliateCommissions({});
+      const byUser = new Map(commissions?.statements.map((s) => [s.userId, s]) ?? []);
+      for (const a of affiliates) {
+        const stmt = byUser.get(a.userId);
+        if (stmt) {
+          a.payableCents = stmt.payableCents;
+          a.clearingCents = stmt.clearingCents;
+        }
+      }
+    } catch (err) {
+      console.warn("admin-owed: payable overlay skipped", err);
+    }
+
     affiliates.sort((x, y) => y.owedCents - x.owedCents);
 
     return NextResponse.json({

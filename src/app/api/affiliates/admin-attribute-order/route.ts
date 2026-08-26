@@ -15,7 +15,12 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { resolveAdminAffiliate, escapeLike, asQueryClient } from "@/lib/affiliate-admin";
+import {
+  resolveAdminAffiliate,
+  escapeLike,
+  asQueryClient,
+  attributeOrdersToAffiliate,
+} from "@/lib/affiliate-admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -132,37 +137,15 @@ export async function POST(request: Request) {
     }
   }
 
-  const stamped: string[] = [];
-  const skipped: { orderId: string; reason: string }[] = [];
-
-  for (const o of candidates) {
-    const existing = str(o.ref_affiliate_user_id);
-    if (existing && existing === aff.userId) {
-      skipped.push({ orderId: o.ls_order_id, reason: "already attributed to this affiliate" });
-      continue;
-    }
-    if (existing && existing !== aff.userId && !force) {
-      skipped.push({
-        orderId: o.ls_order_id,
-        reason: "already attributed to a different affiliate (use force to override)",
-      });
-      continue;
-    }
-    const { error } = await admin
-      .from("orders")
-      .update({
-        ref_affiliate_user_id: aff.userId,
-        ref_affiliate_code: aff.code,
-        attribution_status: "pending",
-      })
-      .eq("ls_order_id", o.ls_order_id);
-    if (error) {
-      console.error("admin-attribute-order: update failed", o.ls_order_id, error);
-      skipped.push({ orderId: o.ls_order_id, reason: "update failed" });
-      continue;
-    }
-    stamped.push(o.ls_order_id);
-  }
+  const { stamped, skipped } = await attributeOrdersToAffiliate(
+    adminClient,
+    { userId: aff.userId, code: aff.code },
+    candidates.map((o) => ({
+      ls_order_id: o.ls_order_id,
+      ref_affiliate_user_id: o.ref_affiliate_user_id,
+    })),
+    force,
+  );
 
   await logAdminAction({
     actor,

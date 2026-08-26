@@ -79,6 +79,44 @@ describe("deriveReferredSignups funnel counts", () => {
     expect(funnel.cancelled).toBe(0);
   });
 
+  it("derives insights: avg trial length, avg tenure, and plan mix", () => {
+    const { insights } = deriveReferredSignups(
+      [],
+      [
+        // Converted after 3 days, annual, still active.
+        sub({
+          user_id: "u1",
+          status: "active",
+          trial_started_at: "2026-07-01T00:00:00.000Z",
+          trial_converted_at: "2026-07-04T00:00:00.000Z",
+          billing_interval: "year",
+        }),
+        // Converted after 5 days, monthly, later cancelled after ~30 days.
+        sub({
+          user_id: "u2",
+          status: "cancelled",
+          trial_started_at: "2026-06-01T00:00:00.000Z",
+          trial_converted_at: "2026-06-06T00:00:00.000Z",
+          ends_at: "2026-07-06T00:00:00.000Z",
+          billing_interval: "month",
+        }),
+      ],
+    );
+    expect(insights.avgDaysToConvert).toBe(4); // (3 + 5) / 2
+    expect(insights.avgDaysSubscribed).toBe(30); // only the ended sub: Jun6 -> Jul6
+    expect(insights.planMix).toEqual({ monthly: 1, annual: 1, other: 0 });
+  });
+
+  it("insights are null/zero when there is no paid activity", () => {
+    const { insights } = deriveReferredSignups(
+      [profile()],
+      [sub({ status: "on_trial", trial_started_at: "2026-07-10T00:00:00.000Z" })],
+    );
+    expect(insights.avgDaysToConvert).toBeNull();
+    expect(insights.avgDaysSubscribed).toBeNull();
+    expect(insights.planMix).toEqual({ monthly: 0, annual: 0, other: 0 });
+  });
+
   it("counts expired subs as ended (real LS status for a lapsed sub)", () => {
     const { funnel, events } = deriveReferredSignups(
       [],

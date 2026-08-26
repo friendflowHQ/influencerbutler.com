@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
+import { applyClawbacks } from "@/lib/affiliate-commissions";
 import { createPayoutBatch, paypalConfigured } from "@/lib/paypal";
 
 export function payoutMinimumCents(): number {
@@ -14,14 +15,23 @@ export function payoutMinimumCents(): number {
   return Number.isFinite(raw) && raw >= 0 ? Math.round(raw) : 1000; // default $10
 }
 
-/** One covered order on a payout ledger row. */
-export type PayoutOrderRef = { id: string; owedCents: number };
+/**
+ * One covered order on a payout ledger row. `owedCents` is the amount paid for
+ * this order in THIS payout (a single monthly slice for an amortized annual
+ * order, or the whole thing for a monthly order). `fullOwedCents` is the order's
+ * total commission, so the reconcile step knows when it has been fully paid off.
+ * Legacy rows may omit fullOwedCents; the reconcile treats those as fully paid.
+ */
+export type PayoutOrderRef = { id: string; owedCents: number; fullOwedCents?: number };
 
 export type PayoutRow = {
   id: string;
   user_id: string;
   status: string;
   order_ids: PayoutOrderRef[] | null;
+  /** Clawback adjustment ids this payout settles (optional; may be absent if the
+   *  column is not selected or not migrated yet). */
+  adjustment_ids?: string[] | null;
   paypal_batch_id: string | null;
   sender_item_id: string | null;
 };
@@ -80,20 +90,65 @@ export async function applyPayoutStatus(
       return;
     }
 
-    // Stamp covered orders. Guard on reconciled_at IS NULL so a replayed webhook
-    // can't re-stamp, and carry the per-order owed as the reconciled amount.
+    // Reconcile covered orders INCREMENTALLY: add this payout's slice to the
+    // order's reconciled_amount_cents, and only stamp reconciled_at once the
+    // running total reaches the order's full commission (an annual order is paid
+    // one twelfth at a time across the year). Idempotent per (payout, order):
+    // an order already carrying this payout_id is skipped, and the ledger-status
+    // early-return above stops a whole payout from being applied twice.
     for (const ref of row.order_ids ?? []) {
+      const { data: ord, error: readErr } = await supabase
+        .from("orders")
+        .select("reconciled_amount_cents,payout_id")
+        .eq("ls_order_id", ref.id)
+        .maybeSingle();
+      if (readErr) {
+        console.error("applyPayoutStatus: order read failed", ref.id, readErr);
+        continue;
+      }
+      if (!ord) continue;
+      if ((ord.payout_id as string | null) === row.id) continue; // already applied by this payout
+
+      const prevPaid =
+        typeof ord.reconciled_amount_cents === "number" ? ord.reconciled_amount_cents : 0;
+      const newPaid = prevPaid + ref.owedCents;
+      // Legacy refs without fullOwedCents behave like the old whole-order stamp.
+      const fullOwed = typeof ref.fullOwedCents === "number" ? ref.fullOwedCents : ref.owedCents;
+      const fullyPaid = newPaid >= fullOwed;
+
       const { error } = await supabase
         .from("orders")
         .update({
-          reconciled_at: nowIso,
-          reconciled_amount_cents: ref.owedCents,
+          reconciled_amount_cents: newPaid,
           reconciled_by: "paypal-payout",
           payout_id: row.id,
+          ...(fullyPaid ? { reconciled_at: nowIso } : {}),
         })
-        .eq("ls_order_id", ref.id)
+        .eq("ls_order_id", ref.id);
+      if (error) console.error("applyPayoutStatus: order reconcile failed", ref.id, error);
+    }
+
+    // Settle any clawback adjustments this payout netted. Best-effort read so a
+    // pre-migration environment (no adjustment_ids column) simply reconciles no
+    // adjustments. Guarded on reconciled_at IS NULL so a replay is a no-op.
+    let adjIds: string[] = Array.isArray(row.adjustment_ids)
+      ? (row.adjustment_ids as string[])
+      : [];
+    if (adjIds.length === 0) {
+      const { data: fresh } = await supabase
+        .from("affiliate_payouts")
+        .select("adjustment_ids")
+        .eq("id", row.id)
+        .maybeSingle();
+      if (Array.isArray(fresh?.adjustment_ids)) adjIds = fresh.adjustment_ids as string[];
+    }
+    for (const adjId of adjIds) {
+      const { error } = await supabase
+        .from("affiliate_commission_adjustments")
+        .update({ reconciled_at: nowIso, payout_id: row.id })
+        .eq("id", adjId)
         .is("reconciled_at", null);
-      if (error) console.error("applyPayoutStatus: order stamp failed", ref.id, error);
+      if (error) console.error("applyPayoutStatus: adjustment reconcile failed", adjId, error);
     }
     return;
   }
@@ -177,47 +232,86 @@ export async function disburseAffiliate(params: {
     return { ok: false, httpStatus: 409, code: "tax_unverified", error: "Affiliate's tax form is not verified" };
   }
 
-  const commissions = await loadAffiliateCommissions({ userIds: [userId], period: period ?? undefined });
+  // Pay only the PAYABLE amount: commission that is recognized (annual amortized
+  // 1/12 per month) AND past the clearing buffer, netting anything already paid.
+  // Computed all-time (not period-scoped) so an amortized annual order's cleared
+  // twelfths from earlier months are included; `period` only labels the ledger.
+  const commissions = await loadAffiliateCommissions({ userIds: [userId] });
   const stmt = commissions?.statements.find((s) => s.userId === userId) ?? null;
-  const owedCents = stmt?.owedCents ?? 0;
+  const payableCents = stmt?.payableCents ?? 0;
   const minimum = payoutMinimumCents();
-  if (owedCents < minimum) {
+  if (payableCents < minimum) {
     return {
       ok: false,
       httpStatus: 409,
       code: "below_minimum",
-      error: `Owed ${owedCents} cents is below the ${minimum}-cent minimum`,
+      error: `Payable ${payableCents} cents is below the ${minimum}-cent minimum`,
     };
   }
 
-  const orderRefs: PayoutOrderRef[] = (stmt?.lines ?? [])
-    .filter((l) => l.owedCents > 0)
-    .map((l) => ({ id: l.lsOrderId, owedCents: l.owedCents }));
+  const orderRefs: PayoutOrderRef[] = (stmt?.payableLines ?? [])
+    .filter((l) => l.payableNowCents > 0)
+    .map((l) => ({ id: l.lsOrderId, owedCents: l.payableNowCents, fullOwedCents: l.fullOwedCents }));
+
+  // Net any open CLAWBACK (negative) adjustments against this payout: a refund or
+  // chargeback that landed after we already paid commission is recovered from the
+  // next disbursement. Apply only clawbacks the current payable fully covers
+  // (leave the rest open for a later round), and record their ids on the ledger
+  // so they settle on real PayPal success. Positive make-whole adjustments keep
+  // their own separate settle path (admin-makewhole-pay), so they are excluded.
+  const { netPayableCents, appliedAdjustmentIds: appliedAdjIds } = applyClawbacks(
+    payableCents,
+    (stmt?.adjustments ?? []).map((a) => ({ id: a.id, amountCents: a.amountCents })),
+  );
+  if (netPayableCents < minimum) {
+    return {
+      ok: false,
+      httpStatus: 409,
+      code: "below_minimum",
+      error: `Payable after clawbacks (${netPayableCents} cents) is below the ${minimum}-cent minimum`,
+    };
+  }
 
   let senderBatchId = buildSenderBatchId(userId, period);
   if (retrySuffix) senderBatchId = `${senderBatchId}_r${retrySuffix}`;
   const senderItemId = `${senderBatchId}_1`;
   const nowIso = new Date().toISOString();
 
-  const { data: inserted, error: insertErr } = await admin
-    .from("affiliate_payouts")
-    .insert({
-      user_id: userId,
-      period,
-      gross_cents: owedCents,
-      currency: "USD",
-      fee_note: "Recipient bears PayPal receiving / currency-conversion fees.",
-      order_ids: orderRefs,
-      paypal_email: paypalEmail,
-      sender_batch_id: senderBatchId,
-      sender_item_id: senderItemId,
-      status: "pending",
-      created_by: actorEmail,
-      created_at: nowIso,
-      updated_at: nowIso,
-    })
-    .select("id,status")
-    .maybeSingle();
+  // Amount actually sent + adjustments actually settled. If the adjustment_ids
+  // column has not been migrated in yet, fall back to paying the full payable
+  // with no clawback netting (the clawbacks stay open for next time) rather than
+  // failing the payout.
+  let amountCents = netPayableCents;
+  let ledgerAdjIds = appliedAdjIds;
+  const insertLedger = (includeAdj: boolean) =>
+    admin
+      .from("affiliate_payouts")
+      .insert({
+        user_id: userId,
+        period,
+        gross_cents: amountCents,
+        currency: "USD",
+        fee_note: "Recipient bears PayPal receiving / currency-conversion fees.",
+        order_ids: orderRefs,
+        ...(includeAdj && ledgerAdjIds.length ? { adjustment_ids: ledgerAdjIds } : {}),
+        paypal_email: paypalEmail,
+        sender_batch_id: senderBatchId,
+        sender_item_id: senderItemId,
+        status: "pending",
+        created_by: actorEmail,
+        created_at: nowIso,
+        updated_at: nowIso,
+      })
+      .select("id,status")
+      .maybeSingle();
+
+  let { data: inserted, error: insertErr } = await insertLedger(true);
+  if (insertErr && (insertErr as { code?: string }).code === "42703" && ledgerAdjIds.length) {
+    console.warn("disburseAffiliate: adjustment_ids column missing, paying without clawback netting");
+    amountCents = payableCents;
+    ledgerAdjIds = [];
+    ({ data: inserted, error: insertErr } = await insertLedger(false));
+  }
 
   if (insertErr) {
     const code = (insertErr as { code?: string }).code;
@@ -248,7 +342,7 @@ export async function disburseAffiliate(params: {
     items: [
       {
         receiver: paypalEmail,
-        amountCents: owedCents,
+        amountCents,
         currency: "USD",
         senderItemId,
         note: period ? `Affiliate commission ${period}` : "Affiliate commission",
@@ -273,5 +367,5 @@ export async function disburseAffiliate(params: {
     })
     .eq("id", payoutId);
 
-  return { ok: true, payoutId, payoutBatchId: result.payoutBatchId, grossCents: owedCents };
+  return { ok: true, payoutId, payoutBatchId: result.payoutBatchId, grossCents: amountCents };
 }

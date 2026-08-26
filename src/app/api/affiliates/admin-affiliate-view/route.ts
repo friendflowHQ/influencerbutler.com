@@ -134,6 +134,11 @@ export async function GET(request: Request) {
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,
       durationMonths: stmt ? stmt.durationMonths : 12,
+      // Refund/chargeback-safety breakdown of the outstanding owed (see
+      // me-selfhosted): cleared-and-payable now, still clearing, not yet recognized.
+      payableCents: stmt?.payableCents ?? 0,
+      clearingCents: stmt?.clearingCents ?? 0,
+      upcomingCents: stmt?.upcomingCents ?? 0,
       paidCents,
       paypalEmail: (profile.paypal_email as string | null) ?? null,
       taxStatus,

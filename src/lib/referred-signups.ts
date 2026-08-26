@@ -18,6 +18,19 @@ export type ReferredSubscriptionRow = {
   trial_converted_at: string | null;
   pro_started_at: string | null;
   ends_at: string | null;
+  /** Billing cadence, precomputed by the data layer from ls_variant_id. Kept off
+   *  this pure module's IO so it stays unit-testable. Null = unknown. */
+  billing_interval?: "month" | "year" | null;
+};
+
+/** Aggregate, still-anonymous insights layered on top of the raw funnel. */
+export type ReferredInsights = {
+  /** Average trial length in days among trials that converted. */
+  avgDaysToConvert: number | null;
+  /** Average subscription lifetime in days among ended subs. */
+  avgDaysSubscribed: number | null;
+  /** Split of paying referrals by billing cadence. */
+  planMix: { monthly: number; annual: number; other: number };
 };
 
 export type ReferredEventType =
@@ -75,10 +88,24 @@ function validIso(value: string | null | undefined): string | null {
   return Number.isNaN(Date.parse(value)) ? null : value;
 }
 
+function daysBetween(startIso: string | null, endIso: string | null): number | null {
+  const start = validIso(startIso);
+  const end = validIso(endIso);
+  if (!start || !end) return null;
+  const ms = Date.parse(end) - Date.parse(start);
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  return ms / (24 * 60 * 60 * 1000);
+}
+
+function average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
+}
+
 export function deriveReferredSignups(
   profiles: ReferredProfileRow[],
   subscriptions: ReferredSubscriptionRow[],
-): { funnel: ReferredFunnel; events: ReferredEvent[] } {
+): { funnel: ReferredFunnel; events: ReferredEvent[]; insights: ReferredInsights } {
   const subs = dedupeByUser(subscriptions);
 
   // LS "expired" = a cancelled/lapsed sub past its end date; to an affiliate
@@ -130,5 +157,34 @@ export function deriveReferredSignups(
   }
 
   events.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
-  return { funnel, events: events.slice(0, REFERRED_EVENTS_CAP) };
+
+  // Insights: trial length among converters, tenure among ended subs, and the
+  // paying plan mix. All aggregate, so they never reveal an individual customer.
+  const convertDays: number[] = [];
+  const tenureDays: number[] = [];
+  const planMix = { monthly: 0, annual: 0, other: 0 };
+  for (const s of subs) {
+    const conv = daysBetween(s.trial_started_at, s.trial_converted_at);
+    if (conv !== null) convertDays.push(conv);
+
+    if (isEnded(s)) {
+      const anchor = s.pro_started_at ?? s.trial_converted_at ?? s.trial_started_at;
+      const tenure = daysBetween(anchor, s.ends_at);
+      if (tenure !== null) tenureDays.push(tenure);
+    }
+
+    if (everPaid(s)) {
+      if (s.billing_interval === "year") planMix.annual += 1;
+      else if (s.billing_interval === "month") planMix.monthly += 1;
+      else planMix.other += 1;
+    }
+  }
+
+  const insights: ReferredInsights = {
+    avgDaysToConvert: average(convertDays),
+    avgDaysSubscribed: average(tenureDays),
+    planMix,
+  };
+
+  return { funnel, events: events.slice(0, REFERRED_EVENTS_CAP), insights };
 }

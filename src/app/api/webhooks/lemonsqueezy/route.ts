@@ -760,14 +760,68 @@ export async function POST(request: Request) {
     // returned. LS sends the new status ('refunded' or 'partial_refund') in the
     // payload; we only update an existing row (no upsert) so a stray refund
     // event for an unknown order is a no-op rather than a phantom insert.
+    //
+    // Clawback: if we had ALREADY paid the affiliate commission on this order
+    // (reconciled_amount_cents > 0), flipping status is not enough - the money is
+    // gone. Record a negative, open affiliate_commission_adjustments row for what
+    // we paid, so the next automated disburse nets it back. Idempotent on the
+    // order id (related_customer) so a re-delivered refund event never doubles it.
     order_refunded: async () => {
       if (!recordId) return;
+
+      // Read the order first so we know whether commission was already paid and
+      // who the referring affiliate was.
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("ref_affiliate_user_id,reconciled_amount_cents,currency")
+        .eq("ls_order_id", recordId)
+        .maybeSingle();
+
       await assertWrite(
         "orders.update(order_refunded)",
         supabase
           .from("orders")
           .update({ status: getString(attrs.status) ?? "refunded" })
           .eq("ls_order_id", recordId),
+      );
+
+      const affiliateUserId =
+        typeof existingOrder?.ref_affiliate_user_id === "string"
+          ? existingOrder.ref_affiliate_user_id
+          : null;
+      const paidCents =
+        typeof existingOrder?.reconciled_amount_cents === "number"
+          ? existingOrder.reconciled_amount_cents
+          : 0;
+      if (!affiliateUserId || paidCents <= 0) return; // nothing was paid -> no clawback
+
+      // Idempotency: skip if a clawback for this order already exists. Filter the
+      // negative amount in JS (the typed client only chains .eq here).
+      const { data: prior } = await supabase
+        .from("affiliate_commission_adjustments")
+        .select("id,amount_cents")
+        .eq("related_customer", recordId);
+      if (
+        Array.isArray(prior) &&
+        prior.some((r) => typeof r.amount_cents === "number" && r.amount_cents < 0)
+      ) {
+        return;
+      }
+
+      await assertWrite(
+        "affiliate_commission_adjustments.insert(clawback)",
+        supabase.from("affiliate_commission_adjustments").insert({
+          user_id: affiliateUserId,
+          amount_cents: -paidCents,
+          currency:
+            typeof existingOrder?.currency === "string" ? existingOrder.currency : "USD",
+          note: `Refund/chargeback clawback on order ${recordId}`,
+          // 'manual' keeps within the source CHECK constraint (makewhole|manual);
+          // related_customer carries the order id for idempotency + admin context.
+          source: "manual",
+          related_customer: recordId,
+          created_by: "ls-webhook:order_refunded",
+        }),
       );
     },
 

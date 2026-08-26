@@ -87,3 +87,65 @@ export async function resolveAdminAffiliate(
 
   return { userId: row.id as string, code: str(row.affiliate_code), displayName };
 }
+
+/** A candidate order for attribution, narrowed to the fields the guard needs. */
+export type AttributableOrder = {
+  ls_order_id: string;
+  ref_affiliate_user_id: string | null;
+};
+
+export type AttributeResult = {
+  stamped: string[];
+  skipped: { orderId: string; reason: string }[];
+};
+
+/**
+ * Stamp a set of orders with an affiliate's attribution (ref_affiliate_user_id /
+ * ref_affiliate_code / attribution_status='pending'), which is exactly what the
+ * Owed report and the PayPal disburse path read to credit and pay them. Shared by
+ * the manual "Attribute an existing order" tool and the attribution-gap
+ * reconciler so both apply the same guard: never overwrite an order already
+ * attributed to a DIFFERENT affiliate unless `force` is set. An order already
+ * attributed to this same affiliate is skipped as a no-op.
+ */
+export async function attributeOrdersToAffiliate(
+  admin: unknown,
+  affiliate: { userId: string; code: string | null },
+  orders: AttributableOrder[],
+  force: boolean,
+): Promise<AttributeResult> {
+  const q = asQueryClient(admin);
+  const stamped: string[] = [];
+  const skipped: { orderId: string; reason: string }[] = [];
+
+  for (const o of orders) {
+    const existing = str(o.ref_affiliate_user_id);
+    if (existing && existing === affiliate.userId) {
+      skipped.push({ orderId: o.ls_order_id, reason: "already attributed to this affiliate" });
+      continue;
+    }
+    if (existing && existing !== affiliate.userId && !force) {
+      skipped.push({
+        orderId: o.ls_order_id,
+        reason: "already attributed to a different affiliate (use force to override)",
+      });
+      continue;
+    }
+    const { error } = await q
+      .from("orders")
+      .update({
+        ref_affiliate_user_id: affiliate.userId,
+        ref_affiliate_code: affiliate.code,
+        attribution_status: "pending",
+      })
+      .eq("ls_order_id", o.ls_order_id);
+    if (error) {
+      console.error("attributeOrdersToAffiliate: update failed", o.ls_order_id, error);
+      skipped.push({ orderId: o.ls_order_id, reason: "update failed" });
+      continue;
+    }
+    stamped.push(o.ls_order_id);
+  }
+
+  return { stamped, skipped };
+}

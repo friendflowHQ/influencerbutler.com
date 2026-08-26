@@ -3,9 +3,11 @@ import {
   deriveReferredSignups,
   type ReferredEvent,
   type ReferredFunnel,
+  type ReferredInsights,
   type ReferredProfileRow,
   type ReferredSubscriptionRow,
 } from "@/lib/referred-signups";
+import { billingIntervalForVariantId } from "@/lib/lemonsqueezy";
 
 /**
  * Loads the "Referred signups" funnel for one affiliate, using an already
@@ -21,8 +23,28 @@ import {
 export async function loadReferredSignups(
   admin: SupabaseClient,
   affiliateUserId: string,
-): Promise<{ migrationPending: boolean; funnel: ReferredFunnel; events: ReferredEvent[] }> {
+): Promise<{
+  migrationPending: boolean;
+  funnel: ReferredFunnel;
+  events: ReferredEvent[];
+  insights: ReferredInsights;
+}> {
   let migrationPending = false;
+
+  // Attach the billing cadence (from ls_variant_id) so the funnel can report a
+  // plan mix. Tolerates the reduced (no pro_started_at) shape from the retry.
+  const withInterval = (rows: Record<string, unknown>[]): ReferredSubscriptionRow[] =>
+    rows.map((r) => ({
+      user_id: (r.user_id as string | null) ?? null,
+      status: (r.status as string | null) ?? null,
+      trial_started_at: (r.trial_started_at as string | null) ?? null,
+      trial_converted_at: (r.trial_converted_at as string | null) ?? null,
+      pro_started_at: (r.pro_started_at as string | null) ?? null,
+      ends_at: (r.ends_at as string | null) ?? null,
+      billing_interval: billingIntervalForVariantId(
+        (r.ls_variant_id as string | number | null) ?? null,
+      ),
+    }));
 
   let profileRows: ReferredProfileRow[] = [];
   const { data: signupData, error: signupErr } = await admin
@@ -42,7 +64,7 @@ export async function loadReferredSignups(
   let subRows: ReferredSubscriptionRow[] = [];
   const { data: subData, error: subErr } = await admin
     .from("subscriptions")
-    .select("user_id,status,trial_started_at,trial_converted_at,pro_started_at,ends_at")
+    .select("user_id,status,trial_started_at,trial_converted_at,pro_started_at,ends_at,ls_variant_id")
     .eq("ref_affiliate_user_id", affiliateUserId)
     .limit(200);
   if (subErr) {
@@ -52,20 +74,18 @@ export async function loadReferredSignups(
     console.warn("referred-signups: full subscriptions read failed, retrying reduced", subErr);
     const { data: reducedData, error: reducedErr } = await admin
       .from("subscriptions")
-      .select("user_id,status,trial_started_at,trial_converted_at,ends_at")
+      .select("user_id,status,trial_started_at,trial_converted_at,ends_at,ls_variant_id")
       .eq("ref_affiliate_user_id", affiliateUserId)
       .limit(200);
     if (reducedErr) {
       console.warn("referred-signups: subscriptions read skipped", reducedErr);
     } else {
-      subRows = ((reducedData ?? []) as Omit<ReferredSubscriptionRow, "pro_started_at">[]).map(
-        (row) => ({ ...row, pro_started_at: null }),
-      );
+      subRows = withInterval((reducedData ?? []) as Record<string, unknown>[]);
     }
   } else {
-    subRows = (subData ?? []) as ReferredSubscriptionRow[];
+    subRows = withInterval((subData ?? []) as Record<string, unknown>[]);
   }
 
-  const { funnel, events } = deriveReferredSignups(profileRows, subRows);
-  return { migrationPending, funnel, events };
+  const { funnel, events, insights } = deriveReferredSignups(profileRows, subRows);
+  return { migrationPending, funnel, events, insights };
 }

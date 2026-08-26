@@ -38,6 +38,11 @@ type SelfHostedData = {
   owedCents: number;
   adjustmentCents?: number;
   adjustments?: Adjustment[];
+  // Refund/chargeback-safety split of the outstanding owed. Optional so an older
+  // cached payload without them still renders.
+  payableCents?: number;
+  clearingCents?: number;
+  upcomingCents?: number;
   grossCents: number;
   orderCount: number;
   ratePercent: number;
@@ -239,7 +244,7 @@ export default function SelfHostedAffiliateDashboard({
           label="Unpaid earnings"
           value={formatUsdFromCents(data.owedCents + (data.adjustmentCents ?? 0))}
           hint="Paid monthly via PayPal"
-          tooltip="Paid monthly via PayPal. A month's earnings clear after a short hold (about 30 days, to cover any refunds), then pay out on or around the 1st of the following month, once your balance reaches $10. PayPal fees are not covered, so the amount that lands may be slightly less."
+          tooltip="Paid monthly via PayPal. Each order's commission clears after a short hold (about 14 days, to cover any dispute), then pays out on or around the 1st, once your balance reaches $10. Annual plans are paid a month at a time across the year. PayPal fees are not covered, so the amount that lands may be slightly less."
         />
         <StatCard label="Paid to date" value={formatUsdFromCents(data.paidCents)} hint="Successful payouts" />
         <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
@@ -249,6 +254,34 @@ export default function SelfHostedAffiliateDashboard({
           hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
         />
       </section>
+
+      {(data.payableCents ?? 0) + (data.clearingCents ?? 0) + (data.upcomingCents ?? 0) > 0 ? (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+            How your unpaid earnings clear
+          </h3>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <BreakdownItem
+              label="Available now"
+              value={formatUsdFromCents(data.payableCents ?? 0)}
+              hint="Cleared the hold, ready for the next payout"
+              accent="text-emerald-700"
+            />
+            <BreakdownItem
+              label="Clearing"
+              value={formatUsdFromCents(data.clearingCents ?? 0)}
+              hint="In the ~14-day hold before it can be paid"
+              accent="text-amber-700"
+            />
+            <BreakdownItem
+              label="Upcoming"
+              value={formatUsdFromCents(data.upcomingCents ?? 0)}
+              hint="Annual plans: future months, paid as they're earned"
+              accent="text-slate-500"
+            />
+          </div>
+        </section>
+      ) : null}
 
       {data.adjustments && data.adjustments.length > 0 ? (
         <section className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
@@ -418,6 +451,26 @@ function StatCard({
       <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </article>
+  );
+}
+
+function BreakdownItem({
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  accent: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold tracking-tight ${accent}`}>{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
+    </div>
   );
 }
 
