@@ -43,8 +43,8 @@ export function isEligibleNewAccount(
 export async function captureSignupReferral(args: {
   userId: string;
   userCreatedAt: string | null | undefined;
-  /** Included in the upsert payload only (the profiles row may not exist
-   *  yet); never returned to any client. */
+  /** Used only when the profiles row does not exist yet and has to be
+   *  inserted (email is NOT NULL); never returned to any client. */
   userEmail: string | null | undefined;
   cookieStore: CookieReader;
 }): Promise<void> {
@@ -67,7 +67,7 @@ export async function captureSignupReferral(args: {
     // First-touch: never overwrite an existing stamp.
     const { data: existing, error: readErr } = await admin
       .from("profiles")
-      .select("ref_affiliate_user_id")
+      .select("id, ref_affiliate_user_id")
       .eq("id", args.userId)
       .maybeSingle();
     if (readErr) {
@@ -77,20 +77,42 @@ export async function captureSignupReferral(args: {
     }
     if (existing?.ref_affiliate_user_id) return;
 
-    // Upsert, not update: there is no handle_new_user trigger, so the
-    // profiles row may not exist yet at confirmation time.
-    const { error: writeErr } = await admin.from("profiles").upsert(
-      {
+    const stamp = {
+      ref_affiliate_user_id: owner.affiliateUserId,
+      ref_affiliate_code: owner.code.toUpperCase(),
+      ref_captured_at: new Date().toISOString(),
+    };
+
+    if (existing) {
+      // Existing row: update only the stamp columns. Never write email here,
+      // and never via upsert: profiles.email is NOT NULL and Postgres checks
+      // the proposed insert row BEFORE on-conflict resolution, so an upsert
+      // with email null fails 23502 even when the row exists.
+      const { error: writeErr } = await admin
+        .from("profiles")
+        .update(stamp)
+        .eq("id", args.userId);
+      if (writeErr) {
+        console.warn("signup-referral: profiles update skipped", writeErr);
+      }
+    } else {
+      // No profiles row yet (there is no handle_new_user trigger, so at
+      // confirmation time it may not exist). The insert needs a real email
+      // to satisfy NOT NULL; without one the stamp cannot land.
+      if (!args.userEmail) {
+        console.warn("signup-referral: no email for new profile row, stamp skipped", {
+          userId: args.userId,
+        });
+        return;
+      }
+      const { error: writeErr } = await admin.from("profiles").insert({
         id: args.userId,
-        email: args.userEmail ?? null,
-        ref_affiliate_user_id: owner.affiliateUserId,
-        ref_affiliate_code: owner.code.toUpperCase(),
-        ref_captured_at: new Date().toISOString(),
-      },
-      { onConflict: "id" },
-    );
-    if (writeErr) {
-      console.warn("signup-referral: profiles upsert skipped", writeErr);
+        email: args.userEmail,
+        ...stamp,
+      });
+      if (writeErr) {
+        console.warn("signup-referral: profiles insert skipped", writeErr);
+      }
     }
   } catch (err) {
     console.warn("signup-referral: capture skipped", err);

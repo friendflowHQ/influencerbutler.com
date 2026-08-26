@@ -17,7 +17,8 @@ vi.mock("../affiliate-lookup", () => ({
 }));
 
 const maybeSingleMock = vi.fn();
-const upsertMock = vi.fn();
+const updateMock = vi.fn();
+const insertMock = vi.fn();
 vi.mock("../supabase/admin", () => ({
   createAdminClient: () => ({
     from: (_table: string) => ({
@@ -26,7 +27,10 @@ vi.mock("../supabase/admin", () => ({
           maybeSingle: () => maybeSingleMock(),
         }),
       }),
-      upsert: (values: unknown, options: unknown) => upsertMock(values, options),
+      update: (values: unknown) => ({
+        eq: (_col: string, val: string) => updateMock(values, val),
+      }),
+      insert: (values: unknown) => insertMock(values),
     }),
   }),
 }));
@@ -58,8 +62,12 @@ beforeEach(() => {
     lsAffiliateId: null,
     code: "samantha",
   });
-  maybeSingleMock.mockResolvedValue({ data: { ref_affiliate_user_id: null }, error: null });
-  upsertMock.mockResolvedValue({ error: null });
+  maybeSingleMock.mockResolvedValue({
+    data: { id: "new-user-id", ref_affiliate_user_id: null },
+    error: null,
+  });
+  updateMock.mockResolvedValue({ error: null });
+  insertMock.mockResolvedValue({ error: null });
 });
 
 afterEach(() => {
@@ -89,7 +97,8 @@ describe("captureSignupReferral guards", () => {
   it("does nothing without the ib_aff_src cookie", async () => {
     await captureSignupReferral(baseArgs({ cookieStore: cookieStoreWith(null) }));
     expect(lookupMock).not.toHaveBeenCalled();
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it("does nothing for an old account (magic-link login, not a signup)", async () => {
@@ -99,13 +108,15 @@ describe("captureSignupReferral guards", () => {
       }),
     );
     expect(lookupMock).not.toHaveBeenCalled();
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it("does nothing when the code doesn't belong to a real affiliate", async () => {
     lookupMock.mockResolvedValue(null);
     await captureSignupReferral(baseArgs());
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it("does nothing on self-referral", async () => {
@@ -115,7 +126,8 @@ describe("captureSignupReferral guards", () => {
       code: "samantha",
     });
     await captureSignupReferral(baseArgs());
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it("is first-touch: does not overwrite an existing stamp", async () => {
@@ -124,42 +136,62 @@ describe("captureSignupReferral guards", () => {
       error: null,
     });
     await captureSignupReferral(baseArgs());
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
   it("skips quietly when the profiles read errors (migration not applied)", async () => {
     maybeSingleMock.mockResolvedValue({ data: null, error: { message: "column missing" } });
     await captureSignupReferral(baseArgs());
-    expect(upsertMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 });
 
 describe("captureSignupReferral happy path", () => {
-  it("upserts the stamp with the canonical uppercased code, keyed on id", async () => {
+  it("updates an existing row with the canonical uppercased code, never touching email", async () => {
     await captureSignupReferral(baseArgs());
 
     // Cookie value is uppercased before the lookup.
     expect(lookupMock).toHaveBeenCalledWith("SAMANTHA");
-    expect(upsertMock).toHaveBeenCalledTimes(1);
-    const [values, options] = upsertMock.mock.calls[0];
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    const [values, id] = updateMock.mock.calls[0];
     expect(values).toEqual({
+      ref_affiliate_user_id: "affiliate-id",
+      ref_affiliate_code: "SAMANTHA",
+      ref_captured_at: NOW.toISOString(),
+    });
+    expect(id).toBe("new-user-id");
+  });
+
+  it("inserts (with email) when the profiles row doesn't exist yet", async () => {
+    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+    await captureSignupReferral(baseArgs());
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(insertMock.mock.calls[0][0]).toEqual({
       id: "new-user-id",
       email: "new@example.com",
       ref_affiliate_user_id: "affiliate-id",
       ref_affiliate_code: "SAMANTHA",
       ref_captured_at: NOW.toISOString(),
     });
-    expect(options).toEqual({ onConflict: "id" });
   });
 
-  it("stamps a profile row that doesn't exist yet (maybeSingle returns null data)", async () => {
+  it("skips the insert when the row doesn't exist and no email is available (NOT NULL)", async () => {
     maybeSingleMock.mockResolvedValue({ data: null, error: null });
-    await captureSignupReferral(baseArgs());
-    expect(upsertMock).toHaveBeenCalledTimes(1);
+    await captureSignupReferral(baseArgs({ userEmail: null }));
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("swallows upsert failures instead of throwing into the auth flow", async () => {
-    upsertMock.mockResolvedValue({ error: { message: "boom" } });
+  it("swallows write failures instead of throwing into the auth flow", async () => {
+    updateMock.mockResolvedValue({ error: { message: "boom" } });
+    await expect(captureSignupReferral(baseArgs())).resolves.toBeUndefined();
+
+    maybeSingleMock.mockResolvedValue({ data: null, error: null });
+    insertMock.mockResolvedValue({ error: { message: "boom" } });
     await expect(captureSignupReferral(baseArgs())).resolves.toBeUndefined();
   });
 });
