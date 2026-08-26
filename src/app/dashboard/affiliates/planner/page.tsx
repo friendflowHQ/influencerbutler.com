@@ -456,7 +456,7 @@ export default function AffiliatePlannerPage() {
         <p className="mt-1 text-sm text-slate-600">
           The highest-reach format on Facebook and Instagram: teach a real framework, then bait a
           comment for a free resource. You post the value, and every time someone comments the
-          keyword, you reply or DM them your tracked link. Comments boost the post's reach AND hand
+          keyword, you reply or DM them your tracked link. Comments boost the post&apos;s reach AND hand
           you a warm lead in one move.
         </p>
         <div className="mt-3 rounded-xl border border-[#f97316]/30 bg-orange-50/60 p-3 text-xs text-slate-700">

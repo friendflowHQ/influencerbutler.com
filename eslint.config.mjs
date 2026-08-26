@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Leftover Claude session worktrees; linting them duplicates every error.
+    ".claude/**",
+    // Generated extension bundle output.
+    "extension/dist-selfhosted/**",
   ]),
+  {
+    // Plain-.js maintenance scripts run under Node as CommonJS.
+    files: ["scripts/**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

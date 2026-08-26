@@ -124,7 +124,7 @@ export default async function PricingPage({
             Pricing
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free, upgrade when you're ready
+            Start free, upgrade when you&apos;re ready
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
             The whole Chrome extension and six See &amp; Organize butlers are free forever. Go Pro
