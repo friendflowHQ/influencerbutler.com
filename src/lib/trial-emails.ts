@@ -9,11 +9,12 @@ import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// 14-day trial nurture drip. Early touches (day0/1/3/7) are anchored to trial
-// start; the last two (day13/day14) are the "24 hours left" and "ends tonight"
-// urgency emails, timed to land just before the 14-day trial converts. See
-// TRIAL_TIERS in /api/cron/affiliate-funnel/route.ts for the send schedule.
-export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day13" | "day14";
+// 14-day trial nurture drip. Early touches (day0/1) are onboarding; day3 and
+// day11 are personal founder notes (a check-in and a "3 days left" nudge); the
+// last two (day13/day14) are the "24 hours left" and "ends tonight" urgency
+// emails, timed to land just before the 14-day trial converts. See TRIAL_TIERS
+// in /api/cron/affiliate-funnel/route.ts for the send schedule.
+export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day11" | "day13" | "day14";
 
 export type TierCopy = {
   // Subject can depend on the vars (day3 drops the codes mention when the
@@ -99,25 +100,20 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
     },
   },
   day3: {
-    subject: "3 days in: the one butler to run if you haven't yet",
+    // A personal founder note, not a feature list. Short, human, reply-inviting:
+    // day-3 check-ins from the founder get answered and shape the roadmap.
+    subject: "quick question about your Butler trial",
     build: (v) => {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're a few days into your 14-day trial. If you do just one thing this week, make it this: run Orders Butler and let it pull your real Amazon order history.`,
+        `Liz here, founder of Influencer Butler. No pitch, I promise.`,
         ``,
-        `Once it has your real numbers, every other butler gets smarter:`,
-        `  1. Daily Commission Butler accepts the Creator Connections campaigns that match what you actually sell.`,
-        `  2. Earnings Intelligence shows which products truly pay you, returns and all.`,
-        `  3. The AI Keyword Generator targets what's converting in your niche this month.`,
+        `I just want to know one thing: what were you hoping Butler would do for you when you started your trial?`,
         ``,
-        `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
+        `Whatever you say, I read every reply myself and it shapes what we build next. And if something is already in your way, tell me and I'll personally help you get it working.`,
         ``,
-        `Stuck on anything? Reply and a real human will help you get it running.`,
-        ``,
-        COMMUNITY_LINE,
-        ``,
-        `- The Influencer Butler team`,
+        `- Liz`,
       ].join("\n");
     },
   },
@@ -142,6 +138,22 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
         COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
+      ].join("\n");
+    },
+  },
+  day11: {
+    // A personal "3 days left" nudge from the founder, a few days before the
+    // day13/day14 urgency emails. Warm, not salesy: reply-to-fix, not buy-now.
+    subject: "3 days left on your Butler trial",
+    build: (v) => {
+      return [
+        `Hi ${v.firstName},`,
+        ``,
+        `Your 14-day Pro trial wraps up in about 3 days.`,
+        ``,
+        `If Butler has been earning its keep, you don't need to do a thing, it just continues. If it hasn't clicked yet, hit reply and tell me what's missing. I'd genuinely rather fix it than lose you.`,
+        ``,
+        `- Liz`,
       ].join("\n");
     },
   },

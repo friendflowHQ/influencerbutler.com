@@ -301,9 +301,11 @@ const TRIAL_TIERS: ReadonlyArray<{
 }> = [
   // Most-aged first so we send the highest matured tier that's still pending.
   // Thresholds derive from TRIAL_LENGTH_DAYS: day13/day14 are the "24 hours
-  // left" and "ends tonight" urgency emails, timed to the trial's final days.
+  // left" and "ends tonight" urgency emails; day11 is the personal "3 days left"
+  // founder nudge that lands a couple of days before them.
   { tier: "day14", thresholdMs: TRIAL_LENGTH_DAYS * TRIAL_DAY_MS, sentCol: "trial_email_day14_sent_at" },
   { tier: "day13", thresholdMs: (TRIAL_LENGTH_DAYS - 1) * TRIAL_DAY_MS, sentCol: "trial_email_day13_sent_at" },
+  { tier: "day11", thresholdMs: (TRIAL_LENGTH_DAYS - 3) * TRIAL_DAY_MS, sentCol: "trial_email_day11_sent_at" },
   { tier: "day7", thresholdMs: 7 * TRIAL_DAY_MS, sentCol: "trial_email_day7_sent_at" },
   { tier: "day3", thresholdMs: 3 * TRIAL_DAY_MS, sentCol: "trial_email_day3_sent_at" },
   { tier: "day1", thresholdMs: 24 * 60 * 60 * 1000, sentCol: "trial_email_day1_sent_at" },
@@ -323,6 +325,7 @@ type TrialSubRow = {
   trial_email_day1_sent_at: string | null;
   trial_email_day3_sent_at: string | null;
   trial_email_day7_sent_at: string | null;
+  trial_email_day11_sent_at: string | null;
   trial_email_day13_sent_at: string | null;
   trial_email_day14_sent_at: string | null;
 };
@@ -373,7 +376,7 @@ async function fetchUserContact(
 }
 
 async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, number>> {
-  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day3: 0, day7: 0, day13: 0, day14: 0 };
+  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day3: 0, day7: 0, day11: 0, day13: 0, day14: 0 };
 
   const siteUrl =
     process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -389,7 +392,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   const { data, error } = await supabase
     .from("subscriptions")
     .select(
-      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day3_sent_at,trial_email_day7_sent_at,trial_email_day13_sent_at,trial_email_day14_sent_at",
+      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day3_sent_at,trial_email_day7_sent_at,trial_email_day11_sent_at,trial_email_day13_sent_at,trial_email_day14_sent_at",
     )
     .lte("trial_started_at", oldest)
     .limit(PER_RUN_LIMIT);
@@ -416,11 +419,15 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     // they're onboarding content, and the pro welcome track deliberately
     // excludes trial converts (see the pro_started_at comment in the LS
     // webhook), so this is their only onboarding sequence.
-    if (row.status === "active" && (tier.tier === "day13" || tier.tier === "day14")) {
+    if (
+      row.status === "active" &&
+      (tier.tier === "day11" || tier.tier === "day13" || tier.tier === "day14")
+    ) {
       const nowIso = new Date().toISOString();
       await supabase
         .from("subscriptions")
         .update({
+          trial_email_day11_sent_at: row.trial_email_day11_sent_at ?? nowIso,
           trial_email_day13_sent_at: row.trial_email_day13_sent_at ?? nowIso,
           trial_email_day14_sent_at: row.trial_email_day14_sent_at ?? nowIso,
         })

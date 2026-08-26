@@ -21,6 +21,10 @@
       "schedule": "0 14 1 * *"
     },
     {
+      "path": "/api/cron/tax-review-reminder",
+      "schedule": "0 23 28-31 * *"
+    },
+    {
       "path": "/api/cron/testimonial-requests",
       "schedule": "0 15 * * *"
     },
@@ -55,6 +59,10 @@
     {
       "path": "/api/cron/winback-autocomp",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/affiliate-activation",
+      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/cron/daily-digest",

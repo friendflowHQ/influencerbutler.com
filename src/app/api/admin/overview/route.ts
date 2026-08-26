@@ -16,6 +16,7 @@
 import { NextResponse } from "next/server";
 import { resolveActor, createAdminClient, type Actor } from "@/lib/admin";
 import type { PermissionKey } from "@/lib/permissions";
+import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -107,20 +108,24 @@ export async function GET(request: Request) {
           b.gte("created_at", startOfMonth),
         );
 
-        // Trial-to-paid conversion over trials that started 3-90 days ago
-        // (younger trials have not finished yet). Needs trial_converted_at,
-        // which arrives with the 20260704_trial_conversion_capture migration:
-        // until it is applied in prod these counts error and the tile shows n/a.
+        // Trial-to-paid conversion over trials that started between 90 days ago
+        // and one full trial-length ago, so only FINISHED trials count (a trial
+        // younger than TRIAL_LENGTH_DAYS is still running and would understate
+        // the rate). Needs trial_converted_at, which arrives with the
+        // 20260704_trial_conversion_capture migration: until it is applied in
+        // prod these counts error and the tile shows n/a.
         const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-        const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+        const trialMaturityCutoff = new Date(
+          now.getTime() - TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000,
+        ).toISOString();
         const cohort = await safeCount(supabase, "subscriptions", (b) =>
-          b.not("trial_started_at", "is", null).gte("trial_started_at", ninetyDaysAgo).lte("trial_started_at", threeDaysAgo),
+          b.not("trial_started_at", "is", null).gte("trial_started_at", ninetyDaysAgo).lte("trial_started_at", trialMaturityCutoff),
         );
         const converted = await safeCount(supabase, "subscriptions", (b) =>
           b
             .not("trial_started_at", "is", null)
             .gte("trial_started_at", ninetyDaysAgo)
-            .lte("trial_started_at", threeDaysAgo)
+            .lte("trial_started_at", trialMaturityCutoff)
             .not("trial_converted_at", "is", null),
         );
         const conversionRate =
