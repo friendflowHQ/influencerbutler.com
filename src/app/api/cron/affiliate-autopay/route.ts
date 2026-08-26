@@ -51,8 +51,35 @@ function capCents(): number {
   return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 20000; // $200 default
 }
 
-function isArmed(): boolean {
-  return process.env.AFFILIATE_AUTOPAY_ENABLED === "true";
+/**
+ * Whether auto-pay may move money. The env var AFFILIATE_AUTOPAY_ENABLED="true"
+ * is a hard override; otherwise the dashboard toggle (stored in app_config under
+ * affiliate_autopay_armed) decides, so the owner can arm/disarm without touching
+ * Vercel. Defaults to shadow (false) when neither is set.
+ */
+async function isArmed(): Promise<boolean> {
+  if (process.env.AFFILIATE_AUTOPAY_ENABLED === "true") return true;
+  const db = createAdminClient() as unknown as {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (k: string, v: string) => {
+          maybeSingle: () => Promise<{ data: Record<string, unknown> | null }>;
+        };
+      };
+    };
+  } | null;
+  if (!db) return false;
+  try {
+    const { data } = await db
+      .from("app_config")
+      .select("value")
+      .eq("key", "affiliate_autopay_armed")
+      .maybeSingle();
+    const v = (data?.value ?? null) as { armed?: boolean } | null;
+    return v?.armed === true;
+  } catch {
+    return false;
+  }
 }
 
 function displayName(s: AffiliateStatement): string {
@@ -109,7 +136,7 @@ export async function GET(request: Request) {
 
   const dry = new URL(request.url).searchParams.get("dry") === "1";
   const period = currentPeriod();
-  const armed = isArmed();
+  const armed = await isArmed();
   const cap = capCents();
   const min = payoutMinimumCents();
 

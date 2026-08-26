@@ -330,6 +330,13 @@ export default function AdminAffiliatesPage() {
   const [gapRow, setGapRow] = useState<Record<string, LinkRowState>>({});
   const [gapAllState, setGapAllState] = useState<LinkRowState>({ kind: "idle" });
 
+  // Auto-pay arming toggle (stored server-side in app_config; env var can force it).
+  const [autopayArmed, setAutopayArmed] = useState(false);
+  const [autopayEnvForced, setAutopayEnvForced] = useState(false);
+  const [autopayCapCents, setAutopayCapCents] = useState(20000);
+  const [autopayLoaded, setAutopayLoaded] = useState(false);
+  const [autopaySaving, setAutopaySaving] = useState(false);
+
   // Per-row state for the roster "Generate new code" action.
   const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
 
@@ -460,6 +467,56 @@ export default function AdminAffiliatesPage() {
     }
   }, []);
 
+  const loadAutopayConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/affiliates/admin-autopay-config", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as {
+        armed?: boolean;
+        envForced?: boolean;
+        capCents?: number;
+      };
+      if (res.ok) {
+        setAutopayArmed(json.armed === true);
+        setAutopayEnvForced(json.envForced === true);
+        if (typeof json.capCents === "number") setAutopayCapCents(json.capCents);
+        setAutopayLoaded(true);
+      }
+    } catch (err) {
+      console.error("autopay config load failed", err);
+    }
+  }, []);
+
+  const onToggleAutopay = async (next: boolean) => {
+    if (autopayEnvForced) return; // locked on by env var
+    if (
+      next &&
+      !window.confirm(
+        "Arm auto-pay? On the 1st of each month the system will pay every eligible affiliate (verified tax form + PayPal, over $10) their cleared commission automatically via PayPal. Amounts over the cap still wait for your manual Disburse. You can turn this off anytime.",
+      )
+    ) {
+      return;
+    }
+    setAutopaySaving(true);
+    try {
+      const res = await fetch("/api/affiliates/admin-autopay-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ armed: next }),
+      });
+      const json = (await res.json()) as { armed?: boolean; error?: string };
+      if (res.ok) setAutopayArmed(json.armed === true);
+      else console.error("autopay toggle failed", json.error);
+    } catch (err) {
+      console.error("autopay toggle failed", err);
+    } finally {
+      setAutopaySaving(false);
+    }
+  };
+
   // Roster + applications load eagerly (applications powers the tab badge and is
   // a cheap DB read). Reconcile and owed each hit Lemon Squeezy, so they load
   // lazily the first time their tab is opened.
@@ -479,8 +536,9 @@ export default function AdminAffiliatesPage() {
       owedLoaded.current = true;
       void loadOwed();
       void loadGap();
+      void loadAutopayConfig();
     }
-  }, [tab, loadReconcile, loadOwed, loadGap]);
+  }, [tab, loadReconcile, loadOwed, loadGap, loadAutopayConfig]);
 
   const setRow = (userId: string, state: RowState) =>
     setRowState((prev) => ({ ...prev, [userId]: state }));
@@ -1332,6 +1390,59 @@ export default function AdminAffiliatesPage() {
               <strong>Mark paid manually</strong> only if you paid the affiliate some other way.
             </p>
           </div>
+
+          {/* Auto-pay arming: pay eligible affiliates automatically each month. */}
+          {autopayLoaded ? (
+            <div
+              className={`rounded-2xl border p-4 sm:p-5 shadow-sm ${
+                autopayArmed ? "border-emerald-300 bg-emerald-50/60" : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Monthly auto-pay{" "}
+                    <span
+                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        autopayArmed
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {autopayArmed ? "Armed" : "Shadow (preview only)"}
+                    </span>
+                  </p>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                    When armed, on the 1st of each month the system pays every eligible affiliate
+                    (verified tax form + PayPal, over $10) their cleared commission via PayPal, and
+                    emails you a summary. Amounts over{" "}
+                    <strong>{formatUsd(autopayCapCents)}</strong> still wait for your manual Disburse.
+                    In shadow mode it emails you a preview but sends no money.
+                    {autopayEnvForced
+                      ? " (Locked on by an environment variable.)"
+                      : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autopayArmed}
+                  disabled={autopaySaving || autopayEnvForced}
+                  onClick={() => onToggleAutopay(!autopayArmed)}
+                  className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                    autopayArmed ? "bg-emerald-500" : "bg-slate-300"
+                  }`}
+                  title={autopayEnvForced ? "Locked on by an environment variable" : "Toggle auto-pay"}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                      autopayArmed ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {/* Attribution gap: referred conversions whose orders were never stamped. */}
           <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 sm:p-6 shadow-sm">
