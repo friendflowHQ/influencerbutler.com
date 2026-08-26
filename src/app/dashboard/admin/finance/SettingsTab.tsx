@@ -19,6 +19,8 @@ type Settings = {
   seTaxBasePercent: number;
   scorpDistributionRatePercent: number;
   paypalSenderFeePerPayoutCents: number;
+  utahUseTaxRatePercent: number;
+  useTaxDefaultForSoftware: "review" | "na";
 };
 
 type Props = { onSettingsChanged: () => void };
@@ -188,6 +190,36 @@ export default function SettingsTab({ onSettingsChanged }: Props) {
             num("scorpDistributionRatePercent", "Distribution rate %", "federal, on distributions")
           )}
           {num("utahRatePercent", "Utah rate %")}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">Utah use tax</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          On purchases where a vendor did not already charge Utah sales tax. Confirm your exact
+          combined (state + local) rate for your business location; local rates change.
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-4">
+          {num("utahUseTaxRatePercent", "Use-tax rate %", "combined state + local")}
+          <label className="text-xs text-slate-600">
+            SaaS / hosting default
+            <select
+              value={settings.useTaxDefaultForSoftware}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  useTaxDefaultForSoftware: e.target.value as Settings["useTaxDefaultForSoftware"],
+                })
+              }
+              className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="review">Flag for review</option>
+              <option value="na">No use tax</option>
+            </select>
+            <span className="mt-0.5 block text-[10px] text-slate-400">
+              default for new hosting expenses
+            </span>
+          </label>
         </div>
       </div>
 

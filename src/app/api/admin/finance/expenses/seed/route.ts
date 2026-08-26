@@ -67,6 +67,8 @@ export async function POST(request: Request) {
         amount_cents: e.amountCents,
         incurred_on: e.incurredOn,
         source: "seed",
+        // SaaS/hosting is potentially Utah use-taxable; flag for owner review.
+        use_tax: e.category === "software_hosting" ? "review" : "na",
         external_ref: seedExpenseRef(e),
         created_by: gate.actor.userId,
       })),
@@ -87,6 +89,7 @@ export async function POST(request: Request) {
         day_of_month: r.dayOfMonth ?? 1,
         starts_on: r.startsOn,
         note: r.note,
+        use_tax: r.category === "software_hosting" ? "review" : "na",
         external_ref: seedRecurringRef(r),
         created_by: gate.actor.userId,
       })),

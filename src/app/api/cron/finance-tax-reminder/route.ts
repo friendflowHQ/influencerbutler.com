@@ -103,6 +103,7 @@ export async function GET(request: Request) {
     netProfitCents: pnl.netProfitCents,
     setAside: computeTaxSetAside(pnl.netProfitCents, settings),
     taxMode: settings.taxMode,
+    useTaxOwedCents: pnl.useTaxOwedCents,
   };
 
   if (dry) {

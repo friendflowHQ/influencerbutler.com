@@ -32,6 +32,10 @@ export type FinanceSettings = {
   scorpDistributionRatePercent: number;
   /** Optional PayPal sender fee added per affiliate payout, in cents. */
   paypalSenderFeePerPayoutCents: number;
+  /** Combined Utah use-tax rate (state + local) at the business location. */
+  utahUseTaxRatePercent: number;
+  /** Default use-tax state for new software/hosting expenses. */
+  useTaxDefaultForSoftware: "review" | "na";
 };
 
 export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
@@ -47,6 +51,9 @@ export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   seTaxBasePercent: 92.35,
   scorpDistributionRatePercent: 20,
   paypalSenderFeePerPayoutCents: 0,
+  // West Valley City combined state + local rate (confirm exact local rate).
+  utahUseTaxRatePercent: 7.25,
+  useTaxDefaultForSoftware: "review",
 };
 
 const CONFIG_KEY = "finance";
@@ -83,6 +90,8 @@ export function normalizeFinanceSettings(raw: unknown): FinanceSettings {
     paypalSenderFeePerPayoutCents: Math.round(
       clampNumber(r.paypalSenderFeePerPayoutCents, d.paypalSenderFeePerPayoutCents, 0, 10000),
     ),
+    utahUseTaxRatePercent: clampNumber(r.utahUseTaxRatePercent, d.utahUseTaxRatePercent, 0, 15),
+    useTaxDefaultForSoftware: r.useTaxDefaultForSoftware === "na" ? "na" : "review",
   };
 }
 

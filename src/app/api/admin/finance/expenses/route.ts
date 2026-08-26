@@ -11,7 +11,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { requireFinance, isMigrationPendingError } from "@/lib/finance-stepup";
 import { loadFinanceSettings } from "@/lib/finance-settings";
-import { loadExpenses, isScheduleCKey, SCHEDULE_C_CATEGORIES } from "@/lib/finance-expenses";
+import {
+  loadExpenses,
+  isScheduleCKey,
+  isUseTaxState,
+  defaultUseTaxForCategory,
+  SCHEDULE_C_CATEGORIES,
+} from "@/lib/finance-expenses";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +52,9 @@ export async function GET(request: Request) {
     items: result.items,
     recurringTemplates: result.recurringTemplates,
     totalCents: result.totalCents,
+    useTaxOwedCents: result.useTaxOwedCents,
+    useTaxUnderReviewCents: result.useTaxUnderReviewCents,
+    utahUseTaxRatePercent: settings.utahUseTaxRatePercent,
     categories: SCHEDULE_C_CATEGORIES,
   });
 }
@@ -57,6 +66,7 @@ type ExpenseBody = {
   category?: string;
   amountCents?: number;
   incurredOn?: string;
+  useTax?: string;
 };
 
 function validateExpense(body: ExpenseBody): { error: string } | {
@@ -99,9 +109,13 @@ export async function POST(request: Request) {
   if ("error" in validated) return NextResponse.json(validated, { status: 400 });
 
   const db = createAdminClient();
+  const settings = await loadFinanceSettings(db);
+  const useTax = isUseTaxState(body.useTax)
+    ? body.useTax
+    : defaultUseTaxForCategory(validated.category, settings.useTaxDefaultForSoftware);
   const { data, error } = await db
     .from("finance_expenses")
-    .insert({ ...validated, source: "manual", created_by: gate.actor.userId })
+    .insert({ ...validated, use_tax: useTax, source: "manual", created_by: gate.actor.userId })
     .select("id")
     .maybeSingle();
   if (error) {
@@ -134,9 +148,10 @@ export async function PATCH(request: Request) {
   if ("error" in validated) return NextResponse.json(validated, { status: 400 });
 
   const db = createAdminClient();
+  const useTaxPatch = isUseTaxState(body.useTax) ? { use_tax: body.useTax } : {};
   const { error } = await db
     .from("finance_expenses")
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...validated, ...useTaxPatch, updated_at: new Date().toISOString() })
     .eq("id", body.id);
   if (error) {
     if (isMigrationPendingError(error)) return NextResponse.json({ migrationPending: true });

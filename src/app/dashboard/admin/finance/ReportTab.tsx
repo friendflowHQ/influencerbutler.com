@@ -19,6 +19,7 @@ type Pnl = {
   totalExpensesCents: number;
   netProfitCents: number;
   taxSetAside: { seTaxCents: number; federalCents: number; utahCents: number; totalCents: number };
+  useTaxOwedCents: number;
 };
 
 type ReportResponse = {
@@ -138,7 +139,8 @@ export default function ReportTab() {
           <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Tax planning
           </div>
-          <Row label="Recommended set-aside" value={pnl.taxSetAside.totalCents} bold />
+          <Row label="Recommended income-tax set-aside" value={pnl.taxSetAside.totalCents} bold />
+          <Row label="Utah use tax owed (estimate)" value={pnl.useTaxOwedCents} />
         </div>
       ) : null}
     </div>

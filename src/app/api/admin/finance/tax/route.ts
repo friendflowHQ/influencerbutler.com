@@ -53,10 +53,15 @@ export async function GET(request: Request) {
       revenueNetCents: pnl.revenue.netCents,
       expensesCents: pnl.totalExpensesCents,
       setAside: computeTaxSetAside(pnl.netProfitCents, settings),
+      useTaxOwedCents: pnl.useTaxOwedCents,
       isPast: q.dueDate < today,
       daysUntilDue: daysUntil(today, q.dueDate),
     });
   }
+  const useTaxOwedYearCents = quarters.reduce(
+    (sum: number, q) => sum + ((q as { useTaxOwedCents?: number }).useTaxOwedCents ?? 0),
+    0,
+  );
 
   const upcoming = nextDeadline(today);
   return NextResponse.json({
@@ -71,6 +76,8 @@ export async function GET(request: Request) {
       scorpDistributionRatePercent: settings.scorpDistributionRatePercent,
     },
     quarters,
+    useTaxOwedYearCents,
+    utahUseTaxRatePercent: settings.utahUseTaxRatePercent,
     nextDeadline: upcoming.quarter,
     morEducation: MOR_EDUCATION,
   });

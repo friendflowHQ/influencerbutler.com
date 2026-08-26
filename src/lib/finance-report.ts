@@ -9,7 +9,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FinanceOrder } from "@/lib/finance-orders-data";
 import type { FinanceSettings } from "@/lib/finance-settings";
-import { loadExpenses, categoryLabel, SCHEDULE_C_CATEGORIES } from "@/lib/finance-expenses";
+import {
+  loadExpenses,
+  categoryLabel,
+  computeItemUseTax,
+  SCHEDULE_C_CATEGORIES,
+  type UseTaxState,
+} from "@/lib/finance-expenses";
 import { computeTaxSetAside, type TaxSetAside } from "@/lib/finance-tax";
 
 export type PnlCategoryRow = {
@@ -33,6 +39,8 @@ export type Pnl = {
   totalExpensesCents: number;
   netProfitCents: number;
   taxSetAside: TaxSetAside;
+  /** Utah use tax on expenses confirmed 'owed' (estimate; separate liability). */
+  useTaxOwedCents: number;
 };
 
 function inRange(iso: string | null, from: string, to: string): boolean {
@@ -44,7 +52,7 @@ function inRange(iso: string | null, from: string, to: string): boolean {
 /** Pure P&L math over pre-loaded orders + expense items. */
 export function buildPnlFromData(
   orders: FinanceOrder[],
-  expenseItems: { category: string; amountCents: number }[],
+  expenseItems: { category: string; amountCents: number; useTax?: UseTaxState }[],
   from: string,
   to: string,
   settings: FinanceSettings,
@@ -70,9 +78,16 @@ export function buildPnlFromData(
 
   const byCategory = new Map<string, number>();
   let totalExpenses = 0;
+  let useTaxOwedCents = 0;
   for (const item of expenseItems) {
     byCategory.set(item.category, (byCategory.get(item.category) ?? 0) + item.amountCents);
     totalExpenses += item.amountCents;
+    if (item.useTax === "owed") {
+      useTaxOwedCents += computeItemUseTax(
+        { amountCents: item.amountCents, useTax: "owed" },
+        settings.utahUseTaxRatePercent,
+      );
+    }
   }
   const expensesByCategory: PnlCategoryRow[] = SCHEDULE_C_CATEGORIES.filter((c) =>
     byCategory.has(c.key),
@@ -98,6 +113,7 @@ export function buildPnlFromData(
     totalExpensesCents: totalExpenses,
     netProfitCents: netProfit,
     taxSetAside: computeTaxSetAside(netProfit, settings),
+    useTaxOwedCents,
   };
 }
 
@@ -126,7 +142,15 @@ function usd(cents: number): string {
 /** CSV of the P&L plus an itemized expense section, for on-demand export. */
 export function pnlToCsv(
   pnl: Pnl,
-  expenseItems: { date: string; vendor: string; description: string | null; category: string; amountCents: number; source: string }[],
+  expenseItems: {
+    date: string;
+    vendor: string;
+    description: string | null;
+    category: string;
+    amountCents: number;
+    source: string;
+    useTax?: UseTaxState;
+  }[],
 ): string {
   const rows: string[] = [];
   rows.push(`Profit & Loss,${pnl.from} to ${pnl.to}`);
@@ -142,10 +166,11 @@ export function pnlToCsv(
   }
   rows.push(`Expenses,Total expenses,-${usd(pnl.totalExpensesCents)}`);
   rows.push(`Profit,Net profit,${usd(pnl.netProfitCents)}`);
-  rows.push(`Tax planning,Recommended set-aside,${usd(pnl.taxSetAside.totalCents)}`);
+  rows.push(`Tax planning,Recommended income-tax set-aside,${usd(pnl.taxSetAside.totalCents)}`);
+  rows.push(`Tax planning,Utah use tax owed (estimate),${usd(pnl.useTaxOwedCents)}`);
   rows.push("");
   rows.push("Expense detail");
-  rows.push("Date,Vendor,Description,Category,Source,Amount USD");
+  rows.push("Date,Vendor,Description,Category,Source,Use tax,Amount USD");
   for (const e of expenseItems) {
     rows.push(
       [
@@ -154,6 +179,7 @@ export function pnlToCsv(
         csvField(e.description),
         csvField(categoryLabel(e.category)),
         csvField(e.source),
+        csvField(e.useTax ?? "na"),
         usd(e.amountCents),
       ].join(","),
     );

@@ -28,6 +28,8 @@ export type TaxReminderInput = {
   netProfitCents: number;
   setAside: TaxSetAside;
   taxMode: "passthrough" | "scorp";
+  /** Utah use tax accrued this period on purchases (owed), estimate. */
+  useTaxOwedCents?: number;
 };
 
 /** Plain-text reminder body. Pure, so it can be unit-tested. */
@@ -49,7 +51,13 @@ export function buildTaxReminderBody(input: TaxReminderInput): string {
   lines.push("");
   lines.push("Pay federal at https://www.irs.gov/payments (Estimated tax) and Utah at https://tap.utah.gov.");
   lines.push("");
-  lines.push("Reminder: Lemon Squeezy remits sales tax as merchant of record; this covers income tax only.");
+  if (input.useTaxOwedCents && input.useTaxOwedCents > 0) {
+    lines.push(
+      `Utah use tax accrued this period (on purchases, separate from income tax): ${formatUsdFromCents(input.useTaxOwedCents)}. File it on your Utah sales/use tax return.`,
+    );
+    lines.push("");
+  }
+  lines.push("Reminder: Lemon Squeezy remits sales tax as merchant of record on our sales; this covers income tax only.");
   lines.push("");
   lines.push("Full breakdown in the Finance dashboard (Taxes tab):");
   lines.push(ADMIN_FINANCE_URL);

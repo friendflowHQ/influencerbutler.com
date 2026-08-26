@@ -7,7 +7,11 @@ import {
 } from "@/lib/finance-revenue";
 import { estimateOrderNetCents, computePayoutForecast, nextPayoutDateMs } from "@/lib/finance-ls-payouts";
 import { computeTaxSetAside, taxQuartersForYear, nextDeadline, daysUntil } from "@/lib/finance-tax";
-import { expandRecurring } from "@/lib/finance-expenses";
+import {
+  expandRecurring,
+  defaultUseTaxForCategory,
+  computeItemUseTax,
+} from "@/lib/finance-expenses";
 import { DEFAULT_FINANCE_SETTINGS, normalizeFinanceSettings } from "@/lib/finance-settings";
 import { buildPnlFromData } from "@/lib/finance-report";
 import type { FinanceOrder } from "@/lib/finance-orders-data";
@@ -167,6 +171,7 @@ describe("finance-expenses expandRecurring", () => {
     startsOn: "2026-09-01",
     cancelledOn: null as string | null,
     note: null,
+    useTax: "na" as const,
   };
 
   it("emits one occurrence per month from starts_on", () => {
@@ -181,6 +186,41 @@ describe("finance-expenses expandRecurring", () => {
       "2026-12-31",
     );
     expect(items.map((i) => i.date)).toEqual(["2026-09-01", "2026-10-01"]);
+  });
+});
+
+describe("finance use tax", () => {
+  it("defaults software/hosting to the configured software default, else na", () => {
+    expect(defaultUseTaxForCategory("software_hosting", "review")).toBe("review");
+    expect(defaultUseTaxForCategory("software_hosting", "na")).toBe("na");
+    expect(defaultUseTaxForCategory("office_expense", "review")).toBe("na");
+    expect(defaultUseTaxForCategory("insurance", "review")).toBe("na");
+  });
+
+  it("computes use tax only for owed/review rows at the given rate", () => {
+    // $2,000 at 7.25% = $145.00
+    expect(computeItemUseTax({ amountCents: 200000, useTax: "owed" }, 7.25)).toBe(14500);
+    expect(computeItemUseTax({ amountCents: 200000, useTax: "review" }, 7.25)).toBe(14500);
+    expect(computeItemUseTax({ amountCents: 200000, useTax: "na" }, 7.25)).toBe(0);
+    expect(computeItemUseTax({ amountCents: 200000, useTax: "exempt" }, 7.25)).toBe(0);
+  });
+
+  it("P&L sums use tax only for 'owed' rows", () => {
+    const orders: FinanceOrder[] = [];
+    const expenses = [
+      { category: "software_hosting", amountCents: 2686, useTax: "owed" as const },
+      { category: "software_hosting", amountCents: 2000, useTax: "review" as const },
+      { category: "office_expense", amountCents: 2000, useTax: "na" as const },
+    ];
+    const pnl = buildPnlFromData(
+      orders,
+      expenses,
+      "2026-08-01",
+      "2026-08-31",
+      DEFAULT_FINANCE_SETTINGS,
+    );
+    // Only the 'owed' row: round(2686 * 7.25 / 100) = 195
+    expect(pnl.useTaxOwedCents).toBe(Math.round((2686 * 7.25) / 100));
   });
 });
 

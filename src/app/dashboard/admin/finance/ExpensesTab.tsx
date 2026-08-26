@@ -9,6 +9,8 @@ import { usd, parseDollarsToCents, shortDate, todayIso } from "./format";
 
 type Category = { key: string; label: string; line: string };
 
+type UseTaxState = "na" | "review" | "owed" | "exempt";
+
 type ExpenseItem = {
   id: string;
   vendor: string;
@@ -18,6 +20,7 @@ type ExpenseItem = {
   date: string;
   source: "manual" | "seed" | "recurring" | "affiliate_payout";
   editable: boolean;
+  useTax: UseTaxState;
 };
 
 type RecurringTemplate = {
@@ -29,6 +32,7 @@ type RecurringTemplate = {
   startsOn: string;
   cancelledOn: string | null;
   note: string | null;
+  useTax: UseTaxState;
 };
 
 type ExpensesResponse = {
@@ -40,8 +44,49 @@ type ExpensesResponse = {
   items?: ExpenseItem[];
   recurringTemplates?: RecurringTemplate[];
   totalCents?: number;
+  useTaxOwedCents?: number;
+  useTaxUnderReviewCents?: number;
+  utahUseTaxRatePercent?: number;
   categories?: Category[];
 };
+
+const USE_TAX_LABEL: Record<UseTaxState, string> = {
+  na: "No use tax",
+  review: "Review",
+  owed: "Use tax owed",
+  exempt: "Exempt / already taxed",
+};
+
+const USE_TAX_STATES: UseTaxState[] = ["na", "review", "owed", "exempt"];
+
+function UseTaxSelect({
+  value,
+  onChange,
+}: {
+  value: UseTaxState;
+  onChange: (v: UseTaxState) => void;
+}) {
+  const tone =
+    value === "owed"
+      ? "border-rose-300 text-rose-700"
+      : value === "review"
+        ? "border-amber-300 text-amber-700"
+        : "border-slate-200 text-slate-500";
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as UseTaxState)}
+      title="Utah use tax applies if the vendor did not already charge Utah sales tax on a taxable item"
+      className={`rounded-md border bg-white px-1.5 py-1 text-xs ${tone}`}
+    >
+      {USE_TAX_STATES.map((s) => (
+        <option key={s} value={s}>
+          {USE_TAX_LABEL[s]}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 const SOURCE_BADGE: Record<ExpenseItem["source"], { label: string; cls: string }> = {
   manual: { label: "Manual", cls: "bg-slate-100 text-slate-700" },
@@ -141,6 +186,34 @@ export default function ExpensesTab() {
   const deleteExpense = async (id: string) => {
     if (!window.confirm("Delete this expense?")) return;
     await fetch(`/api/admin/finance/expenses?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await load();
+  };
+
+  // Use-tax on a manual/seed row: the PATCH validates the full row, so resend
+  // the row's current fields alongside the new use-tax state.
+  const setExpenseUseTax = async (item: ExpenseItem, useTax: UseTaxState) => {
+    await fetch("/api/admin/finance/expenses", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: item.id,
+        vendor: item.vendor,
+        category: item.category,
+        amountCents: item.amountCents,
+        incurredOn: item.date,
+        description: item.description,
+        useTax,
+      }),
+    });
+    await load();
+  };
+
+  const setTemplateUseTax = async (t: RecurringTemplate, useTax: UseTaxState) => {
+    await fetch("/api/admin/finance/recurring", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: t.id, useTax }),
+    });
     await load();
   };
 
@@ -271,6 +344,29 @@ export default function ExpensesTab() {
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
 
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-amber-900">
+            Utah use tax ({(data?.utahUseTaxRatePercent ?? 7.25).toFixed(2)}%)
+          </h2>
+          <div className="flex gap-6 text-sm">
+            <span className="text-amber-900">
+              Confirmed owed:{" "}
+              <span className="font-semibold">{usd(data?.useTaxOwedCents ?? 0)}</span>
+            </span>
+            <span className="text-amber-800">
+              Under review:{" "}
+              <span className="font-semibold">{usd(data?.useTaxUnderReviewCents ?? 0)}</span>
+            </span>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-amber-800">
+          Use tax applies when a vendor did not already charge Utah sales tax on a taxable purchase
+          (notably SaaS/hosting). Set each flagged row to &quot;owed&quot; or &quot;exempt&quot;. File
+          it on your Utah sales/use tax return. Planning estimate, not tax advice.
+        </p>
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">Add expense</h2>
         <div className="mt-3 flex flex-wrap items-end gap-3">
@@ -361,6 +457,7 @@ export default function ExpensesTab() {
                 <th className="px-4 py-2">Amount / mo</th>
                 <th className="px-4 py-2">Since</th>
                 <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Utah use tax</th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
@@ -380,6 +477,12 @@ export default function ExpensesTab() {
                         Active
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-2">
+                    <UseTaxSelect
+                      value={t.useTax}
+                      onChange={(v) => void setTemplateUseTax(t, v)}
+                    />
                   </td>
                   <td className="px-4 py-2 text-right">
                     {t.cancelledOn ? (
@@ -434,6 +537,16 @@ export default function ExpensesTab() {
                     >
                       {SOURCE_BADGE[item.source].label}
                     </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {item.editable ? (
+                      <UseTaxSelect
+                        value={item.useTax}
+                        onChange={(v) => void setExpenseUseTax(item, v)}
+                      />
+                    ) : item.useTax !== "na" ? (
+                      <span className="text-xs text-slate-500">{USE_TAX_LABEL[item.useTax]}</span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-2 text-right font-medium text-slate-900">
                     {usd(item.amountCents)}

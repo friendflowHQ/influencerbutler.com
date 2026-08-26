@@ -30,6 +30,8 @@ type TaxResponse = {
   year?: number;
   taxMode?: "passthrough" | "scorp";
   quarters?: QuarterRow[];
+  useTaxOwedYearCents?: number;
+  utahUseTaxRatePercent?: number;
   morEducation?: string;
 };
 
@@ -155,6 +157,19 @@ export default function TaxesTab() {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : null}
+
+      {data && (data.useTaxOwedYearCents ?? 0) > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">
+            Utah use tax owed for {data.year}: {usd(data.useTaxOwedYearCents ?? 0)}
+          </p>
+          <p className="mt-1 text-amber-800">
+            On purchases where a vendor did not charge Utah sales tax (set per expense on the
+            Expenses tab, at {(data.utahUseTaxRatePercent ?? 7.25).toFixed(2)}%). File it on your
+            Utah sales/use tax return, separate from income tax. Planning estimate, not tax advice.
+          </p>
         </div>
       ) : null}
 

@@ -10,7 +10,12 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { requireFinance, isMigrationPendingError } from "@/lib/finance-stepup";
-import { isScheduleCKey } from "@/lib/finance-expenses";
+import {
+  isScheduleCKey,
+  isUseTaxState,
+  defaultUseTaxForCategory,
+} from "@/lib/finance-expenses";
+import { loadFinanceSettings } from "@/lib/finance-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +30,7 @@ export async function GET(request: Request) {
   const db = createAdminClient();
   const { data, error } = await db
     .from("finance_recurring_expenses")
-    .select("id,vendor,category,amount_cents,day_of_month,starts_on,cancelled_on,note")
+    .select("id,vendor,category,amount_cents,day_of_month,starts_on,cancelled_on,note,use_tax")
     .order("vendor", { ascending: true });
   if (error) {
     if (isMigrationPendingError(error)) return NextResponse.json({ migrationPending: true });
@@ -43,6 +48,7 @@ type RecurringBody = {
   startsOn?: string;
   cancelledOn?: string | null;
   note?: string | null;
+  useTax?: string;
 };
 
 export async function POST(request: Request) {
@@ -74,6 +80,10 @@ export async function POST(request: Request) {
   }
 
   const db = createAdminClient();
+  const settings = await loadFinanceSettings(db);
+  const useTax = isUseTaxState(body.useTax)
+    ? body.useTax
+    : defaultUseTaxForCategory(body.category, settings.useTaxDefaultForSoftware);
   const { data, error } = await db
     .from("finance_recurring_expenses")
     .insert({
@@ -83,6 +93,7 @@ export async function POST(request: Request) {
       day_of_month: day,
       starts_on: body.startsOn.slice(0, 10),
       note: typeof body.note === "string" && body.note.trim() ? body.note.trim() : null,
+      use_tax: useTax,
       created_by: gate.actor.userId,
     })
     .select("id")
@@ -136,6 +147,7 @@ export async function PATCH(request: Request) {
   if (body.cancelledOn === null) patch.cancelled_on = null;
   else if (isDate(body.cancelledOn)) patch.cancelled_on = body.cancelledOn.slice(0, 10);
   if (typeof body.note === "string") patch.note = body.note.trim() || null;
+  if (isUseTaxState(body.useTax)) patch.use_tax = body.useTax;
 
   const db = createAdminClient();
   const { error } = await db.from("finance_recurring_expenses").update(patch).eq("id", body.id);

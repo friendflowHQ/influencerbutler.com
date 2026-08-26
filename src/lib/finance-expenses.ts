@@ -40,6 +40,32 @@ export function categoryLabel(key: string): string {
   return SCHEDULE_C_CATEGORIES.find((c) => c.key === key)?.label ?? key;
 }
 
+// Utah use-tax state for a purchase (see 20260829_finance_use_tax.sql):
+//   na     - not applicable (non-taxable category)
+//   review - possibly taxable (SaaS/hosting), owner must confirm
+//   owed   - confirmed: vendor did not charge Utah tax, use tax is owed
+//   exempt - confirmed not owed (not taxable, or vendor already charged tax)
+export type UseTaxState = "na" | "review" | "owed" | "exempt";
+
+const USE_TAX_STATES = new Set<string>(["na", "review", "owed", "exempt"]);
+
+export function isUseTaxState(value: unknown): value is UseTaxState {
+  return typeof value === "string" && USE_TAX_STATES.has(value);
+}
+
+/**
+ * Default use-tax state for a new expense in a category. Only software/hosting
+ * (remotely accessed prewritten software, taxable in Utah) defaults to the
+ * configured software default ("review"); everything else is "na". The owner
+ * overrides per vendor.
+ */
+export function defaultUseTaxForCategory(
+  category: string,
+  softwareDefault: UseTaxState,
+): UseTaxState {
+  return category === "software_hosting" ? softwareDefault : "na";
+}
+
 export type ExpenseSource = "manual" | "seed" | "recurring" | "affiliate_payout";
 
 export type ExpenseItem = {
@@ -54,6 +80,8 @@ export type ExpenseItem = {
   source: ExpenseSource;
   /** Only manual/seed rows can be edited or deleted from the Expenses tab. */
   editable: boolean;
+  /** Utah use-tax state for this purchase. */
+  useTax: UseTaxState;
 };
 
 export type RecurringTemplate = {
@@ -65,6 +93,7 @@ export type RecurringTemplate = {
   startsOn: string; // YYYY-MM-DD
   cancelledOn: string | null;
   note: string | null;
+  useTax: UseTaxState;
 };
 
 function pad2(n: number): string {
@@ -103,6 +132,7 @@ export function expandRecurring(
           date,
           source: "recurring",
           editable: false,
+          useTax: t.useTax,
         });
       }
       month += 1;
@@ -121,8 +151,21 @@ export type ExpensesResult =
       items: ExpenseItem[];
       recurringTemplates: RecurringTemplate[];
       totalCents: number;
+      /** Utah use tax on rows confirmed 'owed', at the configured rate. */
+      useTaxOwedCents: number;
+      /** Utah use tax on 'review' rows (potential, pending owner review). */
+      useTaxUnderReviewCents: number;
     }
   | { ok: false; migrationPending: boolean };
+
+/** Use tax on one expense at the given rate; 0 unless state is owed/review. */
+export function computeItemUseTax(
+  item: Pick<ExpenseItem, "amountCents" | "useTax">,
+  ratePercent: number,
+): number {
+  if (item.useTax !== "owed" && item.useTax !== "review") return 0;
+  return Math.round((item.amountCents * ratePercent) / 100);
+}
 
 /** Loads and merges all expense sources for [from, to] (YYYY-MM-DD, inclusive). */
 export async function loadExpenses(
@@ -136,7 +179,7 @@ export async function loadExpenses(
   // 1. Manual + seed rows.
   const { data: manualRows, error: manualError } = await db
     .from("finance_expenses")
-    .select("id,vendor,description,category,amount_cents,incurred_on,source")
+    .select("id,vendor,description,category,amount_cents,incurred_on,source,use_tax")
     .gte("incurred_on", from)
     .lte("incurred_on", to)
     .order("incurred_on", { ascending: false });
@@ -155,13 +198,14 @@ export async function loadExpenses(
       date: ((r.incurred_on as string) ?? "").slice(0, 10),
       source: r.source === "seed" ? "seed" : "manual",
       editable: true,
+      useTax: isUseTaxState(r.use_tax) ? r.use_tax : "na",
     });
   }
 
   // 2. Recurring templates, expanded at read time.
   const { data: recurringRows, error: recurringError } = await db
     .from("finance_recurring_expenses")
-    .select("id,vendor,category,amount_cents,day_of_month,starts_on,cancelled_on,note")
+    .select("id,vendor,category,amount_cents,day_of_month,starts_on,cancelled_on,note,use_tax")
     .order("vendor", { ascending: true });
   if (recurringError) {
     if (isMigrationPendingError(recurringError)) return { ok: false, migrationPending: true };
@@ -177,6 +221,7 @@ export async function loadExpenses(
     startsOn: ((r.starts_on as string) ?? "").slice(0, 10),
     cancelledOn: r.cancelled_on ? (r.cancelled_on as string).slice(0, 10) : null,
     note: (r.note as string | null) ?? null,
+    useTax: isUseTaxState(r.use_tax) ? r.use_tax : "na",
   }));
   items.push(...expandRecurring(templates, from, to));
 
@@ -211,11 +256,27 @@ export async function loadExpenses(
         date: ((p.paid_at as string) ?? "").slice(0, 10),
         source: "affiliate_payout",
         editable: false,
+        // Commission payments to affiliates are not a taxable Utah purchase.
+        useTax: "na",
       });
     }
   }
 
   items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   const totalCents = items.reduce((sum, i) => sum + i.amountCents, 0);
-  return { ok: true, items, recurringTemplates: templates, totalCents };
+  const rate = settings.utahUseTaxRatePercent;
+  let useTaxOwedCents = 0;
+  let useTaxUnderReviewCents = 0;
+  for (const i of items) {
+    if (i.useTax === "owed") useTaxOwedCents += computeItemUseTax(i, rate);
+    else if (i.useTax === "review") useTaxUnderReviewCents += computeItemUseTax(i, rate);
+  }
+  return {
+    ok: true,
+    items,
+    recurringTemplates: templates,
+    totalCents,
+    useTaxOwedCents,
+    useTaxUnderReviewCents,
+  };
 }
