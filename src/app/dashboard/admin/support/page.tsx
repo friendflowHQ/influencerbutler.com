@@ -20,6 +20,15 @@ import {
   type ReactNode,
 } from "react";
 
+type Attachment = {
+  id: number | string;
+  filename: string;
+  contentType: string;
+  size: number | null;
+  isInline: boolean;
+  contentId: string | null;
+};
+
 type Reply = {
   id: number | string;
   direction: "outbound" | "inbound";
@@ -27,6 +36,7 @@ type Reply = {
   subject: string;
   body: string;
   sentAt: number | null;
+  attachments?: Attachment[];
 };
 
 type Ticket = {
@@ -53,6 +63,9 @@ type Ticket = {
   repliedAt: number | null;
   logTail?: string;
   replies?: Reply[];
+  // Attachments that arrived on the email that OPENED the ticket (inbound
+  // screenshots / files); per-reply attachments live on each Reply instead.
+  attachments?: Attachment[];
 };
 
 const REPO_URL = "https://github.com/friendflowHQ/InfluencerButler";
@@ -195,6 +208,69 @@ function ago(ms: number | null | undefined): string {
 function fullTime(ms: number | null | undefined): string {
   if (!ms) return "—";
   try { return new Date(Number(ms)).toLocaleString("en-US"); } catch { return String(ms); }
+}
+
+function formatBytes(n: number | null | undefined): string {
+  if (!n || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function attachmentSrc(a: Attachment): string {
+  return `/api/admin/support/attachment?id=${encodeURIComponent(String(a.id))}`;
+}
+
+function isImageAttachment(a: Attachment): boolean {
+  return a.isInline || (a.contentType || "").startsWith("image/");
+}
+
+// Render inbound-email attachments: inline images as a thumbnail grid (click to
+// open full size), everything else as a labeled download chip. Bytes stream
+// from the private R2 bucket through the same-origin, permission-gated proxy.
+function AttachmentGallery({ items }: { items: Attachment[] | undefined }) {
+  const list = items ?? [];
+  if (list.length === 0) return null;
+  const images = list.filter(isImageAttachment);
+  const files = list.filter((a) => !isImageAttachment(a));
+  return (
+    <div className="mt-2 space-y-2">
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {images.map((a) => (
+            <a
+              key={a.id}
+              href={attachmentSrc(a)}
+              target="_blank"
+              rel="noreferrer"
+              title={`${a.filename}${a.size ? ` · ${formatBytes(a.size)}` : ""}`}
+              className="block overflow-hidden rounded-lg border border-slate-200 hover:border-[#f97316]"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={attachmentSrc(a)} alt={a.filename} className="max-h-48 w-auto object-contain" />
+            </a>
+          ))}
+        </div>
+      )}
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {files.map((a) => (
+            <a
+              key={a.id}
+              href={attachmentSrc(a)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:border-[#f97316] hover:text-[#f97316]"
+            >
+              <span aria-hidden>📎</span>
+              <span className="max-w-[16rem] truncate">{a.filename}</span>
+              {a.size ? <span className="text-slate-400">{formatBytes(a.size)}</span> : null}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function SupportAdminPage() {
@@ -799,6 +875,10 @@ export default function SupportAdminPage() {
             <section className="mt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</h3>
               <pre className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-xs text-slate-700">{selected.description || "(empty)"}</pre>
+              {/* Screenshots / files the customer sent on the opening email.
+                  These replace the bare "[image: image.png]" placeholder that
+                  used to be all we kept. */}
+              <AttachmentGallery items={selected.attachments} />
             </section>
 
             {selected.agentNotes && (
@@ -834,6 +914,7 @@ export default function SupportAdminPage() {
                   <li key={r.id} className={`rounded-lg p-2 text-sm ${r.direction === "inbound" ? "bg-amber-50" : "bg-slate-50"}`}>
                     <div className="text-xs text-slate-400">{r.direction} · {r.author} · {fullTime(r.sentAt)}</div>
                     <pre className="mt-1 whitespace-pre-wrap break-words text-slate-700">{r.body}</pre>
+                    <AttachmentGallery items={r.attachments} />
                   </li>
                 ))}
               </ol>
