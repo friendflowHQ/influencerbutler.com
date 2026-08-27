@@ -544,6 +544,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "global-controls",
+      "title": "Global controls: pause everything and show or hide every browser at once",
+      "category": "Other",
+      "summary": "Use the bar under the header to pause every running butler in one click, resume just the ones you want, and flip \"Watch it run\" for all butlers at the same time.",
+      "order": 346,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "manage-subscription",
       "title": "Manage or cancel your subscription",
       "category": "Other",
