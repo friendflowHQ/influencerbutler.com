@@ -45,6 +45,7 @@ export default function SchedulingAdminPage() {
   const [forbidden, setForbidden] = useState(false);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
   const [prep, setPrep] = useState<Prep | null>(null);
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState("");
@@ -54,7 +55,8 @@ export default function SchedulingAdminPage() {
   const loadList = useCallback(async () => {
     const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
-    if (res.ok) setBookings((await res.json()).bookings ?? []);
+    if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
+    else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
   }, [scope]);
 
   const loadSettings = useCallback(async () => {
@@ -122,7 +124,8 @@ export default function SchedulingAdminPage() {
                 <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
+                {listError ? <tr><td colSpan={5} className="px-3 py-8 text-center text-rose-600">{listError}</td></tr> :
+                  bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
                   bookings.map((b) => (
                     <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
                       <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at, b.user_timezone)}</td>
