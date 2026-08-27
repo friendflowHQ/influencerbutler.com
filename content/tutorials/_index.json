@@ -152,6 +152,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "daily-performance",
+      "title": "Your daily Amazon performance readout",
+      "category": "Amazon",
+      "summary": "A once-a-day snapshot of your verified Amazon numbers, on your dashboard and in your inbox, with plain guidance when a month dips.",
+      "order": 21,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "cc-check",
       "title": "CC Check: check ASINs and accept Creator Connections campaigns",
       "category": "Amazon",
