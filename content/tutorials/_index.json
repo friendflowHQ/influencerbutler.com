@@ -168,6 +168,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "campaign-alert-butler",
+      "title": "Campaign Alert Butler: get alerted and auto-accept new brand campaigns",
+      "category": "Amazon",
+      "summary": "Follow the Creator Connections brands you care about, get alerted the moment they post a new campaign, and optionally auto-accept those campaigns on a schedule so you get in before they fill up.",
+      "order": 32,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "cc-deals",
       "title": "Campaign Deals: track on-sale items in your Creator Connections campaigns",
       "category": "Amazon",
