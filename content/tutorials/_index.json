@@ -544,6 +544,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "expired-butler",
+      "title": "Expired Butler: clean up posts for deals that have ended",
+      "category": "Other",
+      "summary": "Find every deal post whose deal has expired and remove it, or, when a creator campaign was attached, edit it in place so it stops advertising a dead price. Card and table views, filters, an action history, and one-click Post again.",
+      "order": 344.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "focus-mode",
       "title": "Focus Mode: a calmer, ADHD-friendly workspace",
       "category": "Other",
