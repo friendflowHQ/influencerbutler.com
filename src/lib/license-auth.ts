@@ -71,6 +71,12 @@ type AdminLookupClient = {
             | null;
           error: { message?: string } | null;
         }>;
+        limit: (count: number) => Promise<{
+          data:
+            | { id?: string | null; user_id?: string | null; key_hash?: string | null }[]
+            | null;
+          error: { message?: string } | null;
+        }>;
       };
     };
     update: (values: Record<string, unknown>) => {
@@ -216,16 +222,22 @@ async function resolveLicenseBearer(
     return { ok: false, status: 503, error: "Server misconfigured" };
   }
   const licenseHash = hashLicenseKey(key);
+  // .limit(1) (not .maybeSingle()) on purpose: duplicate license_keys rows can
+  // share one key_hash (the LS self-heal upsert keys on ls_license_key_id, not
+  // key_hash, so a re-issued/re-subscribed key can leave two rows). maybeSingle
+  // ERRORS on 2+ rows, which used to 500 the whole assistant for that user with
+  // "License lookup failed". Any matching row resolves the same owning user, so
+  // taking the first is correct and can never error on duplicates.
   const hashLookup = await admin
     .from("license_keys")
     .select("user_id, key_hash")
     .eq("key_hash", licenseHash)
-    .maybeSingle();
+    .limit(1);
   if (hashLookup.error) {
     console.error("license-auth: license_keys lookup failed", hashLookup.error);
     return { ok: false, status: 500, error: "License lookup failed" };
   }
-  let row = hashLookup.data;
+  let row = hashLookup.data?.[0] ?? null;
   // Self-heal fallback: a valid row may exist with a null or stale key_hash
   // (e.g. written before the key_hash backfill, or by a path that did not
   // compute it). Match on the plaintext key, then backfill the hash so the
@@ -235,7 +247,7 @@ async function resolveLicenseBearer(
       .from("license_keys")
       .select("user_id, key_hash")
       .eq("key", key)
-      .maybeSingle();
+      .limit(1);
     if (keyLookup.error) {
       console.error(
         "license-auth: license_keys key fallback failed",
@@ -243,9 +255,10 @@ async function resolveLicenseBearer(
       );
       return { ok: false, status: 500, error: "License lookup failed" };
     }
-    if (keyLookup.data && keyLookup.data.user_id) {
-      row = keyLookup.data;
-      if (keyLookup.data.key_hash !== licenseHash) {
+    const keyRow = keyLookup.data?.[0] ?? null;
+    if (keyRow && keyRow.user_id) {
+      row = keyRow;
+      if (keyRow.key_hash !== licenseHash) {
         const upd = await admin
           .from("license_keys")
           .update({ key_hash: licenseHash })

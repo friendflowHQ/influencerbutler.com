@@ -49,12 +49,16 @@ function makeAdmin(opts: {
     // license_keys
     return {
       select: () => ({
-        eq: (col: string) => ({
-          maybeSingle: async () => ({
-            data: col === "key_hash" ? opts.hashRow ?? null : opts.keyRow ?? null,
-            error: null,
-          }),
-        }),
+        eq: (col: string) => {
+          const row = col === "key_hash" ? opts.hashRow ?? null : opts.keyRow ?? null;
+          return {
+            maybeSingle: async () => ({ data: row, error: null }),
+            // resolveLicenseBearer reads license_keys via .limit(1) (not
+            // .maybeSingle()) so duplicate rows sharing a key_hash cannot 500 the
+            // lookup. Mirror that shape here: an array the code reads [0] from.
+            limit: async () => ({ data: row ? [row] : [], error: null }),
+          };
+        },
       }),
       upsert,
     };
@@ -101,6 +105,20 @@ describe("resolveLicenseBearer LS self-heal", () => {
     }
     expect(validateMock).toHaveBeenCalledTimes(1);
     expect(admin.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves on a direct key_hash hit without touching LS or the key fallback", async () => {
+    // Regression guard for the .limit(1) lookup: a matching license_keys row
+    // resolves straight away. Previously the query used .maybeSingle(), which
+    // ERRORS on 2+ rows sharing a key_hash and 500'd the whole assistant.
+    const admin = makeAdmin({ hashRow: { user_id: "user-42", key_hash: "h" } });
+    createAdminMock.mockReturnValue(admin.client);
+
+    const res = await resolveLicenseOnly(bearer(UUID_A));
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.auth.userId).toBe("user-42");
+    expect(validateMock).not.toHaveBeenCalled();
+    expect(admin.upsert).not.toHaveBeenCalled();
   });
 
   it("never calls LS for a non-UUID key", async () => {
