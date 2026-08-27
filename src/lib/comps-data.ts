@@ -49,6 +49,10 @@ export type CompRow = {
   expiresAt: string | null;
   daysRemaining: number | null;
   subscriptionStatus: string | null;
+  /** Human plan name for the comp (subscriptions.plan_name, "(comp)" stripped),
+   *  e.g. "Deals Influencer Butler Workspace" or "Pro Solo". Null for LS-detected
+   *  comps with no matching subscription row. */
+  planLabel: string | null;
   renewsAt: string | null;
   licenseStatus: string | null;
   state: CompState;
@@ -323,6 +327,8 @@ function buildCompRow(args: {
   const { lsSubId, sub, grant, order, userId, emailByUser, affiliateByUser, licenseByUser, licenseById, now } = args;
 
   const status = sub ? str(sub.status) : null;
+  // Human plan name, with the internal "(comp)" suffix stripped for display.
+  const planLabel = sub ? (str(sub.plan_name)?.replace(/\s*\(comp\)\s*$/i, "") ?? null) : null;
   const license = userId ? licenseByUser.get(userId) : undefined;
   // Prefer the comp's OWN minted key (comp_grants.license_key_id) so a user
   // with multiple keys shows the right one; fall back to their first key.
@@ -386,6 +392,7 @@ function buildCompRow(args: {
     expiresAt,
     daysRemaining,
     subscriptionStatus: status,
+    planLabel,
     renewsAt: sub ? str(sub.renews_at) : null,
     licenseStatus: grantLicense?.status ?? license?.status ?? null,
     licenseKey: grantLicense?.key ?? license?.key ?? null,

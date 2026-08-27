@@ -28,6 +28,7 @@ import { hashLicenseKey } from "@/lib/license-auth";
 import { addMonthsUtc, addDaysUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendEmail } from "@/lib/email-send";
 
 export type IssueCompInput = {
@@ -156,6 +157,11 @@ async function sendCompEmail(params: {
   days: number | null;
   forever: boolean;
   signInLink: string | null;
+  /** Human name of the granted plan for the body, with any needed article
+   *  (e.g. "Influencer Butler Pro" or "the Deals Influencer Butler Workspace"). */
+  planPhrase: string;
+  /** Subject line for this plan (e.g. "Your free Influencer Butler Pro license"). */
+  subject: string;
   /** Affiliate branded checkout link (attribution) and issuer name, when gifted. */
   convertLink?: string | null;
   issuerName?: string | null;
@@ -168,10 +174,10 @@ async function sendCompEmail(params: {
 
   const durationPhrase =
     params.forever || (params.months == null && params.days == null)
-      ? "Influencer Butler Pro, free forever"
+      ? `${params.planPhrase}, free forever`
       : params.days != null
-        ? `${params.days} day${params.days === 1 ? "" : "s"} of Influencer Butler Pro, free`
-        : `${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free`;
+        ? `${params.days} day${params.days === 1 ? "" : "s"} of ${params.planPhrase}, free`
+        : `${params.months} month${params.months === 1 ? "" : "s"} of ${params.planPhrase}, free`;
 
   const gifted = params.issuerName ? ` from ${params.issuerName}` : "";
   const lines = [
@@ -183,6 +189,7 @@ async function sendCompEmail(params: {
     ``,
     `1. Download the desktop app: ${siteUrl}/download`,
     `2. Open it and paste the license key above when prompted.`,
+    `3. New here? Our quick-start guides walk you through the butlers: ${siteUrl}/help`,
   ];
   if (params.signInLink) {
     lines.push(
@@ -195,11 +202,17 @@ async function sendCompEmail(params: {
   if (params.convertLink) {
     lines.push(
       ``,
-      `Want to keep Pro when your free time is up? Upgrade any time here:`,
+      `Want to keep it when your free time is up? Upgrade any time here:`,
       ``,
       `    ${params.convertLink}`,
     );
   }
+  lines.push(
+    ``,
+    `Come say hi in our free Facebook community: swap tips and get help from other creators:`,
+    ``,
+    `    ${FACEBOOK_GROUP_URL}`,
+  );
   lines.push(
     ``,
     `Questions? Just reply to this email and a real human will answer.`,
@@ -210,7 +223,7 @@ async function sendCompEmail(params: {
   await sendEmail({
     from: "Influencer Butler <hello@influencerbutler.com>",
     to: params.to,
-    subject: "Your free Influencer Butler Pro license",
+    subject: params.subject,
     text: lines.join("\n"),
     category: "comp_issue",
   });
@@ -389,6 +402,12 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     } catch (err) {
       console.error("comp-issue: generateLink threw", err);
     }
+    // Word the email around the plan that was actually granted, so an add-on
+    // comp does not read as "Influencer Butler Pro".
+    const planPhrase = isDailyDeals ? "the Deals Influencer Butler Workspace" : "Influencer Butler Pro";
+    const compSubject = isDailyDeals
+      ? "Your free Deals Influencer Butler Workspace"
+      : "Your free Influencer Butler Pro license";
     await sendCompEmail({
       to: email,
       key,
@@ -396,6 +415,8 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
       days,
       forever,
       signInLink,
+      planPhrase,
+      subject: compSubject,
       convertLink: input.convertLink ?? null,
       issuerName: input.issuerName ?? null,
     });

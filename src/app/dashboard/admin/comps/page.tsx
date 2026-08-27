@@ -23,6 +23,7 @@ type CompRow = {
   expiresAt: string | null;
   daysRemaining: number | null;
   subscriptionStatus: string | null;
+  planLabel: string | null;
   renewsAt: string | null;
   licenseStatus: string | null;
   state: CompState;
@@ -140,6 +141,7 @@ type SortKey =
   | "user"
   | "source"
   | "code"
+  | "plan"
   | "months"
   | "issued"
   | "expires"
@@ -152,6 +154,7 @@ const COLUMNS: { key: SortKey | null; label: string }[] = [
   { key: "user", label: "User" },
   { key: "source", label: "Source" },
   { key: "code", label: "Code" },
+  { key: "plan", label: "Plan" },
   { key: "months", label: "Months" },
   { key: "issued", label: "Issued" },
   { key: "expires", label: "Expires" },
@@ -179,6 +182,8 @@ function sortValue(row: CompRow, key: SortKey): string | number | null {
       return row.source;
     case "code":
       return (row.discountCode ?? "").toLowerCase() || null;
+    case "plan":
+      return (row.planLabel ?? "").toLowerCase() || null;
     case "months":
       return row.months;
     case "issued":
@@ -781,7 +786,7 @@ export default function AdminCompsPage() {
         </p>
       ) : (
         <section className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[1250px] text-left text-sm">
+          <table className="w-full min-w-[1360px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 {COLUMNS.map((col, i) =>
@@ -852,6 +857,9 @@ export default function AdminCompsPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">
                       {row.discountCode ?? "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {row.planLabel ?? "-"}
                     </td>
                     <td className="px-4 py-3">
                       {row.state === "forever" ? (
