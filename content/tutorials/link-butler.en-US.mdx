@@ -54,6 +54,15 @@ The **Performance** tab is your click dashboard: totals, app-open rate, self-hea
 
 The **Settings** tab holds account-wide defaults for new links: your default associate tag, the confirmation page ("The Doorman"), and optional retargeting pixels ("The Doorbell") that fire when a shopper opens a Calling Card.
 
+## Use your own domain (paid plans)
+
+On a paid plan you can put your own brand on your links, so they read as your domain instead of `influencerbutler.com`. In **Settings**, open **Your own domain** and enter a domain you own, like `go.yourbrand.com`. Add the two DNS records we show you at your domain provider:
+
+- a **CNAME** record that points your domain at our link service, and
+- a **TXT** record that proves you own the domain so we can issue its security certificate.
+
+We keep checking until both records are live. This can take a few minutes to a couple of hours, depending on your DNS provider. Once your domain is active, every new Butler Link uses it in place of `influencerbutler.com`. Links you already posted keep working, and you can remove or change your domain any time.
+
 ## Related
 
 - [Relink Butler tutorial](/help/tutorials/relink-butler) - rewrite the affiliate links in content you already published.
