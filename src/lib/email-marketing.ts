@@ -25,6 +25,26 @@ export function stepCategory(sequenceId: string, position: number): string {
   return `seq_${shortId(sequenceId)}_s${position}`;
 }
 
+/** The email-marketing cron runs every 5 minutes: 12 runs per hour. */
+export const SEQUENCE_RUNS_PER_HOUR = 12;
+
+/**
+ * Per-run send budget for a sequence given its hourly rate cap. A positive
+ * sends_per_hour throttles to ceil(rate / runsPerHour) sends per cron run (min
+ * 1); null/0/invalid falls back to the caller's default budget. Pure so the
+ * throttle math can be unit-tested without the cron.
+ */
+export function sequenceRunBudget(
+  sendsPerHour: number | null | undefined,
+  defaultBudget: number,
+  runsPerHour: number = SEQUENCE_RUNS_PER_HOUR,
+): number {
+  if (typeof sendsPerHour === "number" && Number.isFinite(sendsPerHour) && sendsPerHour > 0) {
+    return Math.max(1, Math.ceil(sendsPerHour / runsPerHour));
+  }
+  return defaultBudget;
+}
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));

@@ -146,6 +146,21 @@ async function collectUserIdsByStatus(
   }
 }
 
+/**
+ * Returns the set of lowercased emails belonging to users who currently have a
+ * live subscription (active / on_trial / past_due / paused). Used by the
+ * sequence cron to stop a re-engagement drip the moment someone converts, so we
+ * never keep nudging a person who has already subscribed. Returns null on a
+ * query error so callers can skip the check rather than cancel wrongly.
+ */
+export async function liveSubscriberEmails(db: SupabaseClient): Promise<Set<string> | null> {
+  const ids = await collectUserIdsByStatus(db, LIVE_STATUSES);
+  if (!ids) return null;
+  const into = new Set<string>();
+  if (ids.size > 0) await emailsForUserIds(db, [...ids], into);
+  return into;
+}
+
 /** Hydrates emails from profiles for a set of user ids (chunked .in()). */
 async function emailsForUserIds(
   db: SupabaseClient,

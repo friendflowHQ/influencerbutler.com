@@ -19,15 +19,17 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseAudience, resolveAudience } from "@/lib/email-audience";
+import { parseAudience, resolveAudience, liveSubscriberEmails } from "@/lib/email-audience";
 import {
   MARKETING_FROM,
   campaignCategory,
   stepCategory,
+  shortId,
   enrollEmails,
+  sequenceRunBudget,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
-import { logSuppressedSkip } from "@/lib/email-send";
+import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
@@ -37,13 +39,24 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CAMPAIGN_PER_RUN = 100;
-const SEQUENCE_PER_RUN = 40;
+const SEQUENCE_PER_RUN = 40; // default per-sequence cap when sends_per_hour is null
 const MAX_ATTEMPTS = 3;
 const CANDIDATE_LIMIT = 500;
 const CHUNK = 200;
 const AUTO_ENROLL_WINDOW_DAYS = 7;
 const MATERIALIZE_PER_RUN = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Hard ceiling on total sequence sends per run, across all sequences, so no
+// rate setting can blow the function's time budget. (Per-sequence throttle math
+// lives in sequenceRunBudget in email-marketing.ts.)
+const SEQUENCE_GLOBAL_CEILING = 200;
+
+// Auto-pause thresholds: once a sequence has sent at least MIN_HEALTH_SAMPLE
+// emails, pause it if bounces or complaints cross these rates.
+const MIN_HEALTH_SAMPLE = 25;
+const MAX_BOUNCE_RATE = 0.05; // 5%
+const MAX_COMPLAINT_RATE = 0.003; // 0.3%
 
 type DbError = { message?: string; code?: string } | null;
 
@@ -54,10 +67,12 @@ type Summary = {
   campaignSkipped: number;
   campaignFailed: number;
   sequenceSent: number;
+  sequenceStoppedSubscribed: number;
+  sequencesAutoPaused: number;
   autoEnrolled: number;
 };
 
-type SequenceRow = { id: string; trigger: unknown };
+type SequenceRow = { id: string; trigger: unknown; sends_per_hour: number | null };
 
 type StepRow = {
   id: string;
@@ -91,12 +106,24 @@ function reportError(step: string, error: DbError): void {
 
 /** Fetches active sequences, or null when the table is missing / errored. */
 async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null> {
-  const { data, error } = await db.from("email_sequences").select("id, trigger").eq("status", "active");
-  if (error) {
-    reportError("active sequences query", error);
+  // sends_per_hour is added by 20260828_sequence_send_controls.sql; fall back to
+  // the base columns when that migration has not been applied yet so the cron
+  // keeps running (every sequence then uses the default budget).
+  const withRate = await db
+    .from("email_sequences")
+    .select("id, trigger, sends_per_hour")
+    .eq("status", "active");
+  if (!withRate.error) return (withRate.data ?? []) as SequenceRow[];
+
+  const base = await db.from("email_sequences").select("id, trigger").eq("status", "active");
+  if (base.error) {
+    reportError("active sequences query", base.error);
     return null;
   }
-  return (data ?? []) as SequenceRow[];
+  return ((base.data ?? []) as { id: string; trigger: unknown }[]).map((r) => ({
+    ...r,
+    sends_per_hour: null,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -319,11 +346,19 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
     stepsBySequence.set(step.sequence_id, list);
   }
 
-  let budget = SEQUENCE_PER_RUN;
+  // Stop-on-subscribe: anyone who now has a live subscription (subscribed or
+  // started a trial) gets cancelled out of every re-engagement drip so we don't
+  // keep nudging a converted customer. Fetched once per run; on error we skip
+  // the check (never cancel wrongly).
+  const liveEmails = await liveSubscriberEmails(db);
+
+  // Global ceiling bounds total work; each sequence also has its own per-run cap.
+  let globalRemaining = SEQUENCE_GLOBAL_CEILING;
 
   for (const seq of sequences) {
-    if (budget <= 0) break;
+    if (globalRemaining <= 0) break;
     const steps = stepsBySequence.get(seq.id) ?? [];
+    let seqBudget = Math.min(sequenceRunBudget(seq.sends_per_hour, SEQUENCE_PER_RUN), globalRemaining);
 
     const { data: enrollData, error: enrollErr } = await db
       .from("email_sequence_enrollments")
@@ -346,7 +381,17 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
     }[];
 
     for (const enrollment of enrollments) {
-      if (budget <= 0) break;
+      if (seqBudget <= 0 || globalRemaining <= 0) break;
+
+      // Converted since enrolling? Cancel and move on (does not spend budget).
+      if (liveEmails && liveEmails.has(enrollment.email.trim().toLowerCase())) {
+        await db
+          .from("email_sequence_enrollments")
+          .update({ cancelled_at: new Date().toISOString() })
+          .eq("id", enrollment.id);
+        summary.sequenceStoppedSubscribed += 1;
+        continue;
+      }
 
       const nextStep = steps.find((s) => s.position === (enrollment.last_step_sent ?? 0) + 1);
       if (!nextStep) {
@@ -362,7 +407,8 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       const dueAt = new Date(enrollment.enrolled_at).getTime() + nextStep.day_offset * DAY_MS;
       if (!Number.isFinite(dueAt) || dueAt > Date.now()) continue;
 
-      budget -= 1;
+      seqBudget -= 1;
+      globalRemaining -= 1;
       const ok = await sendMarketingEmail({
         from: MARKETING_FROM,
         to: enrollment.email,
@@ -383,6 +429,90 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       await db.from("email_sequence_enrollments").update(update).eq("id", enrollment.id);
       summary.sequenceSent += 1;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// (c2) Monitor sequence health: auto-pause on a bounce/complaint spike
+// ---------------------------------------------------------------------------
+
+/** Counts email_sends rows for a category prefix, optionally where a column is set. */
+async function countSends(
+  db: SupabaseClient,
+  prefix: string,
+  opts: { sentOnly?: boolean; column?: "bounced_at" | "complained_at" } = {},
+): Promise<number | null> {
+  let q = db
+    .from("email_sends")
+    .select("id", { count: "exact", head: true })
+    .like("category", `${prefix}%`);
+  if (opts.sentOnly) q = q.eq("status", "sent");
+  if (opts.column) q = q.not(opts.column, "is", null);
+  const { count, error } = await q;
+  if (error) {
+    reportError("sequence health count", error);
+    return null;
+  }
+  return count ?? 0;
+}
+
+/**
+ * For each active sequence, checks its delivered/bounced/complained numbers and
+ * pauses the sequence (recording why + emailing the owner) if the bounce or
+ * complaint rate crosses a safe threshold once there is a meaningful sample.
+ * Protects the sending domain when a stale list is dripping. Depends on the
+ * Resend webhook filling bounced_at/complained_at, which needs
+ * RESEND_WEBHOOK_SECRET configured; with no bounce data it simply never fires.
+ */
+async function monitorSequenceHealth(db: SupabaseClient, summary: Summary): Promise<void> {
+  const sequences = await activeSequences(db);
+  if (!sequences || sequences.length === 0) return;
+
+  for (const seq of sequences) {
+    const prefix = `seq_${shortId(seq.id)}_`;
+    const sent = await countSends(db, prefix, { sentOnly: true });
+    if (sent === null || sent < MIN_HEALTH_SAMPLE) continue;
+
+    const bounced = await countSends(db, prefix, { column: "bounced_at" });
+    const complained = await countSends(db, prefix, { column: "complained_at" });
+    if (bounced === null || complained === null) continue;
+
+    const bounceRate = bounced / sent;
+    const complaintRate = complained / sent;
+    if (bounceRate <= MAX_BOUNCE_RATE && complaintRate <= MAX_COMPLAINT_RATE) continue;
+
+    const reason =
+      `Auto-paused: ${(bounceRate * 100).toFixed(1)}% bounces, ` +
+      `${(complaintRate * 100).toFixed(2)}% complaints over ${sent} sends.`;
+
+    const { error: pauseErr } = await db
+      .from("email_sequences")
+      .update({ status: "paused", auto_paused_at: new Date().toISOString(), pause_reason: reason })
+      .eq("id", seq.id)
+      .eq("status", "active"); // only flip if still active (avoid double-alert)
+    if (pauseErr) {
+      reportError("sequence auto-pause update", pauseErr);
+      continue;
+    }
+    summary.sequencesAutoPaused += 1;
+
+    const to = process.env.OWNER_ALERT_EMAIL ?? "elizabethdean30@gmail.com";
+    await sendEmail({
+      from: MARKETING_FROM,
+      to,
+      subject: "A sequence was auto-paused (deliverability)",
+      text: [
+        `Heads up: an email sequence was automatically paused to protect your sending domain.`,
+        ``,
+        reason,
+        ``,
+        `Sequence id: ${seq.id}`,
+        ``,
+        `Open Emails > Sequences to review the numbers. Fix the list (or verify it) before resuming.`,
+      ].join("\n"),
+      category: "sequence_auto_pause",
+      funnel: "transactional",
+    });
   }
 }
 
@@ -446,6 +576,8 @@ export async function GET(request: Request) {
     campaignSkipped: 0,
     campaignFailed: 0,
     sequenceSent: 0,
+    sequenceStoppedSubscribed: 0,
+    sequencesAutoPaused: 0,
     autoEnrolled: 0,
   };
 
@@ -459,6 +591,11 @@ export async function GET(request: Request) {
     await sendCampaignRecipients(db, summary);
   } catch (err) {
     console.error("cron email-marketing: campaign send step threw", err);
+  }
+  try {
+    await monitorSequenceHealth(db, summary);
+  } catch (err) {
+    console.error("cron email-marketing: sequence health step threw", err);
   }
   try {
     await advanceSequences(db, summary);

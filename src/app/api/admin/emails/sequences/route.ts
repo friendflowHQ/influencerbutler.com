@@ -4,12 +4,17 @@
  * GET   /api/admin/emails/sequences
  *   Latest sequences with their steps (plus per-step email_sends category
  *   keys) and enrollment counts.
- * POST  { name, trigger?, steps }                create (paused by default)
+ * POST  { name, trigger?, steps, sendsPerHour? }  create (paused by default)
  * PATCH { id, action, ... } where action is one of:
- *   "update"   { name?, trigger?, steps? }  edit; provided steps replace all
- *   "pause" / "activate"                    flip status
+ *   "update"   { name?, trigger?, steps?, sendsPerHour? }  edit; steps replace all
+ *   "pause" / "activate"                    flip status (activate clears auto-pause)
+ *   "stop"                                  pause AND cancel all open enrollments
  *   "enroll"   { emails? } or { tag? }      bulk-enroll addresses
  *   "unenroll" { emails }                   cancel open enrollments
+ *
+ * sendsPerHour caps this sequence's drip rate (throttle/warmup); null uses the
+ * cron default. auto_paused_at / pause_reason are set by the cron's health
+ * monitor when it pauses a sequence on a bounce/complaint spike.
  *
  * Depends on the 20260817_email_marketing migration; responses degrade with
  * migrationPending until it is applied.
@@ -31,6 +36,7 @@ const COUNT_CAP = 20000;
 const MAX_STEPS = 20;
 const MAX_DAY_OFFSET = 365;
 const MAX_EMAILS = 2000;
+const MAX_SENDS_PER_HOUR = 5000;
 
 type SequenceRow = {
   id: string;
@@ -80,6 +86,19 @@ function parseTrigger(input: unknown): Trigger | undefined {
     return source.length > 0 ? { kind: "source", source } : undefined;
   }
   return undefined;
+}
+
+/**
+ * Validates an untrusted sends_per_hour value.
+ * Returns undefined for "not provided / leave unchanged", null to clear it
+ * (use the default rate), a positive int to set it, or the string "invalid".
+ */
+function parseSendsPerHour(input: unknown): number | null | undefined | "invalid" {
+  if (input === undefined) return undefined;
+  if (input === null || input === "") return null;
+  const n = Number(input);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_SENDS_PER_HOUR) return "invalid";
+  return n;
 }
 
 /** Validates an untrusted steps array. Null = invalid. */
@@ -194,7 +213,7 @@ export async function POST(request: Request) {
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  let body: { name?: unknown; trigger?: unknown; steps?: unknown };
+  let body: { name?: unknown; trigger?: unknown; steps?: unknown; sendsPerHour?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -213,10 +232,22 @@ export async function POST(request: Request) {
   if (!steps) {
     return NextResponse.json({ error: "Invalid steps" }, { status: 400 });
   }
+  const sendsPerHour = parseSendsPerHour(body.sendsPerHour);
+  if (sendsPerHour === "invalid") {
+    return NextResponse.json({ error: "Invalid sends per hour" }, { status: 400 });
+  }
+
+  const insertRow: Record<string, unknown> = {
+    name,
+    trigger,
+    status: "paused",
+    created_by: actor.email,
+  };
+  if (sendsPerHour !== undefined) insertRow.sends_per_hour = sendsPerHour;
 
   const { data, error } = await db
     .from("email_sequences")
-    .insert({ name, trigger, status: "paused", created_by: actor.email })
+    .insert(insertRow)
     .select("id")
     .single();
   if (error) {
@@ -252,6 +283,7 @@ export async function PATCH(request: Request) {
     name?: unknown;
     trigger?: unknown;
     steps?: unknown;
+    sendsPerHour?: unknown;
     emails?: unknown;
     tag?: unknown;
   };
@@ -295,6 +327,13 @@ export async function PATCH(request: Request) {
       }
       values.trigger = trigger;
     }
+    if (body.sendsPerHour !== undefined) {
+      const sendsPerHour = parseSendsPerHour(body.sendsPerHour);
+      if (sendsPerHour === "invalid") {
+        return NextResponse.json({ error: "Invalid sends per hour" }, { status: 400 });
+      }
+      values.sends_per_hour = sendsPerHour;
+    }
     let steps: StepInput[] | null = null;
     if (body.steps !== undefined) {
       steps = parseSteps(body.steps);
@@ -336,13 +375,42 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "pause" || action === "activate") {
-    const status = action === "pause" ? "paused" : "active";
-    const { error } = await db.from("email_sequences").update({ status }).eq("id", id);
+    const values: Record<string, unknown> =
+      action === "pause"
+        ? { status: "paused" }
+        : // Activating (or resuming) clears any prior auto-pause record so the
+          // banner and reason disappear and monitoring starts fresh.
+          { status: "active", auto_paused_at: null, pause_reason: null };
+    const { error } = await db.from("email_sequences").update(values).eq("id", id);
     if (error) {
       console.error("admin emails/sequences: status update failed", error);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "stop") {
+    // Hard stop: pause the sequence AND cancel every open enrollment so no one
+    // mid-drip receives another step. Use this to abort a send in progress.
+    const { error: statusErr } = await db
+      .from("email_sequences")
+      .update({ status: "paused" })
+      .eq("id", id);
+    if (statusErr) {
+      console.error("admin emails/sequences: stop status update failed", statusErr);
+      return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    }
+    const { error: cancelErr, count } = await db
+      .from("email_sequence_enrollments")
+      .update({ cancelled_at: new Date().toISOString() }, { count: "exact" })
+      .eq("sequence_id", id)
+      .is("cancelled_at", null)
+      .is("completed_at", null);
+    if (cancelErr) {
+      console.error("admin emails/sequences: stop cancel-all failed", cancelErr);
+      return NextResponse.json({ error: "Could not cancel pending enrollments" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, cancelled: count ?? 0 });
   }
 
   if (action === "enroll") {

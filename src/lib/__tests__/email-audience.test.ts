@@ -10,7 +10,12 @@
 
 import { describe, it, expect } from "vitest";
 import { parseAudience, parseEmailList, normalizeTag } from "@/lib/email-audience";
-import { shortId, campaignCategory, stepCategory } from "@/lib/email-marketing";
+import {
+  shortId,
+  campaignCategory,
+  stepCategory,
+  sequenceRunBudget,
+} from "@/lib/email-marketing";
 
 describe("normalizeTag", () => {
   it("lowercases, trims, and hyphenates spaces", () => {
@@ -103,5 +108,28 @@ describe("tracking category keys", () => {
   it("builds stable campaign and step categories", () => {
     expect(campaignCategory(id)).toBe("campaign_abcdef01");
     expect(stepCategory(id, 3)).toBe("seq_abcdef01_s3");
+  });
+});
+
+describe("sequenceRunBudget (throttle math)", () => {
+  const DEFAULT = 40;
+
+  it("falls back to the default budget when no rate is set", () => {
+    expect(sequenceRunBudget(null, DEFAULT)).toBe(DEFAULT);
+    expect(sequenceRunBudget(undefined, DEFAULT)).toBe(DEFAULT);
+    expect(sequenceRunBudget(0, DEFAULT)).toBe(DEFAULT);
+    expect(sequenceRunBudget(-5, DEFAULT)).toBe(DEFAULT);
+  });
+
+  it("converts an hourly rate into a per-run budget (12 runs/hour)", () => {
+    // 20/hour -> ceil(20/12) = 2 per run (~24/hour effective, close enough for warmup).
+    expect(sequenceRunBudget(20, DEFAULT)).toBe(2);
+    expect(sequenceRunBudget(12, DEFAULT)).toBe(1);
+    expect(sequenceRunBudget(240, DEFAULT)).toBe(20);
+  });
+
+  it("never drops below 1 for a positive rate", () => {
+    expect(sequenceRunBudget(1, DEFAULT)).toBe(1);
+    expect(sequenceRunBudget(5, DEFAULT)).toBe(1);
   });
 });

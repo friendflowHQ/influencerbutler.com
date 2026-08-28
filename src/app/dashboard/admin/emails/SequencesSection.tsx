@@ -49,6 +49,9 @@ type Sequence = {
   name: string;
   status: "active" | "paused";
   trigger: Trigger;
+  sends_per_hour: number | null;
+  auto_paused_at: string | null;
+  pause_reason: string | null;
   created_at: string;
   steps: SequenceStep[];
   enrollmentCounts: { active: number; completed: number; cancelled: number };
@@ -142,6 +145,7 @@ export default function SequencesSection({
   const [triggerKind, setTriggerKind] = useState<"none" | "tag_added" | "source">("none");
   const [triggerTag, setTriggerTag] = useState("");
   const [triggerSource, setTriggerSource] = useState("");
+  const [sendsPerHour, setSendsPerHour] = useState("");
   const [steps, setSteps] = useState<EditableStep[]>([]);
   const [editorBusy, setEditorBusy] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
@@ -209,6 +213,7 @@ export default function SequencesSection({
       setTriggerKind("none");
       setTriggerTag("");
       setTriggerSource("");
+      setSendsPerHour("");
       setSteps([{ dayOffset: 0, subject: "", body: "" }]);
     } else {
       setName(seq.name);
@@ -225,6 +230,7 @@ export default function SequencesSection({
         setTriggerSource(seq.trigger.source);
         setTriggerTag("");
       }
+      setSendsPerHour(seq.sends_per_hour != null ? String(seq.sends_per_hour) : "");
       setSteps(
         [...seq.steps]
           .sort((a, b) => a.position - b.position)
@@ -255,12 +261,19 @@ export default function SequencesSection({
         body: s.body,
       }));
       const trigger = buildTrigger();
+      // Empty field clears the cap (use default rate); a number sets the throttle.
+      const ratePayload = sendsPerHour.trim() === "" ? null : Number(sendsPerHour);
       const res =
         editing === "new"
           ? await fetch("/api/admin/emails/sequences", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name, trigger: trigger ?? undefined, steps: payloadSteps }),
+              body: JSON.stringify({
+                name,
+                trigger: trigger ?? undefined,
+                steps: payloadSteps,
+                sendsPerHour: ratePayload,
+              }),
             })
           : await fetch("/api/admin/emails/sequences", {
               method: "PATCH",
@@ -271,6 +284,7 @@ export default function SequencesSection({
                 name,
                 trigger,
                 steps: payloadSteps,
+                sendsPerHour: ratePayload,
               }),
             });
       if (!res.ok) {
@@ -301,6 +315,33 @@ export default function SequencesSection({
       void refetch();
     } catch {
       setListError("Could not update the sequence. Check your connection and try again.");
+    }
+  }
+
+  async function stopSequence(seq: Sequence) {
+    const active = seq.enrollmentCounts.active;
+    if (
+      !window.confirm(
+        `Stop "${seq.name}"? This pauses it and cancels ${active.toLocaleString("en-US")} pending ` +
+          `enrollment(s) so no one mid-drip gets another email. People already finished are unaffected.`,
+      )
+    ) {
+      return;
+    }
+    setListError(null);
+    try {
+      const res = await fetch("/api/admin/emails/sequences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: seq.id, action: "stop" }),
+      });
+      if (!res.ok) {
+        setListError(await readError(res, "Could not stop the sequence"));
+        return;
+      }
+      void refetch();
+    } catch {
+      setListError("Could not stop the sequence. Check your connection and try again.");
     }
   }
 
@@ -443,6 +484,24 @@ export default function SequencesSection({
                 </>
               ) : null}
             </div>
+          </div>
+
+          <div className="mt-3 max-w-xs">
+            <label className="text-xs font-medium text-slate-500">Send rate (emails/hour)</label>
+            <input
+              type="number"
+              min={1}
+              max={5000}
+              value={sendsPerHour}
+              onChange={(e) => setSendsPerHour(e.target.value)}
+              placeholder="No limit"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Throttles this drip to protect your sending domain. Leave blank for no per-sequence
+              limit. For a cold or old list, start low (e.g. 20-50/hour) and raise it over a few days
+              while bounces stay healthy.
+            </p>
           </div>
 
           <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -683,7 +742,12 @@ export default function SequencesSection({
                     {seq.status}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-slate-500">{triggerLabel(seq.trigger)}</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {triggerLabel(seq.trigger)}
+                  {seq.sends_per_hour != null
+                    ? ` - throttled to ${seq.sends_per_hour.toLocaleString("en-US")}/hour`
+                    : ""}
+                </p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {seq.enrollmentCounts.active.toLocaleString("en-US")} active,{" "}
                   {seq.enrollmentCounts.completed.toLocaleString("en-US")} completed
@@ -718,8 +782,26 @@ export default function SequencesSection({
                 >
                   Enroll
                 </button>
+                {seq.enrollmentCounts.active > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => void stopSequence(seq)}
+                    className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                    title="Pause the sequence and cancel everyone still mid-drip"
+                  >
+                    Stop &amp; cancel pending
+                  </button>
+                ) : null}
               </div>
             </div>
+
+            {seq.auto_paused_at ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <span className="font-semibold">Auto-paused to protect your domain.</span>{" "}
+                {seq.pause_reason ?? "Bounce or complaint rate crossed the safe threshold."} Review
+                the list, then Activate to resume.
+              </div>
+            ) : null}
 
             <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
               {[...seq.steps]

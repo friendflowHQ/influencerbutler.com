@@ -48,6 +48,28 @@ function parseTags(input: string): string[] {
   );
 }
 
+// The server import caps at 2000 addresses per request; large pastes are split
+// into sequential batches client-side so thousands can be loaded in one go.
+const IMPORT_BATCH = 2000;
+
+/** Splits a pasted blob into deduped, lowercased email tokens. */
+function parseImportEmails(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(/[\s,;]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.includes("@")),
+    ),
+  );
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 export default function ContactsSection({
   onOpenCustomer,
 }: {
@@ -74,6 +96,7 @@ export default function ContactsSection({
   const [importBusy, setImportBusy] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importProgress, setImportProgress] = useState<string | null>(null);
 
   // Selection + bulk actions
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -109,43 +132,70 @@ export default function ContactsSection({
     setImportBusy(true);
     setImportError(null);
     setImportResult(null);
+    setImportProgress(null);
     try {
-      const body: {
-        emails: string;
-        tags?: string[];
-        source?: string;
-        syncToResendAudience?: boolean;
-      } = { emails: importEmails };
+      const allEmails = parseImportEmails(importEmails);
+      if (allEmails.length === 0) {
+        setImportError("No valid email addresses found.");
+        return;
+      }
       const tags = parseTags(importTagsInput);
-      if (tags.length > 0) body.tags = tags;
-      if (importSource.trim()) body.source = importSource.trim();
-      if (importSync) body.syncToResendAudience = true;
-      const res = await fetch("/api/admin/emails/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.status === 403) {
-        setMutationForbidden(true);
-        return;
+      const source = importSource.trim();
+      const batches = chunk(allEmails, IMPORT_BATCH);
+      // Accumulate across batches so the final result reflects the whole paste.
+      const totals: ImportResult = { added: 0, existingTagged: 0, invalid: 0, total: 0 };
+
+      for (let i = 0; i < batches.length; i++) {
+        if (batches.length > 1) {
+          setImportProgress(`Importing batch ${i + 1} of ${batches.length}...`);
+        }
+        const body: {
+          emails: string;
+          tags?: string[];
+          source?: string;
+          syncToResendAudience?: boolean;
+        } = { emails: batches[i].join("\n") };
+        if (tags.length > 0) body.tags = tags;
+        if (source) body.source = source;
+        if (importSync) body.syncToResendAudience = true;
+
+        const res = await fetch("/api/admin/emails/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.status === 403) {
+          setMutationForbidden(true);
+          return;
+        }
+        if (res.status === 409) {
+          setImportError(
+            "The contacts table is missing. Apply supabase/migrations/20260817_email_marketing.sql first.",
+          );
+          return;
+        }
+        if (!res.ok) {
+          setImportError(
+            `Import failed on batch ${i + 1} of ${batches.length} (HTTP ${res.status}). ` +
+              `${totals.added} contacts were added before the error.`,
+          );
+          return;
+        }
+        const r = (await res.json()) as ImportResult;
+        totals.added += r.added ?? 0;
+        totals.existingTagged += r.existingTagged ?? 0;
+        totals.invalid += r.invalid ?? 0;
+        totals.total += r.total ?? 0;
       }
-      if (res.status === 409) {
-        setImportError(
-          "The contacts table is missing. Apply supabase/migrations/20260817_email_marketing.sql first.",
-        );
-        return;
-      }
-      if (!res.ok) {
-        setImportError(`Import failed (HTTP ${res.status}).`);
-        return;
-      }
-      setImportResult((await res.json()) as ImportResult);
+
+      setImportResult(totals);
       setImportEmails("");
       void refetch();
     } catch {
       setImportError("Import failed. Check your connection and try again.");
     } finally {
       setImportBusy(false);
+      setImportProgress(null);
     }
   }
 
@@ -335,9 +385,22 @@ export default function ContactsSection({
             Also add to the weekly newsletter list (Resend)
           </label>
           <p className="mt-2 text-xs text-slate-500">
-            Only import addresses that gave you permission. For big lists, start with a few hundred
-            and watch bounces before scaling up.
+            Only import addresses that gave you permission. Large pastes are imported automatically in
+            batches of {IMPORT_BATCH.toLocaleString("en-US")}. For a cold or old list, verify it first
+            and let the sequence throttle the sending pace.
           </p>
+          {(() => {
+            const count = parseImportEmails(importEmails).length;
+            return count > 0 ? (
+              <p className="mt-1 text-xs text-slate-500">
+                {count.toLocaleString("en-US")} address{count === 1 ? "" : "es"} detected
+                {count > IMPORT_BATCH
+                  ? ` (${Math.ceil(count / IMPORT_BATCH)} batches)`
+                  : ""}
+                .
+              </p>
+            ) : null;
+          })()}
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
@@ -347,6 +410,9 @@ export default function ContactsSection({
             >
               {importBusy ? "Importing..." : "Import"}
             </button>
+            {importProgress ? (
+              <span className="text-sm text-slate-500">{importProgress}</span>
+            ) : null}
             {importResult ? (
               <span className="text-sm text-emerald-700">
                 {importResult.added} added, {importResult.existingTagged} updated,{" "}
