@@ -22,6 +22,8 @@ export type SystemFunnelMeta = {
   key: string; // trial | pro | conversion | onboarding | winback
   name: string;
   description: string;
+  /** Info-tooltip text: who enters this funnel and when it fires. */
+  tooltip: string;
   /** {{placeholder}} names available in this funnel's copy (editor chips). */
   vars: string[];
   steps: FunnelStepMeta[];
@@ -32,6 +34,8 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     key: "trial",
     name: "Trial drip",
     description: "Sends over a new user's 14-day Pro trial, from start to the final-hours push.",
+    tooltip:
+      "Enters automatically when a user starts the 14-day Pro trial. 6 emails from day 0 through the final hours on day 14.",
     vars: ["firstName", "monthlyCode", "annualCode", "monthlyPercent", "annualPercent", "subscriptionUrl"],
     steps: [
       { tier: "day0", label: "Day 0 (welcome)", defaultDayOffset: 0, category: "trial_day0" },
@@ -46,6 +50,8 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     key: "pro",
     name: "Pro welcome",
     description: "Onboards a new paying Pro subscriber over their first 10 days.",
+    tooltip:
+      "Enters automatically when someone becomes a paying Pro subscriber directly (not via a trial conversion). 4 emails over 10 days.",
     vars: ["firstName", "planName", "subscriptionUrl"],
     steps: [
       { tier: "day0", label: "Day 0 (welcome)", defaultDayOffset: 0, category: "pro_day0" },
@@ -58,6 +64,8 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     key: "onboarding",
     name: "Free onboarding",
     description: "Guides someone who downloaded the free app over their first 10 days.",
+    tooltip:
+      "Enters automatically when someone downloads the free app (a contact with source 'download-app'). 4 emails over 10 days.",
     vars: ["firstName", "pricingUrl", "helpUrl", "extensionUrl", "discountCode", "discountPercent"],
     steps: [
       { tier: "day0", label: "Day 0 (setup guide)", defaultDayOffset: 0, category: "onboarding_day0" },
@@ -71,6 +79,8 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     name: "Win-back",
     description:
       "Re-engages churned customers. The comp track offers free months; the discount track offers a code (for 'too expensive' cancels). Stats are shared per tier.",
+    tooltip:
+      "Enters automatically when a subscriber cancels. 'Too expensive' cancels get the discount track; everyone else gets the comp (free months) track. Emails on day 7, 21, and 45.",
     vars: ["firstName", "isTechnical", "claimUrl", "discountCode", "discountPercent", "checkoutUrl"],
     steps: [
       { tier: "comp_t1", label: "Comp: Day 7", defaultDayOffset: 7, category: "winback_t1" },
@@ -85,6 +95,8 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     key: "conversion",
     name: "Affiliate conversion",
     description: "Nudges new affiliates to become paying customers with escalating offers.",
+    tooltip:
+      "Enters automatically when an affiliate application is approved and they have not purchased yet. 3 emails with escalating offers (1 hour, day 3, day 5).",
     vars: ["firstName", "code", "checkoutUrl"],
     steps: [
       { tier: "1h", label: "1 hour (20% off)", defaultDayOffset: 0, category: "conversion_1h" },

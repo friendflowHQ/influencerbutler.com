@@ -141,6 +141,7 @@ export async function GET(request: Request) {
         funnel: f.key,
         name: f.name,
         description: f.description,
+        tooltip: f.tooltip,
         vars: f.vars,
         entered,
         converted,

@@ -14,6 +14,7 @@ type SystemFunnel = {
   funnel: string;
   name: string;
   description: string;
+  tooltip?: string;
   vars: string[];
   entered: number | null;
   converted: number | null;
@@ -83,6 +84,30 @@ function triggerLabel(t: Trigger): string {
   if (!t) return "Manual enrollment only";
   if (t.kind === "tag_added") return `Auto-enrolls when tag ${t.tag} is added`;
   return `Auto-enrolls signups from source ${t.source}`;
+}
+
+/** Longer how-to-enroll text for the info tooltip on a custom sequence card. */
+function sequenceTooltip(t: Trigger): string {
+  if (!t) {
+    return "No auto-enroll trigger. Add people with the Enroll button (paste emails, or enroll everyone with a tag).";
+  }
+  if (t.kind === "tag_added") {
+    return `Enroll a contact by importing them on the Contacts tab with the tag "${t.tag}", or by selecting contacts and choosing Tag. The sequence must be Active for auto-enroll; if you tag people while it is paused, activate it and then use Enroll > By tag to backfill.`;
+  }
+  return `Enrolls automatically when a new contact signs up with source "${t.source}" (checked over a 7-day window). The sequence must be Active.`;
+}
+
+/** Small info glyph with a native hover tooltip (repo has no icon library). */
+function InfoDot({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      aria-label={text}
+      className="cursor-help select-none text-sm leading-none text-slate-400 transition hover:text-slate-600"
+    >
+      &#9432;
+    </span>
+  );
 }
 
 function parseEmails(input: string): string[] {
@@ -569,6 +594,7 @@ export default function SequencesSection({
             <div key={funnel.funnel} className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-slate-800">{funnel.name}</h3>
+                {funnel.tooltip ? <InfoDot text={funnel.tooltip} /> : null}
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                   System
                 </span>
@@ -646,6 +672,7 @@ export default function SequencesSection({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-slate-800">{seq.name}</h3>
+                  <InfoDot text={sequenceTooltip(seq.trigger)} />
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       seq.status === "active"
