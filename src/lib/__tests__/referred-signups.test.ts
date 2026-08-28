@@ -205,6 +205,26 @@ describe("deriveReferredSignups events", () => {
     expect(events).toEqual([{ type: "cancelled", at: "2026-07-15T00:00:00.000Z", channel: "web" }]);
   });
 
+  it("adds dated, amount-bearing comp make-whole events without touching the funnel", () => {
+    const { funnel, events } = deriveReferredSignups(
+      [],
+      [sub({ user_id: "u1", status: "cancelled", ends_at: "2026-08-01T00:00:00.000Z" })],
+      Date.parse("2026-09-15T00:00:00.000Z"),
+      [
+        { amountCents: 1061, at: "2026-08-01T00:00:00.000Z" },
+        { amountCents: 1061, at: "2026-09-01T00:00:00.000Z" },
+      ],
+    );
+    // Comp make-whole lines do not inflate the customer funnel counts.
+    expect(funnel.cancelled).toBe(1);
+    expect(funnel.paid).toBe(1);
+    // Two make-whole lines carry their amount, newest first, alongside the cancel.
+    const mw = events.filter((e) => e.type === "comp_makewhole");
+    expect(mw.map((e) => e.amountCents)).toEqual([1061, 1061]);
+    expect(mw[0].at).toBe("2026-09-01T00:00:00.000Z");
+    expect(events[0].type).toBe("comp_makewhole"); // Sep 1 is the newest event
+  });
+
   it("caps the feed at the newest REFERRED_EVENTS_MAX events", () => {
     const base = Date.parse("2026-06-01T00:00:00.000Z");
     const profiles: ReferredProfileRow[] = [];

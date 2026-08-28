@@ -57,7 +57,8 @@ export type ReferredEventType =
   | "trial_started"
   | "trial_converted"
   | "subscription_started"
-  | "cancelled";
+  | "cancelled"
+  | "comp_makewhole";
 
 export type ReferredEvent = {
   type: ReferredEventType;
@@ -65,7 +66,16 @@ export type ReferredEvent = {
   at: string;
   /** Lead source. Aggregate-safe: a channel label reveals no individual. */
   channel: ReferredChannel;
+  /** Only set on `comp_makewhole`: the amount owed/paid for that installment, in
+   *  cents. This is the affiliate's OWN earning (not customer data), so it does
+   *  not break the feed's "never reveal who the customer is" contract. */
+  amountCents?: number;
 };
+
+/** A comp make-whole owed to this affiliate, pre-shaped by the data layer: the
+ *  amount and the ISO date it belongs to (its due month). Already gated to due
+ *  installments upstream so the feed shows one per month as it lands. */
+export type CompMakeWholeEntry = { amountCents: number; at: string };
 
 export type ReferredFunnel = {
   signups: number;
@@ -143,6 +153,7 @@ export function deriveReferredSignups(
   profiles: ReferredProfileRow[],
   subscriptions: ReferredSubscriptionRow[],
   now: number = Date.now(),
+  compMakeWholes: CompMakeWholeEntry[] = [],
 ): { funnel: ReferredFunnel; events: ReferredEvent[]; insights: ReferredInsights } {
   const subs = dedupeByUser(subscriptions);
 
@@ -206,6 +217,14 @@ export function deriveReferredSignups(
     if (isEnded(s) && endsAt) {
       events.push({ type: "cancelled", at: endsAt, channel });
     }
+  }
+
+  // Comp make-whole earnings: an affiliate whose referred customer was comped
+  // keeps earning via a make-whole, which "Subscription cancelled" alone hides.
+  // Surface each due installment as its own dated, amount-bearing activity line.
+  for (const cw of compMakeWholes) {
+    const at = validIso(cw.at);
+    if (at) events.push({ type: "comp_makewhole", at, channel: "web", amountCents: cw.amountCents });
   }
 
   events.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));

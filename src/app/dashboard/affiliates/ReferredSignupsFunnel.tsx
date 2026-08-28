@@ -8,6 +8,7 @@ import {
   type ReferredFunnel,
   type ReferredInsights,
 } from "@/lib/referred-signups";
+import { formatUsdFromCents } from "@/lib/affiliates";
 
 /**
  * "Referred signups" funnel panel for the self-hosted affiliate dashboard.
@@ -37,6 +38,7 @@ const EVENT_LABELS: Record<ReferredEvent["type"], string> = {
   trial_converted: "Trial converted to paid",
   subscription_started: "New paid subscription",
   cancelled: "Subscription cancelled",
+  comp_makewhole: "Comp make-whole",
 };
 
 const CHANNEL_LABELS: Record<ReferredChannel, string> = {
@@ -277,7 +279,13 @@ export default function ReferredSignupsFunnel({
                           <span className="truncate text-slate-700">
                             {EVENT_LABELS[event.type]}
                           </span>
-                          <SourcePill channel={event.channel} />
+                          {event.type === "comp_makewhole" && typeof event.amountCents === "number" ? (
+                            <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                              +{formatUsdFromCents(event.amountCents)}
+                            </span>
+                          ) : (
+                            <SourcePill channel={event.channel} />
+                          )}
                         </span>
                         <span className="shrink-0 text-xs text-slate-500">
                           {eventDate(event.at)}

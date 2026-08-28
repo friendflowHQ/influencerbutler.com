@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   deriveReferredSignups,
+  type CompMakeWholeEntry,
   type ReferredEvent,
   type ReferredFunnel,
   type ReferredInsights,
@@ -111,6 +112,44 @@ export async function loadReferredSignups(
     subRows = withInterval((subData ?? []) as Record<string, unknown>[]);
   }
 
-  const { funnel, events, insights } = deriveReferredSignups(profileRows, subRows);
+  // Comp make-whole earnings owed to THIS affiliate, so the funnel's recent
+  // activity can show them (a comped referral otherwise reads as just a
+  // cancellation). Best-effort: the adjustments table is a manual-apply
+  // migration that can lag prod, and this must never break the funnel. Only
+  // DUE installments (period <= current month) are shown, matching how the owed
+  // total surfaces them one month at a time.
+  let compMakeWholes: CompMakeWholeEntry[] = [];
+  try {
+    const nowMonth = new Date().toISOString().slice(0, 7);
+    const { data: adjData } = await admin
+      .from("affiliate_commission_adjustments")
+      .select("amount_cents,period,created_at,source")
+      .eq("user_id", affiliateUserId);
+    compMakeWholes = ((adjData ?? []) as Record<string, unknown>[])
+      .filter((r) => (r.source as string | null) === "comp")
+      .map((r) => {
+        const period = typeof r.period === "string" ? r.period : null;
+        const createdAt = typeof r.created_at === "string" ? r.created_at : null;
+        const dueMonth = period ?? (createdAt ? createdAt.slice(0, 7) : null);
+        const at = period ? `${period}-01T00:00:00.000Z` : createdAt;
+        return {
+          amountCents: typeof r.amount_cents === "number" ? r.amount_cents : 0,
+          at,
+          dueMonth,
+        };
+      })
+      .filter((r): r is { amountCents: number; at: string; dueMonth: string | null } => Boolean(r.at))
+      .filter((r) => !r.dueMonth || r.dueMonth <= nowMonth)
+      .map(({ amountCents, at }) => ({ amountCents, at }));
+  } catch (error) {
+    console.warn("referred-signups: comp make-whole read skipped", error);
+  }
+
+  const { funnel, events, insights } = deriveReferredSignups(
+    profileRows,
+    subRows,
+    Date.now(),
+    compMakeWholes,
+  );
   return { migrationPending, funnel, events, insights };
 }
