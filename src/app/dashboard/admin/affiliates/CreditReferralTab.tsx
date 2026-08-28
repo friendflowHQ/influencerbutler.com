@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export type AffiliateOption = {
   userId: string;
@@ -303,6 +303,10 @@ function LoyaltyMakeWholeCard() {
 
 type CompMakeWholeResult = {
   recorded: boolean;
+  schedule: "monthly" | "lump";
+  installments: number;
+  perInstallmentCents: number;
+  voidedPrevious: number;
   adjustmentId: string | null;
   affiliate: { code: string | null; ratePercent: number } | null;
   monthsAlreadyPaid: number;
@@ -332,11 +336,53 @@ function CompMakeWholeCard({
   const [code, setCode] = useState(initialCode ?? "");
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [compMonths, setCompMonths] = useState("12");
+  const [scheduleMonthly, setScheduleMonthly] = useState(true);
   const [note, setNote] = useState("");
   const [state, setState] = useState<FormState>({ kind: "idle" });
   const [result, setResult] = useState<CompMakeWholeResult | null>(null);
   const [paid, setPaid] = useState(false);
   const [payState, setPayState] = useState<FormState>({ kind: "idle" });
+  // Number of months the customer already paid (deducted from the make-whole).
+  const [monthsAlreadyPaid, setMonthsAlreadyPaid] = useState<number | null>(null);
+
+  // When deep-linked with a customer, prefill the monthly price (their latest
+  // real paid charge) and comp length (their comp grant) so the operator just
+  // confirms and records. Best-effort: a failed suggest leaves the fields blank.
+  useEffect(() => {
+    const customer = (initialCustomer ?? "").trim();
+    if (!customer) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/billing/comp-makewhole?email=${encodeURIComponent(customer)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          found?: boolean;
+          referredMonthlyCents?: number | null;
+          compMonths?: number | null;
+          monthsAlreadyPaid?: number | null;
+        };
+        if (cancelled || !json.found) return;
+        if (typeof json.referredMonthlyCents === "number" && json.referredMonthlyCents > 0) {
+          setMonthlyPrice((json.referredMonthlyCents / 100).toFixed(2));
+        }
+        if (typeof json.compMonths === "number" && json.compMonths > 0) {
+          setCompMonths(String(json.compMonths));
+        }
+        if (typeof json.monthsAlreadyPaid === "number") {
+          setMonthsAlreadyPaid(json.monthsAlreadyPaid);
+        }
+      } catch {
+        // best-effort prefill only
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialCustomer]);
 
   const submit = async () => {
     const referredMonthlyCents = dollarsToCents(monthlyPrice);
@@ -362,6 +408,7 @@ function CompMakeWholeCard({
           affiliateCode: code.trim() || null,
           referredMonthlyCents,
           compMonths: months,
+          schedule: scheduleMonthly ? "monthly" : "lump",
           note: note.trim() || null,
         }),
       });
@@ -372,12 +419,20 @@ function CompMakeWholeCard({
       }
       setResult(json);
       const mw = json.makeWhole;
+      const owedLine = !json.recorded
+        ? "Nothing owed."
+        : json.schedule === "monthly"
+          ? `Make-whole: ${json.installments} monthly installment${json.installments === 1 ? "" : "s"} of ${fmtCents(json.perInstallmentCents)} (total ${fmtCents(mw?.amountCents ?? 0)}). First is due now; the rest appear in the affiliate's Owed one per month.`
+          : `Make-whole owed: ${fmtCents(mw?.amountCents ?? 0)} lump (${json.affiliate?.ratePercent ?? 0}% x ${fmtCents(mw?.perBillingCents ?? 0)}/mo x ${json.payableMonths} month${json.payableMonths === 1 ? "" : "s"}).`;
       const detail = [
-        json.recorded && mw
-          ? `Make-whole owed: ${fmtCents(mw.amountCents)} (${json.affiliate?.ratePercent ?? 0}% x ${fmtCents(mw.perBillingCents)}/mo x ${json.payableMonths} month${json.payableMonths === 1 ? "" : "s"})`
-          : "Nothing owed.",
+        owedLine,
         `Already credited: ${json.monthsAlreadyPaid} of a ${json.windowMonths}-month window.`,
-      ].join("\n");
+        json.voidedPrevious > 0
+          ? `Replaced ${json.voidedPrevious} earlier unpaid comp make-whole record${json.voidedPrevious === 1 ? "" : "s"} for this customer.`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
       setState({
         kind: "success",
         message: json.message,
@@ -415,6 +470,15 @@ function CompMakeWholeCard({
   };
 
   const disabled = state.kind === "working" || !email.trim() || !monthlyPrice.trim() || !compMonths.trim();
+
+  // Preview of months we'll actually pay for: the comp length minus months
+  // already paid, capped at the default 12-month window. Approximate (the server
+  // uses the affiliate's real window/rate); the recorded result is exact.
+  const monthsNum = Number.parseInt(compMonths, 10);
+  const payablePreview =
+    monthsAlreadyPaid != null && Number.isFinite(monthsNum)
+      ? Math.max(0, Math.min(monthsNum, 12 - monthsAlreadyPaid))
+      : null;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -480,6 +544,49 @@ function CompMakeWholeCard({
             onChange={(e) => setCompMonths(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-[#f97316] focus:outline-none"
           />
+          <p className="mt-1 text-xs text-slate-400">
+            The full comp you granted. Months already paid are deducted automatically.
+          </p>
+          {monthsAlreadyPaid != null ? (
+            <p className="mt-1 text-xs text-slate-500">
+              {monthsAlreadyPaid} month{monthsAlreadyPaid === 1 ? "" : "s"} already paid
+              {payablePreview != null ? ` -> ~${payablePreview} month${payablePreview === 1 ? "" : "s"} payable` : ""}.
+            </p>
+          ) : null}
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Payout schedule
+          </label>
+          <div className="mt-1 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setScheduleMonthly(true)}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                scheduleMonthly
+                  ? "border-[#f97316] bg-orange-50 text-[#c2410c]"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+              }`}
+            >
+              Monthly installments
+            </button>
+            <button
+              type="button"
+              onClick={() => setScheduleMonthly(false)}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                !scheduleMonthly
+                  ? "border-[#f97316] bg-orange-50 text-[#c2410c]"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+              }`}
+            >
+              One lump
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            {scheduleMonthly
+              ? "Pays the affiliate as they would have earned it: one entry per remaining month, each showing in their Owed on its own month."
+              : "Records the whole amount as a single owed entry, payable now."}
+          </p>
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="cmw-note" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -515,7 +622,7 @@ function CompMakeWholeCard({
               {state.detail}
             </pre>
           ) : null}
-          {result?.recorded && result.adjustmentId && result.makeWhole && result.makeWhole.amountCents > 0 ? (
+          {result?.recorded && result.schedule === "lump" && result.adjustmentId && result.makeWhole && result.makeWhole.amountCents > 0 ? (
             <div className="mt-3 border-t border-emerald-200 pt-3">
               <p className="text-xs">
                 After you PayPal the affiliate {fmtCents(result.makeWhole.amountCents)}, record it so it
@@ -535,6 +642,15 @@ function CompMakeWholeCard({
               {payState.kind === "success" ? (
                 <p className="mt-2 text-xs text-emerald-700">{payState.message}</p>
               ) : null}
+            </div>
+          ) : null}
+          {result?.recorded && result.schedule === "monthly" ? (
+            <div className="mt-3 border-t border-emerald-200 pt-3 text-xs">
+              <p>
+                Each month, this affiliate&apos;s {fmtCents(result.perInstallmentCents)} installment shows up
+                on the <span className="font-semibold">Payouts</span> tab. Pay it via PayPal and mark it paid
+                there, the same as any other owed commission.
+              </p>
             </div>
           ) : null}
         </div>

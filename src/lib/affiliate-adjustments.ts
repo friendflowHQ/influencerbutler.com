@@ -113,10 +113,18 @@ function str(v: unknown): string | null {
  * Loads OPEN (reconciled_at null) adjustments grouped by affiliate user id.
  * Best-effort: the table lives on a manual-apply migration that can lag prod, so
  * a read error yields an empty map rather than throwing.
+ *
+ * Future-dated installments are gated by `asOfPeriod` (default: the current
+ * month): an adjustment whose `period` is AFTER the cutoff is not yet due, so it
+ * is excluded from the owed total. This is how a comp make-whole spread into
+ * monthly installments surfaces one month at a time instead of all at once. A
+ * null period is always considered due (legacy/manual adjustments).
  */
 export async function loadOpenAdjustmentsByUser(
   client: FromClient,
+  asOfPeriod?: string,
 ): Promise<Map<string, AdjustmentRow[]>> {
+  const cutoff = asOfPeriod ?? new Date().toISOString().slice(0, 7);
   const byUser = new Map<string, AdjustmentRow[]>();
   try {
     const { data, error } = await client
@@ -130,6 +138,9 @@ export async function loadOpenAdjustmentsByUser(
     for (const row of (data ?? []) as Record<string, unknown>[]) {
       const uid = str(row.user_id);
       if (!uid) continue;
+      const period = str(row.period);
+      // Not-yet-due installment: hide until its month arrives.
+      if (period && period > cutoff) continue;
       const adj: AdjustmentRow = {
         id: str(row.id) ?? "",
         amountCents: typeof row.amount_cents === "number" ? row.amount_cents : 0,

@@ -8,9 +8,22 @@ import {
   computeMakeWhole,
   makeWholeWindowMonths,
   compMakeWholePayableMonths,
+  loadOpenAdjustmentsByUser,
   sumAdjustmentsCents,
   MAKE_WHOLE_MAX_WINDOW_MONTHS,
 } from "../affiliate-adjustments";
+
+// Minimal stand-in for the PostgREST client loadOpenAdjustmentsByUser needs:
+// from(table).select(cols).is(col, null) -> { data, error }.
+function fakeClient(rows: Record<string, unknown>[]) {
+  return {
+    from: () => ({
+      select: () => ({
+        is: async () => ({ data: rows, error: null }),
+      }),
+    }),
+  } as unknown as Parameters<typeof loadOpenAdjustmentsByUser>[0];
+}
 
 describe("computeMakeWhole", () => {
   it("annual: 30% of the $58.50 diff, 1 billing (Beth/Michelle case)", () => {
@@ -129,6 +142,28 @@ describe("comp make-whole amount (computeMakeWhole with newPrice 0)", () => {
     expect(r.perBillingCents).toBe(690); // 30% of $23.00
     expect(r.billings).toBe(10);
     expect(r.amountCents).toBe(6900); // $69.00
+  });
+});
+
+describe("loadOpenAdjustmentsByUser due-date gate", () => {
+  const rows = [
+    { id: "aug", user_id: "u1", amount_cents: 1061, note: null, source: "comp", period: "2026-08", created_at: null },
+    { id: "sep", user_id: "u1", amount_cents: 1061, note: null, source: "comp", period: "2026-09", created_at: null },
+    { id: "oct", user_id: "u1", amount_cents: 1061, note: null, source: "comp", period: "2026-10", created_at: null },
+    { id: "manual", user_id: "u1", amount_cents: 500, note: null, source: "manual", period: null, created_at: null },
+  ];
+
+  it("hides installments whose period is after the cutoff month", async () => {
+    const map = await loadOpenAdjustmentsByUser(fakeClient(rows), "2026-08");
+    const ids = (map.get("u1") ?? []).map((a) => a.id).sort();
+    // Aug installment is due, null-period manual is always due; Sep/Oct are hidden.
+    expect(ids).toEqual(["aug", "manual"]);
+  });
+
+  it("reveals an installment once its month arrives", async () => {
+    const map = await loadOpenAdjustmentsByUser(fakeClient(rows), "2026-09");
+    const ids = (map.get("u1") ?? []).map((a) => a.id).sort();
+    expect(ids).toEqual(["aug", "manual", "sep"]);
   });
 });
 
