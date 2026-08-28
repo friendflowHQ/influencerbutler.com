@@ -67,6 +67,13 @@ type LookupResult = {
   error?: string;
 };
 
+type UserNote = {
+  id: string;
+  body: string;
+  created_by: string | null;
+  created_at: string | null;
+};
+
 // One row of the browsable directory (from /api/admin/users/list). Kept lean:
 // the full per-user detail still comes from the lookup tab.
 type DirectoryRow = {
@@ -209,6 +216,13 @@ export default function AdminUsersPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [impersonateLink, setImpersonateLink] = useState<string | null>(null);
 
+  // Per-user internal note log. Loaded separately from the lookup (gated by its
+  // own permission) so note content never reaches users.view-only operators.
+  const [notes, setNotes] = useState<UserNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteBusy, setNoteBusy] = useState(false);
+
   // Directory tab state.
   const [tab, setTab] = useState<"directory" | "lookup">("directory");
   const [directory, setDirectory] = useState<DirectoryResult | null>(null);
@@ -335,6 +349,82 @@ export default function AdminUsersPage() {
       await lookup();
     } catch {
       setMsg("Network error.");
+    }
+  };
+
+  // Load the note log for the currently looked-up user. Separate from lookup so
+  // it is gated by users.notes.view and can refresh on its own after add/delete.
+  const loadNotes = useCallback(
+    async (userId: string) => {
+      setNotesLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users/notes?userId=${encodeURIComponent(userId)}`, {
+          cache: "no-store",
+        });
+        const json = (await res.json().catch(() => ({}))) as { notes?: UserNote[] };
+        setNotes(res.ok ? json.notes ?? [] : []);
+      } catch {
+        setNotes([]);
+      } finally {
+        setNotesLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const userId = result?.found ? result.userId : null;
+    if (userId && can("users.notes.view")) {
+      void loadNotes(userId);
+    } else {
+      setNotes([]);
+    }
+    setNoteDraft("");
+  }, [result?.userId, result?.found, can, loadNotes]);
+
+  const addNote = async () => {
+    const userId = result?.userId;
+    const body = noteDraft.trim();
+    if (!userId || !body) return;
+    setNoteBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/admin/users/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, body }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(json.error ?? `Failed to save note (${res.status})`);
+        return;
+      }
+      setNoteDraft("");
+      await loadNotes(userId);
+    } catch {
+      setMsg("Network error saving note.");
+    } finally {
+      setNoteBusy(false);
+    }
+  };
+
+  const deleteNote = async (noteId: string) => {
+    const userId = result?.userId;
+    if (!userId) return;
+    try {
+      const res = await fetch("/api/admin/users/notes/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noteId }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(json.error ?? `Failed to delete note (${res.status})`);
+        return;
+      }
+      await loadNotes(userId);
+    } catch {
+      setMsg("Network error deleting note.");
     }
   };
 
@@ -597,9 +687,92 @@ export default function AdminUsersPage() {
             </div>
           </section>
 
+          {/* Notes: an internal, timestamped note log for this account. */}
+          {can("users.notes.view") ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">Notes</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Internal only. Record why a decision was made on this account (never shown to the user).
+              </p>
+
+              {can("users.notes.edit") ? (
+                <div className="mt-3">
+                  <textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    rows={2}
+                    placeholder="e.g. Cancelled Pro Solo Monthly, gave a year of Pro Trio comp. Owe Kay (KAY) the make-whole."
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+                  />
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => void addNote()}
+                      disabled={noteBusy || !noteDraft.trim()}
+                      className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                    >
+                      {noteBusy ? "Saving…" : "Add note"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <ul className="mt-4 space-y-2">
+                {notesLoading ? (
+                  <li className="text-sm text-slate-500">Loading notes…</li>
+                ) : notes.length === 0 ? (
+                  <li className="text-sm text-slate-500">No notes yet.</li>
+                ) : (
+                  notes.map((n) => (
+                    <li key={n.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="whitespace-pre-wrap break-words text-slate-800">{n.body}</p>
+                      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                        <span>
+                          {n.created_by ?? "unknown"} · {fmtDate(n.created_at)}
+                        </span>
+                        {can("users.notes.edit") ? (
+                          <button
+                            type="button"
+                            onClick={() => void deleteNote(n.id)}
+                            className="text-red-500 hover:text-red-700 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+          ) : null}
+
           {/* Subscriptions */}
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Subscriptions</h2>
+
+            {/* Comp make-whole nudge: a referred customer on a comp means their
+                affiliate stops earning. Point the operator at the tool to make
+                the affiliate whole for the comp period. */}
+            {result.referral &&
+            (result.subscriptions ?? []).some((s) => (s.ls_subscription_id ?? "").startsWith("comp:")) ? (
+              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <p>
+                  This referred customer is on a comp, so their affiliate
+                  {result.referral.affiliateName ? ` (${result.referral.affiliateName})` : ""} stops
+                  earning commission. Record a comp make-whole to keep them whole for the comp period.
+                </p>
+                <a
+                  href={`/dashboard/admin/affiliates?tab=credit&customer=${encodeURIComponent(
+                    result.profile?.email ?? "",
+                  )}&code=${encodeURIComponent(result.referral.code ?? "")}`}
+                  className="mt-1 inline-block font-semibold underline"
+                >
+                  Open comp make-whole
+                </a>
+              </div>
+            ) : null}
+
             {(result.subscriptions ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-slate-500">None.</p>
             ) : (

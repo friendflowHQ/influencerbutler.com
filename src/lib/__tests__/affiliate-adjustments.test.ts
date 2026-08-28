@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeMakeWhole,
   makeWholeWindowMonths,
+  compMakeWholePayableMonths,
   sumAdjustmentsCents,
   MAKE_WHOLE_MAX_WINDOW_MONTHS,
 } from "../affiliate-adjustments";
@@ -82,6 +83,52 @@ describe("makeWholeWindowMonths", () => {
   });
   it("a shorter honored window is preserved", () => {
     expect(makeWholeWindowMonths(6)).toBe(6);
+  });
+});
+
+describe("compMakeWholePayableMonths", () => {
+  it("bounds to the remaining window (12-month window, 2 already paid -> 10)", () => {
+    expect(
+      compMakeWholePayableMonths({ compMonths: 12, windowMonths: 12, monthsAlreadyPaid: 2 }),
+    ).toBe(10);
+  });
+
+  it("uses the comp length when it is the smaller bound", () => {
+    expect(
+      compMakeWholePayableMonths({ compMonths: 3, windowMonths: 12, monthsAlreadyPaid: 0 }),
+    ).toBe(3);
+  });
+
+  it("returns 0 when the affiliate has already earned their whole window", () => {
+    expect(
+      compMakeWholePayableMonths({ compMonths: 12, windowMonths: 12, monthsAlreadyPaid: 12 }),
+    ).toBe(0);
+    // over-paid past the window never goes negative
+    expect(
+      compMakeWholePayableMonths({ compMonths: 12, windowMonths: 12, monthsAlreadyPaid: 15 }),
+    ).toBe(0);
+  });
+});
+
+describe("comp make-whole amount (computeMakeWhole with newPrice 0)", () => {
+  it("full commission on the referred monthly price for each payable month", () => {
+    // Kay: 30% affiliate, Jenna paid $23/mo, comped for a year after 2 paid months.
+    const payableMonths = compMakeWholePayableMonths({
+      compMonths: 12,
+      windowMonths: makeWholeWindowMonths(null), // default/lifetime caps at 12
+      monthsAlreadyPaid: 2,
+    });
+    expect(payableMonths).toBe(10);
+    const r = computeMakeWhole({
+      ratePercent: 30,
+      referredPriceCents: 2300, // $23.00/mo
+      newPriceCents: 0, // comp is fully free
+      interval: "month",
+      windowMonths: payableMonths,
+    });
+    expect(r.perBillingCents).toBe(690); // 30% of $23.00
+    expect(r.billings).toBe(10);
+    expect(r.amountCents).toBe(6900); // $69.00
   });
 });
 

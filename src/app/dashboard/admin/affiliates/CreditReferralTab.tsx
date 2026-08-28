@@ -301,6 +301,253 @@ function LoyaltyMakeWholeCard() {
   );
 }
 
+type CompMakeWholeResult = {
+  recorded: boolean;
+  adjustmentId: string | null;
+  affiliate: { code: string | null; ratePercent: number } | null;
+  monthsAlreadyPaid: number;
+  payableMonths: number;
+  windowMonths: number;
+  makeWhole: { amountCents: number; perBillingCents: number; billings: number } | null;
+  message: string;
+  migrationPending?: boolean;
+};
+
+/**
+ * Compensate a referring affiliate when their referred customer is comped (paid
+ * sub cancelled -> free 100%-off comp). Records what the affiliate is owed for
+ * the comp period, bounded to their remaining commission window, then (after the
+ * operator sends PayPal) marks it paid so it reconciles into 1099 / Xero. Works
+ * without a live subscription and takes the affiliate explicitly, because a
+ * referred customer is often still "attribution pending".
+ */
+function CompMakeWholeCard({
+  initialCustomer,
+  initialCode,
+}: {
+  initialCustomer?: string;
+  initialCode?: string;
+}) {
+  const [email, setEmail] = useState(initialCustomer ?? "");
+  const [code, setCode] = useState(initialCode ?? "");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [compMonths, setCompMonths] = useState("12");
+  const [note, setNote] = useState("");
+  const [state, setState] = useState<FormState>({ kind: "idle" });
+  const [result, setResult] = useState<CompMakeWholeResult | null>(null);
+  const [paid, setPaid] = useState(false);
+  const [payState, setPayState] = useState<FormState>({ kind: "idle" });
+
+  const submit = async () => {
+    const referredMonthlyCents = dollarsToCents(monthlyPrice);
+    const months = Number.parseInt(compMonths, 10);
+    if (referredMonthlyCents == null || referredMonthlyCents <= 0) {
+      setState({ kind: "error", message: "Enter the referred monthly price." });
+      return;
+    }
+    if (!Number.isFinite(months) || months <= 0) {
+      setState({ kind: "error", message: "Enter the comp length in months." });
+      return;
+    }
+    setState({ kind: "working" });
+    setResult(null);
+    setPaid(false);
+    setPayState({ kind: "idle" });
+    try {
+      const res = await fetch("/api/admin/billing/comp-makewhole", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim() || null,
+          affiliateCode: code.trim() || null,
+          referredMonthlyCents,
+          compMonths: months,
+          note: note.trim() || null,
+        }),
+      });
+      const json = (await res.json()) as CompMakeWholeResult & { error?: string };
+      if (!res.ok) {
+        setState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setResult(json);
+      const mw = json.makeWhole;
+      const detail = [
+        json.recorded && mw
+          ? `Make-whole owed: ${fmtCents(mw.amountCents)} (${json.affiliate?.ratePercent ?? 0}% x ${fmtCents(mw.perBillingCents)}/mo x ${json.payableMonths} month${json.payableMonths === 1 ? "" : "s"})`
+          : "Nothing owed.",
+        `Already credited: ${json.monthsAlreadyPaid} of a ${json.windowMonths}-month window.`,
+      ].join("\n");
+      setState({
+        kind: "success",
+        message: json.message,
+        detail,
+      });
+    } catch (err) {
+      console.error(err);
+      setState({ kind: "error", message: "Network error." });
+    }
+  };
+
+  const markPaid = async () => {
+    if (!result?.adjustmentId) return;
+    setPayState({ kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-makewhole-pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adjustmentId: result.adjustmentId }),
+      });
+      const json = (await res.json()) as { ok?: boolean; error?: string; alreadyPaid?: boolean };
+      if (!res.ok) {
+        setPayState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setPaid(true);
+      setPayState({
+        kind: "success",
+        message: json.alreadyPaid ? "Already recorded as paid." : "Make-whole recorded as paid.",
+      });
+    } catch (err) {
+      console.error(err);
+      setPayState({ kind: "error", message: "Network error." });
+    }
+  };
+
+  const disabled = state.kind === "working" || !email.trim() || !monthlyPrice.trim() || !compMonths.trim();
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 className="text-lg font-semibold text-slate-900">Comp make-whole (referred customer)</h3>
+      <p className="mt-1 text-sm text-slate-600">
+        When you comp a referred customer (cancel their paid sub, grant a free comp), their affiliate
+        stops earning. Record what the affiliate is owed for the comp period here. It&apos;s bounded to
+        the affiliate&apos;s remaining commission window, so months they already earned on real paid
+        orders are not double-paid. Send the PayPal yourself; this tracks and reconciles it.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="cmw-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Customer email
+          </label>
+          <input
+            id="cmw-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="customer@example.com"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+        <div>
+          <label htmlFor="cmw-code" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Affiliate code
+          </label>
+          <input
+            id="cmw-code"
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="KAY"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">Needed when attribution is still pending.</p>
+        </div>
+        <div>
+          <label htmlFor="cmw-price" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Referred monthly price
+          </label>
+          <input
+            id="cmw-price"
+            inputMode="decimal"
+            value={monthlyPrice}
+            onChange={(e) => setMonthlyPrice(e.target.value)}
+            placeholder="23.00"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">What they paid per month before the comp.</p>
+        </div>
+        <div>
+          <label htmlFor="cmw-months" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Comp length (months)
+          </label>
+          <input
+            id="cmw-months"
+            type="number"
+            min={1}
+            value={compMonths}
+            onChange={(e) => setCompMonths(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="cmw-note" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Note (shown to the affiliate)
+          </label>
+          <input
+            id="cmw-note"
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Customer moved to a comp; keeping your commission whole."
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={submit}
+          disabled={disabled}
+          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+        >
+          {state.kind === "working" ? "Recording…" : "Record comp make-whole"}
+        </button>
+      </div>
+
+      {state.kind === "success" ? (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <p className="font-medium">{state.message}</p>
+          {state.detail ? (
+            <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-emerald-900">
+              {state.detail}
+            </pre>
+          ) : null}
+          {result?.recorded && result.adjustmentId && result.makeWhole && result.makeWhole.amountCents > 0 ? (
+            <div className="mt-3 border-t border-emerald-200 pt-3">
+              <p className="text-xs">
+                After you PayPal the affiliate {fmtCents(result.makeWhole.amountCents)}, record it so it
+                counts toward their 1099 / Xero:
+              </p>
+              <button
+                type="button"
+                onClick={markPaid}
+                disabled={payState.kind === "working" || paid}
+                className="mt-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-900 disabled:opacity-60"
+              >
+                {paid ? "Marked paid" : payState.kind === "working" ? "Recording…" : "Mark make-whole paid (PayPal sent)"}
+              </button>
+              {payState.kind === "error" ? (
+                <p className="mt-2 text-xs text-red-700">{payState.message}</p>
+              ) : null}
+              {payState.kind === "success" ? (
+                <p className="mt-2 text-xs text-emerald-700">{payState.message}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {state.kind === "error" ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {state.message}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 function CompCard({ affiliates }: { affiliates: AffiliateOption[] }) {
   const [affiliate, setAffiliate] = useState("");
   const [email, setEmail] = useState("");
@@ -630,7 +877,15 @@ function AttributeCard({ affiliates }: { affiliates: AffiliateOption[] }) {
   );
 }
 
-export default function CreditReferralTab({ affiliates }: { affiliates: AffiliateOption[] }) {
+export default function CreditReferralTab({
+  affiliates,
+  initialCustomer,
+  initialCode,
+}: {
+  affiliates: AffiliateOption[];
+  initialCustomer?: string;
+  initialCode?: string;
+}) {
   // Only affiliates make sense as a credit target. Sort by name for the picker.
   const options = useMemo(
     () =>
@@ -655,6 +910,8 @@ export default function CreditReferralTab({ affiliates }: { affiliates: Affiliat
           attribute an order they already paid for (backstop).
         </p>
       </div>
+
+      <CompMakeWholeCard initialCustomer={initialCustomer} initialCode={initialCode} />
 
       <LoyaltyMakeWholeCard />
 

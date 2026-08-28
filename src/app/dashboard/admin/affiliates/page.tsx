@@ -293,8 +293,35 @@ function formatDateShort(iso: string | null): string {
   }
 }
 
+const TAB_KEYS: TabKey[] = [
+  "roster",
+  "applications",
+  "reconcile",
+  "credit",
+  "owed",
+  "payouts",
+  "analytics",
+];
+
 export default function AdminAffiliatesPage() {
   const [tab, setTab] = useState<TabKey>("roster");
+  // Deep-link prefill: the Users page links here as ?tab=credit&customer=&code=
+  // to jump straight to the comp make-whole tool with the customer + affiliate
+  // filled in. Read once on mount from the URL (no useSearchParams -> no Suspense
+  // boundary needed for this client page).
+  const [creditCustomer, setCreditCustomer] = useState<string | undefined>(undefined);
+  const [creditCode, setCreditCode] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      if (t && (TAB_KEYS as string[]).includes(t)) setTab(t as TabKey);
+      setCreditCustomer(params.get("customer") ?? undefined);
+      setCreditCode(params.get("code") ?? undefined);
+    } catch {
+      // no-op: URL parsing is best-effort prefill only.
+    }
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -1373,7 +1400,13 @@ export default function AdminAffiliatesPage() {
         </div>
       ) : null}
 
-      {tab === "credit" ? <CreditReferralTab affiliates={creditableAffiliates} /> : null}
+      {tab === "credit" ? (
+        <CreditReferralTab
+          affiliates={creditableAffiliates}
+          initialCustomer={creditCustomer}
+          initialCode={creditCode}
+        />
+      ) : null}
 
       {tab === "owed" ? (
         <section className="space-y-4">

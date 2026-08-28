@@ -71,6 +71,28 @@ export function makeWholeWindowMonths(durationMonths: number | null): number {
   return Math.min(durationMonths, MAKE_WHOLE_MAX_WINDOW_MONTHS);
 }
 
+/**
+ * How many months of a comp we make the referring affiliate whole for. A comp is
+ * fully free (newPrice = 0), so the affiliate earns nothing on it; we owe them
+ * their commission for the comp period, but only within their REMAINING window:
+ *
+ *   payableMonths = clamp0(min(compMonths, windowMonths - monthsAlreadyPaid))
+ *
+ * so we never pay past their normal duration or double-count months they already
+ * earned on real paid orders. `windowMonths` is the caller's already-capped
+ * window (see makeWholeWindowMonths); a 0 or negative result means "nothing owed".
+ */
+export function compMakeWholePayableMonths(input: {
+  compMonths: number;
+  windowMonths: number;
+  monthsAlreadyPaid: number;
+}): number {
+  const comp = Number.isFinite(input.compMonths) ? Math.max(0, Math.floor(input.compMonths)) : 0;
+  const window = Number.isFinite(input.windowMonths) ? Math.max(0, Math.floor(input.windowMonths)) : 0;
+  const paid = Number.isFinite(input.monthsAlreadyPaid) ? Math.max(0, Math.floor(input.monthsAlreadyPaid)) : 0;
+  return Math.max(0, Math.min(comp, window - paid));
+}
+
 export type AdjustmentRow = {
   id: string;
   amountCents: number;

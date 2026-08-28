@@ -67,6 +67,8 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "users.resend_auth", label: "Resend welcome / magic link", description: "Re-send a sign-in magic link to a user.", domain: "Users", risk: "normal", built: true },
   { key: "users.impersonate", label: "Impersonate user", description: "Generate a link to sign in as a user for support debugging. High risk.", domain: "Users", risk: "destructive", built: true },
   { key: "users.delete", label: "Delete user", description: "Permanently delete a user account. Irreversible.", domain: "Users", risk: "destructive", built: true },
+  { key: "users.notes.view", label: "View user notes", description: "Read the internal admin note log on a user account.", domain: "Users", risk: "normal", built: true },
+  { key: "users.notes.edit", label: "Edit user notes", description: "Add and delete internal admin notes on a user account.", domain: "Users", risk: "normal", built: true },
 
   // Community
   { key: "community.view", label: "View community Q&A", description: "See questions and answers across all statuses.", domain: "Community", risk: "normal", built: true },
