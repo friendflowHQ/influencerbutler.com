@@ -36,10 +36,19 @@ type Config = { booking_horizon_days: number; lead_time_hours: number; decoy_min
 const REPO = "https://github.com/friendflowHQ/InfluencerButler";
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function hhmm(min: number): string { const h = Math.floor(min / 60), m = min % 60; return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`; }
-function fmtWhen(iso: string, tz: string | null): string {
-  try { return new Intl.DateTimeFormat("en-US", { timeZone: tz || "UTC", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); }
+// Renders in the admin's own (browser) timezone, with a short zone label so
+// there's no ambiguity about whose clock the time is on.
+function fmtWhen(iso: string): string {
+  try { return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
   catch { return new Date(iso).toLocaleString("en-US"); }
 }
+// Renders in a specific IANA zone (used to show the customer's local time on the prep sheet).
+function fmtWhenIn(iso: string, tz: string | null): string {
+  try { return new Intl.DateTimeFormat("en-US", { timeZone: tz || "UTC", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
+  catch { return new Date(iso).toLocaleString("en-US"); }
+}
+// The admin's own resolved timezone, used to decide whether the customer is in a different zone.
+function localTz(): string { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } }
 
 export default function SchedulingAdminPage() {
   const [forbidden, setForbidden] = useState(false);
@@ -128,7 +137,7 @@ export default function SchedulingAdminPage() {
                   bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
                   bookings.map((b) => (
                     <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
-                      <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at, b.user_timezone)}</td>
+                      <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at)}</td>
                       <td className="px-3 py-2">{b.call_type}</td>
                       <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
                       <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
@@ -224,7 +233,10 @@ export default function SchedulingAdminPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">{prep.booking.call_type === "support" ? "Support call" : "Demo call"}</h2>
-                <p className="text-sm text-slate-500">{fmtWhen(prep.booking.starts_at, prep.booking.user_timezone)} ({prep.booking.user_timezone || "?"})</p>
+                <p className="text-sm text-slate-500">{fmtWhen(prep.booking.starts_at)}</p>
+                {prep.booking.user_timezone && prep.booking.user_timezone !== localTz() && (
+                  <p className="text-xs text-slate-400">Customer&apos;s time: {fmtWhenIn(prep.booking.starts_at, prep.booking.user_timezone)} ({prep.booking.user_timezone})</p>
+                )}
               </div>
               <button type="button" onClick={() => setPrep(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
             </div>
