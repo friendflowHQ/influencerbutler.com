@@ -31,6 +31,7 @@ describe("suggestTarget", () => {
   it("falls back to the metric floor at zero baseline", () => {
     expect(suggestTarget("trial_clicks", 0)).toBe(DEFAULT_FLOOR.trial_clicks);
     expect(suggestTarget("email_subscribers", null)).toBe(DEFAULT_FLOOR.email_subscribers);
+    expect(suggestTarget("download_leads", 0)).toBe(DEFAULT_FLOOR.download_leads);
   });
 
   it("skips floorless metrics with no history", () => {

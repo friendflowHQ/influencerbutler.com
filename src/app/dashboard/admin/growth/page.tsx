@@ -31,10 +31,23 @@ type MetricsResponse = {
   error?: string;
 };
 
+// Clarifying captions for the trial funnel tiles. These three measure DIFFERENT,
+// unjoined populations and must not be read as one funnel: trial clicks are
+// anonymous CTA/download clicks with no identity, while trials started and
+// conversions come from the Lemon Squeezy subscription lifecycle. Keeping the
+// hints here (not in the shared metric catalog) so only this page shows them.
+const TILE_HINTS: Record<string, string> = {
+  trial_clicks: "Anonymous download/CTA clicks. Not linked to the trials below.",
+  trials_started: "Paid-checkout trials (Lemon Squeezy). A separate population from clicks.",
+  trial_conversions: "Trials that became paid subscriptions.",
+  download_leads: "Emails captured at the app download. These are your named leads.",
+};
+
 const TILE_ORDER: { key: string; accent: string }[] = [
   { key: "trial_clicks", accent: "#0ea5e9" },
   { key: "trials_started", accent: "#6366f1" },
   { key: "trial_conversions", accent: "#10b981" },
+  { key: "download_leads", accent: "#0d9488" },
   { key: "new_subscriptions", accent: "#8b5cf6" },
   { key: "revenue_cents", accent: "#f59e0b" },
   { key: "affiliate_clicks", accent: "#f97316" },
@@ -264,6 +277,7 @@ export default function AdminGrowthPage() {
                   previous={snap.previous}
                   series={snap.series}
                   accent={accent}
+                  hint={TILE_HINTS[key]}
                 />
               );
             })}

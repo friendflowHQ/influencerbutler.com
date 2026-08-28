@@ -21,6 +21,7 @@ export const DEFAULT_FLOOR: Record<string, number> = {
   trial_clicks: 10,
   trials_started: 2,
   trial_conversions: 1,
+  download_leads: 5,
   new_subscriptions: 1,
   affiliate_signups: 1,
   affiliate_clicks: 10,

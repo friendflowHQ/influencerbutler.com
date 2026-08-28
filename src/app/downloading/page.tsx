@@ -5,8 +5,7 @@ import {
   WINDOWS_DOWNLOAD_URL,
   currentMacDownloadUrl,
 } from "@/lib/desktop-downloads";
-import DownloadStarter from "./DownloadStarter";
-import DownloadEmailCapture from "./DownloadEmailCapture";
+import GatedDownload from "./GatedDownload";
 import NoCardTrialCta from "./NoCardTrialCta";
 
 export const runtime = "nodejs";
@@ -92,14 +91,13 @@ export default async function DownloadingPage({
             Step 1 of 2
           </span>
           <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
-            Your {osLabel} download is starting.
+            Your {osLabel} download is ready.
           </h1>
           <p className="mt-4 text-slate-600">
-            Check your browser&apos;s downloads bar, then open the installer to finish setting up
-            the desktop app.
+            Enter your email to start the download. We will send your 3-minute setup guide so you
+            are earning with the free butlers within minutes of installing.
           </p>
-          <DownloadStarter url={downloadUrl} />
-          <DownloadEmailCapture />
+          <GatedDownload url={downloadUrl} />
           {process.env.NO_CARD_TRIAL_ENABLED === "1" ? <NoCardTrialCta /> : null}
         </section>
 

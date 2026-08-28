@@ -23,6 +23,7 @@ export default function MetricTile({
   previous,
   series,
   accent = "#6366f1",
+  hint,
 }: {
   label: string;
   unit: MetricUnit;
@@ -30,6 +31,9 @@ export default function MetricTile({
   previous: number | null;
   series: number[] | null;
   accent?: string;
+  /** Optional caption under the label, e.g. to explain what a tile does and
+   *  does not measure so unrelated tiles are not read as one funnel. */
+  hint?: string;
 }) {
   const delta = deltaBits(current, previous);
   return (
@@ -43,6 +47,7 @@ export default function MetricTile({
         ) : null}
       </div>
       <p className="mt-1 text-xs font-medium text-slate-500">{label}</p>
+      {hint ? <p className="mt-0.5 text-[11px] leading-snug text-slate-400">{hint}</p> : null}
       {series && series.some((v) => v > 0) ? (
         <div className="mt-2">
           <Sparkline data={series} stroke={accent} />

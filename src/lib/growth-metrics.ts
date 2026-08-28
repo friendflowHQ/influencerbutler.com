@@ -29,6 +29,7 @@ export const GROWTH_METRICS: GrowthMetricDef[] = [
   { key: "trial_clicks", label: "Free-trial clicks", goalLabel: "trial clicks", unit: "count", goalable: true },
   { key: "trials_started", label: "Trials started", goalLabel: "trials started", unit: "count", goalable: true },
   { key: "trial_conversions", label: "Trial conversions", goalLabel: "trial conversions", unit: "count", goalable: true },
+  { key: "download_leads", label: "Download leads", goalLabel: "download leads", unit: "count", goalable: true },
   { key: "new_subscriptions", label: "New subscriptions", goalLabel: "new subscriptions", unit: "count", goalable: true },
   { key: "active_subscriptions", label: "Active subscribers", goalLabel: "active subscribers", unit: "count", goalable: true },
   { key: "on_trial_subscriptions", label: "On trial right now", goalLabel: "trials in progress", unit: "count", goalable: false },
@@ -246,7 +247,7 @@ export async function computeGrowthSnapshot(
     windowRows("affiliate_applications", "created_at", "created_at"),
     windowRows("affiliate_clicks", "created_at", "created_at", (c) => c.eq("is_bot", false)),
     windowRows("testimonials", "created_at", "created_at"),
-    windowRows("email_subscribers", "created_at", "created_at"),
+    windowRows("email_subscribers", "created_at,source", "created_at"),
     (async () => {
       try {
         const [y, m] = month.split("-").map(Number);
@@ -310,6 +311,15 @@ export async function computeGrowthSnapshot(
   metrics.affiliate_clicks = bucket(affClickRows, "created_at");
   metrics.testimonials = bucket(testimonialRows, "created_at");
   metrics.email_subscribers = bucket(emailSubRows, "created_at");
+  // Download leads: the subset of email_subscribers captured at the gated app
+  // download (source = 'download-app'). Broken out from the newsletter total so
+  // the funnel's actual named-lead volume is visible on its own.
+  metrics.download_leads = bucket(
+    emailSubRows
+      ? emailSubRows.filter((r) => String(r.source ?? "") === "download-app")
+      : null,
+    "created_at",
+  );
 
   if (earnings && earnings.totals.length >= 1) {
     const cur = earnings.totals.find((b) => b.month === month) ?? null;
