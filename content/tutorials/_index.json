@@ -512,6 +512,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "walmart-research",
+      "title": "Walmart Research: price and rank history for Walmart products",
+      "category": "Other",
+      "summary": "See price history, rank history, and estimated monthly sales for Walmart products, built automatically as the app looks products up, with a daily check that keeps every one fresh.",
+      "order": 342,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
