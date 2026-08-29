@@ -415,7 +415,9 @@ export async function PATCH(request: Request) {
 
   if (action === "enroll") {
     let list: string[] = [];
-    if (typeof body.emails === "string" && body.emails.trim().length > 0) {
+    if (Array.isArray(body.emails)) {
+      list = cleanEmailArray(body.emails);
+    } else if (typeof body.emails === "string" && body.emails.trim().length > 0) {
       list = parseEmailList(body.emails, MAX_EMAILS).emails;
     } else if (typeof body.tag === "string") {
       const tag = normalizeTag(body.tag);
