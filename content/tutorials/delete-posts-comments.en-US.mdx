@@ -24,6 +24,12 @@ Two dropdowns decide the target:
 
 With groups selected, tick the groups and pages to clean from the checklist (copied from Deals Influencer Butler), or paste more group or page URLs, one per line.
 
+When **Whose content** is **Anyone, by keyword**, a **How to find posts** choice appears:
+
+- **Search by keyword** uses Facebook's in-group search. It is fast, but Facebook's search does not always return every match.
+- **Scroll back through the feed** reads the whole group feed and keeps the posts matching your keywords. It is slower, but it catches posts search misses.
+- **Both** searches first, then scrolls the feed, for the most complete cleanup. A post found by both passes is never removed twice.
+
 ## Filters
 
 - **Delete**: posts, comments, or both. Group cleanup removes posts; comment cleanup runs on your timeline.
@@ -75,3 +81,4 @@ Set a start time and a repeat interval (6, 12, 24 hours, 7 days, or custom) and 
 - **A post was skipped with "No Delete option".** Facebook does not offer a delete action on that post for your account (for example a post cross-posted by a Page you do not manage). The runner skips it and moves on.
 - **"A specific person" could not find the member.** Paste their profile link instead of typing the name. A name is matched against the group member list, which is less reliable.
 - **Removing other members' posts needs admin.** The person and anyone filters only work in groups where you are an admin or moderator.
+- **Keyword cleanup missed some posts.** Facebook's in-group search is not always complete. Switch **How to find posts** to **Scroll back through the feed**, or **Both**, so the run reads the whole feed instead of relying on search.
