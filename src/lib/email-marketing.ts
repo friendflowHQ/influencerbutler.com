@@ -25,6 +25,24 @@ export function stepCategory(sequenceId: string, position: number): string {
   return `seq_${shortId(sequenceId)}_s${position}`;
 }
 
+/**
+ * Per-sequence contact tag (e.g. "seq-course-follow-up") applied when someone is
+ * enrolled, so the Contacts tab shows which sequence enrolled an address and can
+ * filter by it. Always a valid tag: lowercased, non-alphanumeric runs collapse
+ * to hyphens, trimmed, capped, "seq-" prefixed. The SQL backfill in
+ * 20260831_tag_enrollee_contacts_by_sequence.sql reproduces this exact slug, so
+ * keep the two in sync.
+ */
+export function sequenceContactTag(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32)
+    .replace(/-+$/g, "");
+  return slug ? `seq-${slug}` : "seq-drip";
+}
+
 /** The email-marketing cron runs every 5 minutes: 12 runs per hour. */
 export const SEQUENCE_RUNS_PER_HOUR = 12;
 

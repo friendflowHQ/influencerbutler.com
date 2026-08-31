@@ -16,6 +16,7 @@ import {
   stepCategory,
   sequenceRunBudget,
   nextSendTime,
+  sequenceContactTag,
 } from "@/lib/email-marketing";
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -134,6 +135,27 @@ describe("sequenceRunBudget (throttle math)", () => {
   it("never drops below 1 for a positive rate", () => {
     expect(sequenceRunBudget(1, DEFAULT)).toBe(1);
     expect(sequenceRunBudget(5, DEFAULT)).toBe(1);
+  });
+});
+
+describe("sequenceContactTag (per-sequence contact tag)", () => {
+  it("slugifies a sequence name into a seq- prefixed tag", () => {
+    expect(sequenceContactTag("Instagram Posse community")).toBe("seq-instagram-posse-community");
+    expect(sequenceContactTag("Course follow-up drip!")).toBe("seq-course-follow-up-drip");
+    expect(sequenceContactTag("  VIP  ")).toBe("seq-vip");
+  });
+
+  it("caps the slug and never leaves a trailing hyphen", () => {
+    // 40-char name slugifies, gets cut to 32, and any trailing hyphen is trimmed.
+    const tag = sequenceContactTag("a".repeat(30) + "   spillover words here");
+    expect(tag.startsWith("seq-")).toBe(true);
+    expect(tag.length).toBeLessThanOrEqual(36);
+    expect(tag.endsWith("-")).toBe(false);
+  });
+
+  it("falls back to seq-drip when the name has no usable characters", () => {
+    expect(sequenceContactTag("!!!")).toBe("seq-drip");
+    expect(sequenceContactTag("")).toBe("seq-drip");
   });
 });
 

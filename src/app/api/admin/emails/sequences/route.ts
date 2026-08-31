@@ -24,7 +24,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeTag, parseEmailList, resolveAudience } from "@/lib/email-audience";
-import { enrollEmails, stepCategory, tagRecipientsAsContacts } from "@/lib/email-marketing";
+import {
+  enrollEmails,
+  stepCategory,
+  tagRecipientsAsContacts,
+  sequenceContactTag,
+} from "@/lib/email-marketing";
 import { isMissingTable } from "@/lib/growth-goals";
 
 export const runtime = "nodejs";
@@ -491,9 +496,11 @@ export async function PATCH(request: Request) {
     }
     const enrolled = await enrollEmails(db, id, list);
     // Mirror enrollees into the contacts list so pasted addresses show up on the
-    // Contacts tab (not just as an enrollment count). Idempotent; tag-resolved
-    // lists are already contacts, so this is a no-op for them.
-    await tagRecipientsAsContacts(db, list, null, "sequence-enroll");
+    // Contacts tab (not just as an enrollment count), tagged by which sequence
+    // enrolled them so you can tell them apart and filter. Idempotent; unions
+    // the tag onto existing contacts without replacing their other tags.
+    const seqTag = typeof found.name === "string" ? sequenceContactTag(found.name) : "seq-drip";
+    await tagRecipientsAsContacts(db, list, seqTag, "sequence-enroll");
     return NextResponse.json({ ok: true, enrolled });
   }
 
