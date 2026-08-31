@@ -1,0 +1,62 @@
+---
+title: "Facebook Group Email Collection: capture emails from your group's join requests"
+summary: Read your Facebook group's join requests, capture the email each person submits, optionally approve them, and hand the list to Pitch Butler.
+category: Other
+---
+
+## What Facebook Group Email Collection does
+
+Many Facebook group admins add a participation question to the join form, like "What is your email address? We'll send you daily deals to your inbox too." Every pending request then carries a real, opt-in email address, but reading them one by one and copying each into a list is slow.
+
+Facebook Group Email Collection opens your group's **Participant requests** page, reads the email each person submitted, and drops it into a table. It can approve each request after capturing the email, and it hands the whole list to Pitch Butler, where every contact shows a Facebook source chip.
+
+## Before you start
+
+- **A Facebook account signed in** through Deals Influencer Butler.
+- **You are an admin** of the group whose requests you want to read.
+- Your group's join form asks for an email in a participation question.
+
+## Running your first collection
+
+1. Open **Facebook Group Email Collection** under Facebook Butler.
+2. **Group participant requests URL**: paste your group's participant requests URL, for example `https://www.facebook.com/groups/yourgroup/participant_requests`. You can also paste the group's main URL and Butler adjusts it for you.
+3. **Facebook account**: pick which signed-in account reads the requests.
+4. **Approve requests after capturing email**: on by default. After reading each request's email, Butler clicks Approve to admit the person. Turn it off to only read emails and leave the requests pending.
+5. **Send to Pitch Butler automatically**: on by default. At the end of each run, newly captured emails are added to Pitch Butler.
+6. Keep **Watch it run** on so you can see the browser work, then click **Start**.
+
+A Chrome window opens on your group's Participant requests page. Butler reads each request's name and email, saves it to the table, and (if enabled) approves the request before moving to the next.
+
+## Working the results
+
+The results table has one row per captured email:
+
+- **Name**: the person who requested to join.
+- **Email**: the address they submitted.
+- **Timestamp**: when it was captured.
+- **Sent** toggle: flag whether you've reached out already.
+- **Pitched**: shows whether this contact is already in Pitch Butler.
+
+Top toolbar buttons:
+
+- **Select visible** and **Clear selection**: pick rows for bulk actions.
+- **Send to Pitch Butler**: push the selected rows (or all rows) to Pitch Butler now. This is the same handoff the automatic option does at the end of a run.
+- **Mark as sent** and **Unmark sent**: flip the Sent flag on selected rows.
+- **Copy table** and **Export CSV**: take the list into a spreadsheet or another tool.
+- **Delete selected**, **Delete all**, and **Restore last data**: manage the list, with a one-click undo.
+
+## Sending to Pitch Butler
+
+Captured emails become brand or creator records in Pitch Butler tagged with a **Facebook** source chip, so you can pitch them alongside your other leads and filter by where they came from. Auto-send only adds contacts that aren't already in Pitch Butler, so re-running never creates duplicates.
+
+## Common gotchas
+
+- **No emails found**: your group's join form has no email question, or the requests don't include a plain-text email in the answer.
+- **Sign-in prompt or bot check mid-run**: keep Watch it run on, finish the sign-in in the Chrome window, then run again.
+- **Approved people leave the queue**: with Approve on, each captured request is admitted and removed from the pending list, so a re-run only sees new requests.
+
+## Related
+
+- [Pitch Butler tutorial](/help/tutorials/pitchbutler) - the unified brand CRM these emails flow into.
+- [Group Invite Butler tutorial](/help/tutorials/group-invite-butler) - invite a list of emails into your Facebook group.
+- [Instagram Email Collection tutorial](/help/tutorials/instagram-email) - the Instagram twin of this workspace.

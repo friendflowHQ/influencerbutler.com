@@ -1,0 +1,62 @@
+---
+title: "Collecte des e-mails du groupe Facebook: capturez les e-mails des demandes d'adhesion"
+summary: Lisez les demandes d'adhesion a votre groupe Facebook, capturez l'e-mail que chaque personne indique, approuvez-les au besoin et transmettez la liste a Pitch Butler.
+category: Other
+---
+
+## Ce que fait Collecte des e-mails du groupe Facebook
+
+Beaucoup d'administrateurs de groupes Facebook ajoutent une question de participation au formulaire d'adhesion, comme "Quelle est votre adresse e-mail ? Nous vous enverrons aussi les offres du jour." Chaque demande en attente porte alors une vraie adresse e-mail donnee volontairement, mais les lire une par une et copier chacune dans une liste est lent.
+
+Collecte des e-mails du groupe Facebook ouvre la page **Demandes de participants** de votre groupe, lit l'e-mail que chaque personne a indique et l'ajoute a un tableau. Elle peut approuver chaque demande apres avoir capture l'e-mail, et transmet toute la liste a Pitch Butler, ou chaque contact affiche une pastille de source Facebook.
+
+## Avant de commencer
+
+- **Un compte Facebook connecte** via Deals Influencer Butler.
+- **Vous etes administrateur** du groupe dont vous voulez lire les demandes.
+- Le formulaire d'adhesion de votre groupe demande un e-mail dans une question de participation.
+
+## Votre premiere collecte
+
+1. Ouvrez **Collecte des e-mails du groupe Facebook** sous Facebook Butler.
+2. **URL des demandes de participants du groupe**: collez l'URL des demandes de participants de votre groupe, par exemple `https://www.facebook.com/groups/votregroupe/participant_requests`. Vous pouvez aussi coller l'URL principale du groupe, Butler l'ajuste pour vous.
+3. **Compte Facebook**: choisissez quel compte connecte lit les demandes.
+4. **Approuver les demandes apres la capture de l'e-mail**: active par defaut. Apres avoir lu l'e-mail de chaque demande, Butler clique sur Approuver pour admettre la personne. Desactivez-le pour seulement lire les e-mails et laisser les demandes en attente.
+5. **Envoyer a Pitch Butler automatiquement**: active par defaut. A la fin de chaque execution, les e-mails nouvellement captures sont ajoutes a Pitch Butler.
+6. Gardez **Regarder l'execution** active pour voir le navigateur travailler, puis cliquez sur **Demarrer**.
+
+Une fenetre Chrome s'ouvre sur la page Demandes de participants de votre groupe. Butler lit le nom et l'e-mail de chaque demande, l'enregistre dans le tableau et (si active) approuve la demande avant de passer a la suivante.
+
+## Exploiter les resultats
+
+Le tableau des resultats affiche une ligne par e-mail capture:
+
+- **Nom**: la personne qui a demande a rejoindre.
+- **E-mail**: l'adresse qu'elle a indiquee.
+- **Date**: quand elle a ete capturee.
+- Bouton **Envoye**: indiquez si vous l'avez deja contactee.
+- **Contacte**: indique si ce contact est deja dans Pitch Butler.
+
+Boutons de la barre superieure:
+
+- **Selectionner les visibles** et **Effacer la selection**: choisissez des lignes pour les actions groupees.
+- **Envoyer a Pitch Butler**: envoyez maintenant les lignes selectionnees (ou toutes) a Pitch Butler. C'est le meme transfert que fait l'option automatique a la fin d'une execution.
+- **Marquer comme envoye** et **Annuler envoye**: changez le marqueur Envoye sur les lignes selectionnees.
+- **Copier le tableau** et **Exporter CSV**: reprenez la liste dans un tableur ou un autre outil.
+- **Supprimer la selection**, **Tout supprimer** et **Restaurer les dernieres donnees**: gerez la liste, avec une annulation en un clic.
+
+## Envoyer a Pitch Butler
+
+Les e-mails captures deviennent des fiches de marque ou de createur dans Pitch Butler, avec une pastille de source **Facebook**, pour les demarcher a cote de vos autres contacts et filtrer selon leur origine. L'envoi automatique n'ajoute que les contacts qui ne sont pas deja dans Pitch Butler, donc relancer ne cree jamais de doublons.
+
+## Problemes courants
+
+- **Aucun e-mail trouve**: le formulaire d'adhesion de votre groupe n'a pas de question d'e-mail, ou les demandes ne contiennent pas d'e-mail en texte dans la reponse.
+- **Invite de connexion ou verification en cours d'execution**: gardez Regarder l'execution active, terminez la connexion dans la fenetre Chrome, puis relancez.
+- **Les personnes approuvees quittent la file**: avec Approuver active, chaque demande capturee est admise et retiree de la liste en attente, donc une nouvelle execution ne voit que les nouvelles demandes.
+
+## En lien
+
+- [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) - le CRM de marques unifie vers lequel ces e-mails arrivent.
+- [Tutoriel Group Invite Butler](/help/tutorials/group-invite-butler) - invitez une liste d'e-mails dans votre groupe Facebook.
+- [Tutoriel Collecte des e-mails Instagram](/help/tutorials/instagram-email) - le jumeau Instagram de cet espace.

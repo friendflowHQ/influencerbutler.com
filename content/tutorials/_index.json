@@ -528,6 +528,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-group-email",
+      "title": "Facebook Group Email Collection: capture emails from your group's join requests",
+      "category": "Other",
+      "summary": "Read your Facebook group's join requests, capture the email each person submits, optionally approve them, and hand the list to Pitch Butler with a Facebook source chip.",
+      "order": 342.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "facebook-group-builder",
       "title": "Facebook Group Builder: create and grow niche groups on autopilot",
       "category": "Other",
