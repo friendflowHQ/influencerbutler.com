@@ -43,6 +43,12 @@ export interface Dict {
   salesEstModeled: string;
   salesEstCalibrated: string;
   boughtPastMonthChip: (n: string) => string;
+  // Local BSR-derived estimates on the product panel, with exact labels matching
+  // the desktop app. Honest tooltips: these are estimates, not reported figures.
+  estUnitsLabel: string;
+  estRevenueLabel: string;
+  estUnitsTip: string;
+  estRevenueTip: string;
   marketPoolNote: string;
   shotListTitle: string;
   shotListShowFeatures: string;
@@ -316,6 +322,9 @@ export interface Dict {
   // salesEstModeled / salesEstCalibrated.
   tileRevenue: (money: string) => string;
   tileBsr: (rank: string, category: string | null) => string;
+  // Estimated monthly units per tile (value + unit; the label lives in the chip
+  // tooltip, matching tileRevenue).
+  tileEstUnits: (n: string) => string;
   // Per-tile action menu (the "..." button on a search card).
   tileMenuLabel: string;
   tileMenuAddToList: string;
@@ -804,6 +813,12 @@ const en: Dict = {
   salesEstModeled: "Modeled from best-seller rank",
   salesEstCalibrated: "Calibrated from real data",
   boughtPastMonthChip: (n) => `${n}+ bought/mo`,
+  estUnitsLabel: "Est. units/mo",
+  estRevenueLabel: "Est. revenue/mo",
+  estUnitsTip:
+    "Estimated monthly units, modeled from the product's Best Sellers Rank. An estimate, not a reported figure.",
+  estRevenueTip:
+    "Estimated monthly revenue (estimated units times price). An estimate, not a reported figure.",
   marketPoolNote: "From the shared Influencer Butler catalogue.",
   shotListTitle: "Shot list",
   shotListShowFeatures: "Show these features on camera:",
@@ -1076,6 +1091,7 @@ const en: Dict = {
   tileCoupon: "Coupon",
   tileRevenue: (money) => `~${money}/mo`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} units/mo`,
   tileMenuLabel: "More actions",
   tileMenuAddToList: "Add to list",
   tileMenuNewList: "New list",
@@ -1585,6 +1601,12 @@ const es: Dict = {
   salesEstModeled: "Estimado a partir del ranking de ventas",
   salesEstCalibrated: "Calibrado con datos reales",
   boughtPastMonthChip: (n) => `${n}+ comprados/mes`,
+  estUnitsLabel: "Uds./mes est.",
+  estRevenueLabel: "Ingresos/mes est.",
+  estUnitsTip:
+    "Unidades mensuales estimadas, calculadas a partir del ranking de ventas del producto. Es una estimación, no una cifra oficial.",
+  estRevenueTip:
+    "Ingresos mensuales estimados (unidades estimadas multiplicadas por el precio). Es una estimación, no una cifra oficial.",
   marketPoolNote: "Del catálogo compartido de Influencer Butler.",
   shotListTitle: "Guion de grabación",
   shotListShowFeatures: "Muestra estas características en cámara:",
@@ -1857,6 +1879,7 @@ const es: Dict = {
   tileCoupon: "Cupón",
   tileRevenue: (money) => `~${money}/mes`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} uds./mes`,
   tileMenuLabel: "Más acciones",
   tileMenuAddToList: "Añadir a lista",
   tileMenuNewList: "Nueva lista",
@@ -2366,6 +2389,12 @@ const fr: Dict = {
   salesEstModeled: "Estimé d'après le classement des ventes",
   salesEstCalibrated: "Calibré sur des données réelles",
   boughtPastMonthChip: (n) => `${n}+ achetés/mois`,
+  estUnitsLabel: "Unités/mois est.",
+  estRevenueLabel: "Revenus/mois est.",
+  estUnitsTip:
+    "Unités mensuelles estimées, modélisées d'après le classement des ventes du produit. Une estimation, pas un chiffre officiel.",
+  estRevenueTip:
+    "Revenus mensuels estimés (unités estimées multipliées par le prix). Une estimation, pas un chiffre officiel.",
   marketPoolNote: "Issu du catalogue partagé Influencer Butler.",
   shotListTitle: "Plan de tournage",
   shotListShowFeatures: "Montrez ces caractéristiques à la caméra:",
@@ -2638,6 +2667,7 @@ const fr: Dict = {
   tileCoupon: "Coupon",
   tileRevenue: (money) => `~${money}/mois`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} unités/mois`,
   tileMenuLabel: "Plus d'actions",
   tileMenuAddToList: "Ajouter à une liste",
   tileMenuNewList: "Nouvelle liste",

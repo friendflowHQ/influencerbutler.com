@@ -8,7 +8,10 @@ import { getRateCard } from "../../rate-card/cache";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
-import { formatCents } from "../calculator/model";
+import { formatCents, formatCompactMoney } from "../calculator/model";
+import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
+import type { DpStaticSignals } from "../../amazon/dp-static";
+import { enrichStoreTiles } from "../store-overlay/enrich";
 import { query } from "../../amazon/selectors";
 import {
   sendToBackground,
@@ -53,11 +56,22 @@ type Row = {
   showWatch: boolean;
   watched: boolean;
   provenEarner: boolean;
+  // Static product-page signals (BSR, category, bought) once the background
+  // /dp/ enrichment fills them. Drives the estimated units + revenue chips.
+  dp: DpStaticSignals | null;
 };
 
 let stopScan = false;
+// Aborts a prior run's in-flight /dp/ enrichment when the grid re-inits (Amazon
+// rewrites the URL on a department or page change).
+let enrichController: AbortController | null = null;
 
 export async function initTrendRadar(settings: Settings): Promise<void> {
+  // Cancel any prior run's background /dp/ enrichment before we rebuild.
+  enrichController?.abort();
+  const run = new AbortController();
+  enrichController = run;
+
   // Amazon rewrites the URL when the user changes department or page, which
   // re-triggers this run. Tear down the prior overlay and clear done-markers so
   // we rebuild cleanly over the current grid instead of double-badging.
@@ -107,6 +121,7 @@ export async function initTrendRadar(settings: Settings): Promise<void> {
       showWatch: settings.tools.watchlist,
       watched: false,
       provenEarner: false,
+      dp: null,
     };
     mountBadge(tile, badgeBody);
     renderBadge(row);
@@ -222,6 +237,36 @@ export async function initTrendRadar(settings: Settings): Promise<void> {
 
   // Lead with what is rising fastest.
   applySort("trending");
+
+  // Fill BSR (and the estimated units + revenue chips) in the background,
+  // cache-first and paced, so a discovery grid the creator is scanning gets the
+  // "is this actually big?" numbers without blocking the toolbar. Aborts if the
+  // grid re-inits on a department/page change.
+  void enrichTiles(rows, marketplace, run.signal);
+}
+
+// Background tier-1 enrichment: fetch each tile's product page once (static
+// HTML), read the BSR/demand signals, and repaint its badge as they arrive.
+// Reuses the store overlay's shared fetcher (cache-first, throttle-aware).
+async function enrichTiles(rows: Row[], marketplace: string, signal: AbortSignal): Promise<void> {
+  try {
+    await enrichStoreTiles({
+      asins: rows.map((r) => r.tile.asin),
+      origin: location.origin,
+      marketplace,
+      signal,
+      onResult: (o) => {
+        if (o.signals === null || signal.aborted) return;
+        const row = rows.find((r) => r.tile.asin === o.asin);
+        if (!row) return;
+        row.dp = o.signals;
+        renderBadge(row);
+      },
+      onProgress: () => {},
+    });
+  } catch (error) {
+    log("trend-radar", "enrichment failed", error);
+  }
 }
 
 // The p13n grid is mostly server-rendered but can hydrate a beat late.
@@ -341,7 +386,31 @@ function renderBadge(row: Row): void {
   if (row.influencerVideos !== null) {
     body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
   }
+  appendEstimateChips(row, body);
   if (row.showWatch) body.append(watchControl(row));
+}
+
+// Estimated monthly units + revenue from the per-tile /dp/ enrichment BSR + the
+// tile price, computed locally. Each chip appears only once enrichment supplies a
+// BSR (and the tile has a price). Honest tooltips: estimates.
+function appendEstimateChips(row: Row, body: HTMLElement): void {
+  const units = resolveEstimate({
+    serverUnits: null,
+    salesRank: row.dp?.bestsellerRank?.rank ?? null,
+    priceCents: row.tile.priceCents,
+    category: row.dp?.category ?? null,
+    boughtPastMonth: row.dp?.boughtPastMonth ?? null,
+  }).units;
+  if (units === null) return;
+  const unitsChip = el("span", "tile-chip", t().tileEstUnits(units.toLocaleString()));
+  unitsChip.title = t().estUnitsTip;
+  body.append(unitsChip);
+  if (row.tile.priceCents !== null) {
+    const revCents = Math.round(units * row.tile.priceCents);
+    const revChip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revCents, row.tile.currency)));
+    revChip.title = t().estRevenueTip;
+    body.append(revChip);
+  }
 }
 
 // A small watch toggle on the tile, same as the search/store overlays. Stops

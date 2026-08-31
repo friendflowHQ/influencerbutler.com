@@ -8,7 +8,8 @@ import { getRateCard } from "../../rate-card/cache";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
-import { formatCents } from "../calculator/model";
+import { formatCents, formatCompactMoney } from "../calculator/model";
+import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
 import { getState } from "../../storage/store";
 import { SCAN_CACHE_TTL_MS } from "../../shared/constants";
 import { query } from "../../amazon/selectors";
@@ -283,7 +284,31 @@ function renderBadge(row: Row): void {
   if (row.influencerVideos !== null) {
     body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
   }
+  appendEstimateChips(row, body);
   if (row.showWatch) body.append(watchControl(row));
+}
+
+// Estimated monthly units + revenue from the per-tile /dp/ enrichment BSR + the
+// tile price, computed locally. Each chip appears only when its value is known.
+// Honest tooltips: estimates.
+function appendEstimateChips(row: Row, body: HTMLElement): void {
+  const units = resolveEstimate({
+    serverUnits: null,
+    salesRank: row.dp?.bestsellerRank?.rank ?? null,
+    priceCents: row.tile.priceCents,
+    category: row.dp?.category ?? null,
+    boughtPastMonth: row.dp?.boughtPastMonth ?? null,
+  }).units;
+  if (units === null) return;
+  const unitsChip = el("span", "tile-chip", t().tileEstUnits(units.toLocaleString()));
+  unitsChip.title = t().estUnitsTip;
+  body.append(unitsChip);
+  if (row.tile.priceCents !== null) {
+    const revCents = Math.round(units * row.tile.priceCents);
+    const revChip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revCents, row.tile.currency)));
+    revChip.title = t().estRevenueTip;
+    body.append(revChip);
+  }
 }
 
 // A small watch toggle on the tile, same as the search and store overlays'.

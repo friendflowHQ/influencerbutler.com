@@ -165,6 +165,23 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
   return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, "call_reminder", undefined, html);
 }
 
+export async function sendMissedYou(b: BookingEmailData): Promise<boolean> {
+  const ct = CALL_TYPES[b.callType];
+  const tz = b.userTimezone || "UTC";
+  const body = [
+    `Hi ${firstName(b.userName, b.userEmail)},`,
+    ``,
+    `We were looking forward to your ${ct.label.toLowerCase()} on ${whenLine(b.startMs, b.userEndMs, tz)}, but we did not manage to connect this time.`,
+    ``,
+    `No worries at all: you can grab a new time whenever it suits you from your dashboard under Book a Call. We would love to catch up with you.`,
+    ``,
+    `Warmly,`,
+    `Your Influencer Butler Team`,
+  ].join("\n");
+  const html = htmlFrom(body, [{ phrase: "Book a Call", href: BOOK_URL }]);
+  return sendResend(b.userEmail, `We missed you: your ${ct.label.toLowerCase()}`, body, "call_missed", undefined, html);
+}
+
 export async function sendCancellation(b: BookingEmailData): Promise<boolean> {
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";

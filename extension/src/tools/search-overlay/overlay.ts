@@ -11,6 +11,7 @@ import { getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents, formatCompactMoney } from "../calculator/model";
+import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
 import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
 import { formatMoney, tileTotals } from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
@@ -474,11 +475,25 @@ function rateFor(row: Row): number {
   return row.ccRate ? row.ccRate.ratePct : row.ratePct;
 }
 
-// Estimated monthly revenue in cents: modeled units x price. Prefer the live
+// Estimated monthly units for the tile: prefer the shared catalogue's calibrated
+// figure, fall back to the local BSR curve so it shows even off the pool. Reads
+// the per-tile /dp/ enrichment (row.dp) or the pooled snapshot for the BSR.
+function estUnitsFor(row: Row): number | null {
+  return resolveEstimate({
+    serverUnits: row.market?.estMonthlySales ?? null,
+    salesRank: row.dp?.bestsellerRank?.rank ?? row.market?.bsrRank ?? null,
+    priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
+    category: row.dp?.category ?? row.market?.bsrCategory ?? null,
+    boughtPastMonth:
+      row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? row.market?.boughtPastMonth ?? null,
+  }).units;
+}
+
+// Estimated monthly revenue in cents: estimated units x price. Prefer the live
 // search-tile price (what the shopper sees now) over the pooled snapshot price.
 // Null when there is no estimate or no price to multiply by.
 function revenueCentsFor(row: Row): number | null {
-  const units = row.market?.estMonthlySales;
+  const units = estUnitsFor(row);
   if (units == null) return null;
   const priceCents = row.tile.priceCents ?? row.market?.priceCents ?? null;
   if (priceCents == null) return null;
@@ -595,20 +610,27 @@ function renderBadge(row: Row, settings: Settings): void {
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
     );
   }
-  // Estimated monthly revenue (modeled sales x price) from the shared catalogue:
-  // the "is this product actually big?" signal, matching what shoppers see on a
-  // best-seller page but never on search. Honest tooltip: modeled vs calibrated.
-  const revenueCents = revenueCentsFor(row);
-  if (revenueCents !== null && row.market) {
-    const chip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revenueCents, row.tile.currency)));
-    chip.title = row.market.estimateCalibrated ? t().salesEstCalibrated : t().salesEstModeled;
+  // Estimated monthly units + revenue: the "is this product actually big?"
+  // signal. Prefer the shared catalogue's calibrated figure, fall back to the
+  // local BSR estimate so it shows even off the pool. Honest tooltips: estimates.
+  const estUnits = estUnitsFor(row);
+  if (estUnits !== null) {
+    const chip = el("span", "tile-chip", t().tileEstUnits(estUnits.toLocaleString()));
+    chip.title = t().estUnitsTip;
     body.append(chip);
   }
-  // Best-seller rank + its category, straight from the pooled snapshot.
-  if (row.market?.bsrRank != null) {
-    body.append(
-      el("span", "tile-chip", t().tileBsr(row.market.bsrRank.toLocaleString(), row.market.bsrCategory)),
-    );
+  const revenueCents = revenueCentsFor(row);
+  if (revenueCents !== null) {
+    const chip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revenueCents, row.tile.currency)));
+    chip.title = t().estRevenueTip;
+    body.append(chip);
+  }
+  // Best-seller rank + its category, from the pooled snapshot or the per-tile
+  // /dp/ enrichment.
+  const bsrRank = row.market?.bsrRank ?? row.dp?.bestsellerRank?.rank ?? null;
+  const bsrCategory = row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null;
+  if (bsrRank != null) {
+    body.append(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)));
   }
   if (row.flags.cc || row.flags.spcc) {
     body.append(

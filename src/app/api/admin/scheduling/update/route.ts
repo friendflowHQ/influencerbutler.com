@@ -1,6 +1,6 @@
 /**
  * POST /api/admin/scheduling/update
- * Body: { id, action:'complete'|'no_show'|'cancel'|'notes'|'link'|'reschedule', ... }
+ * Body: { id, action:'complete'|'no_show'|'no_show_email'|'cancel'|'notes'|'link'|'reschedule', ... }
  * Owner-side booking mutations. Gated by scheduling.manage, audited.
  */
 import { NextResponse } from "next/server";
@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
-import { sendCancellation, type BookingEmailData } from "@/lib/call-emails";
+import { sendCancellation, sendMissedYou, type BookingEmailData } from "@/lib/call-emails";
 import { deleteMeetEvent } from "@/lib/google-meet";
 import { stopBot } from "@/lib/recall";
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   const patch: Record<string, unknown> = {};
   if (action === "complete") patch.status = "completed";
-  else if (action === "no_show") patch.status = "no_show";
+  else if (action === "no_show" || action === "no_show_email") patch.status = "no_show";
   else if (action === "cancel") { patch.status = "cancelled"; patch.cancelled_at = new Date().toISOString(); patch.recording_status = "none"; }
   else if (action === "notes") patch.host_notes = String(body.hostNotes ?? "").slice(0, 8000);
   else if (action === "link") patch.join_url = String(body.joinUrl ?? "").slice(0, 500);
@@ -54,6 +54,18 @@ export async function POST(request: Request) {
 
   const { error: updErr } = await admin.from("call_bookings").update(patch).eq("id", id);
   if (updErr) return NextResponse.json({ error: "Update failed" }, { status: 500 });
+
+  if (action === "no_show_email") {
+    try {
+      const data: BookingEmailData = {
+        id: booking.id as string, callType: booking.call_type as CallTypeKey,
+        userEmail: booking.user_email as string, userName: booking.user_name as string | null,
+        startMs: Date.parse(booking.starts_at as string), userEndMs: Date.parse(booking.user_ends_at as string),
+        userTimezone: booking.user_timezone as string | null,
+      };
+      await sendMissedYou(data);
+    } catch (e) { console.error("[scheduling/update] missed-you email", e); }
+  }
 
   if (action === "cancel") {
     try {

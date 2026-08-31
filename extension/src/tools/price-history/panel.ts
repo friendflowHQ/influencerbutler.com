@@ -4,6 +4,7 @@ import { formatCents } from "../calculator/model";
 import { sendToBackground, type MarketResult, type PricePoint } from "../../shared/messages";
 import type { DesktopHistoryResult } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
+import { formatEstRevenue, formatEstUnits, resolveEstimate } from "../../amazon/bsr-revenue-estimator";
 
 // Price history (and, when the desktop app is paired, sales-rank history) for
 // the product being viewed. Prefers the desktop app's durable time-series over
@@ -96,9 +97,20 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
 
   const hasPrice = price.length >= 2;
   const hasRank = rank.length >= 2;
+  // Estimated monthly units + revenue, unified across the pooled catalogue and a
+  // local BSR estimate: prefer the pool's calibrated units, fall back to the
+  // on-page BSR + price so the figures show even off the pool.
+  const est = resolveEstimate({
+    serverUnits: pool?.estMonthlySales ?? null,
+    salesRank: signals.bestsellerRank?.rank ?? pool?.bsrRank ?? null,
+    priceCents: signals.priceCents ?? pool?.priceCents ?? null,
+    category: signals.category ?? signals.bestsellerRank?.category ?? pool?.bsrCategory ?? null,
+    boughtPastMonth: signals.boughtPastMonth ?? pool?.boughtPastMonth ?? null,
+  });
   // The estimate and the real demand figure are worth showing even for a product
-  // with no trend yet, so the panel opens when any of the four signals exists.
-  const hasEstimate = pool != null && pool.estMonthlySales != null;
+  // with no trend yet, so the panel opens when any of the signals exists.
+  const hasPoolEstimate = pool != null && pool.estMonthlySales != null;
+  const hasEstimate = est.units != null;
   const hasBought = pool != null && pool.boughtPastMonth != null;
   if (!hasPrice && !hasRank && !hasEstimate && !hasBought) {
     section.remove();
@@ -109,7 +121,7 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
   const usingPool =
     (!fromDesktop && localPrice.length < 2 && poolPrice.length >= 2) ||
     (desktopRank.length < 2 && poolRank.length >= 2) ||
-    hasEstimate ||
+    hasPoolEstimate ||
     hasBought;
 
   if (hasPrice) {
@@ -144,9 +156,10 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     section.append(summary);
   }
 
-  // Estimated monthly sales + Amazon's own "bought in past month" figure, both
-  // from the shared catalogue. The estimate is labeled honestly as modeled (or
-  // calibrated once its category curve was fit from real co-captured data).
+  // Estimated monthly units + revenue, plus Amazon's own "bought in past month"
+  // figure. The estimate is labeled honestly as an estimate; the pooled units
+  // figure is tagged modeled (or calibrated once its category curve was fit from
+  // real co-captured data). A local-only estimate is always modeled from rank.
   if (hasEstimate || hasBought) {
     const heading = el("p", "note", t().salesEstTitle);
     heading.style.marginTop = "8px";
@@ -154,15 +167,14 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     section.append(heading);
 
     const summary = el("div", "counts");
-    if (hasEstimate) {
-      summary.append(chip("", t().salesEstValue((pool as NonNullable<typeof pool>).estMonthlySales!.toLocaleString())));
-      summary.append(
-        chip(
-          (pool as NonNullable<typeof pool>).estimateCalibrated ? "good" : "",
-          (pool as NonNullable<typeof pool>).estimateCalibrated ? t().salesEstCalibrated : t().salesEstModeled,
-        ),
-      );
-    }
+    const unitsChip = chip("", `${t().estUnitsLabel}: ${formatEstUnits(est.units)}`);
+    unitsChip.title = t().estUnitsTip;
+    summary.append(unitsChip);
+    const revenueChip = chip("", `${t().estRevenueLabel}: ${formatEstRevenue(est.revenueDollars)}`);
+    revenueChip.title = t().estRevenueTip;
+    summary.append(revenueChip);
+    const calibrated = hasPoolEstimate && (pool as NonNullable<typeof pool>).estimateCalibrated;
+    summary.append(chip(calibrated ? "good" : "", calibrated ? t().salesEstCalibrated : t().salesEstModeled));
     if (hasBought) {
       summary.append(
         chip("good", t().boughtPastMonthChip((pool as NonNullable<typeof pool>).boughtPastMonth!.toLocaleString())),

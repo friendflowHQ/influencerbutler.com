@@ -34,6 +34,7 @@ type License = {
   key: string;
   status: string;
   activation_limit: number | null;
+  subscription_id: string | null;
 };
 
 type Referral = {
@@ -841,12 +842,22 @@ export default function AdminUsersPage() {
               <p className="mt-2 text-sm text-slate-500">None.</p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {result.licenses!.map((l) => (
+                {result.licenses!.map((l) => {
+                  // license_keys.subscription_id references the local
+                  // subscriptions row id, so surface that plan's name to tell
+                  // an operator which subscription a key belongs to.
+                  const planName = l.subscription_id
+                    ? (result.subscriptions ?? []).find((s) => s.id === l.subscription_id)?.plan_name ?? null
+                    : null;
+                  return (
                   <li key={l.ls_license_key_id} className="rounded-lg border border-slate-200 p-3 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-mono text-xs break-all">{l.key}</span>
                       <span className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(l.status)}`}>{l.status}</span>
                     </div>
+                    {planName ? (
+                      <div className="mt-1 text-xs text-slate-500">{planName}</div>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {can("licenses.resend") ? (
                         <button type="button" onClick={() => void act("/api/admin/licenses/resend", { lsLicenseKeyId: l.ls_license_key_id }, "License emailed.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Resend</button>
@@ -859,7 +870,8 @@ export default function AdminUsersPage() {
                       ) : null}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
