@@ -60,6 +60,8 @@ export default function SchedulingAdminPage() {
   const [notes, setNotes] = useState("");
   const [tab, setTab] = useState<"calls" | "settings">("calls");
   const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addMsg, setAddMsg] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
@@ -101,6 +103,19 @@ export default function SchedulingAdminPage() {
     } finally { setBusy(false); }
   }, [loadList, prep, openPrep]);
 
+  // Returns true on success so the form can clear itself; surfaces the server
+  // error (e.g. the slot_taken 409 that tells the admin to tick Force) otherwise.
+  const createCall = useCallback(async (body: Record<string, unknown>): Promise<boolean> => {
+    setBusy(true); setAddMsg(null);
+    try {
+      const res = await fetch("/api/admin/scheduling/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (res.ok) { setAddMsg("Call added."); await loadList(); return true; }
+      const j = await res.json().catch(() => ({}));
+      setAddMsg(j.error || `Could not add the call (server error ${res.status}).`);
+      return false;
+    } finally { setBusy(false); }
+  }, [loadList]);
+
   const mutateSettings = useCallback(async (body: Record<string, unknown>) => {
     setBusy(true);
     try { await fetch("/api/admin/scheduling/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); await loadSettings(); }
@@ -122,11 +137,15 @@ export default function SchedulingAdminPage() {
 
       {tab === "calls" && (
         <>
-          <div className="flex gap-1">
-            {(["upcoming", "past", "all"] as const).map((s) => (
-              <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
-            ))}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1">
+              {(["upcoming", "past", "all"] as const).map((s) => (
+                <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
+              ))}
+            </div>
+            <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">{showAdd ? "Close" : "Add call"}</button>
           </div>
+          {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} />}
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -322,6 +341,7 @@ export default function SchedulingAdminPage() {
             <section className="mt-4 flex flex-wrap gap-2">
               <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "complete" })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Mark done</button>
               <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "no_show" })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show</button>
+              <button type="button" disabled={busy} onClick={() => { if (confirm("Mark no-show and email the customer to rebook?")) act(prep.booking.id, { action: "no_show_email" }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show + email</button>
               <button type="button" disabled={busy} onClick={() => { const url = prompt("Join link:", prep.booking.join_url || ""); if (url != null) act(prep.booking.id, { action: "link", joinUrl: url }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Set link</button>
               <button type="button" disabled={busy} onClick={() => { if (confirm("Cancel and email the customer?")) act(prep.booking.id, { action: "cancel" }); }} className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Cancel</button>
             </section>
@@ -342,6 +362,55 @@ function AddBlock({ onAdd }: { onAdd: (b: { starts_at: string; ends_at: string; 
       <label className="text-xs text-slate-500">End<input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
       <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Break" /></label>
       <button type="button" disabled={!start || !end} onClick={() => { onAdd({ starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(), label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add block</button>
+    </div>
+  );
+}
+
+// Manually add a call without the customer going through the front-end booking
+// flow. Times are entered in the admin's own browser timezone; the browser IANA
+// zone is sent along so the customer-facing invite renders in the same clock.
+function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAdd: (body: Record<string, unknown>) => Promise<boolean> }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"support" | "demo">("support");
+  const [start, setStart] = useState("");
+  const [topic, setTopic] = useState("");
+  const [joinUrl, setJoinUrl] = useState("");
+  const [sendEmail, setSendEmail] = useState(false);
+  const [force, setForce] = useState(false);
+  const valid = email.includes("@") && start !== "";
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-slate-700">Add a call</h2>
+      <p className="mt-1 text-xs text-slate-500">Drops a call onto the schedule directly. The time is in your timezone ({localTz()}).</p>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="text-xs text-slate-500">Customer email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="name@example.com" /></label>
+        <label className="text-xs text-slate-500">Name (optional)<input value={name} onChange={(e) => setName(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">Type
+          <select value={type} onChange={(e) => setType(e.target.value as "support" | "demo")} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm">
+            <option value="support">Support</option>
+            <option value="demo">Demo</option>
+          </select>
+        </label>
+        <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500 sm:col-span-2">Topic (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
+        <label className="text-xs text-slate-500 sm:col-span-2">Join link (optional)<input value={joinUrl} onChange={(e) => setJoinUrl(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" /></label>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />Email the customer a confirmation</label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />Force / allow overlap</label>
+      </div>
+      {msg && <p className="mt-2 text-xs text-slate-600">{msg}</p>}
+      <button
+        type="button"
+        disabled={!valid || busy}
+        onClick={async () => {
+          const startMs = new Date(start).getTime();
+          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, joinUrl: joinUrl.trim() || undefined, sendEmail, force });
+          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setJoinUrl(""); setSendEmail(false); setForce(false); }
+        }}
+        className="mt-3 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50"
+      >Add call</button>
     </div>
   );
 }
