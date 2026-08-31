@@ -376,9 +376,22 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
   const [start, setStart] = useState("");
   const [topic, setTopic] = useState("");
   const [joinUrl, setJoinUrl] = useState("");
+  const [meetingId, setMeetingId] = useState<string | null>(null); // set when the link is a generated Google Meet room
+  const [gen, setGen] = useState(false);
+  const [genMsg, setGenMsg] = useState<string | null>(null);
   const [sendEmail, setSendEmail] = useState(false);
   const [force, setForce] = useState(false);
   const valid = email.includes("@") && start !== "";
+
+  const generateMeet = async () => {
+    setGen(true); setGenMsg(null);
+    try {
+      const res = await fetch("/api/admin/scheduling/meet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, startMs: new Date(start).getTime(), email: email.trim(), topic: topic.trim() || undefined }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.joinUrl) { setJoinUrl(j.joinUrl); setMeetingId(j.meetingId || null); setGenMsg("Google Meet link created."); }
+      else setGenMsg(j.error || `Could not create a link (server error ${res.status}).`);
+    } finally { setGen(false); }
+  };
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <h2 className="text-sm font-semibold text-slate-700">Add a call</h2>
@@ -394,7 +407,14 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
         </label>
         <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
         <label className="text-xs text-slate-500 sm:col-span-2">Topic (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
-        <label className="text-xs text-slate-500 sm:col-span-2">Join link (optional)<input value={joinUrl} onChange={(e) => setJoinUrl(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" /></label>
+        <div className="text-xs text-slate-500 sm:col-span-2">
+          <div className="flex items-center justify-between">
+            <span>Join link (optional){meetingId ? <span className="ml-1 rounded bg-emerald-50 px-1 py-0.5 text-[10px] text-emerald-700">Google Meet</span> : null}</span>
+            <button type="button" disabled={!valid || gen} onClick={generateMeet} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50">{gen ? "Generating..." : "Generate Meet link"}</button>
+          </div>
+          <input value={joinUrl} onChange={(e) => { setJoinUrl(e.target.value); setMeetingId(null); }} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+          {genMsg && <p className="mt-1 text-[11px] text-slate-500">{genMsg}</p>}
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />Email the customer a confirmation</label>
@@ -406,8 +426,8 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
         disabled={!valid || busy}
         onClick={async () => {
           const startMs = new Date(start).getTime();
-          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, joinUrl: joinUrl.trim() || undefined, sendEmail, force });
-          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setJoinUrl(""); setSendEmail(false); setForce(false); }
+          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, joinUrl: joinUrl.trim() || undefined, meetingId: meetingId || undefined, meetingProvider: meetingId ? "google_meet" : undefined, sendEmail, force });
+          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setJoinUrl(""); setMeetingId(null); setGenMsg(null); setSendEmail(false); setForce(false); }
         }}
         className="mt-3 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50"
       >Add call</button>
