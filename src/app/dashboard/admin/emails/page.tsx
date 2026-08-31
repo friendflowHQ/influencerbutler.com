@@ -622,7 +622,13 @@ export default function AdminEmailsPage() {
       {tab === "campaigns" ? (
         <CampaignsSection summary={summary} onOpenCustomer={setCustomerEmail} />
       ) : null}
-      {tab === "sequences" ? <SequencesSection summary={summary} /> : null}
+      {tab === "sequences" ? (
+        <SequencesSection
+          summary={summary}
+          onOpenCustomer={setCustomerEmail}
+          onOpenSend={setSelectedSendId}
+        />
+      ) : null}
 
       {customerEmail ? (
         <CustomerDrawer

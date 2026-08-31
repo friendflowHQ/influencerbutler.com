@@ -24,7 +24,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeTag, parseEmailList, resolveAudience } from "@/lib/email-audience";
-import { enrollEmails, stepCategory } from "@/lib/email-marketing";
+import { enrollEmails, stepCategory, tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { isMissingTable } from "@/lib/growth-goals";
 
 export const runtime = "nodejs";
@@ -99,6 +99,33 @@ function parseSendsPerHour(input: unknown): number | null | undefined | "invalid
   const n = Number(input);
   if (!Number.isInteger(n) || n < 1 || n > MAX_SENDS_PER_HOUR) return "invalid";
   return n;
+}
+
+/**
+ * Validates an untrusted send_hour value.
+ * Returns undefined for "not provided / leave unchanged", null to clear it
+ * (send at each person's enrollment minute), an int 0-23 to pin the hour, or
+ * the string "invalid".
+ */
+function parseSendHour(input: unknown): number | null | undefined | "invalid" {
+  if (input === undefined) return undefined;
+  if (input === null || input === "") return null;
+  const n = Number(input);
+  if (!Number.isInteger(n) || n < 0 || n > 23) return "invalid";
+  return n;
+}
+
+/**
+ * True when the write failed only because the send_hour column is not there
+ * yet (migration lags the deploy, per repo convention). Postgres undefined
+ * column is 42703; PostgREST's stale schema cache reports PGRST204. Lets the
+ * caller retry the write without send_hour so sequence create/edit keeps
+ * working until 20260831_sequence_send_hour.sql is applied.
+ */
+function isMissingSendHourColumn(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42703" || error.code === "PGRST204") return true;
+  return /send_hour/i.test(error.message ?? "") && /column|schema cache/i.test(error.message ?? "");
 }
 
 /** Validates an untrusted steps array. Null = invalid. */
@@ -213,7 +240,13 @@ export async function POST(request: Request) {
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  let body: { name?: unknown; trigger?: unknown; steps?: unknown; sendsPerHour?: unknown };
+  let body: {
+    name?: unknown;
+    trigger?: unknown;
+    steps?: unknown;
+    sendsPerHour?: unknown;
+    sendHour?: unknown;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -236,6 +269,10 @@ export async function POST(request: Request) {
   if (sendsPerHour === "invalid") {
     return NextResponse.json({ error: "Invalid sends per hour" }, { status: 400 });
   }
+  const sendHour = parseSendHour(body.sendHour);
+  if (sendHour === "invalid") {
+    return NextResponse.json({ error: "Invalid send hour" }, { status: 400 });
+  }
 
   const insertRow: Record<string, unknown> = {
     name,
@@ -244,17 +281,22 @@ export async function POST(request: Request) {
     created_by: actor.email,
   };
   if (sendsPerHour !== undefined) insertRow.sends_per_hour = sendsPerHour;
+  if (sendHour !== undefined) insertRow.send_hour = sendHour;
 
-  const { data, error } = await db
-    .from("email_sequences")
-    .insert(insertRow)
-    .select("id")
-    .single();
+  let { data, error } = await db.from("email_sequences").insert(insertRow).select("id").single();
+  if (error && "send_hour" in insertRow && isMissingSendHourColumn(error)) {
+    // Column not applied yet: retry without it so create still works.
+    delete insertRow.send_hour;
+    ({ data, error } = await db.from("email_sequences").insert(insertRow).select("id").single());
+  }
   if (error) {
     if (isMissingTable(error)) {
       return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
     }
     console.error("admin emails/sequences: insert failed", error);
+    return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+  }
+  if (!data) {
     return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
 
@@ -284,6 +326,7 @@ export async function PATCH(request: Request) {
     trigger?: unknown;
     steps?: unknown;
     sendsPerHour?: unknown;
+    sendHour?: unknown;
     emails?: unknown;
     tag?: unknown;
   };
@@ -334,6 +377,13 @@ export async function PATCH(request: Request) {
       }
       values.sends_per_hour = sendsPerHour;
     }
+    if (body.sendHour !== undefined) {
+      const sendHour = parseSendHour(body.sendHour);
+      if (sendHour === "invalid") {
+        return NextResponse.json({ error: "Invalid send hour" }, { status: 400 });
+      }
+      values.send_hour = sendHour;
+    }
     let steps: StepInput[] | null = null;
     if (body.steps !== undefined) {
       steps = parseSteps(body.steps);
@@ -344,7 +394,16 @@ export async function PATCH(request: Request) {
     }
 
     if (Object.keys(values).length > 0) {
-      const { error } = await db.from("email_sequences").update(values).eq("id", id);
+      let { error } = await db.from("email_sequences").update(values).eq("id", id);
+      if (error && "send_hour" in values && isMissingSendHourColumn(error)) {
+        // Column not applied yet: retry without it so the rest of the edit saves.
+        delete values.send_hour;
+        if (Object.keys(values).length > 0) {
+          ({ error } = await db.from("email_sequences").update(values).eq("id", id));
+        } else {
+          error = null;
+        }
+      }
       if (error) {
         console.error("admin emails/sequences: update failed", error);
         return NextResponse.json({ error: "Update failed" }, { status: 500 });
@@ -431,6 +490,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "emails or tag is required" }, { status: 400 });
     }
     const enrolled = await enrollEmails(db, id, list);
+    // Mirror enrollees into the contacts list so pasted addresses show up on the
+    // Contacts tab (not just as an enrollment count). Idempotent; tag-resolved
+    // lists are already contacts, so this is a no-op for them.
+    await tagRecipientsAsContacts(db, list, null, "sequence-enroll");
     return NextResponse.json({ ok: true, enrolled });
   }
 

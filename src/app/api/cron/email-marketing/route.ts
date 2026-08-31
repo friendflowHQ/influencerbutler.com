@@ -27,6 +27,7 @@ import {
   shortId,
   enrollEmails,
   sequenceRunBudget,
+  nextSendTime,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
@@ -72,7 +73,12 @@ type Summary = {
   autoEnrolled: number;
 };
 
-type SequenceRow = { id: string; trigger: unknown; sends_per_hour: number | null };
+type SequenceRow = {
+  id: string;
+  trigger: unknown;
+  sends_per_hour: number | null;
+  send_hour: number | null;
+};
 
 type StepRow = {
   id: string;
@@ -106,14 +112,26 @@ function reportError(step: string, error: DbError): void {
 
 /** Fetches active sequences, or null when the table is missing / errored. */
 async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null> {
-  // sends_per_hour is added by 20260828_sequence_send_controls.sql; fall back to
-  // the base columns when that migration has not been applied yet so the cron
-  // keeps running (every sequence then uses the default budget).
+  // sends_per_hour / send_hour are added by later migrations; fall back to the
+  // base columns when those have not been applied yet so the cron keeps running
+  // (every sequence then uses the default budget and enrollment-minute timing).
+  const withHour = await db
+    .from("email_sequences")
+    .select("id, trigger, sends_per_hour, send_hour")
+    .eq("status", "active");
+  if (!withHour.error) return (withHour.data ?? []) as SequenceRow[];
+
+  // send_hour not applied yet but sends_per_hour might be: keep the throttle.
   const withRate = await db
     .from("email_sequences")
     .select("id, trigger, sends_per_hour")
     .eq("status", "active");
-  if (!withRate.error) return (withRate.data ?? []) as SequenceRow[];
+  if (!withRate.error) {
+    return ((withRate.data ?? []) as Omit<SequenceRow, "send_hour">[]).map((r) => ({
+      ...r,
+      send_hour: null,
+    }));
+  }
 
   const base = await db.from("email_sequences").select("id, trigger").eq("status", "active");
   if (base.error) {
@@ -123,6 +141,7 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
   return ((base.data ?? []) as { id: string; trigger: unknown }[]).map((r) => ({
     ...r,
     sends_per_hour: null,
+    send_hour: null,
   }));
 }
 
@@ -404,7 +423,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         continue;
       }
 
-      const dueAt = new Date(enrollment.enrolled_at).getTime() + nextStep.day_offset * DAY_MS;
+      const dueAt = nextSendTime(enrollment.enrolled_at, nextStep.day_offset, seq.send_hour);
       if (!Number.isFinite(dueAt) || dueAt > Date.now()) continue;
 
       seqBudget -= 1;

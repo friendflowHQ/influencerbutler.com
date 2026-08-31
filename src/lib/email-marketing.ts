@@ -28,6 +28,103 @@ export function stepCategory(sequenceId: string, position: number): string {
 /** The email-marketing cron runs every 5 minutes: 12 runs per hour. */
 export const SEQUENCE_RUNS_PER_HOUR = 12;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Timezone a sequence's fixed send hour is interpreted in. The business is in
+ * Utah (Mountain Time), so a "9" send hour means 9am MT year-round, DST and all.
+ */
+export const SEQUENCE_SEND_TIMEZONE = "America/Denver";
+
+/** Wall-clock parts of a UTC instant as seen in `tz`. */
+function tzParts(
+  utcMs: number,
+  tz: string,
+): { year: number; month: number; day: number; hour: number; minute: number; second: number } {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const map: Record<string, number> = {};
+  for (const p of dtf.formatToParts(new Date(utcMs))) {
+    if (p.type !== "literal") map[p.type] = Number(p.value);
+  }
+  // Some engines emit "24" for midnight; normalize to 0.
+  if (map.hour === 24) map.hour = 0;
+  return {
+    year: map.year,
+    month: map.month,
+    day: map.day,
+    hour: map.hour,
+    minute: map.minute,
+    second: map.second,
+  };
+}
+
+/** Offset (local - UTC) in ms that `tz` has at the given UTC instant. */
+function tzOffsetMs(utcMs: number, tz: string): number {
+  const p = tzParts(utcMs, tz);
+  const asUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  return asUtc - utcMs;
+}
+
+/** UTC ms for `hour:00:00` wall-clock on the given date, interpreted in `tz`. */
+function zonedWallToUtc(year: number, month: number, day: number, hour: number, tz: string): number {
+  const asUtc = Date.UTC(year, month - 1, day, hour, 0, 0);
+  const offset = tzOffsetMs(asUtc, tz);
+  let utc = asUtc - offset;
+  // One refinement pass handles the DST edge where the naive guess landed in a
+  // different offset than the real instant.
+  const offset2 = tzOffsetMs(utc, tz);
+  if (offset2 !== offset) utc = asUtc - offset2;
+  return utc;
+}
+
+/**
+ * When a sequence step is due to send, as a UTC epoch ms.
+ *
+ * The base due time is always `enrolled_at + dayOffset` days (offsets count
+ * from enrollment, not from the previous step). With no `sendHour` that base is
+ * the answer, matching the original behavior of firing at the same wall-clock
+ * minute each person enrolled. With a `sendHour` (0-23) set, the send is pinned
+ * to the first `sendHour:00` in `tz` at or after that base, so steps land at a
+ * predictable hour instead of a random per-person minute. Pure so the timing
+ * math can be unit-tested without the cron.
+ */
+export function nextSendTime(
+  enrolledAt: string | number | Date,
+  dayOffset: number,
+  sendHour: number | null | undefined,
+  tz: string = SEQUENCE_SEND_TIMEZONE,
+): number {
+  const base = new Date(enrolledAt).getTime() + dayOffset * DAY_MS;
+  if (!Number.isFinite(base)) return NaN;
+  if (sendHour == null || !Number.isInteger(sendHour) || sendHour < 0 || sendHour > 23) {
+    return base;
+  }
+  const p = tzParts(base, tz);
+  let candidate = zonedWallToUtc(p.year, p.month, p.day, sendHour, tz);
+  if (candidate < base) {
+    // sendHour has already passed today (in tz): roll to the next calendar day.
+    // Date.UTC with day+1 rolls month/year over correctly.
+    const rolled = new Date(Date.UTC(p.year, p.month - 1, p.day + 1));
+    candidate = zonedWallToUtc(
+      rolled.getUTCFullYear(),
+      rolled.getUTCMonth() + 1,
+      rolled.getUTCDate(),
+      sendHour,
+      tz,
+    );
+  }
+  return candidate;
+}
+
 /**
  * Per-run send budget for a sequence given its hourly rate cap. A positive
  * sends_per_hour throttles to ceil(rate / runsPerHour) sends per cron run (min

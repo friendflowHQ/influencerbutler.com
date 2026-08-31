@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import FunnelStepEditor, { type FunnelStep } from "./FunnelStepEditor";
+import SequenceStepDrawer from "./SequenceStepDrawer";
 
 type Trigger = null | { kind: "tag_added"; tag: string } | { kind: "source"; source: string };
 
@@ -50,6 +51,7 @@ type Sequence = {
   status: "active" | "paused";
   trigger: Trigger;
   sends_per_hour: number | null;
+  send_hour: number | null;
   auto_paused_at: string | null;
   pause_reason: string | null;
   created_at: string;
@@ -68,6 +70,14 @@ type SummaryCategory = {
 };
 
 type EditableStep = { dayOffset: number; subject: string; body: string };
+
+/** "9:00 AM MT" style label for a fixed send hour (0-23), else null. */
+function sendHourLabel(hour: number | null): string | null {
+  if (hour == null || !Number.isInteger(hour) || hour < 0 || hour > 23) return null;
+  const period = hour < 12 ? "AM" : "PM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:00 ${period} MT`;
+}
 
 const SOURCE_SUGGESTIONS = [
   "site",
@@ -126,8 +136,12 @@ function parseEmails(input: string): string[] {
 
 export default function SequencesSection({
   summary,
+  onOpenCustomer,
+  onOpenSend,
 }: {
   summary: { categories: SummaryCategory[] } | null;
+  onOpenCustomer: (email: string) => void;
+  onOpenSend: (sendId: string) => void;
 }) {
   const [data, setData] = useState<SequencesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,6 +160,7 @@ export default function SequencesSection({
   const [triggerTag, setTriggerTag] = useState("");
   const [triggerSource, setTriggerSource] = useState("");
   const [sendsPerHour, setSendsPerHour] = useState("");
+  const [sendHour, setSendHour] = useState("");
   const [steps, setSteps] = useState<EditableStep[]>([]);
   const [editorBusy, setEditorBusy] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
@@ -158,6 +173,9 @@ export default function SequencesSection({
   const [enrollBusy, setEnrollBusy] = useState(false);
   const [enrollResult, setEnrollResult] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
+
+  // Step drill-down drawer (which step of which sequence is open).
+  const [openStep, setOpenStep] = useState<{ sequenceId: string; position: number } | null>(null);
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -214,6 +232,7 @@ export default function SequencesSection({
       setTriggerTag("");
       setTriggerSource("");
       setSendsPerHour("");
+      setSendHour("");
       setSteps([{ dayOffset: 0, subject: "", body: "" }]);
     } else {
       setName(seq.name);
@@ -231,6 +250,7 @@ export default function SequencesSection({
         setTriggerTag("");
       }
       setSendsPerHour(seq.sends_per_hour != null ? String(seq.sends_per_hour) : "");
+      setSendHour(seq.send_hour != null ? String(seq.send_hour) : "");
       setSteps(
         [...seq.steps]
           .sort((a, b) => a.position - b.position)
@@ -263,6 +283,8 @@ export default function SequencesSection({
       const trigger = buildTrigger();
       // Empty field clears the cap (use default rate); a number sets the throttle.
       const ratePayload = sendsPerHour.trim() === "" ? null : Number(sendsPerHour);
+      // Empty clears the fixed hour (send at each person's enrollment minute).
+      const hourPayload = sendHour.trim() === "" ? null : Number(sendHour);
       const res =
         editing === "new"
           ? await fetch("/api/admin/emails/sequences", {
@@ -273,6 +295,7 @@ export default function SequencesSection({
                 trigger: trigger ?? undefined,
                 steps: payloadSteps,
                 sendsPerHour: ratePayload,
+                sendHour: hourPayload,
               }),
             })
           : await fetch("/api/admin/emails/sequences", {
@@ -285,6 +308,7 @@ export default function SequencesSection({
                 trigger,
                 steps: payloadSteps,
                 sendsPerHour: ratePayload,
+                sendHour: hourPayload,
               }),
             });
       if (!res.ok) {
@@ -501,6 +525,27 @@ export default function SequencesSection({
               Throttles this drip to protect your sending domain. Leave blank for no per-sequence
               limit. For a cold or old list, start low (e.g. 20-50/hour) and raise it over a few days
               while bounces stay healthy.
+            </p>
+          </div>
+
+          <div className="mt-3 max-w-xs">
+            <label className="text-xs font-medium text-slate-500">Send at (hour, Mountain Time)</label>
+            <select
+              value={sendHour}
+              onChange={(e) => setSendHour(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
+            >
+              <option value="">Any time (when each person enrolled)</option>
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {sendHourLabel(h)}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Day offsets count from each person&apos;s enrollment. With a fixed hour, a step lands
+              at that hour on its due day instead of the exact minute they enrolled. Leave on &quot;Any
+              time&quot; to send as soon as the offset elapses.
             </p>
           </div>
 
@@ -807,18 +852,24 @@ export default function SequencesSection({
               {[...seq.steps]
                 .sort((a, b) => a.position - b.position)
                 .map((step, i) => (
-                  <div
+                  <button
                     key={step.id}
-                    className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                    type="button"
+                    onClick={() =>
+                      setOpenStep({ sequenceId: seq.id, position: step.position })
+                    }
+                    className="flex w-full flex-wrap items-baseline justify-between gap-2 rounded-lg px-2 py-1 text-left text-sm transition hover:bg-slate-50"
+                    title="View this step: copy, who opened/clicked, and who is scheduled"
                   >
-                    <span className="text-slate-700">
+                    <span className="min-w-0 flex-1 truncate text-slate-700">
                       <span className="font-medium">
-                        Step {i + 1} (day {step.day_offset}):
+                        Step {i + 1} (day {step.day_offset}
+                        {sendHourLabel(seq.send_hour) ? `, ${sendHourLabel(seq.send_hour)}` : ""}):
                       </span>{" "}
                       {step.subject}
                     </span>
                     <span className="text-xs text-slate-500">{stepStats(step)}</span>
-                  </div>
+                  </button>
                 ))}
               {seq.steps.length === 0 ? (
                 <p className="text-sm text-slate-500">No steps yet.</p>
@@ -889,6 +940,16 @@ export default function SequencesSection({
         ) : null}
         {loading ? <div className="h-24 animate-pulse rounded-xl bg-slate-100" /> : null}
       </div>
+
+      {openStep ? (
+        <SequenceStepDrawer
+          sequenceId={openStep.sequenceId}
+          position={openStep.position}
+          onClose={() => setOpenStep(null)}
+          onOpenCustomer={onOpenCustomer}
+          onOpenSend={onOpenSend}
+        />
+      ) : null}
 
       {editingFunnelStep ? (
         <FunnelStepEditor

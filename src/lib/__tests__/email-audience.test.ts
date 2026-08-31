@@ -15,7 +15,10 @@ import {
   campaignCategory,
   stepCategory,
   sequenceRunBudget,
+  nextSendTime,
 } from "@/lib/email-marketing";
+
+const iso = (ms: number) => new Date(ms).toISOString();
 
 describe("normalizeTag", () => {
   it("lowercases, trims, and hyphenates spaces", () => {
@@ -131,5 +134,32 @@ describe("sequenceRunBudget (throttle math)", () => {
   it("never drops below 1 for a positive rate", () => {
     expect(sequenceRunBudget(1, DEFAULT)).toBe(1);
     expect(sequenceRunBudget(5, DEFAULT)).toBe(1);
+  });
+});
+
+describe("nextSendTime (step due-time math)", () => {
+  it("with no fixed hour, sends at enrolled_at + dayOffset days (unchanged behavior)", () => {
+    const enrolled = "2026-08-31T14:23:00.000Z";
+    expect(iso(nextSendTime(enrolled, 0, null))).toBe("2026-08-31T14:23:00.000Z");
+    expect(iso(nextSendTime(enrolled, 3, null))).toBe("2026-09-03T14:23:00.000Z");
+    // An out-of-range hour is ignored, same as null.
+    expect(iso(nextSendTime(enrolled, 3, 99))).toBe("2026-09-03T14:23:00.000Z");
+  });
+
+  it("pins to the given hour on the same day when that hour is still ahead", () => {
+    // Enrolled 04:00 MT (10:00Z, summer/MDT); 9am MT that day is 15:00Z, after base.
+    expect(iso(nextSendTime("2026-08-31T10:00:00.000Z", 0, 9))).toBe("2026-08-31T15:00:00.000Z");
+  });
+
+  it("rolls to the next day when the fixed hour has already passed", () => {
+    // Enrolled 14:00 MT (20:00Z); 9am MT today already passed, so it lands the next day.
+    expect(iso(nextSendTime("2026-08-31T20:00:00.000Z", 0, 9))).toBe("2026-09-01T15:00:00.000Z");
+  });
+
+  it("applies the correct Mountain Time offset across the DST boundary", () => {
+    // Summer (MDT, UTC-6): 9am MT resolves to 15:00Z.
+    expect(iso(nextSendTime("2026-07-15T00:00:00.000Z", 0, 9))).toBe("2026-07-15T15:00:00.000Z");
+    // Winter (MST, UTC-7): 9am MT resolves to 16:00Z.
+    expect(iso(nextSendTime("2026-12-15T00:00:00.000Z", 0, 9))).toBe("2026-12-15T16:00:00.000Z");
   });
 });
