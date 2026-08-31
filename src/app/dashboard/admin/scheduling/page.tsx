@@ -384,7 +384,12 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
   const valid = email.includes("@") && start !== "";
 
   const generateMeet = async () => {
-    setGen(true); setGenMsg(null);
+    setGenMsg(null);
+    // datetime-local reads as "" until BOTH date and time are set, so guide the
+    // owner instead of silently doing nothing.
+    if (!email.includes("@")) { setGenMsg("Enter the customer email first."); return; }
+    if (start === "") { setGenMsg("Pick a start date and time first (the time is still blank)."); return; }
+    setGen(true);
     try {
       const res = await fetch("/api/admin/scheduling/meet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, startMs: new Date(start).getTime(), email: email.trim(), topic: topic.trim() || undefined }) });
       const j = await res.json().catch(() => ({}));
@@ -410,7 +415,7 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
         <div className="text-xs text-slate-500 sm:col-span-2">
           <div className="flex items-center justify-between">
             <span>Join link (optional){meetingId ? <span className="ml-1 rounded bg-emerald-50 px-1 py-0.5 text-[10px] text-emerald-700">Google Meet</span> : null}</span>
-            <button type="button" disabled={!valid || gen} onClick={generateMeet} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50">{gen ? "Generating..." : "Generate Meet link"}</button>
+            <button type="button" disabled={gen} onClick={generateMeet} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50">{gen ? "Generating..." : "Generate Meet link"}</button>
           </div>
           <input value={joinUrl} onChange={(e) => { setJoinUrl(e.target.value); setMeetingId(null); }} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
           {genMsg && <p className="mt-1 text-[11px] text-slate-500">{genMsg}</p>}
