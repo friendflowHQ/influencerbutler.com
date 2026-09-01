@@ -654,7 +654,7 @@ export default function SupportAdminPage() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search title / text / email"
+          placeholder="Search ID / title / text / email"
           className="w-56 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
         />
       </div>
