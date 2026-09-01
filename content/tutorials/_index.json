@@ -520,6 +520,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "walmart-repost",
+      "title": "Walmart Repost: copy your storefront to Walmart, hands-free",
+      "category": "Other",
+      "summary": "Repost your Amazon storefront videos and photos to your Walmart Creator storefront automatically, only when the product is the exact same item on Walmart. Use the Set it up wizard to sign in and configure it in under a minute.",
+      "order": 342.3,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
