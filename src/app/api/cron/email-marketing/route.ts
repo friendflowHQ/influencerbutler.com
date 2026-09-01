@@ -30,6 +30,7 @@ import {
   nextSendTime,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
@@ -379,6 +380,13 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
     const steps = stepsBySequence.get(seq.id) ?? [];
     let seqBudget = Math.min(sequenceRunBudget(seq.sends_per_hour, SEQUENCE_PER_RUN), globalRemaining);
 
+    // The review-ask sequence deliberately targets HAPPY users, paying ones
+    // included, so it opts out of stop-on-subscribe (a converted customer is
+    // exactly who we want a review from). Its self-report confirm link is what
+    // cancels it. Every other sequence is a re-engagement drip that must stop.
+    const trig = (seq.trigger ?? null) as { kind?: string; tag?: string } | null;
+    const stopOnSubscribe = !(trig?.kind === "tag_added" && trig.tag === EXT_REVIEW_TAG);
+
     const { data: enrollData, error: enrollErr } = await db
       .from("email_sequence_enrollments")
       .select("id, email, enrolled_at, last_step_sent")
@@ -403,7 +411,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       if (seqBudget <= 0 || globalRemaining <= 0) break;
 
       // Converted since enrolling? Cancel and move on (does not spend budget).
-      if (liveEmails && liveEmails.has(enrollment.email.trim().toLowerCase())) {
+      if (stopOnSubscribe && liveEmails && liveEmails.has(enrollment.email.trim().toLowerCase())) {
         await db
           .from("email_sequence_enrollments")
           .update({ cancelled_at: new Date().toISOString() })
@@ -432,7 +440,9 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         from: MARKETING_FROM,
         to: enrollment.email,
         subject: nextStep.subject,
-        text: nextStep.body,
+        // No-op unless the body carries {{REVIEW_*}} placeholders (the review
+        // sequence), which get replaced with this recipient's signed links.
+        text: personalizeReviewBody(nextStep.body, enrollment.email),
         category: stepCategory(seq.id, nextStep.position),
         funnel: "sequence",
       });

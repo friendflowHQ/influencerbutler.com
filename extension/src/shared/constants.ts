@@ -256,6 +256,12 @@ export const BRIDGE_STATUS_TTL_MS = 15_000;
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;
 export const APP_LEARN_URL = `${API_BASE}/extension`;
 
+// Opened in a new tab on FIRST install only (not on updates): a short welcome
+// page that optionally captures an email for setup tips and, ~10 days later, the
+// review + feedback nudge. The extension is anonymous, so this on-site page is
+// where the email is collected rather than in the popup.
+export const EXTENSION_WELCOME_URL = `${API_BASE}/extension-welcome?src=install`;
+
 // ASIN watchlist. The background poller opens each watched product in a
 // background tab on this alarm, but only a small batch per run (least-recently
 // checked first) so the MV3 worker's awake time stays bounded and a killed

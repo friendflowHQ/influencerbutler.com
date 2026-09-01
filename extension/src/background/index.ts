@@ -3,6 +3,7 @@ import {
   CAMPAIGN_WATCH_PERIOD_MINUTES,
   CATALOGUE_ALARM,
   CATALOGUE_PERIOD_MINUTES,
+  EXTENSION_WELCOME_URL,
   FACEBOOK_GROUP_URL,
   SYNC_ALARM,
   SYNC_PERIOD_MINUTES,
@@ -136,6 +137,16 @@ chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
   // whether (and what) to announce. A fresh install announces nothing.
   void noteInstall(details.reason, details.previousVersion);
+  // On a FRESH install (never on updates), open the welcome tab. It thanks the
+  // user and optionally captures an email for setup tips + the day-10 review /
+  // feedback nudge. Best-effort: a blocked tab create just means no welcome.
+  if (details.reason === "install") {
+    try {
+      void chrome.tabs.create({ url: EXTENSION_WELCOME_URL });
+    } catch {
+      // Tab creation not available in this context: skip silently.
+    }
+  }
   void injectIntoOpenTabs();
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
