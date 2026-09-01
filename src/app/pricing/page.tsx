@@ -134,8 +134,8 @@ export default async function PricingPage({
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
             The whole Chrome extension and six See &amp; Organize butlers are free forever. Go Pro
-            for all 40+ tools, unlimited messages, and priority support. Cancel anytime - no
-            questions asked.
+            for all 40+ tools, unlimited messages, and priority support, starting with a 14-day
+            free trial. Cancel anytime - no questions asked.
           </p>
           <div className="mt-5 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-900">
