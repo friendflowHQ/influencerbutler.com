@@ -17,6 +17,7 @@ import {
   sequenceRunBudget,
   nextSendTime,
   sequenceContactTag,
+  sequencePlatformTags,
 } from "@/lib/email-marketing";
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -156,6 +157,23 @@ describe("sequenceContactTag (per-sequence contact tag)", () => {
   it("falls back to seq-drip when the name has no usable characters", () => {
     expect(sequenceContactTag("!!!")).toBe("seq-drip");
     expect(sequenceContactTag("")).toBe("seq-drip");
+  });
+});
+
+describe("sequencePlatformTags (platform tag from sequence name)", () => {
+  it("tags Instagram sequences", () => {
+    expect(sequencePlatformTags("Instagram Posse community")).toEqual(["instagram"]);
+    expect(sequencePlatformTags("Cold Leads: Instagram (Amazon influencers)")).toEqual(["instagram"]);
+  });
+
+  it("tags TikTok sequences (including 'tik tok' spelling)", () => {
+    expect(sequencePlatformTags("Cold Leads: TikTok (Amazon influencers)")).toEqual(["tiktok"]);
+    expect(sequencePlatformTags("Tik Tok warmup")).toEqual(["tiktok"]);
+  });
+
+  it("returns no platform tag for names that name no platform", () => {
+    expect(sequencePlatformTags("Course follow-up drip")).toEqual([]);
+    expect(sequencePlatformTags("")).toEqual([]);
   });
 });
 

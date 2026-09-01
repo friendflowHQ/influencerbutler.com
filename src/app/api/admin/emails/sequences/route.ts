@@ -29,6 +29,7 @@ import {
   stepCategory,
   tagRecipientsAsContacts,
   sequenceContactTag,
+  sequencePlatformTags,
 } from "@/lib/email-marketing";
 import { isMissingTable } from "@/lib/growth-goals";
 
@@ -503,6 +504,14 @@ export async function PATCH(request: Request) {
     // the tag onto existing contacts without replacing their other tags.
     const seqTag = typeof found.name === "string" ? sequenceContactTag(found.name) : "seq-drip";
     await tagRecipientsAsContacts(db, list, seqTag, "sequence-enroll");
+    // Also union a platform tag (instagram/tiktok) implied by the sequence name,
+    // so contacts can be segmented by platform across every IG/TikTok sequence,
+    // not just per-sequence. No-op for sequences whose name names no platform.
+    if (typeof found.name === "string") {
+      for (const platformTag of sequencePlatformTags(found.name)) {
+        await tagRecipientsAsContacts(db, list, platformTag, "sequence-enroll");
+      }
+    }
     return NextResponse.json({ ok: true, ...result });
   }
 

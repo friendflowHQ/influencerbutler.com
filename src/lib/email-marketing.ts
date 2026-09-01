@@ -43,6 +43,24 @@ export function sequenceContactTag(name: string): string {
   return slug ? `seq-${slug}` : "seq-drip";
 }
 
+/**
+ * Platform tags implied by a sequence's name (e.g. an Instagram or TikTok drip).
+ * Enrolling into such a sequence unions these onto the contact IN ADDITION to
+ * the per-sequence seq-* tag, so the Contacts tab can segment every Instagram or
+ * TikTok contact across all such sequences, not just per-sequence. Returns
+ * already-valid, normalized tags ("instagram" / "tiktok"); empty when the name
+ * names no platform. Ordered [tag, matcher] so more platforms can be added.
+ */
+const PLATFORM_TAG_MATCHERS: ReadonlyArray<readonly [string, RegExp]> = [
+  ["tiktok", /tik\s*tok/],
+  ["instagram", /instagram/],
+];
+
+export function sequencePlatformTags(name: string): string[] {
+  const n = name.toLowerCase();
+  return PLATFORM_TAG_MATCHERS.filter(([, re]) => re.test(n)).map(([tag]) => tag);
+}
+
 /** The email-marketing cron runs every 5 minutes: 12 runs per hour. */
 export const SEQUENCE_RUNS_PER_HOUR = 12;
 
