@@ -616,6 +616,30 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "telegram-compose",
+      "title": "Telegram Butler: post to your Telegram channel",
+      "category": "Other",
+      "summary": "Connect a Telegram bot, then compose, schedule, and manage posts to your Telegram channel without leaving Influencer Butler.",
+      "order": 360,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "reddit-compose",
+      "title": "Reddit Butler: post to a subreddit",
+      "category": "Other",
+      "summary": "Connect your Reddit app and account, then submit link or text posts to a subreddit, schedule them, and edit or delete them from Influencer Butler.",
+      "order": 361,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "threads-compose",
+      "title": "Threads Butler: post to Threads",
+      "category": "Other",
+      "summary": "Post to your Threads feed using your Instagram login. Compose, schedule, and delete Threads posts from Influencer Butler.",
+      "order": 362,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
