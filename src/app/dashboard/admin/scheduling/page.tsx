@@ -109,12 +109,20 @@ export default function SchedulingAdminPage() {
     setBusy(true); setAddMsg(null);
     try {
       const res = await fetch("/api/admin/scheduling/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-      if (res.ok) { setAddMsg("Call added."); await loadList(); return true; }
+      if (res.ok) {
+        // A call whose time is already past is hidden by the "upcoming" filter, so
+        // switch to a scope that shows it (auto-reloads via the scope effect) and
+        // say where it went, instead of it silently vanishing.
+        const past = typeof body.startMs === "number" && (body.startMs as number) < Date.now();
+        if (past && scope === "upcoming") { setScope("all"); setAddMsg("Call added. Its start time is in the past, so it appears under All / Past, not Upcoming."); }
+        else { setAddMsg("Call added."); await loadList(); }
+        return true;
+      }
       const j = await res.json().catch(() => ({}));
       setAddMsg(j.error || `Could not add the call (server error ${res.status}).`);
       return false;
     } finally { setBusy(false); }
-  }, [loadList]);
+  }, [loadList, scope]);
 
   const mutateSettings = useCallback(async (body: Record<string, unknown>) => {
     setBusy(true);
@@ -382,6 +390,7 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
   const [sendEmail, setSendEmail] = useState(false);
   const [force, setForce] = useState(false);
   const valid = email.includes("@") && start !== "";
+  const startInPast = start !== "" && new Date(start).getTime() < Date.now();
 
   const generateMeet = async () => {
     setGenMsg(null);
@@ -410,7 +419,7 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
             <option value="demo">Demo</option>
           </select>
         </label>
-        <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />{startInPast && <span className="mt-0.5 block text-[11px] text-amber-600">This time is in the past, so the call will land under Past, not Upcoming.</span>}</label>
         <label className="text-xs text-slate-500 sm:col-span-2">Topic (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
         <div className="text-xs text-slate-500 sm:col-span-2">
           <div className="flex items-center justify-between">
