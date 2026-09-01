@@ -34,6 +34,11 @@ function pageParam(url: URL, key: string): number {
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
 }
 
+/** Escape LIKE wildcards so a typed email is matched literally, not as a pattern. */
+function likeLiteral(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
 export async function GET(request: Request) {
   const actor = await requirePermission("reports.view", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -56,6 +61,10 @@ export async function GET(request: Request) {
   }
   const sentPage = pageParam(url, "page");
   const schedPage = pageParam(url, "schedPage");
+  // Optional email search: filters both the Sent and Scheduled lists (and their
+  // exact counts) to recipients whose address contains this substring.
+  const q = (url.searchParams.get("q") ?? "").trim().toLowerCase().slice(0, 200);
+  const emailPattern = q ? `%${likeLiteral(q)}%` : null;
 
   // Sequence (for send_hour) + this step's copy.
   const { data: seq, error: seqErr } = await db
@@ -88,32 +97,36 @@ export async function GET(request: Request) {
 
   // Sent recipients for this step, newest first.
   const category = stepCategory(sequenceId, position);
-  const {
-    data: sentRows,
-    error: sentErr,
-    count: sentCount,
-  } = await db
+  let sentQuery = db
     .from("email_sends")
     .select("id, recipient, status, delivered_at, opened_at, clicked_at, bounced_at, created_at", {
       count: "exact",
     })
-    .eq("category", category)
+    .eq("category", category);
+  if (emailPattern) sentQuery = sentQuery.ilike("recipient", emailPattern);
+  const {
+    data: sentRows,
+    error: sentErr,
+    count: sentCount,
+  } = await sentQuery
     .order("created_at", { ascending: false })
     .range(sentPage * PAGE_SIZE, sentPage * PAGE_SIZE + PAGE_SIZE - 1);
   if (sentErr) console.error("admin emails/sequence-step: sends query failed", sentErr);
 
   // Open enrollments whose next step IS this one: last_step_sent = position - 1.
-  const {
-    data: schedData,
-    error: schedErr,
-    count: schedCount,
-  } = await db
+  let schedQuery = db
     .from("email_sequence_enrollments")
     .select("email, enrolled_at", { count: "exact" })
     .eq("sequence_id", sequenceId)
     .eq("last_step_sent", position - 1)
     .is("completed_at", null)
-    .is("cancelled_at", null)
+    .is("cancelled_at", null);
+  if (emailPattern) schedQuery = schedQuery.ilike("email", emailPattern);
+  const {
+    data: schedData,
+    error: schedErr,
+    count: schedCount,
+  } = await schedQuery
     .order("enrolled_at", { ascending: true })
     .range(schedPage * PAGE_SIZE, schedPage * PAGE_SIZE + PAGE_SIZE - 1);
   if (schedErr) console.error("admin emails/sequence-step: enrollments query failed", schedErr);

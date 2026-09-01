@@ -82,19 +82,37 @@ export default function SequenceStepDrawer({
   onOpenSend: (sendId: string) => void;
 }) {
   const [data, setData] = useState<StepResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sentPage, setSentPage] = useState(0);
   const [schedPage, setSchedPage] = useState(0);
+  // Email search: `search` is what the user types; `query` is the debounced
+  // value actually sent to the API (which filters both lists across all pages).
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+
+  // Debounce typing, and reset both lists to page 1 whenever the search changes.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(search.trim());
+      setSentPage(0);
+      setSchedPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      setData(null);
+      // Keep prior data mounted during refetches (pagination/search) so the
+      // search input never unmounts and lose focus; only the skeleton on first load.
+      setLoading(true);
       setError(null);
       try {
         const res = await fetch(
           `/api/admin/emails/sequence-step?sequenceId=${encodeURIComponent(sequenceId)}` +
-            `&position=${position}&page=${sentPage}&schedPage=${schedPage}`,
+            `&position=${position}&page=${sentPage}&schedPage=${schedPage}` +
+            (query ? `&q=${encodeURIComponent(query)}` : ""),
           { cache: "no-store" },
         );
         const json = (await res.json()) as StepResponse;
@@ -106,12 +124,14 @@ export default function SequenceStepDrawer({
         setData(json);
       } catch {
         if (!cancelled) setError("Network error. Please retry.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [sequenceId, position, sentPage, schedPage]);
+  }, [sequenceId, position, sentPage, schedPage, query]);
 
   const step = data?.step ?? null;
   const hourLabel = data ? sendHourLabel(data.sendHour) : null;
@@ -150,7 +170,7 @@ export default function SequenceStepDrawer({
         {error ? (
           <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
         ) : null}
-        {!data && !error ? (
+        {loading && !data && !error ? (
           <div className="mt-6 h-32 animate-pulse rounded-lg bg-slate-100" />
         ) : null}
 
@@ -167,6 +187,40 @@ export default function SequenceStepDrawer({
             <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-3 font-sans text-sm text-slate-800">
               {step.body || "(empty body)"}
             </pre>
+
+            {/* Email search: filters both the Sent and Scheduled lists below. */}
+            <div className="mt-6">
+              <label
+                htmlFor="seq-step-search"
+                className="text-sm font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Search recipients
+              </label>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  id="seq-step-search"
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Find an email address across all pages..."
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+              {query ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Filtering both lists to addresses containing &ldquo;{query}&rdquo;.
+                </p>
+              ) : null}
+            </div>
 
             {/* Sent */}
             <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -238,7 +292,9 @@ export default function SequenceStepDrawer({
                   {data.sent.rows.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-3 py-6 text-center text-sm text-slate-400">
-                        No one has been sent this step yet.
+                        {query
+                          ? "No sent recipients match your search."
+                          : "No one has been sent this step yet."}
                       </td>
                     </tr>
                   ) : null}
@@ -308,7 +364,9 @@ export default function SequenceStepDrawer({
                   {data.scheduled.rows.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-3 py-6 text-center text-sm text-slate-400">
-                        No one is waiting on this step.
+                        {query
+                          ? "No scheduled recipients match your search."
+                          : "No one is waiting on this step."}
                       </td>
                     </tr>
                   ) : null}
