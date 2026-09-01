@@ -50,6 +50,24 @@ function fmtWhenIn(iso: string, tz: string | null): string {
 // The admin's own resolved timezone, used to decide whether the customer is in a different zone.
 function localTz(): string { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } }
 
+// Human-readable confirmation per action, so a successful click is never silent.
+function actLabel(action: string, emailSent: boolean, email: string): string {
+  switch (action) {
+    case "complete": return "Marked done.";
+    case "no_show": return "Marked no-show.";
+    case "no_show_email": return emailSent
+      ? `Marked no-show. Rebooking email sent to ${email}.`
+      : `Marked no-show, but the rebooking email could not be sent (check email logs).`;
+    case "cancel": return emailSent
+      ? `Call cancelled. Cancellation email sent to ${email}.`
+      : `Call cancelled, but the cancellation email could not be sent (check email logs).`;
+    case "notes": return "Notes saved.";
+    case "link": return "Join link updated.";
+    case "reschedule": return "Call rescheduled.";
+    default: return "Done.";
+  }
+}
+
 export default function SchedulingAdminPage() {
   const [forbidden, setForbidden] = useState(false);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
@@ -62,6 +80,7 @@ export default function SchedulingAdminPage() {
   const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [addMsg, setAddMsg] = useState<string | null>(null);
+  const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const loadList = useCallback(async () => {
     const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
@@ -89,6 +108,7 @@ export default function SchedulingAdminPage() {
   }, []);
 
   const openPrep = useCallback(async (id: string) => {
+    setActMsg(null);
     const res = await fetch(`/api/admin/scheduling/prep?bookingId=${id}`, { cache: "no-store" });
     if (!res.ok) return;
     const p = (await res.json()) as Prep;
@@ -96,10 +116,21 @@ export default function SchedulingAdminPage() {
   }, []);
 
   const act = useCallback(async (id: string, body: Record<string, unknown>) => {
-    setBusy(true);
+    setBusy(true); setActMsg(null);
+    const action = String(body.action || "");
+    const email = prep?.booking.user_email || "the customer";
     try {
       const res = await fetch("/api/admin/scheduling/update", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, ...body }) });
-      if (res.ok) { await loadList(); if (prep?.booking.id === id) await openPrep(id); }
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // Reload first (openPrep clears actMsg), then post the confirmation so it survives.
+        await loadList(); if (prep?.booking.id === id) await openPrep(id);
+        setActMsg({ ok: true, text: actLabel(action, Boolean(j.emailSent), email) });
+      } else {
+        setActMsg({ ok: false, text: j.error || `Action failed (server error ${res.status}).` });
+      }
+    } catch {
+      setActMsg({ ok: false, text: "Action failed: could not reach the server. Please try again." });
     } finally { setBusy(false); }
   }, [loadList, prep, openPrep]);
 
@@ -255,7 +286,7 @@ export default function SchedulingAdminPage() {
 
       {/* Prep sheet drawer */}
       {prep && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/30" onClick={() => setPrep(null)}>
+        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/30" onClick={() => { setPrep(null); setActMsg(null); }}>
           <div className="h-full w-full max-w-2xl overflow-y-auto bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
@@ -265,7 +296,7 @@ export default function SchedulingAdminPage() {
                   <p className="text-xs text-slate-400">Customer&apos;s time: {fmtWhenIn(prep.booking.starts_at, prep.booking.user_timezone)} ({prep.booking.user_timezone})</p>
                 )}
               </div>
-              <button type="button" onClick={() => setPrep(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+              <button type="button" onClick={() => { setPrep(null); setActMsg(null); }} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
             </div>
 
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -353,6 +384,9 @@ export default function SchedulingAdminPage() {
               <button type="button" disabled={busy} onClick={() => { const url = prompt("Join link:", prep.booking.join_url || ""); if (url != null) act(prep.booking.id, { action: "link", joinUrl: url }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Set link</button>
               <button type="button" disabled={busy} onClick={() => { if (confirm("Cancel and email the customer?")) act(prep.booking.id, { action: "cancel" }); }} className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Cancel</button>
             </section>
+            {actMsg && (
+              <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${actMsg.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{actMsg.text}</p>
+            )}
           </div>
         </div>
       )}

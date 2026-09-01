@@ -55,6 +55,10 @@ export async function POST(request: Request) {
   const { error: updErr } = await admin.from("call_bookings").update(patch).eq("id", id);
   if (updErr) return NextResponse.json({ error: "Update failed" }, { status: 500 });
 
+  // Best-effort call emails. We track whether the send actually succeeded so the
+  // admin UI can distinguish "marked + emailed" from "marked, but email failed".
+  let emailSent = false;
+
   if (action === "no_show_email") {
     try {
       const data: BookingEmailData = {
@@ -63,7 +67,7 @@ export async function POST(request: Request) {
         startMs: Date.parse(booking.starts_at as string), userEndMs: Date.parse(booking.user_ends_at as string),
         userTimezone: booking.user_timezone as string | null,
       };
-      await sendMissedYou(data);
+      emailSent = await sendMissedYou(data);
     } catch (e) { console.error("[scheduling/update] missed-you email", e); }
   }
 
@@ -75,7 +79,7 @@ export async function POST(request: Request) {
         startMs: Date.parse(booking.starts_at as string), userEndMs: Date.parse(booking.user_ends_at as string),
         userTimezone: booking.user_timezone as string | null,
       };
-      await sendCancellation(data);
+      emailSent = await sendCancellation(data);
     } catch (e) { console.error("[scheduling/update] cancel email", e); }
     if (booking.meeting_provider === "google_meet" && booking.meeting_id) {
       try { const cfg = await loadConfig(admin); if (cfg.googleRefreshToken) await deleteMeetEvent(cfg.googleRefreshToken, booking.meeting_id as string); }
@@ -89,5 +93,5 @@ export async function POST(request: Request) {
   }
 
   await logAdminAction({ actor, action: `scheduling.${action}`, targetType: "call_booking", targetId: id, details: patch });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, emailSent });
 }
