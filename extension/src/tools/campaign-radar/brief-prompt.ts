@@ -93,6 +93,10 @@ function buildSignalBlock(
     if (demand.estMonthlyRevenueCents !== null)
       parts.push(`estimated ${dollars(demand.estMonthlyRevenueCents)}/month revenue`);
     if (demand.category) parts.push(`category ${demand.category}`);
+    if (demand.videoCount !== null)
+      parts.push(
+        `${demand.videoCount} creator videos already on this product (saturation: fewer means less competition)`,
+      );
     parts.push(
       demand.calibrated
         ? "(estimate calibrated from real data)"

@@ -494,14 +494,16 @@ export async function PATCH(request: Request) {
     } else {
       return NextResponse.json({ error: "emails or tag is required" }, { status: 400 });
     }
-    const enrolled = await enrollEmails(db, id, list);
+    // Manual Enroll reactivates: re-adding a cancelled/completed address restarts
+    // it at Step 1 (an already-active address is left alone, no double-send).
+    const result = await enrollEmails(db, id, list, { reactivate: true });
     // Mirror enrollees into the contacts list so pasted addresses show up on the
     // Contacts tab (not just as an enrollment count), tagged by which sequence
     // enrolled them so you can tell them apart and filter. Idempotent; unions
     // the tag onto existing contacts without replacing their other tags.
     const seqTag = typeof found.name === "string" ? sequenceContactTag(found.name) : "seq-drip";
     await tagRecipientsAsContacts(db, list, seqTag, "sequence-enroll");
-    return NextResponse.json({ ok: true, enrolled });
+    return NextResponse.json({ ok: true, ...result });
   }
 
   if (action === "unenroll") {

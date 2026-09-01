@@ -15,7 +15,9 @@ import type {
   HudStatus,
   NotifyPollResult,
   OutreachKeywordsResult,
+  OwnershipLookupResult,
   PairResult,
+  TemplatesLookupResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
 
@@ -475,6 +477,170 @@ function fetchOutreachKeywordsOnPort(
           done({
             ok: frame.ok === true,
             records: Array.isArray(frame.records) ? frame.records : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Message templates (desktop template store -> composer picker) ────────────
+// Ask the running app for the creator's own message templates (and the resolved
+// placeholder values from the same workspace) so the Message Templates picker on
+// the Creator Connections Messages composer can offer them next to the
+// extension's local templates. Read-only; authed with the pairing token because
+// the templates are the creator's private copy. Returns paired:false when never
+// connected so the caller stays silent (local templates only) instead of
+// erroring. Mirrors fetchOutreachKeywords exactly.
+
+export async function fetchMessageTemplates(): Promise<TemplatesLookupResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, templates: [], values: {} };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchMessageTemplatesOnPort(port, token);
+    if (result) return result;
+  }
+  return { ok: false, templates: [], values: {} };
+}
+
+// Ownership lookup: given a batch of ASINs the creator is browsing, ask the
+// desktop app whether they already own each (Orders Butler history) and whether
+// they already posted/promoted it (Storefront / Daily Deals / YouTube). Read-only
+// and authed. Returns paired:false when the app has never been connected so the
+// caller can fall back to the server-backed owned list or stay silent. Mirrors
+// fetchMessageTemplates. Short-circuits an empty batch (no socket).
+export async function fetchOwnership(asins: string[]): Promise<OwnershipLookupResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(asins) ? asins : []).map((a) => String(a || "").trim().toUpperCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchOwnershipOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchOwnershipOnPort(
+  port: number,
+  asins: string[],
+  token: string,
+): Promise<OwnershipLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: OwnershipLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: OwnershipLookupResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "ownership.lookup", payload: { asins } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "ownership.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+function fetchMessageTemplatesOnPort(
+  port: number,
+  token: string,
+): Promise<TemplatesLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: TemplatesLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          templates?: TemplatesLookupResult["templates"];
+          values?: TemplatesLookupResult["values"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "templates.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, templates: [], values: {} });
+          return;
+        }
+        if (frame.type === "templates.result") {
+          done({
+            ok: frame.ok === true,
+            templates: Array.isArray(frame.templates) ? frame.templates : [],
+            values: frame.values && typeof frame.values === "object" ? frame.values : {},
           });
           return;
         }

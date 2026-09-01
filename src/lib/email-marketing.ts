@@ -166,30 +166,104 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+export type EnrollResult = {
+  /** Addresses with no prior row, inserted fresh. */
+  inserted: number;
+  /** Existing cancelled/completed rows reset to a fresh Step 1 (reactivate only). */
+  reactivated: number;
+  /** Left untouched: already active, or cancelled/completed when not reactivating. */
+  skipped: number;
+};
+
 /**
- * Enrolls addresses into a sequence. Duplicates (already enrolled, whatever
- * their state) are silently ignored via the unique constraint. Returns how
- * many rows were attempted (not how many were new; PostgREST does not report
- * that for ignoreDuplicates upserts).
+ * Enrolls addresses into a sequence. Each address has at most one row per
+ * sequence (UNIQUE (sequence_id, email)), so behavior depends on the existing
+ * row's state:
+ *   - no row      -> inserted fresh (last_step_sent 0, enrolled_at now).
+ *   - active row  -> skipped (already mid-drip; never restarted, so no double-send).
+ *   - cancelled/completed row -> reactivated when opts.reactivate is set:
+ *       reset to a fresh Step 1 (clears cancelled_at/completed_at, resets
+ *       last_step_sent and enrolled_at so day-0 is due on the next cron run);
+ *       otherwise skipped.
+ *
+ * The manual admin Enroll button passes reactivate:true so re-adding a stopped
+ * address restarts it. Tag-added auto-enroll does NOT reactivate, so re-applying
+ * a tag never silently re-drips someone who finished or opted out.
  */
 export async function enrollEmails(
   db: SupabaseClient,
   sequenceId: string,
   emails: string[],
-): Promise<number> {
-  let attempted = 0;
-  for (const slice of chunk(emails, CHUNK)) {
-    const rows = slice.map((email) => ({ sequence_id: sequenceId, email }));
-    const { error } = await db
+  opts: { reactivate?: boolean } = {},
+): Promise<EnrollResult> {
+  const result: EnrollResult = { inserted: 0, reactivated: 0, skipped: 0 };
+  // Callers already lowercase, but dedupe defensively so counts don't double up.
+  const unique = Array.from(new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)));
+  if (unique.length === 0) return result;
+
+  const toInsert: string[] = [];
+  const toReactivate: string[] = [];
+
+  for (const slice of chunk(unique, CHUNK)) {
+    const { data: existing, error: fetchErr } = await db
       .from("email_sequence_enrollments")
-      .upsert(rows, { onConflict: "sequence_id,email", ignoreDuplicates: true });
-    if (error) {
-      console.error("email-marketing: enroll upsert failed", error);
+      .select("email, cancelled_at, completed_at")
+      .eq("sequence_id", sequenceId)
+      .in("email", slice);
+    if (fetchErr) {
+      console.error("email-marketing: enroll existing-lookup failed", fetchErr);
       continue;
     }
-    attempted += slice.length;
+    const state = new Map<string, { cancelled: boolean; completed: boolean }>();
+    for (const row of existing ?? []) {
+      if (typeof row.email !== "string") continue;
+      state.set(row.email, {
+        cancelled: Boolean(row.cancelled_at),
+        completed: Boolean(row.completed_at),
+      });
+    }
+    for (const email of slice) {
+      const prior = state.get(email);
+      if (!prior) {
+        toInsert.push(email);
+      } else if (opts.reactivate && (prior.cancelled || prior.completed)) {
+        toReactivate.push(email);
+      } else {
+        result.skipped += 1;
+      }
+    }
   }
-  return attempted;
+
+  for (const slice of chunk(toInsert, CHUNK)) {
+    const rows = slice.map((email) => ({ sequence_id: sequenceId, email }));
+    const { error } = await db.from("email_sequence_enrollments").insert(rows);
+    if (error) {
+      console.error("email-marketing: enroll insert failed", error);
+      continue;
+    }
+    result.inserted += slice.length;
+  }
+
+  for (const slice of chunk(toReactivate, CHUNK)) {
+    const { error } = await db
+      .from("email_sequence_enrollments")
+      .update({
+        enrolled_at: new Date().toISOString(),
+        last_step_sent: 0,
+        last_step_sent_at: null,
+        cancelled_at: null,
+        completed_at: null,
+      })
+      .eq("sequence_id", sequenceId)
+      .in("email", slice);
+    if (error) {
+      console.error("email-marketing: enroll reactivate failed", error);
+      continue;
+    }
+    result.reactivated += slice.length;
+  }
+
+  return result;
 }
 
 /**

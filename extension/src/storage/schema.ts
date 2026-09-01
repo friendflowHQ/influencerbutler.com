@@ -128,6 +128,12 @@ export type Settings = {
   // The user's own saved list of deal-aggregator URLs for the Deal Sites
   // Harvester, on top of the curated list served from the site.
   dealSources: string[];
+  // Cross-device relay: the default desktop app on ANOTHER computer to send
+  // commands to when no local app is running here (e.g. queue a harvested deal
+  // to post from the other machine). Chosen in the popup's Remote devices
+  // section after linking; null when unconfigured. instanceId is that device's
+  // activation token, the receiver id the relay routes to.
+  relayDefaultTarget: { instanceId: string; label: string | null } | null;
   locale: LocaleSetting;
   tools: {
     videoCounts: boolean;
@@ -155,6 +161,10 @@ export type Settings = {
     // Connections campaigns (score + confidence + AI reasoning). Backfilled to
     // true for existing users by the tools shallow-merge in migrate().
     campaignButler: boolean;
+    // Campaign detail overlay: the persistent per-product panel on a single
+    // campaign's /p/connect/request page (demand + creator-video saturation +
+    // verdict). Backfilled to true by the tools shallow-merge in migrate().
+    campaignDetail: boolean;
     // Video Money: per-row earnings / EPV / live-rate / demand badges plus a
     // reshoot panel on the Creator Hub "Manage videos" list. Backfilled to true
     // for existing users by the tools shallow-merge in migrate().
@@ -165,6 +175,19 @@ export type Settings = {
     // outreach history, so it is a no-op for everyone else. Backfilled to true
     // for existing users by the tools shallow-merge in migrate().
     brandKeywords: boolean;
+    // Message Templates: a Save + one-click "load a template into the message"
+    // toolbar on the Creator Connections Messages composer. Saves templates
+    // locally and also lists the desktop app's own templates (read over the
+    // bridge) so both sides share one library. On by default; backfilled to true
+    // for existing users by the tools shallow-merge in migrate().
+    messageTemplates: boolean;
+    // Ownership: a live "you already own this / you already posted this" badge on
+    // product pages and search/deals tiles, read from the desktop Orders Butler
+    // (order history) + content-coverage (Storefront / Daily Deals / YouTube) over
+    // the bridge. Self-gates to paired users who own/posted the product, so it is
+    // a no-op for everyone else. On by default; backfilled to true for existing
+    // users by the tools shallow-merge in migrate().
+    ownership: boolean;
     // Master gate for all Walmart.com support (the neutral overlays run on
     // Walmart pages when this is on). Lets a user turn Walmart off without
     // touching their Amazon overlays. Backfilled to true by the tools
@@ -348,6 +371,24 @@ export type ProductList = {
 export const PRODUCT_LISTS_CAP = 30;
 export const PRODUCT_LIST_ITEMS_CAP = 200;
 
+// One reusable outreach message the creator saved from the Creator Connections
+// Messages composer (the Message Templates tool). Local-only and never synced to
+// the server; the tool separately reads the desktop app's own templates live
+// over the bridge and merges them into the picker at display time. `body` may
+// contain {placeholder} tokens (e.g. {brandName}); they are resolved on insert.
+export type Template = {
+  // Stable local id (not derived from the label, so a rename never moves it).
+  id: string;
+  label: string;
+  body: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+// Enough saved templates for real use without letting local storage grow
+// unbounded. Adds past the cap are rejected in the UI.
+export const TEMPLATES_CAP = 50;
+
 // One Creator Connections campaign the creator is watching for Last Call: an
 // alert before it fills up. Keyed by the Amazon campaignId. `lastFillPct` and
 // `lastFullyClaimed` are the last observed values, so the poll fires the alert
@@ -423,6 +464,9 @@ export type StorageShape = {
   campaignWatchlist: CampaignWatchItem[];
   // User-named product collections ("Add to List"). Local-only, no server sync.
   productLists: ProductList[];
+  // Saved outreach message templates (the Message Templates tool). Local-only;
+  // desktop-app templates are read live over the bridge, not stored here.
+  templates: Template[];
   telemetry: { selectorMisses: Record<string, number> };
   // When the extension was first actually used (first content-script run on an
   // Amazon page). Anchors the re-engagement nudge timers; null until first use.
@@ -432,7 +476,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 22,
+  schemaVersion: 23,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -486,6 +530,7 @@ export const DEFAULTS: StorageShape = {
     linkButler: { smartRouting: false, pixels: [] },
     creatorMode: "both",
     dealSources: [],
+    relayDefaultTarget: null,
     locale: "auto",
     tools: {
       videoCounts: true,
@@ -506,8 +551,11 @@ export const DEFAULTS: StorageShape = {
       ideaListOverlay: true,
       dealsOverlay: true,
       campaignButler: true,
+      campaignDetail: true,
       videoMoney: true,
       brandKeywords: true,
+      messageTemplates: true,
+      ownership: true,
       walmart: true,
     },
     syncEnabled: true,
@@ -544,6 +592,7 @@ export const DEFAULTS: StorageShape = {
   watchlist: [],
   campaignWatchlist: [],
   productLists: [],
+  templates: [],
   telemetry: { selectorMisses: {} },
   firstUseAt: null,
   nudges: {
@@ -607,7 +656,11 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // top-level `affiliate` slice (the referring affiliate captured on the site,
   // for extension-carried attribution); an existing user starts with null and
   // gains a code the first time they revisit influencerbutler.com with an
-  // affiliate cookie set.
+  // affiliate cookie set. v22 -> v23 added the messageTemplates tool flag (Save
+  // + one-click load on the Creator Connections Messages composer, on by
+  // default, backfilled by the tools shallow-merge) and the top-level
+  // `templates` array (saved outreach messages); an existing user starts with no
+  // saved templates, reconciled below like productLists.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -680,9 +733,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
+    templates: Array.isArray(raw.templates) ? raw.templates : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 22,
+    schemaVersion: 23,
   };
 }
 

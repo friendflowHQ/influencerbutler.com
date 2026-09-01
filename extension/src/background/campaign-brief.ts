@@ -1,6 +1,7 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getIntegration, getState } from "../storage/store";
 import { getMarketBatch } from "./market";
+import { fetchVideoCount } from "./video-count";
 import { openaiComplete } from "./integrations";
 import { buildBriefPrompt, parseBriefSections } from "../tools/campaign-radar/brief-prompt";
 import type {
@@ -39,6 +40,9 @@ function pickStandout(products: MarketProduct[]): CampaignBriefDemand | null {
     priceCents: best.priceCents,
     category: best.categoryLabel ?? best.bsrCategory,
     calibrated: best.estimateCalibrated,
+    // Filled in by fetchCampaignBrief after the standout is chosen (one product
+    // page fetch), so the panel can show the creator-saturation read.
+    videoCount: null,
   };
 }
 
@@ -80,6 +84,9 @@ export async function fetchCampaignBrief(
     const market = await getMarketBatch(signals.asins, signals.marketplace);
     if (market.migrationPending) migrationPending = true;
     demand = pickStandout(market.products);
+    // Creator saturation for the standout product: one product-page fetch, so the
+    // brief can weigh how contested the product already is. A miss leaves it null.
+    if (demand) demand.videoCount = await fetchVideoCount(demand.asin, signals.marketplace);
   }
 
   // BYO key first: write the prose with the creator's own OpenAI integration.

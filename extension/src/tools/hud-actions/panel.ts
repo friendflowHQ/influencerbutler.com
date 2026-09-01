@@ -13,7 +13,13 @@ import { makeCommandRunner, toProductRef } from "./runner";
 // Campaigns section above. When the app is not running, every button becomes a
 // targeted upsell: this is the extension-to-subscription funnel.
 
-export function renderHudActions(signals: ProductSignals): void {
+// Options let a non-Amazon caller (the Walmart product overlay) reuse this same
+// section but limit it to the actions whose desktop handlers are retailer-ready.
+// `onlyDeals` renders just the Deals Influencer Butler push (verified end-to-end
+// for Walmart) and skips the Amazon-only actions (Idea Lists, video/photo, etc.).
+export type HudActionsOptions = { onlyDeals?: boolean };
+
+export function renderHudActions(signals: ProductSignals, opts: HudActionsOptions = {}): void {
   if (!signals.asin) return;
   const section = addSection(t().sendToApp);
   const body = el("div");
@@ -27,7 +33,7 @@ export function renderHudActions(signals: ProductSignals): void {
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
   ]).then(([hud, auth]) => {
     if (hud.connected) {
-      renderConnected(body, status, product, hud, signals.brand);
+      renderConnected(body, status, product, hud, signals.brand, opts);
     } else {
       renderUpsell(body, auth);
     }
@@ -40,6 +46,7 @@ function renderConnected(
   product: ProductRef,
   hud: HudStatus,
   brand: string | null,
+  opts: HudActionsOptions,
 ): void {
   body.replaceChildren();
 
@@ -62,6 +69,16 @@ function renderConnected(
   );
   dealRow.append(picker, dealBtn);
   body.append(dealRow);
+
+  // Non-Amazon retailers only get the retailer-ready actions above for now; the
+  // rest of the section is Amazon-specific (Idea Lists, video/photo, CC).
+  if (opts.onlyDeals) {
+    const note = el("p", "note");
+    const version = hud.appVersion ? ` (app ${hud.appVersion})` : "";
+    note.textContent = t().connectedToApp(version);
+    body.append(note);
+    return;
+  }
 
   // Content Butler + campaign acceptance.
   const contentBtn = el("button", "btn secondary");

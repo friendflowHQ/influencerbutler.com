@@ -470,6 +470,234 @@ Contract notes:
 - If the app was never paired the extension does not send this at all; a rejected
   token yields `{ "type": "auth.error" }` and the extension stays silent.
 
+## Message templates (app to extension, read-only)
+
+Feeds the extension's Message Templates picker on the Creator Connections
+composer, so the creator's desktop-authored templates appear next to their
+extension-local ones and share one library. Authed with the pairing token (the
+templates are the creator's private copy) and read-only. The extension side is
+built (`fetchMessageTemplates` in `extension/src/background/hud-bridge.ts`); the
+app implements the responder (`createTemplatesHandler`) over the `amazonbutler`
+workspace's `messageTemplates` plus the shared `resolveTemplateText` for values.
+
+The extension sends (no payload fields; the app returns the whole store):
+
+```json
+{ "type": "templates.lookup", "payload": {} }
+```
+
+The app replies with the templates trimmed to what the picker needs, plus a map
+of resolved placeholder values from the same workspace:
+
+```json
+{
+  "type": "templates.result",
+  "ok": true,
+  "templates": [
+    { "id": "default", "label": "Default Message", "variations": ["Hi {brandName}!"] }
+  ],
+  "values": { "storefrontUrl": "amazon.com/shop/me", "address": "123 Main St" }
+}
+```
+
+Contract notes:
+
+- `variations` is the template's list of message texts; the extension inserts the
+  first non-empty one. Templates with no label or no usable variation are omitted.
+- `values` carries only the creator-profile tokens the app can resolve without a
+  thread/campaign context (`storefrontUrl`, `mediakit`, `address`,
+  `instagramHandle`, and the About Me apparel tokens `HEIGHT`/`TOPSIZE`/...), and
+  only the non-empty ones. The extension fills `{brandName}` itself from the open
+  thread, substitutes everything in `values`, then strips any token left over so
+  no raw `{braces}` reach the message.
+- If the app was never paired the extension does not send this at all; a rejected
+  token yields `{ "type": "auth.error" }` and the extension stays silent (local
+  templates only).
+
+### Save a template to the app (extension to app, write)
+
+The "Also save to desktop app" option in the extension's Save form pushes a
+template the creator saved in the browser up to the app, so it appears in the
+in-app template manager too. Rides the normal `command` frame (authed). The app
+upserts it into the target workspace's `messageTemplates` by label (idempotent:
+re-saving the same name updates rather than duplicates) via the same
+`saveSettingsFromHUD` path the in-app manager uses.
+
+```json
+{
+  "type": "command",
+  "command": {
+    "type": "template.save",
+    "workspace": "amazonbutler",
+    "template": { "label": "Intro", "body": "Hi {brandName}!" }
+  }
+}
+```
+
+The app replies with the standard `command.result` (`{ "ok": true, "message":
+"Saved to the desktop app." }`). `workspace` defaults to `amazonbutler` (the
+Amazon Creator Connections outreach templates) when omitted; a blank label or
+empty body is rejected before any write.
+
+## Ownership lookup (app to extension, read-only)
+
+The extension asks the running app whether the creator already OWNS a batch of
+ASINs they are browsing (from the Orders Butler's synced order history) and
+whether they have already POSTED/promoted each (Storefront content, Daily Deals
+posts, YouTube uploads, unioned via content-coverage). Product pages and
+search/deals tiles use it to show a live "you already own this / you already
+posted this" badge, so the creator does not buy a duplicate or re-promote the
+same product. Authed with the pairing token (it returns the creator's private
+order and content history) and read-only. The extension side is built
+(`fetchOwnership` in `extension/src/background/hud-bridge.ts`); the app implements
+the responder (`createOwnershipHandler` in
+`app/extension-bridge/command-handlers.js`).
+
+The extension sends:
+
+```json
+{ "type": "ownership.lookup", "payload": { "asins": ["B0CSG3YWR6", "B0EXAMPLE1"] } }
+```
+
+The app replies with one record per ASIN that carries a signal (owned, or has
+posted content). ASINs with neither are omitted, so the extension treats an
+absent ASIN as "nothing to show":
+
+```json
+{
+  "type": "ownership.result",
+  "ok": true,
+  "results": [
+    {
+      "asin": "B0CSG3YWR6",
+      "owned": true,
+      "order": {
+        "orderId": "111-2222222-3333333",
+        "year": 2025,
+        "quantity": 1,
+        "title": "Example gadget",
+        "paidPrice": 19.99,
+        "currency": "USD",
+        "marketplace": "amazon.com"
+      },
+      "posted": {
+        "available": true,
+        "count": 2,
+        "platforms": ["youtube", "facebook"],
+        "lastAt": "2025-02-01T00:00:00.000Z",
+        "items": [
+          { "type": "video", "platform": "youtube", "url": "https://youtu.be/x", "title": "My review", "at": "2025-02-01T00:00:00.000Z" }
+        ]
+      },
+      "reviewed": null
+    }
+  ]
+}
+```
+
+Contract notes:
+
+- `owned` is true when the ASIN is in the creator's synced order history.
+  `order` is OPTIONAL: an older snapshot row, or a re-purchase whose price fetch
+  failed, may carry only some fields (or none). `paidPrice` is in whole currency
+  units (not cents).
+- `posted.available` is true when the creator has already made content for the
+  ASIN. `platforms` is deduped and sorted; `items` is capped (newest first) and
+  MAY be empty even when `available` is true. The app folds a row's `parentAsin`
+  into this lookup, so a variation of an owned product resolves the parent's
+  content.
+- `reviewed` is reserved for a later phase (written Amazon reviews are not
+  harvested yet) and is `null` for now.
+- If the app was never paired the extension does not send this at all; a rejected
+  token yields `{ "type": "auth.error" }` and the extension falls back to the
+  server-backed owned list (owned-only, no order detail or posted content) or
+  stays silent. Amazon only: the desktop ledger does not track Walmart orders.
+
+## Cloud relay (cross-device)
+
+Everything above is loopback only: it works when the extension and the desktop
+app run on the SAME computer. The cloud relay is the counterpart for the case
+where they run on DIFFERENT computers (extension on a laptop, desktop app on a
+studio PC), so a deal found while browsing on one machine can queue to post from
+the other. It carries the same `Command` envelope as the local bridge; the
+desktop feeds each delivered command into the same command dispatcher, so every
+command type is supported with no new per-command work.
+
+Delivery is a polling inbox, not a live socket. The extension POSTs a command
+to the relay; the desktop drains it on a short timer and acks it. Queuing a deal
+is not latency-sensitive (deals post on a schedule), a stateless poll is more
+reliable than holding a socket open, and it needs no Durable Object.
+
+### Where it lives
+
+The relay is a set of `/relay/*` routes on the licensing Worker
+(`workers/licensing/src/routes/relay.js` in the desktop repo), backed by the
+same `DEVICES_KV` namespace the device registry uses. The desktop receiver is
+`app/extension-bridge/relay-client.js`; the extension sender is
+`extension/src/background/relay.ts`. The public host is
+`https://licensing.influencerbutler.com`.
+
+### Trust model (two gates on the same-account namespace)
+
+1. Same license account. Every relay key is namespaced by the license key, so a
+   command can only ever reach a device on the same account. The extension
+   authenticates with `Authorization: Bearer <license key>` (the key the user
+   connected via `/api/extension/auth/check`); the desktop sends the key in the
+   request body, like the other `/license/*` device endpoints.
+2. Explicit device link plus a receive toggle. A send is accepted only when the
+   target desktop has turned receiving ON and has approved the sender via a
+   6-digit link code (the cloud mirror of the local pairing handshake). The link
+   code is minted by the desktop and namespaced by the license key, so only a
+   device holding the same key can claim it.
+
+Enabling receiving and sending both require a paid or trialing license (the Pro
+gate). Polling and acking do not: the desktop is already a licensed app reading
+only its own account and device inbox.
+
+### Endpoints
+
+Link handshake:
+
+- `POST /relay/link/start` `{ keyValue, instanceId, label }` (desktop) mints a
+  one-time 6-digit code (TTL 2 minutes) and returns `{ code, expiresInMs }`.
+- `POST /relay/link/claim` `{ senderId, senderLabel, code }` with the license
+  Bearer (extension) records the sender as an approved link and returns
+  `{ receiverInstanceId, receiverLabel }`. The code is burned on use.
+- `GET /relay/targets?senderId=` (extension) lists the linked desktops.
+- `GET /relay/links?keyValue=&instanceId=` and `POST /relay/unlink`
+  `{ keyValue, instanceId, senderId }` (desktop) manage approved senders.
+
+Receive toggle:
+
+- `POST /relay/recv` `{ keyValue, instanceId, enabled }` and
+  `GET /relay/recv?keyValue=&instanceId=` (desktop).
+
+Inbox:
+
+- `POST /relay/send` `{ senderId, targetInstanceId, command }` with the license
+  Bearer (extension). Rejected unless the target has receiving on AND an approved
+  link for this sender. On success returns `{ id }` (the inbox message id). The
+  `command` is a `Command` object exactly as documented above.
+- `POST /relay/poll` `{ keyValue, instanceId }` (desktop) returns
+  `{ messages: [{ id, ts, senderId, senderLabel, command }] }`.
+- `POST /relay/ack` `{ keyValue, instanceId, ids }` (desktop) removes delivered
+  messages from the inbox.
+- `POST /relay/result` `{ keyValue, senderId, receiverInstanceId, id, ok, message }`
+  (desktop) and `GET /relay/results?senderId=&since=` (extension) carry the
+  best-effort receipt so the sender can show the real outcome ("Added N of M
+  deals on <device>").
+
+### Reliability
+
+Message ids are used to dedupe: the desktop handlers are idempotent, so a
+re-delivered command (an ack that did not land, or a process restart before ack)
+is safe. The inbox is capped (200, drop-oldest) and each write re-stamps a 7-day
+TTL, so a receiver that never comes back never accumulates unboundedly. Read-only
+lookups (`earnings.lookup`, `outreach.lookup`, `brand.enrichment`,
+`history.backfill`, `ownership.lookup`) are NOT relayed: they are synchronous
+enrichers for the page the creator is browsing on this machine, so they stay
+local-bridge only.
+
 ## Versioning
 
 `v` in the envelope starts at 1. The desktop MUST ignore unknown `type`

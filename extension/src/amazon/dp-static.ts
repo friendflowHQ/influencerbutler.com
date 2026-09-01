@@ -48,6 +48,37 @@ export function isBlockedHtml(html: string): boolean {
   return BLOCKED_RE.test(html);
 }
 
+// A rendered product page (the title block is server-rendered), used to tell a
+// genuine "no videos" page apart from a page that simply did not render.
+const PRODUCT_MARKER_RE = /id=["']productTitle["']/i;
+
+// Pure (exported for tests): the #videoCount header total ("60 Videos") read
+// straight from raw HTML, for the BACKGROUND worker which has no DOMParser (the
+// DOM reader readHeaderCount cannot run there). Amazon renders
+// <span id="videoCount" data-video-count="60">60 VIDEOS</span> server-side, so
+// both the attribute and the element text are present before hydration.
+//
+// Returns the count, or 0 when the page clearly rendered as a product yet carries
+// no video-count marker and neither video carousel (a genuine "no creator videos
+// yet"), or null when the count cannot be trusted (a blocked / unrendered page),
+// so a caller can retry instead of caching a false zero.
+export function readVideoCountFromHtml(html: string): number | null {
+  const attr = html.match(/data-video-count\s*=\s*["'](\d[\d,]*)["']/i);
+  if (attr && attr[1]) return toInt(attr[1]);
+  const tag = html.match(/id=["']videoCount["'][^>]*>([^<]*)/i);
+  if (tag && tag[1]) {
+    const digits = tag[1].match(/\d[\d,]*/);
+    if (digits) return toInt(digits[0]);
+  }
+  const { upper, lower } = detectCarouselMarkers(html);
+  if (PRODUCT_MARKER_RE.test(html) && !upper && !lower) return 0;
+  return null;
+}
+
+function toInt(raw: string): number {
+  return parseInt(raw.replace(/,/g, ""), 10);
+}
+
 export function extractDpStatic(doc: Document, html: string): DpStaticSignals {
   const { upper, lower } = detectCarouselMarkers(html);
   return {

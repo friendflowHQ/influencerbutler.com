@@ -27,6 +27,7 @@ const demand: CampaignBriefDemand = {
   priceCents: 4000,
   category: "Bedding",
   calibrated: true,
+  videoCount: 12,
 };
 
 const fullSections = {

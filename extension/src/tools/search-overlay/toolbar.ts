@@ -24,6 +24,12 @@ export type ToolbarCallbacks = {
   // campaign-eligible filter, which it has no data for.
   showScan?: boolean;
   showCampaignFilter?: boolean;
+  // "Send deals to app": batch-push the page's discounted tiles into the desktop
+  // Deals Influencer Butler. Shown only when the overlay wires onSendDeals (the
+  // Walmart rollback/deals + search grids); the overlay owns the row model and
+  // the bridge call, and reports progress through setStatus.
+  showSendDeals?: boolean;
+  onSendDeals?: (setStatus: (text: string) => void) => Promise<void>;
 };
 
 export type SearchToolbar = {
@@ -115,6 +121,25 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   stopBtn.addEventListener("click", () => cb.onScanStop());
   scanWrap.append(scanBtn, stopBtn, status);
 
+  // "Send deals to app": one click batches the page's discounted tiles into the
+  // desktop Deals Influencer Butler. Its own status line, and it disables while
+  // in flight so a double click cannot double-send.
+  const sendWrap = el("div", "search-control search-send-deals");
+  const sendBtn = el("button", "btn secondary") as HTMLButtonElement;
+  sendBtn.type = "button";
+  sendBtn.textContent = t().searchSendDeals;
+  const sendStatus = el("span", "search-status");
+  sendBtn.addEventListener("click", () => {
+    if (!cb.onSendDeals) return;
+    sendBtn.disabled = true;
+    void cb.onSendDeals((text) => {
+      sendStatus.textContent = text;
+    }).finally(() => {
+      sendBtn.disabled = false;
+    });
+  });
+  sendWrap.append(sendBtn, sendStatus);
+
   // Automatic-enrichment progress, separate from the scan status so the two
   // never overwrite each other.
   const enrichStatus = el("span", "search-status");
@@ -123,6 +148,7 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   if (cb.showCampaignFilter !== false) bar.append(campaignWrap);
   bar.append(priceWrap);
   if (cb.showScan !== false) bar.append(scanWrap);
+  if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
   bar.append(enrichStatus);
   root.append(bar);
   return {

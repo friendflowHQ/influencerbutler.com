@@ -13,6 +13,12 @@ import { retailerModule } from "../../retailers/module";
 import { resolveRatePct } from "../score/rate";
 import { type StoredRateCard } from "../../rate-card/cache";
 import { getState } from "../../storage/store";
+import { renderHudActions } from "../hud-actions/panel";
+import { computeButlerScore } from "../score/model";
+import { renderScore } from "../score/badge";
+import { evaluateApproved } from "../butler-approved/criteria";
+import { renderSeal } from "../butler-approved/seal";
+import { renderCalculator } from "../calculator/panel";
 
 // The Walmart PRODUCT-PAGE panel. Walmart search / browse / seller grids reuse
 // the shared Amazon search overlay via the Walmart RetailerModule (see
@@ -146,5 +152,36 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
       row.append(chip("revenue", `~${compactMoney(revenue)}/mo${conf}`));
     }
     log("walmart", `product overlay: ${itemId} @ ${ratePct}%`);
+
+    // Butler Score: the same 0-100 opportunity read as Amazon product pages,
+    // reusing the shared model. Walmart has no Creator Connections and no
+    // "bought past month", so campaign membership is absent and the review
+    // count stands in as the demand proxy (the model caps that at 0.7).
+    const settings = (await getState()).settings;
+    const scoreInputs = {
+      priceCents: signals.priceCents,
+      commissionRatePct: ratePct,
+      influencerVideos: null,
+      boughtPastMonth: null,
+      reviewCount: product?.numReviews ?? null,
+      inStock: signals.inStock,
+      membership: { cc: false, spcc: false },
+    };
+    renderScore(computeButlerScore(scoreInputs, settings));
+
+    // Butler Approved seal: the pass/fail companion to the score, same signals.
+    // Walmart has no video carousel, so the video-count criteria read "unknown".
+    renderSeal(evaluateApproved(signals, null, settings.approved));
+
+    // Break-even Calculator: reuses the Amazon panel but seeded with the Walmart
+    // rate we already resolved, so it does not fall back to the Amazon rate card.
+    renderCalculator(signals, null, settings, ratePct);
+
+    // "Send to your butler app": push this Walmart product into the desktop
+    // Deals Influencer Butler over the local bridge (or upsell when the app is
+    // closed). Rendered last so it sits below the Butler Score. Limited to the
+    // Deals push for now: the other send-to-app actions have Amazon-only desktop
+    // handlers.
+    renderHudActions(signals, { onlyDeals: true });
   })();
 }

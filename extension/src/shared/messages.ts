@@ -5,13 +5,17 @@ import type {
   AsinEarnings,
   BrandEnrichmentRecord,
   BrandEnrichmentResult,
+  DesktopTemplate,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
   HudStatus,
   OutreachKeywordsResult,
   OutreachRecord,
+  OwnershipLookupResult,
+  OwnershipRecord,
   PairResult,
+  TemplatesLookupResult,
 } from "../transport/hud-commands";
 import type {
   IntegrationsState,
@@ -32,6 +36,12 @@ import type {
 } from "../integrations/ib-links-client";
 import type { LinkNotice } from "../integrations/link-notice";
 import type { BrandedMintInput, BulkMintResult } from "../background/links";
+import type {
+  RelayClaimResult,
+  RelaySendResult,
+  RelayTarget,
+  RelayTargetsResult,
+} from "../background/relay";
 
 type IntegrationsGlobal = IntegrationsState["global"];
 
@@ -55,6 +65,7 @@ export type PageStatus = {
     | "creator-upload"
     | "creator-manage"
     | "campaign-grid"
+    | "campaign-detail"
     | "search"
     | "discovery"
     | "deals"
@@ -97,11 +108,22 @@ export type RuntimeMessage =
   // Connections Messages widget can badge each conversation with its keyword.
   // Routed over the local bridge; returns paired:false when never connected.
   | { kind: "FETCH_OUTREACH_KEYWORDS" }
+  // Ask the running desktop app for the creator's own message templates (and the
+  // resolved placeholder values from that workspace), so the Message Templates
+  // picker on the Creator Connections composer can offer them next to the local
+  // ones. Routed over the local bridge; returns paired:false when never connected.
+  | { kind: "FETCH_MESSAGE_TEMPLATES" }
   // Batch-resolve a set of brand names (read from the Messages inbox) against the
   // desktop app's global CC brand index, so *inbound* conversations the creator
   // never pitched can still show a rate/cadence chip. Routed over the local
   // bridge; returns paired:false when never connected.
   | { kind: "FETCH_BRAND_ENRICHMENT"; brands: string[] }
+  // Ask the running desktop app whether the creator already owns a batch of ASINs
+  // (Orders Butler history) and whether they already posted/promoted each
+  // (Storefront / Daily Deals / YouTube), so product pages and search/deals tiles
+  // can badge "you already own this / you already posted this". Routed over the
+  // local bridge; returns paired:false when the app was never connected.
+  | { kind: "LOOKUP_OWNERSHIP"; asins: string[] }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -167,6 +189,12 @@ export type RuntimeMessage =
   // Per-country availability for a tagged product, checked from the worker
   // (cross-marketplace fetch needs the host_permissions CORS bypass).
   | { kind: "FETCH_MARKET_AVAILABILITY"; asin: string; markets: string[] }
+  // Total creator videos already on a product's Amazon listing (Amazon's own
+  // #videoCount header), fetched from the worker for the same CORS reason: a
+  // content script on affiliate-program.amazon.com cannot fetch www.amazon.com.
+  // The Creator Connections overlays show this as a saturation signal. Returns a
+  // number (0 for a product with no videos) or null on a miss so the caller retries.
+  | { kind: "FETCH_VIDEO_COUNT"; asin: string; marketplace: string }
   // Orders Butler "update influencer video count": the order-history content
   // script asks the worker to open one product in a background tab so its
   // client-side video breakdown hydrates and the page emits a product_scan.
@@ -259,9 +287,28 @@ export type RuntimeMessage =
   // (changelog highlights + the user's own resolved bug reports), and dismiss it
   // (advances the stored "last shown version" so both surfaces stop showing it).
   | { kind: "GET_WHATS_NEW" }
-  | { kind: "DISMISS_WHATS_NEW" };
+  | { kind: "DISMISS_WHATS_NEW" }
+  // Cross-device relay (send commands to the desktop app on ANOTHER computer).
+  // Claim a 6-digit link code shown by that app, list the linked desktops, send
+  // one command to a linked desktop, and read/set the default remote target the
+  // deal harvester falls back to when no local app is running here.
+  | { kind: "RELAY_CLAIM_LINK"; code: string; label?: string }
+  | { kind: "RELAY_LIST_TARGETS" }
+  | { kind: "RELAY_SEND"; command: HudCommand; targetInstanceId: string }
+  | { kind: "RELAY_GET_STATE" }
+  | { kind: "RELAY_SET_DEFAULT_TARGET"; target: { instanceId: string; label: string | null } | null };
 
 export type IgBioLinkResult = { email: string | null };
+
+// Cross-device relay UI state for the popup's Remote devices section: whether
+// the account is connected (a license key is signed in), the linked desktops on
+// other computers, and which one is the default fallback for the deal harvester.
+export type RelayStateView = {
+  signedIn: boolean;
+  targets: RelayTarget[];
+  defaultTarget: { instanceId: string; label: string | null } | null;
+  error?: string;
+};
 
 export type FeedbackInput = {
   feedbackType: "bug" | "feature" | "praise" | "other";
@@ -393,6 +440,10 @@ export type CampaignBriefDemand = {
   priceCents: number | null;
   category: string | null;
   calibrated: boolean;
+  // Total creator videos already on this product's listing (Amazon's #videoCount),
+  // the "creator saturation" read: fewer means less competition. null when the
+  // worker could not resolve it; 0 is a real "no videos yet".
+  videoCount: number | null;
 };
 
 // The prose sections the server model wrote (mirror of CampaignBriefSections in
@@ -629,13 +680,17 @@ export type {
   AsinEarnings,
   BrandEnrichmentRecord,
   BrandEnrichmentResult,
+  DesktopTemplate,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
   HudStatus,
   OutreachKeywordsResult,
   OutreachRecord,
+  OwnershipLookupResult,
+  OwnershipRecord,
   PairResult,
+  TemplatesLookupResult,
 };
 export type { PricePoint };
 export type {
@@ -648,6 +703,7 @@ export type {
   StatsResult,
 } from "../integrations/ib-links-client";
 export type { BrandedMintInput, BulkMintResult } from "../background/links";
+export type { RelayClaimResult, RelaySendResult, RelayTarget, RelayTargetsResult } from "../background/relay";
 export type { UpdateStateView } from "../background/update";
 export type { WhatsNewView, ResolvedBug } from "../background/whats-new";
 

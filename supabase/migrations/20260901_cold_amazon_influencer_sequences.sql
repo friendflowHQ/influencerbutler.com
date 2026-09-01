@@ -49,7 +49,7 @@ VALUES
     'You are already doing the Amazon influencer thing on Instagram',
     'Hi,
 
-It is Elizabeth from The Social Media Posse. I came across your Instagram and saw you are already sharing Amazon finds with your followers. That is exactly who we built Influencer Butler for.
+It is Liz from The Social Media Posse. I came across your Instagram and saw you are already sharing Amazon finds with your followers. That is exactly who we built Influencer Butler for.
 
 Influencer Butler is a desktop app that does the slow parts of Amazon influencer work for you:
 
@@ -63,7 +63,7 @@ Start here: https://www.influencerbutler.com/go/download
 
 If it is not for you, no worries at all.
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -71,13 +71,13 @@ The Social Media Posse'
     'The part that works while you sleep',
     'Hi again,
 
-It is Elizabeth. The thing most Amazon creators tell me they hate is the daily grind: hunting for a good deal, writing the caption, remembering to post. Influencer Butler does that on a schedule, so your storefront keeps earning even on the days you are slammed.
+It is Liz. The thing most Amazon creators tell me they hate is the daily grind: hunting for a good deal, writing the caption, remembering to post. Influencer Butler does that on a schedule, so your storefront keeps earning even on the days you are slammed.
 
 Creators are using it to post several Amazon deals a day without sitting at their computer for it.
 
 Your free 14-day trial is right here: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -85,7 +85,7 @@ The Social Media Posse'
     'How Amazon creators are actually using this',
     'Hi,
 
-Elizabeth here. A quick look at how people like you are using Influencer Butler day to day:
+Liz here. A quick look at how people like you are using Influencer Butler day to day:
 
 - Morning: it surfaces the best Amazon deals of the day
 - One click turns them into scheduled Instagram posts
@@ -95,7 +95,7 @@ That is hours a week back, and more consistent posting than doing it by hand.
 
 The 14-day free trial is still open: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -103,13 +103,13 @@ The Social Media Posse'
     'Last note from me',
     'Hi,
 
-It is Elizabeth, last note from me.
+It is Liz, last note from me.
 
 If automating your Amazon posting sounds useful, the free 14-day trial is right here: https://www.influencerbutler.com/go/download
 
 If not, I will leave you to it. Either way, keep up the great content.
 
-Elizabeth
+Liz
 The Social Media Posse'
   )
 ON CONFLICT (sequence_id, position) DO NOTHING;
@@ -135,7 +135,7 @@ VALUES
     'You are already doing the Amazon thing on TikTok',
     'Hi,
 
-It is Elizabeth from The Social Media Posse. I found your TikTok and saw you are already making Amazon finds videos for your followers. That is exactly who we built Influencer Butler for.
+It is Liz from The Social Media Posse. I found your TikTok and saw you are already making Amazon finds videos for your followers. That is exactly who we built Influencer Butler for.
 
 Influencer Butler is a desktop app that handles the slow parts of Amazon influencer work:
 
@@ -147,7 +147,7 @@ Free for 14 days, no card required: https://www.influencerbutler.com/go/download
 
 If it is not for you, no worries at all.
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -155,11 +155,11 @@ The Social Media Posse'
     'The part that works while you sleep',
     'Hi again,
 
-It is Elizabeth. The thing most Amazon creators tell me they hate is the daily grind: finding a deal worth a video, writing it up, remembering to post. Influencer Butler lines that up on a schedule, so your storefront keeps earning on the days you are busy filming.
+It is Liz. The thing most Amazon creators tell me they hate is the daily grind: finding a deal worth a video, writing it up, remembering to post. Influencer Butler lines that up on a schedule, so your storefront keeps earning on the days you are busy filming.
 
 Free 14-day trial, no card: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -167,7 +167,7 @@ The Social Media Posse'
     'How Amazon creators are actually using this',
     'Hi,
 
-Elizabeth here. How people like you are using Influencer Butler day to day:
+Liz here. How people like you are using Influencer Butler day to day:
 
 - Morning: it surfaces the best Amazon deals of the day
 - One click turns them into scheduled posts and links for your TikTok
@@ -177,7 +177,7 @@ That is hours a week back, and more consistent posting than doing it by hand.
 
 Your 14-day free trial is still open: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -185,13 +185,13 @@ The Social Media Posse'
     'Last note from me',
     'Hi,
 
-It is Elizabeth, last note from me.
+It is Liz, last note from me.
 
 If automating your Amazon posting sounds useful, the free 14-day trial is right here: https://www.influencerbutler.com/go/download
 
 If not, I will leave you to it. Either way, keep making great videos.
 
-Elizabeth
+Liz
 The Social Media Posse'
   )
 ON CONFLICT (sequence_id, position) DO NOTHING;

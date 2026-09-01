@@ -21,6 +21,7 @@ import {
 } from "../../amazon/creator-campaigns";
 import type { Availability } from "../../background/market-availability";
 import { getCachedAvailability, putCachedAvailability } from "./availability-cache";
+import { getCachedVideoCounts, putCachedVideoCount } from "./video-count-cache";
 import {
   campaignFillPct,
   computeCampaignScore,
@@ -65,6 +66,10 @@ type Row = {
   // resolved lazily viewport-first. null until a lookup lands; no chip is shown
   // for a card without grid-level ASINs (common on CC Affiliate+ cards).
   availability: Record<string, Availability> | null;
+  // Total creator videos already on the card's first product (Amazon's own
+  // #videoCount), the saturation signal: fewer means less competition. null until
+  // a lookup or cache hit lands; no chip for a card without grid-level ASINs.
+  videoCount: number | null;
   score: CampaignScore;
   badgeBody: HTMLElement;
   // Whether the Butler is watching this campaign for Last Call (the bell state).
@@ -76,6 +81,15 @@ type Row = {
 // re-init (Amazon rewrites the grid constantly) can disconnect the previous
 // run's observer instead of leaking it against removed nodes.
 let availabilityObserver: IntersectionObserver | null = null;
+
+// The viewport observer driving lazy video-count lookups (creator saturation),
+// module-level for the same reason as availabilityObserver: a re-init disconnects
+// the previous run's observer instead of leaking it against removed nodes.
+let videoCountObserver: IntersectionObserver | null = null;
+
+// The Creator Connections Affiliate+ grid is the US marketplace; the card ASINs
+// are amazon.com products, so both the demand and the video-count reads target it.
+const RADAR_MARKETPLACE = "amazon.com";
 
 // Whether Last Call Butler is on for this run, so renderBadge (called from many
 // enrichment callbacks) can decide whether to draw the watch bell without
@@ -100,8 +114,12 @@ export async function initCampaignRadar(
   // rebuild cleanly over the current cards.
   availabilityObserver?.disconnect();
   availabilityObserver = null;
+  videoCountObserver?.disconnect();
+  videoCountObserver = null;
+  // Also drop the detail-page overlay's host, so navigating detail -> grid within
+  // the SPA does not leave its panel stranded over the grid.
   for (const host of Array.from(
-    document.querySelectorAll(".radar-badge-host, .radar-toolbar-host"),
+    document.querySelectorAll(".radar-badge-host, .radar-toolbar-host, .radar-detail-host"),
   )) {
     host.remove();
   }
@@ -159,6 +177,7 @@ export async function initCampaignRadar(
       cc,
       spcc,
       availability: null,
+      videoCount: null,
       score: computeCampaignScore(inputsFor(campaign, daysRemaining, null, null)),
       badgeBody,
       watched: settings.tools.lastCallButler && campaign.campaignId !== null
@@ -229,6 +248,15 @@ export async function initCampaignRadar(
       log("campaign-radar", "availability lookup failed", error),
     );
   }
+
+  // Enrichment 4: creator saturation, the total videos already on each card's
+  // first product (Amazon's own #videoCount). Same lazy shape as availability:
+  // cache hits render immediately, misses resolve viewport-first because each is
+  // a paced product-page fetch through the worker. A card without a grid-level
+  // ASIN simply grows no chip.
+  void enrichVideoCounts(rows).catch((error) =>
+    log("campaign-radar", "video-count lookup failed", error),
+  );
 
   // The toolbar: live thresholds (the differentiator) plus a "passing only"
   // filter. Threshold edits persist and re-highlight instantly.
@@ -351,6 +379,18 @@ function renderBadge(row: Row): void {
       chip.title = t().radarAvailTitle(code, status);
       body.append(chip);
     }
+  }
+
+  // Creator saturation: how many videos already live on this product. 0 reads as
+  // a wide-open opening (green), a light field stays neutral, a crowded one warns
+  // (red). Only rendered once a lookup or cache hit lands, so a card without a
+  // grid-level product never grows this chip.
+  if (row.videoCount !== null) {
+    const n = row.videoCount;
+    const cls = n === 0 ? "tile-chip good" : n > 30 ? "tile-chip bad" : "tile-chip";
+    const chip = el("span", cls, t().radarVideoChip(n));
+    chip.title = t().radarVideoTitle;
+    body.append(chip);
   }
 }
 
@@ -608,6 +648,69 @@ async function enrichAvailability(rows: Row[], markets: string[]): Promise<void>
     void drain();
   });
   for (const row of pending) availabilityObserver.observe(row.campaign.el);
+}
+
+// ---- Creator-saturation (video count) enrichment ----------------------------
+
+// Resolve the total videos already on each card's FIRST product: cache pass
+// upfront (one storage read, instant chips), then a viewport-first queue for the
+// misses, mirroring enrichAvailability. One product per card bounds the fetch
+// cost on large grids; cards without a grid-level ASIN are skipped entirely.
+async function enrichVideoCounts(rows: Row[]): Promise<void> {
+  const candidates = rows.filter((r) => r.campaign.asins.length > 0);
+  if (candidates.length === 0) return;
+
+  const firstAsin = (row: Row): string => row.campaign.asins[0]!.toUpperCase();
+  const cached = await getCachedVideoCounts(candidates.map(firstAsin), RADAR_MARKETPLACE);
+
+  const pending: Row[] = [];
+  for (const row of candidates) {
+    const hit = cached[firstAsin(row)];
+    if (hit !== undefined) {
+      row.videoCount = hit;
+      renderBadge(row);
+    } else {
+      pending.push(row);
+    }
+  }
+  if (pending.length === 0) return;
+
+  const queue: Row[] = [];
+  let draining = false;
+  const drain = async (): Promise<void> => {
+    if (draining) return;
+    draining = true;
+    try {
+      while (queue.length > 0) {
+        const row = queue.shift();
+        if (!row) break;
+        const asin = firstAsin(row);
+        const count = await sendToBackground<number | null>({
+          kind: "FETCH_VIDEO_COUNT",
+          asin,
+          marketplace: RADAR_MARKETPLACE,
+        }).catch(() => null);
+        if (count !== null) {
+          row.videoCount = count;
+          renderBadge(row);
+          void putCachedVideoCount(asin, RADAR_MARKETPLACE, count);
+        }
+      }
+    } finally {
+      draining = false;
+    }
+  };
+
+  videoCountObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      videoCountObserver?.unobserve(entry.target);
+      const row = pending.find((r) => r.campaign.el === entry.target);
+      if (row && !queue.includes(row)) queue.push(row);
+    }
+    void drain();
+  });
+  for (const row of pending) videoCountObserver.observe(row.campaign.el);
 }
 
 // Toggle the card highlight based on whether it clears the user's thresholds.

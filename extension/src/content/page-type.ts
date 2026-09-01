@@ -12,6 +12,7 @@ export type PageType =
   | "creator-upload"
   | "creator-manage"
   | "campaign-grid"
+  | "campaign-detail"
   | "search"
   | "discovery"
   | "deals"
@@ -69,6 +70,15 @@ function detectAmazonPageType(parsed: URL): PageType {
   // performance. Video Money badges each row with earnings, EPV, the live
   // commission rate, and demand. Distinct path from the /video/ edit page above.
   if (/^\/creatorhub\/manage(?:\/|$)/.test(path)) return "creator-manage";
+  // A single campaign's detail page (singular /p/connect/request, distinct from
+  // the plural /p/connect/requests grid), carrying ?adId=/?campaignId= and the
+  // Products / requirements / Samples sections. The campaign-detail overlay reads
+  // its products. MUST be tested before the /p/connect grid catch-all below,
+  // which would otherwise swallow it. The trailing (?:\/|$) keeps "request" from
+  // also matching "requests".
+  if (parsed.host.startsWith("affiliate-program.") && /^\/p\/connect\/request(?:\/|$)/.test(path)) {
+    return "campaign-detail";
+  }
   // The Creator Connections campaign browse grid, where Campaign Radar highlights
   // campaigns. Verified 2026-07-10 on a live account: it lives on the associates
   // host (affiliate-program.amazon.*) under /p/connect/requests (and /p/connect/home
@@ -119,6 +129,11 @@ function detectWalmartPageType(parsed: URL): PageType {
   if (path.startsWith("/orders")) return "order-history";
   // Search results: /search with a keyword query (Walmart uses ?q=).
   if (path === "/search" && parsed.searchParams.has("q")) return "search";
+  // Deals / rollback hubs: /shop/deals redirects to /shop/savings ("Rollbacks &
+  // more"), and both render the same searchResult item grid as search. Score
+  // them with the search overlay so the per-tile rollback / clearance signals
+  // surface. (Walmart /shop/ is a deals hub, unlike Amazon's creator /shop/.)
+  if (path.startsWith("/shop/")) return "search";
   // Browse / category grids: /browse/... and /cp/... (category pages). Trend
   // Radar scores these like Amazon's best-seller grids.
   if (path.startsWith("/browse/") || path.startsWith("/cp/")) return "discovery";

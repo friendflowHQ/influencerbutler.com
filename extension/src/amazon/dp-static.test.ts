@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCarouselMarkers, isBlockedHtml } from "./dp-static";
+import { detectCarouselMarkers, isBlockedHtml, readVideoCountFromHtml } from "./dp-static";
 
 describe("detectCarouselMarkers", () => {
   it("flags the image-block hero slot as the upper carousel", () => {
@@ -36,5 +36,35 @@ describe("isBlockedHtml", () => {
 
   it("passes a normal product page", () => {
     expect(isBlockedHtml("<title>Cat Scratcher</title><div id='dp'>...</div>")).toBe(false);
+  });
+});
+
+describe("readVideoCountFromHtml", () => {
+  it("reads the data-video-count attribute", () => {
+    const html = `<span id="videoCount" data-video-count="60">60 VIDEOS</span>`;
+    expect(readVideoCountFromHtml(html)).toBe(60);
+  });
+
+  it("reads the element text when there is no attribute", () => {
+    const html = `<span id="videoCount">18 VIDEOS</span>`;
+    expect(readVideoCountFromHtml(html)).toBe(18);
+  });
+
+  it("strips thousands separators", () => {
+    expect(readVideoCountFromHtml(`<span data-video-count="1,234">1,234 VIDEOS</span>`)).toBe(1234);
+  });
+
+  it("returns 0 for a rendered product page with no video markers", () => {
+    const html = `<h1 id="productTitle">A product</h1><div id="add-to-cart-button"></div>`;
+    expect(readVideoCountFromHtml(html)).toBe(0);
+  });
+
+  it("returns null when the page did not render as a product (retryable)", () => {
+    expect(readVideoCountFromHtml(`<html><body>loading...</body></html>`)).toBeNull();
+  });
+
+  it("does not trust 0 when a video rail is present but the count is missing", () => {
+    const html = `<h1 id="productTitle">A product</h1><div id="vse-related-videos_feature_div"></div>`;
+    expect(readVideoCountFromHtml(html)).toBeNull();
   });
 });

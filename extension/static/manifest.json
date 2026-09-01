@@ -22,7 +22,8 @@
     "https://affiliate-program.amazon.co.uk/*",
     "https://www.walmart.com/*",
     "https://www.influencerbutler.com/*",
-    "https://links.influencerbutler.com/*"
+    "https://links.influencerbutler.com/*",
+    "https://licensing.influencerbutler.com/*"
   ],
   "optional_host_permissions": [
     "http://*/*",
@@ -267,6 +268,7 @@
         "https://www.walmart.com/search*",
         "https://www.walmart.com/browse/*",
         "https://www.walmart.com/cp/*",
+        "https://www.walmart.com/shop/*",
         "https://www.walmart.com/seller/*",
         "https://www.walmart.com/brand/*",
         "https://www.walmart.com/orders*"

@@ -7,6 +7,8 @@ import {
   type PageStatus,
   type PairResult,
   type ProductListsResult,
+  type RelayClaimResult,
+  type RelayStateView,
   type RowBadge,
   type RowBadgesResult,
   type RowEnrichRef,
@@ -47,6 +49,7 @@ async function init(): Promise<void> {
     renderPageStatus(),
     renderAccount(),
     renderAppBridge(),
+    renderRemoteDevices(),
     renderSettings(),
     renderWatchlist(),
     renderProductLists(),
@@ -449,6 +452,88 @@ async function renderAppBridge(): Promise<void> {
   };
 }
 
+// The "Send to another computer" card: link a desktop app running on a
+// different machine (via the 6-digit code that app shows) and pick which linked
+// computer the deal harvester falls back to when no app is running on this one.
+// Only shown once an account is connected (the relay needs the license key).
+async function renderRemoteDevices(): Promise<void> {
+  const card = byId("relay-card");
+  const signedOut = byId("relay-signed-out");
+  const body = byId("relay-body");
+  const status = byId("relay-status");
+  const targetsLabel = byId("relay-targets-label");
+  const targetsWrap = byId("relay-targets");
+
+  const state = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+  if (!state.signedIn) {
+    card.hidden = true; // surfaced only after a license key is connected
+    return;
+  }
+  card.hidden = false;
+  signedOut.hidden = true;
+  body.hidden = false;
+  renderRelayTargets(state, targetsWrap, targetsLabel, status);
+
+  byId<HTMLButtonElement>("relay-link-btn").onclick = async () => {
+    const input = byId<HTMLInputElement>("relay-code-input");
+    const code = input.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      status.textContent = "Enter the 6-digit code shown in the app on your other computer.";
+      return;
+    }
+    status.textContent = "Linking...";
+    const r = await sendToBackground<RelayClaimResult>({ kind: "RELAY_CLAIM_LINK", code });
+    if (r.ok) {
+      input.value = "";
+      status.textContent = `Linked ${r.receiverLabel || "your other computer"}.`;
+      const next = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+      renderRelayTargets(next, targetsWrap, targetsLabel, status);
+    } else {
+      status.textContent = r.error || "Could not link. Check the code and try again.";
+    }
+  };
+}
+
+function renderRelayTargets(
+  state: RelayStateView,
+  wrap: HTMLElement,
+  label: HTMLElement,
+  status: HTMLElement,
+): void {
+  wrap.replaceChildren();
+  if (!state.targets.length) {
+    label.hidden = true;
+    return;
+  }
+  label.hidden = false;
+  const only = state.targets.length === 1 ? state.targets[0] : undefined;
+  const defaultId = state.defaultTarget?.instanceId ?? only?.receiverInstanceId ?? null;
+  for (const target of state.targets) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const name = document.createElement("span");
+    name.className = "muted small";
+    name.textContent = target.receiverLabel || "Linked computer";
+    row.append(name);
+    const isDefault = target.receiverInstanceId === defaultId;
+    const btn = document.createElement("button");
+    btn.className = isDefault ? "ghost" : "primary";
+    btn.textContent = isDefault ? "Default" : "Make default";
+    btn.disabled = isDefault;
+    btn.onclick = async () => {
+      await sendToBackground({
+        kind: "RELAY_SET_DEFAULT_TARGET",
+        target: { instanceId: target.receiverInstanceId, label: target.receiverLabel },
+      });
+      const next = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+      renderRelayTargets(next, wrap, label, status);
+      status.textContent = `Deals will send to ${target.receiverLabel || "this computer"} when the app is not running here.`;
+    };
+    row.append(btn);
+    wrap.append(row);
+  }
+}
+
 // The gear opens the full API Integrations settings page.
 function wireOptions(): void {
   byId<HTMLButtonElement>("open-options").onclick = () => {
@@ -552,6 +637,7 @@ async function renderPageStatus(): Promise<void> {
       "creator-upload": t().uploadHelperReady,
       "creator-manage": t().sumVideoMoney,
       "campaign-grid": t().campaignRadarActive,
+      "campaign-detail": t().sumCampaignDetail,
       search: t().searchOverlayActive,
       "brand-store": t().storeOverlayActive,
       discovery: t().trendRadarActive,

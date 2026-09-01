@@ -32,6 +32,19 @@ describe("detectPageType", () => {
     expect(detectPageType("https://www.amazon.com/gp/bestsellers/beauty")).toBe("discovery");
     expect(detectPageType("not a url")).toBe("other");
   });
+
+  it("routes the Creator Connections grid vs a single-campaign detail page", () => {
+    expect(
+      detectPageType("https://affiliate-program.amazon.com/p/connect/requests?type=spcc"),
+    ).toBe("campaign-grid");
+    // Singular /request (not /requests) with an adId is the detail page; the more
+    // specific test must win over the grid catch-all.
+    expect(
+      detectPageType(
+        "https://affiliate-program.amazon.com/p/connect/request?creatorId=amzn1.creator.X&adId=amzn1.campaign.Y&type=spcc",
+      ),
+    ).toBe("campaign-detail");
+  });
 });
 
 describe("detectPageType (Walmart)", () => {

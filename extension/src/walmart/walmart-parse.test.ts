@@ -5,6 +5,7 @@ import {
   parseWalmartPriceCents,
   parseWalmartReviewCount,
   parseWalmartRating,
+  parseWasPriceText,
 } from "./search-results";
 
 // Fixtures mirror the live __NEXT_DATA__ shape verified on walmart.com
@@ -153,5 +154,13 @@ describe("Walmart tile DOM text parsers", () => {
     expect(parseWalmartRating("4.5 out of 5 Stars")).toBe(4.5);
     expect(parseWalmartRating("no rating")).toBeNull();
     expect(parseWalmartRating("9 out of 5")).toBeNull();
+  });
+
+  it("parses the strikethrough 'was' price out of the price hook text", () => {
+    // Verified live: the price hook SR text spells out both prices on a rollback.
+    expect(parseWasPriceText("current price Now $4.97, Was $5.82")).toBe(582);
+    expect(parseWasPriceText("$39.99 current price $39.99 Was $1,299.00")).toBe(129900);
+    // No reference price on a full-price tile.
+    expect(parseWasPriceText("$15.99 current price $15.99")).toBeNull();
   });
 });

@@ -28,6 +28,7 @@ import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
+import { renderOwnership } from "../tools/ownership/panel";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
@@ -46,7 +47,9 @@ import { initDealsOverlay } from "../tools/deals-overlay/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
+import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
 import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
+import { initMessageTemplates, teardownMessageTemplates } from "../tools/message-templates/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
@@ -99,7 +102,10 @@ async function main(): Promise<void> {
   g.__ibExtLoaded = true;
 
   const settings = await getSettings();
-  setDebug(settings.debug);
+  // TEMP-DIAGNOSTIC: force [ib:*] console logs on regardless of stored settings
+  // so we can read the brand-keywords sweep stages during live QA. Revert to
+  // `setDebug(settings.debug)` before committing.
+  setDebug(true);
   watchSpaNavigation();
   chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message.kind === "GET_PAGE_STATUS") {
@@ -240,11 +246,13 @@ async function runForPage(): Promise<void> {
     return;
   }
 
-  // Brand Keywords owns a persistent MutationObserver on the Messages widget, so
-  // unlike the once-per-view tools it must be explicitly torn down on every SPA
-  // navigation. Tear it down here up front; the campaign-grid branch below
-  // re-inits it when we are (still) on Creator Connections.
+  // Brand Keywords and Message Templates each own a persistent MutationObserver
+  // on the Messages widget, so unlike the once-per-view tools they must be
+  // explicitly torn down on every SPA navigation. Tear them down here up front;
+  // the campaign-grid branch below re-inits them when we are (still) on Creator
+  // Connections.
   teardownBrandKeywords();
+  teardownMessageTemplates();
 
   // Remote operational flags win over the user's own settings: they are the
   // site's kill switch for when a tool misbehaves in the wild. Apply selector
@@ -302,6 +310,13 @@ async function runForPage(): Promise<void> {
       // over the bridge). Reserves a slot here; reveals only if paired and there
       // are earnings, so it stays invisible for everyone else.
       guard("earnings", () => renderProductEarnings(signals));
+
+      // "You already own / posted this" (from the desktop Orders Butler + content
+      // coverage, over the bridge; owned-only server fallback when unpaired).
+      // Reserves a slot; reveals only when the creator owns or already posted it.
+      if (settings.tools.ownership) {
+        guard("owned", () => renderOwnership(signals));
+      }
 
       // Price history sparkline, built locally from prices seen while browsing.
       // Reserves a slot; reveals only once there are at least two observations.
@@ -521,6 +536,20 @@ async function runForPage(): Promise<void> {
     // unless the app is paired and has "Message Brands" outreach history.
     guard("brand-keywords", () => {
       if (settings.tools.brandKeywords) initBrandKeywords(settings);
+    });
+    // Save + one-click template loading on the same Messages composer. Local
+    // templates work offline; the picker also merges in the desktop app's own
+    // templates when paired. Self-gating like brand-keywords.
+    guard("message-templates", () => {
+      if (settings.tools.messageTemplates) initMessageTemplates(settings);
+    });
+  } else if (pageType === "campaign-detail") {
+    if (!showOnsite) return; // onsite-only page (Creator Connections detail)
+    guard("campaign-detail", () => {
+      if (settings.tools.campaignDetail) {
+        void initCampaignDetail(settings);
+        lastStatus.toolSummaries.push({ label: t().sumCampaignDetail, value: t().ready });
+      }
     });
   }
 }

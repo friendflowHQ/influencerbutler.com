@@ -20,6 +20,13 @@ export type SearchTile = {
   rating: number | null;
   reviewCount: number | null;
   hasCoupon: boolean;
+  // The prior ("was") price, when the tile shows a strikethrough reference
+  // price, so a deal signal can compute how deep the discount is. Optional so
+  // retailers that do not surface it (Amazon tiles today) simply omit it.
+  wasPriceCents?: number | null;
+  // A reduced-price badge on the tile ("rollback" / "clearance" / "reduced"),
+  // when present. Walmart's native deal markers; absent on Amazon tiles.
+  dealBadge?: "rollback" | "clearance" | "reduced" | null;
   el: HTMLElement;
 };
 

@@ -42,7 +42,7 @@ VALUES
     'It has been a while, and I built you something',
     'Hi,
 
-It is Elizabeth from The Social Media Posse. It has been a while since our Instagram course days, and I wanted to reach out personally.
+It is Liz from The Social Media Posse. It has been a while since our Instagram course days, and I wanted to reach out personally.
 
 Since then I built Influencer Butler: a tool that does the tedious parts of creator work for you. It finds the products worth promoting, drafts your posts, and keeps your affiliate links and campaigns organized, so you can spend your time creating instead of chasing spreadsheets.
 
@@ -54,7 +54,7 @@ Start your free trial: https://www.influencerbutler.com/go/download
 
 I would love to see you back.
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -72,7 +72,7 @@ Your 40% welcome-back code POSSEVIP40 is still good through September 21, 2026 (
 
 Start your free trial: https://www.influencerbutler.com/go/download
 
-Elizabeth'
+Liz'
   ),
   (
     '1a5e0001-0000-4000-a000-000000000001', 3, 5,
@@ -87,7 +87,7 @@ Try it free for 14 days, and lock in 40% (monthly or yearly) if you subscribe by
 
 Start your free trial: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -104,7 +104,7 @@ Apply your code at checkout: https://www.influencerbutler.com/pricing
 
 Either way, it was good to be back in touch.
 
-Elizabeth'
+Liz'
   )
 ON CONFLICT (sequence_id, position) DO NOTHING;
 
@@ -128,7 +128,7 @@ VALUES
     'Hey from The Social Media Posse, we built something new',
     'Hi,
 
-It is Elizabeth from The Social Media Posse. You have been part of our community, so I wanted you to be among the first to hear about what I have been building.
+It is Liz from The Social Media Posse. You have been part of our community, so I wanted you to be among the first to hear about what I have been building.
 
 It is called Influencer Butler. It takes the tedious parts of being a creator (finding products worth promoting, writing posts, managing affiliate links and campaigns) and does them for you, so the work feels a lot lighter.
 
@@ -136,7 +136,7 @@ You can try it free for 14 days. And as a community member, use code POSSE20 for
 
 Start your free trial: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -156,7 +156,7 @@ If you want to poke around for free first, our Chrome extension shows money sign
 
 Or start the full free trial: https://www.influencerbutler.com/go/download
 
-Elizabeth'
+Liz'
   ),
   (
     '1a5e0002-0000-4000-a000-000000000002', 3, 7,
@@ -173,7 +173,7 @@ If any of that sounds useful, your intro code POSSE20 gives you 20% off (good th
 
 Start your free 14-day trial: https://www.influencerbutler.com/go/download
 
-Elizabeth
+Liz
 The Social Media Posse'
   ),
   (
@@ -190,6 +190,6 @@ Apply your code at checkout: https://www.influencerbutler.com/pricing
 
 Thanks for being part of the community.
 
-Elizabeth'
+Liz'
   )
 ON CONFLICT (sequence_id, position) DO NOTHING;

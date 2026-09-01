@@ -11,6 +11,8 @@ import {
   type HarvestResult,
   type HudCommandResult,
   type HudStatus,
+  type RelaySendResult,
+  type RelayStateView,
 } from "../shared/messages";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type { ProductRef } from "../transport/hud-commands";
@@ -500,6 +502,23 @@ async function sendSelected(
   const workspace = picker.value || "default";
   const products: ProductRef[] = selected.map(toProductRef);
 
+  // Prefer the desktop app on THIS computer. When it is not running here, fall
+  // back to a linked desktop on another computer over the cloud relay, so a deal
+  // found on this laptop can still queue to post from the machine that runs the
+  // app. If neither is available, show the usual "app not connected" line.
+  const hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" });
+  if (!hud.connected) {
+    const relay = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+    const target = pickRelayTarget(relay);
+    if (target) {
+      await sendSelectedViaRelay(products, workspace, target, btn, status);
+      return;
+    }
+    // Not connected locally and no remote device linked: fall through to the
+    // local path so the user still sees the app-not-connected message (and its
+    // needsPairing prompt) exactly as before this feature existed.
+  }
+
   btn.disabled = true;
   status.textContent = D.sending;
   let sent = 0;
@@ -562,6 +581,56 @@ async function sendChunkOneByOne(
     if (consecutiveFailures >= 5) return { sent, stopped: true, lastMessage };
   }
   return { sent, stopped: false, lastMessage };
+}
+
+// Choose which linked remote desktop to send to: the user's saved default when
+// it is still linked, otherwise the only linked device (so a one-computer setup
+// needs no picking). Null when there is nothing to send to.
+function pickRelayTarget(
+  relay: RelayStateView,
+): { instanceId: string; label: string | null } | null {
+  if (!relay || !relay.signedIn) return null;
+  if (relay.defaultTarget) return relay.defaultTarget;
+  const only = relay.targets.length === 1 ? relay.targets[0] : null;
+  if (only) return { instanceId: only.receiverInstanceId, label: only.receiverLabel };
+  return null;
+}
+
+// Queue the selected deals to a linked desktop on another computer. Chunked like
+// the local path; each chunk is one deal.push.batch command the relay drops into
+// that device's inbox. Fire-and-forget: the desktop posts on its own schedule,
+// so success here means "queued to <device>".
+async function sendSelectedViaRelay(
+  products: ProductRef[],
+  workspace: string,
+  target: { instanceId: string; label: string | null },
+  btn: HTMLButtonElement,
+  status: HTMLElement,
+): Promise<void> {
+  const name = target.label || "your other computer";
+  btn.disabled = true;
+  status.textContent = `Sending to ${name}...`;
+  let sent = 0;
+  let lastError = "";
+  for (let i = 0; i < products.length; i += DEAL_PUSH_CHUNK) {
+    const chunk = products.slice(i, i + DEAL_PUSH_CHUNK);
+    const result = await sendToBackground<RelaySendResult>({
+      kind: "RELAY_SEND",
+      command: { type: "deal.push.batch", workspace, products: chunk },
+      targetInstanceId: target.instanceId,
+    });
+    if (result.ok) {
+      sent += chunk.length;
+    } else {
+      lastError = result.error || "Could not reach your other device.";
+      break;
+    }
+  }
+  btn.disabled = false;
+  status.textContent =
+    sent > 0
+      ? `Queued ${sent} deal(s) to ${name}. They will post from that computer.`
+      : lastError || "Could not reach your other device.";
 }
 
 function toProductRef(row: Row): ProductRef {

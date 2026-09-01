@@ -129,6 +129,28 @@
         <p id="app-pair-status" class="muted small"></p>
       </section>
 
+      <section id="relay-card" class="card" hidden>
+        <h2 data-i18n="relayHeading">Send to another computer</h2>
+        <p class="muted small" data-i18n="relayBlurb">
+          Run the desktop app on a different computer? Link it here to send deals
+          and actions to it from this browser. In the app on that computer, open
+          Settings, Chrome extension, Remote devices, turn on receiving, and click
+          Link a device to get a code.
+        </p>
+        <div id="relay-signed-out" hidden>
+          <p class="muted small" data-i18n="relaySignedOut">Sign in with your license key above to use this.</p>
+        </div>
+        <div id="relay-body" hidden>
+          <div class="row">
+            <input id="relay-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="off" />
+            <button id="relay-link-btn" class="primary" data-i18n="relayLink">Link device</button>
+          </div>
+          <p id="relay-targets-label" class="muted small" data-i18n="relayTargetsLabel" hidden>Linked computers (deals send here when the app is not running on this one):</p>
+          <div id="relay-targets"></div>
+        </div>
+        <p id="relay-status" class="muted small"></p>
+      </section>
+
       <section id="ai-assistant-card" class="card">
         <h2 id="chat-heading">AI Assistant</h2>
         <p class="muted small" id="chat-blurb">

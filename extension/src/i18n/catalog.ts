@@ -29,6 +29,16 @@ export interface Dict {
   earningsTitle: string;
   earningsAmount: (amount: string, count: number) => string;
   earningsNote: string;
+  // Ownership badge: "you already own this / you already posted this", read from
+  // the desktop Orders Butler + content-coverage over the bridge.
+  ownedTitle: string;
+  ownedNote: string;
+  ownedBought: (year: number) => string;
+  ownedPaid: (price: string) => string;
+  ownedPostedChip: string;
+  ownedPostedSummary: (platforms: string) => string;
+  ownedGridOwned: string;
+  ownedGridPosted: string;
   priceHistoryTitle: string;
   priceHistoryNow: (amount: string) => string;
   priceHistoryLow: (amount: string) => string;
@@ -449,6 +459,9 @@ export interface Dict {
   radarChipSpcc: string;
   radarAvailChip: (code: string, status: "available" | "unavailable" | "unknown") => string;
   radarAvailTitle: (code: string, status: "available" | "unavailable" | "unknown") => string;
+  // Creator saturation: total videos already on a campaign product.
+  radarVideoChip: (n: number) => string;
+  radarVideoTitle: string;
   popupAvailabilityLabel: string;
   popupAvailabilityHint: string;
   popupAvailabilityAuDenied: string;
@@ -473,6 +486,7 @@ export interface Dict {
   campaignBriefFilm: string;
   campaignBriefPick: string;
   campaignBriefPickEst: (units: string, revenue: string) => string;
+  campaignBriefSaturation: (n: number) => string;
   campaignBriefOnAmazon: string;
   campaignBriefOffAmazon: string;
   campaignBriefAudience: string;
@@ -488,6 +502,14 @@ export interface Dict {
   campaignBriefVerdictHot: string;
   campaignBriefVerdictWarm: string;
   campaignBriefVerdictCool: string;
+
+  // Campaign detail overlay (single-campaign /p/connect/request page)
+  sumCampaignDetail: string;
+  campaignDetailTitle: string;
+  campaignDetailProducts: string;
+  campaignDetailNoProducts: string;
+  campaignDetailNoData: string;
+  campaignDetailBought: (n: number) => string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -655,6 +677,11 @@ export interface Dict {
   // Send to app (HUD) panel
   sendToApp: string;
   pushToDailyDeals: string;
+  // Search/deals toolbar: batch-send the page's discounted tiles to the desktop
+  // Deals Influencer Butler.
+  searchSendDeals: string;
+  searchNoDeals: string;
+  searchSendingDeals: (n: number) => string;
   sendToContentButler: string;
   saveToLinkButler: string;
   savingLink: string;
@@ -799,6 +826,14 @@ const en: Dict = {
   earningsTitle: "Your earnings",
   earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
   earningsNote: "You have already earned here. Find more products like the ones already paying you.",
+  ownedTitle: "You own this",
+  ownedNote: "This product is in your order history.",
+  ownedBought: (year) => `Bought in ${year}`,
+  ownedPaid: (price) => `Paid ${price}`,
+  ownedPostedChip: "Already posted",
+  ownedPostedSummary: (platforms) => `Already shared on ${platforms}`,
+  ownedGridOwned: "Owned",
+  ownedGridPosted: "Posted",
   priceHistoryTitle: "Price history",
   priceHistoryNow: (amount) => `Now ${amount}`,
   priceHistoryLow: (amount) => `Low ${amount}`,
@@ -1214,6 +1249,9 @@ const en: Dict = {
       : status === "unavailable"
         ? `Not available to buy on the ${code} Amazon store`
         : `Could not check the ${code} Amazon store right now`,
+  radarVideoChip: (n) => (n === 0 ? "No videos yet" : `${n} ${n === 1 ? "video" : "videos"}`),
+  radarVideoTitle:
+    "Creator videos already on this product. Fewer means less competition for the spot.",
   popupAvailabilityLabel: "Show availability for",
   popupAvailabilityHint:
     "Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.",
@@ -1239,6 +1277,10 @@ const en: Dict = {
   campaignBriefFilm: "What to film",
   campaignBriefPick: "Pick of the shelf",
   campaignBriefPickEst: (units, revenue) => `Est. ${units} units/month, ${revenue}/month`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "No creator videos on this product yet: a wide-open spot."
+      : `${n} creator ${n === 1 ? "video" : "videos"} already on this product (saturation).`,
   campaignBriefOnAmazon: "On Amazon",
   campaignBriefOffAmazon: "Off Amazon too",
   campaignBriefAudience: "Who it's for",
@@ -1254,6 +1296,13 @@ const en: Dict = {
   campaignBriefVerdictHot: "Worth accepting",
   campaignBriefVerdictWarm: "Worth a look",
   campaignBriefVerdictCool: "Probably pass",
+
+  sumCampaignDetail: "Campaign detail",
+  campaignDetailTitle: "The Butler's product read",
+  campaignDetailProducts: "Products in this campaign",
+  campaignDetailNoProducts: "No products detected on this campaign yet.",
+  campaignDetailNoData: "No demand data in the catalogue yet.",
+  campaignDetailBought: (n) => `${n}+ bought/mo`,
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -1436,6 +1485,9 @@ const en: Dict = {
 
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Deals Influencer Butler",
+  searchSendDeals: "Send deals to app",
+  searchNoDeals: "No discounted deals on this page.",
+  searchSendingDeals: (n) => `Sending ${n} deal(s) to your app...`,
   sendToContentButler: "Send to Content Butler",
   saveToLinkButler: "Save to Link Butler",
   savingLink: "Saving link...",
@@ -1587,6 +1639,14 @@ const es: Dict = {
   earningsTitle: "Tus ganancias",
   earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
   earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
+  ownedTitle: "Ya lo tienes",
+  ownedNote: "Este producto está en tu historial de pedidos.",
+  ownedBought: (year) => `Comprado en ${year}`,
+  ownedPaid: (price) => `Pagaste ${price}`,
+  ownedPostedChip: "Ya publicado",
+  ownedPostedSummary: (platforms) => `Ya compartido en ${platforms}`,
+  ownedGridOwned: "En tu pedido",
+  ownedGridPosted: "Publicado",
   priceHistoryTitle: "Historial de precios",
   priceHistoryNow: (amount) => `Ahora ${amount}`,
   priceHistoryLow: (amount) => `Mínimo ${amount}`,
@@ -2002,6 +2062,9 @@ const es: Dict = {
       : status === "unavailable"
         ? `No disponible para comprar en la tienda de Amazon de ${code}`
         : `No se pudo comprobar la tienda de Amazon de ${code} ahora mismo`,
+  radarVideoChip: (n) => (n === 0 ? "Sin vídeos aún" : `${n} ${n === 1 ? "vídeo" : "vídeos"}`),
+  radarVideoTitle:
+    "Vídeos de creadores que ya hay sobre este producto. Menos significa menos competencia.",
   popupAvailabilityLabel: "Mostrar disponibilidad para",
   popupAvailabilityHint:
     "Campaign Radar comprueba cada producto de campaña en las tiendas de Amazon de estos países y muestra un distintivo por país.",
@@ -2027,6 +2090,10 @@ const es: Dict = {
   campaignBriefFilm: "Qué grabar",
   campaignBriefPick: "La mejor opción del catálogo",
   campaignBriefPickEst: (units, revenue) => `Est. ${units} unidades/mes, ${revenue}/mes`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "Aún no hay vídeos de creadores sobre este producto: un hueco libre."
+      : `${n} ${n === 1 ? "vídeo" : "vídeos"} de creadores ya sobre este producto (saturación).`,
   campaignBriefOnAmazon: "En Amazon",
   campaignBriefOffAmazon: "Fuera de Amazon también",
   campaignBriefAudience: "Para quién es",
@@ -2042,6 +2109,13 @@ const es: Dict = {
   campaignBriefVerdictHot: "Vale la pena aceptar",
   campaignBriefVerdictWarm: "Merece un vistazo",
   campaignBriefVerdictCool: "Probablemente no",
+
+  sumCampaignDetail: "Detalle de campaña",
+  campaignDetailTitle: "Lectura de producto del Butler",
+  campaignDetailProducts: "Productos de esta campaña",
+  campaignDetailNoProducts: "Aún no se detectan productos en esta campaña.",
+  campaignDetailNoData: "Todavía no hay datos de demanda en el catálogo.",
+  campaignDetailBought: (n) => `${n}+ comprados/mes`,
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -2224,6 +2298,9 @@ const es: Dict = {
 
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Deals Influencer Butler",
+  searchSendDeals: "Enviar ofertas a la app",
+  searchNoDeals: "No hay ofertas con descuento en esta página.",
+  searchSendingDeals: (n) => `Enviando ${n} oferta(s) a tu app...`,
   sendToContentButler: "Enviar a Content Butler",
   saveToLinkButler: "Guardar en Link Butler",
   savingLink: "Guardando enlace...",
@@ -2375,6 +2452,14 @@ const fr: Dict = {
   earningsTitle: "Vos gains",
   earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
   earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",
+  ownedTitle: "Vous l'avez déjà",
+  ownedNote: "Ce produit est dans votre historique de commandes.",
+  ownedBought: (year) => `Acheté en ${year}`,
+  ownedPaid: (price) => `Payé ${price}`,
+  ownedPostedChip: "Déjà publié",
+  ownedPostedSummary: (platforms) => `Déjà partagé sur ${platforms}`,
+  ownedGridOwned: "Déjà acheté",
+  ownedGridPosted: "Publié",
   priceHistoryTitle: "Historique des prix",
   priceHistoryNow: (amount) => `Maintenant ${amount}`,
   priceHistoryLow: (amount) => `Plus bas ${amount}`,
@@ -2790,6 +2875,9 @@ const fr: Dict = {
       : status === "unavailable"
         ? `Indisponible à l'achat sur la boutique Amazon ${code}`
         : `Impossible de vérifier la boutique Amazon ${code} pour le moment`,
+  radarVideoChip: (n) => (n === 0 ? "Aucune vidéo pour l'instant" : `${n} ${n === 1 ? "vidéo" : "vidéos"}`),
+  radarVideoTitle:
+    "Vidéos de créateurs déjà présentes sur ce produit. Moins il y en a, moins la concurrence est forte.",
   popupAvailabilityLabel: "Afficher la disponibilité pour",
   popupAvailabilityHint:
     "Campaign Radar vérifie chaque produit de campagne sur les boutiques Amazon de ces pays et affiche une pastille par pays.",
@@ -2815,6 +2903,10 @@ const fr: Dict = {
   campaignBriefFilm: "Quoi filmer",
   campaignBriefPick: "Le meilleur choix du catalogue",
   campaignBriefPickEst: (units, revenue) => `Est. ${units} unités/mois, ${revenue}/mois`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "Aucune vidéo de créateur sur ce produit pour l'instant : une place à prendre."
+      : `${n} ${n === 1 ? "vidéo" : "vidéos"} de créateurs déjà sur ce produit (saturation).`,
   campaignBriefOnAmazon: "Sur Amazon",
   campaignBriefOffAmazon: "Hors Amazon aussi",
   campaignBriefAudience: "Pour qui",
@@ -2830,6 +2922,13 @@ const fr: Dict = {
   campaignBriefVerdictHot: "À accepter",
   campaignBriefVerdictWarm: "Vaut un coup d'oeil",
   campaignBriefVerdictCool: "Plutôt à laisser",
+
+  sumCampaignDetail: "Détail de campagne",
+  campaignDetailTitle: "Lecture produit du Butler",
+  campaignDetailProducts: "Produits de cette campagne",
+  campaignDetailNoProducts: "Aucun produit détecté sur cette campagne pour l'instant.",
+  campaignDetailNoData: "Pas encore de données de demande dans le catalogue.",
+  campaignDetailBought: (n) => `${n}+ achetés/mois`,
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
@@ -3012,6 +3111,9 @@ const fr: Dict = {
 
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Deals Influencer Butler",
+  searchSendDeals: "Envoyer les deals vers l'app",
+  searchNoDeals: "Aucune promo sur cette page.",
+  searchSendingDeals: (n) => `Envoi de ${n} deal(s) vers votre app...`,
   sendToContentButler: "Envoyer à Content Butler",
   saveToLinkButler: "Enregistrer dans Link Butler",
   savingLink: "Enregistrement du lien...",

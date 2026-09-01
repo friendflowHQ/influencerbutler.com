@@ -12,12 +12,15 @@ import {
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchBrandEnrichment, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { relayClaimLink, relayListTargets, relaySend } from "./relay";
+import type { RelayStateView } from "../shared/messages";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
 import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
+import { fetchVideoCount } from "./video-count";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
 import { enrichRows } from "./row-enrich";
@@ -94,7 +97,7 @@ import {
   saveOwnerPixels,
 } from "./links";
 import { API_BASE } from "../shared/constants";
-import { getState, patchIntegrationsGlobal } from "../storage/store";
+import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 
 // Background service worker: the only place that talks to
@@ -268,8 +271,14 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "FETCH_OUTREACH_KEYWORDS":
       void fetchOutreachKeywords().then(sendResponse);
       return true;
+    case "FETCH_MESSAGE_TEMPLATES":
+      void fetchMessageTemplates().then(sendResponse);
+      return true;
     case "FETCH_BRAND_ENRICHMENT":
       void fetchBrandEnrichment(message.brands).then(sendResponse);
+      return true;
+    case "LOOKUP_OWNERSHIP":
+      void fetchOwnership(message.asins).then(sendResponse);
       return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
@@ -289,11 +298,49 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "UNPAIR_APP":
       void unpair().then(() => sendResponse(undefined));
       return true;
+    case "RELAY_CLAIM_LINK":
+      void relayClaimLink(message.code, message.label).then(sendResponse);
+      return true;
+    case "RELAY_LIST_TARGETS":
+      void relayListTargets().then(sendResponse);
+      return true;
+    case "RELAY_SEND":
+      void relaySend(message.command, message.targetInstanceId).then(sendResponse);
+      return true;
+    case "RELAY_GET_STATE":
+      void (async (): Promise<RelayStateView> => {
+        const [state, settings, targetsRes] = await Promise.all([
+          getState(),
+          getSettings(),
+          relayListTargets(),
+        ]);
+        const signedIn = Boolean(state.auth?.licenseKey);
+        // Drop a stored default that is no longer among the linked targets, so a
+        // device the user unlinked never lingers as the fallback.
+        let defaultTarget = settings.relayDefaultTarget;
+        if (defaultTarget && targetsRes.ok) {
+          const stillLinked = targetsRes.targets.some((t) => t.receiverInstanceId === defaultTarget!.instanceId);
+          if (!stillLinked) defaultTarget = null;
+        }
+        return {
+          signedIn,
+          targets: targetsRes.ok ? targetsRes.targets : [],
+          defaultTarget,
+          error: targetsRes.ok ? undefined : targetsRes.error,
+        };
+      })().then(sendResponse);
+      return true;
+    case "RELAY_SET_DEFAULT_TARGET":
+      void patchSettings({ relayDefaultTarget: message.target }).then(() => sendResponse({ ok: true }));
+      return true;
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
       return true;
     case "FETCH_MARKET_AVAILABILITY":
       void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);
+      return true;
+    case "FETCH_VIDEO_COUNT":
+      void fetchVideoCount(message.asin, message.marketplace).then(sendResponse);
       return true;
     case "SCAN_ASIN_IN_TAB":
       void scanAsinInTab(message.asin, message.marketplace).then(sendResponse);

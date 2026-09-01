@@ -13,6 +13,11 @@ export function renderCalculator(
   signals: ProductSignals,
   counts: VideoCounts | null,
   settings: Settings,
+  // A rate already resolved by the caller (e.g. the Walmart overlay's rate-card
+  // lookup). When given, it seeds the starting rate and suppresses the Amazon
+  // Associates rate-card fallback, which would otherwise apply Amazon rates to a
+  // non-Amazon product.
+  initialRatePct?: number,
 ): void {
   const section = addSection(t().breakEvenMath, t().calcIntro);
 
@@ -25,7 +30,7 @@ export function renderCalculator(
   // product, use it as the starting rate instead of the saved guess.
   const detectedCommission = signals.commissionRatePct;
   const state = {
-    commissionRatePct: detectedCommission ?? settings.commissionRatePct,
+    commissionRatePct: detectedCommission ?? initialRatePct ?? settings.commissionRatePct,
     viewsPerMonth: 1000,
     conversionPct: settings.conversionPct,
     minutesPerVideo: settings.minutesPerVideo,
@@ -133,8 +138,9 @@ export function renderCalculator(
 
   // No live SiteStripe rate on this page: fall back to the Associates rate
   // card, matched on the product's category. Async (reads the cached card),
-  // so it fills in a moment after the panel renders.
-  if (detectedCommission === null) void applyRateCard();
+  // so it fills in a moment after the panel renders. Skipped when the caller
+  // already supplied a rate (a non-Amazon retailer resolves its own rate card).
+  if (detectedCommission === null && initialRatePct == null) void applyRateCard();
 
   async function applyRateCard(): Promise<void> {
     const card = await getRateCard();

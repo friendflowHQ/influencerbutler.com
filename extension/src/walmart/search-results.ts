@@ -52,6 +52,41 @@ function textOf(el: Element | null): string {
 const NUMERIC_ID_RE = /^\d{3,15}$/;
 const IP_HREF_ID_RE = /\/ip\/(?:[^/]+\/)?(\d{3,15})/;
 const PRICE_SEL = '[data-automation-id="product-price"]';
+// The price hook's screen-reader text spells out the reference price, e.g.
+// "current price Now $4.97, Was $5.82" (verified live 2026-09-01). The tile
+// also renders it in a `.strike` node; the SR text is the reliable source.
+const WAS_PRICE_RE = /\bwas\s*\$?\s*([\d,]+\.\d{2})/i;
+
+// Pure parser (exported for tests): the prior ("was") price cents out of the
+// price hook's spelled-out text, e.g. "current price Now $4.97, Was $5.82".
+export function parseWasPriceText(text: string): number | null {
+  const m = text.match(WAS_PRICE_RE)?.[1];
+  return m ? parseWalmartPriceCents(`$${m}`) : null;
+}
+
+// Read the prior ("was") price cents off a tile, preferring the price hook's
+// spelled-out SR text and falling back to a strikethrough node.
+function extractWasPriceCents(tile: HTMLElement, priceEl: HTMLElement): number | null {
+  const fromHook = parseWasPriceText(textOf(priceEl));
+  if (fromHook != null) return fromHook;
+  const strike = tile.querySelector<HTMLElement>(".strike");
+  return strike ? parseWalmartPriceCents(textOf(strike)) : null;
+}
+
+// The reduced-price pill Walmart renders on a discounted tile. Matched on an
+// element whose whole text is the badge word, to avoid matching those words
+// inside a product title. Verified live 2026-09-01: badge keys ROLLBACK,
+// CLEARANCE, REDUCED_PRICE render as "Rollback" / "Clearance" / "Reduced price".
+function extractDealBadge(tile: HTMLElement): "rollback" | "clearance" | "reduced" | null {
+  for (const n of Array.from(tile.querySelectorAll<HTMLElement>("span,div"))) {
+    const txt = (n.textContent ?? "").trim();
+    if (txt.length > 16) continue;
+    if (/^rollback$/i.test(txt)) return "rollback";
+    if (/^clearance$/i.test(txt)) return "clearance";
+    if (/^reduced price$/i.test(txt)) return "reduced";
+  }
+  return null;
+}
 
 // The reorderable grid cell for a tile: the ancestor that is a direct child of
 // the results grid (its parent holds two or more price-bearing tiles). The
@@ -108,6 +143,8 @@ export function parseSearchTiles(root: ParentNode): SearchTile[] {
       rating: parseWalmartRating(ratingText),
       reviewCount: parseWalmartReviewCount(textOf(tile.querySelector('[data-testid="product-reviews"]'))),
       hasCoupon: false,
+      wasPriceCents: extractWasPriceCents(tile, priceEl),
+      dealBadge: extractDealBadge(tile),
       // The reorderable grid cell, so the shared overlay can sort/hide it in
       // place without reparenting it out of its wrapper.
       el: reorderCell(tile),

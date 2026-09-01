@@ -14,6 +14,15 @@ export type ProductRef = {
   currency?: string;
   imageUrl?: string;
   commissionRatePct?: number | null;
+  // Canonical product url for the item on its own marketplace (Amazon /dp/,
+  // Walmart /ip/). Sent so the desktop persists the right link instead of
+  // rebuilding an Amazon-shaped url from the id: for a non-Amazon retailer that
+  // synthesized url would be wrong.
+  url?: string;
+  // A ready-to-post affiliate/tracked link when the extension could mint one for
+  // this retailer (e.g. a Walmart Creator / Mavely link). Absent when no link
+  // provider is configured; the desktop then falls back to `url`.
+  affiliateUrl?: string;
 };
 
 // One Instagram Goldmine creator, sent in a batch to the desktop Pitch / Group
@@ -102,7 +111,14 @@ export type HudCommand =
   // (asin, marketplace, target).
   | { type: "idealist.push"; product: ProductRef; target: IdeaListTarget }
   // Batch form of idealist.push (many products, each with its own target).
-  | { type: "idealist.push.batch"; items: Array<{ product: ProductRef; target: IdeaListTarget }> };
+  | { type: "idealist.push.batch"; items: Array<{ product: ProductRef; target: IdeaListTarget }> }
+  // "Also save to desktop app": push a template the creator saved in the
+  // extension up to the desktop app's own template store, so the same library is
+  // available on both sides. `workspace` names the destination store (the
+  // extension sends "amazonbutler", the Amazon Creator Connections outreach
+  // templates, since that is where the composer lives). The desktop upserts by
+  // label and returns command.result { ok }. Idempotent per (workspace, label).
+  | { type: "template.save"; workspace: string; template: { label: string; body: string } };
 
 export type HudCommandResult = {
   ok: boolean;
@@ -255,6 +271,85 @@ export type OutreachKeywordsResult = {
   ok: boolean;
   paired?: boolean;
   records: OutreachRecord[];
+};
+
+// One posted/promoted content item for a product, as recorded by the desktop
+// app (a Storefront video/photo/idea-list, a Daily Deals post, or a YouTube
+// upload). Unioned across every channel so the extension can say "you already
+// posted this" and, on hover, where and when.
+export type OwnershipPostedItem = {
+  type: string; // video | photo | idea-list | deal-post | media-list
+  platform: string; // amazon | youtube | facebook | telegram | reddit | instagram | benable
+  url: string;
+  title: string;
+  at: string | null; // ISO timestamp, newest-first in `posted.items`
+};
+
+// The order detail the desktop app holds for a product the creator owns, from
+// the Orders Butler snapshot. Every field is optional: an older snapshot row, or
+// a re-purchase whose price fetch failed, may not carry them.
+export type OwnershipOrder = {
+  orderId?: string;
+  year?: number;
+  quantity?: number;
+  title?: string;
+  paidPrice?: number; // in currency units (e.g. 19.99), not cents
+  currency?: string;
+  marketplace?: string;
+};
+
+// One ASIN's ownership answer. `owned` is true when it is in the creator's synced
+// order history; `posted.available` is true when they have already made content
+// for it. Only ASINs with at least one of those signals are returned, so the
+// caller treats an absent ASIN as "nothing to show". `reviewed` is reserved for a
+// later phase (written Amazon reviews are not harvested yet) and is null for now.
+export type OwnershipRecord = {
+  asin: string;
+  owned: boolean;
+  order?: OwnershipOrder;
+  posted: {
+    available: boolean;
+    count: number;
+    platforms: string[];
+    lastAt: string | null;
+    items: OwnershipPostedItem[];
+  };
+  reviewed: null;
+};
+
+// Result of an ownership.lookup request against the desktop Orders Butler +
+// content-coverage stores. `paired` is false when the extension has never
+// connected the app, so the caller can fall back to the server-backed owned list
+// (or stay silent) rather than erroring.
+export type OwnershipLookupResult = {
+  ok: boolean;
+  paired?: boolean;
+  results: OwnershipRecord[];
+  message?: string;
+};
+
+// One reusable message template the desktop app knows about, read over the
+// bridge so the extension's Message Templates picker can offer the creator's
+// desktop-authored templates alongside their extension-local ones. `variations`
+// is the desktop template's list of message texts (the extension inserts the
+// first one); each may contain {placeholder} tokens resolved on insert.
+export type DesktopTemplate = {
+  id: string;
+  label: string;
+  variations: string[];
+};
+
+// Result of a templates.lookup request against the desktop app's own template
+// store. `values` is the creator's resolved placeholder profile (storefrontUrl,
+// address, mediakit, apparel sizes, ...) read from the same workspace settings,
+// so the extension can fill {storefrontUrl} and friends the same way the desktop
+// would. `paired` is false when the extension has never connected the app, so
+// the caller stays silent (no desktop templates) rather than erroring.
+export type TemplatesLookupResult = {
+  ok: boolean;
+  paired?: boolean;
+  templates: DesktopTemplate[];
+  values: Record<string, string>;
 };
 
 // One brand's Creator Connections signal, resolved by the desktop app against

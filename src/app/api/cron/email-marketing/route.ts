@@ -570,9 +570,10 @@ async function autoEnrollFromSources(db: SupabaseClient, summary: Summary): Prom
     }
     if (emails.length === 0) continue;
 
-    // The unique constraint + ignoreDuplicates makes re-scanning the same
-    // window every run idempotent.
-    summary.autoEnrolled += await enrollEmails(db, seq.id, emails);
+    // The unique constraint (one row per sequence+email) makes re-scanning the
+    // same window every run idempotent: only genuinely new addresses insert. No
+    // reactivation here, so a cancelled/completed address is not re-dripped.
+    summary.autoEnrolled += (await enrollEmails(db, seq.id, emails)).inserted;
   }
 }
 

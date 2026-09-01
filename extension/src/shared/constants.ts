@@ -75,6 +75,19 @@ export const LINK_MINT_BULK_CAP = 100;
 export const LINK_MINT_DELAY_MIN_MS = 250;
 export const LINK_MINT_DELAY_MAX_MS = 600;
 
+// Licensing Worker cross-device relay. Lets the extension send bridge commands
+// to the desktop app running on ANOTHER computer (the local bridge above only
+// reaches an app on the SAME machine). Authenticated with the signed-in Lemon
+// Squeezy license key (Bearer), the same credential as the branded-links
+// service. See workers/licensing/src/routes/relay.js in the desktop repo.
+export const IB_RELAY_BASE = "https://licensing.influencerbutler.com";
+export const IB_RELAY_ENDPOINTS = {
+  linkClaim: `${IB_RELAY_BASE}/relay/link/claim`,
+  targets: `${IB_RELAY_BASE}/relay/targets`,
+  send: `${IB_RELAY_BASE}/relay/send`,
+  results: `${IB_RELAY_BASE}/relay/results`,
+} as const;
+
 // The Start Here onboarding walkthrough (opened on install). The Creator API
 // setup step embeds this YouTube walkthrough (same video as the desktop app's
 // API Integrations > Creator API screen and the api-integrations tutorial), and

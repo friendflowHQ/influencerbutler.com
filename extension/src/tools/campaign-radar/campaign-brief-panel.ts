@@ -123,6 +123,7 @@ function briefToText(
     if (demand) {
       const est = money(demand.estMonthlyRevenueCents, locale);
       lines.push("", t().campaignBriefPick, `${demand.asin}${est ? ` - ${est}/month est.` : ""}`);
+      if (demand.videoCount !== null) lines.push(t().campaignBriefSaturation(demand.videoCount));
       if (sections.pickReason) lines.push(sections.pickReason);
     }
     if (sections.onAmazon) lines.push("", t().campaignBriefOnAmazon, sections.onAmazon);
@@ -408,6 +409,11 @@ function renderBody(body: HTMLElement, opts: CampaignBriefOpen, res: CampaignBri
     line.style.fontWeight = "600";
     line.style.color = "#111827";
     body.append(line);
+    if (res.demand.videoCount !== null) {
+      const sat = paragraph(t().campaignBriefSaturation(res.demand.videoCount));
+      sat.style.marginTop = "2px";
+      body.append(sat);
+    }
     if (sections.pickReason) body.append(paragraph(sections.pickReason));
   }
   if (sections.onAmazon) {

@@ -3,11 +3,19 @@ import { sendToBackground } from "../../shared/messages";
 import type { HudCommandResult } from "../../shared/messages";
 import type { ProductRef, HudCommand } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
+import { canonicalProductUrl } from "../../integrations/url";
 
 // Shared plumbing for panels that send HudCommands to the desktop app (the
 // Send-to-app section and the Campaigns section's inline Accept buttons).
 
 export function toProductRef(signals: ProductSignals): ProductRef {
+  // Send the canonical product url so the desktop persists the correct link per
+  // retailer (Walmart /ip/, Amazon /dp/) instead of synthesizing an Amazon /dp/
+  // url from the id, which is wrong for Walmart.
+  const retailer = signals.marketplace.includes("walmart") ? "walmart" : "amazon";
+  const url = signals.asin
+    ? canonicalProductUrl(signals.asin, signals.marketplace, "", retailer)
+    : undefined;
   return {
     asin: signals.asin as string,
     marketplace: signals.marketplace,
@@ -16,6 +24,7 @@ export function toProductRef(signals: ProductSignals): ProductRef {
     currency: signals.currency,
     imageUrl: signals.imageUrl ?? undefined,
     commissionRatePct: signals.commissionRatePct,
+    url: url || undefined,
   };
 }
 

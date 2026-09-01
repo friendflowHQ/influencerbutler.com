@@ -15,17 +15,19 @@ import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
 import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
 import { formatMoney, tileTotals } from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
-import type { AsinEarnings } from "../../transport/hud-commands";
+import type { AsinEarnings, ProductRef } from "../../transport/hud-commands";
 import {
   sendToBackground,
   type CcRate,
   type CcRatesResult,
   type EarningsLookupResult,
+  type HudCommandResult,
   type MarketBatchResult,
   type MarketProduct,
   type ScanAsinResult,
   type WatchlistResult,
 } from "../../shared/messages";
+import { resolveOwnership } from "../ownership/resolve";
 import { enrichSearchTiles } from "./enrich";
 import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
 import { mountTileMenuButton, type HudRef } from "./tile-menu";
@@ -69,6 +71,11 @@ type Row = {
   // already earned on it: turns Amazon search into "find more of what already
   // paid me", with the real dollars on the chip.
   earnings: AsinEarnings | null;
+  // Ownership signals from the desktop Orders Butler (over the bridge; owned-only
+  // server fallback when unpaired). owned = the creator already bought it; posted
+  // = they already made content for it (Storefront / Daily Deals / YouTube).
+  owned: boolean;
+  posted: boolean;
   // Shared-catalogue ("internal Keepa") data for this ASIN: estimated monthly
   // sales, BSR rank/category, real bought-past-month. Null until the batched
   // GET_MARKET_BATCH returns (and stays null when the pool has nothing yet).
@@ -162,6 +169,8 @@ export async function initSearchOverlay(
       showWatch: settings.tools.watchlist,
       watched: false,
       earnings: null,
+      owned: false,
+      posted: false,
       market: null,
       hud,
     };
@@ -211,6 +220,25 @@ export async function initSearchOverlay(
         const earnings = byAsin.get(row.tile.asin.toUpperCase());
         if (earnings?.hasEarnings) {
           row.earnings = earnings;
+          renderBadge(row, settings);
+        }
+      }
+    });
+  }
+
+  // "Already own / already posted this" from the desktop Orders Butler, one
+  // batched lookup. Returns instantly (owned-only server fallback) when the app
+  // was never paired, and only marks tiles that carry a signal, so it is quiet
+  // for everyone else. Amazon only: the desktop ledger does not track Walmart.
+  if (caps.earnings && settings.tools.ownership) {
+    void resolveOwnership(rows.map((r) => r.tile.asin)).then((records) => {
+      if (epoch !== initEpoch) return;
+      const byAsin = new Map(records.map((r) => [r.asin.toUpperCase(), r]));
+      for (const row of rows) {
+        const rec = byAsin.get(row.tile.asin.toUpperCase());
+        if (rec && (rec.owned || rec.posted.available)) {
+          row.owned = rec.owned;
+          row.posted = rec.posted.available;
           renderBadge(row, settings);
         }
       }
@@ -402,6 +430,50 @@ export async function initSearchOverlay(
     setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
   };
 
+  // "Send deals to app": batch the page's discounted tiles (a rollback /
+  // clearance / reduced badge, or a strikethrough was-price) into the desktop
+  // Deals Influencer Butler in one click. On the rollback hub every tile
+  // qualifies; on a plain search only the marked-down ones do.
+  async function sendDealsToApp(setStatus: (text: string) => void): Promise<void> {
+    const dealRows = rows.filter(
+      (r) => r.tile.dealBadge != null || r.tile.wasPriceCents != null,
+    );
+    if (dealRows.length === 0) {
+      setStatus(t().searchNoDeals);
+      return;
+    }
+    if (!hud.connected) {
+      setStatus(t().connectAppToPair);
+      return;
+    }
+    const products: ProductRef[] = dealRows.map((r) => ({
+      asin: r.tile.asin,
+      marketplace: r.marketplace,
+      title: r.tile.title?.slice(0, 200),
+      priceCents: r.tile.priceCents,
+      currency: r.tile.currency,
+      imageUrl: r.tile.imageUrl ?? undefined,
+      commissionRatePct: null,
+      url: r.tile.href ?? undefined,
+    }));
+    setStatus(t().searchSendingDeals(products.length));
+    try {
+      const res = await sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "deal.push.batch", workspace: "default", products },
+      });
+      setStatus(
+        res.ok
+          ? res.message ?? t().sentToApp
+          : res.needsPairing
+            ? t().connectAppToPair
+            : res.message ?? t().couldNotReachApp,
+      );
+    } catch {
+      setStatus(t().couldNotReachApp);
+    }
+  }
+
   const toolbar = renderToolbar({
     count: rows.length,
     onSort: applySort,
@@ -412,6 +484,10 @@ export async function initSearchOverlay(
     },
     showScan: caps.videoScan,
     showCampaignFilter: caps.campaignFilter,
+    // Walmart search / rollback / deals grids can hand-picked-batch to the
+    // desktop; the deal.push.batch receiver is retailer-aware.
+    showSendDeals: module.retailer === "walmart",
+    onSendDeals: sendDealsToApp,
   });
 
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
@@ -605,6 +681,10 @@ function renderBadge(row: Row, settings: Settings): void {
   // A product that already paid you is the strongest buy signal on the page:
   // show the real dollars when the ledger has them.
   if (row.earnings) body.append(earnedChip(row));
+  // You already own / already posted this: stops a duplicate buy or a repeat
+  // promotion right from the grid.
+  if (row.owned) body.append(el("span", "tile-chip good", t().ownedGridOwned));
+  if (row.posted) body.append(el("span", "tile-chip warn", t().ownedGridPosted));
   if (row.commissionCents !== null) {
     body.append(
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
@@ -645,6 +725,23 @@ function renderBadge(row: Row, settings: Settings): void {
     body.append(el("span", "tile-chip good", t().tileDeal));
   }
   if (row.tile.hasCoupon) body.append(el("span", "tile-chip", t().tileCoupon));
+  // Walmart reduced-price signal: a Rollback / Clearance / Reduced pill and how
+  // deep the cut is (from the strikethrough "was" price). The badge words are
+  // Walmart's own English marketing terms; "-N%" is locale-neutral. Amazon tiles
+  // never set these fields, so this chip is Walmart-only.
+  {
+    const { dealBadge, wasPriceCents, priceCents } = row.tile;
+    const discounted = wasPriceCents != null && priceCents != null && wasPriceCents > priceCents;
+    if (dealBadge || discounted) {
+      const label =
+        dealBadge === "clearance" ? "Clearance" :
+        dealBadge === "reduced" ? "Reduced" :
+        dealBadge === "rollback" ? "Rollback" :
+        t().tileDeal;
+      const pct = discounted ? Math.round((1 - priceCents! / wasPriceCents!) * 100) : null;
+      body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
+    }
+  }
   if (row.influencerVideos !== null) {
     body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
   } else if (row.totalVideos !== null) {

@@ -401,8 +401,17 @@ export default function SequencesSection({
         setEnrollError(await readError(res, "Enrollment failed"));
         return;
       }
-      const body = (await res.json()) as { ok: boolean; enrolled?: number };
-      setEnrollResult(`${body.enrolled ?? 0} people enrolled`);
+      const body = (await res.json()) as {
+        ok: boolean;
+        inserted?: number;
+        reactivated?: number;
+        skipped?: number;
+      };
+      const parts: string[] = [];
+      if (body.inserted) parts.push(`${body.inserted} enrolled`);
+      if (body.reactivated) parts.push(`${body.reactivated} reactivated`);
+      if (body.skipped) parts.push(`${body.skipped} already active`);
+      setEnrollResult(parts.length ? parts.join(", ") : "No changes (all already active)");
       setEnrollText("");
       setEnrollTag("");
       void refetch();

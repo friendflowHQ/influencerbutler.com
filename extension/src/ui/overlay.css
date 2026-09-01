@@ -616,6 +616,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 }
 .tile-chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
 .tile-chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.tile-chip.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
 /* The clickable "Earned $X" chip (a button styled like .tile-chip). */
 .earn-chip { font: inherit; font-size: 11.5px; cursor: pointer; }
 .earn-chip:hover { filter: brightness(0.97); }
@@ -657,6 +658,109 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   border-color: #fde68a;
   color: #b45309;
 }
+
+/* Message Templates toolbar: a Save + Templates row mounted just above the
+   Creator Connections message composer, with a pop-over that lists saved
+   templates (local + desktop) or a small save form. Its own block row so it sits
+   cleanly above the reply box; the pop-over opens upward so it never pushes the
+   composer around. */
+.mtpl-host { display: block; margin: 6px 0; }
+.mtpl-bar {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mtpl-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 2147483000;
+  width: 300px;
+  max-width: 80vw;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
+.mtpl-menu[hidden] { display: none; }
+.mtpl-group {
+  margin: 6px 4px 4px;
+  font: 700 11px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.mtpl-group:first-child { margin-top: 2px; }
+.mtpl-row { display: flex; align-items: stretch; gap: 4px; }
+.mtpl-pick {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.mtpl-pick:hover { background: #fff7ed; }
+.mtpl-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+.mtpl-preview {
+  font-size: 11.5px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mtpl-del {
+  flex: none;
+  width: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mtpl-del:hover { background: #fef2f2; color: #dc2626; }
+.mtpl-empty, .mtpl-note {
+  margin: 6px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.mtpl-note { color: #b45309; }
+.mtpl-name {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 2px 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+}
+.mtpl-name:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: transparent; }
+.mtpl-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px 8px;
+  font-size: 12.5px;
+  color: #334155;
+  cursor: pointer;
+}
+.mtpl-actions { display: flex; gap: 6px; }
 .tile-watch {
   display: inline-flex;
   align-items: center;
