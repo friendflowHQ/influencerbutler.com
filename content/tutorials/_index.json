@@ -240,6 +240,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "social-posting-butler",
+      "title": "Social Posting Butler: schedule your own evergreen posts",
+      "category": "Other",
+      "summary": "Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. See everything in a calendar, card, or table view.",
+      "order": 72,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "email-deals",
       "title": "Email Deals: turn seller deal emails into scheduled posts",
       "category": "Amazon",
