@@ -14,6 +14,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { addToResendAudience } from "@/lib/resend-audience";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,14 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
+  }
+
+  // Reserved test domains (example.com, *.test, ...) can never receive mail, so
+  // storing one would seed the newsletter/onboarding send pools with an address
+  // that fails every send forever. Accept quietly (a test/probe still sees 200)
+  // but do not persist or add to the audience.
+  if (isUndeliverableTestEmail(email)) {
+    return NextResponse.json({ ok: true });
   }
 
   const source =

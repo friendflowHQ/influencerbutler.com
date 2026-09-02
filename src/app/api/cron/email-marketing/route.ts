@@ -28,6 +28,7 @@ import {
   enrollEmails,
   sequenceRunBudget,
   nextSendTime,
+  plainTextToTrackableHtml,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
@@ -79,6 +80,7 @@ type SequenceRow = {
   trigger: unknown;
   sends_per_hour: number | null;
   send_hour: number | null;
+  track_opens: boolean;
 };
 
 type StepRow = {
@@ -113,24 +115,27 @@ function reportError(step: string, error: DbError): void {
 
 /** Fetches active sequences, or null when the table is missing / errored. */
 async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null> {
-  // sends_per_hour / send_hour are added by later migrations; fall back to the
-  // base columns when those have not been applied yet so the cron keeps running
-  // (every sequence then uses the default budget and enrollment-minute timing).
+  // sends_per_hour / send_hour / track_opens are added by later migrations; fall
+  // back to the base columns when those have not been applied yet so the cron
+  // keeps running (every sequence then uses the default budget, enrollment-minute
+  // timing, and text-only sends).
   const withHour = await db
     .from("email_sequences")
-    .select("id, trigger, sends_per_hour, send_hour")
+    .select("id, trigger, sends_per_hour, send_hour, track_opens")
     .eq("status", "active");
   if (!withHour.error) return (withHour.data ?? []) as SequenceRow[];
 
-  // send_hour not applied yet but sends_per_hour might be: keep the throttle.
+  // send_hour / track_opens not applied yet but sends_per_hour might be: keep
+  // the throttle.
   const withRate = await db
     .from("email_sequences")
     .select("id, trigger, sends_per_hour")
     .eq("status", "active");
   if (!withRate.error) {
-    return ((withRate.data ?? []) as Omit<SequenceRow, "send_hour">[]).map((r) => ({
+    return ((withRate.data ?? []) as Omit<SequenceRow, "send_hour" | "track_opens">[]).map((r) => ({
       ...r,
       send_hour: null,
+      track_opens: false,
     }));
   }
 
@@ -143,6 +148,7 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
     ...r,
     sends_per_hour: null,
     send_hour: null,
+    track_opens: false,
   }));
 }
 
@@ -436,13 +442,18 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
 
       seqBudget -= 1;
       globalRemaining -= 1;
+      // No-op unless the body carries {{REVIEW_*}} placeholders (the review
+      // sequence), which get replaced with this recipient's signed links.
+      const personalizedText = personalizeReviewBody(nextStep.body, enrollment.email);
       const ok = await sendMarketingEmail({
         from: MARKETING_FROM,
         to: enrollment.email,
         subject: nextStep.subject,
-        // No-op unless the body carries {{REVIEW_*}} placeholders (the review
-        // sequence), which get replaced with this recipient's signed links.
-        text: personalizeReviewBody(nextStep.body, enrollment.email),
+        text: personalizedText,
+        // Text-only by default (best cold-outreach deliverability). When this
+        // sequence opts into open tracking, also send a minimal HTML body so
+        // Resend can inject its open/click pixel: text alone carries none.
+        ...(seq.track_opens ? { html: plainTextToTrackableHtml(personalizedText) } : {}),
         category: stepCategory(seq.id, nextStep.position),
         funnel: "sequence",
       });

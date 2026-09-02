@@ -52,6 +52,7 @@ type Sequence = {
   trigger: Trigger;
   sends_per_hour: number | null;
   send_hour: number | null;
+  track_opens: boolean;
   auto_paused_at: string | null;
   pause_reason: string | null;
   created_at: string;
@@ -161,6 +162,7 @@ export default function SequencesSection({
   const [triggerSource, setTriggerSource] = useState("");
   const [sendsPerHour, setSendsPerHour] = useState("");
   const [sendHour, setSendHour] = useState("");
+  const [trackOpens, setTrackOpens] = useState(false);
   const [steps, setSteps] = useState<EditableStep[]>([]);
   const [editorBusy, setEditorBusy] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
@@ -233,6 +235,7 @@ export default function SequencesSection({
       setTriggerSource("");
       setSendsPerHour("");
       setSendHour("");
+      setTrackOpens(false);
       setSteps([{ dayOffset: 0, subject: "", body: "" }]);
     } else {
       setName(seq.name);
@@ -251,6 +254,7 @@ export default function SequencesSection({
       }
       setSendsPerHour(seq.sends_per_hour != null ? String(seq.sends_per_hour) : "");
       setSendHour(seq.send_hour != null ? String(seq.send_hour) : "");
+      setTrackOpens(Boolean(seq.track_opens));
       setSteps(
         [...seq.steps]
           .sort((a, b) => a.position - b.position)
@@ -296,6 +300,7 @@ export default function SequencesSection({
                 steps: payloadSteps,
                 sendsPerHour: ratePayload,
                 sendHour: hourPayload,
+                trackOpens,
               }),
             })
           : await fetch("/api/admin/emails/sequences", {
@@ -309,6 +314,7 @@ export default function SequencesSection({
                 steps: payloadSteps,
                 sendsPerHour: ratePayload,
                 sendHour: hourPayload,
+                trackOpens,
               }),
             });
       if (!res.ok) {
@@ -555,6 +561,23 @@ export default function SequencesSection({
               Day offsets count from each person&apos;s enrollment. With a fixed hour, a step lands
               at that hour on its due day instead of the exact minute they enrolled. Leave on &quot;Any
               time&quot; to send as soon as the offset elapses.
+            </p>
+          </div>
+
+          <div className="mt-3 max-w-md">
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={trackOpens}
+                onChange={(e) => setTrackOpens(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-300"
+              />
+              <span className="text-sm text-slate-800">Track opens and clicks</span>
+            </label>
+            <p className="mt-1 text-xs text-slate-500">
+              Off by default: steps send as plain text (best deliverability), and only delivered /
+              bounced are recorded. Turn on to also send an HTML copy so Resend can record opens and
+              clicks. It adds a tracking pixel, a small deliverability tradeoff on cold lists.
             </p>
           </div>
 

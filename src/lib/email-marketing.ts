@@ -7,10 +7,45 @@
 // open/click stats with no extra tracking code.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 
 export const MARKETING_FROM = "Influencer Butler <hello@influencerbutler.com>";
 
 const CHUNK = 200;
+
+/** Escapes the five HTML-special characters so plain text renders literally. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Renders a plain-text email body as MINIMAL HTML so Resend can inject its
+ * open-tracking pixel (a text-only send carries no pixel and can never record an
+ * open) and wrap links for click tracking. Deliberately plain: no images or
+ * branding, so the message still reads as a personal 1:1 note. Escapes all text
+ * first, turns bare http(s) URLs into links, and preserves line breaks.
+ *
+ * Used by the sequence sender when a sequence has track_opens enabled. The
+ * marketing sender appends the compliant unsubscribe footer to this HTML.
+ */
+export function plainTextToTrackableHtml(text: string): string {
+  const linked = escapeHtml(text).replace(
+    // Bare http(s) URL up to the next whitespace, trimming common trailing
+    // punctuation so a URL at the end of a sentence does not swallow the period.
+    /(https?:\/\/[^\s<]+[^\s<.,!?:;)'"])/g,
+    (url) => `<a href="${url}">${url}</a>`,
+  );
+  const withBreaks = linked.replace(/\r?\n/g, "<br>\n");
+  return (
+    `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;` +
+    `font-size:15px;line-height:1.5;color:#111827">${withBreaks}</div>`
+  );
+}
 
 /** First 8 hex chars of a UUID: short, stable, collision-safe at our scale. */
 export function shortId(id: string): string {
@@ -216,7 +251,11 @@ export async function enrollEmails(
 ): Promise<EnrollResult> {
   const result: EnrollResult = { inserted: 0, reactivated: 0, skipped: 0 };
   // Callers already lowercase, but dedupe defensively so counts don't double up.
-  const unique = Array.from(new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)));
+  // Drop reserved test addresses (example.com, *.test, ...): they can never be
+  // delivered, so enrolling one only seeds the drip with a guaranteed failure.
+  const unique = Array.from(
+    new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+  ).filter((e) => !isUndeliverableTestEmail(e));
   if (unique.length === 0) return result;
 
   const toInsert: string[] = [];

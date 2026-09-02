@@ -122,16 +122,26 @@ function parseSendHour(input: unknown): number | null | undefined | "invalid" {
 }
 
 /**
- * True when the write failed only because the send_hour column is not there
- * yet (migration lags the deploy, per repo convention). Postgres undefined
- * column is 42703; PostgREST's stale schema cache reports PGRST204. Lets the
- * caller retry the write without send_hour so sequence create/edit keeps
- * working until 20260831_sequence_send_hour.sql is applied.
+ * True when the write failed only because an optional, migration-added column
+ * (send_hour or track_opens) is not there yet (migration lags the deploy, per
+ * repo convention). Postgres undefined column is 42703; PostgREST's stale schema
+ * cache reports PGRST204. Lets the caller retry the write without those columns
+ * so sequence create/edit keeps working until 20260831_sequence_send_hour.sql /
+ * 20260902_sequence_track_opens.sql are applied.
  */
-function isMissingSendHourColumn(error: { message?: string; code?: string } | null): boolean {
+function isMissingOptionalColumn(error: { message?: string; code?: string } | null): boolean {
   if (!error) return false;
   if (error.code === "42703" || error.code === "PGRST204") return true;
-  return /send_hour/i.test(error.message ?? "") && /column|schema cache/i.test(error.message ?? "");
+  return (
+    /send_hour|track_opens/i.test(error.message ?? "") &&
+    /column|schema cache/i.test(error.message ?? "")
+  );
+}
+
+/** Validates an untrusted track_opens value: undefined = leave unchanged. */
+function parseTrackOpens(input: unknown): boolean | undefined {
+  if (input === undefined) return undefined;
+  return Boolean(input);
 }
 
 /** Validates an untrusted steps array. Null = invalid. */
@@ -252,6 +262,7 @@ export async function POST(request: Request) {
     steps?: unknown;
     sendsPerHour?: unknown;
     sendHour?: unknown;
+    trackOpens?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -279,6 +290,7 @@ export async function POST(request: Request) {
   if (sendHour === "invalid") {
     return NextResponse.json({ error: "Invalid send hour" }, { status: 400 });
   }
+  const trackOpens = parseTrackOpens(body.trackOpens);
 
   const insertRow: Record<string, unknown> = {
     name,
@@ -288,11 +300,13 @@ export async function POST(request: Request) {
   };
   if (sendsPerHour !== undefined) insertRow.sends_per_hour = sendsPerHour;
   if (sendHour !== undefined) insertRow.send_hour = sendHour;
+  if (trackOpens !== undefined) insertRow.track_opens = trackOpens;
 
   let { data, error } = await db.from("email_sequences").insert(insertRow).select("id").single();
-  if (error && "send_hour" in insertRow && isMissingSendHourColumn(error)) {
-    // Column not applied yet: retry without it so create still works.
+  if (error && ("send_hour" in insertRow || "track_opens" in insertRow) && isMissingOptionalColumn(error)) {
+    // Optional column not applied yet: retry without them so create still works.
     delete insertRow.send_hour;
+    delete insertRow.track_opens;
     ({ data, error } = await db.from("email_sequences").insert(insertRow).select("id").single());
   }
   if (error) {
@@ -333,6 +347,7 @@ export async function PATCH(request: Request) {
     steps?: unknown;
     sendsPerHour?: unknown;
     sendHour?: unknown;
+    trackOpens?: unknown;
     emails?: unknown;
     tag?: unknown;
   };
@@ -390,6 +405,9 @@ export async function PATCH(request: Request) {
       }
       values.send_hour = sendHour;
     }
+    if (body.trackOpens !== undefined) {
+      values.track_opens = parseTrackOpens(body.trackOpens);
+    }
     let steps: StepInput[] | null = null;
     if (body.steps !== undefined) {
       steps = parseSteps(body.steps);
@@ -401,9 +419,14 @@ export async function PATCH(request: Request) {
 
     if (Object.keys(values).length > 0) {
       let { error } = await db.from("email_sequences").update(values).eq("id", id);
-      if (error && "send_hour" in values && isMissingSendHourColumn(error)) {
-        // Column not applied yet: retry without it so the rest of the edit saves.
+      if (
+        error &&
+        ("send_hour" in values || "track_opens" in values) &&
+        isMissingOptionalColumn(error)
+      ) {
+        // Optional column not applied yet: retry without them so the rest saves.
         delete values.send_hour;
+        delete values.track_opens;
         if (Object.keys(values).length > 0) {
           ({ error } = await db.from("email_sequences").update(values).eq("id", id));
         } else {

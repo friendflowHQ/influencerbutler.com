@@ -8,6 +8,7 @@ import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts
 import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
@@ -775,6 +776,21 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
 
     for (const row of rows) {
       if (!row.email) continue;
+
+      // A reserved test address (e.g. drip-test@example.com) can never be
+      // delivered, so every send fails and the lead is re-picked every run.
+      // Park it up front instead of burning the retry budget on it. The
+      // MAX_ONBOARDING_SEND_FAILURES counter is the backstop for addresses that
+      // only turn out to be dead at send time; this catches the ones we can
+      // tell are undeliverable before we ever call Resend.
+      if (isUndeliverableTestEmail(row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ onboarding_abandoned_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
       const tier = selectOnboardingTier(row, tiers);
       if (!tier) continue;
 
