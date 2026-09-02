@@ -188,6 +188,17 @@ describe("enrollEmails", () => {
     );
   });
 
+  it("enrolls a large batch in full (well past the old 2000 paste cap)", async () => {
+    // The 2000 truncation lived in the route's input validation, not here; this
+    // guards that the batched insert (200/chunk) enrolls every address it is
+    // handed, so raising the route cap actually lets big pastes through.
+    const { db, store } = makeDb();
+    const emails = Array.from({ length: 4321 }, (_, i) => `user${i}@x.com`);
+    const result = await enrollEmails(db, SEQ, emails, { reactivate: true });
+    expect(result).toEqual({ inserted: 4321, reactivated: 0, skipped: 0 });
+    expect(store).toHaveLength(4321);
+  });
+
   it("handles a mixed batch and dedupes case-insensitively", async () => {
     const { db } = makeDb([
       {

@@ -423,12 +423,15 @@ export default function SequencesSection({
         inserted?: number;
         reactivated?: number;
         skipped?: number;
+        capped?: number;
       };
       const parts: string[] = [];
       if (body.inserted) parts.push(`${body.inserted} enrolled`);
       if (body.reactivated) parts.push(`${body.reactivated} reactivated`);
       if (body.skipped) parts.push(`${body.skipped} already active`);
-      setEnrollResult(parts.length ? parts.join(", ") : "No changes (all already active)");
+      let summary = parts.length ? parts.join(", ") : "No changes (all already active)";
+      if (body.capped) summary += ` (${body.capped} over the 50,000 limit not enrolled)`;
+      setEnrollResult(summary);
       setEnrollText("");
       setEnrollTag("");
       void refetch();

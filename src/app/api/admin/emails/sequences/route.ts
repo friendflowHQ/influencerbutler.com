@@ -48,7 +48,10 @@ const COUNT_PAGE = 1000;
 const COUNT_CAP = 20000;
 const MAX_STEPS = 20;
 const MAX_DAY_OFFSET = 365;
-const MAX_EMAILS = 2000;
+// Ceiling on a single paste-enroll. enrollEmails batches inserts at 200/chunk,
+// so it handles this volume; anything beyond is reported back as `capped` rather
+// than silently dropped (the bug that hid a 2000 cap).
+const MAX_EMAILS = 50000;
 const MAX_SENDS_PER_HOUR = 5000;
 
 type SequenceRow = {
@@ -565,10 +568,23 @@ export async function PATCH(request: Request) {
 
   if (action === "enroll") {
     let list: string[] = [];
+    // How many valid, unique addresses were dropped for exceeding MAX_EMAILS.
+    // Reported back so the admin sees "N over the limit not enrolled" instead
+    // of the list being silently truncated (the bug that hid a 2000 cap).
+    let capped = 0;
     if (Array.isArray(body.emails)) {
-      list = cleanEmailArray(body.emails);
+      const uniqueAll = new Set<string>();
+      for (const entry of body.emails) {
+        if (typeof entry !== "string") continue;
+        const email = entry.trim().toLowerCase();
+        if (email) uniqueAll.add(email);
+      }
+      list = [...uniqueAll].slice(0, MAX_EMAILS);
+      capped = uniqueAll.size - list.length;
     } else if (typeof body.emails === "string" && body.emails.trim().length > 0) {
-      list = parseEmailList(body.emails, MAX_EMAILS).emails;
+      const parsed = parseEmailList(body.emails, Number.MAX_SAFE_INTEGER);
+      list = parsed.emails.slice(0, MAX_EMAILS);
+      capped = parsed.emails.length - list.length;
     } else if (typeof body.tag === "string") {
       const tag = normalizeTag(body.tag);
       if (!tag) return NextResponse.json({ error: "A valid tag is required" }, { status: 400 });
@@ -597,7 +613,7 @@ export async function PATCH(request: Request) {
         await tagRecipientsAsContacts(db, list, platformTag, "sequence-enroll");
       }
     }
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: true, ...result, ...(capped > 0 ? { capped } : {}) });
   }
 
   if (action === "unenroll") {
