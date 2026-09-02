@@ -56,14 +56,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Hard ceiling on total sequence sends per run, across all sequences, so no
 // rate setting can blow the function's time budget. (Per-sequence throttle math
-// lives in sequenceRunBudget in email-marketing.ts.)
-const SEQUENCE_GLOBAL_CEILING = 200;
+// lives in sequenceRunBudget in email-marketing.ts.) At 400/run x 12 runs/hr =
+// 4800/hr, this stays above the domain-safe hourly headroom so it never clips it.
+const SEQUENCE_GLOBAL_CEILING = 400;
 
 // Domain-safe ceiling on TOTAL emails sent per rolling hour (all funnels). Drip
 // marketing (campaigns + sequences) yields to it so transactional/system mail
 // (sent immediately outside this cron, never gated) always has headroom. Tunable
 // in prod via EMAIL_SAFE_HOURLY_SENDS without a deploy; falls back to this default.
-const SAFE_HOURLY_SENDS_DEFAULT = 1500;
+const SAFE_HOURLY_SENDS_DEFAULT = 3000;
 
 /** Domain-safe hourly send ceiling, from env or the conservative default. */
 function safeHourlySends(): number {
