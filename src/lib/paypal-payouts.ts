@@ -380,19 +380,34 @@ export async function disburseAffiliate(params: {
   const payoutId = inserted?.id as string | undefined;
   if (!payoutId) return { ok: false, httpStatus: 500, error: "Could not create payout" };
 
-  const result = await createPayoutBatch({
-    senderBatchId,
-    emailSubject: "Your Influencer Butler affiliate commission",
-    items: [
-      {
-        receiver: paypalEmail,
-        amountCents,
-        currency: "USD",
-        senderItemId,
-        note: period ? `Affiliate commission ${period}` : "Affiliate commission",
-      },
-    ],
-  });
+  // getAccessToken() throws on bad/missing creds or a base-URL/env mismatch
+  // (e.g. live creds against the sandbox default). Catch it so the failure comes
+  // back as a clean JSON error naming the cause instead of an HTML 500 that the
+  // client can only render as a bare "Network error." (and so the ledger row is
+  // marked failed rather than left dangling at 'pending').
+  let result: Awaited<ReturnType<typeof createPayoutBatch>>;
+  try {
+    result = await createPayoutBatch({
+      senderBatchId,
+      emailSubject: "Your Influencer Butler affiliate commission",
+      items: [
+        {
+          receiver: paypalEmail,
+          amountCents,
+          currency: "USD",
+          senderItemId,
+          note: period ? `Affiliate commission ${period}` : "Affiliate commission",
+        },
+      ],
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await admin
+      .from("affiliate_payouts")
+      .update({ status: "failed", error_note: msg.slice(0, 300), updated_at: new Date().toISOString() })
+      .eq("id", payoutId);
+    return { ok: false, httpStatus: 502, code: "paypal_call_failed", error: `PayPal call failed: ${msg.slice(0, 200)}` };
+  }
 
   if (!result.ok) {
     await admin

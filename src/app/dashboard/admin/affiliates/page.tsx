@@ -252,6 +252,18 @@ function formatUsd(cents: number | null): string {
   }).format(cents / 100);
 }
 
+// PayPal goods-and-services fee (US commercial): ~2.99% of the amount received.
+// To have the recipient NET `cents`, the sender pads the payment to
+// cents / (1 - rate). This is ONLY for MANUAL PayPal sends: the automated
+// Payouts API (the "Disburse via PayPal" button) charges the sender a separate
+// capped fee and the recipient already gets the full amount, so never gross up
+// there.
+const PAYPAL_GS_FEE_RATE = 0.0299;
+function grossUpForPayPalGs(cents: number): number {
+  if (cents <= 0) return 0;
+  return Math.round(cents / (1 - PAYPAL_GS_FEE_RATE));
+}
+
 // The affiliate's shareable link: the branded code auto-applies at checkout and
 // attributes the referral. Mirrors brandedShareLink in the affiliate dashboard -
 // a clean homepage URL (no "/pricing"); the ?code= is captured on the homepage
@@ -730,8 +742,8 @@ export default function AdminAffiliatesPage() {
     // exact cleared slice; the admin bumps it to whatever they actually sent so
     // the gross-up (PayPal fee) is booked to Finance. No money is sent.
     const entered = window.prompt(
-      `Record a manual payout to ${name}.\n\nThe cleared commission of ${payableLabel} is booked to the affiliate (annual orders keep vesting). Enter the TOTAL you actually sent via PayPal - anything above ${payableLabel} is recorded as a PayPal fee in Finance. No money is sent now.`,
-      (payable / 100).toFixed(2),
+      `Record a manual payout to ${name}.\n\nThe cleared commission of ${payableLabel} is booked to the affiliate (annual orders keep vesting). Enter the TOTAL you actually sent via PayPal - anything above ${payableLabel} is recorded as a PayPal fee in Finance. The default below already covers the ~2.99% goods-and-services fee. No money is sent now.`,
+      (grossUpForPayPalGs(payable) / 100).toFixed(2),
     );
     if (entered === null) return;
     const totalSentCents = Math.round(parseFloat(entered.replace(/[^0-9.]/g, "")) * 100);
@@ -1728,6 +1740,14 @@ export default function AdminAffiliatesPage() {
                             {aff.clearingCents && aff.clearingCents > 0
                               ? ` · ${formatCents(aff.clearingCents, currency)} clearing`
                               : ""}
+                          </p>
+                        ) : null}
+                        {aff.payableCents && aff.payableCents > 0 ? (
+                          <p className="-mt-1 text-[11px] text-slate-400">
+                            Paying by hand? Send{" "}
+                            {formatCents(grossUpForPayPalGs(aff.payableCents), currency)} via PayPal
+                            goods &amp; services so they net{" "}
+                            {formatCents(aff.payableCents, currency)}.
                           </p>
                         ) : null}
                         <button
