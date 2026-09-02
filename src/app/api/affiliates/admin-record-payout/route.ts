@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { recordManualPayout } from "@/lib/paypal-payouts";
+import { isMigrationPendingError } from "@/lib/finance-stepup";
 import { crossSiteBlocked } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
@@ -18,7 +19,15 @@ export const dynamic = "force-dynamic";
  * amount is recomputed server-side (the client never supplies an amount).
  */
 
-type Body = { userId?: string; period?: string | null; externalRef?: string; sendReceipt?: boolean };
+type Body = {
+  userId?: string;
+  period?: string | null;
+  externalRef?: string;
+  sendReceipt?: boolean;
+  // Total the admin actually sent (cents). Anything above the recorded
+  // commission slice is booked as a PayPal fee expense in Finance.
+  totalSentCents?: number;
+};
 
 function currentPeriod(): string {
   const now = new Date();
@@ -83,5 +92,57 @@ export async function POST(request: Request) {
     details: { payoutId: outcome.payoutId, period, grossCents: outcome.grossCents, externalRef },
   });
 
-  return NextResponse.json({ ok: true, payoutId: outcome.payoutId, grossCents: outcome.grossCents });
+  // If the admin sent MORE than the recorded commission (e.g. grossed up to
+  // cover PayPal's goods-and-services fee), book the difference as a PayPal-fee
+  // expense in Finance, so the books match the actual cash out. The commission
+  // itself is already an expense there (loadExpenses reads affiliate_payouts).
+  // Idempotent via a per-payout external_ref; gated on finance.manage so this
+  // never lets an affiliates-only admin write finance rows. Best-effort: a
+  // pending finance migration or a permission gap just skips it (feeRecorded
+  // false) and the UI tells the admin to add it by hand.
+  const totalSentCents =
+    typeof body.totalSentCents === "number" && Number.isFinite(body.totalSentCents)
+      ? Math.round(body.totalSentCents)
+      : null;
+  const feeCents = totalSentCents !== null ? Math.max(0, totalSentCents - outcome.grossCents) : 0;
+  let feeRecorded = false;
+  if (feeCents > 0) {
+    const financeActor = await requirePermission("finance.manage", request);
+    if (financeActor) {
+      try {
+        const admin = createAdminClient();
+        const today = new Date().toISOString().slice(0, 10);
+        const { error } = await admin
+          .from("finance_expenses")
+          .insert({
+            vendor: "PayPal fee (affiliate payout)",
+            description: `Fee on manual affiliate payout${period ? `, period ${period}` : ""}`,
+            category: "commissions_fees",
+            amount_cents: feeCents,
+            currency: "USD",
+            incurred_on: today,
+            use_tax: "na",
+            source: "manual",
+            external_ref: `payout_fee:${outcome.payoutId}`,
+            created_by: financeActor.userId,
+          });
+        // A duplicate external_ref (23505) means the fee is already on the books.
+        if (!error || (error as { code?: string }).code === "23505") {
+          feeRecorded = true;
+        } else if (!isMigrationPendingError(error)) {
+          console.error("admin-record-payout: fee expense insert failed", error);
+        }
+      } catch (err) {
+        console.error("admin-record-payout: fee expense insert threw", err);
+      }
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    payoutId: outcome.payoutId,
+    grossCents: outcome.grossCents,
+    feeCents,
+    feeRecorded,
+  });
 }

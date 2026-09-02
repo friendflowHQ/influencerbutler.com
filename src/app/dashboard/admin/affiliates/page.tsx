@@ -723,11 +723,27 @@ export default function AdminAffiliatesPage() {
   // stay partially owed and are never double-counted next month.
   const onRecordManualPayout = async (aff: OwedAffiliate) => {
     const payable = aff.payableCents ?? 0;
-    if (
-      !window.confirm(
-        `Record a manual payout of ${formatCents(payable, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nUse this when you already paid the affiliate out-of-band (PayPal, bank transfer, etc.). It records ONLY the cleared "payable now" slice - amortized annual orders stay partially owed and keep vesting. The exact amount is recomputed when you confirm. No money is sent.`,
-      )
-    ) {
+    const currency = aff.orders[0]?.currency ?? null;
+    const payableLabel = formatCents(payable, currency);
+    const name = aff.fullName ?? aff.email ?? aff.userId;
+    // The prompt doubles as the confirm (Cancel returns null). Default to the
+    // exact cleared slice; the admin bumps it to whatever they actually sent so
+    // the gross-up (PayPal fee) is booked to Finance. No money is sent.
+    const entered = window.prompt(
+      `Record a manual payout to ${name}.\n\nThe cleared commission of ${payableLabel} is booked to the affiliate (annual orders keep vesting). Enter the TOTAL you actually sent via PayPal - anything above ${payableLabel} is recorded as a PayPal fee in Finance. No money is sent now.`,
+      (payable / 100).toFixed(2),
+    );
+    if (entered === null) return;
+    const totalSentCents = Math.round(parseFloat(entered.replace(/[^0-9.]/g, "")) * 100);
+    if (!Number.isFinite(totalSentCents) || totalSentCents <= 0) {
+      setOwedState(aff.userId, { kind: "error", message: "Enter a valid dollar amount." });
+      return;
+    }
+    if (totalSentCents < payable) {
+      setOwedState(aff.userId, {
+        kind: "error",
+        message: `That's less than the ${payableLabel} cleared commission. Enter at least ${payableLabel}.`,
+      });
       return;
     }
     setOwedState(aff.userId, { kind: "working" });
@@ -735,9 +751,15 @@ export default function AdminAffiliatesPage() {
       const res = await fetch("/api/affiliates/admin-record-payout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: aff.userId }),
+        body: JSON.stringify({ userId: aff.userId, totalSentCents }),
       });
-      const json = (await res.json()) as { error?: string; grossCents?: number; code?: string };
+      const json = (await res.json()) as {
+        error?: string;
+        grossCents?: number;
+        feeCents?: number;
+        feeRecorded?: boolean;
+        code?: string;
+      };
       if (!res.ok) {
         const friendly =
           json.code === "below_minimum"
@@ -748,9 +770,16 @@ export default function AdminAffiliatesPage() {
         setOwedState(aff.userId, { kind: "error", message: friendly });
         return;
       }
+      const fee = json.feeCents ?? 0;
+      const feeNote =
+        fee > 0
+          ? json.feeRecorded
+            ? ` + ${formatCents(fee, currency)} PayPal fee booked to Finance`
+            : ` (add the ${formatCents(fee, currency)} PayPal fee in Finance manually)`
+          : "";
       setOwedState(aff.userId, {
         kind: "success",
-        message: `Recorded ${formatCents(json.grossCents ?? payable, aff.orders[0]?.currency ?? null)} paid.`,
+        message: `Recorded ${formatCents(json.grossCents ?? payable, currency)} paid${feeNote}.`,
       });
       setTimeout(() => {
         void loadOwed();
