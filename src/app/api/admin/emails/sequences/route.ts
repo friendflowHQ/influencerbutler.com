@@ -30,6 +30,7 @@ import {
   tagRecipientsAsContacts,
   sequenceContactTag,
   sequencePlatformTags,
+  DEFAULT_SENDS_PER_HOUR,
 } from "@/lib/email-marketing";
 import { isMissingTable } from "@/lib/growth-goals";
 
@@ -199,6 +200,11 @@ export async function GET(request: Request) {
   const sequences = (data ?? []) as SequenceRow[];
   const stepsById = new Map<string, StepRow[]>();
   const countsById = new Map<string, EnrollmentCounts>();
+  // Per sequence, how many open enrollments are parked at each last_step_sent
+  // value. A step at position p is "queued to send" for everyone whose next step
+  // is it, i.e. last_step_sent = p - 1 (the same rule the step drawer uses for
+  // its Scheduled list). Keyed sequence_id -> lastStepSent -> count.
+  const queuedById = new Map<string, Map<number, number>>();
 
   if (sequences.length > 0) {
     const ids = sequences.map((s) => s.id);
@@ -220,7 +226,7 @@ export async function GET(request: Request) {
     for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
       const { data: enrollRows, error: enrollErr } = await db
         .from("email_sequence_enrollments")
-        .select("sequence_id, completed_at, cancelled_at")
+        .select("sequence_id, completed_at, cancelled_at, last_step_sent")
         .in("sequence_id", ids)
         .range(offset, offset + COUNT_PAGE - 1);
       if (enrollErr) break;
@@ -229,7 +235,14 @@ export async function GET(request: Request) {
         const counts = countsById.get(row.sequence_id) ?? { active: 0, completed: 0, cancelled: 0 };
         if (row.cancelled_at) counts.cancelled += 1;
         else if (row.completed_at) counts.completed += 1;
-        else counts.active += 1;
+        else {
+          counts.active += 1;
+          // Open enrollment: park it against the next step it will receive.
+          const lastStep = typeof row.last_step_sent === "number" ? row.last_step_sent : 0;
+          const perSeq = queuedById.get(row.sequence_id) ?? new Map<number, number>();
+          perSeq.set(lastStep, (perSeq.get(lastStep) ?? 0) + 1);
+          queuedById.set(row.sequence_id, perSeq);
+        }
         countsById.set(row.sequence_id, counts);
       }
       if ((enrollRows ?? []).length < COUNT_PAGE) break;
@@ -237,14 +250,19 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    sequences: sequences.map((row) => ({
-      ...row,
-      steps: (stepsById.get(row.id) ?? []).map((step) => ({
-        ...step,
-        category: stepCategory(row.id, step.position),
-      })),
-      enrollmentCounts: countsById.get(row.id) ?? { active: 0, completed: 0, cancelled: 0 },
-    })),
+    sequences: sequences.map((row) => {
+      const queuedByLastStep = queuedById.get(row.id);
+      return {
+        ...row,
+        steps: (stepsById.get(row.id) ?? []).map((step) => ({
+          ...step,
+          category: stepCategory(row.id, step.position),
+          // People whose next step is this one (last_step_sent = position - 1).
+          queued: queuedByLastStep?.get(step.position - 1) ?? 0,
+        })),
+        enrollmentCounts: countsById.get(row.id) ?? { active: 0, completed: 0, cancelled: 0 },
+      };
+    }),
     migrationPending: false,
   });
 }
@@ -298,7 +316,10 @@ export async function POST(request: Request) {
     status: "paused",
     created_by: actor.email,
   };
-  if (sendsPerHour !== undefined) insertRow.sends_per_hour = sendsPerHour;
+  // Default new sequences to the conservative safe rate (visible + editable in
+  // the UI) so they are drip-protected by default; only an explicit positive
+  // value overrides it.
+  insertRow.sends_per_hour = typeof sendsPerHour === "number" ? sendsPerHour : DEFAULT_SENDS_PER_HOUR;
   if (sendHour !== undefined) insertRow.send_hour = sendHour;
   if (trackOpens !== undefined) insertRow.track_opens = trackOpens;
 

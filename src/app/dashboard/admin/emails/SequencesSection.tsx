@@ -43,6 +43,8 @@ type SequenceStep = {
   subject: string;
   body: string;
   category: string;
+  // Open enrollments whose next step is this one (waiting to be sent it).
+  queued: number;
 };
 
 type Sequence = {
@@ -429,10 +431,15 @@ export default function SequencesSection({
   }
 
   function stepStats(step: SequenceStep): string {
+    const queuedPart =
+      step.queued > 0 ? `${step.queued.toLocaleString("en-US")} queued` : "";
     const cat = summary?.categories.find((c) => c.key === step.category);
-    if (!cat) return "-";
+    if (!cat) return queuedPart || "-";
     const base = Math.max(cat.delivered, cat.sent);
-    return `${cat.sent.toLocaleString("en-US")} sent / ${pct(cat.opened, base)} open / ${pct(cat.clicked, base)} click`;
+    const counts = [`${cat.sent.toLocaleString("en-US")} sent`, queuedPart]
+      .filter(Boolean)
+      .join(", ");
+    return `${counts} / ${pct(cat.opened, base)} open / ${pct(cat.clicked, base)} click`;
   }
 
   // Same open%/click% shape as stepStats, joined by the funnel step's category.
