@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   const { data: booking, error } = await admin
     .from("call_bookings")
-    .select("id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,topic,join_url,host_notes,recording_status,recording_url,transcript,ai_notes,recorded_at")
+    .select("id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,topic,join_url,host_notes,recording_status,recording_url,transcript,ai_notes,recorded_at,filed_ticket_ids")
     .eq("id", bookingId).maybeSingle();
   if (error || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

@@ -11,7 +11,7 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/scheduling-server";
 import { verifyWebhook, fetchTranscriptText, getBot, recordingUrlOf } from "@/lib/recall";
-import { summarizeTranscript } from "@/lib/ai-notes";
+import { applyTranscriptResult } from "@/lib/call-recording-finalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   // Find the booking this bot belongs to.
   const { data: booking } = await admin
     .from("call_bookings")
-    .select("id, call_type, topic, recording_status")
+    .select("id, call_type, topic, recording_status, user_email, tickets_filed_at")
     .eq("recall_bot_id", botId)
     .maybeSingle();
   if (!booking) return NextResponse.json({ ok: true, ignored: "no booking for bot" });
@@ -79,18 +79,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, status: "processing" });
   }
 
-  const notes = await summarizeTranscript(transcript, {
-    callType: booking.call_type as string,
-    topic: (booking.topic as string) || null,
-  });
-
-  await admin.from("call_bookings").update({
-    recording_status: "ready",
-    recording_url: recordingUrl,
-    transcript,
-    ai_notes: notes,
-    recorded_at: new Date().toISOString(),
-  }).eq("id", booking.id);
+  await applyTranscriptResult(
+    admin,
+    {
+      id: booking.id as string,
+      call_type: booking.call_type as string,
+      topic: (booking.topic as string) || null,
+      user_email: (booking.user_email as string) || null,
+      tickets_filed_at: (booking.tickets_filed_at as string) || null,
+    },
+    { transcript, recordingUrl },
+  );
 
   return NextResponse.json({ ok: true, status: "ready" });
 }

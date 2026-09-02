@@ -16,6 +16,7 @@ type Booking = {
   topic: string | null; join_url: string | null; meeting_provider: string | null; host_notes: string | null;
   recording_status?: string | null; recording_url?: string | null;
   transcript?: string | null; ai_notes?: AiNotes | null; recorded_at?: string | null;
+  filed_ticket_ids?: string[] | null;
 };
 type Prep = {
   booking: Booking & { user_id: string | null };
@@ -360,6 +361,9 @@ export default function SchedulingAdminPage() {
                       )}
                       {n?.followUps && n.followUps.length > 0 && (
                         <div><p className="text-xs font-medium text-slate-500">Follow-ups</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.followUps.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {prep.booking.filed_ticket_ids && prep.booking.filed_ticket_ids.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Auto-filed tickets</p><ul className="ml-4 list-disc text-sm text-slate-700">{prep.booking.filed_ticket_ids.map((id) => <li key={id}><a href={`/dashboard/admin/support?ticket=${encodeURIComponent(id)}`} className="text-[#f97316] hover:underline">{id}</a></li>)}</ul></div>
                       )}
                       {prep.booking.transcript && (
                         <details className="mt-1"><summary className="cursor-pointer text-xs text-slate-500">Full transcript</summary><pre className="mt-1 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{prep.booking.transcript}</pre></details>

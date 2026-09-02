@@ -90,3 +90,61 @@ export async function fetchSupportWorkerRaw(path: string): Promise<Response | nu
     return null;
   }
 }
+
+/**
+ * File a new ticket into the feedback worker's public intake (`POST /submit`).
+ * This is the SAME path the desktop Feedback panel and the Butler AI chat use
+ * (see submitFeedback in ai-concierge/agent.ts). Unlike the /agent/* proxy above
+ * this is unauthenticated except for the optional x-ib-key shared secret, which
+ * the worker only enforces when it has FEEDBACK_SHARED_KEY set (today it does
+ * not), so we send it only when the env var exists.
+ *
+ * Returns { ok, id } where id is the "fb-<uuid>" ticket id on success. Never
+ * throws: callers (auto-filing from a finished call) treat filing as best-effort.
+ */
+export async function submitSupportTicket(input: {
+  type: "bug" | "feature";
+  title: string;
+  description: string;
+  userEmail?: string;
+  platform?: string;
+  appVersion?: string;
+  tags?: string;
+}): Promise<{ ok: boolean; id: string | null }> {
+  const title = (input.title || "").trim().slice(0, 200);
+  if (!title) return { ok: false, id: null };
+  const description = (input.description || "").trim().slice(0, 7000);
+
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  const sharedKey = process.env.FEEDBACK_SHARED_KEY;
+  if (sharedKey) headers["x-ib-key"] = sharedKey;
+
+  try {
+    const res = await fetch(`${workerBaseUrl()}/submit`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        type: input.type === "feature" ? "feature" : "bug",
+        title,
+        description,
+        userEmail: input.userEmail || "",
+        appVersion: input.appVersion || "",
+        platform: input.platform || "call-notes",
+        // The worker sets tags via triage, not /submit; it ignores an unknown
+        // field, so this is a best-effort hint only (provenance also lives in
+        // the description). Harmless if dropped upstream.
+        ...(input.tags ? { tags: input.tags } : {}),
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as { ok?: boolean; id?: string } | null;
+    if (!res.ok || !json?.ok) {
+      console.error("submitSupportTicket failed", res.status, json);
+      return { ok: false, id: null };
+    }
+    return { ok: true, id: json.id ?? null };
+  } catch (err) {
+    console.error("submitSupportTicket threw", err);
+    return { ok: false, id: null };
+  }
+}

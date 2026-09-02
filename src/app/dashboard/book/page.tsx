@@ -223,7 +223,7 @@ export default function BookCallPage() {
           </label>
           <label className="mt-3 flex items-start gap-2 text-xs text-slate-600">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
-            <span>This call is recorded and transcribed so we can prepare notes for you to review afterward. Check the box to confirm you understand.</span>
+            <span>This call is recorded, transcribed, and summarized by AI so we can prepare notes to review afterward. Any product issues or feature requests raised may be logged to our support queue so we can follow up. Check the box to confirm you understand.</span>
           </label>
           {msg && <div className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{msg}</div>}
           <button type="button" disabled={submitting || !consent} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">

@@ -9,7 +9,7 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/scheduling-server";
 import { fetchTranscriptText, getBot, recordingUrlOf } from "@/lib/recall";
-import { summarizeTranscript } from "@/lib/ai-notes";
+import { applyTranscriptResult } from "@/lib/call-recording-finalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +27,7 @@ function authorized(request: Request): boolean {
 type Row = {
   id: string; call_type: string; topic: string | null;
   recall_bot_id: string | null; recording_status: string; ends_at: string;
+  user_email: string | null; tickets_filed_at: string | null;
 };
 
 export async function GET(request: Request) {
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await admin
     .from("call_bookings")
-    .select("id, call_type, topic, recall_bot_id, recording_status, ends_at")
+    .select("id, call_type, topic, recall_bot_id, recording_status, ends_at, user_email, tickets_filed_at")
     .in("recording_status", ["scheduled", "recording", "processing"])
     .not("recall_bot_id", "is", null)
     .lt("ends_at", nowIso)
@@ -59,14 +60,11 @@ export async function GET(request: Request) {
       if (transcript) {
         const bot = await getBot(r.recall_bot_id);
         const recordingUrl = recordingUrlOf(bot);
-        const notes = await summarizeTranscript(transcript, { callType: r.call_type, topic: r.topic });
-        await admin.from("call_bookings").update({
-          recording_status: "ready",
-          recording_url: recordingUrl,
-          transcript,
-          ai_notes: notes,
-          recorded_at: new Date().toISOString(),
-        }).eq("id", r.id);
+        await applyTranscriptResult(
+          admin,
+          { id: r.id, call_type: r.call_type, topic: r.topic, user_email: r.user_email, tickets_filed_at: r.tickets_filed_at },
+          { transcript, recordingUrl },
+        );
         results.push({ id: r.id, outcome: "ready" });
         continue;
       }

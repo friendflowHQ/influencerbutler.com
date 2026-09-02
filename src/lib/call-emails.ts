@@ -112,7 +112,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     `Need to change it? You can reschedule or cancel from your dashboard under Book a Call.`,
-    b.recorded ? `\nPlease note: this call is recorded and transcribed so we can prepare notes for you to review afterward.` : "",
+    b.recorded ? `\nPlease note: this call is recorded, transcribed, and AI-summarized so we can prepare notes to review afterward, and any product issues or feature requests raised may be logged to our support queue so we can follow up.` : "",
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,
