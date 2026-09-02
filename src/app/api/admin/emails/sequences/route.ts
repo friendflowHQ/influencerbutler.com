@@ -46,7 +46,11 @@ export const dynamic = "force-dynamic";
 
 const LIST_LIMIT = 100;
 const COUNT_PAGE = 1000;
-const COUNT_CAP = 20000;
+// Max enrollment rows scanned across ALL sequences when tallying per-sequence
+// counts and next-send times. Sized above the current total enrollment volume so
+// large lists (e.g. a 26k re-engagement cohort) are not undercounted; sequences
+// whose rows fall past this cap would otherwise report a too-low backlog.
+const COUNT_CAP = 80000;
 const MAX_STEPS = 20;
 const MAX_DAY_OFFSET = 365;
 // Ceiling on a single paste-enroll. enrollEmails batches inserts at 200/chunk,
