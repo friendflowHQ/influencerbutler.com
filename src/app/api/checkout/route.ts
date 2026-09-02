@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     // back to Lemon Squeezy by email. The LS fallback fails open, so a transient
     // LS error never blocks a legitimate first-time signup.
     //
-    // Exempt: the Daily Deals add-on is a legitimate additive second sub. The
+    // Exempt: the Deals add-on is a legitimate additive second sub. The
     // guest checkout route (/api/checkout/guest) is exempt by nature (guests
     // have no session and therefore no existing subscription).
     if (!isAddon) {

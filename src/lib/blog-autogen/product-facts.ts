@@ -22,11 +22,11 @@ Desktop butlers (accurate one-liners; never claim capabilities beyond these):
 - CC Check (free): checks your ASINs against live Creator Connections catalogs, accepts campaigns, and submits content from one results table.
 - Like Butler (free): auto-likes brand Creator Connections storefront content on a cadence to stay visible to brands.
 - Benable Like Butler (free) and Instagram Like Butler (free): auto-like other creators' Benable collections / Instagram posts on a schedule with caps and delays.
-- Deals Influencer Butler (Pro): end-to-end deal posting - filters Amazon deals on price, discount, and commission, builds posts from your template, and posts to your social destinations on a schedule (Facebook groups and pages, Telegram, Instagram broadcast channels, and more). Includes a Guided Setup that configures it for you.
+- Deals Butler (Pro): end-to-end deal posting - filters Amazon deals on price, discount, and commission, builds posts from your template, and posts to your social destinations on a schedule (Facebook groups and pages, Telegram, Instagram broadcast channels, and more). Includes a Guided Setup that configures it for you.
 - Amazon Butler (Pro): automated Creator Connections outreach to the brands behind your top-selling ASINs.
 - Daily Commission Butler (Pro): auto-accepts the right Creator Connections campaigns based on what you actually sold yesterday.
 - Campaign Deals (Pro): tracks which products in your accepted campaigns are on sale right now.
-- Pricecrash Butler (Pro): scans Amazon on a schedule for extreme pricing errors and hands catches to Deals Influencer Butler.
+- Pricecrash Butler (Pro): scans Amazon on a schedule for extreme pricing errors and hands catches to Deals Butler.
 - Black Friday Butler (Pro): monitors your storefront for time-limited and Black-Friday-flagged deals.
 - Prime Day Butler (Pro): surfaces Prime Day deals from content you already made and products you own, ranked by estimated earnings.
 - Goldmine Butler (Pro): scans other creators' storefronts for #ad and #partner content to find brands already paying creators in your niche.
@@ -50,7 +50,7 @@ Desktop butlers (accurate one-liners; never claim capabilities beyond these):
 - Content Butler (Pro): drag-and-drop calendar for planning what to film next, fed from Orders Butler.
 - Product Research (Pro): price and sales-rank history for products you browse, built from your own browsing with the extension.
 - Group Invite Butler (Pro): invites harvested creator emails into your Facebook group at a human pace with caps.
-- Facebook Group Builder (Pro): AI-plans a niche Facebook group, generates its assets, and hands it to Deals Influencer Butler.
+- Facebook Group Builder (Pro): AI-plans a niche Facebook group, generates its assets, and hands it to Deals Butler.
 - Facebook Inviter (Pro): invites people who reacted to group posts to follow your Facebook Page.
 - Delete Posts & Comments (Pro): bulk-cleans old deal posts and expired promo comments on a schedule with a protect list.
 - Levanta Butler (Pro): pitches Levanta-approved brands on autopilot and harvests brand contact emails.
@@ -61,4 +61,4 @@ Desktop butlers (accurate one-liners; never claim capabilities beyond these):
 - API Integrations: one panel for Amazon Creators API, OpenAI, Levanta, deeplink providers, Telegram, YouTube, and more. The AI features need the user's own OpenAI API key (platform.openai.com), not a ChatGPT subscription.
 - Runs great on an always-on cloud PC (see the /blog cloud PC guide) so butlers keep working while your laptop is closed.
 
-Useful internal pages: /pricing, /extension, /go/download, /help (tutorials), /course/amazon-influencer (free 11-part course), feature pages under /features/ (e.g. /features/daily-deals-butler, /features/orders-butler, /features/pitch-butler).`;
+Useful internal pages: /pricing, /extension, /go/download, /help (tutorials), /course/amazon-influencer (free 11-part course), feature pages under /features/ (e.g. /features/deals-butler, /features/orders-butler, /features/pitch-butler).`;

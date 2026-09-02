@@ -1,12 +1,12 @@
 ---
 title: "Configuración del bot de Telegram: publica ofertas en un canal de Telegram"
-summary: Crea un bot con BotFather, añádelo a tu canal y conéctalo en el panel de API Integrations para que Deals Influencer Butler publique automáticamente.
+summary: Crea un bot con BotFather, añádelo a tu canal y conéctalo en el panel de API Integrations para que Deals Butler publique automáticamente.
 category: Other
 ---
 
 ## Qué hace
 
-Deals Influencer Butler puede publicar las imágenes de tus productos y sus textos directamente en un canal de Telegram. Para configurarlo, conectas un bot de Telegram en el panel de **API Integrations**. Necesitas dos valores: un **token del bot** y el **ID del canal (chat)** en el que quieres publicar. Toda la configuración lleva unos cinco minutos. Aquí tienes la guía completa.
+Deals Butler puede publicar las imágenes de tus productos y sus textos directamente en un canal de Telegram. Para configurarlo, conectas un bot de Telegram en el panel de **API Integrations**. Necesitas dos valores: un **token del bot** y el **ID del canal (chat)** en el que quieres publicar. Toda la configuración lleva unos cinco minutos. Aquí tienes la guía completa.
 
 ## 1. Crea un bot con BotFather
 
@@ -47,7 +47,7 @@ Pega el identificador o el ID numérico en el campo **Channel / Chat ID** y lueg
 
 ## Qué se publica
 
-Una vez conectado, Deals Influencer Butler publica en este canal usando el endpoint `sendPhoto` de la Bot API de Telegram. Cada publicación lleva la imagen del producto de tu fila de oferta más un texto creado a partir de la plantilla de tu compositor de publicaciones. No se envía nada hasta que publicas, así que conectar el bot con antelación es seguro.
+Una vez conectado, Deals Butler publica en este canal usando el endpoint `sendPhoto` de la Bot API de Telegram. Cada publicación lleva la imagen del producto de tu fila de oferta más un texto creado a partir de la plantilla de tu compositor de publicaciones. No se envía nada hasta que publicas, así que conectar el bot con antelación es seguro.
 
 ## Problemas frecuentes
 
@@ -58,4 +58,4 @@ Una vez conectado, Deals Influencer Butler publica en este canal usando el endpo
 ## Relacionado
 
 - [API Integrations](/help/tutorials/api-integrations) es donde vive la tarjeta del bot de Telegram, junto con todas las demás claves de API que usa Butler.
-- [Deals Influencer Butler](/help/tutorials/daily-deals) crea las publicaciones que se envían a este canal.
+- [Deals Butler](/help/tutorials/deals) crea las publicaciones que se envían a este canal.

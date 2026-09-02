@@ -86,7 +86,7 @@ export async function renderCampaigns(signals: ProductSignals, showEnrolled = tr
   }
 
   if (flags.deals) {
-    // The deal hand-off is the "Push to Deals Influencer Butler" button in the
+    // The deal hand-off is the "Push to Deals Butler" button in the
     // Send-to-app section below.
     section.append(el("p", "note", t().dealPushNote));
   }

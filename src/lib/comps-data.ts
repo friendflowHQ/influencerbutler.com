@@ -50,7 +50,7 @@ export type CompRow = {
   daysRemaining: number | null;
   subscriptionStatus: string | null;
   /** Human plan name for the comp (subscriptions.plan_name, "(comp)" stripped),
-   *  e.g. "Deals Influencer Butler Workspace" or "Pro Solo". Null for LS-detected
+   *  e.g. "Deals Butler Workspace" or "Pro Solo". Null for LS-detected
    *  comps with no matching subscription row. */
   planLabel: string | null;
   renewsAt: string | null;

@@ -130,7 +130,7 @@ const FEATURE_LINKS = [
   "/go/download - Download the desktop app",
   "/help - Help & Tutorials",
   "/course/amazon-influencer - Free 11-part Amazon Influencer course",
-  "/features/daily-deals-butler - Deals Influencer Butler feature page",
+  "/features/deals-butler - Deals Butler feature page",
   "/features/orders-butler - Orders Butler feature page",
   "/features/pitch-butler - Pitch Butler feature page",
   "/features/cc-check - CC Check feature page",

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
-import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
+import { firstNameFrom, logPurchaseActivity, logTrialStartActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
 import { lsApi, planForVariantId, setLicenseKeyActivationLimit } from "@/lib/lemonsqueezy";
 import { SEAT_LIMIT, tierForPlan } from "@/lib/pricing-constants";
@@ -447,7 +447,7 @@ async function stampTrialConversion(
  * prevent, for the cases the guard can't catch (guest/manual LS-dashboard
  * checkouts, or a pre-guard race).
  *
- * Only ever cancels trials, never a paid 'active' sub and never the Daily Deals
+ * Only ever cancels trials, never a paid 'active' sub and never the Deals
  * add-on (which is 'active', so already excluded by the status filter).
  * Cancelling a trial in LS stops it converting to paid; the resulting
  * subscription_cancelled webhook reconciles the row, but we also mark it here so
@@ -933,6 +933,16 @@ export async function POST(request: Request) {
 
       if (isTrial && !isAddonSubscription) {
         basePayload.trial_started_at = new Date().toISOString();
+
+        // Record the real trial start for the public recent-activity widget.
+        // Best-effort and non-throwing so it can never break the webhook.
+        // Location comes from the geo stashed at checkout under user:<id> (the
+        // same key logPurchaseActivity uses in order_created); no name is
+        // required (the widget falls back to "Someone").
+        void logTrialStartActivity({
+          geoKey: `user:${userId}`,
+          firstName: firstNameFrom(getString(attrs.user_name)),
+        });
 
         // No-stacking: do not mint a member trial discount when the customer
         // already redeemed one at checkout. The referring-affiliate stamp on

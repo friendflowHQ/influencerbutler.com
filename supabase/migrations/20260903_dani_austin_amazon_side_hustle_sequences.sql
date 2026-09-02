@@ -213,7 +213,7 @@ P.S. Share your new group in ours and we will cheer you on: https://www.facebook
 
 It is Liz. Posting deals by hand gets old fast. This is where it becomes a real side hustle instead of a second job.
 
-The Deals Influencer Butler finds the best Amazon deals every day, turns them into your affiliate links automatically, and posts them to your group on a schedule. You set it once and it runs while you live your life.
+The Deals Butler finds the best Amazon deals every day, turns them into your affiliate links automatically, and posts them to your group on a schedule. You set it once and it runs while you live your life.
 
 It is a desktop app, and you can try the full version free for 14 days, no card required:
 https://www.influencerbutler.com/go/download?src=danibeginner

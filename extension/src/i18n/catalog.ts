@@ -1,6 +1,6 @@
 // Translation catalog for every user-facing string in the extension: the
 // popup and all the in-page panels. Brand and feature names (Influencer
-// Butler, Butler Approved, Orders Butler, Content Butler, Deals Influencer Butler, Creator
+// Butler, Butler Approved, Orders Butler, Content Butler, Deals Butler, Creator
 // Connections, SPCC, SiteStripe) stay in English on purpose, exactly like the
 // tutorials; only the surrounding copy is translated.
 //
@@ -682,7 +682,7 @@ export interface Dict {
   sendToApp: string;
   pushToDailyDeals: string;
   // Search/deals toolbar: batch-send the page's discounted tiles to the desktop
-  // Deals Influencer Butler.
+  // Deals Butler.
   searchSendDeals: string;
   searchNoDeals: string;
   searchSendingDeals: (n: number) => string;
@@ -1466,7 +1466,7 @@ const en: Dict = {
   epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Open the Influencer Butler app to accept this campaign (the app confirms and accepts).",
   dealAvailable: "Deal available",
-  dealPushNote: "Push it to Deals Influencer Butler from the Send to your butler app section below.",
+  dealPushNote: "Push it to Deals Butler from the Send to your butler app section below.",
 
   campaignMatcher: "Campaign matcher",
   campaignMatcherIntro: (source) =>
@@ -1492,7 +1492,7 @@ const en: Dict = {
   sumCampaignMatcher: "Campaign matcher",
 
   sendToApp: "Send to your butler app",
-  pushToDailyDeals: "Push to Deals Influencer Butler",
+  pushToDailyDeals: "Push to Deals Butler",
   searchSendDeals: "Send deals to app",
   searchNoDeals: "No discounted deals on this page.",
   searchSendingDeals: (n) => `Sending ${n} deal(s) to your app...`,
@@ -1524,9 +1524,9 @@ const en: Dict = {
   connectedToApp: (version) =>
     `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`,
   upsellSignedIn:
-    "Open the Influencer Butler desktop app to push this product into your Deals Influencer Butler, Content Butler, and to auto-accept campaigns.",
+    "Open the Influencer Butler desktop app to push this product into your Deals Butler, Content Butler, and to auto-accept campaigns.",
   upsellSignedOut:
-    "Do the rest with the app: push this product to Deals Influencer Butler with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.",
+    "Do the rest with the app: push this product to Deals Butler with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.",
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
@@ -1573,7 +1573,7 @@ const en: Dict = {
     "Automate deals, content, and campaign acceptance from your computer. Click to download it free for Windows or Mac.",
   nudgeAppTitle: "Ready for the desktop app?",
   nudgeAppBody:
-    "The desktop app does the heavy lifting: push products to Deals Influencer Butler, send them to Content Butler, and auto-accept Creator Connections campaigns.",
+    "The desktop app does the heavy lifting: push products to Deals Butler, send them to Content Butler, and auto-accept Creator Connections campaigns.",
   nudgeAppFree: "It is free to download and works alongside this extension.",
   nudgeAppDownloadWindows: "Download for Windows",
   nudgeAppDownloadMac: "Download for Mac",
@@ -2283,7 +2283,7 @@ const es: Dict = {
   epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Abre la app Influencer Butler para aceptar esta campaña (la app confirma y acepta).",
   dealAvailable: "Oferta disponible",
-  dealPushNote: "Envíala a Deals Influencer Butler desde la sección Send to your butler app de abajo.",
+  dealPushNote: "Envíala a Deals Butler desde la sección Send to your butler app de abajo.",
 
   campaignMatcher: "Buscador de campañas",
   campaignMatcherIntro: (source) =>
@@ -2309,7 +2309,7 @@ const es: Dict = {
   sumCampaignMatcher: "Buscador de campañas",
 
   sendToApp: "Enviar a tu app butler",
-  pushToDailyDeals: "Enviar a Deals Influencer Butler",
+  pushToDailyDeals: "Enviar a Deals Butler",
   searchSendDeals: "Enviar ofertas a la app",
   searchNoDeals: "No hay ofertas con descuento en esta página.",
   searchSendingDeals: (n) => `Enviando ${n} oferta(s) a tu app...`,
@@ -2341,9 +2341,9 @@ const es: Dict = {
   connectedToApp: (version) =>
     `Conectado a tu app de Influencer Butler${version}. La aceptación usa tu catálogo local de Creator Connections.`,
   upsellSignedIn:
-    "Abre la app de escritorio de Influencer Butler para enviar este producto a tus Deals Influencer Butler, Content Butler y auto-aceptar campañas.",
+    "Abre la app de escritorio de Influencer Butler para enviar este producto a tus Deals Butler, Content Butler y auto-aceptar campañas.",
   upsellSignedOut:
-    "Haz el resto con la app: envía este producto a Deals Influencer Butler con tu plantilla de publicación y destinos sociales, mándalo a Content Butler y auto-acepta campañas de Creator Connections.",
+    "Haz el resto con la app: envía este producto a Deals Butler con tu plantilla de publicación y destinos sociales, mándalo a Content Butler y auto-acepta campañas de Creator Connections.",
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
@@ -2390,7 +2390,7 @@ const es: Dict = {
     "Automatiza ofertas, contenido y aceptación de campañas desde tu ordenador. Haz clic para descargarla gratis para Windows o Mac.",
   nudgeAppTitle: "¿List@ para la app de escritorio?",
   nudgeAppBody:
-    "La app de escritorio hace el trabajo pesado: envía productos a Deals Influencer Butler, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
+    "La app de escritorio hace el trabajo pesado: envía productos a Deals Butler, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
   nudgeAppFree: "Es gratis de descargar y funciona junto a esta extensión.",
   nudgeAppDownloadWindows: "Descargar para Windows",
   nudgeAppDownloadMac: "Descargar para Mac",
@@ -3100,7 +3100,7 @@ const fr: Dict = {
   epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Ouvrez l'app Influencer Butler pour accepter cette campagne (l'app confirme et accepte).",
   dealAvailable: "Offre disponible",
-  dealPushNote: "Envoyez-la vers Deals Influencer Butler depuis la section Send to your butler app ci-dessous.",
+  dealPushNote: "Envoyez-la vers Deals Butler depuis la section Send to your butler app ci-dessous.",
 
   campaignMatcher: "Détecteur de campagnes",
   campaignMatcherIntro: (source) =>
@@ -3126,7 +3126,7 @@ const fr: Dict = {
   sumCampaignMatcher: "Détecteur de campagnes",
 
   sendToApp: "Envoyer à votre app butler",
-  pushToDailyDeals: "Envoyer vers Deals Influencer Butler",
+  pushToDailyDeals: "Envoyer vers Deals Butler",
   searchSendDeals: "Envoyer les deals vers l'app",
   searchNoDeals: "Aucune promo sur cette page.",
   searchSendingDeals: (n) => `Envoi de ${n} deal(s) vers votre app...`,
@@ -3158,9 +3158,9 @@ const fr: Dict = {
   connectedToApp: (version) =>
     `Connecté à votre app Influencer Butler${version}. L'acceptation utilise votre catalogue Creator Connections local.`,
   upsellSignedIn:
-    "Ouvrez l'app de bureau Influencer Butler pour envoyer ce produit vers vos Deals Influencer Butler, Content Butler et auto-accepter les campagnes.",
+    "Ouvrez l'app de bureau Influencer Butler pour envoyer ce produit vers vos Deals Butler, Content Butler et auto-accepter les campagnes.",
   upsellSignedOut:
-    "Faites le reste avec l'app: envoyez ce produit vers Deals Influencer Butler avec votre modèle de publication et vos destinations sociales, envoyez-le à Content Butler et auto-acceptez les campagnes Creator Connections.",
+    "Faites le reste avec l'app: envoyez ce produit vers Deals Butler avec votre modèle de publication et vos destinations sociales, envoyez-le à Content Butler et auto-acceptez les campagnes Creator Connections.",
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
@@ -3207,7 +3207,7 @@ const fr: Dict = {
     "Automatisez les deals, le contenu et l'acceptation des campagnes depuis votre ordinateur. Cliquez pour la télécharger gratuitement pour Windows ou Mac.",
   nudgeAppTitle: "Prêt pour l'app de bureau?",
   nudgeAppBody:
-    "L'app de bureau fait le gros du travail: envoyez des produits vers Deals Influencer Butler, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
+    "L'app de bureau fait le gros du travail: envoyez des produits vers Deals Butler, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
   nudgeAppFree: "Elle est gratuite à télécharger et fonctionne avec cette extension.",
   nudgeAppDownloadWindows: "Télécharger pour Windows",
   nudgeAppDownloadMac: "Télécharger pour Mac",

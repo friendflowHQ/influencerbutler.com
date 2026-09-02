@@ -59,7 +59,7 @@ const SPECS = [
   {
     out: "daily-checklist/02-daily-deals-scheduler.png",
     badge: "Morning",
-    title: "Check the Daily Deals Scheduler",
+    title: "Check the Deals Scheduler",
     caption: "The Scheduler tab showing recently sent posts and the upcoming queue",
   },
   {

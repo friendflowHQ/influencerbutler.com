@@ -24,10 +24,10 @@ triggers it and receives the results.
     "requestedBy": "admin@email",
     "shots": [
       {
-        "id": "app-daily-deals",
-        "target": "app.daily-deals",
-        "caption": "Deals Influencer Butler workspace with the deal feed",
-        "outPath": "public/assets/app/app-daily-deals.png"
+        "id": "app-deals",
+        "target": "app.deals",
+        "caption": "Deals Butler workspace with the deal feed",
+        "outPath": "public/assets/app/app-deals.png"
       }
     ]
   }
@@ -43,7 +43,7 @@ triggers it and receives the results.
 
 A CLI flag (or `IB_SCREENSHOT_TARGET` env) that, in `DEMO_MODE=1`, navigates
 the HUD to the named workspace after first paint. Map `app.dashboard`,
-`app.daily-deals`, `app.orders-butler`, `app.pitch-butler`, `app.action-queue`
+`app.deals`, `app.orders-butler`, `app.pitch-butler`, `app.action-queue`
 (extend as needed). DEMO_MODE seeds a fixture profile (realistic fake orders,
 deals, pipelines) so screens are populated and no real accounts are touched.
 

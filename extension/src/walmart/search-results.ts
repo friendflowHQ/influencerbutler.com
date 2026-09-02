@@ -50,7 +50,9 @@ function textOf(el: Element | null): string {
 }
 
 const NUMERIC_ID_RE = /^\d{3,15}$/;
-const IP_HREF_ID_RE = /\/ip\/(?:[^/]+\/)?(\d{3,15})/;
+// A Walmart item id out of an /ip/<slug>/<id> (or /ip/<id>) url. Exported so the
+// link cleaner can rebuild a canonical /ip/ url from an arbitrary pasted link.
+export const IP_HREF_ID_RE = /\/ip\/(?:[^/]+\/)?(\d{3,15})/;
 const PRICE_SEL = '[data-automation-id="product-price"]';
 // The price hook's screen-reader text spells out the reference price, e.g.
 // "current price Now $4.97, Was $5.82" (verified live 2026-09-01). The tile

@@ -441,7 +441,7 @@ function watchControl(row: Row): HTMLElement {
     } else {
       void sendToBackground<WatchlistResult>({
         kind: "ADD_TO_WATCHLIST",
-        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title },
+        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title, imageUrl: row.tile.imageUrl },
       }).then(done);
     }
   });

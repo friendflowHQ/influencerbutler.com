@@ -1,6 +1,6 @@
 ---
 title: Pricecrash Butler: catch Amazon pricing errors fast
-summary: Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deals Influencer Butler as drafts or auto-scheduled posts.
+summary: Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deals Butler as drafts or auto-scheduled posts.
 category: Amazon
 ---
 
@@ -8,7 +8,7 @@ category: Amazon
 
 Sellers sometimes forget a decimal point. Catalog teams sometimes miss a flag. When they do, a $400 vacuum shows up at $4, a $2,000 lens at $20, a $89 air fryer at $0.89 - and a smart creator can post the deal before Amazon's automated guards or a human cleanup pull it down.
 
-Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Deals Influencer Butler** as either:
+Pricecrash Butler is the radar. It runs on a schedule, hits the Amazon Creators API for the categories you care about, post-filters every result by discount percentage, and the moment a ≥99%-off product surfaces, the deal gets pushed into **Deals Butler** as either:
 
 - a **draft** in the Search tab (you approve before it posts), or
 - an **auto-scheduled post** that publishes right away (or waits for your next scheduled post time, your choice).
@@ -21,17 +21,17 @@ The threshold is yours - 99% is the default because that's where real pricing er
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
 3. (Optional) Under **Marketplaces to scan**, tick the Amazon regions you want to sweep (UK, DE, FR and more). Leave them all unchecked to scan only your home marketplace. A box unlocks once you connect that region's Creators API credentials in Settings: US and CA use your default credentials; UK, DE, FR, IT and ES use your EU credentials; and JP, AU and IN use your FE credentials.
 4. Decide what should happen when a deal is found:
-   - **Draft for review**: safer; sits in Deals Influencer Butler → Search until you approve it.
-   - **Auto-schedule**: fastest; drops straight into Deals Influencer Butler → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Deals Influencer Butler posting schedule.
+   - **Draft for review**: safer; sits in Deals Butler → Search until you approve it.
+   - **Auto-schedule**: fastest; drops straight into Deals Butler → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Deals Butler posting schedule.
    - **No hand-off**: just log it in the panel; you act manually.
-5. Choose which deals workspaces receive the catches under **Send finds to**. Tick your base Deals Influencer Butler and any extra deals workspaces you have added. Each ticked workspace delivers the catch to its own channels. The post copy always comes from your Pricecrash Butler **Build Your Post** composer (see below), so one pricing error can go out across several audiences at once in one consistent voice. This row is hidden when you pick No hand-off.
+5. Choose which deals workspaces receive the catches under **Send finds to**. Tick your base Deals Butler and any extra deals workspaces you have added. Each ticked workspace delivers the catch to its own channels. The post copy always comes from your Pricecrash Butler **Build Your Post** composer (see below), so one pricing error can go out across several audiences at once in one consistent voice. This row is hidden when you pick No hand-off.
 6. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
 
 ## Recurring scans
 
 Below the run-settings card is the **Auto-scan schedule** row. Pick a preset - `1h`, `3h`, `6h`, `12h`, or `24h` - or set your own with the **Or every** field (any number of minutes, hours, or days), then flip the **Run automatically** switch. The runner will fire on that cadence even when the panel is closed, and your choice (preset or custom) is remembered across restarts.
 
-The 6h default is a deliberate compromise: frequent enough to catch a glitch before the seller fixes it, infrequent enough to stay polite to the Amazon Creators API rate limit (which is shared across every Butler that talks to PA-API - Daily Commission, CC Check, Deals Influencer Butler, Storefront, Levanta, and now Pricecrash).
+The 6h default is a deliberate compromise: frequent enough to catch a glitch before the seller fixes it, infrequent enough to stay polite to the Amazon Creators API rate limit (which is shared across every Butler that talks to PA-API - Daily Commission, CC Check, Deals Butler, Storefront, Levanta, and now Pricecrash).
 
 ## How "99%" actually works
 
@@ -53,24 +53,24 @@ If Amazon's API rejects a keyword-less browse for one of your categories (rare -
 
 ## Build Your Post
 
-Pricecrash Butler has its own **Build Your Post** composer, right in the panel, so every catch posts in one consistent voice no matter which deals workspaces receive it. It looks and works exactly like the one in Deals Influencer Butler:
+Pricecrash Butler has its own **Build Your Post** composer, right in the panel, so every catch posts in one consistent voice no matter which deals workspaces receive it. It looks and works exactly like the one in Deals Butler:
 
 - **Drag a pill, or click it.** Color-coded pills across the top drop values into your caption and first comment: deal fields (Title, Sale price, Was price, % off, Link, Reviews, Stars, Ends in), rotating lines (Hook, Call to action, Hashtags), and the red **Price-crash hype** pill. Drag a pill into the editor, or click it to drop it at your cursor. Dropped pills become colored chips you can drag around or click to remove.
 - **The Image pill.** Drop the purple **Image** pill, then click it to choose what publishes with each post: the caught deal's **Amazon** photo (the default), an image you **Upload**, or **None** for a caption-only post.
 - **A photo under your first comment.** In the first comment's header, use the **Photo** control to post an image below the pinned comment: **Deal photo** uses the caught product's Amazon image, or **Upload** to add your own. Leave it on **None** to keep the comment text-only.
 - **Price-crash hype.** The red hype pill drops a high-urgency line with the real (cents-masked) sale price, like "HURRY! THE SELLER DIDN'T KNOW THEY LISTED THIS FOR $4.xx!!!". When it is in your caption it carries the post. Click the pill (note its small down arrow) to open the line editor: view every built-in hype line, turn lines off, delete them, add your own, and choose whether posts rotate through the enabled lines or always use a single line you pick. By default the editor leans on percentage lines that show the discount instead of the dollar price (write `{percent}` where the percent off should go, or `{price}` for the sale price). Use the **Line style** chooser at the top to switch between percentage-based lines, price-based lines, or both.
 - **Variants.** Add alternate captions or comments under each editor and choose whether posts rotate through them in order or at random, so your feed does not repeat the same wording.
-- **Copy from another workspace.** Use **Copy caption & comment from** at the top to pull the caption, first comment, and their variants from your base Deals Influencer Butler or any deals workspace clone, then tweak from there.
+- **Copy from another workspace.** Use **Copy caption & comment from** at the top to pull the caption, first comment, and their variants from your base Deals Butler or any deals workspace clone, then tweak from there.
 - **Live preview.** The preview at the bottom shows a sample catch rendered with your current caption and comment. When you add variants, use the arrows on the preview to step through each caption and comment version and see exactly how each one reads.
 
-## Hand-off to Deals Influencer Butler
+## Hand-off to Deals Butler
 
-Each found deal is written into Deals Influencer Butler' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your Pricecrash Butler **Build Your Post** composer (above), so the pills you set there drive exactly what Pricecrash posts say. From there:
+Each found deal is written into Deals Butler' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your Pricecrash Butler **Build Your Post** composer (above), so the pills you set there drive exactly what Pricecrash posts say. From there:
 
-- **Draft mode**: the post lands with `status: "draft"`. Open Deals Influencer Butler → Search, review, set destinations, hit Publish.
-- **Auto-schedule mode**: the post lands with `status: "scheduled"`. With **Post right away** (the default), Pricecrash publishes it immediately to every enabled destination, so a catch goes out within seconds even when the auto-fire schedule is off. With **On the next scheduled deal post time**, the post waits for your Deals Influencer Butler posting schedule's next run.
+- **Draft mode**: the post lands with `status: "draft"`. Open Deals Butler → Search, review, set destinations, hit Publish.
+- **Auto-schedule mode**: the post lands with `status: "scheduled"`. With **Post right away** (the default), Pricecrash publishes it immediately to every enabled destination, so a catch goes out within seconds even when the auto-fire schedule is off. With **On the next scheduled deal post time**, the post waits for your Deals Butler posting schedule's next run.
 
-The mode and the timing are **per-scan** - flip them between scheduled runs without re-opening Deals Influencer Butler.
+The mode and the timing are **per-scan** - flip them between scheduled runs without re-opening Deals Butler.
 
 ## Topbar tally
 
@@ -78,13 +78,13 @@ While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** coun
 
 ## Gotchas
 
-- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Deals Influencer Butler.
+- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Deals Butler.
 - **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per category (or one page per keyword when keywords are set) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
 - **Only seeing amazon.com (US) deals when you sell on another marketplace?**: open Settings → API Integrations → Creators API and set the **Marketplace** dropdown to your store (for example amazon.co.uk), then save. Your main credentials already cover your own marketplace, so you do not need a separate "EU" or "FE" credential set just to scan it. Pricecrash then sweeps your marketplace by default; use the **Marketplaces to scan** tick-boxes only when you want to sweep additional regions.
 - **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
-- **Posts not appearing in Deals Influencer Butler**: confirm Deals Influencer Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Deals Influencer Butler isn't visible the deal still lands on disk but you can't see it.
+- **Posts not appearing in Deals Butler**: confirm Deals Butler is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Deals Butler isn't visible the deal still lands on disk but you can't see it.
 
 ## Related
 
-- [Deals Influencer Butler tutorial](/help/tutorials/daily-deals) - the publishing engine that takes Pricecrash's catches the last mile.
+- [Deals Butler tutorial](/help/tutorials/deals) - the publishing engine that takes Pricecrash's catches the last mile.
 - [Orders Butler tutorial](/help/tutorials/ordersbutler) - the upstream order-history feed that powers most of the other Amazon-side workspaces.

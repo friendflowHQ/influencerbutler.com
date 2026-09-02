@@ -37,4 +37,4 @@ Whenever we embed a YouTube video anywhere (marketing page, feature page, email,
 Reference embeds already in place:
 
 - Creator API setup (`plZS_nXX-BE`) in `api-integrations` (Watch the walkthrough section).
-- Amazon Deals to Google Worksheet (`gCIw2WNnbWU`) in `daily-deals` (Send deals to a Google Sheet section).
+- Amazon Deals to Google Worksheet (`gCIw2WNnbWU`) in `deals` (Send deals to a Google Sheet section).

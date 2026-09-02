@@ -14,7 +14,7 @@ It's built for creators growing a community around their storefront or niche. Th
 
 Two things need to be in place:
 
-- **You're signed in to Facebook in the app.** Group Invite Butler uses the same Facebook accounts as Deals Influencer Butler. If you haven't signed in yet, open Deals Influencer Butler first and sign in to Facebook there once. If you post from more than one Facebook account, sign in to each one there.
+- **You're signed in to Facebook in the app.** Group Invite Butler uses the same Facebook accounts as Deals Butler. If you haven't signed in yet, open Deals Butler first and sign in to Facebook there once. If you post from more than one Facebook account, sign in to each one there.
 - **You manage the group.** You can only send email invites for a group where you have invite permissions. Paste that group's URL into the settings, and pick the Facebook account that manages it (see below).
 
 ## Filling the invite queue
@@ -39,7 +39,7 @@ Either way, emails that were **already invited** (or already in the queue) are s
 Under **Run settings**:
 
 - **Facebook group URL**: the group you're inviting people into. Required; Butler won't start without it.
-- **Facebook account**: which signed-in Facebook account sends the invites. It defaults to your Default account. If you manage the group from a different account, pick it here so the invites come from the right one. The list matches the accounts you set up in Deals Influencer Butler.
+- **Facebook account**: which signed-in Facebook account sends the invites. It defaults to your Default account. If you manage the group from a different account, pick it here so the invites come from the right one. The list matches the accounts you set up in Deals Butler.
 - **Seconds between invites** plus **Random extra seconds**: the gap between each invite, plus a random amount on top so the timing looks natural. Slower is safer.
 - **Invites per day**: a daily cap that carries across runs. `0` means no daily cap.
 - **Invites per run**: how many to send in a single run. `0` means send the whole queue.
@@ -74,8 +74,8 @@ Each scheduled run sends up to your **Invites per run** limit and respects the *
 
 ## Common gotchas
 
-- **It won't start**: check that the Facebook group URL is filled in and that you're signed in to Facebook (via Deals Influencer Butler).
-- **It says you're not signed in, but you are**: make sure the **Facebook account** you picked is one you actually signed in to in Deals Influencer Butler. Invites are sent from that exact account, so pick the one that shows as signed in there.
+- **It won't start**: check that the Facebook group URL is filled in and that you're signed in to Facebook (via Deals Butler).
+- **It says you're not signed in, but you are**: make sure the **Facebook account** you picked is one you actually signed in to in Deals Butler. Invites are sent from that exact account, so pick the one that shows as signed in there.
 - **My CSV loaded zero emails**: make sure the email addresses are in the **first column**. Extra columns and header rows are ignored on purpose, but if column A holds something other than emails, nothing matches.
 - **Someone shows as Sent that I didn't invite this run**: that's the durable invited record doing its job. Once anyone has been invited, they stay marked so they're never invited twice.
 - **Go slow at first**: high volume with short gaps is what trips Facebook's limits. Start with a modest daily cap and a comfortable delay, then loosen up once you see it running clean.

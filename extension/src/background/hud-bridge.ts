@@ -512,7 +512,7 @@ export async function fetchMessageTemplates(): Promise<TemplatesLookupResult> {
 
 // Ownership lookup: given a batch of ASINs the creator is browsing, ask the
 // desktop app whether they already own each (Orders Butler history) and whether
-// they already posted/promoted it (Storefront / Daily Deals / YouTube). Read-only
+// they already posted/promoted it (Storefront / Deals / YouTube). Read-only
 // and authed. Returns paired:false when the app has never been connected so the
 // caller can fall back to the server-backed owned list or stay silent. Mirrors
 // fetchMessageTemplates. Short-circuits an empty batch (no socket).

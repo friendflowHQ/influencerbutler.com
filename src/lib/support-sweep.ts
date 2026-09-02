@@ -563,7 +563,7 @@ export function sampleSweepReport(): SweepReport {
     autopilotQueue: [
       {
         id: id(3),
-        title: "App crashes when I open Daily Deals",
+        title: "App crashes when I open Deals",
         priority: "P1",
         status: "escalated",
         classification: "bug",

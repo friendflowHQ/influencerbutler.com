@@ -178,7 +178,7 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
     renderCalculator(signals, null, settings, ratePct);
 
     // "Send to your butler app": push this Walmart product into the desktop
-    // Deals Influencer Butler over the local bridge (or upsell when the app is
+    // Deals Butler over the local bridge (or upsell when the app is
     // closed). Rendered last so it sits below the Butler Score. Limited to the
     // Deals push for now: the other send-to-app actions have Amazon-only desktop
     // handlers.

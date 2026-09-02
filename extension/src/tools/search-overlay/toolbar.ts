@@ -25,7 +25,7 @@ export type ToolbarCallbacks = {
   showScan?: boolean;
   showCampaignFilter?: boolean;
   // "Send deals to app": batch-push the page's discounted tiles into the desktop
-  // Deals Influencer Butler. Shown only when the overlay wires onSendDeals (the
+  // Deals Butler. Shown only when the overlay wires onSendDeals (the
   // Walmart rollback/deals + search grids); the overlay owns the row model and
   // the bridge call, and reports progress through setStatus.
   showSendDeals?: boolean;
@@ -122,7 +122,7 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   scanWrap.append(scanBtn, stopBtn, status);
 
   // "Send deals to app": one click batches the page's discounted tiles into the
-  // desktop Deals Influencer Butler. Its own status line, and it disables while
+  // desktop Deals Butler. Its own status line, and it disables while
   // in flight so a double click cannot double-send.
   const sendWrap = el("div", "search-control search-send-deals");
   const sendBtn = el("button", "btn secondary") as HTMLButtonElement;

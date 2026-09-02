@@ -14,7 +14,7 @@
  * Returns the shape the worker's /license/validate reshapes for the desktop:
  *   { valid, email, status, variantId, productId, activationLimit, addons }
  * where variantId maps to a tier via the desktop's tierForVariantId, and addons
- * carries { type: "daily-deals-workspace" } for a comped Daily Deals add-on.
+ * carries { type: "daily-deals-workspace" } for a comped Deals add-on.
  */
 import { NextResponse, after } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   const activationLimit = typeof lic?.activation_limit === "number" ? lic.activation_limit : null;
 
   // The entitlement is a live subscription for this user (Pro tier and/or the
-  // Daily Deals add-on). No live subscription -> not valid.
+  // Deals add-on). No live subscription -> not valid.
   const subs =
     (
       await svc

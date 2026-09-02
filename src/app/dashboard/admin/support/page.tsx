@@ -936,7 +936,7 @@ export default function SupportAdminPage() {
                 </label>
                 <label className="flex-1 text-sm">
                   <span className="block text-xs text-slate-500">Tags</span>
-                  <input value={editTags} onChange={(e) => setEditTags(e.target.value)} placeholder="daily-deals, posting" className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />
+                  <input value={editTags} onChange={(e) => setEditTags(e.target.value)} placeholder="deals, posting" className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />
                 </label>
                 <button
                   type="button"

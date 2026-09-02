@@ -31,7 +31,9 @@ export type ProductSignals = {
   imageUrl: string | null;
 };
 
-const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+// A product ASIN out of a /dp/ or /gp/product/ url. Exported so the link cleaner
+// can rebuild a canonical product url from an arbitrary pasted link.
+export const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
 const COMMISSION_RE = /commission\s*rate[:\s]*([\d.]+)\s*%/i;
 const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 

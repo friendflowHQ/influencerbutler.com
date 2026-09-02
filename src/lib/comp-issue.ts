@@ -52,7 +52,7 @@ export type IssueCompInput = {
   /**
    * Devices allowed on the key at once (the license_keys.activation_limit).
    * Omitted -> the plan's default seat count (Solo 1 / Team 10 / Agency 25,
-   * Daily Deals add-on 1).
+   * Deals add-on 1).
    */
   seats?: number | null;
   /** When true, the comp never expires and is never auto-cancelled. */
@@ -158,7 +158,7 @@ async function sendCompEmail(params: {
   forever: boolean;
   signInLink: string | null;
   /** Human name of the granted plan for the body, with any needed article
-   *  (e.g. "Influencer Butler Pro" or "the Deals Influencer Butler Workspace"). */
+   *  (e.g. "Influencer Butler Pro" or "the Deals Butler Workspace"). */
   planPhrase: string;
   /** Subject line for this plan (e.g. "Your free Influencer Butler Pro license"). */
   subject: string;
@@ -262,9 +262,9 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     console.error("comp-issue: variant resolve failed", { plan: input.plan, variant });
     return { ok: false, status: 500, error: "Server misconfiguration" };
   }
-  const planName = isDailyDeals ? "Deals Influencer Butler Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
+  const planName = isDailyDeals ? "Deals Butler Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
   // Seat limit written to the key: the admin's chosen count when valid, else the
-  // plan's default (Solo 1 / Team 10 / Agency 25, Daily Deals add-on 1).
+  // plan's default (Solo 1 / Team 10 / Agency 25, Deals add-on 1).
   const planDefaultSeats = isDailyDeals ? 1 : SEAT_LIMIT[tier!];
   const activationLimit =
     typeof input.seats === "number" && Number.isInteger(input.seats) && input.seats >= 1
@@ -278,7 +278,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   if (!userId) return { ok: false, status: 502, error: "Could not create the recipient account." };
 
   // Never stack a second PRIMARY comp on someone who already has live access,
-  // unless the admin explicitly overrides (allowExisting). The Daily Deals
+  // unless the admin explicitly overrides (allowExisting). The Deals
   // add-on is meant to sit ON TOP of a plan, so it is always exempt. Unassigned
   // comps get a fresh placeholder user, so this never trips for them.
   if (!isDailyDeals && !input.allowExisting) {
@@ -404,9 +404,9 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     }
     // Word the email around the plan that was actually granted, so an add-on
     // comp does not read as "Influencer Butler Pro".
-    const planPhrase = isDailyDeals ? "the Deals Influencer Butler Workspace" : "Influencer Butler Pro";
+    const planPhrase = isDailyDeals ? "the Deals Butler Workspace" : "Influencer Butler Pro";
     const compSubject = isDailyDeals
-      ? "Your free Deals Influencer Butler Workspace"
+      ? "Your free Deals Butler Workspace"
       : "Your free Influencer Butler Pro license";
     await sendCompEmail({
       to: email,

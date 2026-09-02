@@ -249,7 +249,7 @@ describe("guided walkthroughs", () => {
     expect(s).toContain("start_walkthrough");
     expect(s).toContain("desktop app only");
     expect(s).toContain("[api-integrations]");
-    expect(s).toContain("[daily-deals]");
+    expect(s).toContain("[deals]");
     expect(s).not.toContain("\u2014");
   });
 

@@ -13,8 +13,8 @@ import {
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
-import { relayClaimLink, relayListTargets, relaySend } from "./relay";
+import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import type { RelayStateView } from "../shared/messages";
 import { sendFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
@@ -79,6 +79,7 @@ import {
   remindUpdateLater,
 } from "./update";
 import { getWhatsNewView, markWhatsNewSeen, noteInstall } from "./whats-new";
+import { cleanLinkForRequest } from "./clean-link";
 import {
   buildIntegrationsView,
   generateAffiliateLink,
@@ -256,7 +257,11 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void getHudStatus(message.force).then(sendResponse);
       return true;
     case "SEND_HUD_COMMAND":
-      void sendHudCommand(message.command).then(sendResponse);
+      // Prefer the app on this computer; a deal push transparently falls back to
+      // a linked desktop on another computer when no local app is running. This
+      // covers every deal surface (Amazon harvester, Walmart / search overlays,
+      // HUD actions) in one place. Non-deal commands pass straight through.
+      void sendCommandPreferLocal(message.command).then(sendResponse);
       return true;
     case "LOOKUP_EARNINGS":
       void lookupEarnings(message.asins).then(sendResponse);
@@ -481,6 +486,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "REWRITE_LINK":
       void rewriteLink(message.url).then(sendResponse);
+      return true;
+    case "CLEAN_LINK":
+      void cleanLinkForRequest(message.url).then(sendResponse);
       return true;
     case "OPENAI_COMPLETE":
       void openaiComplete(message.prompt).then(sendResponse);

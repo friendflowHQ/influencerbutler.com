@@ -58,7 +58,7 @@ export interface DealsDict {
 const en: DealsDict = {
   pageTitle: "Deal Sites Harvester",
   pageIntro:
-    "Paste the daily-deal sites you follow. The harvester reads each one, pulls out the Amazon products, fills in price and commission, and sends the ones you pick into a Deals Influencer Butler workspace in the app.",
+    "Paste the daily-deal sites you follow. The harvester reads each one, pulls out the Amazon products, fills in price and commission, and sends the ones you pick into a Deals Butler workspace in the app.",
   sourcesHeading: "Sites to harvest",
   curatedLabel: "Include the recommended sites",
   savedLabel: "Your saved sites",
@@ -88,7 +88,7 @@ const en: DealsDict = {
   perSiteZeroHint: "No Amazon product links found. Some sites load their deals with scripts and cannot be read this way.",
   enriching: "Filling in prices and commission...",
   sendHeading: "Send to a workspace",
-  workspaceLabel: "Deals Influencer Butler workspace",
+  workspaceLabel: "Deals Butler workspace",
   sendSelected: "Send selected to workspace",
   sending: "Sending...",
   sentToApp: "Sent to the app.",

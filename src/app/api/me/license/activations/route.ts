@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /**
  * GET  /api/me/license/activations  - the signed-in user's activated devices,
  *      read live from Lemon Squeezy and grouped PER LICENSE KEY (per product):
- *      a Team Pro key and a Daily Deals add-on key each get their own group
+ *      a Team Pro key and a Deals add-on key each get their own group
  *      with their own seat count, instead of one misleading combined pool.
  *      Groups are labeled with the owning subscription's plan name when the
  *      key is linked to one. Inactive keys are omitted unless they still have
@@ -51,7 +51,7 @@ type DeviceInstance = {
 type DeviceGroup = {
   /** Internal LS id of the key this group belongs to (or the comp sentinel). */
   lsLicenseKeyId: string;
-  /** Product label, e.g. "Team Pro" or "Deals Influencer Butler Workspace"; null when unknown. */
+  /** Product label, e.g. "Team Pro" or "Deals Butler Workspace"; null when unknown. */
   label: string | null;
   status: string | null;
   activationLimit: number | null;

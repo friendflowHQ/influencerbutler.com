@@ -84,9 +84,9 @@ const DESKTOP_NAV: Array<{ label: string; key?: string; items?: NavLeaf[] }> = [
   { label: "Content Butler", key: "content-butler" },
   { label: "Pitch Butler", key: "pitchbutler" },
   {
-    label: "Deals Influencer Butler",
+    label: "Deals Butler",
     items: [
-      { label: "Deals Influencer Butler", key: "daily-deals" },
+      { label: "Deals Butler", key: "deals" },
       { label: "Best Seller Butler", key: "best-seller-butler" },
       { label: "Pricecrash Butler", key: "pricecrash-butler" },
     ],
@@ -163,8 +163,8 @@ function navMapLines(): string {
  * anything else falls back to AI-composed section steps.
  */
 const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
-  { id: "deals-setup", about: "Deals Influencer Butler filters, post builder, destinations, scheduler" },
-  { id: "deals-harvest", about: "Deals Influencer Butler deal harvest and send" },
+  { id: "deals-setup", about: "Deals Butler filters, post builder, destinations, scheduler" },
+  { id: "deals-harvest", about: "Deals Butler deal harvest and send" },
   { id: "api-integrations", about: "API Integrations and DeepLink Routing setup" },
   { id: "deeplink-mint", about: "Mint a short Butler Link in Link Butler" },
   { id: "daily-commission-harvest", about: "Daily Commission Butler run and schedule" },
@@ -248,7 +248,7 @@ export function buildInstructions(): string {
     "  not need to work out which modes are available; just call start_walkthrough with the tour id.",
     `- Prefer a curated tour when one matches: ${WALKTHROUGH_TOURS.map((t) => `${t.id} (${t.about})`).join("; ")}.`,
     "- Use deals-guided-setup when the user wants deal posting set up for them, or is struggling to",
-    "  configure the Deals Influencer Butler (destinations, schedule, keywords); it opens the",
+    "  configure the Deals Butler (destinations, schedule, keywords); it opens the",
     "  question-driven wizard. Offer it proactively to strugglers.",
     "- If no curated tour fits, compose up to 8 short steps yourself. Each step needs section (a [key]",
     "  from the menu map above), a short title, and one sentence of body text.",

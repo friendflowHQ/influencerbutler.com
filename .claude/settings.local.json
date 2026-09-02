@@ -93,7 +93,8 @@
       "Bash('/c/Program Files/Google/Chrome/Application/chrome.exe' --headless=new --disable-gpu --no-sandbox --hide-scrollbars --window-size=1280,2600 '--screenshot=C:\\\\Users\\\\eliza\\\\AppData\\\\Local\\\\Temp\\\\home-full.png' '--user-data-dir=C:\\\\Users\\\\eliza\\\\AppData\\\\Local\\\\Temp\\\\cr-shot-profile' http://127.0.0.1:8099/)",
       "Bash(powershell.exe -NoProfile -Command \"Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::OpenRead\\('influencer-butler-extension-0.1.8.zip'\\).Entries | Select-Object -First 8 -ExpandProperty FullName\")",
       "Bash(git config *)",
-      "Bash(git cherry-pick *)"
+      "Bash(git cherry-pick *)",
+      "Bash(git -c user.name=FriendFlow -c user.email=elizabethdean30@gmail.com commit -m '@ *)"
     ]
   }
 }

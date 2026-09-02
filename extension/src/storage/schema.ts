@@ -183,7 +183,7 @@ export type Settings = {
     messageTemplates: boolean;
     // Ownership: a live "you already own this / you already posted this" badge on
     // product pages and search/deals tiles, read from the desktop Orders Butler
-    // (order history) + content-coverage (Storefront / Daily Deals / YouTube) over
+    // (order history) + content-coverage (Storefront / Deals / YouTube) over
     // the bridge. Self-gates to paired users who own/posted the product, so it is
     // a no-op for everyone else. On by default; backfilled to true for existing
     // users by the tools shallow-merge in migrate().

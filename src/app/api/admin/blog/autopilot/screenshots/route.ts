@@ -22,7 +22,7 @@ type ShotRequest = { id: string; target: string; caption: string };
 
 const DEFAULT_SHOTS: ShotRequest[] = [
   { id: "app-dashboard", target: "app.dashboard", caption: "The Influencer Butler desktop dashboard with the butler workspaces sidebar" },
-  { id: "app-daily-deals", target: "app.daily-deals", caption: "Deals Influencer Butler workspace with the deal feed and posting schedule" },
+  { id: "app-deals", target: "app.deals", caption: "Deals Butler workspace with the deal feed and posting schedule" },
   { id: "app-orders-butler", target: "app.orders-butler", caption: "Orders Butler workspace with synced Amazon order history" },
   { id: "app-pitch-butler", target: "app.pitch-butler", caption: "Pitch Butler CRM board with brand pipelines" },
   { id: "app-action-queue", target: "app.action-queue", caption: "Action Queue inbox with butler decisions waiting for review" },

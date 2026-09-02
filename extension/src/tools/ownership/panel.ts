@@ -8,7 +8,7 @@ import { resolveOwnership } from "./resolve";
 
 // A live "you already own this / you already posted this" badge on the product
 // page, read from the desktop Orders Butler (order history) + content-coverage
-// (Storefront / Daily Deals / YouTube) over the local bridge. Nothing any
+// (Storefront / Deals / YouTube) over the local bridge. Nothing any
 // competitor shows. Self-gating: the lookup returns instantly for anyone who has
 // not paired the app, and the section is only revealed when the creator actually
 // owns or already posted this product, so it never renders an empty box.

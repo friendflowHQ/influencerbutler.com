@@ -480,7 +480,7 @@ export function planForVariantId(
 /**
  * Billing cadence for an LS variant id, derived from its canonical plan string.
  * 'year' for any *-annual plan, 'month' for any *-monthly plan, null for unknown
- * or non-recurring variants (e.g. the Daily Deals add-on). Used by the affiliate
+ * or non-recurring variants (e.g. the Deals add-on). Used by the affiliate
  * commission engine to amortize annual commissions.
  */
 export function billingIntervalForVariantId(

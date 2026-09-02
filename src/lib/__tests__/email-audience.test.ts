@@ -15,6 +15,7 @@ import {
   campaignCategory,
   stepCategory,
   sequenceRunBudget,
+  marketingRunBudget,
   nextSendTime,
   sequenceContactTag,
   sequencePlatformTags,
@@ -136,6 +137,27 @@ describe("sequenceRunBudget (throttle math)", () => {
   it("never drops below 1 for a positive rate", () => {
     expect(sequenceRunBudget(1, DEFAULT)).toBe(1);
     expect(sequenceRunBudget(5, DEFAULT)).toBe(1);
+  });
+});
+
+describe("marketingRunBudget (system-first hourly headroom)", () => {
+  it("returns the full per-run ceiling when the hour is quiet", () => {
+    expect(marketingRunBudget(1500, 0, 200)).toBe(200);
+    expect(marketingRunBudget(1500, 300, 200)).toBe(200); // headroom 1200 > ceiling
+  });
+
+  it("shrinks as more has already been sent this hour", () => {
+    // headroom = 1500 - 1400 = 100, below the 200 ceiling.
+    expect(marketingRunBudget(1500, 1400, 200)).toBe(100);
+  });
+
+  it("clamps to 0 once the hourly ceiling is reached or exceeded", () => {
+    expect(marketingRunBudget(1500, 1500, 200)).toBe(0);
+    expect(marketingRunBudget(1500, 5000, 200)).toBe(0);
+  });
+
+  it("treats a negative/garbage sentLastHour as zero (fail open to the ceiling)", () => {
+    expect(marketingRunBudget(1500, -10, 200)).toBe(200);
   });
 });
 

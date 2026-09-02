@@ -8,14 +8,14 @@ import type { ProductSignals } from "../../amazon/product-signals";
 import { makeCommandRunner, toProductRef } from "./runner";
 
 // "Send to your butler app" section. When the desktop app is running, its
-// buttons push the current product straight into a workspace (Deals Influencer Butler,
+// buttons push the current product straight into a workspace (Deals Butler,
 // Content Butler), all over the local bridge. Campaign acceptance lives in the
 // Campaigns section above. When the app is not running, every button becomes a
 // targeted upsell: this is the extension-to-subscription funnel.
 
 // Options let a non-Amazon caller (the Walmart product overlay) reuse this same
 // section but limit it to the actions whose desktop handlers are retailer-ready.
-// `onlyDeals` renders just the Deals Influencer Butler push (verified end-to-end
+// `onlyDeals` renders just the Deals Butler push (verified end-to-end
 // for Walmart) and skips the Amazon-only actions (Idea Lists, video/photo, etc.).
 export type HudActionsOptions = { onlyDeals?: boolean };
 
@@ -52,7 +52,7 @@ function renderConnected(
 
   const run = makeCommandRunner(body, status);
 
-  // Deals Influencer Butler: workspace picker + send.
+  // Deals Butler: workspace picker + send.
   const workspaces = hud.dealWorkspaces?.length ? hud.dealWorkspaces : DEAL_WORKSPACES;
   const dealRow = el("div", "row");
   const picker = el("select");

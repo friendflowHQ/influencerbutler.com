@@ -158,7 +158,7 @@ Before showing command buttons, the extension probes:
   "type": "status",
   "appVersion": "1.0.41",
   "dealWorkspaces": [
-    { "key": "default", "label": "Deals Influencer Butler (main)" },
+    { "key": "default", "label": "Deals Butler (main)" },
     { "key": "garden-bargains", "label": "Garden Bargains" }
   ],
   "ideaLists": [
@@ -195,7 +195,7 @@ The extension sends `{ "type": "command", "command": <Command> }` and expects
 The `message` is shown verbatim in the panel ("Added to Garden Bargains",
 "No Creator Connections campaign for this ASIN", etc.). Commands:
 
-**`deal.push`** - drop the product into a Daily Deals workspace with that
+**`deal.push`** - drop the product into a Deals workspace with that
 workspace's existing Build-Your-Post template and social destinations, exactly
 as if the user added it there by hand.
 
@@ -215,7 +215,7 @@ as if the user added it there by hand.
 **`deal.push.batch`** - same as `deal.push`, but many products into one
 workspace at once, from the Deal Sites Harvester. The extension chunks large
 harvests (200 products per command); the app accepts a batch and returns one
-result ("Added N of M deal(s) to Deals Influencer Butler."). Desktop apps
+result ("Added N of M deal(s) to Deals Butler."). Desktop apps
 newer than 1.0.51 implement it; when an older app answers "Unknown command",
 the extension falls back to N sequential `deal.push` calls for the rest of
 the run.
@@ -543,7 +543,7 @@ empty body is rejected before any write.
 
 The extension asks the running app whether the creator already OWNS a batch of
 ASINs they are browsing (from the Orders Butler's synced order history) and
-whether they have already POSTED/promoted each (Storefront content, Daily Deals
+whether they have already POSTED/promoted each (Storefront content, Deals
 posts, YouTube uploads, unioned via content-coverage). Product pages and
 search/deals tiles use it to show a live "you already own this / you already
 posted this" badge, so the creator does not buy a duplicate or re-promote the

@@ -28,12 +28,14 @@
         <ul>
           <li data-nav-for="update-card" hidden><a href="#update-card" data-i18n="navUpdate">Update</a></li>
           <li data-nav-for="whats-new-card" hidden><a href="#whats-new-card" data-i18n="navWhatsNew">What's new</a></li>
+          <li data-nav-for="quick-link-card" hidden><a href="#quick-link-card" id="nav-quick-link">Get my link</a></li>
           <li><a href="#page-status" data-i18n="thisPageHeading">This page</a></li>
           <li><a href="#account" data-i18n="accountHeading">Account</a></li>
           <li><a href="#app-bridge" data-i18n="appBridgeHeading">Desktop app</a></li>
           <li><a href="#ai-assistant-card" data-i18n="navAiAssistant">AI Assistant</a></li>
           <li data-nav-for="deal-harvester"><a href="#deal-harvester" data-i18n="navDeals">Deal Harvester</a></li>
           <li><a href="#link-butler" data-i18n="navLinkButler">Link Butler</a></li>
+          <li><a href="#clean-link-card" id="nav-clean-link">Clean link</a></li>
           <li><a href="#settings-card" data-i18n="settingsHeading">Settings</a>
             <ul>
               <li><a href="#grp-walmart" data-i18n="groupWalmart">Walmart</a></li>
@@ -61,6 +63,17 @@
         <p id="whats-new-meta" class="muted small"></p>
         <div id="whats-new-sections"></div>
         <button id="whats-new-dismiss" class="primary" data-i18n="whatsNewDismiss">Got it</button>
+      </section>
+
+      <section id="quick-link-card" class="card" hidden>
+        <h2 id="ql-heading">Get my link for this page</h2>
+        <p class="muted small" id="ql-blurb">
+          You're on a product page. Generate your affiliate link (or branded
+          deeplink) for it and copy it in one tap.
+        </p>
+        <button id="ql-generate" class="primary">Get my link</button>
+        <p id="ql-status" class="muted small" hidden></p>
+        <div id="ql-results" hidden></div>
       </section>
 
       <section id="page-status" class="card">
@@ -163,7 +176,7 @@
         <h2 id="deals-heading">Deal Sites Harvester</h2>
         <p class="muted small" id="deals-blurb">
           Pull deals from the daily-deal sites you follow and send them into a
-          Deals Influencer Butler workspace in the app.
+          Deals Butler workspace in the app.
         </p>
         <button id="open-deals" class="primary">Open Deal Sites Harvester</button>
       </section>
@@ -180,6 +193,20 @@
           <span id="lb-branded-label">Copy short branded links</span>
         </label>
         <p class="muted small" id="lb-branded-hint"></p>
+      </section>
+
+      <section id="clean-link-card" class="card">
+        <h2 id="cl-heading">Clean a link</h2>
+        <p class="muted small" id="cl-blurb">
+          Paste a product link that has someone else's tracking on it. We strip
+          their attribution and give you a clean link plus one with your own tag.
+        </p>
+        <div class="row">
+          <input id="cl-input" type="text" placeholder="Paste a product link" autocomplete="off" spellcheck="false" />
+          <button id="cl-clean" class="primary">Clean</button>
+        </div>
+        <p id="cl-status" class="muted small" hidden></p>
+        <div id="cl-results" hidden></div>
       </section>
 
       <section id="settings-card" class="card">

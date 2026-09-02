@@ -98,9 +98,23 @@
       var fresh = !isNaN(then) && Date.now() - then < 24 * 60 * 60 * 1000;
       return who + (where ? " from " + where : "") + (fresh ? " just subscribed" : " recently subscribed");
     }
+    if (e.kind === "trial_start") {
+      var trialWho = e.firstName ? e.firstName : "Someone";
+      return trialWho + (where ? " in " + where : "") + " started a 14-day free trial";
+    }
+    if (e.kind === "extension_install") {
+      return "Someone" + (where ? " in " + where : "") + " installed the free extension";
+    }
     // Soft, browsing-level wording for trial-interest events (covers seeded
     // demo activity too): no claim that anything was completed or verified.
     return "Someone" + (where ? " in " + where : "") + " is checking out Influencer Butler";
+  }
+
+  function iconFor(kind) {
+    if (kind === "purchase") return "🛒";
+    if (kind === "trial_start") return "✨";
+    if (kind === "extension_install") return "🧩";
+    return "🎉";
   }
 
   function injectStyles() {
@@ -124,6 +138,10 @@
       ".ib-activity__body{min-width:0;padding-right:14px}" +
       ".ib-activity__msg{color:#111827;font-weight:600}" +
       ".ib-activity__time{color:#6b7280;font-size:11.5px;margin-top:3px}" +
+      ".ib-activity__cta{display:none;margin-top:6px;font-size:12px;font-weight:700;" +
+        "color:#c2410c;text-decoration:none}" +
+      ".ib-activity__cta.is-shown{display:inline-block}" +
+      ".ib-activity__cta:hover{color:#9a3412;text-decoration:underline}" +
       ".ib-activity__close{position:absolute;top:7px;right:9px;border:0;background:none;" +
         "cursor:pointer;color:#6b7280;font-size:17px;line-height:1;padding:2px}" +
       ".ib-activity__close:hover{color:#4b5563}";
@@ -142,6 +160,7 @@
         '<div class="ib-activity__body">' +
           '<div class="ib-activity__msg" id="ib-activity-msg"></div>' +
           '<div class="ib-activity__time" id="ib-activity-time"></div>' +
+          '<a class="ib-activity__cta" id="ib-activity-cta" href="/extension">FREE Extension - get it here</a>' +
         "</div>" +
       "</div>";
     document.body.appendChild(root);
@@ -157,9 +176,16 @@
   function hide(root) { root.classList.remove("is-visible"); }
 
   function render(root, e) {
-    root.querySelector("#ib-activity-icon").textContent = e.kind === "purchase" ? "🛒" : "🎉";
+    root.querySelector("#ib-activity-icon").textContent = iconFor(e.kind);
     root.querySelector("#ib-activity-msg").textContent = headline(e);
     root.querySelector("#ib-activity-time").textContent = timeAgo(e.createdAt);
+    // "Get it here" CTA only on extension-install cards; hidden on every other
+    // kind so the link never implies unrelated actions.
+    var cta = root.querySelector("#ib-activity-cta");
+    if (cta) {
+      if (e.kind === "extension_install") cta.classList.add("is-shown");
+      else cta.classList.remove("is-shown");
+    }
   }
 
   function run(events) {

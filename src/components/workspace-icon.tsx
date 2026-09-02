@@ -65,7 +65,7 @@ const icons: Record<string, IconRenderer> = {
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" />
     </svg>
   ),
-  "daily-deals": (p) => (
+  "deals": (p) => (
     <svg {...baseProps} {...p}>
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" />
       <circle cx="7" cy="7" r="1.5" fill="currentColor" />

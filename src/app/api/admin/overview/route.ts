@@ -88,7 +88,7 @@ export async function GET(request: Request) {
           SUBSCRIPTION_STATUSES.map(async (status) => {
             const n = await safeCount(supabase, "subscriptions", (b) => {
               let q = b.eq("status", status);
-              // The Daily Deals add-on creates extra subscription rows; keep the
+              // The Deals add-on creates extra subscription rows; keep the
               // headline "active" count to real plans when the variant is known.
               if (status === "active" && addonVariant) q = q.neq("ls_variant_id", addonVariant);
               return q;

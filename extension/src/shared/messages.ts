@@ -122,7 +122,7 @@ export type RuntimeMessage =
   | { kind: "FETCH_BRAND_ENRICHMENT"; brands: string[] }
   // Ask the running desktop app whether the creator already owns a batch of ASINs
   // (Orders Butler history) and whether they already posted/promoted each
-  // (Storefront / Daily Deals / YouTube), so product pages and search/deals tiles
+  // (Storefront / Deals / YouTube), so product pages and search/deals tiles
   // can badge "you already own this / you already posted this". Routed over the
   // local bridge; returns paired:false when the app was never connected.
   | { kind: "LOOKUP_OWNERSHIP"; asins: string[] }
@@ -188,6 +188,9 @@ export type RuntimeMessage =
       retailer?: "amazon" | "walmart";
     }
   | { kind: "REWRITE_LINK"; url: string }
+  // Clean Link (popup tool): strip another person's tracking off a pasted url,
+  // expanding a short link first, then re-tag with the user's own attribution.
+  | { kind: "CLEAN_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   | { kind: "AI_CHAT"; messages: AiChatTurn[] }
   // AI concierge voice: mint an ephemeral Realtime token, run a Realtime tool
@@ -371,6 +374,10 @@ export type WatchInput = {
   asin: string;
   marketplace: string;
   title: string | null;
+  // Product image captured at add time (from the tile / product page), so the
+  // watchlist row shows a thumbnail immediately without waiting on the sign-in
+  // gated Creator API backfill. Null when the source had no image.
+  imageUrl?: string | null;
   notifyOn?: WatchCondition[];
 };
 
@@ -670,6 +677,26 @@ export type GenerateLinkResult = {
   notice?: LinkNotice;
 };
 export type OpenAiResult = { ok: boolean; text?: string; error?: string };
+
+// Clean Link result. `cleanUrl` is the tracking-free link (canonical when we
+// recognized a product, else the input with known trackers stripped). `myLink`
+// is that clean link re-tagged with the user's own attribution, present only
+// when a product was recognized. `expandedFrom` is set when a short link was
+// followed to reach the cleaned url; `expandFailed` when a short link could not
+// be resolved (missing host permission or a network error). `myLinkNotice`
+// rides along from the affiliate-link build (see GenerateLinkResult).
+export type CleanLinkResult = {
+  ok: boolean;
+  error?: string;
+  retailer?: "amazon" | "walmart" | null;
+  productId?: string | null;
+  cleanUrl?: string;
+  matched?: boolean;
+  myLink?: string;
+  myLinkNotice?: LinkNotice;
+  expandedFrom?: string;
+  expandFailed?: boolean;
+};
 
 export type AiChatTurn = { role: "user" | "assistant"; content: string };
 export type AiChatImage = { url: string; alt: string };

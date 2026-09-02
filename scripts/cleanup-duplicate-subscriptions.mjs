@@ -8,7 +8,7 @@
  *   duplicates; this script mops up the ones already stacked.
  *
  *   Safe by default: it only CANCELS trials, never a paid 'active' subscription,
- *   and never the Daily Deals add-on. It is a DRY RUN unless you pass --apply.
+ *   and never the Deals add-on. It is a DRY RUN unless you pass --apply.
  *   Cancelling in LS (DELETE) stops a trial converting; your production
  *   subscription_cancelled webhook then reconciles the subscriptions table, so
  *   this script deliberately does NOT touch the database.
@@ -31,7 +31,7 @@
  * Env:
  *   LEMONSQUEEZY_API_KEY                    (required)
  *   LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON  (optional) - the add-on variant id,
- *                   so the additive Daily Deals sub is never treated as a
+ *                   so the additive Deals sub is never treated as a
  *                   duplicate. If unset, add-ons are identified only by their
  *                   status (they are 'active', never a trial, so trials are
  *                   still safe to cancel either way).

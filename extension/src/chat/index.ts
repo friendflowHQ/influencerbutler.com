@@ -27,7 +27,7 @@ type RealtimeEvent = {
 const SUGGESTIONS = [
   "How do I set up the Chrome extension?",
   "How do I connect my Amazon Creator API?",
-  "How does Daily Deals posting work?",
+  "How does Deals posting work?",
 ];
 
 function main(): void {

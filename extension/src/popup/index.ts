@@ -1,8 +1,10 @@
 import {
   sendToBackground,
   type AuthStatus,
+  type CleanLinkResult,
   type FeedbackInput,
   type FeedbackResult,
+  type GenerateLinkResult,
   type IntegrationsView,
   type PageStatus,
   type PairResult,
@@ -17,6 +19,10 @@ import {
   type WatchlistResult,
   type WhatsNewView,
 } from "../shared/messages";
+import { shortenerOriginPattern } from "../integrations/clean-link";
+import { detectRetailerForUrl } from "../content/page-type";
+import { retailerModule } from "../retailers/module";
+import { copyButton } from "../ui/components";
 import { getSettings, patchSettings } from "../storage/store";
 import { getFlags } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
@@ -35,6 +41,14 @@ import { resolveLocale, setLocale, t } from "../i18n";
 // primary deeplink provider is the whole of "turn branded links on": it takes no
 // credentials, only the signed-in license.
 const IB_LINKS = "influencerbutler";
+
+// Friendly names for the Walmart link providers, used in the Quick Link card's
+// "Generating your <provider> link..." status. Keys match the adapter ids stored
+// in integrations.global.walmartLinkProvider.
+const WALMART_PROVIDER_NAMES: Record<string, string> = {
+  walmartCreator: "Walmart Creator",
+  mavely: "Mavely",
+};
 
 void init();
 
@@ -62,6 +76,12 @@ async function init(): Promise<void> {
   // Link Butler (branded-link Ledger) is a neutral tool: creators share links on
   // every channel, so it shows regardless of onsite/offsite creator mode.
   void wireLinkButler(settings.locale);
+  // Quick Link: when the active tab is an Amazon or Walmart product page, offer
+  // a top-of-box button to generate/copy the affiliate link for it. Async (it
+  // reads the active tab), so it reveals its own card and re-syncs the nav.
+  void wireQuickLink(settings.locale);
+  // Clean Link is a neutral utility for every creator, wired unconditionally.
+  wireCleanLink(settings.locale);
   // The Deal Sites Harvester and Instagram Goldmine are offsite tools (harvest
   // deals / creators to share off-Amazon). Hide their launcher cards for an
   // onsite-only creator; "both" and offsite show them as before.
@@ -289,7 +309,7 @@ function wireDealHarvester(locale: Settings["locale"]): void {
     en: {
       heading: "Deal Sites Harvester",
       blurb:
-        "Pull deals from the daily-deal sites you follow and send them into a Deals Influencer Butler workspace in the app.",
+        "Pull deals from the daily-deal sites you follow and send them into a Deals Butler workspace in the app.",
       open: "Open Deal Sites Harvester",
     },
     es: {
@@ -377,6 +397,332 @@ async function wireLinkButler(locale: Settings["locale"]): Promise<void> {
       partial: { primaryDeeplinkProvider: box.checked ? IB_LINKS : null },
     });
   };
+}
+
+// Clean Link: paste a product link carrying someone else's tracking, get back a
+// clean link plus one re-tagged with the user's own attribution. Strings are
+// Quick Link: a top-of-box card, shown only when the active tab is an Amazon or
+// Walmart product page, that generates and copies the affiliate link (or branded
+// deeplink) for that product. It reuses the same GENERATE_AFFILIATE_LINK message
+// as the on-page overlays; Walmart routes through the headless Walmart Creator /
+// Mavely mint (per the user's provider setting), so we name the provider in a
+// "Generating..." status while the background works. Strings localized inline,
+// no em dashes (repo convention).
+async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
+  const dict = {
+    en: {
+      nav: "Get my link",
+      heading: "Get my link for this page",
+      blurb:
+        "You're on a product page. Generate your affiliate link (or branded deeplink) for it and copy it in one tap.",
+      generate: "Get my link",
+      generating: "Building your link...",
+      generatingProvider: (name: string): string => `Generating your ${name} link...`,
+      linkLabel: "Your link",
+      failed: "Could not build a link. Try again.",
+      copied: "Copied!",
+      copiedPlain: "Copied (plain link).",
+      copiedSignIn:
+        "Copied a plain link. Sign in to your Walmart link provider to get tracked links.",
+      notTracked: "Links are not commission-tracked yet.",
+      setup: "Set up Walmart affiliate links",
+    },
+    es: {
+      nav: "Obtener mi enlace",
+      heading: "Obten mi enlace para esta pagina",
+      blurb:
+        "Estas en una pagina de producto. Genera tu enlace de afiliado (o deeplink de marca) y copialo en un toque.",
+      generate: "Obtener mi enlace",
+      generating: "Creando tu enlace...",
+      generatingProvider: (name: string): string => `Generando tu enlace de ${name}...`,
+      linkLabel: "Tu enlace",
+      failed: "No pudimos crear un enlace. Intenta de nuevo.",
+      copied: "Copiado!",
+      copiedPlain: "Copiado (enlace simple).",
+      copiedSignIn:
+        "Copiamos un enlace simple. Inicia sesion en tu proveedor de enlaces de Walmart para obtener enlaces con seguimiento.",
+      notTracked: "Los enlaces aun no tienen seguimiento de comision.",
+      setup: "Configurar enlaces de afiliado de Walmart",
+    },
+    fr: {
+      nav: "Obtenir mon lien",
+      heading: "Obtenir mon lien pour cette page",
+      blurb:
+        "Vous etes sur une page produit. Generez votre lien d'affiliation (ou deeplink de marque) et copiez-le en un clic.",
+      generate: "Obtenir mon lien",
+      generating: "Creation de votre lien...",
+      generatingProvider: (name: string): string => `Generation de votre lien ${name}...`,
+      linkLabel: "Votre lien",
+      failed: "Impossible de creer un lien. Reessayez.",
+      copied: "Copie !",
+      copiedPlain: "Copie (lien simple).",
+      copiedSignIn:
+        "Lien simple copie. Connectez-vous a votre fournisseur de liens Walmart pour obtenir des liens suivis.",
+      notTracked: "Les liens ne sont pas encore suivis pour la commission.",
+      setup: "Configurer les liens d'affiliation Walmart",
+    },
+  }[resolveLocale(locale)];
+
+  const card = document.getElementById("quick-link-card");
+  if (!card) return;
+  byId("ql-heading").textContent = dict.heading;
+  byId("ql-blurb").textContent = dict.blurb;
+  const navLink = document.getElementById("nav-quick-link");
+  if (navLink) navLink.textContent = dict.nav;
+  const btn = byId<HTMLButtonElement>("ql-generate");
+  btn.textContent = dict.generate;
+  const status = byId("ql-status");
+  const results = byId("ql-results");
+
+  const showStatus = (text: string): void => {
+    status.textContent = text;
+    status.hidden = !text;
+  };
+
+  const resultRow = (label: string, value: string): HTMLElement => {
+    const wrap = document.createElement("div");
+    wrap.className = "cl-result";
+    const lbl = document.createElement("p");
+    lbl.className = "muted small";
+    lbl.textContent = label;
+    const row = document.createElement("div");
+    row.className = "row";
+    const field = document.createElement("input");
+    field.type = "text";
+    field.readOnly = true;
+    field.value = value;
+    row.append(field, copyButton(value));
+    wrap.append(lbl, row);
+    return wrap;
+  };
+
+  // Is the active tab a product page we can build a link for? Both Amazon /dp/
+  // and Walmart /ip/ URLs carry the id in the path, so a pure URL parse (no page
+  // DOM, no content-script round trip) covers the common case.
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = tab?.url ?? "";
+  const retailer = url ? detectRetailerForUrl(url) : null;
+  if (!retailer) return; // not Amazon/Walmart: card stays hidden
+  const mod = retailerModule(retailer);
+  const productId = mod.extractProductId(url);
+  if (!productId || !mod.productIdValid(productId)) return; // not a product page
+  const marketplace = mod.marketplaceFor(url);
+
+  // Reveal the card, then re-sync the nav (init already ran syncNavVisibility
+  // before this async work resolved, so the nav item is still hidden).
+  card.hidden = false;
+  syncNavVisibility();
+
+  // For Walmart, learn the configured provider so we can name it in the status
+  // and, when none is set, warn that links are not commission-tracked yet (same
+  // path the on-page Walmart overlay offers).
+  let providerName: string | null = null;
+  if (retailer === "walmart") {
+    try {
+      const view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
+      const providerId = view.global.walmartLinkProvider;
+      const configured = Boolean(
+        providerId && view.providers.find((p) => p.id === providerId)?.configured,
+      );
+      providerName = providerId ? WALMART_PROVIDER_NAMES[providerId] ?? null : null;
+      if (!configured) {
+        const setup = document.createElement("button");
+        setup.className = "link-inline";
+        setup.type = "button";
+        setup.textContent = dict.setup;
+        setup.onclick = () => void sendToBackground({ kind: "OPEN_OPTIONS" });
+        const note = document.createElement("p");
+        note.className = "muted small";
+        note.append(document.createTextNode(`${dict.notTracked} `), setup);
+        status.before(note);
+      }
+    } catch {
+      // Integrations unavailable: proceed with neutral labels.
+    }
+  }
+
+  const generatingText =
+    retailer === "walmart" && providerName ? dict.generatingProvider(providerName) : dict.generating;
+
+  const run = async (): Promise<void> => {
+    btn.disabled = true;
+    results.hidden = true;
+    results.replaceChildren();
+    showStatus(generatingText);
+    try {
+      const res = await sendToBackground<GenerateLinkResult>({
+        kind: "GENERATE_AFFILIATE_LINK",
+        asin: productId,
+        marketplace,
+        url,
+        retailer,
+      });
+      if (!res.ok || !res.url) {
+        showStatus(res.error || dict.failed);
+        return;
+      }
+      results.replaceChildren(resultRow(dict.linkLabel, res.url));
+      results.hidden = false;
+      void navigator.clipboard?.writeText(res.url).catch(() => {});
+      showStatus(
+        res.notice === "signInRequired"
+          ? dict.copiedSignIn
+          : res.notice
+            ? dict.copiedPlain
+            : dict.copied,
+      );
+    } catch {
+      showStatus(dict.failed);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  btn.onclick = () => void run();
+}
+
+// localized inline like the other launcher cards. No em dashes (repo convention).
+function wireCleanLink(locale: Settings["locale"]): void {
+  const dict = {
+    en: {
+      nav: "Clean link",
+      heading: "Clean a link",
+      blurb:
+        "Paste a product link that has someone else's tracking on it. We strip their attribution and give you a clean link plus one with your own tag.",
+      placeholder: "Paste a product link",
+      clean: "Clean",
+      working: "Cleaning...",
+      pasteFirst: "Paste a link first.",
+      failed: "Could not clean that link. Check it and try again.",
+      cleanLabel: "Clean link (no tags)",
+      myLinkLabel: "My link (with your attribution)",
+      expanded: "Expanded the short link first.",
+      expandFailed: "Could not expand that short link, so we cleaned it as given.",
+      strippedOnly:
+        "We could not identify the product, so only known trackers were removed.",
+      noTag: "Set up your affiliate tag in Settings to also get your own link.",
+    },
+    es: {
+      nav: "Limpiar enlace",
+      heading: "Limpia un enlace",
+      blurb:
+        "Pega un enlace de producto que tenga el seguimiento de otra persona. Quitamos su atribucion y te damos un enlace limpio y otro con tu propia etiqueta.",
+      placeholder: "Pega un enlace de producto",
+      clean: "Limpiar",
+      working: "Limpiando...",
+      pasteFirst: "Pega un enlace primero.",
+      failed: "No pudimos limpiar ese enlace. Revisalo e intenta de nuevo.",
+      cleanLabel: "Enlace limpio (sin etiquetas)",
+      myLinkLabel: "Mi enlace (con tu atribucion)",
+      expanded: "Primero expandimos el enlace corto.",
+      expandFailed: "No pudimos expandir ese enlace corto, asi que lo limpiamos tal cual.",
+      strippedOnly:
+        "No pudimos identificar el producto, asi que solo quitamos los rastreadores conocidos.",
+      noTag: "Configura tu etiqueta de afiliado en Ajustes para obtener tambien tu propio enlace.",
+    },
+    fr: {
+      nav: "Nettoyer un lien",
+      heading: "Nettoyer un lien",
+      blurb:
+        "Collez un lien produit qui porte le suivi de quelqu'un d'autre. Nous retirons son attribution et vous donnons un lien propre plus un avec votre propre balise.",
+      placeholder: "Collez un lien produit",
+      clean: "Nettoyer",
+      working: "Nettoyage...",
+      pasteFirst: "Collez d'abord un lien.",
+      failed: "Impossible de nettoyer ce lien. Verifiez-le et reessayez.",
+      cleanLabel: "Lien propre (sans balises)",
+      myLinkLabel: "Mon lien (avec votre attribution)",
+      expanded: "Nous avons d'abord deploye le lien court.",
+      expandFailed: "Impossible de deployer ce lien court, nous l'avons donc nettoye tel quel.",
+      strippedOnly:
+        "Nous n'avons pas pu identifier le produit, seuls les traceurs connus ont ete retires.",
+      noTag: "Configurez votre balise d'affiliation dans les Reglages pour obtenir aussi votre propre lien.",
+    },
+  }[resolveLocale(locale)];
+
+  byId("cl-heading").textContent = dict.heading;
+  byId("cl-blurb").textContent = dict.blurb;
+  const navLink = document.getElementById("nav-clean-link");
+  if (navLink) navLink.textContent = dict.nav;
+  const input = byId<HTMLInputElement>("cl-input");
+  input.placeholder = dict.placeholder;
+  const btn = byId<HTMLButtonElement>("cl-clean");
+  btn.textContent = dict.clean;
+  const status = byId("cl-status");
+  const results = byId("cl-results");
+
+  const showStatus = (text: string): void => {
+    status.textContent = text;
+    status.hidden = !text;
+  };
+
+  const resultRow = (label: string, value: string): HTMLElement => {
+    const wrap = document.createElement("div");
+    wrap.className = "cl-result";
+    const lbl = document.createElement("p");
+    lbl.className = "muted small";
+    lbl.textContent = label;
+    const row = document.createElement("div");
+    row.className = "row";
+    const field = document.createElement("input");
+    field.type = "text";
+    field.readOnly = true;
+    field.value = value;
+    row.append(field, copyButton(value));
+    wrap.append(lbl, row);
+    return wrap;
+  };
+
+  const run = async (): Promise<void> => {
+    const url = input.value.trim();
+    results.hidden = true;
+    results.replaceChildren();
+    if (!url) {
+      showStatus(dict.pasteFirst);
+      return;
+    }
+    // A short link is followed by the background, which needs host access to the
+    // shortener's origin. Request it here, in the click gesture, before the send.
+    const pattern = shortenerOriginPattern(url);
+    if (pattern) {
+      try {
+        await chrome.permissions.request({ origins: [pattern] });
+      } catch {
+        // Denied or unavailable: the background will report expandFailed.
+      }
+    }
+    btn.disabled = true;
+    showStatus(dict.working);
+    try {
+      const res = await sendToBackground<CleanLinkResult>({ kind: "CLEAN_LINK", url });
+      if (!res.ok) {
+        showStatus(res.error || dict.failed);
+        return;
+      }
+      results.replaceChildren();
+      results.append(resultRow(dict.cleanLabel, res.cleanUrl ?? ""));
+      if (res.myLink) results.append(resultRow(dict.myLinkLabel, res.myLink));
+      results.hidden = false;
+      const notes: string[] = [];
+      if (res.expandFailed) notes.push(dict.expandFailed);
+      else if (res.expandedFrom) notes.push(dict.expanded);
+      if (!res.matched) notes.push(dict.strippedOnly);
+      else if (!res.myLink) notes.push(dict.noTag);
+      showStatus(notes.join(" "));
+    } catch {
+      showStatus(dict.failed);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  btn.onclick = () => void run();
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void run();
+    }
+  });
 }
 
 // Local storage key the background's hud-bridge writes the pairing token to.
@@ -816,10 +1162,16 @@ function makeThumb(imageUrl: string | null, alt: string): HTMLImageElement {
   const img = document.createElement("img");
   img.className = imageUrl ? "row-thumb" : "row-thumb placeholder";
   img.loading = "lazy";
-  img.alt = alt;
+  // The row already shows the product name as visible text next to the thumb, so
+  // the image is decorative: keep alt empty while it is a placeholder (or after a
+  // failed load) so the browser does not paint the alt string + broken-image
+  // glyph inside the box, which reads as "images broken".
+  img.alt = imageUrl ? alt : "";
+  img.dataset.alt = alt;
   if (imageUrl) img.src = imageUrl;
   img.onerror = () => {
     img.removeAttribute("src");
+    img.alt = "";
     img.classList.add("placeholder");
   };
   return img;
@@ -827,6 +1179,7 @@ function makeThumb(imageUrl: string | null, alt: string): HTMLImageElement {
 
 function setThumb(img: HTMLImageElement, imageUrl: string): void {
   img.src = imageUrl;
+  img.alt = img.dataset.alt ?? "";
   img.classList.remove("placeholder");
 }
 

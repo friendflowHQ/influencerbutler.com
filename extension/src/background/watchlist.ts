@@ -56,7 +56,7 @@ export async function addToWatchlist(input: WatchInput): Promise<WatchlistResult
       asin,
       marketplace: input.marketplace,
       title: input.title,
-      imageUrl: null,
+      imageUrl: input.imageUrl ?? null,
       addedAt: Date.now(),
       notifyOn,
       last: null,

@@ -66,7 +66,7 @@ export type IdeaListRef = {
 
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
-  // Batch push of harvested deals into one Deals Influencer Butler workspace, from the Deal
+  // Batch push of harvested deals into one Deals Butler workspace, from the Deal
   // Sites Harvester. Same target as deal.push, many products at once.
   | { type: "deal.push.batch"; workspace: string; products: ProductRef[] }
   | { type: "content.push"; product: ProductRef }
@@ -274,7 +274,7 @@ export type OutreachKeywordsResult = {
 };
 
 // One posted/promoted content item for a product, as recorded by the desktop
-// app (a Storefront video/photo/idea-list, a Daily Deals post, or a YouTube
+// app (a Storefront video/photo/idea-list, a Deals post, or a YouTube
 // upload). Unioned across every channel so the extension can say "you already
 // posted this" and, on hover, where and when.
 export type OwnershipPostedItem = {

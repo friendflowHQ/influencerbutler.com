@@ -95,7 +95,7 @@ export const REFERRED_EVENTS_MAX = 500;
 export const REFERRED_EVENTS_RECENT_VISIBLE = 15;
 
 /**
- * A user can hold more than one subscription row (e.g. the Daily Deals add-on
+ * A user can hold more than one subscription row (e.g. the Deals add-on
  * next to the main sub). Keep one row per user, preferring the one with the
  * richest lifecycle so trial/paid history isn't shadowed by an add-on row.
  */

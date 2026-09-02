@@ -1191,8 +1191,8 @@ export const BUTLERS: ButlerGroup[] = [
     ]
   },
   {
-    "slug": "daily-deals-butler",
-    "name": "Deals Influencer Butler",
+    "slug": "deals-butler",
+    "name": "Deals Butler",
     "cat": "Content & Deals",
     "blurb": "Finds hot deals, injects your promo codes, writes captions in your voice, and auto-posts across platforms.",
     "posts": [

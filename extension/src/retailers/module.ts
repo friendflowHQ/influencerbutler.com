@@ -6,13 +6,17 @@ import type { Settings } from "../storage/schema";
 import { getRateCard, getWalmartRateCard, type StoredRateCard } from "../rate-card/cache";
 import { canonicalProductUrl } from "../integrations/url";
 
-import { extractSignals as extractAmazonSignals, marketplaceFromUrl } from "../amazon/product-signals";
+import {
+  ASIN_URL_RE,
+  extractSignals as extractAmazonSignals,
+  marketplaceFromUrl,
+} from "../amazon/product-signals";
 import { parseSearchTiles as parseAmazonTiles } from "../amazon/search-results";
 import {
   extractSignals as extractWalmartSignals,
   WALMART_MARKETPLACE,
 } from "../walmart/product-signals";
-import { parseSearchTiles as parseWalmartTiles } from "../walmart/search-results";
+import { IP_HREF_ID_RE, parseSearchTiles as parseWalmartTiles } from "../walmart/search-results";
 
 // The retailer abstraction the shared money layer resolves once per page. Both
 // Amazon and Walmart implement it, so the overlays read signals, tiles, the
@@ -46,6 +50,10 @@ export interface RetailerModule {
   // though the Walmart parser reads the tile DOM directly.
   parseSearchTiles(root: ParentNode, url: string): SearchTile[];
   canonicalProductUrl(id: string, marketplace: string): string;
+  // A product id parsed from an arbitrary product url, or null when the url is
+  // not a product page for this retailer. The link cleaner uses this to rebuild
+  // a clean canonical url that carries none of another person's tracking.
+  extractProductId(url: string): string | null;
   productIdValid(id: string): boolean;
   // The cached commission-rate schedule for this retailer (Amazon Associates /
   // Walmart Impact), refreshed daily by the background. Null until first fetch.
@@ -64,6 +72,7 @@ const amazonModule: RetailerModule = {
   extractSignals: (doc, url) => extractAmazonSignals(doc, url),
   parseSearchTiles: (root, url) => parseAmazonTiles(root, url),
   canonicalProductUrl: (id, marketplace) => canonicalProductUrl(id, marketplace, "", "amazon"),
+  extractProductId: (url) => url.match(ASIN_URL_RE)?.[1]?.toUpperCase() ?? null,
   productIdValid: (id) => productIdValid("amazon", id),
   getRateCard: () => getRateCard(),
   // The user's saved onsite commission default.
@@ -87,6 +96,7 @@ const walmartModule: RetailerModule = {
   extractSignals: (doc, url) => extractWalmartSignals(doc, url),
   parseSearchTiles: (root) => parseWalmartTiles(root),
   canonicalProductUrl: (id, marketplace) => canonicalProductUrl(id, marketplace, "", "walmart"),
+  extractProductId: (url) => url.match(IP_HREF_ID_RE)?.[1] ?? null,
   productIdValid: (id) => productIdValid("walmart", id),
   getRateCard: () => getWalmartRateCard(),
   // Walmart's schedule is category-based; the rate card's own default carries

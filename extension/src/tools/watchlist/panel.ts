@@ -45,7 +45,7 @@ export async function renderWatchButton(signals: ProductSignals): Promise<void> 
     } else {
       void sendToBackground<WatchlistResult>({
         kind: "ADD_TO_WATCHLIST",
-        item: { asin, marketplace, title: signals.title ?? null },
+        item: { asin, marketplace, title: signals.title ?? null, imageUrl: signals.imageUrl },
       }).then(done);
     }
   });

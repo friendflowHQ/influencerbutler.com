@@ -18,7 +18,11 @@ export type Geo = {
   country: string | null;
 };
 
-export type ActivityKind = "trial_click" | "purchase";
+export type ActivityKind =
+  | "trial_click"
+  | "purchase"
+  | "extension_install"
+  | "trial_start";
 
 /** Public-safe shape returned to the marketing-site widget. */
 export type PublicActivity = {
@@ -214,6 +218,74 @@ export async function logPurchaseActivity(params: {
   }
 }
 
+/**
+ * Records a Chrome-extension install for the widget feed. Geo only, no name:
+ * the install itself carries no identity. Called when the auto-opened welcome
+ * tab loads (see src/app/extension-welcome). Never throws.
+ */
+export async function logExtensionInstallActivity(params: {
+  geo: Geo;
+}): Promise<void> {
+  try {
+    const db = serviceDb();
+    if (!db) return;
+    const { error } = await db.from("activity_events").insert({
+      kind: "extension_install",
+      city: params.geo.city,
+      region: params.geo.region,
+      country: params.geo.country,
+      is_bot: false,
+    });
+    if (error) console.error("logExtensionInstallActivity: insert failed", error);
+  } catch (err) {
+    console.error("logExtensionInstallActivity threw", err);
+  }
+}
+
+/**
+ * Records a real 14-day trial start for the widget feed, pulling geo from
+ * checkout_geo the same way logPurchaseActivity does. Fired from the Lemon
+ * Squeezy on_trial webhook branch. firstName is optional (the widget falls back
+ * to "Someone"). Never throws.
+ */
+export async function logTrialStartActivity(params: {
+  geoKey: string | null;
+  firstName: string | null;
+}): Promise<void> {
+  try {
+    const db = serviceDb();
+    if (!db) return;
+
+    let geo: Geo = { city: null, region: null, country: null };
+    if (params.geoKey) {
+      const { data } = await db
+        .from("checkout_geo")
+        .select("city,region,country")
+        .eq("welcome_token", params.geoKey)
+        .maybeSingle();
+      if (data) {
+        geo = {
+          city: (data.city as string | null) ?? null,
+          region: (data.region as string | null) ?? null,
+          country: (data.country as string | null) ?? null,
+        };
+      }
+    }
+
+    const { error } = await db.from("activity_events").insert({
+      kind: "trial_start",
+      first_name: params.firstName,
+      city: geo.city,
+      region: geo.region,
+      country: geo.country,
+      is_bot: false,
+    });
+    if (error) console.error("logTrialStartActivity: insert failed", error);
+  } catch (err) {
+    console.error("logTrialStartActivity threw", err);
+  }
+}
+
 // --------------------------------------------------------------------------
 // Config
 // --------------------------------------------------------------------------
@@ -325,11 +397,17 @@ export async function getPublicRecentActivity(): Promise<{
       .limit(config.maxCount);
 
   try {
-    const [purchases, trialClicks] = await Promise.all([
+    const [purchases, trialStarts, extensionInstalls, trialClicks] = await Promise.all([
       query("purchase", purchaseSinceIso),
+      query("trial_start", trialSinceIso),
+      query("extension_install", trialSinceIso),
       query("trial_click", trialSinceIso),
     ]);
-    const rows = composePublicRows(purchases, trialClicks, config.maxCount);
+    const rows = composePublicRows(
+      purchases,
+      [trialStarts, extensionInstalls, trialClicks],
+      config.maxCount,
+    );
     return { enabled: true, events: rows.map(toPublic) };
   } catch {
     return { enabled: true, events: [] };
@@ -339,26 +417,37 @@ export async function getPublicRecentActivity(): Promise<{
 type KindQueryResult = { data: Array<Record<string, unknown>> | null; error: unknown };
 
 /**
- * Purchases lead (up to PURCHASE_LEAD of them, newest-first), then trial clicks
- * fill the remaining slots, then any leftover purchases backfill if there aren't
- * enough trial clicks. Capped at maxCount. This keeps subscriptions up front as
- * the strongest proof while guaranteeing the "checking out" trial-click cards
- * still appear even during a busy sales week. A failed per-kind query degrades
- * to an empty list rather than sinking the whole response. Exported for tests.
+ * Purchases lead (up to PURCHASE_LEAD of them, newest-first), then the
+ * engagement kinds (trial starts, extension installs, trial clicks) merged
+ * newest-first fill the remaining slots, then any leftover purchases backfill if
+ * there aren't enough engagement events. Capped at maxCount. This keeps
+ * subscriptions up front as the strongest proof while guaranteeing the "checking
+ * out" / "installed" / "started a trial" cards still appear even during a busy
+ * sales week. A failed per-kind query degrades to an empty list rather than
+ * sinking the whole response. Exported for tests.
  */
 export function composePublicRows(
   purchases: KindQueryResult,
-  trialClicks: KindQueryResult,
+  engagement: KindQueryResult[],
   maxCount: number,
 ): Array<Record<string, unknown>> {
   const ok = (r: KindQueryResult) => (r.error || !r.data ? [] : r.data);
   const cap = Math.max(0, maxCount);
   const buys = ok(purchases);
-  const trials = ok(trialClicks);
+
+  // Each engagement kind is already newest-first from its own query; merge them
+  // into one newest-first stream so the freshest signal of any kind leads.
+  const engaged = engagement
+    .flatMap((r) => ok(r))
+    .sort((a, b) => {
+      const at = String(a.created_at ?? "");
+      const bt = String(b.created_at ?? "");
+      return at < bt ? 1 : at > bt ? -1 : 0;
+    });
 
   const lead = buys.slice(0, PURCHASE_LEAD);
   const backfill = buys.slice(PURCHASE_LEAD);
-  return [...lead, ...trials, ...backfill].slice(0, cap);
+  return [...lead, ...engaged, ...backfill].slice(0, cap);
 }
 
 /** Recent events for the admin curation list (includes hidden + bot rows). */

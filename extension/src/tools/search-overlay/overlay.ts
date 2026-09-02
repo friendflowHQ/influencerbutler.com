@@ -73,7 +73,7 @@ type Row = {
   earnings: AsinEarnings | null;
   // Ownership signals from the desktop Orders Butler (over the bridge; owned-only
   // server fallback when unpaired). owned = the creator already bought it; posted
-  // = they already made content for it (Storefront / Daily Deals / YouTube).
+  // = they already made content for it (Storefront / Deals / YouTube).
   owned: boolean;
   posted: boolean;
   // Shared-catalogue ("internal Keepa") data for this ASIN: estimated monthly
@@ -432,7 +432,7 @@ export async function initSearchOverlay(
 
   // "Send deals to app": batch the page's discounted tiles (a rollback /
   // clearance / reduced badge, or a strikethrough was-price) into the desktop
-  // Deals Influencer Butler in one click. On the rollback hub every tile
+  // Deals Butler in one click. On the rollback hub every tile
   // qualifies; on a plain search only the marked-down ones do.
   async function sendDealsToApp(setStatus: (text: string) => void): Promise<void> {
     const dealRows = rows.filter(
@@ -837,7 +837,7 @@ function watchControl(row: Row, settings: Settings): HTMLElement {
     } else {
       void sendToBackground<WatchlistResult>({
         kind: "ADD_TO_WATCHLIST",
-        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title },
+        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title, imageUrl: row.tile.imageUrl },
       }).then(done);
     }
   });

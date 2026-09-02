@@ -312,10 +312,10 @@ export const UPDATE_REMIND_MS = 3 * 24 * 60 * 60 * 1000;
 // surface advances it so both stop.
 export const WHATS_NEW_STORAGE_KEY = "ib-whatsnew";
 
-// Deals Influencer Butler workspaces the extension can target. This is a hint list for
+// Deals Butler workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.
 export const DEAL_WORKSPACES: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "default", label: "Deals Influencer Butler (main)" },
+  { key: "default", label: "Deals Butler (main)" },
   { key: "garden-bargains", label: "Garden Bargains" },
   { key: "prime-day", label: "Prime Day Butler" },
   { key: "black-friday", label: "Black Friday Butler" },

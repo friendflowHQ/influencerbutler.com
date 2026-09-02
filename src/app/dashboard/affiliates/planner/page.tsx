@@ -87,11 +87,11 @@ const IDEAS: Idea[] = [
       "Like Butler auto-likes storefront posts on a schedule at a safe pace, so you stop tapping hearts all day. It's free forever, no trial needed. Great first taste of what Butler does:",
   },
   {
-    feature: "Deals Influencer Butler",
+    feature: "Deals Butler",
     cat: "Content & Deals",
     hook: "Post your deals to 5 platforms on autopilot.",
     caption:
-      "Deals Influencer Butler finds the deals, injects your promo codes, writes the captions, and auto-posts to Instagram, Threads, Facebook groups and pages, Telegram, and Reddit on a schedule. Set it up once and wake up to posted deals:",
+      "Deals Butler finds the deals, injects your promo codes, writes the captions, and auto-posts to Instagram, Threads, Facebook groups and pages, Telegram, and Reddit on a schedule. Set it up once and wake up to posted deals:",
     visual: "/assets/before_and_after_stress_influencer_butler_vertical.png",
   },
   {
@@ -215,7 +215,7 @@ const VALUE_POSTS: ValuePost[] = [
     title: "3 kinds of deal posts that convert (not just get likes)",
     cat: "Content & Deals",
     keyword: "DEALS",
-    deliver: "Reply/DM your tracked link to the free 14-day trial (Deals Influencer Butler).",
+    deliver: "Reply/DM your tracked link to the free 14-day trial (Deals Butler).",
     caption:
       "I used to post 'cute find!' products and get a few likes and zero sales. Likes don't pay. Clicks do.\n\nOnce I changed WHAT I post, the same audience started actually buying. Turns out people don't click products, they click deals with a reason to act now.\n\nSo I rotate 3 kinds of deal posts:\n\n1. The live discount: X% off, ends tonight. Urgency does half the selling for you.\n2. The price crash: a genuine glitch or steep drop people can't believe. Screenshots get shared.\n3. The 'I actually use this' deal: a real product you love that happens to be on sale. Trust plus timing.\n\nSame effort, completely different results, because the post gives people a reason to click today.\n\nI auto-post mine to 5 platforms on a schedule so I'm not doing it by hand. Want the tool? Comment DEALS and I'll send it. 💛",
   },
@@ -270,7 +270,7 @@ const CALENDAR: { day: string; focus: string; platform: string }[] = [
   { day: "Day 3", focus: "Free Chrome extension: video counts + content gaps (free forever)", platform: "Reel" },
   { day: "Day 4", focus: "Email 1 to your list", platform: "Email" },
   { day: "Day 5", focus: "Messenger Butler tidy inbox", platform: "Carousel" },
-  { day: "Day 6", focus: "Deals Influencer Butler 5-platform auto-post", platform: "Reel" },
+  { day: "Day 6", focus: "Deals Butler 5-platform auto-post", platform: "Reel" },
   { day: "Day 7", focus: "Weekend: competitor comparison graphic", platform: "Feed post" },
   { day: "Day 8", focus: "Email 2 to your list", platform: "Email" },
   { day: "Day 9", focus: "Retag Butler found-money angle", platform: "Story" },

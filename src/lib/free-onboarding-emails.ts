@@ -103,7 +103,7 @@ export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
         `The free butlers keep your accounts healthy. The Pro butlers are the ones that actually grow your commissions on autopilot:`,
         ``,
         `  1. Daily Commission Butler: auto-accepts the right Creator Connections campaigns based on what you sold yesterday.`,
-        `  2. Deals Influencer Butler: finds deals in your niche and posts them across your platforms automatically.`,
+        `  2. Deals Butler: finds deals in your niche and posts them across your platforms automatically.`,
         `  3. Messenger Butler: keeps your DMs answered so warm followers do not go cold.`,
         ``,
         `You can try all of them free for 14 days - every Pro butler unlocked. Start here: ${v.pricingUrl}`,

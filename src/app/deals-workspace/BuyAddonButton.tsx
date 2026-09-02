@@ -88,13 +88,13 @@ export default function BuyAddonButton({ signedIn, label, className }: Props) {
         .json()
         .then((body: { error?: string }) => body?.error)
         .catch(() => undefined);
-      console.error("Daily Deals add-on checkout failed", {
+      console.error("Deals add-on checkout failed", {
         status: guestResponse.status,
         error: detail,
       });
       setError(CHECKOUT_ERROR_MESSAGE);
     } catch (error) {
-      console.error("Daily Deals add-on checkout failed", error);
+      console.error("Deals add-on checkout failed", error);
       setError(CHECKOUT_ERROR_MESSAGE);
     } finally {
       setLoading(false);

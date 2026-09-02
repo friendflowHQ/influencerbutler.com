@@ -88,13 +88,15 @@ export async function GET(request: Request) {
   let summary: GscSummary | null = null;
   let cachedAt: string | null = null;
   let gscError = false;
+  let errorDetail: string | null = null;
 
   if (cached && cacheFresh && !wantRefresh) {
     summary = cached.data;
     cachedAt = cached.fetched_at;
   } else {
-    summary = await fetchGscSummary();
-    if (summary) {
+    const result = await fetchGscSummary();
+    if (result.summary) {
+      summary = result.summary;
       cachedAt = new Date().toISOString();
       await writeCache(db, summary);
     } else if (cached) {
@@ -102,8 +104,10 @@ export async function GET(request: Request) {
       summary = cached.data;
       cachedAt = cached.fetched_at;
       gscError = true;
+      errorDetail = result.error;
     } else {
       gscError = true;
+      errorDetail = result.error;
     }
   }
 
@@ -111,6 +115,7 @@ export async function GET(request: Request) {
     admin: { email: actor.email },
     configured: true,
     error: gscError,
+    errorDetail,
     cachedAt,
     topQueries: summary?.topQueries ?? null,
     topPages: summary?.topPages ?? null,
