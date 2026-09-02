@@ -1,60 +1,32 @@
--- Cold-outreach drip sequences for known Amazon influencers (custom sequences).
+-- Rewrite the copy for the two cold Amazon-influencer sequences.
 --
--- Seeds two tag-triggered sequences for cold leads found by hand on social,
--- people who ALREADY do Amazon influencer work (onsite and offsite: storefronts,
--- Creator Connections, product videos), from the admin Emails > Sequences tab:
---   1. cold-ig-amazon       -> Amazon influencers found on Instagram
---   2. cold-tiktok-amazon   -> Amazon influencers found on TikTok
---
--- The copy is angled at real Amazon creators, not deal posters: it leads with
--- the automations they actually care about (auto-accepting Creator Connections
+-- The original 20260901_cold_amazon_influencer_sequences.sql seeded these two
+-- sequences with deal-poster copy ("finds the day's best Amazon deals worth
+-- posting"). The leads we actually harvest are onsite/offsite Amazon influencers
+-- (storefronts, Creator Connections, product videos), so this re-angles all
+-- eight steps toward what they care about: auto-accepting Creator Connections
 -- campaigns from their sales, brand outreach on autopilot, and the new Walmart
 -- Repost that copies their Amazon storefront to their Walmart Creator
--- storefront), all under the free 14-day Pro trial (no discount code, no card).
--- Since these are cold, unsolicited sends, every step goes through the compliant
--- marketing sender, which appends the one-click unsubscribe and postal-address
--- footer and honors the suppression list. Do not add either to the body copy.
+-- storefront. Every step now also ends with a P.S. inviting them to the free
+-- Facebook group.
 --
--- Both are created PAUSED. Nothing sends until you Activate them in the UI.
--- Auto-enroll fires when a contact is tagged (Contacts tab import, or manual
--- bulk-tag): the tag is normalized to lowercase-hyphen, so typing
--- "cold ig amazon" / "cold tiktok amazon" matches these triggers exactly. For a
--- list you tagged before activating, use Enroll > By tag to backfill.
+-- The seed uses ON CONFLICT DO NOTHING, so re-running it does NOT touch rows
+-- that already exist in prod. This migration UPDATEs the live rows in place,
+-- keyed by sequence id + position, and is safe to re-run. Live enrollees keep
+-- their progress; only the copy of each step changes.
 --
--- Each is throttled to 25 sends/hour (sends_per_hour) so a large pasted list
--- drips slowly and protects the sending domain on a cold audience. Raise it in
--- the editor once bounces stay healthy.
---
--- Depends on 20260817_email_marketing.sql (email_sequences /
--- email_sequence_steps) and 20260828_sequence_send_controls.sql (sends_per_hour).
--- Everything is idempotent and safe to re-run.
+--   cold-ig-amazon      -> 1a5e0003-0000-4000-a000-000000000003
+--   cold-tiktok-amazon  -> 1a5e0004-0000-4000-a000-000000000004
 --
 -- NOTE: prod Supabase is applied by hand and lags this folder. Paste this into
--- the Supabase SQL editor AFTER those two migrations. If the two sequences were
--- already seeded from an earlier version of this file, the copy is refreshed
--- by 20260902_cold_amazon_influencer_sequences_rewrite.sql (this file's
--- ON CONFLICT DO NOTHING will not overwrite existing rows).
+-- the Supabase SQL editor after 20260901_cold_amazon_influencer_sequences.sql.
 
 -- ---------------------------------------------------------------------------
 -- Sequence 1: Cold Leads: Instagram (Amazon influencers)
 -- ---------------------------------------------------------------------------
-INSERT INTO email_sequences (id, name, status, trigger, sends_per_hour, created_by)
-VALUES (
-  '1a5e0003-0000-4000-a000-000000000003',
-  'Cold Leads: Instagram (Amazon influencers)',
-  'paused',
-  '{"kind":"tag_added","tag":"cold-ig-amazon"}'::jsonb,
-  25,
-  'elizabethdean30@gmail.com'
-)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO email_sequence_steps (sequence_id, position, day_offset, subject, body)
-VALUES
-  (
-    '1a5e0003-0000-4000-a000-000000000003', 1, 0,
-    'You are already doing the Amazon influencer thing on Instagram',
-    'Hi,
+UPDATE email_sequence_steps SET
+  subject = 'You are already doing the Amazon influencer thing on Instagram',
+  body = 'Hi,
 
 It is Liz from The Social Media Posse. I came across your Instagram and saw you are already doing the Amazon influencer thing: storefront, tags, the whole setup. That is exactly who we built Influencer Butler for.
 
@@ -73,11 +45,11 @@ Liz
 The Social Media Posse
 
 P.S. We run a free group for Amazon and Walmart creators. Come say hi: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0003-0000-4000-a000-000000000003', 2, 3,
-    'The part that works while you sleep',
-    'Hi again,
+WHERE sequence_id = '1a5e0003-0000-4000-a000-000000000003' AND position = 1;
+
+UPDATE email_sequence_steps SET
+  subject = 'The part that works while you sleep',
+  body = 'Hi again,
 
 It is Liz. The thing most Amazon creators tell me they hate is the busywork between the money: chasing Creator Connections offers, remembering which brands to pitch, keeping the storefront fed.
 
@@ -94,11 +66,11 @@ Liz
 The Social Media Posse
 
 P.S. Join our free community of Amazon and Walmart creators: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0003-0000-4000-a000-000000000003', 3, 7,
-    'New: your Amazon storefront now copies itself to Walmart',
-    'Hi,
+WHERE sequence_id = '1a5e0003-0000-4000-a000-000000000003' AND position = 2;
+
+UPDATE email_sequence_steps SET
+  subject = 'New: your Amazon storefront now copies itself to Walmart',
+  body = 'Hi,
 
 Liz here with the update I am most excited about: we just folded Walmart into Influencer Butler.
 
@@ -116,11 +88,11 @@ Liz
 The Social Media Posse
 
 P.S. We trade Amazon and Walmart tips daily in the group: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0003-0000-4000-a000-000000000003', 4, 14,
-    'Last note from me',
-    'Hi,
+WHERE sequence_id = '1a5e0003-0000-4000-a000-000000000003' AND position = 3;
+
+UPDATE email_sequence_steps SET
+  subject = 'Last note from me',
+  body = 'Hi,
 
 It is Liz, last note from me.
 
@@ -132,29 +104,14 @@ Liz
 The Social Media Posse
 
 P.S. Either way, you are welcome in our free creator group: https://www.facebook.com/groups/influencerbutler'
-  )
-ON CONFLICT (sequence_id, position) DO NOTHING;
+WHERE sequence_id = '1a5e0003-0000-4000-a000-000000000003' AND position = 4;
 
 -- ---------------------------------------------------------------------------
 -- Sequence 2: Cold Leads: TikTok (Amazon influencers)
 -- ---------------------------------------------------------------------------
-INSERT INTO email_sequences (id, name, status, trigger, sends_per_hour, created_by)
-VALUES (
-  '1a5e0004-0000-4000-a000-000000000004',
-  'Cold Leads: TikTok (Amazon influencers)',
-  'paused',
-  '{"kind":"tag_added","tag":"cold-tiktok-amazon"}'::jsonb,
-  25,
-  'elizabethdean30@gmail.com'
-)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO email_sequence_steps (sequence_id, position, day_offset, subject, body)
-VALUES
-  (
-    '1a5e0004-0000-4000-a000-000000000004', 1, 0,
-    'You are already doing the Amazon thing on TikTok',
-    'Hi,
+UPDATE email_sequence_steps SET
+  subject = 'You are already doing the Amazon thing on TikTok',
+  body = 'Hi,
 
 It is Liz from The Social Media Posse. I found your TikTok and saw you are already doing the Amazon influencer thing: storefront, product videos, the whole setup. That is exactly who we built Influencer Butler for.
 
@@ -171,11 +128,11 @@ Liz
 The Social Media Posse
 
 P.S. We run a free group for Amazon and Walmart creators. Come say hi: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0004-0000-4000-a000-000000000004', 2, 3,
-    'The part that works while you sleep',
-    'Hi again,
+WHERE sequence_id = '1a5e0004-0000-4000-a000-000000000004' AND position = 1;
+
+UPDATE email_sequence_steps SET
+  subject = 'The part that works while you sleep',
+  body = 'Hi again,
 
 It is Liz. The thing most Amazon creators tell me they hate is the busywork between the money: chasing Creator Connections offers, remembering which brands to pitch, keeping the storefront fed.
 
@@ -192,11 +149,11 @@ Liz
 The Social Media Posse
 
 P.S. Join our free community of Amazon and Walmart creators: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0004-0000-4000-a000-000000000004', 3, 7,
-    'New: your Amazon storefront now copies itself to Walmart',
-    'Hi,
+WHERE sequence_id = '1a5e0004-0000-4000-a000-000000000004' AND position = 2;
+
+UPDATE email_sequence_steps SET
+  subject = 'New: your Amazon storefront now copies itself to Walmart',
+  body = 'Hi,
 
 Liz here with the update I am most excited about: we just folded Walmart into Influencer Butler.
 
@@ -214,11 +171,11 @@ Liz
 The Social Media Posse
 
 P.S. We trade Amazon and Walmart tips daily in the group: https://www.facebook.com/groups/influencerbutler'
-  ),
-  (
-    '1a5e0004-0000-4000-a000-000000000004', 4, 14,
-    'Last note from me',
-    'Hi,
+WHERE sequence_id = '1a5e0004-0000-4000-a000-000000000004' AND position = 3;
+
+UPDATE email_sequence_steps SET
+  subject = 'Last note from me',
+  body = 'Hi,
 
 It is Liz, last note from me.
 
@@ -230,5 +187,4 @@ Liz
 The Social Media Posse
 
 P.S. Either way, you are welcome in our free creator group: https://www.facebook.com/groups/influencerbutler'
-  )
-ON CONFLICT (sequence_id, position) DO NOTHING;
+WHERE sequence_id = '1a5e0004-0000-4000-a000-000000000004' AND position = 4;
