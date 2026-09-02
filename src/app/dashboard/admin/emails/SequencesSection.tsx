@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import FunnelStepEditor, { type FunnelStep } from "./FunnelStepEditor";
-import SequenceStepDrawer from "./SequenceStepDrawer";
+import SequenceStepDrawer, { DEFAULT_TEST_EMAIL } from "./SequenceStepDrawer";
 
 type Trigger = null | { kind: "tag_added"; tag: string } | { kind: "source"; source: string };
 
@@ -180,6 +180,15 @@ export default function SequencesSection({
 
   // Step drill-down drawer (which step of which sequence is open).
   const [openStep, setOpenStep] = useState<{ sequenceId: string; position: number } | null>(null);
+
+  // Test All panel state (one open at a time, keyed by sequence id). Sends every
+  // step of the funnel now to a test address, ignoring drip schedule,
+  // subscription/suppression status, and the hourly send limit.
+  const [testOpenId, setTestOpenId] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState(DEFAULT_TEST_EMAIL);
+  const [testBusy, setTestBusy] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -427,6 +436,46 @@ export default function SequencesSection({
       setEnrollError("Enrollment failed. Check your connection and try again.");
     } finally {
       setEnrollBusy(false);
+    }
+  }
+
+  async function submitTestAll(seq: Sequence) {
+    const to = testEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      setTestError("Enter a valid email address.");
+      setTestResult(null);
+      return;
+    }
+    setTestBusy(true);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/admin/emails/sequences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: seq.id, action: "test-all", toEmail: to }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        sent?: number;
+        total?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        setTestError(body.error ?? `Could not send the test (HTTP ${res.status}).`);
+        return;
+      }
+      const sent = body.sent ?? 0;
+      const total = body.total ?? sent;
+      setTestResult(
+        sent === total
+          ? `Sent all ${total} step(s) to ${to}.`
+          : `Sent ${sent} of ${total} step(s) to ${to} (some failed).`,
+      );
+    } catch {
+      setTestError("Could not send the test. Check your connection and try again.");
+    } finally {
+      setTestBusy(false);
     }
   }
 
@@ -866,6 +915,18 @@ export default function SequencesSection({
                 >
                   Enroll
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTestOpenId((prev) => (prev === seq.id ? null : seq.id));
+                    setTestResult(null);
+                    setTestError(null);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  title="Send every step of this funnel to a test address now, ignoring the schedule and sending limits"
+                >
+                  Test All
+                </button>
                 {seq.enrollmentCounts.active > 0 ? (
                   <button
                     type="button"
@@ -967,6 +1028,44 @@ export default function SequencesSection({
                     <span className="text-sm text-emerald-700">{enrollResult}</span>
                   ) : null}
                   {enrollError ? <span className="text-sm text-rose-600">{enrollError}</span> : null}
+                </div>
+              </div>
+            ) : null}
+
+            {testOpenId === seq.id ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-700">
+                  Send all {seq.steps.length} step(s) now
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Delivers every email in this funnel immediately, regardless of subscription status,
+                  and does not use the hourly or daily sending limits. A real recipient gets them
+                  spread over days; a test gets them all at once.
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => {
+                      setTestEmail(e.target.value);
+                      setTestResult(null);
+                      setTestError(null);
+                    }}
+                    placeholder="you@example.com"
+                    className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void submitTestAll(seq)}
+                    disabled={testBusy || seq.steps.length === 0}
+                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-40"
+                  >
+                    {testBusy ? "Sending..." : "Send test of all steps"}
+                  </button>
+                  {testResult ? (
+                    <span className="text-sm text-emerald-700">{testResult}</span>
+                  ) : null}
+                  {testError ? <span className="text-sm text-rose-600">{testError}</span> : null}
                 </div>
               </div>
             ) : null}

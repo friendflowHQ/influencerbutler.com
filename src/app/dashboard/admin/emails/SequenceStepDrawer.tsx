@@ -47,6 +47,12 @@ const STATUS_BADGE: Record<string, string> = {
   failed: "bg-rose-50 text-rose-700",
 };
 
+// Prefilled recipient for the "Send test" buttons. Editable in the field; this
+// is just the default so a staff member can fire a test with one click.
+export const DEFAULT_TEST_EMAIL = "elizabethdean30@gmail.com";
+
+const TEST_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function fmt(iso: string | null): string {
   if (!iso) return "-";
   const d = new Date(iso);
@@ -90,6 +96,43 @@ export default function SequenceStepDrawer({
   // value actually sent to the API (which filters both lists across all pages).
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+
+  // Per-step test send: fires this one step immediately to a test address,
+  // bypassing the drip schedule, subscription/suppression gating, and the
+  // hourly send budget.
+  const [testEmail, setTestEmail] = useState(DEFAULT_TEST_EMAIL);
+  const [testBusy, setTestBusy] = useState(false);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
+  const [testErr, setTestErr] = useState<string | null>(null);
+
+  async function sendTest() {
+    const to = testEmail.trim().toLowerCase();
+    if (!TEST_EMAIL_RE.test(to)) {
+      setTestErr("Enter a valid email address.");
+      setTestMsg(null);
+      return;
+    }
+    setTestBusy(true);
+    setTestErr(null);
+    setTestMsg(null);
+    try {
+      const res = await fetch("/api/admin/emails/sequences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sequenceId, action: "test", position, toEmail: to }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setTestErr(json.error ?? `Could not send the test (HTTP ${res.status}).`);
+        return;
+      }
+      setTestMsg(`Test email sent to ${to}.`);
+    } catch {
+      setTestErr("Could not send the test. Check your connection and try again.");
+    } finally {
+      setTestBusy(false);
+    }
+  }
 
   // Debounce typing, and reset both lists to page 1 whenever the search changes.
   useEffect(() => {
@@ -187,6 +230,39 @@ export default function SequenceStepDrawer({
             <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-3 font-sans text-sm text-slate-800">
               {step.body || "(empty body)"}
             </pre>
+
+            {/* Send this step to yourself right now, ignoring the drip schedule,
+                subscription/suppression status, and the hourly send limit. */}
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => {
+                    setTestEmail(e.target.value);
+                    setTestMsg(null);
+                    setTestErr(null);
+                  }}
+                  placeholder="you@example.com"
+                  className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void sendTest()}
+                  disabled={testBusy}
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-40"
+                  title="Send this step now to the address above. Does not count against sending limits."
+                >
+                  {testBusy ? "Sending..." : "Send test"}
+                </button>
+                {testMsg ? <span className="text-sm text-emerald-700">{testMsg}</span> : null}
+                {testErr ? <span className="text-sm text-rose-600">{testErr}</span> : null}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Sends immediately, regardless of subscription status, and does not use the hourly or
+                daily sending limits.
+              </p>
+            </div>
 
             {/* Email search: filters both the Sent and Scheduled lists below. */}
             <div className="mt-6">

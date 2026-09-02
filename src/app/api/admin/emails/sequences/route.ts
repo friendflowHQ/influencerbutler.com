@@ -23,7 +23,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeTag, parseEmailList, resolveAudience } from "@/lib/email-audience";
+import { EMAIL_RE, normalizeTag, parseEmailList, resolveAudience } from "@/lib/email-audience";
 import {
   enrollEmails,
   stepCategory,
@@ -31,7 +31,12 @@ import {
   sequenceContactTag,
   sequencePlatformTags,
   DEFAULT_SENDS_PER_HOUR,
+  MARKETING_FROM,
+  plainTextToTrackableHtml,
 } from "@/lib/email-marketing";
+import { sendMarketingEmail } from "@/lib/marketing-email";
+import { personalizeReviewBody } from "@/lib/extension-review";
+import { personalizePathBody } from "@/lib/email-path-select";
 import { isMissingTable } from "@/lib/growth-goals";
 
 export const runtime = "nodejs";
@@ -353,6 +358,39 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, id: data.id });
 }
 
+type TestStep = { position: number; subject: string; body: string };
+
+/**
+ * Sends one sequence step immediately to a test address, mirroring the cron's
+ * per-step build exactly (see src/app/api/cron/email-marketing/route.ts) so the
+ * preview lands byte-for-byte like a real drip: same {{...}} placeholder
+ * substitution, same text-only-vs-tracked-HTML choice. Unlike the cron this
+ * never touches the rate-limit budget (logged under the 'sequence_test'
+ * category, which sentInLastHour excludes) and always delivers
+ * (bypassSuppression), so a staff member can preview a funnel in their own inbox
+ * regardless of subscription or suppression status.
+ */
+async function sendSequenceStepTest(
+  step: TestStep,
+  toEmail: string,
+  trackOpens: boolean,
+): Promise<boolean> {
+  const personalizedText = personalizePathBody(
+    personalizeReviewBody(step.body, toEmail),
+    toEmail,
+  );
+  return sendMarketingEmail({
+    from: MARKETING_FROM,
+    to: toEmail,
+    subject: step.subject,
+    text: personalizedText,
+    ...(trackOpens ? { html: plainTextToTrackableHtml(personalizedText) } : {}),
+    category: "sequence_test",
+    funnel: "sequence",
+    bypassSuppression: true,
+  });
+}
+
 export async function PATCH(request: Request) {
   const actor = await requirePermission("marketing.send", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -371,6 +409,8 @@ export async function PATCH(request: Request) {
     trackOpens?: unknown;
     emails?: unknown;
     tag?: unknown;
+    position?: unknown;
+    toEmail?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -575,6 +615,59 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "test" || action === "test-all") {
+    const toEmail =
+      typeof body.toEmail === "string" ? body.toEmail.trim().toLowerCase() : "";
+    if (!toEmail || !EMAIL_RE.test(toEmail)) {
+      return NextResponse.json({ error: "A valid toEmail is required" }, { status: 400 });
+    }
+    const trackOpens = Boolean((found as { track_opens?: unknown }).track_opens);
+
+    if (action === "test") {
+      const position =
+        typeof body.position === "number" ? body.position : Number(body.position);
+      if (!Number.isInteger(position) || position < 1) {
+        return NextResponse.json({ error: "A valid position is required" }, { status: 400 });
+      }
+      const { data: step, error: stepErr } = await db
+        .from("email_sequence_steps")
+        .select("position, subject, body")
+        .eq("sequence_id", id)
+        .eq("position", position)
+        .maybeSingle();
+      if (stepErr) {
+        console.error("admin emails/sequences: test step lookup failed", stepErr);
+        return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
+      }
+      if (!step) return NextResponse.json({ error: "Step not found" }, { status: 404 });
+      const ok = await sendSequenceStepTest(step as TestStep, toEmail, trackOpens);
+      return NextResponse.json({ ok });
+    }
+
+    // action === "test-all": send every step now, back-to-back, so the whole
+    // funnel lands in the test inbox at once (a real recipient gets them spread
+    // over days).
+    const { data: stepData, error: stepErr } = await db
+      .from("email_sequence_steps")
+      .select("position, subject, body")
+      .eq("sequence_id", id)
+      .order("position", { ascending: true });
+    if (stepErr) {
+      console.error("admin emails/sequences: test-all steps lookup failed", stepErr);
+      return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
+    }
+    const steps = (stepData ?? []) as TestStep[];
+    if (steps.length === 0) {
+      return NextResponse.json({ error: "This sequence has no steps" }, { status: 400 });
+    }
+    let sent = 0;
+    for (const step of steps) {
+      const ok = await sendSequenceStepTest(step, toEmail, trackOpens);
+      if (ok) sent += 1;
+    }
+    return NextResponse.json({ ok: sent === steps.length, sent, total: steps.length });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

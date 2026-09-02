@@ -27,6 +27,9 @@ import {
   shortId,
   enrollEmails,
   sequenceRunBudget,
+  marketingRunBudget,
+  DEFAULT_SENDS_PER_HOUR,
+  SEQUENCE_RUNS_PER_HOUR,
   nextSendTime,
   plainTextToTrackableHtml,
 } from "@/lib/email-marketing";
@@ -43,7 +46,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CAMPAIGN_PER_RUN = 100;
-const SEQUENCE_PER_RUN = 40; // default per-sequence cap when sends_per_hour is null
 const MAX_ATTEMPTS = 3;
 const CANDIDATE_LIMIT = 500;
 const CHUNK = 200;
@@ -55,6 +57,41 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // rate setting can blow the function's time budget. (Per-sequence throttle math
 // lives in sequenceRunBudget in email-marketing.ts.)
 const SEQUENCE_GLOBAL_CEILING = 200;
+
+// Domain-safe ceiling on TOTAL emails sent per rolling hour (all funnels). Drip
+// marketing (campaigns + sequences) yields to it so transactional/system mail
+// (sent immediately outside this cron, never gated) always has headroom. Tunable
+// in prod via EMAIL_SAFE_HOURLY_SENDS without a deploy; falls back to this default.
+const SAFE_HOURLY_SENDS_DEFAULT = 1500;
+
+/** Domain-safe hourly send ceiling, from env or the conservative default. */
+function safeHourlySends(): number {
+  const raw = Number(process.env.EMAIL_SAFE_HOURLY_SENDS);
+  return Number.isFinite(raw) && raw > 0 ? raw : SAFE_HOURLY_SENDS_DEFAULT;
+}
+
+/**
+ * Counts emails actually sent (status='sent') in the last rolling hour, across
+ * every funnel, using the email_sends created_at index. Returns 0 on error so a
+ * transient count failure fails open to the per-run ceilings (prior behavior)
+ * rather than stalling the drip.
+ */
+async function sentInLastHour(db: SupabaseClient): Promise<number> {
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count, error } = await db
+    .from("email_sends")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "sent")
+    // Admin test sends (a staff member previewing a funnel in their own inbox)
+    // must not eat into the domain-safe drip headroom, so they are excluded here.
+    .not("category", "in", "(sequence_test,campaign_test)")
+    .gte("created_at", since);
+  if (error) {
+    reportError("sent-last-hour count", error);
+    return 0;
+  }
+  return count ?? 0;
+}
 
 // Auto-pause thresholds: once a sequence has sent at least MIN_HEALTH_SAMPLE
 // emails (100, so small early batches are not paused on noise), pause it if the
@@ -266,8 +303,10 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     return;
   }
 
-  // One shared budget across every sending campaign, oldest first.
-  let budget = CAMPAIGN_PER_RUN;
+  // One shared budget across every sending campaign, oldest first, bounded by the
+  // rolling-hour headroom so campaigns yield to transactional/system volume.
+  let budget = marketingRunBudget(safeHourlySends(), await sentInLastHour(db), CAMPAIGN_PER_RUN);
+  if (budget <= 0) return;
 
   for (const campaign of (rows ?? []) as SendingCampaign[]) {
     if (budget <= 0) break;
@@ -381,12 +420,24 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
   const liveEmails = await liveSubscriberEmails(db);
 
   // Global ceiling bounds total work; each sequence also has its own per-run cap.
-  let globalRemaining = SEQUENCE_GLOBAL_CEILING;
+  // Bounded by the rolling-hour headroom too, so sequences yield to transactional
+  // and campaign volume (transactional is counted but never gated: system first).
+  // sentInLastHour here already includes any campaign sends from this same run,
+  // since those are logged synchronously before advanceSequences runs.
+  let globalRemaining = marketingRunBudget(
+    safeHourlySends(),
+    await sentInLastHour(db),
+    SEQUENCE_GLOBAL_CEILING,
+  );
+
+  // Per-sequence fallback when sends_per_hour is null: the conservative default
+  // rate, so even a sequence created without an explicit rate stays drip-protected.
+  const defaultSeqBudget = Math.max(1, Math.ceil(DEFAULT_SENDS_PER_HOUR / SEQUENCE_RUNS_PER_HOUR));
 
   for (const seq of sequences) {
     if (globalRemaining <= 0) break;
     const steps = stepsBySequence.get(seq.id) ?? [];
-    let seqBudget = Math.min(sequenceRunBudget(seq.sends_per_hour, SEQUENCE_PER_RUN), globalRemaining);
+    let seqBudget = Math.min(sequenceRunBudget(seq.sends_per_hour, defaultSeqBudget), globalRemaining);
 
     // The review-ask sequence deliberately targets HAPPY users, paying ones
     // included, so it opts out of stop-on-subscribe (a converted customer is

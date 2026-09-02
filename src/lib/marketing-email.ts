@@ -33,6 +33,11 @@ export type MarketingEmail = {
   /** Stable per-template key, e.g. 'trial_day0'. Shows up in the admin log. */
   category: string;
   funnel?: EmailFunnel;
+  /** When true, send even if the recipient is on the suppression list. Used only
+   * by admin test sends (a staff member previewing a funnel in their own inbox),
+   * never by the bulk cron. The unsubscribe footer + headers are still appended,
+   * so the test email is byte-for-byte what a real recipient would receive. */
+  bypassSuppression?: boolean;
 };
 
 /**
@@ -46,7 +51,7 @@ export type MarketingEmail = {
  * exception), which tells the caller to retry on the next run.
  */
 export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean> {
-  if (await isEmailSuppressed(email.to)) {
+  if (!email.bypassSuppression && (await isEmailSuppressed(email.to))) {
     // Recipient opted out. Report "handled" so the caller stamps it as done and
     // stops reconsidering this row every run. Nothing is sent, but the skip is
     // logged so it stays visible in the admin dashboard.
