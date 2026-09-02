@@ -60,6 +60,8 @@ type Sequence = {
   created_at: string;
   steps: SequenceStep[];
   enrollmentCounts: { active: number; completed: number; cancelled: number };
+  // Soonest next send across open enrollments (ISO), or null when none pending.
+  next_send_at: string | null;
 };
 
 type SequencesResponse = { sequences: Sequence[]; migrationPending: boolean };
@@ -80,6 +82,72 @@ function sendHourLabel(hour: number | null): string | null {
   const period = hour < 12 ? "AM" : "PM";
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${h12}:00 ${period} MT`;
+}
+
+// The cron's fallback rate when a sequence has no explicit sends_per_hour
+// (mirrors DEFAULT_SENDS_PER_HOUR in src/lib/email-marketing.ts). Used only so
+// the drain estimate is never divided by zero.
+const DEFAULT_RATE = 120;
+
+/** True when an ISO next-send time is due now or overdue (within a minute). */
+function isDueNow(iso: string | null): boolean {
+  if (!iso) return false;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t <= Date.now() + 60_000;
+}
+
+/** "now" when due/overdue, else a short "Sep 3, 9:00 AM" style label; "-" if none. */
+function nextSendLabel(iso: string | null): string {
+  if (!iso) return "-";
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "-";
+  if (t <= Date.now() + 60_000) return "now";
+  return new Date(t).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Rough time to clear `active` open enrollments at this sequence's rate/hour.
+ * Throttle-bound and optimistic: the real pace also depends on the shared
+ * domain-safe hourly headroom, so this is an upper bound on speed, not a promise.
+ */
+function drainLabel(active: number, rate: number | null): string {
+  if (active <= 0) return "-";
+  const perHour = rate && rate > 0 ? rate : DEFAULT_RATE;
+  const hours = active / perHour;
+  if (hours < 1) return "< 1 hr";
+  if (hours < 48) return `~${Math.round(hours)} hr`;
+  return `~${Math.round(hours / 24)} days`;
+}
+
+/** One compact, color-toned stat cell for the per-sequence readout band. */
+function StatChip({
+  label,
+  value,
+  tone,
+  title,
+}: {
+  label: string;
+  value: string;
+  tone: "indigo" | "slate" | "emerald" | "amber";
+  title?: string;
+}) {
+  const tones: Record<typeof tone, string> = {
+    indigo: "border-indigo-100 bg-indigo-50 text-indigo-700",
+    slate: "border-slate-200 bg-slate-50 text-slate-700",
+    emerald: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    amber: "border-amber-100 bg-amber-50 text-amber-800",
+  };
+  return (
+    <div className={`rounded-lg border px-3 py-2 ${tones[tone]}`} title={title}>
+      <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
+    </div>
+  );
 }
 
 const SOURCE_SUGGESTIONS = [
@@ -950,6 +1018,37 @@ export default function SequencesSection({
                 the list, then Activate to resume.
               </div>
             ) : null}
+
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <StatChip
+                label="Rate"
+                value={`${(seq.sends_per_hour ?? DEFAULT_RATE).toLocaleString("en-US")}/hr`}
+                tone="indigo"
+                title="How fast this sequence is allowed to drip, per hour."
+              />
+              <StatChip
+                label="Waiting"
+                value={seq.enrollmentCounts.active.toLocaleString("en-US")}
+                tone="slate"
+                title="Open enrollments still mid-drip (the backlog)."
+              />
+              <StatChip
+                label="Next send"
+                value={nextSendLabel(seq.next_send_at)}
+                tone={isDueNow(seq.next_send_at) ? "emerald" : "slate"}
+                title={
+                  seq.send_hour != null
+                    ? `Pinned to ${sendHourLabel(seq.send_hour)}. Clear the send hour (Edit) to start sending on the next cron run instead.`
+                    : "Soonest upcoming send across everyone still mid-drip."
+                }
+              />
+              <StatChip
+                label="Est. drain"
+                value={drainLabel(seq.enrollmentCounts.active, seq.sends_per_hour)}
+                tone="amber"
+                title="Rough time to clear the backlog at this rate. Real pace also depends on the shared domain-safe hourly limit, so treat it as a best case."
+              />
+            </div>
 
             <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
               {[...seq.steps]

@@ -32,6 +32,7 @@ import {
   sequencePlatformTags,
   DEFAULT_SENDS_PER_HOUR,
   MARKETING_FROM,
+  nextSendTime,
   plainTextToTrackableHtml,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
@@ -214,6 +215,16 @@ export async function GET(request: Request) {
   // is it, i.e. last_step_sent = p - 1 (the same rule the step drawer uses for
   // its Scheduled list). Keyed sequence_id -> lastStepSent -> count.
   const queuedById = new Map<string, Map<number, number>>();
+  // Soonest upcoming (or overdue) send across a sequence's open enrollments, as
+  // a UTC epoch ms. Powers the "next send" readout on each card: computed with
+  // the same nextSendTime() the cron uses, so the two never disagree.
+  const nextSendById = new Map<string, number>();
+  // send_hour per sequence, for the nextSendTime math (select("*") returns it).
+  const sendHourById = new Map<string, number | null>();
+  for (const s of sequences) {
+    const hour = (s as unknown as { send_hour?: number | null }).send_hour;
+    sendHourById.set(s.id, typeof hour === "number" ? hour : null);
+  }
 
   if (sequences.length > 0) {
     const ids = sequences.map((s) => s.id);
@@ -235,7 +246,7 @@ export async function GET(request: Request) {
     for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
       const { data: enrollRows, error: enrollErr } = await db
         .from("email_sequence_enrollments")
-        .select("sequence_id, completed_at, cancelled_at, last_step_sent")
+        .select("sequence_id, completed_at, cancelled_at, last_step_sent, enrolled_at")
         .in("sequence_id", ids)
         .range(offset, offset + COUNT_PAGE - 1);
       if (enrollErr) break;
@@ -251,6 +262,22 @@ export async function GET(request: Request) {
           const perSeq = queuedById.get(row.sequence_id) ?? new Map<number, number>();
           perSeq.set(lastStep, (perSeq.get(lastStep) ?? 0) + 1);
           queuedById.set(row.sequence_id, perSeq);
+
+          // Track the soonest due time for this open enrollment's next step.
+          const nextStep = (stepsById.get(row.sequence_id) ?? []).find(
+            (st) => st.position === lastStep + 1,
+          );
+          if (nextStep && typeof row.enrolled_at === "string") {
+            const due = nextSendTime(
+              row.enrolled_at,
+              nextStep.day_offset,
+              sendHourById.get(row.sequence_id) ?? null,
+            );
+            if (Number.isFinite(due)) {
+              const cur = nextSendById.get(row.sequence_id);
+              if (cur === undefined || due < cur) nextSendById.set(row.sequence_id, due);
+            }
+          }
         }
         countsById.set(row.sequence_id, counts);
       }
@@ -261,6 +288,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     sequences: sequences.map((row) => {
       const queuedByLastStep = queuedById.get(row.id);
+      const nextMs = nextSendById.get(row.id);
       return {
         ...row,
         steps: (stepsById.get(row.id) ?? []).map((step) => ({
@@ -270,6 +298,11 @@ export async function GET(request: Request) {
           queued: queuedByLastStep?.get(step.position - 1) ?? 0,
         })),
         enrollmentCounts: countsById.get(row.id) ?? { active: 0, completed: 0, cancelled: 0 },
+        // Soonest next send across open enrollments (null when none are pending).
+        next_send_at:
+          typeof nextMs === "number" && Number.isFinite(nextMs)
+            ? new Date(nextMs).toISOString()
+            : null,
       };
     }),
     migrationPending: false,
