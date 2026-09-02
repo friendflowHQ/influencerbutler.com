@@ -188,6 +188,12 @@ export type Settings = {
     // a no-op for everyone else. On by default; backfilled to true for existing
     // users by the tools shallow-merge in migrate().
     ownership: boolean;
+    // Shows an "Enrolled in Creator Connections / SPCC" badge on product pages,
+    // read from the desktop app's accepted-history ledger (kept fresh by its hourly
+    // sync) over the bridge. Self-gates to paired users who are actually enrolled,
+    // so it is a no-op for everyone else. On by default; backfilled to true for
+    // existing users by the tools shallow-merge in migrate().
+    enrolledBadge: boolean;
     // Master gate for all Walmart.com support (the neutral overlays run on
     // Walmart pages when this is on). Lets a user turn Walmart off without
     // touching their Amazon overlays. Backfilled to true by the tools
@@ -556,6 +562,7 @@ export const DEFAULTS: StorageShape = {
       brandKeywords: true,
       messageTemplates: true,
       ownership: true,
+      enrolledBadge: true,
       walmart: true,
     },
     syncEnabled: true,

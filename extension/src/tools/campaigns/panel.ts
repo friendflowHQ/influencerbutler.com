@@ -3,7 +3,8 @@ import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { makeCommandRunner, toProductRef } from "../hud-actions/runner";
-import type { HudStatus } from "../../shared/messages";
+import { resolveCampaignStatus } from "./status";
+import type { CampaignStatusRecord, HudStatus } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 
 // Shows whether this product likely has a Creator Connections or Sponsored
@@ -11,7 +12,7 @@ import type { ProductSignals } from "../../amazon/product-signals";
 // filter (zero server cost). A hit is a strong hint, not a guarantee (Bloom
 // filters have a small false-positive rate); the app confirms on Accept.
 
-export async function renderCampaigns(signals: ProductSignals): Promise<void> {
+export async function renderCampaigns(signals: ProductSignals, showEnrolled = true): Promise<void> {
   if (!signals.asin) return;
   // Claim the section slot before any await so this section always lands above
   // "Send to your butler app" (whose panel adds its section synchronously);
@@ -33,14 +34,55 @@ export async function renderCampaigns(signals: ProductSignals): Promise<void> {
     return;
   }
 
+  // Personal enrollment from the desktop accepted-history ledger (kept fresh by
+  // the app's hourly sync). Empty for unpaired users / when the app is closed.
+  // Fetched before building the chip row so an enrolled program shows the stronger
+  // "Enrolled" badge instead of the generic "available" chip + Accept button. This
+  // is a *different* signal from the Bloom availability flag above: availability
+  // means "some creator can join", enrollment means "you already joined".
+  let enrolled: CampaignStatusRecord | null = null;
+  if (showEnrolled && (flags.cc || flags.spcc)) {
+    try {
+      const [rec] = await resolveCampaignStatus([signals.asin]);
+      enrolled = rec ?? null;
+    } catch {
+      enrolled = null;
+    }
+  }
+  const ccEnrolled = enrolled?.cc === true;
+  const spccEnrolled = enrolled?.spcc === true;
+
   const row = el("div", "counts");
-  if (flags.cc) row.append(chip("good", t().ccAvailable));
-  if (flags.spcc) row.append(chip("good", t().spccAvailable));
+  if (ccEnrolled) row.append(chip("good", t().enrolledCc));
+  else if (flags.cc) row.append(chip("good", t().ccAvailable));
+  if (spccEnrolled) row.append(chip("good", t().enrolledSpcc));
+  else if (flags.spcc) row.append(chip("good", t().spccAvailable));
   if (flags.deals) row.append(chip("good", t().dealAvailable));
   section.append(row);
 
-  if (flags.cc || flags.spcc) {
-    await renderAcceptActions(section, signals, flags);
+  // Enrolled economics: the accepted commission rate and the creator's realized
+  // EPC (earnings / clicks), each shown only when the app returned it. Realized
+  // EPC is null for products accepted but not yet earned on, so the pill is often
+  // absent right after accepting.
+  if (enrolled && (ccEnrolled || spccEnrolled)) {
+    const pills = el("div", "counts");
+    if (enrolled.ratePct !== null) {
+      pills.append(chip("good", t().enrolledRate(enrolled.ratePct)));
+    }
+    if (enrolled.epc !== null) {
+      // No currency travels with the record; realized EPC is overwhelmingly USD
+      // (Amazon Associates US). Format as dollars; localize if that changes.
+      pills.append(chip("good", t().epc(`$${enrolled.epc.toFixed(2)}`)));
+    }
+    if (pills.childElementCount > 0) section.append(pills);
+  }
+
+  // Accept only a program that is available but NOT already enrolled: accepting a
+  // campaign you are already in is meaningless.
+  const canAcceptCc = flags.cc && !ccEnrolled;
+  const canAcceptSpcc = flags.spcc && !spccEnrolled;
+  if (canAcceptCc || canAcceptSpcc) {
+    await renderAcceptActions(section, signals, { cc: canAcceptCc, spcc: canAcceptSpcc });
   }
 
   if (flags.deals) {

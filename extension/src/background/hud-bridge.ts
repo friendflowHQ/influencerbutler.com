@@ -8,6 +8,7 @@ import { log } from "../shared/log";
 import { getSettings, patchSettings } from "../storage/store";
 import type {
   BrandEnrichmentResult,
+  CampaignStatusResult,
   DesktopHistoryResult,
   EarningsLookupResult,
   HudCommand,
@@ -575,6 +576,89 @@ function fetchOwnershipOnPort(
           return;
         }
         if (frame.type === "ownership.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// Campaign-status lookup: given a batch of ASINs the creator is browsing, ask the
+// desktop app whether they are already ENROLLED in a Creator Connections / SPCC
+// campaign for each (its accepted-history ledger, kept fresh by the app's hourly
+// sync), plus the accepted rate and their realized EPC. Read-only and authed.
+// Returns paired:false when the app has never been connected so the caller stays
+// silent (enrollment lives only on the desktop, no server fallback). Mirrors
+// fetchOwnership. Short-circuits an empty batch (no socket).
+export async function fetchCampaignStatus(asins: string[]): Promise<CampaignStatusResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(asins) ? asins : []).map((a) => String(a || "").trim().toUpperCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchCampaignStatusOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchCampaignStatusOnPort(
+  port: number,
+  asins: string[],
+  token: string,
+): Promise<CampaignStatusResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: CampaignStatusResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: CampaignStatusResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "campaign.status.lookup", payload: { asins } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "campaign.status.result") {
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],

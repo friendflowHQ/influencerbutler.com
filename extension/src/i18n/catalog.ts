@@ -652,6 +652,10 @@ export interface Dict {
   noCampaign: string;
   ccAvailable: string;
   spccAvailable: string;
+  enrolledCc: string;
+  enrolledSpcc: string;
+  enrolledRate: (pct: number) => string;
+  epc: (money: string) => string;
   campaignConnectNote: string;
   dealAvailable: string;
   dealPushNote: string;
@@ -1456,6 +1460,10 @@ const en: Dict = {
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
+  enrolledCc: "Enrolled in Creator Connections",
+  enrolledSpcc: "Enrolled in SPCC",
+  enrolledRate: (pct) => `${pct}% commission`,
+  epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Open the Influencer Butler app to accept this campaign (the app confirms and accepts).",
   dealAvailable: "Deal available",
   dealPushNote: "Push it to Deals Influencer Butler from the Send to your butler app section below.",
@@ -2269,6 +2277,10 @@ const es: Dict = {
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
+  enrolledCc: "Inscrito en Creator Connections",
+  enrolledSpcc: "Inscrito en SPCC",
+  enrolledRate: (pct) => `${pct}% de comisión`,
+  epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Abre la app Influencer Butler para aceptar esta campaña (la app confirma y acepta).",
   dealAvailable: "Oferta disponible",
   dealPushNote: "Envíala a Deals Influencer Butler desde la sección Send to your butler app de abajo.",
@@ -3082,6 +3094,10 @@ const fr: Dict = {
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
+  enrolledCc: "Inscrit à Creator Connections",
+  enrolledSpcc: "Inscrit à SPCC",
+  enrolledRate: (pct) => `${pct}% de commission`,
+  epc: (money) => `EPC ${money}`,
   campaignConnectNote: "Ouvrez l'app Influencer Butler pour accepter cette campagne (l'app confirme et accepte).",
   dealAvailable: "Offre disponible",
   dealPushNote: "Envoyez-la vers Deals Influencer Butler depuis la section Send to your butler app ci-dessous.",

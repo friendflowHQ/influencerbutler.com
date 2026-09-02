@@ -381,3 +381,34 @@ export type BrandEnrichmentResult = {
   paired?: boolean;
   records: BrandEnrichmentRecord[];
 };
+
+// One ASIN's Creator Connections / SPCC enrollment answer, resolved by the desktop
+// app against its own accepted-history ledger (cc-check-items.json), kept fresh by
+// the app's hourly background sync. This is *personal* enrollment ("you accepted
+// this campaign"), a stronger and different signal than the global Bloom
+// availability filter the extension checks locally. `ratePct` is the accepted
+// campaign's commission rate when known; `epc` is the creator's *realized* revenue
+// per click (earnings / clicks) from the Daily Commission Butler ledger, so it is
+// null for products the creator has accepted but not yet earned on (not Amazon's
+// forecast EPC). Only ASINs the creator is actually enrolled in are returned, so an
+// absent ASIN means "not enrolled / nothing to show".
+export type CampaignStatusRecord = {
+  asin: string;
+  cc: boolean;
+  spcc: boolean;
+  ratePct: number | null;
+  epc: number | null; // realized revenue per click, in currency units (e.g. 0.84)
+  brand: string | null;
+  acceptedAt: string | null;
+};
+
+// Result of a campaign.status.lookup request against the desktop accepted-history
+// ledger. `paired` is false when the extension has never connected the app; unlike
+// ownership there is no server-backed fallback (enrollment lives only on the
+// desktop), so the caller simply shows nothing new rather than erroring.
+export type CampaignStatusResult = {
+  ok: boolean;
+  paired?: boolean;
+  results: CampaignStatusRecord[];
+  message?: string;
+};

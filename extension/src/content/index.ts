@@ -382,8 +382,10 @@ async function runForPage(): Promise<void> {
         guard("calculator", () => renderCalculator(signals, carousel.counts, settings));
       }
 
-      // Campaign availability from the locally-cached membership filter.
-      if (showOnsite) guard("campaigns", () => void renderCampaigns(signals));
+      // Campaign availability from the locally-cached membership filter, plus a
+      // personal "Enrolled" badge from the desktop accepted-history ledger.
+      if (showOnsite)
+        guard("campaigns", () => void renderCampaigns(signals, settings.tools.enrolledBadge));
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
       // plus the download/trial upsell when the app is not running.

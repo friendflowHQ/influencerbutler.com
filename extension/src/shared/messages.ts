@@ -5,6 +5,8 @@ import type {
   AsinEarnings,
   BrandEnrichmentRecord,
   BrandEnrichmentResult,
+  CampaignStatusRecord,
+  CampaignStatusResult,
   DesktopTemplate,
   EarningsLookupResult,
   HudCommand,
@@ -124,6 +126,13 @@ export type RuntimeMessage =
   // can badge "you already own this / you already posted this". Routed over the
   // local bridge; returns paired:false when the app was never connected.
   | { kind: "LOOKUP_OWNERSHIP"; asins: string[] }
+  // Ask the running desktop app whether the creator is already ENROLLED in a
+  // Creator Connections / SPCC campaign for a batch of ASINs (its accepted-history
+  // ledger, kept fresh by the app's hourly sync), plus the accepted rate and their
+  // realized EPC, so a product page can badge "you're already enrolled". Personal
+  // enrollment lives only on the desktop, so there is no server fallback: returns
+  // paired:false when the app was never connected.
+  | { kind: "LOOKUP_CAMPAIGN_STATUS"; asins: string[] }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -680,6 +689,8 @@ export type {
   AsinEarnings,
   BrandEnrichmentRecord,
   BrandEnrichmentResult,
+  CampaignStatusRecord,
+  CampaignStatusResult,
   DesktopTemplate,
   EarningsLookupResult,
   HudCommand,

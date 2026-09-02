@@ -13,7 +13,7 @@ import {
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, sendHudCommand, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend } from "./relay";
 import type { RelayStateView } from "../shared/messages";
 import { sendFeedback } from "./feedback";
@@ -290,6 +290,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "LOOKUP_OWNERSHIP":
       void fetchOwnership(message.asins).then(sendResponse);
+      return true;
+    case "LOOKUP_CAMPAIGN_STATUS":
+      void fetchCampaignStatus(message.asins).then(sendResponse);
       return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
