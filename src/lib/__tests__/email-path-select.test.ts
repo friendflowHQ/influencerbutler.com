@@ -32,6 +32,16 @@ describe("pathSelectToken / verifyPathSelectToken", () => {
     expect(verifyPathSelectToken("a@example.com", "creator", token)).toBe(false);
   });
 
+  it("rejects a creator token replayed as the livesweet path", () => {
+    const token = pathSelectToken("a@example.com", "creator");
+    expect(verifyPathSelectToken("a@example.com", "livesweet", token)).toBe(false);
+  });
+
+  it("verifies a livesweet token it produced", () => {
+    const token = pathSelectToken("a@example.com", "livesweet");
+    expect(verifyPathSelectToken("a@example.com", "livesweet", token)).toBe(true);
+  });
+
   it("rejects an empty or garbage token", () => {
     expect(verifyPathSelectToken("a@example.com", "beginner", "")).toBe(false);
     expect(verifyPathSelectToken("a@example.com", "beginner", "not-a-real-token")).toBe(false);
@@ -44,9 +54,10 @@ describe("pathSelectToken / verifyPathSelectToken", () => {
 });
 
 describe("isFunnelPath", () => {
-  it("accepts the two known paths and rejects anything else", () => {
+  it("accepts the known paths and rejects anything else", () => {
     expect(isFunnelPath("beginner")).toBe(true);
     expect(isFunnelPath("creator")).toBe(true);
+    expect(isFunnelPath("livesweet")).toBe(true);
     expect(isFunnelPath("influencer")).toBe(false);
     expect(isFunnelPath("")).toBe(false);
   });
@@ -82,5 +93,13 @@ describe("personalizePathBody", () => {
   it("maps each path to its enroll tag", () => {
     expect(PATH_TAGS.beginner).toBe("ib-beginner");
     expect(PATH_TAGS.creator).toBe("ib-creator");
+    expect(PATH_TAGS.livesweet).toBe("live-sweet-yes");
+  });
+
+  it("replaces the Live Sweet gate placeholder with the livesweet link", () => {
+    const out = personalizePathBody("Opt back in: {{LIVE_SWEET_YES_URL}}", "creator@example.com");
+    expect(out).toContain(pathSelectUrl("creator@example.com", "livesweet"));
+    expect(out).toContain("p=livesweet");
+    expect(out).not.toContain("{{");
   });
 });

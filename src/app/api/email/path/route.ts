@@ -19,14 +19,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/email-unsubscribe";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
-import {
-  DANI_WELCOME_SEQUENCE_ID,
-  PATH_LANDING,
-  PATH_SELECT_SOURCE,
-  PATH_TAGS,
-  isFunnelPath,
-  verifyPathSelectToken,
-} from "@/lib/email-path-select";
+import { PATHS, isFunnelPath, verifyPathSelectToken } from "@/lib/email-path-select";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,25 +46,27 @@ export async function GET(request: Request) {
     return landing("/course/amazon-influencer");
   }
 
+  const config = PATHS[rawPath];
+
   // Bad or forged link: land them somewhere useful, but change nothing.
   if (!email || !verifyPathSelectToken(email, rawPath, token)) {
-    return landing(PATH_LANDING[rawPath]);
+    return landing(config.landing);
   }
 
   try {
     const db = createAdminClient();
 
     // Tag + create-contact-if-missing + fire tag_added auto-enrollment. This is
-    // the single call that enrolls them into the matching branch sequence (only
-    // if that sequence is active, so activate the branches before sending).
-    await tagRecipientsAsContacts(db, [email], PATH_TAGS[rawPath], PATH_SELECT_SOURCE);
+    // the single call that enrolls them into the matching sequence (only if that
+    // sequence is active, so activate it before sending).
+    await tagRecipientsAsContacts(db, [email], config.tag, config.source);
 
-    // Stop the universal welcome drip so they are not double-dripped now that
-    // they have chosen a track. Same guard the review-confirm route uses.
+    // Stop the originating welcome/gate drip so they are not double-dripped now
+    // that they have chosen. Same guard the review-confirm route uses.
     await db
       .from("email_sequence_enrollments")
       .update({ cancelled_at: new Date().toISOString() })
-      .eq("sequence_id", DANI_WELCOME_SEQUENCE_ID)
+      .eq("sequence_id", config.cancelWelcome)
       .eq("email", email)
       .is("cancelled_at", null)
       .is("completed_at", null);
@@ -79,5 +74,5 @@ export async function GET(request: Request) {
     console.error("email path select: threw", err);
   }
 
-  return landing(PATH_LANDING[rawPath]);
+  return landing(config.landing);
 }

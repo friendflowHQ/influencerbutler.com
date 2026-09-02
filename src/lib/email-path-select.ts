@@ -1,48 +1,79 @@
-// "Choose your path" self-select links for the Dani Austin giveaway welcome drip:
-// shared constants, signed per-recipient links, and body personalization.
+// Signed "self-select" email links: shared constants, per-recipient signed links,
+// and body personalization. Used by sequence step bodies to let a recipient pick
+// a path (or opt back in) with one click.
 //
-// The welcome sequence step body carries {{PATH_BEGINNER_URL}} and
-// {{PATH_CREATOR_URL}} placeholders; the email-marketing cron replaces them with
-// per-recipient signed URLs at send time (see personalizePathBody). The links are
-// stateless: an HMAC of the normalized recipient + chosen path proves the click
-// came from an email we sent, so no per-send token row is needed, exactly like
-// the one-click unsubscribe and extension-review links.
+// A sequence step body carries a placeholder ({{PATH_BEGINNER_URL}},
+// {{PATH_CREATOR_URL}}, {{LIVE_SWEET_YES_URL}}); the email-marketing cron replaces
+// it with a per-recipient signed URL at send time (see personalizePathBody). The
+// links are stateless: an HMAC of the normalized recipient + chosen path proves the
+// click came from an email we sent, so no per-send token row is needed, exactly
+// like the one-click unsubscribe and extension-review links.
 //
-// The signed endpoint (/api/email/path) tags the clicker ib-beginner or
-// ib-creator, which auto-enrolls them into the matching branch sequence, and
-// cancels their welcome enrollment so they are not double-dripped. The three
-// sequences live in supabase/migrations/20260903_dani_austin_amazon_side_hustle_sequences.sql.
+// The signed endpoint (/api/email/path) tags the clicker with that path's tag,
+// which auto-enrolls them into the matching sequence, and cancels their originating
+// welcome/gate enrollment so they are not double-dripped. Paths + their sequences:
+//   beginner / creator  -> supabase/migrations/20260903_dani_austin_amazon_side_hustle_sequences.sql
+//   livesweet           -> supabase/migrations/20260904_live_sweet_bundle_sequences.sql
 
 import crypto from "node:crypto";
 import { normalizeEmail } from "@/lib/email-unsubscribe";
 
-/** The two branches a giveaway subscriber can self-select into. */
-export type FunnelPath = "beginner" | "creator";
-
-/** Contact tags that auto-enroll an address into each branch sequence. */
-export const PATH_TAGS: Record<FunnelPath, string> = {
-  beginner: "ib-beginner",
-  creator: "ib-creator",
-};
-
-/** email_subscribers.source stamped when a contact is created via a path click. */
-export const PATH_SELECT_SOURCE = "dani-path-select";
-
 /**
- * Hardcoded welcome sequence id from the seed migration. The path route cancels
- * this enrollment when someone branches, so the universal welcome drip stops once
- * they have chosen a track. Keep in sync with the migration's UUID.
+ * Hardcoded welcome/gate sequence ids from the seed migrations. The path route
+ * cancels the originating enrollment when someone self-selects, so the intro drip
+ * stops once they have chosen. Keep in sync with the migrations' UUIDs.
  */
 export const DANI_WELCOME_SEQUENCE_ID = "1a5e0006-0000-4000-a000-000000000006";
+export const LIVE_SWEET_WELCOME_SEQUENCE_ID = "1a5e0009-0000-4000-a000-000000000009";
 
-/** Where each branch click lands the reader after tagging + enrolling them. */
-export const PATH_LANDING: Record<FunnelPath, string> = {
-  beginner: "/help/tutorials/facebook-group-builder",
-  creator: "/help/tutorials/getting-started-influencer-butler",
+/** A self-select path a recipient can click into. */
+export type FunnelPath = "beginner" | "creator" | "livesweet";
+
+type PathConfig = {
+  /** Contact tag applied on click; auto-enrolls the matching ACTIVE sequence. */
+  tag: string;
+  /** Where the click lands the reader after tagging + enrolling them. */
+  landing: string;
+  /** The intro (welcome/gate) enrollment to cancel so they are not double-dripped. */
+  cancelWelcome: string;
+  /** email_subscribers.source stamped when a contact is created via this click. */
+  source: string;
+};
+
+/**
+ * The path registry. Adding a new list's self-select link is a new entry here plus
+ * a placeholder in personalizePathBody: no new endpoint code.
+ */
+export const PATHS: Record<FunnelPath, PathConfig> = {
+  beginner: {
+    tag: "ib-beginner",
+    landing: "/help/tutorials/facebook-group-builder",
+    cancelWelcome: DANI_WELCOME_SEQUENCE_ID,
+    source: "dani-path-select",
+  },
+  creator: {
+    tag: "ib-creator",
+    landing: "/help/tutorials/getting-started-influencer-butler",
+    cancelWelcome: DANI_WELCOME_SEQUENCE_ID,
+    source: "dani-path-select",
+  },
+  livesweet: {
+    tag: "live-sweet-yes",
+    landing: "/course/amazon-influencer",
+    cancelWelcome: LIVE_SWEET_WELCOME_SEQUENCE_ID,
+    source: "live-sweet-path-select",
+  },
+};
+
+/** Convenience map of path -> enroll tag (derived from the registry). */
+export const PATH_TAGS: Record<FunnelPath, string> = {
+  beginner: PATHS.beginner.tag,
+  creator: PATHS.creator.tag,
+  livesweet: PATHS.livesweet.tag,
 };
 
 export function isFunnelPath(value: string): value is FunnelPath {
-  return value === "beginner" || value === "creator";
+  return value === "beginner" || value === "creator" || value === "livesweet";
 }
 
 function siteUrl(): string {
@@ -67,9 +98,9 @@ function secret(): string {
 /**
  * HMAC token proving a path link was issued for this address + path. The
  * "pathselect:<path>:" context keeps these tokens distinct from unsubscribe and
- * review tokens for the same email, and keeps the two paths distinct from each
- * other, so no token can be replayed as a different purpose or the other branch.
- * Empty string if no secret.
+ * review tokens for the same email, and keeps the paths distinct from each other,
+ * so no token can be replayed as a different purpose or a different path. Empty
+ * string if no secret.
  */
 export function pathSelectToken(email: string, path: FunnelPath): string {
   const key = secret();
@@ -89,7 +120,7 @@ export function verifyPathSelectToken(email: string, path: FunnelPath, token: st
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-/** Signed self-select link: tags the clicker, enrolls the branch, stops welcome. */
+/** Signed self-select link: tags the clicker, enrolls the path, stops the intro drip. */
 export function pathSelectUrl(email: string, path: FunnelPath): string {
   const e = encodeURIComponent(normalizeEmail(email));
   const t = encodeURIComponent(pathSelectToken(email, path));
@@ -97,10 +128,11 @@ export function pathSelectUrl(email: string, path: FunnelPath): string {
 }
 
 /**
- * Replaces the path placeholders in a sequence step body with per-recipient
+ * Replaces the self-select placeholders in a sequence step body with per-recipient
  * signed URLs:
- *   {{PATH_BEGINNER_URL}}  self-select the "start from zero" deals-group track
- *   {{PATH_CREATOR_URL}}   self-select the "leverage your following" track
+ *   {{PATH_BEGINNER_URL}}   self-select the "start from zero" deals-group track
+ *   {{PATH_CREATOR_URL}}    self-select the "leverage your following" track
+ *   {{LIVE_SWEET_YES_URL}}  opt back in (Live Sweet re-engagement gate)
  * A no-op on bodies without any placeholder, so it is safe to run over every
  * sequence send. Kept pure for unit testing.
  */
@@ -110,5 +142,7 @@ export function personalizePathBody(body: string, email: string): string {
     .split("{{PATH_BEGINNER_URL}}")
     .join(pathSelectUrl(email, "beginner"))
     .split("{{PATH_CREATOR_URL}}")
-    .join(pathSelectUrl(email, "creator"));
+    .join(pathSelectUrl(email, "creator"))
+    .split("{{LIVE_SWEET_YES_URL}}")
+    .join(pathSelectUrl(email, "livesweet"));
 }
