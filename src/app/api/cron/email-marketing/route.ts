@@ -32,6 +32,7 @@ import {
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
+import { personalizePathBody } from "@/lib/email-path-select";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
@@ -56,9 +57,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const SEQUENCE_GLOBAL_CEILING = 200;
 
 // Auto-pause thresholds: once a sequence has sent at least MIN_HEALTH_SAMPLE
-// emails, pause it if bounces or complaints cross these rates.
-const MIN_HEALTH_SAMPLE = 25;
-const MAX_BOUNCE_RATE = 0.05; // 5%
+// emails (100, so small early batches are not paused on noise), pause it if the
+// bounce rate crosses 10% or the complaint rate crosses 0.3%.
+const MIN_HEALTH_SAMPLE = 100;
+const MAX_BOUNCE_RATE = 0.1; // 10%
 const MAX_COMPLAINT_RATE = 0.003; // 0.3%
 
 type DbError = { message?: string; code?: string } | null;
@@ -442,9 +444,13 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
 
       seqBudget -= 1;
       globalRemaining -= 1;
-      // No-op unless the body carries {{REVIEW_*}} placeholders (the review
-      // sequence), which get replaced with this recipient's signed links.
-      const personalizedText = personalizeReviewBody(nextStep.body, enrollment.email);
+      // No-op unless the body carries placeholders: {{REVIEW_*}} (the review
+      // sequence) or {{PATH_*_URL}} (the giveaway welcome fork), each replaced
+      // with this recipient's signed links.
+      const personalizedText = personalizePathBody(
+        personalizeReviewBody(nextStep.body, enrollment.email),
+        enrollment.email,
+      );
       const ok = await sendMarketingEmail({
         from: MARKETING_FROM,
         to: enrollment.email,
