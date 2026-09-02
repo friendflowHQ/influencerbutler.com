@@ -717,10 +717,57 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Record an out-of-band payment (admin already sent money via PayPal's UI, a
+  // bank transfer, etc.). Records ONLY the cleared "payable now" slice via the
+  // same money-safe reconcile as the PayPal payout, so amortized annual orders
+  // stay partially owed and are never double-counted next month.
+  const onRecordManualPayout = async (aff: OwedAffiliate) => {
+    const payable = aff.payableCents ?? 0;
+    if (
+      !window.confirm(
+        `Record a manual payout of ${formatCents(payable, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nUse this when you already paid the affiliate out-of-band (PayPal, bank transfer, etc.). It records ONLY the cleared "payable now" slice - amortized annual orders stay partially owed and keep vesting. The exact amount is recomputed when you confirm. No money is sent.`,
+      )
+    ) {
+      return;
+    }
+    setOwedState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-record-payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId }),
+      });
+      const json = (await res.json()) as { error?: string; grossCents?: number; code?: string };
+      if (!res.ok) {
+        const friendly =
+          json.code === "below_minimum"
+            ? "Nothing is cleared and past the 14-day hold yet, so there's nothing to record."
+            : json.code === "already_recorded"
+              ? "A manual payout for this affiliate is already recorded this month."
+              : json.error ?? `Failed (${res.status})`;
+        setOwedState(aff.userId, { kind: "error", message: friendly });
+        return;
+      }
+      setOwedState(aff.userId, {
+        kind: "success",
+        message: `Recorded ${formatCents(json.grossCents ?? payable, aff.orders[0]?.currency ?? null)} paid.`,
+      });
+      setTimeout(() => {
+        void loadOwed();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setOwedState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  // Break-glass: force-reconcile the FULL owed across ALL orders at once. Rarely
+  // correct under amortized/clearing commissions (it hides commission that has
+  // not vested yet); kept only for legacy whole-bonus situations paid in full.
   const onMarkPaid = async (aff: OwedAffiliate) => {
     if (
       !window.confirm(
-        `Mark ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} as paid to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nDo this ONLY after you have issued the bonus in the Lemon Squeezy dashboard. Sanity-check these ${aff.orderCount} orders against LS first - an older or partial refund may not be reflected here. This stamps the orders reconciled so they drop off the report.`,
+        `Force-reconcile the FULL ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} owed to ${aff.fullName ?? aff.email ?? aff.userId} and drop all ${aff.orderCount} orders off the report?\n\nWARNING: this marks the ENTIRE owed balance paid, including commission that has not vested or cleared yet. If you only paid the "payable now" slice, use "Record manual payout" instead. Do this ONLY if you truly paid the full balance out-of-band. Sanity-check these orders against Lemon Squeezy first - an older or partial refund may not be reflected here.`,
       )
     ) {
       return;
@@ -1422,8 +1469,11 @@ export default function AdminAffiliatesPage() {
               order value, or the affiliate&apos;s custom rate). Click{" "}
               <strong>Disburse via PayPal</strong> to pay directly: the exact amount is recomputed at
               send, and it requires a verified tax form and a PayPal email on file. Orders are marked
-              reconciled only once PayPal confirms the payout succeeded. Use{" "}
-              <strong>Mark paid manually</strong> only if you paid the affiliate some other way.
+              reconciled only once PayPal confirms the payout succeeded. If you already paid an
+              affiliate out-of-band, use <strong>Record manual payout</strong> to log the cleared
+              &quot;payable now&quot; slice (annual orders keep vesting). <strong>Force-reconcile all
+              orders</strong> is a break-glass that marks the entire owed balance paid: rarely what
+              you want.
             </p>
           </div>
 
@@ -1659,13 +1709,23 @@ export default function AdminAffiliatesPage() {
                         >
                           {working ? "Working…" : "Disburse via PayPal"}
                         </button>
+                        {aff.payableCents && aff.payableCents > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => onRecordManualPayout(aff)}
+                            disabled={working}
+                            className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Record manual payout
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => onMarkPaid(aff)}
                           disabled={working}
-                          className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                          className="text-[11px] font-medium text-slate-400 underline decoration-dotted underline-offset-2 transition hover:text-red-600 disabled:opacity-60"
                         >
-                          Mark paid manually
+                          Force-reconcile all orders
                         </button>
                       </div>
                     </div>

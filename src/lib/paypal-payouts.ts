@@ -77,6 +77,7 @@ export async function applyPayoutStatus(
   supabase: SupabaseClient,
   row: PayoutRow,
   ledgerStatus: string,
+  opts?: { sendReceipt?: boolean },
 ): Promise<void> {
   if (row.status === ledgerStatus) return;
 
@@ -157,7 +158,9 @@ export async function applyPayoutStatus(
     // Receipt: tell the affiliate they've been paid. Best-effort and wrapped so
     // an email hiccup never blocks reconciliation. Fires once per payout because
     // the ledger-status early-return above stops this branch running twice.
-    try {
+    // Suppressed (sendReceipt:false) for out-of-band manual records, where the
+    // affiliate already got PayPal's own notification at send time.
+    if (opts?.sendReceipt !== false) try {
       let amountCents = typeof row.gross_cents === "number" ? row.gross_cents : 0;
       if (amountCents <= 0) {
         const { data: pay } = await supabase
@@ -409,4 +412,162 @@ export async function disburseAffiliate(params: {
     .eq("id", payoutId);
 
   return { ok: true, payoutId, payoutBatchId: result.payoutBatchId, grossCents: amountCents };
+}
+
+export type ManualRecordOutcome =
+  | { ok: true; payoutId: string; grossCents: number }
+  | {
+      ok: false;
+      httpStatus: number;
+      code?: string;
+      error: string;
+      existing?: { id: string; status: string } | null;
+    };
+
+/**
+ * Record an out-of-band affiliate payment (admin already sent money via PayPal's
+ * own UI, a bank transfer, etc.) against the ledger, reconciling ONLY the
+ * currently-payable slice (recognized + past the 14-day clear), exactly like a
+ * real PayPal payout. No money moves and no PayPal call is made here: this just
+ * makes the books match reality. Unlike disburseAffiliate it does NOT require a
+ * verified tax form or a PayPal email on file, since payment already happened.
+ *
+ * Idempotency: one manual record per affiliate per month. The sender_batch_id
+ * carries a `manual_<period>` marker (UNIQUE), so a double-click cannot
+ * double-record; a legitimate second manual payment lands in a later month.
+ */
+export async function recordManualPayout(params: {
+  admin: SupabaseClient;
+  actorEmail: string;
+  userId: string;
+  period: string; // 'YYYY-MM': ledger label + idempotency scope
+  externalRef?: string | null; // e.g. the PayPal transaction id, kept for the record
+  sendReceipt?: boolean; // default false: affiliate already got PayPal's own notice
+}): Promise<ManualRecordOutcome> {
+  const { admin, actorEmail, userId, period, externalRef } = params;
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("is_affiliate,paypal_email")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile || profile.is_affiliate !== true) {
+    return { ok: false, httpStatus: 404, error: "Not an affiliate" };
+  }
+  const paypalEmail = typeof profile.paypal_email === "string" ? profile.paypal_email.trim() : "";
+
+  // Same PAYABLE computation as the PayPal path: recognized (annual amortized
+  // 1/12 per month) AND past the clearing buffer, netting anything already paid.
+  const commissions = await loadAffiliateCommissions({ userIds: [userId] });
+  const stmt = commissions?.statements.find((s) => s.userId === userId) ?? null;
+  const payableCents = stmt?.payableCents ?? 0;
+  const minimum = payoutMinimumCents();
+  if (payableCents < minimum) {
+    return {
+      ok: false,
+      httpStatus: 409,
+      code: "below_minimum",
+      error: `Payable ${payableCents} cents is below the ${minimum}-cent minimum`,
+    };
+  }
+
+  const orderRefs: PayoutOrderRef[] = (stmt?.payableLines ?? [])
+    .filter((l) => l.payableNowCents > 0)
+    .map((l) => ({ id: l.lsOrderId, owedCents: l.payableNowCents, fullOwedCents: l.fullOwedCents }));
+
+  // Net any open clawbacks against this record, same as the PayPal path.
+  const { netPayableCents, appliedAdjustmentIds: appliedAdjIds } = applyClawbacks(
+    payableCents,
+    (stmt?.adjustments ?? []).map((a) => ({ id: a.id, amountCents: a.amountCents })),
+  );
+  if (netPayableCents < minimum) {
+    return {
+      ok: false,
+      httpStatus: 409,
+      code: "below_minimum",
+      error: `Payable after clawbacks (${netPayableCents} cents) is below the ${minimum}-cent minimum`,
+    };
+  }
+
+  // Distinct from real PayPal batches (aff_<short>_<period>): aff_<short>_adhoc_manual_<period>.
+  const senderBatchId = buildSenderBatchId(userId, null, `manual_${period}`);
+  const senderItemId = `${senderBatchId}_1`;
+  const nowIso = new Date().toISOString();
+
+  let amountCents = netPayableCents;
+  let ledgerAdjIds = appliedAdjIds;
+  const insertLedger = (includeAdj: boolean) =>
+    admin
+      .from("affiliate_payouts")
+      .insert({
+        user_id: userId,
+        period,
+        gross_cents: amountCents,
+        currency: "USD",
+        fee_note: "Recorded manually: paid out-of-band (no PayPal Payouts call).",
+        order_ids: orderRefs,
+        ...(includeAdj && ledgerAdjIds.length ? { adjustment_ids: ledgerAdjIds } : {}),
+        paypal_email: paypalEmail || null,
+        paypal_batch_id: externalRef ? String(externalRef).slice(0, 200) : null,
+        sender_batch_id: senderBatchId,
+        sender_item_id: senderItemId,
+        status: "pending",
+        created_by: actorEmail,
+        created_at: nowIso,
+        updated_at: nowIso,
+      })
+      .select("id,status")
+      .maybeSingle();
+
+  let { data: inserted, error: insertErr } = await insertLedger(true);
+  if (insertErr && (insertErr as { code?: string }).code === "42703" && ledgerAdjIds.length) {
+    console.warn("recordManualPayout: adjustment_ids column missing, recording without clawback netting");
+    amountCents = payableCents;
+    ledgerAdjIds = [];
+    ({ data: inserted, error: insertErr } = await insertLedger(false));
+  }
+
+  if (insertErr) {
+    const code = (insertErr as { code?: string }).code;
+    if (code === "23505") {
+      const { data: existing } = await admin
+        .from("affiliate_payouts")
+        .select("id,status")
+        .eq("sender_batch_id", senderBatchId)
+        .maybeSingle();
+      return {
+        ok: false,
+        httpStatus: 409,
+        code: "already_recorded",
+        error: "A manual payout for this affiliate and month is already recorded.",
+        existing: (existing as { id: string; status: string } | null) ?? null,
+      };
+    }
+    console.error("recordManualPayout: ledger insert failed", insertErr);
+    return { ok: false, httpStatus: 500, error: "Could not record payout" };
+  }
+
+  const payoutId = inserted?.id as string | undefined;
+  if (!payoutId) return { ok: false, httpStatus: 500, error: "Could not record payout" };
+
+  // Reuse the exact payout-success reconcile: accumulate reconciled_amount_cents
+  // per order, stamp reconciled_at only once an order is fully paid across
+  // months, and settle clawbacks. Receipt suppressed unless the caller opts in.
+  await applyPayoutStatus(
+    admin,
+    {
+      id: payoutId,
+      user_id: userId,
+      status: "pending",
+      gross_cents: amountCents,
+      order_ids: orderRefs,
+      adjustment_ids: ledgerAdjIds,
+      paypal_batch_id: null,
+      sender_item_id: senderItemId,
+    },
+    "success",
+    { sendReceipt: params.sendReceipt === true },
+  );
+
+  return { ok: true, payoutId, grossCents: amountCents };
 }

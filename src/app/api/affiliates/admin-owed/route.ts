@@ -296,20 +296,28 @@ export async function POST(request: Request) {
   const failed: string[] = [];
 
   // Stamp each order, guarded by `.is('reconciled_at', null)` so a double-submit
-  // never re-stamps an already-paid referral.
-  for (const lsOrderId of orderIds) {
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        reconciled_at: reconciledAt,
-        reconciled_amount_cents: amountCents,
-        reconciled_by: actor.email,
-      })
-      .eq("ls_order_id", lsOrderId)
-      .is("reconciled_at", null);
-    if (error) {
-      console.error("admin-owed: mark-paid update failed", lsOrderId, error);
-      failed.push(lsOrderId);
+  // never re-stamps an already-paid referral. Run CONCURRENTLY: a large affiliate
+  // has dozens of orders, and 22+ sequential round-trips could exceed the
+  // serverless function budget and return a non-JSON platform error (the client
+  // then shows a bare "Network error."). Fanning out keeps wall-time ~one query.
+  const results = await Promise.all(
+    orderIds.map(async (lsOrderId) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          reconciled_at: reconciledAt,
+          reconciled_amount_cents: amountCents,
+          reconciled_by: actor.email,
+        })
+        .eq("ls_order_id", lsOrderId)
+        .is("reconciled_at", null);
+      return { lsOrderId, error };
+    }),
+  );
+  for (const r of results) {
+    if (r.error) {
+      console.error("admin-owed: mark-paid update failed", r.lsOrderId, r.error);
+      failed.push(r.lsOrderId);
     } else {
       reconciledCount += 1;
     }
