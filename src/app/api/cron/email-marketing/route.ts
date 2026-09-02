@@ -472,11 +472,26 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       if (seqBudget <= 0 || globalRemaining <= 0) break;
 
       // Converted since enrolling? Cancel and move on (does not spend budget).
+      // Also record the conversion last-touch: converted_at + the last step they
+      // received (converted_step), so the Sequences tab can show which step earns
+      // conversions. Degrades gracefully if the 20260906 migration is not applied
+      // yet: retry with just cancelled_at so stop-on-subscribe still works.
       if (stopOnSubscribe && liveEmails && liveEmails.has(enrollment.email.trim().toLowerCase())) {
-        await db
+        const now = new Date().toISOString();
+        const { error: convErr } = await db
           .from("email_sequence_enrollments")
-          .update({ cancelled_at: new Date().toISOString() })
+          .update({
+            cancelled_at: now,
+            converted_at: now,
+            converted_step: enrollment.last_step_sent ?? 0,
+          })
           .eq("id", enrollment.id);
+        if (convErr) {
+          await db
+            .from("email_sequence_enrollments")
+            .update({ cancelled_at: now })
+            .eq("id", enrollment.id);
+        }
         summary.sequenceStoppedSubscribed += 1;
         continue;
       }

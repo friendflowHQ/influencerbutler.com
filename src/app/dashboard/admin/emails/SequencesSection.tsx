@@ -45,6 +45,9 @@ type SequenceStep = {
   category: string;
   // Open enrollments whose next step is this one (waiting to be sent it).
   queued: number;
+  // Conversions attributed last-touch to this step (recipient became a live
+  // subscriber after receiving it).
+  converted: number;
 };
 
 type Sequence = {
@@ -62,6 +65,8 @@ type Sequence = {
   enrollmentCounts: { active: number; completed: number; cancelled: number };
   // Soonest next send across open enrollments (ISO), or null when none pending.
   next_send_at: string | null;
+  // Total conversions (became a live subscriber) across the whole sequence.
+  convertedTotal: number;
 };
 
 type SequencesResponse = { sequences: Sequence[]; migrationPending: boolean };
@@ -122,6 +127,19 @@ function drainLabel(active: number, rate: number | null): string {
   if (hours < 1) return "< 1 hr";
   if (hours < 48) return `~${Math.round(hours)} hr`;
   return `~${Math.round(hours / 24)} days`;
+}
+
+/**
+ * Sequence-level conversion readout: total who became a live subscriber vs
+ * everyone who ever entered (active + completed + cancelled). "-" when none yet.
+ */
+function convertedLabel(seq: Sequence): string {
+  const total = seq.convertedTotal ?? 0;
+  if (total <= 0) return "-";
+  const entered =
+    seq.enrollmentCounts.active + seq.enrollmentCounts.completed + seq.enrollmentCounts.cancelled;
+  const rate = entered > 0 ? ` (${Math.round((total / entered) * 100)}%)` : "";
+  return `${total.toLocaleString("en-US")}${rate}`;
 }
 
 /** One compact, color-toned stat cell for the per-sequence readout band. */
@@ -553,13 +571,25 @@ export default function SequencesSection({
   function stepStats(step: SequenceStep): string {
     const queuedPart =
       step.queued > 0 ? `${step.queued.toLocaleString("en-US")} queued` : "";
+    // Conversions (became a live subscriber) attributed last-touch to this step.
+    // Shown as a % of this step's sends when we have a send count for the window,
+    // else as a raw count (conversions can predate the summary window).
     const cat = summary?.categories.find((c) => c.key === step.category);
-    if (!cat) return queuedPart || "-";
+    const convPart =
+      step.converted > 0
+        ? cat && cat.sent > 0
+          ? `${step.converted.toLocaleString("en-US")} conv (${pct(step.converted, cat.sent)})`
+          : `${step.converted.toLocaleString("en-US")} conv`
+        : "";
+    if (!cat) return [queuedPart, convPart].filter(Boolean).join(" / ") || "-";
     const base = Math.max(cat.delivered, cat.sent);
     const counts = [`${cat.sent.toLocaleString("en-US")} sent`, queuedPart]
       .filter(Boolean)
       .join(", ");
-    return `${counts} / ${pct(cat.opened, base)} open / ${pct(cat.clicked, base)} click`;
+    const tail = [`${pct(cat.opened, base)} open`, `${pct(cat.clicked, base)} click`, convPart]
+      .filter(Boolean)
+      .join(" / ");
+    return `${counts} / ${tail}`;
   }
 
   // Same open%/click% shape as stepStats, joined by the funnel step's category.
@@ -1019,7 +1049,7 @@ export default function SequencesSection({
               </div>
             ) : null}
 
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
               <StatChip
                 label="Rate"
                 value={`${(seq.sends_per_hour ?? DEFAULT_RATE).toLocaleString("en-US")}/hr`}
@@ -1047,6 +1077,12 @@ export default function SequencesSection({
                 value={drainLabel(seq.enrollmentCounts.active, seq.sends_per_hour)}
                 tone="amber"
                 title="Rough time to clear the backlog at this rate. Real pace also depends on the shared domain-safe hourly limit, so treat it as a best case."
+              />
+              <StatChip
+                label="Converted"
+                value={convertedLabel(seq)}
+                tone="emerald"
+                title="People who became a live subscriber (trial or paid) after entering this sequence, as a share of everyone who entered. This is the payoff signal: higher means the sequence is working."
               />
             </div>
 

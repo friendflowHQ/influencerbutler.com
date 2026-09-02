@@ -79,6 +79,18 @@ type StepRow = {
 
 type EnrollmentCounts = { active: number; completed: number; cancelled: number };
 
+// Loosely-typed enrollment row for the counts scan. converted_* are optional so
+// the same type covers the pre-migration (BASE_COLS) select too.
+type CountEnrollRow = {
+  sequence_id: string;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  last_step_sent: number | null;
+  enrolled_at: string;
+  converted_at?: string | null;
+  converted_step?: number | null;
+};
+
 type Trigger = { kind: "tag_added"; tag: string } | { kind: "source"; source: string } | null;
 
 type StepInput = { day_offset: number; subject: string; body: string };
@@ -229,6 +241,12 @@ export async function GET(request: Request) {
     const hour = (s as unknown as { send_hour?: number | null }).send_hour;
     sendHourById.set(s.id, typeof hour === "number" ? hour : null);
   }
+  // Conversions attributed last-touch to the step the enrollee last received
+  // (converted_step) when they became a live subscriber. Keyed
+  // sequence_id -> convertedStep -> count, plus a per-sequence total. Empty until
+  // the 20260906 migration is applied and the cron records the first conversion.
+  const convertedById = new Map<string, Map<number, number>>();
+  const convertedTotalById = new Map<string, number>();
 
   if (sequences.length > 0) {
     const ids = sequences.map((s) => s.id);
@@ -247,16 +265,53 @@ export async function GET(request: Request) {
       stepsById.set(step.sequence_id, list);
     }
 
+    // converted_at / converted_step are added by the 20260906 migration. Select
+    // them when present; if that errors as a missing column, drop to the base
+    // columns for the rest of the scan so counts still work pre-migration.
+    // Typed as string (not a literal) so the PostgREST type parser does not try
+    // to resolve the dynamic select and returns loosely-typed rows.
+    const BASE_COLS: string = "sequence_id, completed_at, cancelled_at, last_step_sent, enrolled_at";
+    const CONV_COLS: string = `${BASE_COLS}, converted_at, converted_step`;
+    const isMissingConvCol = (e: { code?: string; message?: string } | null): boolean => {
+      if (!e) return false;
+      if (e.code === "42703" || e.code === "PGRST204") return true;
+      const msg = e.message ?? "";
+      return /converted_at|converted_step/i.test(msg) && /column|schema cache/i.test(msg);
+    };
+    let convColsMissing = false;
+
     for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
-      const { data: enrollRows, error: enrollErr } = await db
+      let { data: enrollRows, error: enrollErr } = await db
         .from("email_sequence_enrollments")
-        .select("sequence_id, completed_at, cancelled_at, last_step_sent, enrolled_at")
+        .select(convColsMissing ? BASE_COLS : CONV_COLS)
         .in("sequence_id", ids)
-        .range(offset, offset + COUNT_PAGE - 1);
+        .range(offset, offset + COUNT_PAGE - 1)
+        .returns<CountEnrollRow[]>();
+      if (enrollErr && !convColsMissing && isMissingConvCol(enrollErr)) {
+        convColsMissing = true;
+        ({ data: enrollRows, error: enrollErr } = await db
+          .from("email_sequence_enrollments")
+          .select(BASE_COLS)
+          .in("sequence_id", ids)
+          .range(offset, offset + COUNT_PAGE - 1)
+          .returns<CountEnrollRow[]>());
+      }
       if (enrollErr) break;
       for (const row of enrollRows ?? []) {
         if (typeof row.sequence_id !== "string") continue;
         const counts = countsById.get(row.sequence_id) ?? { active: 0, completed: 0, cancelled: 0 };
+        // A converted enrollment is also cancelled; tally it before the shared
+        // cancelled/completed/open branching (last-touch to converted_step).
+        if (row.converted_at) {
+          const step = typeof row.converted_step === "number" ? row.converted_step : 0;
+          const perSeq = convertedById.get(row.sequence_id) ?? new Map<number, number>();
+          perSeq.set(step, (perSeq.get(step) ?? 0) + 1);
+          convertedById.set(row.sequence_id, perSeq);
+          convertedTotalById.set(
+            row.sequence_id,
+            (convertedTotalById.get(row.sequence_id) ?? 0) + 1,
+          );
+        }
         if (row.cancelled_at) counts.cancelled += 1;
         else if (row.completed_at) counts.completed += 1;
         else {
@@ -293,6 +348,7 @@ export async function GET(request: Request) {
     sequences: sequences.map((row) => {
       const queuedByLastStep = queuedById.get(row.id);
       const nextMs = nextSendById.get(row.id);
+      const convertedByStep = convertedById.get(row.id);
       return {
         ...row,
         steps: (stepsById.get(row.id) ?? []).map((step) => ({
@@ -300,8 +356,13 @@ export async function GET(request: Request) {
           category: stepCategory(row.id, step.position),
           // People whose next step is this one (last_step_sent = position - 1).
           queued: queuedByLastStep?.get(step.position - 1) ?? 0,
+          // Conversions attributed last-touch to this step (they became a live
+          // subscriber after receiving it, i.e. converted_step = position).
+          converted: convertedByStep?.get(step.position) ?? 0,
         })),
         enrollmentCounts: countsById.get(row.id) ?? { active: 0, completed: 0, cancelled: 0 },
+        // Total conversions across this sequence (all steps + pre-first-step).
+        convertedTotal: convertedTotalById.get(row.id) ?? 0,
         // Soonest next send across open enrollments (null when none are pending).
         next_send_at:
           typeof nextMs === "number" && Number.isFinite(nextMs)
