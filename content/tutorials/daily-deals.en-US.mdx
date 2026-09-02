@@ -62,7 +62,7 @@ The **active preset** (default named `default`) saves your filter config. You ca
 
 A few Filter Recipe settings decide how strict your harvest is, and they pull in opposite directions:
 
-- **Real discounts only** (on by default) keeps only products with a straightforward markdown: a real percent off, a flat savings amount, or an active Amazon deal flag. Coupon-only and promo-code-only finds are set aside so your posts feature clear bargains. Separately, and no matter how this setting is set, the Deals Butler never posts a full-priced item: any product with no discount, coupon, promo code, or Amazon deal flag at all is dropped before it can reach your queue. Most people keep Real discounts only on.
+- **Real discounts only** (on by default) keeps only products with a straightforward markdown: a real percent off, a flat savings amount, or an active Amazon deal flag. Coupon-only and promo-code-only finds are set aside so your posts feature clear bargains. Separately, and no matter how this setting is set, the Deals Butler never posts a full-priced item: any product with no discount, coupon, promo code, or Amazon deal flag at all is dropped before it can reach your queue. The one exception is when you deliberately turn on **Full price finds** (see below). Most people keep Real discounts only on.
 - **Avoid 0-commission products and categories** (on by default) skips products you cannot earn a commission on: the categories Amazon pays 0% on (such as gift cards, alcohol, and Amazon devices), plus any category your commission rates show as 0%. Products with a Creator Connections or SPCC campaign are always kept, since the campaign is what pays you. A deal whose commission Butler cannot work out yet is kept, so nothing is dropped by mistake. Turn it off in Deal Filters if you would rather see and post every deal regardless of commission.
 - **Flag suspicious prices** (on by default) goes one step further than Real discounts only. Even when a percent off is real, a huge markdown on a single small item is usually a sign the "list price" was inflated (think an 86% off on one small snack bar). Butler does not drop these. It holds them in your Upcoming posts for a quick look, so you can **Post anyway** or skip them, while everything else keeps posting automatically. The same check runs on Email Deals, where a flagged deal is simply held back from auto-send.
 - **Skip low stock** (off by default) skips deals with fewer than the number you set left in stock, so a deal is not gone by the time it posts. Amazon shows a stock count for only some listings, so this is best effort: deals with no count shown still pass. Sold-out items are always left out, whether or not you use this.
@@ -71,6 +71,16 @@ A few Filter Recipe settings decide how strict your harvest is, and they pull in
 - **Top up to reach your target** (off by default) only matters when you set **Max deals harvested**. If your filters find fewer deals than that target, Butler adds the best near-miss deals until you reach it. Topped-up deals already passed your price range, excluded keywords, and repost guard, but they can fall below your Minimum percent off, review, and star minimums. They are still real deals, though: a full-priced product is never topped up. Turn it on when hitting your daily post count matters more than strict filtering; leave it off if you never want a deal that misses your filters.
 
 In short: Real discounts only trims your harvest down to true markdowns, and Top up to reach your target fills the harvest back up when that trim leaves you short of your target.
+
+## Full price finds
+
+By default Butler keeps only products on a real markdown. Sometimes, though, a great everyday-price product under a certain price is still worth sharing. The **Full price finds** section on the Deal Filters tab lets you mix those in, without ever pretending they are on sale. It is collapsed and off until you open it, so nothing changes unless you turn it on.
+
+- Turn on **Mix in full-price finds** and Butler keeps products with no discount, as long as their price is below the **Max price** you set higher up in the Filter Recipe. That Max price is the ceiling, so this does nothing until you set one. Everything else still applies: a full-price find still has to clear your price range, reviews, stars, stock, and category filters, and sold-out items are still left out.
+- Because these have no discount, you can hold them to a higher bar. **Best Sellers only** keeps a full-price find only when Amazon marks it a Best Seller, and **Min star rating for full-price finds** keeps one only when it is rated at least the number you set, on top of your main Min star rating. Both apply to full-price finds only, so your real deals are untouched.
+- Full-price finds always post with no discount wording: no was-price, no percent off. They use the **Full price posts** caption and pinned comment you set in Build Your Post (see Caption by deal type below), so you write copy that sells the product at its everyday price. Leave those boxes empty and a full-price find falls back to your main caption with the price and discount pills blank, so it never shows a made-up "was" price.
+
+Leave this section off and nothing changes: Butler still never posts a full-priced item.
 
 ## If a deal changes before it posts
 
@@ -160,6 +170,8 @@ How Butler picks a box: for each product it checks whether the product has a pri
 If a deal ends up with no caption at all (no matching box, an empty main caption, and no variants), Butler posts a basic caption (percent off and the product title) and the preview shows a note telling you so, with a shortcut to connect OpenAI or add a caption.
 
 Your **pinned comment** has the same boxes. Below the caption cases you will find **Comment by deal type**, its **Walmart** twin, and **Comment by store**, each working just like the caption versions: turn on a case, write a pinned comment just for it, and Butler picks the matching box for each deal (deal type first, then store, then your main pinned comment). Leave a box empty and that deal keeps your main comment. **Copy main comment to all** fills both store comments from your main pinned comment in one click, and **Refresh caption & comments** re-applies these to every deal already in your queue.
+
+If you use **Full price finds** (see the filters section above), you will also find a **Full price posts** card here with its own caption and pinned comment. Butler uses these for any full-price product it mixed in, and it blanks the price and discount pills for them so nothing reads as a sale.
 
 ## Auto-build Amazon Idea Lists
 
