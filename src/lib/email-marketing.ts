@@ -99,6 +99,15 @@ export function sequencePlatformTags(name: string): string[] {
 /** The email-marketing cron runs every 5 minutes: 12 runs per hour. */
 export const SEQUENCE_RUNS_PER_HOUR = 12;
 
+/**
+ * Default hourly send rate for a sequence with no explicit sends_per_hour. Kept
+ * conservative so every sequence (including any created later without a rate set)
+ * is drip-protected by default rather than blasting. The admin create endpoint
+ * seeds this into new sequences, and the cron falls back to it if the column is
+ * somehow null.
+ */
+export const DEFAULT_SENDS_PER_HOUR = 120;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
@@ -211,6 +220,26 @@ export function sequenceRunBudget(
     return Math.max(1, Math.ceil(sendsPerHour / runsPerHour));
   }
   return defaultBudget;
+}
+
+/**
+ * Per-run budget for drip marketing (campaigns and sequences) given a domain-safe
+ * hourly ceiling and how many emails (all funnels) already went out in the last
+ * rolling hour. Returns the leftover headroom, clamped to [0, perRunCeiling].
+ *
+ * This is how transactional/system mail is prioritized: transactional is sent
+ * immediately outside the cron and is never gated, but it IS counted in
+ * sentLastHour, so a burst of it shrinks the headroom left for drip sends this
+ * run (down to zero). A quiet hour opens the budget back up. Pure so the math is
+ * unit-testable without the DB; the caller supplies sentLastHour from email_sends.
+ */
+export function marketingRunBudget(
+  safeHourly: number,
+  sentLastHour: number,
+  perRunCeiling: number,
+): number {
+  const headroom = Math.max(0, safeHourly - Math.max(0, sentLastHour));
+  return Math.max(0, Math.min(perRunCeiling, headroom));
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
