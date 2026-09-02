@@ -37,6 +37,7 @@ import {
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { personalizeReviewBody } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
+import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { isMissingTable } from "@/lib/growth-goals";
 
 export const runtime = "nodejs";
@@ -375,8 +376,8 @@ async function sendSequenceStepTest(
   toEmail: string,
   trackOpens: boolean,
 ): Promise<boolean> {
-  const personalizedText = personalizePathBody(
-    personalizeReviewBody(step.body, toEmail),
+  const personalizedText = personalizeBundleSubmitBody(
+    personalizePathBody(personalizeReviewBody(step.body, toEmail), toEmail),
     toEmail,
   );
   return sendMarketingEmail({

@@ -132,6 +132,17 @@ async function main() {
     });
   }
 
+  // The Grow Together Creator Bundle reader freebie is a public Next route
+  // (src/app/grow-together/get), not a static .html page. Emit it so the
+  // evergreen download page is indexed. NOTE: the recruitment page
+  // (/grow-together) is deliberately noindex (time-limited), so it is NOT here.
+  entries.push({
+    loc: `${SITE_ORIGIN}/grow-together/get`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "monthly",
+    priority: "0.7",
+  });
+
   // Blog is a public Next route (src/app/blog), not a static .html page, so
   // the walk above never sees it. Pull the post list from the blog manifest
   // and emit /blog plus each /blog/<slug> URL.

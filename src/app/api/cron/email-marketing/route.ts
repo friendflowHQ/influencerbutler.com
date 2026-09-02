@@ -36,6 +36,7 @@ import {
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
+import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
@@ -496,10 +497,14 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       seqBudget -= 1;
       globalRemaining -= 1;
       // No-op unless the body carries placeholders: {{REVIEW_*}} (the review
-      // sequence) or {{PATH_*_URL}} (the giveaway welcome fork), each replaced
-      // with this recipient's signed links.
-      const personalizedText = personalizePathBody(
-        personalizeReviewBody(nextStep.body, enrollment.email),
+      // sequence), {{PATH_*_URL}} (the giveaway welcome fork), or
+      // {{BUNDLE_SUBMIT_URL}} (the Grow Together contributor onboarding), each
+      // replaced with this recipient's signed links.
+      const personalizedText = personalizeBundleSubmitBody(
+        personalizePathBody(
+          personalizeReviewBody(nextStep.body, enrollment.email),
+          enrollment.email,
+        ),
         enrollment.email,
       );
       const ok = await sendMarketingEmail({

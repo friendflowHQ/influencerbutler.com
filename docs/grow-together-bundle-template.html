@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Grow Together Creator Bundle: PDF template</title>
+<!--
+  Print-to-PDF template for assembling the Grow Together Creator Bundle.
+  Open in Chrome, then File > Print > Save as PDF (Letter, margins: none / default,
+  "Background graphics" ON). Duplicate the .chapter block for each contributor and
+  the .section-divider for each section. Brand: Influencer Butler orange, Inter.
+  No em dashes anywhere (house style).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --brand-600: #ea580c;
+    --brand-700: #c2410c;
+    --brand-50: #fff7ed;
+    --brand-100: #ffedd5;
+    --ink: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--ink);
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* One Letter page per .page. */
+  .page {
+    width: 8.5in;
+    min-height: 11in;
+    padding: 0.9in 0.85in;
+    margin: 0 auto;
+    position: relative;
+    page-break-after: always;
+    border-bottom: 1px dashed #ddd; /* screen-only guide; harmless in print */
+  }
+  @media print {
+    .page { border-bottom: none; margin: 0; }
+    @page { size: Letter; margin: 0; }
+  }
+
+  .footer-num {
+    position: absolute;
+    bottom: 0.5in;
+    right: 0.85in;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ---- Cover ---- */
+  .cover {
+    background: linear-gradient(160deg, var(--brand-50), #ffffff 60%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .cover .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand-700);
+    background: var(--brand-100);
+    padding: 6px 14px;
+    border-radius: 999px;
+  }
+  .cover h1 {
+    font-size: 52px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin: 22px 0 0;
+    line-height: 1.02;
+  }
+  .cover .sub {
+    max-width: 5.5in;
+    margin: 18px auto 0;
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .cover .year { margin-top: 40px; font-weight: 700; color: var(--brand-700); letter-spacing: 0.08em; }
+  .cover .url { position: absolute; bottom: 0.7in; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
+
+  /* ---- Table of contents ---- */
+  .toc-title { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+  .toc-section { margin-top: 26px; }
+  .toc-section h3 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--brand-700); margin: 0 0 10px; font-weight: 700;
+  }
+  .toc-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .toc-row .t { font-weight: 600; font-size: 14px; }
+  .toc-row .a { font-size: 13px; color: var(--muted); }
+
+  /* ---- Section divider ---- */
+  .section-divider {
+    background: var(--brand-600);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  .section-divider h2 { font-size: 40px; font-weight: 900; letter-spacing: -0.01em; margin: 0; max-width: 6in; }
+
+  /* ---- Contributor chapter ---- */
+  .chapter .byline { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 2px solid var(--brand-100); }
+  .chapter .avatar {
+    width: 72px; height: 72px; border-radius: 999px; object-fit: cover;
+    background: var(--brand-100); border: 3px solid var(--brand-100); flex: none;
+  }
+  .chapter .who .name { font-size: 18px; font-weight: 800; color: var(--brand-700); text-transform: uppercase; letter-spacing: 0.04em; }
+  .chapter .who .meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .chapter .who .socials { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .chapter .chapter-title {
+    margin: 22px 0 16px; text-align: center; font-size: 20px; font-weight: 800;
+    background: var(--brand-50); color: var(--brand-700); padding: 12px 16px; border-radius: 12px;
+  }
+  .chapter .body { column-count: 2; column-gap: 28px; font-size: 12.5px; line-height: 1.6; color: #1f2937; text-align: left; }
+  .chapter .body p { margin: 0 0 12px; }
+  .chapter .body h4 { font-size: 13px; font-weight: 700; margin: 14px 0 6px; break-after: avoid; }
+  .chapter .body ul, .chapter .body ol { margin: 0 0 12px 18px; padding: 0; }
+  .chapter .signature { margin-top: 18px; text-align: right; font-weight: 700; color: var(--brand-700); }
+</style>
+</head>
+<body>
+
+  <!-- ========================= COVER ========================= -->
+  <section class="page cover">
+    <span class="kicker">A free creator bundle</span>
+    <h1>Grow Together<br />Creator Bundle</h1>
+    <p class="sub">The best advice from a group of Amazon, Walmart, and social creators, all in one place. Real tactics for growing your audience and turning it into income.</p>
+    <div class="year">2026 Edition</div>
+    <div class="url">influencerbutler.com/grow-together</div>
+  </section>
+
+  <!-- ========================= TABLE OF CONTENTS ========================= -->
+  <section class="page">
+    <div class="toc-title">Inside this bundle</div>
+
+    <div class="toc-section">
+      <h3>Getting started</h3>
+      <div class="toc-row"><span class="t">Setting up an Amazon storefront that sells</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Getting your first Amazon commissions</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Finding and owning your niche</span><span class="a">Contributor name</span></div>
+    </div>
+
+    <div class="toc-section">
+      <h3>Growing your audience</h3>
+      <div class="toc-row"><span class="t">Short-form video that sells</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Pinterest for affiliate traffic</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Building an email list as a creator</span><span class="a">Contributor name</span></div>
+    </div>
+
+    <div class="toc-section">
+      <h3>Turning it into income</h3>
+      <div class="toc-row"><span class="t">Winning Amazon Creator Connections campaigns</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Negotiating brand deals and rates</span><span class="a">Contributor name</span></div>
+      <div class="toc-row"><span class="t">Tools and automation that save you hours</span><span class="a">Liz Dean</span></div>
+    </div>
+
+    <div class="footer-num">2</div>
+  </section>
+
+  <!-- ========================= SECTION DIVIDER (duplicate per section) ========================= -->
+  <section class="page section-divider">
+    <h2>Turning it into income</h2>
+  </section>
+
+  <!-- ========================= CONTRIBUTOR CHAPTER (duplicate per contributor) ========================= -->
+  <section class="page chapter">
+    <div class="byline">
+      <!-- Swap src for the contributor headshot; the box shows brand color if missing. -->
+      <img class="avatar" src="" alt="" />
+      <div class="who">
+        <div class="name">Liz Dean | Influencer Butler</div>
+        <div class="meta">@lizdean</div>
+        <div class="socials">influencerbutler.com</div>
+      </div>
+    </div>
+
+    <div class="chapter-title">Set it up once, let it run</div>
+
+    <div class="body">
+      <p>Paste the contributor's chapter here. Two columns flow automatically. Keep paragraphs short so both columns stay balanced.</p>
+      <h4>A subheading</h4>
+      <p>Use short subheadings and bullet lists to break up advice.</p>
+      <ul>
+        <li>One concrete tip</li>
+        <li>Another concrete tip</li>
+      </ul>
+      <p>End with one clear takeaway and where readers can follow the author.</p>
+      <div class="signature">Liz Dean</div>
+    </div>
+
+    <div class="footer-num">3</div>
+  </section>
+
+</body>
+</html>
