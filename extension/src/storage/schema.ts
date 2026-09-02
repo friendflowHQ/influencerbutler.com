@@ -430,6 +430,7 @@ export type NudgeState = {
 export type NudgesState = {
   fbGroup: NudgeState;
   appDownload: NudgeState;
+  communityNotice: NudgeState;
 };
 
 export const DEFAULT_NUDGE_STATE: NudgeState = {
@@ -605,6 +606,7 @@ export const DEFAULTS: StorageShape = {
   nudges: {
     fbGroup: { ...DEFAULT_NUDGE_STATE },
     appDownload: { ...DEFAULT_NUDGE_STATE },
+    communityNotice: { ...DEFAULT_NUDGE_STATE },
   },
   hints: { ...DEFAULT_HINTS_STATE },
 };
@@ -735,6 +737,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     nudges: {
       fbGroup: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.fbGroup ?? {}) },
       appDownload: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.appDownload ?? {}) },
+      communityNotice: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.communityNotice ?? {}) },
     },
     hints: { ...DEFAULT_HINTS_STATE, ...(raw.hints ?? {}) },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],

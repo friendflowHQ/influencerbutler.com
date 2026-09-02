@@ -287,13 +287,20 @@ export const CAMPAIGN_GRID_URL =
 
 // Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
 // day 1 invites the user to the Facebook community, day 3 invites them to
-// download the free desktop app. Each fires once via an OS notification (on the
-// alarm below) and once via an in-page modal on the next Amazon visit.
+// download the free desktop app, day 5 reinforces that the community is for
+// tips (not bug reports) and points issues at Feedback Butler. Each fires once
+// via an OS notification (on the alarm below) and once via an in-page modal on
+// the next Amazon visit.
 export const FACEBOOK_GROUP_URL = "https://www.facebook.com/groups/influencerbutler";
+// Public Feedback Butler page (same-origin, so it passes the OPEN_URL
+// allowlist). Where the day-5 "report a bug" actions send the user.
+export const EXTENSION_FEEDBACK_URL = `${API_BASE}/extension-feedback`;
 export const NUDGE_FB_ALARM = "ib-nudge-fb";
 export const NUDGE_APP_ALARM = "ib-nudge-app";
+export const NUDGE_COMMUNITY_ALARM = "ib-nudge-community";
 export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
 export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
+export const NUDGE_COMMUNITY_DELAY_MS = 5 * 24 * 60 * 60 * 1000; // 5 days after first use
 
 // Extension self-update banner. Chrome stages extension updates itself (and in
 // MV3 applies them shortly after the worker idles); we just record what is

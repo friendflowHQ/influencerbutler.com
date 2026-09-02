@@ -1,8 +1,11 @@
 import {
   APP_TRIAL_URL,
+  EXTENSION_FEEDBACK_URL,
   FACEBOOK_GROUP_URL,
   NUDGE_APP_ALARM,
   NUDGE_APP_DELAY_MS,
+  NUDGE_COMMUNITY_ALARM,
+  NUDGE_COMMUNITY_DELAY_MS,
   NUDGE_FB_ALARM,
   NUDGE_FB_DELAY_MS,
 } from "../shared/constants";
@@ -12,25 +15,30 @@ import { getHudStatus } from "./hud-bridge";
 import { log } from "../shared/log";
 
 // Background half of the re-engagement nudges. Owns first-use tracking, the
-// day-1 / day-3 alarms, and the OS notifications. The content script owns the
-// in-page modals; the two channels coordinate through storage.nudges so a user
-// who acts on one is not nagged by the other.
+// day-1 / day-3 / day-5 alarms, and the OS notifications. The content script
+// owns the in-page modals; the two channels coordinate through storage.nudges
+// so a user who acts on one is not nagged by the other.
 
-type NudgeKey = "fbGroup" | "appDownload";
+type NudgeKey = "fbGroup" | "appDownload" | "communityNotice";
+
+const ALL_KEYS: NudgeKey[] = ["fbGroup", "appDownload", "communityNotice"];
 
 const ALARM_TO_KEY: Record<string, NudgeKey> = {
   [NUDGE_FB_ALARM]: "fbGroup",
   [NUDGE_APP_ALARM]: "appDownload",
+  [NUDGE_COMMUNITY_ALARM]: "communityNotice",
 };
 
 const KEY_TO_ALARM: Record<NudgeKey, string> = {
   fbGroup: NUDGE_FB_ALARM,
   appDownload: NUDGE_APP_ALARM,
+  communityNotice: NUDGE_COMMUNITY_ALARM,
 };
 
 const DELAY: Record<NudgeKey, number> = {
   fbGroup: NUDGE_FB_DELAY_MS,
   appDownload: NUDGE_APP_DELAY_MS,
+  communityNotice: NUDGE_COMMUNITY_DELAY_MS,
 };
 
 // Records the first real use (first content-script run on an Amazon page) and
@@ -51,7 +59,7 @@ export async function ensureNudgeAlarms(firstUseAt?: number | null): Promise<voi
   const anchor = firstUseAt === undefined ? state!.firstUseAt : firstUseAt;
   if (anchor === null) return;
   const nudges = state ? state.nudges : (await getState()).nudges;
-  for (const key of ["fbGroup", "appDownload"] as NudgeKey[]) {
+  for (const key of ALL_KEYS) {
     if (nudges[key].notifiedAt === null) {
       await chrome.alarms.create(KEY_TO_ALARM[key], { when: anchor + DELAY[key] });
     }
@@ -85,10 +93,16 @@ async function fireNudge(key: NudgeKey): Promise<void> {
   }
 
   applyBackgroundLocale();
-  const copy =
-    key === "fbGroup"
-      ? { title: t().nudgeFbNotifTitle, message: t().nudgeFbNotifBody }
-      : { title: t().nudgeAppNotifTitle, message: t().nudgeAppNotifBody };
+  const strings = t();
+  const copyByKey: Record<NudgeKey, { title: string; message: string }> = {
+    fbGroup: { title: strings.nudgeFbNotifTitle, message: strings.nudgeFbNotifBody },
+    appDownload: { title: strings.nudgeAppNotifTitle, message: strings.nudgeAppNotifBody },
+    communityNotice: {
+      title: strings.nudgeCommunityNotifTitle,
+      message: strings.nudgeCommunityNotifBody,
+    },
+  };
+  const copy = copyByKey[key];
 
   try {
     await chrome.notifications.create(KEY_TO_ALARM[key], {
@@ -116,7 +130,12 @@ export async function handleNudgeNotificationClick(
 ): Promise<boolean> {
   const key = ALARM_TO_KEY[notificationId];
   if (!key) return false;
-  const url = key === "fbGroup" ? FACEBOOK_GROUP_URL : `${APP_TRIAL_URL}?src=ext-nudge-notif`;
+  const urlByKey: Record<NudgeKey, string> = {
+    fbGroup: FACEBOOK_GROUP_URL,
+    appDownload: `${APP_TRIAL_URL}?src=ext-nudge-notif`,
+    communityNotice: `${EXTENSION_FEEDBACK_URL}?src=ext-nudge-notif`,
+  };
+  const url = urlByKey[key];
   await open(url);
   await patchState((s) => {
     s.nudges[key].actedAt = Date.now();
