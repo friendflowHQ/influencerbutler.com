@@ -406,6 +406,28 @@ async function findSubscriptionByLsId(
   return { id: getString(data?.id), userId: getString(data?.user_id) };
 }
 
+/**
+ * Resolves a local order (by its LS order id) to the owning user and, when the
+ * order is a subscription order, the LS subscription id stored on it. Used as a
+ * fallback for events whose payload carries an order_id but no usable user
+ * context: license_key_created payloads carry order_id + user_email but NO
+ * subscription_id, so guest-checkout licenses could never resolve a user.
+ */
+async function findOrderByLsId(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+): Promise<{ userId: string | null; lsSubscriptionId: string | null }> {
+  const { data } = await supabase
+    .from("orders")
+    .select("user_id,ls_subscription_id")
+    .eq("ls_order_id", lsOrderId)
+    .maybeSingle();
+  return {
+    userId: getString(data?.user_id),
+    lsSubscriptionId: getString(data?.ls_subscription_id),
+  };
+}
+
 async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
   const { data } = await supabase.from(table).select("id").eq(column, value).maybeSingle();
   return Boolean(data);
@@ -1200,7 +1222,19 @@ export async function POST(request: Request) {
       const sub = lsSubscriptionId
         ? await findSubscriptionAttribution(supabase, lsSubscriptionId)
         : { userId: null, refAffiliateUserId: null, refAffiliateCode: null, attributionStatus: null };
-      const userId = directUserId || sub.userId;
+      let userId = directUserId || sub.userId;
+
+      // Fallback: the initial payment can arrive before subscription_created has
+      // written the subscription row, so the subscription lookup misses. The
+      // invoice carries user_email; resolve to an existing profile without
+      // sending a welcome email (findUserIdByEmail, not ensureUserForEmail) so a
+      // routine renewal never re-mails a sign-in link.
+      if (!userId) {
+        const payEmail = getString(attrs.user_email);
+        if (payEmail) {
+          userId = await findUserIdByEmail(supabase, payEmail);
+        }
+      }
 
       if (!userId) {
         throw new Error(
@@ -1399,15 +1433,52 @@ export async function POST(request: Request) {
     license_key_created: async () => {
       if (!recordId) return;
 
-      const lsSubscriptionId = getIdString(attrs.subscription_id);
-      const subscription = lsSubscriptionId
+      // LS license_key_created payloads carry NO subscription_id attribute (only
+      // order_id, customer_id, user_email), so for guest checkouts (no
+      // custom_data.supabase_user_id) neither directUserId nor the subscription
+      // lookup can resolve a user - every such delivery failed with
+      // "no user context for sub=null" and, because we return 200, LS never
+      // retried. Resolve through a fallback chain: the LS subscription id (rarely
+      // present here) -> the local order row (written by order_created) -> the
+      // invoice email (always present, provisions a guest buyer).
+      let lsSubscriptionId = getIdString(attrs.subscription_id);
+      let subscription = lsSubscriptionId
         ? await findSubscriptionByLsId(supabase, lsSubscriptionId)
-        : { id: null, userId: null };
-      const userId = directUserId || subscription.userId;
+        : { id: null as string | null, userId: null as string | null };
+      let userId: string | null = directUserId || subscription.userId;
+
+      // Fallback 1: resolve via the order this license belongs to. The local
+      // order row carries user_id and, for a subscription order, the
+      // ls_subscription_id the payload omitted - so we can also link the license
+      // to its subscription immediately instead of waiting for the
+      // subscription_created backfill.
+      const lsOrderId = getIdString(attrs.order_id);
+      if (!userId && lsOrderId) {
+        const order = await findOrderByLsId(supabase, lsOrderId);
+        userId = order.userId;
+        if (!subscription.id && order.lsSubscriptionId) {
+          lsSubscriptionId = order.lsSubscriptionId;
+          subscription = await findSubscriptionByLsId(supabase, order.lsSubscriptionId);
+          userId = userId || subscription.userId;
+        }
+      }
+
+      // Fallback 2: provision from the invoice email (guest checkout, or the
+      // license event racing ahead of order_created). ensureUserForEmail is
+      // idempotent and its welcome email is dedup-guarded, so re-provisioning an
+      // already-known buyer is safe.
+      if (!userId) {
+        const licenseEmail = getString(attrs.user_email);
+        if (licenseEmail) {
+          userId = await ensureUserForEmail(supabase, licenseEmail, {
+            lsCustomerId: getIdString(attrs.customer_id),
+          });
+        }
+      }
 
       if (!userId) {
         throw new Error(
-          `license_key_created: no user context for sub=${lsSubscriptionId ?? "null"}`,
+          `license_key_created: no user context - sub=${lsSubscriptionId ?? "null"}, order=${lsOrderId ?? "null"}, email=${getString(attrs.user_email) ?? "null"}`,
         );
       }
 
