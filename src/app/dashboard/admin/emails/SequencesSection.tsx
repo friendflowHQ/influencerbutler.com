@@ -67,6 +67,8 @@ type Sequence = {
   next_send_at: string | null;
   // Total conversions (became a live subscriber) across the whole sequence.
   convertedTotal: number;
+  // All-time emails sent across the whole sequence (summed over its steps).
+  sentTotal: number;
 };
 
 type SequencesResponse = { sequences: Sequence[]; migrationPending: boolean };
@@ -140,6 +142,12 @@ function convertedLabel(seq: Sequence): string {
     seq.enrollmentCounts.active + seq.enrollmentCounts.completed + seq.enrollmentCounts.cancelled;
   const rate = entered > 0 ? ` (${Math.round((total / entered) * 100)}%)` : "";
   return `${total.toLocaleString("en-US")}${rate}`;
+}
+
+/** All-time emails sent across the whole sequence; "-" when none yet. */
+function sentLabel(seq: Sequence): string {
+  const total = seq.sentTotal ?? 0;
+  return total > 0 ? total.toLocaleString("en-US") : "-";
 }
 
 /** One compact, color-toned stat cell for the per-sequence readout band. */
@@ -1049,7 +1057,7 @@ export default function SequencesSection({
               </div>
             ) : null}
 
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               <StatChip
                 label="Rate"
                 value={`${(seq.sends_per_hour ?? DEFAULT_RATE).toLocaleString("en-US")}/hr`}
@@ -1077,6 +1085,12 @@ export default function SequencesSection({
                 value={drainLabel(seq.enrollmentCounts.active, seq.sends_per_hour)}
                 tone="amber"
                 title="Rough time to clear the backlog at this rate. Real pace also depends on the shared domain-safe hourly limit, so treat it as a best case."
+              />
+              <StatChip
+                label="Sent"
+                value={sentLabel(seq)}
+                tone="slate"
+                title="Total emails this sequence has ever sent, across all steps (all-time). The per-step counts below follow the 7/30/90-day window selector instead."
               />
               <StatChip
                 label="Converted"

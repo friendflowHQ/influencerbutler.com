@@ -58,6 +58,9 @@ const MAX_DAY_OFFSET = 365;
 // than silently dropped (the bug that hid a 2000 cap).
 const MAX_EMAILS = 50000;
 const MAX_SENDS_PER_HOUR = 5000;
+// Batch size for the .in("category", ...) filter on the all-time sent scan, so a
+// sequence set with many steps never builds an over-long PostgREST query string.
+const CATEGORY_IN_CHUNK = 200;
 
 type SequenceRow = {
   id: string;
@@ -247,6 +250,11 @@ export async function GET(request: Request) {
   // the 20260906 migration is applied and the cron records the first conversion.
   const convertedById = new Map<string, Map<number, number>>();
   const convertedTotalById = new Map<string, number>();
+  // All-time emails sent per sequence, summed from email_sends across every
+  // step's category. Unlike the windowed per-step readouts (which follow the
+  // dashboard's 7/30/90-day selector via the summary endpoint), this is a
+  // lifetime total. Populated by the scan below; 0 for sequences with no sends.
+  const sentTotalById = new Map<string, number>();
 
   if (sequences.length > 0) {
     const ids = sequences.map((s) => s.id);
@@ -342,6 +350,42 @@ export async function GET(request: Request) {
       }
       if ((enrollRows ?? []).length < COUNT_PAGE) break;
     }
+
+    // All-time sent per sequence, from email_sends keyed by each step's category
+    // (seq_<shortId>_s<position>). Scan only these sequences' step categories and
+    // only genuine sends (status not suppressed/failed), so this touches far
+    // fewer rows than the full table. Best-effort: any failure leaves totals at 0
+    // and the rest of the response still renders.
+    const categoryToSeq = new Map<string, string>();
+    for (const [seqId, steps] of stepsById) {
+      for (const step of steps) categoryToSeq.set(stepCategory(seqId, step.position), seqId);
+    }
+    const categories = [...categoryToSeq.keys()];
+    try {
+      for (let i = 0; i < categories.length; i += CATEGORY_IN_CHUNK) {
+        const chunk = categories.slice(i, i + CATEGORY_IN_CHUNK);
+        for (let offset = 0; ; offset += COUNT_PAGE) {
+          const { data: sendRows, error: sendErr } = await db
+            .from("email_sends")
+            .select("category")
+            .in("category", chunk)
+            .not("status", "in", "(suppressed,failed)")
+            .range(offset, offset + COUNT_PAGE - 1)
+            .returns<{ category: string }[]>();
+          if (sendErr) {
+            console.error("admin emails/sequences: sent scan failed", sendErr);
+            break;
+          }
+          for (const row of sendRows ?? []) {
+            const seqId = categoryToSeq.get(row.category);
+            if (seqId) sentTotalById.set(seqId, (sentTotalById.get(seqId) ?? 0) + 1);
+          }
+          if ((sendRows ?? []).length < COUNT_PAGE) break;
+        }
+      }
+    } catch (err) {
+      console.error("admin emails/sequences: sent scan threw", err);
+    }
   }
 
   return NextResponse.json({
@@ -363,6 +407,8 @@ export async function GET(request: Request) {
         enrollmentCounts: countsById.get(row.id) ?? { active: 0, completed: 0, cancelled: 0 },
         // Total conversions across this sequence (all steps + pre-first-step).
         convertedTotal: convertedTotalById.get(row.id) ?? 0,
+        // All-time emails sent across this sequence (summed over its steps).
+        sentTotal: sentTotalById.get(row.id) ?? 0,
         // Soonest next send across open enrollments (null when none are pending).
         next_send_at:
           typeof nextMs === "number" && Number.isFinite(nextMs)
