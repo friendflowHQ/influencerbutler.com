@@ -117,9 +117,11 @@ export default async function DailyDealsWorkspacePage() {
                 Different posting cadences
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Your Cooking workspace posts at 10am ET. Your Sports workspace
-                fires every game-day Saturday. Independent schedulers per
-                clone - they don&apos;t step on each other.
+                Your Cooking Deals Butler posts at 10am ET. Your Sports one
+                fires every game-day Saturday. Each added Deals Butler is its
+                own Amazon Deals and Walmart Deals workspaces plus its own
+                scheduler and destinations - they don&apos;t step on each
+                other or on your main one.
               </p>
             </article>
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -169,7 +171,11 @@ export default async function DailyDealsWorkspacePage() {
                 Open Deals Butler in the nav and click{" "}
                 <span className="font-mono text-[13px]">+ Add Workspace</span>.
                 Name it whatever you want - &ldquo;Gardening&rdquo;,
-                &ldquo;Sports&rdquo;, &ldquo;Cooking&rdquo;.
+                &ldquo;Sports&rdquo;, &ldquo;Cooking&rdquo;. You get a
+                &ldquo;Gardening Butler&rdquo; hub in the Deals Butler group and
+                &ldquo;Gardening Amazon Deals&rdquo; / &ldquo;Gardening Walmart
+                Deals&rdquo; next to your main stores under Amazon Butler and
+                Walmart Butler.
               </p>
             </div>
           </li>
