@@ -69,6 +69,8 @@ type SequenceRow = {
   trigger: unknown;
   created_by: string;
   created_at: string;
+  auto_pause_enabled?: boolean;
+  health_alerted_at?: string | null;
 };
 
 type StepRow = {
@@ -153,23 +155,30 @@ function parseSendHour(input: unknown): number | null | undefined | "invalid" {
 
 /**
  * True when the write failed only because an optional, migration-added column
- * (send_hour or track_opens) is not there yet (migration lags the deploy, per
- * repo convention). Postgres undefined column is 42703; PostgREST's stale schema
- * cache reports PGRST204. Lets the caller retry the write without those columns
- * so sequence create/edit keeps working until 20260831_sequence_send_hour.sql /
- * 20260902_sequence_track_opens.sql are applied.
+ * (send_hour, track_opens, or auto_pause_enabled) is not there yet (migration
+ * lags the deploy, per repo convention). Postgres undefined column is 42703;
+ * PostgREST's stale schema cache reports PGRST204. Lets the caller retry the
+ * write without those columns so sequence create/edit keeps working until
+ * 20260831_sequence_send_hour.sql / 20260902_sequence_track_opens.sql /
+ * 20260903_sequence_auto_pause_override.sql are applied.
  */
 function isMissingOptionalColumn(error: { message?: string; code?: string } | null): boolean {
   if (!error) return false;
   if (error.code === "42703" || error.code === "PGRST204") return true;
   return (
-    /send_hour|track_opens/i.test(error.message ?? "") &&
+    /send_hour|track_opens|auto_pause_enabled|health_alerted_at/i.test(error.message ?? "") &&
     /column|schema cache/i.test(error.message ?? "")
   );
 }
 
 /** Validates an untrusted track_opens value: undefined = leave unchanged. */
 function parseTrackOpens(input: unknown): boolean | undefined {
+  if (input === undefined) return undefined;
+  return Boolean(input);
+}
+
+/** Validates an untrusted auto_pause_enabled value: undefined = leave unchanged. */
+function parseAutoPauseEnabled(input: unknown): boolean | undefined {
   if (input === undefined) return undefined;
   return Boolean(input);
 }
@@ -434,6 +443,7 @@ export async function POST(request: Request) {
     sendsPerHour?: unknown;
     sendHour?: unknown;
     trackOpens?: unknown;
+    autoPauseEnabled?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -462,6 +472,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid send hour" }, { status: 400 });
   }
   const trackOpens = parseTrackOpens(body.trackOpens);
+  const autoPauseEnabled = parseAutoPauseEnabled(body.autoPauseEnabled);
 
   const insertRow: Record<string, unknown> = {
     name,
@@ -475,12 +486,19 @@ export async function POST(request: Request) {
   insertRow.sends_per_hour = typeof sendsPerHour === "number" ? sendsPerHour : DEFAULT_SENDS_PER_HOUR;
   if (sendHour !== undefined) insertRow.send_hour = sendHour;
   if (trackOpens !== undefined) insertRow.track_opens = trackOpens;
+  // Omitted = column default (true, auto-pause on); only set when explicitly given.
+  if (autoPauseEnabled !== undefined) insertRow.auto_pause_enabled = autoPauseEnabled;
 
   let { data, error } = await db.from("email_sequences").insert(insertRow).select("id").single();
-  if (error && ("send_hour" in insertRow || "track_opens" in insertRow) && isMissingOptionalColumn(error)) {
+  if (
+    error &&
+    ("send_hour" in insertRow || "track_opens" in insertRow || "auto_pause_enabled" in insertRow) &&
+    isMissingOptionalColumn(error)
+  ) {
     // Optional column not applied yet: retry without them so create still works.
     delete insertRow.send_hour;
     delete insertRow.track_opens;
+    delete insertRow.auto_pause_enabled;
     ({ data, error } = await db.from("email_sequences").insert(insertRow).select("id").single());
   }
   if (error) {
@@ -555,6 +573,7 @@ export async function PATCH(request: Request) {
     sendsPerHour?: unknown;
     sendHour?: unknown;
     trackOpens?: unknown;
+    enabled?: unknown;
     emails?: unknown;
     tag?: unknown;
     position?: unknown;
@@ -681,6 +700,28 @@ export async function PATCH(request: Request) {
     const { error } = await db.from("email_sequences").update(values).eq("id", id);
     if (error) {
       console.error("admin emails/sequences: status update failed", error);
+      return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "auto-pause") {
+    // Quick per-sequence override toggle (card control). enabled=false exempts the
+    // sequence from the deliverability auto-pause: the monitor alerts but never
+    // pauses it. enabled=true restores the default protective behavior.
+    const enabled = parseAutoPauseEnabled(body.enabled);
+    if (enabled === undefined) {
+      return NextResponse.json({ error: "enabled is required" }, { status: 400 });
+    }
+    const { error } = await db
+      .from("email_sequences")
+      .update({ auto_pause_enabled: enabled })
+      .eq("id", id);
+    if (error) {
+      if (isMissingOptionalColumn(error)) {
+        return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
+      }
+      console.error("admin emails/sequences: auto-pause toggle failed", error);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
     return NextResponse.json({ ok: true });

@@ -58,6 +58,9 @@ type Sequence = {
   sends_per_hour: number | null;
   send_hour: number | null;
   track_opens: boolean;
+  // false = exempt from the deliverability auto-pause (monitor alerts, never
+  // pauses). May be absent on rows read before 20260903 migration is applied.
+  auto_pause_enabled?: boolean;
   auto_paused_at: string | null;
   pause_reason: string | null;
   created_at: string;
@@ -450,6 +453,27 @@ export default function SequencesSection({
       void refetch();
     } catch {
       setListError("Could not update the sequence. Check your connection and try again.");
+    }
+  }
+
+  async function toggleAutoPause(seq: Sequence) {
+    // Default true when the column is absent (pre-migration): the sequence is
+    // protected, so the toggle offers to turn the override ON.
+    const currentlyEnabled = seq.auto_pause_enabled !== false;
+    setListError(null);
+    try {
+      const res = await fetch("/api/admin/emails/sequences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: seq.id, action: "auto-pause", enabled: !currentlyEnabled }),
+      });
+      if (!res.ok) {
+        setListError(await readError(res, "Could not update auto-pause"));
+        return;
+      }
+      void refetch();
+    } catch {
+      setListError("Could not update auto-pause. Check your connection and try again.");
     }
   }
 
@@ -1036,6 +1060,22 @@ export default function SequencesSection({
                 >
                   Test All
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void toggleAutoPause(seq)}
+                  className={
+                    seq.auto_pause_enabled === false
+                      ? "rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 transition hover:bg-amber-100"
+                      : "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                  }
+                  title={
+                    seq.auto_pause_enabled === false
+                      ? "Auto-pause is off for this sequence: a bounce/complaint spike alerts you but will not pause it. Click to turn auto-pause back on."
+                      : "Auto-pause is on: a bounce/complaint spike pauses this sequence to protect your domain. Click to exempt it (alert only, never pause)."
+                  }
+                >
+                  {seq.auto_pause_enabled === false ? "Auto-pause: off" : "Auto-pause: on"}
+                </button>
                 {seq.enrollmentCounts.active > 0 ? (
                   <button
                     type="button"
@@ -1054,6 +1094,14 @@ export default function SequencesSection({
                 <span className="font-semibold">Auto-paused to protect your domain.</span>{" "}
                 {seq.pause_reason ?? "Bounce or complaint rate crossed the safe threshold."} Review
                 the list, then Activate to resume.
+              </div>
+            ) : null}
+
+            {seq.auto_pause_enabled === false && !seq.auto_paused_at ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                <span className="font-semibold">Auto-pause is off for this sequence.</span> A bounce
+                or complaint spike will email you but will not pause it. Turn it back on once the list
+                is verified.
               </div>
             ) : null}
 
