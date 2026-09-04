@@ -16,14 +16,14 @@ The output is a complete Benable collection: header, sub-lists, products under e
 
 - **A Benable account** with your referral link saved in **API Integrations**.
 - **OpenAI API key** in API Integrations - the model that picks products and writes copy.
-- **Amazon affiliate tag** for the marketplace you're targeting (amazon.com, amazon.co.uk, amazon.ca etc).
+- **Amazon affiliate tag** for the Amazon marketplace you're targeting (amazon.com, amazon.co.uk, amazon.ca etc). For **Walmart**, no tag is needed: signed-in users resolve Walmart products through the shared lookup service, and Benable attributes the published links to your creator account.
 - **First-time Publish** also needs you to sign into Benable in the Chrome window Butler spawns - a manual sign-in once, then your session persists for future runs.
 
 ## The three modes (read this first)
 
 Benable Butler has three buttons that look similar but do very different things:
 
-- **Dry run**: runs the OpenAI + Amazon pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
+- **Dry run**: runs the OpenAI + product-search pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
 - **Preview**: same as Dry run plus writes a JSON + HTML report you can open in your browser. Lets you see the full collection structure before committing. Recommended for your first run in any niche.
 - **Publish**: actually creates the collection on Benable via Puppeteer (browser automation). Uses your saved Benable session. Takes 5-15 minutes depending on collection size.
 
@@ -33,7 +33,7 @@ Benable Butler has three buttons that look similar but do very different things:
 
 1. Open **Benable Butler** under Amazon Butler.
 2. In **What should we publish?**, type a niche keyword (e.g. "minimalist kitchen", "running gear for beginners", "small-apartment storage"). Specific niches outperform broad ones.
-3. Pick a **Marketplace** (amazon.com is the default).
+3. Pick a **Marketplace** (amazon.com is the default). Choose **Walmart** to build the collection from Walmart products instead of Amazon.
 4. Confirm your **Benable handle** auto-fills correctly. Edit if it's wrong.
 5. Click **Dry run**. Review the console output - does Butler understand your niche?
 6. If yes, click **Preview**. Open the generated HTML report when it finishes. Walk through every list + product. Reject anything that doesn't fit.

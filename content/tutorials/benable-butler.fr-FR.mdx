@@ -16,14 +16,14 @@ La sortie est une collection Benable complète : header, sous-listes, produits s
 
 - **Un compte Benable** avec votre lien d'affiliation sauvegardé dans **API Integrations**.
 - **Clé d'API OpenAI** dans API Integrations - le modèle qui choisit les produits et écrit le copy.
-- **Tag d'affiliation Amazon** pour le marketplace ciblé (amazon.com, amazon.co.uk, amazon.ca, etc.).
+- **Tag d'affiliation Amazon** pour le marketplace Amazon ciblé (amazon.com, amazon.co.uk, amazon.ca, etc.). Pour **Walmart**, aucun tag n'est nécessaire : les utilisateurs connectés résolvent les produits Walmart via le service de recherche partagé, et Benable attribue les liens publiés à votre compte créateur.
 - **Le premier Publish** vous demande aussi de vous connecter à Benable dans la fenêtre Chrome que Butler ouvre - connexion manuelle une fois, ensuite la session persiste pour les runs suivants.
 
 ## Les trois modes (lisez ça en premier)
 
 Benable Butler a trois boutons qui se ressemblent mais font des choses très différentes :
 
-- **Dry run**: exécute uniquement le pipeline OpenAI + Amazon. Pas de navigateur, pas de publication. Écrit en console un résumé de ce que Butler *construirait*. Tokens OpenAI gratuits ; prend ~1 minute.
+- **Dry run**: exécute uniquement le pipeline OpenAI + recherche de produits. Pas de navigateur, pas de publication. Écrit en console un résumé de ce que Butler *construirait*. Tokens OpenAI gratuits ; prend ~1 minute.
 - **Preview**: comme Dry run plus l'écriture d'un rapport JSON + HTML que vous pouvez ouvrir dans votre navigateur. Permet de voir la structure complète avant de valider. Recommandé pour votre première exécution dans n'importe quelle niche.
 - **Publish**: crée réellement la collection sur Benable via Puppeteer (automatisation navigateur). Utilise votre session Benable sauvegardée. Prend 5-15 minutes selon la taille de la collection.
 
@@ -33,7 +33,7 @@ Benable Butler a trois boutons qui se ressemblent mais font des choses très dif
 
 1. Ouvrez **Benable Butler** sous Amazon Butler.
 2. Dans **What should we publish?**, tapez un mot-clé de niche (par ex. "cuisine minimaliste", "équipement course pour débutants", "rangement pour studio"). Les niches précises surperforment les larges.
-3. Choisissez un **Marketplace** (amazon.com par défaut).
+3. Choisissez un **Marketplace** (amazon.com par défaut). Choisissez **Walmart** pour construire la collection à partir de produits Walmart au lieu d'Amazon.
 4. Vérifiez que votre **handle Benable** se remplit correctement. Modifiez si c'est faux.
 5. Cliquez sur **Dry run**. Relisez la sortie console - est-ce que Butler a compris votre niche ?
 6. Si oui, cliquez sur **Preview**. Ouvrez le rapport HTML généré une fois terminé. Parcourez chaque liste et produit. Rejetez ce qui ne colle pas.
