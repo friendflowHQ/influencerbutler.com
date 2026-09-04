@@ -41,8 +41,8 @@ describe("fillEmpty", () => {
       },
     });
     const { merged, filled } = fillEmpty(ext, app);
-    expect(merged.providers.linktwin.creds.apiKey).toBe("KEY"); // blank -> filled
-    expect(merged.providers.geniuslink.creds.apiSecret).toBe("S"); // new provider adopted
+    expect(merged.providers.linktwin!.creds.apiKey).toBe("KEY"); // blank -> filled
+    expect(merged.providers.geniuslink!.creds.apiSecret).toBe("S"); // new provider adopted
     expect(filled).toBe(2);
   });
 
@@ -107,8 +107,8 @@ describe("coerceSyncPayload", () => {
     expect(out).not.toBeNull();
     expect(out!.storefrontHandle).toBeNull(); // blank -> null
     expect(out!.perCountryTags).toEqual({ US: "tag" }); // non-string dropped
-    expect(out!.providers.linktwin.creds).toEqual({ apiKey: "K" });
-    expect(out!.providers.linktwin.routingParticipates).toBe(true); // default
+    expect(out!.providers.linktwin!.creds).toEqual({ apiKey: "K" });
+    expect(out!.providers.linktwin!.routingParticipates).toBe(true); // default
   });
 
   it("rejects a non-object", () => {
