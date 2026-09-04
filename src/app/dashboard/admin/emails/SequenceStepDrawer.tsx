@@ -105,6 +105,53 @@ export default function SequenceStepDrawer({
   const [testMsg, setTestMsg] = useState<string | null>(null);
   const [testErr, setTestErr] = useState<string | null>(null);
 
+  // "Copy all" for the Sent list: pages through every result (respecting the
+  // current search filter) and writes the addresses to the clipboard, one per
+  // line so they paste straight into the enrollment box.
+  const [copying, setCopying] = useState(false);
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
+
+  async function copyAllSent() {
+    if (!data || data.sent.total === 0 || copying) return;
+    setCopying(true);
+    setCopyMsg(null);
+    try {
+      const pageSize = data.sent.pageSize > 0 ? data.sent.pageSize : 50;
+      const pages = Math.max(1, Math.ceil(data.sent.total / pageSize));
+      const seen = new Set<string>();
+      const emails: string[] = [];
+      for (let p = 0; p < pages; p += 1) {
+        const res = await fetch(
+          `/api/admin/emails/sequence-step?sequenceId=${encodeURIComponent(sequenceId)}` +
+            `&position=${position}&page=${p}&schedPage=0` +
+            (query ? `&q=${encodeURIComponent(query)}` : ""),
+          { cache: "no-store" },
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as StepResponse;
+        for (const r of json.sent?.rows ?? []) {
+          const email = (r.recipient ?? "").trim();
+          const key = email.toLowerCase();
+          if (email && !seen.has(key)) {
+            seen.add(key);
+            emails.push(email);
+          }
+        }
+      }
+      if (emails.length === 0) {
+        setCopyMsg("Nothing to copy.");
+        return;
+      }
+      await navigator.clipboard.writeText(emails.join("\n"));
+      setCopyMsg(`Copied ${emails.length.toLocaleString("en-US")}`);
+    } catch {
+      setCopyMsg("Copy failed.");
+    } finally {
+      setCopying(false);
+      window.setTimeout(() => setCopyMsg(null), 4000);
+    }
+  }
+
   async function sendTest() {
     const to = testEmail.trim().toLowerCase();
     if (!TEST_EMAIL_RE.test(to)) {
@@ -307,7 +354,20 @@ export default function SequenceStepDrawer({
                 <thead>
                   <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
                     <th className="px-3 py-2 font-medium">When</th>
-                    <th className="px-3 py-2 font-medium">Email</th>
+                    <th className="px-3 py-2 font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        Email
+                        <button
+                          type="button"
+                          onClick={copyAllSent}
+                          disabled={copying || data.sent.total === 0}
+                          title="Copy every sent recipient email (all pages) to the clipboard"
+                          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                        >
+                          {copying ? "Copying..." : (copyMsg ?? "Copy all")}
+                        </button>
+                      </span>
+                    </th>
                     <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 font-medium">Engagement</th>
                   </tr>
