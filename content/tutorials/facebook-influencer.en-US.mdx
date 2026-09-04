@@ -1,14 +1,16 @@
 ---
-title: "Facebook Inviter: turn group reactions into Page followers"
-summary: Walk the Facebook groups you belong to, open each post's reaction list, and invite those people to follow your Page, with a per-post cap, skip list, and daily schedule.
+title: "Facebook Inviter: turn group engagement into Page followers"
+summary: Walk the Facebook groups you belong to, find your own posts in each one, and invite everyone who reacted or commented to follow your Page, with a master on/off toggle, per-post cap, skip list, and daily schedule.
 category: Other
 ---
 
 ## What Facebook Inviter does
 
-You post a deal in a Facebook group and forty people react, then nothing happens, because none of them follow your Page. Facebook Inviter chases them up: it walks the groups you belong to, opens the reaction list on each post, and invites every one of those people to follow your Page.
+You post a deal in a Facebook group and forty people react or drop a comment, then nothing happens, because none of them follow your Page. Facebook Inviter chases them up: it walks the groups you belong to, finds the posts your own Page made in each one, and invites everyone who engaged with them to follow your Page. That means people who reacted (invited with one click) and, as a best effort, people who left a comment.
 
-Those reactions are the warmest audience you will get that day. This tool turns them into followers who see your next deal without you re-posting into the group.
+Those engagers are the warmest audience you will get that day. This tool turns them into followers who see your next deal without you re-posting into the group.
+
+A quick note on commenters: Facebook gives a clean one-click invite for people who reacted, but the invite option for someone who only commented is tucked away and does not always appear. So Facebook Inviter invites every reactor and picks up commenters wherever Facebook offers the option, quietly skipping the rest rather than stalling.
 
 ## Before you start
 
@@ -20,6 +22,7 @@ Those reactions are the warmest audience you will get that day. This tool turns 
 
 Under **Run settings**:
 
+- **Invite everyone who engaged with my posts**: the master switch, on by default. Leave it on for the normal behavior (invite every reactor and commenter on your posts). Turn it off when you want to sit a run out; with it off, pressing Start does nothing.
 - **Profile or Page ID**: the numeric identifier people will be invited to follow. Required; Butler won't start without it.
 - **Facebook account**: which signed-in Facebook account sends the invites. It defaults to your Default account. The list matches the accounts you set up in Deals Butler, so pick the one that belongs to the Page.
 - **Groups to skip**: any groups you belong to but would rather not be seen inviting people from. One per line.
