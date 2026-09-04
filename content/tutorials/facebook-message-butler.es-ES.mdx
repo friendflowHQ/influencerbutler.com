@@ -1,0 +1,78 @@
+---
+title: "Facebook Message Butler: envía mensajes a miembros de grupos y responde a quien comenta"
+summary: Envía mensajes a los miembros de un grupo de Facebook o a los seguidores de una página, uno a uno a ritmo humano y con un mensaje distinto cada vez, y configura reglas de comentario a MD que responden a quien comenta automáticamente.
+category: Other
+---
+
+## Qué hace Facebook Message Butler
+
+Facebook Message Butler contacta a personas en Facebook por ti de dos formas. Primero, envía un mensaje privado a los miembros de un grupo en el que estás, o a los seguidores de una página, de uno en uno, con una pausa natural y una redacción diferente para cada persona para que nada parezca copiado y pegado. Segundo, ejecuta automatizaciones de comentario a MD: cuando alguien comenta una palabra clave en una de tus publicaciones, Butler le envía automáticamente un mensaje de Messenger (y, si quieres, también una respuesta pública al comentario). Usa la misma sesión de Facebook que Deals Butler, así que solo inicias sesión una vez.
+
+Está pensado para creadores que quieren iniciar conversaciones a gran escala sin estar frente al teclado, manteniéndose dentro de los límites que mantienen la cuenta segura.
+
+## Antes de empezar
+
+- **Inicia sesión en Facebook en la app.** Butler envía mensajes desde tu sesión real de Facebook. En la sección **Cuenta de Facebook**, elige la cuenta desde la que enviar, haz clic en **Iniciar sesión**, termina de iniciar sesión en la ventana que se abre, ciérrala y haz clic en **Verificar inicio de sesión**. Una insignia verde de **Sesión iniciada** indica que estás listo. Para añadir más cuentas, agrégalas en Deals Butler dentro de Destinos sociales y aparecerán en esta lista.
+- **Ve despacio al principio.** Facebook vigila el envío en ráfaga. Los ajustes predefinidos empiezan de forma conservadora a propósito. Las cuentas nuevas deberían elegir el más cauteloso.
+
+## Parte 1: Enviar mensajes a un grupo o página
+
+### Paso 1: Elige a quién enviar
+
+En la sección **A quién enviar**, elige un origen:
+
+- **Miembros del grupo**: pega la URL de un grupo al que perteneces. Sus miembros pasan a ser tus destinatarios. Activa **Enviar también a los administradores del grupo** solo si es tu intención.
+- **Seguidores de la página**: pega la URL de una página. Se envían mensajes a los perfiles reales; las páginas seguidoras se omiten.
+- **Pegar o CSV**: carga un CSV con URLs de perfil o nombres, o pásate destinatarios desde otro espacio de trabajo.
+
+Haz clic en **Buscar destinatarios** (o **Cargar CSV**) para llenar la cola. Se omite automáticamente a quien ya has enviado un mensaje.
+
+### Paso 2: Escribe tu mensaje
+
+En **Tu mensaje**, escribe lo que quieres decir. Pon opciones entre llaves como `{Hola|Hey|Buenas}` y Butler elige una al azar para cada persona, para que cada mensaje se lea un poco diferente. Usa `{firstName}` para poner su nombre. La barra de herramientas puede insertar un saludo, una despedida o su nombre por ti, y **Ver variaciones** muestra algunos mensajes de ejemplo para que veas el abanico antes de ejecutar.
+
+### Paso 3: Elige cómo enviar y a qué velocidad
+
+En **Cómo enviar**, mantén **Mensajes individuales** (la opción más segura). El chat de grupo está disponible, pero Facebook lo limita mucho, así que es más fácil que te bloqueen.
+
+En **Ritmo y límites**, elige un ajuste: **Cauteloso** para una cuenta nueva, **Conservador** (recomendado) para la mayoría, o **Moderado** si la cuenta está bien establecida. Elige **Personalizado** para fijar tu propio rango de pausa, mensajes por hora y mensajes por día. **Entrar con suavidad** añade espacio extra en los primeros mensajes, y **Pausar de noche** detiene el envío de madrugada.
+
+### Paso 4 (opcional): Ponlo en un horario
+
+Activa **Ejecutar automáticamente en un horario** para que Butler se ejecute solo cada tantas horas o días, empezando a la hora que elijas. Haz clic en **Aplicar horario**.
+
+### Paso 5: Empieza
+
+Haz clic en **Iniciar Facebook Message Butler**. Deja **Verlo funcionar** activado para traer el navegador al frente y ver salir los mensajes; desactívalo para ejecutar en segundo plano en silencio. La cola muestra los recuentos de Pendientes, Enviados y Fallidos a medida que trabaja.
+
+## Parte 2: Responder por MD a quien comenta (comentario a MD)
+
+Esta es la parte que no requiere manos. Abre la sección **Automatizaciones: comentario a MD** y activa **Activar automatizaciones**. Fija **Máximo de mensajes por hora** en un tope cómodo. Luego añade una o más reglas con **Añadir regla**. Cada regla son tres pasos sencillos.
+
+### Paso 1 de una regla: qué publicación y palabras
+
+- **Elige una publicación.** Introduce la URL de tu página o perfil de Facebook y haz clic en **Cargar publicaciones recientes**. Tus publicaciones recientes aparecen como tarjetas con una miniatura y un texto. Haz clic en la que quieres vigilar. Si no carga nada, pega un enlace de publicación directamente en el cuadro de abajo.
+- **Elige cómo activa la regla un comentario.** Puede *contener* alguna de tus palabras, *empezar con* ellas, *coincidir exactamente* con una o coincidir con *cualquier comentario*. Luego escribe tus palabras clave, separadas por comas.
+
+### Paso 2 de una regla: el mensaje automático
+
+Escribe el mensaje de Messenger que Butler envía cuando la regla coincide. El spintax como `{Hey|Hola}` y `{firstName}` también funciona aquí. Añade un enlace si quieres incluirlo. Usa **Vista previa** para ver un ejemplo con el spintax resuelto, y **Enviarme una prueba** para enviarte a ti mismo el mensaje real primero y comprobarlo antes de soltar la regla.
+
+### Paso 3 de una regla: respuesta pública (opcional)
+
+Actívalo para responder también públicamente en el comentario, por ejemplo "¡Enviado! Revisa tus MD". Déjalo desactivado para enviar solo el mensaje privado.
+
+Cada regla muestra una pequeña línea de actividad (cuántos envió hoy y cuándo se disparó por última vez) para que veas que funciona. **Ejecutar una pasada ahora** revisa tus publicaciones vigiladas al instante en lugar de esperar a la comprobación en segundo plano.
+
+## Consejos para mantenerte a salvo
+
+- Empieza con el ajuste **Conservador** o **Cauteloso** y topes diarios bajos, y luego súbelos poco a poco a lo largo de días, no de horas.
+- Mantén los mensajes realmente variados con spintax. Los mensajes idénticos son la forma más rápida de que te marquen.
+- Si Facebook muestra un bloqueo o un control de seguridad, detente y deja descansar la cuenta antes de volver a ejecutar.
+
+## Solución de problemas
+
+- **La insignia de Sesión iniciada no está verde.** Haz clic en **Iniciar sesión**, termina en la ventana, ciérrala y haz clic en **Verificar inicio de sesión** de nuevo. Si sigue fallando, inicia sesión en Facebook una vez en Deals Butler.
+- **No se encontraron destinatarios.** Asegúrate de que la URL del grupo o la página es correcta y de que eres miembro del grupo. Algunas páginas ocultan a sus seguidores.
+- **El selector de publicaciones no muestra ninguna.** Pega el enlace de la publicación directamente en el cuadro debajo del selector. El selector necesita la URL correcta de tu página o perfil y una sesión de Facebook activa.
+- **No llegó un MD de prueba.** Confirma que has iniciado sesión e inténtalo de nuevo. Los mensajes de prueba llegan a tu propia bandeja como una nota para ti.

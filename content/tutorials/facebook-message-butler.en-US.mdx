@@ -1,0 +1,78 @@
+---
+title: "Facebook Message Butler: message group members and auto-DM commenters"
+summary: Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, and set up comment-to-DM rules that reply to commenters automatically.
+category: Other
+---
+
+## What Facebook Message Butler does
+
+Facebook Message Butler reaches people on Facebook for you in two ways. First, it sends a private message to the members of a group you are in, or the followers of a Page, one person at a time, with a natural delay and a different wording for each person so nothing looks copy-pasted. Second, it runs comment-to-DM automations: when someone comments a keyword on one of your posts, Butler automatically sends them a Messenger message (and, if you want, a public reply on the comment too). It uses the same Facebook session as Deals Butler, so you sign in once.
+
+It is built for creators who want to start conversations at scale without sitting at the keyboard, while staying inside limits that keep the account safe.
+
+## Before you start
+
+- **Sign in to Facebook in the app.** Butler messages from your real Facebook session. In the **Facebook account** section, pick the account to send from, click **Sign in**, finish signing in the window that opens, close it, then click **Verify sign-in**. A green **Signed in** badge means you are ready. To add more accounts, add them in Deals Butler under Social Destinations and they appear in this list.
+- **Go slow at first.** Facebook watches for burst messaging. The built-in presets start conservative on purpose. Newer accounts should pick the most cautious one.
+
+## Part 1: Message a group or Page
+
+### Step 1: Choose who to message
+
+In the **Who to message** section, pick a source:
+
+- **Group members**: paste the URL of a group you belong to. Its members become your recipients. Turn on **Also message group admins** only if you mean to.
+- **Page followers**: paste a Page URL. Real profiles are messaged; follower Pages are skipped.
+- **Paste or CSV**: load a CSV of profile URLs or names, or hand recipients over from another workspace.
+
+Click **Find recipients** (or **Load CSV**) to fill the queue. Anyone you have already messaged is skipped automatically.
+
+### Step 2: Write your message
+
+In **Your message**, write what you want to say. Put choices in braces like `{Hi|Hey|Hello}` and Butler picks one at random for each person, so every message reads a little differently. Use `{firstName}` to drop in their name. The toolbar can insert a greeting, a sign-off, or their name for you, and **Preview variations** shows a few sample messages so you can see the spread before you run.
+
+### Step 3: Pick how to send and how fast
+
+Under **How to send**, keep **Individual messages** (the safest option). Group chat is available but Facebook limits it heavily, so it is easier to get blocked.
+
+Under **Pacing and limits**, pick a preset: **Cautious** for a new account, **Conservative** (recommended) for most, or **Moderate** if the account is well established. Choose **Custom** to set your own delay range, messages per hour, and messages per day. **Ease in gently** adds extra spacing for the first few messages, and **Pause overnight** stops sending late at night.
+
+### Step 4 (optional): Put it on a schedule
+
+Turn on **Run automatically on a schedule** to have Butler run itself every so many hours or days, starting at a time you pick. Click **Apply Schedule**.
+
+### Step 5: Start
+
+Click **Start Facebook Message Butler**. Leave **Watch it run** on to bring the browser to the front and watch the messages go out; turn it off to run quietly in the background. The queue shows Pending, Sent, and Failed counts as it works.
+
+## Part 2: Auto-DM people who comment (comment to DM)
+
+This is the hands-off part. Open the **Automations: comment to DM** section and turn on **Turn on automations**. Set **Max messages per hour** to a comfortable ceiling. Then add one or more rules with **Add rule**. Each rule is three simple steps.
+
+### Step 1 of a rule: which post and words
+
+- **Pick a post.** Enter your Facebook Page or profile URL and click **Load recent posts**. Your recent posts appear as cards with a thumbnail and caption. Click the one you want to watch. If nothing loads, paste a post link directly in the box below.
+- **Choose how a comment triggers the rule.** It can *contain* any of your words, *start with* them, *exactly match* one, or match *any comment* at all. Then type your keywords, separated by commas.
+
+### Step 2 of a rule: the auto message
+
+Write the Messenger message Butler sends when the rule matches. Spintax like `{Hey|Hi}` and `{firstName}` work here too. Add a link if you want it included. Use **Preview** to see a sample with the spintax resolved, and **Send test to me** to send yourself the real message first so you can check it before turning the rule loose.
+
+### Step 3 of a rule: public reply (optional)
+
+Turn this on to also reply on the comment publicly, for example "Sent! Check your DMs." Leave it off to only send the private message.
+
+Each rule shows a small activity line (how many it sent today, and when it last fired) so you can see it working. **Run a pass now** checks your watched posts immediately instead of waiting for the background check.
+
+## Tips for staying safe
+
+- Start with the **Conservative** or **Cautious** preset and low daily caps, then raise them slowly over days, not hours.
+- Keep messages genuinely varied with spintax. Identical messages are the fastest way to get flagged.
+- If Facebook shows a block or a checkpoint, stop and let the account rest before running again.
+
+## Troubleshooting
+
+- **The Signed in badge is not green.** Click **Sign in**, finish in the window, close it, then click **Verify sign-in** again. If it still fails, sign in to Facebook once in Deals Butler.
+- **No recipients found.** Make sure the group or Page URL is correct and that you are a member of the group. Some Pages hide their followers.
+- **The post picker shows no posts.** Paste the post link directly in the box below the picker. The picker needs your correct Page or profile URL and an active Facebook sign-in.
+- **A test DM did not arrive.** Confirm you are signed in, then try again. Test messages go to your own inbox as a note to yourself.

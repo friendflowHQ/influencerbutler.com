@@ -1,0 +1,78 @@
+---
+title: "Facebook Message Butler : contactez les membres d'un groupe et répondez en MP à ceux qui commentent"
+summary: Envoyez un message aux membres d'un groupe Facebook ou aux abonnés d'une page, un par un à un rythme humain et avec un message différent à chaque fois, et créez des règles commentaire vers MP qui répondent automatiquement à ceux qui commentent.
+category: Other
+---
+
+## Ce que fait Facebook Message Butler
+
+Facebook Message Butler contacte des personnes sur Facebook pour vous de deux façons. D'abord, il envoie un message privé aux membres d'un groupe dont vous faites partie, ou aux abonnés d'une page, une personne à la fois, avec un délai naturel et une formulation différente pour chacun, afin que rien n'ait l'air copié-collé. Ensuite, il exécute des automatisations commentaire vers MP : quand quelqu'un commente un mot-clé sur l'une de vos publications, Butler lui envoie automatiquement un message Messenger (et, si vous le souhaitez, une réponse publique sur le commentaire). Il utilise la même session Facebook que Deals Butler, vous ne vous connectez donc qu'une seule fois.
+
+Il est conçu pour les créateurs qui veulent lancer des conversations à grande échelle sans rester au clavier, tout en restant dans les limites qui gardent le compte en sécurité.
+
+## Avant de commencer
+
+- **Connectez-vous à Facebook dans l'app.** Butler envoie les messages depuis votre vraie session Facebook. Dans la section **Compte Facebook**, choisissez le compte d'envoi, cliquez sur **Se connecter**, terminez la connexion dans la fenêtre qui s'ouvre, fermez-la, puis cliquez sur **Vérifier la connexion**. Un badge vert **Connecté** indique que vous êtes prêt. Pour ajouter d'autres comptes, ajoutez-les dans Deals Butler sous Destinations sociales et ils apparaîtront dans cette liste.
+- **Allez doucement au début.** Facebook surveille les envois en rafale. Les préréglages intégrés démarrent volontairement de façon prudente. Les comptes récents devraient choisir le plus prudent.
+
+## Partie 1 : Envoyer un message à un groupe ou une page
+
+### Étape 1 : Choisissez à qui envoyer
+
+Dans la section **À qui envoyer**, choisissez une source :
+
+- **Membres du groupe** : collez l'URL d'un groupe dont vous êtes membre. Ses membres deviennent vos destinataires. N'activez **Envoyer aussi aux administrateurs du groupe** que si c'est votre intention.
+- **Abonnés de la page** : collez l'URL d'une page. Les vrais profils reçoivent un message ; les pages abonnées sont ignorées.
+- **Coller ou CSV** : chargez un CSV d'URL de profil ou de noms, ou transférez des destinataires depuis un autre espace de travail.
+
+Cliquez sur **Trouver les destinataires** (ou **Charger un CSV**) pour remplir la file. Toute personne à qui vous avez déjà écrit est ignorée automatiquement.
+
+### Étape 2 : Rédigez votre message
+
+Dans **Votre message**, écrivez ce que vous voulez dire. Mettez des choix entre accolades comme `{Bonjour|Salut|Coucou}` et Butler en choisit un au hasard pour chaque personne, pour que chaque message se lise un peu différemment. Utilisez `{firstName}` pour insérer leur prénom. La barre d'outils peut insérer une salutation, une signature ou leur prénom pour vous, et **Aperçu des variations** montre quelques messages d'exemple pour voir l'éventail avant de lancer.
+
+### Étape 3 : Choisissez comment envoyer et à quelle vitesse
+
+Dans **Comment envoyer**, gardez **Messages individuels** (l'option la plus sûre). Le chat de groupe est disponible, mais Facebook le limite fortement, il est donc plus facile de se faire bloquer.
+
+Dans **Rythme et limites**, choisissez un préréglage : **Prudent** pour un compte récent, **Conservateur** (recommandé) pour la plupart, ou **Modéré** si le compte est bien établi. Choisissez **Personnalisé** pour définir votre propre plage de délai, messages par heure et messages par jour. **Démarrer en douceur** ajoute un espacement supplémentaire pour les premiers messages, et **Pause la nuit** arrête l'envoi tard le soir.
+
+### Étape 4 (facultatif) : Programmez-le
+
+Activez **Exécuter automatiquement selon un planning** pour que Butler s'exécute tout seul toutes les X heures ou X jours, en commençant à l'heure que vous choisissez. Cliquez sur **Appliquer le planning**.
+
+### Étape 5 : Démarrez
+
+Cliquez sur **Démarrer Facebook Message Butler**. Laissez **Le voir tourner** activé pour ramener le navigateur au premier plan et voir partir les messages ; désactivez-le pour tourner discrètement en arrière-plan. La file affiche les compteurs En attente, Envoyés et Échoués au fur et à mesure.
+
+## Partie 2 : Répondre en MP à ceux qui commentent (commentaire vers MP)
+
+C'est la partie sans les mains. Ouvrez la section **Automatisations : commentaire vers MP** et activez **Activer les automatisations**. Réglez **Maximum de messages par heure** sur un plafond confortable. Puis ajoutez une ou plusieurs règles avec **Ajouter une règle**. Chaque règle tient en trois étapes simples.
+
+### Étape 1 d'une règle : quelle publication et quels mots
+
+- **Choisissez une publication.** Saisissez l'URL de votre page ou profil Facebook et cliquez sur **Charger les publications récentes**. Vos publications récentes apparaissent sous forme de cartes avec une miniature et un texte. Cliquez sur celle à surveiller. Si rien ne se charge, collez un lien de publication directement dans le champ ci-dessous.
+- **Choisissez comment un commentaire déclenche la règle.** Il peut *contenir* l'un de vos mots, *commencer par* eux, *correspondre exactement* à l'un d'eux, ou correspondre à *n'importe quel commentaire*. Saisissez ensuite vos mots-clés, séparés par des virgules.
+
+### Étape 2 d'une règle : le message automatique
+
+Rédigez le message Messenger que Butler envoie quand la règle correspond. Le spintax comme `{Salut|Bonjour}` et `{firstName}` fonctionne aussi ici. Ajoutez un lien si vous voulez l'inclure. Utilisez **Aperçu** pour voir un exemple avec le spintax résolu, et **M'envoyer un test** pour vous envoyer d'abord le vrai message et le vérifier avant de lâcher la règle.
+
+### Étape 3 d'une règle : réponse publique (facultatif)
+
+Activez-la pour répondre aussi publiquement sur le commentaire, par exemple « Envoyé ! Vérifiez vos MP ». Laissez-la désactivée pour n'envoyer que le message privé.
+
+Chaque règle affiche une petite ligne d'activité (combien elle en a envoyés aujourd'hui, et quand elle s'est déclenchée pour la dernière fois) pour que vous la voyiez travailler. **Lancer un passage maintenant** vérifie vos publications surveillées immédiatement au lieu d'attendre le contrôle en arrière-plan.
+
+## Conseils pour rester en sécurité
+
+- Commencez avec le préréglage **Conservateur** ou **Prudent** et des plafonds quotidiens bas, puis augmentez-les peu à peu sur des jours, pas des heures.
+- Gardez des messages vraiment variés avec le spintax. Des messages identiques sont le moyen le plus rapide de se faire signaler.
+- Si Facebook affiche un blocage ou un contrôle de sécurité, arrêtez et laissez le compte se reposer avant de relancer.
+
+## Dépannage
+
+- **Le badge Connecté n'est pas vert.** Cliquez sur **Se connecter**, terminez dans la fenêtre, fermez-la, puis cliquez à nouveau sur **Vérifier la connexion**. Si cela échoue encore, connectez-vous une fois à Facebook dans Deals Butler.
+- **Aucun destinataire trouvé.** Vérifiez que l'URL du groupe ou de la page est correcte et que vous êtes membre du groupe. Certaines pages masquent leurs abonnés.
+- **Le sélecteur de publications n'en montre aucune.** Collez le lien de la publication directement dans le champ sous le sélecteur. Le sélecteur a besoin de l'URL correcte de votre page ou profil et d'une session Facebook active.
+- **Un MP de test n'est pas arrivé.** Confirmez que vous êtes connecté, puis réessayez. Les messages de test arrivent dans votre propre boîte comme une note pour vous-même.

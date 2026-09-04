@@ -568,6 +568,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-message-butler",
+      "title": "Facebook Message Butler: message group members and auto-DM commenters",
+      "category": "Other",
+      "summary": "Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, and set up comment-to-DM rules that reply to commenters automatically.",
+      "order": 343.7,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "delete-posts-comments",
       "title": "Delete Posts & Comments: bulk-clean your Facebook deal posts",
       "category": "Other",
