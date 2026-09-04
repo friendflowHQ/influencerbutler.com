@@ -85,6 +85,15 @@ export interface Dict {
   navAiAssistant: string;
   navDeals: string;
   navLinkButler: string;
+  // Short labels for the Settings sub-nav in the left rail. The full section
+  // headings (groupAmazon*) are too long for the narrow rail and wrapped; these
+  // keep each sub-item on one line.
+  navGrpWalmart: string;
+  navGrpCross: string;
+  navGrpProduct: string;
+  navGrpResearch: string;
+  navGrpCampaigns: string;
+  navGrpEarnings: string;
   thisPageHeading: string;
   checkingTab: string;
   accountHeading: string;
@@ -891,6 +900,12 @@ const en: Dict = {
   navAiAssistant: "AI Assistant",
   navDeals: "Deal Harvester",
   navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Cross-platform",
+  navGrpProduct: "Product pages",
+  navGrpResearch: "Research",
+  navGrpCampaigns: "Campaigns",
+  navGrpEarnings: "Earnings",
   thisPageHeading: "This page",
   checkingTab: "Checking the current tab...",
   accountHeading: "Account",
@@ -1719,6 +1734,12 @@ const es: Dict = {
   navAiAssistant: "Asistente IA",
   navDeals: "Recolector de ofertas",
   navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Multiplataforma",
+  navGrpProduct: "Productos",
+  navGrpResearch: "Investigación",
+  navGrpCampaigns: "Campañas",
+  navGrpEarnings: "Ganancias",
   thisPageHeading: "Esta página",
   checkingTab: "Comprobando la pestaña actual...",
   accountHeading: "Cuenta",
@@ -2547,6 +2568,12 @@ const fr: Dict = {
   navAiAssistant: "Assistant IA",
   navDeals: "Collecteur d'offres",
   navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Multiplateforme",
+  navGrpProduct: "Pages produit",
+  navGrpResearch: "Recherche",
+  navGrpCampaigns: "Campagnes",
+  navGrpEarnings: "Gains",
   thisPageHeading: "Cette page",
   checkingTab: "Vérification de l'onglet actuel...",
   accountHeading: "Compte",

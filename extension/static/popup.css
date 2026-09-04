@@ -11,19 +11,34 @@
 
 * { box-sizing: border-box; }
 
+html { height: 100%; }
+
 body {
-  width: 340px;
-  /* Never let a stray wide child stretch the popup or add a sideways scrollbar:
-     the layout is designed for 340px, so clip anything that tries to exceed it. */
-  max-width: 340px;
-  overflow-x: hidden;
+  /* User-resizable popup. Chrome sizes the popup window to the document, so an
+     explicit size on <body> plus `resize: both` gives a native drag grabber in
+     the bottom-right corner and Chrome follows it live. The chosen size is saved
+     to localStorage and reapplied on open (see popup/index.ts). Stay a hair under
+     Chrome's 800x600 popup cap so the grabber never fights the window edge. */
+  width: 380px;
+  height: 560px;
+  min-width: 300px;
+  min-height: 360px;
+  max-width: 780px;
+  max-height: 590px;
+  resize: both;
+  /* overflow must not be `visible` for the resize grabber to appear; children
+     scroll in their own panes, so hide the body's own overflow. */
+  overflow: hidden;
   margin: 0;
+  display: flex;
+  flex-direction: column;
   font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--slate-900);
   background: var(--slate-50);
 }
 
 .head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -90,51 +105,63 @@ body {
   border-color: var(--orange);
 }
 
+/* The flexible middle: fills the space between the fixed header and footer, so
+   a taller (resized) popup shows more content. min-height:0 lets the two inner
+   scroll columns own the overflow instead of the whole body. */
 main {
-  padding: 10px 10px 10px 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 10px 10px 10px;
   display: grid;
   /* minmax(0, 1fr) so the pane can never grow past the space left of the nav:
      a plain 1fr track has a min-content floor, and wide card content (number
      inputs side by side) was pushing the pane into sideways scrolling. */
-  grid-template-columns: 88px minmax(0, 1fr); /* compact left nav + content pane */
-  gap: 8px;
-  align-items: start;
+  grid-template-columns: 128px minmax(0, 1fr); /* left rail + content pane */
+  gap: 12px;
 }
 
-/* Left-hand section navigation: sticky, scrolls independently of the pane so
-   it stays in view while the content on the right scrolls. */
+/* Left-hand section navigation: its own scroll column, full height of main, with
+   a hairline divider so it reads as a rail beside the content pane. A thin
+   scrollbar keeps the labels from being clipped by a chunky one. */
 .side-nav {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  /* 480px keeps header + main + footer under Chrome's 600px popup height cap;
-     taller and the whole body scrolls too, stacking a second scrollbar that
-     steals width and clips the cards. */
-  max-height: 480px;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  font-size: 11px;
+  scrollbar-width: thin;
+  padding-right: 8px;
+  border-right: 1px solid var(--slate-200);
+  font-size: 11.5px;
 }
 .side-nav ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.side-nav > ul > li > a {
+.side-nav > ul > li + li { margin-top: 1px; }
+.side-nav a {
   display: block;
-  padding: 4px 6px;
-  border-radius: 6px;
+  padding: 6px 8px;
+  border-radius: 7px;
   color: var(--slate-600);
   text-decoration: none;
   font-weight: 600;
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Settings sub-items: indented under a soft guide line, lighter than their
+   parent so the hierarchy reads at a glance. */
+.side-nav ul ul {
+  margin: 2px 0 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--slate-200);
+}
 .side-nav ul ul a {
-  padding-left: 14px;
+  padding: 5px 8px;
   font-weight: 500;
-  font-size: 10.5px;
+  font-size: 11px;
+  color: #64748b;
 }
 .side-nav a:hover {
   background: var(--slate-50);
@@ -148,11 +175,13 @@ main {
 
 /* Bounded content pane: the cards scroll here while the nav stays put. */
 .pane {
-  max-height: 480px; /* match .side-nav: stay under Chrome's 600px popup cap */
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
   display: grid;
   gap: 10px;
+  align-content: start;
   padding-right: 2px;
 }
 
@@ -280,9 +309,11 @@ button[disabled] { opacity: 0.6; cursor: default; }
 .row.toggle.tool-sub { margin-left: 22px; }
 
 .foot {
+  flex: none;
   display: flex;
   justify-content: space-between;
   padding: 8px 14px 12px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .foot a { color: var(--slate-600); text-decoration: none; }

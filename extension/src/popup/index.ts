@@ -53,6 +53,7 @@ const WALMART_PROVIDER_NAMES: Record<string, string> = {
 void init();
 
 async function init(): Promise<void> {
+  restorePopupSize();
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
@@ -99,6 +100,46 @@ async function init(): Promise<void> {
   // settled, so the nav mirrors exactly which cards are on screen.
   wireSectionNav();
   syncNavVisibility();
+}
+
+// The popup is user-resizable: popup.css gives <body> an explicit size plus
+// `resize: both`, and Chrome sizes the popup window to the document, so dragging
+// the bottom-right grabber resizes the whole popup. Restore the last size the
+// user chose on open, and persist any resize so it reopens the same way. Kept in
+// localStorage (popup-local, no schema migration) and wrapped in try/catch so a
+// private window or blocked storage just falls back to the CSS default size.
+const POPUP_SIZE_KEY = "ib_popup_size";
+
+function restorePopupSize(): void {
+  try {
+    const raw = localStorage.getItem(POPUP_SIZE_KEY);
+    if (raw) {
+      const size = JSON.parse(raw) as { w?: unknown; h?: unknown };
+      const w = Number(size.w);
+      const h = Number(size.h);
+      if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
+        document.body.style.width = `${w}px`;
+        document.body.style.height = `${h}px`;
+      }
+    }
+  } catch {
+    // Malformed or unavailable storage: the CSS default size applies.
+  }
+  let saveTimer = 0;
+  const save = (): void => {
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(
+          POPUP_SIZE_KEY,
+          JSON.stringify({ w: document.body.offsetWidth, h: document.body.offsetHeight }),
+        );
+      } catch {
+        // Best-effort; ignore quota / private-mode failures.
+      }
+    }, 200);
+  };
+  new ResizeObserver(save).observe(document.body);
 }
 
 // Left-hand section navigation. Each nav link points at a card (or a tool-group
