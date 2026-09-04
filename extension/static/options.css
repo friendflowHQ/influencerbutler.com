@@ -326,6 +326,48 @@ button[disabled] {
   outline-offset: -1px;
 }
 
+/* Amazon Creators API setup walkthrough: a caption, a responsive 16:9 YouTube
+   embed, and a link out to the full tutorial. Mirrors the desktop app placing
+   the same video on its Creator API screen. */
+.provider-video {
+  margin-top: 12px;
+}
+
+.provider-video-caption {
+  margin: 0 0 6px;
+}
+
+.provider-video-frame {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--slate-200);
+  background: #000;
+}
+
+.provider-video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.provider-video-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--orange-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.provider-video-link:hover {
+  text-decoration: underline;
+}
+
 .tag-grid {
   display: grid;
   grid-template-columns: 1fr 2fr auto;

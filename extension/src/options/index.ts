@@ -28,12 +28,17 @@ import {
   type IntegrationTestOutcome,
   type IntegrationView,
 } from "../shared/messages";
+import { ONBOARDING_VIDEO_ID, API_INTEGRATIONS_TUTORIAL_URL } from "../shared/constants";
 
 // The API Integrations options page. All credentials are handled by the
 // background worker; this page only shows non-secret values and status, and
 // requests host permission (from the user's click) before a provider is tested.
 
 const ASSOCIATES = "associates";
+// The Amazon Creators API (PA-API) card embeds the same setup walkthrough the
+// desktop app plays on its API Integrations > Creator API screen, so the
+// credential paste has a video to follow right where the keys are entered.
+const CREATORS_API = "creatorsApi";
 // Branded links authenticate with the signed-in license key instead of a stored
 // credential, so "configured" for this provider means "signed in".
 const IB_LINKS = "influencerbutler";
@@ -479,6 +484,42 @@ function makeBadge(status: "ok" | "fail" | "untested"): HTMLElement {
   return badge;
 }
 
+// The Creators API setup walkthrough: a responsive privacy-mode YouTube embed
+// (same video and youtube-nocookie host the api-integrations tutorial uses),
+// with a caption and a link out to the full tutorial. Built as DOM nodes rather
+// than innerHTML so it stays inside the extension page's default CSP.
+function renderSetupVideo(): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "provider-video";
+
+  const caption = document.createElement("p");
+  caption.className = "muted small provider-video-caption";
+  caption.textContent = D.watchSetupVideo;
+  wrap.append(caption);
+
+  const frame = document.createElement("div");
+  frame.className = "provider-video-frame";
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://www.youtube-nocookie.com/embed/${ONBOARDING_VIDEO_ID}?rel=0`;
+  iframe.title = D.watchSetupVideo;
+  iframe.loading = "lazy";
+  iframe.allow =
+    "accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+  iframe.allowFullscreen = true;
+  frame.append(iframe);
+  wrap.append(frame);
+
+  const link = document.createElement("a");
+  link.className = "provider-video-link small";
+  link.href = API_INTEGRATIONS_TUTORIAL_URL;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = D.openFullTutorial;
+  wrap.append(link);
+
+  return wrap;
+}
+
 function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   const pv = providerView(adapter.id);
   const block = document.createElement("div");
@@ -498,6 +539,13 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     desc.className = "muted small";
     desc.textContent = label(adapter.descriptionKey);
     block.append(desc);
+  }
+
+  // The Creators API card carries the setup walkthrough, matching the desktop
+  // app's API Integrations screen. Privacy-mode youtube-nocookie embed, same
+  // video as the api-integrations tutorial.
+  if (adapter.id === CREATORS_API) {
+    block.append(renderSetupVideo());
   }
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.

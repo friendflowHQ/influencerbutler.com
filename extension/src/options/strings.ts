@@ -31,6 +31,8 @@ export interface OptionsDict {
   saving: string;
   saved: string;
   showMeWhere: string;
+  watchSetupVideo: string;
+  openFullTutorial: string;
   participatesLabel: string;
   secretSavedPlaceholder: string;
   storedBadge: string;
@@ -171,6 +173,8 @@ const en: OptionsDict = {
   saving: "Saving...",
   saved: "Saved",
   showMeWhere: "Show me where",
+  watchSetupVideo: "Watch the setup walkthrough:",
+  openFullTutorial: "Open the full tutorial",
   participatesLabel: "Use in affiliate routing",
   secretSavedPlaceholder: "Key stored. Leave blank to keep it, or paste a new key to replace it.",
   storedBadge: "Stored",
@@ -314,6 +318,8 @@ const es: OptionsDict = {
   saving: "Guardando...",
   saved: "Guardado",
   showMeWhere: "Muéstrame dónde",
+  watchSetupVideo: "Mira el tutorial de configuración:",
+  openFullTutorial: "Abrir el tutorial completo",
   participatesLabel: "Usar en el enrutado de afiliados",
   secretSavedPlaceholder: "Clave guardada. Déjalo en blanco para conservarla, o pega una nueva clave para reemplazarla.",
   storedBadge: "Guardada",
@@ -457,6 +463,8 @@ const fr: OptionsDict = {
   saving: "Enregistrement...",
   saved: "Enregistré",
   showMeWhere: "Montrez-moi où",
+  watchSetupVideo: "Regardez le tutoriel de configuration :",
+  openFullTutorial: "Ouvrir le tutoriel complet",
   participatesLabel: "Utiliser dans le routage d'affiliation",
   secretSavedPlaceholder: "Clé enregistrée. Laissez vide pour la conserver, ou collez une nouvelle clé pour la remplacer.",
   storedBadge: "Enregistrée",
