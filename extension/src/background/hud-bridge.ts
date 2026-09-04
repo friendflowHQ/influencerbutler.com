@@ -71,8 +71,12 @@ export async function getClientId(): Promise<string> {
 let cached: { status: HudStatus; at: number } | null = null;
 
 export async function getHudStatus(force = false): Promise<HudStatus> {
+  // Read pairing OUTSIDE the probe cache: a token can be granted while a cached
+  // "connected" status is still warm, and a stale paired:false would keep
+  // showing the pairing prompt after the user had already paired.
+  const paired = !!(await getToken());
   if (!force && cached && Date.now() - cached.at < BRIDGE_STATUS_TTL_MS) {
-    return cached.status;
+    return { ...cached.status, paired };
   }
   const status = await probe();
   cached = { status, at: Date.now() };
@@ -90,7 +94,7 @@ export async function getHudStatus(force = false): Promise<HudStatus> {
       // storage may be unavailable; filtering falls back to the stored default
     }
   }
-  return status;
+  return { ...status, paired };
 }
 
 async function probe(): Promise<HudStatus> {

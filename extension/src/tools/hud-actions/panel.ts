@@ -32,12 +32,32 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
     sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
   ]).then(([hud, auth]) => {
-    if (hud.connected) {
+    if (hud.connected && hud.paired === false) {
+      // App running but this extension was never paired to it. Every command
+      // would come back needsPairing, and the only place that showed was a
+      // small status line AFTER a click, so the buttons looked ready and then
+      // appeared to do nothing (reported for Send to Deals Butler, Send to
+      // Collab Butler, and Generate AI photo alike). Say it up front instead.
+      // Explicit === false so an older background that omits `paired` keeps the
+      // previous behavior rather than being treated as unpaired.
+      renderNeedsPairing(body, status);
+    } else if (hud.connected) {
       renderConnected(body, status, product, hud, signals.brand, opts);
     } else {
       renderUpsell(body, auth);
     }
   });
+}
+
+// The app is reachable but unpaired: show the pairing instruction in place of
+// the action buttons, so the user learns it before clicking rather than after.
+function renderNeedsPairing(body: HTMLElement, status: HTMLElement): void {
+  body.replaceChildren();
+  const card = el("div", "seal fail");
+  card.style.display = "block";
+  card.textContent = t().connectAppToPair;
+  body.append(card);
+  status.textContent = "";
 }
 
 function renderConnected(

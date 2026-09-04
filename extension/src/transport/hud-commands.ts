@@ -142,6 +142,12 @@ export type PairResult = {
 
 export type HudStatus = {
   connected: boolean;
+  // Whether this extension holds a pairing token for the app. `connected` only
+  // says the local bridge answered; the app can be running while the extension
+  // has never been paired to it, in which case every command comes back
+  // needsPairing. Surfaced so a panel can say so BEFORE the user clicks, rather
+  // than rendering buttons that look ready and appear to do nothing.
+  paired?: boolean;
   appVersion?: string;
   // Workspaces the app actually has, when it reports them; the extension
   // falls back to DEAL_WORKSPACES otherwise.
