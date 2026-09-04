@@ -228,7 +228,10 @@ export async function GET(request: Request) {
   // Export-all-emails mode: ?emailsFor=<sequenceId> returns every enrolled
   // address (all statuses), deduped, so the card's "Copy emails" button can drop
   // the whole list on the clipboard in one call instead of paging like the
-  // per-step "Copy all". Pages through the enrollment table up to COUNT_CAP.
+  // per-step "Copy all". Pages through the enrollment table up to COUNT_CAP, then
+  // drops any suppressed address (bounce, unsubscribe, complaint, or manual) so a
+  // dead or opted-out inbox is never re-pasted into another campaign or an ad
+  // audience. The suppression list is precisely the "do not email" set.
   const emailsFor = new URL(request.url).searchParams.get("emailsFor");
   if (emailsFor) {
     const seen = new Set<string>();
@@ -259,7 +262,31 @@ export async function GET(request: Request) {
       }
       if (batch.length < COUNT_PAGE) break;
     }
-    return NextResponse.json({ emails });
+
+    // Look up which of these addresses are suppressed and drop them. Chunk the
+    // .in() filter (query string length) and match the enrolled list, not the
+    // whole suppressions table. Fail open per chunk: a transient read error
+    // should shrink the excluded set, never break the copy.
+    const suppressed = new Set<string>();
+    for (let i = 0; i < emails.length; i += CATEGORY_IN_CHUNK) {
+      const chunk = emails.slice(i, i + CATEGORY_IN_CHUNK).map((e) => e.toLowerCase());
+      const { data: sup, error: supErr } = await db
+        .from("email_suppressions")
+        .select("email")
+        .in("email", chunk)
+        .returns<{ email: string | null }[]>();
+      if (supErr) {
+        console.error("admin emails/sequences: suppression filter failed", supErr);
+        continue;
+      }
+      for (const r of sup ?? []) {
+        const e = (r.email ?? "").trim().toLowerCase();
+        if (e) suppressed.add(e);
+      }
+    }
+    const filtered =
+      suppressed.size > 0 ? emails.filter((e) => !suppressed.has(e.toLowerCase())) : emails;
+    return NextResponse.json({ emails: filtered });
   }
 
   const { data, error } = await db

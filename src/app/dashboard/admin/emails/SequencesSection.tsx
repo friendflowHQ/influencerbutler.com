@@ -606,10 +606,10 @@ export default function SequencesSection({
     }
   }
 
-  // Copy every enrolled email for this sequence (all statuses, deduped) to the
-  // clipboard, one per line, so the list pastes straight into another sequence's
-  // Enroll box or an ad-audience upload. Shows a transient "Copied N" / error
-  // label on the button.
+  // Copy every enrolled email for this sequence (all statuses, deduped, minus
+  // bounced/unsubscribed) to the clipboard, one per line, so the list pastes
+  // straight into another sequence's Enroll box or an ad-audience upload. Shows a
+  // transient "Copied N" / error label on the button.
   async function copyEmails(seq: Sequence) {
     if (copyingId) return;
     setCopyingId(seq.id);
@@ -1101,7 +1101,7 @@ export default function SequencesSection({
                   type="button"
                   onClick={() => void copyEmails(seq)}
                   disabled={copyingId === seq.id}
-                  title="Copy every enrolled email address in this sequence (all statuses) to the clipboard, one per line"
+                  title="Copy every enrolled email address in this sequence to the clipboard, one per line. Excludes bounced and unsubscribed (suppressed) addresses."
                   className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                 >
                   {copyingId === seq.id
