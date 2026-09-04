@@ -1,6 +1,6 @@
 ---
 title: "Facebook Message Butler: message group members and auto-DM commenters"
-summary: Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, and set up comment-to-DM rules that reply to commenters automatically.
+summary: Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, set up comment-to-DM rules that reply to commenters automatically, and check for replies to collect email addresses people send back.
 category: Other
 ---
 
@@ -64,6 +64,23 @@ Turn this on to also reply on the comment publicly, for example "Sent! Check you
 
 Each rule shows a small activity line (how many it sent today, and when it last fired) so you can see it working. **Run a pass now** checks your watched posts immediately instead of waiting for the background check.
 
+## Part 3: Collect email replies
+
+If your message asks people something back, for example "reply with your email to join our daily deals newsletter," Butler can gather those answers for you. Open the **Check for replies and collect emails** section.
+
+### How it works
+
+Click **Check for replies**. Butler opens the conversations of the people you already messaged, reads what they wrote back, and saves any email address it finds. Collected emails appear in **Facebook Butler**, under **Facebook Group Email Collection**, where you can push them to Pitch Butler with one click. Butler remembers who it has already checked, so running it again only looks at new or still-unanswered conversations.
+
+### Tune it
+
+- **Conversations to check per run**: how many chats Butler opens in one pass. Keep it modest so a single run stays quick.
+- **Recheck a quiet chat after (hours)**: how long Butler waits before reopening a conversation that has not produced an email yet. Once it captures someone's email, it never reopens that chat.
+
+### Check automatically (optional)
+
+Turn on **Check for replies automatically on a schedule** to have Butler sweep for new replies every so many hours or days, then click **Apply Schedule**. This runs on its own, separate from your sending schedule, so you can message on one cadence and collect replies on another.
+
 ## Tips for staying safe
 
 - Start with the **Conservative** or **Cautious** preset and low daily caps, then raise them slowly over days, not hours.
@@ -76,3 +93,4 @@ Each rule shows a small activity line (how many it sent today, and when it last 
 - **No recipients found.** Make sure the group or Page URL is correct and that you are a member of the group. Some Pages hide their followers.
 - **The post picker shows no posts.** Paste the post link directly in the box below the picker. The picker needs your correct Page or profile URL and an active Facebook sign-in.
 - **A test DM did not arrive.** Confirm you are signed in, then try again. Test messages go to your own inbox as a note to yourself.
+- **Check for replies found nothing, or Facebook asks to restore your chats.** Facebook Messenger sometimes shows an "Enter your PIN to restore your chats" screen that hides your conversation history. Open Messenger, clear that prompt once (enter your PIN, or choose not to restore), then run **Check for replies** again. Also remember that only emails people actually typed in a reply are collected.

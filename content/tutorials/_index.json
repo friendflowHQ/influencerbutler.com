@@ -571,7 +571,7 @@
       "id": "facebook-message-butler",
       "title": "Facebook Message Butler: message group members and auto-DM commenters",
       "category": "Other",
-      "summary": "Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, and set up comment-to-DM rules that reply to commenters automatically.",
+      "summary": "Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, set up comment-to-DM rules that reply to commenters automatically, and check for replies to collect email addresses people send back.",
       "order": 343.7,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },

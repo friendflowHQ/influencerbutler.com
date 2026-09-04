@@ -1,6 +1,6 @@
 ---
 title: "Facebook Message Butler : contactez les membres d'un groupe et répondez en MP à ceux qui commentent"
-summary: Envoyez un message aux membres d'un groupe Facebook ou aux abonnés d'une page, un par un à un rythme humain et avec un message différent à chaque fois, et créez des règles commentaire vers MP qui répondent automatiquement à ceux qui commentent.
+summary: Envoyez un message aux membres d'un groupe Facebook ou aux abonnés d'une page, un par un à un rythme humain et avec un message différent à chaque fois, créez des règles commentaire vers MP qui répondent automatiquement à ceux qui commentent, et vérifiez les réponses pour récupérer les adresses e-mail que les gens vous renvoient.
 category: Other
 ---
 
@@ -64,6 +64,23 @@ Activez-la pour répondre aussi publiquement sur le commentaire, par exemple « 
 
 Chaque règle affiche une petite ligne d'activité (combien elle en a envoyés aujourd'hui, et quand elle s'est déclenchée pour la dernière fois) pour que vous la voyiez travailler. **Lancer un passage maintenant** vérifie vos publications surveillées immédiatement au lieu d'attendre le contrôle en arrière-plan.
 
+## Partie 3 : Collectez les réponses par e-mail
+
+Si votre message demande quelque chose en retour, par exemple "répondez avec votre e-mail pour rejoindre notre newsletter d'offres quotidiennes", Butler peut rassembler ces réponses pour vous. Ouvrez la section **Vérifier les réponses et récupérer les e-mails**.
+
+### Comment ça marche
+
+Cliquez sur **Vérifier les réponses**. Butler ouvre les conversations des personnes que vous avez déjà contactées, lit ce qu'elles ont répondu et enregistre toute adresse e-mail qu'il trouve. Les e-mails récupérés apparaissent dans **Facebook Butler**, sous **Collecte d'e-mails des groupes Facebook**, d'où vous pouvez les envoyer vers Pitch Butler en un clic. Butler retient qui il a déjà vérifié, donc le relancer ne regarde que les conversations nouvelles ou encore sans réponse.
+
+### Réglez-le
+
+- **Conversations à vérifier par exécution** : combien de discussions Butler ouvre en un passage. Gardez un nombre modéré pour que chaque exécution reste rapide.
+- **Revérifier une discussion sans réponse après (heures)** : combien de temps Butler attend avant de rouvrir une conversation qui n'a pas encore donné d'e-mail. Une fois qu'il capture l'e-mail de quelqu'un, il ne rouvre plus cette discussion.
+
+### Vérifier automatiquement (facultatif)
+
+Activez **Vérifier les réponses automatiquement selon un horaire** pour que Butler cherche les nouvelles réponses toutes les quelques heures ou jours, puis cliquez sur **Appliquer l'horaire**. Cela s'exécute tout seul, séparément de votre horaire d'envoi, vous pouvez donc écrire à un rythme et collecter les réponses à un autre.
+
 ## Conseils pour rester en sécurité
 
 - Commencez avec le préréglage **Conservateur** ou **Prudent** et des plafonds quotidiens bas, puis augmentez-les peu à peu sur des jours, pas des heures.
@@ -76,3 +93,4 @@ Chaque règle affiche une petite ligne d'activité (combien elle en a envoyés a
 - **Aucun destinataire trouvé.** Vérifiez que l'URL du groupe ou de la page est correcte et que vous êtes membre du groupe. Certaines pages masquent leurs abonnés.
 - **Le sélecteur de publications n'en montre aucune.** Collez le lien de la publication directement dans le champ sous le sélecteur. Le sélecteur a besoin de l'URL correcte de votre page ou profil et d'une session Facebook active.
 - **Un MP de test n'est pas arrivé.** Confirmez que vous êtes connecté, puis réessayez. Les messages de test arrivent dans votre propre boîte comme une note pour vous-même.
+- **Vérifier les réponses n'a rien trouvé, ou Facebook demande de restaurer vos discussions.** Facebook Messenger affiche parfois un écran "Saisissez votre code pour restaurer vos discussions" qui masque votre historique de conversations. Ouvrez Messenger, traitez cette invite une fois (saisissez votre code, ou choisissez de ne pas restaurer), puis relancez **Vérifier les réponses**. Rappelez-vous aussi que seuls les e-mails que les personnes ont réellement saisis dans une réponse sont collectés.

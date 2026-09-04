@@ -1,6 +1,6 @@
 ---
 title: "Facebook Message Butler: envía mensajes a miembros de grupos y responde a quien comenta"
-summary: Envía mensajes a los miembros de un grupo de Facebook o a los seguidores de una página, uno a uno a ritmo humano y con un mensaje distinto cada vez, y configura reglas de comentario a MD que responden a quien comenta automáticamente.
+summary: Envía mensajes a los miembros de un grupo de Facebook o a los seguidores de una página, uno a uno a ritmo humano y con un mensaje distinto cada vez, configura reglas de comentario a MD que responden a quien comenta automáticamente, y comprueba las respuestas para recopilar las direcciones de correo que la gente te envía.
 category: Other
 ---
 
@@ -64,6 +64,23 @@ Actívalo para responder también públicamente en el comentario, por ejemplo "�
 
 Cada regla muestra una pequeña línea de actividad (cuántos envió hoy y cuándo se disparó por última vez) para que veas que funciona. **Ejecutar una pasada ahora** revisa tus publicaciones vigiladas al instante en lugar de esperar a la comprobación en segundo plano.
 
+## Parte 3: Recopila respuestas por correo
+
+Si tu mensaje pide algo a cambio, por ejemplo "responde con tu correo para unirte a nuestro boletín de ofertas diarias", Butler puede recopilar esas respuestas por ti. Abre la sección **Comprobar respuestas y recopilar correos**.
+
+### Cómo funciona
+
+Haz clic en **Comprobar respuestas**. Butler abre las conversaciones de las personas a las que ya escribiste, lee lo que respondieron y guarda cualquier dirección de correo que encuentre. Los correos recopilados aparecen en **Facebook Butler**, en **Recopilación de correos de grupos de Facebook**, desde donde puedes enviarlos a Pitch Butler con un clic. Butler recuerda a quién ya comprobó, así que ejecutarlo de nuevo solo revisa las conversaciones nuevas o aún sin respuesta.
+
+### Ajústalo
+
+- **Conversaciones a revisar por ejecución**: cuántos chats abre Butler en una pasada. Mantenlo moderado para que cada ejecución sea rápida.
+- **Volver a revisar un chat sin respuesta tras (horas)**: cuánto espera Butler antes de volver a abrir una conversación que aún no ha dado un correo. Una vez que captura el correo de alguien, no vuelve a abrir ese chat.
+
+### Comprobar automáticamente (opcional)
+
+Activa **Comprobar respuestas automáticamente según un horario** para que Butler busque respuestas nuevas cada cierto número de horas o días, y luego haz clic en **Aplicar horario**. Esto se ejecuta por su cuenta, aparte de tu horario de envío, así que puedes escribir con una cadencia y recopilar respuestas con otra.
+
 ## Consejos para mantenerte a salvo
 
 - Empieza con el ajuste **Conservador** o **Cauteloso** y topes diarios bajos, y luego súbelos poco a poco a lo largo de días, no de horas.
@@ -76,3 +93,4 @@ Cada regla muestra una pequeña línea de actividad (cuántos envió hoy y cuán
 - **No se encontraron destinatarios.** Asegúrate de que la URL del grupo o la página es correcta y de que eres miembro del grupo. Algunas páginas ocultan a sus seguidores.
 - **El selector de publicaciones no muestra ninguna.** Pega el enlace de la publicación directamente en el cuadro debajo del selector. El selector necesita la URL correcta de tu página o perfil y una sesión de Facebook activa.
 - **No llegó un MD de prueba.** Confirma que has iniciado sesión e inténtalo de nuevo. Los mensajes de prueba llegan a tu propia bandeja como una nota para ti.
+- **Comprobar respuestas no encontró nada, o Facebook te pide restaurar tus chats.** A veces Facebook Messenger muestra una pantalla de "Introduce tu PIN para restaurar tus chats" que oculta tu historial de conversaciones. Abre Messenger, resuelve ese aviso una vez (introduce tu PIN o elige no restaurar) y luego vuelve a ejecutar **Comprobar respuestas**. Recuerda también que solo se recopilan los correos que las personas escribieron realmente en una respuesta.
