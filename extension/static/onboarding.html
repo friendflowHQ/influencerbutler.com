@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Influencer Butler setup</title>
+    <link rel="stylesheet" href="onboarding.css" />
+  </head>
+  <body>
+    <main class="ob">
+      <header class="ob-head">
+        <div class="brand">
+          <img src="icons/icon-48.png" alt="" width="28" height="28" />
+          <span data-i18n="obTitle">Set up Influencer Butler</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar"><span id="ob-progress-fill"></span></div>
+          <span id="ob-progress-label" class="muted small"></span>
+        </div>
+      </header>
+
+      <section class="ob-step" data-step="welcome">
+        <h1 data-i18n="obWelcomeTitle">Welcome to Influencer Butler</h1>
+        <p data-i18n="obWelcomeBody"></p>
+        <p class="note" data-i18n="obWelcomePin"></p>
+      </section>
+
+      <section class="ob-step" data-step="account" hidden>
+        <h1 data-i18n="obAccountTitle">Connect your account</h1>
+        <p data-i18n="obAccountBody"></p>
+        <div id="ob-account-signedout">
+          <div class="row">
+            <input id="ob-license-input" type="password" data-i18n-ph="licensePlaceholder" placeholder="License key" autocomplete="off" />
+            <button id="ob-connect-btn" class="primary" data-i18n="connect">Connect</button>
+          </div>
+          <p id="ob-auth-error" class="error" hidden></p>
+          <p class="muted small" data-i18n="obAccountSkipHint"></p>
+        </div>
+        <p id="ob-account-signedin" class="ok" hidden></p>
+      </section>
+
+      <section class="ob-step" data-step="storefront" hidden>
+        <h1 data-i18n="obStorefrontTitle">Your storefront</h1>
+        <p data-i18n="obStorefrontBody"></p>
+        <label class="field">
+          <span data-i18n="storefrontHandleLabel">My storefront handle</span>
+          <input id="ob-storefront-input" type="text" placeholder="e.g. influencerbutler" data-i18n-ph="storefrontHandlePlaceholder" />
+        </label>
+        <p id="ob-storefront-detected" class="ok" hidden></p>
+        <p class="note" data-i18n="obStorefrontAuto"></p>
+      </section>
+
+      <section class="ob-step" data-step="tools" hidden>
+        <h1 data-i18n="obToolsTitle">Turn on the tools you want</h1>
+        <p data-i18n="obToolsBody"></p>
+        <div class="tool-toggles">
+          <label class="row toggle"><input id="ob-tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
+          <label class="row toggle"><input id="ob-tool-videoCounts" type="checkbox" /><span data-i18n="toolVideoCounts">Video counts</span></label>
+          <label class="row toggle"><input id="ob-tool-approved" type="checkbox" /><span data-i18n="toolApproved">Butler Approved seal</span></label>
+          <label class="row toggle"><input id="ob-tool-calculator" type="checkbox" /><span data-i18n="toolCalculator">Profit calculator</span></label>
+          <label class="row toggle"><input id="ob-tool-storefront" type="checkbox" /><span data-i18n="toolStorefront">Storefront checks</span></label>
+          <label class="row toggle"><input id="ob-tool-campaignRadar" type="checkbox" /><span data-i18n="toolCampaignRadar">Campaign Radar (highlight campaigns)</span></label>
+          <label class="row toggle"><input id="ob-tool-earningsOverlay" type="checkbox" /><span data-i18n="toolEarningsOverlay">Earnings overlay (storefront badges)</span></label>
+          <label class="row toggle"><input id="ob-tool-walmart" type="checkbox" /><span data-i18n="toolWalmart">Walmart support</span></label>
+        </div>
+      </section>
+
+      <section class="ob-step" data-step="app" hidden>
+        <h1 data-i18n="obAppTitle">Connect the desktop app</h1>
+        <p data-i18n="obAppBody"></p>
+        <div id="ob-app-disconnected">
+          <button id="ob-app-connect-btn" class="primary" data-i18n="appConnect">Connect the desktop app</button>
+        </div>
+        <div id="ob-app-pairing" hidden>
+          <p class="muted small" data-i18n="appEnterCode">Enter the 6-digit code showing in the desktop app:</p>
+          <div class="row">
+            <input id="ob-app-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" data-i18n-ph="appCodePlaceholder" autocomplete="off" />
+            <button id="ob-app-pair-submit" class="primary" data-i18n="appPairSubmit">Pair</button>
+          </div>
+        </div>
+        <div id="ob-app-connected" class="ok" hidden>
+          <p data-i18n="appConnected">Connected to the desktop app.</p>
+        </div>
+        <p id="ob-app-status" class="muted small"></p>
+        <div id="ob-sync-offer" hidden>
+          <p class="note" id="ob-sync-offer-text"></p>
+          <button id="ob-sync-offer-btn" class="secondary" data-i18n="syncNow">Sync now</button>
+          <p id="ob-sync-offer-status" class="muted small"></p>
+        </div>
+        <p class="muted small" data-i18n="obAppSkipHint"></p>
+      </section>
+
+      <section class="ob-step" data-step="done" hidden>
+        <h1 data-i18n="obDoneTitle">You are all set</h1>
+        <p data-i18n="obDoneBody"></p>
+        <div class="row done-links">
+          <a id="ob-done-help" class="primary" href="#" data-i18n="obDoneHelp">Open Help</a>
+          <a id="ob-done-dashboard" class="secondary" href="#" data-i18n="obDoneDashboard">My dashboard</a>
+        </div>
+      </section>
+
+      <footer class="ob-foot">
+        <button id="ob-back" class="ghost" data-i18n="obBack">Back</button>
+        <div class="spacer"></div>
+        <button id="ob-skip" class="link" data-i18n="obSkip">Skip for now</button>
+        <button id="ob-next" class="primary" data-i18n="obNext">Next</button>
+      </footer>
+    </main>
+
+    <script src="onboarding.js"></script>
+  </body>
+</html>

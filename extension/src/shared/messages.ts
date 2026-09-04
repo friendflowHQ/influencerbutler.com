@@ -308,7 +308,13 @@ export type RuntimeMessage =
   | { kind: "RELAY_LIST_TARGETS" }
   | { kind: "RELAY_SEND"; command: HudCommand; targetInstanceId: string }
   | { kind: "RELAY_GET_STATE" }
-  | { kind: "RELAY_SET_DEFAULT_TARGET"; target: { instanceId: string; label: string | null } | null };
+  | { kind: "RELAY_SET_DEFAULT_TARGET"; target: { instanceId: string; label: string | null } | null }
+  // Settings sync with the paired desktop app (integration providers, affiliate
+  // tags, storefront id). PREVIEW does the non-destructive both-ways fill and
+  // reports which fields still conflict; APPLY reconciles those conflicts in the
+  // chosen direction. Routed over the local bridge only (secrets never relay).
+  | { kind: "SYNC_SETTINGS_PREVIEW" }
+  | { kind: "SYNC_SETTINGS_APPLY"; direction: "app-wins" | "ext-wins" };
 
 export type IgBioLinkResult = { email: string | null };
 
@@ -331,6 +337,22 @@ export type FeedbackInput = {
 export type FeedbackResult = { ok: boolean; error?: string };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
+
+// Settings sync with the desktop app. `status` distinguishes not-paired (connect
+// the app), app-unavailable (paired but the app is closed or too old to answer
+// the settings frames), and ok. PREVIEW reports how many fields were auto-filled
+// each way and which still conflict; APPLY reports how many were changed.
+export type SyncPreviewResult = {
+  status: "not-paired" | "app-unavailable" | "ok";
+  filled: number;
+  pushed: number;
+  diffs: string[];
+};
+
+export type SyncApplyResult = {
+  status: "not-paired" | "app-unavailable" | "ok";
+  changed: number;
+};
 
 // What the options page renders for one provider. `values` holds only
 // non-secret field values (never a password/secret); `configured` says whether

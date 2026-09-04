@@ -137,6 +137,12 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/onboarding/index.ts")],
+    outfile: path.join(dist, "onboarding.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/deals/index.ts")],
     outfile: path.join(dist, "deals.js"),
     format: "iife",

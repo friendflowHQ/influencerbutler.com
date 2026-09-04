@@ -827,6 +827,60 @@ export interface Dict {
   watchCondSlotOpens: string;
   watchCondPriceDrop: string;
   watchRemoveShort: string;
+
+  // Storefront auto-detect toast: shown once when we read the creator's own
+  // /shop/<handle> off their Creator Hub and fill the empty storefront setting.
+  storefrontDetectedTitle: string;
+  storefrontDetectedBody: (handle: string) => string;
+
+  // First-run walkthrough (the onboarding page) + the "replay" launcher.
+  obReplayLink: string;
+  obTitle: string;
+  obProgress: (current: number, total: number) => string;
+  obBack: string;
+  obNext: string;
+  obSkip: string;
+  obFinish: string;
+  obWelcomeTitle: string;
+  obWelcomeBody: string;
+  obWelcomePin: string;
+  obAccountTitle: string;
+  obAccountBody: string;
+  obAccountConnected: (email: string) => string;
+  obAccountSkipHint: string;
+  obStorefrontTitle: string;
+  obStorefrontBody: string;
+  obStorefrontAuto: string;
+  obStorefrontDetected: (handle: string) => string;
+  obToolsTitle: string;
+  obToolsBody: string;
+  obAppTitle: string;
+  obAppBody: string;
+  obAppSkipHint: string;
+  obDoneTitle: string;
+  obDoneBody: string;
+  obDoneHelp: string;
+  obDoneDashboard: string;
+  obDoneClose: string;
+
+  // Settings sync with the paired desktop app (popup card + walkthrough +
+  // "are you sure" reconcile confirm).
+  syncTitle: string;
+  syncBlurb: string;
+  syncNow: string;
+  syncChecking: string;
+  syncInSync: string;
+  syncNotPaired: string;
+  syncAppOutdated: string;
+  syncFilled: (n: number) => string;
+  syncFailed: string;
+  syncConfirmTitle: string;
+  syncConfirmBody: (n: number) => string;
+  syncConfirmList: string;
+  syncConfirmAppWins: string;
+  syncConfirmExtWins: string;
+  syncCancel: string;
+  syncDone: string;
 }
 
 const en: Dict = {
@@ -1661,6 +1715,68 @@ const en: Dict = {
   watchCondSlotOpens: "Video slot opens",
   watchCondPriceDrop: "Price drop",
   watchRemoveShort: "Remove",
+
+  storefrontDetectedTitle: "Storefront detected",
+  storefrontDetectedBody: (handle) =>
+    `We found your storefront (${handle}) and saved it in Settings. You can change it there anytime.`,
+
+  obReplayLink: "Setup guide",
+  obTitle: "Set up Influencer Butler",
+  obProgress: (current, total) => `Step ${current} of ${total}`,
+  obBack: "Back",
+  obNext: "Next",
+  obSkip: "Skip for now",
+  obFinish: "Finish",
+  obWelcomeTitle: "Welcome to Influencer Butler",
+  obWelcomeBody:
+    "This quick setup gets your money signals, storefront, and links ready. It takes about a minute, and you can skip any step.",
+  obWelcomePin: "Tip: pin the extension so its button is always one click away. Click the puzzle-piece icon in Chrome's toolbar, then the pin next to Influencer Butler.",
+  obAccountTitle: "Connect your account",
+  obAccountBody:
+    "Add your license key to sync findings to your dashboard and the desktop app. Everything works without it, so you can skip this.",
+  obAccountConnected: (email) => `Connected as ${email}.`,
+  obAccountSkipHint: "No account yet? Skip this: the extension is fully usable for free.",
+  obStorefrontTitle: "Your storefront",
+  obStorefrontBody:
+    "Your Amazon storefront handle powers your links and storefront checks. It is the part after /shop/ in your storefront URL.",
+  obStorefrontAuto:
+    "You do not have to look it up: we fill this in automatically the first time you open your Amazon Creator Hub.",
+  obStorefrontDetected: (handle) => `Detected: ${handle}`,
+  obToolsTitle: "Turn on the tools you want",
+  obToolsBody:
+    "These are on by default. Turn off anything you do not need now, you can change all of these later in Settings.",
+  obAppTitle: "Connect the desktop app",
+  obAppBody:
+    "Pair the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon. Enter the 6-digit code shown in the app.",
+  obAppSkipHint: "Do not have the desktop app open? Skip this and pair later from the popup.",
+  obDoneTitle: "You are all set",
+  obDoneBody:
+    "Influencer Butler is ready. Open a product, your storefront, or a Creator Connections campaign to see it work.",
+  obDoneHelp: "Open Help",
+  obDoneDashboard: "My dashboard",
+  obDoneClose: "Done",
+
+  syncTitle: "Sync with desktop app",
+  syncBlurb:
+    "Copy your link providers, affiliate tags, and storefront ID between this extension and the desktop app.",
+  syncNow: "Sync now",
+  syncChecking: "Checking...",
+  syncInSync: "Everything is already in sync.",
+  syncNotPaired: "Connect the desktop app first to sync settings.",
+  syncAppOutdated: "Update the desktop app to sync settings.",
+  syncFilled: (n) =>
+    n === 1 ? "Filled in 1 setting from the desktop app." : `Filled in ${n} settings from the desktop app.`,
+  syncFailed: "Could not reach the desktop app. Make sure it is running.",
+  syncConfirmTitle: "These settings differ",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 setting is different between the extension and the desktop app. Choose which side to keep."
+      : `${n} settings are different between the extension and the desktop app. Choose which side to keep.`,
+  syncConfirmList: "Different settings:",
+  syncConfirmAppWins: "Use the desktop app's values",
+  syncConfirmExtWins: "Use the extension's values",
+  syncCancel: "Cancel",
+  syncDone: "Synced.",
 };
 
 const es: Dict = {
@@ -2495,6 +2611,68 @@ const es: Dict = {
   watchCondSlotOpens: "Se abre espacio de video",
   watchCondPriceDrop: "Baja de precio",
   watchRemoveShort: "Eliminar",
+
+  storefrontDetectedTitle: "Tienda detectada",
+  storefrontDetectedBody: (handle) =>
+    `Encontramos tu tienda (${handle}) y la guardamos en Ajustes. Puedes cambiarla allí cuando quieras.`,
+
+  obReplayLink: "Guía de configuración",
+  obTitle: "Configura Influencer Butler",
+  obProgress: (current, total) => `Paso ${current} de ${total}`,
+  obBack: "Atrás",
+  obNext: "Siguiente",
+  obSkip: "Omitir por ahora",
+  obFinish: "Finalizar",
+  obWelcomeTitle: "Te damos la bienvenida a Influencer Butler",
+  obWelcomeBody:
+    "Esta configuración rápida deja listas tus señales de ingresos, tu tienda y tus enlaces. Tarda alrededor de un minuto y puedes omitir cualquier paso.",
+  obWelcomePin: "Consejo: fija la extensión para tener su botón siempre a un clic. Haz clic en el icono de pieza de puzle en la barra de Chrome y luego en la chincheta junto a Influencer Butler.",
+  obAccountTitle: "Conecta tu cuenta",
+  obAccountBody:
+    "Añade tu clave de licencia para sincronizar los hallazgos con tu panel y con la app de escritorio. Todo funciona sin ella, así que puedes omitir este paso.",
+  obAccountConnected: (email) => `Conectado como ${email}.`,
+  obAccountSkipHint: "¿Aún no tienes cuenta? Omítelo: la extensión es totalmente utilizable gratis.",
+  obStorefrontTitle: "Tu tienda",
+  obStorefrontBody:
+    "El identificador de tu tienda de Amazon impulsa tus enlaces y las comprobaciones de tienda. Es la parte que va después de /shop/ en la URL de tu tienda.",
+  obStorefrontAuto:
+    "No hace falta que lo busques: lo rellenamos automáticamente la primera vez que abras tu Creator Hub de Amazon.",
+  obStorefrontDetected: (handle) => `Detectado: ${handle}`,
+  obToolsTitle: "Activa las herramientas que quieras",
+  obToolsBody:
+    "Están activadas por defecto. Desactiva lo que no necesites ahora; puedes cambiar todo esto más tarde en Ajustes.",
+  obAppTitle: "Conecta la app de escritorio",
+  obAppBody:
+    "Vincula la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon. Introduce el código de 6 dígitos que muestra la app.",
+  obAppSkipHint: "¿No tienes la app de escritorio abierta? Omítelo y vincúlala más tarde desde la ventana emergente.",
+  obDoneTitle: "Todo listo",
+  obDoneBody:
+    "Influencer Butler está listo. Abre un producto, tu tienda o una campaña de Creator Connections para verlo en acción.",
+  obDoneHelp: "Abrir Ayuda",
+  obDoneDashboard: "Mi panel",
+  obDoneClose: "Listo",
+
+  syncTitle: "Sincronizar con la app de escritorio",
+  syncBlurb:
+    "Copia tus proveedores de enlaces, etiquetas de afiliado e ID de tienda entre esta extensión y la app de escritorio.",
+  syncNow: "Sincronizar ahora",
+  syncChecking: "Comprobando...",
+  syncInSync: "Todo ya está sincronizado.",
+  syncNotPaired: "Conecta primero la app de escritorio para sincronizar los ajustes.",
+  syncAppOutdated: "Actualiza la app de escritorio para sincronizar los ajustes.",
+  syncFilled: (n) =>
+    n === 1 ? "Se rellenó 1 ajuste desde la app de escritorio." : `Se rellenaron ${n} ajustes desde la app de escritorio.`,
+  syncFailed: "No se pudo contactar con la app de escritorio. Asegúrate de que esté abierta.",
+  syncConfirmTitle: "Estos ajustes difieren",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 ajuste es diferente entre la extensión y la app de escritorio. Elige qué lado conservar."
+      : `${n} ajustes son diferentes entre la extensión y la app de escritorio. Elige qué lado conservar.`,
+  syncConfirmList: "Ajustes diferentes:",
+  syncConfirmAppWins: "Usar los valores de la app de escritorio",
+  syncConfirmExtWins: "Usar los valores de la extensión",
+  syncCancel: "Cancelar",
+  syncDone: "Sincronizado.",
 };
 
 const fr: Dict = {
@@ -3329,6 +3507,68 @@ const fr: Dict = {
   watchCondSlotOpens: "Créneau vidéo libre",
   watchCondPriceDrop: "Baisse de prix",
   watchRemoveShort: "Retirer",
+
+  storefrontDetectedTitle: "Boutique détectée",
+  storefrontDetectedBody: (handle) =>
+    `Nous avons trouvé votre boutique (${handle}) et l'avons enregistrée dans les Réglages. Vous pouvez la modifier à tout moment.`,
+
+  obReplayLink: "Guide de configuration",
+  obTitle: "Configurer Influencer Butler",
+  obProgress: (current, total) => `Étape ${current} sur ${total}`,
+  obBack: "Retour",
+  obNext: "Suivant",
+  obSkip: "Ignorer pour l'instant",
+  obFinish: "Terminer",
+  obWelcomeTitle: "Bienvenue dans Influencer Butler",
+  obWelcomeBody:
+    "Cette configuration rapide prépare vos signaux de revenus, votre boutique et vos liens. Cela prend environ une minute, et vous pouvez ignorer toute étape.",
+  obWelcomePin: "Astuce: épinglez l'extension pour garder son bouton à portée de clic. Cliquez sur l'icône de pièce de puzzle dans la barre de Chrome, puis sur l'épingle à côté d'Influencer Butler.",
+  obAccountTitle: "Connectez votre compte",
+  obAccountBody:
+    "Ajoutez votre clé de licence pour synchroniser vos trouvailles avec votre tableau de bord et l'app de bureau. Tout fonctionne sans elle, vous pouvez donc ignorer cette étape.",
+  obAccountConnected: (email) => `Connecté en tant que ${email}.`,
+  obAccountSkipHint: "Pas encore de compte? Ignorez cette étape: l'extension est entièrement utilisable gratuitement.",
+  obStorefrontTitle: "Votre boutique",
+  obStorefrontBody:
+    "L'identifiant de votre boutique Amazon alimente vos liens et les vérifications de boutique. C'est la partie qui suit /shop/ dans l'URL de votre boutique.",
+  obStorefrontAuto:
+    "Pas besoin de la chercher: nous la remplissons automatiquement la première fois que vous ouvrez votre Creator Hub Amazon.",
+  obStorefrontDetected: (handle) => `Détecté: ${handle}`,
+  obToolsTitle: "Activez les outils souhaités",
+  obToolsBody:
+    "Ils sont activés par défaut. Désactivez ce dont vous n'avez pas besoin maintenant; vous pourrez tout modifier plus tard dans les Réglages.",
+  obAppTitle: "Connectez l'app de bureau",
+  obAppBody:
+    "Appairez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon. Saisissez le code à 6 chiffres affiché dans l'app.",
+  obAppSkipHint: "L'app de bureau n'est pas ouverte? Ignorez cette étape et appairez plus tard depuis la fenêtre.",
+  obDoneTitle: "Tout est prêt",
+  obDoneBody:
+    "Influencer Butler est prêt. Ouvrez un produit, votre boutique ou une campagne Creator Connections pour le voir à l'œuvre.",
+  obDoneHelp: "Ouvrir l'aide",
+  obDoneDashboard: "Mon tableau de bord",
+  obDoneClose: "Terminé",
+
+  syncTitle: "Synchroniser avec l'app de bureau",
+  syncBlurb:
+    "Copiez vos fournisseurs de liens, vos balises d'affiliation et votre ID de boutique entre cette extension et l'app de bureau.",
+  syncNow: "Synchroniser maintenant",
+  syncChecking: "Vérification...",
+  syncInSync: "Tout est déjà synchronisé.",
+  syncNotPaired: "Connectez d'abord l'app de bureau pour synchroniser les réglages.",
+  syncAppOutdated: "Mettez à jour l'app de bureau pour synchroniser les réglages.",
+  syncFilled: (n) =>
+    n === 1 ? "1 réglage rempli depuis l'app de bureau." : `${n} réglages remplis depuis l'app de bureau.`,
+  syncFailed: "Impossible de joindre l'app de bureau. Assurez-vous qu'elle est ouverte.",
+  syncConfirmTitle: "Ces réglages diffèrent",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 réglage diffère entre l'extension et l'app de bureau. Choisissez le côté à conserver."
+      : `${n} réglages diffèrent entre l'extension et l'app de bureau. Choisissez le côté à conserver.`,
+  syncConfirmList: "Réglages différents:",
+  syncConfirmAppWins: "Utiliser les valeurs de l'app de bureau",
+  syncConfirmExtWins: "Utiliser les valeurs de l'extension",
+  syncCancel: "Annuler",
+  syncDone: "Synchronisé.",
 };
 
 export type Locale = "en" | "es" | "fr";

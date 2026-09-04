@@ -31,6 +31,8 @@ import {
   OPTIONAL_MARKET_ORIGINS,
 } from "../background/market-availability";
 import { channelAllowed } from "../shared/creator-mode";
+import { isPairedLocal } from "../shared/bridge-token";
+import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
 import { resolveLocale, setLocale, t } from "../i18n";
 
 // Popup: page status via the active tab's content script, account sign-in via
@@ -766,20 +768,6 @@ function wireCleanLink(locale: Settings["locale"]): void {
   });
 }
 
-// Local storage key the background's hud-bridge writes the pairing token to.
-// Kept in sync with TOKEN_KEY in src/background/hud-bridge.ts.
-const BRIDGE_TOKEN_KEY = "ib-bridge-token";
-
-async function isPairedLocal(): Promise<boolean> {
-  try {
-    const out = await chrome.storage.local.get(BRIDGE_TOKEN_KEY);
-    const token = out?.[BRIDGE_TOKEN_KEY];
-    return typeof token === "string" && token.length > 0;
-  } catch {
-    return false;
-  }
-}
-
 // The "Desktop app" card: a two-step pairing flow. Connect asks the running app
 // to show a 6-digit code (it pops it in the app), then the user types the code
 // here to pair. Once paired, the token is stored and commands authenticate with
@@ -797,6 +785,11 @@ async function renderAppBridge(): Promise<void> {
   };
   const paired = await isPairedLocal();
   show(paired ? "connected" : "disconnected");
+
+  const syncStatus = byId("app-sync-status");
+  byId<HTMLButtonElement>("app-sync-btn").onclick = () => void runSyncReconcile(syncStatus);
+  // Already paired when the popup opens: quietly fill any empty settings both ways.
+  if (paired) void autoFillFromDesktop();
 
   // Guide freshly-connected users to the (optional) next step: once they've
   // linked a license but haven't paired the desktop app, surface a hint so the
@@ -827,6 +820,8 @@ async function renderAppBridge(): Promise<void> {
     if (r.ok && r.stage === "paired") {
       show("connected");
       status.textContent = t().appPaired;
+      // Newly paired: fill any empty settings both ways so the two apps line up.
+      void autoFillFromDesktop();
     } else {
       status.textContent = r.message ?? t().appPairFailed;
     }
@@ -925,6 +920,12 @@ function renderRelayTargets(
 function wireOptions(): void {
   byId<HTMLButtonElement>("open-options").onclick = () => {
     chrome.runtime.openOptionsPage();
+  };
+  // "Setup guide": reopen the first-run walkthrough on demand (it also opens
+  // itself once on a fresh install). Opens in its own tab.
+  byId<HTMLAnchorElement>("open-onboarding").onclick = (event) => {
+    event.preventDefault();
+    void chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
   };
 }
 

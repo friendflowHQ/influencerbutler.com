@@ -447,10 +447,32 @@ export type HintsState = {
   // "Copy my link" tip pointing out free branded short links, shown to a
   // signed-in creator who is still copying plain tagged Amazon urls.
   brandedLinks: number | null;
+  // Stamped the first time we auto-fill the storefront handle from the creator's
+  // own Creator Hub, so the "Detected your storefront" toast shows at most once
+  // even though the auto-fill itself re-runs whenever the field is empty.
+  storefrontAutofill: number | null;
 };
 
 export const DEFAULT_HINTS_STATE: HintsState = {
   brandedLinks: null,
+  storefrontAutofill: null,
+};
+
+// First-run walkthrough progress. Mirrors the desktop app's walkthroughComplete
+// + onboardingStepIndex: completedAt stamps when the user finished (or skipped),
+// stepIndex resumes a reopened wizard on the right step, and skipped records that
+// they chose to skip rather than complete. Opened once on fresh install and
+// replayable from the popup afterward.
+export type OnboardingState = {
+  completedAt: number | null;
+  stepIndex: number;
+  skipped: boolean;
+};
+
+export const DEFAULT_ONBOARDING_STATE: OnboardingState = {
+  completedAt: null,
+  stepIndex: 0,
+  skipped: false,
 };
 
 export type StorageShape = {
@@ -480,10 +502,12 @@ export type StorageShape = {
   firstUseAt: number | null;
   nudges: NudgesState;
   hints: HintsState;
+  // First-run walkthrough progress (see OnboardingState).
+  onboarding: OnboardingState;
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 23,
+  schemaVersion: 24,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -609,6 +633,7 @@ export const DEFAULTS: StorageShape = {
     communityNotice: { ...DEFAULT_NUDGE_STATE },
   },
   hints: { ...DEFAULT_HINTS_STATE },
+  onboarding: { ...DEFAULT_ONBOARDING_STATE },
 };
 
 export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
@@ -669,7 +694,11 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // + one-click load on the Creator Connections Messages composer, on by
   // default, backfilled by the tools shallow-merge) and the top-level
   // `templates` array (saved outreach messages); an existing user starts with no
-  // saved templates, reconciled below like productLists.
+  // saved templates, reconciled below like productLists. v23 -> v24 added the
+  // `onboarding` slice (first-run walkthrough progress) and the
+  // hints.storefrontAutofill stamp; both backfill from their defaults (an
+  // existing user starts with onboarding uncompleted, so the walkthrough is
+  // available to replay from the popup but never force-opens on an update).
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -740,13 +769,14 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       communityNotice: { ...DEFAULT_NUDGE_STATE, ...(raw.nudges?.communityNotice ?? {}) },
     },
     hints: { ...DEFAULT_HINTS_STATE, ...(raw.hints ?? {}) },
+    onboarding: { ...DEFAULT_ONBOARDING_STATE, ...(raw.onboarding ?? {}) },
     watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [],
     campaignWatchlist: Array.isArray(raw.campaignWatchlist) ? raw.campaignWatchlist : [],
     productLists: Array.isArray(raw.productLists) ? raw.productLists : [],
     templates: Array.isArray(raw.templates) ? raw.templates : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 23,
+    schemaVersion: 24,
   };
 }
 

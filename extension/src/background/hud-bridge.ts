@@ -21,6 +21,13 @@ import type {
   TemplatesLookupResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
+import type {
+  DesktopSettingsResult,
+  PushSettingsResult,
+  SyncMode,
+  SyncSettingsPayload,
+} from "../transport/sync-settings";
+import { coerceSyncPayload } from "../tools/settings-sync/merge";
 
 // Where the pairing token + this extension install's stable client id live.
 // The client id is generated once and reused so re-pairing rotates the token
@@ -243,6 +250,149 @@ function sendToPort(
         if (frame.type === "command.result") {
           log("hud", `command ${command.type} -> ${frame.ok ? "ok" : "fail"}`);
           done({ ok: frame.ok === true, message: frame.message, needsPairing: frame.needsPairing });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Settings sync ────────────────────────────────────────────────────────────
+// Pull the desktop app's integration settings, or push the extension's, over the
+// local bridge with greenfield frames (settings.get / settings.push). An older
+// app ignores unknown frame types, so a paired-but-silent result surfaces as
+// app-unavailable and the UI asks the user to update the app. These frames can
+// carry decrypted secrets, so they ride the LOCAL bridge only, never the relay.
+
+export async function fetchDesktopSettings(): Promise<DesktopSettingsResult> {
+  const token = await getToken();
+  if (!token) return { status: "not-paired" };
+  for (const port of BRIDGE_PORTS) {
+    const payload = await fetchSettingsOnPort(port, token);
+    if (payload) return { status: "ok", payload };
+  }
+  cached = null; // nothing answered; refresh status next time
+  return { status: "app-unavailable" };
+}
+
+function fetchSettingsOnPort(port: number, token: string): Promise<SyncSettingsPayload | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: SyncSettingsPayload | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as { type?: string; payload?: unknown };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "settings.get" }));
+          return;
+        }
+        if (frame.type === "settings.result") {
+          done(coerceSyncPayload(frame.payload));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done(null);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+export async function pushDesktopSettings(
+  payload: SyncSettingsPayload,
+  mode: SyncMode,
+): Promise<PushSettingsResult> {
+  const token = await getToken();
+  if (!token) return { status: "not-paired" };
+  for (const port of BRIDGE_PORTS) {
+    const applied = await pushSettingsOnPort(port, payload, mode, token);
+    if (applied !== null) return { status: "ok", applied };
+  }
+  cached = null;
+  return { status: "app-unavailable" };
+}
+
+function pushSettingsOnPort(
+  port: number,
+  payload: SyncSettingsPayload,
+  mode: SyncMode,
+  token: string,
+): Promise<number | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: number | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          applied?: number;
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "settings.push", mode, payload }));
+          return;
+        }
+        if (frame.type === "settings.push.result") {
+          done(frame.ok === true ? (typeof frame.applied === "number" ? frame.applied : 0) : null);
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done(null);
           return;
         }
       } catch {

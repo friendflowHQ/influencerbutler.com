@@ -137,6 +137,11 @@
         </div>
         <div id="app-bridge-connected" hidden>
           <p class="muted small" data-i18n="appConnected">Connected to the desktop app.</p>
+          <p class="muted small" data-i18n="syncBlurb">Copy your link providers, affiliate tags, and storefront ID between this extension and the desktop app.</p>
+          <div class="row">
+            <button id="app-sync-btn" class="ghost" data-i18n="syncNow">Sync now</button>
+            <span id="app-sync-status" class="muted small"></span>
+          </div>
           <button id="app-unpair-btn" class="ghost" data-i18n="appUnpair">Disconnect app</button>
         </div>
         <p id="app-pair-status" class="muted small"></p>
@@ -316,6 +321,7 @@
     </main>
 
     <footer class="foot">
+      <a href="#" id="open-onboarding" data-i18n="obReplayLink">Setup guide</a>
       <a href="https://www.influencerbutler.com/extension" target="_blank" rel="noreferrer" data-i18n="footerHelp">Help</a>
       <a href="https://www.influencerbutler.com/dashboard/extension" target="_blank" rel="noreferrer" data-i18n="footerDashboard">My dashboard</a>
     </footer>

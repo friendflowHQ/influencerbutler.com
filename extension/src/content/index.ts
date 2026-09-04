@@ -39,6 +39,7 @@ import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
+import { maybeCaptureStorefrontHandle } from "../tools/storefront-detect/capture";
 import { initVideoMoney } from "../tools/video-money/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
@@ -460,6 +461,10 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   } else if (pageType === "creator-upload") {
+    // Capture the creator's own storefront handle off their Creator Hub even for
+    // offsite-only creators (the handle drives links regardless of channel), and
+    // before the onsite guard below. Non-destructive: fills only an empty handle.
+    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
     if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
       initUploadHelper();
@@ -471,6 +476,7 @@ async function runForPage(): Promise<void> {
       videoMoney: settings.tools.videoMoney,
       creatorMode: settings.creatorMode,
     });
+    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
     if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
     guard("video-money", () => {
       if (settings.tools.videoMoney) {

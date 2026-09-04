@@ -3,8 +3,9 @@ import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/reg
 import { buildAffiliateLink } from "../integrations/routing";
 import { retailerFromHost } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
-import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
+import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
+import type { SyncProviderPayload, SyncSettingsPayload } from "../transport/sync-settings";
 import type {
   GenerateLinkResult,
   IntegrationsView,
@@ -255,6 +256,57 @@ export async function generateAffiliateLink(
     return { ok: true, url: built.url, notice: built.notice };
   } catch {
     return { ok: false, error: "Could not build a link." };
+  }
+}
+
+// Settings sync with the desktop app. buildSyncPayload decrypts the syncable
+// providers into a flat payload (this is the ONLY place that leaves the encrypted
+// store, and it is sent over the loopback bridge only); writeSyncPayload folds an
+// already-merged payload back in, re-encrypting each provider through
+// saveIntegration. Only credential-based providers participate: session-based
+// (Walmart link) and license-based (branded links, Associates tags-in-global)
+// providers have no portable secret and are covered by the global fields.
+export async function buildSyncPayload(): Promise<SyncSettingsPayload> {
+  const [settings, integrations] = await Promise.all([getSettings(), getIntegrations()]);
+  const providers: Record<string, SyncProviderPayload> = {};
+  for (const adapter of ADAPTERS) {
+    if (adapter.fields.length === 0) continue; // no stored credential to sync
+    const state = integrations.providers[adapter.id];
+    const creds = await credsFor(adapter.id, integrations);
+    const filtered: Record<string, string> = {};
+    for (const field of adapter.fields) {
+      const value = creds[field.name];
+      if (typeof value === "string" && value.trim()) filtered[field.name] = value;
+    }
+    providers[adapter.id] = {
+      enabled: state?.enabled ?? false,
+      routingParticipates: state?.routingParticipates ?? true,
+      creds: filtered,
+    };
+  }
+  return {
+    storefrontHandle: settings.storefrontHandle,
+    primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
+    walmartLinkProvider: integrations.global.walmartLinkProvider,
+    affiliateRoutingEnabled: integrations.global.affiliateRoutingEnabled,
+    perCountryTags: { ...integrations.global.perCountryTags },
+    providers,
+  };
+}
+
+export async function writeSyncPayload(payload: SyncSettingsPayload): Promise<void> {
+  await patchSettings({ storefrontHandle: payload.storefrontHandle });
+  await patchIntegrationsGlobal({
+    primaryDeeplinkProvider: payload.primaryDeeplinkProvider,
+    walmartLinkProvider: payload.walmartLinkProvider,
+    affiliateRoutingEnabled: payload.affiliateRoutingEnabled,
+    perCountryTags: { ...payload.perCountryTags },
+  });
+  for (const [id, provider] of Object.entries(payload.providers)) {
+    if (!getAdapter(id)) continue; // ignore a provider this build does not know
+    // saveIntegration re-encrypts and keeps a stored secret when an incoming
+    // password field is blank, so re-saving unchanged creds is a safe no-op.
+    await saveIntegration(id, provider.creds, provider.enabled, provider.routingParticipates);
   }
 }
 

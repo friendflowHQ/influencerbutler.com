@@ -3,7 +3,6 @@ import {
   CAMPAIGN_WATCH_PERIOD_MINUTES,
   CATALOGUE_ALARM,
   CATALOGUE_PERIOD_MINUTES,
-  EXTENSION_WELCOME_URL,
   FACEBOOK_GROUP_URL,
   SYNC_ALARM,
   SYNC_PERIOD_MINUTES,
@@ -98,9 +97,15 @@ import {
   repointOwnerLink,
   saveOwnerPixels,
 } from "./links";
+import { applySync, initSettingsSyncOnChange, previewSync } from "./settings-sync";
 import { API_BASE } from "../shared/constants";
 import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
+
+// Wire the debounced extension -> desktop settings push. Cheap for the common
+// case: it establishes a baseline and only pushes after a syncable field changes
+// AND the app is paired, so an unpaired install does effectively nothing.
+initSettingsSyncOnChange();
 
 // Background service worker: the only place that talks to
 // influencerbutler.com. Receives findings from content scripts, queues them,
@@ -138,12 +143,14 @@ chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
   // whether (and what) to announce. A fresh install announces nothing.
   void noteInstall(details.reason, details.previousVersion);
-  // On a FRESH install (never on updates), open the welcome tab. It thanks the
-  // user and optionally captures an email for setup tips + the day-10 review /
-  // feedback nudge. Best-effort: a blocked tab create just means no welcome.
+  // On a FRESH install (never on updates), open the in-extension guided
+  // walkthrough. It steps the user through account, storefront, tools, and
+  // pairing the desktop app, writing real settings as they go, and replaces the
+  // old external welcome tab as the first-run destination. Best-effort: a blocked
+  // tab create just means no walkthrough (it stays replayable from the popup).
   if (details.reason === "install") {
     try {
-      void chrome.tabs.create({ url: EXTENSION_WELCOME_URL });
+      void chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
     } catch {
       // Tab creation not available in this context: skip silently.
     }
@@ -316,6 +323,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "UNPAIR_APP":
       void unpair().then(() => sendResponse(undefined));
+      return true;
+    case "SYNC_SETTINGS_PREVIEW":
+      void previewSync().then(sendResponse);
+      return true;
+    case "SYNC_SETTINGS_APPLY":
+      void applySync(message.direction).then(sendResponse);
       return true;
     case "RELAY_CLAIM_LINK":
       void relayClaimLink(message.code, message.label).then(sendResponse);
