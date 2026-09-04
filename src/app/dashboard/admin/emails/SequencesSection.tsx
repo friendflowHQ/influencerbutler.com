@@ -278,6 +278,12 @@ export default function SequencesSection({
   // Step drill-down drawer (which step of which sequence is open).
   const [openStep, setOpenStep] = useState<{ sequenceId: string; position: number } | null>(null);
 
+  // "Copy emails" per sequence: the id currently being copied, and a transient
+  // per-sequence result message keyed by id (so the label only changes on the
+  // button that was clicked).
+  const [copyingId, setCopyingId] = useState<string | null>(null);
+  const [copyMsgById, setCopyMsgById] = useState<Record<string, string>>({});
+
   // Test All panel state (one open at a time, keyed by sequence id). Sends every
   // step of the funnel now to a test address, ignoring drip schedule,
   // subscription/suppression status, and the hourly send limit.
@@ -597,6 +603,49 @@ export default function SequencesSection({
       setTestError("Could not send the test. Check your connection and try again.");
     } finally {
       setTestBusy(false);
+    }
+  }
+
+  // Copy every enrolled email for this sequence (all statuses, deduped) to the
+  // clipboard, one per line, so the list pastes straight into another sequence's
+  // Enroll box or an ad-audience upload. Shows a transient "Copied N" / error
+  // label on the button.
+  async function copyEmails(seq: Sequence) {
+    if (copyingId) return;
+    setCopyingId(seq.id);
+    setCopyMsgById((m) => {
+      const { [seq.id]: _drop, ...rest } = m;
+      void _drop;
+      return rest;
+    });
+    const flash = (msg: string) => {
+      setCopyMsgById((m) => ({ ...m, [seq.id]: msg }));
+      window.setTimeout(() => {
+        setCopyMsgById((m) => {
+          const { [seq.id]: _drop, ...rest } = m;
+          void _drop;
+          return rest;
+        });
+      }, 4000);
+    };
+    try {
+      const res = await fetch(
+        `/api/admin/emails/sequences?emailsFor=${encodeURIComponent(seq.id)}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as { emails?: string[] };
+      const emails = json.emails ?? [];
+      if (emails.length === 0) {
+        flash("Nothing to copy.");
+        return;
+      }
+      await navigator.clipboard.writeText(emails.join("\n"));
+      flash(`Copied ${emails.length.toLocaleString("en-US")}`);
+    } catch {
+      flash("Copy failed.");
+    } finally {
+      setCopyingId(null);
     }
   }
 
@@ -1047,6 +1096,17 @@ export default function SequencesSection({
                   className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                 >
                   Enroll
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyEmails(seq)}
+                  disabled={copyingId === seq.id}
+                  title="Copy every enrolled email address in this sequence (all statuses) to the clipboard, one per line"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                >
+                  {copyingId === seq.id
+                    ? "Copying..."
+                    : (copyMsgById[seq.id] ?? "Copy emails")}
                 </button>
                 <button
                   type="button"

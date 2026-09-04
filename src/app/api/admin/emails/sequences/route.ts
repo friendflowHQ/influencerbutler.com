@@ -225,6 +225,43 @@ export async function GET(request: Request) {
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
+  // Export-all-emails mode: ?emailsFor=<sequenceId> returns every enrolled
+  // address (all statuses), deduped, so the card's "Copy emails" button can drop
+  // the whole list on the clipboard in one call instead of paging like the
+  // per-step "Copy all". Pages through the enrollment table up to COUNT_CAP.
+  const emailsFor = new URL(request.url).searchParams.get("emailsFor");
+  if (emailsFor) {
+    const seen = new Set<string>();
+    const emails: string[] = [];
+    for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
+      const { data: rows, error: rowsErr } = await db
+        .from("email_sequence_enrollments")
+        .select("email")
+        .eq("sequence_id", emailsFor)
+        .order("enrolled_at", { ascending: true })
+        .range(offset, offset + COUNT_PAGE - 1)
+        .returns<{ email: string | null }[]>();
+      if (rowsErr) {
+        if (isMissingTable(rowsErr)) {
+          return NextResponse.json({ emails: [], migrationPending: true });
+        }
+        console.error("admin emails/sequences: emails export failed", rowsErr);
+        return NextResponse.json({ error: "Export failed" }, { status: 500 });
+      }
+      const batch = rows ?? [];
+      for (const r of batch) {
+        const email = (r.email ?? "").trim();
+        const key = email.toLowerCase();
+        if (email && !seen.has(key)) {
+          seen.add(key);
+          emails.push(email);
+        }
+      }
+      if (batch.length < COUNT_PAGE) break;
+    }
+    return NextResponse.json({ emails });
+  }
+
   const { data, error } = await db
     .from("email_sequences")
     .select("*")
