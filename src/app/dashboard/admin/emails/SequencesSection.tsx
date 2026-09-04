@@ -76,6 +76,34 @@ type Sequence = {
 
 type SequencesResponse = { sequences: Sequence[]; migrationPending: boolean };
 
+// A/B/C variant group detection (client mirror of the server rule in the
+// sequences route): a variant sequence's trigger tag ends in a single-letter
+// suffix ("-a" / "-b" / "-c") and the text before it is the shared base.
+// variantSiblings returns the whole group (sorted by tag) when this sequence
+// belongs to one of size >= 2, else []. Used to offer the "split evenly across
+// the variants" enroll option only on grouped sequences.
+const VARIANT_TAG_RE = /^(.+)-[a-z]$/;
+function triggerTagOf(trigger: Trigger): string | null {
+  return trigger && trigger.kind === "tag_added" ? trigger.tag : null;
+}
+function variantBase(tag: string | null): string | null {
+  if (!tag) return null;
+  const m = VARIANT_TAG_RE.exec(tag);
+  return m ? m[1] : null;
+}
+function variantSiblings(seq: Sequence, all: Sequence[]): Sequence[] {
+  const base = variantBase(triggerTagOf(seq.trigger));
+  if (!base) return [];
+  const group = all
+    .filter((s) => variantBase(triggerTagOf(s.trigger)) === base)
+    .sort((a, b) => {
+      const ta = triggerTagOf(a.trigger) ?? "";
+      const tb = triggerTagOf(b.trigger) ?? "";
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
+    });
+  return group.length >= 2 ? group : [];
+}
+
 type SummaryCategory = {
   key: string;
   sent: number;
@@ -274,6 +302,11 @@ export default function SequencesSection({
   const [enrollBusy, setEnrollBusy] = useState(false);
   const [enrollResult, setEnrollResult] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
+  // For A/B/C variant sequences: split the batch evenly across the variants
+  // instead of enrolling everyone into just this one. Defaults on for grouped
+  // sequences (the whole point of enrolling from a variant card); ignored for
+  // sequences that are not part of a variant group.
+  const [enrollSplit, setEnrollSplit] = useState(true);
 
   // Step drill-down drawer (which step of which sequence is open).
   const [openStep, setOpenStep] = useState<{ sequenceId: string; position: number } | null>(null);
@@ -515,9 +548,18 @@ export default function SequencesSection({
     setEnrollError(null);
     setEnrollResult(null);
     try {
-      const payload: { id: string; action: "enroll"; emails?: string[]; tag?: string } = {
+      // Split across the A/B/C variants only when this is a grouped sequence and
+      // the option is left on; otherwise enroll into just this sequence.
+      const siblings = variantSiblings(seq, sequences);
+      const doSplit = enrollSplit && siblings.length >= 2;
+      const payload: {
+        id: string;
+        action: "enroll" | "enroll-split";
+        emails?: string[];
+        tag?: string;
+      } = {
         id: seq.id,
-        action: "enroll",
+        action: doSplit ? "enroll-split" : "enroll",
       };
       if (enrollMode === "paste") {
         const emails = parseEmails(enrollText);
@@ -548,12 +590,35 @@ export default function SequencesSection({
         reactivated?: number;
         skipped?: number;
         capped?: number;
+        total?: number;
+        split?: Array<{
+          name: string;
+          tag: string;
+          inserted: number;
+          reactivated: number;
+          skipped: number;
+        }>;
       };
-      const parts: string[] = [];
-      if (body.inserted) parts.push(`${body.inserted} enrolled`);
-      if (body.reactivated) parts.push(`${body.reactivated} reactivated`);
-      if (body.skipped) parts.push(`${body.skipped} already active`);
-      let summary = parts.length ? parts.join(", ") : "No changes (all already active)";
+      let summary: string;
+      if (doSplit && body.split) {
+        // "Split 45 across 3: a +15, b +15, c +14" using each variant's tag
+        // suffix letter and its newly added (inserted + reactivated) count.
+        const per = body.split
+          .map((v) => {
+            const letter = v.tag.slice(-1).toUpperCase();
+            return `${letter} +${(v.inserted ?? 0) + (v.reactivated ?? 0)}`;
+          })
+          .join(", ");
+        summary = `Split ${body.total ?? 0} across ${body.split.length}: ${per}`;
+        const alreadyActive = body.split.reduce((n, v) => n + (v.skipped ?? 0), 0);
+        if (alreadyActive) summary += ` (${alreadyActive} already active)`;
+      } else {
+        const parts: string[] = [];
+        if (body.inserted) parts.push(`${body.inserted} enrolled`);
+        if (body.reactivated) parts.push(`${body.reactivated} reactivated`);
+        if (body.skipped) parts.push(`${body.skipped} already active`);
+        summary = parts.length ? parts.join(", ") : "No changes (all already active)";
+      }
       if (body.capped) summary += ` (${body.capped} over the 50,000 limit not enrolled)`;
       setEnrollResult(summary);
       setEnrollText("");
@@ -1275,6 +1340,27 @@ export default function SequencesSection({
                     className="mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
                   />
                 )}
+                {(() => {
+                  const group = variantSiblings(seq, sequences);
+                  if (group.length < 2) return null;
+                  const letters = group
+                    .map((s) => (triggerTagOf(s.trigger) ?? "").slice(-1).toUpperCase())
+                    .join(" / ");
+                  return (
+                    <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={enrollSplit}
+                        onChange={(e) => setEnrollSplit(e.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        Split evenly across the {group.length} variants ({letters}). Each address
+                        lands in exactly one variant, and anyone already in a variant stays put.
+                      </span>
+                    </label>
+                  );
+                })()}
                 <div className="mt-2 flex items-center gap-3">
                   <button
                     type="button"
@@ -1282,7 +1368,11 @@ export default function SequencesSection({
                     disabled={enrollBusy}
                     className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-40"
                   >
-                    {enrollBusy ? "Enrolling..." : "Enroll"}
+                    {enrollBusy
+                      ? "Enrolling..."
+                      : enrollSplit && variantSiblings(seq, sequences).length >= 2
+                        ? "Split and enroll"
+                        : "Enroll"}
                   </button>
                   {enrollResult ? (
                     <span className="text-sm text-emerald-700">{enrollResult}</span>

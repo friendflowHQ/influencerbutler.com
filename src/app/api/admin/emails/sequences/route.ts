@@ -10,6 +10,10 @@
  *   "pause" / "activate"                    flip status (activate clears auto-pause)
  *   "stop"                                  pause AND cancel all open enrollments
  *   "enroll"   { emails? } or { tag? }      bulk-enroll addresses
+ *   "enroll-split" { emails? } or { tag? }  even A/B/C split: fan the batch out
+ *       across all sibling variant sequences sharing this one's tag base
+ *       (cold-x-a / -b / -c). New addresses round-robin evenly; anyone already
+ *       in a variant stays in it (one person, one variant).
  *   "unenroll" { emails }                   cancel open enrollments
  *
  * sendsPerHour caps this sequence's drip rate (throttle/warmup); null uses the
@@ -216,6 +220,86 @@ function cleanEmailArray(raw: unknown): string[] {
     if (email && seen.size < MAX_EMAILS) seen.add(email);
   }
   return [...seen];
+}
+
+type EnrollListError = { error: string; status: number; migrationPending?: boolean };
+
+/**
+ * Resolves the recipient list for an enroll / enroll-split request from any of:
+ * an emails array, a pasted emails string, or a tag. Returns the deduped,
+ * lowercased list plus how many valid addresses were dropped for exceeding
+ * MAX_EMAILS (reported so nothing is silently truncated), or a typed error the
+ * caller turns into a response. Shared so paste-enroll and split-enroll parse
+ * their audience identically.
+ */
+async function resolveEnrollList(
+  db: SupabaseClient,
+  body: { emails?: unknown; tag?: unknown },
+): Promise<{ list: string[]; capped: number } | EnrollListError> {
+  if (Array.isArray(body.emails)) {
+    const uniqueAll = new Set<string>();
+    for (const entry of body.emails) {
+      if (typeof entry !== "string") continue;
+      const email = entry.trim().toLowerCase();
+      if (email) uniqueAll.add(email);
+    }
+    const list = [...uniqueAll].slice(0, MAX_EMAILS);
+    return { list, capped: uniqueAll.size - list.length };
+  }
+  if (typeof body.emails === "string" && body.emails.trim().length > 0) {
+    const parsed = parseEmailList(body.emails, Number.MAX_SAFE_INTEGER);
+    const list = parsed.emails.slice(0, MAX_EMAILS);
+    return { list, capped: parsed.emails.length - list.length };
+  }
+  if (typeof body.tag === "string") {
+    const tag = normalizeTag(body.tag);
+    if (!tag) return { error: "A valid tag is required", status: 400 };
+    const resolved = await resolveAudience(db, { kind: "tag", tag });
+    if (resolved.migrationPending) {
+      return { error: "Migration pending", status: 409, migrationPending: true };
+    }
+    return { list: resolved.emails, capped: 0 };
+  }
+  return { error: "emails or tag is required", status: 400 };
+}
+
+/**
+ * Mirrors an enrolled batch into the Contacts list: a per-sequence seq-* tag so
+ * the Contacts tab shows which sequence enrolled an address, plus any platform
+ * tag (instagram/tiktok) the sequence name implies. Idempotent; unions the tags
+ * without replacing a contact's other tags. Shared by enroll and enroll-split.
+ */
+async function tagEnrolleesForSequence(
+  db: SupabaseClient,
+  name: unknown,
+  list: string[],
+): Promise<void> {
+  if (list.length === 0) return;
+  const seqTag = typeof name === "string" ? sequenceContactTag(name) : "seq-drip";
+  await tagRecipientsAsContacts(db, list, seqTag, "sequence-enroll");
+  if (typeof name === "string") {
+    for (const platformTag of sequencePlatformTags(name)) {
+      await tagRecipientsAsContacts(db, list, platformTag, "sequence-enroll");
+    }
+  }
+}
+
+/** The tag of a tag_added trigger, normalized; null for any other trigger. */
+function triggerTag(trigger: unknown): string | null {
+  const t = parseTrigger(trigger);
+  return t && t.kind === "tag_added" ? t.tag : null;
+}
+
+// A variant trigger tag ends in a single-letter suffix ("-a", "-b", "-c"); the
+// text before it is the shared A/B/C group base. Used to gather the sibling
+// sequences a split-enroll fans out across.
+const VARIANT_TAG_RE = /^(.+)-[a-z]$/;
+
+/** Split-group base for a variant tag ("cold-x-a" -> "cold-x"); null if none. */
+function variantGroupBase(tag: string | null): string | null {
+  if (!tag) return null;
+  const m = VARIANT_TAG_RE.exec(tag);
+  return m ? m[1] : null;
 }
 
 export async function GET(request: Request) {
@@ -816,53 +900,146 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "enroll") {
-    let list: string[] = [];
-    // How many valid, unique addresses were dropped for exceeding MAX_EMAILS.
-    // Reported back so the admin sees "N over the limit not enrolled" instead
-    // of the list being silently truncated (the bug that hid a 2000 cap).
-    let capped = 0;
-    if (Array.isArray(body.emails)) {
-      const uniqueAll = new Set<string>();
-      for (const entry of body.emails) {
-        if (typeof entry !== "string") continue;
-        const email = entry.trim().toLowerCase();
-        if (email) uniqueAll.add(email);
-      }
-      list = [...uniqueAll].slice(0, MAX_EMAILS);
-      capped = uniqueAll.size - list.length;
-    } else if (typeof body.emails === "string" && body.emails.trim().length > 0) {
-      const parsed = parseEmailList(body.emails, Number.MAX_SAFE_INTEGER);
-      list = parsed.emails.slice(0, MAX_EMAILS);
-      capped = parsed.emails.length - list.length;
-    } else if (typeof body.tag === "string") {
-      const tag = normalizeTag(body.tag);
-      if (!tag) return NextResponse.json({ error: "A valid tag is required" }, { status: 400 });
-      const resolved = await resolveAudience(db, { kind: "tag", tag });
-      if (resolved.migrationPending) {
-        return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
-      }
-      list = resolved.emails;
-    } else {
-      return NextResponse.json({ error: "emails or tag is required" }, { status: 400 });
+    const resolved = await resolveEnrollList(db, body);
+    if ("error" in resolved) {
+      return NextResponse.json(
+        { error: resolved.error, ...(resolved.migrationPending ? { migrationPending: true } : {}) },
+        { status: resolved.status },
+      );
     }
+    const { list, capped } = resolved;
     // Manual Enroll reactivates: re-adding a cancelled/completed address restarts
     // it at Step 1 (an already-active address is left alone, no double-send).
     const result = await enrollEmails(db, id, list, { reactivate: true });
-    // Mirror enrollees into the contacts list so pasted addresses show up on the
-    // Contacts tab (not just as an enrollment count), tagged by which sequence
-    // enrolled them so you can tell them apart and filter. Idempotent; unions
-    // the tag onto existing contacts without replacing their other tags.
-    const seqTag = typeof found.name === "string" ? sequenceContactTag(found.name) : "seq-drip";
-    await tagRecipientsAsContacts(db, list, seqTag, "sequence-enroll");
-    // Also union a platform tag (instagram/tiktok) implied by the sequence name,
-    // so contacts can be segmented by platform across every IG/TikTok sequence,
-    // not just per-sequence. No-op for sequences whose name names no platform.
-    if (typeof found.name === "string") {
-      for (const platformTag of sequencePlatformTags(found.name)) {
-        await tagRecipientsAsContacts(db, list, platformTag, "sequence-enroll");
+    // Mirror enrollees into the Contacts list (seq-* + platform tags) so pasted
+    // addresses show up on the Contacts tab, not just as an enrollment count.
+    await tagEnrolleesForSequence(db, found.name, list);
+    return NextResponse.json({ ok: true, ...result, ...(capped > 0 ? { capped } : {}) });
+  }
+
+  if (action === "enroll-split") {
+    // Even A/B/C split. Distribute one pasted (or tag-resolved) batch across all
+    // sibling variant sequences whose trigger tag shares this one's base
+    // (cold-x-a / -b / -c), so each variant gets an equal third of the NEW
+    // addresses. Solves the "split the list into thirds by hand" step: enroll
+    // once from any variant card and everyone lands in exactly one variant.
+    const base = variantGroupBase(triggerTag(found.trigger));
+    if (!base) {
+      return NextResponse.json(
+        {
+          error:
+            "This sequence is not part of an A/B/C variant group. Its trigger tag must end in a single-letter suffix like -a / -b / -c.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // Gather every sequence in the group (siblings share the base), ordered by
+    // tag suffix (a, b, c) so the round-robin is stable and readable.
+    const { data: allSeq, error: allErr } = await db
+      .from("email_sequences")
+      .select("id, name, trigger");
+    if (allErr) {
+      if (isMissingTable(allErr)) {
+        return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
+      }
+      console.error("admin emails/sequences: split sibling lookup failed", allErr);
+      return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
+    }
+    const siblings = (allSeq ?? [])
+      .map((s) => {
+        const row = s as { id: unknown; name: unknown; trigger: unknown };
+        return { id: String(row.id), name: row.name, tag: triggerTag(row.trigger) };
+      })
+      .filter((s): s is { id: string; name: unknown; tag: string } =>
+        s.tag !== null && variantGroupBase(s.tag) === base,
+      )
+      .sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
+    if (siblings.length < 2) {
+      return NextResponse.json(
+        { error: "Need at least two variant sequences (for example -a and -b) to split across." },
+        { status: 400 },
+      );
+    }
+
+    const resolved = await resolveEnrollList(db, body);
+    if ("error" in resolved) {
+      return NextResponse.json(
+        { error: resolved.error, ...(resolved.migrationPending ? { migrationPending: true } : {}) },
+        { status: resolved.status },
+      );
+    }
+    const { list, capped } = resolved;
+    const siblingIds = siblings.map((s) => s.id);
+
+    // Preserve prior assignment: any incoming address already enrolled in a
+    // sibling variant stays in that variant and is never moved. This keeps the
+    // one-person-one-variant invariant when overlapping batches are enrolled,
+    // so a re-enroll can never put someone in A this week and B next week (which
+    // would contaminate the test). Chunk the .in() lookups by query-string size.
+    const priorVariant = new Map<string, string>(); // email -> sequence_id
+    for (let i = 0; i < list.length; i += CATEGORY_IN_CHUNK) {
+      const chunk = list.slice(i, i + CATEGORY_IN_CHUNK);
+      const { data: rows, error: rowsErr } = await db
+        .from("email_sequence_enrollments")
+        .select("email, sequence_id")
+        .in("sequence_id", siblingIds)
+        .in("email", chunk)
+        .returns<{ email: string | null; sequence_id: string | null }[]>();
+      if (rowsErr) {
+        // Fail open: on a lookup error treat the chunk as new and round-robin it.
+        console.error("admin emails/sequences: split prior-assignment lookup failed", rowsErr);
+        continue;
+      }
+      for (const r of rows ?? []) {
+        const email = (r.email ?? "").trim().toLowerCase();
+        const seqId = r.sequence_id ?? "";
+        if (email && seqId && !priorVariant.has(email)) priorVariant.set(email, seqId);
       }
     }
-    return NextResponse.json({ ok: true, ...result, ...(capped > 0 ? { capped } : {}) });
+
+    // Bucket per sibling: already-assigned addresses go back to their variant;
+    // the rest are sorted (deterministic) and round-robined evenly.
+    const buckets = new Map<string, string[]>(siblingIds.map((sid) => [sid, []]));
+    const fresh: string[] = [];
+    for (const email of list) {
+      const prior = priorVariant.get(email);
+      if (prior && buckets.has(prior)) buckets.get(prior)!.push(email);
+      else fresh.push(email);
+    }
+    fresh.sort();
+    fresh.forEach((email, i) => {
+      buckets.get(siblingIds[i % siblingIds.length])!.push(email);
+    });
+
+    // Enroll each bucket into its sibling and mirror to Contacts, exactly like a
+    // normal enroll (reactivate so a cancelled address restarts at Step 1).
+    const split: Array<{
+      id: string;
+      name: string;
+      tag: string;
+      inserted: number;
+      reactivated: number;
+      skipped: number;
+    }> = [];
+    for (const sib of siblings) {
+      const emails = buckets.get(sib.id) ?? [];
+      const name = typeof sib.name === "string" ? sib.name : "";
+      if (emails.length === 0) {
+        split.push({ id: sib.id, name, tag: sib.tag, inserted: 0, reactivated: 0, skipped: 0 });
+        continue;
+      }
+      const result = await enrollEmails(db, sib.id, emails, { reactivate: true });
+      await tagEnrolleesForSequence(db, sib.name, emails);
+      split.push({ id: sib.id, name, tag: sib.tag, ...result });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      split,
+      total: list.length,
+      ...(capped > 0 ? { capped } : {}),
+    });
   }
 
   if (action === "unenroll") {
