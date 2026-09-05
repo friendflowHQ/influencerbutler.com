@@ -210,6 +210,75 @@ describe("executeAgentTool", () => {
       else delete process.env.FEEDBACK_SHARED_KEY;
     }
   });
+
+  // An unassigned comp grant carries a synthetic address that is never emailed.
+  // Filing it as userEmail made tickets look contactable when they were not.
+  it("submit_feedback drops an unassigned-comp placeholder address", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-comp" }), { status: 200 }));
+    try {
+      const r = (await executeAgentTool(
+        "submit_feedback",
+        { type: "bug", title: "Broken", description: "Details" },
+        {
+          userId: "u2",
+          email: "comp-c7043c6d-135b-4179-a470-3e2c9ba511a8@unassigned.comp.influencerbutler.com",
+          source: "license",
+        },
+      )) as { ok: boolean; needsContactEmail: boolean; note: string };
+      expect(r.ok).toBe(true);
+      expect(r.needsContactEmail).toBe(true);
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(String(init.body));
+      expect(body.userEmail).toBe("");
+      expect(body.description).toContain("[No reply address on file");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("submit_feedback uses a contact_email the user supplied after being asked", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-contact" }), { status: 200 }));
+    try {
+      const r = (await executeAgentTool(
+        "submit_feedback",
+        { type: "bug", title: "Broken", description: "Details", contact_email: "real@example.com" },
+        {
+          userId: "u3",
+          email: "comp-c7043c6d-135b-4179-a470-3e2c9ba511a8@unassigned.comp.influencerbutler.com",
+          source: "license",
+        },
+      )) as { ok: boolean; needsContactEmail: boolean };
+      expect(r.needsContactEmail).toBe(false);
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(String(init.body));
+      expect(body.userEmail).toBe("real@example.com");
+      expect(body.description).not.toContain("[No reply address on file");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("submit_feedback ignores chat noise passed as contact_email", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, id: "fb-noise" }), { status: 200 }));
+    try {
+      const r = (await executeAgentTool(
+        "submit_feedback",
+        { type: "bug", title: "Broken", description: "Details", contact_email: "yes please" },
+        null,
+      )) as { needsContactEmail: boolean };
+      expect(r.needsContactEmail).toBe(true);
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(JSON.parse(String(init.body)).userEmail).toBe("");
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
 });
 
 describe("tool schemas", () => {
@@ -239,7 +308,14 @@ describe("tool schemas", () => {
     expect(tool).toBeTruthy();
     expect(tool?.description).toMatch(/explicit yes/i);
     const props = (tool?.parameters as { properties: Record<string, unknown> }).properties;
-    expect(Object.keys(props).sort()).toEqual(["description", "title", "type"]);
+    expect(Object.keys(props).sort()).toEqual(["contact_email", "description", "title", "type"]);
+    // contact_email is the opt-in fallback for accounts with no reply address,
+    // so it must stay optional: the model should never demand an email up front.
+    expect((tool?.parameters as { required: string[] }).required.sort()).toEqual([
+      "description",
+      "title",
+      "type",
+    ]);
   });
 });
 

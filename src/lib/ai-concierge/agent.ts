@@ -20,6 +20,7 @@ import type { Principal } from "@/lib/mcp/auth";
 import { loadSearchIndex } from "@/lib/tutorials";
 import { getAdmin } from "@/lib/scheduling-server";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
+import { isPlaceholderCompEmail } from "@/lib/comp-codes";
 
 export const BOOK_CALL_PATH = "/dashboard/book";
 const SITE = "https://www.influencerbutler.com";
@@ -261,6 +262,10 @@ export function buildInstructions(): string {
     "  sentence description. Ask for an explicit yes. Only call submit_feedback AFTER the user",
     "  confirms. Never file without confirmation, and never file the same report twice.",
     "- After filing, confirm it was sent and that the team reads every report and replies by email.",
+    "- If the filing result comes back with needsContactEmail, the account has no address the team",
+    "  can reply to. Say so plainly, ask whether they would like to add one for the reply, and if",
+    "  they give you an address call submit_feedback again with the same title and contact_email set.",
+    "  Never tell the user to expect a reply when needsContactEmail came back true.",
     "",
     "Boundaries:",
     "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
@@ -373,6 +378,11 @@ export const AGENT_TOOLS: AgentTool[] = [
         description: {
           type: "string",
           description: "What happened or what they want, including steps and context from the conversation.",
+        },
+        contact_email: {
+          type: "string",
+          description:
+            "Reply address, only when the tool has told you no reply address is on the account and the user has given you one. Leave this out otherwise.",
         },
       },
       required: ["type", "title", "description"],
@@ -608,6 +618,16 @@ export function extractReplyImages(reply: string): { text: string; images: HelpI
 }
 
 /**
+ * True for something we can actually send a support reply to. Deliberately
+ * loose (the worker and Resend do the real validation); this only has to reject
+ * chat noise like "yes" or "my email" and the comp placeholder domain.
+ */
+function isUsableReplyEmail(email: string): boolean {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  return !isPlaceholderCompEmail(email);
+}
+
+/**
  * File a bug/feature report into the same Cloudflare feedback worker inbox the
  * desktop Feedback panel submits to, so chat-filed reports land in the standard
  * support triage flow. The worker only enforces the x-ib-key header when it has
@@ -626,6 +646,16 @@ async function submitFeedback(
   const description = typeof args.description === "string" ? args.description.trim().slice(0, 7000) : "";
   if (!title) return { error: "A title is required." };
 
+  // Reply address. A comp grant that was never assigned to a person carries a
+  // synthetic `comp-<uuid>@unassigned.comp.influencerbutler.com` address that is
+  // deliberately never emailed (see COMP_PLACEHOLDER_DOMAIN in @/lib/comp-codes).
+  // Filing that as the ticket's userEmail produced tickets that LOOKED
+  // contactable but could never be answered, so support kept "replying" into a
+  // void. Treat a placeholder as no address, and let the user supply a real one.
+  const argEmail = typeof args.contact_email === "string" ? args.contact_email.trim() : "";
+  const accountEmail = isPlaceholderCompEmail(principal?.email) ? "" : (principal?.email ?? "");
+  const replyEmail = isUsableReplyEmail(argEmail) ? argEmail : accountEmail;
+
   const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (sharedKey) headers["x-ib-key"] = sharedKey;
@@ -636,8 +666,10 @@ async function submitFeedback(
       body: JSON.stringify({
         type,
         title,
-        description: `${description}\n\n[Filed via Butler AI chat${client?.surface ? ` (${client.surface})` : ""}]`,
-        userEmail: principal?.email ?? "",
+        description:
+          `${description}\n\n[Filed via Butler AI chat${client?.surface ? ` (${client.surface})` : ""}]` +
+          (replyEmail ? "" : "\n[No reply address on file: this reporter cannot be emailed back.]"),
+        userEmail: replyEmail,
         appVersion: client?.appVersion || "",
         platform: client?.platform || "concierge",
         submittedAt: new Date().toISOString(),
@@ -651,7 +683,10 @@ async function submitFeedback(
     return {
       ok: true,
       id: json.id ?? null,
-      note: "Filed. The team reads every report and replies by email when a reply address is on the account.",
+      needsContactEmail: !replyEmail,
+      note: replyEmail
+        ? "Filed. The team reads every report and replies by email."
+        : "Filed, but there is no reply address on this account, so the team has no way to write back. Tell the user that plainly, and ask whether they want to add an email address for the reply. If they give you one, call submit_feedback again with the same title and contact_email set.",
     };
   } catch (err) {
     console.error("[ai-concierge] submit_feedback threw", err);
