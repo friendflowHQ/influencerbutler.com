@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-09-06T21:36:08.178Z",
-  "count": 103,
+  "count": 102,
   "entries": [
     {
       "section": "action-queue",
@@ -593,16 +593,6 @@
         "Group Uninvite Butler"
       ],
       "description": "Cancel pending invites in your Facebook group, one at a time."
-    },
-    {
-      "section": "feedback",
-      "workspaceId": "feedback",
-      "label": "Feedback",
-      "path": "Feedback",
-      "crumbs": [
-        "Feedback"
-      ],
-      "description": "Send a bug report or feature request to the team."
     },
     {
       "section": "help",
