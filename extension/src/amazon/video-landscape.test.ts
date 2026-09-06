@@ -156,3 +156,50 @@ describe("computeLandscape: duration-gated section", () => {
     expect(l.bandSec).toBeUndefined();
   });
 });
+
+describe("computeLandscape: DOM-scanned carousel durations", () => {
+  it("uses the DOM badge sample and outweighs a sparse brand-only durationSec set", () => {
+    // The reported bug: Amazon ships durationSeconds only for the short brand
+    // hero videos (28, 30), so on their own they are hidden (< 4). The hydrated
+    // carousel DOM supplies the real creator-rail runtimes, giving a truthful,
+    // longer median.
+    const videos: CarouselVideo[] = [
+      video({ creatorName: "BrandCo", creatorType: "brand", carousel: "upper", durationSec: 28 }),
+      video({ creatorName: "BrandCo", creatorType: "brand", carousel: "upper", durationSec: 30 }),
+      ...Array.from({ length: 8 }, (_, i) =>
+        video({ creatorName: `creator${i}`, carousel: "lower" }),
+      ),
+    ];
+    const domDurations = [60, 70, 80, 90, 100, 110, 120, 130];
+    const l = computeLandscape(videos, 10, { domDurations });
+    expect(l.hasDurations).toBe(true);
+    // 2 upper durationSec + 8 DOM badges, no double count of the rail.
+    expect(l.durationCount).toBe(10);
+    expect(l.medianSec).toBe(80); // not the ~30 the brand-only sample would give
+  });
+
+  it("ignores lower-rail durationSec when DOM badges are present (no double count)", () => {
+    const videos: CarouselVideo[] = [
+      video({ creatorName: "BrandCo", creatorType: "brand", carousel: "upper", durationSec: 30 }),
+      // Bogus lower durationSec that must be ignored in favor of the DOM badges.
+      ...Array.from({ length: 3 }, (_, i) =>
+        video({ creatorName: `creator${i}`, carousel: "lower", durationSec: 999 }),
+      ),
+    ];
+    const l = computeLandscape(videos, 4, { domDurations: [60, 60, 60] });
+    expect(l.hasDurations).toBe(true);
+    expect(l.durationCount).toBe(4); // upper 30 + three DOM 60s, 999s excluded
+    expect(l.medianSec).toBe(60);
+  });
+
+  it("hides the stat when the duration sample does not cover enough of the carousel", () => {
+    // Reproduces the original failure: 5 real durations against a 24-video
+    // carousel is unrepresentative, so the section is omitted rather than shown.
+    const videos: CarouselVideo[] = Array.from({ length: 24 }, (_, i) =>
+      video({ creatorName: `creator${i}`, carousel: "lower", durationSec: i < 5 ? 30 : null }),
+    );
+    const l = computeLandscape(videos, 24);
+    expect(l.hasDurations).toBe(false);
+    expect(l.medianSec).toBeUndefined();
+  });
+});

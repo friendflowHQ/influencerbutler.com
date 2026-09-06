@@ -7,6 +7,7 @@ export type SelectorId =
   | "videoCards"
   | "videoCardCreatorLink"
   | "videoCardByline"
+  | "videoCardDuration"
   | "videoHeaderCount"
   | "productTitle"
   | "productByline"
@@ -86,6 +87,18 @@ const REGISTRY: Record<SelectorId, string[]> = {
     ".vse-video-byline",
     "[class*='byline']",
     ".a-size-small.a-color-secondary",
+  ],
+  // Static runtime badge overlaid on each video thumbnail, e.g. "0:22" / "1:43".
+  // Scoped under videoWidget by the caller so it never catches the main player's
+  // live countdown (which reads "-0:22" and is rejected by parseClock). Hashed
+  // vse CSS-module fragments first, generic Amazon time/duration classes after.
+  videoCardDuration: [
+    "[class*='vseDuration']",
+    "[class*='vseTimeStamp']",
+    "[class*='videoDuration']",
+    "[class*='vse-duration']",
+    "[aria-label*='duration' i]",
+    ".a-video-duration",
   ],
   videoHeaderCount: [
     "#videoCount",

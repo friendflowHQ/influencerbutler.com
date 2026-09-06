@@ -526,6 +526,41 @@ function readDurationSeconds(objectText: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
+// A single video runtime badge ("m:ss" or "h:mm:ss") to seconds, or null. Only
+// clean, non-negative clocks pass: a leading "-" (the main player's live
+// countdown, e.g. "-0:22") is rejected, as are out-of-range minute/second
+// fields and anything longer than 8 hours (a mis-scraped price or count).
+export function parseClock(text: string): number | null {
+  const trimmed = (text ?? "").trim();
+  const match = /^(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)$/.exec(trimmed);
+  if (!match) return null;
+  const h = match[1] ? Number(match[1]) : 0;
+  const m = Number(match[2]);
+  const s = Number(match[3]);
+  const total = h * 3600 + m * 60 + s;
+  if (total <= 0 || total > 8 * 3600) return null;
+  return total;
+}
+
+// Real per-video runtimes read from the hydrated carousel DOM. Amazon exposes
+// durationSeconds up front only for the brand/hero videos, so the state-script
+// sample is short-skewed; the rendered thumbnails carry a static "m:ss" badge
+// for EVERY video, including the creator rail. Scoped under videoWidget so the
+// main player's live countdown ("-0:22", rejected by parseClock anyway) is out
+// of range. Returns a flat multiset for the aggregate length stat; order and
+// per-video identity do not matter to a median/band.
+export function scanCarouselDurations(doc: Document): number[] {
+  const widget = query(doc, "videoWidget");
+  if (!widget) return [];
+  const out: number[] = [];
+  for (const badge of queryAll(widget, "videoCardDuration")) {
+    const label = badge.getAttribute("aria-label") ?? badge.textContent ?? "";
+    const secs = parseClock(label);
+    if (secs !== null) out.push(secs);
+  }
+  return out;
+}
+
 function emptyCounts(): VideoCounts {
   return { total: 0, influencer: 0, brand: 0, customer: 0, unknown: 0 };
 }

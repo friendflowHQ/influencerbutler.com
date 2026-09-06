@@ -7,6 +7,7 @@ import {
   classifyVideoAci,
   extractFromText,
   mergeCarouselCandidates,
+  parseClock,
   upperInfluencerSlot,
   type CarouselResult,
   type CarouselSource,
@@ -124,6 +125,30 @@ describe("extractFromText", () => {
     });
     const result = extractFromText(misaligned);
     expect(result?.videos.map((v) => v.durationSec)).toEqual([null, null]);
+  });
+});
+
+describe("parseClock", () => {
+  it("parses m:ss and h:mm:ss badges to seconds", () => {
+    expect(parseClock("0:22")).toBe(22);
+    expect(parseClock("1:43")).toBe(103);
+    expect(parseClock("10:00")).toBe(600);
+    expect(parseClock(" 1:02:03 ")).toBe(3723);
+  });
+
+  it("rejects the main player's live countdown (leading '-')", () => {
+    // The active player reads "-0:22"; it is not a static thumbnail badge and
+    // must never be scraped into the length sample.
+    expect(parseClock("-0:22")).toBeNull();
+  });
+
+  it("rejects junk, out-of-range fields, and non-clock text", () => {
+    expect(parseClock("")).toBeNull();
+    expect(parseClock("0:00")).toBeNull(); // zero-length is not a real runtime
+    expect(parseClock("1:99")).toBeNull(); // seconds out of range
+    expect(parseClock("$19.98")).toBeNull();
+    expect(parseClock("Video duration 1:43")).toBeNull(); // must be the whole value
+    expect(parseClock("42")).toBeNull();
   });
 });
 

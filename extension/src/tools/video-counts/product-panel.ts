@@ -3,6 +3,7 @@ import { t } from "../../i18n";
 import {
   carouselBreakdown,
   classifiedCount,
+  scanCarouselDurations,
   upperInfluencerSlot,
   type CarouselResult,
   type CarouselVideo,
@@ -103,7 +104,12 @@ export function renderVideoCounts(
     landscapeHost = el("div");
     section.append(landscapeHost);
     if (result.videos.length > 0) {
-      renderLandscape(landscapeHost, computeLandscape(result.videos, result.counts.total));
+      renderLandscape(
+        landscapeHost,
+        computeLandscape(result.videos, result.counts.total, {
+          domDurations: scanCarouselDurations(document),
+        }),
+      );
     }
   }
 
@@ -232,7 +238,9 @@ function renderDeepScan(
         if (landscapeHost) {
           renderLandscape(
             landscapeHost,
-            computeLandscape(harvest.videos, harvest.headerTotal ?? harvest.counts.total),
+            computeLandscape(harvest.videos, harvest.headerTotal ?? harvest.counts.total, {
+              domDurations: scanCarouselDurations(document),
+            }),
           );
         }
         const classified = harvest.counts.total;

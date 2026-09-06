@@ -73,11 +73,16 @@ const DAY_MS = 86_400_000;
 // the brand hero videos), so a tiny sample is biased. Hide the whole length
 // stat until enough real durations exist rather than show a misleading median.
 const MIN_DURATIONS = 4;
+// On top of the floor, the sample must cover a real share of the product's
+// videos before the stat is trustworthy. Without this, the ~5 brand-hero
+// durations Amazon ships up front would drive a short-skewed "typical length"
+// for a carousel of dozens of (mostly longer) creator videos.
+const COVERAGE_FRACTION = 0.6;
 
 export function computeLandscape(
   videos: CarouselVideo[],
   headerTotal: number | null,
-  opts: { now?: number } = {},
+  opts: { now?: number; domDurations?: number[] } = {},
 ): VideoLandscape {
   const now = opts.now ?? Date.now();
   const n = videos.length;
@@ -127,7 +132,7 @@ export function computeLandscape(
   };
 
   applyDates(landscape, videos, now);
-  applyDurations(landscape, videos);
+  applyDurations(landscape, videos, opts.domDurations ?? []);
 
   return landscape;
 }
@@ -175,19 +180,42 @@ function applyDates(landscape: VideoLandscape, videos: CarouselVideo[], now: num
   landscape.pulse = pulse;
 }
 
-function applyDurations(landscape: VideoLandscape, videos: CarouselVideo[]): void {
-  const durs: number[] = [];
-  for (const v of videos) {
-    const d = v.durationSec;
-    if (typeof d === "number" && Number.isFinite(d) && d > 0) durs.push(d);
-  }
+function applyDurations(
+  landscape: VideoLandscape,
+  videos: CarouselVideo[],
+  domDurations: number[],
+): void {
+  const durs = collectDurations(videos, domDurations);
   if (durs.length < MIN_DURATIONS) return;
+
+  // Representativeness guard: the sample must cover a real share of the
+  // product's videos (measured against the authoritative total, header count
+  // when known). A handful of durations out of a large carousel is the biased
+  // brand-only case that made the stat wrong; hide it rather than mislead.
+  const denominator = Math.max(landscape.known, landscape.currentlyPlaced);
+  const needed = Math.max(MIN_DURATIONS, Math.ceil(COVERAGE_FRACTION * denominator));
+  if (durs.length < needed) return;
 
   durs.sort((a, b) => a - b);
   landscape.hasDurations = true;
   landscape.durationCount = durs.length;
   landscape.medianSec = percentile(durs, 0.5);
   landscape.bandSec = [percentile(durs, 0.25), percentile(durs, 0.75)];
+}
+
+// The duration multiset for the length stat. When the hydrated carousel DOM
+// yields real per-thumbnail runtimes, prefer them for the creator rail and add
+// only the upper (brand/hero) videos' own durationSec: the brand hero lives in
+// the image block, not the related-videos widget, so there is no double count.
+// With no DOM durations, fall back to whatever durationSec the payloads carried.
+function collectDurations(videos: CarouselVideo[], domDurations: number[]): number[] {
+  const valid = (d: number | null | undefined): d is number =>
+    typeof d === "number" && Number.isFinite(d) && d > 0;
+  if (domDurations.length > 0) {
+    const upper = videos.filter((v) => v.carousel === "upper" && valid(v.durationSec)).map((v) => v.durationSec as number);
+    return [...upper, ...domDurations.filter(valid)];
+  }
+  return videos.filter((v) => valid(v.durationSec)).map((v) => v.durationSec as number);
 }
 
 // Nearest-rank percentile on an already-sorted ascending array.
