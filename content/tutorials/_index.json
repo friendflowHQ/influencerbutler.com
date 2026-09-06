@@ -2,6 +2,30 @@
   "version": 1,
   "tutorials": [
     {
+      "id": "tiktok-creator-stats",
+      "title": "TikTok Creator Stats: your followers and recent video performance",
+      "category": "TikTok",
+      "summary": "See your TikTok profile, follower and like counts, and how your recent videos are performing, all in one dashboard.",
+      "order": 700,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-video-butler",
+      "title": "TikTok Video Butler: upload videos to your TikTok account",
+      "category": "TikTok",
+      "summary": "Send a video straight to your connected TikTok account, either to your drafts to finish in the app or as a direct post once TikTok approves the app.",
+      "order": 701,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-orders-butler",
+      "title": "TikTok Orders Butler: track your TikTok Shop affiliate orders and commissions",
+      "category": "TikTok",
+      "summary": "Pull your TikTok Shop affiliate orders into one dashboard and see projected vs settled commission at a glance.",
+      "order": 702,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "getting-started-influencer-butler",
       "title": "Getting started: your first 15 minutes",
       "category": "Getting Started",
