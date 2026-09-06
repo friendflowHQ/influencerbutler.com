@@ -1,0 +1,42 @@
+---
+title: "Group Uninvite Butler: cancela las invitaciones pendientes de tu grupo de Facebook"
+summary: Retira las invitaciones pendientes que enviaste a un grupo de Facebook que administras, una a una y a ritmo pausado. Elige si cancelar todas, solo las de perfiles y páginas, o solo las de correo, con una pausa entre cada una para que la actividad parezca natural.
+category: Other
+---
+
+## Qué hace Group Uninvite Butler
+
+Group Uninvite Butler cancela las invitaciones pendientes de un grupo de Facebook que administras, una a una y con una pausa entre cada una. Es la contraparte de Group Invite Butler: mientras aquel envía invitaciones, este retira las que siguen en "Invitado" y que nadie ha aceptado todavía.
+
+Por cada invitación que cancela, anota si era de un perfil, de una página o por correo, para que veas exactamente qué se retiró. Es útil cuando invitaste a un lote que ya no quieres tener pendiente, o cuando quieres empezar de cero antes de una nueva ronda de invitaciones.
+
+## Antes de empezar
+
+Necesitas tener dos cosas listas:
+
+- **Tienes la sesión de Facebook iniciada en la app.** Group Uninvite Butler usa las mismas cuentas de Facebook que Deals Butler. Si aún no has iniciado sesión, abre primero Deals Butler e inicia sesión en Facebook allí una vez. Si administras grupos desde más de una cuenta, inicia sesión en cada una allí.
+- **Tú administras el grupo.** Solo puedes cancelar invitaciones en un grupo donde tengas permisos de invitación. Pega la URL de ese grupo en la configuración y elige la cuenta de Facebook que lo administra.
+
+## Cómo usarlo
+
+1. En el menú de la izquierda, abre **Facebook Butler** y luego **Group Uninvite Butler**.
+2. En **Configuración de ejecución**, pega la **URL del grupo de Facebook**. Es obligatoria, y Butler no arranca sin ella.
+3. Elige la **Cuenta de Facebook** que administra el grupo. Por defecto usa tu cuenta **Predeterminada**. Si otra cuenta administra el grupo, selecciónala aquí para que las cancelaciones salgan del lugar correcto.
+4. En **Qué invitaciones cancelar**, elige **Todas las invitaciones pendientes**, **Solo perfiles y páginas** o **Solo invitaciones por correo**.
+5. (Opcional) Ajusta **Solo cancelar invitaciones más antiguas de** a un número de días. `0` cancela invitaciones pendientes de cualquier antigüedad. Pon `7` para cancelar solo las de al menos una semana. Cuando no se puede leer la fecha de una invitación, se deja tal cual.
+6. (Opcional) Ajusta el ritmo en **Ritmo**: **Segundos entre cancelaciones** más **Segundos extra aleatorios** por encima, para que el tiempo parezca natural. Más lento es más seguro.
+7. (Opcional) Define los **Límites de cancelación**: **Cancelaciones por día** (un tope diario que se conserva entre ejecuciones, `0` significa sin tope) y **Cancelaciones por ejecución** (`0` cancela todas las invitaciones pendientes del alcance).
+8. Pulsa **Iniciar Group Uninvite Butler**. Deja activado **Míralo en acción** para traer el navegador al frente y ver cada cancelación, o desactívalo para que trabaje en segundo plano.
+9. Observa cómo se llena la tabla de **Resultados**. Muestra cada invitación cancelada con su **Tipo**, quién la envió (**Invitada por**), el **Estado** y la **Hora**, además de los contadores en vivo de **Canceladas** y **Fallidas**. Usa los chips **Todas**, **Perfiles** y **Correos** para filtrar, **Exportar CSV** para guardar la lista o **Borrar resultados** para reiniciar la tabla. Pulsa **Detener** cuando quieras.
+
+## Notas
+
+- Todo se guarda automáticamente mientras escribes. No hay botón de guardar.
+- Para ejecutarlo de forma recurrente, usa la tarjeta **Programación**: elige una **Hora de inicio**, una cadencia en **Repetir cada** (15 o 30 minutos, o 1, 2, 3, 6, 12 o 24 horas, o **Horas personalizadas**) y pulsa **Activar programación**. Cada ejecución programada usa la misma configuración y respeta tus límites. Pulsa **Detener programación** para desactivarla. La app debe permanecer abierta y con la sesión de Facebook iniciada para que se disparen las ejecuciones programadas.
+- Si no arranca, comprueba que la URL del grupo esté rellenada y que tengas la sesión de Facebook iniciada (a través de Deals Butler).
+- Si dice que no has iniciado sesión pero sí lo hiciste, asegúrate de que la **Cuenta de Facebook** que elegiste sea una en la que realmente iniciaste sesión en Deals Butler. Las cancelaciones salen de esa cuenta exacta.
+- Ve despacio al principio. El volumen alto con pausas cortas es lo que activa los límites de Facebook. Empieza con una pausa moderada y afloja una vez que lo veas funcionar sin problemas.
+
+## Relacionado
+
+- [Tutorial de Group Invite Butler](/help/tutorials/group-invite-butler), la contraparte que envía las invitaciones que este butler retira.

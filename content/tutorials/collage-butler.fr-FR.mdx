@@ -1,0 +1,33 @@
+---
+title: "Collage Butler : creez des images de collage multi-produits a publier"
+summary: "Recuperez des produits Amazon par mot-cle, disposez-les en un collage accrocheur et envoyez-le directement a Social Posting Butler."
+category: Collage
+---
+
+## Ce que fait Collage Butler
+
+Collage Butler transforme une poignee de produits Amazon en une seule image de collage prete a publier. Vous donnez des mots-cles, il recupere les produits correspondants via la Creators API, dispose leurs photos dans la mise en page que vous choisissez, ajoute votre titre et votre appel a l'action, puis remet l'image finale a Social Posting Butler. Il est concu pour les publications de type selection (nouveautes, une selection thematique, une grille de soldes) ou une seule image doit montrer plusieurs produits a la fois.
+
+## Avant de commencer
+
+- **Collage Butler est en beta.** Vous le debloquez dans le menu de gauche, sous **Settings** : activez **Collage Butler (beta)**. Jusque-la, le groupe reste masque.
+- Ayez en tete quelques **mots-cles** pour les produits a mettre en avant (par exemple : robes d'ete, sacs de plage, sandales).
+- Configurez **Social Posting Butler** si vous comptez publier le collage, car c'est la que les collages termines sont mis en file.
+
+## Comment l'utiliser
+
+1. Dans le menu de gauche, ouvrez le groupe **Collage Butler** (il a son propre groupe avec des sous-sections). Commencez sur le panneau principal **Collage Butler**.
+2. Ouvrez la sous-section **Mots-cles et filtres**. Saisissez vos **Mots-cles** et, si vous voulez, une **Categorie**, un **Prix minimum** et un **Prix maximum**. Ils decident quels produits Amazon entrent dans le collage.
+3. De retour sur le panneau principal, ouvrez l'onglet **Generateur de collage IA**. Sous **Mode de rendu**, choisissez-en un : **Modele (vraies photos produit)** pour une mise en page exacte et reproductible, **Genere par IA**, ou **Hybride (fond IA + vraies photos)**.
+4. Choisissez une **Mise en page**, comme 2 x 2 (4 produits) ou 3 x 3 (9 produits). La mise en page fixe le nombre de photos produit affichees.
+5. Saisissez un **Titre** (par exemple, Amazon New Arrivals) et un **Appel a l'action** (par exemple, Acheter maintenant).
+6. Cliquez sur **Generer le collage** pour creer l'image et la voir dans l'apercu, ou cliquez sur **Generer et envoyer a Social Posting** pour la creer et l'envoyer directement a Social Posting Butler.
+7. Ouvrez la sous-section **Collage Gallery** a tout moment pour revoir tous les collages generes et leur statut de publication. Cette vue est en lecture seule.
+8. Pour reutiliser un style, ouvrez **Collage Templates** et enregistrez une mise en page par defaut, une police, des couleurs et des reglages de titre et d'appel a l'action reutilisables sur vos futurs collages.
+
+## Notes
+
+- **Cet espace de travail est en beta** et encore en cours de finition. Certaines parties, comme l'editeur de legende **Creer la publication** et le panneau complet **Parametres** (couleurs de marque, filigrane, plafond de depense), s'activent au fur et a mesure que le cablage du generateur avance, attendez-vous donc a quelques manques.
+- L'onglet **Journal de console** montre l'activite de generation et s'avere utile si un collage ne sort pas comme prevu.
+- Les photos produit viennent de la Creators API d'Amazon, donc un mot-cle sans produit correspondant donne un collage vide. Elargissez le mot-cle ou assouplissez les filtres de prix si rien n'apparait.
+- Les modes de rendu IA et Hybride generent de nouvelles images et peuvent entrainer un petit cout par image. Un plafond de depense mensuel le garde sous controle une fois le panneau Parametres actif.

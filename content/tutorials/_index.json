@@ -648,6 +648,30 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-admin-butler",
+      "title": "Facebook Admin Butler: find adminless groups and take them over",
+      "category": "Other",
+      "summary": "Search Facebook for groups in your niche by keyword, filter them by size and type, join the ones you are not in yet, and automatically accept the admin role when an adminless group offers it to you.",
+      "order": 344.2,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "facebook-goldmine",
+      "title": "Facebook Goldmine: harvest viral group posts and repurpose them",
+      "category": "Other",
+      "summary": "Scan the Facebook groups you belong to, collect the posts already going viral, then approve the best ones to repost to your Page and reshare into your groups on rotation.",
+      "order": 344.4,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "group-uninvite-butler",
+      "title": "Group Uninvite Butler: cancel pending invites in your Facebook group",
+      "category": "Other",
+      "summary": "Withdraw the pending invites you sent into a Facebook group you manage, one at a time, at a natural pace. Choose whether to clear all of them, only profile and Page invites, or only email invites, with a delay between each so the activity looks human.",
+      "order": 344.6,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "expired-butler",
       "title": "Expired Butler: clean up posts for deals that have ended",
       "category": "Other",
