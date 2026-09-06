@@ -1,0 +1,43 @@
+---
+title: "Sheetsyncer Butler: envoyez le travail de vos butlers vers une feuille Google"
+summary: Connectez une feuille Google une fois par source, choisissez vos colonnes, puis envoyez les publications de Facebook Group Builder et les résultats de Deals Butler, à la demande ou automatiquement.
+category: Amazon
+---
+
+## Ce que fait Sheetsyncer Butler
+
+Sheetsyncer Butler envoie le contenu généré par vos autres butlers vers une feuille Google qui vous appartient. Connectez une feuille une fois par source, choisissez les colonnes à remplir, puis envoyez les lignes à la main ou laissez-les circuler automatiquement.
+
+Deux sources existent aujourd'hui, chacune sur sa propre carte:
+
+- **Publications Facebook Group Builder**: les publications de bienvenue, d'engagement et virales de votre dernier plan généré, une ligne par publication. Les publications n'ont pas de fichiers image, vous obtenez donc le texte plus une colonne d'idée d'image, pas de miniatures.
+- **Deals Butler**: connectez une feuille distincte pour chaque espace de travail d'offres (votre Deals Butler de base et chaque clone). Les offres sont envoyées automatiquement après chaque recherche lorsque l'envoi automatique est activé dans l'onglet Rechercher des offres de cet espace.
+
+Il y a aussi une carte **Votre feuille en direct** qui intègre la feuille connectée dans l'app, pour la modifier sans quitter Influencer Butler.
+
+## Avant de commencer
+
+Il vous faut:
+
+1. **Une feuille Google** que vous pouvez modifier, et un compte Google connecté.
+2. **Un plan généré** dans Facebook Group Builder (pour la carte FGB), ou **l'envoi automatique activé** dans l'onglet Rechercher des offres d'un espace d'offres (pour la carte Deals).
+3. **Un déploiement Apps Script** sur la feuille, à faire une seule fois. C'est ce qui permet à l'app d'y écrire des lignes. Les étapes sont intégrées au panneau de connexion.
+
+## Comment l'utiliser
+
+1. Dans le menu de gauche, cliquez sur **Sheetsyncer Butler** (un élément de premier niveau).
+2. Choisissez votre carte de source. Pour Facebook Group Builder, cochez les types de publication sous **Include** (**Welcome posts**, **Engagement posts**, **Viral posts**) et cliquez sur **Refresh from Facebook Group Builder** pour récupérer votre dernier plan.
+3. Ouvrez **How to connect a Google Sheet** sur la carte. Dans votre feuille, allez dans **Extensions**, puis **Apps Script**. Cliquez sur **Copy script**, collez-le et déployez-le (**Deploy**) en tant qu'**application web** avec **Qui a accès** réglé sur **Tout le monde**.
+4. Copiez l'URL **/exec** du déploiement, collez-la dans le champ URL et cliquez sur **Connect**. Utilisez d'abord **Test in browser** si vous voulez vérifier l'URL: un court message d'état signifie que ça marche, une page de connexion Google signifie que l'accès n'est pas encore réglé sur Tout le monde.
+5. Sous **Match your sheet columns**, faites correspondre chaque colonne à la donnée qu'elle doit contenir (ou laissez-en une sur **Do not fill**). Utilisez **Add extra columns** pour ce qui n'est pas encore dans votre feuille.
+6. Sous **When sending**, choisissez comment les lignes arrivent: **Add new rows only (skip duplicates)**, **Add every row**, **Replace all rows each time**, ou l'option de remplacement quotidien pour les feuilles partagées. Sous **Send trigger**, choisissez **Manual** ou **Automatic**.
+7. Cliquez sur **Send to Google Sheet** pour envoyer maintenant, ou laissez-le sur Automatic et les lignes circuleront à mesure que du contenu est généré. Suivez la progression dans la carte **Votre feuille en direct**.
+
+## Notes
+
+- **La connexion échoue avec une page de connexion (HTTP 403)**: l'accès de votre application web n'est pas réglé sur **Tout le monde**. Dans Deploy, changez **Qui a accès** en Tout le monde, redéployez, puis collez la nouvelle URL **/exec** et connectez à nouveau. Le bouton **Test in browser** est le moyen le plus rapide de le confirmer avant de connecter.
+- **"Cela ne ressemble pas à une URL d'application web Apps Script"**: l'URL doit se terminer par **/exec**, pas par **/dev**. Copiez-la depuis la boîte de dialogue Deploy, pas depuis l'éditeur de script.
+- **Délai dépassé en contactant le script**: vérifiez votre connexion et reconnectez. La connexion attend un court instant, puis s'arrête au lieu de tourner indéfiniment.
+- **Chaque espace Deals garde sa propre feuille.** Connecter un clone n'en touche pas un autre. Utilisez **Copy this setup to your other deals workspaces** pour réutiliser une disposition de colonnes, puis connectez la feuille propre à chacun.
+- **La feuille en direct reste vide**: connectez votre feuille dans le panneau ci-dessus, redéployez l'Apps Script, ou collez le lien de votre feuille dans **Paste your Google Sheet link** et cliquez sur **Show sheet**. Si Google vous demande de vous connecter dans l'intégration, faites-le une fois et ce sera mémorisé.
+- Sheetsyncer Butler est une fonctionnalité **Pro** après votre essai gratuit.

@@ -1,0 +1,43 @@
+---
+title: "Sheetsyncer Butler: send your butlers' work to a Google Sheet"
+summary: Connect a Google Sheet once per source, pick your columns, and push Facebook Group Builder posts and Deals Butler results into it, on demand or automatically.
+category: Amazon
+---
+
+## What Sheetsyncer Butler does
+
+Sheetsyncer Butler sends content your other butlers generate into a Google Sheet you own. Connect a sheet once per source, choose which columns get filled, then send rows by hand or let them flow automatically.
+
+Two sources ship today, each on its own card:
+
+- **Facebook Group Builder posts**: the welcome, engagement, and viral posts from your latest generated plan, one row per post. Posts have no image files, so you get the caption plus an image idea column, not thumbnails.
+- **Deals Butler**: connect a separate sheet for each deals workspace (your base Deals Butler plus every clone). Deals are sent automatically after each search when auto send is turned on in that workspace's Search Deals tab.
+
+There is also a **Your live sheet** card that embeds the connected sheet right in the app, so you can edit it without leaving Influencer Butler.
+
+## Before you start
+
+You need:
+
+1. **A Google Sheet** you can edit, and a Google account signed in.
+2. **A generated plan** in Facebook Group Builder (for the FGB card), or **auto send turned on** in a deals workspace's Search Deals tab (for the Deals card).
+3. **A one-time Apps Script deployment** on the sheet. This is what lets the app write rows in. The setup steps are built into the connect panel.
+
+## How to use it
+
+1. In the left menu, click **Sheetsyncer Butler** (a top-level item).
+2. Pick your source card. For Facebook Group Builder, tick the post types under **Include** (**Welcome posts**, **Engagement posts**, **Viral posts**) and click **Refresh from Facebook Group Builder** to pull your latest plan.
+3. Open **How to connect a Google Sheet** on the card. In your sheet, go to **Extensions**, then **Apps Script**. Click **Copy script**, paste it in, and **Deploy** it as a **Web app** with **Who has access** set to **Anyone**.
+4. Copy the deployment's **/exec** URL, paste it into the URL box, and click **Connect**. Use **Test in browser** first if you want to check the URL: a short status message means it works, a Google sign-in page means access is not set to Anyone yet.
+5. Under **Match your sheet columns**, line up each column with the data it should hold (or leave one on **Do not fill**). Use **Add extra columns** for anything not in your sheet yet.
+6. Under **When sending**, choose how rows land: **Add new rows only (skip duplicates)**, **Add every row**, **Replace all rows each time**, or the shared-sheet daily-replace option. Under **Send trigger**, pick **Manual** or **Automatic**.
+7. Click **Send to Google Sheet** to push now, or leave it on Automatic and rows flow as new content is generated. Watch progress in the **Your live sheet** card.
+
+## Notes
+
+- **Connect fails with a sign-in page (HTTP 403)**: your Web app access is not set to **Anyone**. In Deploy, change **Who has access** to Anyone, redeploy, then paste the fresh **/exec** URL and Connect again. The **Test in browser** button is the quickest way to confirm this before you Connect.
+- **"That does not look like an Apps Script Web app URL"**: the URL must end with **/exec**, not **/dev**. Copy it from the Deploy dialog, not the script editor.
+- **Timed out reaching the script**: check your connection and Connect again. Connecting waits a short while, then stops rather than spinning forever.
+- **Each Deals workspace keeps its own sheet.** Connecting one clone does not touch another. Use **Copy this setup to your other deals workspaces** to reuse a column layout, then connect each one's own sheet.
+- **Live sheet stays blank**: connect your sheet in the panel above, redeploy the Apps Script, or paste your sheet link into **Paste your Google Sheet link** and click **Show sheet**. If Google asks you to sign in inside the embed, do it once and it is remembered.
+- Sheetsyncer Butler is a **Pro** feature after your free trial.

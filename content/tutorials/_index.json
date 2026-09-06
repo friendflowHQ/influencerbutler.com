@@ -336,6 +336,46 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "brand-release-butler",
+      "title": "Brand Release Butler: be first to promote a brand's new products",
+      "category": "Amazon",
+      "summary": "Follow the Amazon brands you care about, get alerted the moment they list a product you have not seen before, and hand each new release straight to Build Your Post so you can be first to promote it.",
+      "order": 33,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "earnings-intelligence",
+      "title": "Earnings Intelligence: see which ASINs actually earned",
+      "category": "Amazon",
+      "summary": "Track your Amazon commissions by source, storefront, and ASIN over time, so you can tell which products made money versus which just drove clicks.",
+      "order": 92,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "best-seller-butler",
+      "title": "Best Seller Butler: find products your audience keeps engaging with and post them on repeat",
+      "category": "Amazon",
+      "summary": "Best Seller Butler measures which Amazon products get the most engagement on your social posts, scores them over a recency window, and promotes the top performers into your always-post pool so they get reposted automatically.",
+      "order": 95,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "content-planner",
+      "title": "Content Planner: plan your socials week and see what your butlers scheduled",
+      "category": "Amazon",
+      "summary": "A visual Monday to Sunday week where you write your own colour-coded plans for each day and see every roundup, deal and automation your butlers have scheduled, all in one grid.",
+      "order": 96,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "google-sheets-export",
+      "title": "Sheetsyncer Butler: send your butlers' work to a Google Sheet",
+      "category": "Amazon",
+      "summary": "Connect a Google Sheet once per source, pick your columns, and push Facebook Group Builder posts and Deals Butler results into it, on demand or automatically.",
+      "order": 97,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "video-reload-butler",
       "title": "Video Reload Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",

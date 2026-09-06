@@ -1,0 +1,44 @@
+---
+title: "Earnings Intelligence : voyez quels ASIN ont vraiment rapporté"
+summary: Suivez vos commissions Amazon par source, vitrine et ASIN au fil du temps, pour savoir quels produits ont rapporté et lesquels n'ont fait que générer des clics.
+category: Amazon
+---
+
+## Ce que fait Earnings Intelligence
+
+Earnings Intelligence recoupe les ASIN collectés par vos butlers avec vos données de gains réelles. Au lieu de deviner quels produits méritent d'être remis en avant, vous obtenez une image claire de ceux qui ont vraiment rapporté, de ceux qui n'ont fait que générer des clics, et de l'évolution de vos commissions mois après mois.
+
+Tout est en lecture seule. L'outil n'ouvre pas de navigateur et ne modifie rien sur Amazon. Il lit les données que vos autres butlers collectent déjà (Daily Commission, Storefront Butler, Orders Butler, cc-check) et les réorganise de six façons grâce aux onglets en haut :
+
+- **ASIN Explorer** : le détail ligne par ligne de chaque ASIN générateur de gains (commission, unités, jours actifs, dernière apparition, marchés).
+- **Top Performers** : vos meilleurs produits de toujours, classés.
+- **Recovered Winners** : d'anciens produits rentables sortis du catalogue Creator Connections, puis revenus.
+- **Harvest Funnel** : une répartition par type de source, des ASIN collectés jusqu'aux ASIN générateurs de gains.
+- **Monthly Breakdown** : vos commissions par mois, réparties entre chaque source de revenus.
+- **Conversion Leak** : les offres publiées devenues indisponibles, ainsi que les clics et la commission probablement perdus.
+
+## Avant de commencer
+
+- **Earnings Intelligence est une fonction Pro** (voir Remarques). Vérifiez que vous êtes connecté avec un abonnement Pro.
+- **Vos butlers ont déjà collecté des données.** Les onglets s'appuient sur les exécutions de Daily Commission, Storefront, Orders et cc-check, alors laissez-les tourner au moins une fois d'abord.
+- Pour **Recovered Winners**, lancez une actualisation du catalogue Creator Connections afin que Butler puisse repérer les anciens produits rentables sortis du catalogue.
+- Pour **Conversion Leak**, publiez quelques offres depuis Deals Butler avec le routage Butler Link activé, pour que les clics soient mesurables.
+
+## Comment l'utiliser
+
+1. Dans le menu de gauche, ouvrez **Amazon Butler**, puis **Earnings Intelligence**.
+2. Choisissez une période. Utilisez une puce **Quick date ranges** (**Today**, **This week**, **Last week**, **This month**, **Last month**, **Year to date**, **All time**), ou réglez **Date from** et **Date to** à la main.
+3. Affinez la vue avec les filtres si besoin : **Source type** (par exemple dailycommission ou storefront), **Marketplace** (un code pays ISO comme US ou UK), **Storefront** (le slug de votre vitrine CC) et **Tag** (une balise d'affiliation Amazon).
+4. Cliquez sur **Refresh** pour relancer la requête. Les filtres et la plage de dates s'appliquent à tous les onglets, alors cliquez sur Refresh chaque fois que vous les modifiez.
+5. Basculez entre **ASIN Explorer**, **Top Performers**, **Recovered Winners**, **Harvest Funnel**, **Monthly Breakdown** et **Conversion Leak** pour réorganiser les mêmes données filtrées.
+6. Dans **ASIN Explorer**, lisez la barre de résumé (commission totale, unités totales, nombre d'ASIN) au-dessus du tableau, puis parcourez les lignes. Les repères **CC** et **SPCC** signalent les ASIN avec une campagne active ou une offre sponsorisée.
+7. Utilisez les actions rapides de chaque ligne pour passer directement à l'action : **Open in Daily Commission** ou **Open in Storefront** pour un ASIN prometteur.
+8. Pour garder une trace, cliquez sur **Export CSV** ou **Export Excel** (le tableau principal et Monthly Breakdown ont chacun leurs propres boutons d'export).
+
+## Remarques
+
+- **Abonnement Pro requis.** Earnings Intelligence est une fonction Pro, disponible après votre essai gratuit. L'entrée du menu affiche une pastille **Pro**.
+- Les chiffres ne sont complets que dans la mesure de vos collectes. Si un onglet semble vide, lancez le butler qui l'alimente (Daily Commission, Storefront, Orders ou cc-check) et cliquez sur Refresh.
+- **Recovered Winners** reste vide tant qu'une actualisation du catalogue Creator Connections n'a pas été lancée, car c'est ainsi que Butler sait quels produits rentables ont quitté le catalogue.
+- **Conversion Leak** compte les offres sans Butler Link comme non mesurables. Activez le routage Butler Link pour les offres afin que chaque offre publiée apparaisse.
+- Rien ici ne publie, ne modifie ni ne supprime. C'est une vue de rapport, que vous pouvez ouvrir à tout moment en toute sécurité.
