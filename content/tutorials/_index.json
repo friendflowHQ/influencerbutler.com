@@ -26,6 +26,46 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "tiktok-outreach",
+      "title": "TikTok Message Followers: DM your new TikTok followers automatically",
+      "category": "TikTok",
+      "summary": "Send personalized DMs to your new TikTok followers, or to a custom list of usernames, with rotating message templates, follow-ups, and safety-first rate limits.",
+      "order": 703,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-like-butler",
+      "title": "TikTok Like Butler: auto-like the recent videos of accounts you choose",
+      "category": "TikTok",
+      "summary": "Add TikTok usernames and Like Butler taps the heart on each account's recent videos, on demand or on a schedule, to keep your engagement steady.",
+      "order": 704,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-follow-butler",
+      "title": "TikTok Follow Butler: auto-follow the TikTok accounts you choose",
+      "category": "TikTok",
+      "summary": "Add a list of TikTok usernames and let the butler open each profile and tap Follow for you, with delays, a daily cap, and a scheduler to keep it steady.",
+      "order": 705,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-comment-butler",
+      "title": "TikTok Comment Butler: auto-comment on creators' recent videos",
+      "category": "TikTok",
+      "summary": "Pick the TikTok accounts you want to engage, write a pool of comments, and let the butler post one on each account recent videos, rotating through your lines.",
+      "order": 706,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-goldmine",
+      "title": "TikTok Goldmine: discover brand-collab leads from TikTok creators",
+      "category": "TikTok",
+      "summary": "A research-only crawler that walks TikTok creators and their suggested-account graph to surface qualifying videos (#ad, paid partnerships, brand mentions) plus creator contact info.",
+      "order": 707,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "getting-started-influencer-butler",
       "title": "Getting started: your first 15 minutes",
       "category": "Getting Started",

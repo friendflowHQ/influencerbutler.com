@@ -1,0 +1,35 @@
+---
+title: "TikTok Goldmine : trouvez des pistes de collaboration de marque parmi les créateurs TikTok"
+summary: Un explorateur en lecture seule qui parcourt des créateurs TikTok et leur graphe de comptes suggérés pour faire remonter les vidéos qualifiées (#ad, partenariats rémunérés, mentions de marque) ainsi que les coordonnées du créateur.
+category: TikTok
+---
+
+## Ce que fait TikTok Goldmine
+
+TikTok Goldmine est un explorateur en lecture seule qui sert à trouver des pistes de collaboration avec des marques. Vous lui donnez une poignée de noms d'utilisateur TikTok de départ (ou des hashtags), et il visite ces profils, parcourt leur graphe de comptes suggérés et inspecte les vidéos récentes de chaque créateur. Toute vidéo correspondant à vos règles de qualification (une mention #ad ou de partenariat, une étiquette "Partenariat rémunéré", ou une marque taguée ou mentionnée) apparaît dans le tableau **Qualifying videos**, avec le nombre d'abonnés du créateur, son engagement et un e-mail de contact récupéré sur son profil.
+
+Il ne lit que des métadonnées publiques. Il ne copie aucun média, ne contourne pas les comptes privés et n'échappe pas aux limites de débit. Si TikTok demande une connexion, une fenêtre manuelle s'ouvre pour que vous vous connectiez vous-même.
+
+## Avant de commencer
+
+- Ouvrez l'espace : dans le menu de gauche, ouvrez **TikTok Butler**, puis **TikTok Goldmine**.
+- Ayez quelques créateurs de départ en tête : des comptes de votre niche dont vous voulez cartographier l'audience et les collaborateurs.
+- Laissez **Watch it run** activé (c'est le réglage par défaut) lors de votre première exécution pour voir le navigateur travailler et compléter toute invite de connexion TikTok.
+
+## Comment l'utiliser
+
+1. Dans **Seeds and filters**, collez un créateur par ligne dans **Seed usernames**. Le @ est facultatif, et les URL complètes de profil (`https://www.tiktok.com/@handle`) fonctionnent aussi.
+2. Choisissez un **Run mode** : **Seeds plus suggested profiles** (par défaut) parcourt chaque graine et les comptes que TikTok suggère ensuite. Autres options : **Seed profiles only**, **Suggested profiles only**, **Hashtags: harvest video authors** et **Commenters on a seed's latest videos**.
+3. Réglez vos **Limits** : **Min followers** (10000 par défaut), **Max videos checked per profile**, **Max suggested per seed**, **Max profiles per run** et, en option, **Skip creators over this many followers** (0 signifie aucune limite).
+4. Sous **Video qualification**, cochez les règles qui conservent une vidéo : **Videos with #ad or sponsorship disclosures**, **Videos with a "Paid partnership" label**, **Videos with tagged or mentioned brands** et **Only verified accounts**. Une vidéo est conservée si elle correspond à au moins une règle activée.
+5. Sous **Behavior**, choisissez si vous voulez **Capture a contact email from each creator's profile** (activé par défaut), **Harvest engagement rate (slower)**, **Save a screenshot on failure** et **Safe mode (2x human delays)**.
+6. Cliquez sur **Start Discovery**. Les cartes **Discovery totals** suivent **Profiles Visited**, **Videos Scanned** et **Qualifying Videos** pendant l'exécution. Utilisez **Stop** pour terminer plus tôt.
+7. Exploitez les résultats dans le tableau **Qualifying videos**. Filtrez avec les puces **All / Has #ad / Paid partnership / Brand mention**, cherchez dans les légendes et les hashtags, et triez n'importe quelle colonne. **Discovered accounts**, plus bas, liste chaque créateur trouvé.
+8. Exportez avec **Export CSV** ou **Export JSON**, utilisez **Copy emails** pour récupérer des contacts pour votre prospection, ou **Open exports folder** pour retrouver les fichiers sur le disque.
+
+## Notes
+
+- **Bêta.** TikTok Butler est encore en bêta, donc certains comportements peuvent changer ou ne pas fonctionner pleinement pour l'instant.
+- Le panneau **Live status** (replié par défaut) affiche l'utilisateur actuel, la file d'attente restante, la dernière capture et la dernière erreur si une exécution se bloque.
+- Les réglages, les filtres et la disposition du tableau s'enregistrent tout seuls, donc votre configuration est prête à la prochaine ouverture de l'espace.
+- Le taux d'engagement n'est collecté que lorsque vous l'activez, car échantillonner les vidéos récentes ajoute du temps de navigation.
