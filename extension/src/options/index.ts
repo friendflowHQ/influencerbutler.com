@@ -24,6 +24,7 @@ import {
 } from "../tools/my-link/voiceover-prompt";
 import {
   sendToBackground,
+  type CreatorApiBackupStatus,
   type IntegrationsView,
   type IntegrationTestOutcome,
   type IntegrationView,
@@ -54,9 +55,88 @@ async function init(): Promise<void> {
   D = OPTIONS_CATALOG[resolveLocale(settings.locale)];
   view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
   renderChrome();
-  renderGlobals();
+  renderGeneral();
+  renderAffiliateRoutingStrategy();
   renderCategories();
   renderVoiceover();
+  // Nav depends on the sections above already being in the DOM.
+  renderSideNav();
+  setupScrollSpy();
+}
+
+// Build the left section nav from the sections rendered above and wire scroll-to
+// (plain href anchors, with a scroll-margin offset handled in CSS). Grouped like
+// the desktop app's Settings sub-nav: General, then API Integrations, then
+// Voiceover Butler.
+function renderSideNav(): void {
+  const nav = byId("side-nav");
+  nav.replaceChildren();
+
+  type NavItem = { id: string; text: string };
+  type NavGroup = { title: string | null; items: NavItem[] };
+  const groups: NavGroup[] = [
+    { title: null, items: [{ id: "sec-general", text: D.navGeneral }] },
+    {
+      title: D.navApiIntegrations,
+      items: [
+        { id: "sec-routing", text: D.navAffiliateRouting },
+        ...CATEGORY_ORDER.filter((c) => ADAPTERS.some((a) => a.category === c)).map((c) => ({
+          id: `sec-cat-${c}`,
+          text: categoryLabel(c),
+        })),
+      ],
+    },
+    { title: null, items: [{ id: "sec-voiceover", text: D.voHeading }] },
+  ];
+
+  for (const group of groups) {
+    if (group.title) {
+      const heading = document.createElement("p");
+      heading.className = "side-nav-group";
+      heading.textContent = group.title;
+      nav.append(heading);
+    }
+    for (const item of group.items) {
+      const link = document.createElement("a");
+      link.href = `#${item.id}`;
+      link.textContent = item.text;
+      if (group.title) link.classList.add("side-nav-child");
+      nav.append(link);
+    }
+  }
+}
+
+// Highlight the nav link for the section currently in view. Uses an
+// IntersectionObserver keyed to the top of the viewport (below the sticky
+// header) so the active item tracks scrolling, like the desktop scroll-spy.
+function setupScrollSpy(): void {
+  const links = new Map<string, HTMLAnchorElement>();
+  for (const link of Array.from(document.querySelectorAll<HTMLAnchorElement>("#side-nav a"))) {
+    links.set(link.getAttribute("href")?.slice(1) ?? "", link);
+  }
+  const sections = Array.from(
+    document.querySelectorAll<HTMLElement>("main .settings-section[id]"),
+  );
+  if (sections.length === 0) return;
+
+  const setActive = (id: string): void => {
+    for (const [linkId, link] of links) {
+      if (linkId === id) link.dataset.active = "1";
+      else delete link.dataset.active;
+    }
+  };
+  const first = sections[0];
+  if (first) setActive(first.id);
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      }
+    },
+    { rootMargin: "-80px 0px -70% 0px", threshold: 0 },
+  );
+  for (const section of sections) observer.observe(section);
 }
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -81,74 +161,18 @@ function renderChrome(): void {
   byId("page-intro").textContent = D.pageIntro;
   byId("security-note").textContent = D.securityNote;
   byId("affiliate-disclosure").textContent = D.affiliateDisclosure;
+  byId("title-general").textContent = D.navGeneral;
+  byId("title-routing").textContent = D.routingStrategyTitle;
   byId("label-startup").textContent = D.testOnStartup;
-  byId("label-routing").textContent = D.affiliateRouting;
-  byId("label-primary-deeplink").textContent = D.primaryDeeplink;
-  byId("hint-primary-deeplink").textContent = D.primaryDeeplinkHint;
-  byId("label-walmart-link").textContent = D.walmartLink;
-  byId("hint-walmart-link").textContent = D.walmartLinkHint;
   byId("run-all").textContent = D.runAllTests;
 }
 
-function renderGlobals(): void {
+// General section: run-all-tests and the test-on-startup toggle (the rest of the
+// old globals card moved into the Affiliate Routing Strategy section below).
+function renderGeneral(): void {
   const startup = byId<HTMLInputElement>("test-on-startup");
   startup.checked = view.global.testOnStartup;
   startup.onchange = () => void setGlobal({ testOnStartup: startup.checked });
-
-  const routing = byId<HTMLInputElement>("affiliate-routing");
-  routing.checked = view.global.affiliateRoutingEnabled;
-  routing.onchange = () => void setGlobal({ affiliateRoutingEnabled: routing.checked });
-
-  const select = byId<HTMLSelectElement>("primary-deeplink");
-  select.replaceChildren();
-  const none = document.createElement("option");
-  none.value = "";
-  none.textContent = D.primaryDeeplinkNone;
-  select.append(none);
-  for (const id of DEEPLINK_PROVIDER_IDS) {
-    const adapter = getAdapter(id);
-    if (!adapter) continue;
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = label(adapter.labelKey);
-    select.append(opt);
-  }
-  select.value = view.global.primaryDeeplinkProvider ?? "";
-
-  // Branded links selected with nobody signed in is the one provider choice
-  // that silently does nothing: routing keeps handing back plain tagged Amazon
-  // links. Say so here rather than letting the user guess.
-  const warning = byId("primary-deeplink-warning");
-  const syncWarning = (): void => {
-    const needsSignIn = select.value === IB_LINKS && !providerView(IB_LINKS).configured;
-    warning.textContent = needsSignIn ? D.primaryDeeplinkSignIn : "";
-    warning.hidden = !needsSignIn;
-  };
-  syncWarning();
-
-  select.onchange = () => {
-    syncWarning();
-    void setGlobal({ primaryDeeplinkProvider: select.value || null });
-  };
-
-  // Walmart affiliate link provider (mirrors the primary-deeplink select). The
-  // user picks which connected provider mints their Walmart links.
-  const wmSelect = byId<HTMLSelectElement>("walmart-link");
-  wmSelect.replaceChildren();
-  const wmNone = document.createElement("option");
-  wmNone.value = "";
-  wmNone.textContent = D.walmartLinkNone;
-  wmSelect.append(wmNone);
-  for (const id of WALMART_LINK_PROVIDER_IDS) {
-    const adapter = getAdapter(id);
-    if (!adapter) continue;
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = label(adapter.labelKey);
-    wmSelect.append(opt);
-  }
-  wmSelect.value = view.global.walmartLinkProvider ?? "";
-  wmSelect.onchange = () => void setGlobal({ walmartLinkProvider: wmSelect.value || null });
 
   const runAll = byId<HTMLButtonElement>("run-all");
   const status = byId("run-all-status");
@@ -169,10 +193,198 @@ function renderGlobals(): void {
     });
     view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
     renderCategories();
+    renderAffiliateRoutingStrategy();
     runAll.disabled = false;
     const failed = Object.values(results).filter((r) => !r.ok).length;
     status.textContent = failed === 0 ? D.statusOk : `${failed} ${D.statusFail}`;
   };
+}
+
+// The routing-strategy roster, mapping each roster row to the extension provider
+// whose connection state drives its status pill.
+const ROUTING_ROSTER: Array<{ key: string; labelKey: keyof OptionsDict; providerId: string }> = [
+  { key: "amazon", labelKey: "routingRowAmazon", providerId: ASSOCIATES },
+  { key: "levanta", labelKey: "provLevanta", providerId: "levanta" },
+  { key: "archer", labelKey: "provArcher", providerId: "archer" },
+  { key: "mavely", labelKey: "provMavely", providerId: "mavely" },
+  { key: "walmart", labelKey: "routingRowWalmart", providerId: "walmartCreator" },
+];
+
+// Providers that authenticate with a signed-in session/license rather than a
+// stored API key: a saved credential reads as "Signed in", not "Connected".
+const SESSION_PROVIDERS = new Set([IB_LINKS, "mavely", "walmartCreator"]);
+
+// Map a provider's connection state to a routing status pill (text + state key).
+function routingStatus(providerId: string): { text: string; state: "success" | "error" | "idle" } {
+  const pv = providerView(providerId);
+  if (pv.lastTest.status === "fail") return { text: D.statusFail, state: "error" };
+  if (!pv.configured) return { text: D.statusNotConnected, state: "idle" };
+  if (pv.lastTest.status === "ok") {
+    return SESSION_PROVIDERS.has(providerId)
+      ? { text: D.statusSignedIn, state: "success" }
+      : { text: D.statusOk, state: "success" };
+  }
+  // Configured but not yet tested.
+  return SESSION_PROVIDERS.has(providerId)
+    ? { text: D.statusSignedIn, state: "success" }
+    : { text: D.statusReady, state: "idle" };
+}
+
+// Affiliate Routing Strategy: the consolidated routing card (mirrors the desktop
+// app). Holds the highest-commission master toggle, the "rewrite links" switch,
+// the provider roster, and the deeplink/Walmart provider pickers that used to
+// live in the globals card.
+function renderAffiliateRoutingStrategy(): void {
+  const root = byId("affiliate-routing-strategy");
+  root.replaceChildren();
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const hint = document.createElement("p");
+  hint.className = "routing-hint small";
+  hint.textContent = D.routingStrategyHint;
+  card.append(hint);
+
+  // Master toggle: pick the highest-commission provider per product.
+  const master = document.createElement("label");
+  master.className = "routing-toggle";
+  const masterBox = document.createElement("input");
+  masterBox.type = "checkbox";
+  masterBox.className = "switch";
+  masterBox.checked = view.global.useHighestCommission;
+  masterBox.onchange = () => void setGlobal({ useHighestCommission: masterBox.checked });
+  const masterCopy = document.createElement("span");
+  masterCopy.className = "routing-toggle-copy";
+  const masterTitle = document.createElement("span");
+  masterTitle.className = "routing-toggle-title";
+  masterTitle.textContent = D.routingUseHighest;
+  const masterHint = document.createElement("span");
+  masterHint.className = "routing-toggle-hint";
+  masterHint.textContent = D.routingUseHighestHint;
+  masterCopy.append(masterTitle, masterHint);
+  master.append(masterBox, masterCopy);
+  card.append(master);
+
+  // The overall "rewrite links" switch (was the globals affiliate-routing
+  // toggle): when off, Copy my link hands back plain tagged Amazon links.
+  const rewrite = document.createElement("label");
+  rewrite.className = "toggle";
+  rewrite.style.marginTop = "14px";
+  const rewriteBox = document.createElement("input");
+  rewriteBox.type = "checkbox";
+  rewriteBox.checked = view.global.affiliateRoutingEnabled;
+  rewriteBox.onchange = () => void setGlobal({ affiliateRoutingEnabled: rewriteBox.checked });
+  const rewriteLabel = document.createElement("span");
+  rewriteLabel.textContent = D.affiliateRouting;
+  rewrite.append(rewriteBox, rewriteLabel);
+  card.append(rewrite);
+
+  // Provider roster: which connected providers may take part in routing.
+  const roster = view.global.routingProviders ?? {};
+  const providers = document.createElement("div");
+  providers.className = "routing-providers";
+  for (const row of ROUTING_ROSTER) {
+    const label = document.createElement("label");
+    label.className = "routing-row";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = roster[row.key] !== false;
+    box.onchange = () => {
+      const next = { ...(view.global.routingProviders ?? {}), [row.key]: box.checked };
+      void setGlobal({ routingProviders: next });
+    };
+    const name = document.createElement("span");
+    name.className = "routing-row-label";
+    name.textContent = D[row.labelKey];
+    const status = document.createElement("span");
+    status.className = "routing-status";
+    const st = routingStatus(row.providerId);
+    status.textContent = st.text;
+    status.dataset.state = st.state;
+    label.append(box, name, status);
+    providers.append(label);
+  }
+  card.append(providers);
+
+  // Deeplink + Walmart provider pickers (moved from the old globals card).
+  const selects = document.createElement("div");
+  selects.className = "routing-selects";
+  card.append(selects);
+
+  const deeplinkField = document.createElement("label");
+  deeplinkField.className = "field";
+  const deeplinkLabel = document.createElement("span");
+  deeplinkLabel.textContent = D.primaryDeeplink;
+  const select = document.createElement("select");
+  const none = document.createElement("option");
+  none.value = "";
+  none.textContent = D.primaryDeeplinkNone;
+  select.append(none);
+  for (const id of DEEPLINK_PROVIDER_IDS) {
+    const adapter = getAdapter(id);
+    if (!adapter) continue;
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = label(adapter.labelKey);
+    select.append(opt);
+  }
+  select.value = view.global.primaryDeeplinkProvider ?? "";
+  deeplinkField.append(deeplinkLabel, select);
+  selects.append(deeplinkField);
+
+  const deeplinkHint = document.createElement("p");
+  deeplinkHint.className = "muted small";
+  deeplinkHint.style.margin = "6px 0 0";
+  deeplinkHint.style.maxWidth = "62ch";
+  deeplinkHint.textContent = D.primaryDeeplinkHint;
+  selects.append(deeplinkHint);
+
+  // Branded links selected with nobody signed in silently does nothing: routing
+  // keeps handing back plain tagged Amazon links. Say so rather than let the
+  // user guess.
+  const warning = document.createElement("p");
+  warning.className = "warn";
+  const syncWarning = (): void => {
+    const needsSignIn = select.value === IB_LINKS && !providerView(IB_LINKS).configured;
+    warning.textContent = needsSignIn ? D.primaryDeeplinkSignIn : "";
+    warning.hidden = !needsSignIn;
+  };
+  syncWarning();
+  selects.append(warning);
+  select.onchange = () => {
+    syncWarning();
+    void setGlobal({ primaryDeeplinkProvider: select.value || null });
+  };
+
+  const wmField = document.createElement("label");
+  wmField.className = "field";
+  const wmLabel = document.createElement("span");
+  wmLabel.textContent = D.walmartLink;
+  const wmSelect = document.createElement("select");
+  const wmNone = document.createElement("option");
+  wmNone.value = "";
+  wmNone.textContent = D.walmartLinkNone;
+  wmSelect.append(wmNone);
+  for (const id of WALMART_LINK_PROVIDER_IDS) {
+    const adapter = getAdapter(id);
+    if (!adapter) continue;
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = label(adapter.labelKey);
+    wmSelect.append(opt);
+  }
+  wmSelect.value = view.global.walmartLinkProvider ?? "";
+  wmSelect.onchange = () => void setGlobal({ walmartLinkProvider: wmSelect.value || null });
+  wmField.append(wmLabel, wmSelect);
+  selects.append(wmField);
+
+  const wmHint = document.createElement("p");
+  wmHint.className = "muted small";
+  wmHint.style.margin = "6px 0 0";
+  wmHint.textContent = D.walmartLinkHint;
+  selects.append(wmHint);
+
+  root.append(card);
 }
 
 async function setGlobal(partial: Partial<IntegrationsView["global"]>): Promise<void> {
@@ -188,14 +400,20 @@ function renderCategories(): void {
   for (const category of CATEGORY_ORDER) {
     const adapters = ADAPTERS.filter((a) => a.category === category);
     if (adapters.length === 0) continue;
-    const heading = document.createElement("h2");
-    heading.className = "cat";
+    // Each category is its own scroll-to section with a title, so the left nav
+    // can jump to it and scroll-spy can highlight it.
+    const section = document.createElement("section");
+    section.className = "settings-section";
+    section.id = `sec-cat-${category}`;
+    const heading = document.createElement("h3");
+    heading.className = "section-title";
     heading.textContent = categoryLabel(category);
-    root.append(heading);
+    section.append(heading);
     const card = document.createElement("section");
     card.className = "card";
     for (const adapter of adapters) card.append(renderProvider(adapter));
-    root.append(card);
+    section.append(card);
+    root.append(section);
   }
 }
 
@@ -222,8 +440,11 @@ function renderVoiceover(): void {
   root.replaceChildren();
   const vo = settings.voiceover;
 
-  const heading = document.createElement("h2");
-  heading.className = "cat";
+  const section = document.createElement("section");
+  section.className = "settings-section";
+  section.id = "sec-voiceover";
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
   heading.textContent = D.voHeading;
   const card = document.createElement("section");
   card.className = "card";
@@ -473,7 +694,8 @@ function renderVoiceover(): void {
     window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
   };
 
-  root.append(heading, card);
+  section.append(heading, card);
+  root.append(section);
 }
 
 function makeBadge(status: "ok" | "fail" | "untested"): HTMLElement {
@@ -484,10 +706,14 @@ function makeBadge(status: "ok" | "fail" | "untested"): HTMLElement {
   return badge;
 }
 
-// The Creators API setup walkthrough: a responsive privacy-mode YouTube embed
-// (same video and youtube-nocookie host the api-integrations tutorial uses),
-// with a caption and a link out to the full tutorial. Built as DOM nodes rather
-// than innerHTML so it stays inside the extension page's default CSP.
+// The Creators API setup walkthrough. We deliberately do NOT embed a raw
+// youtube-nocookie iframe here: this options page loads from a chrome-extension://
+// origin, which YouTube's player cannot validate as an embedding site, so the
+// inline player fails with "Error 153". Instead we show a click-to-play facade
+// (the real video thumbnail plus a play glyph) that opens the video in a normal
+// browser tab, where a real https origin lets it play. This also loads faster and
+// avoids handing YouTube a frame on page load. Built as DOM nodes so it stays
+// inside the extension page's default CSP.
 function renderSetupVideo(): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "provider-video";
@@ -497,17 +723,28 @@ function renderSetupVideo(): HTMLElement {
   caption.textContent = D.watchSetupVideo;
   wrap.append(caption);
 
-  const frame = document.createElement("div");
-  frame.className = "provider-video-frame";
-  const iframe = document.createElement("iframe");
-  iframe.src = `https://www.youtube-nocookie.com/embed/${ONBOARDING_VIDEO_ID}?rel=0`;
-  iframe.title = D.watchSetupVideo;
-  iframe.loading = "lazy";
-  iframe.allow =
-    "accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-  iframe.allowFullscreen = true;
-  frame.append(iframe);
-  wrap.append(frame);
+  // Open on the real YouTube watch page (valid https origin) in a new tab.
+  const watchUrl = `https://www.youtube.com/watch?v=${ONBOARDING_VIDEO_ID}`;
+  const facade = document.createElement("a");
+  facade.className = "provider-video-frame provider-video-facade";
+  facade.href = watchUrl;
+  facade.target = "_blank";
+  facade.rel = "noopener noreferrer";
+  facade.title = D.watchSetupVideo;
+  facade.setAttribute("aria-label", D.watchSetupVideo);
+
+  const thumb = document.createElement("img");
+  thumb.className = "provider-video-thumb";
+  thumb.src = `https://i.ytimg.com/vi/${ONBOARDING_VIDEO_ID}/hqdefault.jpg`;
+  thumb.alt = "";
+  thumb.loading = "lazy";
+  facade.append(thumb);
+
+  const play = document.createElement("span");
+  play.className = "provider-video-play";
+  play.setAttribute("aria-hidden", "true");
+  facade.append(play);
+  wrap.append(facade);
 
   const link = document.createElement("a");
   link.className = "provider-video-link small";
@@ -518,6 +755,83 @@ function renderSetupVideo(): HTMLElement {
   wrap.append(link);
 
   return wrap;
+}
+
+// Backup-credential controls for the Creator API card. Shows an "active" chip
+// when a lease is live, and an "offer" (revealed by an eligibility-blocked Test)
+// to lease Influencer Butler's house credentials while Amazon has not unlocked
+// the user's own account. Returns the element plus a showOffer() the test
+// handler calls when it sees eligibilityBlocked.
+function renderCreatorsBackup(): { el: HTMLElement; showOffer: () => void } {
+  const el = document.createElement("div");
+  el.className = "provider-backup";
+
+  const status = document.createElement("p");
+  status.className = "muted small";
+  status.setAttribute("aria-live", "polite");
+  status.hidden = true;
+
+  const offer = document.createElement("div");
+  offer.className = "provider-backup-offer";
+  offer.hidden = true;
+  const offerHint = document.createElement("p");
+  offerHint.className = "muted small";
+  offerHint.textContent = D.creatorsBackupOfferHint;
+  const enableBtn = document.createElement("button");
+  enableBtn.className = "ghost";
+  enableBtn.textContent = D.creatorsBackupEnable;
+  offer.append(offerHint, enableBtn);
+
+  const activeChip = document.createElement("div");
+  activeChip.className = "provider-backup-active warn";
+  activeChip.hidden = true;
+  const activeText = document.createElement("span");
+  activeText.textContent = D.creatorsBackupActive;
+  const disableBtn = document.createElement("button");
+  disableBtn.className = "ghost";
+  disableBtn.textContent = D.creatorsBackupDisable;
+  activeChip.append(activeText, disableBtn);
+
+  el.append(status, offer, activeChip);
+
+  const showActive = (active: boolean): void => {
+    activeChip.hidden = !active;
+    if (active) offer.hidden = true;
+  };
+
+  enableBtn.onclick = async () => {
+    enableBtn.disabled = true;
+    status.hidden = false;
+    status.textContent = D.creatorsBackupWorking;
+    const res = await sendToBackground<CreatorApiBackupStatus | { error: string }>({
+      kind: "CREATOR_API_BACKUP",
+      action: "backup-enable",
+    });
+    enableBtn.disabled = false;
+    if (res && "error" in res) {
+      status.textContent = res.error;
+      return;
+    }
+    status.hidden = true;
+    showActive(Boolean(res?.active));
+  };
+
+  disableBtn.onclick = async () => {
+    disableBtn.disabled = true;
+    await sendToBackground<CreatorApiBackupStatus>({ kind: "CREATOR_API_BACKUP", action: "backup-disable" });
+    disableBtn.disabled = false;
+    showActive(false);
+  };
+
+  // Load the current lease state on render; a live lease shows the active chip.
+  void sendToBackground<CreatorApiBackupStatus | { error: string }>({
+    kind: "CREATOR_API_BACKUP",
+    action: "backup-status",
+  }).then((res) => {
+    if (res && !("error" in res) && res?.active) showActive(true);
+  });
+
+  return { el, showOffer: () => { if (activeChip.hidden) offer.hidden = false; } };
 }
 
 function renderProvider(adapter: IntegrationAdapter): HTMLElement {
@@ -542,10 +856,12 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   }
 
   // The Creators API card carries the setup walkthrough, matching the desktop
-  // app's API Integrations screen. Privacy-mode youtube-nocookie embed, same
-  // video as the api-integrations tutorial.
+  // app's API Integrations screen.
+  let backupControls: { el: HTMLElement; showOffer: () => void } | null = null;
   if (adapter.id === CREATORS_API) {
     block.append(renderSetupVideo());
+    backupControls = renderCreatorsBackup();
+    block.append(backupControls.el);
   }
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.
@@ -727,6 +1043,9 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     });
     setMsg(outcome.message, outcome.ok ? "ok" : "fail");
     head.replaceChild(makeBadge(outcome.ok ? "ok" : "fail"), head.lastChild as Node);
+    // Amazon accepted the credentials but has not unlocked the Creator API yet:
+    // reveal the backup-credentials offer.
+    if (outcome.eligibilityBlocked) backupControls?.showOffer();
     testBtn.disabled = false;
     testBtn.textContent = D.testBtn;
   };

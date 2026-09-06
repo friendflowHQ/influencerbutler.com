@@ -11,7 +11,7 @@ export type DeeplinkProviderId =
   | "geniuslink"
   | "selfhosted";
 
-export type AffiliateNetworkId = "levanta" | "archer" | "logie" | "benable";
+export type AffiliateNetworkId = "levanta" | "archer" | "benable";
 
 // Walmart affiliate link providers. Both are session-based (no credential
 // fields): Walmart Creator mints walmrt.us links from the signed-in
@@ -53,7 +53,14 @@ export type FieldSpec = {
   normalize?: (value: string) => string;
 };
 
-export type TestResult = { ok: boolean; message: string };
+export type TestResult = {
+  ok: boolean;
+  message: string;
+  // Set by the Creator API adapter when Amazon accepts the credentials but has
+  // not yet unlocked Creator API access for the account (an eligibility 4xx).
+  // The options page uses this to offer Influencer Butler's backup credentials.
+  eligibilityBlocked?: boolean;
+};
 
 export type LinkTarget = {
   // The retailer's product id: an Amazon ASIN or a Walmart item id. Named `asin`
@@ -86,6 +93,12 @@ export type IntegrationAdapter = {
   test(creds: Record<string, string>): Promise<TestResult>;
   // Deeplink providers turn an Amazon url into a wrapped/tracked link.
   generateLink?(target: LinkTarget, creds: Record<string, string>): Promise<string>;
+  // Best-effort commission rate (as a percentage, for example 5 for 5%) this
+  // provider pays for the target product, or null when it does not report one.
+  // Used by highest-commission routing to compare providers; a null result just
+  // means this provider cannot compete on rate and falls back to priority order.
+  // Only affiliate networks that can read a product rate implement this.
+  estimateRate?(target: LinkTarget, creds: Record<string, string>): Promise<number | null>;
   // OpenAI turns a prompt into text.
   complete?(prompt: string, creds: Record<string, string>): Promise<string>;
 };

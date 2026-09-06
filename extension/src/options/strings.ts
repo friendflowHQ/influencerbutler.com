@@ -62,7 +62,6 @@ export interface OptionsDict {
   provSelfhosted: string;
   provLevanta: string;
   provArcher: string;
-  provLogie: string;
   provBenable: string;
   provWalmartCreator: string;
   provWalmartCreatorDesc: string;
@@ -76,12 +75,24 @@ export interface OptionsDict {
   fieldPassword: string;
   fieldModel: string;
   recommendedSuffix: string;
-  fieldAccessKey: string;
-  fieldSecretKey: string;
+  fieldCredentialId: string;
+  fieldCredentialSecret: string;
+  fieldCredentialVersion: string;
   fieldPartnerTag: string;
   fieldMarketplace: string;
   fieldLinkTemplate: string;
   fieldReferralUrl: string;
+  // Creator API per-region (EU/FE) credential subsections
+  creatorsRegionsSummary: string;
+  creatorsRegionEuTitle: string;
+  creatorsRegionFeTitle: string;
+  creatorsRegionTest: string;
+  // Creator API backup-credential leasing
+  creatorsBackupOfferHint: string;
+  creatorsBackupEnable: string;
+  creatorsBackupActive: string;
+  creatorsBackupDisable: string;
+  creatorsBackupWorking: string;
   // Walmart affiliate link provider select
   walmartLink: string;
   walmartLinkNone: string;
@@ -142,10 +153,25 @@ export interface OptionsDict {
   voDenyGroup: string;
   voDenyLabel: string;
   voDenyHint: string;
+  // Settings shell + left-hand section nav
+  navGeneral: string;
+  navApiIntegrations: string;
+  navAffiliateRouting: string;
+  // Affiliate Routing Strategy card
+  routingStrategyTitle: string;
+  routingStrategyHint: string;
+  routingUseHighest: string;
+  routingUseHighestHint: string;
+  routingRowAmazon: string;
+  routingRowWalmart: string;
+  // Extra routing-roster status pills (statusOk doubles as "Connected")
+  statusSignedIn: string;
+  statusReady: string;
+  statusNotConnected: string;
 }
 
 const en: OptionsDict = {
-  pageTitle: "API Integrations",
+  pageTitle: "Settings",
   pageIntro:
     "Connect the same providers the desktop app uses. Paste a key, test it, and the extension uses it while you browse Amazon.",
   securityNote:
@@ -193,7 +219,7 @@ const en: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   creatorsApiHint:
-    "Use the Access Key and Secret Key from Associates Central: Tools: Product Advertising API. Not an AWS or IAM key, and not the newer Creators-API client id or secret.",
+    "Use the Credential ID and Credential Secret from the Amazon Creator Connections console (they start with amzn1.). This is the OAuth2 Creator API, not the older Product Advertising API access key.",
   provAssociates: "Amazon Associates tags",
   provInfluencerButler: "Influencer Butler branded links",
   provInfluencerButlerDesc:
@@ -204,7 +230,6 @@ const en: OptionsDict = {
   provSelfhosted: "Self-hosted",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
@@ -223,8 +248,20 @@ const en: OptionsDict = {
   fieldPassword: "Password",
   fieldModel: "Model",
   recommendedSuffix: "(recommended)",
-  fieldAccessKey: "Access key",
-  fieldSecretKey: "Secret key",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Credential Version",
+  creatorsRegionsSummary: "International credentials (EU and FE)",
+  creatorsRegionEuTitle: "EU credentials (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "FE credentials (AU, JP, SG, IN)",
+  creatorsRegionTest: "Test",
+  creatorsBackupOfferHint:
+    "Amazon has not unlocked the Creator API for your account yet. You can use Influencer Butler's backup credentials while you wait.",
+  creatorsBackupEnable: "Use Influencer Butler's backup credentials",
+  creatorsBackupActive:
+    "Backup credentials active. Your own Creator API is re-tested and takes over as soon as Amazon unlocks it.",
+  creatorsBackupDisable: "Stop using backup",
+  creatorsBackupWorking: "Setting up backup credentials...",
   fieldPartnerTag: "Partner tag",
   fieldMarketplace: "Marketplace (optional)",
   fieldLinkTemplate: "Link pattern",
@@ -287,10 +324,24 @@ const en: OptionsDict = {
   voDenyLabel: "Brands to never mention (comma separated)",
   voDenyHint:
     "Scripts are told to avoid these brand names, and every draft is checked afterward: if one slips through you get a warning under the script.",
+  navGeneral: "General",
+  navApiIntegrations: "API Integrations",
+  navAffiliateRouting: "Affiliate Routing",
+  routingStrategyTitle: "Affiliate Routing Strategy",
+  routingStrategyHint:
+    "How the extension decides which link Copy my link hands you for each product. The deeplink and Walmart choices below feed this too.",
+  routingUseHighest: "Pick the highest-commission provider for each product",
+  routingUseHighestHint:
+    "When on, each product link routes through whichever connected provider pays the most for that product, using the rates the extension can read. When a provider does not report a rate, routing falls back to the fixed order (connected networks first, then Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Signed in",
+  statusReady: "Ready",
+  statusNotConnected: "Not connected",
 };
 
 const es: OptionsDict = {
-  pageTitle: "Integraciones de API",
+  pageTitle: "Ajustes",
   pageIntro:
     "Conecta los mismos proveedores que usa la app de escritorio. Pega una clave, pruébala y la extensión la usa mientras navegas por Amazon.",
   securityNote:
@@ -338,7 +389,7 @@ const es: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   creatorsApiHint:
-    "Usa la Access Key y la Secret Key de Associates Central: Herramientas: Product Advertising API. No una clave de AWS o IAM, ni el nuevo client id o secret de la Creators API.",
+    "Usa el Credential ID y el Credential Secret de la consola de Amazon Creator Connections (empiezan por amzn1.). Es la Creator API OAuth2, no la Access Key de la antigua Product Advertising API.",
   provAssociates: "Etiquetas de Amazon Associates",
   provInfluencerButler: "Enlaces de marca de Influencer Butler",
   provInfluencerButlerDesc:
@@ -349,7 +400,6 @@ const es: OptionsDict = {
   provSelfhosted: "Autoalojado",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
@@ -368,8 +418,20 @@ const es: OptionsDict = {
   fieldPassword: "Contraseña",
   fieldModel: "Modelo",
   recommendedSuffix: "(recomendado)",
-  fieldAccessKey: "Clave de acceso",
-  fieldSecretKey: "Clave secreta",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Versión de credencial",
+  creatorsRegionsSummary: "Credenciales internacionales (EU y FE)",
+  creatorsRegionEuTitle: "Credenciales EU (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "Credenciales FE (AU, JP, SG, IN)",
+  creatorsRegionTest: "Probar",
+  creatorsBackupOfferHint:
+    "Amazon aún no ha habilitado la Creator API para tu cuenta. Puedes usar las credenciales de respaldo de Influencer Butler mientras esperas.",
+  creatorsBackupEnable: "Usar las credenciales de respaldo de Influencer Butler",
+  creatorsBackupActive:
+    "Credenciales de respaldo activas. Tu propia Creator API se vuelve a probar y toma el relevo en cuanto Amazon la habilite.",
+  creatorsBackupDisable: "Dejar de usar el respaldo",
+  creatorsBackupWorking: "Configurando las credenciales de respaldo...",
   fieldPartnerTag: "Etiqueta de socio",
   fieldMarketplace: "Mercado (opcional)",
   fieldLinkTemplate: "Patrón de enlace",
@@ -432,10 +494,24 @@ const es: OptionsDict = {
   voDenyLabel: "Marcas que nunca se deben mencionar (separadas por comas)",
   voDenyHint:
     "Se indica a los guiones que eviten estas marcas y cada borrador se revisa después: si alguna se cuela, verás un aviso debajo del guion.",
+  navGeneral: "General",
+  navApiIntegrations: "Integraciones de API",
+  navAffiliateRouting: "Enrutado de afiliados",
+  routingStrategyTitle: "Estrategia de enrutado de afiliados",
+  routingStrategyHint:
+    "Cómo decide la extensión qué enlace te da Copiar mi enlace para cada producto. Las opciones de deeplink y de Walmart de abajo también alimentan esto.",
+  routingUseHighest: "Elegir el proveedor con mayor comisión para cada producto",
+  routingUseHighestHint:
+    "Cuando está activado, cada enlace de producto se enruta por el proveedor conectado que más paga por ese producto, usando las tarifas que la extensión puede leer. Cuando un proveedor no informa de una tarifa, el enrutado vuelve al orden fijo (primero las redes conectadas, luego Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Sesión iniciada",
+  statusReady: "Listo",
+  statusNotConnected: "Sin conectar",
 };
 
 const fr: OptionsDict = {
-  pageTitle: "Intégrations API",
+  pageTitle: "Paramètres",
   pageIntro:
     "Connectez les mêmes fournisseurs que l'app de bureau. Collez une clé, testez-la, et l'extension l'utilise pendant que vous naviguez sur Amazon.",
   securityNote:
@@ -483,7 +559,7 @@ const fr: OptionsDict = {
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
   creatorsApiHint:
-    "Utilisez l'Access Key et la Secret Key depuis Associates Central : Outils : Product Advertising API. Pas une clé AWS ou IAM, ni le nouveau client id ou secret de la Creators API.",
+    "Utilisez le Credential ID et le Credential Secret depuis la console Amazon Creator Connections (ils commencent par amzn1.). Il s'agit de la Creator API OAuth2, pas de l'Access Key de l'ancienne Product Advertising API.",
   provAssociates: "Balises Amazon Associates",
   provInfluencerButler: "Liens de marque Influencer Butler",
   provInfluencerButlerDesc:
@@ -494,7 +570,6 @@ const fr: OptionsDict = {
   provSelfhosted: "Auto-hébergé",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
   provWalmartCreator: "Walmart Creator",
   provWalmartCreatorDesc:
@@ -513,8 +588,20 @@ const fr: OptionsDict = {
   fieldPassword: "Mot de passe",
   fieldModel: "Modèle",
   recommendedSuffix: "(recommandé)",
-  fieldAccessKey: "Clé d'accès",
-  fieldSecretKey: "Clé secrète",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Version de la credential",
+  creatorsRegionsSummary: "Identifiants internationaux (EU et FE)",
+  creatorsRegionEuTitle: "Identifiants EU (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "Identifiants FE (AU, JP, SG, IN)",
+  creatorsRegionTest: "Tester",
+  creatorsBackupOfferHint:
+    "Amazon n'a pas encore débloqué la Creator API pour votre compte. Vous pouvez utiliser les identifiants de secours d'Influencer Butler en attendant.",
+  creatorsBackupEnable: "Utiliser les identifiants de secours d'Influencer Butler",
+  creatorsBackupActive:
+    "Identifiants de secours actifs. Votre propre Creator API est retestée et prend le relais dès qu'Amazon la débloque.",
+  creatorsBackupDisable: "Arrêter d'utiliser le secours",
+  creatorsBackupWorking: "Configuration des identifiants de secours...",
   fieldPartnerTag: "Balise partenaire",
   fieldMarketplace: "Place de marché (facultatif)",
   fieldLinkTemplate: "Modèle de lien",
@@ -577,6 +664,20 @@ const fr: OptionsDict = {
   voDenyLabel: "Marques à ne jamais mentionner (séparées par des virgules)",
   voDenyHint:
     "Les scripts reçoivent la consigne d'éviter ces marques et chaque brouillon est vérifié ensuite : si l'une d'elles passe, un avertissement s'affiche sous le script.",
+  navGeneral: "Général",
+  navApiIntegrations: "Intégrations API",
+  navAffiliateRouting: "Routage d'affiliation",
+  routingStrategyTitle: "Stratégie de routage d'affiliation",
+  routingStrategyHint:
+    "Comment l'extension choisit le lien que Copier mon lien vous donne pour chaque produit. Les choix de deeplink et de Walmart ci-dessous l'alimentent aussi.",
+  routingUseHighest: "Choisir le fournisseur avec la commission la plus élevée pour chaque produit",
+  routingUseHighestHint:
+    "Quand c'est activé, chaque lien produit passe par le fournisseur connecté qui paie le plus pour ce produit, selon les taux que l'extension peut lire. Quand un fournisseur n'indique pas de taux, le routage revient à l'ordre fixe (d'abord les réseaux connectés, puis Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Connecté",
+  statusReady: "Prêt",
+  statusNotConnected: "Non connecté",
 };
 
 export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };

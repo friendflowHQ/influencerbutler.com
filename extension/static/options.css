@@ -9,6 +9,50 @@
   --slate-50: #f8fafc;
   --green: #16a34a;
   --red: #dc2626;
+
+  /* Desktop-app design tokens (renderer/style/hud.css), so the redesigned
+     Settings page matches the app: orange accents, soft orange-tinted card
+     shadows, an off-white ground. The tokens below layer over the slate scale
+     above; the dark block remaps the underlying slate values so the existing
+     slate-based rules flip to dark automatically. */
+  --brand: #f97316;
+  --brand-rgb: 249, 115, 22;
+  --brand-50: #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-600: #ea580c;
+  --bg: var(--slate-50);
+  --panel: #ffffff;
+  --text: var(--slate-900);
+  --muted: var(--slate-600);
+  --border: var(--slate-200);
+  --hud-nav-width: 220px;
+}
+
+/* Dark theme: remap the slate scale (which nearly every rule uses) plus the
+   brand tints, so the whole page follows the browser theme like the desktop
+   app does, without editing each rule. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --slate-900: #e5e7eb;
+    --slate-600: #9ca3af;
+    --slate-400: #6b7280;
+    --slate-200: #27272a;
+    --slate-100: #1f1f22;
+    --slate-50: #0a0a0b;
+    --brand: #fb923c;
+    --brand-50: #1c0f07;
+    --brand-100: #3a1e0b;
+    --panel: #141416;
+  }
+  body {
+    background: var(--slate-50);
+  }
+  .card,
+  .head,
+  .field input,
+  .field select {
+    background: var(--panel);
+  }
 }
 
 * {
@@ -43,10 +87,92 @@ body {
   font-size: 16px;
 }
 
-main {
-  max-width: 760px;
+/* Two-column shell: a fixed-width section nav beside the settings column,
+   centered as a group. Mirrors the desktop app's Settings layout. */
+.layout {
+  display: grid;
+  grid-template-columns: var(--hud-nav-width) minmax(0, 1fr);
+  gap: 24px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 20px;
+  align-items: start;
+}
+
+main {
+  min-width: 0;
+}
+
+/* Left section nav. Sticks below the sticky header; scroll-spy marks the
+   section currently in view (see options.js). */
+.side-nav {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  max-height: calc(100vh - 92px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-100) transparent;
+}
+
+.side-nav-group {
+  margin: 0 0 6px;
+  padding: 14px 12px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate-400);
+}
+
+.side-nav-group:first-child {
+  padding-top: 0;
+}
+
+.side-nav a {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+/* Group children sit under a group label with a left rule, like the desktop
+   nav's collapsible children. */
+.side-nav-child {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 1.5px solid var(--border);
+}
+
+.side-nav a:hover {
+  background: var(--brand-50);
+  color: var(--text);
+}
+
+.side-nav a[data-active="1"] {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(var(--brand-rgb), 0.28);
+}
+
+/* A settings section is a scroll-to target; the offset keeps its title clear of
+   the sticky header when jumped to. */
+.settings-section {
+  scroll-margin-top: 80px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 26px 0 12px;
+}
+
+.settings-section:first-of-type .section-title {
+  margin-top: 0;
 }
 
 .intro {
@@ -65,11 +191,12 @@ main {
 }
 
 .card {
-  background: #fff;
-  border: 1px solid var(--slate-200);
-  border-radius: 12px;
-  padding: 16px;
+  background: var(--panel);
+  border: 1px solid var(--brand-100);
+  border-radius: 14px;
+  padding: 18px;
   margin-bottom: 16px;
+  box-shadow: 0 12px 28px rgba(var(--brand-rgb), 0.12);
 }
 
 .globals .toggle {
@@ -356,6 +483,70 @@ button[disabled] {
   border: 0;
 }
 
+/* Click-to-play facade (opens the video in a new tab; see renderSetupVideo). */
+.provider-video-facade {
+  display: block;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.provider-video-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+}
+
+.provider-video-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 64px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  transition: background 0.15s ease;
+}
+
+.provider-video-play::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-42%, -50%);
+  border-style: solid;
+  border-width: 9px 0 9px 15px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.provider-video-facade:hover .provider-video-play,
+.provider-video-facade:focus-visible .provider-video-play {
+  background: var(--orange-dark, #c2410c);
+}
+
+/* Creator API backup-credential controls (offer + active chip). */
+.provider-backup {
+  margin-top: 10px;
+}
+
+.provider-backup-offer,
+.provider-backup-active {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.provider-backup-offer p,
+.provider-backup-active span {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+}
+
 .provider-video-link {
   display: inline-block;
   margin-top: 8px;
@@ -381,4 +572,183 @@ button[disabled] {
   padding: 7px 9px;
   border: 1px solid var(--slate-200);
   border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Affiliate Routing Strategy card (mirrors the desktop app's routing section):
+   a highlighted master toggle, then a provider roster with status pills.
+   -------------------------------------------------------------------------- */
+.routing-hint {
+  color: var(--muted);
+  margin: 0 0 14px;
+  max-width: 70ch;
+}
+
+/* Master "highest commission" toggle: a highlighted card with a sliding pill
+   switch, matching the desktop .integration-toggle. */
+.routing-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--panel), var(--brand-50));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  cursor: pointer;
+}
+
+.routing-toggle .routing-toggle-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.routing-toggle-title {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.routing-toggle-hint {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Sliding-pill switch (desktop parity), used for the routing master toggle. */
+.switch {
+  appearance: none;
+  flex: 0 0 auto;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: var(--slate-200);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.switch:checked {
+  background: var(--brand-100);
+}
+
+.switch:checked::after {
+  transform: translateX(18px);
+  background: var(--brand);
+}
+
+.switch:focus-visible {
+  outline: 2px solid rgba(var(--brand-rgb), 0.5);
+  outline-offset: 2px;
+}
+
+/* Provider roster: one row per routing provider, each with a status pill. */
+.routing-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.routing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.routing-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+}
+
+.routing-row:hover {
+  border-color: rgba(var(--brand-rgb), 0.45);
+  box-shadow: 0 4px 12px rgba(var(--brand-rgb), 0.08);
+}
+
+.routing-row:has(input:checked) {
+  border-color: var(--brand);
+  background: var(--brand-50);
+}
+
+.routing-row-label {
+  flex: 1;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Status pill (Connected / Signed in / Ready / Not connected), matching the
+   desktop routing-row status colors. */
+.routing-status {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.routing-status[data-state="success"] {
+  color: #16a34a;
+  border-color: #86efac;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.routing-status[data-state="error"] {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* The deeplink + Walmart provider pickers live under the roster. */
+.routing-selects {
+  margin-top: 14px;
+  border-top: 1px solid var(--slate-100);
+  padding-top: 4px;
+}
+
+/* On narrow widths the nav stacks above the settings column. */
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .side-nav {
+    position: static;
+    max-height: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .side-nav-group {
+    flex-basis: 100%;
+    padding: 8px 4px 2px;
+  }
+  .side-nav-child {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+  }
 }

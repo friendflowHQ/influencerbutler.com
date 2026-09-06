@@ -91,10 +91,19 @@ export const IB_RELAY_ENDPOINTS = {
 // The Start Here onboarding walkthrough (opened on install). The Creator API
 // setup step embeds this YouTube walkthrough (same video as the desktop app's
 // API Integrations > Creator API screen and the api-integrations tutorial), and
-// the "Show me where" button points at the Amazon Associates credentials page.
+// the "Show me where" button points at the Amazon Creator API credentials page.
 export const ONBOARDING_VIDEO_ID = "plZS_nXX-BE";
 export const ASSOCIATES_CREDENTIALS_URL =
   "https://affiliate-program.amazon.com/assoc_credentials/home";
+// Where the OAuth2 Creator API Credential ID + Secret are issued, per region.
+// Same destinations the desktop app's "Show me where" opens. NA is the default;
+// the options page uses the EU/FE entries for the per-region subsections.
+export const CREATOR_API_CREDENTIALS_URLS = {
+  NA: "https://affiliate-program.amazon.com/creatorsapi",
+  EU: "https://affiliate-program.amazon.co.uk/creatorsapi",
+  FE: "https://affiliate.amazon.com.au/creatorsapi",
+} as const;
+export const CREATOR_API_CREDENTIALS_URL = CREATOR_API_CREDENTIALS_URLS.NA;
 export const API_INTEGRATIONS_TUTORIAL_URL = `${API_BASE}/help/tutorials/api-integrations`;
 
 // "Show me where" destinations for the deeplink and affiliate-network
@@ -107,12 +116,11 @@ export const PROVIDER_CREDENTIALS_URLS = {
   linktwin: "https://linktw.in/",
   levanta: "https://app.levanta.io/",
   archer: "https://app.archeraffiliates.com/",
-  logie: "https://www.mylogie.com/",
 } as const;
 
 // Marketplaces the onboarding credential form offers. Host is what the
 // extension records from the page URL; label is shown to the user. Kept in sync
-// with MARKETPLACES in src/lib/paapi.ts on the server.
+// with MARKETPLACES in src/lib/creators-api.ts on the server.
 export const CREATOR_API_MARKETPLACES: ReadonlyArray<{ host: string; label: string }> = [
   { host: "amazon.com", label: "United States (amazon.com)" },
   { host: "amazon.co.uk", label: "United Kingdom (amazon.co.uk)" },

@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
-import {
-  guidanceFor,
-  normalizeMarketplace,
-  normalizePartnerTag,
-  precheckCredentials,
-} from "./creators-api";
+import { guidanceFor, normalizeMarketplace, normalizePartnerTag, precheckCredentials } from "./creators-api";
 
-// A valid PA-API access key is 20 uppercase alphanumerics; the secret is 40 chars.
-// These example values (Amazon's own docs) pass the local pre-check.
-const OK_ACCESS = "AKIAIOSFODNN7EXAMPLE";
-const OK_SECRET = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+// A real Creator API Credential ID is an amzn1.application-oa2-client... value.
+const OK_CREDENTIAL_ID = "amzn1.application-oa2-client.abc123def456";
+const OK_SECRET = "amzn1.oa2-cs.v1.0123456789abcdef0123456789abcdef";
 
-// Regression guard for the bug where a blank Marketplace field became the invalid
-// PA-API param "www." ("The value www. provided in the request for Marketplace is
-// invalid"). normalizeMarketplace must always yield a valid www.-prefixed domain.
+// Regression guard for the bug where a blank Marketplace field became the
+// invalid param "www.". normalizeMarketplace must always yield a valid
+// www.-prefixed domain.
 describe("normalizeMarketplace", () => {
   it("defaults blank / whitespace / null / undefined to US", () => {
     expect(normalizeMarketplace("")).toBe("www.amazon.com");
@@ -43,15 +37,11 @@ describe("normalizeMarketplace", () => {
 
   it("strips protocol and path from a pasted store URL", () => {
     expect(normalizeMarketplace("https://www.amazon.com/")).toBe("www.amazon.com");
-    expect(normalizeMarketplace("http://amazon.co.jp/gp/bestsellers")).toBe(
-      "www.amazon.co.jp",
-    );
+    expect(normalizeMarketplace("http://amazon.co.jp/gp/bestsellers")).toBe("www.amazon.co.jp");
   });
 });
 
-// Regression guard for the bug where a partner tag pasted as "@littleprettyl-20"
-// (an Instagram-style handle) went to Amazon verbatim and failed. A real tag has
-// no "@" and no spaces.
+// A real tag has no "@" and no spaces.
 describe("normalizePartnerTag", () => {
   it("strips a leading @", () => {
     expect(normalizePartnerTag("@littleprettyl-20")).toBe("littleprettyl-20");
@@ -75,62 +65,40 @@ describe("normalizePartnerTag", () => {
   });
 });
 
-// The local pre-check names the common paste mistakes before a confusing round
-// trip to Amazon (which reports all of them as "Access Key ID ... invalid").
 describe("precheckCredentials", () => {
-  it("passes a well-formed key pair", () => {
-    expect(precheckCredentials(OK_ACCESS, OK_SECRET)).toBeNull();
+  it("accepts a real amzn1. Credential ID + Secret", () => {
+    expect(precheckCredentials(OK_CREDENTIAL_ID, OK_SECRET)).toBeNull();
   });
 
-  it("flags whitespace inside a key", () => {
-    expect(precheckCredentials("AKIA IOSFODNN7EXAMPL", OK_SECRET)).toMatch(/space or line break/i);
-    expect(precheckCredentials(OK_ACCESS, "wJalr XUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")).toMatch(
-      /space or line break/i,
-    );
+  it("flags whitespace inside the id or secret", () => {
+    expect(precheckCredentials("amzn1.application oa2", OK_SECRET)).toMatch(/space or line break/i);
+    expect(precheckCredentials(OK_CREDENTIAL_ID, "amzn1 secret")).toMatch(/space or line break/i);
   });
 
-  it("detects a Creators-API client id pasted as the access key", () => {
-    expect(precheckCredentials("amzn1.application-oa2-client.abc123", OK_SECRET)).toMatch(
-      /client id/i,
-    );
-  });
-
-  it("flags an access key of the wrong length", () => {
-    expect(precheckCredentials("SHORTKEY", OK_SECRET)).toMatch(/length/i);
-  });
-
-  it("flags a too-short secret", () => {
-    expect(precheckCredentials(OK_ACCESS, "tooshort")).toMatch(/too short/i);
+  it("detects an old PA-API access key pasted as the Credential ID", () => {
+    // A 20-char AKIA/ASIA access key is the old PA-API credential, not the new
+    // OAuth Credential ID.
+    expect(precheckCredentials("AKIAIOSFODNN7EXAMPLE", OK_SECRET)).toMatch(/Product Advertising API access key/i);
   });
 });
 
-// Amazon returns the same misleading message for several distinct causes, so the
-// classifier keys off the error code / message to give the right next step.
 describe("guidanceFor", () => {
-  it("maps an unrecognized-client auth error to key-copy guidance", () => {
-    expect(guidanceFor(401, "UnrecognizedClientException", "The Access Key ID ... is invalid.")).toMatch(
-      /does not recognize this access key/i,
-    );
-  });
-
-  it("maps a signature mismatch to the secret key", () => {
-    expect(guidanceFor(403, "IncompleteSignatureException", "signature")).toMatch(/secret key/i);
+  it("maps an OAuth invalid_client error to credential-copy guidance", () => {
+    const g = guidanceFor(401, "invalid_client", "client authentication failed");
+    expect(g?.message).toMatch(/did not accept these credentials/i);
+    expect(g?.eligibilityBlocked).toBe(false);
   });
 
   it("maps a partner tag error", () => {
-    expect(guidanceFor(400, "InvalidPartnerTag", "partner tag not registered")).toMatch(
-      /partner tag/i,
-    );
+    const g = guidanceFor(400, "InvalidPartnerTag", "partner tag not registered");
+    expect(g?.message).toMatch(/partner tag/i);
+    expect(g?.eligibilityBlocked).toBe(false);
   });
 
-  it("maps a clock-skew error", () => {
-    expect(guidanceFor(400, "RequestExpired", "Signature expired: too far in the past")).toMatch(
-      /clock/i,
-    );
-  });
-
-  it("maps throttling", () => {
-    expect(guidanceFor(429, "TooManyRequests", "")).toMatch(/throttled/i);
+  it("maps an eligibility 403 to the backup offer path", () => {
+    const g = guidanceFor(403, "AccessDenied", "not authorized to access this resource");
+    expect(g?.message).toMatch(/has not unlocked the Creator API/i);
+    expect(g?.eligibilityBlocked).toBe(true);
   });
 
   it("returns null when it has nothing better than Amazon's own message", () => {

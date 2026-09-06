@@ -2,8 +2,8 @@
  * enriched-item.ts - the retailer-agnostic product shape returned by the
  * /api/extension/enrich route.
  *
- * Both the Amazon PA-API client (paapi.ts) and the Walmart Affiliate API client
- * (walmart-api.ts) normalize into this one shape so everything downstream (the
+ * Both the Amazon Creator API client (creators-api.ts) and the Walmart Affiliate
+ * API client (walmart-api.ts) normalize into this one shape so everything downstream (the
  * enrich route, the extension) stays retailer-blind. Amazon-only fields
  * (primeEligible, binding) and Walmart-only fields (numReviews, retailerRank)
  * are simply null on the retailer that has no equivalent.

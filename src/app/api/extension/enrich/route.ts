@@ -1,17 +1,19 @@
 /**
- * /api/extension/enrich - PA-API product enrichment for the Chrome extension.
+ * /api/extension/enrich - Creator API product enrichment for the Chrome
+ * extension.
  *
  * POST (Bearer license key): { asins: string[] } (or legacy { asin }) plus an
  * optional `marketplaces` filter -> for each marketplace the user has stored
- * Creator API credentials for, calls PA-API GetItems (batched, up to 10 ASINs
- * per request) and returns, per requested ASIN, one normalized row per
- * marketplace. Best-effort: PA-API credentials/partner tags are per-region and
- * the same ASIN may not exist in every marketplace, so each row reports
+ * Creator API credentials for, calls Creators API getItems (batched, up to 10
+ * ASINs per request) and returns, per requested ASIN, one normalized row per
+ * marketplace. Best-effort: Creator API credentials/partner tags are per-region
+ * and the same ASIN may not exist in every marketplace, so each row reports
  * found/not-found (or a per-marketplace error) independently and one failure
  * never fails the batch.
  *
- * Signing uses the decrypted secret key server-side only; the secret never
- * leaves this process. See src/lib/paapi.ts and src/lib/creator-api-creds.ts.
+ * Auth mints a Creators API token from the decrypted credential secret
+ * server-side only; the secret never leaves this process. See
+ * src/lib/creators-api.ts and src/lib/creator-api-creds.ts.
  */
 import { resolveLicenseOnly } from "@/lib/license-auth";
 import {
@@ -22,8 +24,8 @@ import {
   migrationPendingResponse,
   optionsResponse,
 } from "@/lib/extension-api";
-import { loadDecryptedCreds } from "@/lib/creator-api-creds";
-import { getItems, GET_ITEMS_MAX, type EnrichedItem } from "@/lib/paapi";
+import { loadDecryptedCreds, loadBackupCredsFor } from "@/lib/creator-api-creds";
+import { getItems, GET_ITEMS_MAX, type CreatorsCreds, type EnrichedItem } from "@/lib/creators-api";
 import { loadWalmartCreds, lookupItems, WALMART_LOOKUP_MAX } from "@/lib/walmart-api";
 
 export const runtime = "nodejs";
@@ -77,14 +79,28 @@ export async function POST(request: Request) {
   const { creds, migrationPending, error } = await loadDecryptedCreds(auth.auth.userId);
   if (migrationPending) return migrationPendingResponse();
   if (error) return jsonWithCors({ error }, 500);
-  if (creds.length === 0) {
+
+  let selected = (filter ? creds.filter((c) => filter.has(c.host)) : creds).slice(0, MARKETPLACE_CAP);
+
+  // Fall back to leased backup credentials when the user has no own credentials
+  // for the requested marketplaces. House credentials are region-scoped, so
+  // loadBackupCredsFor only returns creds for a host in the lease's own group.
+  if (selected.length === 0) {
+    const candidateHosts = filter ? [...filter] : ["amazon.com"];
+    const backup: CreatorsCreds[] = [];
+    for (const host of candidateHosts.slice(0, MARKETPLACE_CAP)) {
+      const c = await loadBackupCredsFor(auth.auth.userId, host);
+      if (c) backup.push(c);
+    }
+    selected = backup;
+  }
+
+  if (selected.length === 0) {
     return jsonWithCors({ ok: true, configured: false, items: [] });
   }
 
-  const selected = (filter ? creds.filter((c) => filter.has(c.host)) : creds).slice(0, MARKETPLACE_CAP);
-
-  // Sequential across marketplaces to stay within PA-API's low per-second
-  // throughput limits; one batched GetItems call covers all ASINs per market.
+  // Sequential across marketplaces to stay within the Creators API's per-second
+  // throughput limits; one batched getItems call covers all ASINs per market.
   const byAsin = new Map<string, EnrichedItem[]>();
   for (const a of asins) byAsin.set(a, []);
   for (const cred of selected) {

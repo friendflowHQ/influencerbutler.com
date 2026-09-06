@@ -1,7 +1,7 @@
 /**
  * walmart-api.ts - a minimal Walmart.io Affiliate API client used by
  * /api/extension/enrich to fetch Walmart product data, parallel to the Amazon
- * PA-API client in paapi.ts.
+ * Creator API client in creators-api.ts.
  *
  * Auth: Walmart signs each request with RSA-SHA256 over a canonical string of
  * three values (consumer id, timestamp in ms, key version), each newline

@@ -180,12 +180,23 @@ export type RuntimeMessage =
   | { kind: "CLEAR_INTEGRATION"; id: string }
   | { kind: "TEST_INTEGRATION"; id: string }
   | { kind: "TEST_ALL_INTEGRATIONS" }
+  // Creator API backup-credential lease (the options card's backup chips):
+  // enable leases Influencer Butler's house credentials while Amazon has not
+  // unlocked the user's own; disable clears them; status reports the lease.
+  | { kind: "CREATOR_API_BACKUP"; action: "backup-enable" | "backup-disable" | "backup-status" }
   | {
       kind: "GENERATE_AFFILIATE_LINK";
       asin: string;
       marketplace: string;
       url?: string;
       retailer?: "amazon" | "walmart";
+      // Optional hints for highest-commission routing. `category` lets the
+      // background resolve an Amazon rate from the rate card; `ratePctHint` is a
+      // known commission percentage for this product (for example a Creator
+      // Connections campaign rate a caller already has). Both are ignored unless
+      // highest-commission routing is on.
+      category?: string;
+      ratePctHint?: number;
     }
   | { kind: "REWRITE_LINK"; url: string }
   // Clean Link (popup tool): strip another person's tracking off a pasted url,
@@ -516,8 +527,8 @@ export type CampaignBriefResult = {
   openaiConnected?: boolean;
 };
 
-// One normalized Creator API (PA-API) product row. Mirrors the server's
-// EnrichedItem shape in src/lib/paapi.ts, one per (asin, marketplace).
+// One normalized Creator API product row. Mirrors the server's EnrichedItem
+// shape in src/lib/creators-api.ts, one per (asin, marketplace).
 export type EnrichedProduct = {
   asin: string | null;
   marketplace: string;
@@ -687,7 +698,14 @@ export type HarvestResult = {
   capped: boolean;
 };
 
-export type IntegrationTestOutcome = { ok: boolean; message: string };
+export type IntegrationTestOutcome = { ok: boolean; message: string; eligibilityBlocked?: boolean };
+
+// Result of a Creator API backup-credential action (enable/disable/status).
+export type CreatorApiBackupStatus = {
+  enabled: boolean;
+  active: boolean;
+  expiresAt: number | null;
+} | null;
 // `notice` explains why the url is not the link the user's setup asked for (for
 // example the branded-link provider is selected but nobody is signed in). The
 // url is still a working affiliate link, so callers copy it either way and just

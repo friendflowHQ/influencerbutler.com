@@ -89,6 +89,7 @@ import {
   testAllIntegrations,
   testIntegration,
 } from "./integrations";
+import { backupAction } from "./creator-api-sync";
 import {
   bulkMintBranded,
   getOwnerPixels,
@@ -492,10 +493,18 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "TEST_ALL_INTEGRATIONS":
       void testAllIntegrations().then(sendResponse);
       return true;
+    case "CREATOR_API_BACKUP":
+      void backupAction(message.action).then(sendResponse);
+      return true;
     case "GENERATE_AFFILIATE_LINK":
-      void generateAffiliateLink(message.asin, message.marketplace, message.url, message.retailer).then(
-        sendResponse,
-      );
+      void generateAffiliateLink(
+        message.asin,
+        message.marketplace,
+        message.url,
+        message.retailer,
+        message.category,
+        message.ratePctHint,
+      ).then(sendResponse);
       return true;
     case "REWRITE_LINK":
       void rewriteLink(message.url).then(sendResponse);

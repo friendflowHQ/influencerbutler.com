@@ -2,10 +2,10 @@ import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
 import type { EnrichResult } from "../shared/messages";
 
-// Creator API (PA-API) enrichment for the storefront checkup. The content
-// script cannot hold the license key or hit our origin directly, so it sends a
-// batch of ASINs here and the worker POSTs /api/extension/enrich with the
-// Bearer token. Signing and the encrypted secret stay entirely server-side.
+// Creator API enrichment for the storefront checkup. The content script cannot
+// hold the license key or hit our origin directly, so it sends a batch of ASINs
+// here and the worker POSTs /api/extension/enrich with the Bearer token. The
+// OAuth token mint and the encrypted secret stay entirely server-side.
 
 const NOT_CONFIGURED: EnrichResult = { ok: false, configured: false, items: [] };
 

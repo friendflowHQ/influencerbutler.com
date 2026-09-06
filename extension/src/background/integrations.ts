@@ -1,6 +1,9 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
+import { normalizeMarketplace } from "../integrations/creators-api-client";
+import { clearCreatorApiVault, pushCreatorApiCreds, type VaultEntry } from "./creator-api-sync";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
+import { getRateCard, rateForCategory } from "../rate-card/cache";
 import { retailerFromHost } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
@@ -22,6 +25,10 @@ const ASSOCIATES = "associates";
 // Influencer Butler branded links authenticate with the signed-in license key
 // instead of a stored, user-typed credential (see adapters/influencerbutler).
 const IB_LINKS = "influencerbutler";
+// The Amazon Creators API: besides storing credentials locally (for the in-card
+// Test), they are mirrored to the server vault so server-side enrichment can
+// mint a token and call Amazon. See background/creator-api-sync.ts.
+const CREATORS_API = "creatorsApi";
 
 // Decrypt a provider's stored credentials. Two providers have no encrypted blob:
 // Associates' "credentials" are the per-country affiliate tags in global state,
@@ -145,7 +152,27 @@ export async function saveIntegration(
     if (enabled !== undefined) s.enabled = enabled;
     if (routingParticipates !== undefined) s.routingParticipates = routingParticipates;
   });
+  // Mirror Creator API credentials to the server vault so server-side enrichment
+  // can use them. Fire-and-forget: local save must not block on the network, and
+  // a failed push just means enrichment falls back to not-configured until the
+  // next save or a manual retry.
+  if (id === CREATORS_API) void syncCreatorApiVault(merged);
   return viewFor(id);
+}
+
+// Build a single vault entry from the stored Creator API credentials and push it
+// to the server. Only pushes when fully configured; the marketplace value is
+// normalized to a bare host (e.g. "amazon.com").
+async function syncCreatorApiVault(creds: Record<string, string>): Promise<void> {
+  const host = normalizeMarketplace(creds.marketplace ?? "").replace(/^www\./, "");
+  const entry: VaultEntry = {
+    host,
+    partnerTag: (creds.partnerTag ?? "").trim(),
+    credentialId: (creds.credentialId ?? "").trim(),
+    credentialSecret: (creds.credentialSecret ?? "").trim(),
+    credentialVersion: (creds.credentialVersion ?? "").trim(),
+  };
+  await pushCreatorApiCreds([entry]);
 }
 
 // Wipe a provider's stored credentials (the options page "Clear saved keys"
@@ -160,6 +187,9 @@ export async function clearIntegration(id: string): Promise<IntegrationView> {
     s.enabled = false;
     s.lastTest = { status: "untested", at: null, message: null };
   });
+  // Clearing the card also clears the server vault, so enrichment stops using a
+  // credential the user just removed locally.
+  if (id === CREATORS_API) void clearCreatorApiVault();
   return viewFor(id);
 }
 
@@ -216,23 +246,43 @@ export async function generateAffiliateLink(
   marketplace: string,
   url?: string,
   retailer?: "amazon" | "walmart",
+  category?: string,
+  ratePctHint?: number,
 ): Promise<GenerateLinkResult> {
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
     // Retailer is explicit when the caller knows it, else derived from the host.
     const resolvedRetailer = retailer ?? retailerFromHost(marketplace);
+    const roster = integrations.global.routingProviders ?? {};
     // Affiliate networks that are enabled, take part in routing, have saved
     // credentials, and can mint their own link. Tried before the deeplink
-    // wrapper (see buildAffiliateLink), in registry order.
+    // wrapper (see buildAffiliateLink), in registry order. Also gated by the
+    // Affiliate Routing Strategy roster (a missing roster key means enabled).
     const affiliateNetworks = AFFILIATE_NETWORK_IDS.filter((id) => {
       const state = integrations.providers[id];
       return Boolean(
-        state?.enabled &&
+        roster[id] !== false &&
+          state?.enabled &&
           state.routingParticipates &&
           state.credentialsEnc &&
           getAdapter(id)?.generateLink,
       );
     });
+    // Under highest-commission routing, resolve the Amazon Associates rate for
+    // this product so it can compete: a caller-supplied hint wins, else the rate
+    // card matched by category, else the card's default rate, else unknown.
+    let amazonRatePct: number | null = null;
+    if (integrations.global.useHighestCommission && resolvedRetailer === "amazon") {
+      if (typeof ratePctHint === "number" && ratePctHint > 0) {
+        amazonRatePct = ratePctHint;
+      } else {
+        const card = await getRateCard();
+        if (card) {
+          const match = rateForCategory(card, category ?? null);
+          amazonRatePct = match ? match.ratePct : card.defaultRatePct;
+        }
+      }
+    }
     const built = await buildAffiliateLink(
       { asin, marketplace, url, retailer: resolvedRetailer },
       {
@@ -244,6 +294,9 @@ export async function generateAffiliateLink(
         walmartLinkProvider: integrations.global.walmartLinkProvider,
         perCountryTags: integrations.global.perCountryTags,
         storefrontHandle: settings.storefrontHandle,
+        useHighestCommission: integrations.global.useHighestCommission,
+        amazonRatePct,
+        amazonParticipates: roster.amazon !== false,
       },
       async (providerId) => credsFor(providerId, integrations),
     );
