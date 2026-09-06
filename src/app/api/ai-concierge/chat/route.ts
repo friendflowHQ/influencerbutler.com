@@ -33,10 +33,15 @@ function sanitizeClient(raw: unknown): ClientMeta | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const c = raw as Record<string, unknown>;
   const pick = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : undefined);
+  const personaRaw = c.persona && typeof c.persona === "object" ? (c.persona as Record<string, unknown>) : null;
+  const persona = personaRaw
+    ? { butlerName: pick(personaRaw.butlerName, 60), firstName: pick(personaRaw.firstName, 60) }
+    : null;
   return {
     surface: pick(c.surface, 40),
     appVersion: pick(c.appVersion, 40),
     platform: pick(c.platform, 40),
+    ...(persona && (persona.butlerName || persona.firstName) ? { persona } : {}),
   };
 }
 
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
     source: authed.auth.kind === "license" ? "license" : "session",
   };
   const messages: Array<Record<string, unknown>> = [
-    { role: "system", content: buildInstructions() },
+    { role: "system", content: buildInstructions(client?.persona) },
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: String(m.content || "").slice(0, 4000) })),

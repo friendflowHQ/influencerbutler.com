@@ -1,0 +1,1107 @@
+{
+  "generatedAt": "2026-09-06T21:36:08.178Z",
+  "count": 103,
+  "entries": [
+    {
+      "section": "action-queue",
+      "workspaceId": "actionqueue",
+      "label": "Action Queue",
+      "path": "Action Queue",
+      "crumbs": [
+        "Action Queue"
+      ],
+      "description": "Tasks waiting on your decision: review and approve each one."
+    },
+    {
+      "section": "ai-assistant",
+      "workspaceId": "ai-assistant",
+      "label": "AI Assistant",
+      "path": "AI Assistant",
+      "crumbs": [
+        "AI Assistant"
+      ],
+      "description": "Ask the AI assistant for setup help and how-tos."
+    },
+    {
+      "section": "amazon-butler-dashboard",
+      "workspaceId": "amazon-butler-dashboard",
+      "label": "Amazon Butler",
+      "path": "Amazon Butler",
+      "crumbs": [
+        "Amazon Butler"
+      ],
+      "description": "Expand to see all Amazon-related butlers."
+    },
+    {
+      "section": "ads-goldmine",
+      "workspaceId": "ads-goldmine-butler",
+      "label": "Ads Goldmine",
+      "path": "Amazon Butler › Ads Goldmine",
+      "crumbs": [
+        "Amazon Butler",
+        "Ads Goldmine"
+      ],
+      "description": "Find Amazon ads and sponsored brand campaigns worth re-sharing."
+    },
+    {
+      "section": "black-friday",
+      "workspaceId": "black-friday",
+      "label": "Black Friday Butler",
+      "path": "Amazon Butler › Black Friday Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Black Friday Butler"
+      ],
+      "description": "Seasonal helper: find and post Black Friday deals across platforms."
+    },
+    {
+      "section": "brand-release-butler",
+      "workspaceId": "brand-release-butler",
+      "label": "Brand Release Butler",
+      "path": "Amazon Butler › Brand Release Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Brand Release Butler"
+      ],
+      "description": "Follow Amazon brands and get alerted when they list a new product, so you can be first to promote it."
+    },
+    {
+      "section": "campaign-alert-butler",
+      "workspaceId": "campaign-alert-butler",
+      "label": "Campaign Alert Butler",
+      "path": "Amazon Butler › Campaign Alert Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Campaign Alert Butler"
+      ],
+      "description": "Follow Creator Connections brands and get alerted when they post new campaigns."
+    },
+    {
+      "section": "cc-check",
+      "workspaceId": "cc-check",
+      "label": "CC Check",
+      "path": "Amazon Butler › CC Check",
+      "crumbs": [
+        "Amazon Butler",
+        "CC Check"
+      ],
+      "description": "Verify your Amazon Creator Connections campaigns and accept those matching your ASINs."
+    },
+    {
+      "section": "cc-deals",
+      "workspaceId": "cc-deals",
+      "label": "Campaign Deals",
+      "path": "Amazon Butler › CC Check › Campaign Deals",
+      "crumbs": [
+        "Amazon Butler",
+        "CC Check",
+        "Campaign Deals"
+      ],
+      "description": "See which products in your Creator Connections campaigns are on sale right now."
+    },
+    {
+      "section": "harvest",
+      "workspaceId": "goldminebutler",
+      "label": "Daily Commission Butler",
+      "path": "Amazon Butler › Daily Commission Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Daily Commission Butler"
+      ],
+      "description": "Auto-accept Amazon CC campaigns that match your storefront ASINs."
+    },
+    {
+      "section": "earnings-intelligence",
+      "workspaceId": "earnings-intelligence",
+      "label": "Earnings Intelligence",
+      "path": "Amazon Butler › Earnings Intelligence",
+      "crumbs": [
+        "Amazon Butler",
+        "Earnings Intelligence"
+      ],
+      "description": "Track earnings per source, storefront, and ASIN over time."
+    },
+    {
+      "section": "goldmine-butler",
+      "workspaceId": "goldminebutler",
+      "label": "Goldmine Butler",
+      "path": "Amazon Butler › Goldmine Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Goldmine Butler"
+      ],
+      "description": "Surface high-value brand opportunities from your CC inbox."
+    },
+    {
+      "section": "like-butler",
+      "workspaceId": "like-butler",
+      "label": "Like Butler",
+      "path": "Amazon Butler › Like Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Like Butler"
+      ],
+      "description": "Auto-like CC campaigns from brands you want to keep top of mind."
+    },
+    {
+      "section": "outreach",
+      "workspaceId": "amazonbutler",
+      "label": "Message Brands",
+      "path": "Amazon Butler › Message Brands",
+      "crumbs": [
+        "Amazon Butler",
+        "Message Brands"
+      ],
+      "description": "Send brand outreach DMs through Amazon Creator Connections."
+    },
+    {
+      "section": "ai-keyword-generator",
+      "workspaceId": "ai-keyword-generator",
+      "label": "Keywords & Filters",
+      "path": "Amazon Butler › Message Brands › Keywords & Filters",
+      "crumbs": [
+        "Amazon Butler",
+        "Message Brands",
+        "Keywords & Filters"
+      ],
+      "description": "Set your keyword and brand filters, generate seasonal keywords with AI, and send them to your Message Brands keyword list."
+    },
+    {
+      "section": "orders-butler",
+      "workspaceId": "ordersbutler",
+      "label": "Orders Butler",
+      "path": "Amazon Butler › Orders Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Orders Butler"
+      ],
+      "description": "Pull your Amazon order history so commissions can be reconciled."
+    },
+    {
+      "section": "photo-reload-butler",
+      "workspaceId": "photo-reload-butler",
+      "label": "Photo Reload Butler",
+      "path": "Amazon Butler › Photo Reload Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Photo Reload Butler"
+      ],
+      "description": "Reload your Amazon storefront photos to other marketplaces with fresh tags."
+    },
+    {
+      "section": "prime-day-butler",
+      "workspaceId": "prime-day-butler",
+      "label": "Prime Day Butler",
+      "path": "Amazon Butler › Prime Day Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Prime Day Butler"
+      ],
+      "description": "Seasonal helper: surface Prime Day deals you can post about, including products you already own."
+    },
+    {
+      "section": "product-research",
+      "workspaceId": "product-research-butler",
+      "label": "Product Research",
+      "path": "Amazon Butler › Product Research",
+      "crumbs": [
+        "Amazon Butler",
+        "Product Research"
+      ],
+      "description": "See price and sales-rank history for any product you browse."
+    },
+    {
+      "section": "retag-butler",
+      "workspaceId": "retag-butler",
+      "label": "Retag Butler",
+      "path": "Amazon Butler › Retag Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Retag Butler"
+      ],
+      "description": "Switch the Amazon affiliate tag on existing links in bulk."
+    },
+    {
+      "section": "amazon-butler-settings",
+      "workspaceId": "amazon-butler-settings",
+      "label": "Settings",
+      "path": "Amazon Butler › Settings",
+      "crumbs": [
+        "Amazon Butler",
+        "Settings"
+      ],
+      "description": "Your Amazon storefront IDs, marketplace sign-ins, and Associate commission rates."
+    },
+    {
+      "section": "storefrontbutler",
+      "workspaceId": "storefrontbutler",
+      "label": "Storefront Butler",
+      "path": "Amazon Butler › Storefront Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Storefront Butler"
+      ],
+      "description": "Scan your Amazon storefront so the other butlers know which ASINs you carry."
+    },
+    {
+      "section": "video-reload-butler",
+      "workspaceId": "video-reload-butler",
+      "label": "Video Reload Butler",
+      "path": "Amazon Butler › Video Reload Butler",
+      "crumbs": [
+        "Amazon Butler",
+        "Video Reload Butler"
+      ],
+      "description": "Generate Amazon-platform video content from your product picks."
+    },
+    {
+      "section": "api-integrations",
+      "workspaceId": "api-integrations",
+      "label": "API Integrations",
+      "path": "API Integrations",
+      "crumbs": [
+        "API Integrations"
+      ],
+      "description": "Connect external services: OpenAI, GeniusLink, Levanta, Amazon Creators API, and more."
+    },
+    {
+      "section": "benable-butler-dashboard",
+      "workspaceId": "benable-butler-dashboard",
+      "label": "Benable Butler",
+      "path": "Benable Butler",
+      "crumbs": [
+        "Benable Butler"
+      ],
+      "description": "Expand to see Benable-related butlers."
+    },
+    {
+      "section": "benable-like-butler",
+      "workspaceId": "benable-like-butler",
+      "label": "Benable Like Butler",
+      "path": "Benable Butler › Benable Like Butler",
+      "crumbs": [
+        "Benable Butler",
+        "Benable Like Butler"
+      ],
+      "description": "Auto-like Benable content from brands you follow."
+    },
+    {
+      "section": "benable-comment-butler",
+      "workspaceId": "benable-comment-butler",
+      "label": "Comment Butler",
+      "path": "Benable Butler › Comment Butler",
+      "crumbs": [
+        "Benable Butler",
+        "Comment Butler"
+      ],
+      "description": "Auto-comment on Benable posts from creators you follow."
+    },
+    {
+      "section": "benable-butler",
+      "workspaceId": "benable-butler",
+      "label": "List Publishing",
+      "path": "Benable Butler › List Publishing",
+      "crumbs": [
+        "Benable Butler",
+        "List Publishing"
+      ],
+      "description": "Publish your product lists to Benable."
+    },
+    {
+      "section": "collab",
+      "workspaceId": "collab-butler",
+      "label": "Collab Butler",
+      "path": "Collab Butler",
+      "crumbs": [
+        "Collab Butler"
+      ],
+      "description": "Coordinate creator collaborations across your team."
+    },
+    {
+      "section": "collage-butler-dashboard",
+      "workspaceId": "collage-butler-dashboard",
+      "label": "Collage Butler",
+      "path": "Collage Butler",
+      "crumbs": [
+        "Collage Butler"
+      ],
+      "description": "Expand to see Collage Butler sub-sections."
+    },
+    {
+      "section": "collage-butler",
+      "workspaceId": "collage-butler",
+      "label": "Collage Butler",
+      "path": "Collage Butler",
+      "crumbs": [
+        "Collage Butler"
+      ],
+      "description": "Build multi-product collages from your keywords and send them to post."
+    },
+    {
+      "section": "collage-gallery",
+      "workspaceId": "collage-gallery",
+      "label": "Collage Gallery",
+      "path": "Collage Butler › Collage Gallery",
+      "crumbs": [
+        "Collage Butler",
+        "Collage Gallery"
+      ],
+      "description": "Browse every collage you have generated and its post status."
+    },
+    {
+      "section": "collage-templates",
+      "workspaceId": "collage-templates",
+      "label": "Collage Templates",
+      "path": "Collage Butler › Collage Templates",
+      "crumbs": [
+        "Collage Butler",
+        "Collage Templates"
+      ],
+      "description": "Save reusable collage layouts, colors, and presets."
+    },
+    {
+      "section": "collage-keywords",
+      "workspaceId": "collage-keywords",
+      "label": "Keywords & Filters",
+      "path": "Collage Butler › Keywords & Filters",
+      "crumbs": [
+        "Collage Butler",
+        "Keywords & Filters"
+      ],
+      "description": "Pick the keywords and filters that choose your collage products."
+    },
+    {
+      "section": "audit",
+      "workspaceId": "audit",
+      "label": "Console",
+      "path": "Console",
+      "crumbs": [
+        "Console"
+      ],
+      "description": "Live activity logs from every running butler."
+    },
+    {
+      "section": "content-butler",
+      "workspaceId": "content-butler",
+      "label": "Content Butler",
+      "path": "Content Butler",
+      "crumbs": [
+        "Content Butler"
+      ],
+      "description": "Generate social-ready posts from your product picks."
+    },
+    {
+      "section": "content-planner",
+      "workspaceId": "content-planner",
+      "label": "Content Planner",
+      "path": "Content Planner",
+      "crumbs": [
+        "Content Planner"
+      ],
+      "description": "Plan your socials week visually. Write your own entries and see what your butlers have scheduled."
+    },
+    {
+      "section": "dashboard",
+      "workspaceId": "dashboard",
+      "label": "Dashboard",
+      "path": "Dashboard",
+      "crumbs": [
+        "Dashboard"
+      ],
+      "description": "Daily overview: what's running, what needs attention, recent activity."
+    },
+    {
+      "section": "deals-butler-dashboard",
+      "workspaceId": "deals-butler-dashboard",
+      "label": "Deals Butler",
+      "path": "Deals Butler",
+      "crumbs": [
+        "Deals Butler"
+      ],
+      "description": "Expand to see Deals Butler sub-sections."
+    },
+    {
+      "section": "deals",
+      "workspaceId": "deals",
+      "label": "Deals Butler",
+      "path": "Deals Butler",
+      "crumbs": [
+        "Deals Butler"
+      ],
+      "description": "Open Deals Butler. Switch sections with the tabs at the top."
+    },
+    {
+      "section": "posted-deals-log",
+      "workspaceId": "posted-deals-log",
+      "label": "Archive",
+      "path": "Deals Butler › Archive",
+      "crumbs": [
+        "Deals Butler",
+        "Archive"
+      ],
+      "description": "See which deals were posted, where, and when."
+    },
+    {
+      "section": "best-seller-butler",
+      "workspaceId": "best-seller-butler",
+      "label": "Best Seller Butler",
+      "path": "Deals Butler › Best Seller Butler",
+      "crumbs": [
+        "Deals Butler",
+        "Best Seller Butler"
+      ],
+      "description": "Find products that keep converting and post them on repeat."
+    },
+    {
+      "section": "email-deals",
+      "workspaceId": "email-deals",
+      "label": "Email Deals",
+      "path": "Deals Butler › Email Deals",
+      "crumbs": [
+        "Deals Butler",
+        "Email Deals"
+      ],
+      "description": "Harvest the deals sellers email you into a postable deals table."
+    },
+    {
+      "section": "expired-butler",
+      "workspaceId": "expired-butler",
+      "label": "Expired Butler",
+      "path": "Deals Butler › Expired Butler",
+      "crumbs": [
+        "Deals Butler",
+        "Expired Butler"
+      ],
+      "description": "Remove or update posts for deals that have expired."
+    },
+    {
+      "section": "pricecrash-butler",
+      "workspaceId": "pricecrashbutler",
+      "label": "Pricecrash Butler",
+      "path": "Deals Butler › Pricecrash Butler",
+      "crumbs": [
+        "Deals Butler",
+        "Pricecrash Butler"
+      ],
+      "description": "Catch Amazon pricing errors before the seller fixes them."
+    },
+    {
+      "section": "facebook-butler-dashboard",
+      "workspaceId": "facebook-butler-dashboard",
+      "label": "Facebook Butler",
+      "path": "Facebook Butler",
+      "crumbs": [
+        "Facebook Butler"
+      ],
+      "description": "Expand to see Facebook-related butlers."
+    },
+    {
+      "section": "delete-posts-comments",
+      "workspaceId": "delete-posts-comments",
+      "label": "Delete Posts & Comments",
+      "path": "Facebook Butler › Delete Posts & Comments",
+      "crumbs": [
+        "Facebook Butler",
+        "Delete Posts & Comments"
+      ],
+      "description": "Bulk-delete your own Facebook posts and comments on a schedule, with a preview and per-run cap."
+    },
+    {
+      "section": "facebook-admin-butler",
+      "workspaceId": "facebook-admin-butler",
+      "label": "Facebook Admin Butler",
+      "path": "Facebook Butler › Facebook Admin Butler",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Admin Butler"
+      ],
+      "description": "Find groups that need an admin by keyword and take them over automatically."
+    },
+    {
+      "section": "facebook-goldmine",
+      "workspaceId": "facebook-goldmine",
+      "label": "Facebook Goldmine",
+      "path": "Facebook Butler › Facebook Goldmine",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Goldmine"
+      ],
+      "description": "Find the posts already going viral in your niche groups, then repurpose them."
+    },
+    {
+      "section": "facebook-group-builder",
+      "workspaceId": "facebook-group-builder",
+      "label": "Facebook Group Builder",
+      "path": "Facebook Butler › Facebook Group Builder",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Group Builder"
+      ],
+      "description": "Build and grow niche Facebook groups on autopilot with AI, then post deals to them."
+    },
+    {
+      "section": "facebook-group-email",
+      "workspaceId": "facebook-group-email",
+      "label": "Facebook Group Email Collection",
+      "path": "Facebook Butler › Facebook Group Email Collection",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Group Email Collection"
+      ],
+      "description": "Collect the emails people submit when requesting to join your Facebook group."
+    },
+    {
+      "section": "facebook-influencer",
+      "workspaceId": "facebook-influencer",
+      "label": "Facebook Inviter",
+      "path": "Facebook Butler › Facebook Inviter",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Inviter"
+      ],
+      "description": "Invite people who react to your Facebook group posts to follow your Page."
+    },
+    {
+      "section": "facebook-message-butler",
+      "workspaceId": "facebook-message-butler",
+      "label": "Facebook Message Butler",
+      "path": "Facebook Butler › Facebook Message Butler",
+      "crumbs": [
+        "Facebook Butler",
+        "Facebook Message Butler"
+      ],
+      "description": "Message Facebook group members or Page followers with safe pacing and unique messages."
+    },
+    {
+      "section": "group-invite-butler",
+      "workspaceId": "group-invite-butler",
+      "label": "Group Invite Butler",
+      "path": "Facebook Butler › Group Invite Butler",
+      "crumbs": [
+        "Facebook Butler",
+        "Group Invite Butler"
+      ],
+      "description": "Invite emails harvested by the Goldmines to join your Facebook group."
+    },
+    {
+      "section": "group-uninvite-butler",
+      "workspaceId": "group-uninvite-butler",
+      "label": "Group Uninvite Butler",
+      "path": "Facebook Butler › Group Uninvite Butler",
+      "crumbs": [
+        "Facebook Butler",
+        "Group Uninvite Butler"
+      ],
+      "description": "Cancel pending invites in your Facebook group, one at a time."
+    },
+    {
+      "section": "feedback",
+      "workspaceId": "feedback",
+      "label": "Feedback",
+      "path": "Feedback",
+      "crumbs": [
+        "Feedback"
+      ],
+      "description": "Send a bug report or feature request to the team."
+    },
+    {
+      "section": "help",
+      "workspaceId": "help",
+      "label": "Help & Tutorials",
+      "path": "Help & Tutorials",
+      "crumbs": [
+        "Help & Tutorials"
+      ],
+      "description": "Read guides and watch walkthrough videos."
+    },
+    {
+      "section": "instagram-butler-dashboard",
+      "workspaceId": "instagram-butler-dashboard",
+      "label": "Instagram Butler",
+      "path": "Instagram Butler",
+      "crumbs": [
+        "Instagram Butler"
+      ],
+      "description": "Expand to see all Instagram-related butlers."
+    },
+    {
+      "section": "closefriends-butler",
+      "workspaceId": "close-friends-butler",
+      "label": "Instagram Close Friends Butler",
+      "path": "Instagram Butler › Instagram Close Friends Butler",
+      "crumbs": [
+        "Instagram Butler",
+        "Instagram Close Friends Butler"
+      ],
+      "description": "Maintain your Instagram Close Friends list automatically."
+    },
+    {
+      "section": "instagram-email",
+      "workspaceId": "instagram-email",
+      "label": "Instagram Email Collection",
+      "path": "Instagram Butler › Instagram Email Collection",
+      "crumbs": [
+        "Instagram Butler",
+        "Instagram Email Collection"
+      ],
+      "description": "Collect email addresses from Instagram brand bios."
+    },
+    {
+      "section": "instagram-goldmine",
+      "workspaceId": "instagram-goldmine",
+      "label": "Instagram Goldmine",
+      "path": "Instagram Butler › Instagram Goldmine",
+      "crumbs": [
+        "Instagram Butler",
+        "Instagram Goldmine"
+      ],
+      "description": "Surface brand-collab opportunities from your Instagram feed."
+    },
+    {
+      "section": "instagram-like-butler",
+      "workspaceId": "instagram-like-butler",
+      "label": "Instagram Like Butler",
+      "path": "Instagram Butler › Instagram Like Butler",
+      "crumbs": [
+        "Instagram Butler",
+        "Instagram Like Butler"
+      ],
+      "description": "Auto-like the recent posts of Instagram accounts you choose."
+    },
+    {
+      "section": "instagram-outreach",
+      "workspaceId": "instagram",
+      "label": "Instagram Message Followers",
+      "path": "Instagram Butler › Instagram Message Followers",
+      "crumbs": [
+        "Instagram Butler",
+        "Instagram Message Followers"
+      ],
+      "description": "Send brand outreach DMs from your Instagram account."
+    },
+    {
+      "section": "levanta-butler-dashboard",
+      "workspaceId": "levanta-butler-dashboard",
+      "label": "Levanta Butler",
+      "path": "Levanta Butler",
+      "crumbs": [
+        "Levanta Butler"
+      ],
+      "description": "Expand to see Levanta-related butlers."
+    },
+    {
+      "section": "levanta-email-extractor",
+      "workspaceId": "levanta",
+      "label": "Email Extractor",
+      "path": "Levanta Butler › Email Extractor",
+      "crumbs": [
+        "Levanta Butler",
+        "Email Extractor"
+      ],
+      "description": "Pull brand emails from your Levanta inbox."
+    },
+    {
+      "section": "levanta-message-brands",
+      "workspaceId": "levanta",
+      "label": "Message Brands",
+      "path": "Levanta Butler › Message Brands",
+      "crumbs": [
+        "Levanta Butler",
+        "Message Brands"
+      ],
+      "description": "Send outreach through the Levanta brand network."
+    },
+    {
+      "section": "link-butler-dashboard",
+      "workspaceId": "link-butler-dashboard",
+      "label": "Link Butler",
+      "path": "Link Butler",
+      "crumbs": [
+        "Link Butler"
+      ],
+      "description": "Expand to see your deeplink tools."
+    },
+    {
+      "section": "link-butler",
+      "workspaceId": "link-butler",
+      "label": "Influencer Deeplink Butler",
+      "path": "Link Butler › Influencer Deeplink Butler",
+      "crumbs": [
+        "Link Butler",
+        "Influencer Deeplink Butler"
+      ],
+      "description": "Mint branded, tracked links that open the shopping app."
+    },
+    {
+      "section": "relink-butler",
+      "workspaceId": "relink-butler",
+      "label": "Relink Butler",
+      "path": "Link Butler › Relink Butler",
+      "crumbs": [
+        "Link Butler",
+        "Relink Butler"
+      ],
+      "description": "Bulk-edit existing affiliate links across multiple platforms."
+    },
+    {
+      "section": "messenger-butler-dashboard",
+      "workspaceId": "messenger-butler-dashboard",
+      "label": "Messenger Butler",
+      "path": "Messenger Butler",
+      "crumbs": [
+        "Messenger Butler"
+      ],
+      "description": "Expand to see Messenger-related butlers."
+    },
+    {
+      "section": "messenger",
+      "workspaceId": "messenger",
+      "label": "Messages",
+      "path": "Messenger Butler › Messages",
+      "crumbs": [
+        "Messenger Butler",
+        "Messages"
+      ],
+      "description": "Send Facebook Messenger DMs to brand accounts."
+    },
+    {
+      "section": "messenger-templates",
+      "workspaceId": "messenger-templates",
+      "label": "Templates",
+      "path": "Messenger Butler › Templates",
+      "crumbs": [
+        "Messenger Butler",
+        "Templates"
+      ],
+      "description": "Manage the reply templates Messenger Butler picks from when responding to brand threads."
+    },
+    {
+      "section": "pinterest-butler",
+      "workspaceId": "pinterest-butler",
+      "label": "Pinterest Butler",
+      "path": "Pinterest Butler",
+      "crumbs": [
+        "Pinterest Butler"
+      ],
+      "description": "Schedule and post Amazon products to Pinterest boards."
+    },
+    {
+      "section": "pitchbutler",
+      "workspaceId": "pitchbutler",
+      "label": "Pitch Butler",
+      "path": "Pitch Butler",
+      "crumbs": [
+        "Pitch Butler"
+      ],
+      "description": "One CRM for every brand you're prospecting, pitching, or negotiating with."
+    },
+    {
+      "section": "reddit-butler-dashboard",
+      "workspaceId": "reddit-butler-dashboard",
+      "label": "Reddit Butler",
+      "path": "Reddit Butler",
+      "crumbs": [
+        "Reddit Butler"
+      ],
+      "description": "Expand to see your Reddit tools."
+    },
+    {
+      "section": "reddit-compose",
+      "workspaceId": "reddit-compose",
+      "label": "Compose",
+      "path": "Reddit Butler › Compose",
+      "crumbs": [
+        "Reddit Butler",
+        "Compose"
+      ],
+      "description": "Compose and post to a subreddit."
+    },
+    {
+      "section": "reddit-manage",
+      "workspaceId": "reddit-manage",
+      "label": "Manage posts",
+      "path": "Reddit Butler › Manage posts",
+      "crumbs": [
+        "Reddit Butler",
+        "Manage posts"
+      ],
+      "description": "Edit or delete posts you sent from Compose."
+    },
+    {
+      "section": "settings",
+      "workspaceId": "settings",
+      "label": "Settings",
+      "path": "Settings",
+      "crumbs": [
+        "Settings"
+      ],
+      "description": "Global app settings: license, language, theme, schedules."
+    },
+    {
+      "section": "google-sheets-export",
+      "workspaceId": "google-sheets-export",
+      "label": "Sheetsyncer Butler",
+      "path": "Sheetsyncer Butler",
+      "crumbs": [
+        "Sheetsyncer Butler"
+      ],
+      "description": "Send content your butlers generate to a Google Sheet, like Deals Butler does."
+    },
+    {
+      "section": "social-posting-butler",
+      "workspaceId": "social-posting-butler",
+      "label": "Social Posting Butler",
+      "path": "Social Posting Butler",
+      "crumbs": [
+        "Social Posting Butler"
+      ],
+      "description": "Schedule and publish your posts to every social destination."
+    },
+    {
+      "section": "telegram-butler-dashboard",
+      "workspaceId": "telegram-butler-dashboard",
+      "label": "Telegram Butler",
+      "path": "Telegram Butler",
+      "crumbs": [
+        "Telegram Butler"
+      ],
+      "description": "Expand to see your Telegram tools."
+    },
+    {
+      "section": "telegram-compose",
+      "workspaceId": "telegram-compose",
+      "label": "Compose",
+      "path": "Telegram Butler › Compose",
+      "crumbs": [
+        "Telegram Butler",
+        "Compose"
+      ],
+      "description": "Compose and post to your Telegram channel."
+    },
+    {
+      "section": "telegram-manage",
+      "workspaceId": "telegram-manage",
+      "label": "Manage posts",
+      "path": "Telegram Butler › Manage posts",
+      "crumbs": [
+        "Telegram Butler",
+        "Manage posts"
+      ],
+      "description": "Edit or delete posts you sent from Compose."
+    },
+    {
+      "section": "temu",
+      "workspaceId": "temu",
+      "label": "Temu Butler",
+      "path": "Temu Butler",
+      "crumbs": [
+        "Temu Butler"
+      ],
+      "description": "Opens Temu's Creator Hub in your default browser."
+    },
+    {
+      "section": "threads-butler-dashboard",
+      "workspaceId": "threads-butler-dashboard",
+      "label": "Threads Butler",
+      "path": "Threads Butler",
+      "crumbs": [
+        "Threads Butler"
+      ],
+      "description": "Expand to see your Threads tools."
+    },
+    {
+      "section": "threads-compose",
+      "workspaceId": "threads-compose",
+      "label": "Compose",
+      "path": "Threads Butler › Compose",
+      "crumbs": [
+        "Threads Butler",
+        "Compose"
+      ],
+      "description": "Compose and post to Threads."
+    },
+    {
+      "section": "threads-manage",
+      "workspaceId": "threads-manage",
+      "label": "Manage posts",
+      "path": "Threads Butler › Manage posts",
+      "crumbs": [
+        "Threads Butler",
+        "Manage posts"
+      ],
+      "description": "Delete posts you sent from Compose."
+    },
+    {
+      "section": "tiktok-butler-dashboard",
+      "workspaceId": "tiktok-butler-dashboard",
+      "label": "TikTok Butler",
+      "path": "TikTok Butler",
+      "crumbs": [
+        "TikTok Butler"
+      ],
+      "description": "Expand to see all TikTok-related butlers."
+    },
+    {
+      "section": "tiktok-comment-butler",
+      "workspaceId": "tiktok-comment-butler",
+      "label": "TikTok Comment Butler",
+      "path": "TikTok Butler › TikTok Comment Butler",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Comment Butler"
+      ],
+      "description": "Auto-comment on the recent videos of TikTok accounts you choose."
+    },
+    {
+      "section": "tiktok-creator-stats",
+      "workspaceId": "tiktok-creator-stats",
+      "label": "TikTok Creator Stats",
+      "path": "TikTok Butler › TikTok Creator Stats",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Creator Stats"
+      ],
+      "description": "See your TikTok profile, followers, and recent video stats."
+    },
+    {
+      "section": "tiktok-follow-butler",
+      "workspaceId": "tiktok-follow-butler",
+      "label": "TikTok Follow Butler",
+      "path": "TikTok Butler › TikTok Follow Butler",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Follow Butler"
+      ],
+      "description": "Auto-follow the TikTok accounts you choose."
+    },
+    {
+      "section": "tiktok-goldmine",
+      "workspaceId": "tiktok-goldmine",
+      "label": "TikTok Goldmine",
+      "path": "TikTok Butler › TikTok Goldmine",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Goldmine"
+      ],
+      "description": "Surface brand-collab opportunities from TikTok."
+    },
+    {
+      "section": "tiktok-like-butler",
+      "workspaceId": "tiktok-like-butler",
+      "label": "TikTok Like Butler",
+      "path": "TikTok Butler › TikTok Like Butler",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Like Butler"
+      ],
+      "description": "Auto-like the recent videos of TikTok accounts you choose."
+    },
+    {
+      "section": "tiktok-outreach",
+      "workspaceId": "tiktok-outreach",
+      "label": "TikTok Message Followers",
+      "path": "TikTok Butler › TikTok Message Followers",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Message Followers"
+      ],
+      "description": "Send brand outreach DMs from your TikTok account."
+    },
+    {
+      "section": "tiktok-orders-butler",
+      "workspaceId": "tiktok-orders-butler",
+      "label": "TikTok Orders Butler",
+      "path": "TikTok Butler › TikTok Orders Butler",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Orders Butler"
+      ],
+      "description": "See your TikTok Shop affiliate orders and commissions."
+    },
+    {
+      "section": "tiktok-video-butler",
+      "workspaceId": "tiktok-video-butler",
+      "label": "TikTok Video Butler",
+      "path": "TikTok Butler › TikTok Video Butler",
+      "crumbs": [
+        "TikTok Butler",
+        "TikTok Video Butler"
+      ],
+      "description": "Upload videos to your TikTok account."
+    },
+    {
+      "section": "voiceover-butler",
+      "workspaceId": "voiceover-butler",
+      "label": "Voiceover Butler",
+      "path": "Voiceover Butler",
+      "crumbs": [
+        "Voiceover Butler"
+      ],
+      "description": "Generate voiceovers for short-form video using AI."
+    },
+    {
+      "section": "walmart-butler-dashboard",
+      "workspaceId": "walmart-butler-dashboard",
+      "label": "Walmart Butler",
+      "path": "Walmart Butler",
+      "crumbs": [
+        "Walmart Butler"
+      ],
+      "description": "Expand to see your Walmart tools."
+    },
+    {
+      "section": "walmart-photo-butler",
+      "workspaceId": "walmart-photo-butler",
+      "label": "Photo Repost",
+      "path": "Walmart Butler › Photo Repost",
+      "crumbs": [
+        "Walmart Butler",
+        "Photo Repost"
+      ],
+      "description": "Repost your Amazon storefront photos to your Walmart Creator storefront when the product is the exact same item."
+    },
+    {
+      "section": "walmart-butler-settings",
+      "workspaceId": "walmart-butler-settings",
+      "label": "Settings",
+      "path": "Walmart Butler › Settings",
+      "crumbs": [
+        "Walmart Butler",
+        "Settings"
+      ],
+      "description": "Choose how your Walmart deal links are created."
+    },
+    {
+      "section": "walmartbutler",
+      "workspaceId": "walmartbutler",
+      "label": "Video Repost",
+      "path": "Walmart Butler › Video Repost",
+      "crumbs": [
+        "Walmart Butler",
+        "Video Repost"
+      ],
+      "description": "Repost your Amazon storefront videos to your Walmart Creator storefront when the product is the exact same item."
+    },
+    {
+      "section": "walmart-research",
+      "workspaceId": "walmart-research",
+      "label": "Walmart Research",
+      "path": "Walmart Butler › Walmart Research",
+      "crumbs": [
+        "Walmart Butler",
+        "Walmart Research"
+      ],
+      "description": "See price and rank history for Walmart products before you feature them."
+    },
+    {
+      "section": "youtube-butler",
+      "workspaceId": "youtube-butler",
+      "label": "YouTube Butler",
+      "path": "YouTube Butler",
+      "crumbs": [
+        "YouTube Butler"
+      ],
+      "description": "Manage YouTube descriptions and affiliate links across your channel."
+    }
+  ]
+}

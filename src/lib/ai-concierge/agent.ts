@@ -15,6 +15,8 @@
  * ../mcp/auth, ../scheduling-server, ../entitlements.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { callTool } from "@/lib/mcp/tools";
 import type { Principal } from "@/lib/mcp/auth";
 import { loadSearchIndex } from "@/lib/tutorials";
@@ -148,7 +150,34 @@ const DESKTOP_NAV: Array<{ label: string; key?: string; items?: NavLeaf[] }> = [
   { label: "Settings", key: "settings" },
 ];
 
+/**
+ * The generated nav map: every workspace/sub-panel with its EXACT click path
+ * and one-line description, produced from the desktop's live nav tree by
+ * `scripts/help/build-nav-map.js` in the desktop repo and published here as
+ * content/nav-map.json. This supersedes the hand-maintained DESKTOP_NAV above
+ * (kept only as a fallback), so the concierge's click paths stay correct and
+ * complete as the app adds workspaces. Read once at module load.
+ */
+type NavMapEntry = { section: string; label: string; path: string; description?: string };
+const NAV_MAP: NavMapEntry[] = (() => {
+  try {
+    const raw = readFileSync(join(process.cwd(), "content", "nav-map.json"), "utf8");
+    const parsed = JSON.parse(raw) as { entries?: NavMapEntry[] };
+    return Array.isArray(parsed.entries) ? parsed.entries : [];
+  } catch {
+    return [];
+  }
+})();
+
 function navMapLines(): string {
+  // Prefer the generated map: one line per screen with its full path + the
+  // [section] key start_walkthrough steps must use, plus what it does.
+  if (NAV_MAP.length) {
+    return NAV_MAP.map((e) =>
+      `- ${e.path} [${e.section}]${e.description ? `: ${e.description}` : ""}`,
+    ).join("\n");
+  }
+  // Fallback to the hand-maintained tree if the generated map is unavailable.
   const leaf = (l: { label: string; key?: string }) =>
     l.key ? `${l.label} [${l.key}]` : l.label;
   return DESKTOP_NAV.map((entry) =>
@@ -190,13 +219,18 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
  * the deep how-to knowledge is fetched on demand via the search_help tool rather
  * than dumped in here.
  */
-export function buildInstructions(): string {
+export function buildInstructions(persona?: { butlerName?: string; firstName?: string }): string {
+  const firstName = persona && typeof persona.firstName === "string" ? persona.firstName.trim() : "";
+  const butlerName = persona && typeof persona.butlerName === "string" ? persona.butlerName.trim() : "";
   return [
     "You are Butler AI, the friendly on-demand concierge for Influencer Butler, a desktop app by",
     "The Social Media Posse LLC that helps Amazon creators and influencers automate Creator",
     "Connections, brand outreach, commission harvesting, deal posting, and storefront and content",
     "management. The individual tools are called \"butlers.\"",
     "",
+    firstName ? `The user's first name is ${firstName}. Address them by their first name naturally, not in every sentence.` : "",
+    butlerName ? `The user has named their assistant "${butlerName}". You ARE ${butlerName}: refer to yourself as ${butlerName} when it reads naturally, and do not call yourself "Butler AI" to them.` : "",
+    (firstName || butlerName) ? "" : "",
     "Your job: give a live product demo and answer setup questions in real time, like a helpful",
     "pre-sales and onboarding specialist. Be warm, concise, and concrete. In voice mode, speak in",
     "short spoken sentences. Ask a clarifying question when the user's goal is unclear.",
@@ -225,7 +259,10 @@ export function buildInstructions(): string {
     "  starting from the left menu. Example: In the left menu, click API Integrations. Sub-tools",
     "  live under their group hub, for example: In the left menu, open Instagram Butler, then click",
     "  Instagram Goldmine.",
-    "- The desktop left menu, in order (a group lists its sub-tools):",
+    "- Every screen with its EXACT click path from the left menu and what it does. Give the user",
+    "  the full path verbatim, for example: In the left menu, open Amazon Butler, then Message",
+    "  Brands, then Keywords & Filters. The [section-key] on each line is what start_walkthrough",
+    "  steps must use. Never shorten a path or send the user to a generic Settings screen:",
     navMapLines(),
     "",
     "Screenshots:",
@@ -530,7 +567,14 @@ function unwrapMcp(text: string): unknown {
 }
 
 /** Client metadata the chat surfaces may send along (desktop app version etc). */
-export type ClientMeta = { surface?: string; appVersion?: string; platform?: string };
+export type ClientMeta = {
+  surface?: string;
+  appVersion?: string;
+  platform?: string;
+  // Optional personalization from the desktop: the user's first name and the
+  // name they gave their butler, so replies can address them and stay in-voice.
+  persona?: { butlerName?: string; firstName?: string };
+};
 
 /**
  * Validated start_walkthrough payload. The desktop resolves tourId against its
