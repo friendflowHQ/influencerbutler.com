@@ -6,9 +6,10 @@ import type { ProductSignals } from "../../amazon/product-signals";
 // The identity card at the top of the product panel: the ASINs a creator needs
 // to copy, the category and bestseller rank at a glance, and the commission
 // rate (or an honest "not set"). Mirrors the competitor's product card, in our
-// branding.
-export function renderProductSnapshot(signals: ProductSignals): void {
-  if (!signals.asin) return;
+// branding. Returns its section element so the campaigns tool can append its
+// availability block to the bottom of this same card.
+export function renderProductSnapshot(signals: ProductSignals): HTMLElement | null {
+  if (!signals.asin) return null;
   const section = addSection(t().snapshotTitle);
 
   const ids = el("div", "idrows");
@@ -30,6 +31,8 @@ export function renderProductSnapshot(signals: ProductSignals): void {
   const commission = el("p", "note");
   section.append(commission);
   void fillCommission(commission, signals);
+
+  return section;
 }
 
 function idRow(label: string, value: string): HTMLElement {

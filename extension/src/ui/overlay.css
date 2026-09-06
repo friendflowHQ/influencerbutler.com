@@ -192,6 +192,7 @@
 .chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
 .chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .chip.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.chip.muted { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
 
 .seal {
   display: flex;
@@ -259,6 +260,19 @@
 }
 .copy-btn:hover { background: #ffedd5; }
 .copy-btn.copied { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+
+/* Campaign availability, merged into the bottom of the Product snapshot card
+   with a light divider so it reads as part of the same card. */
+.snapshot-campaigns { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+.snapshot-campaigns-head {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
 
 .criteria { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .criteria li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: #334155; }

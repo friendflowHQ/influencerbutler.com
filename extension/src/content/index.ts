@@ -305,7 +305,12 @@ async function runForPage(): Promise<void> {
           (carousel.counts.influencer > 0 && !namedInfluencers));
 
       // Identity card first: the ASINs, category, rank, and rate at a glance.
-      guard("product-snapshot", () => renderProductSnapshot(signals));
+      // Its section is captured so the campaigns tool can append its availability
+      // block to the bottom of this same card.
+      let snapshotSection: HTMLElement | null = null;
+      guard("product-snapshot", () => {
+        snapshotSection = renderProductSnapshot(signals);
+      });
 
       // Your real earnings on this exact product (from the desktop app ledger,
       // over the bridge). Reserves a slot here; reveals only if paired and there
@@ -385,8 +390,14 @@ async function runForPage(): Promise<void> {
 
       // Campaign availability from the locally-cached membership filter, plus a
       // personal "Enrolled" badge from the desktop accepted-history ledger.
+      // Appended to the bottom of the Product snapshot card above (async, but the
+      // snapshot section is already first in the panel so the block still lands
+      // at the card's bottom regardless of resolution order).
       if (showOnsite)
-        guard("campaigns", () => void renderCampaigns(signals, settings.tools.enrolledBadge));
+        guard(
+          "campaigns",
+          () => void renderCampaigns(signals, settings.tools.enrolledBadge, snapshotSection),
+        );
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
       // plus the download/trial upsell when the app is not running.

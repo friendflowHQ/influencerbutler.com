@@ -1,4 +1,4 @@
-import { addSection, chip, el } from "../../ui/components";
+import { chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
@@ -11,28 +11,25 @@ import type { ProductSignals } from "../../amazon/product-signals";
 // Products (SPCC) campaign, checked locally against the downloaded membership
 // filter (zero server cost). A hit is a strong hint, not a guarantee (Bloom
 // filters have a small false-positive rate); the app confirms on Accept.
+//
+// This block is appended to the bottom of the Product snapshot section (passed
+// in as `section`) rather than living in its own panel section, so campaign
+// status reads as part of the product's identity card.
 
-export async function renderCampaigns(signals: ProductSignals, showEnrolled = true): Promise<void> {
-  if (!signals.asin) return;
-  // Claim the section slot before any await so this section always lands above
-  // "Send to your butler app" (whose panel adds its section synchronously);
-  // notes elsewhere say "the section below" and rely on this order.
-  const section = addSection(t().campaigns);
+export async function renderCampaigns(
+  signals: ProductSignals,
+  showEnrolled = true,
+  section: HTMLElement | null = null,
+): Promise<void> {
+  if (!signals.asin || !section) return;
 
   const cache = await getCache();
   const loaded = loadFilters(cache);
-  // No filters downloaded yet: stay quiet rather than show a misleading "none".
-  if (!loaded.cc && !loaded.spcc && !loaded.deals) {
-    section.remove();
-    return;
-  }
+  // No filters downloaded yet: stay quiet rather than show a misleading status.
+  // We cannot honestly say "not available" for a filter we never fetched.
+  if (!loaded.cc && !loaded.spcc && !loaded.deals) return;
 
   const flags = membership(loaded, signals.asin);
-
-  if (!flags.cc && !flags.spcc && !flags.deals) {
-    section.append(el("p", "note", t().noCampaign));
-    return;
-  }
 
   // Personal enrollment from the desktop accepted-history ledger (kept fresh by
   // the app's hourly sync). Empty for unpaired users / when the app is closed.
@@ -52,13 +49,23 @@ export async function renderCampaigns(signals: ProductSignals, showEnrolled = tr
   const ccEnrolled = enrolled?.cc === true;
   const spccEnrolled = enrolled?.spcc === true;
 
+  // The block that lands at the bottom of the Product snapshot card, headed by a
+  // small "Campaigns" label so the chips read as campaign status, not identity.
+  const block = el("div", "snapshot-campaigns");
+  block.append(el("span", "snapshot-campaigns-head", t().campaigns));
+
+  // Always show a status line per program whose filter is downloaded: enrolled >
+  // available > not available. A program with no downloaded filter is omitted
+  // rather than shown as "not available" (we can't honestly claim that).
   const row = el("div", "counts");
   if (ccEnrolled) row.append(chip("good", t().enrolledCc));
   else if (flags.cc) row.append(chip("good", t().ccAvailable));
+  else if (loaded.cc) row.append(chip("muted", t().ccNotAvailable));
   if (spccEnrolled) row.append(chip("good", t().enrolledSpcc));
   else if (flags.spcc) row.append(chip("good", t().spccAvailable));
+  else if (loaded.spcc) row.append(chip("muted", t().spccNotAvailable));
   if (flags.deals) row.append(chip("good", t().dealAvailable));
-  section.append(row);
+  block.append(row);
 
   // Enrolled economics: the accepted commission rate and the creator's realized
   // EPC (earnings / clicks), each shown only when the app returned it. Realized
@@ -74,7 +81,7 @@ export async function renderCampaigns(signals: ProductSignals, showEnrolled = tr
       // (Amazon Associates US). Format as dollars; localize if that changes.
       pills.append(chip("good", t().epc(`$${enrolled.epc.toFixed(2)}`)));
     }
-    if (pills.childElementCount > 0) section.append(pills);
+    if (pills.childElementCount > 0) block.append(pills);
   }
 
   // Accept only a program that is available but NOT already enrolled: accepting a
@@ -82,14 +89,16 @@ export async function renderCampaigns(signals: ProductSignals, showEnrolled = tr
   const canAcceptCc = flags.cc && !ccEnrolled;
   const canAcceptSpcc = flags.spcc && !spccEnrolled;
   if (canAcceptCc || canAcceptSpcc) {
-    await renderAcceptActions(section, signals, { cc: canAcceptCc, spcc: canAcceptSpcc });
+    await renderAcceptActions(block, signals, { cc: canAcceptCc, spcc: canAcceptSpcc });
   }
 
   if (flags.deals) {
     // The deal hand-off is the "Push to Deals Butler" button in the
     // Send-to-app section below.
-    section.append(el("p", "note", t().dealPushNote));
+    block.append(el("p", "note", t().dealPushNote));
   }
+
+  section.append(block);
 }
 
 // Inline Accept buttons, right next to the availability chips, so accepting

@@ -661,6 +661,8 @@ export interface Dict {
   noCampaign: string;
   ccAvailable: string;
   spccAvailable: string;
+  ccNotAvailable: string;
+  spccNotAvailable: string;
   enrolledCc: string;
   enrolledSpcc: string;
   enrolledRate: (pct: number) => string;
@@ -1539,6 +1541,8 @@ const en: Dict = {
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
+  ccNotAvailable: "Creator Connections not available",
+  spccNotAvailable: "SPCC not available",
   enrolledCc: "Enrolled in Creator Connections",
   enrolledSpcc: "Enrolled in SPCC",
   enrolledRate: (pct) => `${pct}% commission`,
@@ -2435,6 +2439,8 @@ const es: Dict = {
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
+  ccNotAvailable: "Creator Connections no disponible",
+  spccNotAvailable: "SPCC no disponible",
   enrolledCc: "Inscrito en Creator Connections",
   enrolledSpcc: "Inscrito en SPCC",
   enrolledRate: (pct) => `${pct}% de comisión`,
@@ -3331,6 +3337,8 @@ const fr: Dict = {
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
+  ccNotAvailable: "Creator Connections non disponible",
+  spccNotAvailable: "SPCC non disponible",
   enrolledCc: "Inscrit à Creator Connections",
   enrolledSpcc: "Inscrit à SPCC",
   enrolledRate: (pct) => `${pct}% de commission`,
