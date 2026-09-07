@@ -31,6 +31,17 @@ export function removeHost(): void {
 export function createInlineShadow(hostClass?: string): { host: HTMLElement; root: ShadowRoot } {
   const host = document.createElement("div");
   host.className = hostClass ? `${UI_PREFIX}-inline ${hostClass}` : `${UI_PREFIX}-inline`;
+  // The shared overlay stylesheet resets the host with `:host { all: initial }`,
+  // whose initial `display` is `inline`. An inline host wrapping a full-width
+  // block (a tile badge row, a toolbar, a card) misplaces in some page layouts:
+  // on a wide Amazon results page each card column is floated, so an inline host
+  // appended after it flows up alongside the float and paints our chips over the
+  // product title. Force a full-width block that clears floats, via inline styles
+  // that outrank the `:host` rule; the rare caller that wants an inline chip
+  // (brand-keywords) overrides `display` back.
+  host.style.display = "block";
+  host.style.clear = "both";
+  host.style.width = "100%";
   const root = host.attachShadow({ mode: "closed" });
   const style = document.createElement("style");
   style.textContent = overlayCss;

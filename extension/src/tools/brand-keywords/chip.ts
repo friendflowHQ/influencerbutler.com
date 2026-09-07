@@ -7,6 +7,11 @@ import type { BrandEnrichmentRecord, OutreachRecord } from "./types";
 // send date and any earlier keywords.
 function buildChipHost(record: OutreachRecord): HTMLElement {
   const { host, root } = createInlineShadow("bkw-chip-host");
+  // A keyword pill sits inline next to a conversation name, so opt back out of
+  // the block/full-width default createInlineShadow applies.
+  host.style.display = "inline-block";
+  host.style.width = "auto";
+  host.style.clear = "none";
   const chip = el("span", "bkw-chip");
   chip.append(el("span", "bkw-glyph", "🔍"), el("span", "bkw-kw", record.keyword));
   chip.title = tooltipFor(record);
@@ -60,6 +65,10 @@ const CADENCE_LABEL: Record<string, string> = {
 
 function buildEnrichmentChipHost(record: BrandEnrichmentRecord): HTMLElement {
   const { host, root } = createInlineShadow("bkw-chip-host");
+  // Inline pill next to a conversation name (see buildChipHost).
+  host.style.display = "inline-block";
+  host.style.width = "auto";
+  host.style.clear = "none";
   const chip = el("span", "bkw-chip bkw-chip-enrich");
   if (record.verdict === "risky") chip.classList.add("bkw-chip-risky");
   chip.append(el("span", "bkw-glyph", "📊"), el("span", "bkw-kw", enrichmentText(record)));
