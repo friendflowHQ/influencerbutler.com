@@ -281,6 +281,17 @@ export type IntegrationsState = {
     testOnStartup: boolean;
     // Master switch for rewriting Amazon links through connected providers.
     affiliateRoutingEnabled: boolean;
+    // When on, routing picks the connected provider with the highest known
+    // commission rate per product (tie-broken by the fixed priority order),
+    // mirroring the desktop app's "highest commission" strategy. When off,
+    // routing keeps the fixed priority order (networks first, then Amazon).
+    useHighestCommission: boolean;
+    // Which roster providers may take part in affiliate routing, keyed by the
+    // roster id shown on the Affiliate Routing Strategy card: "amazon",
+    // "levanta", "archer", "mavely", "walmart". A missing key means enabled
+    // (default all on). Networks also honor their per-provider
+    // routingParticipates flag.
+    routingProviders: Record<string, boolean>;
     // Which deeplink provider wraps generated links (adapter id), or null.
     primaryDeeplinkProvider: string | null;
     // Which Walmart link provider mints Walmart affiliate links
@@ -486,6 +497,12 @@ export type StorageShape = {
   queue: Finding[];
   lastSyncAt: number | null;
   cache: Record<string, CachedScan>;
+  // Maps a child variant to its listing's parent ASIN, keyed `marketplace:asin`,
+  // value the bare parent ASIN. Written whenever a product page is scanned (for
+  // the viewed ASIN and every sibling in its twister), so the search overlay can
+  // roll a card up to a sibling variant's already-scanned video split instead of
+  // showing a thinner per-variant estimate. A hint cache: bounded, best-effort.
+  variantParents: Record<string, string>;
   // Price history per `marketplace:asin`, oldest-first. See PricePoint.
   priceHistory: Record<string, PricePoint[]>;
   orderCursors: Record<string, OrderCursor>;
@@ -507,7 +524,7 @@ export type StorageShape = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 24,
+  schemaVersion: 25,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -600,6 +617,16 @@ export const DEFAULTS: StorageShape = {
     global: {
       testOnStartup: false,
       affiliateRoutingEnabled: false,
+      // On by default: routing picks the highest-commission connected provider
+      // per product out of the box, so the creator earns the most without having
+      // to discover the toggle. They can switch back to fixed-order on the
+      // Settings page. This default reaches fresh installs; migrate() also
+      // backfills it onto pre-v25 installs that never stored the key.
+      useHighestCommission: true,
+      // Every roster provider takes part by default; the creator can exclude one
+      // on the Affiliate Routing Strategy card. Backfilled onto existing installs
+      // by the global shallow-merge in migrate().
+      routingProviders: { amazon: true, levanta: true, archer: true, mavely: true, walmart: true },
       // Branded short links out of the box: free on every plan, no credentials
       // (the signed-in license is the auth), and it keeps the creator's
       // affiliate tag out of the url they post. This default reaches FRESH
@@ -619,6 +646,7 @@ export const DEFAULTS: StorageShape = {
   queue: [],
   lastSyncAt: null,
   cache: {},
+  variantParents: {},
   priceHistory: {},
   orderCursors: {},
   watchlist: [],
@@ -699,6 +727,13 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // hints.storefrontAutofill stamp; both backfill from their defaults (an
   // existing user starts with onboarding uncompleted, so the walkthrough is
   // available to replay from the popup but never force-opens on an update).
+  // v24 -> v25 added integrations.global.useHighestCommission (on by default,
+  // so both fresh installs and pre-v25 installs that never stored the key get
+  // highest-commission routing) and
+  // integrations.global.routingProviders (the Affiliate Routing Strategy roster,
+  // every provider on by default); both backfill through the global
+  // shallow-merge, with routingProviders deep-merged so a stored partial roster
+  // still gains any newly added provider key.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -712,6 +747,12 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     ...structuredClone(DEFAULTS.integrations.global),
     ...(raw.integrations?.global ?? {}),
     perCountryTags: { ...(raw.integrations?.global?.perCountryTags ?? {}) },
+    // Deep-merge the roster so a stored partial map still gains any provider key
+    // added in a later version (a bare shallow spread would keep the old map).
+    routingProviders: {
+      ...structuredClone(DEFAULTS.integrations.global.routingProviders),
+      ...(raw.integrations?.global?.routingProviders ?? {}),
+    },
   };
   if (migratedGlobal.walmartLinkProvider === "impact") migratedGlobal.walmartLinkProvider = null;
   return {
@@ -776,7 +817,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
     templates: Array.isArray(raw.templates) ? raw.templates : [],
     priceHistory:
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
-    schemaVersion: 24,
+    variantParents:
+      raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
+    schemaVersion: 25,
   };
 }
 
