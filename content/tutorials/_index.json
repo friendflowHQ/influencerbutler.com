@@ -448,6 +448,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "extension-assistant",
+      "title": "Ask Butler AI from the Chrome extension",
+      "category": "Amazon",
+      "summary": "Open the Influencer Butler AI assistant straight from the Chrome extension. Ask how any tool works, get exact click paths, or talk it through by voice, without leaving Amazon.",
+      "order": 146,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "levanta",
       "title": "Levanta Butler: automate outreach + email extraction across the Levanta brand network",
       "category": "Partnerships",
