@@ -157,6 +157,18 @@ export type RuntimeMessage =
   | { kind: "SUBMIT_PAIRING_CODE"; code: string }
   | { kind: "UNPAIR_APP" }
   | { kind: "SEND_FEEDBACK"; feedback: FeedbackInput }
+  // Rich feedback from the in-page chat bubble's Report view (desktop parity):
+  // a Bug/Feature/Question with a title, optional reply email, a diagnostic log
+  // bundle, and up to 6 screenshots. Posts through the background so the license
+  // key never reaches the content script, and records the submission to a local
+  // store so the bubble's "My reports" list works even when anonymous.
+  | { kind: "SUBMIT_FEEDBACK_RICH"; feedback: RichFeedbackInput }
+  // Capture a PNG of the visible tab for the report (only the background can call
+  // chrome.tabs.captureVisibleTab). Uses the sender tab's window.
+  | { kind: "CAPTURE_SCREENSHOT" }
+  // Read / dismiss the local "My reports" list backing the bubble's history tab.
+  | { kind: "LIST_MY_FEEDBACK" }
+  | { kind: "DISMISS_MY_FEEDBACK"; id: string }
   | { kind: "OPEN_URL"; url: string }
   // Opens the extension's options/settings page. Content scripts cannot call
   // chrome.runtime.openOptionsPage directly, so the on-page gear routes here.
@@ -346,6 +358,37 @@ export type FeedbackInput = {
 };
 
 export type FeedbackResult = { ok: boolean; error?: string };
+
+// Rich feedback report from the chat bubble. Mirrors the desktop bubble's
+// submit payload; `screenshots` carry base64 (validated + capped client-side).
+export type RichFeedbackInput = {
+  type: "bug" | "feature" | "question";
+  title: string;
+  description: string;
+  userEmail: string;
+  attachLogs: boolean;
+  screenshots: Array<{ base64: string; mime: string; filename: string }>;
+  pageUrl?: string;
+};
+
+export type RichFeedbackResult = { ok: boolean; id?: string; error?: string };
+
+// One row in the bubble's "My reports" list (local, per-browser). Mirrors the
+// desktop bubble's history item shape closely enough for the shared UI.
+export type MyFeedbackItem = {
+  id: string;
+  type: "bug" | "feature" | "question";
+  title: string;
+  status: string;
+  createdAt: string;
+  attachmentCount: number;
+};
+
+export type MyFeedbackListResult = { ok: boolean; submissions: MyFeedbackItem[] };
+
+export type CaptureScreenshotResult = { ok: boolean; dataUrl?: string; error?: string };
+
+export type DismissFeedbackResult = { ok: boolean };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
 

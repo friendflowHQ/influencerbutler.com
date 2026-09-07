@@ -15,7 +15,7 @@ import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import type { RelayStateView } from "../shared/messages";
-import { sendFeedback } from "./feedback";
+import { sendFeedback, submitFeedbackRich, listLocalFeedback, dismissLocalFeedback } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
 import { refreshFlags } from "./flags";
@@ -368,6 +368,29 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
+      return true;
+    case "SUBMIT_FEEDBACK_RICH":
+      void submitFeedbackRich(message.feedback).then(sendResponse);
+      return true;
+    case "CAPTURE_SCREENSHOT": {
+      // Only the background can call captureVisibleTab; capture the window the
+      // requesting content script lives in. Best-effort: report an error the
+      // bubble surfaces rather than throwing.
+      const windowId = sender.tab?.windowId;
+      const capture =
+        typeof windowId === "number"
+          ? chrome.tabs.captureVisibleTab(windowId, { format: "png" })
+          : chrome.tabs.captureVisibleTab({ format: "png" });
+      void Promise.resolve(capture)
+        .then((dataUrl) => sendResponse({ ok: true, dataUrl }))
+        .catch((err) => sendResponse({ ok: false, error: err?.message || "Could not capture the page." }));
+      return true;
+    }
+    case "LIST_MY_FEEDBACK":
+      void listLocalFeedback().then(sendResponse);
+      return true;
+    case "DISMISS_MY_FEEDBACK":
+      void dismissLocalFeedback(message.id).then(sendResponse);
       return true;
     case "FETCH_MARKET_AVAILABILITY":
       void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);

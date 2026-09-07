@@ -57,6 +57,7 @@ import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
 import { maybeShowUpdateBanner } from "../tools/update-banner";
 import { maybeShowWhatsNew } from "../tools/whats-new";
+import { initChatBubble } from "../tools/chat-bubble/panel";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
@@ -181,6 +182,10 @@ async function main(): Promise<void> {
   // Post-update "What's New" card (an update just installed): its own shadow
   // host, once per page load, same reasoning as the update pill above.
   guard("whats-new", () => void maybeShowWhatsNew());
+  // Floating chat bubble (AI concierge + Report a bug + My reports). Its own
+  // shadow host, mounted once per page load after runForPage() has set the
+  // locale; survives SPA-nav rebuilds (removeHost only tears down the main panel).
+  guard("chat-bubble", () => initChatBubble());
 }
 
 // The widget's classified data can land well after first render (it only
