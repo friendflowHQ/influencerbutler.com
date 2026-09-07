@@ -231,7 +231,18 @@ the run.
 ```
 
 **`content.push`** - queue the product into Content Butler for a post.
-Same `product` shape.
+Same `product` shape. When `product.brand` is present (scraped from the
+product byline), the app pre-fills the card's Brand field.
+
+**`voiceover.push`** - queue the product into Voiceover Butler so the app writes
+an FTC-compliant shoppable-video script. Same `product` shape. The app enqueues
+by ASIN (deduped per active ASIN, with the Creators API dossier pre-fetched) and
+falls back to a manual job keyed off `product.title` when the page carried no
+ASIN.
+
+```json
+{ "type": "voiceover.push", "product": { "asin": "...", "marketplace": "amazon.com" } }
+```
 
 **`campaign.accept`** - accept the product's Creator Connections (`"kind":
 "cc"`) or Sponsored Products (`"kind": "spcc"`) campaign. The APP looks the

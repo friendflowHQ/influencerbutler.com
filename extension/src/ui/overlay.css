@@ -23,6 +23,16 @@
 
 .panel.collapsed { width: auto; max-height: none; overflow: visible; }
 .panel.collapsed .body { display: none; }
+.panel.collapsed .quickbar { display: none; }
+
+/* The header and the pinned quick-links bar share one sticky region so they
+   stay together at the top while the sections scroll beneath them. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
 
 .header {
   display: flex;
@@ -32,14 +42,45 @@
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid #f1f5f9;
-  position: sticky;
-  top: 0;
   /* Soft warm wash so the header reads as a premium brand bar, not a plain row. */
   background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
   border-radius: 16px 16px 0 0;
 }
 
 .panel.collapsed .header { border-bottom: 0; }
+
+/* Pinned quick-links bar: small Get link / Scrub link buttons plus the URL
+   readouts, so a shareable link is one click away without scrolling. */
+.quickbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 16px;
+  background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+  border-bottom: 1px solid #f1f5f9;
+}
+.quickbar .quickbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.link-readout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e7ecf3;
+  border-radius: 8px;
+  word-break: break-all;
+  user-select: text;
+}
+.link-readout .link-readout-url { flex: 1; }
+.link-readout .link-notice { margin: 0; }
 
 .header .dot {
   width: 22px;

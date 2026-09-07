@@ -6,12 +6,17 @@ import logoUrl from "../../static/icons/icon-48.png";
 // The floating panel is shared by every tool on a page: each tool adds a
 // section, so exactly one UI root exists no matter how many tools run.
 let panel: HTMLElement | null = null;
+let topbar: HTMLElement | null = null;
 let body: HTMLElement | null = null;
+let quickBar: HTMLElement | null = null;
 
 export function getPanel(title: string): HTMLElement {
   const root = getShadowRoot();
   if (panel && panel.isConnected) return body as HTMLElement;
   panel = el("div", "panel");
+  // The header plus any pinned bars (the quick-links bar) live in one sticky
+  // region so they stay put while the tool sections below scroll.
+  topbar = el("div", "topbar");
   const header = el("div", "header");
   const dot = el("img", "dot");
   dot.src = logoUrl;
@@ -26,10 +31,22 @@ export function getPanel(title: string): HTMLElement {
     panel?.classList.toggle("collapsed");
     chev.textContent = panel?.classList.contains("collapsed") ? t().panelChevronShow : t().panelChevronHide;
   });
+  topbar.append(header);
   body = el("div", "body");
-  panel.append(header, body);
+  panel.append(topbar, body);
   root.append(panel);
   return body;
+}
+
+// The pinned quick-links bar under the header (Get link / Scrub link). Lazily
+// created once inside the sticky topbar and reused thereafter, mirroring the
+// panel/body singletons so a tool never stacks a second bar.
+export function getQuickBar(): HTMLElement {
+  getPanel("Influencer Butler");
+  if (quickBar && quickBar.isConnected) return quickBar;
+  quickBar = el("div", "quickbar");
+  topbar?.append(quickBar);
+  return quickBar;
 }
 
 // The gear in the header opens the full settings/options page (OpenAI key,

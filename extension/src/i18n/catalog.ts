@@ -332,6 +332,14 @@ export interface Dict {
   tileProvenEarner: string;
   tileEarned: (money: string) => string;
   tileInfluencer: (n: number) => string;
+  // Influencer count alongside the page's total video count, shown when a scan's
+  // influencer split is smaller than the page total ("2 infl / 17 videos").
+  tileInfluencerOfTotal: (infl: number, total: number) => string;
+  // Tooltips saying where a tile's video count came from: an exact scan of this
+  // ASIN, a sibling variant's scan rolled up, or the page total only (no split).
+  tileVideoTipSelf: string;
+  tileVideoTipVariant: string;
+  tileVideoTipEstimate: string;
   tileApproved: string;
   tileLikelyFit: string;
   tileDeal: string;
@@ -698,6 +706,8 @@ export interface Dict {
   searchNoDeals: string;
   searchSendingDeals: (n: number) => string;
   sendToContentButler: string;
+  sendToVoiceover: string;
+  sendingVoiceover: string;
   saveToLinkButler: string;
   savingLink: string;
   acceptCc: string;
@@ -721,6 +731,11 @@ export interface Dict {
   sentToApp: string;
   couldNotReachApp: string;
   connectAppToPair: string;
+  // Toast title shown when a "send to your butler app" action fails. The status
+  // line under the buttons already carries the specific reason; this raises it
+  // into a toast so a failed click (e.g. app not running) can't scroll off
+  // unseen the way "nothing happened" reports described.
+  actionFailedTitle: string;
   connectedToApp: (version: string) => string;
   upsellSignedIn: string;
   upsellSignedOut: string;
@@ -733,12 +748,17 @@ export interface Dict {
   sfSendToRetag: (n: number) => string;
   sfSendToContent: (n: number) => string;
   sfSendingToContent: string;
+  sfSendToVoiceover: (n: number) => string;
+  sfSendingToVoiceover: string;
   sfSendingToRetag: string;
   sfAcceptAllCampaigns: (n: number) => string;
   sfAcceptingCampaigns: string;
   obSendToContentButler: (n: number) => string;
   obSendingToContentButler: string;
   obSentToContentButler: (n: number) => string;
+  obSendToVoiceover: (n: number) => string;
+  obSendingToVoiceover: string;
+  obSentToVoiceover: (n: number) => string;
   appBridgeHeading: string;
   appBridgeBlurb: string;
   appNextStepHint: string;
@@ -1205,6 +1225,12 @@ const en: Dict = {
   tileProvenEarner: "Proven earner",
   tileEarned: (money) => `Earned ${money}`,
   tileInfluencer: (n) => `${n} infl. videos`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} infl. / ${total} videos`,
+  tileVideoTipSelf: "Exact influencer split, scanned from this product's page.",
+  tileVideoTipVariant:
+    "Estimated from another variant of this listing. Open this variant or Scan for its exact split.",
+  tileVideoTipEstimate:
+    "Page video total only. The influencer split loads on the product page: open it or Scan for the exact count.",
   tileApproved: "Butler Approved",
   tileLikelyFit: "Likely fit",
   tileDeal: "Deal",
@@ -1580,6 +1606,8 @@ const en: Dict = {
   searchNoDeals: "No discounted deals on this page.",
   searchSendingDeals: (n) => `Sending ${n} deal(s) to your app...`,
   sendToContentButler: "Send to Content Butler",
+  sendToVoiceover: "Send to Voiceover Butler",
+  sendingVoiceover: "Sending to Voiceover Butler...",
   saveToLinkButler: "Save to Link Butler",
   savingLink: "Saving link...",
   acceptCc: "Accept CC campaign",
@@ -1604,6 +1632,7 @@ const en: Dict = {
   couldNotReachApp: "Could not reach the app. Is it still running?",
   connectAppToPair:
     "Connect the app first: open the extension popup and pair with the 6-digit code.",
+  actionFailedTitle: "Butler action didn't go through",
   connectedToApp: (version) =>
     `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`,
   upsellSignedIn:
@@ -1617,12 +1646,17 @@ const en: Dict = {
   sfSendToRetag: (n) => `Send ${n} issue(s) to Retag Butler`,
   sfSendToContent: (n) => `Send ${n} product(s) to Content Butler`,
   sfSendingToContent: "Sending to Content Butler...",
+  sfSendToVoiceover: (n) => `Send ${n} product(s) to Voiceover Butler`,
+  sfSendingToVoiceover: "Sending to Voiceover Butler...",
   sfSendingToRetag: "Sending to Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accept all available campaigns (${n})`,
   sfAcceptingCampaigns: "Accepting campaigns in the app...",
   obSendToContentButler: (n) => `Send ${n} product(s) to Content Butler`,
   obSendingToContentButler: "Sending to Content Butler...",
   obSentToContentButler: (n) => `Sent ${n} product(s) to Content Butler.`,
+  obSendToVoiceover: (n) => `Send ${n} product(s) to Voiceover Butler`,
+  obSendingToVoiceover: "Sending to Voiceover Butler...",
+  obSentToVoiceover: (n) => `Sent ${n} product(s) to Voiceover Butler.`,
   appBridgeHeading: "Desktop app",
   appBridgeBlurb:
     "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
@@ -2103,6 +2137,12 @@ const es: Dict = {
   tileProvenEarner: "Ya te ha pagado",
   tileEarned: (money) => `Ganaste ${money}`,
   tileInfluencer: (n) => `${n} videos de infl.`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} de infl. / ${total} videos`,
+  tileVideoTipSelf: "Reparto exacto de influencers, leido de la pagina de este producto.",
+  tileVideoTipVariant:
+    "Estimado a partir de otra variante de este anuncio. Abre esta variante o pulsa Escanear para ver su reparto exacto.",
+  tileVideoTipEstimate:
+    "Solo el total de videos de la pagina. El reparto de influencers se carga en la pagina del producto: abrela o pulsa Escanear para el conteo exacto.",
   tileApproved: "Aprobado por Butler",
   tileLikelyFit: "Buen candidato",
   tileDeal: "Oferta",
@@ -2478,6 +2518,8 @@ const es: Dict = {
   searchNoDeals: "No hay ofertas con descuento en esta página.",
   searchSendingDeals: (n) => `Enviando ${n} oferta(s) a tu app...`,
   sendToContentButler: "Enviar a Content Butler",
+  sendToVoiceover: "Enviar a Voiceover Butler",
+  sendingVoiceover: "Enviando a Voiceover Butler...",
   saveToLinkButler: "Guardar en Link Butler",
   savingLink: "Guardando enlace...",
   acceptCc: "Aceptar campaña CC",
@@ -2502,6 +2544,7 @@ const es: Dict = {
   couldNotReachApp: "No se pudo contactar la app. ¿Sigue abierta?",
   connectAppToPair:
     "Conecta la app primero: abre la ventana de la extensión y vincula con el código de 6 dígitos.",
+  actionFailedTitle: "La acción del butler no se completó",
   connectedToApp: (version) =>
     `Conectado a tu app de Influencer Butler${version}. La aceptación usa tu catálogo local de Creator Connections.`,
   upsellSignedIn:
@@ -2515,12 +2558,17 @@ const es: Dict = {
   sfSendToRetag: (n) => `Enviar ${n} problema(s) a Retag Butler`,
   sfSendToContent: (n) => `Enviar ${n} producto(s) a Content Butler`,
   sfSendingToContent: "Enviando a Content Butler...",
+  sfSendToVoiceover: (n) => `Enviar ${n} producto(s) a Voiceover Butler`,
+  sfSendingToVoiceover: "Enviando a Voiceover Butler...",
   sfSendingToRetag: "Enviando a Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Aceptar todas las campañas disponibles (${n})`,
   sfAcceptingCampaigns: "Aceptando campañas en la app...",
   obSendToContentButler: (n) => `Enviar ${n} producto(s) a Content Butler`,
   obSendingToContentButler: "Enviando a Content Butler...",
   obSentToContentButler: (n) => `Se enviaron ${n} producto(s) a Content Butler.`,
+  obSendToVoiceover: (n) => `Enviar ${n} producto(s) a Voiceover Butler`,
+  obSendingToVoiceover: "Enviando a Voiceover Butler...",
+  obSentToVoiceover: (n) => `Se enviaron ${n} producto(s) a Voiceover Butler.`,
   appBridgeHeading: "App de escritorio",
   appBridgeBlurb:
     "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
@@ -3001,6 +3049,12 @@ const fr: Dict = {
   tileProvenEarner: "Déjà rentable",
   tileEarned: (money) => `${money} gagnés`,
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} d'infl. / ${total} vidéos`,
+  tileVideoTipSelf: "Répartition exacte des influenceurs, lue sur la page de ce produit.",
+  tileVideoTipVariant:
+    "Estimé à partir d'une autre variante de cette annonce. Ouvrez cette variante ou lancez Scanner pour sa répartition exacte.",
+  tileVideoTipEstimate:
+    "Total des vidéos de la page uniquement. La répartition des influenceurs se charge sur la page produit : ouvrez-la ou lancez Scanner pour le compte exact.",
   tileApproved: "Approuvé par Butler",
   tileLikelyFit: "Bon candidat",
   tileDeal: "Promo",
@@ -3376,6 +3430,8 @@ const fr: Dict = {
   searchNoDeals: "Aucune promo sur cette page.",
   searchSendingDeals: (n) => `Envoi de ${n} deal(s) vers votre app...`,
   sendToContentButler: "Envoyer à Content Butler",
+  sendToVoiceover: "Envoyer à Voiceover Butler",
+  sendingVoiceover: "Envoi à Voiceover Butler...",
   saveToLinkButler: "Enregistrer dans Link Butler",
   savingLink: "Enregistrement du lien...",
   acceptCc: "Accepter la campagne CC",
@@ -3400,6 +3456,7 @@ const fr: Dict = {
   couldNotReachApp: "Impossible de joindre l'app. Est-elle toujours ouverte?",
   connectAppToPair:
     "Connectez l'app d'abord : ouvrez la fenetre de l'extension et associez avec le code a 6 chiffres.",
+  actionFailedTitle: "L'action du butler n'a pas abouti",
   connectedToApp: (version) =>
     `Connecté à votre app Influencer Butler${version}. L'acceptation utilise votre catalogue Creator Connections local.`,
   upsellSignedIn:
@@ -3413,12 +3470,17 @@ const fr: Dict = {
   sfSendToRetag: (n) => `Envoyer ${n} problème(s) vers Retag Butler`,
   sfSendToContent: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
   sfSendingToContent: "Envoi vers Content Butler...",
+  sfSendToVoiceover: (n) => `Envoyer ${n} produit(s) vers Voiceover Butler`,
+  sfSendingToVoiceover: "Envoi vers Voiceover Butler...",
   sfSendingToRetag: "Envoi vers Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accepter toutes les campagnes disponibles (${n})`,
   sfAcceptingCampaigns: "Acceptation des campagnes dans l'app...",
   obSendToContentButler: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
   obSendingToContentButler: "Envoi vers Content Butler...",
   obSentToContentButler: (n) => `${n} produit(s) envoyé(s) vers Content Butler.`,
+  obSendToVoiceover: (n) => `Envoyer ${n} produit(s) vers Voiceover Butler`,
+  obSendingToVoiceover: "Envoi vers Voiceover Butler...",
+  obSentToVoiceover: (n) => `${n} produit(s) envoyé(s) vers Voiceover Butler.`,
   appBridgeHeading: "App de bureau",
   appBridgeBlurb:
     "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",

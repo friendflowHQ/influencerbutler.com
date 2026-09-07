@@ -33,7 +33,7 @@ import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
 import { mountTileMenuButton, type HudRef } from "./tile-menu";
 import type { AuthStatus } from "../../shared/messages";
 import type { HudStatus } from "../../transport/hud-commands";
-import type { Settings } from "../../storage/schema";
+import type { CachedScan, Settings, StorageShape } from "../../storage/schema";
 
 // Marks a tile as already decorated so an SPA rebuild does not double-badge it.
 const DONE_ATTR = "data-ib-search";
@@ -54,6 +54,14 @@ type Row = {
   flags: { cc: boolean; spcc: boolean; deals: boolean };
   influencerVideos: number | null;
   totalVideos: number | null;
+  // Where the video counts came from, so the badge can be honest about it:
+  //  - "self":     an exact scan of THIS ASIN (authoritative).
+  //  - "variant":  a sibling variant's scan, rolled up via the shared parent
+  //                (a stand-in until this variant is scanned).
+  //  - "estimate": the static page video TOTAL only, with no influencer split
+  //                (that hydrates via ajax and is not in the static HTML).
+  //  - null:       nothing known yet, or a definitive "no carousel" zero.
+  videoSource: "self" | "variant" | "estimate" | null;
   // Static product-page signals once enrichment (or the shared cache) has them.
   dp: DpStaticSignals | null;
   // inStock from a previous background-tab scan, used until dp arrives.
@@ -146,6 +154,10 @@ export async function initSearchOverlay(
   // live, so no repaint is needed when it flips.
   const hud: HudRef = { connected: false, signedIn: false };
 
+  // Best (most complete) scanned video split per parent listing, so a tile whose
+  // own ASIN was never scanned can borrow a sibling variant's exact split.
+  const bestScanByParent = buildBestScanByParent(state, marketplace);
+
   const rows: Row[] = tiles.map((tile, i) => {
     const flags = loaded ? membership(loaded, tile.asin) : { cc: false, spcc: false, deals: false };
     const badgeBody = el("div", "tile-badge-body");
@@ -160,6 +172,7 @@ export async function initSearchOverlay(
       flags: { cc: flags.cc, spcc: flags.spcc, deals: flags.deals },
       influencerVideos: null,
       totalVideos: null,
+      videoSource: null,
       dp: null,
       cachedInStock: null,
       scanned: false,
@@ -177,12 +190,27 @@ export async function initSearchOverlay(
     // A previous background-tab scan (from any surface) already knows this
     // product's exact influencer split; use it for free and let the Scan
     // button skip the row.
-    const cachedScan = state.cache[`${marketplace}:${tile.asin}`];
+    const key = `${marketplace}:${tile.asin}`;
+    const cachedScan = state.cache[key];
     if (cachedScan) {
       row.influencerVideos = cachedScan.counts.influencer;
       row.totalVideos = cachedScan.counts.total;
       row.cachedInStock = cachedScan.inStock;
+      row.videoSource = "self";
       row.scanned = true;
+    } else {
+      // No scan for this exact variant. If a sibling variant of the same listing
+      // was scanned, roll its split up as an estimate (Amazon usually serves one
+      // shared video set across a listing's variations). Left scannable so the
+      // Scan button can still pull this variant's own numbers. In-stock stays
+      // null because stock is genuinely per-variant.
+      const parent = state.variantParents[key];
+      const sibling = parent ? bestScanByParent.get(parent) : undefined;
+      if (sibling) {
+        row.influencerVideos = sibling.counts.influencer;
+        row.totalVideos = sibling.counts.total;
+        row.videoSource = "variant";
+      }
     }
     recompute(row, settings);
     mountBadge(tile, badgeBody);
@@ -414,6 +442,8 @@ export async function initSearchOverlay(
         if (result.classified && result.counts) {
           row.influencerVideos = result.counts.influencer;
           row.totalVideos = result.counts.total;
+          // A live scan of this exact ASIN: authoritative, drop any estimate mark.
+          row.videoSource = "self";
           recompute(row, settings);
           renderBadge(row, settings);
         }
@@ -528,6 +558,11 @@ export async function initSearchOverlay(
       ) {
         row.influencerVideos = 0;
         row.scanned = true;
+      } else if (row.videoSource === null && row.influencerVideos === null && row.totalVideos !== null) {
+        // Static HTML gives the page's video TOTAL but never the influencer
+        // split (that hydrates via ajax). Flag it so the chip reads as an
+        // estimate the product page can refine, not a precise figure.
+        row.videoSource = "estimate";
       }
       recompute(row, settings);
       renderBadge(row, settings);
@@ -656,6 +691,53 @@ function comparator(key: SortKey): (a: Row, b: Row) => number {
   }
 }
 
+// Index the scanned-video cache by parent listing, keeping the most complete
+// sibling (largest observed total) per parent, so a tile whose own ASIN was
+// never scanned can borrow a sibling variant's exact influencer split.
+function buildBestScanByParent(state: StorageShape, marketplace: string): Map<string, CachedScan> {
+  const best = new Map<string, CachedScan>();
+  const prefix = `${marketplace}:`;
+  for (const [key, entry] of Object.entries(state.cache)) {
+    if (!key.startsWith(prefix)) continue;
+    const parent = state.variantParents[key];
+    if (!parent) continue;
+    const current = best.get(parent);
+    if (!current || entry.counts.total > current.counts.total) best.set(parent, entry);
+  }
+  return best;
+}
+
+// The video chip for a tile. Shows the influencer split when known; when a
+// partial or sibling scan gives an influencer count but the page's total is
+// larger, shows BOTH ("2 infl / 17 videos") so an undercount never reads as the
+// whole story. A "~" marks a variant rollup or a page-total estimate, and the
+// tooltip says where the number came from.
+function videoChip(row: Row): HTMLElement | null {
+  const { influencerVideos, totalVideos, videoSource } = row;
+  let text: string | null = null;
+  if (influencerVideos !== null) {
+    text =
+      totalVideos !== null && totalVideos > influencerVideos
+        ? t().tileInfluencerOfTotal(influencerVideos, totalVideos)
+        : t().tileInfluencer(influencerVideos);
+  } else if (totalVideos !== null) {
+    text = t().tileVideos(totalVideos);
+  }
+  if (text === null) return null;
+  const approx = videoSource === "variant" || videoSource === "estimate";
+  const chip = el("span", "tile-chip", `${approx ? "~" : ""}${text}`);
+  const tip =
+    videoSource === "variant"
+      ? t().tileVideoTipVariant
+      : videoSource === "estimate"
+        ? t().tileVideoTipEstimate
+        : videoSource === "self"
+          ? t().tileVideoTipSelf
+          : null;
+  if (tip) chip.title = tip;
+  return chip;
+}
+
 function mountBadge(tile: SearchTile, body: HTMLElement): void {
   const { host, root } = createInlineShadow("tile-badge-host");
   const wrap = el("div", "tile-badge");
@@ -742,11 +824,8 @@ function renderBadge(row: Row, settings: Settings): void {
       body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
     }
   }
-  if (row.influencerVideos !== null) {
-    body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
-  } else if (row.totalVideos !== null) {
-    body.append(el("span", "tile-chip", t().tileVideos(row.totalVideos)));
-  }
+  const video = videoChip(row);
+  if (video) body.append(video);
   if (row.showWatch) body.append(watchControl(row, settings));
   // The "..." action menu: Add to list / Copy link / Open page always, plus the
   // desktop-bridge actions when the app is paired (else an upsell). Mounted last

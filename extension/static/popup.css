@@ -18,9 +18,12 @@ body {
      explicit size on <body> plus `resize: both` gives a native drag grabber in
      the bottom-right corner and Chrome follows it live. The chosen size is saved
      to localStorage and reapplied on open (see popup/index.ts). Stay a hair under
-     Chrome's 800x600 popup cap so the grabber never fights the window edge. */
-  width: 380px;
-  height: 560px;
+     Chrome's 800x600 popup cap so the grabber never fights the window edge.
+     Default to a roomy size (near the height cap, comfortably wide) so the popup
+     opens big enough that content is not cramped out of the box; anyone who
+     resizes gets their own size restored on top of this default. */
+  width: 460px;
+  height: 590px;
   min-width: 300px;
   min-height: 360px;
   max-width: 780px;

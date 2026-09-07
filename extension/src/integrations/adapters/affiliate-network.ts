@@ -5,10 +5,8 @@ import { REQUEST_TIMEOUT_MS, firstString, obj, providerError, str, taggedUrlFor 
 // Affiliate networks. Levanta and Archer are real API providers: they collect
 // the same credentials the desktop app collects (integrations/levantaClient.js,
 // integrations/archerClient.js), verify them read-only in test(), and mint a
-// real attribution link in generateLink(). Logie collects its key/secret and
-// verifies them read-only, but does not mint its own link (desktop parity: its
-// attribution routes through the primary deeplink provider). Benable is just a
-// referral profile url and a routing flag, with no network call.
+// real attribution link in generateLink(). Benable is just a referral profile
+// url and a routing flag, with no network call.
 //
 // A network's minted link already encodes attribution, so routing.ts prefers it
 // over the generic deeplink wrapper. generateLink always falls back to the plain
@@ -49,6 +47,32 @@ function extractNetworkLink(payload: unknown): string {
     dataLink.url,
     dataLink.deeplink,
   );
+}
+
+// Best-effort commission-rate reader for a network's product payload. Networks
+// rarely surface a per-product rate (the desktop app's extractRate notes the
+// same), so this returns null far more often than not; highest-commission
+// routing then falls back to priority order. Scans the common field shapes,
+// treats a 0-1 value as a fraction, and rejects anything outside (0, 100].
+function extractRate(payload: unknown): number | null {
+  const p = obj(payload);
+  const data = obj(p.data);
+  const product = obj(p.product);
+  const commission = obj(p.commission);
+  const dataCommission = obj(data.commission);
+  const raw = [
+    p.commissionRate, p.commission_rate, p.commissionPct, p.commission_pct, p.payoutRate, p.payout_rate, p.rate,
+    data.commissionRate, data.commission_rate, data.commissionPct, data.commission_pct, data.rate,
+    product.commissionRate, product.commission_rate, product.commissionPct, product.rate,
+    commission.rate, commission.pct, dataCommission.rate, dataCommission.pct,
+  ];
+  for (const value of raw) {
+    const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+    if (!Number.isFinite(n) || n <= 0) continue;
+    const pct = n < 1 ? n * 100 : n;
+    if (pct > 0 && pct <= 100) return pct;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +140,22 @@ const levantaAdapter: IntegrationAdapter = {
       return extractNetworkLink(await res.json().catch(() => null)) || tagged;
     } catch {
       return tagged;
+    }
+  },
+  async estimateRate(target, creds): Promise<number | null> {
+    const apiKey = str(creds.apiKey);
+    if (!apiKey || !target.asin) return null;
+    const params = new URLSearchParams({ marketplace: marketplaceOf(target.marketplace) });
+    try {
+      const res = await fetch(`${LEVANTA_BASE}/products/${target.asin}?${params.toString()}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+      if (!res.ok) return null;
+      return extractRate(await res.json().catch(() => null));
+    } catch {
+      return null;
     }
   },
 };
@@ -216,48 +256,21 @@ const archerAdapter: IntegrationAdapter = {
       return tagged;
     }
   },
-};
-
-// ---------------------------------------------------------------------------
-// Logie (api.logie.ai) - verify only, no minting
-// ---------------------------------------------------------------------------
-
-const LOGIE_BASE = "https://api.logie.ai";
-
-const logieAdapter: IntegrationAdapter = {
-  id: "logie",
-  labelKey: "provLogie",
-  category: "affiliateNetwork",
-  hosts: ["https://api.logie.ai/*"],
-  credentialsUrl: PROVIDER_CREDENTIALS_URLS.logie,
-  fields: [
-    { name: "apiKey", labelKey: "fieldApiKey", type: "password" },
-    { name: "apiSecret", labelKey: "fieldApiSecret", type: "password" },
-  ],
-  async test(creds): Promise<TestResult> {
-    const apiKey = str(creds.apiKey);
-    const apiSecret = str(creds.apiSecret);
-    if (!apiKey || !apiSecret) return { ok: false, message: "Enter your Logie API key and secret." };
-    let res: Response;
+  async estimateRate(target, creds): Promise<number | null> {
+    if (!target.asin) return null;
     try {
-      res = await fetch(LOGIE_BASE, {
+      const bearer = await archerBearer(creds);
+      const params = new URLSearchParams({ asin: target.asin, marketplace: marketplaceOf(creds.marketplace) });
+      const res = await fetch(`${ARCHER_BASE}/get_single_product?${params.toString()}`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "x-api-key": apiKey,
-          "x-api-secret": apiSecret,
-          Accept: "application/json",
-        },
+        headers: { Authorization: `Bearer ${bearer}`, Accept: "application/json" },
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
+      if (!res.ok) return null;
+      return extractRate(await res.json().catch(() => null));
     } catch {
-      return { ok: false, message: "Could not reach Logie. Are you online?" };
+      return null;
     }
-    if (res.ok) return { ok: true, message: "Connected to Logie." };
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, message: "Logie rejected that key or secret. Check them in your Logie account." };
-    }
-    return { ok: false, message: await providerError(res, `Logie returned ${res.status}.`) };
   },
 };
 
@@ -283,6 +296,5 @@ const benableAdapter: IntegrationAdapter = {
 export const affiliateNetworkAdapters: IntegrationAdapter[] = [
   levantaAdapter,
   archerAdapter,
-  logieAdapter,
   benableAdapter,
 ];

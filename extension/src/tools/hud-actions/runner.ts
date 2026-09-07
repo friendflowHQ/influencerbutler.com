@@ -4,6 +4,7 @@ import type { HudCommandResult } from "../../shared/messages";
 import type { ProductRef, HudCommand } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { canonicalProductUrl } from "../../integrations/url";
+import { showToast } from "../../ui/toast";
 
 // Shared plumbing for panels that send HudCommands to the desktop app (the
 // Send-to-app section and the Campaigns section's inline Accept buttons).
@@ -20,6 +21,9 @@ export function toProductRef(signals: ProductSignals): ProductRef {
     asin: signals.asin as string,
     marketplace: signals.marketplace,
     title: signals.title?.slice(0, 200),
+    // Carry the scraped brand so the desktop can pre-fill the Content Butler /
+    // Collab card's Brand field instead of leaving it blank.
+    brand: signals.brand?.slice(0, 120) ?? undefined,
     priceCents: signals.priceCents,
     currency: signals.currency,
     imageUrl: signals.imageUrl ?? undefined,
@@ -41,6 +45,17 @@ export function makeCommandRunner(
   body: HTMLElement,
   status: HTMLElement,
 ): (command: HudCommand, pending: string) => void {
+  // A failed command only wrote to the small status line under the buttons,
+  // which scrolls out of view on a tall panel, so a click that didn't go
+  // through (app not running, unpaired, no image key) read as "nothing
+  // happened". Raise the same reason into a toast as well.
+  const failToast = (message: string) => {
+    showToast({
+      title: t().actionFailedTitle,
+      message,
+      closeLabel: t().nudgeCloseLabel,
+    });
+  };
   return (command, pending) => {
     status.textContent = pending;
     disableAll(body, true);
@@ -54,8 +69,11 @@ export function makeCommandRunner(
           // never sent. Without this, an unpaired click just looked like nothing
           // happened. Point the user at the popup pairing flow.
           status.textContent = t().connectAppToPair;
+          failToast(t().connectAppToPair);
         } else {
-          status.textContent = result.message ?? t().couldNotReachApp;
+          const message = result.message ?? t().couldNotReachApp;
+          status.textContent = message;
+          failToast(message);
         }
       })
       // A rejected sendMessage (routine when the MV3 service worker was
@@ -63,6 +81,7 @@ export function makeCommandRunner(
       .catch(() => {
         disableAll(body, false);
         status.textContent = t().couldNotReachApp;
+        failToast(t().couldNotReachApp);
       });
   };
 }

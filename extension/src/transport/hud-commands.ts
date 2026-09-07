@@ -10,6 +10,10 @@ export type ProductRef = {
   asin: string;
   marketplace: string;
   title?: string;
+  // Brand name scraped from the product byline ("Visit the <Brand> Store"). Sent
+  // so a Content Butler / Collab card lands with its brand pre-filled instead of
+  // an empty field. Absent when the page named no brand.
+  brand?: string;
   priceCents?: number | null;
   currency?: string;
   imageUrl?: string;
@@ -72,6 +76,14 @@ export type HudCommand =
   | { type: "content.push"; product: ProductRef }
   // Batch push of harvested order products into the Content Butler planner.
   | { type: "content.push.batch"; products: ProductRef[] }
+  // "Send to Voiceover Butler": enqueue the product into the desktop Voiceover
+  // Butler so it writes an FTC-compliant shoppable-video script. Enqueued by
+  // ASIN (the desktop dedupes an active ASIN and pre-fetches its Creators API
+  // dossier); a manual job when the page carried no ASIN.
+  | { type: "voiceover.push"; product: ProductRef }
+  // Batch push of harvested products into Voiceover Butler, from the Orders
+  // harvester / storefront checkup. Same target as voiceover.push, many at once.
+  | { type: "voiceover.push.batch"; products: ProductRef[] }
   | { type: "campaign.accept"; kind: "cc" | "spcc"; product: ProductRef }
   // Batch "accept all available campaigns" found across a storefront scan.
   | { type: "campaign.accept.batch"; items: Array<{ kind: "cc" | "spcc"; product: ProductRef }> }

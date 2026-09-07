@@ -175,6 +175,91 @@ describe("buildAffiliateLink", () => {
   });
 });
 
+describe("buildAffiliateLink highest-commission", () => {
+  const base = { asin: "B0ABC12345", marketplace: "amazon.com" };
+
+  // Levanta mints via POST /links and reports a rate via GET /products/{asin};
+  // `rate` is the body the products endpoint returns so a test can control the
+  // network's commission rate (or omit it to simulate an unknown rate).
+  const stubLevanta = (rate: object): void => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/links")) {
+          return new Response(JSON.stringify({ link: "https://levanta.pxf.io/abc" }), { status: 200 });
+        }
+        if (url.includes("/products/")) {
+          return new Response(JSON.stringify(rate), { status: 200 });
+        }
+        return new Response("{}", { status: 404 });
+      }),
+    );
+  };
+
+  const creds = async (id: string): Promise<Record<string, string>> =>
+    id === "levanta" ? { apiKey: "k" } : { linkTemplate: "https://go.me/?url={url}" };
+
+  it("wraps the Amazon link when its rate beats a network with no known rate", async () => {
+    stubLevanta({}); // network reports no rate -> null, loses to Amazon's 5%
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        useHighestCommission: true,
+        amazonRatePct: 5,
+        amazonParticipates: true,
+        primaryDeeplinkProvider: "selfhosted",
+        affiliateNetworks: ["levanta"],
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      creds,
+    );
+    expect(url).toBe(
+      `https://go.me/?url=${encodeURIComponent("https://www.amazon.com/dp/B0ABC12345?tag=t-20")}`,
+    );
+  });
+
+  it("picks the network when its reported rate beats Amazon", async () => {
+    stubLevanta({ commissionRate: 10 }); // 10% > Amazon's 5%
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        useHighestCommission: true,
+        amazonRatePct: 5,
+        amazonParticipates: true,
+        primaryDeeplinkProvider: "selfhosted",
+        affiliateNetworks: ["levanta"],
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      creds,
+    );
+    expect(url).toBe("https://levanta.pxf.io/abc");
+  });
+
+  it("uses the network by priority when Amazon is excluded and no rate is known", async () => {
+    stubLevanta({}); // unknown network rate; Amazon not a candidate
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        useHighestCommission: true,
+        amazonRatePct: 5,
+        amazonParticipates: false,
+        primaryDeeplinkProvider: "selfhosted",
+        affiliateNetworks: ["levanta"],
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+      },
+      creds,
+    );
+    expect(url).toBe("https://levanta.pxf.io/abc");
+  });
+});
+
 describe("validateTags", () => {
   it("accepts well-formed tags and rejects malformed ones", () => {
     expect(validateTags({ US: "mytag-20" }).ok).toBe(true);

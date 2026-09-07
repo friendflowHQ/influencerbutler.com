@@ -3,45 +3,56 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Influencer Butler: API Integrations</title>
+    <title>Influencer Butler: Settings</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <header class="head">
       <div class="brand">
         <img src="icons/icon-32.png" alt="" width="24" height="24" />
-        <span id="page-title">API Integrations</span>
+        <span id="page-title">Settings</span>
       </div>
     </header>
 
-    <main id="root">
-      <p id="page-intro" class="intro"></p>
-      <p id="security-note" class="note"></p>
-      <p id="affiliate-disclosure" class="note"></p>
+    <!-- Two-column shell: a left section nav (scroll-to + scroll-spy, built by
+         options.js from the rendered sections) beside the scrolling settings
+         column. Mirrors the desktop app's Settings layout. -->
+    <div class="layout">
+      <nav class="side-nav" aria-label="Settings sections">
+        <div id="side-nav"></div>
+      </nav>
 
-      <section class="card globals">
-        <div class="row">
-          <button id="run-all" class="primary"></button>
-          <span id="run-all-status" class="muted small"></span>
-        </div>
-        <label class="toggle"><input id="test-on-startup" type="checkbox" /><span id="label-startup"></span></label>
-        <label class="toggle"><input id="affiliate-routing" type="checkbox" /><span id="label-routing"></span></label>
-        <label class="field">
-          <span id="label-primary-deeplink"></span>
-          <select id="primary-deeplink"></select>
-        </label>
-        <p id="hint-primary-deeplink" class="muted small"></p>
-        <p id="primary-deeplink-warning" class="warn" hidden></p>
-        <label class="field">
-          <span id="label-walmart-link"></span>
-          <select id="walmart-link"></select>
-        </label>
-        <p id="hint-walmart-link" class="muted small"></p>
-      </section>
+      <main id="root">
+        <p id="page-intro" class="intro"></p>
+        <p id="security-note" class="note"></p>
+        <p id="affiliate-disclosure" class="note"></p>
 
-      <div id="categories"></div>
-      <div id="voiceover"></div>
-    </main>
+        <!-- General -->
+        <section id="sec-general" class="settings-section">
+          <h3 class="section-title" id="title-general"></h3>
+          <section class="card globals">
+            <div class="row">
+              <button id="run-all" class="primary"></button>
+              <span id="run-all-status" class="muted small"></span>
+            </div>
+            <label class="toggle"><input id="test-on-startup" type="checkbox" /><span id="label-startup"></span></label>
+          </section>
+        </section>
+
+        <!-- Affiliate Routing Strategy (built by options.js: master toggle,
+             provider roster, and the deeplink/Walmart provider pickers). -->
+        <section id="sec-routing" class="settings-section">
+          <h3 class="section-title" id="title-routing"></h3>
+          <div id="affiliate-routing-strategy"></div>
+        </section>
+
+        <!-- Provider category sections injected here (one section per category). -->
+        <div id="categories"></div>
+
+        <!-- Voiceover Butler section injected here. -->
+        <div id="voiceover"></div>
+      </main>
+    </div>
 
     <script src="options.js"></script>
   </body>

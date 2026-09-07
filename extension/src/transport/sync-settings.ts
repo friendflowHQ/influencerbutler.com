@@ -21,7 +21,7 @@ export type SyncSettingsPayload = {
   perCountryTags: Record<string, string>;
   // Credential-based integration providers, keyed by extension adapter id
   // (linktwin, creatorsApi, urlgenius, geniuslink, selfhosted, openai, levanta,
-  // archer, logie, benable). Session-based and license-based providers are not
+  // archer, benable). Session-based and license-based providers are not
   // synced (they have no portable secret).
   providers: Record<string, SyncProviderPayload>;
 };

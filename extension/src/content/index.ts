@@ -35,6 +35,7 @@ import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
+import { renderQuickLinks } from "../tools/quick-links/panel";
 import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
@@ -304,6 +305,10 @@ async function runForPage(): Promise<void> {
           breakdown.lower.total === 0 ||
           (carousel.counts.influencer > 0 && !namedInfluencers));
 
+      // Pinned quick-links bar (Get link / Scrub link): built first so it sits
+      // in the sticky topbar, one click away without scrolling past the sections.
+      guard("quick-links", () => void renderQuickLinks(signals));
+
       // Identity card first: the ASINs, category, rank, and rate at a glance.
       // Its section is captured so the campaigns tool can append its availability
       // block to the bottom of this same card.
@@ -570,6 +575,16 @@ async function runForPage(): Promise<void> {
         lastStatus.toolSummaries.push({ label: t().sumCampaignDetail, value: t().ready });
       }
     });
+    // The same floating Messages widget the grid carries also opens on a single
+    // campaign's detail page, so decorate it here too: the outreach keyword chip
+    // and the one-click template composer are self-gating and scoped to the
+    // widget, independent of the detail panel.
+    guard("brand-keywords", () => {
+      if (settings.tools.brandKeywords) initBrandKeywords(settings);
+    });
+    guard("message-templates", () => {
+      if (settings.tools.messageTemplates) initMessageTemplates(settings);
+    });
   }
 }
 
@@ -663,6 +678,17 @@ function watchForVideoHydration(): void {
   }, 2500);
 }
 
+// Bound the child->parent hint map so it can never grow without limit. A
+// listing carries a few dozen variants; this holds hundreds of listings' worth
+// before dropping the oldest-inserted keys (insertion order).
+const MAX_VARIANT_PARENTS = 6000;
+
+function pruneVariantParents(map: Record<string, string>): void {
+  const keys = Object.keys(map);
+  if (keys.length <= MAX_VARIANT_PARENTS) return;
+  for (const k of keys.slice(0, keys.length - MAX_VARIANT_PARENTS)) delete map[k];
+}
+
 function emitProductScan(
   signals: ProductSignals,
   carousel: CarouselResult,
@@ -674,6 +700,13 @@ function emitProductScan(
   // real breakdowns for products the user has actually viewed.
   if (carousel.strategy === "json" || carousel.strategy === "dom") {
     const asin = signals.asin;
+    const parent = signals.parentAsin;
+    // The listing's sibling variants (twister), plus the ASIN we are on, all
+    // roll up to the same parent. Recording it for each lets the search overlay
+    // reuse this exact split for a sibling variant it has not scanned yet.
+    const siblings = parent
+      ? [asin, ...signals.variationAsins].filter((a) => /^[A-Z0-9]{10}$/.test(a))
+      : [];
     void patchState((s) => {
       s.cache[`${signals.marketplace}:${asin}`] = {
         counts: carousel.counts,
@@ -681,6 +714,12 @@ function emitProductScan(
         inStock: signals.inStock,
         ts: Date.now(),
       };
+      if (parent) {
+        for (const sib of siblings) {
+          s.variantParents[`${signals.marketplace}:${sib}`] = parent;
+        }
+        pruneVariantParents(s.variantParents);
+      }
     });
   }
   // De-identified per-video placement observations for the opt-in video pool.

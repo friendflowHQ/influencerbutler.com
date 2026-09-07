@@ -113,9 +113,16 @@ function renderConnected(
     run({ type: "collaboration.add", product }, t().addingCollab),
   );
 
+  // Send to Voiceover Butler: enqueue the product for a shoppable-video script.
+  const voiceoverBtn = el("button", "btn secondary");
+  voiceoverBtn.textContent = t().sendToVoiceover;
+  voiceoverBtn.addEventListener("click", () =>
+    run({ type: "voiceover.push", product }, t().sendingVoiceover),
+  );
+
   const grid = el("div", "row");
   grid.style.flexWrap = "wrap";
-  grid.append(contentBtn, collabBtn);
+  grid.append(contentBtn, collabBtn, voiceoverBtn);
 
   // Save to Link Butler: mint + record a branded, app-opening Calling Card for
   // this product in the desktop Link Butler (so it lands in The Ledger).

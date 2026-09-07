@@ -17,7 +17,6 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
   levanta: "Levanta",
   archer: "Archer",
-  logie: "Logie",
   benable: "Benable",
 };
 

@@ -41,6 +41,7 @@ export type HudRef = { connected: boolean; signedIn: boolean; ideaLists?: IdeaLi
 // only need a ProductRef, so they are safe from search.
 const APP_ACTIONS: Array<{ labelKey: keyof ReturnType<typeof t>; command: (p: ProductRef) => HudCommand }> = [
   { labelKey: "sendToContentButler", command: (product) => ({ type: "content.push", product }) },
+  { labelKey: "sendToVoiceover", command: (product) => ({ type: "voiceover.push", product }) },
   { labelKey: "addToCollab", command: (product) => ({ type: "collaboration.add", product }) },
   { labelKey: "saveToLinkButler", command: (product) => ({ type: "link.mint", product }) },
   {

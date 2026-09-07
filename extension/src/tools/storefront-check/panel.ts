@@ -344,6 +344,23 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       });
     });
     exportRow.append(contentBtn);
+
+    // Same set, into Voiceover Butler: turn the niche into a batch of
+    // shoppable-video scripts. Sibling of the Content Butler push above.
+    const voiceoverBtn = el("button", "btn secondary");
+    voiceoverBtn.textContent = t().sfSendToVoiceover(products.length);
+    voiceoverBtn.addEventListener("click", () => {
+      voiceoverBtn.disabled = true;
+      status.textContent = t().sfSendingToVoiceover;
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "voiceover.push.batch", products },
+      }).then((r) => {
+        voiceoverBtn.disabled = false;
+        status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+      });
+    });
+    exportRow.append(voiceoverBtn);
   }
 
   // Accept every Creator Connections / SPCC campaign found across the products.
