@@ -23,6 +23,12 @@ import {
 // A widely-available sample ASIN used only to exercise the partner tag on Test.
 const PROBE_ASIN = "B0CVZWMD34";
 
+// The message when the user has not filled in their own Creator API credentials.
+// Exported so the options page can recognize this specific "nothing to test yet"
+// outcome and, when a backup lease is active, soften it into an informational
+// note instead of a red error (product data is already working via backup).
+export const INCOMPLETE_CREDS_MESSAGE = "Enter your Credential ID, Credential Secret, and partner tag.";
+
 // Re-exported so the marketplace field and the options page share one list.
 export { CREATORS_HOST_PATTERNS } from "../creators-api-client";
 
@@ -136,7 +142,7 @@ async function test(creds: Record<string, string>): Promise<TestResult> {
   const credentialSecret = (creds.credentialSecret ?? "").trim();
   const partnerTag = normalizePartnerTag(creds.partnerTag);
   if (!credentialId || !credentialSecret || !partnerTag) {
-    return { ok: false, message: "Enter your Credential ID, Credential Secret, and partner tag." };
+    return { ok: false, message: INCOMPLETE_CREDS_MESSAGE };
   }
   const precheck = precheckCredentials(credentialId, credentialSecret);
   if (precheck) return { ok: false, message: precheck };

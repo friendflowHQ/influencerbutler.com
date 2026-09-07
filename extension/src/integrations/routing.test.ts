@@ -24,6 +24,18 @@ describe("resolveTag", () => {
     expect(resolveTag("amazon.com", {}, "myhandle")).toBe("myhandle");
     expect(resolveTag("amazon.co.uk", {}, "myhandle")).toBeUndefined();
   });
+  // The Creator API partner tag (including Influencer Butler's backup tag
+  // littleprettyl-20) is only ever passed to resolveTag as a product-data value
+  // if a bug wired it in. resolveTag reads only perCountryTags / storefrontHandle,
+  // so with no user tag of their own the link stays untagged: the product-data
+  // tag can never leak into a shared link.
+  it("never uses a Creator API partner tag as the link tag", () => {
+    // No user tag anywhere. Even though "littleprettyl-20" is the account's
+    // Creator API partner tag, resolveTag has no channel for it and returns
+    // undefined, so buildAffiliateLink below leaves the link untagged.
+    expect(resolveTag("amazon.com", {}, null)).toBeUndefined();
+    expect(resolveTag("amazon.com", {}, "")).toBeUndefined();
+  });
 });
 
 describe("withAffiliateTag", () => {
@@ -64,6 +76,22 @@ describe("buildAffiliateLink", () => {
       noCreds,
     );
     expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20");
+  });
+
+  // Guard: the Creator API / backup partner tag (littleprettyl-20) must never
+  // end up on a link the user shares. With routing enabled but no user affiliate
+  // tag configured, the built link carries NO tag at all, and in particular not
+  // littleprettyl-20 (which lives in a separate product-data credential store the
+  // link builder cannot see).
+  it("never stamps the Creator API partner tag on a shared link", async () => {
+    const { url } = await buildAffiliateLink(
+      base,
+      { enabled: true, primaryDeeplinkProvider: null, perCountryTags: {}, storefrontHandle: null },
+      noCreds,
+    );
+    expect(url).toBe("https://www.amazon.com/dp/B0ABC12345");
+    expect(url).not.toContain("littleprettyl-20");
+    expect(url).not.toContain("tag=");
   });
 
   it("wraps through the primary deeplink provider template", async () => {

@@ -79,10 +79,19 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
               // returns {}); reporting that as unconfigured prompts a clean
               // re-entry instead of showing an empty field that claims "Saved".
               adapter.fields.some((f) => (creds[f.name] ?? "").trim() !== "");
+    // The specific fields that decrypt to a value, so the UI can put a "Stored"
+    // chip only on the fields that really hold one (a partner tag saved without
+    // its Credential ID/Secret should not make the empty secret boxes claim
+    // STORED). Field-based providers only; the others have no per-field secrets.
+    const storedFields =
+      adapter.id === ASSOCIATES || adapter.id === IB_LINKS || adapter.fields.length === 0
+        ? []
+        : adapter.fields.filter((f) => (creds[f.name] ?? "").trim() !== "").map((f) => f.name);
     providers.push({
       id: adapter.id,
       enabled: state?.enabled ?? false,
       configured,
+      storedFields,
       // Associates has no secret fields; its "values" are the per-country tags.
       values:
         adapter.id === ASSOCIATES

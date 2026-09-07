@@ -93,6 +93,7 @@ export interface OptionsDict {
   creatorsBackupActive: string;
   creatorsBackupDisable: string;
   creatorsBackupWorking: string;
+  creatorsBackupCovering: string;
   // Walmart affiliate link provider select
   walmartLink: string;
   walmartLinkNone: string;
@@ -262,6 +263,8 @@ const en: OptionsDict = {
     "Backup credentials active. Your own Creator API is re-tested and takes over as soon as Amazon unlocks it.",
   creatorsBackupDisable: "Stop using backup",
   creatorsBackupWorking: "Setting up backup credentials...",
+  creatorsBackupCovering:
+    "Product data is running on Influencer Butler's backup credentials. Add your own Credential ID and Secret above to switch to your own Creator API.",
   fieldPartnerTag: "Partner tag",
   fieldMarketplace: "Marketplace (optional)",
   fieldLinkTemplate: "Link pattern",
@@ -432,6 +435,8 @@ const es: OptionsDict = {
     "Credenciales de respaldo activas. Tu propia Creator API se vuelve a probar y toma el relevo en cuanto Amazon la habilite.",
   creatorsBackupDisable: "Dejar de usar el respaldo",
   creatorsBackupWorking: "Configurando las credenciales de respaldo...",
+  creatorsBackupCovering:
+    "Los datos de producto funcionan con las credenciales de respaldo de Influencer Butler. Añade tu propio Credential ID y Secret arriba para pasar a tu propia Creator API.",
   fieldPartnerTag: "Etiqueta de socio",
   fieldMarketplace: "Mercado (opcional)",
   fieldLinkTemplate: "Patrón de enlace",
@@ -602,6 +607,8 @@ const fr: OptionsDict = {
     "Identifiants de secours actifs. Votre propre Creator API est retestée et prend le relais dès qu'Amazon la débloque.",
   creatorsBackupDisable: "Arrêter d'utiliser le secours",
   creatorsBackupWorking: "Configuration des identifiants de secours...",
+  creatorsBackupCovering:
+    "Les données produit fonctionnent avec les identifiants de secours d'Influencer Butler. Ajoutez vos propres Credential ID et Secret ci-dessus pour passer à votre propre Creator API.",
   fieldPartnerTag: "Balise partenaire",
   fieldMarketplace: "Place de marché (facultatif)",
   fieldLinkTemplate: "Modèle de lien",

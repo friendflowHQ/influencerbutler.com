@@ -372,6 +372,11 @@ export type IntegrationView = {
   id: string;
   enabled: boolean;
   configured: boolean;
+  // Names of the fields that actually decrypt to a stored value. Lets the UI
+  // show a per-field "Stored" chip that tells the truth, instead of gating every
+  // secret field on the provider-wide `configured` flag (which is true when ANY
+  // one field is stored). Never contains a secret value, only field names.
+  storedFields: string[];
   values: Record<string, string>;
   lastTest: IntegrationTestResult;
   routingParticipates: boolean;

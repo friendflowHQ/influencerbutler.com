@@ -30,6 +30,7 @@ import {
   type IntegrationView,
 } from "../shared/messages";
 import { ONBOARDING_VIDEO_ID, API_INTEGRATIONS_TUTORIAL_URL } from "../shared/constants";
+import { INCOMPLETE_CREDS_MESSAGE } from "../integrations/adapters/creators-api";
 
 // The API Integrations options page. All credentials are handled by the
 // background worker; this page only shows non-secret values and status, and
@@ -152,7 +153,7 @@ function label(key: string): string {
 function providerView(id: string): IntegrationView {
   const found = view.providers.find((p) => p.id === id);
   if (found) return found;
-  return { id, enabled: false, configured: false, values: {}, lastTest: { status: "untested", at: null, message: null }, routingParticipates: true };
+  return { id, enabled: false, configured: false, storedFields: [], values: {}, lastTest: { status: "untested", at: null, message: null }, routingParticipates: true };
 }
 
 function renderChrome(): void {
@@ -762,7 +763,12 @@ function renderSetupVideo(): HTMLElement {
 // to lease Influencer Butler's house credentials while Amazon has not unlocked
 // the user's own account. Returns the element plus a showOffer() the test
 // handler calls when it sees eligibilityBlocked.
-function renderCreatorsBackup(): { el: HTMLElement; showOffer: () => void } {
+function renderCreatorsBackup(): {
+  el: HTMLElement;
+  showOffer: () => void;
+  isActive: () => boolean;
+  onActive: (cb: (active: boolean) => void) => void;
+} {
   const el = document.createElement("div");
   el.className = "provider-backup";
 
@@ -794,9 +800,13 @@ function renderCreatorsBackup(): { el: HTMLElement; showOffer: () => void } {
 
   el.append(status, offer, activeChip);
 
-  const showActive = (active: boolean): void => {
-    activeChip.hidden = !active;
-    if (active) offer.hidden = true;
+  let active = false;
+  let activeCb: ((active: boolean) => void) | null = null;
+  const showActive = (isActive: boolean): void => {
+    active = isActive;
+    activeChip.hidden = !isActive;
+    if (isActive) offer.hidden = true;
+    activeCb?.(isActive);
   };
 
   enableBtn.onclick = async () => {
@@ -831,7 +841,12 @@ function renderCreatorsBackup(): { el: HTMLElement; showOffer: () => void } {
     if (res && !("error" in res) && res?.active) showActive(true);
   });
 
-  return { el, showOffer: () => { if (activeChip.hidden) offer.hidden = false; } };
+  return {
+    el,
+    showOffer: () => { if (activeChip.hidden) offer.hidden = false; },
+    isActive: () => active,
+    onActive: (cb) => { activeCb = cb; },
+  };
 }
 
 function renderProvider(adapter: IntegrationAdapter): HTMLElement {
@@ -857,7 +872,7 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
 
   // The Creators API card carries the setup walkthrough, matching the desktop
   // app's API Integrations screen.
-  let backupControls: { el: HTMLElement; showOffer: () => void } | null = null;
+  let backupControls: ReturnType<typeof renderCreatorsBackup> | null = null;
   if (adapter.id === CREATORS_API) {
     block.append(renderSetupVideo());
     backupControls = renderCreatorsBackup();
@@ -902,11 +917,14 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       input.type = field.type === "password" ? "password" : "text";
       input.autocomplete = "off";
       if (field.type === "password") {
-        input.placeholder = pv.configured ? D.secretSavedPlaceholder : field.placeholder ?? "";
+        // "Stored" is per field: a partner tag saved without its Credential ID/
+        // Secret must not make the empty secret boxes claim STORED.
+        const fieldStored = pv.storedFields.includes(field.name);
+        input.placeholder = fieldStored ? D.secretSavedPlaceholder : field.placeholder ?? "";
         // A password box is never pre-filled, so a stored key otherwise looks like
         // an empty field. A "Stored" chip on the label makes it obvious the key is
         // still saved and the blank box is expected.
-        if (pv.configured) {
+        if (fieldStored) {
           const chip = document.createElement("span");
           chip.className = "stored-chip";
           chip.textContent = D.storedBadge;
@@ -957,6 +975,29 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   if (pv.lastTest.message) {
     setMsg(pv.lastTest.message, pv.lastTest.status === "ok" ? "ok" : "fail");
   }
+  // When Influencer Butler's backup credentials are active, product data is
+  // already working through the server-side lease, so a stale "enter your own
+  // credentials" failure on this card is misleading. Replace it with a neutral
+  // informational note (and clear the red badge) whenever the lease is live.
+  // Only a non-passing result is overridden, so a genuine "connected with your
+  // own credentials" result is never clobbered.
+  backupControls?.onActive((isActive) => {
+    if (isActive) {
+      if (pv.lastTest.status !== "ok") {
+        setMsg(D.creatorsBackupCovering, "");
+        head.replaceChild(makeBadge("untested"), head.lastChild as Node);
+      }
+    } else {
+      // Backup turned off: restore this card's real credential status so the
+      // user sees whether their own Creator API still needs to be entered.
+      if (pv.lastTest.message) {
+        setMsg(pv.lastTest.message, pv.lastTest.status === "ok" ? "ok" : "fail");
+      } else {
+        setMsg("", "");
+      }
+      head.replaceChild(makeBadge(pv.lastTest.status), head.lastChild as Node);
+    }
+  });
   actions.append(saveBtn, testBtn);
   // "Show me where" opens the provider's own credentials page in a new tab, so
   // users can find these keys without leaving the flow. Matches the desktop app.
@@ -1041,8 +1082,16 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       kind: "TEST_INTEGRATION",
       id: adapter.id,
     });
-    setMsg(outcome.message, outcome.ok ? "ok" : "fail");
-    head.replaceChild(makeBadge(outcome.ok ? "ok" : "fail"), head.lastChild as Node);
+    // If the only problem is that the user has not entered their own Creator API
+    // credentials yet, but the backup lease is active, product data is already
+    // covered: show the informational note instead of a red error.
+    if (!outcome.ok && outcome.message === INCOMPLETE_CREDS_MESSAGE && backupControls?.isActive()) {
+      setMsg(D.creatorsBackupCovering, "");
+      head.replaceChild(makeBadge("untested"), head.lastChild as Node);
+    } else {
+      setMsg(outcome.message, outcome.ok ? "ok" : "fail");
+      head.replaceChild(makeBadge(outcome.ok ? "ok" : "fail"), head.lastChild as Node);
+    }
     // Amazon accepted the credentials but has not unlocked the Creator API yet:
     // reveal the backup-credentials offer.
     if (outcome.eligibilityBlocked) backupControls?.showOffer();

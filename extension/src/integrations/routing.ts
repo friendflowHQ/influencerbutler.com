@@ -45,6 +45,13 @@ export function countryFor(marketplace: string): string {
 
 // The tag to use for a marketplace. The US tag falls back to the creator's
 // storefront handle when no explicit tag is set, matching the desktop app.
+//
+// This resolves ONLY the user's own Associates link tag (perCountryTags /
+// storefrontHandle). It deliberately never falls back to the Creator API
+// partner tag: that tag (including Influencer Butler's backup partner tag) is
+// for product-data lookups only and must never be stamped onto a link the user
+// shares. When the user has no tag of their own, this returns undefined and the
+// link is left untagged rather than borrowing the product-data tag.
 export function resolveTag(
   marketplace: string,
   perCountryTags: Record<string, string>,
