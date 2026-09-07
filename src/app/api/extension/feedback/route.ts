@@ -105,21 +105,27 @@ export async function POST(request: Request) {
   const logs = cleanString(input.logs, LOGS_MAX);
   const screenshots = sanitizeScreenshots(input.screenshots);
 
+  // The rich columns (title / logs / screenshots) ship in a separate migration.
+  // Only reference them when the caller actually sent something, so the minimal
+  // popup form (which sends none) keeps saving even before the migration is
+  // applied. The bubble sends a title, so it needs the migration to be applied.
+  const row: Record<string, unknown> = {
+    user_id: userId,
+    email,
+    feedback_type: feedbackType,
+    message,
+    page_url: cleanString(input.page_url, 500),
+    ext_version: cleanString(input.ext_version, 20),
+    browser: cleanString(input.browser, 40),
+  };
+  if (title) row.title = title;
+  if (logs) row.logs = logs;
+  if (screenshots.length) row.screenshots = screenshots;
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("extension_feedback")
-    .insert({
-      user_id: userId,
-      email,
-      feedback_type: feedbackType,
-      title: title || null,
-      message,
-      page_url: cleanString(input.page_url, 500),
-      ext_version: cleanString(input.ext_version, 20),
-      browser: cleanString(input.browser, 40),
-      logs: logs || null,
-      screenshots: screenshots.length ? screenshots : null,
-    })
+    .insert(row)
     .select("id")
     .single();
 
