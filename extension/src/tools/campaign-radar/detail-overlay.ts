@@ -38,7 +38,9 @@ const MAX_PRODUCTS = 12;
 // The detail page is a React SPA whose Products list can hydrate after our first
 // pass. Retry a few times before giving up rather than mounting an empty panel.
 const RETRY_MS = 700;
-const MAX_RETRIES = 5;
+// The Products list often hydrates a beat after the header, so wait ~5.6s
+// (8 x 700ms) before settling for whatever is on the page.
+const MAX_RETRIES = 8;
 
 const BAND_COLOR: Record<CampaignScoreBand, string> = {
   hot: "#16a34a",
@@ -76,14 +78,23 @@ async function run(mine: number, attempt: number): Promise<void> {
   const asins = extractCampaignAsins(document.body).slice(0, MAX_PRODUCTS);
   const fields = parseCampaignText(document.body.textContent ?? "");
 
-  // Nothing to show yet: retry while the SPA hydrates, then give up quietly.
-  if (asins.length === 0 && fields.commissionRatePct === null) {
-    if (attempt >= MAX_RETRIES) return;
+  const headerReady = fields.commissionRatePct !== null;
+  const productsReady = asins.length > 0;
+
+  // The detail page is a React SPA that hydrates in stages: the campaign header
+  // (commission / budget / dates) lands before the Products list. Retry while
+  // EITHER is still missing, so we do not mount a card that says "no products"
+  // the instant the header is ready but before the product cards have rendered
+  // (the bug this guards against). Bounded; after the retry window we render
+  // whatever we have, so a genuinely product-less campaign still shows the note.
+  if ((!headerReady || !productsReady) && attempt < MAX_RETRIES) {
     window.setTimeout(() => {
       if (mine === epoch) void run(mine, attempt + 1);
     }, RETRY_MS);
     return;
   }
+  // Still nothing after the retry window: not a campaign detail we can read.
+  if (!headerReady && !productsReady) return;
 
   const now = new Date();
   const daysRemaining = fields.endsAt ? daysUntil(fields.endsAt, now) : null;
