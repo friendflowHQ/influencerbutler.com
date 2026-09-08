@@ -101,6 +101,15 @@ Esto necesita tu clave de OpenAI en **Integraciones de API** y gasta tokens por 
 
 La pestaña **Product QR** genera un código QR por ASIN que puedes superponer en un vídeo antes de subirlo. Útil para contenido comprable donde los espectadores pueden escanear en vez de hacer clic.
 
+## Copia de seguridad de mis vídeos (descarga todo tu canal)
+
+La pestaña **Copia de mis vídeos** descarga todos los vídeos de tu canal conectado a una carpeta de tu ordenador, con su miniatura y un pequeño archivo de detalles. El butler lista tus subidas a través de la conexión de YouTube del Asistente de configuración y luego obtiene cada archivo con la opción **Descargar** de YouTube Studio en el navegador con sesión iniciada del butler, así que no se cambia nada en YouTube.
+
+- Conecta YouTube primero en el **Asistente de configuración** y deja **Ver cómo funciona** activado en la primera ejecución para iniciar sesión en YouTube Studio si lo pide.
+- **Guardar en** muestra la carpeta (por defecto: *Influencer Butler Backups / YouTube* dentro de tu carpeta Vídeos). **Elegir carpeta** la cambia.
+- Ejecútalo cuando quieras: solo se descargan los vídeos nuevos. **Detener** termina la ejecución tras el vídeo actual.
+- Los vídeos que YouTube aún está procesando se omiten hasta que estén listos.
+
 ## Dónde van los datos
 
 El estado de subida por vídeo vive en el panel Upload Log (filtrable por estado, búsqueda, marketplace, etc.). Los IDs de vídeos subidos se guardan localmente para que YouTube Butler no suba nada dos veces.

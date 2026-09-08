@@ -101,6 +101,15 @@ Cela nécessite votre clé OpenAI dans **Intégrations API** et consomme des tok
 
 L'onglet **Product QR** génère un QR code par ASIN que vous pouvez superposer sur une vidéo avant upload. Utile pour du contenu achetable où les viewers scannent au lieu de cliquer.
 
+## Sauvegarder mes vidéos (télécharger toute votre chaîne)
+
+L'onglet **Sauvegarder mes vidéos** télécharge toutes les vidéos de votre chaîne connectée dans un dossier de votre ordinateur, avec leur miniature et un petit fichier de détails. Le butler liste vos envois via la connexion YouTube de l'assistant de configuration, puis récupère chaque fichier avec l'option **Télécharger** de YouTube Studio dans le navigateur connecté du butler : rien n'est modifié sur YouTube.
+
+- Connectez d'abord YouTube dans l'**assistant de configuration** et laissez **Regarder en direct** activé lors de la première exécution pour vous connecter à YouTube Studio s'il le demande.
+- **Enregistrer dans** affiche le dossier (par défaut : *Influencer Butler Backups / YouTube* dans votre dossier Vidéos). **Choisir un dossier** le change.
+- Relancez-la quand vous voulez : seules les nouvelles vidéos sont téléchargées. **Arrêter** termine l'exécution après la vidéo en cours.
+- Les vidéos encore en traitement sur YouTube sont ignorées jusqu'à ce qu'elles soient prêtes.
+
 ## Où vont les données
 
 Le statut d'upload par vidéo vit dans le panneau Upload Log (filtrable par statut, recherche, marketplace, etc.). Les IDs de vidéos uploadées sont stockés en local pour que YouTube Butler n'upload jamais deux fois.
