@@ -66,6 +66,8 @@ Une fois que cela semble bon, réactivez **Process All** pour toute la biblioth�
 
 - **skipViewsAtLeast**: le bouton le plus important. Montez-le pour protéger plus de vidéos performantes ; baissez-le pour être plus agressif sur le rafraîchissement du vieux contenu.
 - **deleteOriginal / deleteBeforeReupload**: avec les deux désactivés, les originaux restent. La section "Nettoyage" permet de les supprimer en lot après vérification des re-uploads. Avec "Supprimer avant le re-upload" activé, le champ **Ne pas supprimer si ajouté dans les (jours)** empêche la suppression de toute vidéo ajoutée à Amazon dans ce nombre de jours, pour que les publications récentes restent en place. 0 le désactive.
+- **Attente entre les envois (secondes)**: fixez un minimum et un maximum, et chaque envoi démarre un nombre aléatoire de secondes après le précédent dans cette plage. Utilisez-la pour ralentir le butler si Amazon continue de suspendre votre compte après une rafale de publications. Les deux à 0 conservent la courte pause par défaut.
+- **M'envoyer un e-mail si une exécution s'arrête avant la fin**: activé par défaut. Quand Amazon suspend une exécution, vous recevez un e-mail avec la raison et l'heure à laquelle le butler la relancera tout seul. L'exécution redémarre aussi d'elle-même tant que l'application reste ouverte ; cliquez sur Lancer pour réessayer plus tôt ou sur Arrêter pour annuler le redémarrage automatique.
 - **joinMode + joinClip**: colle un court clip d'intro/outro à chaque re-upload. Utile pour la cohérence de marque.
 - **Overlays légende / filigrane**: il y a un panneau séparé ; ils survivent au ré-encodage.
 

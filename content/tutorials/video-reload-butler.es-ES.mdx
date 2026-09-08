@@ -66,6 +66,8 @@ Una vez que se vea bien, vuelve a activar **Process All** para toda la bibliotec
 
 - **skipViewsAtLeast**: el control más importante. Súbelo para proteger más vídeos de buen rendimiento; bájalo para ser más agresivo refrescando contenido viejo.
 - **deleteOriginal / deleteBeforeReupload**: con ambos apagados, los originales se quedan. La sección "Limpieza" permite borrarlos por lotes después de verificar las re-subidas. Con "Eliminar antes de re-subir" activado, el campo **No eliminar si se añadió en los últimos (días)** evita que se borre cualquier vídeo añadido a Amazon dentro de ese número de días, para que las publicaciones recientes se queden. 0 lo desactiva.
+- **Espera entre subidas (segundos)**: fija un mínimo y un máximo, y cada subida empieza un número aleatorio de segundos después de la anterior dentro de ese rango. Úsalo para frenar al butler si Amazon sigue pausando tu cuenta tras una ráfaga de publicaciones. Con ambos en 0 se mantiene la pausa corta por defecto.
+- **Avísame por correo si una ejecución se detiene antes de tiempo**: activado por defecto. Cuando Amazon pausa una ejecución, recibes un correo con el motivo y la hora a la que el butler la reanudará solo. La ejecución también se reanuda sola mientras la app siga abierta; pulsa Ejecutar para intentarlo antes o Detener para cancelar el reinicio automático.
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 

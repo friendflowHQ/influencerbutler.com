@@ -67,6 +67,8 @@ Once that looks good, turn **Process All** back on for the full library.
 - **skipViewsAtLeast**: the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.
 - **deleteOriginal / deleteBeforeReupload**: when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads. With "Delete before re-upload" on, the **Don't delete if added within (days)** field keeps any video added to Amazon within that many days from being deleted, so fresh listings stay put. 0 disables it.
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
+- **Wait between uploads (seconds)**: set a minimum and maximum, and each upload starts a random number of seconds after the previous one inside that range. Use it to slow the butler down if Amazon keeps pausing your account after a burst of posts. Both at 0 keeps the default short pause.
+- **Email me if a run stops early**: on by default. When Amazon pauses a run, you get one email with why it stopped and when the butler restarts it on its own. The run also restarts by itself while the app stays open; click Run to try sooner or Stop to cancel the automatic restart.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
 ## Post in each country's language
