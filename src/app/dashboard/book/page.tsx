@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CALL_TYPES } from "@/lib/scheduling";
 
 type Slot = { startMs: number; endMs: number; userEndMs: number };
 type DaySlots = { date: string; timezone: string; slots: Slot[] };
@@ -166,14 +167,14 @@ export default function BookCallPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <button type="button" onClick={() => setCallType("demo")}
           className={`rounded-2xl border p-4 text-left ${callType === "demo" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white`}>
-          <div className="font-semibold text-slate-900">Demo call</div>
-          <div className="mt-1 text-sm text-slate-500">A 2-hour walkthrough of Influencer Butler, tailored to you.</div>
+          <div className="font-semibold text-slate-900">{CALL_TYPES.demo.label}</div>
+          <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.demo.description}</div>
         </button>
         <button type="button" disabled={isSubscriber === false} onClick={() => isSubscriber !== false && setCallType("support")}
           className={`rounded-2xl border p-4 text-left ${callType === "support" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white ${isSubscriber === false ? "opacity-60" : ""}`}>
-          <div className="font-semibold text-slate-900">Support call</div>
-          <div className="mt-1 text-sm text-slate-500">A 45-minute 1:1 to work through an issue with your setup.</div>
-          {isSubscriber === false && <div className="mt-2 text-xs text-[#c2410c]">For subscribers. <a href="/dashboard/subscription" className="underline">Start a plan</a> (no credit card required) to book one.</div>}
+          <div className="font-semibold text-slate-900">{CALL_TYPES.support.label}</div>
+          <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.support.description}</div>
+          {isSubscriber === false && <div className="mt-2 text-xs text-slate-500">New to Butler? Book the free <strong>{CALL_TYPES.demo.label}</strong> above (or Butler AI) for setup help at no cost, or <a href="/dashboard/subscription" className="underline">start a plan</a> (no credit card required).</div>}
         </button>
       </div>
 
@@ -211,7 +212,7 @@ export default function BookCallPage() {
       {selectedSlot && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="text-sm text-slate-700">
-            {callType === "support" ? "Support call" : "Demo call"} on <strong>{fmtDayLabel(selectedSlot.startMs)}</strong> at <strong>{fmtTime(selectedSlot.startMs)}</strong> ({tzFriendly()})
+            {CALL_TYPES[callType].label} on <strong>{fmtDayLabel(selectedSlot.startMs)}</strong> at <strong>{fmtTime(selectedSlot.startMs)}</strong> ({tzFriendly()})
           </div>
           <label className="mt-3 block text-sm">
             <span className="text-slate-500">Your name (optional)</span>
@@ -240,7 +241,7 @@ export default function BookCallPage() {
             {mine.map((b) => (
               <li key={b.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
-                  <span className="font-medium text-slate-800">{b.call_type === "support" ? "Support" : "Demo"}</span>
+                  <span className="font-medium text-slate-800">{CALL_TYPES[b.call_type].label}</span>
                   <span className="ml-2 text-slate-500">{fmtDayLabel(Date.parse(b.starts_at))} at {fmtTime(Date.parse(b.starts_at))}</span>
                   <span className={`ml-2 rounded px-1.5 py-0.5 text-xs ${b.status === "confirmed" ? "bg-sky-50 text-sky-700" : "bg-slate-100 text-slate-500"}`}>{b.status}</span>
                 </div>

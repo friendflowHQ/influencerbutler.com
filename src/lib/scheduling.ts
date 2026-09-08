@@ -18,19 +18,19 @@ export const CALL_TYPES: Record<CallTypeKey, {
 }> = {
   support: {
     key: "support",
-    label: "Support call",
+    label: "Priority 1:1 call",
     userMinutes: 45,
     blockMinutes: 60,
     requiresSubscription: true,
-    description: "A 45-minute 1:1 to work through an issue with your setup.",
+    description: "A focused 45-minute 1:1 to troubleshoot a specific issue, fast. Included with any plan.",
   },
   demo: {
     key: "demo",
-    label: "Demo call",
+    label: "Setup call",
     userMinutes: 120,
     blockMinutes: 120,
     requiresSubscription: false,
-    description: "A 2-hour walkthrough of Influencer Butler, tailored to you.",
+    description: "A free 2-hour 1:1 where we set up Influencer Butler with you, any butler you want (YouTube Butler, Amazon Butler, and more).",
   },
 };
 

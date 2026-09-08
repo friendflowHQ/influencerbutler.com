@@ -17,6 +17,7 @@ import {
   type StatsResult,
 } from "../integrations/ib-links-client";
 import { canonicalProductUrl, withAffiliateTag } from "../integrations/url";
+import { withAppOpenParams } from "../integrations/app-link";
 import { resolveTag } from "../integrations/routing";
 import { LINK_MINT_BULK_CAP, LINK_MINT_DELAY_MAX_MS, LINK_MINT_DELAY_MIN_MS } from "../shared/constants";
 import { getIntegrations, getSettings, getState, patchSettings } from "../storage/store";
@@ -49,7 +50,12 @@ async function taggedTargetUrl(input: BrandedMintInput): Promise<string> {
       ? input.url
       : canonicalProductUrl(input.asin ?? "", input.marketplace, input.url ?? "");
   const tag = resolveTag(input.marketplace, integrations.global.perCountryTags, settings.storefrontHandle);
-  return tag ? withAffiliateTag(base, tag) : base;
+  const tagged = tag ? withAffiliateTag(base, tag) : base;
+  // Same free app-opening params the single-link path applies, so a branded
+  // link minted from the Ledger also opens the Amazon app on phones.
+  return integrations.global.appOpeningLinks !== false && input.asin
+    ? withAppOpenParams(tagged, input.asin)
+    : tagged;
 }
 
 // Mint (or reuse) a branded link for one product, and publish smart routing when

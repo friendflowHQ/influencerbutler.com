@@ -14,6 +14,9 @@ export interface OptionsDict {
   runningTests: string;
   testOnStartup: string;
   affiliateRouting: string;
+  // App-opening Amazon links (SiteStripe linkCode=ssc + creativeASIN params).
+  appOpeningLinks: string;
+  appOpeningLinksHint: string;
   primaryDeeplink: string;
   primaryDeeplinkNone: string;
   primaryDeeplinkHint: string;
@@ -183,6 +186,9 @@ const en: OptionsDict = {
   runningTests: "Testing every saved integration...",
   testOnStartup: "Test all integrations when the browser starts",
   affiliateRouting: "Rewrite Amazon links through my affiliate setup",
+  appOpeningLinks: "Links open the Amazon app on phones",
+  appOpeningLinksHint:
+    "Adds Amazon's own share parameters to every Amazon link so it opens in the Amazon app instead of the mobile browser. Free, and harmless on desktop.",
   primaryDeeplink: "Primary deeplink provider",
   primaryDeeplinkNone: "None (affiliate tag only)",
   primaryDeeplinkHint:
@@ -355,6 +361,9 @@ const es: OptionsDict = {
   runningTests: "Probando cada integración guardada...",
   testOnStartup: "Probar todas las integraciones al iniciar el navegador",
   affiliateRouting: "Reescribir enlaces de Amazon con mi configuración de afiliado",
+  appOpeningLinks: "Los enlaces abren la app de Amazon en el móvil",
+  appOpeningLinksHint:
+    "Añade los parámetros de compartir de Amazon a cada enlace de Amazon para que se abra en la app de Amazon en lugar del navegador móvil. Gratis, y sin efecto en escritorio.",
   primaryDeeplink: "Proveedor de deeplink principal",
   primaryDeeplinkNone: "Ninguno (solo etiqueta de afiliado)",
   primaryDeeplinkHint:
@@ -527,6 +536,9 @@ const fr: OptionsDict = {
   runningTests: "Test de chaque intégration enregistrée...",
   testOnStartup: "Tester toutes les intégrations au démarrage du navigateur",
   affiliateRouting: "Réécrire les liens Amazon avec ma configuration d'affiliation",
+  appOpeningLinks: "Les liens ouvrent l'application Amazon sur mobile",
+  appOpeningLinksHint:
+    "Ajoute les paramètres de partage d'Amazon à chaque lien Amazon pour qu'il s'ouvre dans l'application Amazon plutôt que dans le navigateur mobile. Gratuit, et sans effet sur ordinateur.",
   primaryDeeplink: "Fournisseur de deeplink principal",
   primaryDeeplinkNone: "Aucun (balise d'affiliation seule)",
   primaryDeeplinkHint:

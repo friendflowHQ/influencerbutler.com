@@ -27,6 +27,7 @@ import {
 } from "./selectors";
 import type { BrandEnrichmentRecord, EnrichmentMap, OutreachMap, OutreachRecord } from "./types";
 import type { Settings } from "../../storage/schema";
+import { subscribeMessagesWidget } from "../cc-widget/observer";
 
 // Brand Keywords: badge each Creator Connections Messages conversation with a
 // chip. A brand the creator *pitched* through the desktop "Message Brands" tool
@@ -35,21 +36,20 @@ import type { Settings } from "../../storage/schema";
 // pitched) instead gets a Creator Connections signal chip: best commission rate
 // plus a cadence word, resolved from the app's global brand index. The Messages
 // widget is a floating panel that mounts, unmounts, and toggles between a list
-// and a thread on the same /p/connect/* route, so this owns a scoped
-// MutationObserver rather than hanging off a page type.
+// and a thread on the same /p/connect/* route, so this subscribes to the shared
+// Messages-widget observer (tools/cc-widget/observer.ts) rather than hanging
+// off a page type.
 
 // Marks a decorated (or checked-and-unmatched) row/header so a re-render or a
 // later sweep does not re-query it. Mirrors campaign-radar's data-ib-radar.
 const DONE_ATTR = "data-ib-bkw";
 const HOST_CLASS = "bkw-chip-host";
-// Coalesce React's burst of mutations into one sweep.
-const SWEEP_DEBOUNCE_MS = 250;
 // Do not refetch the ledger (or retry a failed enrichment fetch) more often than
 // this when the panel is reopened.
 const REFETCH_THROTTLE_MS = 60_000;
 
-let observer: MutationObserver | null = null;
-let debounceTimer: number | null = null;
+// Unsubscribes from the shared widget observer; null when not initialised.
+let unsubscribe: (() => void) | null = null;
 // Bumped on every init so a sweep that awaited a fetch across an SPA re-entry
 // can tell it lost and bail before touching the new page's DOM.
 let epoch = 0;
@@ -71,19 +71,14 @@ let enrichBackoffUntil = 0;
 export function initBrandKeywords(_settings: Settings): void {
   teardownBrandKeywords();
   const myEpoch = ++epoch;
-  observer = new MutationObserver(() => scheduleSweep(myEpoch));
-  observer.observe(document.body, { childList: true, subtree: true });
-  // Initial pass in case the widget is already open on entry.
-  scheduleSweep(myEpoch);
+  // The shared observer debounces the mutation burst and runs an initial pass
+  // in case the widget is already open on entry, so the callback sweeps directly.
+  unsubscribe = subscribeMessagesWidget(() => runSweep(myEpoch));
 }
 
 export function teardownBrandKeywords(): void {
-  observer?.disconnect();
-  observer = null;
-  if (debounceTimer !== null) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
+  unsubscribe?.();
+  unsubscribe = null;
   // Bump the epoch so any in-flight sweep bails instead of decorating.
   epoch += 1;
   // Drop the accumulated enrichment so a fresh page starts clean (the outreach
@@ -98,13 +93,9 @@ export function teardownBrandKeywords(): void {
   }
 }
 
-function scheduleSweep(myEpoch: number): void {
-  if (debounceTimer !== null) return;
-  debounceTimer = window.setTimeout(() => {
-    debounceTimer = null;
-    if (myEpoch !== epoch) return;
-    void sweep(myEpoch).catch((error) => log("brand-keywords", "sweep failed", error));
-  }, SWEEP_DEBOUNCE_MS);
+function runSweep(myEpoch: number): void {
+  if (myEpoch !== epoch) return;
+  void sweep(myEpoch).catch((error) => log("brand-keywords", "sweep failed", error));
 }
 
 async function sweep(myEpoch: number): Promise<void> {

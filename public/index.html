@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections brand outreach, auto-accept matching campaigns, harvest commissions, post deals, and manage content with 40+ built-in tools.">
+    <meta name="description" content="Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections brand outreach, auto-accept matching campaigns, harvest commissions, post deals, and manage content with 40+ built-in tools, plus a free Chrome extension for product research.">
     <meta name="keywords" content="Amazon influencer tools, Creator Connections automation, auto accept Creator Connections, Amazon influencer software, affiliate marketing software, commission tracking, brand outreach automation, Amazon storefront tools, influencer desktop app">
     <meta name="robots" content="index, follow">
     <!-- Search engine verification. Replace PASTE_..._CODE with the code each tool gives you (Search Console > HTML tag method; Bing Webmaster > HTML meta tag). DNS verification is an alternative and needs neither tag. -->
@@ -11,7 +11,7 @@
     <meta name="msvalidate.01" content="PASTE_BING_WEBMASTER_CODE">
     <link rel="canonical" href="https://www.influencerbutler.com/">
     <meta property="og:title" content="Influencer Butler | Automate Your Entire Influencer Business">
-    <meta property="og:description" content="40+ automation tools for Amazon creators and influencers. Brand outreach, commission harvesting, deal posting, and content management, all from one powerful desktop app.">
+    <meta property="og:description" content="40+ automation tools for Amazon creators and influencers. Brand outreach, commission harvesting, deal posting, and content management, all from one powerful desktop app, plus a free Chrome extension for product research.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.influencerbutler.com/">
     <meta property="og:site_name" content="Influencer Butler">
@@ -246,7 +246,7 @@
                         <a href="/go/download?src=home-hero" class="btn btn-primary btn-lg">Start Free</a>
                         <a href="#pricing" class="btn btn-outline btn-lg">See Pro Plans</a>
                     </div>
-                    <p class="hero-note" style="margin-top:0.75rem;font-size:0.85rem;color:#64748b;">Free forever tier, no card needed. Every Pro plan starts with a 14-day free trial.</p>
+                    <p class="hero-note" style="margin-top:0.75rem;font-size:0.85rem;color:#64748b;">Free forever tier, no card needed. Every Pro plan starts with a 14-day full-Pro trial, the only one in the category.</p>
                     <div class="hero-personas">
                         <span class="hero-personas-label">Not sure where to start? Tell us who you are:</span>
                         <div class="hero-persona-btns">
@@ -796,6 +796,120 @@
             </div>
         </section>
 
+        <!-- ===================== FREE CHROME EXTENSION ===================== -->
+        <!--
+          Research in the browser, automation on the desktop. The seven group
+          cards mirror EXTENSION_GROUPS in src/lib/extension-features.ts; the
+          full tool list lives on /extension. Rendered as a <div> (not a
+          <section>) so the persona blocks below keep their nth-of-type
+          backgrounds, and the cards use their own class so the feature-tab
+          filter in js/main.js (which hides every .feature-card without a
+          matching data-category) leaves them alone.
+        -->
+        <style>
+            #extension { background: var(--bg); }
+            #extension .ext-grid { margin-top: 2.5rem; }
+            #extension .ext-card {
+                padding: 1.75rem 1.5rem;
+                border-radius: var(--radius);
+                background: var(--bg);
+                border: 1px solid var(--border);
+                transition: all var(--transition);
+                text-align: left;
+            }
+            #extension .ext-card:hover { border-color: var(--brand-200); box-shadow: var(--shadow); transform: translateY(-2px); }
+            #extension .ext-card h3 { font-size: 1.05rem; margin-bottom: 0.4rem; }
+            #extension .ext-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+            #extension .ext-research {
+                display: grid;
+                grid-template-columns: 1.2fr 1fr;
+                gap: 2.5rem;
+                align-items: center;
+                margin-top: 3rem;
+                text-align: left;
+            }
+            #extension .ext-research h3 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+            #extension .ext-research > div > p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.25rem; }
+            #extension .ext-cta { margin-top: 2.5rem; }
+            #extension .ext-note { margin-top: 1rem; font-size: 0.85rem; color: var(--muted); }
+            @media (max-width: 900px) { #extension .ext-research { grid-template-columns: 1fr; } }
+        </style>
+        <div class="features" id="extension">
+            <div class="container">
+                <span class="section-label">Free Chrome Extension</span>
+                <h2>Research in your browser. Automation on your desktop.</h2>
+                <p class="section-sub">The free extension puts product research and Creator Connections intel on the Amazon pages you already browse. The desktop app does the posting, outreach, and accepting.</p>
+
+                <div class="feature-grid ext-grid">
+                    <div class="ext-card">
+                        <h3>Product research</h3>
+                        <p>Butler Score and the Butler Approved seal, BSR with an estimated revenue, price and rank history, video counts with an open-slot indicator, Trend Radar, and content gaps from your own orders.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Creator Connections</h3>
+                        <p>Campaign Radar scores every card on the grid with fill meters and Last Call watch bells, The Butler's Brief tells you what to film, and the paired desktop app accepts in one tap.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Never throttled</h3>
+                        <p>One polite request at a time: a single paced fetcher with a 2.5 to 4 second jittered gap, robot-check aware back-off, and a cap on every run. No screen of death.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Fast</h3>
+                        <p>The panel reads the page you already opened, so the score, seal, and video counts appear as the page loads. Nothing runs in the background.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Deep links</h3>
+                        <p>Get link builds your own tagged Amazon link on every product, free, and it opens the Amazon app on a phone. Branded short links with a click ledger are optional.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Global Maximizer</h3>
+                        <p>One row per marketplace with availability, local price, and an estimated commission, plus a localized affiliate link for each of 12 Amazon stores.</p>
+                    </div>
+                    <div class="ext-card">
+                        <h3>Storefront Checkup</h3>
+                        <p>Untagged videos, over-tagging that dilutes clicks, and tagged products that went unavailable, exported as a CSV. Deal Sites Harvester and Idea List capture are in the box too.</p>
+                    </div>
+                </div>
+
+                <div class="ext-research">
+                    <div>
+                        <span class="section-label">Product research</span>
+                        <h3>The whole picture on every product page</h3>
+                        <p>Every product page gets a Butler Score with a breakdown of where the points came from, the Best Sellers Rank turned into estimated monthly units and revenue, a price and rank history sparkline, and a count of who owns the video carousel with an open-slot indicator. Trend Radar carries the same signals onto Amazon's Best Sellers, New Releases, and Movers &amp; Shakers grids.</p>
+                        <ul class="spotlight-list">
+                            <li>Butler Score with a hover breakdown, next to the Butler Approved seal</li>
+                            <li>BSR plus estimated monthly units and revenue</li>
+                            <li>Price and rank history sparklines</li>
+                            <li>Influencer, brand, and customer video counts with an open-slot indicator</li>
+                            <li>Trend Radar on Amazon's discovery grids</li>
+                        </ul>
+                    </div>
+                    <div class="spotlight-visual">
+                        <div class="spotlight-card">
+                            <div class="sc-header">
+                                <span class="sc-dot"></span>
+                                Butler Approved
+                            </div>
+                            <div class="sc-body">
+                                <div class="sc-row"><span class="sc-label">Butler Score</span><span class="sc-value highlight">82 / 100 Hot</span></div>
+                                <div class="sc-row"><span class="sc-label">BSR</span><span class="sc-value">#1,240 in Kitchen</span></div>
+                                <div class="sc-row"><span class="sc-label">Est. revenue</span><span class="sc-value">~$18k / mo</span></div>
+                                <div class="sc-row"><span class="sc-label">Price, 30 days</span><span class="sc-value">$34.99 to $29.99</span></div>
+                                <div class="sc-row"><span class="sc-label">Videos</span><span class="sc-value">7 total, 2 influencer</span></div>
+                                <div class="sc-row"><span class="sc-label">Upper carousel</span><span class="sc-status accepted">Open slot</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="persona-cta ext-cta">
+                    <a href="/extension" class="btn btn-primary btn-lg">Get the free extension</a>
+                    <a href="/help/tutorials/extension" class="btn btn-outline btn-lg">Read the tutorial</a>
+                </div>
+                <p class="ext-note">Free forever, no account needed. Works in Chrome, Edge, and Brave on Windows and Mac.</p>
+            </div>
+        </div>
+
         <!-- ===================== PERSONA PATHS ===================== -->
         <!--
           Persona entry points. These mirror the desktop app's "Pick your goal"
@@ -1211,6 +1325,36 @@
                                 <td class="col-other"><span class="cross" aria-label="Not included">&#10005;</span></td>
                             </tr>
                             <tr>
+                                <td>Throttle-free product research (paced, robot-check aware)</td>
+                                <td class="col-ib"><span class="check" aria-label="Included">&#10003;</span></td>
+                                <td class="col-other"><span class="cross" aria-label="Not included">&#10005;</span></td>
+                            </tr>
+                            <tr>
+                                <td>Full-Pro free trial (14 days)</td>
+                                <td class="col-ib"><span class="check" aria-label="Included">&#10003;</span></td>
+                                <td class="col-other"><span class="cross" aria-label="Not included">&#10005;</span></td>
+                            </tr>
+                            <tr>
+                                <td>Deep links (free)</td>
+                                <td class="col-ib"><span class="check" aria-label="Included">&#10003;</span></td>
+                                <td class="col-other"><span class="partial" aria-label="Partial">~</span></td>
+                            </tr>
+                            <tr>
+                                <td>AI Creator Connections messaging (unlimited on Pro)</td>
+                                <td class="col-ib"><span class="check" aria-label="Included">&#10003;</span></td>
+                                <td class="col-other"><span class="partial" aria-label="Partial">~</span></td>
+                            </tr>
+                            <tr>
+                                <td>Mobile campaign accept</td>
+                                <td class="col-ib"><strong>Coming: Mobile Butler</strong></td>
+                                <td class="col-other"><span class="partial" aria-label="Partial">~</span></td>
+                            </tr>
+                            <tr>
+                                <td>Free earnings dashboard on the web</td>
+                                <td class="col-ib"><strong>Coming</strong></td>
+                                <td class="col-other"><span class="partial" aria-label="Partial">~</span></td>
+                            </tr>
+                            <tr>
                                 <td>Number of Built-In Tools</td>
                                 <td class="col-ib"><strong>40+</strong></td>
                                 <td class="col-other">3-8</td>
@@ -1236,7 +1380,7 @@
                     <div class="step-card anim-up">
                         <div class="step-number">1</div>
                         <h3>Download &amp; Install</h3>
-                        <p>Free download for Windows and Mac. Install in under a minute. No browser extensions required.</p>
+                        <p>Free download for Windows and Mac. Install in under a minute. Add the free Chrome extension for research while you browse.</p>
                     </div>
                     <div class="step-connector">
                         <svg width="40" height="12" viewBox="0 0 40 12" fill="none"><path d="M0 6h36M32 1l5 5-5 5" stroke="#fdba74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

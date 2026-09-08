@@ -1,17 +1,26 @@
+import type { Metadata } from "next";
 import ExtensionLandingContent from "./ExtensionLandingContent";
 
-export const metadata = {
-  title: "Free Amazon Influencer Chrome Extension | Influencer Butler",
+const SITE = "https://www.influencerbutler.com";
+
+export const metadata: Metadata = {
+  title: "Free Amazon Influencer Chrome Extension",
   description:
-    "See influencer vs brand video counts on any Amazon product, find content gaps in your own orders, spot Butler Approved opportunities, and check your storefront. 100% free.",
+    "Free Chrome extension for Amazon influencers: Butler Score, BSR and revenue estimates, price history, influencer vs brand video counts, Creator Connections Campaign Radar, and deep links. Never throttled. 100% free.",
+  alternates: { canonical: `${SITE}/extension` },
+  openGraph: {
+    title: "Free Amazon Influencer Chrome Extension",
+    description:
+      "Product research, Creator Connections radar, and deep links on the Amazon pages you already browse. Free forever.",
+    url: `${SITE}/extension`,
+    type: "website",
+  },
 };
 
-// NOTE: /extension is redirected straight to the Chrome Web Store listing by
-// next.config.ts (it is the store short link used across the site, footer, help
-// tutorials, and the desktop app install buttons), so this page component does
-// not actually render at /extension today. It is kept as a safety net (if the
-// redirect is ever removed) and as the canonical home of the landing markup,
-// which is shared with the attributed /extension/get route.
+// /extension is the indexable landing page for the free Chrome extension. The
+// Web Store short link is /go/extension (next.config.ts redirects it to the
+// listing). The landing markup itself lives in ExtensionLandingContent so the
+// attributed /extension/get twin (affiliate ?code= links, noindex) can share it.
 export default function ExtensionLandingPage() {
   return <ExtensionLandingContent />;
 }

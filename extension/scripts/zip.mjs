@@ -1,11 +1,15 @@
 // Packages dist/ into influencer-butler-extension-<version>.zip for the
-// Chrome Web Store. Requires a prior `npm run build`.
+// Chrome Web Store. Requires a prior `npm run build`. Refuses to package a
+// version that has no entry in static/changelog.json unless
+// --allow-missing-changelog is passed (the What's New notice reads that file).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkReleaseEntry } from "./changelog-check.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const allowMissingChangelog = process.argv.includes("--allow-missing-changelog");
 // The self-hosted build (Instagram Goldmine) is packaged from dist-selfhosted/
 // under a distinct name; it is distributed off the Web Store.
 const selfHosted = process.argv.includes("--selfhosted");
@@ -16,6 +20,13 @@ if (!fs.existsSync(path.join(dist, "manifest.json"))) {
   process.exit(1);
 }
 const { version } = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+if (!checkReleaseEntry(version)) {
+  if (allowMissingChangelog) {
+    console.warn(`packaging without a changelog entry for ${version} (--allow-missing-changelog)`);
+  } else {
+    process.exit(1);
+  }
+}
 const suffix = selfHosted ? "-selfhosted" : "";
 const out = path.join(root, `influencer-butler-extension${suffix}-${version}.zip`);
 fs.rmSync(out, { force: true });

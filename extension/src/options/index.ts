@@ -280,6 +280,29 @@ function renderAffiliateRoutingStrategy(): void {
   rewrite.append(rewriteBox, rewriteLabel);
   card.append(rewrite);
 
+  // App-opening links: every Amazon link carries Amazon's own SiteStripe share
+  // params (linkCode=ssc + creativeASIN) so it opens the Amazon app on phones.
+  // Independent of the rewrite switch and applied before any wrapper.
+  const appOpen = document.createElement("label");
+  appOpen.className = "routing-toggle";
+  appOpen.style.marginTop = "14px";
+  const appOpenBox = document.createElement("input");
+  appOpenBox.type = "checkbox";
+  appOpenBox.className = "switch";
+  appOpenBox.checked = view.global.appOpeningLinks !== false;
+  appOpenBox.onchange = () => void setGlobal({ appOpeningLinks: appOpenBox.checked });
+  const appOpenCopy = document.createElement("span");
+  appOpenCopy.className = "routing-toggle-copy";
+  const appOpenTitle = document.createElement("span");
+  appOpenTitle.className = "routing-toggle-title";
+  appOpenTitle.textContent = D.appOpeningLinks;
+  const appOpenHint = document.createElement("span");
+  appOpenHint.className = "routing-toggle-hint";
+  appOpenHint.textContent = D.appOpeningLinksHint;
+  appOpenCopy.append(appOpenTitle, appOpenHint);
+  appOpen.append(appOpenBox, appOpenCopy);
+  card.append(appOpen);
+
   // Provider roster: which connected providers may take part in routing.
   const roster = view.global.routingProviders ?? {};
   const providers = document.createElement("div");

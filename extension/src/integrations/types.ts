@@ -70,6 +70,9 @@ export type LinkTarget = {
   url: string; // canonical product url
   tag?: string; // resolved affiliate tag for this marketplace, if any
   retailer?: "amazon" | "walmart"; // defaults to "amazon" when absent
+  // When true, the tagged Amazon url also carries the SiteStripe app-opening
+  // params (see app-link.ts) so every wrapper points at an app-opening target.
+  appOpen?: boolean;
 };
 
 export type IntegrationAdapter = {

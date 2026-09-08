@@ -153,6 +153,10 @@ export type CcRateRow = {
   ratePct: number;
   brand: string | null;
   endsAt: string | null; // ISO, null when the campaign end date is unparseable
+  // The id of the campaign this rate came from (the best active one), e.g.
+  // "amzn1.campaign.116OEQZBQCQ9V". Lets the extension open that exact campaign
+  // for its standalone Accept flow.
+  campaignId: string;
 };
 
 // Builds the per-ASIN best-active-campaign-rate rows from the CC catalogue:
@@ -226,16 +230,26 @@ export async function buildCcRates(opts: {
     const asin = row.asin.trim().toUpperCase();
     if (!/^[A-Z0-9]{10}$/.test(asin)) return;
     let best: { ratePct: number; brand: string | null; endsAt: string | null } | null = null;
+    let bestId: string | null = null;
     for (const id of row.ids) {
       const c = campaigns.get(id);
-      if (c && (!best || c.ratePct > best.ratePct)) best = c;
+      if (c && (!best || c.ratePct > best.ratePct)) {
+        best = c;
+        bestId = id;
+      }
     }
-    if (!best) return;
+    if (!best || !bestId) return;
     rowCount += 1;
     // Rows a previous (timed-out) run already flushed: count them but do not
     // re-upsert.
     if (rowCount <= skipRows) return;
-    chunk.push({ asin, ratePct: best.ratePct, brand: best.brand, endsAt: best.endsAt });
+    chunk.push({
+      asin,
+      ratePct: best.ratePct,
+      brand: best.brand,
+      endsAt: best.endsAt,
+      campaignId: bestId,
+    });
     if (chunk.length >= chunkSize) {
       const out = chunk;
       chunk = [];

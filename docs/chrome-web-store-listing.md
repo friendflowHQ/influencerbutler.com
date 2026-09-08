@@ -41,6 +41,16 @@ behavior; reviewers compare the two.
 > does); it is IMAGES that must stay badge-free. Do not reintroduce
 > promotional badges into listing images.
 
+> **2026-09-08 canonical tool list.** The tool names and the headline tool
+> count now live in `src/lib/extension-features.ts` (`EXTENSION_TOOLS`,
+> `EXTENSION_GROUPS`, `EXTENSION_TOOL_COUNT`). The /extension landing page, the
+> homepage extension section, and the Help & Tutorials article in all three
+> locales read from or are tested against that file
+> (`src/lib/__tests__/extension-features.test.ts` also checks this doc quotes
+> the same count). When you edit listing copy below, take the tool list from
+> there rather than retyping it; when the extension gains or loses a tool,
+> change the list there first.
+
 For shipping new **code** (as opposed to editing this listing copy), see
 [chrome-web-store-publishing.md](chrome-web-store-publishing.md): the release is
 automated as `npm run bump` + `npm run release`.
@@ -185,6 +195,57 @@ Sign in free and mint branded short links for the products you promote, then wat
 
 Deal Sites Harvester
 Collect the deals from deal roundup pages you visit into one organized table, with each product's affiliate link tagged to your own account, ready to review and share.
+```
+
+## Draft: next detailed description (staged 2026-09-08, NOT yet submitted)
+
+Covers the surfaces that shipped in the live 0.1.13 build after the
+2026-08-16 refresh was written: Last Call fill meters and watch bells, Trend
+Radar, Global Maximizer, and price history. Same constraints as every prior
+submission: no competitor names, no provider brand-name lists, no automation
+claims (insights while you browse; the extension never accepts or declines a
+campaign on its own), and no badges or promotional text in images. Tool names
+match `src/lib/extension-features.ts` (12 tools in seven groups). Review
+against the live build before pasting; the blocks below replace the
+"WHAT YOU GET" list and slot in after the 2026-08-16 additions, and the rest
+of the approved copy stays unchanged.
+
+```
+Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 12 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
+
+WHAT YOU GET (all free):
+
+Butler Score and Butler Approved seal
+Every product page gets a 0 to 100 Butler Score with a breakdown of where the points came from, next to a Butler Approved seal that shows each opportunity criterion as pass or fail: actively selling, an open influencer slot in the video carousel, in stock, and above your price floor.
+
+Best Sellers Rank, estimated revenue, and price history
+Reads the sales rank on the page, turns it into estimated monthly units and revenue, and draws a price-history sparkline from the prices you have seen, so you can tell whether a product is climbing or fading.
+
+Video counts on any product
+See how many videos a product has and who made them: influencer, brand, or customer, with an indicator for whether the upper carousel still has an open slot.
+
+Trend Radar
+On Amazon's Best Sellers, New Releases, and Movers & Shakers pages, every tile shows its Butler Score, estimated commission per sale, and video count, with a toolbar to sort and filter by what pays.
+
+Content gaps in your own orders
+Scan your Amazon order history to find products you have bought that have few or no influencer videos yet: your easiest next content ideas, ranked and exportable.
+
+Campaign Radar with fill meters and Last Call alerts
+Browsing the Creator Connections campaign grid? Every campaign card gets an at-a-glance opportunity score, chips for products you already own or have earned on, a fill meter showing how full the campaign is, and an optional watch bell that notifies you when a campaign you are watching is nearly full. Purely informational: the extension never accepts or declines campaigns for you.
+
+Global reach
+For the product on screen, see which of 12 Amazon marketplaces list it, the local price and availability, and an estimated commission per sale, and build a localized affiliate link for each so international viewers land on a store they can buy from.
+
+Storefront checkup
+Scan your own storefront for untagged videos and unavailable tagged products, and export the results as a CSV to clean up your shop.
+
+Affiliate links, tagged with your own account
+When you click "Get link" or "Copy my link" on a product, the extension builds an Amazon affiliate link so qualifying purchases earn you a commission. The link uses the Amazon Associates tag or storefront handle you enter in the extension's settings, so the commission is yours. If you already use an affiliate network or link shortener, you can optionally connect your own account for it in Settings to create or shorten those links. The extension never uses its own tag, never swaps your tag, and never takes a cut.
+
+HOW IT WORKS
+The extension reads the Amazon pages you visit and only fetches additional pages when you explicitly click a scan button (or run optional watchlist checks you turn on). Scans run one page at a time with a pause between pages, stop if Amazon asks for a robot check, and cap how many pages a single run can read. It builds an affiliate link only when you click a link button; it does not silently rewrite links as you browse. Everything it computes stays on your device unless you choose to connect your Influencer Butler account to sync findings to your dashboard. Full details are in the privacy policy at influencerbutler.com/extension/privacy.
+
+Free to use. Optional sign-in with an Influencer Butler license key unlocks syncing to your dashboard at influencerbutler.com.
 ```
 
 ## Final submitted copy (2026-07-09)

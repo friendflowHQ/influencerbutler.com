@@ -94,6 +94,75 @@ describe("buildAffiliateLink", () => {
     expect(url).not.toContain("tag=");
   });
 
+  // App-opening links: the tagged Amazon url carries the SiteStripe params so it
+  // opens the Amazon app on phones, and wrappers point at that same url.
+  it("adds the app-opening params to a tagged Amazon link when the setting is on", async () => {
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: null,
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+        appOpeningLinks: true,
+      },
+      noCreds,
+    );
+    expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20&linkCode=ssc&creativeASIN=B0ABC12345");
+  });
+
+  it("leaves the app-opening params out when the setting is off", async () => {
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: null,
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+        appOpeningLinks: false,
+      },
+      noCreds,
+    );
+    expect(url).toBe("https://www.amazon.com/dp/B0ABC12345?tag=t-20");
+    expect(url).not.toContain("linkCode");
+    expect(url).not.toContain("creativeASIN");
+  });
+
+  it("wraps the app-opening url through the deeplink provider", async () => {
+    const { url } = await buildAffiliateLink(
+      base,
+      {
+        enabled: true,
+        primaryDeeplinkProvider: "selfhosted",
+        perCountryTags: { US: "t-20" },
+        storefrontHandle: null,
+        appOpeningLinks: true,
+      },
+      async () => ({ linkTemplate: "https://go.me/?url={url}" }),
+    );
+    expect(url).toBe(
+      `https://go.me/?url=${encodeURIComponent(
+        "https://www.amazon.com/dp/B0ABC12345?tag=t-20&linkCode=ssc&creativeASIN=B0ABC12345",
+      )}`,
+    );
+  });
+
+  it("does not add the app-opening params to a Walmart link", async () => {
+    const { url } = await buildAffiliateLink(
+      { asin: "123456789", marketplace: "walmart.com", retailer: "walmart" },
+      {
+        enabled: true,
+        primaryDeeplinkProvider: null,
+        walmartLinkProvider: null,
+        perCountryTags: {},
+        storefrontHandle: null,
+        appOpeningLinks: true,
+      },
+      noCreds,
+    );
+    expect(url).toBe("https://www.walmart.com/ip/123456789");
+  });
+
   it("wraps through the primary deeplink provider template", async () => {
     const { url } = await buildAffiliateLink(
       base,

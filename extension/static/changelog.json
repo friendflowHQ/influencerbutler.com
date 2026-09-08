@@ -1,6 +1,100 @@
 {
-  "lastUpdated": "2026-08-25",
+  "lastUpdated": "2026-09-06",
   "releases": [
+    {
+      "version": "0.1.13",
+      "date": "September 6, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "The Amazon Creators API card now takes the official Creator API credentials (Credential ID, Secret, and Version) instead of the older Product Advertising API keys, and warns you if you paste the wrong kind of key"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Typical length stat on product pages now comes from the real runtimes of the videos in the carousel, and stays hidden when there are too few to be trustworthy",
+            "The Creators API setup video on the settings page plays again instead of showing an error"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Creator Connections and SPCC status now lives at the bottom of the Product snapshot card, and each program always shows enrolled, available, or not available once its list is downloaded"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.12",
+      "date": "September 4, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "A guided setup walkthrough opens on first install and can be replayed any time from the Setup guide link in the popup",
+            "Your storefront handle is filled in automatically the first time you visit your Creator Hub, so you never have to type it",
+            "Settings sync with the desktop app: pairing fills in empty fields on both sides, and a Sync now button reconciles the rest",
+            "The popup can be resized by dragging its corner, and it remembers the size you choose",
+            "The Creators API setup video now plays right on the settings card where you paste your keys"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Send to app panel now tells you the desktop app is not paired yet instead of showing buttons that do nothing"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "The popup side menu scrolls on its own and uses shorter labels so every item fits on one line"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.11",
+      "date": "September 1, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Product pages show an Enrolled badge when you are already accepted into a Creator Connections or SPCC campaign for that item, along with your accepted rate and earnings per click",
+            "A welcome page opens right after a fresh install to help you get set up",
+            "A friendly community reminder a few days after install explains that the Facebook group is for tips and wins, with a Report a bug button that takes issues straight to Feedback Butler"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Sending feedback from the extension is more reliable"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.10",
+      "date": "August 25, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Money signals now appear on the Amazon Today's Deals grid, including Coupons, Lightning Deals, and Outlet, with the same Butler Score, verdict, commission, and sorting tools as search results",
+            "When The Butler's Brief cannot be written, Campaign Butler now explains that connecting an OpenAI key gets you a full brief and offers a shortcut to settings"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Butler's Brief now recovers when the first AI provider fails, and shows a short reason when a brief still cannot be written",
+            "Video Money badges are back on the redesigned Creator Hub Manage videos page, and the page no longer freezes while your storefront loads",
+            "The popup no longer crashes when your product lists cannot be loaded"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.9",
       "date": "August 25, 2026",

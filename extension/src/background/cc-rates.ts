@@ -45,7 +45,11 @@ export async function lookupCcRates(asins: string[]): Promise<CcRatesResult> {
   const misses: string[] = [];
   for (const asin of wanted) {
     const hit = cache[asin];
-    if (hit && now - hit.ts < TTL_MS) {
+    // A hit cached before the server started sending campaignId (the key is
+    // absent, not null) is re-asked once so the standalone Accept flow can
+    // learn the campaign to open; a null id (server has no id yet) is honored.
+    const preCampaignId = hit?.rate ? !("campaignId" in hit.rate) : false;
+    if (hit && now - hit.ts < TTL_MS && !preCampaignId) {
       if (hit.rate) rates[asin] = hit.rate;
     } else {
       misses.push(asin);
@@ -69,7 +73,17 @@ export async function lookupCcRates(asins: string[]): Promise<CcRatesResult> {
       if (!data || typeof data.rates !== "object" || data.rates === null) continue;
       fetchedAny = true;
       for (const asin of batch) {
-        const rate = data.rates[asin] ?? null;
+        const raw = data.rates[asin] ?? null;
+        // Normalize so every stored rate carries the campaignId key (null when
+        // the server has none), which is what the pre-campaignId check reads.
+        const rate: CcRate | null = raw
+          ? {
+              ratePct: raw.ratePct,
+              brand: raw.brand ?? null,
+              endsAt: raw.endsAt ?? null,
+              campaignId: typeof raw.campaignId === "string" && raw.campaignId ? raw.campaignId : null,
+            }
+          : null;
         cache[asin] = { rate, ts: now };
         if (rate) rates[asin] = rate;
       }

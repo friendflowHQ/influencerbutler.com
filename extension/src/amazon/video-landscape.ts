@@ -137,6 +137,43 @@ export function computeLandscape(
   return landscape;
 }
 
+// The one-line competition sentence a creator reads first ("You'd compete with
+// N creators..."). Derived purely from the landscape so it refreshes for free
+// when Deep Scan hands back a fuller snapshot.
+//
+//   creators  distinct named creators in the snapshot
+//   repeat    creators with more than one video here
+//   top5Pct   share of ALL snapshot videos held by the five biggest creators,
+//             null when there are five or fewer creators (the "top 5" would be
+//             everyone, which says nothing about concentration)
+//   partial   the snapshot did not cover every video the page reports (Amazon's
+//             #videoCount is higher than what we classified), so the numbers
+//             are a floor, not the whole field
+//
+// Returns null when no creator could be named: a sentence built on zero
+// creators would read as "no competition" when we simply could not see it.
+export type CompetitionLine = {
+  creators: number;
+  repeat: number;
+  top5Pct: number | null;
+  partial: boolean;
+};
+
+export function competitionLine(landscape: VideoLandscape): CompetitionLine | null {
+  const creators = landscape.uniqueCreators;
+  if (!Number.isFinite(creators) || creators <= 0) return null;
+  const top5Pct =
+    creators > 5 && landscape.currentlyPlaced > 0
+      ? Math.max(0, Math.min(100, Math.round(landscape.top5Share * 100)))
+      : null;
+  return {
+    creators,
+    repeat: Math.max(0, landscape.effective.repeat),
+    top5Pct,
+    partial: landscape.known > landscape.currentlyPlaced,
+  };
+}
+
 // Single-snapshot proxy for "carousel strength": upper (brand hero / image
 // block) outranks lower (related rail), and within a side we trust Amazon's own
 // payload order (earlier = stronger). Never presented as the longitudinal

@@ -137,7 +137,15 @@ export type RuntimeMessage =
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
   // key; available to any signed-in user regardless of whether they contribute.
-  | { kind: "GET_MARKET"; asin: string; marketplace: string; retailer?: "amazon" | "walmart" }
+  // seasonality: also ask for 24 months of pooled monthly rank buckets (product
+  // page only; the server ignores it on batches of more than 5 ASINs).
+  | {
+      kind: "GET_MARKET";
+      asin: string;
+      marketplace: string;
+      retailer?: "amazon" | "walmart";
+      seasonality?: boolean;
+    }
   // Batched sibling of GET_MARKET: one round trip for a whole page of ASINs (the
   // search overlay wants a market read per tile). The endpoint already accepts up
   // to 50 comma-joined ASINs; this returns them all so the overlay does not fire
@@ -337,7 +345,106 @@ export type RuntimeMessage =
   // reports which fields still conflict; APPLY reconciles those conflicts in the
   // chosen direction. Routed over the local bridge only (secrets never relay).
   | { kind: "SYNC_SETTINGS_PREVIEW" }
-  | { kind: "SYNC_SETTINGS_APPLY"; direction: "app-wins" | "ext-wins" };
+  | { kind: "SYNC_SETTINGS_APPLY"; direction: "app-wins" | "ext-wins" }
+  // ---- Standalone campaign accept (no desktop app) ---------------------------
+  // See tools/campaigns/accept.ts (content) and background/campaign-accept.ts.
+  // Content -> background: accept a Creator Connections campaign by driving
+  // Amazon's own Accept button in a background tab (the campaign's page, with a
+  // grid fallback). Serialized in the worker: one accept tab at a time. Answers
+  // with an AcceptOutcome.
+  | {
+      kind: "ACCEPT_CAMPAIGN_IN_TAB";
+      campaignId: string;
+      asin: string | null;
+      marketplace: string;
+      source?: AcceptSource;
+    }
+  // Content (campaign grid / detail page) -> background: this tab's accept
+  // runner is armed. Sent on every such page load; the worker only acts on a
+  // tab it opened itself (correlated by sender.tab.id), everything else is
+  // ignored.
+  | { kind: "ACCEPT_TAB_READY"; pageType: "campaign-grid" | "campaign-detail" }
+  // Background -> the tab it opened (chrome.tabs.sendMessage): click Accept for
+  // this campaign now. The tab answers with ACCEPT_RESULT.
+  | { kind: "RUN_ACCEPT"; campaignId: string }
+  // Content -> background: the outcome of RUN_ACCEPT on this tab.
+  | { kind: "ACCEPT_RESULT"; campaignId: string; outcome: AcceptOutcome }
+  // Content -> background: an accept that happened in-page (the grid's Accept
+  // pill / Brief modal) so the daily accept ledger stays complete.
+  | { kind: "RECORD_ACCEPT"; campaignId: string; source: AcceptSource }
+  // Rule-based accept (tools/campaign-radar/auto-accept.ts, background/last-call.ts).
+  // Background -> the Last Call poll tab it opened (chrome.tabs.sendMessage):
+  // run the creator's accept rules over the grid now. The tab answers with
+  // AUTO_ACCEPT_DONE (also the reply), which is what the worker resolves on.
+  | { kind: "RUN_AUTO_ACCEPT" }
+  // Content -> background: what one rule-based pass did. `accepted` is every
+  // campaign Amazon's card confirmed (the worker records each in the ledger with
+  // source "auto" and posts one summary notification); `stoppedReason` is the
+  // first failure that ended the pass early, or null when every pick went
+  // through (or nothing matched). A "blocked" reason starts the accept cooldown.
+  | { kind: "AUTO_ACCEPT_DONE"; accepted: AutoAcceptedItem[]; stoppedReason: AutoAcceptStopReason | null }
+  // Options page / content -> background: today's accept ledger plus the
+  // robot-check cooldown, for "Today: n of cap" and "Paused until <time>".
+  | { kind: "GET_ACCEPT_LEDGER" };
+
+// Who triggered an accept: "manual" is a click by the creator, "auto" is the
+// rule-based pass (settings.autoAccept) that runs from the Last Call poll tab.
+export type AcceptSource = "manual" | "auto";
+
+// One campaign the rule-based pass accepted, for the ledger and the summary
+// notification ("Accepted 2 campaigns: Brand A, Brand B").
+export type AutoAcceptedItem = { campaignId: string; brand: string | null };
+
+// Why a rule-based pass stopped before its picks were exhausted: any accept
+// failure, or "timeout" when the run's own time budget (inside the tab dwell)
+// ran out before the next pick.
+export type AutoAcceptStopReason = AcceptFailReason;
+
+// The accept ledger as the options page and the rule-based runner read it:
+// today's count + items, the rolling history of accepted ids (30 days), and
+// the cooldown stamp (null when no cooldown is in force). Plain data, no
+// class, so it crosses the message boundary unchanged.
+export type AcceptLedgerView = {
+  day: string;
+  count: number;
+  items: Array<{ campaignId: string; at: number; source: AcceptSource }>;
+  history: Array<{ campaignId: string; at: number }>;
+  cooldownUntil: number | null;
+};
+
+// Why a standalone accept did not go through. "blocked" is a robot-check page
+// (starts the cooldown); "not-found" means the campaign card / Accept button
+// never appeared (signed out, campaign gone, or the detail URL shape is wrong);
+// "no-change" means Accept was clicked but the card never confirmed; "cooldown"
+// / "disabled" are local gates; "needs-app" is an SPCC accept without the
+// desktop app; "needs-id" is a CC accept for which no campaign id is known.
+export type AcceptFailReason =
+  | "blocked"
+  | "not-found"
+  | "no-change"
+  | "error-toast"
+  | "timeout"
+  | "tab"
+  | "cooldown"
+  | "disabled"
+  | "needs-app"
+  | "needs-id"
+  | "error";
+
+// The outcome of driving Amazon's Accept button. `state` is what the card read
+// after the click: "accepted" outright, or "pending" when Amazon queues the
+// request for brand approval.
+export type AcceptOutcome =
+  | { ok: true; state: "accepted" | "pending" }
+  | { ok: false; reason: AcceptFailReason; detail?: string };
+
+// What requestAccept (tools/campaigns/accept.ts) resolves with: the outcome plus
+// which route carried it ("bridge" = desktop app, "standalone" = our own tab,
+// "none" = nothing could run) and, for the bridge, the app's own message.
+export type AcceptResult = AcceptOutcome & {
+  route: "bridge" | "standalone" | "none";
+  message?: string;
+};
 
 export type IgBioLinkResult = { email: string | null };
 
@@ -597,7 +704,16 @@ export type EnrichedProduct = {
 
 // One ASIN's best active Creator Connections campaign rate, as served by
 // /api/extension/cc-rates. `endsAt` is the campaign end date when known.
-export type CcRate = { ratePct: number; brand: string | null; endsAt: string | null };
+// `campaignId` is the campaign that rate came from (null until the server's
+// campaign_id column is applied and rebuilt); the standalone Accept flow opens
+// that campaign. Optional (not just nullable) so a cache entry written before
+// the field existed still type-checks; cc-rates.ts re-asks for those.
+export type CcRate = {
+  ratePct: number;
+  brand: string | null;
+  endsAt: string | null;
+  campaignId?: string | null;
+};
 
 // Response of LOOKUP_CC_RATES: only ASINs with a known active campaign rate
 // appear in `rates`. `ok:false` means the server could not be reached (the
@@ -671,7 +787,15 @@ export type MarketProduct = {
   estimateConfidence?: "low" | "medium";
   numReviews?: number | null;
   retailer?: "amazon" | "walmart";
+  // Track 1.4 seasonality: pooled per-calendar-month rank buckets over the last
+  // 24 months (oldest-first). Present only when GET_MARKET asked for
+  // seasonality and the market_monthly_rank RPC is applied.
+  monthly?: MarketMonthlyBucket[];
 };
+
+// One calendar month of pooled sales-rank observations: logMeanRank is
+// avg(ln(bsr_rank)) over `points` observations in that YYYY-MM month.
+export type MarketMonthlyBucket = { month: string; logMeanRank: number; points: number };
 
 // Response of GET_MARKET. product is null when the pool has nothing for the ASIN
 // yet (fresh catalogue), or when the migration is not applied (migrationPending).

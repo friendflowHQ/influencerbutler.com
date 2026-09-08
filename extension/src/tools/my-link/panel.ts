@@ -1,6 +1,8 @@
 import { addSection, el } from "../../ui/components";
 import { resolveLocale } from "../../i18n";
+import { CATALOG as I18N } from "../../i18n/catalog";
 import { getState, patchState } from "../../storage/store";
+import { retailerFromHost } from "../../shared/retailer";
 import {
   sendToBackground,
   type GenerateLinkResult,
@@ -147,8 +149,13 @@ const CATALOG: Record<string, Strings> = {
 export async function renderMyLink(signals: ProductSignals): Promise<void> {
   if (!signals.asin) return;
   const state = await getState();
-  const s = CATALOG[resolveLocale(state.settings.locale)] ?? EN;
+  const locale = resolveLocale(state.settings.locale);
+  const s = CATALOG[locale] ?? EN;
   const integrations = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
+  // "Opens in the Amazon app on phones": shown under the copy row once a link
+  // has been copied, only when the setting is on and this is an Amazon product.
+  const showAppOpensNote =
+    integrations.global.appOpeningLinks !== false && retailerFromHost(signals.marketplace) === "amazon";
   const openai = integrations.providers.find((p) => p.id === "openai");
   const openaiReady = Boolean(openai?.configured && openai.lastTest.status === "ok");
   // The branded-link tip is worth showing only to someone it would actually work
@@ -168,6 +175,11 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
   // resets, so the reason is still readable.
   const notice = el("p", "link-notice");
   notice.hidden = true;
+
+  // Small muted line under the row after a copy: the copied link carries the
+  // SiteStripe app-opening params (see integrations/app-link.ts).
+  const appOpensNote = el("p", "affiliate-note", I18N[locale].appOpensNote);
+  appOpensNote.hidden = true;
 
   const copyBtn = el("button", "btn") as HTMLButtonElement;
   copyBtn.type = "button";
@@ -231,6 +243,7 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
         } catch {
           copyBtn.textContent = result.url;
         }
+        if (showAppOpensNote) appOpensNote.hidden = false;
       } else {
         copyBtn.textContent = s.linkFailed;
       }
@@ -355,7 +368,7 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
   const disclosure = el("p", "affiliate-note");
   disclosure.textContent = s.disclosure;
 
-  section.append(row, notice, connect, connectError, openSettings, out, voOut, disclosure);
+  section.append(row, notice, appOpensNote, connect, connectError, openSettings, out, voOut, disclosure);
   if (showBrandedHint) section.append(brandedHint(s));
 }
 

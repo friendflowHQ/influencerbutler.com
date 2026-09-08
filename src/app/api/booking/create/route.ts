@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
     if (tier === "free") {
-      return NextResponse.json({ error: "Support calls are for subscribers. Start a plan (no credit card required) to book one, or book a free demo call instead." }, { status: 403 });
+      return NextResponse.json({ error: "The Priority 1:1 call is included with any plan. Start a plan (no credit card required) to book one, or book the free Setup call instead." }, { status: 403 });
     }
   }
 

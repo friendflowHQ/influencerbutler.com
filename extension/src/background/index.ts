@@ -78,6 +78,12 @@ import {
   remindUpdateLater,
 } from "./update";
 import { getWhatsNewView, markWhatsNewSeen, noteInstall } from "./whats-new";
+import {
+  acceptCampaignInTab,
+  noteAccept,
+  noteAcceptResult,
+  noteAcceptTabReady,
+} from "./campaign-accept";
 import { cleanLinkForRequest } from "./clean-link";
 import {
   buildIntegrationsView,
@@ -308,7 +314,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void fetchCampaignStatus(message.asins).then(sendResponse);
       return true;
     case "GET_MARKET":
-      void getMarket(message.asin, message.marketplace, message.retailer).then(sendResponse);
+      void getMarket(message.asin, message.marketplace, message.retailer, {
+        seasonality: message.seasonality === true,
+      }).then(sendResponse);
       return true;
     case "GET_MARKET_BATCH":
       void getMarketBatch(message.asins, message.marketplace, message.retailer).then(sendResponse);
@@ -578,6 +586,26 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "DISMISS_WHATS_NEW":
       void markWhatsNewSeen().then(() => sendResponse(undefined));
+      return true;
+    // Standalone campaign accept (background/campaign-accept.ts).
+    case "ACCEPT_CAMPAIGN_IN_TAB":
+      void acceptCampaignInTab({
+        campaignId: message.campaignId,
+        asin: message.asin,
+        marketplace: message.marketplace,
+        source: message.source,
+      }).then(sendResponse);
+      return true;
+    case "ACCEPT_TAB_READY":
+      noteAcceptTabReady(sender.tab?.id);
+      sendResponse(undefined);
+      return false;
+    case "ACCEPT_RESULT":
+      noteAcceptResult(sender.tab?.id, message.campaignId, message.outcome);
+      sendResponse(undefined);
+      return false;
+    case "RECORD_ACCEPT":
+      void noteAccept(message.campaignId, message.source).then(() => sendResponse(undefined));
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background

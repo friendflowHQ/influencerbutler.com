@@ -30,12 +30,17 @@ export async function getMarket(
   asin: string,
   marketplace: string,
   retailer: Retailer = "amazon",
+  // seasonality: also request the pooled monthly rank buckets (24 months) the
+  // product page's seasonality chip reads. Single-ASIN only by construction;
+  // the server ignores the flag on batches over 5 ASINs anyway.
+  opts: { seasonality?: boolean } = {},
 ): Promise<MarketResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
   if (!key) return EMPTY;
 
-  const url = `${ENDPOINTS.market}?${marketQuery([asin], marketplace, retailer)}`;
+  const query = marketQuery([asin], marketplace, retailer);
+  const url = `${ENDPOINTS.market}?${query}${opts.seasonality ? "&seasonality=1" : ""}`;
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
     const data = (await res.json().catch(() => null)) as

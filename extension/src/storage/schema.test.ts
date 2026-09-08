@@ -110,6 +110,24 @@ describe("migrate", () => {
     expect(creator.enabled).toBe(true);
   });
 
+  it("backfills integrations.global.appOpeningLinks (on) onto pre-v26 state and keeps an explicit off", () => {
+    const { appOpeningLinks: _dropped, ...globalWithout } = structuredClone(DEFAULTS.integrations.global);
+    const v25 = {
+      schemaVersion: 25,
+      integrations: { global: globalWithout, providers: {} },
+    } as unknown as Partial<StorageShape>;
+    expect(migrate(v25).integrations.global.appOpeningLinks).toBe(true);
+
+    const off = {
+      schemaVersion: 26,
+      integrations: {
+        global: { ...structuredClone(DEFAULTS.integrations.global), appOpeningLinks: false },
+        providers: {},
+      },
+    } as unknown as Partial<StorageShape>;
+    expect(migrate(off).integrations.global.appOpeningLinks).toBe(false);
+  });
+
   it("keeps a stored walmartCreator selection through the v18 migration", () => {
     const v17 = {
       schemaVersion: 17,
@@ -202,5 +220,38 @@ describe("migrate", () => {
     expect(out.settings.campaignRadar.minRemainingBudget).toBe(
       DEFAULTS.settings.campaignRadar.minRemainingBudget,
     );
+  });
+});
+
+describe("migrate: v27 standalone accept + upload campaign prompt flags", () => {
+  it("backfills tools.standaloneAccept and tools.uploadCampaignPrompt (on) onto v26 state", () => {
+    const tools = structuredClone(DEFAULTS.settings.tools) as Record<string, boolean>;
+    delete tools.standaloneAccept;
+    delete tools.uploadCampaignPrompt;
+    const v26 = {
+      schemaVersion: 26,
+      settings: { ...structuredClone(DEFAULTS.settings), tools },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(v26);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.settings.tools.standaloneAccept).toBe(true);
+    expect(out.settings.tools.uploadCampaignPrompt).toBe(true);
+  });
+
+  it("keeps an explicit off for both flags", () => {
+    const off = {
+      schemaVersion: 27,
+      settings: {
+        ...structuredClone(DEFAULTS.settings),
+        tools: {
+          ...structuredClone(DEFAULTS.settings.tools),
+          standaloneAccept: false,
+          uploadCampaignPrompt: false,
+        },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(off);
+    expect(out.settings.tools.standaloneAccept).toBe(false);
+    expect(out.settings.tools.uploadCampaignPrompt).toBe(false);
   });
 });

@@ -306,6 +306,7 @@ export async function generateAffiliateLink(
         useHighestCommission: integrations.global.useHighestCommission,
         amazonRatePct,
         amazonParticipates: roster.amazon !== false,
+        appOpeningLinks: integrations.global.appOpeningLinks !== false,
       },
       async (providerId) => credsFor(providerId, integrations),
     );

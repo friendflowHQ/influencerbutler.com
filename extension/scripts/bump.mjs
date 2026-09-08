@@ -7,13 +7,22 @@
 // Nothing else should hardcode the version: runtime code reads it from
 // chrome.runtime.getManifest().version so it cannot go stale.
 //
-// Usage: npm run bump patch|minor|major   (default: patch)
+// The bump refuses to run unless static/changelog.json already has notes for
+// the next version (the post-update What's New notice reads that file), so
+// release notes are written before the version moves, not remembered after.
+// Pass --allow-missing-changelog to skip that gate.
+//
+// Usage: npm run bump patch|minor|major [--allow-missing-changelog]   (default: patch)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkReleaseEntry } from "./changelog-check.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const level = (process.argv[2] || "patch").toLowerCase();
+const flags = process.argv.slice(2).filter((a) => a.startsWith("--"));
+const positional = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const allowMissingChangelog = flags.includes("--allow-missing-changelog");
+const level = (positional[0] || "patch").toLowerCase();
 if (!["patch", "minor", "major"].includes(level)) {
   console.error(`unknown bump level "${level}"; use patch, minor, or major`);
   process.exit(1);
@@ -35,6 +44,15 @@ if (level === "major") { major += 1; minor = 0; patch = 0; }
 else if (level === "minor") { minor += 1; patch = 0; }
 else { patch += 1; }
 const next = `${major}.${minor}.${patch}`;
+
+// Gate: notes for `next` must already exist before any file is rewritten.
+if (!checkReleaseEntry(next)) {
+  if (allowMissingChangelog) {
+    console.warn(`continuing without a changelog entry for ${next} (--allow-missing-changelog)`);
+  } else {
+    process.exit(1);
+  }
+}
 
 // Rewrite only the version field in each file, preserving formatting.
 fs.writeFileSync(

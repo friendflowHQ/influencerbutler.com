@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeLandscape } from "./video-landscape";
+import { competitionLine, computeLandscape } from "./video-landscape";
 import type { CarouselVideo } from "./video-carousel";
 
 // Minimal video factory: only the fields a test cares about, the rest defaulted.
@@ -201,5 +201,55 @@ describe("computeLandscape: DOM-scanned carousel durations", () => {
     const l = computeLandscape(videos, 24);
     expect(l.hasDurations).toBe(false);
     expect(l.medianSec).toBeUndefined();
+  });
+});
+
+describe("competitionLine: the headline competition sentence", () => {
+  const named = (n: number, prefix = "creator"): CarouselVideo[] =>
+    Array.from({ length: n }, (_, i) => video({ creatorName: `${prefix}${i}` }));
+
+  it("returns null when no creator could be named", () => {
+    const l = computeLandscape([video({ creatorName: null, creatorType: "customer" })], 3);
+    expect(competitionLine(l)).toBeNull();
+    expect(competitionLine(computeLandscape([], null))).toBeNull();
+  });
+
+  it("reports creators, repeats and the top-5 share on a full snapshot", () => {
+    const videos: CarouselVideo[] = [
+      ...named(8),
+      video({ creatorName: "creator0" }), // creator0 now has 2 videos
+      video({ creatorName: "creator1" }), // creator1 now has 2 videos
+    ];
+    // 10 videos, header total matches: not partial.
+    const line = competitionLine(computeLandscape(videos, 10));
+    expect(line).not.toBeNull();
+    expect(line!.creators).toBe(8);
+    expect(line!.repeat).toBe(2);
+    // Top 5: creator0 (2), creator1 (2), then three singles = 7 of 10 videos.
+    expect(line!.top5Pct).toBe(70);
+    expect(line!.partial).toBe(false);
+  });
+
+  it("omits the top-5 share when five or fewer creators exist", () => {
+    const line = competitionLine(computeLandscape(named(5), null));
+    expect(line!.creators).toBe(5);
+    expect(line!.top5Pct).toBeNull();
+  });
+
+  it("flags partial when the page reports more videos than the snapshot holds", () => {
+    const line = competitionLine(computeLandscape(named(6), 40));
+    expect(line!.partial).toBe(true);
+    expect(line!.creators).toBe(6);
+    // Falls back to not-partial once the snapshot reaches the header count.
+    expect(competitionLine(computeLandscape(named(6), 6))!.partial).toBe(false);
+    // No header total at all: the snapshot is all we know, so never partial.
+    expect(competitionLine(computeLandscape(named(6), null))!.partial).toBe(false);
+  });
+
+  it("never emits NaN or out-of-range percentages", () => {
+    const line = competitionLine(computeLandscape(named(12), 12));
+    expect(Number.isFinite(line!.top5Pct as number)).toBe(true);
+    expect(line!.top5Pct).toBeGreaterThanOrEqual(0);
+    expect(line!.top5Pct).toBeLessThanOrEqual(100);
   });
 });

@@ -44,8 +44,8 @@ describe("resolveOwnership", () => {
     };
     const out = await resolveOwnership(["b0owned0001"]);
     expect(out).toHaveLength(1);
-    expect(out[0].owned).toBe(true);
-    expect(out[0].posted.available).toBe(true);
+    expect(out[0]?.owned).toBe(true);
+    expect(out[0]?.posted.available).toBe(true);
   });
 
   it("falls back to the server owned list when the app was never paired", async () => {
@@ -58,10 +58,10 @@ describe("resolveOwnership", () => {
     };
     const out = await resolveOwnership(["B0OWNED0001", "B0NOTOWN001"]);
     expect(out.map((r) => r.asin)).toEqual(["B0OWNED0001"]);
-    expect(out[0].owned).toBe(true);
+    expect(out[0]?.owned).toBe(true);
     // The server fallback has no order detail or posted content.
-    expect(out[0].order).toBeUndefined();
-    expect(out[0].posted.available).toBe(false);
+    expect(out[0]?.order).toBeUndefined();
+    expect(out[0]?.posted.available).toBe(false);
   });
 
   it("returns nothing on a failed unpaired fallback", async () => {

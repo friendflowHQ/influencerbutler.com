@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { CALL_TYPES } from "@/lib/scheduling";
 
 type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
 type Booking = {
@@ -291,7 +292,7 @@ export default function SchedulingAdminPage() {
           <div className="h-full w-full max-w-2xl overflow-y-auto bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">{prep.booking.call_type === "support" ? "Support call" : "Demo call"}</h2>
+                <h2 className="text-lg font-semibold text-slate-900">{CALL_TYPES[prep.booking.call_type].label}</h2>
                 <p className="text-sm text-slate-500">{fmtWhen(prep.booking.starts_at)}</p>
                 {prep.booking.user_timezone && prep.booking.user_timezone !== localTz() && (
                   <p className="text-xs text-slate-400">Customer&apos;s time: {fmtWhenIn(prep.booking.starts_at, prep.booking.user_timezone)} ({prep.booking.user_timezone})</p>
@@ -453,8 +454,8 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
         <label className="text-xs text-slate-500">Name (optional)<input value={name} onChange={(e) => setName(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
         <label className="text-xs text-slate-500">Type
           <select value={type} onChange={(e) => setType(e.target.value as "support" | "demo")} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm">
-            <option value="support">Support</option>
-            <option value="demo">Demo</option>
+            <option value="support">Priority 1:1</option>
+            <option value="demo">Setup</option>
           </select>
         </label>
         <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />{startInPast && <span className="mt-0.5 block text-[11px] text-amber-600">This time is in the past, so the call will land under Past, not Upcoming.</span>}</label>

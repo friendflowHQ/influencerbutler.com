@@ -8,11 +8,15 @@
  * asks about ASINs whose Bloom membership already says "in a campaign", so
  * batches stay tiny.
  *
- * Response: { rates: { [asin]: { ratePct, brand, endsAt } } } - ASINs with no
- * active campaign rate are simply absent.
+ * Response: { rates: { [asin]: { ratePct, brand, endsAt, campaignId } } } -
+ * ASINs with no active campaign rate are simply absent. `campaignId` is the
+ * campaign the rate came from (null until migration 20260911 is applied and
+ * the next build runs); the extension uses it to open that campaign for its
+ * standalone Accept flow.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  isMissingColumnError,
   isMissingTableError,
   jsonWithCors,
   migrationPendingResponse,
@@ -52,10 +56,25 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
+  // campaign_id arrived with migration 20260911; a prod schema that lags it
+  // answers with a missing-column error, so retry with the older column list
+  // and serve campaignId: null rather than failing the whole lookup.
+  let data: Record<string, unknown>[] | null = null;
+  let error: { code?: string; message?: string } | null = null;
+  const withId = await admin
     .from("extension_cc_rates")
-    .select("asin, rate_pct, brand, ends_at")
+    .select("asin, rate_pct, brand, ends_at, campaign_id")
     .in("asin", asins);
+  data = withId.data;
+  error = withId.error;
+  if (error && isMissingColumnError(error)) {
+    const withoutId = await admin
+      .from("extension_cc_rates")
+      .select("asin, rate_pct, brand, ends_at")
+      .in("asin", asins);
+    data = withoutId.data;
+    error = withoutId.error;
+  }
 
   if (error) {
     if (isMissingTableError(error)) return migrationPendingResponse();
@@ -63,13 +82,17 @@ export async function POST(request: Request) {
     return jsonWithCors({ error: "Could not load rates" }, 500);
   }
 
-  const rates: Record<string, { ratePct: number; brand: string | null; endsAt: string | null }> =
-    {};
-  for (const row of data ?? []) {
+  const rates: Record<
+    string,
+    { ratePct: number; brand: string | null; endsAt: string | null; campaignId: string | null }
+  > = {};
+  for (const raw of data ?? []) {
+    const row = raw as Record<string, unknown>;
     rates[row.asin as string] = {
       ratePct: Number(row.rate_pct),
       brand: (row.brand as string | null) ?? null,
       endsAt: (row.ends_at as string | null) ?? null,
+      campaignId: typeof row.campaign_id === "string" && row.campaign_id ? row.campaign_id : null,
     };
   }
   return jsonWithCors({ rates }, 200);

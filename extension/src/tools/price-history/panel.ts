@@ -1,10 +1,16 @@
 import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { formatCents } from "../calculator/model";
-import { sendToBackground, type MarketResult, type PricePoint } from "../../shared/messages";
+import {
+  sendToBackground,
+  type MarketMonthlyBucket,
+  type MarketResult,
+  type PricePoint,
+} from "../../shared/messages";
 import type { DesktopHistoryResult } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { formatEstRevenue, formatEstUnits, resolveEstimate } from "../../amazon/bsr-revenue-estimator";
+import { computeSeasonality, formatSeasonality, fromMonthly, type Seasonality } from "./seasonality";
 
 // Price history (and, when the desktop app is paired, sales-rank history) for
 // the product being viewed. Prefers the desktop app's durable time-series over
@@ -47,10 +53,13 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
       asin,
       marketplace: signals.marketplace,
     }).catch(() => null),
+    // seasonality: the product page (and only the product page) also asks for
+    // the pooled monthly rank buckets behind the seasonality chip.
     sendToBackground<MarketResult>({
       kind: "GET_MARKET",
       asin,
       marketplace: signals.marketplace,
+      seasonality: true,
     }).catch(() => null),
   ]);
 
@@ -153,6 +162,17 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     const summary = el("div", "counts");
     summary.append(chip("", t().bsrHistoryNow(current.toLocaleString())));
     summary.append(chip("good", t().bsrHistoryBest(best.toLocaleString())));
+    // Seasonality chip ("Peaks in Nov-Dec" / "Steady all year"), same source
+    // order as the sparkline: desktop history (deepest), then the pooled monthly
+    // buckets, then the pooled trend (rarely deep enough). Never rendered below
+    // the 10-month coverage floor: the helpers return null instead.
+    const season = resolveSeasonality(desktopRank, pool?.monthly, poolRank);
+    const seasonText = season ? formatSeasonality(season, t()) : null;
+    if (season && seasonText) {
+      const seasonChip = chip(season.label === "peaks" ? "good" : "", seasonText);
+      seasonChip.title = t().seasonWindowTip(season.monthsCovered);
+      summary.append(seasonChip);
+    }
     section.append(summary);
   }
 
@@ -190,6 +210,23 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
       : t().priceHistoryNote;
   section.append(el("p", "note", noteText));
   section.style.display = "";
+}
+
+// First source that clears the seasonality coverage floor, in depth order.
+function resolveSeasonality(
+  desktopRank: Sample[],
+  poolMonthly: MarketMonthlyBucket[] | undefined,
+  poolRank: Sample[],
+): Seasonality | null {
+  const now = Date.now();
+  const toPoints = (samples: Sample[]) => samples.map((s) => ({ at: s.at, rank: s.value }));
+  const fromDesktop = desktopRank.length > 0 ? computeSeasonality(toPoints(desktopRank), now) : null;
+  if (fromDesktop) return fromDesktop;
+  if (Array.isArray(poolMonthly) && poolMonthly.length > 0) {
+    const fromPool = fromMonthly(poolMonthly, now);
+    if (fromPool) return fromPool;
+  }
+  return poolRank.length > 0 ? computeSeasonality(toPoints(poolRank), now) : null;
 }
 
 // Build a sparkline as an inline SVG. Even x-spacing by index keeps it simple

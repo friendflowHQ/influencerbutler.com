@@ -379,7 +379,7 @@
       "id": "video-reload-butler",
       "title": "Video Reload Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",
-      "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata across 13 marketplaces, translating the title and burning local-language captions for each country.",
+      "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata across 13 marketplaces, translating the title and adding translated captions or an AI dub for each country.",
       "order": 100,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -416,14 +416,6 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
-      "id": "foyer-butler",
-      "title": "Foyer Butler: one shoppable link for your bio",
-      "category": "Amazon",
-      "summary": "Build a hosted link-in-bio page from your tracked Butler Links, publish it at your own handle, and see every tap and sale in your Ledger.",
-      "order": 127,
-      "locales": ["en-US", "es-ES", "fr-FR"]
-    },
-    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
@@ -443,7 +435,7 @@
       "id": "extension",
       "title": "Chrome Extension: Amazon intel while you browse",
       "category": "Amazon",
-      "summary": "Install the free Chrome extension: influencer vs brand video counts on any product, content gaps in your orders, Butler Approved seals, storefront checkups, and dashboard sync.",
+      "summary": "Install the free Chrome extension: 12 tools in seven groups, from Butler Score, BSR and price history to Campaign Radar, Last Call, deep links, Global Maximizer, and the Storefront Checkup, with dashboard sync.",
       "order": 145,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -803,7 +795,7 @@
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
-      "summary": "Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, write SEO copy, and schedule posts.",
+      "summary": "Beta workspace: the panel is a preview and nothing posts to Pinterest yet. What the pin engine will do once it is wired up, what you can do today, and how to follow the rollout.",
       "order": 999,
       "locales": ["en-US", "es-ES", "fr-FR"]
     }

@@ -46,6 +46,15 @@ export const dynamic = "force-dynamic";
 
 // How many recent history points to return per ASIN on read.
 const TREND_POINTS = 60;
+// Seasonality (Track 1.4): ?seasonality=1 also returns per-calendar-month rank
+// buckets over this many months, via the market_monthly_rank RPC. Honored only
+// on small reads (a product page), never on a grid batch: the aggregate scans
+// the whole history log for each ASIN.
+const SEASONALITY_MONTHS = 24;
+const SEASONALITY_MAX_ASINS = 5;
+
+type MonthlyRankRow = { asin: string; month: string; log_mean_rank: number; points: number };
+type MonthlyBucket = { month: string; logMeanRank: number; points: number };
 // Allowed contribution sources, so a bad payload cannot invent arbitrary tags.
 const SOURCES = new Set(["browse", "search", "discovery", "watchlist", "desktop"]);
 
@@ -314,11 +323,43 @@ export async function GET(request: Request) {
     }
   }
 
+  // Optional monthly rank buckets for the seasonality chip. Soft-fails: an
+  // unapplied RPC (or any read error) just omits `monthly`, the rest of the
+  // payload is unaffected.
+  const wantSeasonality =
+    url.searchParams.get("seasonality") === "1" && uniqueAsins.length <= SEASONALITY_MAX_ASINS;
+  const monthlyByAsin = new Map<string, MonthlyBucket[]>();
+  if (wantSeasonality && (latestRows ?? []).length > 0) {
+    const { data: monthlyRows, error: monthlyError } = await admin.rpc("market_monthly_rank", {
+      p_asins: uniqueAsins,
+      p_marketplace: marketplace,
+      p_months: SEASONALITY_MONTHS,
+    });
+    if (monthlyError) {
+      console.warn("extension/market: monthly rank read failed (RPC applied?)", monthlyError);
+    } else {
+      for (const raw of (monthlyRows ?? []) as MonthlyRankRow[]) {
+        const logMeanRank = Number(raw.log_mean_rank);
+        const points = Number(raw.points);
+        if (!raw.asin || typeof raw.month !== "string") continue;
+        if (!Number.isFinite(logMeanRank) || !Number.isFinite(points) || points <= 0) continue;
+        const list = monthlyByAsin.get(raw.asin) ?? [];
+        list.push({ month: raw.month, logMeanRank, points });
+        monthlyByAsin.set(raw.asin, list);
+      }
+    }
+  }
+
   const products = (latestRows ?? []).map((row) => {
     const curve = (row.bsr_category ? fittedCurves.get(row.bsr_category) : null) ?? seedCurveFor(row.bsr_category);
     // History came back newest-first; reverse to oldest-first for charting.
     const trend = (trendByAsin.get(row.asin) ?? []).slice().reverse();
+    // Monthly buckets ride along only when asked for (oldest-first).
+    const monthly = wantSeasonality
+      ? (monthlyByAsin.get(row.asin) ?? []).slice().sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0))
+      : undefined;
     return {
+      ...(monthly ? { monthly } : {}),
       asin: row.asin,
       marketplace: row.marketplace,
       priceCents: row.price_cents,

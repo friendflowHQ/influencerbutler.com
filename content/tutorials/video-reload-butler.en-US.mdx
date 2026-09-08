@@ -71,14 +71,23 @@ Once that looks good, turn **Process All** back on for the full library.
 - **Email me if a run stops early**: on by default. When Amazon pauses a run, you get one email with why it stopped and when the butler restarts it on its own. The run also restarts by itself while the app stays open; click Run to try sooner or Stop to cancel the automatic restart.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
-## Post in each country's language
+## AI translation and dubbing for each marketplace
 
-When you fan a video out to a non-English marketplace, you can post it in that country's language instead of English. Open **Localize for each marketplace** and turn it on. From then on, for every non-English destination Video Reload Butler:
+When you fan a video out to a non-English marketplace, Video Reload Butler can post it in that country's language. Open the **Localize for each marketplace** card and set **Enabled** to Enabled. Then choose:
 
-- **Translates the post title** into the marketplace's language before it types it into the composer.
-- **Burns local-language captions into the video** when Closed Captions are on. It transcribes the audio once, then translates and burns a copy per language, so a German post carries German subtitles and a Japanese post carries Japanese subtitles.
+- **Translate the post title**: on by default. The title is translated into the marketplace's language before it is typed into the composer.
+- **For each market: Title only**: the video is posted unchanged; only the title is translated.
+- **For each market: Translated captions**: the audio is transcribed once, then translated and burned in as subtitles per language, so a German post carries German subtitles and a Japanese post carries Japanese subtitles. This needs **Closed Captions** turned on above; the card reminds you if it is off.
+- **For each market: AI dub (replaces audio)**: the transcript is translated and spoken by an AI voice, and that new audio replaces the original track for that market.
+- **Dub voice**: shown when AI dub is chosen. Pick Alloy, Echo, Fable, Onyx, Nova, or Shimmer.
+- **Source language**: the language your video is spoken in (English by default). Markets that share it post unchanged.
 
-English markets (US, CA, UK, AU, SG) post unchanged, and markets that share a language reuse the same translation and encode, so a fan-out to several countries stays fast. Translation uses your own OpenAI key from **API Integrations** and spends a small amount of tokens per run, so it is off by default.
+A few things to know:
+
+- English markets (US, CA, UK, AU, SG) post unchanged, and markets that share a language reuse the same translation and the same file, so a fan-out to several countries stays fast.
+- Translation, transcription, and dubbing use your own OpenAI key from **API Integrations** and spend tokens per run, which is why the card is off by default. Dubbed audio is cached, so re-running the same video with the same voice does not bill again.
+- If AI dub is on but no OpenAI key is set, the run log warns you once and the video posts with its original audio, which non-English storefronts may reject. If the dub fails for one segment, that segment is skipped; if no audio comes back at all, the original audio is kept.
+- Captions or dub? Captions keep your real voice and cost less, but the viewer has to read. A dub sounds native and works with the sound on, but replaces your voice with a synthetic one and costs more per run. Start with captions and switch to a dub on the markets where it matters.
 
 ## Product tagging options
 

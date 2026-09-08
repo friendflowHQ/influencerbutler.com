@@ -1,7 +1,33 @@
 import { collapsible, el } from "../../ui/components";
 import { t } from "../../i18n";
-import type { VideoLandscape } from "../../amazon/video-landscape";
+import { competitionLine, type VideoLandscape } from "../../amazon/video-landscape";
 import type { CarouselVideo } from "../../amazon/video-carousel";
+
+// The competition sentence as localized text, or null when no creator could be
+// named (see competitionLine). Shared by the landscape panel and the product
+// panel's headline line so both always say the same thing.
+export function competitionLineText(landscape: VideoLandscape): string | null {
+  const line = competitionLine(landscape);
+  if (!line) return null;
+  return line.partial
+    ? t().lsCompeteLinePartial(
+        line.creators,
+        line.repeat,
+        line.top5Pct,
+        landscape.currentlyPlaced,
+        landscape.known,
+      )
+    : t().lsCompeteLine(line.creators, line.repeat, line.top5Pct);
+}
+
+// Fill (or hide) a standalone competition-line element. Hidden rather than
+// removed so the product panel can keep it as the section's first child and
+// refresh it in place after Deep Scan.
+export function fillCompetitionLine(target: HTMLElement, landscape: VideoLandscape): void {
+  const text = competitionLineText(landscape);
+  target.textContent = text ?? "";
+  target.style.display = text ? "" : "none";
+}
 
 // Renders the aggregate "Video landscape" inside the video competition section.
 // Everything drawn here comes from a single page-load snapshot; date- and
@@ -14,6 +40,10 @@ import type { CarouselVideo } from "../../amazon/video-carousel";
 export function renderLandscape(host: HTMLElement, landscape: VideoLandscape): void {
   host.replaceChildren();
   const content = collapsible(host, t().videoLandscape, { open: true });
+
+  // Headline first: the competition sentence, before any tile or chart.
+  const compete = competitionLineText(landscape);
+  if (compete) content.append(el("p", "ls-compete", compete));
 
   content.append(
     tiles([

@@ -1,5 +1,6 @@
 import { getAdapter } from "./registry";
 import { canonicalProductUrl, withAffiliateTag } from "./url";
+import { withAppOpenParams } from "./app-link";
 import { noticeOf, type LinkNotice } from "./link-notice";
 import type { LinkTarget } from "./types";
 
@@ -87,6 +88,11 @@ export type RoutingConfig = {
   // Whether the Amazon baseline competes in highest-commission routing (the
   // "amazon" roster row). Networks are already gated by affiliateNetworks.
   amazonParticipates?: boolean;
+  // When true, Amazon links carry the SiteStripe app-opening params
+  // (linkCode=ssc + creativeASIN) so they open the Amazon app on phones. Every
+  // wrapper (deeplink providers, branded links) points at that same url. Off
+  // when unset so callers opt in explicitly from the stored setting.
+  appOpeningLinks?: boolean;
 };
 
 // One provider's candidate link under highest-commission routing. `rate` is the
@@ -160,11 +166,16 @@ export async function buildAffiliateLink(
     ? resolveTag(input.marketplace, config.perCountryTags, config.storefrontHandle)
     : undefined;
 
-  const tagged = tag ? withAffiliateTag(url, tag) : url;
+  // The single Amazon link assembly point: tag, then (setting on) the
+  // app-opening params. Adapters rebuild the same url via taggedUrlFor from the
+  // target below, so `appOpen` rides along on the target.
+  const appOpen = config.appOpeningLinks === true;
+  const taggedBase = tag ? withAffiliateTag(url, tag) : url;
+  const tagged = appOpen ? withAppOpenParams(taggedBase, input.asin) : taggedBase;
 
   if (!config.enabled) return { url: tagged };
 
-  const target: LinkTarget = { asin: input.asin, marketplace: input.marketplace, url, tag };
+  const target: LinkTarget = { asin: input.asin, marketplace: input.marketplace, url, tag, appOpen };
 
   // 0. Highest-commission routing: gather each connected provider's link and
   // rate, then pick the best-paying one for this product. A network's minted

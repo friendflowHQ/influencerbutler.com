@@ -2,10 +2,11 @@ import type { NextConfig } from "next";
 
 const SUPABASE_AUTH_BASE = "https://khutiiojhafblabtixpp.supabase.co/auth/v1";
 
-// Single source of truth for the Chrome Web Store listing. The site's
-// /extension short link (used across the landing page, top nav, footer, help
-// pages, and the desktop app's install buttons) redirects here, so the
-// extension id lives in exactly one place.
+// Single source of truth for the Chrome Web Store listing. /extension is now
+// the indexable landing page (src/app/extension); the store short link is
+// /go/extension, which redirects here so the extension id lives in exactly one
+// place. Anything that explicitly wants the Web Store (desktop app install
+// buttons, "Add to Chrome" deep links) should use /go/extension.
 const CHROME_EXTENSION_URL =
   "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
@@ -85,21 +86,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // /extension is the Web Store short link referenced across the landing
-      // page, top nav, footer, and help tutorials, so it lands on the live Web
-      // Store listing. Kept non-permanent so the target can be retargeted
+      // /extension is the extension landing page (src/app/extension/page.tsx),
+      // linked from the top nav, footer, and help tutorials, and it renders
+      // normally. /go/extension is the Web Store short link: it lands on the
+      // live listing. Kept non-permanent so the target can be retargeted
       // without a browser-cached 301 lock-in.
       {
-        source: "/extension",
+        source: "/go/extension",
         destination: CHROME_EXTENSION_URL,
-        permanent: false,
-      },
-      // /help/chrome-extension is a help link baked into already-shipped desktop
-      // app builds, so it lands on the extension's help article rather than the
-      // install listing. Non-permanent for the same retargeting reason.
-      {
-        source: "/help/chrome-extension",
-        destination: "/help/tutorials/extension",
         permanent: false,
       },
       {

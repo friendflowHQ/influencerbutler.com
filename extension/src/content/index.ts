@@ -1,4 +1,5 @@
 import { detectPageType, detectRetailerForUrl, type PageType } from "./page-type";
+import { watchNavigation } from "./nav";
 import {
   extractSignals as extractWalmartSignals,
   extractWalmartProduct,
@@ -50,6 +51,7 @@ import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
+import { runAcceptOnPage } from "../tools/campaign-radar/accept-runner";
 import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
 import { initMessageTemplates, teardownMessageTemplates } from "../tools/message-templates/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
@@ -64,7 +66,12 @@ import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import { removeHost } from "../ui/host";
-import { sendToBackground, type PageStatus, type RuntimeMessage } from "../shared/messages";
+import {
+  sendToBackground,
+  type AcceptOutcome,
+  type PageStatus,
+  type RuntimeMessage,
+} from "../shared/messages";
 import { setDealsFeed, dealsFeedSize, type DealsFeedItem } from "../amazon/deals-feed";
 import type { Finding, ProductScanFinding } from "../transport/types";
 import type { CampaignFill } from "../amazon/creator-campaigns";
@@ -92,6 +99,10 @@ let renderedFingerprint = "";
 // drop the Affiliate+ fills. Fed into Campaign Radar's Last Call meter.
 let campaignFills: Record<string, CampaignFill> = {};
 let lastCallRefreshTimer: number | null = null;
+// Whether the last product render was still waiting on video data (see
+// videosPending in runForPage). Read by the hydration watcher so it can stop
+// as soon as a rebuild reports full coverage instead of running out its clock.
+let videosStillPending = false;
 
 void main();
 
@@ -105,14 +116,42 @@ async function main(): Promise<void> {
   g.__ibExtLoaded = true;
 
   const settings = await getSettings();
-  // TEMP-DIAGNOSTIC: force [ib:*] console logs on regardless of stored settings
-  // so we can read the brand-keywords sweep stages during live QA. Revert to
-  // `setDebug(settings.debug)` before committing.
-  setDebug(true);
+  setDebug(settings.debug);
   watchSpaNavigation();
   chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message.kind === "GET_PAGE_STATUS") {
       sendResponse(lastStatus);
+      return true;
+    }
+    // Standalone accept: the background opened this campaign tab and asks us to
+    // drive Amazon's Accept button. Re-read settings + remote flags here (not
+    // the boot-time copy) so a kill switch flipped after load still holds. The
+    // outcome goes back both as the reply and as ACCEPT_RESULT, which is what
+    // the worker resolves on.
+    if (message.kind === "RUN_ACCEPT") {
+      void (async () => {
+        let outcome: AcceptOutcome;
+        try {
+          const settings = await getSettings();
+          const flags = await getFlags();
+          const enabled =
+            settings.tools.standaloneAccept &&
+            !flags?.disableAll &&
+            !flags?.disabledTools.includes("standaloneAccept");
+          outcome = enabled
+            ? await runAcceptOnPage(message.campaignId)
+            : { ok: false, reason: "disabled" };
+        } catch (error) {
+          log("content", "accept runner failed", error);
+          outcome = { ok: false, reason: "error" };
+        }
+        void sendToBackground({
+          kind: "ACCEPT_RESULT",
+          campaignId: message.campaignId,
+          outcome,
+        }).catch(() => undefined);
+        sendResponse(outcome);
+      })();
       return true;
     }
     return false;
@@ -225,6 +264,7 @@ async function runForPage(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
+  videosStillPending = false;
   log("content", `page type: ${pageType} (${retailer})`);
 
   // Walmart.com. The neutral page classes (product / search / discovery /
@@ -309,6 +349,7 @@ async function runForPage(): Promise<void> {
           upperInfluencerSlot(carousel) === "unknown" ||
           breakdown.lower.total === 0 ||
           (carousel.counts.influencer > 0 && !namedInfluencers));
+      videosStillPending = videosPending;
 
       // Pinned quick-links bar (Get link / Scrub link): built first so it sits
       // in the sticky topbar, one click away without scrolling past the sections.
@@ -406,7 +447,13 @@ async function runForPage(): Promise<void> {
       if (showOnsite)
         guard(
           "campaigns",
-          () => void renderCampaigns(signals, settings.tools.enrolledBadge, snapshotSection),
+          () =>
+            void renderCampaigns(
+              signals,
+              settings.tools.enrolledBadge,
+              snapshotSection,
+              settings.tools.standaloneAccept,
+            ),
         );
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
@@ -488,7 +535,10 @@ async function runForPage(): Promise<void> {
     guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
     if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
-      initUploadHelper();
+      initUploadHelper({
+        campaignPrompt: settings.tools.uploadCampaignPrompt,
+        standaloneAccept: settings.tools.standaloneAccept,
+      });
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
     });
   } else if (pageType === "creator-manage") {
@@ -553,6 +603,14 @@ async function runForPage(): Promise<void> {
       }
     });
   } else if (pageType === "campaign-grid") {
+    // Tell the background this tab's accept runner is armed (it only acts on a
+    // tab it opened itself). Before the onsite guard: a background accept tab
+    // must report regardless of the creator's channel setting.
+    if (settings.tools.standaloneAccept) {
+      void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-grid" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (Creator Connections radar)
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
@@ -573,6 +631,11 @@ async function runForPage(): Promise<void> {
       if (settings.tools.messageTemplates) initMessageTemplates(settings);
     });
   } else if (pageType === "campaign-detail") {
+    if (settings.tools.standaloneAccept) {
+      void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-detail" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (Creator Connections detail)
     guard("campaign-detail", () => {
       if (settings.tools.campaignDetail) {
@@ -663,24 +726,33 @@ function autoHydrateVideos(): void {
 
 // Re-extract every 2.5s until classification coverage stops improving. The
 // auto-nudge (or the user scrolling the video section into view) is what
-// triggers Amazon to load the data. Gives up after 2 minutes; the network
-// hook can still trigger a rebuild any time after that.
+// triggers Amazon to load the data. Stops as soon as a rebuild reports nothing
+// pending, or after 2 minutes of wall-clock time; the network hook can still
+// trigger a rebuild any time after that. Ticks are skipped while the tab is
+// hidden (Amazon does not hydrate an off-screen widget in a background tab, so
+// re-extracting would only burn CPU), but the 2-minute ceiling still applies.
 let hydrationWatch: number | null = null;
+const HYDRATION_TICK_MS = 2500;
+const HYDRATION_CEILING_MS = 120_000;
 
 function watchForVideoHydration(): void {
   if (hydrationWatch !== null) return;
   const startedFor = currentUrl;
-  let tries = 0;
+  const startedAt = Date.now();
   hydrationWatch = window.setInterval(() => {
-    tries += 1;
-    if (location.href !== startedFor || tries > 48) {
+    const done =
+      location.href !== startedFor ||
+      !videosStillPending ||
+      Date.now() - startedAt > HYDRATION_CEILING_MS;
+    if (done) {
       if (hydrationWatch !== null) window.clearInterval(hydrationWatch);
       hydrationWatch = null;
       return;
     }
+    if (document.hidden) return;
     autoHydrateVideos();
     rebuildIfImproved();
-  }, 2500);
+  }, HYDRATION_TICK_MS);
 }
 
 // Bound the child->parent hint map so it can never grow without limit. A
@@ -772,8 +844,9 @@ function emitProductScan(
   });
 }
 
-// The storefront SPA rewrites history instead of reloading. Watch pushState,
-// popstate, and a low-frequency fallback so we rebuild the panel per view.
+// The storefront SPA rewrites history instead of reloading. Watch pushState /
+// popstate / the Navigation API, plus bounded polling on the SPA page types
+// only (see content/nav.ts), so we rebuild the panel per view.
 function watchSpaNavigation(): void {
   const notice = () => {
     if (location.href === currentUrl) return;
@@ -784,15 +857,5 @@ function watchSpaNavigation(): void {
     removeHost();
     void runForPage();
   };
-  const wrap = (name: "pushState" | "replaceState") => {
-    const original = history[name].bind(history);
-    history[name] = (...args: Parameters<History["pushState"]>) => {
-      original(...args);
-      setTimeout(notice, 400);
-    };
-  };
-  wrap("pushState");
-  wrap("replaceState");
-  window.addEventListener("popstate", () => setTimeout(notice, 400));
-  setInterval(notice, 3000);
+  watchNavigation(notice, { pageTypeForUrl: detectPageType });
 }

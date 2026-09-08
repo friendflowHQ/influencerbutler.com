@@ -1,5 +1,5 @@
 import type { IntegrationAdapter, TestResult } from "../types";
-import { withAffiliateTag } from "../url";
+import { taggedUrlFor } from "../adapter-utils";
 import { LinkNoticeError } from "../link-notice";
 import { listLinks, mintLink } from "../ib-links-client";
 
@@ -49,7 +49,7 @@ export const influencerButlerLinkAdapter: IntegrationAdapter = {
   },
   async generateLink(target, creds): Promise<string> {
     const licenseKey = (creds.licenseKey ?? "").trim();
-    const tagged = target.tag ? withAffiliateTag(target.url, target.tag) : target.url;
+    const tagged = taggedUrlFor(target);
     // Not signed in: nothing can be minted. Raise a notice rather than quietly
     // returning the tagged url, so the caller still falls back to that working
     // link but can tell the user why it is not a branded short link.

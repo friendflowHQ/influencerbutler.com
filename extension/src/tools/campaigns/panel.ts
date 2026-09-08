@@ -4,6 +4,8 @@ import { sendToBackground } from "../../shared/messages";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { makeCommandRunner, toProductRef } from "../hud-actions/runner";
 import { resolveCampaignStatus } from "./status";
+import { describeAcceptResult, lookupCampaignId, requestAccept } from "./accept";
+import { showToast } from "../../ui/toast";
 import type { CampaignStatusRecord, HudStatus } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 
@@ -20,6 +22,10 @@ export async function renderCampaigns(
   signals: ProductSignals,
   showEnrolled = true,
   section: HTMLElement | null = null,
+  // tools.standaloneAccept with remote flags applied: whether an unpaired user
+  // still gets an Accept button (our own tab drives Amazon's Accept), or only
+  // the "open the app" note.
+  standaloneAccept = true,
 ): Promise<void> {
   if (!signals.asin || !section) return;
 
@@ -89,7 +95,17 @@ export async function renderCampaigns(
   const canAcceptCc = flags.cc && !ccEnrolled;
   const canAcceptSpcc = flags.spcc && !spccEnrolled;
   if (canAcceptCc || canAcceptSpcc) {
-    await renderAcceptActions(block, signals, { cc: canAcceptCc, spcc: canAcceptSpcc });
+    // The standalone route needs the campaign to open, and this page only knows
+    // the ASIN: resolve it through the daily cc-rates lookup (cached a day, and
+    // only for products the Bloom filter already flagged, so it is cheap).
+    const ccCampaignId =
+      canAcceptCc && standaloneAccept ? await lookupCampaignId(signals.asin) : null;
+    await renderAcceptActions(
+      block,
+      signals,
+      { cc: canAcceptCc, spcc: canAcceptSpcc },
+      { standaloneAccept, ccCampaignId },
+    );
   }
 
   if (flags.deals) {
@@ -102,13 +118,17 @@ export async function renderCampaigns(
 }
 
 // Inline Accept buttons, right next to the availability chips, so accepting
-// never requires hunting through the Send-to-app section. When the desktop app
-// is not connected there is nothing to accept with, so a short pointer note
-// renders instead (the full trial upsell already lives in Send-to-app).
+// never requires hunting through the Send-to-app section. The desktop app is
+// the preferred route when it is paired (it confirms and accepts). Without it,
+// a Creator Connections campaign whose id we know can still be accepted by our
+// standalone path (Amazon's own Accept button, driven in a background tab);
+// SPCC has no standalone path yet, so it keeps the short pointer note (the full
+// trial upsell already lives in Send-to-app).
 async function renderAcceptActions(
   section: HTMLElement,
   signals: ProductSignals,
   flags: { cc: boolean; spcc: boolean },
+  opts: { standaloneAccept: boolean; ccCampaignId: string | null },
 ): Promise<void> {
   let hud: HudStatus;
   try {
@@ -117,7 +137,11 @@ async function renderAcceptActions(
     hud = { connected: false };
   }
 
-  if (!hud.connected) {
+  if (!hud.connected || hud.paired === false) {
+    if (flags.cc && opts.standaloneAccept && opts.ccCampaignId) {
+      renderStandaloneAccept(section, signals, opts.ccCampaignId, flags.spcc);
+      return;
+    }
     section.append(el("p", "note", t().campaignConnectNote));
     return;
   }
@@ -144,4 +168,46 @@ async function renderAcceptActions(
     body.append(spccBtn);
   }
   section.append(body, status);
+}
+
+// The unpaired "Accept CC campaign" button: requestAccept re-checks the bridge
+// (it wins if the app got paired meanwhile) and otherwise asks the background
+// to drive Amazon's Accept in a tab. The button disappears on success; a
+// failure is named in the status line and raised as a toast, like the bridge
+// runner does.
+function renderStandaloneAccept(
+  section: HTMLElement,
+  signals: ProductSignals,
+  campaignId: string,
+  spccAlsoAvailable: boolean,
+): void {
+  const body = el("div", "row");
+  const status = el("p", "progress");
+  const btn = el("button", "btn secondary");
+  btn.textContent = t().acceptCc;
+  btn.addEventListener("click", () => {
+    void (async () => {
+      btn.disabled = true;
+      status.textContent = t().acceptWorking;
+      const result = await requestAccept({
+        asin: signals.asin,
+        marketplace: signals.marketplace,
+        kind: "cc",
+        campaignId,
+        brand: signals.brand ?? null,
+      });
+      const line = describeAcceptResult(result);
+      status.textContent = line;
+      if (result.ok) {
+        btn.remove();
+      } else {
+        btn.disabled = false;
+        showToast({ title: t().actionFailedTitle, message: line, closeLabel: t().nudgeCloseLabel });
+      }
+    })();
+  });
+  body.append(btn);
+  section.append(body, status);
+  // SPCC still needs the app; say so under the button rather than hiding it.
+  if (spccAlsoAvailable) section.append(el("p", "note", t().campaignConnectNote));
 }

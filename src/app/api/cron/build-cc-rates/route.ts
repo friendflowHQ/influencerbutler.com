@@ -16,7 +16,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildCcRates, r2Configured, readLatest } from "@/lib/r2-catalogue";
-import { isMissingTableError } from "@/lib/extension-api";
+import { isMissingColumnError, isMissingTableError } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +80,9 @@ export async function GET(request: Request) {
   try {
     const builtAt = new Date().toISOString();
     let flushed = skipRows;
+    // Flips to false on the first chunk if prod has not applied migration
+    // 20260911 yet, so every later chunk skips the column without re-probing.
+    let hasCampaignIdColumn = true;
     const built = await buildCcRates({
       skipRows,
       // 5k rows keeps each upsert statement well under the Postgres statement
@@ -87,17 +90,28 @@ export async function GET(request: Request) {
       // observed timing out during the 2026-08-17 initial build).
       chunkSize: 5000,
       onChunk: async (rows) => {
-        const { error } = await admin.from("extension_cc_rates").upsert(
-          rows.map((r) => ({
-            asin: r.asin,
-            rate_pct: r.ratePct,
-            brand: r.brand,
-            ends_at: r.endsAt,
-            version: latestVersion,
-            built_at: builtAt,
-          })),
-          { onConflict: "asin" },
-        );
+        const shape = (r: (typeof rows)[number], withCampaignId: boolean) => ({
+          asin: r.asin,
+          rate_pct: r.ratePct,
+          brand: r.brand,
+          ends_at: r.endsAt,
+          version: latestVersion,
+          built_at: builtAt,
+          // The source campaign id (migration 20260911). Written when the
+          // column exists; a lagging prod schema falls back to the old shape
+          // below rather than failing the whole build.
+          ...(withCampaignId ? { campaign_id: r.campaignId } : {}),
+        });
+        let { error } = await admin
+          .from("extension_cc_rates")
+          .upsert(rows.map((r) => shape(r, hasCampaignIdColumn)), { onConflict: "asin" });
+        if (error && hasCampaignIdColumn && isMissingColumnError(error)) {
+          hasCampaignIdColumn = false;
+          console.warn("build-cc-rates: campaign_id column missing; writing rows without it");
+          ({ error } = await admin
+            .from("extension_cc_rates")
+            .upsert(rows.map((r) => shape(r, false)), { onConflict: "asin" }));
+        }
         if (error) throw new Error(`upsert failed: ${error.message}`);
         flushed += rows.length;
         // Best-effort progress marker so a timeout resumes instead of

@@ -13,7 +13,7 @@ import { query } from "../../amazon/selectors";
 import { harvestVideos, type VideoHarvestResult } from "../../amazon/video-harvest";
 import type { VideoCounts } from "../../transport/types";
 import { buildVideoCsv, downloadCsv } from "./video-csv";
-import { renderLandscape } from "./landscape-panel";
+import { fillCompetitionLine, renderLandscape } from "./landscape-panel";
 import { renderVideoPassport } from "./passport-panel";
 
 // Marketplace host for pool reads, e.g. "amazon.com" / "amazon.co.uk".
@@ -47,6 +47,19 @@ export function renderVideoCounts(
     callout.textContent = result.strategy === "none" ? t().noCarousel : t().noVideosYet;
     section.append(callout);
     return;
+  }
+
+  // Competition sentence: the FIRST line of the section (right under the
+  // heading, outside every collapsible) so it reads without expanding anything.
+  // Gated on the video landscape tool; hidden until classified videos exist and
+  // refreshed in place when Deep Scan hands back the fuller snapshot.
+  let competeLine: HTMLElement | undefined;
+  if (showLandscape) {
+    competeLine = el("p", "ls-compete");
+    competeLine.style.display = "none";
+    const heading = section.querySelector("h4");
+    if (heading) heading.after(competeLine);
+    else section.prepend(competeLine);
   }
 
   if (result.strategy === "header") {
@@ -104,19 +117,18 @@ export function renderVideoCounts(
     landscapeHost = el("div");
     section.append(landscapeHost);
     if (result.videos.length > 0) {
-      renderLandscape(
-        landscapeHost,
-        computeLandscape(result.videos, result.counts.total, {
-          domDurations: scanCarouselDurations(document),
-        }),
-      );
+      const landscape = computeLandscape(result.videos, result.counts.total, {
+        domDurations: scanCarouselDurations(document),
+      });
+      if (competeLine) fillCompetitionLine(competeLine, landscape);
+      renderLandscape(landscapeHost, landscape);
     }
   }
 
   // Deep Scan is only worth offering when Amazon claims more videos than we
   // have classified so far (the shortfall lives in counts.unknown).
   if (result.counts.unknown > 0) {
-    renderDeepScan(section, result, endpoints, reextract, landscapeHost);
+    renderDeepScan(section, result, endpoints, reextract, landscapeHost, competeLine);
   }
 }
 
@@ -187,6 +199,7 @@ function renderDeepScan(
   endpoints: string[],
   reextract?: () => CarouselResult,
   landscapeHost?: HTMLElement,
+  competeLine?: HTMLElement,
 ): void {
   // The header top-up already made counts.total authoritative (Amazon's own
   // #videoCount), so it is the target the harvest counts up toward.
@@ -236,12 +249,13 @@ function renderDeepScan(
         // Refresh the landscape from the fuller harvested set (Amazon's own
         // #videoCount is the authoritative total when present).
         if (landscapeHost) {
-          renderLandscape(
-            landscapeHost,
-            computeLandscape(harvest.videos, harvest.headerTotal ?? harvest.counts.total, {
-              domDurations: scanCarouselDurations(document),
-            }),
+          const landscape = computeLandscape(
+            harvest.videos,
+            harvest.headerTotal ?? harvest.counts.total,
+            { domDurations: scanCarouselDurations(document) },
           );
+          if (competeLine) fillCompetitionLine(competeLine, landscape);
+          renderLandscape(landscapeHost, landscape);
         }
         const classified = harvest.counts.total;
         const total = Math.max(harvest.headerTotal ?? classified, classified);

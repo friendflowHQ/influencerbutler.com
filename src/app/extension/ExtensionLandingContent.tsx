@@ -1,5 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
+import {
+  EXTENSION_ALSO_IN_THE_BOX,
+  EXTENSION_GROUPS,
+  EXTENSION_TOOL_COUNT,
+  PERF_BUDGET_MS,
+  toolsInGroup,
+  type ExtensionGroup,
+} from "@/lib/extension-features";
 
 // Chrome Web Store listing URL. The extension is live, so default straight to
 // the listing (same id that next.config.ts treats as the single source of
@@ -9,65 +17,77 @@ const CHROME_STORE_URL =
   process.env.NEXT_PUBLIC_CHROME_STORE_URL ||
   "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
-const TOOLS = [
-  {
-    name: "Video Scanner",
-    tagline: "Know the carousel before you film",
-    description:
-      "On any Amazon product page, instantly see how many videos it has and who made them: influencer, brand, or customer. The exact intel other tools charge monthly for, free while you browse.",
-  },
-  {
-    name: "Content Gap Finder",
-    tagline: "Film what you already own",
-    description:
-      "Scan your own Amazon order history and surface products you bought that have few or zero influencer videos. Those are the easiest wins on Amazon: you own the product and can film today.",
-  },
-  {
-    name: "Butler Approved Seal",
-    tagline: "A green light you can trust",
-    description:
-      "A product earns the seal when it is actively selling, has an open influencer slot in the carousel, is in stock, and clears your price floor. Every criterion is shown pass or fail, so you know why.",
-  },
-  {
-    name: "Storefront Checkup",
-    tagline: "Stop leaking commissions",
-    description:
-      "One click checks your storefront videos for missing product tags, over-tagging that dilutes clicks, and tagged products that have gone unavailable.",
-  },
+// Factual, sourced from extension/src/amazon/html-fetch.ts (single serialized
+// fetch chain), extension/src/shared/constants.ts (FETCH_DELAY_MIN_MS 2500,
+// FETCH_DELAY_MAX_MS 4000, per-run caps) and extension/src/amazon/dp-enrich.ts
+// (robot-check detection arms a cooldown). Keep this in step with the code.
+const NEVER_THROTTLED_COPY =
+  "One polite request at a time. Every scan runs through a single serialized fetcher with a 2.5 to 4 second jittered gap, watches for Amazon's robot check and backs off, and caps each run. You never see a screen of death.";
+
+const NEVER_THROTTLED_POINTS = [
+  "Product pages are read in place: the page you are already looking at is the data source, so nothing extra is fetched to show the panel.",
+  "Order, storefront, and grid scans queue through one fetcher and wait 2.5 to 4 seconds between pages, jittered so it reads like a person browsing.",
+  "If Amazon serves a robot check, the run stops and automatic enrichment pauses for ten minutes instead of hammering the block.",
+  "Every run has a cap (20 orders, 25 storefront videos, 40 deal pages, 200 order-history pages), so a parsing miss can never turn into an unbounded crawl.",
+];
+
+const FAST_POINTS = [
+  "The panel reads the product page you already opened, so the score, video counts, and seal appear as the page hydrates.",
+  "Scan results are cached for a week, so revisiting a product or re-opening a grid is instant.",
+  "Nothing runs in the background: the only waits are the deliberate pauses inside a scan you clicked.",
 ];
 
 const COMPARISON: Array<{ feature: string; ib: string; others: string }> = [
   { feature: "Price", ib: "Free", others: "$25-$50/mo" },
+  { feature: "Butler Score with a visible breakdown", ib: "Yes", others: "Rarely" },
+  { feature: "BSR, revenue estimate, and price history on the page", ib: "Yes", others: "Sometimes" },
   { feature: "Influencer vs brand vs customer video counts", ib: "Yes", others: "Sometimes" },
   { feature: "Content gaps from your order history", ib: "Yes", others: "Usually a paid tier" },
-  { feature: "Opportunity seal with visible criteria", ib: "Yes", others: "Rarely" },
-  { feature: "Break-even and profit math on the page", ib: "Yes", others: "Sometimes" },
+  { feature: "Creator Connections radar with fill meters and Last Call alerts", ib: "Yes", others: "Rarely" },
+  { feature: "Throttle-free paced scans", ib: "Yes", others: "Often rate-limited" },
+  { feature: "Deep links that open the Amazon app", ib: "Yes, free", others: "Usually a paid tier" },
+  { feature: "Localized links for 12 marketplaces", ib: "Yes", others: "Rarely" },
   { feature: "Storefront untagged and dead-product checks", ib: "Yes", others: "Usually a paid tier" },
   { feature: "Syncs with a full automation suite (42+ butlers)", ib: "Yes", others: "No" },
 ];
 
 // Free Chrome extension vs the desktop app. `true`/`false` render a check / x;
-// a string (Price row) renders as plain text. Keeps the capability split
-// unmistakable so nobody expects the extension to auto-post.
+// a string renders as plain text. Keeps the capability split unmistakable so
+// nobody expects the extension to auto-post.
 const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boolean | string }> = [
-  { feature: "Product research while you browse (video counts, content gaps, storefront checks)", ext: true, app: true },
+  {
+    feature: "Product research while you browse (Butler Score, BSR + revenue, price history, video counts, content gaps)",
+    ext: true,
+    app: true,
+  },
+  {
+    feature: "Creator Connections Campaign Radar: score chips, fill meters, Last Call watch bells",
+    ext: true,
+    app: false,
+  },
+  { feature: "One-tap campaign accept", ext: "Via the paired desktop app", app: true },
+  { feature: "Creator Connections auto-outreach", ext: false, app: true },
+  {
+    feature: "Deep linking (free tagged link that opens the Amazon app; branded short links with a free sign-in)",
+    ext: true,
+    app: true,
+  },
+  { feature: "Localized links for 12 marketplaces (Global Maximizer)", ext: true, app: false },
   { feature: "Deal Sites Harvester (turn deal lists into deals)", ext: true, app: true },
   { feature: "Auto-post deals to Facebook, Instagram, and more", ext: false, app: true },
   { feature: "Scheduling and autopilot posting", ext: false, app: true },
-  { feature: "Creator Connections auto-outreach", ext: false, app: true },
   { feature: "Like Butler (auto-like storefronts)", ext: false, app: true },
   { feature: "Auto video uploads", ext: false, app: true },
-  { feature: "Commission tracking dashboard", ext: false, app: true },
-  { feature: "Deep linking", ext: false, app: true },
+  { feature: "Commission tracking dashboard", ext: "Reads your desktop earnings when paired", app: true },
   { feature: "Runs 24/7 unattended", ext: false, app: true },
   { feature: "Price", ext: "Free", app: "From $39/mo" },
 ];
 
 // One table cell for the Extension vs Desktop App grid: green check for yes,
-// muted x for no (both labelled for screen readers), plain text for the Price row.
+// muted x for no (both labelled for screen readers), plain text otherwise.
 function CapabilityCell({ value }: { value: boolean | string }) {
   if (typeof value === "string") {
-    return <span className="font-semibold text-slate-900">{value}</span>;
+    return <span className="text-xs font-semibold text-slate-900 sm:text-sm">{value}</span>;
   }
   return value ? (
     <span role="img" aria-label="Yes" className="text-lg font-bold text-emerald-600">
@@ -86,8 +106,16 @@ const FAQ = [
     a: "Yes. Every tool in the extension works without an account and without a card. If you also use the Influencer Butler desktop app, connecting your license key syncs your findings to your dashboard, but that is optional.",
   },
   {
+    q: "Does it throttle or get me blocked?",
+    a: `No. ${NEVER_THROTTLED_COPY} Scans only start when you click a scan button, and the panel itself reads the page you are already on.`,
+  },
+  {
+    q: "Does Influencer Butler give me a deep link?",
+    a: "Yes: Get link builds your own tagged Amazon link for the product on screen, free, and it opens the Amazon app on a phone; branded short links with a click ledger are optional and unlock with a free sign-in.",
+  },
+  {
     q: "Do I need the desktop app?",
-    a: "No. The extension stands on its own. The desktop app adds the automation side: posting, deal harvesting, Creator Connections outreach, and more, and the two are better together.",
+    a: "No. The extension stands on its own. The desktop app adds the automation side: posting, deal harvesting, Creator Connections outreach, one-tap campaign accept, and more, and the two are better together.",
   },
   {
     q: "How does it count influencer videos?",
@@ -103,14 +131,97 @@ const FAQ = [
   },
   {
     q: "Which marketplaces are supported?",
-    a: "Amazon.com at launch. Additional marketplaces are on the roadmap.",
+    a: "The on-page panel runs on Amazon.com, .ca, and .co.uk, and Global Maximizer builds localized links for 12 marketplaces (US, CA, UK, AU, DE, FR, IT, ES, JP, IN, MX, BR). Additional storefronts are on the roadmap.",
   },
 ];
 
+function GroupHeading({ group, index }: { group: ExtensionGroup; index: number }) {
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <div>
+        <h3 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{group.name}</h3>
+        <p className="mt-1 text-sm text-slate-600">{group.tagline}</p>
+      </div>
+    </div>
+  );
+}
+
+// One group of tool cards. The two "section" groups (Never throttled, Fast)
+// have no tool rows: they explain a property of the whole extension instead.
+function GroupBlock({ group, index }: { group: ExtensionGroup; index: number }) {
+  if (group.id === "never-throttled") {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+        <GroupHeading group={group} index={index} />
+        <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-700">{NEVER_THROTTLED_COPY}</p>
+        <ul className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+          {NEVER_THROTTLED_POINTS.map((point) => (
+            <li key={point} className="flex items-start gap-2">
+              <span className="mt-0.5 font-semibold text-[#f97316]">•</span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (group.id === "fast") {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <GroupHeading group={group} index={index} />
+        {PERF_BUDGET_MS !== null ? (
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-slate-700">
+            The on-page panel renders in under {PERF_BUDGET_MS} ms on a normal product page.
+          </p>
+        ) : null}
+        <ul className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
+          {FAST_POINTS.map((point) => (
+            <li key={point} className="flex items-start gap-2">
+              <span className="mt-0.5 font-semibold text-[#f97316]">•</span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  const tools = toolsInGroup(group.id);
+  return (
+    <div>
+      <GroupHeading group={group} index={index} />
+      <div className={`mt-6 grid gap-6 ${tools.length > 1 ? "md:grid-cols-2" : ""}`}>
+        {tools.map((tool) => (
+          <div key={tool.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">{tool.tagline}</p>
+            <h4 className="mt-2 text-xl font-semibold text-slate-900">{tool.name}</h4>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{tool.description}</p>
+          </div>
+        ))}
+      </div>
+      {group.id === "storefront" ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Also in the box</p>
+          <ul className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+            {EXTENSION_ALSO_IN_THE_BOX.map((item) => (
+              <li key={item.name}>
+                <span className="font-semibold text-slate-900">{item.name}</span>: {item.description}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Presentational body for the free Chrome extension landing page. Shared by the
- * /extension short link page and the attributed /extension/get route (which
+ * indexable /extension page and the attributed /extension/get route (which
  * also fires the affiliate touch), so the marketing copy lives in one place.
+ * Tool names and the tool count come from src/lib/extension-features.ts.
  */
 export default function ExtensionLandingContent() {
   return (
@@ -161,16 +272,17 @@ export default function ExtensionLandingContent() {
             Free Chrome Extension
           </span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            The Amazon intel other tools{" "}
+            Product research and Creator Connections intel,{" "}
             <span className="bg-gradient-to-r from-[#f97316] to-amber-500 bg-clip-text text-transparent">
-              charge $30/month for.
+              on the Amazon pages you already browse.
             </span>
-            <br className="hidden sm:block" /> Free. Forever.
+            <br className="hidden sm:block" /> Free. Never throttled.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-600">
-            See how many influencer videos any product has, find content gaps in your own orders,
-            spot Butler Approved opportunities, and keep your storefront healthy: all while you
-            browse Amazon like normal.
+            Butler Score, BSR and revenue estimates, price history, influencer vs brand video counts,
+            Campaign Radar with fill meters and Last Call alerts, deep links that open the Amazon
+            app, and localized links for 12 marketplaces: {EXTENSION_TOOL_COUNT} tools, all while
+            you shop like normal.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
@@ -194,11 +306,11 @@ export default function ExtensionLandingContent() {
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
               { k: "$0", v: "Every tool, no card" },
-              { k: "4", v: "Tools in your browser" },
-              { k: "1-click", v: "Order history scan" },
+              { k: String(EXTENSION_TOOL_COUNT), v: "Tools in your browser" },
+              { k: "12", v: "Marketplaces linked" },
               { k: "42+", v: "Butlers it syncs with" },
             ].map((stat) => (
-              <div key={stat.k} className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+              <div key={stat.v} className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.v}</dt>
                 <dd className="mt-1 text-2xl font-bold text-slate-900">{stat.k}</dd>
               </div>
@@ -207,19 +319,19 @@ export default function ExtensionLandingContent() {
         </div>
       </section>
 
-      {/* Tools */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      {/* Tools, grouped */}
+      <section className="mx-auto max-w-6xl px-6 py-20" id="tools">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">The toolkit</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          Four tools that live where you shop.
+          {EXTENSION_TOOL_COUNT} tools that live where you shop.
         </h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {TOOLS.map((tool) => (
-            <div key={tool.name} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">{tool.tagline}</p>
-              <h3 className="mt-2 text-xl font-semibold text-slate-900">{tool.name}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{tool.description}</p>
-            </div>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
+          Seven groups, in the order a creator meets them: research the product, read the campaign,
+          trust the pacing, get the link, go global, keep the storefront clean.
+        </p>
+        <div className="mt-12 space-y-14">
+          {EXTENSION_GROUPS.map((group, index) => (
+            <GroupBlock key={group.id} group={group} index={index} />
           ))}
         </div>
       </section>
@@ -271,7 +383,8 @@ export default function ExtensionLandingContent() {
             <p className="mt-4 text-sm leading-relaxed text-slate-600">
               Connect the extension with your Influencer Butler license key and everything it finds
               syncs to your dashboard: every product scan, every content gap, every storefront
-              issue. Desktop app users get the same findings flowing toward the HUD, so an
+              issue. Pair the desktop app and the panel gains Accept buttons for campaigns, your
+              real earnings per product, and the app&apos;s full price and rank history, so an
               opportunity you spot while shopping becomes an action item where you work.
             </p>
             <ol className="mt-6 space-y-3 text-sm text-slate-700">
@@ -296,6 +409,9 @@ export default function ExtensionLandingContent() {
               posting, Creator Connections outreach, commission tracking, and 40+ other butlers),
               start a 14-day Pro trial.
             </p>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              The only full-Pro 14-day trial in the category: every butler unlocked, not a lite tier.
+            </p>
             <Link
               href="/#pricing"
               className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
@@ -315,8 +431,9 @@ export default function ExtensionLandingContent() {
           Extension vs Desktop App
         </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
-          The free extension finds opportunities while you browse. The desktop app does the
-          automation: posting, outreach, and scheduling. Here is exactly what each one does.
+          The free extension does the research and reads the Creator Connections grid while you
+          browse. The desktop app does the automation: posting, outreach, accepting, and scheduling.
+          Here is exactly what each one does.
         </p>
         <div className="mt-10 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
@@ -343,9 +460,9 @@ export default function ExtensionLandingContent() {
           </table>
         </div>
         <p className="mt-4 max-w-3xl text-xs text-slate-500">
-          In short: use the free extension to research and find products, then add the desktop app
-          when you want to automate posting, outreach, and scheduling. Auto-posting is a desktop-app
-          feature and does not run from the extension.
+          In short: use the free extension to research products and read campaigns, then add the
+          desktop app when you want to automate posting, outreach, accepting, and scheduling.
+          Auto-posting is a desktop-app feature and does not run from the extension.
         </p>
       </section>
 
@@ -376,7 +493,8 @@ export default function ExtensionLandingContent() {
           Stop guessing which products deserve a video.
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-slate-600">
-          Install the free extension and see the whole picture on every product page.
+          Install the free extension and see the whole picture on every product page and every
+          campaign card.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
@@ -386,7 +504,7 @@ export default function ExtensionLandingContent() {
             Add to Chrome - Free →
           </a>
           <Link
-            href="/help"
+            href="/help/tutorials/extension"
             className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
           >
             Read the tutorial
@@ -428,6 +546,7 @@ export default function ExtensionLandingContent() {
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
             <Link href="/contact" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</Link>
+            <Link href="/help/tutorials/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension tutorial</Link>
             <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
           </div>
         </div>

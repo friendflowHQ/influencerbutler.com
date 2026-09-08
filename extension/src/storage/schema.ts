@@ -2,6 +2,11 @@ import type { Finding, VideoCounts } from "../transport/types";
 import type { LocaleSetting } from "../i18n";
 import type { CreatorMode } from "../shared/creator-mode";
 import type { LinkPixel } from "../integrations/ib-links-client";
+import type { CampaignScoreBand } from "../tools/campaign-radar/score";
+import {
+  AUTO_ACCEPT_DAILY_HARD_CAP,
+  AUTO_ACCEPT_PER_RUN_HARD_CAP,
+} from "../shared/constants";
 
 // Everything lives in chrome.storage.local. The license key deliberately
 // never goes to storage.sync so it cannot leave the machine via Chrome sync.
@@ -99,6 +104,14 @@ export type Settings = {
   lastCall: {
     alertAtPct: number;
   };
+  // Rule-based accept: "accept campaigns that match rules you set". OPT-IN
+  // (enabled is false until the creator turns it on in Settings, after reading
+  // the disclosure there). When on, the Last Call poll tab runs these rules
+  // over the Creator Connections grid every 30 minutes and clicks Amazon's own
+  // Accept on the campaigns that pass, up to the caps. The options page writes
+  // this whole object at once because patchSettings shallow-merges. Also gated
+  // by tools.autoAccept and the remote "autoAccept" kill flag.
+  autoAccept: AutoAcceptSettings;
   // Voiceover Butler: creator profile, script defaults, About Me apparel
   // block, and brand denylist behind the "Draft voiceover (AI)" button in the
   // My Link panel. The options page writes this whole object at once (never a
@@ -199,6 +212,25 @@ export type Settings = {
     // touching their Amazon overlays. Backfilled to true by the tools
     // shallow-merge in migrate().
     walmart: boolean;
+    // Standalone campaign accept: "Accept CC campaign" without the desktop app,
+    // by driving Amazon's own Accept button (in-page on the campaign grid, or
+    // in a background tab from a product / upload page). The desktop bridge is
+    // still preferred when paired. Also the key the remote flags kill switch
+    // targets ("standaloneAccept" in disabledTools). On by default; backfilled
+    // to true for existing users by the tools shallow-merge in migrate().
+    standaloneAccept: boolean;
+    // Upload-page campaign prompts: on the Creator Hub "Edit Video" page, flag
+    // any tagged product that has a Creator Connections / SPCC campaign (from
+    // the local membership filters) with an Accept button, so the campaign is
+    // joined before the video goes live. On by default; backfilled to true for
+    // existing users by the tools shallow-merge in migrate().
+    uploadCampaignPrompt: boolean;
+    // Rule-based accept tool gate. On by default but meaningless until the
+    // creator opts in via settings.autoAccept.enabled; this is the key the
+    // remote flags kill switch targets ("autoAccept" in disabledTools) and the
+    // one a support flow can flip off without touching the creator's rules.
+    // Backfilled to true by the tools shallow-merge in migrate().
+    autoAccept: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -301,6 +333,10 @@ export type IntegrationsState = {
     // Amazon Associates tag per marketplace country code, for example
     // { US: "mytag-20", UK: "mytag-21" }. US defaults to the storefront handle.
     perCountryTags: Record<string, string>;
+    // When on, every Amazon link the extension builds carries Amazon's own
+    // SiteStripe share params (linkCode=ssc + creativeASIN) so it opens the
+    // Amazon app on phones. Free and first-party; on by default.
+    appOpeningLinks: boolean;
   };
   providers: Record<string, IntegrationState>;
 };
@@ -523,8 +559,83 @@ export type StorageShape = {
   onboarding: OnboardingState;
 };
 
+// The rules behind "accept campaigns that match rules you set". Every number is
+// clamped by normalizeAutoAccept (in migrate and on every options-page save),
+// so the runner can trust the stored values.
+export type AutoAcceptSettings = {
+  // Opt-in master switch. Off on a fresh install and after every migration
+  // that lacks the block; never backfilled to true.
+  enabled: boolean;
+  // A campaign must pay at least this commission rate (percent).
+  minCommissionPct: number;
+  // Which Campaign Radar score bands qualify (the band of computeCampaignScore).
+  bands: CampaignScoreBand[];
+  // Skip a campaign ending within this many hours (its runway is too short to
+  // film, post, and earn). Compared as whole days: hours / 24.
+  excludeEndingWithinHours: number;
+  // At most this many rule-based accepts per local calendar day
+  // (1..AUTO_ACCEPT_DAILY_HARD_CAP).
+  dailyCap: number;
+  // At most this many accepts per 30-minute pass (1..AUTO_ACCEPT_PER_RUN_HARD_CAP).
+  perRunCap: number;
+};
+
+export const AUTO_ACCEPT_BANDS: readonly CampaignScoreBand[] = ["hot", "warm", "cool"];
+
+const clampInt = (n: unknown, lo: number, hi: number, fallback: number): number => {
+  const v = typeof n === "number" && Number.isFinite(n) ? Math.round(n) : fallback;
+  return Math.min(hi, Math.max(lo, v));
+};
+
+// Clamp the daily cap to 1..AUTO_ACCEPT_DAILY_HARD_CAP. Exported so the options
+// page and the runner clamp exactly the way migrate() does.
+export function clampAutoAcceptDailyCap(n: unknown): number {
+  return clampInt(n, 1, AUTO_ACCEPT_DAILY_HARD_CAP, DEFAULT_AUTO_ACCEPT.dailyCap);
+}
+
+export function clampAutoAcceptPerRunCap(n: unknown): number {
+  return clampInt(n, 1, AUTO_ACCEPT_PER_RUN_HARD_CAP, DEFAULT_AUTO_ACCEPT.perRunCap);
+}
+
+// Pure: coerce an untrusted (stored / typed) autoAccept block into a valid one.
+// Missing or malformed fields fall back to the defaults; `enabled` is true only
+// for an explicit true. Bands keep only known values, in canonical order, and
+// an empty list falls back to the default ("hot"): an empty band list would
+// silently match nothing, which reads as broken.
+export function normalizeAutoAccept(raw: unknown): AutoAcceptSettings {
+  const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const rawBands = Array.isArray(obj.bands) ? obj.bands : [];
+  const bands = AUTO_ACCEPT_BANDS.filter((b) => rawBands.includes(b));
+  const minCommission =
+    typeof obj.minCommissionPct === "number" && Number.isFinite(obj.minCommissionPct)
+      ? Math.min(100, Math.max(0, obj.minCommissionPct))
+      : DEFAULT_AUTO_ACCEPT.minCommissionPct;
+  return {
+    enabled: obj.enabled === true,
+    minCommissionPct: minCommission,
+    bands: bands.length ? bands : [...DEFAULT_AUTO_ACCEPT.bands],
+    excludeEndingWithinHours: clampInt(
+      obj.excludeEndingWithinHours,
+      0,
+      24 * 90,
+      DEFAULT_AUTO_ACCEPT.excludeEndingWithinHours,
+    ),
+    dailyCap: clampAutoAcceptDailyCap(obj.dailyCap),
+    perRunCap: clampAutoAcceptPerRunCap(obj.perRunCap),
+  };
+}
+
+const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
+  enabled: false,
+  minCommissionPct: 12,
+  bands: ["hot"],
+  excludeEndingWithinHours: 48,
+  dailyCap: 5,
+  perRunCap: 2,
+};
+
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 25,
+  schemaVersion: 28,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -545,6 +656,7 @@ export const DEFAULTS: StorageShape = {
     lastCall: {
       alertAtPct: 90,
     },
+    autoAccept: { ...DEFAULT_AUTO_ACCEPT, bands: [...DEFAULT_AUTO_ACCEPT.bands] },
     voiceover: {
       tone: "",
       niche: "",
@@ -606,6 +718,9 @@ export const DEFAULTS: StorageShape = {
       ownership: true,
       enrolledBadge: true,
       walmart: true,
+      standaloneAccept: true,
+      uploadCampaignPrompt: true,
+      autoAccept: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -640,6 +755,9 @@ export const DEFAULTS: StorageShape = {
       // existing users alike start null; the global shallow-merge backfills it).
       walmartLinkProvider: null,
       perCountryTags: {},
+      // App-opening Amazon links on by default (fresh installs and, via the
+      // global shallow-merge in migrate(), pre-v26 installs alike).
+      appOpeningLinks: true,
     },
     providers: {},
   },
@@ -733,7 +851,16 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // integrations.global.routingProviders (the Affiliate Routing Strategy roster,
   // every provider on by default); both backfill through the global
   // shallow-merge, with routingProviders deep-merged so a stored partial roster
-  // still gains any newly added provider key.
+  // still gains any newly added provider key. v25 -> v26 added
+  // integrations.global.appOpeningLinks (SiteStripe app-opening params on every
+  // Amazon link, on by default); the global shallow-merge backfills it.
+  // v26 -> v27 added tools.standaloneAccept (accept a CC campaign without the
+  // desktop app) and tools.uploadCampaignPrompt (campaign prompts on the
+  // Creator Hub upload page), both on by default; the tools shallow-merge
+  // backfills them. v27 -> v28 added settings.autoAccept (rule-based accept:
+  // OPT-IN, enabled stays false unless stored true; the other fields deep-merge
+  // and clamp through normalizeAutoAccept) and tools.autoAccept (on by default,
+  // the kill-flag key; the tools shallow-merge backfills it).
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -770,6 +897,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
         ...DEFAULTS.settings.lastCall,
         ...(raw.settings?.lastCall ?? {}),
       },
+      autoAccept: normalizeAutoAccept({
+        ...DEFAULTS.settings.autoAccept,
+        ...(raw.settings?.autoAccept ?? {}),
+      }),
       voiceover: {
         ...structuredClone(DEFAULTS.settings.voiceover),
         ...(raw.settings?.voiceover ?? {}),
@@ -819,7 +950,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 25,
+    schemaVersion: 28,
   };
 }
 

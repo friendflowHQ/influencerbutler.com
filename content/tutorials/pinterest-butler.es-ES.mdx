@@ -1,47 +1,40 @@
 ---
 title: Pinterest Butler: generación y programación de pines en Pinterest (próximamente)
-summary: Espacio planeado que generará pines desde Idea Lists de Amazon, priorizará por campañas CC activas, renderizará plantillas adaptadas al nicho, escribirá copy SEO y programará publicaciones.
+summary: Espacio en beta: el panel es una vista previa y todavía nada se publica en Pinterest. Qué hará el motor de pines cuando esté conectado, qué puedes hacer hoy y cómo seguir el despliegue.
 category: Other
 ---
 
-> **Espacio de hoja de ruta.** Pinterest Butler está montado en el dashboard pero aún no es funcional. El botón de navegación está visible para que veas qué viene; el espacio renderiza un panel "coming soon" en vez de una UI funcionando. No esperes comportamiento de producción todavía.
+> **Espacio en beta.** Pinterest Butler aparece en el dashboard con una insignia de beta, pero el panel del espacio es solo una vista previa: explica lo que viene y todavía no tiene controles. Hoy nada se publica en Pinterest, no se pide ningún inicio de sesión y no hay nada que configurar. No esperes comportamiento de producción todavía.
 
-## Qué hará Pinterest Butler
+## Qué muestra el espacio hoy
 
-Cuando salga, Pinterest Butler será el equivalente Pinterest de Deals Butler - un pipeline de contenido de extremo a extremo para el lado Pinterest:
+Abre **Pinterest Butler** y verás un aviso **En beta**, una breve descripción de lo que será (un pipeline completo de Pinterest: ASINs de tus Idea Lists de Amazon, pines renderizados automáticamente, copy SEO y publicaciones programadas, todo guiado por tus campañas activas de Creator Connections) y una lista de los módulos que están llegando. Todavía no hay botón de ejecutar, ni ajustes, ni tabla de resultados.
 
-1. **Tomar productos**: leer desde tus Idea Lists de Amazon (listas curadas que hayas construido en Amazon) y desde el catálogo de Storefront Butler.
-2. **Priorizar**: rankear productos por estado de campaña activa de Creator Connections. Los productos que de verdad puedes monetizar van por delante del contenido genérico del catálogo.
-3. **Generar pines**: producir imágenes de pin desde plantillas adaptadas al nicho. Las plantillas respetan la categoría (comida, moda, hogar, fitness) y adaptan tipografías, colores y layout por categoría.
-4. **Escribir copy SEO**: título + descripción de pin optimizados para el algoritmo de búsqueda de Pinterest, con URLs etiquetadas como afiliado.
-5. **Programar**: publicar con una cadencia que respete los rate-limits de Pinterest, con jitter integrado y distribución por tablero.
+## Qué hará el motor cuando esté conectado
 
-En otras palabras: el pipeline completo desde "tengo un catálogo de productos" hasta "los pines aterrizan en Pinterest con enlaces de afiliado" sin que toques la UI de Pinterest.
+El motor de publicación que hay detrás del panel ya está construido y probado; una versión posterior lo conecta al espacio. Cuando esté en vivo, una ejecución funciona así:
 
-## Por qué está en roadmap y no en vivo
-
-Las piezas de puntuación + programación de InfluencerButler son lo bastante genéricas como para alimentar Pinterest - ya corren para Deals Butler, Benable Butler y el stack de Instagram. Lo que falta es:
-
-- **Un flujo OAuth de Pinterest** en API Integrations.
-- **Un módulo de generación de pines** (el renderizado visual de plantillas es más complejo que para plataformas basadas en texto).
-- **Un módulo poster** que pilote la API de Pinterest o controle la UI web vía Puppeteer.
-
-Son piezas abordables; sólo no se han construido aún. Que Pinterest Butler salga significa que las tres existen.
+- **Inicio de sesión en el navegador con sesión recordada**: la primera ejecución abre una ventana visible del navegador en Pinterest para que inicies sesión tú (incluida cualquier verificación en dos pasos). La sesión se guarda en una carpeta de perfil dedicada, así que las siguientes ejecuciones la reutilizan en silencio hasta que caduque, y el escáner de Creator Connections y el publicador de pines comparten el mismo inicio de sesión. **En Windows:** `%APPDATA%\InfluencerButler\browser-profiles\sites\pinterest`. **En Mac:** `~/Library/Application Support/InfluencerButler/browser-profiles/sites/pinterest`.
+- **Un tablero por sub-nicho, más como mucho un tablero de cross-pin**: cada pin se guarda en el tablero propio de su sub-nicho (se crea si aún no existe) y, cuando uno de los tableros de cross-pin del nicho coincide con la intención, el modificador o el gancho estacional del pin, en un tablero más. Nunca más de uno: guardar el mismo pin en tres o más tableros en poco tiempo es una señal de spam para Pinterest.
+- **Cinco plantillas de pin**: Cream Grid Classic, Pink Starry, Amazon Finds Classic, Sports Mom Specific y Country Spring, cada una un pin de cuadrícula de productos renderizado con tu tipografía, colores y fondo. Llegarán más plantillas a medida que se aprueben sus briefs de diseño.
+- **Escáner de Creator Connections**: filtra las campañas CC por las palabras clave de tu nicho, registra qué ASINs están en una campaña activa (tasa de bonificación, presupuesto restante, fecha de fin) y pone esos productos primero cuando se monta un pin.
+- **Filtro de validez por nicho y temporada**: una idea de pin solo se conserva cuando su nicho está en temporada este mes, o cuando su gancho estacional es perenne. Un pin de jardinería no sale en enero salvo que sea perenne.
+- **Ritmo de publicación**: al menos 2 horas entre pines, como máximo 15 pines al día, como máximo 3 al día durante tus primeros 14 días publicando, y ningún pin entre la 1am y las 6am de tu hora local. Un pin que todavía no está permitido se aplaza al siguiente hueco permitido en lugar de descartarse.
+- **Reintentos y vigilante**: las ejecuciones de pin fallidas se pueden reintentar con un clic, y un vigilante vuelve a comprobar los pines programados de forma nativa en Pinterest y marca los que hayan desaparecido antes de su fecha.
+- **Marcador local**: pines, guardados y clics salientes de lo que va de mes frente al mismo periodo del mes anterior, calculados desde una base de datos en tu ordenador. No se envía nada a nuestros servidores.
 
 ## Qué puedes hacer hoy
 
-Nada dentro de Pinterest Butler. Mientras esperas:
+- **Lee la vista previa** en el espacio para saber qué viene.
+- **Cura tus Idea Lists de Amazon**: el motor de pines lee de ellas. Cuanto más limpias estén, mejor se verán las primeras ejecuciones.
+- **Prepara tu cuenta de Pinterest**: una cuenta de empresa con unos cuantos tableros ya en tu nicho le da al motor un punto de partida razonable.
+- **Consejo**: si la publicación automática en Pinterest de la propia Amazon está activada para tu tienda, ponla en Borrador en lugar de Publicar antes de que Pinterest Butler entre en vivo, para que el mismo producto no se pinee dos veces.
 
-- **Usa Deals Butler** como el equivalente más cercano en otras plataformas hoy. Sus patrones de plantilla-de-post + programador son lo que Pinterest Butler modelará.
-- **Cura tus datos fuente de Pinterest**: mantén las Idea Lists de Amazon en buen estado. Cuanto más limpia esté esa fuente, mejor pintarán las primeras ejecuciones de Pinterest Butler cuando salga.
-- **Configura el perfil de tu cuenta de Pinterest**: si no tienes una cuenta de creador todavía, móntala ahora. El flujo OAuth que usará Pinterest Butler requiere permisos de nivel creador.
+## Seguir el despliegue
 
-## Seguir el rollout
-
-El botón de navegación del espacio pasará de un panel "coming soon" a una UI funcional cuando Pinterest Butler salga. Vigila las notas de versión de la app (Ajustes → Acerca de → Notas de versión) o el feed de la comunidad de Help & Tutorials para el anuncio.
+La insignia de beta se queda en el botón de navegación hasta que el generador y el publicador estén conectados al panel. Vigila las notas de versión de la app (Ajustes > Acerca de > Notas de versión), el aviso de Novedades tras una actualización o el feed de la comunidad de Help & Tutorials para el anuncio.
 
 ## Relacionado
 
-- [Tutorial de Deals Butler](/help/tutorials/deals) - el equivalente más cercano por ahora. Pinterest Butler seguirá este patrón.
+- [Tutorial de Deals Butler](/help/tutorials/deals) - el equivalente más cercano por ahora. Pinterest Butler sigue el mismo patrón de plantilla de post + programador.
 - [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) - una de las fuentes de datos planeadas para Pinterest Butler.
-- [Tutorial de API Integrations](/help/tutorials/api-integrations) - donde aterrizará el OAuth de Pinterest una vez cableado.

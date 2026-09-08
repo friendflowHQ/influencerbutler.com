@@ -71,14 +71,23 @@ Una vez que se vea bien, vuelve a activar **Process All** para toda la bibliotec
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 
-## Publica en el idioma de cada país
+## Traducción y doblaje con IA para cada mercado
 
-Cuando expandes un vídeo a un mercado no anglófono, puedes publicarlo en el idioma de ese país en lugar de en inglés. Abre **Localiza para cada mercado** y actívalo. A partir de entonces, para cada destino no anglófono Video Reload Butler:
+Cuando expandes un vídeo a un mercado no anglófono, Video Reload Butler puede publicarlo en el idioma de ese país. Abre la tarjeta **Localiza para cada mercado** y pon **Habilitado** en Habilitado. Después elige:
 
-- **Traduce el título de la publicación** al idioma del mercado antes de escribirlo en el compositor.
-- **Incrusta subtítulos en el idioma local en el vídeo** cuando los Subtítulos están activados. Transcribe el audio una vez y luego traduce e incrusta una copia por idioma, de modo que una publicación en alemán lleva subtítulos en alemán y una en japonés lleva subtítulos en japonés.
+- **Traducir el título de la publicación**: activado por defecto. El título se traduce al idioma del mercado antes de escribirlo en el compositor.
+- **Para cada mercado: Solo título**: el vídeo se publica sin cambios; solo se traduce el título.
+- **Para cada mercado: Subtítulos traducidos**: el audio se transcribe una vez y luego se traduce e incrusta como subtítulos por idioma, de modo que una publicación en alemán lleva subtítulos en alemán y una en japonés lleva subtítulos en japonés. Requiere tener activados los **Subtítulos** más arriba; la tarjeta te lo recuerda si están apagados.
+- **Para cada mercado: Doblaje con IA (reemplaza el audio)**: la transcripción se traduce y la lee una voz de IA, y ese nuevo audio sustituye a la pista original para ese mercado.
+- **Voz del doblaje**: aparece al elegir el doblaje con IA. Elige Alloy, Echo, Fable, Onyx, Nova o Shimmer.
+- **Idioma de origen**: el idioma en el que está hablado tu vídeo (inglés por defecto). Los mercados que comparten ese idioma se publican sin cambios.
 
-Los mercados en inglés (US, CA, UK, AU, SG) se publican sin cambios, y los mercados que comparten idioma reutilizan la misma traducción y codificación, así que expandir a varios países sigue siendo rápido. La traducción usa tu propia clave de OpenAI de **Integraciones de API** y consume una pequeña cantidad de tokens por ejecución, por lo que está desactivada por defecto.
+Algunas cosas que conviene saber:
+
+- Los mercados en inglés (US, CA, UK, AU, SG) se publican sin cambios, y los mercados que comparten idioma reutilizan la misma traducción y el mismo archivo, así que expandir a varios países sigue siendo rápido.
+- La traducción, la transcripción y el doblaje usan tu propia clave de OpenAI de **Integraciones de API** y consumen tokens por ejecución; por eso la tarjeta está desactivada por defecto. El audio doblado se guarda en caché: volver a ejecutar el mismo vídeo con la misma voz no vuelve a cobrar.
+- Si el doblaje con IA está activado pero no hay clave de OpenAI configurada, el registro de la ejecución te avisa una vez y el vídeo se publica con su audio original, que las tiendas no anglófonas pueden rechazar. Si el doblaje falla en un fragmento, ese fragmento se omite; si no llega audio en absoluto, se conserva el audio original.
+- ¿Subtítulos o doblaje? Los subtítulos conservan tu voz real y cuestan menos, pero el espectador tiene que leer. El doblaje suena nativo y funciona con el sonido activado, pero sustituye tu voz por una sintética y cuesta más por ejecución. Empieza con subtítulos y pasa al doblaje en los mercados donde importe.
 
 ## Opciones de etiquetado de productos
 

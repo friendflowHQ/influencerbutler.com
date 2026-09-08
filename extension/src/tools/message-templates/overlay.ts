@@ -4,23 +4,23 @@ import type { DesktopTemplate } from "../../transport/hud-commands";
 import type { Settings } from "../../storage/schema";
 import { findComposer, findMessagesWidget, findThreadHeader, readThreadBrand } from "./selectors";
 import { buildToolbar, HOST_CLASS, type ToolbarContext } from "./toolbar";
+import { subscribeMessagesWidget } from "../cc-widget/observer";
 
 // Message Templates: a Save + one-click "load a template into the message"
 // toolbar on the Creator Connections Messages composer. Saves templates locally
 // and merges in the desktop app's own templates (read over the bridge) so both
 // sides share one library. Like Brand Keywords, this lives on the same floating
 // Messages widget that mounts, unmounts, and toggles between a list and a thread
-// on the /p/connect/* route, so it owns a scoped MutationObserver rather than
-// hanging off a page type, and is torn down explicitly on every SPA navigation.
+// on the /p/connect/* route, so it subscribes to the shared Messages-widget
+// observer (tools/cc-widget/observer.ts) rather than hanging off a page type,
+// and is torn down explicitly on every SPA navigation.
 
-// Coalesce React's burst of mutations into one sweep.
-const SWEEP_DEBOUNCE_MS = 250;
 // Do not refetch the desktop template store more often than this when the panel
 // is reopened (the picker reads the cached copy each time it opens).
 const REFETCH_THROTTLE_MS = 60_000;
 
-let observer: MutationObserver | null = null;
-let debounceTimer: number | null = null;
+// Unsubscribes from the shared widget observer; null when not initialised.
+let unsubscribe: (() => void) | null = null;
 // Bumped on every init so a sweep that awaited the bridge across an SPA re-entry
 // can tell it lost and bail before touching the new page's DOM.
 let epoch = 0;
@@ -35,18 +35,14 @@ let lastFetchAt = 0;
 export function initMessageTemplates(_settings: Settings): void {
   teardownMessageTemplates();
   const myEpoch = ++epoch;
-  observer = new MutationObserver(() => scheduleSweep(myEpoch));
-  observer.observe(document.body, { childList: true, subtree: true });
-  scheduleSweep(myEpoch);
+  // The shared observer debounces the mutation burst and runs an initial pass
+  // in case the widget is already open on entry, so the callback sweeps directly.
+  unsubscribe = subscribeMessagesWidget(() => runSweep(myEpoch));
 }
 
 export function teardownMessageTemplates(): void {
-  observer?.disconnect();
-  observer = null;
-  if (debounceTimer !== null) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
+  unsubscribe?.();
+  unsubscribe = null;
   epoch += 1;
   desktopTemplates = [];
   desktopValues = {};
@@ -55,13 +51,9 @@ export function teardownMessageTemplates(): void {
   for (const host of Array.from(document.querySelectorAll(`.${HOST_CLASS}`))) host.remove();
 }
 
-function scheduleSweep(myEpoch: number): void {
-  if (debounceTimer !== null) return;
-  debounceTimer = window.setTimeout(() => {
-    debounceTimer = null;
-    if (myEpoch !== epoch) return;
-    void sweep(myEpoch).catch((error) => log("message-templates", "sweep failed", error));
-  }, SWEEP_DEBOUNCE_MS);
+function runSweep(myEpoch: number): void {
+  if (myEpoch !== epoch) return;
+  void sweep(myEpoch).catch((error) => log("message-templates", "sweep failed", error));
 }
 
 async function sweep(myEpoch: number): Promise<void> {

@@ -1,9 +1,11 @@
 import { copyButton, el, getQuickBar } from "../../ui/components";
 import { resolveLocale } from "../../i18n";
+import { CATALOG as I18N } from "../../i18n/catalog";
 import { getState } from "../../storage/store";
 import { sendToBackground, type GenerateLinkResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { cleanLink } from "../../integrations/clean-link";
+import { retailerFromHost } from "../../shared/retailer";
 
 // Pinned quick-links bar under the HUD header: the two link actions creators
 // reach for most, without scrolling past every other tool section.
@@ -74,13 +76,15 @@ async function copyToClipboard(text: string): Promise<void> {
   }
 }
 
-// Fill a readout group with the resulting url (plus a re-copy button) and an
-// optional note line. Replaces any previous contents so repeat clicks refresh.
-function showUrl(group: HTMLElement, url: string, note?: string): void {
+// Fill a readout group with the resulting url (plus a re-copy button), an
+// optional notice line, and an optional small muted note. Replaces any previous
+// contents so repeat clicks refresh.
+function showUrl(group: HTMLElement, url: string, note?: string, mutedNote?: string): void {
   const readout = el("div", "link-readout");
   readout.append(el("span", "link-readout-url", url), copyButton(url));
   const children: HTMLElement[] = [readout];
   if (note) children.push(el("p", "link-notice", note));
+  if (mutedNote) children.push(el("p", "affiliate-note", mutedNote));
   group.replaceChildren(...children);
   group.hidden = false;
 }
@@ -88,7 +92,14 @@ function showUrl(group: HTMLElement, url: string, note?: string): void {
 export async function renderQuickLinks(signals: ProductSignals): Promise<void> {
   if (!signals.asin) return;
   const state = await getState();
-  const s = CATALOG[resolveLocale(state.settings.locale)] ?? EN;
+  const locale = resolveLocale(state.settings.locale);
+  const s = CATALOG[locale] ?? EN;
+  // "Opens in the Amazon app on phones": only when the setting is on and this
+  // is an Amazon product (the params are Amazon's own SiteStripe share params).
+  const appOpensNote =
+    state.integrations.global.appOpeningLinks !== false && retailerFromHost(signals.marketplace) === "amazon"
+      ? I18N[locale].appOpensNote
+      : undefined;
 
   const bar = getQuickBar();
   // The bar is a shared singleton in the sticky topbar; build its contents once.
@@ -129,7 +140,12 @@ export async function renderQuickLinks(signals: ProductSignals): Promise<void> {
     }).then(async (result) => {
       if (result.ok && result.url) {
         await copyToClipboard(result.url);
-        showUrl(getOut, result.url, result.notice === "signInRequired" ? s.signInNote : undefined);
+        showUrl(
+          getOut,
+          result.url,
+          result.notice === "signInRequired" ? s.signInNote : undefined,
+          appOpensNote,
+        );
         getBtn.textContent = s.copied;
       } else {
         getBtn.textContent = s.getFailed;

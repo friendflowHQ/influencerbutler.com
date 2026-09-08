@@ -32,6 +32,9 @@ import {
   type RadarThresholds,
 } from "./score";
 import { openCampaignBrief } from "./campaign-brief-panel";
+import { runAcceptOnPage } from "./accept-runner";
+import { describeAcceptResult } from "../campaigns/accept";
+import type { AcceptOutcome } from "../../shared/messages";
 import type { Settings } from "../../storage/schema";
 
 // Campaign Radar overlay: score and highlight the campaigns on the Creator
@@ -75,6 +78,10 @@ type Row = {
   // Whether the Butler is watching this campaign for Last Call (the bell state).
   // Seeded from the background watchlist, flipped optimistically on toggle.
   watched: boolean;
+  // In-page accept (the Accept pill / Brief modal): idle until clicked, then
+  // working, then what Amazon's card confirmed, or failed with a reason line.
+  acceptState: "idle" | "working" | "accepted" | "pending" | "failed";
+  acceptNote: string | null;
 };
 
 // The viewport observer driving lazy availability lookups. Module-level so a
@@ -99,6 +106,11 @@ let lastCallEnabled = false;
 // Whether Campaign Butler ("The Butler's Brief") is on for this run, so the
 // badge can decide whether to draw the "Brief" button. Set at the top of init.
 let campaignButlerEnabled = false;
+
+// Whether the standalone accept tool is on (settings with remote flags
+// applied), so the badge can draw the "Accept campaign" pill and the Brief's
+// Accept can run through the accept runner. Set at the top of init.
+let standaloneAcceptEnabled = false;
 
 // Init epoch: initCampaignRadar awaits between its teardown and its mounting,
 // so two SPA-triggered runs can interleave and BOTH mount (seen live as two
@@ -138,6 +150,7 @@ export async function initCampaignRadar(
 
   lastCallEnabled = settings.tools.lastCallButler;
   campaignButlerEnabled = settings.tools.campaignButler;
+  standaloneAcceptEnabled = settings.tools.standaloneAccept;
 
   // Merge the campaign fill / capacity captured from the API (Last Call). Fill is
   // not in the card DOM, so this is how each card learns how full it is.
@@ -183,6 +196,8 @@ export async function initCampaignRadar(
       watched: settings.tools.lastCallButler && campaign.campaignId !== null
         ? watchedIds.has(campaign.campaignId)
         : false,
+      acceptState: "idle",
+      acceptNote: null,
     };
     // Badge onto the stats block so the score sits next to the numbers it
     // explains; outline/dim/filter target `el`, the full visual card.
@@ -343,7 +358,28 @@ function renderBadge(row: Row): void {
   if (lastCallEnabled && row.campaign.campaignId) scoreRow.append(renderWatchBell(row));
   // Campaign Butler: open the on-demand "Butler's Brief" for this campaign.
   if (campaignButlerEnabled) scoreRow.append(renderBriefButton(row));
+  // Standalone accept: an "Accept campaign" pill beside Brief, for a card that
+  // still has its native Accept button. We are already on the grid, so the
+  // accept runs in-page (no tab).
+  if (
+    standaloneAcceptEnabled &&
+    row.campaign.campaignId &&
+    (row.acceptState === "idle" || row.acceptState === "failed") &&
+    hasNativeAccept(row.campaign.el)
+  ) {
+    scoreRow.append(renderAcceptPill(row));
+  }
   body.append(scoreRow);
+
+  if (row.acceptState === "working") {
+    body.append(el("span", "tile-chip", t().acceptWorking));
+  } else if (row.acceptState === "accepted" || row.acceptState === "pending") {
+    body.append(
+      el("span", "tile-chip good", row.acceptState === "pending" ? t().acceptPending : t().acceptAccepted),
+    );
+  } else if (row.acceptState === "failed" && row.acceptNote) {
+    body.append(el("span", "tile-chip bad", row.acceptNote));
+  }
 
   // Last Call fill meter: how full the campaign is (creator slots claimed vs
   // cap). Fill lives only in the API capture, so a card without it simply shows
@@ -495,6 +531,63 @@ async function toggleWatch(row: Row): Promise<void> {
   }
 }
 
+// ---- Standalone accept: the Accept pill ---------------------------------------
+
+function hasNativeAccept(cardEl: HTMLElement): boolean {
+  return !!cardEl.querySelector('[data-testid$="-campaign-card-accept-btn"]');
+}
+
+// Same quiet outlined-pill look as the Brief button, so the two read as one
+// action row beside the score.
+function renderAcceptPill(row: Row): HTMLElement {
+  const btn = el("button", "radar-accept-btn", t().acceptStandalone);
+  btn.type = "button";
+  btn.title = t().acceptStandalone;
+  btn.style.border = "1px solid #16a34a";
+  btn.style.background = "transparent";
+  btn.style.color = "#15803d";
+  btn.style.cursor = "pointer";
+  btn.style.fontSize = "11px";
+  btn.style.fontWeight = "700";
+  btn.style.lineHeight = "1";
+  btn.style.padding = "3px 8px";
+  btn.style.borderRadius = "999px";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void acceptInPage(row);
+  });
+  return btn;
+}
+
+// Drive the card's own Accept button through the accept runner (click, confirm
+// any dialog, read the card's confirmation), then record the accept in the
+// daily ledger. Shared by the pill and the Brief modal's Accept.
+async function acceptInPage(row: Row): Promise<void> {
+  const campaignId = row.campaign.campaignId;
+  if (!campaignId || row.acceptState === "working") return;
+  row.acceptState = "working";
+  row.acceptNote = null;
+  renderBadge(row);
+  let outcome: AcceptOutcome;
+  try {
+    outcome = await runAcceptOnPage(campaignId);
+  } catch (error) {
+    log("campaign-radar", "in-page accept failed", error);
+    outcome = { ok: false, reason: "error" };
+  }
+  if (outcome.ok) {
+    row.acceptState = outcome.state;
+    void sendToBackground({ kind: "RECORD_ACCEPT", campaignId, source: "manual" }).catch(
+      () => undefined,
+    );
+  } else {
+    row.acceptState = "failed";
+    row.acceptNote = describeAcceptResult({ ...outcome, route: "standalone" });
+  }
+  renderBadge(row);
+}
+
 // ---- Campaign Butler: The Butler's Brief ------------------------------------
 
 // The "Brief" chip on a card badge. Opens the on-demand advisory panel. Kept
@@ -551,10 +644,19 @@ function openBrief(row: Row): void {
     locale: getLocale(),
   };
 
-  // Wire "Accept campaign" to the card's own native accept button when present.
+  // Wire "Accept campaign" to the card's own native accept button when present:
+  // through the accept runner (click + confirm + read back, recorded in the
+  // ledger) when the standalone tool is on and the card has an id, else a plain
+  // click on the native button.
   const acceptBtn = campaign.el.querySelector<HTMLElement>(
     '[data-testid$="-campaign-card-accept-btn"]',
   );
+  const onAccept = acceptBtn
+    ? () => {
+        if (standaloneAcceptEnabled && campaign.campaignId) void acceptInPage(row);
+        else acceptBtn.click();
+      }
+    : null;
 
   openCampaignBrief({
     brand: campaign.brand,
@@ -563,7 +665,7 @@ function openBrief(row: Row): void {
     locale: getLocale(),
     request: () =>
       sendToBackground<CampaignBriefResult>({ kind: "GET_CAMPAIGN_BRIEF", signals }),
-    onAccept: acceptBtn ? () => acceptBtn.click() : null,
+    onAccept,
     watched: row.watched,
     onToggleWatch:
       campaign.campaignId !== null

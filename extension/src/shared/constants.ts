@@ -335,3 +335,48 @@ export const DEAL_WORKSPACES: ReadonlyArray<{ key: string; label: string }> = [
   { key: "prime-day", label: "Prime Day Butler" },
   { key: "black-friday", label: "Black Friday Butler" },
 ];
+
+// Standalone campaign accept (no desktop app). The extension drives Amazon's
+// OWN Accept button on the campaign's page in a background tab (never a replay
+// of Amazon's accept API): open the campaign, wait for the tab's content script
+// to report ready, ask it to click Accept, read the outcome, close the tab. One
+// accept tab at a time. The desktop bridge stays the preferred route when the
+// app is paired; this is the fallback for creators without the app.
+//
+// The single-campaign detail URL is UNVERIFIED: the one observed live shape is
+// /p/connect/request?creatorId=<creator>&adId=<campaignId>&type=<tab> (see
+// content/page-type.test.ts), and we do not know the creator id, so we pass
+// the campaign id as both adId and campaignId and rely on the runner's grid
+// fallback (background/campaign-accept.ts) when the page does not resolve.
+export const ACCEPT_TAB_DWELL_MS = 30_000;
+// After a robot-check page, stop opening accept tabs for this long so a
+// blocked session is not hammered.
+export const ACCEPT_BLOCK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+// Own storage keys (no schema bump, like UPDATE_STORAGE_KEY): the daily accept
+// ledger and the robot-check cooldown stamp.
+export const ACCEPT_LEDGER_KEY = "ib-accept-ledger";
+export const ACCEPT_COOLDOWN_KEY = "ib-accept-cooldown";
+// Rule-based accept ("accept campaigns that match rules you set"): an OPT-IN
+// pass that rides the Last Call poll tab (background/last-call.ts). Once the
+// grid's fill report lands, the worker asks the tab to run the creator's rules
+// (tools/campaign-radar/auto-accept.ts) and keeps the tab open this long for
+// the clicks to finish; the tab reports AUTO_ACCEPT_DONE and is closed.
+export const AUTO_ACCEPT_TAB_DWELL_MS = 60_000;
+// A human-paced gap between two accepts in one run (jittered in this range).
+export const AUTO_ACCEPT_DELAY_MIN_MS = 4_000;
+export const AUTO_ACCEPT_DELAY_MAX_MS = 9_000;
+// The absolute ceiling on accepts per day from the rule-based pass, whatever
+// the creator types into the daily-cap field (settings clamp to 1..this).
+export const AUTO_ACCEPT_DAILY_HARD_CAP = 20;
+// Per-run cap ceiling: a run must finish inside AUTO_ACCEPT_TAB_DWELL_MS, and
+// each accept can take up to ~27s (jitter + find + confirm), so more than a
+// few per pass would just time out.
+export const AUTO_ACCEPT_PER_RUN_HARD_CAP = 5;
+// The accept ledger keeps a rolling history of every accepted campaign id this
+// long, so the rule-based pass never re-tries a campaign it already took
+// (Amazon may keep showing an accepted card with a "pending" state).
+export const ACCEPT_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
+export const CAMPAIGN_DETAIL_URL = (campaignId: string): string =>
+  `https://affiliate-program.amazon.com/p/connect/request?adId=${encodeURIComponent(
+    campaignId,
+  )}&campaignId=${encodeURIComponent(campaignId)}&type=affiliate-plus`;

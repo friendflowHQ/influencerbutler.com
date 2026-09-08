@@ -48,6 +48,25 @@ describe("cleanLink: Walmart", () => {
 });
 
 describe("cleanLink: fallback strip", () => {
+  it("scrubs the app-opening params off a product url (canonical rebuild)", () => {
+    const r = cleanLink(
+      "https://www.amazon.com/dp/B01JGG5CH4?tag=someoneelse-20&linkCode=ssc&creativeASIN=B01JGG5CH4",
+    );
+    expect(r.matched).toBe(true);
+    expect(r.cleanUrl).toBe("https://www.amazon.com/dp/B01JGG5CH4");
+  });
+
+  it("strips linkCode and creativeASIN off a non-product url on the fallback path", () => {
+    const r = cleanLink(
+      "https://www.amazon.com/s?k=air+fryer&linkCode=ssc&creativeASIN=B01JGG5CH4&camp=1789",
+    );
+    expect(r.matched).toBe(false);
+    expect(r.cleanUrl).toContain("k=air+fryer");
+    expect(r.cleanUrl).not.toContain("linkCode");
+    expect(r.cleanUrl).not.toContain("creativeASIN");
+    expect(r.cleanUrl).not.toContain("camp=");
+  });
+
   it("strips known trackers off a retailer non-product url without a canonical rebuild", () => {
     const r = cleanLink(
       "https://www.amazon.com/s?k=air+fryer&ref=nb_sb&tag=someoneelse-20&utm_source=ig",

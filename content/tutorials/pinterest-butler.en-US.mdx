@@ -1,47 +1,40 @@
 ---
 title: Pinterest Butler: Pinterest pin generation + scheduling (coming soon)
-summary: Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, render niche-aware templates, write SEO copy, and schedule posts.
+summary: Beta workspace: the panel is a preview and nothing posts to Pinterest yet. What the pin engine will do once it is wired up, what you can do today, and how to follow the rollout.
 category: Other
 ---
 
-> **Roadmap workspace.** Pinterest Butler is scaffolded in the dashboard but not yet functional. The nav button is visible so you can see what's coming; the workspace renders a "coming soon" panel rather than a working UI. Don't expect production behavior yet.
+> **Beta workspace.** Pinterest Butler sits in the dashboard behind a beta badge, but the workspace panel is a preview only: it explains what is coming and has no controls yet. Nothing posts to Pinterest today, no sign-in is requested, and there is nothing to configure. Do not expect production behavior yet.
 
-## What Pinterest Butler will do
+## What the workspace shows today
 
-When it ships, Pinterest Butler will be Pinterest's equivalent of Deals Butler - an end-to-end content pipeline for the Pinterest side:
+Open **Pinterest Butler** and you get an **In Beta** notice, a short description of what it will be (an end-to-end Pinterest pipeline: ASINs from your Amazon Idea Lists, auto-rendered pins, SEO copy, and scheduled posts, all driven by your active Creator Connections campaigns), and a list of the modules that are shipping. There is no Run button, no settings, and no results table yet.
 
-1. **Source products**: read from your Amazon Idea Lists (curated lists you've built on Amazon) and from Storefront Butler's catalog.
-2. **Prioritize**: rank products by active Creator Connections campaign status. Products you can actually monetize get priority over generic catalog content.
-3. **Generate pins**: produce pin images from niche-aware templates. Templates respect category (food, fashion, home, fitness) and adapt fonts, colors, and layout per category.
-4. **Write SEO copy**: pin title + description optimized for Pinterest's search algorithm, with affiliate-tagged URLs.
-5. **Schedule**: post on a cadence respecting Pinterest's rate limits, with built-in jitter and per-board distribution.
+## What the engine will do once it is wired up
 
-In other words: the full pipeline from "I have a product catalog" to "pins are landing on Pinterest with affiliate links" without you touching the Pinterest UI.
+The posting engine behind the panel is built and tested; a follow-up release connects it to the workspace. When it goes live, a run works like this:
 
-## Why it's roadmap and not live
-
-The scoring + scheduling pieces in InfluencerButler are general-purpose enough to power Pinterest - they already run for Deals Butler, Benable Butler, and the Instagram stack. What's missing is:
-
-- **A Pinterest OAuth flow** in API Integrations.
-- **A pin-generation module** (the visual template rendering is more involved than for text-based platforms).
-- **A poster module** that drives the Pinterest API or Puppeteer-controls the web UI.
-
-These are tractable; they just haven't been built. Pinterest Butler shipping means all three of those exist.
+- **Browser sign-in with a remembered session**: the first run opens a visible browser window on Pinterest so you sign in yourself (including any two-step verification). The session is saved to a dedicated profile folder, so later runs reuse it silently until it expires, and the Creator Connections scanner and the pin poster share the same sign-in. **On Windows:** `%APPDATA%\InfluencerButler\browser-profiles\sites\pinterest`. **On Mac:** `~/Library/Application Support/InfluencerButler/browser-profiles/sites/pinterest`.
+- **One board per sub-niche, plus at most one cross-pin board**: every pin is saved to its sub-niche's own board (created if it does not exist yet) and, when one of the niche's cross-pin boards matches the pin's intent, modifier, or seasonal hook, to one more board. Never more than one: saving the same pin to three or more boards in quick succession is a Pinterest spam signal.
+- **Five pin templates**: Cream Grid Classic, Pink Starry, Amazon Finds Classic, Sports Mom Specific, and Country Spring, each a product-grid pin rendered with your font, colors, and background. More templates arrive as their design briefs are approved.
+- **Creator Connections scanner**: filters CC campaigns by your niche keywords, records which ASINs are in an active campaign (bonus rate, remaining budget, end date), and ranks those products first when a pin is assembled.
+- **Niche and season validity gate**: a pin idea is kept only when its niche is in season this month, or when its seasonal hook is evergreen. A gardening pin does not go out in January unless it is an evergreen one.
+- **Pacing**: at least a 2 hour gap between pins, at most 15 pins per day, at most 3 per day during your first 14 days of posting, and no pins between 1am and 6am your local time. A pin that is not allowed yet is deferred to the next allowed slot rather than dropped.
+- **Retry and watchdog**: failed pin runs can be retried in one click, and a watchdog re-checks pins that were scheduled natively on Pinterest and flags any that vanished before their date.
+- **Local scorecard**: pins, saves, and outbound clicks for this month so far against the same window last month, computed from a database on your computer. Nothing is sent to our servers.
 
 ## What you can do today
 
-Nothing in Pinterest Butler itself. While you wait:
-
-- **Use Deals Butler** for the closest existing equivalent on other platforms. Its post-template + scheduler patterns are what Pinterest Butler will model.
-- **Curate your Pinterest source data**: keep Amazon Idea Lists in good shape. The cleaner that source is, the better Pinterest Butler's first runs will look when it ships.
-- **Set up your Pinterest account profile**: if you don't have a creator account yet, set one up now. The OAuth flow Pinterest Butler will use requires creator-tier permissions.
+- **Read the preview** in the workspace so you know what is coming.
+- **Curate your Amazon Idea Lists**: the pin engine reads from them. The cleaner those lists are, the better the first runs will look.
+- **Get your Pinterest account ready**: a business account with a few boards already in your niche gives the engine somewhere sensible to start.
+- **Tip**: if Amazon's own Pinterest auto-publish is turned on for your storefront, set it to Draft rather than Publish before Pinterest Butler goes live, so the same product does not get pinned twice.
 
 ## Tracking the rollout
 
-The workspace's nav button will switch from a "coming soon" panel to a working UI when Pinterest Butler ships. Watch the app's release notes (Settings → About → Release notes) or the Help & Tutorials community feed for the announcement.
+The beta badge stays on the nav button until the generator and poster are connected to the panel. Watch the app's release notes (Settings > About > Release notes), the What's New toast after an update, or the Help & Tutorials community feed for the announcement.
 
 ## Related
 
-- [Deals Butler tutorial](/help/tutorials/deals) - the closest existing equivalent for now. Pinterest Butler will follow this pattern.
+- [Deals Butler tutorial](/help/tutorials/deals) - the closest existing equivalent for now. Pinterest Butler follows the same post-template + scheduler pattern.
 - [Storefront Butler tutorial](/help/tutorials/storefrontbutler) - one of Pinterest Butler's planned data sources.
-- [API Integrations tutorial](/help/tutorials/api-integrations) - where the Pinterest OAuth will land once it's wired up.

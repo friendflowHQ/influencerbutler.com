@@ -15,6 +15,8 @@ export interface Dict {
   panelSettings: string;
   copy: string;
   copied: string;
+  // Muted note under a copied Amazon link when app-opening links are on.
+  appOpensNote: string;
 
   // Product snapshot card
   snapshotTitle: string;
@@ -263,6 +265,16 @@ export interface Dict {
   lsLengthBand: (median: string, low: string, high: string) => string;
   lsLengthMedian: (median: string) => string;
   lsDurationsUnavailable: string;
+
+  // Track 1.4: competition sentence (first line of the video section) and the
+  // seasonality chip on the sales-rank history row.
+  lsCompeteLine: (n: number, repeat: number, pct: number | null) => string;
+  lsCompeteLinePartial: (n: number, repeat: number, pct: number | null, seen: number, known: number) => string;
+  seasonPeaks: (range: string) => string;
+  seasonSteady: string;
+  seasonWindowTip: (months: number) => string;
+  // 12 three-letter month abbreviations, January first.
+  monthAbbr: string[];
 
   // Per-video passport (longitudinal placement history)
   passportOpen: string;
@@ -903,6 +915,19 @@ export interface Dict {
   syncConfirmExtWins: string;
   syncCancel: string;
   syncDone: string;
+
+  // Standalone campaign accept (no desktop app) + upload-page campaign prompts
+  // (tools/campaigns/accept.ts, tools/campaign-radar/accept-runner.ts,
+  // tools/upload-helper/campaign-prompt.ts).
+  acceptStandalone: string;
+  acceptWorking: string;
+  acceptNeedsSignIn: string;
+  acceptAccepted: string;
+  acceptPending: string;
+  acceptFailed: (reason: string) => string;
+  acceptCooldown: string;
+  uhCampaignAvailable: (asin: string) => string;
+  uhCampaignAcceptTitle: string;
 }
 
 const en: Dict = {
@@ -911,6 +936,7 @@ const en: Dict = {
   panelSettings: "Settings",
   copy: "Copy",
   copied: "Copied",
+  appOpensNote: "Opens in the Amazon app on phones",
 
   snapshotTitle: "Product snapshot",
   snapshotProduct: "Product",
@@ -1158,6 +1184,20 @@ const en: Dict = {
   lsLengthBand: (median, low, high) => `Median ${median} (typical ${low} to ${high})`,
   lsLengthMedian: (median) => `Median ${median}`,
   lsDurationsUnavailable: "Video lengths are not exposed by this listing.",
+
+  // Track 1.4: competition sentence + seasonality chip
+  lsCompeteLine: (n, repeat, pct) =>
+    `You'd compete with ${n} creator${n === 1 ? "" : "s"} (${repeat} repeat${
+      pct === null ? "" : `, top 5 hold ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `You'd compete with at least ${n} creator${n === 1 ? "" : "s"} (${repeat} repeat${
+      pct === null ? "" : `, top 5 hold ${pct}%`
+    }) - ${seen} of ~${known} videos seen`,
+  seasonPeaks: (range) => `Peaks in ${range}`,
+  seasonSteady: "Steady all year",
+  seasonWindowTip: (months) => `Based on ${months} months of rank history`,
+  monthAbbr: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 
   passportOpen: "Placement history",
   passportClose: "Hide history",
@@ -1815,6 +1855,19 @@ const en: Dict = {
   syncConfirmExtWins: "Use the extension's values",
   syncCancel: "Cancel",
   syncDone: "Synced.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Accept campaign",
+  acceptWorking: "Accepting...",
+  acceptNeedsSignIn:
+    "Could not find that campaign. Make sure you are signed in to Amazon Associates in this browser and the campaign is still open.",
+  acceptAccepted: "Campaign accepted.",
+  acceptPending: "Request sent. The brand will confirm.",
+  acceptFailed: (reason) => `Could not accept the campaign (${reason}).`,
+  acceptCooldown:
+    "Amazon asked for a check on the last attempt. Accept is paused for a few hours; you can still accept on the Creator Connections page yourself.",
+  uhCampaignAvailable: (asin) => `${asin} has a campaign you have not joined yet`,
+  uhCampaignAcceptTitle: "Campaigns for the tagged products",
 };
 
 const es: Dict = {
@@ -1823,6 +1876,7 @@ const es: Dict = {
   panelSettings: "Ajustes",
   copy: "Copiar",
   copied: "Copiado",
+  appOpensNote: "Se abre en la app de Amazon en el móvil",
 
   snapshotTitle: "Resumen del producto",
   snapshotProduct: "Producto",
@@ -2070,6 +2124,20 @@ const es: Dict = {
   lsLengthBand: (median, low, high) => `Mediana ${median} (típico de ${low} a ${high})`,
   lsLengthMedian: (median) => `Mediana ${median}`,
   lsDurationsUnavailable: "Este listado no expone la duración de los videos.",
+
+  // Track 1.4: frase de competencia + chip de estacionalidad
+  lsCompeteLine: (n, repeat, pct) =>
+    `Competirías con ${n} creador${n === 1 ? "" : "es"} (${repeat} recurrente${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, los 5 principales tienen el ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `Competirías con al menos ${n} creador${n === 1 ? "" : "es"} (${repeat} recurrente${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, los 5 principales tienen el ${pct}%`
+    }) - ${seen} de ~${known} videos vistos`,
+  seasonPeaks: (range) => `Picos en ${range}`,
+  seasonSteady: "Estable todo el año",
+  seasonWindowTip: (months) => `Basado en ${months} meses de historial de ranking`,
+  monthAbbr: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
 
   passportOpen: "Historial de colocación",
   passportClose: "Ocultar historial",
@@ -2727,6 +2795,19 @@ const es: Dict = {
   syncConfirmExtWins: "Usar los valores de la extensión",
   syncCancel: "Cancelar",
   syncDone: "Sincronizado.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Aceptar campaña",
+  acceptWorking: "Aceptando...",
+  acceptNeedsSignIn:
+    "No se encontró esa campaña. Asegúrate de haber iniciado sesión en Amazon Associates en este navegador y de que la campaña siga abierta.",
+  acceptAccepted: "Campaña aceptada.",
+  acceptPending: "Solicitud enviada. La marca la confirmará.",
+  acceptFailed: (reason) => `No se pudo aceptar la campaña (${reason}).`,
+  acceptCooldown:
+    "Amazon pidió una verificación en el último intento. Aceptar queda en pausa unas horas; puedes aceptar tú mismo en la página de Creator Connections.",
+  uhCampaignAvailable: (asin) => `${asin} tiene una campaña a la que aún no te has unido`,
+  uhCampaignAcceptTitle: "Campañas de los productos etiquetados",
 };
 
 const fr: Dict = {
@@ -2735,6 +2816,7 @@ const fr: Dict = {
   panelSettings: "Paramètres",
   copy: "Copier",
   copied: "Copié",
+  appOpensNote: "S'ouvre dans l'application Amazon sur mobile",
 
   snapshotTitle: "Aperçu du produit",
   snapshotProduct: "Produit",
@@ -2982,6 +3064,20 @@ const fr: Dict = {
   lsLengthBand: (median, low, high) => `Médiane ${median} (typique de ${low} à ${high})`,
   lsLengthMedian: (median) => `Médiane ${median}`,
   lsDurationsUnavailable: "Cette fiche n'expose pas la durée des vidéos.",
+
+  // Track 1.4: phrase de concurrence + puce de saisonnalité
+  lsCompeteLine: (n, repeat, pct) =>
+    `Vous seriez en concurrence avec ${n} créateur${n === 1 ? "" : "s"} (${repeat} récurrent${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, les 5 premiers détiennent ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `Vous seriez en concurrence avec au moins ${n} créateur${n === 1 ? "" : "s"} (${repeat} récurrent${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, les 5 premiers détiennent ${pct}%`
+    }) - ${seen} vidéos vues sur ~${known}`,
+  seasonPeaks: (range) => `Pics en ${range}`,
+  seasonSteady: "Stable toute l'année",
+  seasonWindowTip: (months) => `Basé sur ${months} mois d'historique de classement`,
+  monthAbbr: ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
 
   passportOpen: "Historique de placement",
   passportClose: "Masquer l'historique",
@@ -3639,6 +3735,19 @@ const fr: Dict = {
   syncConfirmExtWins: "Utiliser les valeurs de l'extension",
   syncCancel: "Annuler",
   syncDone: "Synchronisé.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Accepter la campagne",
+  acceptWorking: "Acceptation...",
+  acceptNeedsSignIn:
+    "Campagne introuvable. Vérifiez que vous êtes connecté à Amazon Associates dans ce navigateur et que la campagne est toujours ouverte.",
+  acceptAccepted: "Campagne acceptée.",
+  acceptPending: "Demande envoyée. La marque confirmera.",
+  acceptFailed: (reason) => `Impossible d'accepter la campagne (${reason}).`,
+  acceptCooldown:
+    "Amazon a demandé une vérification lors de la dernière tentative. L'acceptation est en pause quelques heures; vous pouvez toujours accepter vous-même sur la page Creator Connections.",
+  uhCampaignAvailable: (asin) => `${asin} a une campagne que vous n'avez pas encore rejointe`,
+  uhCampaignAcceptTitle: "Campagnes des produits tagués",
 };
 
 export type Locale = "en" | "es" | "fr";
