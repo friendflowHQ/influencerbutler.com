@@ -98,6 +98,7 @@ export default function AdminEventsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
+  const [rearmingId, setRearmingId] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     try {
@@ -222,6 +223,23 @@ export default function AdminEventsPage() {
       body: JSON.stringify({ id }),
     });
     if (res.ok) await refetch();
+  };
+
+  const rearmRecording = async (id: string) => {
+    setRearmingId(id);
+    setMessage("Retrying recording...");
+    try {
+      const res = await fetch("/api/admin/events/rearm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setMessage(res.ok ? "Recording re-armed." : data.error || "Could not re-arm recording.");
+      await refetch();
+    } finally {
+      setRearmingId(null);
+    }
   };
 
   if (forbidden) {
@@ -492,6 +510,16 @@ export default function AdminEventsPage() {
                   >
                     Edit
                   </button>
+                  {e.status === "scheduled" && e.recordEnabled && e.recordingStatus === "failed" ? (
+                    <button
+                      type="button"
+                      onClick={() => rearmRecording(e.id)}
+                      disabled={rearmingId === e.id}
+                      className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                    >
+                      {rearmingId === e.id ? "Retrying..." : "Retry recording"}
+                    </button>
+                  ) : null}
                   {e.status === "scheduled" ? (
                     <button
                       type="button"
