@@ -41,6 +41,12 @@ export default function AffiliatesLandingPage() {
               Blog
             </Link>
             <Link
+              href="/leaderboard"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Leaderboard
+            </Link>
+            <Link
               href="/download"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
@@ -101,6 +107,16 @@ export default function AffiliatesLandingPage() {
               Affiliate login
             </Link>
           </div>
+
+          <p className="mt-6 text-sm text-slate-600">
+            Running our end-of-month push?{" "}
+            <Link
+              href="/leaderboard"
+              className="font-semibold text-[#c2410c] underline underline-offset-2 hover:text-[#9a3412]"
+            >
+              See the Top Affiliates leaderboard →
+            </Link>
+          </p>
 
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[

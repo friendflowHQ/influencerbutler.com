@@ -1,0 +1,16 @@
+{
+  "lastUpdated": "2026-09-08",
+  "challenge": {
+    "headline": "September Referral Sprint",
+    "reward": "Refer 15 signups before October 1 and get 6 months of Butler free",
+    "deadline": "2026-10-01T23:59:00-06:00",
+    "applyHref": "/affiliates/apply"
+  },
+  "entries": [
+    { "rank": 1, "name": "@amazonwithamber", "referrals": 41, "trend": "up" },
+    { "rank": 2, "name": "@thedealdiva", "referrals": 33, "trend": "up" },
+    { "rank": 3, "name": "Marcus T.", "referrals": 28, "trend": "down" },
+    { "rank": 4, "name": "@creatorsidehustle", "referrals": 19, "trend": "new" },
+    { "rank": 5, "name": "Priya K.", "referrals": 12, "trend": "up" }
+  ]
+}
