@@ -73,6 +73,10 @@ export default function AdminExtensionFeedbackPage() {
   const [version, setVersion] = useState("");
   const [note, setNote] = useState("");
 
+  // Backfill the pre-mirror backlog into the D1 support inbox.
+  const [backfillBusy, setBackfillBusy] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
+
   const load = useCallback(async (which: Status | "all", type: string) => {
     setLoading(true);
     setFetchError(null);
@@ -136,6 +140,37 @@ export default function AdminExtensionFeedbackPage() {
     }
   };
 
+  const runBackfill = async () => {
+    setBackfillBusy(true);
+    setBackfillMsg(null);
+    try {
+      const res = await fetch("/api/admin/extension-feedback/backfill-d1", { method: "POST" });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        filed?: number;
+        failed?: number;
+        remaining?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setBackfillMsg(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      const filed = json.filed ?? 0;
+      const failed = json.failed ?? 0;
+      const remaining = json.remaining ?? 0;
+      setBackfillMsg(
+        remaining > 0
+          ? `Sent ${filed} to the support inbox${failed ? `, ${failed} failed` : ""}. ${remaining} still to go: click again to continue.`
+          : `Done. The backlog is in the support inbox${failed ? ` (${failed} failed, click again to retry)` : ""}.`,
+      );
+    } catch {
+      setBackfillMsg("Network error.");
+    } finally {
+      setBackfillBusy(false);
+    }
+  };
+
   if (forbidden) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -153,6 +188,22 @@ export default function AdminExtensionFeedbackPage() {
         report surfaces it in their post-update &ldquo;What&rsquo;s New&rdquo; notice as an issue you
         fixed, so write the note for them to read.
       </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex-1 text-sm text-slate-600">
+          <span className="font-medium text-slate-800">Backlog to support inbox.</span> Send older
+          extension bug/feature/question reports into the main support inbox so you can reply to them
+          in one place. New reports go there automatically.
+        </div>
+        <button
+          onClick={runBackfill}
+          disabled={backfillBusy}
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60"
+        >
+          {backfillBusy ? "Sending..." : "Send backlog"}
+        </button>
+      </div>
+      {backfillMsg ? <p className="mt-2 text-sm text-slate-600">{backfillMsg}</p> : null}
 
       {migrationPending ? (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

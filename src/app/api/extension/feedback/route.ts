@@ -14,6 +14,7 @@ import { submitSupportTicket } from "@/lib/support-worker";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   cleanString,
+  isMissingColumnError,
   isMissingTableError,
   jsonWithCors,
   migrationPendingResponse,
@@ -154,7 +155,21 @@ export async function POST(request: Request) {
         platform: "extension",
         appVersion: cleanString(input.ext_version, 20) || undefined,
       });
-      if (filed.ok && filed.id) d1Id = filed.id;
+      if (filed.ok && filed.id) {
+        d1Id = filed.id;
+        // Link the Supabase row to its D1 ticket so the backlog backfill skips
+        // it. Best-effort and tolerant of the d1_ticket_id column not being
+        // applied yet (the mirror still worked; only the link is deferred).
+        if (data?.id) {
+          const { error: linkErr } = await admin
+            .from("extension_feedback")
+            .update({ d1_ticket_id: d1Id })
+            .eq("id", data.id);
+          if (linkErr && !isMissingColumnError(linkErr)) {
+            console.error("extension/feedback: d1_ticket_id link failed", linkErr);
+          }
+        }
+      }
     } catch (err) {
       console.error("extension/feedback: D1 mirror failed", err);
     }
