@@ -70,6 +70,54 @@ export async function callSupportWorker<T = unknown>(
 }
 
 /**
+ * Proxy a PER-USER feedback-Worker call, forwarding the caller's OWN Bearer
+ * license key (not the bot token). Used by the extension-facing /replies routes:
+ * the Worker verifies the license itself and matches ticket ownership by
+ * hash/email, so the site is a thin authenticated pass-through. `authorization`
+ * is the incoming request's Authorization header (already "Bearer <key>").
+ */
+export async function callFeedbackWorkerAsUser<T = unknown>(
+  path: string,
+  authorization: string,
+  init?: { method?: "GET" | "POST"; body?: unknown },
+): Promise<SupportWorkerResult<T>> {
+  const method = init?.method || "GET";
+  const url = `${workerBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  const headers: Record<string, string> = {};
+  if (authorization) headers.authorization = authorization;
+  if (init?.body !== undefined) headers["content-type"] = "application/json";
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("callFeedbackWorkerAsUser fetch failed", err);
+    return { ok: false, status: 502, error: "Support worker unreachable" };
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!res.ok || (payload && typeof payload === "object" && (payload as { ok?: boolean }).ok === false)) {
+    const error =
+      (payload && typeof payload === "object" && (payload as { error?: string }).error) ||
+      `Worker HTTP ${res.status}`;
+    return { ok: false, status: res.ok ? 502 : res.status, error: String(error) };
+  }
+
+  return { ok: true, status: res.status, data: (payload ?? {}) as T };
+}
+
+/**
  * Fetch a binary /agent/* path (e.g. an attachment stream) with the bot bearer
  * and return the raw upstream Response so the caller can pipe the body through.
  * Returns null when the bearer is unconfigured or the fetch fails at transport
