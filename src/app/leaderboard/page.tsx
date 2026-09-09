@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Countdown from "./Countdown";
-import leaderboard from "../../../content/leaderboard.json";
+import content from "../../../content/leaderboard.json";
+import { loadPublicLeaderboard } from "@/lib/leaderboard";
 
 export const metadata = {
   title: "Top Affiliates Leaderboard",
@@ -9,20 +10,31 @@ export const metadata = {
   alternates: { canonical: "/leaderboard" },
 };
 
+// Re-query the live ranking and re-render at most once an hour (ISR). No cron
+// or manual step needed: the board refreshes itself. The challenge banner copy
+// still comes from the hand-editable content/leaderboard.json.
+export const revalidate = 3600;
+
 type Trend = "up" | "down" | "new";
 
-type Entry = {
-  rank: number;
-  name: string;
-  referrals: number;
-  trend?: Trend;
-};
-
-// Human-friendly "last updated" without timezone drift: anchor the date at
-// midday UTC so the calendar day never shifts across the parse.
-function formatUpdated(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return iso;
+// "Last updated" line. Live data carries an ISO timestamp (show date + time in
+// Mountain Time, the business timezone); the JSON fallback carries a plain date
+// string, anchored at midday UTC so the calendar day never drifts on parse.
+function formatUpdated(updatedAt: string, source: "live" | "fallback"): string {
+  if (source === "live") {
+    const d = new Date(updatedAt);
+    if (Number.isNaN(d.getTime())) return updatedAt;
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Denver",
+    }).format(d) + " MT";
+  }
+  const d = new Date(`${updatedAt}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return updatedAt;
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
     day: "numeric",
@@ -58,11 +70,10 @@ function TrendBadge({ trend }: { trend?: Trend }) {
   return null;
 }
 
-export default function LeaderboardPage() {
-  const { lastUpdated, challenge } = leaderboard;
-  const entries = ([...leaderboard.entries] as Entry[])
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 5);
+export default async function LeaderboardPage() {
+  const { challenge } = content;
+  const board = await loadPublicLeaderboard(5);
+  const entries = board.entries;
 
   const leader = entries[0];
   const rest = entries.slice(1);
@@ -117,7 +128,8 @@ export default function LeaderboardPage() {
             </h2>
           </div>
           <p className="text-sm text-slate-500">
-            Ranked by referrals. Updated {formatUpdated(lastUpdated)}.
+            Ranked by referrals. Updated {formatUpdated(board.updatedAt, board.source)}.
+            {board.source === "live" ? " Refreshes hourly." : null}
           </p>
         </div>
 
@@ -156,36 +168,68 @@ export default function LeaderboardPage() {
 
         {/* Ranks 2-5 */}
         <ol className="mt-4 space-y-3">
-          {rest.map((entry) => (
-            <li
-              key={entry.rank}
-              className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:gap-6 sm:p-5"
-            >
-              <span
-                className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-700"
-                aria-hidden
+          {rest.map((entry) =>
+            entry.placeholder ? (
+              <li
+                key={entry.rank}
+                className="flex items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-4 sm:gap-6 sm:p-5"
               >
-                {entry.rank}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-lg font-semibold text-slate-900">
+                <span
+                  className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-dashed border-slate-300 text-lg font-bold text-slate-400"
+                  aria-hidden
+                >
+                  {entry.rank}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={challenge.applyHref}
+                    className="text-lg font-semibold text-[#c2410c] hover:text-[#9a3412]"
+                  >
                     <span className="sr-only">Rank {entry.rank}: </span>
-                    {entry.name}
-                  </p>
-                  <TrendBadge trend={entry.trend} />
+                    Open spot: claim it →
+                  </Link>
+                  <p className="text-sm text-slate-500">Be on the board by October 1.</p>
                 </div>
-              </div>
-              <div className="flex-none text-right">
-                <p className="text-xl font-bold tabular-nums text-slate-900">
-                  {entry.referrals}
-                </p>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Referrals
-                </p>
-              </div>
-            </li>
-          ))}
+                <div className="flex-none text-right">
+                  <p className="text-xl font-bold tabular-nums text-slate-400" aria-hidden>
+                    -
+                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Referrals
+                  </p>
+                </div>
+              </li>
+            ) : (
+              <li
+                key={entry.rank}
+                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:gap-6 sm:p-5"
+              >
+                <span
+                  className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-700"
+                  aria-hidden
+                >
+                  {entry.rank}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-lg font-semibold text-slate-900">
+                      <span className="sr-only">Rank {entry.rank}: </span>
+                      {entry.name}
+                    </p>
+                    <TrendBadge trend={entry.trend} />
+                  </div>
+                </div>
+                <div className="flex-none text-right">
+                  <p className="text-xl font-bold tabular-nums text-slate-900">
+                    {entry.referrals}
+                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Referrals
+                  </p>
+                </div>
+              </li>
+            ),
+          )}
         </ol>
 
         {/* Footer CTA */}

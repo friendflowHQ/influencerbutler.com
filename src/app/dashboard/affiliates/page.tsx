@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AffiliateApplyInline from "./AffiliateApplyInline";
 import SelfHostedAffiliateDashboard from "./SelfHostedAffiliateDashboard";
+import LeaderboardOptInCard from "./LeaderboardOptInCard";
 import PlannerCallout from "./PlannerCallout";
 import { createClient } from "@/lib/supabase/client";
 
@@ -126,7 +127,12 @@ export default function AffiliatesPage() {
     );
   }
 
-  return <SelfHostedAffiliateDashboard displayName={data.displayName} />;
+  return (
+    <div className="space-y-6">
+      <SelfHostedAffiliateDashboard displayName={data.displayName} />
+      <LeaderboardOptInCard />
+    </div>
+  );
 }
 
 function PendingState({
