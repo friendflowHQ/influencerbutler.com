@@ -12,6 +12,9 @@ export const ENDPOINTS = {
   // "issues you reported that we fixed". License Bearer required (anonymous
   // feedback has no identifier to key on); returns an empty list otherwise.
   feedbackResolved: `${API_BASE}/api/extension/feedback/resolved`,
+  // Support-reply threads: the signed-in user's own answered tickets (GET) and
+  // replying back to one (POST .../<ticketId>). License Bearer required.
+  feedbackReplies: `${API_BASE}/api/extension/feedback/replies`,
   // Creator API (PA-API) credential vault + product enrichment. The vault only
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,

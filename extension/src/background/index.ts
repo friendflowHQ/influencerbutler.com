@@ -15,7 +15,15 @@ import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import type { RelayStateView } from "../shared/messages";
-import { sendFeedback, submitFeedbackRich, listLocalFeedback, dismissLocalFeedback } from "./feedback";
+import {
+  sendFeedback,
+  submitFeedbackRich,
+  listLocalFeedback,
+  dismissLocalFeedback,
+  listFeedbackThreads,
+  postFeedbackReply,
+  markFeedbackThreadRead,
+} from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
 import { refreshFlags } from "./flags";
@@ -399,6 +407,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "DISMISS_MY_FEEDBACK":
       void dismissLocalFeedback(message.id).then(sendResponse);
+      return true;
+    case "LIST_FEEDBACK_THREADS":
+      void listFeedbackThreads().then(sendResponse);
+      return true;
+    case "POST_FEEDBACK_REPLY":
+      void postFeedbackReply(message.ticketId, message.body).then(sendResponse);
+      return true;
+    case "MARK_FEEDBACK_THREAD_READ":
+      void markFeedbackThreadRead(message.ticketId).then(sendResponse);
       return true;
     case "FETCH_MARKET_AVAILABILITY":
       void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);

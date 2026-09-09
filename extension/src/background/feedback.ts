@@ -8,6 +8,11 @@ import type {
   MyFeedbackItem,
   MyFeedbackListResult,
   DismissFeedbackResult,
+  FeedbackThread,
+  FeedbackThreadReply,
+  FeedbackThreadsResult,
+  PostReplyResult,
+  MarkThreadReadResult,
 } from "../shared/messages";
 
 // Sends a single feedback submission to the site. Attaches the license key as
@@ -90,6 +95,111 @@ export async function dismissLocalFeedback(id: string): Promise<DismissFeedbackR
   const rows = await readLocalFeedback();
   await writeLocalFeedback(rows.filter((r) => r.id !== id));
   return { ok: true };
+}
+
+// ---- Support-reply threads (read the answer + reply in-app) -----------------
+
+// Per-thread "last seen reply id" so the extension can compute unread without a
+// server-side read flag (the D1 read state is desktop-local). Its own key.
+const THREADS_SEEN_KEY = "ib-feedback-threads-seen";
+
+async function readSeen(): Promise<Record<string, number | string>> {
+  try {
+    const got = await chrome.storage.local.get(THREADS_SEEN_KEY);
+    const rec = got?.[THREADS_SEEN_KEY];
+    return rec && typeof rec === "object" ? (rec as Record<string, number | string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function writeSeen(seen: Record<string, number | string>): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [THREADS_SEEN_KEY]: seen });
+  } catch {
+    /* best-effort: unread just recomputes next fetch */
+  }
+}
+
+function newestOutboundId(thread: FeedbackThread): number | string | null {
+  let best: number | string | null = null;
+  let bestSent = -1;
+  for (const r of thread.replies || []) {
+    if (r.direction !== "outbound") continue;
+    const sent = Number(r.sentAt) || 0;
+    if (sent >= bestSent) { bestSent = sent; best = r.id; }
+  }
+  return best;
+}
+
+// The signed-in user's answered support threads, with an `unread` flag computed
+// against the local seen-store. Returns an empty list when signed out or on any
+// error (the bubble simply shows no conversations).
+export async function listFeedbackThreads(): Promise<FeedbackThreadsResult> {
+  const state = await getState();
+  if (!state.auth.licenseKey) return { ok: true, threads: [], unread: 0 };
+  let threads: FeedbackThread[] = [];
+  try {
+    const response = await fetch(ENDPOINTS.feedbackReplies, {
+      headers: { Authorization: `Bearer ${state.auth.licenseKey}` },
+    });
+    if (!response.ok) return { ok: true, threads: [], unread: 0 };
+    const data = (await response.json().catch(() => ({}))) as { threads?: unknown };
+    threads = Array.isArray(data.threads) ? (data.threads as FeedbackThread[]) : [];
+  } catch {
+    return { ok: true, threads: [], unread: 0 };
+  }
+  const seen = await readSeen();
+  let unread = 0;
+  for (const t of threads) {
+    const newest = newestOutboundId(t);
+    t.unread = newest != null && seen[t.id] !== newest;
+    if (t.unread) unread += 1;
+  }
+  return { ok: true, threads, unread };
+}
+
+// Mark a thread read: remember its newest outbound reply id so it no longer
+// counts as unread.
+export async function markFeedbackThreadRead(ticketId: string): Promise<MarkThreadReadResult> {
+  if (!ticketId) return { ok: false };
+  const { threads } = await listFeedbackThreads();
+  const thread = threads.find((t) => t.id === ticketId);
+  if (thread) {
+    const newest = newestOutboundId(thread);
+    if (newest != null) {
+      const seen = await readSeen();
+      seen[ticketId] = newest;
+      await writeSeen(seen);
+    }
+  }
+  const after = await listFeedbackThreads();
+  return { ok: true, unread: after.unread };
+}
+
+// Post the user's reply to one of their own tickets, then mark the thread read.
+export async function postFeedbackReply(ticketId: string, body: string): Promise<PostReplyResult> {
+  const id = (ticketId || "").trim();
+  const text = (body || "").trim();
+  if (!id) return { ok: false, error: "Missing ticket id" };
+  if (!text) return { ok: false, error: "Reply is empty" };
+  const state = await getState();
+  if (!state.auth.licenseKey) return { ok: false, error: "Sign in to reply to support." };
+  try {
+    const response = await fetch(`${ENDPOINTS.feedbackReplies}/${encodeURIComponent(id)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.auth.licenseKey}` },
+      body: JSON.stringify({ body: text }),
+    });
+    const data = (await response.json().catch(() => ({}))) as { ok?: boolean; reply?: FeedbackThreadReply; error?: string };
+    if (!response.ok || !data.ok) {
+      return { ok: false, error: data.error || "Could not send right now. Try again in a minute." };
+    }
+    await markFeedbackThreadRead(id);
+    return { ok: true, reply: data.reply ?? null };
+  } catch {
+    return { ok: false, error: "Network error. Are you online?" };
+  }
 }
 
 // A compact, redaction-friendly diagnostic blob. The extension has no log ring,

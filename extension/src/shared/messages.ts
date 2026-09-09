@@ -177,6 +177,12 @@ export type RuntimeMessage =
   // Read / dismiss the local "My reports" list backing the bubble's history tab.
   | { kind: "LIST_MY_FEEDBACK" }
   | { kind: "DISMISS_MY_FEEDBACK"; id: string }
+  // Support-reply threads: read the support agent's answers to the user's own
+  // tickets, reply back in-app, and clear a thread's unread state. Fetched
+  // through the background so the license key never reaches the content script.
+  | { kind: "LIST_FEEDBACK_THREADS" }
+  | { kind: "POST_FEEDBACK_REPLY"; ticketId: string; body: string }
+  | { kind: "MARK_FEEDBACK_THREAD_READ"; ticketId: string }
   | { kind: "OPEN_URL"; url: string }
   // Opens the extension's options/settings page. Content scripts cannot call
   // chrome.runtime.openOptionsPage directly, so the on-page gear routes here.
@@ -492,6 +498,40 @@ export type MyFeedbackItem = {
 };
 
 export type MyFeedbackListResult = { ok: boolean; submissions: MyFeedbackItem[] };
+
+// One message in a support conversation thread (bot / human-support answer, or
+// the user's own reply). Mirrors the desktop bubble's thread shape.
+export type FeedbackThreadReply = {
+  id: number | string;
+  direction: "outbound" | "inbound";
+  author: string;
+  subject?: string;
+  body: string;
+  sentAt: number;
+  attachments?: Array<{ filename: string; contentType?: string; size?: number | null }>;
+};
+
+export type FeedbackThread = {
+  id: string;
+  type?: string;
+  title: string;
+  status?: string;
+  replies: FeedbackThreadReply[];
+  unread?: boolean;
+  updatedAt?: number;
+  repliedAt?: number | null;
+};
+
+export type FeedbackThreadsResult = {
+  ok: boolean;
+  threads: FeedbackThread[];
+  unread?: number;
+  error?: string;
+};
+
+export type PostReplyResult = { ok: boolean; reply?: FeedbackThreadReply | null; error?: string };
+
+export type MarkThreadReadResult = { ok: boolean; unread?: number };
 
 export type CaptureScreenshotResult = { ok: boolean; dataUrl?: string; error?: string };
 

@@ -22,6 +22,10 @@ import type {
   MyFeedbackItem,
   DismissFeedbackResult,
   CaptureScreenshotResult,
+  FeedbackThread,
+  FeedbackThreadReply,
+  FeedbackThreadsResult,
+  PostReplyResult,
 } from "../../shared/messages";
 import {
   validateScreenshot,
@@ -34,7 +38,7 @@ import {
 
 const HOST_ID = `${UI_PREFIX}-chat-bubble-host`;
 
-type View = "chat" | "report";
+type View = "chat" | "report" | "thread";
 type ReportTab = "form" | "history";
 
 type Strings = {
@@ -77,6 +81,15 @@ type Strings = {
   historyError: string;
   loading: string;
   dismiss: string;
+  threadRole: string;
+  threadUntitled: string;
+  threadNewReply: string;
+  threadConversation: string;
+  threadEmpty: string;
+  replyPlaceholder: string;
+  replySending: string;
+  replySent: string;
+  replyFailed: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -120,6 +133,15 @@ const STRINGS: Record<Locale, Strings> = {
     historyError: "Could not load your reports.",
     loading: "Loading...",
     dismiss: "Dismiss",
+    threadRole: "Support conversation",
+    threadUntitled: "Support ticket",
+    threadNewReply: "New reply from support",
+    threadConversation: "Support conversation",
+    threadEmpty: "No messages yet.",
+    replyPlaceholder: "Type your reply...",
+    replySending: "Sending...",
+    replySent: "Sent",
+    replyFailed: "Could not send your reply.",
   },
   es: {
     launcher: "Pregunta al asistente",
@@ -161,6 +183,15 @@ const STRINGS: Record<Locale, Strings> = {
     historyError: "No se pudieron cargar tus informes.",
     loading: "Cargando...",
     dismiss: "Descartar",
+    threadRole: "Conversación con soporte",
+    threadUntitled: "Ticket de soporte",
+    threadNewReply: "Nueva respuesta de soporte",
+    threadConversation: "Conversación con soporte",
+    threadEmpty: "Aún no hay mensajes.",
+    replyPlaceholder: "Escribe tu respuesta...",
+    replySending: "Enviando...",
+    replySent: "Enviado",
+    replyFailed: "No se pudo enviar tu respuesta.",
   },
   fr: {
     launcher: "Poser une question à l'assistant",
@@ -202,6 +233,15 @@ const STRINGS: Record<Locale, Strings> = {
     historyError: "Impossible de charger vos signalements.",
     loading: "Chargement...",
     dismiss: "Ignorer",
+    threadRole: "Conversation avec l'assistance",
+    threadUntitled: "Ticket d'assistance",
+    threadNewReply: "Nouvelle réponse de l'assistance",
+    threadConversation: "Conversation avec l'assistance",
+    threadEmpty: "Aucun message pour le moment.",
+    replyPlaceholder: "Saisissez votre réponse...",
+    replySending: "Envoi...",
+    replySent: "Envoyé",
+    replyFailed: "Impossible d'envoyer votre réponse.",
   },
 };
 
@@ -320,6 +360,33 @@ const CSS = `
 .hdismiss { flex: 0 0 auto; border: 0; background: transparent; color: #ea580c;
   font-size: 11.5px; font-weight: 700; cursor: pointer; }
 .hdismiss:hover { text-decoration: underline; }
+.launcher { position: relative; }
+.badge { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px;
+  padding: 0 5px; border-radius: 999px; background: #dc2626; color: #fff;
+  font-size: 11px; font-weight: 800; line-height: 20px; text-align: center;
+  border: 2px solid #fff; box-shadow: 0 2px 6px rgba(220,38,38,.4); }
+.badge[hidden] { display: none; }
+.convo { text-align: left; width: 100%; cursor: pointer; border: 1px solid #eceef1;
+  border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px;
+  background: #fff; font-family: inherit; }
+.convo:hover { border-color: rgba(234,88,12,.4); }
+.convo.unread { border-color: rgba(234,88,12,.55); background: rgba(234,88,12,.06); }
+.convo .ctop { display: flex; align-items: center; gap: 7px; }
+.convo .cdot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: #ea580c; }
+.convo .ctitle { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.convo .cmeta { font-size: 11px; color: #6b7280; }
+.convo.unread .cmeta { color: #ea580c; font-weight: 700; }
+.thread { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.thread[hidden] { display: none; }
+.thread .transcript { flex: 1 1 auto; }
+.tstatus { padding: 0 12px 8px; font-size: 12px; background: #fafafa; }
+.tstatus.ok { color: #16a34a; }
+.tstatus.err { color: #dc2626; }
+.msg .atts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.msg .attchip { font-size: 11px; border-radius: 999px; padding: 2px 8px;
+  background: rgba(0,0,0,.06); color: #6b7280; }
+.msg.user .attchip { background: rgba(255,255,255,.25); color: #fff; }
 `;
 
 let mounted = false;
@@ -380,6 +447,15 @@ class ChatBubble {
   private shotsWrap!: HTMLElement;
   private reportSend!: HTMLButtonElement;
   private statusEl!: HTMLElement;
+  private badge!: HTMLElement;
+  private threadWrap!: HTMLElement;
+  private threadTranscript!: HTMLElement;
+  private threadInput!: HTMLInputElement;
+  private threadSendBtn!: HTMLButtonElement;
+  private threadStatus!: HTMLElement;
+  private currentThreadId: string | null = null;
+  private autoOpened = new Set<string>();
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.s = STRINGS[getLocale()] || STRINGS.en;
@@ -391,6 +467,15 @@ class ChatBubble {
     this.root.append(style);
     this.build();
     document.documentElement.append(host);
+    this.startReplyPolling();
+  }
+
+  // Poll for support replies: refresh the unread badge, and auto-open the bubble
+  // to a newly-answered thread the first time we see it (only on the visible tab,
+  // so a reply does not pop the bubble on every background tab at once).
+  private startReplyPolling(): void {
+    void this.refreshThreads(true);
+    this.pollTimer = setInterval(() => { void this.refreshThreads(true); }, 90_000);
   }
 
   private build(): void {
@@ -402,6 +487,9 @@ class ChatBubble {
     this.launcher.setAttribute("aria-label", s.launcher);
     this.launcher.textContent = "💬";
     this.launcher.addEventListener("click", () => this.toggle());
+    this.badge = el("span", "badge");
+    this.badge.hidden = true;
+    this.launcher.append(this.badge);
 
     this.panel = el("section", "panel");
     this.panel.hidden = true;
@@ -413,7 +501,7 @@ class ChatBubble {
     this.back.textContent = "←";
     this.back.setAttribute("aria-label", s.back);
     this.back.hidden = true;
-    this.back.addEventListener("click", () => this.setView("chat"));
+    this.back.addEventListener("click", () => this.goBack());
     const avatar = el("div", "avatar");
     avatar.textContent = "💬";
     const idbox = el("div", "idbox");
@@ -449,7 +537,25 @@ class ChatBubble {
     // Report view
     this.report = this.buildReport();
 
-    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report);
+    // Support-conversation (thread) view
+    this.threadWrap = el("div", "thread");
+    this.threadWrap.hidden = true;
+    this.threadTranscript = el("div", "transcript");
+    const tComposer = el("div", "composer");
+    this.threadInput = el("input", undefined);
+    this.threadInput.type = "text";
+    this.threadInput.placeholder = s.replyPlaceholder;
+    this.threadSendBtn = el("button", "sendbtn", s.send);
+    this.threadSendBtn.type = "button";
+    this.threadSendBtn.addEventListener("click", () => void this.sendThreadReply());
+    this.threadInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") void this.sendThreadReply();
+    });
+    tComposer.append(this.threadInput, this.threadSendBtn);
+    this.threadStatus = el("div", "tstatus");
+    this.threadWrap.append(this.threadTranscript, tComposer, this.threadStatus);
+
+    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report, this.threadWrap);
     wrap.append(this.panel, this.launcher);
     this.root.append(wrap);
   }
@@ -599,14 +705,29 @@ class ChatBubble {
   private setView(view: View): void {
     this.view = view;
     const isReport = view === "report";
+    const isThread = view === "thread";
+    const isChat = view === "chat";
     this.report.hidden = !isReport;
-    this.transcript.hidden = isReport;
-    this.composer.hidden = isReport;
-    this.reportCta.hidden = isReport;
-    this.back.hidden = !isReport;
+    this.threadWrap.hidden = !isThread;
+    this.transcript.hidden = !isChat;
+    this.composer.hidden = !isChat;
+    this.reportCta.hidden = !isChat;
+    this.back.hidden = isChat;
     this.full.textContent = "×";
-    this.nameEl.textContent = isReport ? this.s.reportHeading : this.s.title;
-    this.roleEl.textContent = isReport ? this.s.reportSub : this.s.role;
+    if (isReport) {
+      this.nameEl.textContent = this.s.reportHeading;
+      this.roleEl.textContent = this.s.reportSub;
+    } else if (isChat) {
+      this.nameEl.textContent = this.s.title;
+      this.roleEl.textContent = this.s.role;
+    }
+    // Thread header text is set by openThread (ticket title + role).
+  }
+
+  // Back arrow: thread -> reports list, report -> chat.
+  private goBack(): void {
+    if (this.view === "thread") { this.setView("report"); this.setReportTab("history"); return; }
+    this.setView("chat");
   }
 
   private setReportTab(tab: ReportTab): void {
@@ -815,19 +936,29 @@ class ChatBubble {
     this.historyEmpty.textContent = this.s.loading;
     this.historyEmpty.hidden = false;
     try {
+      // Support conversations (support has answered) render first as clickable
+      // rows; the local submissions list follows, de-duped against them.
+      let threads: FeedbackThread[] = [];
+      try {
+        const tRes = await sendToBackground<FeedbackThreadsResult>({ kind: "LIST_FEEDBACK_THREADS" });
+        threads = tRes && tRes.ok && Array.isArray(tRes.threads) ? tRes.threads : [];
+      } catch { threads = []; }
       const res = await sendToBackground<MyFeedbackListResult>({ kind: "LIST_MY_FEEDBACK" });
-      const rows = res && res.ok && Array.isArray(res.submissions) ? res.submissions : [];
+      const threadIds = new Set(threads.map((t) => t.id));
+      const rows = (res && res.ok && Array.isArray(res.submissions) ? res.submissions : [])
+        .filter((r) => !threadIds.has(r.id));
       this.bundle = rows;
-      this.renderHistory(rows);
+      this.renderHistory(rows, threads);
     } catch {
       this.historyEmpty.textContent = this.s.historyError;
       this.historyEmpty.hidden = false;
     }
   }
 
-  private renderHistory(rows: MyFeedbackItem[]): void {
+  private renderHistory(rows: MyFeedbackItem[], threads: FeedbackThread[] = []): void {
     this.historyList.textContent = "";
-    if (!rows.length) {
+    this.renderThreadRows(threads);
+    if (!rows.length && !threads.length) {
       this.historyEmpty.textContent = this.s.historyEmpty;
       this.historyEmpty.hidden = false;
       return;
@@ -864,6 +995,129 @@ class ChatBubble {
     } catch {
       /* ignore */
     }
+  }
+
+  // ---- support-reply threads ----
+
+  private renderThreadRows(threads: FeedbackThread[]): void {
+    for (const th of threads) {
+      const item = el("button", "convo" + (th.unread ? " unread" : ""));
+      (item as HTMLButtonElement).type = "button";
+      const top = el("div", "ctop");
+      if (th.unread) top.append(el("span", "cdot"));
+      top.append(el("span", "ctitle", th.title || this.s.threadUntitled));
+      const replies = Array.isArray(th.replies) ? th.replies : [];
+      const last = replies[replies.length - 1];
+      let when = "";
+      try { when = last && last.sentAt ? new Date(last.sentAt).toLocaleString() : ""; } catch { when = ""; }
+      const meta = el("div", "cmeta", th.unread ? this.s.threadNewReply : (when || this.s.threadConversation));
+      item.append(top, meta);
+      item.addEventListener("click", () => void this.openThread(th.id));
+      this.historyList.append(item);
+    }
+  }
+
+  async openThread(ticketId: string): Promise<void> {
+    const id = (ticketId || "").trim();
+    if (!id) return;
+    if (!this.open) { this.panel.hidden = false; this.open = true; }
+    this.currentThreadId = id;
+    let thread: FeedbackThread | null = null;
+    try {
+      const res = await sendToBackground<FeedbackThreadsResult>({ kind: "LIST_FEEDBACK_THREADS" });
+      const threads = res && res.ok && Array.isArray(res.threads) ? res.threads : [];
+      thread = threads.find((t) => t.id === id) || null;
+    } catch { thread = null; }
+    this.renderThread(thread);
+    this.setView("thread");
+    try { await sendToBackground({ kind: "MARK_FEEDBACK_THREAD_READ", ticketId: id }); } catch { /* ignore */ }
+    void this.refreshThreads(false);
+    setTimeout(() => { try { this.threadInput.focus(); } catch { /* ignore */ } }, 0);
+  }
+
+  private renderThread(thread: FeedbackThread | null): void {
+    this.nameEl.textContent = (thread && thread.title) || this.s.threadUntitled;
+    this.roleEl.textContent = this.s.threadRole;
+    this.threadTranscript.textContent = "";
+    this.setThreadStatus("", "");
+    const replies = thread && Array.isArray(thread.replies) ? thread.replies : [];
+    if (!replies.length) {
+      this.addThreadBubble("assistant", this.s.threadEmpty);
+    } else {
+      for (const r of replies) {
+        this.addThreadBubble(r.direction === "outbound" ? "assistant" : "user", r.body || "", r.attachments);
+      }
+    }
+    this.threadInput.value = "";
+    this.threadInput.placeholder = this.s.replyPlaceholder;
+  }
+
+  private addThreadBubble(
+    role: "user" | "assistant",
+    text: string,
+    attachments?: FeedbackThreadReply["attachments"],
+  ): void {
+    const b = el("div", `msg ${role}`, text);
+    const atts = Array.isArray(attachments) ? attachments : [];
+    if (atts.length) {
+      const row = el("div", "atts");
+      for (const a of atts) row.append(el("span", "attchip", "📎 " + (a.filename || "attachment")));
+      b.append(row);
+    }
+    this.threadTranscript.append(b);
+    this.threadTranscript.scrollTop = this.threadTranscript.scrollHeight;
+  }
+
+  private async sendThreadReply(): Promise<void> {
+    const id = this.currentThreadId;
+    const text = (this.threadInput.value || "").trim();
+    if (!id || !text || this.busy) return;
+    this.busy = true;
+    this.threadSendBtn.disabled = true;
+    this.addThreadBubble("user", text);
+    this.threadInput.value = "";
+    this.setThreadStatus(this.s.replySending, "");
+    try {
+      const res = await sendToBackground<PostReplyResult>({ kind: "POST_FEEDBACK_REPLY", ticketId: id, body: text });
+      if (res && res.ok) this.setThreadStatus(this.s.replySent, "ok");
+      else this.setThreadStatus((res && res.error) || this.s.replyFailed, "err");
+    } catch {
+      this.setThreadStatus(this.s.replyFailed, "err");
+    } finally {
+      this.busy = false;
+      this.threadSendBtn.disabled = false;
+    }
+  }
+
+  private setThreadStatus(text: string, cls: "" | "ok" | "err"): void {
+    this.threadStatus.textContent = text;
+    this.threadStatus.className = "tstatus" + (cls ? " " + cls : "");
+  }
+
+  // Update the unread badge; when `autoOpen`, expand to a newly-answered thread
+  // the first time it appears (only on the visible tab).
+  private async refreshThreads(autoOpen: boolean): Promise<void> {
+    let res: FeedbackThreadsResult | null = null;
+    try {
+      res = await sendToBackground<FeedbackThreadsResult>({ kind: "LIST_FEEDBACK_THREADS" });
+    } catch { return; }
+    if (!res || !res.ok) return;
+    this.setBadge(Number(res.unread) || 0);
+    if (!autoOpen) return;
+    const isVisible = typeof document === "undefined" || document.visibilityState === "visible";
+    if (!isVisible) return;
+    const fresh = (res.threads || []).find((t) => t.unread && !this.autoOpened.has(t.id));
+    if (fresh) {
+      this.autoOpened.add(fresh.id);
+      void this.openThread(fresh.id);
+    }
+  }
+
+  private setBadge(count: number): void {
+    const n = Number(count) || 0;
+    if (n <= 0) { this.badge.hidden = true; this.badge.textContent = ""; return; }
+    this.badge.textContent = n > 9 ? "9+" : String(n);
+    this.badge.hidden = false;
   }
 }
 
