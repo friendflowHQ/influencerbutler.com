@@ -10,6 +10,7 @@
  * the migrationPending soft-fail follow the other /api/extension/* routes.
  */
 import { resolveLicenseOnly } from "@/lib/license-auth";
+import { submitSupportTicket } from "@/lib/support-worker";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   cleanString,
@@ -135,5 +136,29 @@ export async function POST(request: Request) {
     return jsonWithCors({ error: "Could not save feedback" }, 500);
   }
 
-  return jsonWithCors({ ok: true, id: data?.id ?? null });
+  // Mirror actionable feedback into the feedback Worker (D1), the same support
+  // inbox the desktop app uses, so a bug/feature/question becomes a conversation
+  // the user can follow and reply to in-app (GET /api/extension/feedback/replies).
+  // The Supabase row above stays for the existing admin dashboard; praise/other
+  // are not tickets, so they stay Supabase-only. Best-effort: a Worker hiccup
+  // must never fail the submission. When it succeeds we return the D1 ticket id
+  // so the bubble's local "My reports" keys to the same thread the reply lands on.
+  let d1Id: string | null = null;
+  if (feedbackType === "bug" || feedbackType === "feature" || feedbackType === "question") {
+    try {
+      const filed = await submitSupportTicket({
+        type: feedbackType,
+        title: title || message.slice(0, 120),
+        description: message,
+        userEmail: email || undefined,
+        platform: "extension",
+        appVersion: cleanString(input.ext_version, 20) || undefined,
+      });
+      if (filed.ok && filed.id) d1Id = filed.id;
+    } catch (err) {
+      console.error("extension/feedback: D1 mirror failed", err);
+    }
+  }
+
+  return jsonWithCors({ ok: true, id: d1Id ?? data?.id ?? null });
 }

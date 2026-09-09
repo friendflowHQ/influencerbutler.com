@@ -151,7 +151,7 @@ export async function fetchSupportWorkerRaw(path: string): Promise<Response | nu
  * throws: callers (auto-filing from a finished call) treat filing as best-effort.
  */
 export async function submitSupportTicket(input: {
-  type: "bug" | "feature";
+  type: "bug" | "feature" | "question";
   title: string;
   description: string;
   userEmail?: string;
@@ -167,12 +167,13 @@ export async function submitSupportTicket(input: {
   const sharedKey = process.env.FEEDBACK_SHARED_KEY;
   if (sharedKey) headers["x-ib-key"] = sharedKey;
 
+  const type = input.type === "feature" ? "feature" : input.type === "question" ? "question" : "bug";
   try {
     const res = await fetch(`${workerBaseUrl()}/submit`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        type: input.type === "feature" ? "feature" : "bug",
+        type,
         title,
         description,
         userEmail: input.userEmail || "",
