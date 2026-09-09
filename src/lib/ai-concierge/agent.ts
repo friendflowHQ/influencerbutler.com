@@ -215,11 +215,83 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
 ];
 
 /**
+ * The curated tour ids the model may always pass, even when the desktop sends
+ * no catalog. This is the single source for the start_walkthrough enum below.
+ * The desktop's LIVE catalog (window.ibAssistantTours.list(), sent on every
+ * chat turn) is unioned on top of this at request time, so a tour newly shipped
+ * in the desktop build becomes selectable here without editing this list. Keep
+ * these in sync with the always-present tours in the desktop registry.
+ */
+export const BASE_TOUR_IDS: string[] = [
+  "deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations",
+  "deeplink-mint", "daily-commission-harvest", "feedback-report",
+  "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group",
+  "facebook-message-setup", "content-butler-plan", "messenger-setup",
+  "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest",
+  "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest",
+  "retag-butler-setup",
+];
+
+/** One catalog entry the desktop sends: a tour id and its human title. */
+export type TourCatalogEntry = { id: string; title?: string };
+
+/**
+ * Normalize the desktop-sent tour catalog (window.ibAssistantTours.list()).
+ * Drops junk, dedupes, and caps length so a tampered payload cannot bloat the
+ * tool schema or the system prompt.
+ */
+export function sanitizeTourCatalog(raw: unknown): TourCatalogEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TourCatalogEntry[] = [];
+  const seen = new Set<string>();
+  for (const row of raw as Array<Record<string, unknown>>) {
+    if (!row || typeof row !== "object") continue;
+    const id = typeof row.id === "string" ? row.id.trim().slice(0, 60) : "";
+    if (!id || seen.has(id)) continue;
+    const title = typeof row.title === "string" ? row.title.trim().slice(0, 120) : "";
+    seen.add(id);
+    out.push(title ? { id, title } : { id });
+    if (out.length >= 200) break;
+  }
+  return out;
+}
+
+/** BASE_TOUR_IDS unioned with the desktop's live catalog ids (deduped). */
+function tourIdEnum(extra: TourCatalogEntry[]): string[] {
+  const ids = new Set<string>(BASE_TOUR_IDS);
+  for (const t of extra) ids.add(t.id);
+  return [...ids];
+}
+
+/**
+ * The "prefer a curated tour" prompt line: the curated tours (with their rich
+ * descriptions) plus any extra tours the desktop shipped that we do not describe
+ * here, listed by title so the model knows what each one is for.
+ */
+function walkthroughListLine(extra: TourCatalogEntry[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const t of WALKTHROUGH_TOURS) {
+    parts.push(`${t.id} (${t.about})`);
+    seen.add(t.id);
+  }
+  for (const t of extra) {
+    if (seen.has(t.id)) continue;
+    seen.add(t.id);
+    parts.push(t.title ? `${t.id} (${t.title})` : t.id);
+  }
+  return parts.join("; ");
+}
+
+/**
  * The system prompt / persona shared by voice and text. Kept factual and short;
  * the deep how-to knowledge is fetched on demand via the search_help tool rather
  * than dumped in here.
  */
-export function buildInstructions(persona?: { butlerName?: string; firstName?: string }): string {
+export function buildInstructions(
+  persona?: { butlerName?: string; firstName?: string },
+  tours: TourCatalogEntry[] = [],
+): string {
   const firstName = persona && typeof persona.firstName === "string" ? persona.firstName.trim() : "";
   const butlerName = persona && typeof persona.butlerName === "string" ? persona.butlerName.trim() : "";
   return [
@@ -284,7 +356,7 @@ export function buildInstructions(persona?: { butlerName?: string; firstName?: s
     "  the control while the user clicks Next. A fast-track wizard asks a few questions and writes the",
     "  settings for them. The app shows the Fast track button only where a wizard exists, so you do",
     "  not need to work out which modes are available; just call start_walkthrough with the tour id.",
-    `- Prefer a curated tour when one matches: ${WALKTHROUGH_TOURS.map((t) => `${t.id} (${t.about})`).join("; ")}.`,
+    `- Prefer a curated tour when one matches: ${walkthroughListLine(tours)}.`,
     "- Use deals-guided-setup when the user wants deal posting set up for them, or is struggling to",
     "  configure the Deals Butler (destinations, schedule, keywords); it opens the",
     "  question-driven wizard. Offer it proactively to strugglers.",
@@ -377,7 +449,9 @@ export const AGENT_TOOLS: AgentTool[] = [
       properties: {
         tourId: {
           type: "string",
-          enum: ["deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report", "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group", "facebook-message-setup", "content-butler-plan", "messenger-setup", "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest", "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest", "retag-butler-setup"],
+          // Base curated ids; toChatTools() unions the desktop's live catalog on
+          // top at request time so newly shipped tours are selectable too.
+          enum: [...BASE_TOUR_IDS],
           description: "A curated tour id. Preferred when the topic matches.",
         },
         steps: {
@@ -428,12 +502,26 @@ export const AGENT_TOOLS: AgentTool[] = [
   },
 ];
 
-/** Shape for OpenAI chat/completions `tools`. */
-export function toChatTools() {
-  return AGENT_TOOLS.map((t) => ({
-    type: "function" as const,
-    function: { name: t.name, description: t.description, parameters: t.parameters },
-  }));
+/**
+ * Shape for OpenAI chat/completions `tools`. Pass the desktop's live tour
+ * catalog to widen the start_walkthrough tourId enum to every tour the current
+ * desktop build ships; with no catalog it returns the base curated enum.
+ */
+export function toChatTools(extraTours: TourCatalogEntry[] = []) {
+  const enumIds = tourIdEnum(extraTours);
+  return AGENT_TOOLS.map((t) => {
+    let parameters = t.parameters;
+    if (t.name === "start_walkthrough") {
+      // Deep-clone so we never mutate the shared AGENT_TOOLS schema.
+      parameters = JSON.parse(JSON.stringify(t.parameters)) as JsonSchema;
+      const props = (parameters as { properties?: Record<string, { enum?: string[] }> }).properties;
+      if (props && props.tourId) props.tourId.enum = enumIds;
+    }
+    return {
+      type: "function" as const,
+      function: { name: t.name, description: t.description, parameters },
+    };
+  });
 }
 
 /** Shape for the OpenAI Realtime session `tools` (flattened). */

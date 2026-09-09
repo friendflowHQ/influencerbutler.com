@@ -13,8 +13,8 @@
  */
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
-import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs } from "@/lib/ai-concierge/agent";
-import type { ClientMeta, WalkthroughPayload } from "@/lib/ai-concierge/agent";
+import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs, sanitizeTourCatalog } from "@/lib/ai-concierge/agent";
+import type { ClientMeta, WalkthroughPayload, TourCatalogEntry } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
 import type { TextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
@@ -52,14 +52,19 @@ export async function POST(request: Request) {
   const authed = await resolveAuth(request);
   if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
 
-  let body: { messages?: ChatMsg[]; client?: unknown };
+  let body: { messages?: ChatMsg[]; client?: unknown; tours?: unknown };
   try {
-    body = (await request.json()) as { messages?: ChatMsg[]; client?: unknown };
+    body = (await request.json()) as { messages?: ChatMsg[]; client?: unknown; tours?: unknown };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const history = Array.isArray(body.messages) ? body.messages.slice(-MAX_HISTORY) : [];
   const client = sanitizeClient(body.client);
+  // The desktop app sends the live guided-tour catalog it ships so the model can
+  // offer any current tour, not just the base curated set. Walkthroughs are
+  // desktop-only, so ignore the catalog for website/extension callers.
+  const tours: TourCatalogEntry[] =
+    client?.surface === "desktop" ? sanitizeTourCatalog(body.tours) : [];
 
   const principal: Principal = {
     userId: authed.auth.userId,
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
     source: authed.auth.kind === "license" ? "license" : "session",
   };
   const messages: Array<Record<string, unknown>> = [
-    { role: "system", content: buildInstructions(client?.persona) },
+    { role: "system", content: buildInstructions(client?.persona, tours) },
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: String(m.content || "").slice(0, 4000) })),
@@ -81,7 +86,7 @@ export async function POST(request: Request) {
         model: p.model,
         temperature: 0.4,
         messages,
-        tools: toChatTools(),
+        tools: toChatTools(tours),
         tool_choice: "auto",
       }),
     });

@@ -36,6 +36,7 @@ import {
   executeAgentTool,
   extractReplyImages,
   sanitizeWalkthroughArgs,
+  sanitizeTourCatalog,
   toChatTools,
   toRealtimeTools,
   AGENT_TOOLS,
@@ -301,6 +302,52 @@ describe("tool schemas", () => {
     expect(props.tourId.enum).toContain("facebook-message-setup");
     expect(props.tourId.enum).toContain("like-butler-setup");
     expect(props).toHaveProperty("steps");
+  });
+
+  it("widens the start_walkthrough enum with the desktop's live tour catalog", () => {
+    // No catalog: the base curated enum only.
+    const base = toChatTools()[AGENT_TOOLS.findIndex((t) => t.name === "start_walkthrough")] as {
+      function: { parameters: { properties: Record<string, { enum?: string[] }> } };
+    };
+    const baseEnum = base.function.parameters.properties.tourId.enum ?? [];
+    expect(baseEnum).toContain("deals-setup");
+    expect(baseEnum).not.toContain("cc-check-setup");
+
+    // With the desktop catalog: newly shipped ids become selectable, base kept.
+    const tools = toChatTools([
+      { id: "cc-check-setup", title: "CC Check setup" },
+      { id: "message-brands-setup", title: "Message Brands setup" },
+      { id: "deals-setup", title: "dup is deduped" },
+    ]);
+    const tool = tools[AGENT_TOOLS.findIndex((t) => t.name === "start_walkthrough")] as {
+      function: { parameters: { properties: Record<string, { enum?: string[] }> } };
+    };
+    const widened = tool.function.parameters.properties.tourId.enum ?? [];
+    expect(widened).toContain("deals-setup");
+    expect(widened).toContain("cc-check-setup");
+    expect(widened).toContain("message-brands-setup");
+    // Deduped: deals-setup appears exactly once.
+    expect(widened.filter((id) => id === "deals-setup").length).toBe(1);
+
+    // The shared AGENT_TOOLS schema is never mutated by the widening.
+    const shared = AGENT_TOOLS.find((t) => t.name === "start_walkthrough");
+    const sharedEnum = (shared?.parameters as { properties: Record<string, { enum?: string[] }> })
+      .properties.tourId.enum ?? [];
+    expect(sharedEnum).not.toContain("cc-check-setup");
+  });
+
+  it("sanitizeTourCatalog drops junk, dedupes, and caps", () => {
+    expect(sanitizeTourCatalog(null)).toEqual([]);
+    expect(sanitizeTourCatalog([{ id: " a " }, { id: "a" }, { nope: 1 }, { id: "" }])).toEqual([{ id: "a" }]);
+    expect(sanitizeTourCatalog([{ id: "x", title: "  X  " }])).toEqual([{ id: "x", title: "X" }]);
+    expect(sanitizeTourCatalog(Array.from({ length: 300 }, (_, i) => ({ id: `t${i}` }))).length).toBe(200);
+  });
+
+  it("lists desktop-shipped tours in the prompt so the model knows them", () => {
+    const s = buildInstructions(undefined, [{ id: "cc-check-setup", title: "CC Check setup" }]);
+    expect(s).toContain("cc-check-setup");
+    // Curated tours are still listed alongside.
+    expect(s).toContain("deals-setup");
   });
 
   it("exposes submit_feedback with the confirm-first contract", () => {
