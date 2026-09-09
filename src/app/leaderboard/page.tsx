@@ -95,6 +95,26 @@ export default async function LeaderboardPage() {
             {challenge.reward}
           </p>
 
+          {challenge.description ? (
+            <p className="mx-auto mt-4 max-w-xl text-white/90">{challenge.description}</p>
+          ) : null}
+
+          {challenge.howItWorks?.length ? (
+            <ul className="mx-auto mt-6 grid max-w-md gap-2.5 rounded-2xl border border-white/25 bg-white/10 p-5 text-left">
+              {challenge.howItWorks.map((point) => (
+                <li key={point} className="flex items-start gap-2.5 text-sm text-white/90">
+                  <span
+                    className="mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white"
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
           <div className="mt-8 flex justify-center">
             <Countdown deadline={challenge.deadline} />
           </div>
@@ -106,6 +126,19 @@ export default async function LeaderboardPage() {
             >
               Join the challenge →
             </Link>
+            {challenge.facebookGroupHref ? (
+              <a
+                href={challenge.facebookGroupHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/50 bg-white/10 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/20"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 flex-none fill-current" aria-hidden>
+                  <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z" />
+                </svg>
+                Join the Facebook group
+              </a>
+            ) : null}
             <Link
               href="/login?next=/dashboard/affiliates"
               className="rounded-xl border border-white/50 bg-white/10 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/20"

@@ -4,8 +4,16 @@
   "challenge": {
     "headline": "September Referral Sprint",
     "reward": "Refer 15 signups before October 1 and get 6 months of Butler free",
+    "description": "Every new signup you refer this month counts toward the sprint. Reach 15 referred signups before the clock runs out and we hand you 6 months of Butler Pro, on the house. Climb the board below and claim your spot.",
+    "howItWorks": [
+      "What counts: each new signup from your referral link or code.",
+      "The goal: 15 referred signups before the deadline.",
+      "The prize: 6 months of Butler Pro, free.",
+      "The clock: ends October 1, 11:59pm Mountain Time."
+    ],
     "deadline": "2026-10-01T23:59:00-06:00",
-    "applyHref": "/affiliates/apply"
+    "applyHref": "/affiliates/apply",
+    "facebookGroupHref": "https://www.facebook.com/groups/influencerbutler"
   },
   "entries": [
     { "rank": 1, "name": "@amazonwithamber", "referrals": 41, "trend": "up" },
