@@ -18,6 +18,7 @@ import {
   mountThreadChip,
   mountThreadEnrichmentChip,
 } from "./chip";
+import { mountAppHint, readHintSuppressedUntil, removeAppHint } from "./hint";
 import {
   findConversationRows,
   findMessagesWidget,
@@ -57,6 +58,19 @@ let epoch = 0;
 let outreachMap: OutreachMap | null = null;
 let lastOutreachFetchAt = 0;
 
+// Whether the last bridge fetch reached a running, paired desktop app, and
+// whether the install is paired at all. Persisted across sweeps because the
+// outreach fetch is throttled, so a sweep that skips the fetch still knows the
+// last state when deciding whether to show the "open the app" hint.
+let appReachable = false;
+let lastPaired = true;
+// The hint's dismissal deadline, loaded once per init from storage. Until it
+// loads, `hintConfigLoaded` stays false so a just-dismissed hint never flashes
+// on reload. `hintDismissedThisPage` is the in-memory guard after a click.
+let hintSuppressedUntil = 0;
+let hintConfigLoaded = false;
+let hintDismissedThisPage = false;
+
 // Accumulated inbound-brand enrichment. `enrichmentRecords` is every record with
 // a signal we have received so far; `enrichmentMap` is the lookup rebuilt from
 // it. `enrichedBrands` records every normalized brand we have already asked the
@@ -71,6 +85,15 @@ let enrichBackoffUntil = 0;
 export function initBrandKeywords(_settings: Settings): void {
   teardownBrandKeywords();
   const myEpoch = ++epoch;
+  // Load the hint's dismissal deadline before any sweep is allowed to mount it,
+  // so a hint the creator dismissed does not flash back on every page load.
+  hintDismissedThisPage = false;
+  hintConfigLoaded = false;
+  void readHintSuppressedUntil().then((until) => {
+    if (myEpoch !== epoch) return; // a newer init won
+    hintSuppressedUntil = until;
+    hintConfigLoaded = true;
+  });
   // The shared observer debounces the mutation burst and runs an initial pass
   // in case the widget is already open on entry, so the callback sweeps directly.
   unsubscribe = subscribeMessagesWidget(() => runSweep(myEpoch));
@@ -87,6 +110,7 @@ export function teardownBrandKeywords(): void {
   enrichmentMap = { exact: new Map(), loose: new Map() };
   enrichedBrands.clear();
   enrichBackoffUntil = 0;
+  removeAppHint();
   for (const host of Array.from(document.querySelectorAll(`.${HOST_CLASS}`))) host.remove();
   for (const node of Array.from(document.querySelectorAll(`[${DONE_ATTR}]`))) {
     node.removeAttribute(DONE_ATTR);
@@ -96,6 +120,21 @@ export function teardownBrandKeywords(): void {
 function runSweep(myEpoch: number): void {
   if (myEpoch !== epoch) return;
   void sweep(myEpoch).catch((error) => log("brand-keywords", "sweep failed", error));
+}
+
+// Show or hide the "open the desktop app" banner based on the last known bridge
+// state. A reachable app removes it; an unreachable one mounts it, unless the
+// creator dismissed it (this page, or within the storage cooldown) or the
+// dismissal state has not finished loading yet.
+function updateHint(widget: HTMLElement): void {
+  if (appReachable) {
+    removeAppHint();
+    return;
+  }
+  if (hintDismissedThisPage || !hintConfigLoaded || Date.now() < hintSuppressedUntil) return;
+  mountAppHint(widget, { paired: lastPaired }, () => {
+    hintDismissedThisPage = true;
+  });
 }
 
 async function sweep(myEpoch: number): Promise<void> {
@@ -111,6 +150,10 @@ async function sweep(myEpoch: number): Promise<void> {
     if (myEpoch !== epoch) return; // lost to a newer init while awaiting
     outreachMap = buildMaps(res?.ok ? res.records : []);
     lastOutreachFetchAt = Date.now();
+    // Remember whether the app answered, so the throttled sweeps in between can
+    // still show or hide the "open the app" hint without re-fetching.
+    appReachable = res?.ok === true;
+    lastPaired = res?.paired !== false;
     log("brand-keywords", "outreach fetch", {
       ok: res?.ok === true,
       paired: res?.paired !== false,
@@ -123,6 +166,12 @@ async function sweep(myEpoch: number): Promise<void> {
   //    still awaiting an enrichment lookup.
   const pending = decorate(widget, outreachMap, enrichmentMap);
   log("brand-keywords", "decorate", { pending: pending.length });
+
+  // The app is the missing piece when we cannot reach it: tell the creator so,
+  // rather than leaving a bare drawer with no explanation. Clears itself the
+  // moment the app is reachable again.
+  updateHint(widget);
+
   if (pending.length === 0) return;
 
   // 3. Enrichment: request only brands we have not already looked up. A recent

@@ -716,6 +716,36 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   color: #b45309;
 }
 
+/* "Open the desktop app" banner: a full-width block prepended at the top of the
+   Messages drawer when Brand Keywords is on but the app is not reachable, so the
+   feature no longer fails silently. Orange, to read as ours. */
+.bkw-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font: 600 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bkw-hint .bkw-hint-glyph { flex: none; font-size: 14px; line-height: 1; }
+.bkw-hint .bkw-hint-text { flex: 1 1 auto; }
+.bkw-hint .bkw-hint-x {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: #9a3412;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.bkw-hint .bkw-hint-x:hover { opacity: 1; }
+
 /* Message Templates toolbar: a Save + Templates row mounted just above the
    Creator Connections message composer, with a pop-over that lists saved
    templates (local + desktop) or a small save form. Its own block row so it sits

@@ -1723,7 +1723,7 @@ const en: Dict = {
     "Swap tips with other Amazon Influencers and get the most out of Influencer Butler. Click to join the Facebook group.",
   nudgeFbTitle: "Come say hi in the community",
   nudgeFbBody:
-    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips and wins with other Amazon Influencers and hear about new features first. For bug reports or anything you need from our team, use Feedback Butler instead.",
+    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips and wins with other Amazon Influencers and hear about new features first. For bug reports or anything you need from our team, use the chat bubble in the corner of the page instead.",
   nudgeFbJoin: "Join the Facebook group",
   nudgeFbReport: "Report a bug instead",
   nudgeAppNotifTitle: "Get the free Influencer Butler desktop app",
@@ -1739,14 +1739,14 @@ const en: Dict = {
   nudgeAppIntelMac: "Using an Intel Mac?",
   nudgeCommunityNotifTitle: "A quick tip on getting help",
   nudgeCommunityNotifBody:
-    "Enjoy the Facebook group for tips and wins. For bug reports or feature requests, use Feedback Butler so our team can help.",
+    "Enjoy the Facebook group for tips and wins. For bug reports or feature requests, use the chat bubble in the corner of the page so our team can help.",
   nudgeCommunityTitle: "Getting the most from the community",
   nudgeCommunityBody:
     "You have been with us for a few days now. Our Facebook group is a great place for tips, tricks, and wins from other creators. Come join us.",
   nudgeCommunityNote:
-    "One quick thing: the group is for community and tips, not bug reports, complaints, or billing. For anything you need from our team, use Feedback Butler. It is the fastest way to reach us and it goes straight to the people who can help.",
+    "One quick thing: the group is for community and tips, not bug reports, complaints, or billing. For anything you need from our team, use the chat bubble in the corner of the page. It is the fastest way to reach us and it goes straight to the people who can help.",
   nudgeCommunityUnderstand: "I understand",
-  nudgeCommunityReport: "Report a bug (Feedback Butler)",
+  nudgeCommunityReport: "Report a bug",
 
   updateBannerTitle: "Your Influencer Butler extension has an update waiting.",
   updateBannerBody: (version) =>
@@ -2663,7 +2663,7 @@ const es: Dict = {
     "Intercambia consejos con otros Amazon Influencers y saca el máximo partido a Influencer Butler. Haz clic para unirte al grupo de Facebook.",
   nudgeFbTitle: "Ven a saludar a la comunidad",
   nudgeFbBody:
-    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos y logros con otros Amazon Influencers y enterarte de las novedades antes que nadie. Para informar de errores o cualquier cosa que necesites de nuestro equipo, usa Feedback Butler.",
+    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos y logros con otros Amazon Influencers y enterarte de las novedades antes que nadie. Para informar de errores o cualquier cosa que necesites de nuestro equipo, usa la burbuja de chat en la esquina de la página.",
   nudgeFbJoin: "Unirme al grupo de Facebook",
   nudgeFbReport: "Mejor informar de un error",
   nudgeAppNotifTitle: "Descarga gratis la app de escritorio de Influencer Butler",
@@ -2679,14 +2679,14 @@ const es: Dict = {
   nudgeAppIntelMac: "¿Usas un Mac con Intel?",
   nudgeCommunityNotifTitle: "Un consejo rápido para recibir ayuda",
   nudgeCommunityNotifBody:
-    "Disfruta del grupo de Facebook para consejos y logros. Para informar de errores o pedir funciones, usa Feedback Butler para que nuestro equipo pueda ayudarte.",
+    "Disfruta del grupo de Facebook para consejos y logros. Para informar de errores o pedir funciones, usa la burbuja de chat en la esquina de la página para que nuestro equipo pueda ayudarte.",
   nudgeCommunityTitle: "Aprovecha al máximo la comunidad",
   nudgeCommunityBody:
     "Ya llevas unos días con nosotros. Nuestro grupo de Facebook es un gran lugar para consejos, trucos y logros de otros creadores. Ven a unirte.",
   nudgeCommunityNote:
-    "Una cosa rápida: el grupo es para la comunidad y los consejos, no para informar de errores, quejas o facturación. Para cualquier cosa que necesites de nuestro equipo, usa Feedback Butler. Es la forma más rápida de contactarnos y llega directamente a las personas que pueden ayudarte.",
+    "Una cosa rápida: el grupo es para la comunidad y los consejos, no para informar de errores, quejas o facturación. Para cualquier cosa que necesites de nuestro equipo, usa la burbuja de chat en la esquina de la página. Es la forma más rápida de contactarnos y llega directamente a las personas que pueden ayudarte.",
   nudgeCommunityUnderstand: "Entendido",
-  nudgeCommunityReport: "Informar de un error (Feedback Butler)",
+  nudgeCommunityReport: "Informar de un error",
 
   updateBannerTitle: "Tu extensión de Influencer Butler tiene una actualización pendiente.",
   updateBannerBody: (version) =>
@@ -3603,7 +3603,7 @@ const fr: Dict = {
     "Échangez des astuces avec d'autres Amazon Influencers et tirez le meilleur d'Influencer Butler. Cliquez pour rejoindre le groupe Facebook.",
   nudgeFbTitle: "Venez dire bonjour à la communauté",
   nudgeFbBody:
-    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces et des réussites avec d'autres Amazon Influencers et découvrir les nouveautés en premier. Pour signaler un bug ou tout ce dont vous avez besoin de notre équipe, utilisez plutôt Feedback Butler.",
+    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces et des réussites avec d'autres Amazon Influencers et découvrir les nouveautés en premier. Pour signaler un bug ou tout ce dont vous avez besoin de notre équipe, utilisez plutôt la bulle de chat dans le coin de la page.",
   nudgeFbJoin: "Rejoindre le groupe Facebook",
   nudgeFbReport: "Plutôt signaler un bug",
   nudgeAppNotifTitle: "Obtenez l'app de bureau Influencer Butler gratuite",
@@ -3619,14 +3619,14 @@ const fr: Dict = {
   nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
   nudgeCommunityNotifTitle: "Une astuce rapide pour obtenir de l'aide",
   nudgeCommunityNotifBody:
-    "Profitez du groupe Facebook pour les astuces et les réussites. Pour signaler un bug ou demander une fonctionnalité, utilisez Feedback Butler pour que notre équipe puisse vous aider.",
+    "Profitez du groupe Facebook pour les astuces et les réussites. Pour signaler un bug ou demander une fonctionnalité, utilisez la bulle de chat dans le coin de la page pour que notre équipe puisse vous aider.",
   nudgeCommunityTitle: "Tirez le meilleur de la communauté",
   nudgeCommunityBody:
     "Vous êtes avec nous depuis quelques jours maintenant. Notre groupe Facebook est un endroit idéal pour les astuces, les conseils et les réussites d'autres créateurs. Venez nous rejoindre.",
   nudgeCommunityNote:
-    "Une petite chose : le groupe est dédié à la communauté et aux astuces, pas aux signalements de bugs, aux réclamations ni à la facturation. Pour tout ce dont vous avez besoin de notre équipe, utilisez Feedback Butler. C'est le moyen le plus rapide de nous joindre et cela arrive directement aux personnes qui peuvent vous aider.",
+    "Une petite chose : le groupe est dédié à la communauté et aux astuces, pas aux signalements de bugs, aux réclamations ni à la facturation. Pour tout ce dont vous avez besoin de notre équipe, utilisez la bulle de chat dans le coin de la page. C'est le moyen le plus rapide de nous joindre et cela arrive directement aux personnes qui peuvent vous aider.",
   nudgeCommunityUnderstand: "J'ai compris",
-  nudgeCommunityReport: "Signaler un bug (Feedback Butler)",
+  nudgeCommunityReport: "Signaler un bug",
 
   updateBannerTitle: "Votre extension Influencer Butler a une mise à jour en attente.",
   updateBannerBody: (version) =>

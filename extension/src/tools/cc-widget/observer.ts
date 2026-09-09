@@ -25,9 +25,15 @@ export const DEBOUNCE_MS = 250;
 // detached subtree until the next SPA navigation tore the tools down.
 export const CONNECTED_CHECK_MS = 5_000;
 
-// Our own injected hosts: the Brand Keywords chip host (chip.ts) and the Message
-// Templates toolbar host (toolbar.ts).
-export const OWN_HOST_CLASSES: readonly string[] = ["bkw-chip-host", TEMPLATES_HOST_CLASS];
+// Our own injected hosts: the Brand Keywords chip host (chip.ts), its
+// "open the desktop app" hint banner (hint.ts), and the Message Templates
+// toolbar host (toolbar.ts). Mounting or tearing any of these down must not
+// wake the sweeps that made them.
+export const OWN_HOST_CLASSES: readonly string[] = [
+  "bkw-chip-host",
+  "bkw-hint-host",
+  TEMPLATES_HOST_CLASS,
+];
 
 // Structural slices of the DOM so a test can drive the hub with plain objects.
 export interface NodeLike {
