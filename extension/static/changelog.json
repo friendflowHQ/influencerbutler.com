@@ -1,6 +1,28 @@
 {
-  "lastUpdated": "2026-09-06",
+  "lastUpdated": "2026-09-08",
   "releases": [
+    {
+      "version": "0.1.14",
+      "date": "September 8, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Accept Creator Connections campaigns right from the extension, without opening the desktop app, with an optional rule-based auto-accept that keeps a 30-day history so the same campaign is never taken twice",
+            "A floating chat bubble on the pages the extension runs on: chat with the AI concierge, or file a bug, feature request, or question with screenshots, and review your past reports",
+            "Highest-commission routing is now on out of the box for new installs, so each product's link automatically picks the provider that pays the most (if you turned it off, it stays off)"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Butler's Brief campaign verdict now waits for the campaign's product list to finish loading before deciding, so it no longer flashes a No products detected card on slower pages",
+            "Tile badges on Amazon search results no longer paint over the product title",
+            "The Product data card no longer shows a red credential error while Influencer Butler's backup credentials are covering product data, and the per-field STORED badges now appear only on the fields you actually saved"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.13",
       "date": "September 6, 2026",
