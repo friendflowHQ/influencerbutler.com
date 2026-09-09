@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/scheduling-server";
 import { verifyWebhook, fetchTranscriptText, getBot, recordingUrlOf } from "@/lib/recall";
 import { applyTranscriptResult } from "@/lib/call-recording-finalize";
+import { applyEventTranscriptResult, type FinalizeEvent } from "@/lib/event-recording-finalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,7 +49,10 @@ export async function POST(request: Request) {
     .select("id, call_type, topic, recording_status, user_email, tickets_filed_at")
     .eq("recall_bot_id", botId)
     .maybeSingle();
-  if (!booking) return NextResponse.json({ ok: true, ignored: "no booking for bot" });
+  if (!booking) {
+    // Not a 1:1 booking bot: it may belong to a group event. Route there.
+    return handleEventBot(admin, botId, event);
+  }
 
   // Fatal / error → mark failed.
   if (/fatal|error/.test(event)) {
@@ -91,5 +95,59 @@ export async function POST(request: Request) {
     { transcript, recordingUrl },
   );
 
+  return NextResponse.json({ ok: true, status: "ready" });
+}
+
+/**
+ * Handle a Recall bot that belongs to a group event (events.recall_bot_id).
+ * Mirrors the booking flow: fatal -> failed, in-call -> recording, completion ->
+ * finalize (transcript + AI recap emailed to registrants).
+ */
+async function handleEventBot(
+  admin: NonNullable<ReturnType<typeof getAdmin>>,
+  botId: string,
+  event: string,
+): Promise<NextResponse> {
+  const { data: ev } = await admin
+    .from("events")
+    .select("id, title, description, starts_at, ends_at, timezone, join_url, recording_status, highlights_emailed_at")
+    .eq("recall_bot_id", botId)
+    .maybeSingle();
+  if (!ev) return NextResponse.json({ ok: true, ignored: "no booking or event for bot" });
+
+  if (/fatal|error/.test(event)) {
+    await admin.from("events").update({ recording_status: "failed" }).eq("id", ev.id);
+    return NextResponse.json({ ok: true, status: "failed" });
+  }
+
+  if (/in_call|joining|recording|call_started|participant/.test(event) && ev.recording_status !== "ready") {
+    await admin.from("events").update({ recording_status: "recording" }).eq("id", ev.id);
+  }
+
+  const isDone = /done|completed|complete|ended|transcript|analysis/.test(event);
+  if (!isDone) return NextResponse.json({ ok: true, status: "noted" });
+
+  const bot = await getBot(botId);
+  const recordingUrl = recordingUrlOf(bot);
+  const transcript = await fetchTranscriptText(botId);
+  if (!transcript) {
+    await admin
+      .from("events")
+      .update({ recording_status: "processing", recording_url: recordingUrl })
+      .eq("id", ev.id);
+    return NextResponse.json({ ok: true, status: "processing" });
+  }
+
+  const finalizeEvent: FinalizeEvent = {
+    id: ev.id as string,
+    title: (ev.title as string) || "",
+    description: (ev.description as string | null) || null,
+    starts_at: (ev.starts_at as string) || "",
+    ends_at: (ev.ends_at as string) || "",
+    timezone: (ev.timezone as string | null) || null,
+    join_url: (ev.join_url as string | null) || null,
+    highlights_emailed_at: (ev.highlights_emailed_at as string | null) || null,
+  };
+  await applyEventTranscriptResult(admin, finalizeEvent, { transcript, recordingUrl });
   return NextResponse.json({ ok: true, status: "ready" });
 }

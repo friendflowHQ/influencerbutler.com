@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/scheduling-server";
 import { fetchTranscriptText, getBot, recordingUrlOf } from "@/lib/recall";
 import { applyTranscriptResult } from "@/lib/call-recording-finalize";
+import { applyEventTranscriptResult, type FinalizeEvent } from "@/lib/event-recording-finalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,58 @@ export async function GET(request: Request) {
     } catch (e) {
       console.error("[process-recordings] row", r.id, e);
       results.push({ id: r.id, outcome: "error" });
+    }
+  }
+
+  // Second pass: group-event recordings (events.recall_bot_id), same finalize
+  // contract but the recap is emailed to registrants instead of filing tickets.
+  const { data: evData } = await admin
+    .from("events")
+    .select("id, title, description, starts_at, ends_at, timezone, join_url, recall_bot_id, recording_status, highlights_emailed_at")
+    .in("recording_status", ["scheduled", "recording", "processing"])
+    .not("recall_bot_id", "is", null)
+    .lt("ends_at", nowIso)
+    .order("ends_at", { ascending: true })
+    .limit(BATCH);
+
+  const eventRows = (evData ?? []) as (FinalizeEvent & { recall_bot_id: string | null; recording_status: string })[];
+  for (const r of eventRows) {
+    if (!r.recall_bot_id) continue;
+    try {
+      const transcript = await fetchTranscriptText(r.recall_bot_id);
+      if (transcript) {
+        const bot = await getBot(r.recall_bot_id);
+        const recordingUrl = recordingUrlOf(bot);
+        await applyEventTranscriptResult(
+          admin,
+          {
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            starts_at: r.starts_at,
+            ends_at: r.ends_at,
+            timezone: r.timezone,
+            join_url: r.join_url,
+            highlights_emailed_at: r.highlights_emailed_at,
+          },
+          { transcript, recordingUrl },
+        );
+        results.push({ id: r.id, outcome: "event_ready" });
+        continue;
+      }
+      const endedMs = Date.parse(r.ends_at);
+      if (Number.isFinite(endedMs) && nowMs - endedMs > GRACE_MS) {
+        await admin.from("events").update({ recording_status: "failed" }).eq("id", r.id);
+        results.push({ id: r.id, outcome: "event_failed" });
+      } else {
+        if (r.recording_status !== "processing") {
+          await admin.from("events").update({ recording_status: "processing" }).eq("id", r.id);
+        }
+        results.push({ id: r.id, outcome: "event_waiting" });
+      }
+    } catch (e) {
+      console.error("[process-recordings] event row", r.id, e);
+      results.push({ id: r.id, outcome: "event_error" });
     }
   }
 

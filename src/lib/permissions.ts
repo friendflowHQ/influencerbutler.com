@@ -20,6 +20,7 @@ export type PermissionDomain =
   | "Community"
   | "Support"
   | "Scheduling"
+  | "Events"
   | "Catalogue"
   | "Marketing"
   | "Operations"
@@ -85,6 +86,9 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "scheduling.view", label: "View call bookings", description: "See upcoming and past 1:1 calls with each customer's prep sheet (subscription + support history).", domain: "Scheduling", risk: "normal", built: true },
   { key: "scheduling.manage", label: "Manage calls & availability", description: "Set your bookable hours, cancel or reschedule calls, add manual blocks, and edit scheduling settings.", domain: "Scheduling", risk: "normal", built: true },
 
+  // Events (scheduled group calls with RSVP, cross-app banners, and AI recaps)
+  { key: "events.manage", label: "Manage events", description: "Schedule group events, control the cross-app banner (web, extension, desktop), view the RSVP list, and read the AI recap after the call.", domain: "Events", risk: "normal", built: true },
+
   // Catalogue
   { key: "catalogue.view", label: "View catalogue harvest", description: "See harvest status and history.", domain: "Catalogue", risk: "normal", built: true },
   { key: "catalogue.trigger", label: "Trigger catalogue harvest", description: "Kick off a CC / SPCC catalogue harvest.", domain: "Catalogue", risk: "normal", built: true },
@@ -142,6 +146,7 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Community",
   "Support",
   "Scheduling",
+  "Events",
   "Catalogue",
   "Marketing",
   "Operations",
