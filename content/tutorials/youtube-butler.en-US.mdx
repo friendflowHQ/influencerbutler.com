@@ -91,11 +91,14 @@ This is handy when you keep Shorts and long-form on separate channels, or want t
 
 If your account has more than one channel, the Setup Wizard lets you pick a **secondary channel** alongside your primary. Then, in **Settings → Upload settings**, turn on **Post to my secondary channel** and the run uploads to that channel instead. Both channels must be on the same signed-in Google account. Leave the toggle off to keep uploading to your primary channel as usual.
 
-## AI voiceover (translated audio)
+## Localization: captions or dubbed audio
 
-The **AI voiceover** card replaces a video's audio with an AI voice speaking a translated version of what's said. Turn it on, pick the language to **dub into**, the **source language**, and a **voice**. On each upload the app transcribes the audio, translates it, and swaps in the AI narration before the video goes to YouTube.
+The **Localization** card reaches viewers in another language. Turn it on, pick the **target language** and the **source language**, then choose a mode:
 
-This needs your OpenAI key in **API Integrations** and spends tokens per run. If the target language matches the source, nothing changes. When the key is missing, the app tells you and uploads the original audio instead of quietly skipping the voiceover.
+- **Translated captions**: the app transcribes the audio and burns translated subtitles into the video. Turn on **Closed Captions** first to control the subtitle font, size, and position.
+- **AI dub (replaces audio)**: the app swaps in an AI **voice** speaking the translation, so the video is narrated in the target language.
+
+To also translate the title and description, turn on **Translate my title and description** in Settings. This needs your OpenAI key in **AI & Data Keys** and spends tokens per run. If the target language matches the source, nothing changes. When the key is missing, the app tells you and uploads with the original audio instead of quietly skipping it.
 
 ## Product QR codes
 
