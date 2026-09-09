@@ -346,7 +346,7 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 - **Posts fail silently to Telegram**: bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
 - **Instagram posts go to message requests, not inbox**: that's not a Deals Butler issue; that's Instagram's own routing for accounts you don't follow.
 - **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
-- **The same deal posts more than once**: the **Don't repost recently** guard in the Deal Filters holds a deal at publish time if a matching one already went out inside your window. It is on by default with a 30-day window. If you post product variants, also tick **Product title** under it, so different sizes or colors of the same item count as one deal.
+- **The same deal posts more than once**: the **Don't repost recently** guard in the Deal Filters holds a deal at publish time if a matching one already went out inside your window. It is on by default with a 30-day window. Both **Product ASIN** and **Product title** matching are on by default, and title matching now catches a similar deal even when it went out under a different ASIN, so a re-listing or a slightly reworded title of the same item counts as one deal. To let variants like different sizes or colors post separately, untick **Product title**.
 
 ## Clones (paid)
 
