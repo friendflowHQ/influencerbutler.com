@@ -28,6 +28,7 @@ type EventRow = {
   ends_at: string;
   timezone: string | null;
   join_url: string | null;
+  image_url: string | null;
 };
 
 type RegRow = {
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
 
   const { data: eventsData, error: evErr } = await admin
     .from("events")
-    .select("id,title,description,starts_at,ends_at,timezone,join_url")
+    .select("id,title,description,starts_at,ends_at,timezone,join_url,image_url")
     .eq("status", "scheduled")
     .gte("starts_at", nowIso)
     .lte("starts_at", in24h);
@@ -91,6 +92,7 @@ export async function GET(request: Request) {
       toEmail: r.user_email,
       toName: r.user_name,
       timezone: r.user_timezone || ev.timezone,
+      imageUrl: ev.image_url,
     };
 
     // 1h reminder (within 75 min, not yet sent).

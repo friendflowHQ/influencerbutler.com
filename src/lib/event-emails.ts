@@ -28,9 +28,20 @@ export type EventEmailData = {
   toEmail: string;
   toName?: string | null;
   timezone?: string | null; // recipient display TZ (falls back to the event TZ)
+  imageUrl?: string | null; // branded cover, embedded at the top of the email
 };
 
 type Attachment = { filename: string; content: string };
+
+/** Email-safe cover image block, prepended to the HTML body when present. */
+function imageBlock(url?: string | null): string {
+  if (!url) return "";
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return (
+    `<img src="${esc(url)}" alt="" width="600" ` +
+    `style="display:block;width:100%;max-width:600px;height:auto;border-radius:12px;margin:0 0 16px;" />`
+  );
+}
 
 function htmlFrom(text: string, links: { phrase: string; href: string }[]): string {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -111,10 +122,12 @@ export async function sendEventRegistrationConfirmation(e: EventEmailData): Prom
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].filter((l) => l !== "").join("\n");
-  const html = htmlFrom(body, [
-    { phrase: "Upcoming Events", href: EVENTS_URL },
-    ...(e.joinUrl ? [{ phrase: e.joinUrl, href: e.joinUrl }] : []),
-  ]);
+  const html =
+    imageBlock(e.imageUrl) +
+    htmlFrom(body, [
+      { phrase: "Upcoming Events", href: EVENTS_URL },
+      ...(e.joinUrl ? [{ phrase: e.joinUrl, href: e.joinUrl }] : []),
+    ]);
   return sendResend(e.toEmail, `You are registered: ${e.title}`, body, "event_confirmation", [icsAttachment(e)], html);
 }
 
@@ -134,7 +147,8 @@ export async function sendEventReminder(e: EventEmailData, which: "24h" | "1h"):
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].join("\n");
-  const html = htmlFrom(body, e.joinUrl ? [{ phrase: e.joinUrl, href: e.joinUrl }] : []);
+  const html =
+    imageBlock(e.imageUrl) + htmlFrom(body, e.joinUrl ? [{ phrase: e.joinUrl, href: e.joinUrl }] : []);
   return sendResend(e.toEmail, `Reminder: ${e.title} is ${lead}`, body, "event_reminder", [icsAttachment(e)], html);
 }
 

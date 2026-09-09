@@ -39,6 +39,7 @@ export type EventRow = {
   aiNotes: AiNotes | null;
   recordedAt: string | null;
   highlightsEmailedAt: string | null;
+  imageUrl: string | null;
   createdAt: string;
   cancelledAt: string | null;
 };
@@ -81,7 +82,7 @@ const EVENT_COLS =
   "id,title,description,starts_at,ends_at,timezone,status,join_url,meeting_provider,meeting_id," +
   "banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces," +
   "record_enabled,recall_bot_id,recording_status,recording_url,ai_notes,recorded_at,highlights_emailed_at," +
-  "created_at,cancelled_at";
+  "image_url,created_at,cancelled_at";
 
 function toEvent(r: Record<string, unknown>): EventRow {
   const surfaces = Array.isArray(r.banner_surfaces)
@@ -113,6 +114,7 @@ function toEvent(r: Record<string, unknown>): EventRow {
     aiNotes: (r.ai_notes as AiNotes | null) ?? null,
     recordedAt: (r.recorded_at as string | null) ?? null,
     highlightsEmailedAt: (r.highlights_emailed_at as string | null) ?? null,
+    imageUrl: (r.image_url as string | null) ?? null,
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
     cancelledAt: (r.cancelled_at as string | null) ?? null,
   };
@@ -274,7 +276,7 @@ export async function activeBanners(
       id: String(r.id),
       text,
       ctaLabel: (r.banner_cta_label as string | null) ?? null,
-      ctaUrl: `${SITE}/dashboard/events`,
+      ctaUrl: `${SITE}/events/${String(r.id)}`,
       startsAt: (r.starts_at as string) ?? "",
       endsAt: (r.ends_at as string | null) ?? null,
     });

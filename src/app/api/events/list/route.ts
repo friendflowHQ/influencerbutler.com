@@ -33,6 +33,7 @@ export async function GET() {
     endsAt: e.endsAt,
     timezone: e.timezone,
     joinUrl: e.joinUrl,
+    imageUrl: e.imageUrl,
     registered: registeredIds.has(e.id),
   }));
 

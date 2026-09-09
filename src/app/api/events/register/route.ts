@@ -76,6 +76,7 @@ export async function POST(request: Request) {
       toEmail: user.email,
       toName: name,
       timezone: timezone || event.timezone,
+      imageUrl: event.imageUrl,
     });
   } catch (e) {
     console.error("[events/register] confirm email", e);

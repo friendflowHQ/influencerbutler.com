@@ -23,6 +23,7 @@ type AdminEvent = {
   bannerStartsAt: string | null;
   bannerEndsAt: string | null;
   bannerSurfaces: BannerSurface[];
+  imageUrl: string | null;
   registrations: number;
 };
 
@@ -96,6 +97,7 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [imagingId, setImagingId] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     try {
@@ -174,16 +176,41 @@ export default function AdminEventsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; joinUrl?: string | null };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        id?: string;
+        joinUrl?: string | null;
+      };
       if (!res.ok) {
         setMessage(data.error || "Could not save.");
         return;
       }
+      const savedId = form.id ?? data.id ?? null;
       setMessage(form.id ? "Event updated." : "Event scheduled.");
       setForm(emptyForm());
       await refetch();
+      // Auto-generate the branded cover image (title + date + time) as a
+      // follow-up step so saving stays fast. Best-effort: never blocks.
+      if (savedId) void generateImage(savedId);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const generateImage = async (id: string) => {
+    setImagingId(id);
+    setMessage("Generating event image...");
+    try {
+      const res = await fetch("/api/admin/events/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setMessage(res.ok ? "Event image ready." : data.error || "Could not generate the image.");
+      await refetch();
+    } finally {
+      setImagingId(null);
     }
   };
 
@@ -396,6 +423,14 @@ export default function AdminEventsPage() {
         <div className="mt-3 flex flex-col gap-3">
           {events.map((e) => (
             <div key={e.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              {e.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={e.imageUrl}
+                  alt=""
+                  className="mb-3 w-full max-w-md rounded-lg border border-slate-200"
+                />
+              ) : null}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -441,6 +476,14 @@ export default function AdminEventsPage() {
                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
                   >
                     {openId === e.id ? "Hide RSVPs" : "RSVPs & recap"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => generateImage(e.id)}
+                    disabled={imagingId === e.id}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
+                  >
+                    {imagingId === e.id ? "Generating..." : e.imageUrl ? "Regenerate image" : "Generate image"}
                   </button>
                   <button
                     type="button"

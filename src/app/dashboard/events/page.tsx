@@ -10,6 +10,7 @@ type EventItem = {
   endsAt: string;
   timezone: string;
   joinUrl: string | null;
+  imageUrl: string | null;
   registered: boolean;
 };
 
@@ -132,9 +133,17 @@ export default function UpcomingEventsPage() {
             return (
               <div
                 key={e.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                {e.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={e.imageUrl}
+                    alt={`${e.title} event cover`}
+                    className="aspect-[1200/630] w-full object-cover"
+                  />
+                ) : null}
+                <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <h2 className="text-lg font-semibold text-slate-900">{e.title}</h2>
                     <p className="mt-1 text-sm font-medium text-slate-700">
