@@ -1,0 +1,78 @@
+---
+title: "Optimizar Lista de Benable: analiza una lista de Benable y obtén mejoras concretas"
+summary: Pega la URL de una lista de Benable y obtén un conjunto de mejoras priorizadas y listas para usar. La puntuación es nuestra propia señal de calidad y nunca afirmamos conocer las reglas de clasificación de Benable.
+category: Partnerships
+---
+
+> **Honesto por diseño.** Optimizar Lista de Benable separa lo que medimos en tu página de nuestras sugerencias y de lo que no podemos ver. No conocemos las reglas de clasificación privadas de Benable y nunca prometemos que un cambio consiga una insignia Optimizada, una clasificación, tráfico ni ventas.
+
+## Qué hace Optimizar Lista de Benable
+
+Pegas la URL de una de tus listas de Benable. Influencer Butler la abre en tu Chrome con sesión iniciada, la mide y te entrega un conjunto de mejoras priorizadas: un título más claro, una descripción más fuerte, mejores secciones y texto de reemplazo listo para pegar. Está pensado para cuando una lista no consigue "optimizarse" y quieres un plan concreto en lugar de suposiciones.
+
+El análisis se organiza en torno a una separación simple:
+
+- **Lo que medimos** en la página (hechos): tu título, descripción, secciones, número de artículos y estado de la insignia.
+- **Lo que sugerimos** (heurísticas): nuestras propias recomendaciones para que la lista sea más útil para los compradores.
+- **Lo que no podemos determinar** desde la página: cualquier cosa que Benable no nos muestre, que marcamos con claridad en lugar de adivinar.
+
+## Está pensado para proteger tus créditos de OpenAI
+
+Todo el análisis, incluida la puntuación y las mejoras priorizadas, se calcula **localmente sin coste de OpenAI**. Puedes analizar tantas listas como quieras gratis.
+
+El único paso que gasta créditos de OpenAI es el botón **Generar mejoras con IA**, que redacta texto de reemplazo listo para usar (un título nuevo, una descripción, secciones e ideas de notas). Esos resultados se guardan por lista, así que volver a analizar la misma lista no gasta de nuevo. Un interruptor opcional de captura de pantalla (desactivado por defecto) puede enviar una imagen de la lista a la IA para una lectura visual; déjalo desactivado para reducir costes.
+
+## Antes de empezar
+
+- **Una sesión de Benable iniciada** en Chrome. La herramienta usa tu sesión existente, igual que los demás mayordomos de Benable.
+- **La URL de una lista de Benable** de tu propiedad, como `https://benable.com/<tu-nombre>/<tu-lista>`.
+- **Una clave de OpenAI en Claves de IA y Datos** solo si quieres el texto de "Generar mejoras con IA". El análisis y las puntuaciones funcionan sin ella.
+
+## Analizar una lista
+
+1. Abre **Optimizar Lista de Benable** dentro de Benable Butler (anidado bajo el interruptor de Benable Butler).
+2. Pega la URL de tu lista en **Analizar una lista** y haz clic en **Analizar lista**.
+3. Se abre una ventana de Chrome, la herramienta lee la lista y aparece el análisis.
+
+Obtienes una **puntuación de optimización sobre 100**, el **estado de la insignia Optimizada**, un conjunto de **puntuaciones por categoría** que puedes expandir para ver exactamente por qué se asignó cada número, y una lista **Corrige esto primero** con los cambios de mayor impacto.
+
+## Cómo leer la puntuación
+
+La puntuación es nuestra señal de calidad, no una métrica de Benable. Haz clic en cualquier categoría para expandir su desglose y ver los hechos detrás del número, por ejemplo "7 de 7 secciones no tienen descripción" o "1 sección contiene un solo producto".
+
+La línea de la **insignia Optimizada** se lee directamente de tu perfil de Benable, donde la insignia aparece de verdad. Muestra **Optimizada**, **Casi optimizada**, **No detectada** o **No se pudo determinar** cuando no pudimos comprobarlo. Nunca etiquetamos una lista como "no optimizada" a menos que confirmemos que la insignia estaba ausente.
+
+## Generar mejoras con IA
+
+Haz clic en **Generar mejoras con IA** para obtener texto listo para usar: un título más fuerte, una descripción reescrita, secciones sugeridas con descripciones, ideas de notas para productos débiles, contenido que falta que los compradores esperan y palabras clave de búsqueda. Cada elemento tiene un botón **Copiar**.
+
+Se le indica a la IA que escriba en lenguaje de recomendación honesto ("Ideal para...", "Vale la pena considerarlo si...") y que nunca invente experiencia personal como "Yo uso esto". Si alguna vez se cuela una afirmación en primera persona, la reescribimos antes de que la veas.
+
+## Aplicar título y descripción automáticamente
+
+El **título nuevo** y la **descripción nueva** llevan un botón **Aplicar a la lista** además de Copiar. Aplicar escribe el cambio directamente en tu lista real y guarda el valor anterior, por lo que aparece un botón **Deshacer** justo después por si quieres revertirlo.
+
+Todo lo demás (secciones, notas, eliminaciones de productos, portada) es solo de copia por ahora. Eso lo pegas tú. Aplicar el resto automáticamente está en la hoja de ruta.
+
+## Analizar todas mis listas
+
+Abre **O analizar todas mis listas**, pega la URL de tu perfil de Benable y haz clic en **Analizar todas**. La herramienta analiza cada lista de tu perfil localmente (sin coste de OpenAI) y las ordena para que las menos optimizadas aparezcan primero. Haz clic en cualquier fila para abrir su análisis completo.
+
+## Limitaciones honestas
+
+- **En tus propias listas, las notas de cada producto no se pueden leer.** Benable muestra tu propia lista en una vista editable que no nos expone las tarjetas de los productos. Cuando eso ocurre, la herramienta marca la cobertura de notas como **no determinada** y deja la puntuación de Notas de productos como **N/D** en lugar de inventar un veredicto de "0 de N tienen notas". Las notas siguen siendo una de las partes más importantes de una lista bien curada, así que el análisis te recuerda que las mejores aunque no pueda medirlas.
+- **La insignia vive en tu perfil, no en la página de la lista**, por eso la herramienta visita brevemente tu perfil para leerla.
+- **No leemos la API de datos privada de Benable.** La herramienta se limita a lo que muestra la página.
+
+## Problemas comunes
+
+- **"Introduce una URL de lista de benable.com."**: la URL no es un enlace de lista de Benable. Debe verse como `https://benable.com/<nombre>/<lista>`.
+- **"Conecta OpenAI para generar mejoras con IA"**: el análisis funcionó, pero el texto de IA necesita tu clave de OpenAI en Claves de IA y Datos. Añádela y vuelve a hacer clic en Generar mejoras con IA.
+- **La puntuación parece alta pero la lista no está optimizada**: en tus propias listas no podemos ver las notas, así que la puntuación refleja solo la estructura. Lee la nota de "notas no determinadas" y refuerza las notas de tus productos.
+- **Un análisis volvió con poco contenido**: la lista puede ser privada, estar vacía o seguir cargando. Inténtalo de nuevo y asegúrate de tener la sesión iniciada.
+
+## Relacionado
+
+- [Tutorial de Benable Butler](/help/tutorials/benable-butler) publica tus propias colecciones de Benable.
+- [Tutorial de Benable Like Butler](/help/tutorials/benable-like-butler) mantente visible ante otros creadores.
+- [Tutorial de Benable Comment Butler](/help/tutorials/benable-comment-butler) comenta automáticamente en colecciones de Benable.

@@ -1,0 +1,78 @@
+---
+title: "Benable List Optimize: audit a Benable list and get specific fixes"
+summary: Paste a Benable list URL and get a prioritized, ready-to-use set of improvements. The score is our own quality signal, and we never claim to know Benable's ranking rules.
+category: Partnerships
+---
+
+> **Honest by design.** Benable List Optimize separates what we measured on your page from our suggestions and from things we cannot see. We do not know Benable's private ranking rules, and we never promise that a change will earn an Optimized badge, a ranking, traffic, or sales.
+
+## What Benable List Optimize does
+
+You paste one of your Benable list URLs. Influencer Butler opens it in your signed-in Chrome, measures it, and hands you a prioritized set of fixes: a clearer title, a stronger description, better sections, and ready-to-paste replacement copy. It is built for the moment when a list will not get "optimized" and you want a concrete plan instead of guesswork.
+
+The audit is organized around a simple split:
+
+- **What we measured** on the page (facts): your title, description, sections, item count, and badge status.
+- **What we suggest** (heuristics): our own recommendations for making the list more useful to shoppers.
+- **What we cannot tell** from the page: anything Benable does not render for us, which we mark plainly rather than guess.
+
+## It is built to protect your OpenAI credits
+
+The whole audit, including the score and the prioritized fixes, is computed **locally with no OpenAI cost**. You can audit as many lists as you like for free.
+
+The only step that spends OpenAI credits is the **Generate AI fixes** button, which writes ready-to-use replacement copy (a new title, description, sections, and note ideas). Those results are saved per list, so re-auditing the same list does not spend again. An optional screenshot toggle (off by default) can send a picture of the list to the AI for a visual read; leave it off to keep costs down.
+
+## Before you start
+
+- **A signed-in Benable session** in Chrome. The tool uses your existing session, the same as the other Benable butlers.
+- **A Benable list URL** that you own, like `https://benable.com/<your-name>/<your-list>`.
+- **An OpenAI key in AI & Data Keys** only if you want the "Generate AI fixes" copy. The audit and scores work without it.
+
+## Auditing a list
+
+1. Open **Benable List Optimize** under Benable Butler (nested under the Benable Butler toggle).
+2. Paste your list URL into **Audit a list** and click **Audit list**.
+3. A Chrome window opens, the tool reads the list, and the audit appears.
+
+You get an **optimization score out of 100**, the **Optimized badge status**, a set of **category scores** you can expand to see exactly why each number was assigned, and a **Fix these first** list of the highest-impact changes.
+
+## Reading the score
+
+The score is our quality signal, not a Benable metric. Click any category to expand its breakdown and see the facts behind the number, for example "7 of 7 sections have no description" or "1 section contains only one product."
+
+The **Optimized badge** line reads straight from your Benable profile, where the badge actually appears. It shows **Optimized**, **Near optimized**, **Not detected**, or **Could not tell** when we were unable to check. We never label a list "not optimized" unless we actually confirmed the badge was absent.
+
+## Generate AI fixes
+
+Click **Generate AI fixes** to get ready-to-use copy: a stronger title, a rewritten description, suggested sections with descriptions, note ideas for weak products, content gaps shoppers expect, and search keywords. Every piece has a **Copy** button.
+
+The AI is instructed to write honest recommendation language ("Great for...", "Worth considering if...") and never to invent personal experience like "I use this." If a first-person claim ever slips through, we rewrite it before you see it.
+
+## Apply title and description automatically
+
+The **new title** and **new description** carry an **Apply to list** button in addition to Copy. Applying writes the change straight into your live list and captures the previous value, so an **Undo** button appears right after in case you want to revert.
+
+Everything else (sections, notes, product removals, cover) is copy-only for now. You paste those in yourself. Auto-applying the rest is on the roadmap.
+
+## Scan all my lists
+
+Open **Or scan all my lists**, paste your Benable profile URL, and click **Scan all**. The tool audits every list on your profile locally (no OpenAI cost) and sorts them so the least optimized show first. Click any row to open its full audit.
+
+## Honest limitations
+
+- **On your own lists, individual product notes are not readable.** Benable renders your own list in an editable view that does not expose the item cards to us. When that happens, the tool marks note coverage as **undetermined** and leaves the Product notes score as **N/A** rather than inventing a "0 of N have notes" verdict. Notes are still one of the biggest parts of a well-curated list, so the audit reminds you to strengthen them even when it cannot measure them.
+- **The badge lives on your profile, not the list page**, which is why the tool briefly visits your profile to read it.
+- **We do not read Benable's private data API.** The tool stays on what the page renders.
+
+## Common gotchas
+
+- **"Enter a benable.com list URL."**: the URL is not a Benable list link. It should look like `https://benable.com/<name>/<list>`.
+- **"Connect OpenAI to generate AI fixes"**: the audit worked, but the AI copy needs your OpenAI key in AI & Data Keys. Add it and click Generate AI fixes again.
+- **The score looks high but the list is not optimized**: on your own lists we cannot see the notes, so the score reflects structure only. Read the "notes undetermined" note and strengthen your product notes.
+- **A scan came back thin**: the list may be private, empty, or still loading. Try again, and make sure you are signed in.
+
+## Related
+
+- [Benable Butler tutorial](/help/tutorials/benable-butler) publish your own Benable collections.
+- [Benable Like Butler tutorial](/help/tutorials/benable-like-butler) stay visible to other creators.
+- [Benable Comment Butler tutorial](/help/tutorials/benable-comment-butler) auto-comment on Benable collections.

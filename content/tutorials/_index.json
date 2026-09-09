@@ -472,6 +472,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "benable-list-optimize",
+      "title": "Benable List Optimize: audit a Benable list and get specific fixes",
+      "category": "Partnerships",
+      "summary": "Paste a Benable list URL and get a prioritized, ready-to-use set of improvements, computed locally with no OpenAI cost.",
+      "order": 175,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "benable-like-butler",
       "title": "Benable Like Butler: auto-like other creators' Benable collections on a schedule",
       "category": "Partnerships",
