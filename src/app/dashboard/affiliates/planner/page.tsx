@@ -12,7 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { BUTLERS, CATEGORIES, type Category } from "./engagementPosts";
+import { BUTLERS, BUTLER_CATEGORIES, CATEGORIES, type Category } from "./engagementPosts";
 
 type Idea = {
   feature: string;
@@ -518,7 +518,7 @@ export default function AffiliatePlannerPage() {
               onClick={() => setActiveButler("All")}
             />
           </div>
-          {CATEGORIES.map((c) => (
+          {BUTLER_CATEGORIES.map((c) => (
             <div key={c} className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 {c}

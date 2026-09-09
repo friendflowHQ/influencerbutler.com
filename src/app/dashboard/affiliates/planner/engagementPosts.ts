@@ -16,12 +16,23 @@ export type Category =
   | "Amazon Automation"
   | "Social & Outreach"
   | "Content & Deals"
+  | "Retailers & Networks"
   | "Earnings & Growth";
 
 export const CATEGORIES: Category[] = [
   "Amazon Automation",
   "Social & Outreach",
   "Content & Deals",
+  "Earnings & Growth",
+];
+
+// Category chips for the engagement-post filter bar. Superset of CATEGORIES:
+// the engagement section has a Retailers & Networks group the Content ideas list does not.
+export const BUTLER_CATEGORIES: Category[] = [
+  "Amazon Automation",
+  "Social & Outreach",
+  "Content & Deals",
+  "Retailers & Networks",
   "Earnings & Growth",
 ];
 
@@ -1935,6 +1946,754 @@ export const BUTLERS: ButlerGroup[] = [
         "type": "Relatable",
         "screenshot": "The Content Butler monthly calendar full of organized, tagged deliverables.",
         "caption": "📌 Six months ago my deliverable system was: sticky notes, three group chats, and pure hope.\n\nNow it is one calendar with every brand deliverable tagged, dated, and searchable. Same messy creator brain, way better container for it. 🧠\n\nI did not get more disciplined, I just stopped relying on memory to do a spreadsheet's job.\n\nWhat is YOUR current system for tracking deliverables? Roast yourself in the comments 👇 I will go first lol"
+      }
+    ]
+  },
+  {
+    "slug": "benable-butler",
+    "name": "Benable Butler",
+    "cat": "Retailers & Networks",
+    "blurb": "Builds a full Benable affiliate collection from one niche keyword: the AI picks the products and writes the per-item notes. (Beta)",
+    "posts": [
+      {
+        "title": "One Keyword, Whole Collection",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Benable Butler start screen where you type a single niche keyword before it builds a collection.",
+        "caption": "🪄 I typed ONE keyword - \"cozy fall home\" - and walked away with a full Benable collection.\n\nProduct picks, the strategy behind them, and a little note on every single item. I did not hand-search a thing. The AI did the digging and the writing while I made coffee.\n\nThis one is in beta right now and I am already hooked.\n\nWhat is the one keyword that sums up YOUR niche? Drop it below 👇"
+      },
+      {
+        "title": "It Writes the Notes Too",
+        "type": "Reveal",
+        "screenshot": "The Benable Butler collection view showing an AI-written note under each product.",
+        "caption": "✍️ The part of Benable I always skipped: writing a little note on every product.\n\nThat is exactly the part that makes people actually click. Benable Butler writes those notes for me now, pulled from the real product details, so each item has a reason to exist instead of just sitting there naked.\n\nHonestly the notes are the whole game and I was leaving them blank.\n\nDo you write notes on your collections or leave them empty? Be honest 👇"
+      },
+      {
+        "title": "The Blank Collection Problem",
+        "type": "Relatable",
+        "screenshot": "An empty Benable collection next to Benable Butler ready to fill it.",
+        "caption": "😅 Raise your hand if you made a Benable account, opened a blank collection, and then... closed the tab.\n\n🙋‍♀️ That was me for MONTHS. The idea was great, the empty page was intimidating, so nothing happened.\n\nNow I give the butler a keyword and the collection is already half-built before the fear kicks in. Starting is the hardest part and it just does that part.\n\nWhat is the platform YOU keep meaning to use but never start? Comment below 👇"
+      },
+      {
+        "title": "Beta and Already Worth It",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Benable Butler beta badge next to a freshly generated collection.",
+        "caption": "🧪 Full honesty: this one is still in beta.\n\nAnd I am still using it constantly, because even the rough version turns a keyword into a real collection with products and notes in the time it takes to refill my water bottle.\n\nBeta just means I get to watch it get better while it already saves me the boring part.\n\nAre you an early-adopter type or a wait-til-it-is-polished type? Comment 🧪 or 💎 👇"
+      },
+      {
+        "title": "Give Me a Keyword",
+        "type": "Interactive (drop your niche)",
+        "screenshot": "The Benable Butler keyword field waiting for a niche term.",
+        "caption": "👇 Drop me one keyword for your niche and I will tell you what kind of Benable collection I would build from it.\n\nThis whole butler runs on a single keyword - it handles the product research, the picks, and the per-item notes from there. So the only creative decision that matters is the word you start with.\n\nComment your keyword below 👇 let's brainstorm together."
+      },
+      {
+        "title": "Strategy, Not Just a Pile",
+        "type": "Reveal",
+        "screenshot": "The Benable Butler results grouped into a themed, ordered collection rather than random items.",
+        "caption": "🧠 A collection is not just a pile of products. There is a strategy to what goes together and in what order.\n\nThat is the part I always fumbled. The butler actually thinks it through from your keyword: what fits, what pairs, what a browser would want to see next.\n\nTurns out \"just add products\" was why mine never converted.\n\nWhat is one product category you could talk about for hours? Drop it 👇"
+      },
+      {
+        "title": "I Kept Meaning to Do This",
+        "type": "Relatable",
+        "screenshot": "The Benable Butler dashboard showing a completed collection built in one session.",
+        "caption": "📝 Benable has been on my to-do list for so long it basically became furniture.\n\nEvery week: \"I should really build out my Benable.\" Every week: I did not. It was not hard, it was just one more thing.\n\nOne keyword later and the collection I procrastinated on for a season exists. The butler did the part I kept avoiding.\n\nWhat is the ONE creator task that lives on your list forever? Confess below 👇"
+      },
+      {
+        "title": "What Would You Build First",
+        "type": "Interactive",
+        "screenshot": "The Benable Butler collection templates ready to generate around a chosen theme.",
+        "caption": "🤔 If you could snap your fingers and have one finished Benable collection right now, what would it be?\n\nMine was a gift guide - the thing I always wanted up and never built. Typed the keyword, and there it was.\n\nStart small, pick the collection you WISH already existed on your profile.\n\nTell me the collection you would build first below 👇 I want ideas."
+      },
+      {
+        "title": "Keyword to Published",
+        "type": "Reveal",
+        "screenshot": "The Benable Butler flow going from a keyword input to a shareable collection.",
+        "caption": "🚀 The whole path is short now: keyword in, collection out, share the link.\n\nNo staring at a blank page, no writing ten product notes by hand, no losing an afternoon. The butler builds it, I review it, it goes live.\n\nGetting from \"I have an idea\" to \"here is the link\" used to take me a whole evening.\n\nHow long does it usually take you to publish something start to finish? Drop it below 👇"
+      },
+      {
+        "title": "Another Channel, No Extra Grind",
+        "type": "Relatable",
+        "screenshot": "The Benable Butler adding a new collection alongside a creator's other platforms.",
+        "caption": "🌱 Every new platform sounds great until you realize it is a whole new workload.\n\nThat is why I ignored Benable for so long. But building the collections is the heavy part, and the butler does that from a keyword, so adding this channel did not add hours to my week.\n\nMore places to be found, without more nights at the desk.\n\nHow many platforms are you juggling right now? Drop the number, no judgment 👇"
+      }
+    ]
+  },
+  {
+    "slug": "benable-like-butler",
+    "name": "Benable Like Butler",
+    "cat": "Retailers & Networks",
+    "blurb": "Auto-likes Benable collection items at a safe pace. Free forever on any plan.",
+    "posts": [
+      {
+        "title": "Likes While I Live My Life",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Benable Like Butler working through a list of Benable collection items on its own.",
+        "caption": "🫶 I have not manually liked a Benable item in weeks and my engagement did not skip a beat.\n\nBenable Like Butler works down the collection items I pick, at a calm human pace, while I do literally anything else. Set the limits, walk away, come back to it done.\n\nThe least glamorous task on my list, fully off my plate.\n\nWhat is the tiny repetitive task YOU wish would just do itself? Comment 👇"
+      },
+      {
+        "title": "Free Forever, For Real",
+        "type": "Reveal",
+        "screenshot": "The Benable Like Butler panel showing it active on a free account.",
+        "caption": "🆓 This one is free forever. Not free-trial free. Actually free.\n\nTrial, paid, expired, cancelled - Benable Like Butler keeps liking at a safe pace no matter what your plan is doing. It is one of those tools we just leave on for everyone.\n\nNo catch, no countdown, no card.\n\nComment 🆓 if you did not know some of these butlers are free forever, I love surprising people with this."
+      },
+      {
+        "title": "The Manual Like Grind",
+        "type": "Relatable",
+        "screenshot": "A long Benable collection feed that would take forever to like by hand.",
+        "caption": "😮‍💨 Be honest, sitting there tapping like on item after item is nobody's idea of a good time.\n\nI used to do it in little guilt bursts, forget for a week, then panic-like a hundred things at once (which is exactly how you look like a bot, lol).\n\nNow it just happens, steady and safe, in the background.\n\nHow long can you last manually liking before you want to throw your phone? Drop a time 👇"
+      },
+      {
+        "title": "Paced So You Stay Safe",
+        "type": "Reveal",
+        "screenshot": "The Benable Like Butler pacing setting spacing likes out over time.",
+        "caption": "🐢 The trick with any liking is pace. Fast looks like a bot. Bot gets you flagged.\n\nBenable Like Butler spaces the likes out so it reads like a real person casually scrolling, with caps you set yourself. Slow, steady, and it does not stop.\n\nSafety first is the whole reason I trust it running unattended.\n\nHave you ever gotten flagged for moving too fast on a platform? Comment 🔥 if account safety stresses you too."
+      },
+      {
+        "title": "Set Your Limit, Walk Away",
+        "type": "Interactive",
+        "screenshot": "The Benable Like Butler limit field where you choose your daily cap.",
+        "caption": "🎚️ You pick the number. It respects it. That is the whole setup.\n\nChoose how many likes a day feels right for you, hit go, and Benable Like Butler stays inside your limit at a safe pace. No babysitting, no guessing.\n\nComment SET below and I will walk you through turning it on 👇"
+      },
+      {
+        "title": "No More Thumb Cramp",
+        "type": "Relatable",
+        "screenshot": "The Benable Like Butler running so you never have to tap like manually.",
+        "caption": "👍 My poor thumb has been through enough.\n\nYears of manually liking things for engagement and I genuinely felt it. Now the butler handles the Benable likes and my thumb gets to retire from that particular job.\n\nSmall thing, but it is the small repetitive things that quietly burn you out.\n\nWhat is the most repetitive thing your thumbs do all day? Comment 👇 (be nice to your hands people)"
+      },
+      {
+        "title": "Runs While I Sleep",
+        "type": "Reveal / Relatable",
+        "screenshot": "An overnight Benable Like Butler log showing likes placed at a steady pace.",
+        "caption": "🌙 Engagement kept happening while I was fully asleep.\n\nI set my daily like limit, closed the laptop, and Benable Like Butler paced itself through the night. Woke up and the work I would have done manually was just... done.\n\nMy favorite kind of task is the kind I am not awake for.\n\nNight owl or early bird creator? Comment 🦉 or 🐦 👇"
+      },
+      {
+        "title": "Works Even If Your Plan Lapsed",
+        "type": "Reveal",
+        "screenshot": "The Benable Like Butler still active on an expired account.",
+        "caption": "💡 Little known thing: the free butlers keep working even if your Pro lapses.\n\nBenable Like Butler runs on an expired or cancelled account just the same. So if life happens and your plan pauses, this tool does not abandon you.\n\nWe wanted a few things you can always count on, and this is one of them.\n\nComment 💡 if you appreciate a tool that does not hold your work hostage."
+      },
+      {
+        "title": "Show Some Benable Love",
+        "type": "Interactive (drop a 🫶)",
+        "screenshot": "The Benable Like Butler steadily engaging with a chosen set of collections.",
+        "caption": "🫶 Drop a 🫶 if you are building on Benable this season.\n\nI want to see who is actually over there, because half of you have collections sitting quiet with zero consistent engagement on them. This butler keeps that engagement steady and safe for free.\n\nComment your Benable link under your 🫶 and let's go support each other 👇"
+      },
+      {
+        "title": "The Consistency I Could Not Keep",
+        "type": "Relatable",
+        "screenshot": "The Benable Like Butler keeping a steady daily like streak going.",
+        "caption": "📈 The hardest part of growing anything is doing the boring thing every single day.\n\nI am great for three days and then life eats my routine. Benable Like Butler does not have that problem. It shows up daily, at a safe pace, whether I remembered or not.\n\nConsistency I do not have to personally supply is a cheat code.\n\nWhat is the daily habit you WISH you were consistent with? Drop it 👇"
+      }
+    ]
+  },
+  {
+    "slug": "benable-comment-butler",
+    "name": "Benable Comment Butler",
+    "cat": "Retailers & Networks",
+    "blurb": "Drops short, AI-written friendly comments on Benable list items, with caps, pacing, and a built-in scheduler.",
+    "posts": [
+      {
+        "title": "Comments That Sound Like Me",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Benable Comment Butler posting a short friendly comment on a Benable list item.",
+        "caption": "💬 Benable Comment Butler leaves little friendly comments on list items for me, and they actually sound normal.\n\nShort, warm, human. Not \"great post!\" bot energy. Pulled from the real product details so there is something real to say.\n\nI show up in more places without typing a hundred comments a day.\n\nWhat is your go-to friendly comment when you like something? Drop it 👇"
+      },
+      {
+        "title": "Written From the Product",
+        "type": "Reveal",
+        "screenshot": "The Benable Comment Butler drafting a comment using a product's real details.",
+        "caption": "🧠 The reason the comments do not feel generic: they are written from the actual product details.\n\nSo instead of \"love this!\" on everything, each comment has a real detail in it that makes it land. That specificity is the difference between a comment people ignore and one they reply to.\n\nGeneric comments are just noise, and I was making a lot of noise.\n\nWhat makes YOU actually reply to a comment? Tell me below 👇"
+      },
+      {
+        "title": "I Never Knew What to Say",
+        "type": "Relatable",
+        "screenshot": "A Benable list item with the comment box waiting, before the butler fills it.",
+        "caption": "😅 Confession: half the reason I did not comment on things was I never knew what to write.\n\nI would open the box, stare, type \"so cute!\", delete it, and close the app. Repeat forever. The blank comment box beat me every time.\n\nNow the butler has something real and friendly to say, so the commenting actually happens.\n\nAre you a bold commenter or a lurker? Be honest 👇"
+      },
+      {
+        "title": "Caps and Pacing Built In",
+        "type": "Reveal",
+        "screenshot": "The Benable Comment Butler settings showing daily caps and pacing controls.",
+        "caption": "🛡️ Commenting fast is how you get flagged. So this has caps and pacing baked in.\n\nYou set the limit, it spaces the comments out like a real person, and it just does not go over. Friendly presence, safe pace, no spammy blast.\n\nEvery tool we build has the same rule: slow and safe beats fast and banned.\n\nComment 🔥 if platform safety is always in the back of your mind too."
+      },
+      {
+        "title": "What Do You Comment",
+        "type": "Interactive",
+        "screenshot": "The Benable Comment Butler queue of short friendly comments ready to post.",
+        "caption": "🗣️ Tell me your signature comment. The one you leave on everything you love.\n\nMine used to be a plain \"obsessed 😍\" on repeat. The butler mixes it up with real product-based comments now so I am not leaving the same three words everywhere.\n\nDrop YOUR signature comment below 👇 let's see everyone's."
+      },
+      {
+        "title": "Scheduled So I Forget It",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Benable Comment Butler scheduler set to run on its own each day.",
+        "caption": "📅 The best part is the scheduler. I set it once and stopped thinking about it.\n\nBenable Comment Butler runs on its own timing, drops its capped, paced comments, and I do not have to remember a thing. It is friendly engagement on autopilot.\n\nSet-and-forget is the only kind of consistency I can actually maintain.\n\nAre you a scheduler or a do-it-in-the-moment creator? Comment 📅 or ⚡ 👇"
+      },
+      {
+        "title": "Comments Beat Silence",
+        "type": "Relatable",
+        "screenshot": "The Benable Comment Butler adding friendly activity to otherwise quiet list items.",
+        "caption": "🔇 A quiet profile is a sad profile. Zero comments reads like nobody is home.\n\nShowing up in the comments - genuinely, kindly - is how you stop looking like a ghost town. I just could not keep it up by hand.\n\nNow there is steady friendly activity where there used to be silence.\n\nWhat is worse to you: no likes or no comments? Settle the debate below 👇"
+      },
+      {
+        "title": "Short, Friendly, Never Spammy",
+        "type": "Reveal",
+        "screenshot": "The Benable Comment Butler examples showing brief, warm comments rather than long pitches.",
+        "caption": "✂️ Nobody wants a paragraph pitch in their comments. Short and warm wins.\n\nThat is exactly the lane this stays in: brief, friendly, human. No links dumped, no essays, no desperate energy. Just a nice little note that makes someone smile.\n\nThe restraint is the strategy.\n\nLong thoughtful comment or short sweet one - which do YOU prefer to get? Drop your pick 👇"
+      },
+      {
+        "title": "Comment Style Check",
+        "type": "Interactive (drop your niche)",
+        "screenshot": "The Benable Comment Butler tuned to a creator's niche and tone.",
+        "caption": "🎯 Drop your niche and I will guess your comment vibe.\n\nBeauty girlies comment different than the gadget guys, I do not make the rules. The butler keeps the comments matched to real product details either way, so they fit whatever you are into.\n\nComment your niche below 👇 I am calling everyone's comment personality."
+      },
+      {
+        "title": "One More Thing Off My List",
+        "type": "Relatable",
+        "screenshot": "The Benable Comment Butler handling commenting so the creator can focus elsewhere.",
+        "caption": "😮‍💨 Every creator task I automate is one less tab open in my brain.\n\nCommenting was a small one, but small ones stack up until you are exhausted for no clear reason. Handing it to the butler quietly gave me a little room back.\n\nIt is never the one big task, it is the forty tiny ones.\n\nWhat tiny recurring task is secretly draining YOU? Name it below 👇"
+      }
+    ]
+  },
+  {
+    "slug": "walmart-butler",
+    "name": "Walmart Butler",
+    "cat": "Retailers & Networks",
+    "blurb": "Tracks Walmart price and rank history, and reposts your Amazon storefront videos and photos to your Walmart Creator storefront on an exact barcode match.",
+    "posts": [
+      {
+        "title": "My Amazon Content, on Walmart Too",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Walmart Butler Repost tool moving a storefront video from Amazon to a Walmart Creator storefront.",
+        "caption": "🔁 The videos and photos I already made for Amazon? They are on my Walmart Creator storefront now too. Hands-free.\n\nWalmart Butler reposts my existing storefront content over to Walmart for me, so I am earning in two places off content I made ONCE. No re-filming, no re-editing.\n\nWork made once should earn twice, that is the whole idea.\n\nAre you set up on Walmart Creator yet, or is that a scary someday for you? Comment 👇"
+      },
+      {
+        "title": "Only on an Exact Match",
+        "type": "Reveal",
+        "screenshot": "The Walmart Butler confirming an exact barcode match before reposting a product's content.",
+        "caption": "🎯 It does not just guess. It reposts only when the barcode matches exactly.\n\nSame product, verified by UPC or GTIN, then your Amazon storefront content goes up on Walmart. No wrong-product mixups, no mismatched links. Precise on purpose.\n\nI would rather it repost carefully than fast and sloppy.\n\nHave you ever posted the wrong link and cringed later? Comment 🙈 if yes (we have all done it)."
+      },
+      {
+        "title": "A Whole Storefront I Ignored",
+        "type": "Relatable",
+        "screenshot": "The Walmart Butler dashboard next to a mostly empty Walmart Creator storefront.",
+        "caption": "😅 I had a Walmart Creator storefront sitting basically empty for... a while. Okay, a long while.\n\nI knew I should be on it. I just did not have it in me to redo all my content for another platform. So it stayed a ghost town while Amazon got everything.\n\nNow the butler fills it from my existing content and I stopped leaving that storefront on read.\n\nWhat platform have YOU been sleeping on? Confess below 👇"
+      },
+      {
+        "title": "Price and Rank History",
+        "type": "Reveal",
+        "screenshot": "The Walmart Butler Research view showing a product's price history, rank, and stock over time.",
+        "caption": "📊 Before I post a Walmart product, I can actually see its story: price history, rough rank, estimated monthly sales, stock, refreshed daily.\n\nNo more posting a product blind and hoping. I can tell if it is trending, sinking, or about to be out of stock BEFORE I put it in front of my audience.\n\nPosting on data instead of vibes changed my hit rate.\n\nDo you research before you post or post on gut? Drop your style 👇"
+      },
+      {
+        "title": "Double Your Storefront",
+        "type": "Interactive (drop your storefront)",
+        "screenshot": "The Walmart Butler ready to mirror an Amazon storefront onto Walmart Creator.",
+        "caption": "👇 Drop your Amazon storefront link.\n\nA lot of you have a mountain of storefront videos and photos that only live in ONE place, when the same content could be earning on Walmart too. The butler reposts it over on an exact barcode match, hands-free.\n\nComment your storefront and I will show you how to start mirroring it. Two storefronts, one pile of work."
+      },
+      {
+        "title": "Hands-Free Reposting",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Walmart Butler Repost tool running unattended through a storefront's matched products.",
+        "caption": "🙌 I did not sit there dragging files between platforms. It just ran.\n\nWalmart Butler works through my matched products and republishes the content to Walmart on its own, in the background, while I do actual creative work.\n\nThe manual version of this would have taken me a full weekend I did not want to give up.\n\nWhat would you rather do than manually re-upload content all weekend? Comment the ONE thing 👇"
+      },
+      {
+        "title": "Research Before You Post",
+        "type": "Reveal",
+        "screenshot": "The Walmart Butler Research tool tracking a product a creator is considering promoting.",
+        "caption": "🔎 Half of doing well on a platform is picking the right products before you ever hit post.\n\nWalmart Research tracks the price, the rough rank, the estimated sales, and the stock on the Walmart products I am eyeing, refreshed every day. So I promote the ones with momentum, not the ones about to go out of stock.\n\nGuessing was expensive. This is just... looking.\n\nWhat is one product you promoted that flopped? No shame, drop it 👇"
+      },
+      {
+        "title": "Two Storefronts, Same Effort",
+        "type": "Relatable",
+        "screenshot": "The Walmart Butler managing Amazon and Walmart storefront content side by side.",
+        "caption": "⚖️ Adding a second storefront used to mean doubling my work. Hard pass, I was already maxed.\n\nBut the content already exists. The butler just puts it in a second place. So now I am in two storefronts for roughly the effort of one, and I stopped treating Walmart like an impossible extra job.\n\nMore surface area, same me.\n\nHow many platforms are you actively posting to right now? Drop the number 👇"
+      },
+      {
+        "title": "Are You on Walmart Yet",
+        "type": "Interactive",
+        "screenshot": "The Walmart Butler onboarding a creator's Walmart Creator storefront for the first time.",
+        "caption": "🛒 Real talk: are you on Walmart Creator yet? Yes or no in the comments.\n\nSo many creators are Amazon-only and leaving a whole second storefront on the table. The reason is always the same - redoing content is exhausting. The butler removes that reason by reposting what you already have.\n\nComment YES or NOT YET below 👇 I am genuinely curious how many of us are missing this."
+      },
+      {
+        "title": "It Reposts Carefully",
+        "type": "Reveal",
+        "screenshot": "The Walmart Butler skipping a product with no exact barcode match instead of forcing it.",
+        "caption": "🧷 What I trust most: it will NOT repost a product it cannot exactly match.\n\nNo barcode match, no repost. That means my Walmart storefront does not fill up with wrong or mismatched products just to look busy. Quality over quantity, enforced automatically.\n\nA tool that knows when to skip is a tool I can leave running.\n\nWould you rather a tool be fast or careful? Drop your pick 👇"
+      }
+    ]
+  },
+  {
+    "slug": "temu-butler",
+    "name": "Temu Butler",
+    "cat": "Retailers & Networks",
+    "blurb": "Launches your Temu creator affiliate signup and (soon) harvests products, links, and earnings the same way Amazon Butler does. (Beta)",
+    "posts": [
+      {
+        "title": "Getting In Early on Temu",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Temu Butler launch screen starting a Temu creator affiliate signup.",
+        "caption": "👀 Temu is throwing money at creators right now and most of us are not even signed up.\n\nTemu Butler launches your Temu creator affiliate signup for you, so getting in is one step instead of a rabbit hole of forms. This one is in beta, and soon it will harvest products, links, and earnings the same way Amazon Butler does.\n\nEarly is where the easy money usually is.\n\nAre you on Temu affiliate yet, or is this the first you are hearing of it? Comment 👇"
+      },
+      {
+        "title": "One-Click Signup Launch",
+        "type": "Reveal",
+        "screenshot": "The Temu Butler kicking off the creator signup flow in one click.",
+        "caption": "🚪 The signup is the wall most people never get past. So the butler just opens the door for you.\n\nOne click launches your Temu creator affiliate signup instead of you hunting down where it even lives. Getting started is the hardest part and this removes it.\n\nBeta today, more coming, but the door is already open.\n\nWhat is the affiliate program you keep meaning to sign up for and never do? Drop it 👇"
+      },
+      {
+        "title": "Another Program, I Know",
+        "type": "Relatable",
+        "screenshot": "The Temu Butler positioned as one more affiliate channel in a creator's stack.",
+        "caption": "😮‍💨 I can feel you sighing. Another affiliate program to manage. I sighed too.\n\nBut the whole point of a butler is that the managing is not your job. It launches the signup now and is being built to harvest the products, links, and earnings for you, just like the Amazon one.\n\nMore income streams should not mean more spreadsheets.\n\nHow many affiliate programs are you in right now? Drop the number 👇"
+      },
+      {
+        "title": "The Amazon Playbook, Ported",
+        "type": "Reveal",
+        "screenshot": "The Temu Butler roadmap showing product, link, and earnings harvesting like Amazon Butler.",
+        "caption": "🗺️ If you love what Amazon Butler does, this is that energy pointed at Temu.\n\nRight now Temu Butler launches your signup. Soon it harvests your products, wraps your links, and pulls your earnings the same automated way. Same playbook, new platform.\n\nWatching it grow while I am already onboarded feels like being early to the right thing.\n\nComment 🔥 if you would want the full Temu harvest the second it ships."
+      },
+      {
+        "title": "Are You Doing Temu",
+        "type": "Interactive",
+        "screenshot": "The Temu Butler dashboard tracking a creator's Temu affiliate status.",
+        "caption": "🤔 Genuine question: is anyone here already doing Temu affiliate?\n\nI want to hear from the people actually in it, because the payouts I keep hearing about sound wild and I do not know who to believe. The butler makes getting in painless, but I want real stories.\n\nComment YES if you are on Temu, or 👀 if you are curious 👇"
+      },
+      {
+        "title": "Beta Means Early",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Temu Butler beta badge next to its current signup-launch feature.",
+        "caption": "🧪 Full honesty: Temu Butler is in beta. Today it launches your signup, the harvesting is on the way.\n\nAnd I am okay being early, because early on a fast-growing platform is exactly where you want to be. I would rather be set up and waiting than scrambling once everyone piles in.\n\nBeta just means I get a head start.\n\nEarly adopter or wait-and-see? Comment 🧪 or 💎 👇"
+      },
+      {
+        "title": "I Kept Putting Temu Off",
+        "type": "Relatable",
+        "screenshot": "The Temu Butler finally completing a signup a creator had been avoiding.",
+        "caption": "📝 Temu affiliate lived on my \"later\" list for way too long.\n\nNot because it was hard, but because starting anything new when you are already busy feels like a mountain. The butler made the first step one click, so \"later\" finally became \"done.\"\n\nThe hardest part of any new stream is just beginning.\n\nWhat is on YOUR \"I will get to it\" creator list? Confess below 👇"
+      },
+      {
+        "title": "Products, Links, Earnings - Soon",
+        "type": "Reveal",
+        "screenshot": "The Temu Butler preview of upcoming product and earnings harvesting features.",
+        "caption": "🛠️ Here is where it is headed: the butler will pull your Temu products, wrap your links, and surface your earnings automatically.\n\nToday it gets you signed up. The rest is being built to work the way the Amazon side already does. So getting in now means you are ready the moment the full toolkit lands.\n\nBuilding in public, and I am here for the ride.\n\nWhat feature would you want FIRST on Temu? Drop it 👇"
+      },
+      {
+        "title": "Who Wants In",
+        "type": "Interactive (drop a 👀)",
+        "screenshot": "The Temu Butler signup launcher ready for new creators.",
+        "caption": "👀 Drop a 👀 if you want in on Temu affiliate before it gets crowded.\n\nThe signup is the one-click part now, and the full harvesting butler is coming. I would rather round up the people who want to be early than watch everyone rush in late.\n\nComment 👀 below and I will make sure you know the moment the full Temu Butler ships 👇"
+      },
+      {
+        "title": "New Platform, Familiar Butler",
+        "type": "Relatable",
+        "screenshot": "The Temu Butler sitting alongside a creator's other butlers in the same dashboard.",
+        "caption": "🤝 The scary part of a new platform is learning a whole new system. This is not that.\n\nIt is a butler, in the same dashboard, working the same way the others do. So adding Temu did not mean learning anything new, it just meant flipping on one more helper.\n\nFamiliar tools make new platforms a lot less intimidating.\n\nWhat almost stopped you from trying a new platform? Comment 👇"
+      }
+    ]
+  },
+  {
+    "slug": "black-friday-butler",
+    "name": "Black Friday Butler",
+    "cat": "Amazon Automation",
+    "blurb": "Ranks Creator Connections opportunities by margin and recency during the Black Friday surge so you chase what matters first.",
+    "posts": [
+      {
+        "title": "The Surge Is Coming",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Black Friday Butler ranking a flood of Creator Connections opportunities during the seasonal surge.",
+        "caption": "🖤 Black Friday is the one weekend that can make a creator's whole quarter. And it is chaos.\n\nBlack Friday Butler takes the flood of Creator Connections opportunities and ranks them by margin and recency, so I chase the ones that matter first instead of drowning.\n\nThe surge does not wait for you to get organized. This gets me organized fast.\n\nAre you feeling ready for Black Friday or is your stomach dropping right now? Comment 👇"
+      },
+      {
+        "title": "Ranked by Margin",
+        "type": "Reveal",
+        "screenshot": "The Black Friday Butler list sorted so the highest-margin opportunities sit at the top.",
+        "caption": "💰 Not all Black Friday offers are worth your energy. The butler sorts them so the fattest-margin ones sit at the top.\n\nDuring the surge you only have so many hours, and spending them on low-margin stuff is how you work all weekend for scraps. This puts the best opportunities first, on purpose.\n\nWork the top of the list, ignore the noise.\n\nDo you chase volume or margin during sales? Drop your strategy 👇"
+      },
+      {
+        "title": "Black Friday Overwhelm",
+        "type": "Relatable",
+        "screenshot": "The Black Friday Butler taming a chaotic pile of seasonal offers into one ranked view.",
+        "caption": "😵‍💫 Every Black Friday I hit the same wall: too many offers, too little time, total paralysis.\n\nThere is SO much happening that I would freeze and end up posting almost nothing during the biggest weekend of the year. The overwhelm cost me more than the competition ever did.\n\nA ranked list instead of a pile is the difference between frozen and moving.\n\nDoes Black Friday energize you or overwhelm you? Be honest 👇"
+      },
+      {
+        "title": "Freshest Offers First",
+        "type": "Reveal",
+        "screenshot": "The Black Friday Butler surfacing the most recently posted opportunities at the top.",
+        "caption": "⏱️ During the surge, offers go stale in hours. The butler factors in recency so I am chasing the fresh ones, not yesterday's leftovers.\n\nAn expired Black Friday deal is worse than useless, it makes you look behind. Ranking by recency keeps me pointed at what is actually live right now.\n\nFresh and high-margin, that is the whole target.\n\nHave you ever posted a deal that had already ended? Comment 🙈 👇"
+      },
+      {
+        "title": "What Are You Pushing",
+        "type": "Interactive",
+        "screenshot": "The Black Friday Butler dashboard ready to rank a creator's seasonal opportunities.",
+        "caption": "🛍️ Black Friday plan check: what is the ONE category you are going hard on this year?\n\nMine shifts every season based on what has margin. The butler ranks my opportunities so I actually know where to point my energy instead of guessing in the chaos.\n\nDrop the category you are betting on this Black Friday 👇 let's compare notes."
+      },
+      {
+        "title": "Chase What Matters First",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Black Friday Butler highlighting the top-priority opportunity to act on next.",
+        "caption": "🎯 The secret to a good Black Friday is not doing more. It is doing the RIGHT things first.\n\nThe butler ranks every opportunity by margin and recency so my very next move is always the highest-value one available. No more starting with whatever tab happened to be open.\n\nOrder of operations is everything when the clock is loud.\n\nAre you a plan-ahead creator or a wing-it-in-the-moment one? Comment 👇"
+      },
+      {
+        "title": "I Always Burned Out by Sunday",
+        "type": "Relatable",
+        "screenshot": "The Black Friday Butler helping pace a creator through the long sale weekend.",
+        "caption": "😮‍💨 Every year I would sprint Friday, crash Saturday, and be useless by Cyber Monday.\n\nI burned all my energy on low-value stuff early because I had no order to work in. By the time the best offers landed, I was fried.\n\nWorking a ranked list means I spend my energy where it pays, and I actually make it to Monday.\n\nWhat is your Black Friday survival tip? Share it below 👇"
+      },
+      {
+        "title": "One List, Not a Hundred Tabs",
+        "type": "Reveal",
+        "screenshot": "The Black Friday Butler consolidating scattered opportunities into a single ranked feed.",
+        "caption": "🗂️ My old Black Friday setup was forty open tabs and a prayer. Never again.\n\nThe butler pulls the opportunities into one ranked feed so I am looking at a single prioritized list, not juggling a browser about to crash. Calm beats chaos, especially at volume.\n\nMy laptop fan is grateful.\n\nHow many tabs do you have open RIGHT NOW? Be honest, drop the number 👇"
+      },
+      {
+        "title": "Prep With Me",
+        "type": "Interactive (drop your niche)",
+        "screenshot": "The Black Friday Butler set up ahead of the surge for a specific niche.",
+        "caption": "📋 Drop your niche and let's Black Friday prep together.\n\nThe butler will rank your Creator Connections opportunities by margin and recency once the surge hits, but knowing your lane now means you move faster when it does. Preparation is half the win.\n\nComment your niche below 👇 and let's get ahead of the chaos as a group."
+      },
+      {
+        "title": "Built for the One Weekend",
+        "type": "Reveal",
+        "screenshot": "The Black Friday Butler active specifically during the Black Friday sale window.",
+        "caption": "🖤 Some tools are for every day. This one is a specialist for the weekend that matters most.\n\nBlack Friday Butler exists for the surge: rank fast, chase the best, do not drown. It is the difference between a Black Friday you dread and one you actually cash in on.\n\nShow up ready for the big one.\n\nWhat did last Black Friday teach you? Drop one lesson below 👇"
+      }
+    ]
+  },
+  {
+    "slug": "prime-day-butler",
+    "name": "Prime Day Butler",
+    "cat": "Amazon Automation",
+    "blurb": "Unlocks for Prime Day and surfaces deals you can post about: content you already made, products you already own, and fresh CC/SPCC finds.",
+    "posts": [
+      {
+        "title": "Prime Day Without the Scramble",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Prime Day Butler surfacing postable Prime Day deals during the event window.",
+        "caption": "⚡ Prime Day used to be a full-on scramble for me. Not anymore.\n\nPrime Day Butler surfaces the deals I can actually post about: content I already made, products I already own, and fresh finds - so I walk in with a plan instead of panic-scrolling for something to share.\n\nThe biggest shopping days should be your easiest, not your most stressful.\n\nDoes Prime Day stress you out or hype you up? Comment 👇"
+      },
+      {
+        "title": "Content You Already Made",
+        "type": "Reveal",
+        "screenshot": "The Prime Day Butler matching a live Prime Day deal to a video the creator already posted.",
+        "caption": "♻️ The smartest Prime Day move: post about deals on stuff you ALREADY have content for.\n\nThe butler matches live Prime Day deals to videos and posts I made months ago, so I am not creating from scratch during the busiest window. I just resurface the right existing content at the exact right moment.\n\nOld content plus a live deal is honestly the easiest win there is.\n\nWhat is a video of yours that keeps earning? Drop it 👇"
+      },
+      {
+        "title": "The Prime Day Panic",
+        "type": "Relatable",
+        "screenshot": "The Prime Day Butler calmly listing options during the rush of the event.",
+        "caption": "😰 Prime Day morning, every year: \"there are a thousand deals and I do not know what to post FIRST.\"\n\nThat panic used to eat my whole morning while the clock ran. Too many choices, zero direction, so I would freeze and post late.\n\nThe butler hands me a focused list of deals I can actually speak to, so the panic never gets a chance to start.\n\nWhat is your Prime Day morning like - calm or chaos? Comment 👇"
+      },
+      {
+        "title": "Products You Already Own",
+        "type": "Reveal",
+        "screenshot": "The Prime Day Butler flagging a Prime Day deal on an item the creator personally owns.",
+        "caption": "📦 My most authentic Prime Day posts are always about stuff I actually own. The butler finds those deals for me.\n\nIt surfaces Prime Day discounts on products I already have, so I can talk about them for real - no fake hype, just \"hey this thing I use is on sale.\" That honesty is what converts.\n\nReal beats salesy every single time.\n\nWhat is one thing you own that you would recommend to anyone? Drop it 👇"
+      },
+      {
+        "title": "Whats Your Prime Day Hero",
+        "type": "Interactive",
+        "screenshot": "The Prime Day Butler dashboard highlighting a creator's top Prime Day pick.",
+        "caption": "🦸 Every Prime Day there is that ONE product you push harder than the rest. What is yours?\n\nThe butler surfaces my options - owned, already-covered, and fresh - and my hero product usually jumps right out. Then I build the day around it.\n\nDrop your Prime Day hero product below 👇 I am looking for ideas."
+      },
+      {
+        "title": "CC and SPCC Flags",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Prime Day Butler tagging opportunities with CC and SPCC flags.",
+        "caption": "🚩 Little detail that matters: the butler flags Creator Connections and SPCC opportunities right on the Prime Day deals.\n\nSo I can see at a glance which deals also come with a paid campaign angle, not just a plain commission. During Prime Day that flag can be the difference between a decent post and a great-paying one.\n\nSeeing the money angle up front changes what I prioritize.\n\nComment 🔥 if you would want those flags on every deal you see."
+      },
+      {
+        "title": "I Used to Freeze",
+        "type": "Relatable",
+        "screenshot": "The Prime Day Butler giving a clear starting point instead of an overwhelming deal feed.",
+        "caption": "🥶 Confession: on past Prime Days I would open Amazon, see the wall of deals, and just... freeze.\n\nSo many options that I could not pick one, and choice paralysis quietly cost me the whole event. The deals were there, I just could not move.\n\nA short, relevant list instead of an endless feed is what finally got me unstuck.\n\nDoes too much choice ever freeze YOU up? Comment 👇"
+      },
+      {
+        "title": "One Click to Deals Butler",
+        "type": "Reveal",
+        "screenshot": "The Prime Day Butler handing a selected deal straight to the Deals Butler for posting.",
+        "caption": "🤝 Found a Prime Day deal I like? One click hands it to my Deals Butler and it is queued to post.\n\nNo copy-pasting links, no bouncing between tools. The Prime Day Butler finds it, the Deals Butler posts it, and I barely touched anything in between.\n\nThe handoff being seamless is what makes a busy day actually doable.\n\nWhat slows you down most on a big sale day? Drop it 👇"
+      },
+      {
+        "title": "Prime Day Game Plan",
+        "type": "Interactive (drop your niche)",
+        "screenshot": "The Prime Day Butler prepared ahead of the event for a creator's niche.",
+        "caption": "📋 Prime Day is coming. Drop your niche and let's build a game plan.\n\nWhen the event opens, the butler surfaces the deals you can post about from content and products you already have. Knowing your lane now means you move the second it unlocks.\n\nComment your niche below 👇 and let's prep as a squad."
+      },
+      {
+        "title": "Unlocks When It Counts",
+        "type": "Reveal",
+        "screenshot": "The Prime Day Butler activating during its Prime Day window.",
+        "caption": "🔓 This one is a specialist. It unlocks for the Prime Day window and does exactly one thing brilliantly: get you posting the right deals fast.\n\nNo clutter the rest of the year, all focus when it matters. When Prime Day hits, it is ready and so am I.\n\nA tool that shows up exactly when you need it is a beautiful thing.\n\nHow did your last Prime Day go? Drop a 📈 or 📉 👇"
+      }
+    ]
+  },
+  {
+    "slug": "data-refresh-butler",
+    "name": "Data Refresh Butler",
+    "cat": "Amazon Automation",
+    "blurb": "Schedules when the Creator Connections and SPCC commission catalogs refresh, so every downstream butler runs on fresh data.",
+    "posts": [
+      {
+        "title": "Fresh Data on My Schedule",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Data Refresh Butler scheduling a commission catalog refresh at a set time.",
+        "caption": "🔄 Every butler I run is only as good as the data behind it. So I set that data to refresh on a schedule.\n\nData Refresh Butler updates my Creator Connections and SPCC commission catalogs when I tell it to, so everything downstream - deals, commissions, all of it - runs on numbers that are actually current.\n\nNot glamorous. Completely essential.\n\nHave you ever acted on old numbers and regretted it? Comment 👇"
+      },
+      {
+        "title": "Everything Downstream Runs Better",
+        "type": "Reveal",
+        "screenshot": "The Data Refresh Butler feeding fresh catalog data into the other butlers.",
+        "caption": "🧩 This is the quiet butler that makes all the loud ones better.\n\nWhen the commission catalogs are fresh, every tool that reads them - deal finders, commission trackers - makes smarter calls. One refresh, and the whole system gets sharper.\n\nIt is the plumbing nobody sees but everybody depends on.\n\nWhat is the unglamorous thing that secretly holds YOUR workflow together? Drop it 👇"
+      },
+      {
+        "title": "Stale Data Burned Me",
+        "type": "Relatable",
+        "screenshot": "The Data Refresh Butler preventing decisions made on out-of-date commission rates.",
+        "caption": "😩 I once pushed a product hard based on a commission rate that had quietly changed. Oops.\n\nActing on stale numbers is such an avoidable way to waste effort, and I did it more than once before I got serious about fresh data.\n\nNow the catalogs refresh on a schedule and I stopped making decisions on yesterday's info.\n\nHave you ever been surprised by a rate that changed under you? Comment 🙋‍♀️ 👇"
+      },
+      {
+        "title": "CC and SPCC, Both Fresh",
+        "type": "Reveal",
+        "screenshot": "The Data Refresh Butler updating both the Creator Connections and SPCC catalogs.",
+        "caption": "📚 It keeps both catalogs current: Creator Connections AND Sponsored Products Creator Connections.\n\nTwo sources of truth, both refreshed on my schedule, so nothing I do is running on outdated commission info. When both are fresh, I trust every number I act on.\n\nComplete and current beats fast and wrong.\n\nDo you keep an eye on your commission rates or set-and-forget them? Drop your style 👇"
+      },
+      {
+        "title": "Set It and Trust It",
+        "type": "Interactive",
+        "screenshot": "The Data Refresh Butler schedule toggle switched on and running quietly.",
+        "caption": "✅ I set the refresh schedule once and stopped thinking about it. That is the dream, honestly.\n\nData Refresh Butler keeps my catalogs current in the background so I never have to remember to update anything or wonder if my numbers are stale.\n\nComment SET below and I will show you how to schedule yours 👇"
+      },
+      {
+        "title": "The Butler Behind the Butlers",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Data Refresh Butler working in the background to support every other tool.",
+        "caption": "🎩 If the other butlers are the stars, this one is the stage crew.\n\nNobody claps for the data refresh, but without it the whole show runs on bad numbers. It quietly keeps everything fed with fresh catalog data so the flashy tools can actually shine.\n\nRespect the unsung ones.\n\nWho is the unsung hero of YOUR workflow, tool or person? Shout them out 👇"
+      },
+      {
+        "title": "I Never Thought About It",
+        "type": "Relatable",
+        "screenshot": "The Data Refresh Butler surfacing how often catalog data actually changes.",
+        "caption": "🤯 Real talk: I never once thought about WHEN my commission data updated. I just assumed it was magically current.\n\nIt is not, unless something refreshes it. Once I realized how often catalogs shift, scheduling the refresh went from who cares to oh, that is why my numbers felt off.\n\nThe things we never think about are usually the ones quietly costing us.\n\nWhat is a creator detail YOU only recently learned mattered? Drop it 👇"
+      },
+      {
+        "title": "Schedule It Overnight",
+        "type": "Reveal",
+        "screenshot": "The Data Refresh Butler set to refresh catalogs during off-hours.",
+        "caption": "🌙 I have mine refresh overnight, so every morning I wake up to current data with zero effort.\n\nBy the time I sit down to work, the CC and SPCC catalogs are already fresh and every downstream butler is running on today's numbers. The system quietly resets itself while I sleep.\n\nWaking up ready is a small luxury I did not know I needed.\n\nWhen do YOU do your best work - morning or night? Comment 🌅 or 🌙 👇"
+      },
+      {
+        "title": "When Do You Refresh",
+        "type": "Interactive (drop a ⏰)",
+        "screenshot": "The Data Refresh Butler letting a creator pick their refresh time.",
+        "caption": "⏰ Drop the time of day you would want your data to refresh.\n\nSome people like a morning refresh so numbers are fresh for the workday, some like overnight. The butler lets you pick, and then it just handles it on repeat.\n\nComment your ideal refresh time below 👇 curious what everyone prefers."
+      },
+      {
+        "title": "Boring, and I Love It",
+        "type": "Reveal",
+        "screenshot": "The Data Refresh Butler running a scheduled refresh with no drama.",
+        "caption": "🥱 This butler is boring. It refreshes data on schedule and nothing exciting happens. I love it.\n\nBoring means reliable. Boring means I never think about it. Boring means every other tool I use is quietly running on good information because this one does its thankless job perfectly.\n\nGive me boring and dependable over flashy and flaky any day.\n\nBoring-but-reliable or exciting-but-risky - which do you pick? Drop it 👇"
+      }
+    ]
+  },
+  {
+    "slug": "pinterest-butler",
+    "name": "Pinterest Butler",
+    "cat": "Content & Deals",
+    "blurb": "Turns your Amazon Idea Lists into scheduled, SEO-optimized pins with affiliate links wrapped automatically. (Coming soon)",
+    "posts": [
+      {
+        "title": "Idea Lists In, Pins Out",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Pinterest Butler preview turning an Amazon Idea List into a set of ready pins.",
+        "caption": "📌 Coming soon and I am already excited: Pinterest Butler turns my Amazon Idea Lists into actual pins.\n\nIdea Lists in, scheduled and SEO-optimized pins out, with affiliate links wrapped automatically. The work I already do building Idea Lists becomes a whole second traffic channel.\n\nPinterest is a search engine in disguise and most creators ignore it.\n\nAre you on Pinterest yet or is it a blind spot? Comment 👇"
+      },
+      {
+        "title": "Links Wrapped Automatically",
+        "type": "Reveal",
+        "screenshot": "The Pinterest Butler preview showing affiliate links auto-wrapped on each generated pin.",
+        "caption": "🔗 The tedious part of affiliate Pinterest: wrapping every single link. This handles it automatically.\n\nWhen Pinterest Butler ships, every pin it makes from your Idea Lists comes with the affiliate link already wrapped in. No manual link-building pin by pin.\n\nThe boring part being automatic is what makes a channel actually sustainable.\n\nWhat is the boring task that stops you from starting new platforms? Drop it 👇"
+      },
+      {
+        "title": "Pinterest on My List Forever",
+        "type": "Relatable",
+        "screenshot": "The Pinterest Butler positioned to finally make Pinterest easy for a creator.",
+        "caption": "📝 \"I should really do Pinterest\" has been on my list for approximately... forever.\n\nI know it drives traffic. I know it works for affiliates. I just never had the energy to build pins by hand on top of everything else. So it stayed a good idea I never acted on.\n\nPinterest Butler is coming to do the building part, and my excuse is about to disappear.\n\nWhat platform have YOU been meaning to start for way too long? Confess 👇"
+      },
+      {
+        "title": "SEO-Optimized, Not Guesswork",
+        "type": "Reveal",
+        "screenshot": "The Pinterest Butler preview writing search-optimized text for each pin.",
+        "caption": "🔍 Pinterest is search, which means the words on your pin matter as much as the picture.\n\nPinterest Butler is built to write SEO-optimized pins, not random captions, so the pins can actually get found. That is the difference between pins that sit dead and pins that quietly pull traffic for months.\n\nGuessing at Pinterest SEO is why most creators give up on it.\n\nHave you ever tried Pinterest and quit? Tell me what happened 👇"
+      },
+      {
+        "title": "Who Wants This",
+        "type": "Interactive (drop a 📌)",
+        "screenshot": "The Pinterest Butler waitlist ready for interested creators.",
+        "caption": "📌 Drop a 📌 if you want Pinterest Butler the moment it launches.\n\nIt is coming soon: Idea Lists turned into scheduled, SEO-optimized, affiliate-linked pins, automatically. I want to know who is ready so nobody misses the drop.\n\nComment 📌 below and I will make sure you hear about it first 👇"
+      },
+      {
+        "title": "Coming Soon, Get Ready",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Pinterest Butler coming-soon badge next to a mocked-up pin schedule.",
+        "caption": "🚧 Full honesty: Pinterest Butler is not live yet. It is coming soon.\n\nBut here is the move - start building out your Amazon Idea Lists NOW, because those are the fuel. When the butler drops, the creators with rich Idea Lists get an instant wall of pins on day one.\n\nPrep beats scramble.\n\nHow many Idea Lists do you have right now? Drop the number 👇 (I am building mine up too)."
+      },
+      {
+        "title": "Pinterest Is Slept On",
+        "type": "Relatable",
+        "screenshot": "The Pinterest Butler highlighting Pinterest as an underused affiliate channel.",
+        "caption": "😴 Everyone fights for attention on the same three platforms while Pinterest sits there quietly sending people to affiliate links.\n\nIt is not flashy, it is not trendy, and that is exactly why it is underused. Long-life pins keep working long after a reel is forgotten.\n\nThe butler is coming to make it finally easy, and I think a lot of us are going to wish we started sooner.\n\nWhat is an underrated platform you secretly love? Comment 👇"
+      },
+      {
+        "title": "Scheduled So You Do Not Have To",
+        "type": "Reveal",
+        "screenshot": "The Pinterest Butler preview lining pins up on a posting schedule.",
+        "caption": "📅 Consistency kills on Pinterest, and consistency is exactly what burns creators out.\n\nPinterest Butler is built to schedule the pins for you, so you get steady posting without sitting down to pin every day. Set the Idea Lists loose and let it space them out.\n\nThe scheduling is what turns \"I tried Pinterest once\" into an actual channel.\n\nAre you a batch-and-schedule person or a post-in-real-time person? Comment 👇"
+      },
+      {
+        "title": "Are You on Pinterest",
+        "type": "Interactive",
+        "screenshot": "The Pinterest Butler dashboard ready to connect a creator's Pinterest.",
+        "caption": "🤔 Quick poll: are you actively using Pinterest for affiliate right now? Yes or no.\n\nI have a feeling most of us are not, and that is a lot of free search traffic left on the table. The butler is coming to fix the effort problem that keeps everyone away.\n\nComment YES or NOT YET below 👇 let's see where everyone stands before it launches."
+      },
+      {
+        "title": "The Traffic Nobody Talks About",
+        "type": "Reveal",
+        "screenshot": "The Pinterest Butler preview turning Idea Lists into a steady stream of discoverable pins.",
+        "caption": "📈 Reels get the hype. Pins get the long game.\n\nA good pin can send people to your affiliate links for months or years, quietly, while you sleep. It is the least talked-about traffic in the creator world and it is coming to the butler lineup soon.\n\nBuilding something that keeps working after you stop touching it is the whole dream.\n\nDo you prefer content that pops fast or content that lasts? Drop your pick 👇"
+      }
+    ]
+  },
+  {
+    "slug": "relink-butler",
+    "name": "Relink Butler",
+    "cat": "Content & Deals",
+    "blurb": "Rewrites affiliate links across content you've already published: switch link services, swap Amazon tags, or re-mint through another platform. (Beta)",
+    "posts": [
+      {
+        "title": "Fix Every Old Link at Once",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Relink Butler rewriting affiliate links across a batch of already-published content.",
+        "caption": "🔗 I switched link services and did NOT have to redo a hundred old posts by hand.\n\nRelink Butler rewrites the affiliate links across content I already published - all at once - so my back catalog points to the right place. This one is in beta and it already saved me a weekend of copy-paste dread.\n\nYour old content should not become dead weight just because you switched tools.\n\nHow much old content are you sitting on? Drop a rough number 👇"
+      },
+      {
+        "title": "Switch Services in Bulk",
+        "type": "Reveal",
+        "screenshot": "The Relink Butler moving published links from one link service to another in bulk.",
+        "caption": "🔁 Outgrew your link service? Normally that means either abandoning all your old links or manually fixing every single one. Brutal.\n\nRelink Butler rewrites them in bulk across your published content, so switching platforms does not orphan everything you already made. Change once, and the whole back catalog follows.\n\nBeing able to switch without punishment is huge.\n\nWhat tool have you outgrown but stayed on just because switching felt impossible? Comment 👇"
+      },
+      {
+        "title": "The Wrong Tag Nightmare",
+        "type": "Relatable",
+        "screenshot": "The Relink Butler correcting an old Amazon tag across many published posts.",
+        "caption": "😱 True horror story: realizing a bunch of your old content had the WRONG affiliate tag. Meaning you earned nothing on all of it.\n\nI have lived that stomach-drop. Fixing it by hand across everything you ever posted is a nightmare, so most people just... do not, and keep leaking commissions.\n\nRelink Butler rewrites the tag across your published content instead. Beta, but a genuine save.\n\nHave you ever caught a wrong link too late? Comment 🙈 👇"
+      },
+      {
+        "title": "Swap Your Tag Everywhere",
+        "type": "Reveal",
+        "screenshot": "The Relink Butler applying a new Amazon associate tag across a creator's back catalog.",
+        "caption": "🏷️ New Amazon tag? The butler swaps it across everything you have already published.\n\nNo hunting through old posts, no leaving half your content earning on the wrong account. One swap, applied everywhere, so all your traffic finally credits the right place.\n\nGetting your OWN clicks to actually pay you should not be this rare.\n\nDo you ever audit your old links, or is that a scary someday? Drop your answer 👇"
+      },
+      {
+        "title": "How Many Old Links",
+        "type": "Interactive",
+        "screenshot": "The Relink Butler scanning a library of published content for links to rewrite.",
+        "caption": "🔢 Honest question: how many pieces of content have you published with affiliate links in them?\n\nBecause every one is a link that might need updating someday - new service, new tag, new platform. Relink Butler is built to rewrite them all at once so that someday is not terrifying.\n\nDrop your rough content count below 👇 I want to see who has the biggest back catalog."
+      },
+      {
+        "title": "Beta and Already Clutch",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Relink Butler beta badge next to a completed bulk link rewrite.",
+        "caption": "🧪 Straight up: Relink Butler is in beta.\n\nAnd it already rescued my back catalog when I changed link setups, because the alternative was manually editing dozens of old posts or just eating the loss. Even the early version beats both of those by a mile.\n\nBeta means I get the save now and the polish later.\n\nEarly adopter or wait-for-stable? Comment 🧪 or 💎 👇"
+      },
+      {
+        "title": "I Changed Platforms and Panicked",
+        "type": "Relatable",
+        "screenshot": "The Relink Butler resolving a creator's fear of breaking old links during a switch.",
+        "caption": "😰 The thing that kept me on the wrong tools too long: fear of breaking all my old links.\n\nSwitching felt like setting my back catalog on fire. So I stayed put, on tools I had outgrown, purely out of link anxiety.\n\nRelink Butler rewrites the published links for me, so switching stopped being a scary one-way door.\n\nWhat is a change you have been avoiding out of pure fear of the cleanup? Drop it 👇"
+      },
+      {
+        "title": "Re-Mint Through Anywhere",
+        "type": "Reveal",
+        "screenshot": "The Relink Butler re-minting published links through a different platform.",
+        "caption": "♻️ Want your links running through a different platform now? The butler re-mints them across content you already published.\n\nSo your existing posts get the benefits of your new setup - tracking, branding, whatever - without you rebuilding them from scratch. Your past work upgrades itself.\n\nThe idea that old content is stuck how you made it is just not true anymore.\n\nWhat would you change about your links if it were easy? Comment 👇"
+      },
+      {
+        "title": "The Link Regret",
+        "type": "Interactive (drop a 😬)",
+        "screenshot": "The Relink Butler ready to fix links a creator regrets from older posts.",
+        "caption": "😬 Drop a 😬 if you know you have old content with links you would fix if it were not such a pain.\n\nWrong tag, dead service, whatever - we all have a graveyard of published links we would love to redo. Relink Butler is built to redo them in bulk instead of one agonizing post at a time.\n\nComment 😬 and tell me your worst link regret 👇 no judgment, mine is bad too."
+      },
+      {
+        "title": "Old Content, Earning Right",
+        "type": "Reveal",
+        "screenshot": "The Relink Butler ensuring previously published posts credit the correct affiliate account.",
+        "caption": "💛 The goal is simple: every piece of content you have ever made should be earning to the RIGHT place.\n\nRelink Butler rewrites the links across your published work so your back catalog keeps paying you correctly, even after you change services or tags. Your old posts do not get left behind.\n\nWork you did a year ago should still have your back.\n\nWhat is the oldest piece of content still earning for you? Drop it 👇"
+      }
+    ]
+  },
+  {
+    "slug": "instagram-goldmine",
+    "name": "Instagram Goldmine",
+    "cat": "Earnings & Growth",
+    "blurb": "Finds Instagram creators with active brand partnerships, walks the suggested-creator graph, and harvests qualifying posts as ready-to-pitch leads.",
+    "posts": [
+      {
+        "title": "Brands Already Paying Creators",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Instagram Goldmine surfacing creators with active brand partnership posts.",
+        "caption": "💰 The best brands to pitch are the ones ALREADY paying creators like you. Instagram Goldmine finds them.\n\nIt discovers Instagram creators with active brand partnerships and pulls those partnerships into a list of warm leads. So I am pitching brands with a proven budget, not cold-guessing.\n\nWhy convince a brand to start when you can find ones already spending?\n\nHow do you find brands to pitch right now? Drop your method 👇"
+      },
+      {
+        "title": "Walk the Creator Graph",
+        "type": "Reveal",
+        "screenshot": "The Instagram Goldmine walking from seed accounts through suggested creators.",
+        "caption": "🕸️ You give it a few starting accounts, and it walks the suggested-creator graph outward from there.\n\nOne creator in your niche is connected to dozens more, who are connected to hundreds more - all with their own brand deals. Instagram Goldmine follows those threads and harvests the qualifying ones.\n\nYour next hundred leads are hiding one hop away from creators you already know.\n\nWho are the top creators in YOUR niche? Drop a name or two 👇"
+      },
+      {
+        "title": "I Never Knew Who to Pitch",
+        "type": "Relatable",
+        "screenshot": "The Instagram Goldmine turning a blank pitch list into named brand leads.",
+        "caption": "😅 For the longest time my brand outreach stalled on one dumb problem: I did not know WHO to pitch.\n\nI knew I should be reaching out. I just stared at a blank list with no names, so I did nothing. The not-knowing was the whole blocker.\n\nInstagram Goldmine hands me actual brands with active deals, so the list is never blank again.\n\nIs finding brands or messaging them the harder part for you? Comment 👇"
+      },
+      {
+        "title": "Qualifying Posts, Harvested",
+        "type": "Reveal",
+        "screenshot": "The Instagram Goldmine collecting qualifying brand-partnership posts into a lead list.",
+        "caption": "🔎 It does not just find creators, it harvests the specific posts that prove a real brand partnership.\n\nSo each lead comes with evidence: this brand, this creator, this actual paid post. That means I am pitching brands with a confirmed appetite for creator deals, not hoping they might be interested.\n\nProof beats guessing every time.\n\nWhat is the best brand deal you have ever landed? Brag below 👇"
+      },
+      {
+        "title": "Find Your Goldmine",
+        "type": "Interactive (drop your niche)",
+        "screenshot": "The Instagram Goldmine tuned to a specific niche's active brand partnerships.",
+        "caption": "⛏️ Drop your niche and I will tell you where your goldmine probably is.\n\nEvery niche has a cluster of creators quietly doing brand deals, and that cluster is a map of who to pitch. Instagram Goldmine walks it and harvests the leads for you.\n\nComment your niche below 👇 let's find where the brand money is hiding in yours."
+      },
+      {
+        "title": "Leads While I Sleep",
+        "type": "Reveal / Relatable",
+        "screenshot": "The Instagram Goldmine building a lead list in the background overnight.",
+        "caption": "🌙 I woke up to a list of brands to pitch that I did not lift a finger to build.\n\nInstagram Goldmine walks the creator graph and harvests qualifying partnership posts in the background, so my lead list grows while I sleep. I just wake up and start reaching out.\n\nProspecting used to eat my evenings. Now it eats nothing.\n\nWhat would you do with the hours back from prospecting? Comment 👇"
+      },
+      {
+        "title": "Pitching Into the Void",
+        "type": "Relatable",
+        "screenshot": "The Instagram Goldmine replacing random cold outreach with targeted warm leads.",
+        "caption": "📭 My old outreach strategy was basically pitching random brands into the void and hoping.\n\nNo wonder the replies were rare. I was messaging brands with no signal they even wanted creators, just names I pulled from thin air.\n\nInstagram Goldmine points me at brands already paying creators, so I am pitching into interest instead of into nothing.\n\nWhat is your reply rate on cold pitches, honestly? Drop it 👇"
+      },
+      {
+        "title": "Seed a Few, Find Hundreds",
+        "type": "Reveal",
+        "screenshot": "The Instagram Goldmine expanding a handful of seed accounts into a large lead list.",
+        "caption": "🌱 You start with a handful of accounts you already know. It turns that into hundreds of leads.\n\nThat is the magic of walking the suggested-creator graph: a few seeds branch out into a whole map of creators with active brand deals. Small input, huge list of warm brands to pitch.\n\nThe network was always there, I just could not see it.\n\nHow many brands have you pitched total this year? Drop the number 👇"
+      },
+      {
+        "title": "Who Would You Pitch",
+        "type": "Interactive",
+        "screenshot": "The Instagram Goldmine dashboard listing brand leads ready for outreach.",
+        "caption": "🎯 Dream brand deal: if you could land ONE brand this month, who would it be?\n\nHere is the thing - if that brand already pays creators, Instagram Goldmine can probably find your way in through the creators around it. Dream brands are more reachable than they feel.\n\nDrop your dream brand below 👇 let's manifest some deals in the comments."
+      },
+      {
+        "title": "Warm Leads, Not Cold Guesses",
+        "type": "Reveal",
+        "screenshot": "The Instagram Goldmine delivering a list of brands with proven creator budgets.",
+        "caption": "🔥 The whole point: trade cold guessing for warm leads.\n\nEvery brand Instagram Goldmine surfaces has a track record of paying creators. So when I reach out, I am contacting brands with a proven budget and a proven appetite - the warmest cold outreach there is.\n\nWarm beats cold, and this makes warm scalable.\n\nDo you prefer chasing big brands or steady smaller ones? Drop your take 👇"
       }
     ]
   }
