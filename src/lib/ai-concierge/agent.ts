@@ -195,6 +195,7 @@ function navMapLines(): string {
 const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
   { id: "deals-setup", about: "Deals Butler filters, post builder, destinations, scheduler" },
   { id: "deals-harvest", about: "Deals Butler deal harvest and send" },
+  { id: "deals-filter-recipe", about: "Deal Filters explained one by one: what each setting does and which to leave alone, including which to turn on for best results" },
   { id: "api-integrations", about: "API Integrations and DeepLink Routing setup" },
   { id: "deeplink-mint", about: "Mint a short Butler Link in Link Butler" },
   { id: "daily-commission-harvest", about: "Daily Commission Butler run and schedule" },
@@ -377,7 +378,7 @@ export const AGENT_TOOLS: AgentTool[] = [
       properties: {
         tourId: {
           type: "string",
-          enum: ["deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report", "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group", "facebook-message-setup", "content-butler-plan", "messenger-setup", "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest", "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest", "retag-butler-setup"],
+          enum: ["deals-guided-setup", "deals-setup", "deals-harvest", "deals-filter-recipe", "api-integrations", "deeplink-mint", "daily-commission-harvest", "feedback-report", "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group", "facebook-message-setup", "content-butler-plan", "messenger-setup", "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest", "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest", "retag-butler-setup"],
           description: "A curated tour id. Preferred when the topic matches.",
         },
         steps: {
