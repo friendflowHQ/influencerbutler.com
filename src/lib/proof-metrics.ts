@@ -15,7 +15,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTableError } from "@/lib/extension-api";
 
-export type ProofMetricKey = "deals_posted" | "product_scans" | "campaigns_accepted";
+export type ProofMetricKey =
+  | "deals_posted"
+  | "product_scans"
+  | "campaigns_accepted"
+  | "creator_messaged"
+  | "benable_list_optimized";
 
 // How a metric is counted. Some actions already land in their own table
 // (deals, scans) and are counted directly; others (campaign accepts) never
@@ -51,6 +56,19 @@ export const PROOF_METRICS: ProofMetricDef[] = [
     defaultLabel: "Campaigns Accepted",
     source: { kind: "events_total", metric: "campaign_accepted" },
   },
+  // Reported by the desktop app (separate repo, separate release cadence): they
+  // read 0 until a desktop build that reports them ships, or until a baseline
+  // is set. See src/app/api/desktop/actions.
+  {
+    key: "creator_messaged",
+    defaultLabel: "Brands Messaged",
+    source: { kind: "events_total", metric: "creator_messaged" },
+  },
+  {
+    key: "benable_list_optimized",
+    defaultLabel: "Benable Lists Optimized",
+    source: { kind: "events_total", metric: "benable_list_optimized" },
+  },
 ];
 
 export type ProofConfig = {
@@ -68,6 +86,8 @@ export const DEFAULT_PROOF_CONFIG: ProofConfig = {
     deals_posted: 0,
     product_scans: 0,
     campaigns_accepted: 0,
+    creator_messaged: 0,
+    benable_list_optimized: 0,
   },
   labels: {},
 };
@@ -235,21 +255,24 @@ export async function getPublicProofNumbers(): Promise<{
   const config = await readProofConfig();
   if (!config.enabled) return { enabled: false, metrics: [] };
 
+  // A zero live-count for every registered metric, built from the registry so a
+  // newly added metric can never be silently dropped.
+  const zeroCounts = (): Record<ProofMetricKey, number> => {
+    const out = {} as Record<ProofMetricKey, number>;
+    for (const def of PROOF_METRICS) out[def.key] = 0;
+    return out;
+  };
+
   let admin: AdminClient;
   try {
     admin = createAdminClient();
   } catch {
     // No service-role key configured: show baselines only rather than erroring.
-    const baselineOnly: Record<ProofMetricKey, number> = {
-      deals_posted: 0,
-      product_scans: 0,
-      campaigns_accepted: 0,
-    };
-    return { enabled: true, metrics: composeProofMetrics(config, baselineOnly) };
+    return { enabled: true, metrics: composeProofMetrics(config, zeroCounts()) };
   }
 
   const counts = await Promise.all(PROOF_METRICS.map((def) => liveCount(admin, def.source)));
-  const liveCounts = {} as Record<ProofMetricKey, number>;
+  const liveCounts = zeroCounts();
   PROOF_METRICS.forEach((def, i) => {
     liveCounts[def.key] = counts[i];
   });

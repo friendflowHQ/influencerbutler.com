@@ -306,22 +306,9 @@
             </style>
             <div class="container">
                 <p class="proof-band-label">Working around the clock for creators</p>
-                <div class="proof-stats">
-                    <div class="proof-stat">
-                        <strong data-proof="deals_posted">0</strong>
-                        <span data-proof-label="deals_posted">Deals Posted</span>
-                    </div>
-                    <div class="proof-divider"></div>
-                    <div class="proof-stat">
-                        <strong data-proof="product_scans">0</strong>
-                        <span data-proof-label="product_scans">Products Scanned</span>
-                    </div>
-                    <div class="proof-divider"></div>
-                    <div class="proof-stat">
-                        <strong data-proof="campaigns_accepted">0</strong>
-                        <span data-proof-label="campaigns_accepted">Campaigns Accepted</span>
-                    </div>
-                </div>
+                <!-- Filled by /js/proof-numbers.js: one .proof-stat per metric that
+                     has a positive total, so a zero metric is simply not shown. -->
+                <div class="proof-stats" id="proof-stats"></div>
                 <p class="proof-band-note">Live totals from the Influencer Butler app and extension, updated continuously.</p>
             </div>
         </section>
