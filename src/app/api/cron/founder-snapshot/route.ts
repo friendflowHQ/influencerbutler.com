@@ -126,6 +126,7 @@ export async function GET(request: Request) {
     countKpi("Affiliate link clicks", m.affiliate_clicks),
     countKpi("Newsletter signups", m.email_subscribers),
     countKpi("New testimonials", m.testimonials),
+    countKpi("Facebook group members", m.facebook_members),
   ];
 
   // Affiliate producing/dormant split + total owed (best-effort).

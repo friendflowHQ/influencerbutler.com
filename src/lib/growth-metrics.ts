@@ -40,6 +40,7 @@ export const GROWTH_METRICS: GrowthMetricDef[] = [
   { key: "commission_owed_cents", label: "Commission top-ups owed", goalLabel: "commission owed", unit: "cents", goalable: false },
   { key: "testimonials", label: "New testimonials", goalLabel: "new testimonials", unit: "count", goalable: true },
   { key: "email_subscribers", label: "Newsletter signups", goalLabel: "newsletter signups", unit: "count", goalable: true },
+  { key: "facebook_members", label: "Facebook group members", goalLabel: "Facebook members", unit: "count", goalable: true },
 ];
 
 export type MetricSnapshot = {
@@ -151,6 +152,75 @@ function bucketRows(
   return { current, previous, series };
 }
 
+/**
+ * Buckets daily LEVEL rows (a running headcount, not a per-day flow) into
+ * {previous, current, series}. Unlike bucketRows, each day holds the recorded
+ * level, not a sum, and the sparkline carries the last known value forward so
+ * a day without a snapshot does not read as a drop to zero.
+ *
+ *   current  = the latest recorded level in `month`
+ *   previous = the latest recorded level in `prevMonth` (the month's end level)
+ *   series   = one carried-forward level per day of `month`, seeded from the
+ *              previous month's end so the line starts where last month left off
+ *
+ * Rows must expose `dayCol` as a 'YYYY-MM-DD...' string and `valueCol` as a
+ * number. Duplicate days keep the highest day index seen (upserts make one row
+ * per day anyway).
+ */
+export function bucketLevelRows(
+  rows: Record<string, unknown>[],
+  dayCol: string,
+  valueCol: string,
+  prevMonth: string,
+  month: string,
+  days: number,
+): MetricSnapshot {
+  const byDay = new Map<number, number>();
+  let curLatestDay = -1;
+  let curLatestVal: number | null = null;
+  let prevLatestDay = -1;
+  let prevLatestVal: number | null = null;
+
+  for (const row of rows) {
+    const raw = row[dayCol];
+    if (typeof raw !== "string" || raw.length < 10) continue;
+    const rowMonth = raw.slice(0, 7);
+    const day = Number(raw.slice(8, 10));
+    const val = Number(row[valueCol]);
+    if (!Number.isFinite(val)) continue;
+    if (rowMonth === month) {
+      if (day >= 1 && day <= days) byDay.set(day, val);
+      if (day >= curLatestDay) {
+        curLatestDay = day;
+        curLatestVal = val;
+      }
+    } else if (rowMonth === prevMonth) {
+      if (day >= prevLatestDay) {
+        prevLatestDay = day;
+        prevLatestVal = val;
+      }
+    }
+  }
+
+  const series = new Array<number>(days).fill(0);
+  let last = prevLatestVal ?? 0;
+  let seen = prevLatestVal !== null;
+  for (let i = 0; i < days; i++) {
+    const day = i + 1;
+    if (byDay.has(day)) {
+      last = byDay.get(day)!;
+      seen = true;
+    }
+    series[i] = seen ? last : 0;
+  }
+
+  return {
+    current: curLatestVal,
+    previous: prevLatestVal,
+    series: seen ? series : null,
+  };
+}
+
 const one = () => 1;
 
 /**
@@ -212,6 +282,7 @@ export async function computeGrowthSnapshot(
     affClickRows,
     testimonialRows,
     emailSubRows,
+    fbMemberRows,
     earnings,
   ] = await Promise.all([
     windowRows("activity_events", "created_at", "created_at", (c) =>
@@ -248,6 +319,27 @@ export async function computeGrowthSnapshot(
     windowRows("affiliate_clicks", "created_at", "created_at", (c) => c.eq("is_bot", false)),
     windowRows("testimonials", "created_at", "created_at"),
     windowRows("email_subscribers", "created_at,source", "created_at"),
+    // Point-in-time LEVEL: one member-count row per day. captured_on is a DATE,
+    // so the window is filtered on date-only bounds.
+    (async () => {
+      try {
+        const res = await supabase
+          .from("social_snapshots")
+          .select("captured_on,member_count,platform")
+          .eq("platform", "facebook")
+          .gte("captured_on", prevBounds!.startIso.slice(0, 10))
+          .lt("captured_on", bounds!.nextIso.slice(0, 10))
+          .limit(ROW_LIMIT);
+        if (res.error) {
+          console.error("growth snapshot: social_snapshots query failed", res.error);
+          return null;
+        }
+        return res.data ?? [];
+      } catch (err) {
+        console.error("growth snapshot: social_snapshots query threw", err);
+        return null;
+      }
+    })(),
     (async () => {
       try {
         const [y, m] = month.split("-").map(Number);
@@ -320,6 +412,21 @@ export async function computeGrowthSnapshot(
       : null,
     "created_at",
   );
+  // Facebook group members: a daily headcount level from social_snapshots,
+  // written by the daily scheduled task. current is the latest count in the
+  // month, previous is last month's ending count, and the sparkline carries the
+  // last known value forward. Leaves the metric null (n/a) if the table is not
+  // in prod yet or has no rows for the window.
+  if (fbMemberRows && fbMemberRows.length > 0) {
+    metrics.facebook_members = bucketLevelRows(
+      fbMemberRows,
+      "captured_on",
+      "member_count",
+      prevMonth,
+      month,
+      bounds.days,
+    );
+  }
 
   if (earnings && earnings.totals.length >= 1) {
     const cur = earnings.totals.find((b) => b.month === month) ?? null;

@@ -163,7 +163,14 @@ export async function ensureSuggestions(
     if (!def.goalable) continue;
     const snap = snapshot.metrics[def.key];
     if (!snap) continue;
-    const baseline = def.key === "active_subscriptions" ? snap.current : snap.previous;
+    // Point-in-time LEVEL metrics baseline on where they are now, not on a
+    // monthly flow: active_subscriptions and the Facebook group headcount.
+    const baseline =
+      def.key === "active_subscriptions"
+        ? snap.current
+        : def.key === "facebook_members"
+          ? (snap.current ?? snap.previous)
+          : snap.previous;
     const target = suggestTarget(def.key, baseline);
     if (target === null) continue;
     rows.push({

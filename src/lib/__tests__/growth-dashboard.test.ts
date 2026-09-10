@@ -12,7 +12,13 @@ import {
   GROWTH_IDEA_LIBRARY,
   IDEAS_PER_MONTH,
 } from "../growth-ideas";
-import { deltaPercent, monthKey, prevMonthKey, monthBounds } from "../growth-metrics";
+import {
+  deltaPercent,
+  monthKey,
+  prevMonthKey,
+  monthBounds,
+  bucketLevelRows,
+} from "../growth-metrics";
 import { buildJwtParts } from "../ga4";
 
 describe("suggestTarget", () => {
@@ -122,5 +128,51 @@ describe("buildJwtParts", () => {
     expect(claims.aud).toBe("https://oauth2.googleapis.com/token");
     expect(claims.iat).toBe(now);
     expect(claims.exp).toBe(now + 3600);
+  });
+});
+
+describe("bucketLevelRows", () => {
+  const rows = [
+    { captured_on: "2026-08-31", member_count: 340 },
+    { captured_on: "2026-09-01", member_count: 345 },
+    { captured_on: "2026-09-03", member_count: 350 },
+  ];
+
+  it("reads current as the latest count in the month and previous as last month's end", () => {
+    const snap = bucketLevelRows(rows, "captured_on", "member_count", "2026-08", "2026-09", 30);
+    expect(snap.current).toBe(350);
+    expect(snap.previous).toBe(340);
+  });
+
+  it("carries the last known level forward across gap days", () => {
+    const snap = bucketLevelRows(rows, "captured_on", "member_count", "2026-08", "2026-09", 30);
+    expect(snap.series?.[0]).toBe(345); // day 1
+    expect(snap.series?.[1]).toBe(345); // day 2, carried from day 1
+    expect(snap.series?.[2]).toBe(350); // day 3
+    expect(snap.series?.[29]).toBe(350); // month end, carried
+  });
+
+  it("seeds the line from last month's end before the first snapshot of the month", () => {
+    const late = [
+      { captured_on: "2026-08-31", member_count: 340 },
+      { captured_on: "2026-09-05", member_count: 360 },
+    ];
+    const snap = bucketLevelRows(late, "captured_on", "member_count", "2026-08", "2026-09", 30);
+    expect(snap.series?.[0]).toBe(340); // day 1 shows last month's ending level
+    expect(snap.series?.[4]).toBe(360); // day 5, first snapshot of the month
+  });
+
+  it("is null when no rows fall in the window", () => {
+    const snap = bucketLevelRows(
+      [{ captured_on: "2026-07-15", member_count: 300 }],
+      "captured_on",
+      "member_count",
+      "2026-08",
+      "2026-09",
+      30,
+    );
+    expect(snap.current).toBeNull();
+    expect(snap.previous).toBeNull();
+    expect(snap.series).toBeNull();
   });
 });
