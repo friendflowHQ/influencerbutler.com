@@ -8,8 +8,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isUndeliverableTestEmail } from "@/lib/email-address";
+import { lifecycleFrom } from "@/lib/email-senders";
 
-export const MARKETING_FROM = "Influencer Butler <hello@influencerbutler.com>";
+/** Lifecycle sender for the marketing engine. Cold sequences/campaigns override
+ * this with the cold-stream sender in the cron; see coldFrom(). */
+export const MARKETING_FROM = lifecycleFrom();
 
 const CHUNK = 200;
 

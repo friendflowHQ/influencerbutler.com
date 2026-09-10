@@ -29,6 +29,7 @@ import {
 import { fetchGaSummary } from "@/lib/ga4";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import {
   buildFounderSnapshotEmail,
   formatMoneyCents,
@@ -41,7 +42,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const DEFAULT_TO = "elizabethdean30@gmail.com";
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = transactionalFrom();
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

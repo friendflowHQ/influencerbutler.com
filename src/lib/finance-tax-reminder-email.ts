@@ -4,12 +4,13 @@
 
 import { bodyToHtml } from "@/lib/newsletter";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { TaxSetAside } from "@/lib/finance-tax";
 
 // hello@ is the app's established transactional sender; no-reply@ has no
 // sending reputation and gets spam-filtered.
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = transactionalFrom();
 const ADMIN_FINANCE_URL = "https://www.influencerbutler.com/dashboard/admin/finance";
 
 /** Owner recipients: FINANCE_DIGEST_INBOX, else ADMIN_EMAILS. */

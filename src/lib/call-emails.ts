@@ -9,8 +9,9 @@ import { buildIcs, icsBase64 } from "./ics";
 import { bodyToHtml } from "./newsletter";
 import { CALL_TYPES, type CallTypeKey } from "./scheduling";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = transactionalFrom();
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
 const SITE = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 const BOOK_URL = `${SITE}/dashboard/book`;

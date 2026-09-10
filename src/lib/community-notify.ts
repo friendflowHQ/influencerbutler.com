@@ -11,9 +11,10 @@
  */
 import { createAdminClient } from "@/lib/admin";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 
 const SITE_URL = "https://www.influencerbutler.com";
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = lifecycleFrom();
 const EXCERPT_MAX = 300;
 
 export type ParentAnswerRow = {

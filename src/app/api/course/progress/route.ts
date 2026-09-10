@@ -17,6 +17,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ async function sendResumeEmail(email: string, seriesId: string, token: string): 
   if (!process.env.RESEND_API_KEY || !courseUrl) return;
   const link = `${courseUrl}?resume=${token}`;
   await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to: email,
     subject: "Your course progress is saved: resume anytime",
     text: [

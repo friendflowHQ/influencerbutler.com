@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { sanitizePermissions } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -81,7 +82,7 @@ async function sendInviteEmail(to: string, actionLink: string): Promise<boolean>
     `- The Influencer Butler team`,
   ].join("\n");
   const { ok } = await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to,
     subject: "Your Influencer Butler assistant access",
     text: body,

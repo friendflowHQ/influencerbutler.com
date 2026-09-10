@@ -98,6 +98,7 @@ export async function sendConversionEmail(params: {
     text: resolved.body,
     category: `conversion_${params.tier}`,
     funnel: "conversion",
+    trackOpens: true,
   });
   if (ok && resolved.applyTag) {
     try {

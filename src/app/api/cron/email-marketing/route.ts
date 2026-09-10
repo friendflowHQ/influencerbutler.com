@@ -38,6 +38,7 @@ import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
+import { coldFrom, coldStreamEnabled } from "@/lib/email-senders";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
@@ -114,7 +115,14 @@ type Summary = {
   sequenceStoppedSubscribed: number;
   sequencesAutoPaused: number;
   autoEnrolled: number;
+  // Sequences/campaigns skipped this run because they are on the cold stream
+  // and no cold sender is configured (cold outreach is paused).
+  coldPaused: number;
 };
+
+/** Which sending stream a drip belongs to. "cold" is paused unless a cold
+ * sender is configured; "lifecycle" sends on the brand domain. */
+type DripStream = "lifecycle" | "cold";
 
 type SequenceRow = {
   id: string;
@@ -122,6 +130,10 @@ type SequenceRow = {
   sends_per_hour: number | null;
   send_hour: number | null;
   track_opens: boolean;
+  // "lifecycle" (brand domain) or "cold" (separate domain, paused while
+  // EMAIL_FROM_COLD is unset). Added by 20260910_email_stream.sql; defaults to
+  // "lifecycle" when that migration has not been applied yet.
+  stream: DripStream;
   // false = exempt from auto-pause (monitor alerts but never pauses it). Added by
   // 20260903_sequence_auto_pause_override.sql; defaults to true (protective) when
   // that migration has not been applied yet.
@@ -167,11 +179,25 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
   // applied yet so the cron keeps running (every sequence then uses the default
   // budget, enrollment-minute timing, text-only sends, and stays protected by
   // auto-pause).
+  const withStream = await db
+    .from("email_sequences")
+    .select(
+      "id, trigger, sends_per_hour, send_hour, track_opens, auto_pause_enabled, health_alerted_at, stream",
+    )
+    .eq("status", "active");
+  if (!withStream.error) return (withStream.data ?? []) as SequenceRow[];
+
+  // stream column not applied yet: keep every other control, default lifecycle.
   const withOverride = await db
     .from("email_sequences")
     .select("id, trigger, sends_per_hour, send_hour, track_opens, auto_pause_enabled, health_alerted_at")
     .eq("status", "active");
-  if (!withOverride.error) return (withOverride.data ?? []) as SequenceRow[];
+  if (!withOverride.error) {
+    return ((withOverride.data ?? []) as Omit<SequenceRow, "stream">[]).map((r) => ({
+      ...r,
+      stream: "lifecycle" as DripStream,
+    }));
+  }
 
   // auto_pause_enabled / health_alerted_at not applied yet: keep the send
   // controls but treat every sequence as protected (auto-pause on).
@@ -181,8 +207,16 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
     .eq("status", "active");
   if (!withHour.error) {
     return (
-      (withHour.data ?? []) as Omit<SequenceRow, "auto_pause_enabled" | "health_alerted_at">[]
-    ).map((r) => ({ ...r, auto_pause_enabled: true, health_alerted_at: null }));
+      (withHour.data ?? []) as Omit<
+        SequenceRow,
+        "auto_pause_enabled" | "health_alerted_at" | "stream"
+      >[]
+    ).map((r) => ({
+      ...r,
+      auto_pause_enabled: true,
+      health_alerted_at: null,
+      stream: "lifecycle" as DripStream,
+    }));
   }
 
   // send_hour / track_opens not applied yet but sends_per_hour might be: keep
@@ -195,7 +229,7 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
     return (
       (withRate.data ?? []) as Omit<
         SequenceRow,
-        "send_hour" | "track_opens" | "auto_pause_enabled" | "health_alerted_at"
+        "send_hour" | "track_opens" | "auto_pause_enabled" | "health_alerted_at" | "stream"
       >[]
     ).map((r) => ({
       ...r,
@@ -203,6 +237,7 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
       track_opens: false,
       auto_pause_enabled: true,
       health_alerted_at: null,
+      stream: "lifecycle" as DripStream,
     }));
   }
 
@@ -218,6 +253,7 @@ async function activeSequences(db: SupabaseClient): Promise<SequenceRow[] | null
     track_opens: false,
     auto_pause_enabled: true,
     health_alerted_at: null,
+    stream: "lifecycle" as DripStream,
   }));
 }
 
@@ -305,19 +341,33 @@ type SendingCampaign = {
   body: string;
   attachments?: NormalizedAttachment[] | null;
   inline_images?: NormalizedAttachment[] | null;
+  // "lifecycle" (brand domain) or "cold" (separate domain, paused while
+  // EMAIL_FROM_COLD is unset). Defaults to "lifecycle" pre-migration.
+  stream?: DripStream | null;
 };
 
 async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Promise<void> {
   // Prefer the media columns; fall back to the base columns when the 20260818
   // migration has not been applied so the send engine keeps draining.
-  const withMedia = await db
+  const withStream = await db
     .from("email_campaigns")
-    .select("id, subject, body, attachments, inline_images")
+    .select("id, subject, body, attachments, inline_images, stream")
     .eq("status", "sending")
     .not("materialized_at", "is", null)
     .order("created_at", { ascending: true });
-  let rows = withMedia.data as SendingCampaign[] | null;
-  let error = withMedia.error;
+  let rows = withStream.data as SendingCampaign[] | null;
+  let error = withStream.error;
+  if (error) {
+    // stream column not applied yet: fall back to the media columns.
+    const withMedia = await db
+      .from("email_campaigns")
+      .select("id, subject, body, attachments, inline_images")
+      .eq("status", "sending")
+      .not("materialized_at", "is", null)
+      .order("created_at", { ascending: true });
+    rows = withMedia.data as SendingCampaign[] | null;
+    error = withMedia.error;
+  }
   if (error) {
     const base = await db
       .from("email_campaigns")
@@ -340,6 +390,17 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
 
   for (const campaign of (rows ?? []) as SendingCampaign[]) {
     if (budget <= 0) break;
+
+    // Cold campaigns are paused until a cold sender is configured: leave their
+    // recipients queued (they resume when cold is enabled) rather than sending
+    // from the brand domain.
+    const campaignStream: DripStream = campaign.stream === "cold" ? "cold" : "lifecycle";
+    if (campaignStream === "cold" && !coldStreamEnabled()) {
+      summary.coldPaused += 1;
+      continue;
+    }
+    const campaignFrom = campaignStream === "cold" ? coldFrom() : MARKETING_FROM;
+
     const built = buildCampaignEmail({
       body: campaign.body,
       attachments: campaign.attachments ?? [],
@@ -377,12 +438,13 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
 
       budget -= 1;
       const ok = await sendMarketingEmail({
-        from: MARKETING_FROM,
+        from: campaignFrom,
         to: email,
         subject: campaign.subject,
         text: built.text,
         html: built.html,
         attachments: built.attachments,
+        stream: campaignStream,
         category: campaignCategory(campaign.id),
         funnel: "campaign",
       });
@@ -466,6 +528,16 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
 
   for (const seq of sequences) {
     if (globalRemaining <= 0) break;
+
+    // Cold outreach is paused until a separate cold sender is configured. Skip
+    // the whole sequence (spending no budget) rather than sending it from the
+    // brand domain, and count it so the run summary shows it was held.
+    if (seq.stream === "cold" && !coldStreamEnabled()) {
+      summary.coldPaused += 1;
+      continue;
+    }
+    const seqFrom = seq.stream === "cold" ? coldFrom() : MARKETING_FROM;
+
     const steps = stepsBySequence.get(seq.id) ?? [];
     let seqBudget = Math.min(sequenceRunBudget(seq.sends_per_hour, defaultSeqBudget), globalRemaining);
 
@@ -552,7 +624,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         enrollment.email,
       );
       const ok = await sendMarketingEmail({
-        from: MARKETING_FROM,
+        from: seqFrom,
         to: enrollment.email,
         subject: nextStep.subject,
         text: personalizedText,
@@ -562,6 +634,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         ...(seq.track_opens ? { html: plainTextToTrackableHtml(personalizedText) } : {}),
         category: stepCategory(seq.id, nextStep.position),
         funnel: "sequence",
+        stream: seq.stream,
       });
       // On failure, stamp nothing: the enrollment retries next run.
       if (!ok) continue;
@@ -766,6 +839,7 @@ export async function GET(request: Request) {
     sequenceStoppedSubscribed: 0,
     sequencesAutoPaused: 0,
     autoEnrolled: 0,
+    coldPaused: 0,
   };
 
   // Each step is isolated so one blow-up never blocks the others.

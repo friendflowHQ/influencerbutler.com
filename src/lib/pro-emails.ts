@@ -9,6 +9,7 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,7 +27,7 @@ export type ProVars = {
   subscriptionUrl: string;
 };
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const HELP_URL = "https://www.influencerbutler.com/help";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 // Chooser page so Mac recipients get the right build, not the Windows .exe.
@@ -158,6 +159,7 @@ export async function sendProEmail(payload: ProEmailPayload): Promise<boolean> {
     text: resolved.body,
     category: `pro_${payload.tier}`,
     funnel: "pro",
+    trackOpens: true,
   });
   if (ok && resolved.applyTag) {
     try {

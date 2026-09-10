@@ -8,8 +8,9 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 export type TestimonialEmailPayload = {

@@ -58,6 +58,10 @@ type Sequence = {
   sends_per_hour: number | null;
   send_hour: number | null;
   track_opens: boolean;
+  // "lifecycle" (brand domain) or "cold" (separate domain, paused until a cold
+  // sender is configured). May be absent on rows read before the 20260910
+  // migration is applied; treated as "lifecycle" then.
+  stream?: "lifecycle" | "cold";
   // false = exempt from the deliverability auto-pause (monitor alerts, never
   // pauses). May be absent on rows read before 20260903 migration is applied.
   auto_pause_enabled?: boolean;
@@ -290,6 +294,7 @@ export default function SequencesSection({
   const [sendsPerHour, setSendsPerHour] = useState("");
   const [sendHour, setSendHour] = useState("");
   const [trackOpens, setTrackOpens] = useState(false);
+  const [stream, setStream] = useState<"lifecycle" | "cold">("lifecycle");
   const [steps, setSteps] = useState<EditableStep[]>([]);
   const [editorBusy, setEditorBusy] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
@@ -383,6 +388,7 @@ export default function SequencesSection({
       setSendsPerHour("");
       setSendHour("");
       setTrackOpens(false);
+      setStream("lifecycle");
       setSteps([{ dayOffset: 0, subject: "", body: "" }]);
     } else {
       setName(seq.name);
@@ -402,6 +408,7 @@ export default function SequencesSection({
       setSendsPerHour(seq.sends_per_hour != null ? String(seq.sends_per_hour) : "");
       setSendHour(seq.send_hour != null ? String(seq.send_hour) : "");
       setTrackOpens(Boolean(seq.track_opens));
+      setStream(seq.stream === "cold" ? "cold" : "lifecycle");
       setSteps(
         [...seq.steps]
           .sort((a, b) => a.position - b.position)
@@ -448,6 +455,7 @@ export default function SequencesSection({
                 sendsPerHour: ratePayload,
                 sendHour: hourPayload,
                 trackOpens,
+                stream,
               }),
             })
           : await fetch("/api/admin/emails/sequences", {
@@ -462,6 +470,7 @@ export default function SequencesSection({
                 sendsPerHour: ratePayload,
                 sendHour: hourPayload,
                 trackOpens,
+                stream,
               }),
             });
       if (!res.ok) {
@@ -881,6 +890,23 @@ export default function SequencesSection({
               Off by default: steps send as plain text (best deliverability), and only delivered /
               bounced are recorded. Turn on to also send an HTML copy so Resend can record opens and
               clicks. It adds a tracking pixel, a small deliverability tradeoff on cold lists.
+            </p>
+          </div>
+
+          <div className="mt-3 max-w-md">
+            <label className="block text-sm font-medium text-slate-700">Sending stream</label>
+            <select
+              value={stream}
+              onChange={(e) => setStream(e.target.value === "cold" ? "cold" : "lifecycle")}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
+            >
+              <option value="lifecycle">Lifecycle (known users, brand domain)</option>
+              <option value="cold">Cold outreach (separate domain)</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Cold outreach is paused until a separate cold sending domain is configured. Cold
+              sequences are held (no sends) instead of going out from the brand domain, protecting
+              deliverability of sign-in links and receipts.
             </p>
           </div>
 

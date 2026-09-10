@@ -14,6 +14,7 @@
 // unsubscribe affordance on top before delegating here.
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resendKeyFor, type EmailStream } from "@/lib/email-senders";
 
 export type EmailFunnel =
   | "trial"
@@ -40,6 +41,10 @@ export type EmailSendInput = {
   /** Stable per-template key, e.g. 'trial_day0', 'login_link'. */
   category: string;
   funnel?: EmailFunnel;
+  /** Which sending stream (domain + Resend key) this goes out on. Defaults to
+   * "transactional" so a caller that forgets lands on the account-required
+   * path, never on a marketing/cold domain. See src/lib/email-senders.ts. */
+  stream?: EmailStream;
 };
 
 export type EmailSendResult = { ok: boolean; id: string | null };
@@ -112,9 +117,15 @@ export async function logSuppressedSkip(
  * is returned on success so callers can correlate if they need to.
  */
 export async function sendEmail(input: EmailSendInput): Promise<EmailSendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  // Default to the transactional stream so a caller that forgets lands on the
+  // account-required key/domain, never on a marketing/cold one.
+  const stream: EmailStream = input.stream ?? "transactional";
+  const apiKey = resendKeyFor(stream);
   if (!apiKey) {
-    console.error("RESEND_API_KEY not set - email not sent", { category: input.category });
+    console.error("Resend API key not set for stream - email not sent", {
+      category: input.category,
+      stream,
+    });
     await logSend(logRowFor(input, "failed"));
     return { ok: false, id: null };
   }

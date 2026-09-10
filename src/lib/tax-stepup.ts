@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission, getAdminSession, type Actor } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 const CODE_TTL_MINUTES = 10;
 const RESEND_THROTTLE_SECONDS = 60;
@@ -24,7 +25,7 @@ const VERIFY_WINDOW_HOURS = 12;
 
 // hello@ is the app's established transactional sender; no-reply@ has no
 // sending reputation and gets spam-filtered.
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = transactionalFrom();
 
 function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");

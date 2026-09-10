@@ -10,12 +10,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { requireFinance } from "@/lib/finance-stepup";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { load1099Data } from "@/lib/finance-1099";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = transactionalFrom();
 const DASHBOARD_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 

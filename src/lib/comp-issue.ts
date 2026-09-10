@@ -30,6 +30,7 @@ import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/li
 import { resolveVariantId } from "@/lib/lemonsqueezy";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export type IssueCompInput = {
   /**
@@ -221,7 +222,7 @@ async function sendCompEmail(params: {
   );
 
   await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to: params.to,
     subject: params.subject,
     text: lines.join("\n"),

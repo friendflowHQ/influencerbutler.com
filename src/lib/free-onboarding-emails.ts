@@ -16,6 +16,7 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -36,7 +37,7 @@ export type TierCopy = {
   build: (vars: OnboardingVars) => string;
 };
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 // The six free-forever butlers, kept in sync with entitlements.ts / trial day14.
@@ -201,6 +202,7 @@ export async function sendOnboardingEmail(payload: OnboardingEmailPayload): Prom
     text: resolved.body,
     category: `onboarding_${payload.tier}`,
     funnel: "onboarding",
+    trackOpens: true,
   });
   if (ok && resolved.applyTag) {
     try {

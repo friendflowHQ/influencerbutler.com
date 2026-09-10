@@ -10,6 +10,7 @@ import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { issueInHouseComp } from "@/lib/comp-issue";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 import { isEligibleNewAccount } from "@/lib/referral-signup-capture";
 
 export const REFERRAL_COOKIE = "ib_ref";
@@ -181,7 +182,7 @@ async function sendGiftPassEmail(to: string, key: string): Promise<void> {
     `- The Influencer Butler team`,
   ].join("\n");
   await sendMarketingEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: lifecycleFrom(),
     to,
     subject: "Your referral reward: a free month of Pro to gift",
     text,

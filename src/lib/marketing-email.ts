@@ -18,6 +18,8 @@ import {
   unsubscribeHeaders,
 } from "@/lib/email-unsubscribe";
 import { sendEmail, logSuppressedSkip, type EmailFunnel } from "@/lib/email-send";
+import { plainTextToTrackableHtml } from "@/lib/email-marketing";
+import type { EmailStream } from "@/lib/email-senders";
 
 export type MarketingEmail = {
   from: string;
@@ -33,6 +35,15 @@ export type MarketingEmail = {
   /** Stable per-template key, e.g. 'trial_day0'. Shows up in the admin log. */
   category: string;
   funnel?: EmailFunnel;
+  /** Sending stream (domain + Resend key). Marketing mail is "lifecycle" by
+   * default (brand domain); cold sequences/campaigns pass "cold". */
+  stream?: EmailStream;
+  /** When true and no `html` is supplied, wrap `text` in minimal HTML via
+   * plainTextToTrackableHtml so Resend can inject its open-tracking pixel: a
+   * text-only send carries no pixel and can never record an open. Set on
+   * lifecycle funnels (mail to known users, where engagement should be
+   * tracked); cold sequences opt in separately via their own track_opens flag. */
+  trackOpens?: boolean;
   /** When true, send even if the recipient is on the suppression list. Used only
    * by admin test sends (a staff member previewing a funnel in their own inbox),
    * never by the bulk cron. The unsubscribe footer + headers are still appended,
@@ -59,16 +70,22 @@ export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean
     return true;
   }
 
+  // An explicit HTML body wins; otherwise trackOpens synthesizes a minimal one
+  // from the text so Resend has somewhere to inject its open pixel. Either way,
+  // the compliant footer is appended to whatever HTML goes out.
+  const htmlBody = email.html ?? (email.trackOpens ? plainTextToTrackableHtml(email.text) : undefined);
+
   const result = await sendEmail({
     from: email.from,
     to: email.to,
     subject: email.subject,
     text: email.text + unsubscribeFooterText(email.to),
-    ...(email.html ? { html: email.html + unsubscribeFooterHtml(email.to) } : {}),
+    ...(htmlBody ? { html: htmlBody + unsubscribeFooterHtml(email.to) } : {}),
     ...(email.attachments?.length ? { attachments: email.attachments } : {}),
     headers: unsubscribeHeaders(email.to),
     category: email.category,
     funnel: email.funnel,
+    stream: email.stream ?? "lifecycle",
   });
   return result.ok;
 }

@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/admin";
 import { adminService } from "@/lib/admin-service";
 import { logAdminAction } from "@/lib/admin-audit";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ async function sendMagicLinkEmail(to: string, actionLink: string): Promise<boole
     `- The Influencer Butler team`,
   ].join("\n");
   const { ok } = await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to,
     subject: "Your Influencer Butler sign-in link",
     text: body,

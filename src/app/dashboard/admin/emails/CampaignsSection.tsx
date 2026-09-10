@@ -74,6 +74,9 @@ type Campaign = {
   subject: string;
   body: string;
   audience: Audience;
+  // "lifecycle" (brand domain) or "cold" (separate domain, paused until a cold
+  // sender is configured). Absent on rows read before the 20260910 migration.
+  stream?: "lifecycle" | "cold";
   status: "draft" | "sending" | "sent" | "cancelled";
   scheduled_at: string | null;
   materialized_at: string | null;
@@ -173,6 +176,7 @@ export default function CampaignsSection({
     "trial" | "pro" | "churned" | "newsletter"
   >("trial");
   const [pastedText, setPastedText] = useState("");
+  const [stream, setStream] = useState<"lifecycle" | "cold">("lifecycle");
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [composerBusy, setComposerBusy] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -342,6 +346,7 @@ export default function CampaignsSection({
       setAudienceTag("");
       setAudienceSegment("trial");
       setPastedText("");
+      setStream("lifecycle");
       setAttachments([]);
       setInlineImages([]);
     } else {
@@ -353,6 +358,7 @@ export default function CampaignsSection({
       setAudienceTag(a.kind === "tag" ? a.tag : "");
       setAudienceSegment(a.kind === "segment" ? a.segment : "trial");
       setPastedText(a.kind === "pasted" ? a.emails.join("\n") : "");
+      setStream(campaign.stream === "cold" ? "cold" : "lifecycle");
       setAttachments(toMedia(campaign.attachments));
       setInlineImages(toMedia(campaign.inline_images));
     }
@@ -374,7 +380,7 @@ export default function CampaignsSection({
         const res = await fetch("/api/admin/emails/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, subject, body, audience, ...mediaPayload }),
+          body: JSON.stringify({ name, subject, body, audience, stream, ...mediaPayload }),
         });
         if (!res.ok) {
           setComposerError(await readError(res, "Could not save the draft"));
@@ -390,7 +396,7 @@ export default function CampaignsSection({
       const res = await fetch("/api/admin/emails/campaigns", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: draftId, action: "update", name, subject, body, audience, ...mediaPayload }),
+        body: JSON.stringify({ id: draftId, action: "update", name, subject, body, audience, stream, ...mediaPayload }),
       });
       if (!res.ok) {
         setComposerError(await readError(res, "Could not save the draft"));
@@ -673,6 +679,22 @@ export default function CampaignsSection({
                 </>
               ) : null}
             </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="text-xs font-medium text-slate-500">Sending stream</label>
+            <select
+              value={stream}
+              onChange={(e) => setStream(e.target.value === "cold" ? "cold" : "lifecycle")}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none sm:max-w-xs"
+            >
+              <option value="lifecycle">Lifecycle (known users, brand domain)</option>
+              <option value="cold">Cold outreach (separate domain)</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Cold outreach is paused until a separate cold sending domain is configured. A cold
+              campaign is held (recipients stay queued) instead of sending from the brand domain.
+            </p>
           </div>
 
           {audienceKind === "pasted" ? (

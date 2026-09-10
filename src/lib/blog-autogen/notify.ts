@@ -6,9 +6,10 @@
  * Dependencies: lib/email-send.
  */
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import type { GenerationResult } from "./types";
 
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = transactionalFrom();
 const SITE = "https://influencerbutler.com";
 
 function recipients(): string[] {

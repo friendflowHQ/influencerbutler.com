@@ -294,6 +294,7 @@ export async function sendWinbackEmail(payload: WinbackEmailPayload): Promise<bo
     text: resolved.body,
     category: `winback_${payload.tier}`,
     funnel: "winback",
+    trackOpens: true,
   });
   if (ok && resolved.applyTag) {
     try {

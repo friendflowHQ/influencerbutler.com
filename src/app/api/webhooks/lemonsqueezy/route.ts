@@ -11,6 +11,7 @@ import { SEAT_LIMIT, tierForPlan } from "@/lib/pricing-constants";
 import { rewardReferrerForSubscription } from "@/lib/referral-program";
 import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { sendMetaEvent } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
@@ -175,7 +176,7 @@ async function sendWelcomeMagicLink(params: {
   ].join("\n");
 
   const { ok } = await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to: params.to,
     subject: "Your Influencer Butler sign-in link",
     text: body,

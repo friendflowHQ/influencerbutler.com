@@ -170,7 +170,7 @@ function isMissingOptionalColumn(error: { message?: string; code?: string } | nu
   if (!error) return false;
   if (error.code === "42703" || error.code === "PGRST204") return true;
   return (
-    /send_hour|track_opens|auto_pause_enabled|health_alerted_at/i.test(error.message ?? "") &&
+    /send_hour|track_opens|auto_pause_enabled|health_alerted_at|stream/i.test(error.message ?? "") &&
     /column|schema cache/i.test(error.message ?? "")
   );
 }
@@ -179,6 +179,13 @@ function isMissingOptionalColumn(error: { message?: string; code?: string } | nu
 function parseTrackOpens(input: unknown): boolean | undefined {
   if (input === undefined) return undefined;
   return Boolean(input);
+}
+
+/** Validates an untrusted stream value: undefined = leave unchanged; anything
+ * other than the two known streams falls back to "lifecycle". */
+function parseStream(input: unknown): "lifecycle" | "cold" | undefined {
+  if (input === undefined) return undefined;
+  return input === "cold" ? "cold" : "lifecycle";
 }
 
 /** Validates an untrusted auto_pause_enabled value: undefined = leave unchanged. */
@@ -592,6 +599,7 @@ export async function POST(request: Request) {
     sendHour?: unknown;
     trackOpens?: unknown;
     autoPauseEnabled?: unknown;
+    stream?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -621,6 +629,7 @@ export async function POST(request: Request) {
   }
   const trackOpens = parseTrackOpens(body.trackOpens);
   const autoPauseEnabled = parseAutoPauseEnabled(body.autoPauseEnabled);
+  const stream = parseStream(body.stream);
 
   const insertRow: Record<string, unknown> = {
     name,
@@ -636,17 +645,22 @@ export async function POST(request: Request) {
   if (trackOpens !== undefined) insertRow.track_opens = trackOpens;
   // Omitted = column default (true, auto-pause on); only set when explicitly given.
   if (autoPauseEnabled !== undefined) insertRow.auto_pause_enabled = autoPauseEnabled;
+  if (stream !== undefined) insertRow.stream = stream;
 
   let { data, error } = await db.from("email_sequences").insert(insertRow).select("id").single();
   if (
     error &&
-    ("send_hour" in insertRow || "track_opens" in insertRow || "auto_pause_enabled" in insertRow) &&
+    ("send_hour" in insertRow ||
+      "track_opens" in insertRow ||
+      "auto_pause_enabled" in insertRow ||
+      "stream" in insertRow) &&
     isMissingOptionalColumn(error)
   ) {
     // Optional column not applied yet: retry without them so create still works.
     delete insertRow.send_hour;
     delete insertRow.track_opens;
     delete insertRow.auto_pause_enabled;
+    delete insertRow.stream;
     ({ data, error } = await db.from("email_sequences").insert(insertRow).select("id").single());
   }
   if (error) {
@@ -721,6 +735,7 @@ export async function PATCH(request: Request) {
     sendsPerHour?: unknown;
     sendHour?: unknown;
     trackOpens?: unknown;
+    stream?: unknown;
     enabled?: unknown;
     emails?: unknown;
     tag?: unknown;
@@ -784,6 +799,9 @@ export async function PATCH(request: Request) {
     if (body.trackOpens !== undefined) {
       values.track_opens = parseTrackOpens(body.trackOpens);
     }
+    if (body.stream !== undefined) {
+      values.stream = parseStream(body.stream);
+    }
     let steps: StepInput[] | null = null;
     if (body.steps !== undefined) {
       steps = parseSteps(body.steps);
@@ -797,12 +815,13 @@ export async function PATCH(request: Request) {
       let { error } = await db.from("email_sequences").update(values).eq("id", id);
       if (
         error &&
-        ("send_hour" in values || "track_opens" in values) &&
+        ("send_hour" in values || "track_opens" in values || "stream" in values) &&
         isMissingOptionalColumn(error)
       ) {
         // Optional column not applied yet: retry without them so the rest saves.
         delete values.send_hour;
         delete values.track_opens;
+        delete values.stream;
         if (Object.keys(values).length > 0) {
           ({ error } = await db.from("email_sequences").update(values).eq("id", id));
         } else {

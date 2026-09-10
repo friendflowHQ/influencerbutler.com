@@ -131,6 +131,9 @@ type ValidatedFields = {
   subject?: string;
   body?: string;
   audience?: Audience;
+  // "lifecycle" (brand domain) or "cold" (separate domain, paused until a cold
+  // sender is configured). Optional-migration column; see 20260910_email_stream.
+  stream?: "lifecycle" | "cold";
 };
 
 /**
@@ -138,10 +141,14 @@ type ValidatedFields = {
  * Returns null with an error message when a provided field is unusable.
  */
 function validateFields(
-  raw: { name?: unknown; subject?: unknown; body?: unknown; audience?: unknown },
+  raw: { name?: unknown; subject?: unknown; body?: unknown; audience?: unknown; stream?: unknown },
   requireAll: boolean,
 ): { fields: ValidatedFields } | { error: string } {
   const fields: ValidatedFields = {};
+
+  if (raw.stream !== undefined) {
+    fields.stream = raw.stream === "cold" ? "cold" : "lifecycle";
+  }
 
   if (typeof raw.name === "string") {
     const name = raw.name.trim().slice(0, 200);
@@ -183,7 +190,7 @@ export async function POST(request: Request) {
 
   let body: {
     name?: unknown; subject?: unknown; body?: unknown; audience?: unknown;
-    attachments?: unknown; inlineImages?: unknown;
+    attachments?: unknown; inlineImages?: unknown; stream?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -208,8 +215,11 @@ export async function POST(request: Request) {
     .select("id")
     .single();
   if (error && isMissingColumn(error)) {
-    // Media columns not migrated yet: still let the draft save.
-    ({ data, error } = await db.from("email_campaigns").insert(baseRow).select("id").single());
+    // An optional-migration column (media or stream) is not applied yet: retry
+    // with only the guaranteed columns so the draft still saves.
+    const baseRowNoStream = { ...baseRow } as Record<string, unknown>;
+    delete baseRowNoStream.stream;
+    ({ data, error } = await db.from("email_campaigns").insert(baseRowNoStream).select("id").single());
     mediaUnsaved = hasMedia;
   }
   if (error) {
@@ -242,6 +252,7 @@ export async function PATCH(request: Request) {
     toEmail?: unknown;
     attachments?: unknown;
     inlineImages?: unknown;
+    stream?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -297,8 +308,12 @@ export async function PATCH(request: Request) {
           : validated.fields,
       )
       .eq("id", id);
-    if (error && sentMedia && isMissingColumn(error)) {
-      ({ error } = await db.from("email_campaigns").update(validated.fields).eq("id", id));
+    if (error && isMissingColumn(error)) {
+      // An optional-migration column (media or stream) is missing: retry with
+      // just the always-present fields so the rest of the edit still saves.
+      const fieldsNoStream = { ...validated.fields } as Record<string, unknown>;
+      delete fieldsNoStream.stream;
+      ({ error } = await db.from("email_campaigns").update(fieldsNoStream).eq("id", id));
       mediaUnsaved = hasMedia;
     }
     if (error) {

@@ -11,9 +11,10 @@ import { DateTime } from "luxon";
 import { buildIcs, icsBase64 } from "./ics";
 import { bodyToHtml } from "./newsletter";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import type { AiNotes } from "@/lib/ai-notes";
 
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = transactionalFrom();
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
 const SITE = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 const EVENTS_URL = `${SITE}/dashboard/events`;

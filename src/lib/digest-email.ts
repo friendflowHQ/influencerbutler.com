@@ -14,8 +14,9 @@ import type {
   LocationCount,
 } from "@/lib/daily-digest";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = transactionalFrom();
 const FALLBACK_RECIPIENT = "thesocialmediaposse@gmail.com";
 
 // Palette: green = growth, blue = neutral, amber = watch, red = churn.

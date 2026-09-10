@@ -21,6 +21,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { verifyBundleSubmitToken } from "@/lib/grow-together-submit";
 import { BUNDLE_SLUG, BUNDLE_NAME } from "@/app/grow-together/_data/bundleMeta";
 
@@ -28,7 +29,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const FROM = "Influencer Butler <hello@influencerbutler.com>";
+const FROM = transactionalFrom();
 
 type Body = Record<string, unknown>;
 

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
 import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 import { hasAdsConsent, readMetaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
@@ -248,7 +249,7 @@ async function sendNotification(d: ClickDetails): Promise<void> {
     .join(", ");
 
   await sendEmail({
-    from: "Influencer Butler <hello@influencerbutler.com>",
+    from: transactionalFrom(),
     to,
     subject: `Free trial click${location ? `: ${location}` : ""}`,
     text: [
