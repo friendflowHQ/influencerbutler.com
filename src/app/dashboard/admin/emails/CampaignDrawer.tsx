@@ -6,6 +6,8 @@
 
 import { useEffect, useState } from "react";
 
+import EmailTrends from "./EmailTrends";
+
 type Audience =
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
@@ -204,6 +206,17 @@ export default function CampaignDrawer({
                 </div>
               ) : null}
             </dl>
+
+            {/* This campaign's sends, opens, and clicks over time (category
+                campaign_<id8>). */}
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Over time
+              </h3>
+              <div className="mt-2">
+                <EmailTrends category={campaign.category} />
+              </div>
+            </div>
 
             <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">
               Email body

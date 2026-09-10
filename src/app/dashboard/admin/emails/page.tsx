@@ -5,12 +5,13 @@
 // a searchable feed of individual sends. Data arrives from four parallel
 // admin APIs so one slow panel never blocks the rest of the page.
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import SendDrawer from "./SendDrawer";
 import CustomerDrawer from "./CustomerDrawer";
 import ContactsSection from "./ContactsSection";
 import CampaignsSection from "./CampaignsSection";
 import SequencesSection from "./SequencesSection";
+import EmailTrends from "./EmailTrends";
 
 type FunnelStats = {
   key: string;
@@ -85,6 +86,7 @@ type IssueStats = {
   index: number;
   subject: string;
   sentAt: string;
+  broadcastId: string;
   recipients: number;
   delivered: number;
   opened: number;
@@ -164,6 +166,8 @@ export default function AdminEmailsPage() {
   const [summaryLoading, setSummaryLoading] = useState(true);
 
   const [newsletter, setNewsletter] = useState<NewsletterResponse | null>(null);
+  // Which newsletter issue's per-issue trend chart is expanded (by index).
+  const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
 
   const [sends, setSends] = useState<SendsResponse | null>(null);
   const [sendsLoading, setSendsLoading] = useState(true);
@@ -346,11 +350,12 @@ export default function AdminEmailsPage() {
         </div>
       </section>
 
-      {/* Per-category metrics */}
+      {/* Trends over time (all email). Shares the 7/30/90 window with the
+          per-category table below via the same `days` state. */}
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Sends by email type
+            Trends over time
           </h2>
           <div className="flex gap-1">
             {[7, 30, 90].map((d) => (
@@ -368,6 +373,18 @@ export default function AdminEmailsPage() {
               </button>
             ))}
           </div>
+        </div>
+        <div className="mt-3">
+          <EmailTrends days={days} />
+        </div>
+      </section>
+
+      {/* Per-category metrics */}
+      <section className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Sends by email type
+          </h2>
         </div>
         <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm">
@@ -444,25 +461,45 @@ export default function AdminEmailsPage() {
               </tr>
             </thead>
             <tbody>
-              {(newsletter?.issues ?? []).map((i) => (
-                <tr key={i.index} className="border-b border-slate-50 last:border-0">
-                  <td className="max-w-md truncate px-4 py-2 text-slate-800">
-                    #{i.index + 1} {i.subject}
-                  </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{fmtDate(i.sentAt)}</td>
-                  <td className="px-4 py-2 text-right">{i.recipients.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-2 text-right">{i.delivered.toLocaleString("en-US")}</td>
-                  <td className="px-4 py-2 text-right font-semibold text-indigo-600">
-                    {pct(i.opened, i.delivered > 0 ? i.delivered : i.recipients)}
-                  </td>
-                  <td className="px-4 py-2 text-right font-semibold text-sky-600">
-                    {pct(i.clicked, i.delivered > 0 ? i.delivered : i.recipients)}
-                  </td>
-                  <td className="px-4 py-2 text-right text-rose-600">
-                    {i.bounced > 0 ? i.bounced.toLocaleString("en-US") : "-"}
-                  </td>
-                </tr>
-              ))}
+              {(newsletter?.issues ?? []).map((i) => {
+                const open = expandedIssue === i.index;
+                return (
+                  <Fragment key={i.index}>
+                    <tr className="border-b border-slate-50 last:border-0">
+                      <td className="max-w-md truncate px-4 py-2 text-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedIssue(open ? null : i.index)}
+                          className="text-left hover:text-indigo-600"
+                          title="Show this issue's opens and clicks over time"
+                        >
+                          <span className="mr-1 inline-block text-slate-400">{open ? "▾" : "▸"}</span>
+                          #{i.index + 1} {i.subject}
+                        </button>
+                      </td>
+                      <td className="px-4 py-2 text-xs text-slate-500">{fmtDate(i.sentAt)}</td>
+                      <td className="px-4 py-2 text-right">{i.recipients.toLocaleString("en-US")}</td>
+                      <td className="px-4 py-2 text-right">{i.delivered.toLocaleString("en-US")}</td>
+                      <td className="px-4 py-2 text-right font-semibold text-indigo-600">
+                        {pct(i.opened, i.delivered > 0 ? i.delivered : i.recipients)}
+                      </td>
+                      <td className="px-4 py-2 text-right font-semibold text-sky-600">
+                        {pct(i.clicked, i.delivered > 0 ? i.delivered : i.recipients)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-rose-600">
+                        {i.bounced > 0 ? i.bounced.toLocaleString("en-US") : "-"}
+                      </td>
+                    </tr>
+                    {open ? (
+                      <tr className="border-b border-slate-50 last:border-0">
+                        <td colSpan={7} className="bg-slate-50/50 px-4 py-3">
+                          <EmailTrends broadcastId={i.broadcastId} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
               {newsletter && newsletter.issues.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">

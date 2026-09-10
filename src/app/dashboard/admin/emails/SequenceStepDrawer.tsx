@@ -7,6 +7,8 @@
 
 import { useEffect, useState } from "react";
 
+import EmailTrends from "./EmailTrends";
+
 type StepMeta = {
   position: number;
   day_offset: number;
@@ -277,6 +279,20 @@ export default function SequenceStepDrawer({
             <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-3 font-sans text-sm text-slate-800">
               {step.body || "(empty body)"}
             </pre>
+
+            {/* This step's sends, opens, and clicks over time. Its category is
+                seq_<id8>_s<position>; derive the id8 inline (the shortId rule)
+                rather than importing the server-only email-marketing helper. */}
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Over time
+              </h3>
+              <div className="mt-2">
+                <EmailTrends
+                  category={`seq_${sequenceId.replace(/-/g, "").slice(0, 8)}_s${position}`}
+                />
+              </div>
+            </div>
 
             {/* Send this step to yourself right now, ignoring the drip schedule,
                 subscription/suppression status, and the hourly send limit. */}

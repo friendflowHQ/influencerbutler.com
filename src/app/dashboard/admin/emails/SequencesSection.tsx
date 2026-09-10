@@ -8,6 +8,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import FunnelStepEditor, { type FunnelStep } from "./FunnelStepEditor";
 import SequenceStepDrawer, { DEFAULT_TEST_EMAIL } from "./SequenceStepDrawer";
+import EmailTrends from "./EmailTrends";
+
+/** The shared category prefix for a whole sequence (seq_<id8>), derived from any
+ * step's category by stripping the trailing _s<position>. null when the sequence
+ * has no steps yet (nothing to chart). */
+function seqPrefix(seq: Sequence): string | null {
+  const cat = seq.steps[0]?.category;
+  if (!cat) return null;
+  return cat.replace(/_s\d+$/, "");
+}
 
 type Trigger = null | { kind: "tag_added"; tag: string } | { kind: "source"; source: string };
 
@@ -315,6 +325,9 @@ export default function SequencesSection({
 
   // Step drill-down drawer (which step of which sequence is open).
   const [openStep, setOpenStep] = useState<{ sequenceId: string; position: number } | null>(null);
+
+  // Which sequence's inline "over time" trends panel is expanded (by id).
+  const [trendsOpenId, setTrendsOpenId] = useState<string | null>(null);
 
   // "Copy emails" per sequence: the id currently being copied, and a transient
   // per-sequence result message keyed by id (so the label only changes on the
@@ -1188,6 +1201,20 @@ export default function SequencesSection({
                 >
                   Enroll
                 </button>
+                {seqPrefix(seq) ? (
+                  <button
+                    type="button"
+                    onClick={() => setTrendsOpenId((prev) => (prev === seq.id ? null : seq.id))}
+                    className={
+                      trendsOpenId === seq.id
+                        ? "rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 transition"
+                        : "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    }
+                    title="Show this sequence's sends, opens, and clicks over time"
+                  >
+                    Trends
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void copyEmails(seq)}
@@ -1326,6 +1353,12 @@ export default function SequencesSection({
                 <p className="text-sm text-slate-500">No steps yet.</p>
               ) : null}
             </div>
+
+            {trendsOpenId === seq.id && seqPrefix(seq) ? (
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <EmailTrends prefix={seqPrefix(seq)!} />
+              </div>
+            ) : null}
 
             {enrollOpenId === seq.id ? (
               <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
