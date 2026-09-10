@@ -41,6 +41,7 @@ const TILE_HINTS: Record<string, string> = {
   trials_started: "Paid-checkout trials (Lemon Squeezy). A separate population from clicks.",
   trial_conversions: "Trials that became paid subscriptions.",
   download_leads: "Emails captured at the app download. These are your named leads.",
+  facebook_members: "Members of your Facebook community group, captured daily.",
 };
 
 const TILE_ORDER: { key: string; accent: string }[] = [
@@ -56,6 +57,7 @@ const TILE_ORDER: { key: string; accent: string }[] = [
   { key: "commission_owed_cents", accent: "#ef4444" },
   { key: "testimonials", accent: "#eab308" },
   { key: "email_subscribers", accent: "#3b82f6" },
+  { key: "facebook_members", accent: "#1877F2" },
 ];
 
 export default function AdminGrowthPage() {
