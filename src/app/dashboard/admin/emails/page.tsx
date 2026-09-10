@@ -12,6 +12,7 @@ import ContactsSection from "./ContactsSection";
 import CampaignsSection from "./CampaignsSection";
 import SequencesSection from "./SequencesSection";
 import EmailTrends from "./EmailTrends";
+import StreamBreakdown from "./StreamBreakdown";
 
 type FunnelStats = {
   key: string;
@@ -376,6 +377,18 @@ export default function AdminEmailsPage() {
         </div>
         <div className="mt-3">
           <EmailTrends days={days} />
+        </div>
+      </section>
+
+      {/* Cold vs warm. The blended click rate above looks terrible mostly
+          because cold, unsolicited lists drag it down; this splits the same
+          window so cold outreach and warm (known-audience) mail read apart. */}
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Cold vs warm click-through
+        </h2>
+        <div className="mt-3">
+          <StreamBreakdown days={days} />
         </div>
       </section>
 
