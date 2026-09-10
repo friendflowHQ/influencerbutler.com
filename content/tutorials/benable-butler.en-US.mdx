@@ -45,7 +45,15 @@ Publish opens a Chrome window. On first run, you sign into Benable manually; sub
 
 - **Niche keyword**: the single biggest knob. "Kitchen gadgets" is too broad → Butler returns 50 random products. "Compact kitchen tools for studio apartments" is right-sized → Butler returns a coherent collection.
 - **Priority CC / SPCC** in settings - when on, Butler prioritizes products that have active Creator Connections campaigns or Sponsored Products offers in your niche. Useful for monetization; turn off if you want pure curation regardless of commission.
-- **Collection size**: Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists of 5-7 items; broad niches get 6-8 lists.
+- **Collection size**: Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists; broad niches get more.
+- **Audience and Creator voice**: two optional fields at the top. Fill them in ("budget-conscious moms", "warm, funny, practical") and Butler writes every title, description, and note for that audience in that voice.
+
+## Earning Benable's Optimized badge
+
+Benable only gives a list its **Optimized badge**, and the Discover-feed visibility that comes with it, once the list is well-formed: a catchy first-person title, an enticing description, a helpful note on every item, and **at least 15 items** (18 to 25 is the sweet spot). Benable Butler now builds to that standard automatically.
+
+- **15-item minimum**: Butler aims for 18 to 25 items per list. If a list comes back thin, Butler pulls extra products to top it up. If it still can't reach 15, Butler **holds that list back** rather than publish one that can never earn the badge. The run summary shows which lists were held and why. You can change the minimum or turn the rule off under **Advanced settings**.
+- **Retailer mix**: Amazon stays the backbone of every list, but you can let Butler add a few high-value non-Amazon items where they genuinely fit. Turn on the sources you want under **Advanced settings**: **your own links** (paste your Etsy shop, brand site, or app, one per line), **Walmart** (when your Walmart account is set up), **App Store apps**, and, once you add an API key, **Etsy** and **Google Maps** places. Butler keeps the mix light and only adds a non-Amazon item where it belongs.
 
 ## Where the data goes
 
@@ -56,6 +64,7 @@ Generated collections are logged per-run in the preseed cache (JSON + HTML repor
 - **"OpenAI key missing"**: set it in API Integrations.
 - **"Benable sign-in required"** during Publish - first-time setup or session expired. Sign in via the spawned Chrome window, click Resume.
 - **The published collection has fewer items than the preview**: Benable rejects ASINs that aren't available in the chosen marketplace. The publish log shows which ones were skipped.
+- **A list from the preview didn't publish**: if a list couldn't reach the 15-item minimum, Butler holds it back so it doesn't publish a list that can't earn the Optimized badge. The run summary lists what was held and its item count. Broaden the niche, or lower the minimum under Advanced settings, to publish it anyway.
 - **Niche too narrow**: if Dry run returns <5 candidate ASINs, your niche is too tight. Broaden one notch.
 
 ## Related

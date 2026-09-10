@@ -45,7 +45,15 @@ Publish ouvre une fenêtre Chrome. Au premier run, vous vous connectez à Benabl
 
 - **Mot-clé de niche**: le bouton le plus important de tous. "Gadgets de cuisine" est trop large → Butler renvoie 50 produits au hasard. "Outils compacts pour cuisine en studio" est à la bonne taille → Butler renvoie une collection cohérente.
 - **Priority CC / SPCC** dans les paramètres - activé, Butler privilégie les produits qui ont des campagnes Creator Connections actives ou des offres Sponsored Products dans votre niche. Utile pour la monétisation ; désactivez si vous voulez de la curation pure indépendamment de la commission.
-- **Taille de la collection**: Butler décide automatiquement du nombre de listes et d'éléments par liste selon la niche. Niches étroites : 3-4 listes de 5-7 éléments ; niches larges : 6-8 listes.
+- **Taille de la collection**: Butler décide automatiquement du nombre de listes et d'éléments par liste selon la niche. Niches étroites : 3-4 listes ; niches larges : davantage.
+- **Audience et Voix du créateur**: deux champs optionnels en haut. Remplissez-les ("mamans au budget serré", "chaleureuse, drôle, pratique") et Butler écrit chaque titre, description et note pour cette audience, dans cette voix.
+
+## Gagner le badge Optimized de Benable
+
+Benable n'accorde à une liste son **badge Optimized**, et la visibilité dans le feed Discover qui l'accompagne, que lorsqu'elle est bien construite : un titre accrocheur à la première personne, une description qui donne envie, une note utile sur chaque élément et **au moins 15 éléments** (18 à 25 est l'idéal). Benable Butler construit désormais selon ce standard automatiquement.
+
+- **Minimum de 15 éléments**: Butler vise 18 à 25 éléments par liste. Si une liste revient trop courte, Butler ajoute des produits pour la compléter. Si elle n'atteint toujours pas 15, Butler **met la liste de côté** au lieu de publier une liste qui ne pourra jamais gagner le badge. Le résumé du run indique quelles listes ont été mises de côté et pourquoi. Vous pouvez changer le minimum ou désactiver la règle dans **Paramètres avancés**.
+- **Mélange de boutiques**: Amazon reste la base de chaque liste, mais vous pouvez laisser Butler ajouter quelques éléments non-Amazon à forte valeur là où c'est pertinent. Activez les sources voulues dans **Paramètres avancés** : **vos propres liens** (collez votre boutique Etsy, votre site ou votre app, un par ligne), **Walmart** (quand votre compte Walmart est configuré), **apps de l'App Store** et, une fois une clé API ajoutée, des lieux **Etsy** et **Google Maps**. Butler garde le mélange léger et n'ajoute un élément non-Amazon que là où il a sa place.
 
 ## Où vont les données
 
@@ -56,6 +64,7 @@ Les collections générées sont journalisées par run dans le cache preseed (JS
 - **"Clé OpenAI manquante"**: configurez-la dans API Integrations.
 - **"Connexion Benable requise"** pendant Publish - première configuration ou session expirée. Connectez-vous via la fenêtre Chrome ouverte, cliquez sur Reprendre.
 - **La collection publiée a moins d'éléments que la prévisualisation**: Benable rejette les ASIN non disponibles dans le marketplace choisi. Le log de publication montre ceux qui ont été ignorés.
+- **Une liste de la prévisualisation n'a pas été publiée**: si une liste n'a pas pu atteindre le minimum de 15 éléments, Butler la met de côté pour ne pas publier une liste qui ne peut pas gagner le badge Optimized. Le résumé du run indique ce qui a été mis de côté et son nombre d'éléments. Élargissez la niche, ou baissez le minimum dans Paramètres avancés, pour la publier quand même.
 - **Niche trop étroite**: si Dry run renvoie <5 ASIN candidats, votre niche est trop serrée. Élargissez d'un cran.
 
 ## Relié
