@@ -25,6 +25,7 @@ export const apiTransport: FindingTransport = {
     const orders = batch.filter((f) => f.type === "order");
     const deals = batch.filter((f) => f.type === "deal");
     const creators = batch.filter((f) => f.type === "instagram_creator");
+    const accepts = batch.filter((f) => f.type === "campaign_accept");
 
     const posts: Array<Promise<Response>> = [];
     if (scans.length > 0) {
@@ -159,6 +160,18 @@ export const apiTransport: FindingTransport = {
             source_url: f.sourceUrl,
             promo_code: f.promoCode ?? null,
             detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+
+    if (accepts.length > 0) {
+      posts.push(
+        post(ENDPOINTS.accepts, key, {
+          accepts: accepts.map((f) => ({
+            campaignId: f.campaignId,
+            source: f.source,
+            accepted_at: f.detectedAt,
           })),
         }),
       );

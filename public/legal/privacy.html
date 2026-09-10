@@ -126,6 +126,10 @@
                 <h3>3.2 Recent-activity widget</h3>
                 <p>On the homepage we may display a small "recent activity" popup showing genuine recent events: for a trial click, the approximate city/region it came from and how long ago; for a purchase, the buyer's first name, approximate city/region, and how long ago. It never shows your IP address, full name, email, or any contact detail, and only summarizes events from a short recent window. The lawful basis is our legitimate interest in conveying genuine demand for the Software (GDPR Art. 6(1)(f)). An administrator can hide any individual entry, and you can dismiss the popup for your session.</p>
 
+                <h3>3.3 Product usage metrics ("proof of numbers")</h3>
+                <p>The desktop application and the browser extension count the automated actions they perform for you, for example deals harvested, products scanned, and Creator Connections campaigns accepted, and report those counts to us. Each report is associated with your account through your license key (sent as a bearer token), which is how the same license-key connection that syncs your data to your dashboard already works. We use these counts in two ways: internally, to understand how the Software is used and to improve it; and publicly, in <strong>aggregate only</strong>, to show combined activity totals (such as a running "deals posted" counter) on our marketing website. The public totals are sums across all users plus a fixed baseline; they never identify you, your account, your storefront, or any individual campaign, product, or action.</p>
+                <p>The lawful basis is our legitimate interest in understanding usage and demonstrating genuine activity for the Software (GDPR Art. 6(1)(f)). This reporting rides the same sync channel as the rest of your dashboard data, so turning off sync in the extension's settings (or in the desktop app) stops these counts from leaving your device. We do not sell or "share" this data for advertising, and we do not use it to train AI models.</p>
+
                 <h2>4) How we use information</h2>
                 <p>We use the data described in §2 to:</p>
                 <ul>
@@ -167,6 +171,7 @@
                 <ul>
                     <li><strong>License records</strong> (email, license key, tier, activation status/timestamps): life of the account + 24 months.</li>
                     <li><strong>Device-activation logs</strong> (fingerprint + timestamp): 90 days, then aggregated into anonymized counts.</li>
+                    <li><strong>Product usage metrics</strong> (per-account action counts behind the aggregate "proof of numbers" totals): retained in aggregate; the public counters are sums that identify no individual account or action.</li>
                     <li><strong>Transactional email metadata</strong> (Resend logs): 30 days.</li>
                     <li><strong>Feedback / feature-request / Q&amp;A submissions</strong>: indefinite (these inform product roadmap); displayed Q&amp;A becomes part of the public knowledge base unless you request removal.</li>
                     <li><strong>Website analytics</strong> (Google Analytics 4): 14 months (GA4 default).</li>

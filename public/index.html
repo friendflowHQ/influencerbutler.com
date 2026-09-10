@@ -287,6 +287,45 @@
             </div>
         </section>
 
+        <!-- ===================== LIVE NUMBERS (proof of numbers) =====================
+             Stays hidden until /api/proof-numbers returns real totals, so no
+             fabricated figure ever ships in the static HTML. Populated by
+             /js/proof-numbers.js; the numbers are genuine cumulative counts
+             from the app and extension plus an admin-set baseline offset. -->
+        <section class="proof-band" id="live-numbers" aria-label="Live Influencer Butler activity" hidden>
+            <style>
+                .proof-band { background: #fff7ed; border-top: 1px solid #fed7aa; border-bottom: 1px solid #fed7aa; padding: 28px 0; }
+                .proof-band .proof-band-label { text-align: center; margin: 0 0 18px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9a3412; }
+                .proof-stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
+                .proof-stat { text-align: center; min-width: 130px; }
+                .proof-stat strong { display: block; font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; line-height: 1.05; color: #7c2d12; font-variant-numeric: tabular-nums; }
+                .proof-stat span { display: block; margin-top: 4px; font-size: 0.9rem; font-weight: 600; color: #78350f; }
+                .proof-divider { width: 1px; align-self: stretch; background: #fdba74; }
+                .proof-band-note { text-align: center; margin: 16px 0 0; font-size: 0.8rem; color: #9a3412; }
+                @media (max-width: 640px) { .proof-divider { display: none; } }
+            </style>
+            <div class="container">
+                <p class="proof-band-label">Working around the clock for creators</p>
+                <div class="proof-stats">
+                    <div class="proof-stat">
+                        <strong data-proof="deals_posted">0</strong>
+                        <span data-proof-label="deals_posted">Deals Posted</span>
+                    </div>
+                    <div class="proof-divider"></div>
+                    <div class="proof-stat">
+                        <strong data-proof="product_scans">0</strong>
+                        <span data-proof-label="product_scans">Products Scanned</span>
+                    </div>
+                    <div class="proof-divider"></div>
+                    <div class="proof-stat">
+                        <strong data-proof="campaigns_accepted">0</strong>
+                        <span data-proof-label="campaigns_accepted">Campaigns Accepted</span>
+                    </div>
+                </div>
+                <p class="proof-band-note">Live totals from the Influencer Butler app and extension, updated continuously.</p>
+            </div>
+        </section>
+
         <!-- ===================== TRUST STRIP ===================== -->
         <section class="trust-strip">
             <div class="container">
@@ -2012,6 +2051,7 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script src="/js/proof-numbers.js" defer></script>
     <script src="/js/activity-widget.js" defer></script>
     <script src="/js/testimonials.js" defer></script>
     <script src="/js/testimonial-carousel.js" defer></script>
