@@ -31,6 +31,10 @@ export const ENDPOINTS = {
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
   dealSources: `${API_BASE}/api/extension/deal-sources`,
+  // Campaign accepts: aggregate counts of Creator Connections campaigns the
+  // extension accepted (auto + manual), for the public "proof of numbers"
+  // counter. Reports how many were accepted, not per-campaign detail.
+  accepts: `${API_BASE}/api/extension/accepts`,
   // Real Creator Connections commission rates for a batch of ASINs (built
   // daily from the CC catalogue). Public like the catalogue endpoint.
   ccRates: `${API_BASE}/api/extension/cc-rates`,

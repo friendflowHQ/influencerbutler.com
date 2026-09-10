@@ -130,13 +130,25 @@ export type InstagramCreatorFinding = {
   detectedAt: string;
 };
 
+// One Creator Connections campaign accept, reported for the public
+// "proof of numbers" counter. Carries no campaign detail beyond the id (used
+// only for same-day dedupe) and whether it was an auto or manual accept; the
+// server records an aggregate count, never per-campaign rows.
+export type CampaignAcceptFinding = {
+  type: "campaign_accept";
+  campaignId: string;
+  source: "auto" | "manual";
+  detectedAt: string;
+};
+
 export type Finding =
   | ProductScanFinding
   | ContentGapFinding
   | StorefrontIssueFinding
   | OrderFinding
   | DealFinding
-  | InstagramCreatorFinding;
+  | InstagramCreatorFinding
+  | CampaignAcceptFinding;
 
 export interface FindingTransport {
   id: "api" | "local";
@@ -169,5 +181,9 @@ export function findingKey(finding: Finding): string {
     // while a fresh day records the deal again (price and discount move daily).
     case "deal":
       return `${finding.type}:${finding.asin}:${finding.marketplace}:${day}`;
+    // A campaign accept keys on (campaignId, day): a re-report of the same
+    // accept on the same day counts once, not once per retry or re-click.
+    case "campaign_accept":
+      return `${finding.type}:${finding.campaignId}:${day}`;
   }
 }

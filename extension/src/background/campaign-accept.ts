@@ -10,6 +10,7 @@ import {
 import { getFlags } from "../flags/cache";
 import { getState } from "../storage/store";
 import { log } from "../shared/log";
+import { enqueue } from "../transport/router";
 import type { AcceptLedgerView, AcceptOutcome, AcceptSource } from "../shared/messages";
 
 // Standalone campaign accept: the background half.
@@ -158,12 +159,31 @@ export async function loadAcceptLedger(now = Date.now()): Promise<AcceptLedger> 
   return readAcceptLedger(raw[ACCEPT_LEDGER_KEY], now);
 }
 
+// Report an accept to the website's public "proof of numbers" counter. Rides
+// the same finding queue as every other sync (batched, deduped by campaign+day,
+// retried, and gated on the license key + syncEnabled setting), so a user with
+// sync off never sends it. Best-effort: a queue failure must never break the
+// accept itself.
+async function reportAccept(campaignId: string, source: AcceptSource): Promise<void> {
+  try {
+    await enqueue({
+      type: "campaign_accept",
+      campaignId,
+      source,
+      detectedAt: new Date().toISOString(),
+    });
+  } catch {
+    /* counting is best-effort; the local ledger is the source of truth */
+  }
+}
+
 // Record an accept (from our own tab, or an in-page click reported by the grid
 // overlay) into today's ledger.
 export async function noteAccept(campaignId: string, source: AcceptSource): Promise<AcceptLedger> {
   const now = Date.now();
   const next = recordAccept(await loadAcceptLedger(now), campaignId, source, now);
   await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: next });
+  await reportAccept(campaignId, source);
   return next;
 }
 
@@ -173,6 +193,7 @@ export async function noteAccepts(campaignIds: string[], source: AcceptSource): 
   let ledger = await loadAcceptLedger(now);
   for (const id of campaignIds) ledger = recordAccept(ledger, id, source, now);
   if (campaignIds.length) await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: ledger });
+  for (const id of campaignIds) await reportAccept(id, source);
   return ledger;
 }
 
