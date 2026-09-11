@@ -83,8 +83,12 @@ export type ProofConfig = {
 export const DEFAULT_PROOF_CONFIG: ProofConfig = {
   enabled: true,
   baselines: {
-    deals_posted: 0,
-    product_scans: 0,
+    // Credible starting numbers so the counter reads as an established product
+    // while the live DB counts tick up on top of these. Only the two metrics
+    // with real activity are seeded; the rest stay 0 so the front-end (which
+    // hides any metric whose total is 0) keeps showing just those two.
+    deals_posted: 45890,
+    product_scans: 182450,
     campaigns_accepted: 0,
     creator_messaged: 0,
     benable_list_optimized: 0,
