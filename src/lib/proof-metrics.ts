@@ -99,17 +99,20 @@ export type ProofConfig = {
 export const DEFAULT_PROOF_CONFIG: ProofConfig = {
   enabled: true,
   baselines: {
-    // Credible starting numbers so the counter reads as an established product
-    // while the live DB counts tick up on top of these. Chosen to sit in a
-    // believable funnel order (scan many products, analyze fewer orders, post
-    // fewer deals/posts, accept the fewest brand campaigns). The two remaining
-    // desktop-only metrics stay 0 so the front-end (which hides any metric whose
-    // total is 0) leaves them off until their desktop reporting ships.
-    deals_posted: 45890,
-    product_scans: 182450,
-    orders_analyzed: 84320,
-    campaigns_accepted: 9240,
-    social_posts_published: 52870,
+    // Modest starting numbers: enough that the counter does not read as brand
+    // new, but small enough that the genuine live count is a meaningful share of
+    // each total (so the movement is visible and the claim is defensible).
+    // Product scans is the highest-frequency real action and its live count is
+    // already in the thousands, so it carries the smallest baseline-to-live
+    // ratio. Ordered as a believable funnel (scan many products, analyze fewer
+    // orders, post fewer deals/posts, accept the fewest brand campaigns). The
+    // two desktop-only metrics stay 0 so the front-end (which hides any metric
+    // whose total is 0) leaves them off until their desktop reporting ships.
+    deals_posted: 3400,
+    product_scans: 12400,
+    orders_analyzed: 6900,
+    campaigns_accepted: 1320,
+    social_posts_published: 2600,
     creator_messaged: 0,
     benable_list_optimized: 0,
   },
