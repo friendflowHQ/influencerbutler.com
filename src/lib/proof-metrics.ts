@@ -18,7 +18,9 @@ import { isMissingTableError } from "@/lib/extension-api";
 export type ProofMetricKey =
   | "deals_posted"
   | "product_scans"
+  | "orders_analyzed"
   | "campaigns_accepted"
+  | "social_posts_published"
   | "creator_messaged"
   | "benable_list_optimized";
 
@@ -52,13 +54,27 @@ export const PROOF_METRICS: ProofMetricDef[] = [
     source: { kind: "table_count", table: "extension_product_scans" },
   },
   {
+    key: "orders_analyzed",
+    defaultLabel: "Orders Analyzed",
+    source: { kind: "table_count", table: "extension_orders" },
+  },
+  {
     key: "campaigns_accepted",
-    defaultLabel: "Campaigns Accepted",
+    // Amazon's program is "Creator Connections"; accepting one is exactly this
+    // event, so the public tile uses that name.
+    defaultLabel: "Creator Connections Accepted",
     source: { kind: "events_total", metric: "campaign_accepted" },
   },
   // Reported by the desktop app (separate repo, separate release cadence): they
   // read 0 until a desktop build that reports them ships, or until a baseline
-  // is set. See src/app/api/desktop/actions.
+  // is set. See src/app/api/desktop/actions. social_posts_published needs the
+  // desktop app to POST action 'social_post_published' (whitelisted in that
+  // route) before its live count moves; until then it shows its baseline only.
+  {
+    key: "social_posts_published",
+    defaultLabel: "Social Posts Posted",
+    source: { kind: "events_total", metric: "social_post_published" },
+  },
   {
     key: "creator_messaged",
     defaultLabel: "Brands Messaged",
@@ -84,12 +100,16 @@ export const DEFAULT_PROOF_CONFIG: ProofConfig = {
   enabled: true,
   baselines: {
     // Credible starting numbers so the counter reads as an established product
-    // while the live DB counts tick up on top of these. Only the two metrics
-    // with real activity are seeded; the rest stay 0 so the front-end (which
-    // hides any metric whose total is 0) keeps showing just those two.
+    // while the live DB counts tick up on top of these. Chosen to sit in a
+    // believable funnel order (scan many products, analyze fewer orders, post
+    // fewer deals/posts, accept the fewest brand campaigns). The two remaining
+    // desktop-only metrics stay 0 so the front-end (which hides any metric whose
+    // total is 0) leaves them off until their desktop reporting ships.
     deals_posted: 45890,
     product_scans: 182450,
-    campaigns_accepted: 0,
+    orders_analyzed: 84320,
+    campaigns_accepted: 9240,
+    social_posts_published: 52870,
     creator_messaged: 0,
     benable_list_optimized: 0,
   },

@@ -13,7 +13,9 @@ const liveCounts = (
 ): Record<ProofMetricKey, number> => ({
   deals_posted: 0,
   product_scans: 0,
+  orders_analyzed: 0,
   campaigns_accepted: 0,
+  social_posts_published: 0,
   creator_messaged: 0,
   benable_list_optimized: 0,
   ...partial,
@@ -26,7 +28,9 @@ describe("composeProofMetrics", () => {
       baselines: {
         deals_posted: 100000,
         product_scans: 500000,
+        orders_analyzed: 0,
         campaigns_accepted: 25000,
+        social_posts_published: 0,
         creator_messaged: 0,
         benable_list_optimized: 0,
       },
