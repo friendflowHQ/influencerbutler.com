@@ -91,6 +91,27 @@
     return card;
   }
 
+  // The scroll-reveal observer in main.js snapshots the .anim-up cards once at
+  // page load, so the cards we inject here are never observed and would stay at
+  // opacity:0 (the section looks empty). Reveal our own cards: observe them so
+  // the fade-in still plays, falling back to showing them all immediately.
+  function reveal(cards) {
+    if (!cards.length) return;
+    if ("IntersectionObserver" in window) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      cards.forEach(function (card) { observer.observe(card); });
+    } else {
+      cards.forEach(function (card) { card.classList.add("visible"); });
+    }
+  }
+
   function render(list) {
     var grid = document.querySelector(".testimonials .testimonial-grid");
     if (!grid) return;
@@ -100,6 +121,7 @@
     }
     grid.textContent = "";
     grid.appendChild(frag);
+    reveal(Array.prototype.slice.call(grid.querySelectorAll(".testimonial-card.anim-up")));
     // Let the carousel controller rebuild its pagination for the new cards.
     document.dispatchEvent(new CustomEvent("testimonials:rendered"));
   }

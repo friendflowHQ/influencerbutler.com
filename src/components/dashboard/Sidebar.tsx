@@ -51,6 +51,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [adminRole, setAdminRole] = useState<"admin" | "assistant" | null>(null);
   const [adminPerms, setAdminPerms] = useState<string[]>([]);
+  const [pendingTestimonials, setPendingTestimonials] = useState(0);
   const { setHelpOpen } = useKeyboardShortcutsContext();
 
   useEffect(() => {
@@ -120,6 +121,19 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
         if (!cancelled && json.isStaff) {
           setAdminRole(json.role ?? null);
           setAdminPerms(json.permissions ?? []);
+          // Badge on the Testimonials nav link. Staff-only, so regular users
+          // never make this call. Route returns { count: 0 } without the
+          // testimonials.moderate permission.
+          void fetch("/api/admin/testimonials/pending-count", { cache: "no-store" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((payload: { count?: number } | null) => {
+              if (!cancelled && typeof payload?.count === "number") {
+                setPendingTestimonials(payload.count);
+              }
+            })
+            .catch(() => {
+              // ignore - badge just won't show
+            });
         }
       } catch {
         // not staff / network error: no admin nav
@@ -299,19 +313,34 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             <nav className="mt-2 flex flex-col gap-1" aria-label="Admin navigation">
               {adminNavItems.map((item) => {
                 const isActive = pathname === item.href;
+                const badge =
+                  item.href === "/dashboard/admin/testimonials" && pendingTestimonials > 0
+                    ? pendingTestimonials
+                    : null;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileOpen(false)}
                     className={[
-                      "rounded-lg px-3 py-2 text-sm font-medium transition",
+                      "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
                       isActive
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
                     ].join(" ")}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    {badge !== null ? (
+                      <span
+                        className={[
+                          "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+                          isActive ? "bg-white text-indigo-700" : "bg-rose-500 text-white",
+                        ].join(" ")}
+                        aria-label={`${badge} awaiting review`}
+                      >
+                        {badge}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}
