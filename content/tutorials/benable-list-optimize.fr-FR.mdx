@@ -48,11 +48,13 @@ Cliquez sur **Générer des améliorations IA** pour obtenir du texte prêt à l
 
 L'IA reçoit la consigne d'écrire dans un langage de recommandation honnête ("Idéal pour...", "À envisager si...") et de ne jamais inventer d'expérience personnelle comme "J'utilise ceci". Si une affirmation à la première personne passe malgré tout, nous la réécrivons avant que vous la voyiez.
 
-## Appliquer le titre et la description automatiquement
+## Améliorer cette liste automatiquement
 
-Le **nouveau titre** et la **nouvelle description** portent un bouton **Appliquer à la liste** en plus de Copier. Appliquer écrit la modification directement dans votre liste réelle et enregistre la valeur précédente, si bien qu'un bouton **Annuler** apparaît juste après au cas où vous voudriez revenir en arrière.
+Cliquez sur **Améliorer cette liste automatiquement** pour appliquer les corrections sûres en une étape, après une seule confirmation que vous approuvez. L'outil ne réécrit un **titre** ou une **description** que s'il en a vraiment besoin : si le vôtre a déjà un bon score, il le laisse tel quel et garde la suggestion en copie seule. Quand la liste manque de produits, il **ajoute aussi des produits** pour vous, en utilisant le créneau, la marketplace, les filtres de qualité et l'objectif de vos réglages de Publication de listes, et rédige une note pour chacun. Laissez **Suivre l'exécution** activé pour regarder, et chaque changement de titre ou de description appliqué a son bouton **Annuler**.
 
-Tout le reste (sections, notes, suppressions de produits, couverture) est en copie seule pour l'instant. Vous collez ceux-là vous-même. Appliquer le reste automatiquement est prévu dans la feuille de route.
+Vous préférez procéder par étapes ? Le **nouveau titre** et la **nouvelle description** gardent leur propre bouton **Appliquer à la liste**, et le bouton **Ajouter des produits** de la carte d'amélioration complète la liste tout seul.
+
+Tout le reste (sections, suppressions de produits, couverture) est en copie seule pour l'instant. Vous collez ceux-là vous-même.
 
 ## Analyser toutes mes listes
 
@@ -68,6 +70,7 @@ Ouvrez **Ou analyser toutes mes listes**, collez l'URL de votre profil Benable e
 
 - **"Saisissez une URL de liste benable.com."** : l'URL n'est pas un lien de liste Benable. Elle doit ressembler à `https://benable.com/<nom>/<liste>`.
 - **"Connectez OpenAI pour générer des améliorations IA"** : l'analyse a fonctionné, mais le texte IA nécessite votre clé OpenAI dans Clés IA et Données. Ajoutez-la et cliquez à nouveau sur Générer des améliorations IA.
+- **"Connectez votre API Amazon Creators pour ajouter des produits"** : ajouter des produits recherche sur Amazon des choix sur le thème, il faut donc que votre API Amazon Creators soit connectée dans Clés IA et Données. Les notes des nouveaux produits utilisent aussi votre clé OpenAI, mais les produits s'ajoutent quand même sans elle.
 - **Le score semble élevé mais la liste n'est pas optimisée** : sur vos propres listes, nous ne pouvons pas voir les notes, donc le score ne reflète que la structure. Lisez la note "notes indéterminées" et renforcez les notes de vos produits.
 - **Une analyse est revenue pauvre** : la liste est peut-être privée, vide ou encore en chargement. Réessayez et assurez-vous d'être connecté.
 
