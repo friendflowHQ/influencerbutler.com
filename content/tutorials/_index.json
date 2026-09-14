@@ -472,6 +472,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "benable-published-products",
+      "title": "Benable Published Products: see everything you published and why",
+      "category": "Partnerships",
+      "summary": "A filterable table of every product Benable Butler published, with the reason it was picked, its Creator Connections and SPCC status, campaign end, caption, and collection.",
+      "order": 172,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "benable-list-optimize",
       "title": "Benable List Optimize: audit a Benable list and get specific fixes",
       "category": "Partnerships",
