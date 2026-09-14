@@ -60,6 +60,15 @@ Tout le reste (sections, suppressions de produits, couverture) est en copie seul
 
 Ouvrez **Ou analyser toutes mes listes**, collez l'URL de votre profil Benable et cliquez sur **Tout analyser**. L'outil analyse chaque liste de votre profil localement (sans coût OpenAI) et les trie pour que les moins optimisées apparaissent en premier. Cliquez sur une ligne pour ouvrir son analyse complète.
 
+### Optimiser depuis la vue de tri
+
+Une fois l'analyse terminée, vous pouvez optimiser sans ouvrir chaque liste une par une :
+
+- **Chaque ligne a son propre bouton Optimiser.** Il lance le même flux Auto-améliorer sur cette liste, après une confirmation. Les lignes qui portent déjà le badge Optimisée affichent le bouton désactivé, pour que vous ne touchiez jamais une liste terminée.
+- **Optimisez-en plusieurs à la fois.** Choisissez un filtre (**Pas encore optimisées**, qui couvre presque optimisées et non détectées, ou **Presque optimisées uniquement**), puis cliquez sur **Optimiser ces listes**. Le bouton indique combien de listes seront traitées. Il confirme une fois, puis les traite une par une, et vous pouvez **Arrêter** entre les listes. Les listes déjà optimisées sont toujours ignorées, quel que soit le filtre.
+
+L'optimisation groupée réécrit les titres et les descriptions et ajoute des produits sur vos listes en ligne, et consomme des crédits OpenAI par liste, donc la confirmation le précise d'abord. Le badge de chaque ligne reflète ce que Benable a montré au moment de l'analyse. Relancez une analyse plus tard pour voir les badges mis à jour.
+
 ## Limites honnêtes
 
 - **Sur vos propres listes, les notes de chaque produit ne sont pas lisibles.** Benable affiche votre propre liste dans une vue modifiable qui ne nous expose pas les cartes des produits. Dans ce cas, l'outil marque la couverture des notes comme **indéterminée** et laisse le score des Notes de produits en **S.O.** au lieu d'inventer un verdict de "0 sur N ont des notes". Les notes restent l'une des plus grandes parties d'une liste bien organisée, donc l'analyse vous rappelle de les renforcer même quand elle ne peut pas les mesurer.

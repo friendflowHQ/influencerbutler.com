@@ -60,6 +60,15 @@ Everything else (sections, product removals, cover) is copy-only for now. You pa
 
 Open **Or scan all my lists**, paste your Benable profile URL, and click **Scan all**. The tool audits every list on your profile locally (no OpenAI cost) and sorts them so the least optimized show first. Click any row to open its full audit.
 
+### Optimize from the triage view
+
+Once the scan finishes, you can optimize without opening each list one by one:
+
+- **Every row has its own Optimize button.** It runs the same Auto-improve flow on that single list, after one confirmation. Rows that already carry the Optimized badge show the button disabled, so you never touch a finished list.
+- **Optimize several at once.** Pick a filter (**Not yet optimized**, which covers near optimized and not detected, or **Near optimized only**), then click **Optimize these lists**. The button shows how many lists it will process. It confirms once, then works through them one at a time, and you can **Stop** between lists. Already-optimized lists are always skipped, whatever the filter.
+
+Bulk optimize rewrites titles and descriptions and adds products on your live lists, and it spends OpenAI credits per list, so the confirmation spells that out first. The badge on each row reflects what Benable showed at scan time. Re-scan later to see updated badges.
+
 ## Honest limitations
 
 - **On your own lists, individual product notes are not readable.** Benable renders your own list in an editable view that does not expose the item cards to us. When that happens, the tool marks note coverage as **undetermined** and leaves the Product notes score as **N/A** rather than inventing a "0 of N have notes" verdict. Notes are still one of the biggest parts of a well-curated list, so the audit reminds you to strengthen them even when it cannot measure them.
