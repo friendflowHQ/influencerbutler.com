@@ -64,10 +64,14 @@ export async function scheduleBot(args: {
         bot_name: args.botName,
         join_at: args.joinAtISO,
         metadata: args.metadata,
-        // Record the mixed A/V and produce an async transcript. Recall stores
-        // the artifacts and exposes them on the bot once the call ends.
+        // Record the mixed A/V and transcribe with Recall's own engine. This
+        // account's Recall API version does not accept the older recallai_async
+        // provider (it 400s "Must provide exactly one of ... recallai_streaming
+        // ..."); recallai_streaming is the Recall-native option that needs no
+        // third-party transcription key and still produces the downloadable
+        // transcript artifact fetchTranscriptText reads once the call ends.
         recording_config: {
-          transcript: { provider: { recallai_async: {} } },
+          transcript: { provider: { recallai_streaming: {} } },
         },
       }),
     });
@@ -177,7 +181,7 @@ export async function probeBotCreate(): Promise<BotCreateProbe> {
         meeting_url: "https://meet.google.com/aaa-bbbb-ccc",
         bot_name: "Influencer Butler Healthcheck",
         join_at: new Date(Date.now() + 15 * 60_000).toISOString(),
-        recording_config: { transcript: { provider: { recallai_async: {} } } },
+        recording_config: { transcript: { provider: { recallai_streaming: {} } } },
       }),
     });
     out.status = res.status;
