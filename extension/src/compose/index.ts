@@ -31,8 +31,10 @@ const ctx = {
 };
 
 // Uploaded-image state: when the creator picks a file (fallback path), we hold
-// the returned storage path so the scheduled post uses image_source 'upload'.
+// the returned storage path AND its public URL, so the scheduled post uses
+// image_source 'upload' and the desktop still downloads it via image_url.
 let uploadedPath: string | null = null;
+let uploadedUrl: string | null = null;
 
 function setStatus(el: HTMLElement | null, text: string, kind?: "ok" | "err"): void {
   if (!el) return;
@@ -82,6 +84,7 @@ function initImage(): void {
             return;
           }
           uploadedPath = res.path ?? null;
+          uploadedUrl = res.url ?? null;
           preview.src = res.url;
           preview.hidden = false;
           if (none) none.hidden = true;
@@ -389,6 +392,9 @@ function initSchedule(): void {
     if (uploadedPath) {
       image_source = "upload";
       image_path = uploadedPath;
+      // Also carry the public URL so the desktop downloads it via image_url,
+      // the same path it uses for a remote 'url' source.
+      image_url = uploadedUrl;
     } else if (ctx.imageUrl) {
       image_source = "url";
       image_url = ctx.imageUrl;
