@@ -129,13 +129,21 @@ describe("applyCampaignFills", () => {
         accepted: 3,
         required: 10,
         fullyClaimed: false,
-        stats: { ordersLast30: 72, salesLast30Cents: 233581, roas: 6.69, ordersTotal: 203 },
+        stats: {
+          ordersLast30: 72,
+          salesLast30Cents: 233581,
+          roas: 6.69,
+          ordersTotal: 203,
+          clicksLast30: 300,
+          clicksTotal: 900,
+        },
       },
     });
     expect(c.slotsFilled).toBe(3);
     expect(c.slotsTotal).toBe(10);
     expect(c.stats?.ordersLast30).toBe(72);
     expect(c.stats?.roas).toBeCloseTo(6.69);
+    expect(c.stats?.clicksLast30).toBe(300);
   });
 
   it("leaves stats null when the capture carried none", () => {

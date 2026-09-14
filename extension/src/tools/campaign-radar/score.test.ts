@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bandFor,
   campaignFillPct,
+  campaignStatsConversion,
   computeCampaignScore,
   computeCampaignConfidence,
   meetsRadarThresholds,
@@ -9,6 +10,7 @@ import {
   type CampaignScoreInputs,
   type RadarThresholds,
 } from "./score";
+import type { CampaignStats } from "../../amazon/creator-campaigns";
 
 const strong: CampaignScoreInputs = {
   commissionRatePct: 18,
@@ -247,5 +249,35 @@ describe("computeCampaignConfidence", () => {
 
   it("treats a lone fully-claimed flag as a present fill signal", () => {
     expect(computeCampaignConfidence({ ...empty, fullyClaimed: true })).toBeGreaterThan(0);
+  });
+});
+
+describe("campaignStatsConversion", () => {
+  const stats = (partial: Partial<CampaignStats>): CampaignStats => ({
+    ordersLast30: null,
+    salesLast30Cents: null,
+    roas: null,
+    ordersTotal: null,
+    clicksLast30: null,
+    clicksTotal: null,
+    ...partial,
+  });
+
+  it("is null when there are no stats at all", () => {
+    expect(campaignStatsConversion(null)).toBeNull();
+  });
+
+  it("computes orders / clicks from the last-30-day window", () => {
+    expect(campaignStatsConversion(stats({ ordersLast30: 744, clicksLast30: 1600 }))).toBeCloseTo(
+      0.465,
+    );
+  });
+
+  it("falls back to lifetime totals when the 30-day window is absent", () => {
+    expect(campaignStatsConversion(stats({ ordersTotal: 50, clicksTotal: 200 }))).toBeCloseTo(0.25);
+  });
+
+  it("is null when clicks are missing (no honest denominator)", () => {
+    expect(campaignStatsConversion(stats({ ordersLast30: 10 }))).toBeNull();
   });
 });

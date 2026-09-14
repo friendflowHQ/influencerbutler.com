@@ -3,6 +3,7 @@ import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { visibleBreakdownParts } from "./score";
 import type { CampaignScore, CampaignScoreBand } from "./score";
+import { formatConversion } from "../earnings-overlay/model";
 import { sendToBackground } from "../../shared/messages";
 import type {
   CampaignBriefDemand,
@@ -21,6 +22,9 @@ export type CampaignBriefOpen = {
   brand: string | null;
   score: CampaignScore;
   confidence: number;
+  // Campaign-wide conversion (orders / clicks) from Amazon's own stats when it
+  // exposed them, or null (the common case). Shown under the confidence line.
+  conversion: number | null;
   // 2-letter locale for currency/number formatting of the demand figures.
   locale: string;
   // Fires the GET_CAMPAIGN_BRIEF round trip (built by the overlay, which holds
@@ -281,6 +285,15 @@ export function openCampaignBrief(opts: CampaignBriefOpen): void {
   confidence.style.fontSize = "12px";
   confidence.style.color = "#6b7280";
   verdictWrap.append(verdict, confidence);
+  // Campaign-wide conversion, when Amazon exposed it: the competitor's headline
+  // number, in the butler's panel. Absent (no line) in the usual null case.
+  if (opts.conversion !== null) {
+    const conv = el("div", "", t().campaignBriefConversion(formatConversion(opts.conversion)));
+    conv.style.fontSize = "12px";
+    conv.style.fontWeight = "600";
+    conv.style.color = "#15803d";
+    verdictWrap.append(conv);
+  }
   headline.append(scoreBox, verdictWrap);
 
   // ---- Body (loading -> sections / fallback) ----

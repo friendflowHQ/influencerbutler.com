@@ -76,10 +76,16 @@ function buildSignalBlock(
     const s = signals.ccStats;
     const parts: string[] = [];
     if (s.ordersLast30 !== null) parts.push(`${s.ordersLast30} orders in the last 30 days`);
+    if (s.clicksLast30 !== null) parts.push(`${s.clicksLast30} clicks in the last 30 days`);
     if (s.salesLast30Cents !== null)
       parts.push(`${dollars(s.salesLast30Cents)} sales in the last 30 days`);
     if (s.roas !== null) parts.push(`ROAS ${s.roas}`);
     if (s.ordersTotal !== null) parts.push(`${s.ordersTotal} orders tracked in campaign history`);
+    const conv =
+      s.ordersLast30 !== null && s.clicksLast30 !== null && s.clicksLast30 > 0
+        ? Math.round((s.ordersLast30 / s.clicksLast30) * 100)
+        : null;
+    if (conv !== null) parts.push(`${conv}% conversion (orders per click)`);
     if (parts.length) lines.push(`Campaign performance (from Amazon): ${parts.join(", ")}`);
   }
 

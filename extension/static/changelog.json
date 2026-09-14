@@ -1,6 +1,28 @@
 {
-  "lastUpdated": "2026-09-08",
+  "lastUpdated": "2026-09-14",
   "releases": [
+    {
+      "version": "0.1.15",
+      "date": "September 14, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Video Likes: an orange heart badge on Amazon video and content cards shows how many likes each video has, both on your storefront and on product pages. It is on by default, with an off switch under Video like counts in settings",
+            "The Product snapshot now shows how old a listing is and how many sellers share the buy box, so you can read a product's freshness and how crowded it is at a glance (the seller chip turns amber once five or more sellers are on the listing)",
+            "Conversion rate (orders per click) now appears where it helps: your product's earnings panel headlines its best-converting campaign, the full breakdown tags the best converter, and campaign cards and The Butler's Brief show a campaign's conversion whenever Amazon exposes it",
+            "The price history panel adds a 12-month sales histogram with the peak month called out, plus a 90-day rank trend with a one-word read of rising, steady, or slipping",
+            "Search-results tiles that are in a clicks-based Amazon campaign but have no fixed commission now show Amazon's own per-click forecast (Campaign: up to $X/click) instead of a bare Campaign label"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Tile badges on Amazon Idea List pages no longer hide behind the next row of tiles, so every badge stays visible"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.14",
       "date": "September 8, 2026",

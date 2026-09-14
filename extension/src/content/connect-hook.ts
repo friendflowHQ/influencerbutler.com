@@ -27,6 +27,10 @@ type CampaignStats = {
   salesLast30Cents: number | null;
   roas: number | null;
   ordersTotal: number | null;
+  // Clicks, so a conversion rate (orders / clicks) can be computed downstream.
+  // Same best-effort/unverified status as the rest: usually null.
+  clicksLast30: number | null;
+  clicksTotal: number | null;
 };
 
 type Fill = {
@@ -87,11 +91,20 @@ type Fill = {
     const salesDollars = pickNum(rec, ["salesLast30Days", "salesLast30", "recentSales", "salesAmount", "revenueLast30"]);
     const roas = pickNum(rec, ["roas", "returnOnAdSpend", "roasLast30"]);
     const ordersTotal = pickNum(rec, ["totalOrders", "ordersTotal", "lifetimeOrders", "numberOfOrders"]);
+    const clicksLast30 = pickNum(rec, ["clicksLast30Days", "clicksLast30", "recentClicks", "clicks30d"]);
+    const clicksTotal = pickNum(rec, ["totalClicks", "clicksTotal", "lifetimeClicks", "numberOfClicks"]);
     const salesLast30Cents = salesDollars === null ? null : Math.round(salesDollars * 100);
-    if (ordersLast30 === null && salesLast30Cents === null && roas === null && ordersTotal === null) {
+    if (
+      ordersLast30 === null &&
+      salesLast30Cents === null &&
+      roas === null &&
+      ordersTotal === null &&
+      clicksLast30 === null &&
+      clicksTotal === null
+    ) {
       return null;
     }
-    return { ordersLast30, salesLast30Cents, roas, ordersTotal };
+    return { ordersLast30, salesLast30Cents, roas, ordersTotal, clicksLast30, clicksTotal };
   };
 
   const buildMap = (text: string): Record<string, Fill> | null => {

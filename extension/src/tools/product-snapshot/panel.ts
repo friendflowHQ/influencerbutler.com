@@ -3,6 +3,21 @@ import { t } from "../../i18n";
 import { getRateCard, rateForCategory } from "../../rate-card/cache";
 import type { ProductSignals } from "../../amazon/product-signals";
 
+// At or above this many sellers on the listing, the seller chip turns amber to
+// flag a crowded buybox (the competitor warns at 7; we warn a little earlier).
+const CROWDED_SELLER_THRESHOLD = 5;
+
+// Whole months between a past epoch-ms date and now, floored at 0. Used for the
+// "Age: N mo" chip, so a listing published this month still reads "0 mo".
+function monthsSince(at: number): number {
+  const then = new Date(at);
+  const now = new Date();
+  const months =
+    (now.getUTCFullYear() - then.getUTCFullYear()) * 12 +
+    (now.getUTCMonth() - then.getUTCMonth());
+  return Math.max(0, months);
+}
+
 // The identity card at the top of the product panel: the ASINs a creator needs
 // to copy, the category and bestseller rank at a glance, and the commission
 // rate (or an honest "not set"). Mirrors the competitor's product card, in our
@@ -25,6 +40,17 @@ export function renderProductSnapshot(signals: ProductSignals): HTMLElement | nu
     meta.append(
       chip("good", t().snapshotRank(signals.bestsellerRank.rank, signals.bestsellerRank.category)),
     );
+  }
+  if (signals.listedAt !== null) {
+    const listed = new Date(signals.listedAt);
+    const months = monthsSince(signals.listedAt);
+    const label = `${t().monthAbbr[listed.getUTCMonth()] ?? ""} ${listed.getUTCFullYear()}`.trim();
+    meta.append(chip("", t().snapshotAge(months, label)));
+  }
+  if (signals.sellerCount !== null) {
+    // A crowded buybox is a competition warning; amber above the threshold.
+    const crowded = signals.sellerCount >= CROWDED_SELLER_THRESHOLD;
+    meta.append(chip(crowded ? "warn" : "", t().snapshotSellers(signals.sellerCount)));
   }
   if (meta.childElementCount > 0) section.append(meta);
 

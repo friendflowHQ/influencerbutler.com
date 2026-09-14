@@ -24,6 +24,7 @@ import { getCachedAvailability, putCachedAvailability } from "./availability-cac
 import { getCachedVideoCounts, putCachedVideoCount } from "./video-count-cache";
 import {
   campaignFillPct,
+  campaignStatsConversion,
   computeCampaignScore,
   computeCampaignConfidence,
   meetsRadarThresholds,
@@ -31,6 +32,7 @@ import {
   type CampaignScoreInputs,
   type RadarThresholds,
 } from "./score";
+import { formatConversion } from "../earnings-overlay/model";
 import { openCampaignBrief } from "./campaign-brief-panel";
 import { runAcceptOnPage } from "./accept-runner";
 import { describeAcceptResult } from "../campaigns/accept";
@@ -386,6 +388,17 @@ function renderBadge(row: Row): void {
   // no meter. A fully claimed campaign reads "Full" and the card is dimmed.
   if (lastCallEnabled && row.campaign.slotsTotal !== null) body.append(renderFillMeter(row));
 
+  // Campaign-wide conversion (orders / clicks) when Amazon exposed it on the
+  // record. Almost always absent, so the chip simply does not appear rather than
+  // showing a zero: proof shoppers are buying when we have it, silence when we do
+  // not. This is the number the competitor headlines on their campaign dashboard.
+  const conv = campaignStatsConversion(row.campaign.stats);
+  if (conv !== null) {
+    const convChip = el("span", "tile-chip good", t().radarConversionChip(formatConversion(conv)));
+    convChip.title = t().radarConversionTitle;
+    body.append(convChip);
+  }
+
   // Personal signals lead: a product you own or have earned on is the strongest
   // reason to take a campaign.
   if (row.owned) body.append(el("span", "tile-chip good", t().radarChipOwned));
@@ -662,6 +675,7 @@ function openBrief(row: Row): void {
     brand: campaign.brand,
     score: row.score,
     confidence,
+    conversion: campaignStatsConversion(campaign.stats),
     locale: getLocale(),
     request: () =>
       sendToBackground<CampaignBriefResult>({ kind: "GET_CAMPAIGN_BRIEF", signals }),

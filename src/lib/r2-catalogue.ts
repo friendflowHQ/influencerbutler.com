@@ -262,6 +262,71 @@ export async function buildCcRates(opts: {
   return { version: latest.version, rowCount, campaignCount: campaigns.size };
 }
 
+export type SpccRateRow = {
+  asin: string;
+  estimatedEpc: number;
+  budgetAvailability: string | null;
+  brand: string | null;
+};
+
+// Builds the per-ASIN SPCC ("Earn on Clicks") rows straight from the SPCC
+// catalog: unlike CC, each line is already ASIN-keyed and carries Amazon's own
+// estimatedEpc + budgetAvailability, so this is a single streamed pass with no
+// asin-index join. Streaming with chunked, awaited flushes for the same reason
+// as buildCcRates: the catalog can be large and upserts should never pile up
+// concurrently.
+export async function buildSpccRates(opts: {
+  onChunk: (rows: SpccRateRow[]) => Promise<void>;
+  chunkSize?: number;
+  // Resume support: skip this many already-flushed rows before calling
+  // onChunk again (see buildCcRates for the deterministic-stream-order reasoning).
+  skipRows?: number;
+}): Promise<{ version: string; rowCount: number }> {
+  const latest = await readLatest("spcc");
+  const key = sourceFile("spcc", latest);
+
+  const chunkSize = opts.chunkSize ?? 10_000;
+  const skipRows = opts.skipRows ?? 0;
+  let chunk: SpccRateRow[] = [];
+  let rowCount = 0;
+  await streamNdjson(key, (line) => {
+    let row: {
+      _meta?: unknown;
+      asin?: string;
+      estimatedEpc?: number | null;
+      budgetAvailability?: string | null;
+      brand?: string | null;
+    };
+    try {
+      row = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (row._meta || !row.asin || typeof row.estimatedEpc !== "number") return;
+    const asin = row.asin.trim().toUpperCase();
+    if (!/^[A-Z0-9]{10}$/.test(asin)) return;
+    rowCount += 1;
+    // Rows a previous (timed-out) run already flushed: count them but do not
+    // re-upsert.
+    if (rowCount <= skipRows) return;
+    chunk.push({
+      asin,
+      estimatedEpc: row.estimatedEpc,
+      budgetAvailability: row.budgetAvailability?.trim() || null,
+      brand: row.brand?.trim() || null,
+    });
+    if (chunk.length >= chunkSize) {
+      const out = chunk;
+      chunk = [];
+      return opts.onChunk(out);
+    }
+    return;
+  });
+  if (chunk.length > 0) await opts.onChunk(chunk);
+
+  return { version: latest.version, rowCount };
+}
+
 export async function buildFilter(kind: CatalogueKind): Promise<BuiltFilter> {
   const latest = await readLatest(kind);
   const key = sourceFile(kind, latest);

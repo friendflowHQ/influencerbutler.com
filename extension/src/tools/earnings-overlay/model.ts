@@ -161,3 +161,60 @@ function addNullable(a: number | null, b: number | null): number | null {
   if (a == null && b == null) return null;
   return (a ?? 0) + (b ?? 0);
 }
+
+// ---- Conversion -------------------------------------------------------------
+// The per-campaign conversion readout (orders / clicks), our answer to the
+// "add conversion rate to the product page" reporting a competitor was still
+// figuring out how to show. Pure and shared by the product-panel headline, the
+// detail modal, and the campaign grid so every surface reads a rate the same way.
+
+// Conversion as a 0-1 fraction, or null when there is no honest denominator
+// (clicks missing or zero). A campaign with clicks but no recorded orders is a
+// real 0% and returns 0, distinct from null (unknown).
+export function conversionRate(orders: number | null, clicks: number | null): number | null {
+  if (orders == null || clicks == null || clicks <= 0) return null;
+  return orders / clicks;
+}
+
+// A 0-1 conversion fraction as a short percent label: whole percent at 1% and
+// above ("47%"), one decimal below 1% so a small-but-real rate is not flattened
+// to "0%".
+export function formatConversion(rate: number): string {
+  const pct = rate * 100;
+  const digits = pct > 0 && pct < 1 ? 1 : 0;
+  return `${pct.toFixed(digits)}%`;
+}
+
+export type RankedCampaign = CampaignRow & { conversion: number | null };
+
+// A product's campaign rows, each annotated with its conversion and sorted
+// best-converting first. Rows with no computable conversion (no clicks) sort
+// last, then by orders, so entry [0] is the headline campaign whenever any row
+// carries a rate. This is exactly the "which campaign do we show for a product
+// that is in several" answer: rank them and lead with the best.
+export function rankCampaignsByConversion(campaigns: CampaignRow[]): RankedCampaign[] {
+  return campaigns
+    .map((c) => ({ ...c, conversion: conversionRate(c.orders, c.clicks) }))
+    .sort((a, b) => {
+      if (a.conversion === null && b.conversion === null) {
+        return (b.orders ?? 0) - (a.orders ?? 0);
+      }
+      if (a.conversion === null) return 1;
+      if (b.conversion === null) return -1;
+      return b.conversion - a.conversion;
+    });
+}
+
+// One blended conversion across all of a product's campaigns: total orders over
+// total clicks (weighted by clicks, the honest way to combine rates rather than
+// averaging percentages). Null when no campaign carried clicks.
+export function blendedConversion(campaigns: CampaignRow[]): number | null {
+  let orders = 0;
+  let clicks = 0;
+  for (const c of campaigns) {
+    if (c.clicks == null || c.clicks <= 0) continue;
+    clicks += c.clicks;
+    orders += c.orders ?? 0;
+  }
+  return clicks > 0 ? orders / clicks : null;
+}

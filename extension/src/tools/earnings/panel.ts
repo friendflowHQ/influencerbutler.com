@@ -2,7 +2,13 @@ import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground, type EarningsLookupResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
-import { formatMoney, hasBreakdown, scopedCurrencyTotals } from "../earnings-overlay/model";
+import {
+  formatConversion,
+  formatMoney,
+  hasBreakdown,
+  rankCampaignsByConversion,
+  scopedCurrencyTotals,
+} from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
 
 // Your real earnings on this exact product, pulled from the desktop app's Daily
@@ -63,6 +69,25 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
   }
   section.append(amounts);
   section.append(el("p", "note", t().earningsNote));
+
+  // Conversion readout: your realized orders-per-click on this product, from the
+  // same ledger, one figure per campaign you ran it in. Headline the
+  // best-converting campaign; when you ran several here, a muted sub-note points
+  // to the full ranked list in the breakdown. This is the product-page
+  // conversion reporting a competitor was still trying to work out how to show,
+  // and the "which of several campaigns" problem is a non-issue for us because
+  // the ledger already splits by campaign. Absent for products with no clicks.
+  const ranked = rankCampaignsByConversion(earnings.campaigns ?? []);
+  const best = ranked.find((c) => c.conversion !== null);
+  if (best && best.conversion !== null) {
+    const convRow = el("div", "counts");
+    convRow.append(
+      chip("good", t().earningsConversion(formatConversion(best.conversion), best.name)),
+    );
+    section.append(convRow);
+    const withData = ranked.filter((c) => c.conversion !== null).length;
+    if (withData > 1) section.append(el("p", "note", t().earningsConversionMore(withData)));
+  }
 
   // When the desktop build sends the rich buckets, offer the full by-store /
   // year / month / campaign breakdown (the same popup the storefront badges

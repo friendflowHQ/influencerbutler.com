@@ -249,6 +249,24 @@ function mountBadge(tile: IdeaListTile, body: HTMLElement): void {
   const wrap = el("div", "tile-badge");
   wrap.append(body);
   root.append(wrap);
+  // The Idea List is a justified flex grid (.list-spv-item-container) that locks
+  // every tile to a fixed pixel height. An in-flow badge appended to the tile
+  // overflows below that fixed box and, because the next row starts exactly at
+  // the tile's bottom edge, gets painted under the following row (only the last
+  // row stayed readable). Pin the badge as an absolute overlay inside a
+  // relatively positioned tile instead, so it always sits within its own tile
+  // and can never be covered. createInlineShadow set display/clear/width for the
+  // in-flow case; override them here.
+  if (getComputedStyle(tile.el).position === "static") {
+    tile.el.style.position = "relative";
+  }
+  host.style.position = "absolute";
+  host.style.top = "6px";
+  host.style.left = "6px";
+  host.style.right = "6px";
+  host.style.width = "auto";
+  host.style.clear = "none";
+  host.style.zIndex = "30";
   tile.el.append(host);
 }
 

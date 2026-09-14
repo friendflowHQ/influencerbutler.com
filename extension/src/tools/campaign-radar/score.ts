@@ -14,6 +14,9 @@
 // never synced order history or never paired the desktop app, and read neutral
 // rather than as a penalty so the rate/days/budget score still stands on its own.
 
+import { conversionRate } from "../earnings-overlay/model";
+import type { CampaignStats } from "../../amazon/creator-campaigns";
+
 export type CampaignScoreBand = "hot" | "warm" | "cool";
 
 export type CampaignScore = {
@@ -189,6 +192,20 @@ export function bandFor(score: number): CampaignScoreBand {
   if (score >= 70) return "hot";
   if (score >= 40) return "warm";
   return "cool";
+}
+
+// Campaign-wide conversion (orders / clicks) from the stats Amazon MIGHT expose
+// on a Creator Connections record, or null when either side is missing (the
+// common case: these fields are unverified and usually absent, so the caller
+// shows no chip rather than a zero). Prefers the last-30-day window, falling
+// back to lifetime totals. Reuses the shared conversionRate so the campaign grid
+// and the product page read a rate the same way.
+export function campaignStatsConversion(stats: CampaignStats | null): number | null {
+  if (!stats) return null;
+  return (
+    conversionRate(stats.ordersLast30, stats.clicksLast30) ??
+    conversionRate(stats.ordersTotal, stats.clicksTotal)
+  );
 }
 
 // Extra signals (beyond the score inputs) that raise the Butler's confidence in

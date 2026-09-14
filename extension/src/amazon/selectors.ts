@@ -8,6 +8,7 @@ export type SelectorId =
   | "videoCardCreatorLink"
   | "videoCardByline"
   | "videoCardDuration"
+  | "videoHeartCount"
   | "videoHeaderCount"
   | "productTitle"
   | "productByline"
@@ -23,6 +24,8 @@ export type SelectorId =
   | "mainImage"
   | "breadcrumbs"
   | "bestsellerRank"
+  | "dateFirstAvailable"
+  | "sellerOffers"
   | "siteStripeCommission"
   | "searchResultTile"
   | "searchTileTitle"
@@ -100,6 +103,17 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[aria-label*='duration' i]",
     ".a-video-duration",
   ],
+  // Amazon's native per-video "like" / heart count (the number the Video Likes
+  // overlay reads). Verified live 2026-09-14 on a creator storefront (/shop/*):
+  // each content card carries a `.heart-count` (the integer, e.g. "9") inside a
+  // `hero-item-heart-container` / `heart-container` that also holds the video's
+  // `amzn1.vse.video.*` id. Server-rendered, so no network call is involved.
+  // Stable class names first, then the hashed-fragment fallback.
+  videoHeartCount: [
+    ".heart-count",
+    "[class*='heart-count']",
+    "[class*='heartCount']",
+  ],
   videoHeaderCount: [
     "#videoCount",
     "[data-video-count]",
@@ -168,6 +182,30 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#productDetails_detailBullets_sections1",
     "#prodDetails",
     "#SalesRank",
+  ],
+  // "Date First Available" lives in the same product-details tables as the
+  // bestseller rank (detail-bullets list or the tech-spec table), so we scan the
+  // same containers and regex the label out of their text. Amazon omits the row
+  // on many listings, so this is best-effort and the chip simply hides when
+  // absent.
+  dateFirstAvailable: [
+    "#detailBulletsWrapper_feature_div",
+    "#detailBullets_feature_div",
+    "#productDetails_detailBullets_sections1",
+    "#productDetails_techSpec_section_1",
+    "#prodDetails",
+  ],
+  // The offer/seller count near the buybox. Amazon A/B tests this control
+  // heavily, so the list is a best-effort ordered fallback (the "New (N) from"
+  // buying-choices link first, then the all-offers-display and merchant blocks);
+  // callers parse the integer out of the matched text and hide the chip when
+  // none is found. Correctable live via a remote selector override.
+  sellerOffers: [
+    "#buybox-see-all-buying-choices",
+    "#buybox-see-all-buying-choices-announce",
+    "#aod-total-offer-count",
+    "#olpLinkWidget_feature_div",
+    "#mbc",
   ],
   // The SiteStripe "Influencers & Associates" bar shows the live commission
   // rate for logged-in creators. Amazon labels it "Commission rate" with the

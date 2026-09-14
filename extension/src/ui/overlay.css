@@ -702,6 +702,28 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Video Likes badge: a heart + Amazon "helpful votes" count, overlaid on a
+   product-page video thumbnail. Our brand orange (matches .tile-score.hot) so it
+   reads as ours, not as Amazon's own control. A soft shadow + solid fill keep it
+   legible over any thumbnail; pointer-events are off (set on the host) so it
+   never blocks a click on the video. */
+.vlike-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 1px 7px 1px 6px;
+  font: 800 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+.vlike-badge .vlike-heart { flex: none; font-size: 11px; line-height: 1; }
+.vlike-badge .vlike-count { line-height: 1; }
 /* Inbound-brand variant: a brand that only messaged the creator (never pitched)
    gets its Creator Connections signal (rate + cadence) in a cooler teal so it
    reads apart from the orange keyword chip. A "risky" cadence tints amber. */

@@ -67,6 +67,10 @@ export type CampaignStats = {
   salesLast30Cents: number | null;
   roas: number | null;
   ordersTotal: number | null;
+  // Clicks, when the record carries them, so a conversion rate (orders / clicks)
+  // can be shown on the card and in the brief. Nullable like the rest.
+  clicksLast30: number | null;
+  clicksTotal: number | null;
 };
 
 // Campaign fill / capacity captured from the campaign/search API by the

@@ -40,6 +40,7 @@ import { renderQuickLinks } from "../tools/quick-links/panel";
 import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
 import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
+import { initVideoLikes } from "../tools/video-likes/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { maybeCaptureStorefrontHandle } from "../tools/storefront-detect/capture";
 import { initVideoMoney } from "../tools/video-money/overlay";
@@ -103,6 +104,10 @@ let lastCallRefreshTimer: number | null = null;
 // videosPending in runForPage). Read by the hydration watcher so it can stop
 // as soon as a rebuild reports full coverage instead of running out its clock.
 let videosStillPending = false;
+// Whether the current page has the Video Likes overlay enabled, so the video
+// hydration watcher (product pages) can re-render its heart badges as the widget
+// fills in.
+let videoLikesActive = false;
 
 void main();
 
@@ -257,6 +262,39 @@ function rebuildIfImproved(): void {
   }
 }
 
+// Re-render the Video Likes heart badges from the like counts Amazon has rendered
+// into the DOM. Cheap and idempotent (the overlay tears down its own prior
+// badges), so the video hydration watcher can call it as the widget fills in.
+function refreshVideoLikes(): void {
+  if (!videoLikesActive) return;
+  guard("video-likes", () => initVideoLikes());
+}
+
+// The creator storefront is a React app that lazy-loads more content cards as the
+// user scrolls, so re-run the Video Likes overlay on a debounced observer to badge
+// cards that appear after first paint. Self-disconnects when the overlay is no
+// longer active (navigated off the storefront) or the URL changed.
+let storefrontLikesObserver: MutationObserver | null = null;
+function watchStorefrontVideoLikes(): void {
+  if (storefrontLikesObserver) return;
+  const startedFor = currentUrl;
+  let timer: number | null = null;
+  const target = document.querySelector("main") ?? document.body;
+  storefrontLikesObserver = new MutationObserver(() => {
+    if (!videoLikesActive || location.href !== startedFor) {
+      storefrontLikesObserver?.disconnect();
+      storefrontLikesObserver = null;
+      return;
+    }
+    if (timer !== null) return;
+    timer = window.setTimeout(() => {
+      timer = null;
+      refreshVideoLikes();
+    }, 600);
+  });
+  storefrontLikesObserver.observe(target, { childList: true, subtree: true });
+}
+
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
   const pageType = detectPageType(currentUrl);
@@ -265,6 +303,7 @@ async function runForPage(): Promise<void> {
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
   videosStillPending = false;
+  videoLikesActive = false;
   log("content", `page type: ${pageType} (${retailer})`);
 
   // Walmart.com. The neutral page classes (product / search / discovery /
@@ -408,6 +447,16 @@ async function runForPage(): Promise<void> {
         });
       }
 
+      // Video Likes: an orange heart + Amazon like-count badge on each "Videos
+      // for this product" card that Amazon renders a `.heart-count` for. Mark the
+      // overlay active so the video hydration watcher re-renders it as the widget
+      // fills in, and do a first pass now. Its own tool flag, onsite-only (an
+      // on-Amazon research signal), independent of Video counts.
+      if (showOnsite && settings.tools.videoLikes) {
+        videoLikesActive = true;
+        refreshVideoLikes();
+      }
+
       let approvedRecord: Record<string, boolean> | undefined;
       let approvedFlag = false;
       if (showOnsite && settings.tools.approved) {
@@ -492,6 +541,12 @@ async function runForPage(): Promise<void> {
       if (showOnsite && settings.tools.videoCounts && videosPending) {
         autoHydrateVideos();
         watchForVideoHydration();
+      } else if (showOnsite && settings.tools.videoLikes) {
+        // Video Likes on with Video counts off (or nothing pending): still bring
+        // the widget into view so its cards (and any heart counts on them)
+        // hydrate, then re-run the badges once.
+        autoHydrateVideos();
+        watchForVideoHydration();
       }
     });
   } else if (pageType === "order-history") {
@@ -525,6 +580,15 @@ async function runForPage(): Promise<void> {
           void initEarningsOverlay();
           lastStatus.toolSummaries.push({ label: t().sumEarningsOverlay, value: t().ready });
         });
+      }
+      // Orange like-count heart badge on each content card, read from Amazon's own
+      // rendered .heart-count. The storefront is where Amazon exposes these counts,
+      // so this is the overlay's primary surface. Re-runs on the storefront's React
+      // rebuilds via the observer below.
+      if (settings.tools.videoLikes) {
+        videoLikesActive = true;
+        guard("video-likes", () => initVideoLikes());
+        watchStorefrontVideoLikes();
       }
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });

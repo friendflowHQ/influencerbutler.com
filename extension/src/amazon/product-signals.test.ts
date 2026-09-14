@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { matchParentAsin, parseBestsellerRank, parseVariationAsins } from "./product-signals";
+import {
+  matchParentAsin,
+  parseBestsellerRank,
+  parseDateFirstAvailable,
+  parseSellerCount,
+  parseVariationAsins,
+} from "./product-signals";
 
 describe("matchParentAsin", () => {
   it("pulls the parent ASIN out of twister JSON", () => {
@@ -58,5 +64,55 @@ describe("parseBestsellerRank", () => {
 
   it("returns null when there is no rank", () => {
     expect(parseBestsellerRank("Ships from Amazon")).toBeNull();
+  });
+});
+
+describe("parseDateFirstAvailable", () => {
+  const monthMs = (text: string) => {
+    const at = parseDateFirstAvailable(text);
+    return at == null ? null : { y: new Date(at).getUTCFullYear(), m: new Date(at).getUTCMonth() };
+  };
+
+  it("parses the US 'Month D, YYYY' form from the detail bullets", () => {
+    expect(monthMs("Date First Available : September 21, 2024 ASIN : B0TEST")).toEqual({ y: 2024, m: 8 });
+  });
+
+  it("handles the 'Date first listed' wording and no comma", () => {
+    expect(monthMs("Date first listed on Amazon March 3 2023")).toEqual({ y: 2023, m: 2 });
+  });
+
+  it("parses the intl 'D Month YYYY' order", () => {
+    expect(monthMs("Date First Available 21 November 2022")).toEqual({ y: 2022, m: 10 });
+  });
+
+  it("normalizes the four-letter 'Sept' abbreviation", () => {
+    expect(monthMs("Date First Available: Sept 5, 2021")).toEqual({ y: 2021, m: 8 });
+  });
+
+  it("returns null with no label, a bad date, or an out-of-era year", () => {
+    expect(parseDateFirstAvailable("September 21, 2024")).toBeNull();
+    expect(parseDateFirstAvailable("Date First Available : not a date")).toBeNull();
+    expect(parseDateFirstAvailable("Date First Available : January 1, 1970")).toBeNull();
+  });
+});
+
+describe("parseSellerCount", () => {
+  it("reads a parenthesized buying-choices count", () => {
+    expect(parseSellerCount("New (7) from $399.00")).toBe(7);
+    expect(parseSellerCount("New & Used (12) from $88.10")).toBe(12);
+  });
+
+  it("reads an 'N offers/sellers' phrase", () => {
+    expect(parseSellerCount("3 offers from other sellers")).toBe(3);
+    expect(parseSellerCount("5 sellers")).toBe(5);
+  });
+
+  it("reads a bare count node (all-offers-display total)", () => {
+    expect(parseSellerCount("  9 ")).toBe(9);
+  });
+
+  it("returns null when there is no count or it is out of range", () => {
+    expect(parseSellerCount("See All Buying Options")).toBeNull();
+    expect(parseSellerCount("(0)")).toBeNull();
   });
 });

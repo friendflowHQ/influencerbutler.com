@@ -341,15 +341,22 @@ export async function runAutoHarvest(): Promise<void> {
   void flush();
 }
 
+// Whether the extension already holds host permission for a URL's origin.
+// Shared with deal-badge-register.ts, which uses the same check to decide
+// which sources the on-page badge content script may run on.
+export async function hasOriginPermission(url: string): Promise<boolean> {
+  try {
+    const origin = `${new URL(url).origin}/*`;
+    return await chrome.permissions.contains({ origins: [origin] });
+  } catch {
+    return false;
+  }
+}
+
 async function onlyGrantedOrigins(urls: string[]): Promise<string[]> {
   const out: string[] = [];
   for (const url of urls) {
-    try {
-      const origin = `${new URL(url).origin}/*`;
-      if (await chrome.permissions.contains({ origins: [origin] })) out.push(url);
-    } catch {
-      // malformed URL: skip
-    }
+    if (await hasOriginPermission(url)) out.push(url);
   }
   return out;
 }

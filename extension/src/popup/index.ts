@@ -1130,6 +1130,7 @@ async function renderSettings(): Promise<void> {
     "walmart",
     "videoCounts",
     "videoLandscape",
+    "videoLikes",
     "approved",
     "calculator",
     "storefront",

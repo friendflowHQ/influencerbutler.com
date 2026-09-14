@@ -151,6 +151,13 @@ export type Settings = {
   tools: {
     videoCounts: boolean;
     videoLandscape: boolean;
+    // Video Likes: an orange heart + Amazon like-count badge on each video/content
+    // card that Amazon renders a like count for (creator storefront cards, and
+    // product-page video cards when present) - a competitor-parity overlay in our
+    // brand color. Onsite-only; independent of Video counts. On by default;
+    // backfilled to true for existing users by the tools shallow-merge in
+    // migrate().
+    videoLikes: boolean;
     approved: boolean;
     calculator: boolean;
     storefront: boolean;
@@ -635,7 +642,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 28,
+  schemaVersion: 29,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -695,6 +702,7 @@ export const DEFAULTS: StorageShape = {
     tools: {
       videoCounts: true,
       videoLandscape: true,
+      videoLikes: true,
       approved: true,
       calculator: true,
       storefront: true,
@@ -860,7 +868,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // backfills them. v27 -> v28 added settings.autoAccept (rule-based accept:
   // OPT-IN, enabled stays false unless stored true; the other fields deep-merge
   // and clamp through normalizeAutoAccept) and tools.autoAccept (on by default,
-  // the kill-flag key; the tools shallow-merge backfills it).
+  // the kill-flag key; the tools shallow-merge backfills it). v28 -> v29 added
+  // the videoLikes tool flag (orange Amazon like-count heart badge on video /
+  // content cards, on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -950,7 +960,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 28,
+    schemaVersion: 29,
   };
 }
 

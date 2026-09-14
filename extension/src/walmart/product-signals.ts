@@ -84,6 +84,10 @@ function toSignals(prod: WalmartProduct | null, url: string): ProductSignals {
     parentAsin: null,
     variationAsins: [],
     bestsellerRank: null,
+    // Walmart's __NEXT_DATA__ does not expose a listing date or a buybox offer
+    // count in the shape we read, so these Amazon-only signals stay null here.
+    listedAt: null,
+    sellerCount: null,
     imageUrl: prod?.imageUrl ?? null,
   };
 }

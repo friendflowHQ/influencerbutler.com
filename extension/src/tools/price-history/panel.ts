@@ -10,7 +10,23 @@ import {
 import type { DesktopHistoryResult } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { formatEstRevenue, formatEstUnits, resolveEstimate } from "../../amazon/bsr-revenue-estimator";
-import { computeSeasonality, formatSeasonality, fromMonthly, type Seasonality } from "./seasonality";
+import {
+  bucketByMonth,
+  formatSeasonality,
+  fromMonthly,
+  type MonthlyBucket,
+  type Seasonality,
+} from "./seasonality";
+import {
+  classifyRankTrend,
+  coveredBars,
+  formatCompactUnits,
+  monthlyUnits,
+  ninetyDayAvg,
+  peakBar,
+  type RankTrend,
+  type UnitsBar,
+} from "./sales-histogram";
 
 // Price history (and, when the desktop app is paired, sales-rank history) for
 // the product being viewed. Prefers the desktop app's durable time-series over
@@ -21,6 +37,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const W = 200;
 const H = 44;
 const PAD = 5;
+// The histogram needs at least this many of the trailing 12 months to carry
+// data before it draws, so a stale series never shows a mostly-empty chart.
+const HISTOGRAM_MIN_COVERED = 6;
+// Rank-vs-90-day-average deadband: a current within this fraction of the average
+// reads as "steady" rather than rising or slipping.
+const RANK_TREND_DEADBAND = 0.1;
 
 // One generic sparkline sample: epoch ms + display value in the series' own
 // unit (cents for price, rank for BSR).
@@ -133,6 +155,16 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     hasPoolEstimate ||
     hasBought;
 
+  // Seasonality chip and the 12-month sales histogram share one source of
+  // monthly rank buckets, picked in depth order (desktop history, pooled monthly
+  // buckets, pooled trend) and only from a source that clears the coverage floor.
+  const { season, buckets: monthlyBuckets } = resolveSeasonalityWithBuckets(
+    desktopRank,
+    pool?.monthly,
+    poolRank,
+    Date.now(),
+  );
+
   if (hasPrice) {
     const currency = signals.currency || "USD";
     const values = price.map((s) => s.value);
@@ -162,11 +194,19 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     const summary = el("div", "counts");
     summary.append(chip("", t().bsrHistoryNow(current.toLocaleString())));
     summary.append(chip("good", t().bsrHistoryBest(best.toLocaleString())));
+    // Rank now vs its trailing 90-day average, with a one-word verdict (lower
+    // rank = better, so "rising" means the number went down). Only when the
+    // series actually reaches into the last 90 days.
+    const avg90 = ninetyDayAvg(rank, Date.now());
+    if (avg90 !== null) {
+      summary.append(chip("", t().bsrHistoryAvg90(avg90.toLocaleString())));
+      const trend = classifyRankTrend(current, avg90, RANK_TREND_DEADBAND);
+      summary.append(chip(rankTrendVariant(trend), rankTrendLabel(trend)));
+    }
     // Seasonality chip ("Peaks in Nov-Dec" / "Steady all year"), same source
     // order as the sparkline: desktop history (deepest), then the pooled monthly
     // buckets, then the pooled trend (rarely deep enough). Never rendered below
     // the 10-month coverage floor: the helpers return null instead.
-    const season = resolveSeasonality(desktopRank, pool?.monthly, poolRank);
     const seasonText = season ? formatSeasonality(season, t()) : null;
     if (season && seasonText) {
       const seasonChip = chip(season.label === "peaks" ? "good" : "", seasonText);
@@ -203,6 +243,32 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
     section.append(summary);
   }
 
+  // 12-month sales histogram (modeled units per month) with a peak callout,
+  // built from the same monthly buckets as the seasonality chip. Gated on the
+  // seasonality coverage floor plus enough recent months with data that the bars
+  // are not misleading; below that it renders nothing rather than a partial chart.
+  if (season) {
+    const bars = monthlyUnits(monthlyBuckets, Date.now(), {
+      category: signals.category ?? signals.bestsellerRank?.category ?? pool?.bsrCategory ?? null,
+    });
+    if (coveredBars(bars) >= HISTOGRAM_MIN_COVERED) {
+      const heading = el("p", "note", t().salesHistogramTitle);
+      heading.style.marginTop = "8px";
+      heading.style.fontWeight = "600";
+      section.append(heading);
+
+      const peak = peakBar(bars);
+      section.append(histogram(bars, peak?.month ?? null));
+
+      if (peak && peak.units != null) {
+        const summary = el("div", "counts");
+        const monthLabel = t().monthAbbr[peak.monthIndex] ?? String(peak.monthIndex + 1);
+        summary.append(chip("good", t().salesPeak(formatCompactUnits(peak.units), monthLabel)));
+        section.append(summary);
+      }
+    }
+  }
+
   const noteText = fromDesktop
     ? t().priceHistoryDesktopNote
     : usingPool
@@ -212,21 +278,77 @@ async function fill(section: HTMLElement, signals: ProductSignals): Promise<void
   section.style.display = "";
 }
 
-// First source that clears the seasonality coverage floor, in depth order.
-function resolveSeasonality(
+// First monthly-bucket source that clears the seasonality coverage floor, in
+// depth order, returned together with the buckets that produced it so the sales
+// histogram draws from exactly the same data as the seasonality chip.
+function resolveSeasonalityWithBuckets(
   desktopRank: Sample[],
   poolMonthly: MarketMonthlyBucket[] | undefined,
   poolRank: Sample[],
-): Seasonality | null {
-  const now = Date.now();
-  const toPoints = (samples: Sample[]) => samples.map((s) => ({ at: s.at, rank: s.value }));
-  const fromDesktop = desktopRank.length > 0 ? computeSeasonality(toPoints(desktopRank), now) : null;
-  if (fromDesktop) return fromDesktop;
-  if (Array.isArray(poolMonthly) && poolMonthly.length > 0) {
-    const fromPool = fromMonthly(poolMonthly, now);
-    if (fromPool) return fromPool;
+  now: number,
+): { season: Seasonality | null; buckets: MonthlyBucket[] } {
+  const toBuckets = (samples: Sample[]) =>
+    bucketByMonth(samples.map((s) => ({ at: s.at, rank: s.value })));
+  const candidates: MonthlyBucket[][] = [];
+  if (desktopRank.length > 0) candidates.push(toBuckets(desktopRank));
+  if (Array.isArray(poolMonthly) && poolMonthly.length > 0) candidates.push(poolMonthly);
+  if (poolRank.length > 0) candidates.push(toBuckets(poolRank));
+  for (const buckets of candidates) {
+    const season = fromMonthly(buckets, now);
+    if (season) return { season, buckets };
   }
-  return poolRank.length > 0 ? computeSeasonality(toPoints(poolRank), now) : null;
+  return { season: null, buckets: [] };
+}
+
+// Chip variant for a rank trend: green when improving, red when slipping.
+function rankTrendVariant(trend: RankTrend): string {
+  return trend === "rising" ? "good" : trend === "slipping" ? "bad" : "";
+}
+
+// Localized label for a rank trend ("Rank rising" / "Rank slipping" / "Rank steady").
+function rankTrendLabel(trend: RankTrend): string {
+  return trend === "rising"
+    ? t().bsrTrendRising
+    : trend === "slipping"
+      ? t().bsrTrendSlipping
+      : t().bsrTrendSteady;
+}
+
+// A 12-month sales-volume histogram: one bar per month, height proportional to
+// modeled units, months without coverage drawn as an empty baseline tick. The
+// peak month's bar is green so the eye lands on it, matching the callout chip.
+function histogram(bars: UnitsBar[], peakMonth: string | null): SVGSVGElement {
+  const units = bars.map((b) => b.units ?? 0);
+  const max = Math.max(1, ...units);
+  const n = bars.length || 1;
+  const gap = 2;
+  const bw = (W - 2 * PAD - gap * (n - 1)) / n;
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "price-spark");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", String(H));
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", t().salesHistogramTitle);
+  svg.style.display = "block";
+  svg.style.marginTop = "4px";
+
+  bars.forEach((bar, i) => {
+    const x = PAD + i * (bw + gap);
+    const value = bar.units ?? 0;
+    const h = bar.units == null ? 1 : Math.max(1, (value / max) * (H - 2 * PAD));
+    const rect = document.createElementNS(SVG_NS, "rect");
+    rect.setAttribute("x", x.toFixed(1));
+    rect.setAttribute("y", (H - PAD - h).toFixed(1));
+    rect.setAttribute("width", Math.max(0.5, bw).toFixed(1));
+    rect.setAttribute("height", h.toFixed(1));
+    const isPeak = peakMonth != null && bar.month === peakMonth;
+    rect.setAttribute("fill", bar.units == null ? "#e5e7eb" : isPeak ? "#16a34a" : "#d97706");
+    svg.append(rect);
+  });
+  return svg;
 }
 
 // Build a sparkline as an inline SVG. Even x-spacing by index keeps it simple

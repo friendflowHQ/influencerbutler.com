@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 import type { AsinEarnings } from "../../transport/hud-commands";
 import {
   aggregateEarnings,
+  blendedConversion,
+  conversionRate,
+  formatConversion,
   formatMoney,
   hasBreakdown,
+  rankCampaignsByConversion,
   scopedCurrencyTotals,
   tileTotals,
 } from "./model";
+import type { CampaignRow } from "./model";
 
 // The DOM tile parser (amazon/storefront-tiles.ts, amazon/storefront-cards.ts)
 // needs a browser document, and this repo runs vitest in the node environment
@@ -204,5 +209,70 @@ describe("aggregateEarnings", () => {
     const agg = aggregateEarnings([flatOnly]);
     expect(agg.byCurrency).toEqual([{ currency: "USD", amount: 50, count: 5 }]);
     expect(agg.byStore).toEqual([]);
+  });
+});
+
+describe("conversion", () => {
+  const camp = (over: Partial<CampaignRow>): CampaignRow => ({
+    name: "C",
+    ratePct: 10,
+    clicks: null,
+    orders: null,
+    currency: "USD",
+    amount: 0,
+    ...over,
+  });
+
+  describe("conversionRate", () => {
+    it("is orders / clicks", () => {
+      expect(conversionRate(744, 1600)).toBeCloseTo(0.465);
+    });
+    it("is 0 for real clicks but no orders (distinct from unknown)", () => {
+      expect(conversionRate(0, 50)).toBe(0);
+    });
+    it("is null when clicks are missing or zero", () => {
+      expect(conversionRate(5, null)).toBeNull();
+      expect(conversionRate(5, 0)).toBeNull();
+      expect(conversionRate(null, 50)).toBeNull();
+    });
+  });
+
+  describe("formatConversion", () => {
+    it("shows a whole percent at 1% and above", () => {
+      expect(formatConversion(0.471)).toBe("47%");
+      expect(formatConversion(0.01)).toBe("1%");
+    });
+    it("keeps one decimal for a small-but-real rate so it is not flattened to 0%", () => {
+      expect(formatConversion(0.004)).toBe("0.4%");
+    });
+    it("is 0% for a true zero", () => {
+      expect(formatConversion(0)).toBe("0%");
+    });
+  });
+
+  describe("rankCampaignsByConversion", () => {
+    it("sorts best-converting first, with no-click rows last", () => {
+      const ranked = rankCampaignsByConversion([
+        camp({ name: "low", clicks: 100, orders: 10 }), // 10%
+        camp({ name: "none", clicks: null, orders: null }),
+        camp({ name: "high", clicks: 100, orders: 40 }), // 40%
+      ]);
+      expect(ranked.map((c) => c.name)).toEqual(["high", "low", "none"]);
+      expect(ranked[0]?.conversion).toBeCloseTo(0.4);
+      expect(ranked[2]?.conversion).toBeNull();
+    });
+  });
+
+  describe("blendedConversion", () => {
+    it("is total orders over total clicks, weighting by clicks", () => {
+      const blended = blendedConversion([
+        camp({ clicks: 100, orders: 10 }),
+        camp({ clicks: 300, orders: 90 }),
+      ]);
+      expect(blended).toBeCloseTo(0.25); // 100 orders / 400 clicks
+    });
+    it("is null when no campaign carried clicks", () => {
+      expect(blendedConversion([camp({ clicks: null, orders: 5 })])).toBeNull();
+    });
   });
 });

@@ -25,6 +25,8 @@ import {
   type MarketBatchResult,
   type MarketProduct,
   type ScanAsinResult,
+  type SpccRate,
+  type SpccRatesResult,
   type WatchlistResult,
 } from "../../shared/messages";
 import { resolveOwnership } from "../ownership/resolve";
@@ -50,6 +52,11 @@ type Row = {
   // page-wide default. A known CC campaign rate overrides it (see rateFor).
   ratePct: number;
   ccRate: CcRate | null;
+  // Amazon's own SPCC ("Earn on Clicks") forecast, shown only when no
+  // guaranteed CC rate is known for the same ASIN (see the chip in
+  // renderBadge). Never feeds commissionCents: it is dollars-per-click, not a
+  // percent of price, so mixing it into that math would misrepresent it.
+  spccRate: SpccRate | null;
   commissionCents: number | null;
   flags: { cc: boolean; spcc: boolean; deals: boolean };
   influencerVideos: number | null;
@@ -168,6 +175,7 @@ export async function initSearchOverlay(
       retailer: module.retailer,
       ratePct: defaultRate,
       ccRate: null,
+      spccRate: null,
       commissionCents: null,
       flags: { cc: flags.cc, spcc: flags.spcc, deals: flags.deals },
       influencerVideos: null,
@@ -325,6 +333,26 @@ export async function initSearchOverlay(
           if (rate) {
             row.ccRate = rate;
             recompute(row, settings);
+            renderBadge(row, settings);
+          }
+        }
+      },
+    );
+  }
+
+  // Amazon's own SPCC ("Earn on Clicks") forecast for the SPCC-flagged tiles,
+  // so a tile with no CC commission rate can still show a real $/click number
+  // instead of a bare "Campaign" chip. Restricted to flags.spcc (a CC row, when
+  // one exists, already wins in the chip below, so no need to ask here too).
+  const spccAsins = caps.ccRates ? rows.filter((r) => r.flags.spcc).map((r) => r.tile.asin) : [];
+  if (spccAsins.length > 0) {
+    void sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins: spccAsins }).then(
+      (res) => {
+        if (epoch !== initEpoch || !res.ok) return;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.spccRate = rate;
             renderBadge(row, settings);
           }
         }
@@ -795,13 +823,17 @@ function renderBadge(row: Row, settings: Settings): void {
     body.append(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)));
   }
   if (row.flags.cc || row.flags.spcc) {
-    body.append(
-      el(
-        "span",
-        "tile-chip good",
-        row.ccRate ? t().tileCampaignRate(row.ccRate.ratePct) : t().tileCampaign,
-      ),
-    );
+    // A guaranteed CC commission rate always wins over the SPCC forecast when
+    // a product happens to carry both (rare): a known percent is the safer
+    // number to lead with, same guidance as the CC Check tutorial.
+    const label = row.ccRate
+      ? t().tileCampaignRate(row.ccRate.ratePct)
+      : row.spccRate
+        ? t().tileCampaignEpc(formatMoney(row.spccRate.epc, row.tile.currency ?? "USD"))
+        : t().tileCampaign;
+    const chip = el("span", "tile-chip good", label);
+    if (row.spccRate && !row.ccRate) chip.title = t().tileCampaignEpcTip;
+    body.append(chip);
   } else if (row.flags.deals) {
     // Only when no campaign chip is up: two green chips in a row read as noise.
     body.append(el("span", "tile-chip good", t().tileDeal));

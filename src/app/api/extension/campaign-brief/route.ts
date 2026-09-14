@@ -78,12 +78,16 @@ function coerceStats(v: unknown): CampaignCcStats | null {
     salesLast30Cents: num(o.salesLast30Cents),
     roas: num(o.roas),
     ordersTotal: num(o.ordersTotal),
+    clicksLast30: num(o.clicksLast30),
+    clicksTotal: num(o.clicksTotal),
   };
   const any =
     stats.ordersLast30 !== null ||
     stats.salesLast30Cents !== null ||
     stats.roas !== null ||
-    stats.ordersTotal !== null;
+    stats.ordersTotal !== null ||
+    stats.clicksLast30 !== null ||
+    stats.clicksTotal !== null;
   return any ? stats : null;
 }
 

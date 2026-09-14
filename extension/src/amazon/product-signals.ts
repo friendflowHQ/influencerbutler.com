@@ -28,6 +28,14 @@ export type ProductSignals = {
   variationAsins: string[];
   // The most specific "#N in <category>" bestseller rank, when present.
   bestsellerRank: { rank: number; category: string } | null;
+  // Epoch ms of the listing's "Date First Available", when Amazon shows it. A
+  // freshness signal (newer listing = less-saturated opportunity). Null when the
+  // field is absent, which is common.
+  listedAt: number | null;
+  // Number of sellers / offers on the buybox listing, when it can be read. A
+  // competition signal (a crowded buybox is harder to win). Best-effort; null
+  // when no count is exposed.
+  sellerCount: number | null;
   imageUrl: string | null;
 };
 
@@ -51,6 +59,8 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     parentAsin: extractParentAsin(doc),
     variationAsins: extractVariationAsins(doc),
     bestsellerRank: extractBestsellerRank(doc),
+    listedAt: extractListedAt(doc),
+    sellerCount: extractSellerCount(doc),
     imageUrl: extractImage(doc),
   };
 }
@@ -151,6 +161,69 @@ export function parseBestsellerRank(source: string): { rank: number; category: s
 export function extractBestsellerRank(doc: Document): { rank: number; category: string } | null {
   const source = cleanText(query(doc, "bestsellerRank")?.textContent) ?? "";
   return source ? parseBestsellerRank(source) : null;
+}
+
+// "Date First Available" / "Date first listed" sits in the product-details
+// table, e.g. "Date First Available : September 21, 2024". Find the label, then
+// pull the first date-shaped token from the short tail after it (English month
+// names, US "Month D, YYYY" or intl "D Month YYYY"). Returns epoch ms, or null
+// when the row is absent or unparseable. English-first, like the bought badge.
+const DATE_LABEL_RE = /date\s+first\s+(?:available|listed)/i;
+const MONTH_WORD = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?";
+const DATE_TOKEN_RE = new RegExp(
+  `(${MONTH_WORD}\\s+\\d{1,2},?\\s+\\d{4}|\\d{1,2}\\s+${MONTH_WORD}\\s+\\d{4})`,
+  "i",
+);
+
+function parseDateSafe(s: string): number | null {
+  // "Sept" is not a month V8's Date.parse recognizes; normalize to "Sep".
+  const normalized = s.replace(/sept\b/i, "Sep");
+  const value = Date.parse(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
+// Pure parser (exported for tests): epoch ms of the listing date in a text blob.
+export function parseDateFirstAvailable(text: string): number | null {
+  const label = DATE_LABEL_RE.exec(text);
+  if (!label) return null;
+  const start = label.index + label[0].length;
+  const tail = text.slice(start, start + 60);
+  const token = tail.match(DATE_TOKEN_RE);
+  if (!token || !token[1]) return null;
+  const parsed = parseDateSafe(token[1]);
+  if (parsed == null) return null;
+  // Sanity-bound to the Amazon era so a stray number never reads as a date.
+  const year = new Date(parsed).getUTCFullYear();
+  return year >= 1998 && year <= new Date().getUTCFullYear() + 1 ? parsed : null;
+}
+
+export function extractListedAt(doc: Document): number | null {
+  const source = cleanText(query(doc, "dateFirstAvailable")?.textContent) ?? "";
+  return source ? parseDateFirstAvailable(source) : null;
+}
+
+// Seller/offer count from the buybox controls: "New (7) from $..." /
+// "7 offers" / a bare count node ("#aod-total-offer-count" is just "12").
+// Prefers a parenthesized count, then an "N offers/sellers" phrase, then a
+// bare integer. Bounded 1..9999 so noise never renders. Pure (tested).
+const SELLER_PAREN_RE = /\((\d{1,4})\)/;
+const SELLER_WORD_RE = /(\d{1,4})\s+(?:new\s+)?(?:offers?|sellers?)\b/i;
+const SELLER_BARE_RE = /^(\d{1,4})$/;
+
+export function parseSellerCount(text: string): number | null {
+  const raw =
+    text.match(SELLER_PAREN_RE)?.[1] ??
+    text.match(SELLER_WORD_RE)?.[1] ??
+    text.trim().match(SELLER_BARE_RE)?.[1] ??
+    null;
+  if (raw == null) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 1 && n <= 9999 ? n : null;
+}
+
+export function extractSellerCount(doc: Document): number | null {
+  const source = cleanText(query(doc, "sellerOffers")?.textContent) ?? "";
+  return source ? parseSellerCount(source) : null;
 }
 
 export function extractCategory(doc: Document): string | null {

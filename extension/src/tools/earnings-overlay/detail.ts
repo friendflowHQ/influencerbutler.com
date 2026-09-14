@@ -4,8 +4,10 @@ import { t } from "../../i18n";
 import type { AsinEarnings } from "../../transport/hud-commands";
 import {
   aggregateEarnings,
+  formatConversion,
   formatMoney,
   hasBreakdown,
+  rankCampaignsByConversion,
   type AggregatedEarnings,
   type CurrencyTotal,
   type EarningsScope,
@@ -196,20 +198,27 @@ function renderCampaigns(parent: HTMLElement, agg: AggregatedEarnings): void {
   if (agg.campaigns.length === 0) return;
   const body = collapsible(parent, t().earnCampaigns, { open: false });
   const table = el("div", "earn-table");
-  for (const c of agg.campaigns) {
+  // Rank best-converting first: when a product ran in several campaigns, the
+  // "which one" answer is simply the top of this list, and the leader is tagged.
+  const ranked = rankCampaignsByConversion(agg.campaigns);
+  ranked.forEach((c, i) => {
     const line = el("div", "earn-row");
     const left = el("div", "earn-row-main");
     left.append(el("span", "earn-camp-name", c.name));
     const meta: string[] = [];
+    if (c.conversion !== null) meta.push(t().earnConversion(formatConversion(c.conversion)));
     if (c.ratePct != null) meta.push(t().earnRate(c.ratePct));
     if (c.clicks != null) meta.push(t().earnClicks(c.clicks));
     if (c.orders != null) meta.push(t().earnOrders(c.orders));
     if (meta.length) left.append(el("span", "earn-muted", meta.join(" · ")));
     const right = el("div", "earn-row-figs");
+    if (i === 0 && c.conversion !== null && ranked.length > 1) {
+      right.append(el("span", "tile-chip good", t().earnBestConverter));
+    }
     right.append(el("span", "earn-amt", formatMoney(c.amount, c.currency)));
     line.append(left, right);
     table.append(line);
-  }
+  });
   body.append(table);
 }
 

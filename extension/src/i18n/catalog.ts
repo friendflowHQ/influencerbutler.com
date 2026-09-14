@@ -24,6 +24,10 @@ export interface Dict {
   snapshotParent: string;
   snapshotCategory: (category: string) => string;
   snapshotRank: (rank: number, category: string) => string;
+  // Listing age (from "Date First Available") and the number of sellers on the
+  // buybox: freshness and competition read at a glance, next to the rank chip.
+  snapshotAge: (months: number, listed: string) => string;
+  snapshotSellers: (n: number) => string;
   snapshotCommissionLive: (pct: number) => string;
   snapshotCommissionCategory: (pct: number, category: string) => string;
   snapshotCommissionDefault: (pct: number) => string;
@@ -31,6 +35,10 @@ export interface Dict {
   earningsTitle: string;
   earningsAmount: (amount: string, count: number) => string;
   earningsNote: string;
+  // Product-page conversion readout: your realized orders-per-click on this
+  // product, headlined by your best-converting campaign.
+  earningsConversion: (pct: string, campaign: string) => string;
+  earningsConversionMore: (n: number) => string;
   // Ownership badge: "you already own this / you already posted this", read from
   // the desktop Orders Butler + content-coverage over the bridge.
   ownedTitle: string;
@@ -50,6 +58,15 @@ export interface Dict {
   bsrHistoryTitle: string;
   bsrHistoryNow: (rank: string) => string;
   bsrHistoryBest: (rank: string) => string;
+  // Rank now vs its trailing 90-day average, plus a one-word trend verdict.
+  bsrHistoryAvg90: (rank: string) => string;
+  bsrTrendSteady: string;
+  bsrTrendRising: string;
+  bsrTrendSlipping: string;
+  // A 12-month sales-volume histogram (modeled units per month) and the callout
+  // for its peak month, e.g. "Peaked ~1K in Nov".
+  salesHistogramTitle: string;
+  salesPeak: (units: string, month: string) => string;
   salesEstTitle: string;
   salesEstValue: (n: string) => string;
   salesEstModeled: string;
@@ -107,6 +124,7 @@ export interface Dict {
   connectedAs: string;
   syncToggleLabel: string;
   syncDashboardHint: string;
+  syncStatsHint: string;
   contributeToggleLabel: string;
   contributeBlurb: string;
   disconnect: string;
@@ -130,6 +148,7 @@ export interface Dict {
   toolWalmartHint: string;
   toolVideoCounts: string;
   toolVideoLandscape: string;
+  toolVideoLikes: string;
   toolApproved: string;
   toolCalculator: string;
   toolStorefront: string;
@@ -341,6 +360,10 @@ export interface Dict {
   tileCommission: (amount: string) => string;
   tileCampaign: string;
   tileCampaignRate: (pct: number) => string;
+  // SPCC ("Earn on Clicks") chip: Amazon's own forecast, shown only when no
+  // guaranteed CC commission rate is known for the same ASIN.
+  tileCampaignEpc: (epc: string) => string;
+  tileCampaignEpcTip: string;
   tileProvenEarner: string;
   tileEarned: (money: string) => string;
   tileInfluencer: (n: number) => string;
@@ -424,6 +447,8 @@ export interface Dict {
   tileHeroSlot: string;
   tileNoCarousel: string;
 
+  // Video Likes overlay (heart + helpful-votes badge on product-page videos)
+  videoLikesTitle: string;
   // Earnings overlay (storefront/Curations badges + breakdown popup)
   sumEarningsOverlay: string;
   toolEarningsOverlay: string;
@@ -441,6 +466,10 @@ export interface Dict {
   earnOrders: (n: number) => string;
   earnRate: (pct: number) => string;
   earnClicks: (n: number) => string;
+  // Per-campaign conversion in the breakdown modal, and the tag on the
+  // best-converting campaign when a product ran in several.
+  earnConversion: (pct: string) => string;
+  earnBestConverter: string;
   earnViewBreakdown: string;
   earnNoBreakdown: string;
   earnClose: string;
@@ -491,6 +520,9 @@ export interface Dict {
   // Creator saturation: total videos already on a campaign product.
   radarVideoChip: (n: number) => string;
   radarVideoTitle: string;
+  // Campaign-wide conversion (orders / clicks) captured from Amazon's stats.
+  radarConversionChip: (pct: string) => string;
+  radarConversionTitle: string;
   popupAvailabilityLabel: string;
   popupAvailabilityHint: string;
   popupAvailabilityAuDenied: string;
@@ -511,6 +543,7 @@ export interface Dict {
   campaignBriefTitle: string;
   campaignBriefLoading: string;
   campaignBriefConfidence: (n: number) => string;
+  campaignBriefConversion: (pct: string) => string;
   campaignBriefWhy: string;
   campaignBriefFilm: string;
   campaignBriefPick: string;
@@ -943,6 +976,8 @@ const en: Dict = {
   snapshotParent: "Parent",
   snapshotCategory: (category) => `Category: ${category}`,
   snapshotRank: (rank, category) => `#${rank} in ${category}`,
+  snapshotAge: (months, listed) => `Age: ${months} mo (listed ${listed})`,
+  snapshotSellers: (n) => `Sellers: ${n} on this listing`,
   snapshotCommissionLive: (pct) => `Commission ${pct}% (live from SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Commission about ${pct}% (${category}, rate card)`,
@@ -951,6 +986,8 @@ const en: Dict = {
   earningsTitle: "Your earnings",
   earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
   earningsNote: "You have already earned here. Find more products like the ones already paying you.",
+  earningsConversion: (pct, campaign) => `Converts at ${pct} in "${campaign}"`,
+  earningsConversionMore: (n) => `Best of ${n} campaigns you ran here. See the full breakdown below.`,
   ownedTitle: "You own this",
   ownedNote: "This product is in your order history.",
   ownedBought: (year) => `Bought in ${year}`,
@@ -968,6 +1005,12 @@ const en: Dict = {
   bsrHistoryTitle: "Sales rank history",
   bsrHistoryNow: (rank) => `Now #${rank}`,
   bsrHistoryBest: (rank) => `Best #${rank}`,
+  bsrHistoryAvg90: (rank) => `90-day avg #${rank}`,
+  bsrTrendSteady: "Rank steady",
+  bsrTrendRising: "Rank rising",
+  bsrTrendSlipping: "Rank slipping",
+  salesHistogramTitle: "Sales, last 12 months",
+  salesPeak: (units, month) => `Peaked ~${units} in ${month}`,
   salesEstTitle: "Estimated monthly sales",
   salesEstValue: (n) => `~${n}/mo`,
   salesEstModeled: "Modeled from best-seller rank",
@@ -1021,6 +1064,8 @@ const en: Dict = {
   syncToggleLabel: "Sync findings to my dashboard",
   syncDashboardHint:
     "Findings upload to your web dashboard on their own. No desktop app is needed for this.",
+  syncStatsHint:
+    "While sync is on, anonymized counts of automated actions (like campaigns accepted) are added to our public activity totals. See our Privacy Policy.",
   contributeToggleLabel: "Contribute to the shared product catalogue",
   contributeBlurb:
     "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) and which creator videos are placed on a product's carousel are pooled, never personal data, so everyone sees real demand, price history, and video competition over time.",
@@ -1046,6 +1091,7 @@ const en: Dict = {
     "Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.",
   toolVideoCounts: "Video counts",
   toolVideoLandscape: "Video landscape",
+  toolVideoLikes: "Video like counts",
   toolApproved: "Butler Approved seal",
   toolCalculator: "Profit calculator",
   toolStorefront: "Storefront checks",
@@ -1262,6 +1308,9 @@ const en: Dict = {
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
   tileCampaignRate: (pct) => `Campaign ${pct}%`,
+  tileCampaignEpc: (epc) => `Campaign - up to ${epc}/click`,
+  tileCampaignEpcTip:
+    "Amazon's own Earn on Clicks forecast for this product, not a guaranteed rate - it depends on the clicks you drive and on Amazon's budget for the campaign.",
   tileProvenEarner: "Proven earner",
   tileEarned: (money) => `Earned ${money}`,
   tileInfluencer: (n) => `${n} infl. videos`,
@@ -1333,6 +1382,7 @@ const en: Dict = {
   tileHeroSlot: "Video slot",
   tileNoCarousel: "No carousel",
 
+  videoLikesTitle: "How many likes this video has on Amazon.",
   sumEarningsOverlay: "Earnings overlay",
   toolEarningsOverlay: "Earnings overlay (storefront badges)",
   earnBadgeTitle: "What you have earned on this post. Click for the full breakdown.",
@@ -1349,6 +1399,8 @@ const en: Dict = {
   earnOrders: (n) => `${n} order${n === 1 ? "" : "s"}`,
   earnRate: (pct) => `rate ${pct}%`,
   earnClicks: (n) => `${n} click${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} conversion`,
+  earnBestConverter: "Best converter",
   earnViewBreakdown: "View breakdown",
   earnNoBreakdown: "Update the desktop app to see the store, year, month, and campaign breakdown.",
   earnClose: "Close",
@@ -1401,6 +1453,8 @@ const en: Dict = {
         ? `Not available to buy on the ${code} Amazon store`
         : `Could not check the ${code} Amazon store right now`,
   radarVideoChip: (n) => (n === 0 ? "No videos yet" : `${n} ${n === 1 ? "video" : "videos"}`),
+  radarConversionChip: (pct) => `${pct} conversion`,
+  radarConversionTitle: "Shopper conversion (orders per click) from Amazon's own campaign stats",
   radarVideoTitle:
     "Creator videos already on this product. Fewer means less competition for the spot.",
   popupAvailabilityLabel: "Show availability for",
@@ -1424,6 +1478,7 @@ const en: Dict = {
   campaignBriefTitle: "The Butler's Brief",
   campaignBriefLoading: "The Butler is reading this campaign...",
   campaignBriefConfidence: (n) => `${n} confidence`,
+  campaignBriefConversion: (pct) => `${pct} conversion`,
   campaignBriefWhy: "Why I'd take this",
   campaignBriefFilm: "What to film",
   campaignBriefPick: "Pick of the shelf",
@@ -1883,6 +1938,8 @@ const es: Dict = {
   snapshotParent: "Padre",
   snapshotCategory: (category) => `Categoría: ${category}`,
   snapshotRank: (rank, category) => `#${rank} en ${category}`,
+  snapshotAge: (months, listed) => `Antigüedad: ${months} meses (publicado ${listed})`,
+  snapshotSellers: (n) => `Vendedores: ${n} en esta publicación`,
   snapshotCommissionLive: (pct) => `Comisión ${pct}% (en vivo de SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Comisión aprox. ${pct}% (${category}, tarifario)`,
@@ -1891,6 +1948,8 @@ const es: Dict = {
   earningsTitle: "Tus ganancias",
   earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
   earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
+  earningsConversion: (pct, campaign) => `Convierte al ${pct} en "${campaign}"`,
+  earningsConversionMore: (n) => `La mejor de ${n} campañas que hiciste aquí. Mira el desglose completo abajo.`,
   ownedTitle: "Ya lo tienes",
   ownedNote: "Este producto está en tu historial de pedidos.",
   ownedBought: (year) => `Comprado en ${year}`,
@@ -1908,6 +1967,12 @@ const es: Dict = {
   bsrHistoryTitle: "Historial de clasificación de ventas",
   bsrHistoryNow: (rank) => `Ahora nº${rank}`,
   bsrHistoryBest: (rank) => `Mejor nº${rank}`,
+  bsrHistoryAvg90: (rank) => `Media 90 días nº${rank}`,
+  bsrTrendSteady: "Clasificación estable",
+  bsrTrendRising: "Clasificación subiendo",
+  bsrTrendSlipping: "Clasificación bajando",
+  salesHistogramTitle: "Ventas, últimos 12 meses",
+  salesPeak: (units, month) => `Pico ~${units} en ${month}`,
   salesEstTitle: "Ventas mensuales estimadas",
   salesEstValue: (n) => `~${n}/mes`,
   salesEstModeled: "Estimado a partir del ranking de ventas",
@@ -1961,6 +2026,8 @@ const es: Dict = {
   syncToggleLabel: "Sincronizar hallazgos con mi panel",
   syncDashboardHint:
     "Los hallazgos se suben a tu panel web por su cuenta. No necesitas la app de escritorio para esto.",
+  syncStatsHint:
+    "Mientras la sincronización está activa, se suman recuentos anónimos de acciones automáticas (como campañas aceptadas) a nuestros totales públicos de actividad. Consulta nuestra Política de Privacidad.",
   contributeToggleLabel: "Contribuir al catálogo de productos compartido",
   contributeBlurb:
     "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) y qué videos de creadores aparecen en el carrusel de un producto se agrupan, nunca datos personales, para que todos vean la demanda real, el historial de precios y la competencia de videos a lo largo del tiempo.",
@@ -1986,6 +2053,7 @@ const es: Dict = {
     "Activa las senales de dinero y los overlays en Walmart.com. El overlay de resultados de busqueda (abajo) tambien funciona en las cuadriculas de Walmart.",
   toolVideoCounts: "Recuento de videos",
   toolVideoLandscape: "Panorama de videos",
+  toolVideoLikes: "Recuento de me gusta de videos",
   toolApproved: "Sello Butler Approved",
   toolCalculator: "Calculadora de ganancias",
   toolStorefront: "Chequeos del storefront",
@@ -2202,6 +2270,9 @@ const es: Dict = {
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
   tileCampaignRate: (pct) => `Campaña ${pct}%`,
+  tileCampaignEpc: (epc) => `Campaña - hasta ${epc}/clic`,
+  tileCampaignEpcTip:
+    "Previsión de Amazon de Earn on Clicks para este producto, no es una tasa garantizada: depende de los clics que generes y del presupuesto de Amazon para la campaña.",
   tileProvenEarner: "Ya te ha pagado",
   tileEarned: (money) => `Ganaste ${money}`,
   tileInfluencer: (n) => `${n} videos de infl.`,
@@ -2273,6 +2344,7 @@ const es: Dict = {
   tileHeroSlot: "Hueco de video",
   tileNoCarousel: "Sin carrusel",
 
+  videoLikesTitle: "Cuántos me gusta tiene este video en Amazon.",
   sumEarningsOverlay: "Ganancias en tienda",
   toolEarningsOverlay: "Ganancias en tienda (insignias en el storefront)",
   earnBadgeTitle: "Lo que has ganado con esta publicación. Haz clic para ver el desglose completo.",
@@ -2289,6 +2361,8 @@ const es: Dict = {
   earnOrders: (n) => `${n} pedido${n === 1 ? "" : "s"}`,
   earnRate: (pct) => `tasa ${pct}%`,
   earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} de conversión`,
+  earnBestConverter: "Mejor conversión",
   earnViewBreakdown: "Ver desglose",
   earnNoBreakdown: "Actualiza la app de escritorio para ver el desglose por tienda, año, mes y campaña.",
   earnClose: "Cerrar",
@@ -2341,6 +2415,8 @@ const es: Dict = {
         ? `No disponible para comprar en la tienda de Amazon de ${code}`
         : `No se pudo comprobar la tienda de Amazon de ${code} ahora mismo`,
   radarVideoChip: (n) => (n === 0 ? "Sin vídeos aún" : `${n} ${n === 1 ? "vídeo" : "vídeos"}`),
+  radarConversionChip: (pct) => `${pct} de conversión`,
+  radarConversionTitle: "Conversión de compradores (pedidos por clic) según las estadísticas de campaña de Amazon",
   radarVideoTitle:
     "Vídeos de creadores que ya hay sobre este producto. Menos significa menos competencia.",
   popupAvailabilityLabel: "Mostrar disponibilidad para",
@@ -2364,6 +2440,7 @@ const es: Dict = {
   campaignBriefTitle: "El informe del Butler",
   campaignBriefLoading: "El Butler está analizando esta campaña...",
   campaignBriefConfidence: (n) => `${n} de confianza`,
+  campaignBriefConversion: (pct) => `${pct} de conversión`,
   campaignBriefWhy: "Por qué la aceptaría",
   campaignBriefFilm: "Qué grabar",
   campaignBriefPick: "La mejor opción del catálogo",
@@ -2823,6 +2900,8 @@ const fr: Dict = {
   snapshotParent: "Parent",
   snapshotCategory: (category) => `Catégorie : ${category}`,
   snapshotRank: (rank, category) => `#${rank} dans ${category}`,
+  snapshotAge: (months, listed) => `Ancienneté : ${months} mois (référencé ${listed})`,
+  snapshotSellers: (n) => `Vendeurs : ${n} sur cette annonce`,
   snapshotCommissionLive: (pct) => `Commission ${pct}% (en direct de SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Commission environ ${pct}% (${category}, grille)`,
@@ -2831,6 +2910,8 @@ const fr: Dict = {
   earningsTitle: "Vos gains",
   earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
   earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",
+  earningsConversion: (pct, campaign) => `Convertit à ${pct} dans "${campaign}"`,
+  earningsConversionMore: (n) => `La meilleure de ${n} campagnes menées ici. Voir le détail complet ci-dessous.`,
   ownedTitle: "Vous l'avez déjà",
   ownedNote: "Ce produit est dans votre historique de commandes.",
   ownedBought: (year) => `Acheté en ${year}`,
@@ -2848,6 +2929,12 @@ const fr: Dict = {
   bsrHistoryTitle: "Historique du classement des ventes",
   bsrHistoryNow: (rank) => `Maintenant n°${rank}`,
   bsrHistoryBest: (rank) => `Meilleur n°${rank}`,
+  bsrHistoryAvg90: (rank) => `Moyenne 90 j n°${rank}`,
+  bsrTrendSteady: "Classement stable",
+  bsrTrendRising: "Classement en hausse",
+  bsrTrendSlipping: "Classement en baisse",
+  salesHistogramTitle: "Ventes, 12 derniers mois",
+  salesPeak: (units, month) => `Pic ~${units} en ${month}`,
   salesEstTitle: "Ventes mensuelles estimées",
   salesEstValue: (n) => `~${n}/mois`,
   salesEstModeled: "Estimé d'après le classement des ventes",
@@ -2901,6 +2988,8 @@ const fr: Dict = {
   syncToggleLabel: "Synchroniser les découvertes avec mon tableau de bord",
   syncDashboardHint:
     "Les découvertes se chargent d'elles-mêmes sur votre tableau de bord web. L'app de bureau n'est pas nécessaire pour cela.",
+  syncStatsHint:
+    "Lorsque la synchronisation est active, des décomptes anonymisés d'actions automatiques (comme les campagnes acceptées) sont ajoutés à nos totaux d'activité publics. Consultez notre Politique de confidentialité.",
   contributeToggleLabel: "Contribuer au catalogue de produits partagé",
   contributeBlurb:
     "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) et quelles vidéos de créateurs figurent dans le carrousel d'un produit sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle, l'historique des prix et la concurrence vidéo au fil du temps.",
@@ -2926,6 +3015,7 @@ const fr: Dict = {
     "Active les signaux de revenus et les overlays sur Walmart.com. L'overlay des résultats de recherche (ci-dessous) fonctionne aussi sur les grilles Walmart.",
   toolVideoCounts: "Comptage de vidéos",
   toolVideoLandscape: "Panorama vidéo",
+  toolVideoLikes: "Nombre de mentions J'aime des vidéos",
   toolApproved: "Sceau Butler Approved",
   toolCalculator: "Calculateur de profit",
   toolStorefront: "Vérifications du storefront",
@@ -3142,6 +3232,9 @@ const fr: Dict = {
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
   tileCampaignRate: (pct) => `Campagne ${pct}%`,
+  tileCampaignEpc: (epc) => `Campagne - jusqu'à ${epc}/clic`,
+  tileCampaignEpcTip:
+    "Prévision Earn on Clicks d'Amazon pour ce produit, pas un taux garanti : cela dépend des clics que vous générez et du budget d'Amazon pour la campagne.",
   tileProvenEarner: "Déjà rentable",
   tileEarned: (money) => `${money} gagnés`,
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
@@ -3213,6 +3306,7 @@ const fr: Dict = {
   tileHeroSlot: "Emplacement vidéo",
   tileNoCarousel: "Pas de carrousel",
 
+  videoLikesTitle: "Nombre de mentions J'aime de cette vidéo sur Amazon.",
   sumEarningsOverlay: "Gains en boutique",
   toolEarningsOverlay: "Gains en boutique (badges sur le storefront)",
   earnBadgeTitle: "Ce que vous avez gagné sur cette publication. Cliquez pour le détail complet.",
@@ -3229,6 +3323,8 @@ const fr: Dict = {
   earnOrders: (n) => `${n} commande${n === 1 ? "" : "s"}`,
   earnRate: (pct) => `taux ${pct}%`,
   earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} de conversion`,
+  earnBestConverter: "Meilleure conversion",
   earnViewBreakdown: "Voir le détail",
   earnNoBreakdown: "Mettez à jour l'application de bureau pour voir le détail par boutique, année, mois et campagne.",
   earnClose: "Fermer",
@@ -3281,6 +3377,8 @@ const fr: Dict = {
         ? `Indisponible à l'achat sur la boutique Amazon ${code}`
         : `Impossible de vérifier la boutique Amazon ${code} pour le moment`,
   radarVideoChip: (n) => (n === 0 ? "Aucune vidéo pour l'instant" : `${n} ${n === 1 ? "vidéo" : "vidéos"}`),
+  radarConversionChip: (pct) => `${pct} de conversion`,
+  radarConversionTitle: "Conversion des acheteurs (commandes par clic) selon les statistiques de campagne d'Amazon",
   radarVideoTitle:
     "Vidéos de créateurs déjà présentes sur ce produit. Moins il y en a, moins la concurrence est forte.",
   popupAvailabilityLabel: "Afficher la disponibilité pour",
@@ -3304,6 +3402,7 @@ const fr: Dict = {
   campaignBriefTitle: "La fiche du Butler",
   campaignBriefLoading: "Le Butler analyse cette campagne...",
   campaignBriefConfidence: (n) => `${n} de confiance`,
+  campaignBriefConversion: (pct) => `${pct} de conversion`,
   campaignBriefWhy: "Pourquoi je la prendrais",
   campaignBriefFilm: "Quoi filmer",
   campaignBriefPick: "Le meilleur choix du catalogue",

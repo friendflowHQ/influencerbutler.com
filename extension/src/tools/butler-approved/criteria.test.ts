@@ -19,6 +19,8 @@ const goodSignals: ProductSignals = {
   parentAsin: null,
   variationAsins: [],
   bestsellerRank: null,
+  listedAt: null,
+  sellerCount: null,
   imageUrl: null,
 };
 
