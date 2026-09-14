@@ -83,6 +83,79 @@ export async function scheduleBot(args: {
   }
 }
 
+export type RecallHealth = {
+  configured: boolean;
+  apiBase: string;
+  keyConfigured: boolean;
+  keyLength: number;
+  webhookSecretConfigured: boolean;
+  probe: {
+    ok: boolean;
+    status: number | null;
+    statusText: string;
+    bodySnippet: string;
+    error: string | null;
+  };
+  diagnosis: string;
+};
+
+/**
+ * Owner diagnostic for the recording pipeline. Reports whether Recall is
+ * configured and does one harmless live read (GET /bot/) to validate the API key
+ * and region without scheduling anything. Never returns the key itself, only its
+ * length, so it is safe to expose behind an admin gate. `apiBase` is the public
+ * region origin, not a secret. `diagnosis` maps the probe result to a plain-
+ * English cause + fix.
+ */
+export async function recallHealthCheck(): Promise<RecallHealth> {
+  const key = apiKey();
+  const b = base();
+  const health: RecallHealth = {
+    configured: !!key,
+    apiBase: b,
+    keyConfigured: !!key,
+    keyLength: key.length,
+    webhookSecretConfigured: !!process.env.RECALL_WEBHOOK_SECRET,
+    probe: { ok: false, status: null, statusText: "", bodySnippet: "", error: null },
+    diagnosis: "",
+  };
+
+  if (!key) {
+    health.diagnosis =
+      "RECALL_API_KEY is not set, so no recording bot is ever scheduled and calls end as skipped. Set it in the Vercel project env.";
+    return health;
+  }
+
+  try {
+    // GET /bot/ validates auth + region exactly like scheduleBot's request, with
+    // no side effect. A joining bot is never created by a read.
+    const res = await recallFetch("/bot/");
+    health.probe.ok = res.ok;
+    health.probe.status = res.status;
+    health.probe.statusText = res.statusText;
+    health.probe.bodySnippet = (await res.text().catch(() => "")).slice(0, 300);
+    health.diagnosis = diagnoseProbe(res.status, b);
+  } catch (err) {
+    health.probe.error = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    health.diagnosis =
+      `Could not reach Recall at ${b}. RECALL_API_BASE is likely wrong: it must be a region origin like https://us-west-2.recall.ai.`;
+  }
+  return health;
+}
+
+function diagnoseProbe(status: number, b: string): string {
+  if (status >= 200 && status < 300) {
+    return "Recall API key and region are valid. New bookings with a Google Meet room should schedule a recording bot.";
+  }
+  if (status === 401 || status === 403) {
+    return `Recall rejected the API key (HTTP ${status}). Either the key is invalid/expired, or RECALL_API_BASE (${b}) is the wrong region for this key. Recall keys are region-scoped: the base origin must match the region the key was issued in.`;
+  }
+  if (status === 404) {
+    return `Recall returned 404 for the bot endpoint. RECALL_API_BASE (${b}) is likely the wrong origin.`;
+  }
+  return `Recall returned HTTP ${status}. See the response snippet for detail.`;
+}
+
 /** Raw bot record (status_changes, recordings, media_shortcuts, metadata). */
 export async function getBot(botId: string): Promise<Record<string, unknown> | null> {
   if (!isRecallConfigured() || !botId) return null;
