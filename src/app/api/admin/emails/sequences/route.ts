@@ -954,10 +954,14 @@ export async function PATCH(request: Request) {
     }
 
     // Gather every sequence in the group (siblings share the base), ordered by
-    // tag suffix (a, b, c) so the round-robin is stable and readable.
+    // tag suffix (a, b, c) so the round-robin is stable and readable. Only ACTIVE
+    // siblings take a share: a paused variant (retired loser, or one not yet
+    // activated) must not swallow part of the batch and then send nothing, which
+    // would silently strand ~1/N of the addresses. Pause a variant to pull it out
+    // of the split.
     const { data: allSeq, error: allErr } = await db
       .from("email_sequences")
-      .select("id, name, trigger");
+      .select("id, name, trigger, status");
     if (allErr) {
       if (isMissingTable(allErr)) {
         return NextResponse.json({ error: "Migration pending", migrationPending: true }, { status: 409 });
@@ -967,16 +971,21 @@ export async function PATCH(request: Request) {
     }
     const siblings = (allSeq ?? [])
       .map((s) => {
-        const row = s as { id: unknown; name: unknown; trigger: unknown };
-        return { id: String(row.id), name: row.name, tag: triggerTag(row.trigger) };
+        const row = s as { id: unknown; name: unknown; trigger: unknown; status: unknown };
+        return {
+          id: String(row.id),
+          name: row.name,
+          tag: triggerTag(row.trigger),
+          status: String(row.status),
+        };
       })
-      .filter((s): s is { id: string; name: unknown; tag: string } =>
-        s.tag !== null && variantGroupBase(s.tag) === base,
+      .filter((s): s is { id: string; name: unknown; tag: string; status: string } =>
+        s.tag !== null && variantGroupBase(s.tag) === base && s.status === "active",
       )
       .sort((a, b) => (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0));
     if (siblings.length < 2) {
       return NextResponse.json(
-        { error: "Need at least two variant sequences (for example -a and -b) to split across." },
+        { error: "Need at least two ACTIVE variant sequences (for example -a and -b) to split across. Activate the variants you want in the split." },
         { status: 400 },
       );
     }
