@@ -248,6 +248,79 @@ The extension reads the Amazon pages you visit and only fetches additional pages
 Free to use. Optional sign-in with an Influencer Butler license key unlocks syncing to your dashboard at influencerbutler.com.
 ```
 
+## Draft: next detailed description (staged 2026-09-14, NOT yet submitted, supersedes the 2026-09-08 draft)
+
+Refreshes the 2026-09-08 draft for what shipped in 0.1.14 and 0.1.15: Video
+Likes (like-count badges on video cards), listing age and seller count on the
+product snapshot, conversion-rate readouts (orders per click) on the earnings
+panel and in The Butler's Brief, a 12-month sales histogram plus 90-day rank
+trend on the price-history panel, and the SPCC "Earn on Clicks" per-click
+forecast chip. Same constraints as every prior submission: no competitor names,
+no provider brand-name lists (2026-07-21 rejection), insights-while-you-browse
+framing, and no badges or promotional text in listing images.
+
+Tool count and group count still match `src/lib/extension-features.ts` (12
+tools in seven groups): the new 0.1.14/0.1.15 surfaces are folded into the
+existing tool descriptions rather than added as new headline tools, so the
+count does not drift and `extension-features.test.ts` stays green. If Video
+Likes is later elevated to a counted tool, update that file first (it also
+feeds the landing page, homepage, and tutorials), then rev this copy.
+
+Two framing calls worth a human review before submitting:
+
+1. The Creator Connections section now says the panel offers a one-tap Accept
+   (handled by the paired desktop app) and explicitly that the extension never
+   auto-accepts or declines on its own. This replaces the old "purely
+   informational: never accepts or declines campaigns for you" line, which is
+   no longer accurate now that one-tap accept ships. The reassurance kept is
+   the one reviewers actually care about: no silent or automatic action.
+2. The 0.1.14 rule-based auto-accept is deliberately NOT advertised here, to
+   stay on the safe side of the no-automation framing.
+
+```
+Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 12 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
+
+WHAT YOU GET (all free):
+
+Butler Score and Butler Approved seal
+Every product page gets a 0 to 100 Butler Score with a breakdown of where the points came from, next to a Butler Approved seal that shows each opportunity criterion as pass or fail: actively selling, an open influencer slot in the video carousel, in stock, and above your price floor.
+
+Best Sellers Rank, revenue, and history
+Reads the sales rank on the page and turns it into estimated monthly units and revenue, draws a price-history sparkline, adds a 12-month sales histogram with the peak month called out, and shows a 90-day rank trend of rising, steady, or slipping, so you can tell at a glance whether a product is climbing or fading. The product snapshot also shows how old the listing is and how many sellers share the buy box.
+
+Video counts and likes on any product
+See how many videos a product has and who made them: influencer, brand, or customer, with an indicator for whether the upper carousel still has an open slot. A like-count badge on each video card shows which videos are actually landing with shoppers.
+
+Trend Radar
+On Amazon's Best Sellers, New Releases, and Movers & Shakers pages, every tile shows its Butler Score, estimated commission per sale, and video count, with a toolbar to sort and filter by what pays.
+
+Content gaps in your own orders
+Scan your Amazon order history to find products you have bought that have few or no influencer videos yet: your easiest next content ideas, ranked and exportable.
+
+Campaign Radar with fill meters and Last Call alerts
+Browsing the Creator Connections campaign grid? Every card gets an opportunity score, chips for products you already own or have earned on, a fill meter showing how full the campaign is, and a watch bell that alerts you before a nearly full campaign closes. Open a campaign for The Butler's Brief: a plain verdict on whether it is worth your time, what to film, and which product to lead with, including the campaign's own conversion rate when Amazon shows it. When you have the desktop app paired, an Accept button on the panel lets you enroll in an available campaign in one click. You are always the one who taps it: the extension never auto-accepts or declines a campaign on its own.
+
+Get your link, tagged to your own account
+"Get link" sits pinned at the top of the panel: one tap builds your own tagged Amazon affiliate link for the product on screen, and it opens the Amazon app on a phone so viewers land in the app instead of a browser tab. If you connect your own affiliate network or link-shortener accounts in Settings, the extension can automatically pick the one that pays the most for each product. It never uses its own tag, never swaps your tag, and never takes a cut.
+
+Branded short links with a click ledger
+Sign in free and mint branded short links for the products you promote, then watch clicks by day, country, device, and surface in a simple ledger. If a product goes unavailable, repoint the same short link to a replacement so old posts keep earning.
+
+Global reach
+For the product on screen, see which of 12 Amazon marketplaces list it, the local price and availability, and an estimated commission per sale, and build a localized affiliate link for each so international viewers land on a store they can buy from.
+
+Storefront checkup
+Scan your own storefront for untagged videos and unavailable tagged products, and export the results as a CSV to clean up your shop.
+
+Also in the box
+Collect the deals from a roundup page you visit into one organized table, each with your own affiliate link, and queue any product you are browsing into an Amazon Idea List, with money signals badged on every Idea List page.
+
+HOW IT WORKS
+The extension reads the Amazon pages you visit and only fetches additional pages when you explicitly click a scan button (or run optional watchlist checks you turn on). Scans run one page at a time with a pause between pages, stop if Amazon asks for a robot check, and cap how many pages a single run can read. It builds an affiliate link only when you click a link button; it does not silently rewrite links as you browse. Everything it computes stays on your device unless you choose to connect your Influencer Butler account to sync findings to your dashboard. Full details are in the privacy policy at influencerbutler.com/extension/privacy.
+
+Free to use. Optional sign-in with an Influencer Butler license key unlocks syncing to your dashboard at influencerbutler.com.
+```
+
 ## Final submitted copy (2026-07-09)
 
 The exact text pasted into the Developer Dashboard for the first submission.
