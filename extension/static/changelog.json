@@ -2,6 +2,18 @@
   "lastUpdated": "2026-09-14",
   "releases": [
     {
+      "version": "0.1.16",
+      "date": "September 14, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Schedule a social post in two clicks: right-click any image on the web (a retailer grid, Instagram, Pinterest, a blog) and pick Schedule to Social Posting Butler, or use the Schedule action on Amazon and Walmart product and search tiles. Write a caption or draft one with AI, choose a one-time or repeating time on a mini calendar, and your desktop app posts it. No more saving the image, opening the app, and setting it all up by hand"
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.15",
       "date": "September 14, 2026",
       "sections": [

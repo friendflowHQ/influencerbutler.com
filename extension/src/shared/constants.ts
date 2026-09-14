@@ -54,6 +54,18 @@ export const ENDPOINTS = {
   // a product's carousel (opt-in, same consent as market), GET reads the
   // longitudinal per-video "passport" (presence, rotation, daily visibility).
   videoIntel: `${API_BASE}/api/extension/video-intel`,
+  // Social Posting scheduler: the "click an image, schedule a post" flow. POST
+  // creates a scheduled post (Bearer license), GET lists the creator's own posts
+  // for the mini calendar / upcoming view, and PATCH/DELETE .../<id> edits or
+  // cancels a still-pending one. The desktop app pulls these to publish.
+  socialPosts: `${API_BASE}/api/extension/social-posts`,
+  // Image-bytes fallback for sources the desktop cannot download server-side
+  // (e.g. Instagram's CDN blocks hotlinking): multipart upload, returns a public
+  // URL the scheduled post stores as image_source 'upload'.
+  socialPostsUpload: `${API_BASE}/api/extension/social-posts/upload`,
+  // Free ("Influencer Butler AI") caption engine for the compose box. The
+  // creator can instead use their own connected OpenAI key (OPENAI_COMPLETE).
+  socialCaption: `${API_BASE}/api/extension/social-caption`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),

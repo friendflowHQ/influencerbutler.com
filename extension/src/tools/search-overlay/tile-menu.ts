@@ -208,6 +208,23 @@ function buildFreeSection(target: TileMenuTarget, setStatus: (t: string) => void
     }),
   );
 
+  // Schedule a social post from this product's image. Opens the compose window;
+  // it goes to the backend queue and the desktop app publishes it, so it works
+  // even without the app paired (the compose page checks the signed-in license).
+  section.append(
+    menuItem(t().tileMenuSchedulePost, () => {
+      void sendToBackground<{ ok: boolean }>({
+        kind: "OPEN_SOCIAL_COMPOSE",
+        context: {
+          imageUrl: target.imageUrl,
+          pageUrl: target.href ?? location.href,
+          title: target.title,
+        },
+      });
+      closeMenu();
+    }),
+  );
+
   return section;
 }
 

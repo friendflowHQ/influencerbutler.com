@@ -1,4 +1,9 @@
 import type { Finding, VideoCounts } from "../transport/types";
+import type {
+  SocialCaptionInput,
+  SocialPostInput,
+  SocialPostRecord,
+} from "./social";
 import type { CampaignFill } from "../amazon/creator-campaigns";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type {
@@ -235,6 +240,23 @@ export type RuntimeMessage =
   | { kind: "CLEAN_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   | { kind: "AI_CHAT"; messages: AiChatTurn[] }
+  // Social Posting scheduler ("click an image, schedule a post"). All Bearer-
+  // authed in the background so the license key never reaches a page.
+  // Open the compose window (from a retailer tile / product action; the
+  // right-click context menu opens it directly from the background).
+  | { kind: "OPEN_SOCIAL_COMPOSE"; context: { imageUrl?: string | null; pageUrl?: string | null; title?: string | null } }
+  // Create a scheduled post. Returns the new row id.
+  | { kind: "SCHEDULE_SOCIAL_POST"; post: SocialPostInput }
+  // The creator's own scheduled posts, for the mini calendar / upcoming list.
+  | { kind: "LIST_SOCIAL_POSTS"; status?: string; limit?: number }
+  // Cancel a still-pending scheduled post.
+  | { kind: "CANCEL_SOCIAL_POST"; id: string }
+  // Draft a caption with the chosen engine (free first-party AI or the creator's
+  // own connected OpenAI key).
+  | { kind: "GEN_SOCIAL_CAPTION"; input: SocialCaptionInput }
+  // Upload image bytes (data URL) as the fallback when the source cannot be
+  // downloaded server-side. Returns a public URL + storage path.
+  | { kind: "UPLOAD_SOCIAL_IMAGE"; dataUrl: string }
   // AI concierge voice: mint an ephemeral Realtime token, run a Realtime tool
   // call server-side, and save the transcript. Bearer-authed in the background.
   | { kind: "VOICE_SESSION" }
@@ -992,6 +1014,13 @@ export type CleanLinkResult = {
 export type AiChatTurn = { role: "user" | "assistant"; content: string };
 export type AiChatImage = { url: string; alt: string };
 export type AiChatResult = { ok: boolean; reply?: string; images?: AiChatImage[]; error?: string };
+
+// Social Posting scheduler results.
+export type ScheduleSocialPostResult = { ok: boolean; id?: string; error?: string; migrationPending?: boolean };
+export type ListSocialPostsResult = { ok: boolean; posts: SocialPostRecord[]; error?: string; migrationPending?: boolean };
+export type CancelSocialPostResult = { ok: boolean; error?: string };
+export type GenSocialCaptionResult = { ok: boolean; caption?: string; alts?: string[]; error?: string };
+export type UploadSocialImageResult = { ok: boolean; url?: string; path?: string; error?: string };
 export type VoiceSessionResult = {
   ok: boolean;
   value?: string;

@@ -400,6 +400,7 @@ export interface Dict {
   tileMenuCopied: string;
   tileMenuLinkFailed: string;
   tileMenuOpenPage: string;
+  tileMenuSchedulePost: string;
   tileMenuAppLocked: string;
   tileMenuWorking: string;
   // Product-page "Add to list" panel (incl. Add all variations).
@@ -1339,6 +1340,7 @@ const en: Dict = {
   tileMenuCopied: "Copied",
   tileMenuLinkFailed: "Could not build a link",
   tileMenuOpenPage: "Open product page",
+  tileMenuSchedulePost: "Schedule a post",
   tileMenuAppLocked: "Open the app to send this product.",
   tileMenuWorking: "Working...",
   listPanelHeading: "Product lists",
@@ -2301,6 +2303,7 @@ const es: Dict = {
   tileMenuCopied: "Copiado",
   tileMenuLinkFailed: "No se pudo crear un enlace",
   tileMenuOpenPage: "Abrir página del producto",
+  tileMenuSchedulePost: "Programar una publicación",
   tileMenuAppLocked: "Abre la app para enviar este producto.",
   tileMenuWorking: "Trabajando...",
   listPanelHeading: "Listas de productos",
@@ -3263,6 +3266,7 @@ const fr: Dict = {
   tileMenuCopied: "Copié",
   tileMenuLinkFailed: "Impossible de créer un lien",
   tileMenuOpenPage: "Ouvrir la page produit",
+  tileMenuSchedulePost: "Programmer une publication",
   tileMenuAppLocked: "Ouvrez l'app pour envoyer ce produit.",
   tileMenuWorking: "En cours...",
   listPanelHeading: "Listes de produits",

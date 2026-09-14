@@ -28,6 +28,26 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
 
   const product = toProductRef(signals);
 
+  // Schedule a social post from this product's image. Lives on `section` (not
+  // `body`, which the connect-state branches replace) so it is always shown: it
+  // goes to the backend queue and the desktop app publishes it, so it works even
+  // when the app is not paired. The compose window checks the signed-in license.
+  const scheduleRow = el("div", "row");
+  const scheduleBtn = el("button", "btn secondary");
+  scheduleBtn.textContent = t().tileMenuSchedulePost;
+  scheduleBtn.addEventListener("click", () => {
+    void sendToBackground<{ ok: boolean }>({
+      kind: "OPEN_SOCIAL_COMPOSE",
+      context: {
+        imageUrl: product.imageUrl ?? null,
+        pageUrl: product.url ?? location.href,
+        title: product.title ?? null,
+      },
+    });
+  });
+  scheduleRow.append(scheduleBtn);
+  section.append(scheduleRow);
+
   void Promise.all([
     sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),

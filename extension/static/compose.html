@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Schedule a post</title>
+    <link rel="stylesheet" href="compose.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="brand">
+        <img src="icons/icon-32.png" alt="" width="20" height="20" />
+        <span>Schedule a post</span>
+      </div>
+      <span class="tag">Social Posting Butler</span>
+    </header>
+
+    <main class="pane">
+      <!-- Not connected notice -->
+      <section id="need-key" class="card" hidden>
+        <h2>Connect your account</h2>
+        <p class="muted small">
+          Open the Influencer Butler popup and connect your license key, then try
+          again. Scheduling posts needs a connected account.
+        </p>
+      </section>
+
+      <div id="compose-body">
+        <!-- Image -->
+        <section class="card">
+          <h2>Image</h2>
+          <div id="image-preview-wrap">
+            <img id="image-preview" alt="Selected image" hidden />
+            <p id="image-none" class="muted small">No image selected. This will be a text-only post, or choose a file below.</p>
+          </div>
+          <p id="image-warn" class="notice" hidden>
+            This image may not load when publishing. Choose a file to upload it instead.
+          </p>
+          <div class="row">
+            <label class="filebtn">
+              <input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+              <span>Choose a file</span>
+            </label>
+            <span id="image-file-status" class="muted small"></span>
+          </div>
+        </section>
+
+        <!-- Caption -->
+        <section class="card">
+          <h2>Caption</h2>
+          <textarea id="caption" rows="4" placeholder="Write a caption, or let AI draft one for you"></textarea>
+          <div class="row caption-ai">
+            <label class="inline">
+              <span class="muted small">AI engine</span>
+              <select id="caption-engine">
+                <option value="free">Influencer Butler AI (free)</option>
+                <option value="openai">My OpenAI key</option>
+              </select>
+            </label>
+            <button id="caption-generate" class="ghost" type="button">Draft with AI</button>
+          </div>
+          <p id="caption-status" class="muted small" hidden></p>
+          <div id="caption-alts" class="alts" hidden></div>
+        </section>
+
+        <!-- Link -->
+        <section class="card">
+          <h2>Link <span class="muted small">(optional)</span></h2>
+          <input id="link" type="text" placeholder="https://..." autocomplete="off" spellcheck="false" />
+          <label class="row toggle">
+            <input id="link-first-comment" type="checkbox" />
+            <span>Post the link in the first comment</span>
+          </label>
+        </section>
+
+        <!-- Destinations -->
+        <section class="card">
+          <h2>Where to post</h2>
+          <label class="row toggle">
+            <input id="dest-default" type="checkbox" checked />
+            <span>Use my default destinations (set in the desktop app)</span>
+          </label>
+          <div id="dest-list" class="dest-grid" hidden>
+            <label class="dest"><input type="checkbox" value="pages" /><span>Facebook Pages</span></label>
+            <label class="dest"><input type="checkbox" value="groups" /><span>Facebook Groups</span></label>
+            <label class="dest"><input type="checkbox" value="instagram" /><span>Instagram</span></label>
+            <label class="dest"><input type="checkbox" value="threads" /><span>Threads</span></label>
+            <label class="dest"><input type="checkbox" value="telegram" /><span>Telegram</span></label>
+            <label class="dest"><input type="checkbox" value="reddit" /><span>Reddit</span></label>
+            <label class="dest"><input type="checkbox" value="pinterest" /><span>Pinterest</span></label>
+          </div>
+        </section>
+
+        <!-- When -->
+        <section class="card">
+          <h2>When to post</h2>
+          <div class="seg" id="mode-seg">
+            <button type="button" class="seg-btn active" data-mode="once">Once</button>
+            <button type="button" class="seg-btn" data-mode="evergreen">Repeat</button>
+          </div>
+
+          <!-- Once -->
+          <div id="mode-once" class="mode-panel">
+            <div id="mini-calendar" class="mini-cal"></div>
+            <div class="row">
+              <label class="inline"><span class="muted small">Date</span>
+                <input id="once-date" type="date" />
+              </label>
+              <label class="inline"><span class="muted small">Time</span>
+                <input id="once-time" type="time" value="09:00" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Repeat -->
+          <div id="mode-evergreen" class="mode-panel" hidden>
+            <label class="inline"><span class="muted small">Frequency</span>
+              <select id="repeat-freq">
+                <option value="daily">Every day</option>
+                <option value="weekly">Weekly on set days</option>
+                <option value="hours">Every N hours</option>
+              </select>
+            </label>
+            <div id="repeat-daily" class="repeat-panel">
+              <label class="inline"><span class="muted small">Time</span>
+                <input id="daily-time" type="time" value="09:00" />
+              </label>
+            </div>
+            <div id="repeat-weekly" class="repeat-panel" hidden>
+              <div class="weekdays" id="weekly-days">
+                <label><input type="checkbox" value="0" /><span>Sun</span></label>
+                <label><input type="checkbox" value="1" /><span>Mon</span></label>
+                <label><input type="checkbox" value="2" /><span>Tue</span></label>
+                <label><input type="checkbox" value="3" /><span>Wed</span></label>
+                <label><input type="checkbox" value="4" /><span>Thu</span></label>
+                <label><input type="checkbox" value="5" /><span>Fri</span></label>
+                <label><input type="checkbox" value="6" /><span>Sat</span></label>
+              </div>
+              <label class="inline"><span class="muted small">Time</span>
+                <input id="weekly-time" type="time" value="09:00" />
+              </label>
+            </div>
+            <div id="repeat-hours" class="repeat-panel" hidden>
+              <label class="inline"><span class="muted small">Every</span>
+                <input id="hours-every" type="number" min="1" max="168" step="1" value="24" />
+                <span class="muted small">hours</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button id="schedule-btn" class="primary" type="button">Schedule post</button>
+          <span id="schedule-status" class="muted small"></span>
+        </div>
+
+        <!-- Upcoming -->
+        <section class="card">
+          <h2>Upcoming</h2>
+          <p id="upcoming-empty" class="muted small" hidden>Nothing scheduled yet.</p>
+          <ul id="upcoming-list" class="upcoming"></ul>
+        </section>
+      </div>
+    </main>
+
+    <script src="compose.js"></script>
+  </body>
+</html>

@@ -90,6 +90,9 @@ async function init(): Promise<void> {
   // onsite-only creator; "both" and offsite show them as before.
   if (channelAllowed(settings.creatorMode, "offsite")) {
     wireDealHarvester(settings.locale);
+    // Social Posting scheduler launcher: opens the composer + calendar. Offsite
+    // (it publishes off-Amazon), so it rides the same creator-mode gate.
+    wireSocialSchedule(settings.locale);
     // Instagram Goldmine launcher: self-hosted build only. The whole call (and
     // its import-free body) dead-code-eliminates out of the public build,
     // leaving the card hidden as authored in popup.html.
@@ -374,6 +377,39 @@ function wireDealHarvester(locale: Settings["locale"]): void {
   btn.textContent = dict.open;
   btn.onclick = () => {
     void chrome.tabs.create({ url: chrome.runtime.getURL("deals.html") });
+  };
+}
+
+function wireSocialSchedule(locale: Settings["locale"]): void {
+  const dict = {
+    en: {
+      heading: "Schedule a post",
+      blurb:
+        "Right-click any image on the web to schedule it as a social post, or open the composer to write a caption, pick a time, and see your calendar.",
+      open: "Open composer and calendar",
+    },
+    es: {
+      heading: "Programar una publicación",
+      blurb:
+        "Haz clic derecho en cualquier imagen de la web para programarla como publicación, o abre el editor para escribir un pie de foto, elegir la hora y ver tu calendario.",
+      open: "Abrir editor y calendario",
+    },
+    fr: {
+      heading: "Programmer une publication",
+      blurb:
+        "Faites un clic droit sur n'importe quelle image du web pour la programmer, ou ouvrez l'éditeur pour écrire une légende, choisir un horaire et voir votre calendrier.",
+      open: "Ouvrir l'éditeur et le calendrier",
+    },
+  }[resolveLocale(locale)];
+  byId("social-heading").textContent = dict.heading;
+  byId("social-blurb").textContent = dict.blurb;
+  const btn = byId<HTMLButtonElement>("open-compose");
+  btn.textContent = dict.open;
+  btn.onclick = () => {
+    void sendToBackground<{ ok: boolean }>({
+      kind: "OPEN_SOCIAL_COMPOSE",
+      context: { imageUrl: null, pageUrl: null, title: null },
+    });
   };
 }
 
@@ -1136,6 +1172,7 @@ async function renderSettings(): Promise<void> {
     "storefront",
     "ordersButler",
     "searchOverlay",
+    "socialSchedule",
     "storeOverlay",
     "trendRadar",
     "ideaListOverlay",

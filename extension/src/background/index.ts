@@ -39,6 +39,14 @@ import { getMarket, getMarketBatch } from "./market";
 import { getVideoIntel } from "./video-intel";
 import { fetchCampaignBrief } from "./campaign-brief";
 import {
+  cancelSocialPost,
+  generateSocialCaption,
+  listSocialPosts,
+  scheduleSocialPost,
+  uploadSocialImage,
+} from "./social-schedule";
+import { initSocialContextMenu, openComposeWindow } from "./social-compose-window";
+import {
   assistantChat,
   assistantVoiceSession,
   assistantVoiceTool,
@@ -163,6 +171,11 @@ async function injectIntoOpenTabs(): Promise<void> {
     }
   }
 }
+
+// Wire the "Schedule to Social Posting Butler" right-click menu (and keep it in
+// sync with the tool setting / kill flag). Registers its listeners at top level,
+// as MV3 requires.
+initSocialContextMenu();
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
@@ -315,6 +328,28 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "AI_CHAT":
       void assistantChat(message.messages).then(sendResponse);
+      return true;
+    case "OPEN_SOCIAL_COMPOSE":
+      void openComposeWindow({
+        imageUrl: message.context.imageUrl ?? null,
+        pageUrl: message.context.pageUrl ?? null,
+        title: message.context.title ?? null,
+      }).then(() => sendResponse({ ok: true }));
+      return true;
+    case "SCHEDULE_SOCIAL_POST":
+      void scheduleSocialPost(message.post).then(sendResponse);
+      return true;
+    case "LIST_SOCIAL_POSTS":
+      void listSocialPosts(message.status, message.limit).then(sendResponse);
+      return true;
+    case "CANCEL_SOCIAL_POST":
+      void cancelSocialPost(message.id).then(sendResponse);
+      return true;
+    case "GEN_SOCIAL_CAPTION":
+      void generateSocialCaption(message.input).then(sendResponse);
+      return true;
+    case "UPLOAD_SOCIAL_IMAGE":
+      void uploadSocialImage(message.dataUrl).then(sendResponse);
       return true;
     case "VOICE_SESSION":
       void assistantVoiceSession().then(sendResponse);

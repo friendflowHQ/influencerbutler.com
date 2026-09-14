@@ -238,6 +238,12 @@ export type Settings = {
     // one a support flow can flip off without touching the creator's rules.
     // Backfilled to true by the tools shallow-merge in migrate().
     autoAccept: boolean;
+    // Social Posting scheduler: the "click an image, schedule a post" flow (the
+    // right-click menu + the retailer tile / product "Schedule" action, both
+    // opening the compose window). On by default; the kill-flag key is
+    // "socialSchedule" in disabledTools. Backfilled to true by the tools
+    // shallow-merge in migrate().
+    socialSchedule: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -642,7 +648,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 29,
+  schemaVersion: 30,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -729,6 +735,7 @@ export const DEFAULTS: StorageShape = {
       standaloneAccept: true,
       uploadCampaignPrompt: true,
       autoAccept: true,
+      socialSchedule: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -871,6 +878,8 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // the kill-flag key; the tools shallow-merge backfills it). v28 -> v29 added
   // the videoLikes tool flag (orange Amazon like-count heart badge on video /
   // content cards, on by default); the tools shallow-merge backfills it.
+  // v29 -> v30 added the socialSchedule tool flag ("click an image, schedule a
+  // post", on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -960,7 +969,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 29,
+    schemaVersion: 30,
   };
 }
 
