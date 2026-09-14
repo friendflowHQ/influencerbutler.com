@@ -3,6 +3,8 @@ import {
   CAMPAIGN_WATCH_PERIOD_MINUTES,
   CATALOGUE_ALARM,
   CATALOGUE_PERIOD_MINUTES,
+  DEAL_AUTO_HARVEST_ALARM,
+  DEAL_AUTO_HARVEST_PERIOD_MINUTES,
   FACEBOOK_GROUP_URL,
   SYNC_ALARM,
   SYNC_PERIOD_MINUTES,
@@ -31,6 +33,7 @@ import { fetchMarketAvailability } from "./market-availability";
 import { fetchVideoCount } from "./video-count";
 import { enrichProducts } from "./enrich";
 import { lookupCcRates } from "./cc-rates";
+import { lookupSpccRates } from "./spcc-rates";
 import { enrichRows } from "./row-enrich";
 import { getMarket, getMarketBatch } from "./market";
 import { getVideoIntel } from "./video-intel";
@@ -41,7 +44,13 @@ import {
   assistantVoiceTool,
   assistantVoiceTranscript,
 } from "./assistant";
-import { getDealSources, harvestDealSites } from "./deal-harvest";
+import {
+  getDealAutoHarvest,
+  getDealSources,
+  harvestDealSites,
+  runAutoHarvest,
+  setDealAutoHarvest,
+} from "./deal-harvest";
 import { handleInstagramMessage } from "./instagram";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
 import { getPriceHistory, recordPriceFromFinding } from "./price-history";
@@ -177,6 +186,9 @@ chrome.runtime.onInstalled.addListener((details) => {
   void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
     periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
   });
+  void chrome.alarms.create(DEAL_AUTO_HARVEST_ALARM, {
+    periodInMinutes: DEAL_AUTO_HARVEST_PERIOD_MINUTES,
+  });
   void refreshCatalogues();
   void refreshRateCard();
   void refreshWalmartRateCard();
@@ -190,6 +202,9 @@ chrome.runtime.onStartup.addListener(() => {
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
   void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
     periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
+  });
+  void chrome.alarms.create(DEAL_AUTO_HARVEST_ALARM, {
+    periodInMinutes: DEAL_AUTO_HARVEST_PERIOD_MINUTES,
   });
   void refreshCatalogues();
   void refreshRateCard();
@@ -230,6 +245,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
   if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
   if (alarm.name === CAMPAIGN_WATCH_ALARM) void refreshLastCall();
+  if (alarm.name === DEAL_AUTO_HARVEST_ALARM) void runAutoHarvest();
   handleNudgeAlarm(alarm.name);
 });
 
@@ -435,6 +451,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "LOOKUP_CC_RATES":
       void lookupCcRates(message.asins).then(sendResponse);
       return true;
+    case "LOOKUP_SPCC_RATES":
+      void lookupSpccRates(message.asins).then(sendResponse);
+      return true;
     case "ENRICH_ROWS":
       void enrichRows(message.refs).then(sendResponse);
       return true;
@@ -500,10 +519,16 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void fetchCampaignBrief(message.signals).then(sendResponse);
       return true;
     case "HARVEST_DEAL_SITES":
-      void harvestDealSites(message.urls).then(sendResponse);
+      void harvestDealSites(message.urls, { render: message.render }).then(sendResponse);
       return true;
     case "GET_DEAL_SOURCES":
       void getDealSources(message.force).then(sendResponse);
+      return true;
+    case "GET_DEAL_AUTO_HARVEST":
+      void getDealAutoHarvest().then(sendResponse);
+      return true;
+    case "SET_DEAL_AUTO_HARVEST":
+      void setDealAutoHarvest(message.enabled).then(sendResponse);
       return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from

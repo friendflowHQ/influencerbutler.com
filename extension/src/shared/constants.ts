@@ -38,6 +38,9 @@ export const ENDPOINTS = {
   // Real Creator Connections commission rates for a batch of ASINs (built
   // daily from the CC catalogue). Public like the catalogue endpoint.
   ccRates: `${API_BASE}/api/extension/cc-rates`,
+  // Amazon's own SPCC ("Earn on Clicks") $/click forecast for a batch of ASINs
+  // (built daily from the SPCC catalogue). Public like ccRates.
+  spccRates: `${API_BASE}/api/extension/spcc-rates`,
   // Instagram Goldmine (self-hosted build only): harvested creator + email rows.
   instagramCreators: `${API_BASE}/api/extension/instagram-creators`,
   // Shared product catalogue ("internal Keepa"): POST contributes product facts
@@ -237,6 +240,23 @@ export const DEAL_SOURCES_STALE_MS = 20 * 60 * 60 * 1000;
 export const DEAL_HARVEST_SHORTLINK_CAP = 100;
 export const DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS = 150;
 export const DEAL_HARVEST_SHORTLINK_DELAY_MAX_MS = 400;
+
+// Deep scan (opt-in): some deal sites render their product list with JavaScript,
+// so a plain fetch of the HTML finds no Amazon links. For sites that came back
+// empty, the render pass opens each one in a real background tab, lets it run,
+// reads the rendered DOM, and closes the tab. Heavier than a fetch (a whole tab
+// per site), so it is capped tightly and only ever runs on the zero-yield sites.
+export const DEAL_HARVEST_RENDER_CAP = 8;
+export const DEAL_HARVEST_RENDER_SETTLE_MS = 2500; // dwell after load for late XHR
+export const DEAL_HARVEST_RENDER_TIMEOUT_MS = 20_000; // hard per-tab ceiling
+
+// Automatic background harvesting (opt-in, off by default): when enabled, the
+// DEAL_AUTO_HARVEST_ALARM runs harvestDealSites (with deep scan) against the
+// curated + saved sources on this cadence, with no tab/page open. Long period
+// because each run can open several deep-scan tabs; this is a "check a few
+// times a day" cadence, not a live feed.
+export const DEAL_AUTO_HARVEST_ALARM = "deal-auto-harvest";
+export const DEAL_AUTO_HARVEST_PERIOD_MINUTES = 6 * 60;
 
 // Instagram Goldmine (self-hosted build only). Harvested creator rows are
 // pushed into the desktop app's Pitch / Group Invite butlers in chunks so one

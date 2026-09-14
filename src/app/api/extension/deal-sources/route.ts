@@ -24,6 +24,7 @@ type SourcesFile = { version?: string; sources?: Array<{ url?: unknown; label?: 
 // generic; the R2 file is the source of truth once it exists.
 const SEED: DealSource[] = [
   { url: "https://www.jungle.deals/", label: "Jungle.Deals" },
+  { url: "https://www.savewithcindy.shop/", label: "Save With Cindy" },
 ];
 
 export async function OPTIONS() {

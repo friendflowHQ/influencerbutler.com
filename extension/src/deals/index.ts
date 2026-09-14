@@ -39,6 +39,7 @@ type Row = {
 
 let rows: Row[] = [];
 let curatedSources: DealSource[] = [];
+let autoHarvest = false;
 
 const root = () => document.getElementById("root") as HTMLElement;
 
@@ -50,6 +51,7 @@ async function init(): Promise<void> {
   document.title = `Influencer Butler: ${D.pageTitle}`;
   (document.getElementById("page-title") as HTMLElement).textContent = D.pageTitle;
   curatedSources = await sendToBackground<DealSource[]>({ kind: "GET_DEAL_SOURCES" });
+  autoHarvest = await sendToBackground<boolean>({ kind: "GET_DEAL_AUTO_HARVEST" });
   await render();
 }
 
@@ -68,6 +70,9 @@ async function render(): Promise<void> {
 
 // The sources card: curated toggle, the user's saved list, and a paste box.
 let includeCurated = true;
+// Opt-in deep scan: re-read zero-yield sites in a real tab so script-rendered
+// deal lists are captured. Off by default (slower, opens tabs).
+let deepScan = false;
 
 async function renderSources(saved: string[]): Promise<HTMLElement> {
   const card = section(D.sourcesHeading);
@@ -106,6 +111,18 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
     card.append(list);
   }
 
+  const deepRow = el("label", "toggle");
+  const deepBox = el("input") as HTMLInputElement;
+  deepBox.type = "checkbox";
+  deepBox.checked = deepScan;
+  deepBox.onchange = () => (deepScan = deepBox.checked);
+  const deepSpan = el("span");
+  deepSpan.textContent = D.deepScanLabel;
+  deepRow.append(deepBox, deepSpan);
+  card.append(deepRow);
+
+  card.append(renderAutoHarvestToggle(saved));
+
   const label = el("label", "field");
   const span = el("span");
   span.textContent = D.pasteLabel;
@@ -139,6 +156,44 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
   return card;
 }
 
+// "Pull deals automatically" toggle: when turned on, requests host permission
+// for every current source (same click-gated prompt as a manual harvest) and
+// tells the background to run a periodic deep-scan harvest with no page open
+// (DEAL_AUTO_HARVEST_ALARM in background/index.ts). Turning it off just stops
+// the alarm's early-return check; it does not revoke the granted permissions,
+// so turning it back on later needs no re-prompt.
+function renderAutoHarvestToggle(saved: string[]): HTMLElement {
+  const wrap = el("div");
+  const row = el("label", "toggle");
+  const box = el("input") as HTMLInputElement;
+  box.type = "checkbox";
+  box.checked = autoHarvest;
+  const span = el("span");
+  span.textContent = D.autoHarvestLabel;
+  row.append(box, span);
+  const hint = el("p", "muted small");
+  hint.textContent = D.autoHarvestHint;
+  wrap.append(row, hint);
+
+  box.onchange = () => {
+    void (async () => {
+      if (box.checked) {
+        const urls = [...new Set([...curatedSources.map((s) => s.url), ...saved])];
+        const granted = urls.length === 0 || (await requestOrigins(urls));
+        if (!granted) {
+          box.checked = false;
+          hint.textContent = D.permissionDenied;
+          return;
+        }
+      }
+      autoHarvest = box.checked;
+      await sendToBackground<void>({ kind: "SET_DEAL_AUTO_HARVEST", enabled: autoHarvest });
+      hint.textContent = D.autoHarvestHint;
+    })();
+  };
+  return wrap;
+}
+
 async function runHarvest(
   btn: HTMLButtonElement,
   status: HTMLElement,
@@ -165,9 +220,15 @@ async function runHarvest(
 
   btn.disabled = true;
   btn.textContent = D.harvesting;
-  status.textContent = D.harvesting;
+  // Deep scan opens a tab per zero-yield site, so it runs noticeably longer;
+  // say so up front instead of leaving the plain "Harvesting..." line.
+  status.textContent = deepScan ? D.deepScanning : D.harvesting;
   try {
-    const result = await sendToBackground<HarvestResult>({ kind: "HARVEST_DEAL_SITES", urls: unique });
+    const result = await sendToBackground<HarvestResult>({
+      kind: "HARVEST_DEAL_SITES",
+      urls: unique,
+      render: deepScan,
+    });
     rows = result.deals.map((deal) => ({
       deal,
       title: null,
@@ -208,6 +269,7 @@ function renderPerSite(card: HTMLElement | null, attempted: string[], result: Ha
   wrap.append(h);
 
   const errorByUrl = new Map(result.errors.map((e) => [e.url, e.error]));
+  const renderedUrls = new Set(result.rendered ?? []);
   const countByUrl = new Map<string, number>();
   for (const row of rows) {
     countByUrl.set(row.deal.sourceUrl, (countByUrl.get(row.deal.sourceUrl) ?? 0) + 1);
@@ -221,12 +283,19 @@ function renderPerSite(card: HTMLElement | null, attempted: string[], result: Ha
     const note = el("span", "muted small");
     const error = errorByUrl.get(url);
     const count = countByUrl.get(url) ?? 0;
+    const deepScanned = renderedUrls.has(url);
     if (error) {
       note.textContent = ` ${D.perSiteReadError} (${error})`;
     } else if (count === 0) {
-      note.textContent = ` ${D.perSiteCount(0)}. ${D.perSiteZeroHint}`;
+      // A deep-scanned-but-still-empty site is genuinely unreadable; a plain
+      // zero site can suggest turning deep scan on.
+      note.textContent = deepScanned
+        ? ` ${D.perSiteCount(0)}. ${D.perSiteZeroAfterDeepScan}`
+        : ` ${D.perSiteCount(0)}. ${D.perSiteZeroHint}`;
     } else {
-      note.textContent = ` ${D.perSiteCount(count)}`;
+      note.textContent = deepScanned
+        ? ` ${D.perSiteCount(count)} (${D.perSiteDeepScanned})`
+        : ` ${D.perSiteCount(count)}`;
     }
     li.append(site, note);
     list.append(li);

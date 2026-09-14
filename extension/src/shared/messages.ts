@@ -98,6 +98,11 @@ export type RuntimeMessage =
   // (server-side join of the CC catalogue), so a campaign chip can show the
   // actual percent instead of a bare yes/no. Cached a day in the background.
   | { kind: "LOOKUP_CC_RATES"; asins: string[] }
+  // Look up Amazon's SPCC ("Earn on Clicks") forecast for a batch of ASINs
+  // (server-side join of the SPCC catalogue), so an SPCC-only campaign chip
+  // can show "Up to $X/click" instead of a bare yes/no. Cached a day in the
+  // background, same as LOOKUP_CC_RATES.
+  | { kind: "LOOKUP_SPCC_RATES"; asins: string[] }
   // Read the locally-built price history for a product, for the sparkline on the
   // product panel. Returns points oldest-first (may be empty on a fresh install).
   | { kind: "GET_PRICE_HISTORY"; asin: string; marketplace: string }
@@ -309,8 +314,13 @@ export type RuntimeMessage =
   | { kind: "GET_CAMPAIGN_BRIEF"; signals: CampaignBriefSignals }
   // Deal Sites Harvester: fetch and parse a list of aggregator URLs (the deals
   // page requests the host permission first), and read the curated source list.
-  | { kind: "HARVEST_DEAL_SITES"; urls: string[] }
+  // render: opt-in deep scan that re-reads zero-yield sites in a real tab so
+  // JavaScript-rendered deal lists (invisible to a plain fetch) are captured.
+  | { kind: "HARVEST_DEAL_SITES"; urls: string[]; render?: boolean }
   | { kind: "GET_DEAL_SOURCES"; force?: boolean }
+  // Read/write the opt-in automatic background harvest setting.
+  | { kind: "GET_DEAL_AUTO_HARVEST" }
+  | { kind: "SET_DEAL_AUTO_HARVEST"; enabled: boolean }
   // Instagram Goldmine (self-hosted build only): fetch a creator's bio-link
   // site cross-origin from the worker (content scripts on instagram.com cannot)
   // and return the first email found on it. The Goldmine page requests the
@@ -654,6 +664,8 @@ export type CampaignCcStats = {
   salesLast30Cents: number | null;
   roas: number | null;
   ordersTotal: number | null;
+  clicksLast30: number | null;
+  clicksTotal: number | null;
 };
 
 export type CampaignBriefSignals = {
@@ -759,6 +771,24 @@ export type CcRate = {
 // appear in `rates`. `ok:false` means the server could not be reached (the
 // caller keeps its plain campaign chip).
 export type CcRatesResult = { ok: boolean; rates: Record<string, CcRate> };
+
+// Amazon's own SPCC ("Earn on Clicks") forecast for one ASIN, from the daily
+// extension_spcc_rates build. `epc` is Amazon's forecast dollars-per-click
+// ("Up to $X"), NOT the creator's realized earnings-per-click (that is
+// CampaignStatusRecord.epc, sourced from the desktop ledger, and stays null
+// until the creator has actually earned) - keep these two meanings separate
+// everywhere this type is read. `budgetAvailability` is Amazon's own
+// low/medium/high label, shown as a caveat only, never math.
+export type SpccRate = {
+  epc: number;
+  budgetAvailability: string | null;
+  brand: string | null;
+};
+
+// Response of LOOKUP_SPCC_RATES: only ASINs with a known SPCC row appear in
+// `rates`. `ok:false` means the server could not be reached (the caller keeps
+// its plain campaign chip).
+export type SpccRatesResult = { ok: boolean; rates: Record<string, SpccRate> };
 
 // Response of ENRICH_PRODUCTS. `configured` is false when the user has not
 // stored any Creator API credentials (so the caller can prompt them and fall
@@ -908,6 +938,10 @@ export type HarvestResult = {
   deals: HarvestedDeal[];
   errors: Array<{ url: string; error: string }>;
   capped: boolean;
+  // Source URLs the opt-in deep-scan render pass re-read in a real tab (only the
+  // sites that yielded nothing from a plain fetch). Lets the per-site breakdown
+  // note which sites needed a deep scan. Absent when deep scan was not run.
+  rendered?: string[];
 };
 
 export type IntegrationTestOutcome = { ok: boolean; message: string; eligibilityBlocked?: boolean };

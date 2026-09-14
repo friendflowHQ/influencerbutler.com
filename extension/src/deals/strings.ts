@@ -16,6 +16,10 @@ export interface DealsDict {
   remove: string;
   harvest: string;
   harvesting: string;
+  deepScanLabel: string;
+  deepScanning: string;
+  autoHarvestLabel: string;
+  autoHarvestHint: string;
   stop: string;
   resultsHeading: string;
   selectAll: string;
@@ -34,6 +38,8 @@ export interface DealsDict {
   perSiteCount: (n: number) => string;
   perSiteReadError: string;
   perSiteZeroHint: string;
+  perSiteZeroAfterDeepScan: string;
+  perSiteDeepScanned: string;
   enriching: string;
   sendHeading: string;
   workspaceLabel: string;
@@ -68,6 +74,10 @@ const en: DealsDict = {
   remove: "Remove",
   harvest: "Harvest deals",
   harvesting: "Harvesting...",
+  deepScanLabel: "Deep scan sites that load deals with scripts (slower)",
+  deepScanning: "Deep scanning script-rendered sites...",
+  autoHarvestLabel: "Pull deals automatically a few times a day",
+  autoHarvestHint: "Runs in the background with deep scan on, and records new deals to your dashboard. You still pick which ones to send to a workspace here.",
   stop: "Stop",
   resultsHeading: "Found deals",
   selectAll: "Select all",
@@ -85,7 +95,9 @@ const en: DealsDict = {
   perSiteHeading: "Results by site",
   perSiteCount: (n) => `${n} deal${n === 1 ? "" : "s"}`,
   perSiteReadError: "could not be read",
-  perSiteZeroHint: "No Amazon product links found. Some sites load their deals with scripts and cannot be read this way.",
+  perSiteZeroHint: "No Amazon product links found. Some sites load their deals with scripts and cannot be read this way. Turn on deep scan to try reading it in a tab.",
+  perSiteZeroAfterDeepScan: "No Amazon product links found, even after a deep scan.",
+  perSiteDeepScanned: "deep scanned",
   enriching: "Filling in prices and commission...",
   sendHeading: "Send to a workspace",
   workspaceLabel: "Deals Butler workspace",
@@ -121,6 +133,10 @@ const es: DealsDict = {
   remove: "Quitar",
   harvest: "Recolectar ofertas",
   harvesting: "Recolectando...",
+  deepScanLabel: "Escaneo profundo de sitios que cargan ofertas con scripts (más lento)",
+  deepScanning: "Escaneo profundo de sitios con scripts...",
+  autoHarvestLabel: "Recolectar ofertas automáticamente varias veces al día",
+  autoHarvestHint: "Se ejecuta en segundo plano con el escaneo profundo activado y registra las nuevas ofertas en tu panel. Tú sigues eligiendo cuáles enviar a un espacio aquí.",
   stop: "Detener",
   resultsHeading: "Ofertas encontradas",
   selectAll: "Seleccionar todo",
@@ -138,7 +154,9 @@ const es: DealsDict = {
   perSiteHeading: "Resultados por sitio",
   perSiteCount: (n) => `${n} oferta${n === 1 ? "" : "s"}`,
   perSiteReadError: "no se pudo leer",
-  perSiteZeroHint: "No se encontraron enlaces de productos de Amazon. Algunos sitios cargan sus ofertas con scripts y no se pueden leer de esta forma.",
+  perSiteZeroHint: "No se encontraron enlaces de productos de Amazon. Algunos sitios cargan sus ofertas con scripts y no se pueden leer de esta forma. Activa el escaneo profundo para intentar leerlo en una pestaña.",
+  perSiteZeroAfterDeepScan: "No se encontraron enlaces de productos de Amazon, incluso tras un escaneo profundo.",
+  perSiteDeepScanned: "escaneo profundo",
   enriching: "Completando precios y comisión...",
   sendHeading: "Enviar a un espacio",
   workspaceLabel: "Espacio de Ofertas Diarias",
@@ -174,6 +192,10 @@ const fr: DealsDict = {
   remove: "Retirer",
   harvest: "Collecter les offres",
   harvesting: "Collecte...",
+  deepScanLabel: "Analyse approfondie des sites qui chargent les offres avec des scripts (plus lent)",
+  deepScanning: "Analyse approfondie des sites à scripts...",
+  autoHarvestLabel: "Collecter les offres automatiquement plusieurs fois par jour",
+  autoHarvestHint: "S'exécute en arrière-plan avec l'analyse approfondie activée et enregistre les nouvelles offres dans votre tableau de bord. Vous choisissez toujours lesquelles envoyer vers un espace ici.",
   stop: "Arrêter",
   resultsHeading: "Offres trouvées",
   selectAll: "Tout sélectionner",
@@ -191,7 +213,9 @@ const fr: DealsDict = {
   perSiteHeading: "Résultats par site",
   perSiteCount: (n) => `${n} offre${n === 1 ? "" : "s"}`,
   perSiteReadError: "n'a pas pu être lu",
-  perSiteZeroHint: "Aucun lien de produit Amazon trouvé. Certains sites chargent leurs offres avec des scripts et ne peuvent pas être lus de cette façon.",
+  perSiteZeroHint: "Aucun lien de produit Amazon trouvé. Certains sites chargent leurs offres avec des scripts et ne peuvent pas être lus de cette façon. Activez l'analyse approfondie pour l'essayer dans un onglet.",
+  perSiteZeroAfterDeepScan: "Aucun lien de produit Amazon trouvé, même après une analyse approfondie.",
+  perSiteDeepScanned: "analyse approfondie",
   enriching: "Ajout des prix et de la commission...",
   sendHeading: "Envoyer vers un espace",
   workspaceLabel: "Espace Offres du Jour",
