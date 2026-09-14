@@ -9,7 +9,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { getAdmin } from "@/lib/scheduling-server";
-import { recallHealthCheck } from "@/lib/recall";
+import { recallHealthCheck, probeBotCreate } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +19,12 @@ export async function GET(request: Request) {
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const health = await recallHealthCheck();
+
+  // ?deep=1 additionally attempts a real bot create (with a dummy Meet URL, then
+  // cleans it up) to surface the exact reason scheduleBot fails. It writes, so it
+  // is opt-in, not part of the default read-only check.
+  const deep = new URL(request.url).searchParams.get("deep") === "1";
+  const botCreate = deep ? await probeBotCreate() : null;
 
   // Recent recording outcomes for calls that had a real Meet room, so a
   // 100%-failing pipeline is obvious right here next to the config diagnosis.
@@ -40,5 +46,5 @@ export async function GET(request: Request) {
     recentRecordings.sort((a, b) => b.count - a.count);
   }
 
-  return NextResponse.json({ recall: health, recentRecordings });
+  return NextResponse.json({ recall: health, botCreate, recentRecordings });
 }

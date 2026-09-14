@@ -143,6 +143,65 @@ export async function recallHealthCheck(): Promise<RecallHealth> {
   return health;
 }
 
+export type BotCreateProbe = {
+  status: number | null;
+  statusText: string;
+  bodySnippet: string;
+  error: string | null;
+  createdBotId: string | null;
+  cleanedUp: boolean;
+  diagnosis: string;
+};
+
+/**
+ * Deep probe: attempt a real POST /bot/ with a dummy Meet URL to surface the
+ * exact reason scheduleBot fails, then clean the bot up. Auth is already proven
+ * by the read probe, so a non-2xx here is a request-body / API-version problem
+ * (the payload shape Recall accepts drifts across account API versions). If the
+ * create unexpectedly succeeds, the throwaway bot is removed immediately so no
+ * real recorder is left scheduled. Only run this on demand (it does write).
+ */
+export async function probeBotCreate(): Promise<BotCreateProbe> {
+  const out: BotCreateProbe = {
+    status: null, statusText: "", bodySnippet: "", error: null,
+    createdBotId: null, cleanedUp: false, diagnosis: "",
+  };
+  if (!isRecallConfigured()) {
+    out.diagnosis = "RECALL_API_KEY is not set.";
+    return out;
+  }
+  try {
+    const res = await recallFetch("/bot/", {
+      method: "POST",
+      body: JSON.stringify({
+        meeting_url: "https://meet.google.com/aaa-bbbb-ccc",
+        bot_name: "Influencer Butler Healthcheck",
+        join_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+        recording_config: { transcript: { provider: { recallai_async: {} } } },
+      }),
+    });
+    out.status = res.status;
+    out.statusText = res.statusText;
+    const body = await res.text().catch(() => "");
+    out.bodySnippet = body.slice(0, 600);
+    if (res.ok) {
+      try {
+        const j = JSON.parse(body) as { id?: string };
+        if (j.id) { out.createdBotId = j.id; await stopBot(j.id); out.cleanedUp = true; }
+      } catch { /* body was not the expected shape */ }
+      out.diagnosis = "POST /bot/ succeeded, so the payload scheduleBot sends is accepted. The throwaway bot was cleaned up. If real bookings still fail, the difference is the meeting URL or join_at value, not the request shape.";
+    } else if (out.status === 400) {
+      out.diagnosis = "Recall rejected the bot-creation payload (HTTP 400). The request body shape does not match this account's Recall API version. The body snippet names the offending field: adjust scheduleBot's request in src/lib/recall.ts to match (commonly the recording_config / transcript block).";
+    } else {
+      out.diagnosis = `POST /bot/ returned HTTP ${out.status}. See the body snippet.`;
+    }
+  } catch (err) {
+    out.error = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    out.diagnosis = "The create request threw before a response. See error.";
+  }
+  return out;
+}
+
 function diagnoseProbe(status: number, b: string): string {
   if (status >= 200 && status < 300) {
     return "Recall API key and region are valid. New bookings with a Google Meet room should schedule a recording bot.";
