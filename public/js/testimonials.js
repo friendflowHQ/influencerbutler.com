@@ -126,16 +126,26 @@
     document.dispatchEvent(new CustomEvent("testimonials:rendered"));
   }
 
+  // There are no static fallback cards anymore, so when there is nothing to
+  // show (feed disabled, empty, or failed) hide the whole section rather than
+  // leave an empty "What Creators Are Saying" heading.
+  function hideSection() {
+    var section = document.getElementById("testimonials");
+    if (section) section.style.display = "none";
+  }
+
   function init() {
     fetch("/api/testimonials/feed", { headers: { accept: "application/json" } })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data || data.enabled === false) return;
-        var list = Array.isArray(data.testimonials) ? data.testimonials : [];
-        if (list.length === 0) return; // keep static fallback cards
+        var list =
+          data && data.enabled !== false && Array.isArray(data.testimonials)
+            ? data.testimonials
+            : [];
+        if (list.length === 0) { hideSection(); return; }
         render(list);
       })
-      .catch(function () { /* keep static fallback */ });
+      .catch(hideSection);
   }
 
   if (document.readyState === "loading") {
