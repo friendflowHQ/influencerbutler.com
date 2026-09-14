@@ -321,6 +321,11 @@ export type RuntimeMessage =
   // Read/write the opt-in automatic background harvest setting.
   | { kind: "GET_DEAL_AUTO_HARVEST" }
   | { kind: "SET_DEAL_AUTO_HARVEST"; enabled: boolean }
+  // Re-sync the on-page "N deals found" badge's dynamic content-script
+  // registration to the current curated + saved sources and their granted
+  // permissions. Called right after a permission grant (or a saved-source
+  // edit) so the badge does not wait for the next periodic sync.
+  | { kind: "SYNC_DEAL_BADGE_SCRIPTS" }
   // Instagram Goldmine (self-hosted build only): fetch a creator's bio-link
   // site cross-origin from the worker (content scripts on instagram.com cannot)
   // and return the first email found on it. The Goldmine page requests the

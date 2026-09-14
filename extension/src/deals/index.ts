@@ -52,7 +52,30 @@ async function init(): Promise<void> {
   (document.getElementById("page-title") as HTMLElement).textContent = D.pageTitle;
   curatedSources = await sendToBackground<DealSource[]>({ kind: "GET_DEAL_SOURCES" });
   autoHarvest = await sendToBackground<boolean>({ kind: "GET_DEAL_AUTO_HARVEST" });
+
+  // Arrived from the on-page "N deals found" badge's Review button
+  // (deal-badge/index.ts opens deals.html?add=<url>): save that site and jump
+  // straight into a harvest of it, deep scan on since the badge only ever
+  // fires on a page whose OWN script-rendered DOM already had deals (a plain
+  // fetch would very likely find nothing there).
+  const addUrl = new URL(location.href).searchParams.get("add");
+  if (addUrl && /^https?:\/\//i.test(addUrl)) {
+    const current = settings.dealSources;
+    if (!current.includes(addUrl)) {
+      await patchSettings({ dealSources: [...current, addUrl] });
+    }
+    deepScan = true;
+    history.replaceState(null, "", location.pathname);
+  }
+
   await render();
+
+  if (addUrl && /^https?:\/\//i.test(addUrl)) {
+    const btn = document.getElementById("harvest-btn") as HTMLButtonElement | null;
+    const status = document.getElementById("harvest-status") as HTMLElement | null;
+    const paste = document.getElementById("paste") as HTMLTextAreaElement | null;
+    if (btn && status && paste) void runHarvest(btn, status, paste);
+  }
 }
 
 async function render(): Promise<void> {
@@ -103,6 +126,7 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
       rm.onclick = async () => {
         const next = (await getSettings()).dealSources.filter((s) => s !== url);
         await patchSettings({ dealSources: next });
+        void sendToBackground<void>({ kind: "SYNC_DEAL_BADGE_SCRIPTS" });
         await render();
       };
       li.append(u, rm);
@@ -146,6 +170,7 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
   };
 
   const harvestBtn = el("button", "primary");
+  harvestBtn.id = "harvest-btn";
   harvestBtn.textContent = D.harvest;
   const status = el("span", "muted small");
   status.id = "harvest-status";
@@ -743,7 +768,12 @@ async function requestOrigins(urls: string[]): Promise<boolean> {
   ];
   if (origins.length === 0) return true;
   try {
-    return await chrome.permissions.request({ origins });
+    const granted = await chrome.permissions.request({ origins });
+    // A fresh grant means the on-page badge can now run there too; resync its
+    // dynamic content-script registration right away rather than waiting for
+    // the next periodic sync.
+    if (granted) void sendToBackground<void>({ kind: "SYNC_DEAL_BADGE_SCRIPTS" });
+    return granted;
   } catch {
     return false;
   }

@@ -44,6 +44,7 @@ import {
   assistantVoiceTool,
   assistantVoiceTranscript,
 } from "./assistant";
+import { syncDealBadgeContentScripts } from "./deal-badge-register";
 import {
   getDealAutoHarvest,
   getDealSources,
@@ -193,6 +194,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   void refreshRateCard();
   void refreshWalmartRateCard();
   void refreshFlags();
+  void syncDealBadgeContentScripts();
   // After an update applies, this drops the now-stale "update waiting" record.
   void getUpdateStateView();
 });
@@ -210,6 +212,7 @@ chrome.runtime.onStartup.addListener(() => {
   void refreshRateCard();
   void refreshWalmartRateCard();
   void refreshFlags();
+  void syncDealBadgeContentScripts();
   void maybeTestAllOnStartup();
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
   // was closed fires on the next launch.
@@ -245,7 +248,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
   if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
   if (alarm.name === CAMPAIGN_WATCH_ALARM) void refreshLastCall();
-  if (alarm.name === DEAL_AUTO_HARVEST_ALARM) void runAutoHarvest();
+  if (alarm.name === DEAL_AUTO_HARVEST_ALARM) {
+    void runAutoHarvest();
+    // Piggyback the badge registration resync here too: it is cheap/idempotent
+    // and this is the one alarm guaranteed to fire even for users who never
+    // open the deals page again after granting a site once.
+    void syncDealBadgeContentScripts();
+  }
   handleNudgeAlarm(alarm.name);
 });
 
@@ -529,6 +538,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SET_DEAL_AUTO_HARVEST":
       void setDealAutoHarvest(message.enabled).then(sendResponse);
+      return true;
+    case "SYNC_DEAL_BADGE_SCRIPTS":
+      void syncDealBadgeContentScripts().then(() => sendResponse(undefined));
       return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from

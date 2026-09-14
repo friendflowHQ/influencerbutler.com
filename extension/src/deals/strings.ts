@@ -20,6 +20,10 @@ export interface DealsDict {
   deepScanning: string;
   autoHarvestLabel: string;
   autoHarvestHint: string;
+  // On-page badge shown on a known deal-aggregator site itself (deal-badge/).
+  badgeCount: (n: number) => string;
+  badgeAction: string;
+  badgeDismiss: string;
   stop: string;
   resultsHeading: string;
   selectAll: string;
@@ -78,6 +82,9 @@ const en: DealsDict = {
   deepScanning: "Deep scanning script-rendered sites...",
   autoHarvestLabel: "Pull deals automatically a few times a day",
   autoHarvestHint: "Runs in the background with deep scan on, and records new deals to your dashboard. You still pick which ones to send to a workspace here.",
+  badgeCount: (n) => `${n} Amazon deal${n === 1 ? "" : "s"} on this page`,
+  badgeAction: "Review",
+  badgeDismiss: "Dismiss",
   stop: "Stop",
   resultsHeading: "Found deals",
   selectAll: "Select all",
@@ -137,6 +144,9 @@ const es: DealsDict = {
   deepScanning: "Escaneo profundo de sitios con scripts...",
   autoHarvestLabel: "Recolectar ofertas automáticamente varias veces al día",
   autoHarvestHint: "Se ejecuta en segundo plano con el escaneo profundo activado y registra las nuevas ofertas en tu panel. Tú sigues eligiendo cuáles enviar a un espacio aquí.",
+  badgeCount: (n) => `${n} oferta${n === 1 ? "" : "s"} de Amazon en esta página`,
+  badgeAction: "Revisar",
+  badgeDismiss: "Descartar",
   stop: "Detener",
   resultsHeading: "Ofertas encontradas",
   selectAll: "Seleccionar todo",
@@ -196,6 +206,9 @@ const fr: DealsDict = {
   deepScanning: "Analyse approfondie des sites à scripts...",
   autoHarvestLabel: "Collecter les offres automatiquement plusieurs fois par jour",
   autoHarvestHint: "S'exécute en arrière-plan avec l'analyse approfondie activée et enregistre les nouvelles offres dans votre tableau de bord. Vous choisissez toujours lesquelles envoyer vers un espace ici.",
+  badgeCount: (n) => `${n} offre${n === 1 ? "" : "s"} Amazon sur cette page`,
+  badgeAction: "Examiner",
+  badgeDismiss: "Ignorer",
   stop: "Arrêter",
   resultsHeading: "Offres trouvées",
   selectAll: "Tout sélectionner",
