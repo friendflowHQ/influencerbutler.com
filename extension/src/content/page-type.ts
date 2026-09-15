@@ -36,6 +36,45 @@ export function detectRetailerForUrl(url: string): Retailer | null {
   return null;
 }
 
+// Benable first-path segments that are app routes / redirects, not a creator
+// handle, so a URL under them is never a list.
+const BENABLE_RESERVED: ReadonlySet<string> = new Set([
+  "a",
+  "discover",
+  "explore",
+  "search",
+  "login",
+  "signup",
+  "settings",
+  "about",
+  "help",
+  "terms",
+  "privacy",
+  "notifications",
+  "api",
+]);
+
+// A benable.com list page (benable.com/<handle>/<slug>) or a single rec page
+// (benable.com/<handle>/<slug>/<item>). Excludes the marketing homepage, the
+// bare profile root (/<handle>), the app routes above, and the /a/<code>
+// outbound redirect. Benable is neither Amazon nor Walmart, so the content
+// script matches it by host up front rather than through detectPageType (which
+// stays Amazon/Walmart-only and returns "other" for benable).
+export function isBenableListUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+  if (host !== "benable.com") return false;
+  const parts = parsed.pathname.split("/").filter(Boolean);
+  const handle = parts[0];
+  if (!handle || parts.length < 2) return false;
+  return !BENABLE_RESERVED.has(handle.toLowerCase());
+}
+
 export function detectPageType(url: string): PageType {
   let parsed: URL;
   try {

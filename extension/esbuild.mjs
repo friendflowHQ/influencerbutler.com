@@ -119,6 +119,12 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/content/benable-hook.ts")],
+    outfile: path.join(dist, "benable-hook.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/content/site-referral.ts")],
     outfile: path.join(dist, "site-referral.js"),
     format: "iife",

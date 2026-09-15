@@ -424,6 +424,26 @@ export interface Dict {
   ideaListActive: string;
   toolDealsOverlay: string;
   sumDealsOverlay: string;
+  navGrpBenable: string;
+  groupBenable: string;
+  toolBenableBadge: string;
+  toolBenableBadgeHint: string;
+  sumBenableBadge: string;
+  benableChipCc: (pct: number) => string;
+  benableChipSpcc: (money: string) => string;
+  benableChipNone: string;
+  benableChipTitle: string;
+  benableDetailHeading: string;
+  benableOpenAmazon: string;
+  benableEnds: (date: string) => string;
+  benablePosted: string;
+  benableEarned: (money: string) => string;
+  benableConversion: (pct: string) => string;
+  benablePrice: (money: string) => string;
+  benableEstSales: (n: string) => string;
+  benableNoCampaign: string;
+  benableChecking: string;
+  benableNoExtra: string;
   dealsOverlayActive: string;
   trendCount: (n: number) => string;
   trendSortTrending: string;
@@ -1362,6 +1382,27 @@ const en: Dict = {
   ideaListActive: "Idea List signals are active.",
   toolDealsOverlay: "Today's Deals money signals",
   sumDealsOverlay: "Deals overlay",
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Amazon money signals on Benable lists",
+  toolBenableBadgeHint:
+    "On benable.com, badges each Amazon item with its Creator Connections / SPCC status and commission. Click a badge for enrollment, earnings, and ownership.",
+  sumBenableBadge: "Benable money signals",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clk`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Amazon money signals. Click for detail.",
+  benableDetailHeading: "Amazon money signals",
+  benableOpenAmazon: "Open on Amazon",
+  benableEnds: (date) => `ends ${date}`,
+  benablePosted: "You already posted this",
+  benableEarned: (money) => `Earned ${money}`,
+  benableConversion: (pct) => `${pct} conversion`,
+  benablePrice: (money) => `Price ${money}`,
+  benableEstSales: (n) => `~${n}/mo sold`,
+  benableNoCampaign: "No CC or SPCC campaign",
+  benableChecking: "Checking your data...",
+  benableNoExtra: "Sign in or open the desktop app for enrollment, earnings, and ownership.",
   dealsOverlayActive: "Deals signals are active.",
   trendCount: (n) => `${n} products scored`,
   trendSortTrending: "Rising fastest",
@@ -2325,6 +2366,28 @@ const es: Dict = {
   ideaListActive: "Las señales de Idea List están activas.",
   toolDealsOverlay: "Señales de dinero en Ofertas del Día",
   sumDealsOverlay: "Overlay de ofertas",
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Señales de dinero de Amazon en listas de Benable",
+  toolBenableBadgeHint:
+    "En benable.com, marca cada producto de Amazon con su estado de Creator Connections / SPCC y su comisión. Haz clic en una insignia para ver inscripción, ganancias y propiedad.",
+  sumBenableBadge: "Señales de dinero en Benable",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clic`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Señales de dinero de Amazon. Haz clic para ver el detalle.",
+  benableDetailHeading: "Señales de dinero de Amazon",
+  benableOpenAmazon: "Abrir en Amazon",
+  benableEnds: (date) => `termina ${date}`,
+  benablePosted: "Ya lo publicaste",
+  benableEarned: (money) => `Ganado ${money}`,
+  benableConversion: (pct) => `${pct} de conversión`,
+  benablePrice: (money) => `Precio ${money}`,
+  benableEstSales: (n) => `~${n}/mes vendidos`,
+  benableNoCampaign: "Sin campaña CC ni SPCC",
+  benableChecking: "Consultando tus datos...",
+  benableNoExtra:
+    "Inicia sesión o abre la app de escritorio para ver inscripción, ganancias y propiedad.",
   dealsOverlayActive: "Las señales de ofertas están activas.",
   trendCount: (n) => `${n} productos puntuados`,
   trendSortTrending: "Los que más suben",
@@ -3288,6 +3351,28 @@ const fr: Dict = {
   ideaListActive: "Les signaux Idea List sont actifs.",
   toolDealsOverlay: "Signaux d'argent sur les Offres du jour",
   sumDealsOverlay: "Overlay des offres",
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Signaux d'argent Amazon sur les listes Benable",
+  toolBenableBadgeHint:
+    "Sur benable.com, marque chaque produit Amazon avec son statut Creator Connections / SPCC et sa commission. Cliquez sur un badge pour l'inscription, les gains et la possession.",
+  sumBenableBadge: "Signaux d'argent Benable",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clic`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Signaux d'argent Amazon. Cliquez pour le détail.",
+  benableDetailHeading: "Signaux d'argent Amazon",
+  benableOpenAmazon: "Ouvrir sur Amazon",
+  benableEnds: (date) => `se termine ${date}`,
+  benablePosted: "Vous l'avez déjà publié",
+  benableEarned: (money) => `Gagné ${money}`,
+  benableConversion: (pct) => `${pct} de conversion`,
+  benablePrice: (money) => `Prix ${money}`,
+  benableEstSales: (n) => `~${n}/mois vendus`,
+  benableNoCampaign: "Aucune campagne CC ni SPCC",
+  benableChecking: "Vérification de vos données...",
+  benableNoExtra:
+    "Connectez-vous ou ouvrez l'app de bureau pour l'inscription, les gains et la possession.",
   dealsOverlayActive: "Les signaux des offres sont actifs.",
   trendCount: (n) => `${n} produits notés`,
   trendSortTrending: "Plus fortes hausses",

@@ -1,4 +1,4 @@
-import { detectPageType, detectRetailerForUrl, type PageType } from "./page-type";
+import { detectPageType, detectRetailerForUrl, isBenableListUrl, type PageType } from "./page-type";
 import { watchNavigation } from "./nav";
 import {
   extractSignals as extractWalmartSignals,
@@ -61,6 +61,13 @@ import { maybeShowNudge } from "../tools/nudges/prompts";
 import { maybeShowUpdateBanner } from "../tools/update-banner";
 import { maybeShowWhatsNew } from "../tools/whats-new";
 import { initChatBubble } from "../tools/chat-bubble/panel";
+import { initBenableBadges } from "../tools/benable-badge/overlay";
+import {
+  setBenableFeed,
+  benableFeedCount,
+  resetBenableFeed,
+  type BenableRec,
+} from "../tools/benable-badge/feed";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
@@ -214,6 +221,21 @@ async function main(): Promise<void> {
       if (dealsFeedSize() > before) scheduleDealsRefresh();
     });
   });
+  // Amazon rec feed from the benable-hook (benable.com list / rec pages). Benable
+  // renders its cards from server data and never puts the outbound Amazon link in
+  // the DOM, so the badge overlay cannot render until this feed (ASIN + title +
+  // photo ids per rec, fetched by the hook from Benable's rec_objects API) lands.
+  document.addEventListener("ib-ext-benable-feed", (event) => {
+    guard("benable-feed-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const recs = (detail as { recs?: unknown })?.recs;
+      if (!Array.isArray(recs)) return;
+      const before = benableFeedCount();
+      setBenableFeed(recs as BenableRec[]);
+      // Only a genuinely new rec warrants a rebuild; a repeat batch is a no-op.
+      if (benableFeedCount() > before) scheduleBenableRefresh();
+    });
+  });
   await runForPage();
   // Re-engagement nudges (join the group, get the free app). Records first use
   // on the first run and shows a timed modal on later visits. Guarded so a
@@ -305,6 +327,25 @@ async function runForPage(): Promise<void> {
   videosStillPending = false;
   videoLikesActive = false;
   log("content", `page type: ${pageType} (${retailer})`);
+
+  // Benable.com is neither Amazon nor Walmart, so it is handled up front, before
+  // the retailer overlays. On a list / rec page we badge each card whose outbound
+  // link is an Amazon product with its Creator Connections / SPCC / commission
+  // signals (ASINs arrive from the MAIN-world benable-hook feed). Channel-neutral
+  // research overlay; gated by its own tool flag and the remote kill switch.
+  if (isBenableListUrl(currentUrl)) {
+    const flags = await getFlags();
+    if (flags?.disableAll) {
+      log("content", "all tools disabled by remote flag");
+      return;
+    }
+    const killed = flags?.disabledTools.includes("benableBadge") ?? false;
+    if (settings.tools.benableBadge && !killed) {
+      guard("benable-badge", () => void initBenableBadges());
+      lastStatus.toolSummaries.push({ label: t().sumBenableBadge, value: t().ready });
+    }
+    return;
+  }
 
   // Walmart.com. The neutral page classes (product / search / discovery /
   // brand-store) are driven by the src/walmart extractors, which read Walmart's
@@ -757,6 +798,27 @@ function scheduleDealsRefresh(): void {
   }, 500);
 }
 
+// The benable-hook delivers the whole list's Amazon recs in one (occasionally
+// two) emissions, after the isolated content script has already run. Debounce a
+// re-run so the card badges appear once the feed lands, mirroring the deals
+// refresh above.
+let benableRefreshTimer: number | null = null;
+
+function scheduleBenableRefresh(): void {
+  if (benableRefreshTimer !== null) return;
+  benableRefreshTimer = window.setTimeout(() => {
+    benableRefreshTimer = null;
+    void (async () => {
+      if (!isBenableListUrl(location.href)) return;
+      const settings = await getSettings();
+      if (!settings.tools.benableBadge) return;
+      const flags = await getFlags();
+      if (flags?.disableAll || flags?.disabledTools.includes("benableBadge")) return;
+      guard("benable-badge-refresh", () => void initBenableBadges());
+    })();
+  }, 400);
+}
+
 // Amazon only loads the video widget's classified data once the widget is on
 // screen. Rather than make the user scroll to it, briefly bring it into view
 // (long enough to trip Amazon's lazy load and our network hook), then restore
@@ -918,6 +980,9 @@ function watchSpaNavigation(): void {
     capturedVideoUrls = [];
     renderedClassified = -1;
     renderedFingerprint = "";
+    // Drop the previous Benable list's recs so they cannot mis-join the next
+    // list's cards; the hook re-emits the new list's feed on its group fetch.
+    resetBenableFeed();
     removeHost();
     void runForPage();
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
 
 type EventItem = {
   id: string;
@@ -62,6 +62,50 @@ function formatWhen(startsAt: string, endsAt: string, tz: string): string {
     timeZone: tz,
   });
   return `${dateFmt.format(start)}, ${timeFmt.format(start)} to ${timeFmt.format(end)}`;
+}
+
+/**
+ * Turn plain-text URLs in an event description into clickable links, while
+ * leaving the surrounding text (and its whitespace) intact. Matches http(s)
+ * URLs and bare www. hosts; trailing punctuation is left outside the link.
+ */
+function linkify(text: string): ReactNode[] {
+  const urlRe = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = urlRe.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(<Fragment key={key++}>{text.slice(lastIndex, match.index)}</Fragment>);
+    }
+    let url = match[0];
+    // Keep trailing punctuation (e.g. a sentence-ending period) out of the link.
+    let trailing = "";
+    const trailMatch = url.match(/[.,;:!?)\]]+$/);
+    if (trailMatch) {
+      trailing = trailMatch[0];
+      url = url.slice(0, url.length - trailing.length);
+    }
+    const href = url.startsWith("http") ? url : `https://${url}`;
+    nodes.push(
+      <a
+        key={key++}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-[#c2410c] underline underline-offset-2 hover:text-[#9a3412]"
+      >
+        {url}
+      </a>,
+    );
+    if (trailing) nodes.push(<Fragment key={key++}>{trailing}</Fragment>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    nodes.push(<Fragment key={key++}>{text.slice(lastIndex)}</Fragment>);
+  }
+  return nodes;
 }
 
 export default function UpcomingEventsPage() {
@@ -173,7 +217,9 @@ export default function UpcomingEventsPage() {
                       {formatWhen(e.startsAt, e.endsAt, tz)}
                     </p>
                     {e.description ? (
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{e.description}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">
+                        {linkify(e.description)}
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex flex-none flex-col items-stretch gap-2 sm:w-44">

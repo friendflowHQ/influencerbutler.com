@@ -21,6 +21,8 @@
     "https://affiliate-program.amazon.ca/*",
     "https://affiliate-program.amazon.co.uk/*",
     "https://www.walmart.com/*",
+    "https://benable.com/*",
+    "https://www.benable.com/*",
     "https://www.influencerbutler.com/*",
     "https://links.influencerbutler.com/*",
     "https://licensing.influencerbutler.com/*"
@@ -258,7 +260,9 @@
         "https://www.walmart.com/shop/*",
         "https://www.walmart.com/seller/*",
         "https://www.walmart.com/brand/*",
-        "https://www.walmart.com/orders*"
+        "https://www.walmart.com/orders*",
+        "https://benable.com/*",
+        "https://www.benable.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
@@ -344,6 +348,12 @@
         "https://www.amazon.com.br/coupons*"
       ],
       "js": ["deals-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://benable.com/*", "https://www.benable.com/*"],
+      "js": ["benable-hook.js"],
       "run_at": "document_start",
       "world": "MAIN"
     },

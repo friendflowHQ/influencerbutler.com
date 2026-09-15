@@ -1182,6 +1182,7 @@ async function renderSettings(): Promise<void> {
     "campaignRadar",
     "earningsOverlay",
     "watchlist",
+    "benableBadge",
   ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);
     box.checked = settings.tools[tool];
