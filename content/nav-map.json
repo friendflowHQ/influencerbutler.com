@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-06T21:36:08.178Z",
-  "count": 102,
+  "generatedAt": "2026-09-15T15:09:53.905Z",
+  "count": 108,
   "entries": [
     {
       "section": "action-queue",
@@ -11,6 +11,16 @@
         "Action Queue"
       ],
       "description": "Tasks waiting on your decision: review and approve each one."
+    },
+    {
+      "section": "api-integrations",
+      "workspaceId": "api-integrations",
+      "label": "AI & Data Keys",
+      "path": "AI & Data Keys",
+      "crumbs": [
+        "AI & Data Keys"
+      ],
+      "description": "Your shared AI and data keys: OpenAI, Keepa, Fal.ai, and Ideogram."
     },
     {
       "section": "ai-assistant",
@@ -255,16 +265,6 @@
       "description": "Generate Amazon-platform video content from your product picks."
     },
     {
-      "section": "api-integrations",
-      "workspaceId": "api-integrations",
-      "label": "API Integrations",
-      "path": "API Integrations",
-      "crumbs": [
-        "API Integrations"
-      ],
-      "description": "Connect external services: OpenAI, GeniusLink, Levanta, Amazon Creators API, and more."
-    },
-    {
       "section": "benable-butler-dashboard",
       "workspaceId": "benable-butler-dashboard",
       "label": "Benable Butler",
@@ -273,6 +273,17 @@
         "Benable Butler"
       ],
       "description": "Expand to see Benable-related butlers."
+    },
+    {
+      "section": "benable-deals",
+      "workspaceId": "benable-deals",
+      "label": "Benable Deals",
+      "path": "Benable Butler › Benable Deals",
+      "crumbs": [
+        "Benable Butler",
+        "Benable Deals"
+      ],
+      "description": "Refresh a Benable list from a Deals Butler hub."
     },
     {
       "section": "benable-like-butler",
@@ -297,6 +308,17 @@
       "description": "Auto-comment on Benable posts from creators you follow."
     },
     {
+      "section": "benable-list-optimize",
+      "workspaceId": "benable-list-optimize",
+      "label": "List Optimize",
+      "path": "Benable Butler › List Optimize",
+      "crumbs": [
+        "Benable Butler",
+        "List Optimize"
+      ],
+      "description": "Audit a Benable list and get specific fixes to improve it."
+    },
+    {
       "section": "benable-butler",
       "workspaceId": "benable-butler",
       "label": "List Publishing",
@@ -306,6 +328,17 @@
         "List Publishing"
       ],
       "description": "Publish your product lists to Benable."
+    },
+    {
+      "section": "benable-published-products",
+      "workspaceId": "benable-published-products",
+      "label": "Published Products",
+      "path": "Benable Butler › Published Products",
+      "crumbs": [
+        "Benable Butler",
+        "Published Products"
+      ],
+      "description": "See every product you published, and the reason it was picked."
     },
     {
       "section": "collab",
@@ -702,6 +735,17 @@
       "description": "Send outreach through the Levanta brand network."
     },
     {
+      "section": "levanta-butler-settings",
+      "workspaceId": "levanta-butler-settings",
+      "label": "Settings",
+      "path": "Levanta Butler › Settings",
+      "crumbs": [
+        "Levanta Butler",
+        "Settings"
+      ],
+      "description": "Connect your Levanta account."
+    },
+    {
       "section": "link-butler-dashboard",
       "workspaceId": "link-butler-dashboard",
       "label": "Link Butler",
@@ -732,6 +776,17 @@
         "Relink Butler"
       ],
       "description": "Bulk-edit existing affiliate links across multiple platforms."
+    },
+    {
+      "section": "link-butler-settings",
+      "workspaceId": "link-butler-settings",
+      "label": "Settings",
+      "path": "Link Butler › Settings",
+      "crumbs": [
+        "Link Butler",
+        "Settings"
+      ],
+      "description": "Choose how your links are routed and monetized, and connect your link providers."
     },
     {
       "section": "messenger-butler-dashboard",
@@ -930,6 +985,17 @@
         "TikTok Butler"
       ],
       "description": "Expand to see all TikTok-related butlers."
+    },
+    {
+      "section": "tiktok-butler-settings",
+      "workspaceId": "tiktok-butler-settings",
+      "label": "Settings",
+      "path": "TikTok Butler › Settings",
+      "crumbs": [
+        "TikTok Butler",
+        "Settings"
+      ],
+      "description": "Connect your TikTok account and TikTok Shop."
     },
     {
       "section": "tiktok-comment-butler",
