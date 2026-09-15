@@ -22,6 +22,29 @@ function browserTz(): string {
   }
 }
 
+/** ISO string -> compact UTC stamp Google Calendar expects (YYYYMMDDTHHMMSSZ). */
+function toGCalStamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+/**
+ * Build a Google Calendar "add event" link that opens Calendar with the event
+ * prefilled. This is what most users expect from "Add to calendar", versus the
+ * .ics download (which is really for Apple Calendar / Outlook).
+ */
+function googleCalendarUrl(e: EventItem): string {
+  const dates = `${toGCalStamp(e.startsAt)}/${toGCalStamp(e.endsAt)}`;
+  const details = [e.description || "", e.joinUrl ? `Join: ${e.joinUrl}` : ""]
+    .filter(Boolean)
+    .join("\n\n");
+  const params = new URLSearchParams({ action: "TEMPLATE", text: e.title, dates });
+  if (details) params.set("details", details);
+  if (e.joinUrl) params.set("location", e.joinUrl);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 function formatWhen(startsAt: string, endsAt: string, tz: string): string {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
@@ -171,10 +194,18 @@ export default function UpcomingEventsPage() {
                           </span>
                         )}
                         <a
-                          href={`/api/events/ics?id=${encodeURIComponent(e.id)}`}
-                          className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-[#f97316] hover:text-[#f97316]"
+                          href={googleCalendarUrl(e)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-[#f97316] hover:text-[#c2410c]"
                         >
-                          Add to calendar
+                          Add to Google Calendar
+                        </a>
+                        <a
+                          href={`/api/events/ics?id=${encodeURIComponent(e.id)}`}
+                          className="text-center text-xs font-medium text-slate-400 hover:text-slate-600"
+                        >
+                          Apple or Outlook (.ics)
                         </a>
                         <button
                           type="button"
