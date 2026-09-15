@@ -87,8 +87,47 @@ export default function BookCallPage() {
     finally { setLoadingSlots(false); }
   }, []);
 
+  // Quiet refetch used when the tab regains focus: refreshes availability in
+  // place without clearing the current day pick or flashing the loading state.
+  // If the slot the customer had selected is no longer offered (e.g. the owner
+  // just added a manual block, or someone else took it), it's dropped so they
+  // can't submit a stale time, and we say why.
+  const refreshSlots = useCallback(async (type: "support" | "demo") => {
+    try {
+      const res = await fetch(`/api/booking/slots?type=${type}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const j = await res.json();
+      const nextDays: DaySlots[] = j.days ?? [];
+      setDays(nextDays);
+      setSelectedSlot((prev) => {
+        if (!prev) return prev;
+        const stillOffered = nextDays.some((d) => d.slots.some((s) => s.startMs === prev.startMs));
+        if (stillOffered) return prev;
+        setMsg("That time is no longer available (it was just taken or blocked). Please pick another.");
+        return null;
+      });
+    } catch { /* ignore: keep showing what we have */ }
+  }, []);
+
   useEffect(() => { loadSlots(callType); }, [callType, loadSlots]);
   useEffect(() => { loadMine(); }, [loadMine]);
+
+  // A booking page left open in a background tab keeps showing availability from
+  // when it loaded. Re-pull slots and my bookings whenever the tab regains
+  // focus, so a stale tab can't offer times the owner has since blocked.
+  useEffect(() => {
+    const onFocus = () => {
+      if (document.visibilityState !== "visible") return;
+      refreshSlots(callType);
+      loadMine();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [callType, refreshSlots, loadMine]);
 
   // Flatten all slots and regroup by the CUSTOMER's local day.
   const byDay = useMemo(() => {
