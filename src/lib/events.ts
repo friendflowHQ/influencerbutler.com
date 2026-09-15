@@ -39,6 +39,11 @@ export type EventRow = {
   aiNotes: AiNotes | null;
   recordedAt: string | null;
   highlightsEmailedAt: string | null;
+  youtubeStatus: string;
+  youtubeVideoId: string | null;
+  youtubeUrl: string | null;
+  youtubeError: string | null;
+  youtubeUploadedAt: string | null;
   imageUrl: string | null;
   createdAt: string;
   cancelledAt: string | null;
@@ -82,6 +87,7 @@ const EVENT_COLS =
   "id,title,description,starts_at,ends_at,timezone,status,join_url,meeting_provider,meeting_id," +
   "banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces," +
   "record_enabled,recall_bot_id,recording_status,recording_url,ai_notes,recorded_at,highlights_emailed_at," +
+  "youtube_status,youtube_video_id,youtube_url,youtube_error,youtube_uploaded_at," +
   "image_url,created_at,cancelled_at";
 
 function toEvent(r: Record<string, unknown>): EventRow {
@@ -114,6 +120,11 @@ function toEvent(r: Record<string, unknown>): EventRow {
     aiNotes: (r.ai_notes as AiNotes | null) ?? null,
     recordedAt: (r.recorded_at as string | null) ?? null,
     highlightsEmailedAt: (r.highlights_emailed_at as string | null) ?? null,
+    youtubeStatus: (r.youtube_status as string) ?? "none",
+    youtubeVideoId: (r.youtube_video_id as string | null) ?? null,
+    youtubeUrl: (r.youtube_url as string | null) ?? null,
+    youtubeError: (r.youtube_error as string | null) ?? null,
+    youtubeUploadedAt: (r.youtube_uploaded_at as string | null) ?? null,
     imageUrl: (r.image_url as string | null) ?? null,
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
     cancelledAt: (r.cancelled_at as string | null) ?? null,

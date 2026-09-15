@@ -13,11 +13,15 @@ import { randomUUID } from "crypto";
 
 // calendar.events: create the per-booking Meet event. calendar.freebusy: read
 // the owner's busy blocks so booked/personal time (pickup, deep-work) hides
-// slots. Widening this requires the owner to reconnect ("Connect Google
-// Calendar") so the new scope is granted; prompt:"consent" below forces it.
+// slots. youtube.upload: publish the finished event recording to the owner's
+// YouTube channel (src/lib/youtube.ts), which needs the YouTube Data API v3
+// enabled on the same Google Cloud project. Widening this requires the owner to
+// reconnect ("Connect Google Calendar") so the new scope is granted;
+// prompt:"consent" below forces it.
 const SCOPE = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.freebusy",
+  "https://www.googleapis.com/auth/youtube.upload",
 ].join(" ");
 
 export function isGoogleConfigured(): boolean {

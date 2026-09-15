@@ -59,6 +59,23 @@ export async function applyEventTranscriptResult(
   }
 
   await admin.from("events").update(update).eq("id", event.id);
+
+  // Queue the recording for YouTube upload. A dedicated cron
+  // (src/app/api/cron/youtube-uploads) does the heavy streaming upload, so the
+  // webhook/cron that finalizes here stays fast. Only flip 'none' -> 'pending'
+  // (guarded in the WHERE), so a re-run of finalize never re-queues a recording
+  // that already uploaded or failed. Skipped when there is no video to upload.
+  if (result.recordingUrl) {
+    try {
+      await admin
+        .from("events")
+        .update({ youtube_status: "pending" })
+        .eq("id", event.id)
+        .eq("youtube_status", "none");
+    } catch (e) {
+      console.error("[event-finalize] youtube queue", event.id, e);
+    }
+  }
 }
 
 async function emailRecapToRegistrants(

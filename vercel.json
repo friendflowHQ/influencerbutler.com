@@ -57,6 +57,10 @@
       "schedule": "15 * * * *"
     },
     {
+      "path": "/api/cron/youtube-uploads",
+      "schedule": "20 * * * *"
+    },
+    {
       "path": "/api/cron/event-reminders",
       "schedule": "0 * * * *"
     },

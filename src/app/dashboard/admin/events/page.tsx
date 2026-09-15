@@ -24,6 +24,9 @@ type AdminEvent = {
   bannerEndsAt: string | null;
   bannerSurfaces: BannerSurface[];
   imageUrl: string | null;
+  youtubeStatus: string;
+  youtubeUrl: string | null;
+  youtubeError: string | null;
   registrations: number;
 };
 
@@ -99,6 +102,7 @@ export default function AdminEventsPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
   const [rearmingId, setRearmingId] = useState<string | null>(null);
+  const [youtubingId, setYoutubingId] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     try {
@@ -212,6 +216,23 @@ export default function AdminEventsPage() {
       await refetch();
     } finally {
       setImagingId(null);
+    }
+  };
+
+  const queueYouTube = async (id: string) => {
+    setYoutubingId(id);
+    setMessage("Queuing YouTube upload...");
+    try {
+      const res = await fetch("/api/admin/events/youtube", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+      setMessage(res.ok ? data.message || "Queued for YouTube upload." : data.error || "Could not queue the upload.");
+      await refetch();
+    } finally {
+      setYoutubingId(null);
     }
   };
 
@@ -486,6 +507,27 @@ export default function AdminEventsPage() {
                       {e.joinUrl}
                     </a>
                   ) : null}
+                  {e.youtubeStatus && e.youtubeStatus !== "none" ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      YouTube: {e.youtubeStatus}
+                      {e.youtubeUrl ? (
+                        <>
+                          {" · "}
+                          <a
+                            href={e.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 underline"
+                          >
+                            watch
+                          </a>
+                        </>
+                      ) : null}
+                      {e.youtubeStatus === "failed" && e.youtubeError ? (
+                        <span className="text-rose-600"> · {e.youtubeError}</span>
+                      ) : null}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-none items-center gap-2">
                   <button
@@ -510,6 +552,22 @@ export default function AdminEventsPage() {
                   >
                     Edit
                   </button>
+                  {e.recordingStatus === "ready" || (e.youtubeStatus && e.youtubeStatus !== "none") ? (
+                    <button
+                      type="button"
+                      onClick={() => queueYouTube(e.id)}
+                      disabled={youtubingId === e.id || e.youtubeStatus === "uploading"}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-[#f97316] hover:text-[#c2410c] disabled:opacity-60"
+                    >
+                      {youtubingId === e.id
+                        ? "Queuing..."
+                        : e.youtubeStatus === "uploaded"
+                          ? "Re-upload to YouTube"
+                          : e.youtubeStatus === "failed"
+                            ? "Retry YouTube"
+                            : "Upload to YouTube"}
+                    </button>
+                  ) : null}
                   {e.status === "scheduled" && e.recordEnabled && e.recordingStatus === "failed" ? (
                     <button
                       type="button"
