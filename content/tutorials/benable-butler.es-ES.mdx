@@ -48,11 +48,18 @@ Publish abre una ventana de Chrome. En la primera ejecución, inicias sesión en
 - **Tamaño de colección**: Butler decide automáticamente el número de listas y elementos por lista según el nicho. Nichos estrechos consiguen 3-4 listas; nichos amplios consiguen más.
 - **Audiencia y Voz del creador**: dos campos opcionales arriba. Rellénalos ("madres con presupuesto", "cercana, divertida, práctica") y Butler escribe cada título, descripción y nota para esa audiencia con esa voz.
 
-## Cómo ganar la insignia Optimized de Benable
+## Qué hace que una lista triunfe (la guía de interacción)
 
-Benable solo da a una lista su **insignia Optimized**, y la visibilidad en el feed Discover que la acompaña, cuando la lista está bien formada: un título en primera persona pegadizo, una descripción que enganche, una nota útil en cada elemento y **al menos 15 elementos** (18 a 25 es el punto ideal). Benable Butler ahora construye con ese estándar automáticamente.
+Estudiamos 6.226 listas reales de Benable para saber qué impulsa de verdad la interacción, y Benable Butler ahora construye cada lista según esos hallazgos automáticamente. Puedes ver las mismas reglas cuando quieras en la tarjeta **Guía de listas ganadoras** en la parte superior del panel:
 
-- **Mínimo de 15 elementos**: Butler apunta a 18-25 elementos por lista. Si una lista vuelve corta, Butler añade más productos para completarla. Si aun así no llega a 15, Butler **retiene esa lista** en lugar de publicar una que nunca podría ganar la insignia. El resumen de la ejecución muestra qué listas se retuvieron y por qué. Puedes cambiar el mínimo o desactivar la regla en **Ajustes avanzados**.
+- **De 16 a 30 elementos** es el punto ideal. Menos de 12 es la mayor caída en la interacción, y no hace falta rellenar más allá de 30.
+- **Los títulos cortos ganan**: de 3 a 6 palabras, sin número inicial, sin dos puntos, un emoji como máximo. La calidez en primera persona va en la descripción, no en el título.
+- **Una descripción cálida en primera persona** que diga para quién es la lista, dé un motivo rápido para confiar en tu elección y adelante qué incluye.
+- **Una imagen de portada o un emoji** en cada lista, y una cuenta de Benable **verificada** cuando puedas, ambas aumentan la interacción.
+
+Benable también da a una lista bien formada su **insignia Optimized** y la visibilidad en el feed Discover que la acompaña. Butler construye para las dos cosas a la vez.
+
+- **Suelo de elementos**: Butler apunta al punto ideal de 16 a 30. Si una lista vuelve corta, Butler añade más productos para completarla. Si aun así no llega al mínimo, Butler **retiene esa lista** en lugar de publicar una que nunca podría posicionarse. El resumen de la ejecución muestra qué listas se retuvieron y por qué. Puedes cambiar el mínimo o desactivar la regla en **Ajustes avanzados**.
 - **Mezcla de tiendas**: Amazon sigue siendo la base de cada lista, pero puedes dejar que Butler añada algunos elementos valiosos que no sean de Amazon donde encajen de verdad. Activa las fuentes que quieras en **Ajustes avanzados**: **tus propios enlaces** (pega tu tienda de Etsy, tu web o tu app, uno por línea), **Walmart** (cuando tu cuenta de Walmart esté configurada), **apps de la App Store** y **Target**. Butler mantiene la mezcla ligera y solo añade un elemento no-Amazon donde corresponde.
 
 ## Dónde van los datos
@@ -64,7 +71,7 @@ Las colecciones generadas se registran por ejecución en la caché preseed (JSON
 - **"Falta la clave de OpenAI"**: configúrala en API Integrations.
 - **"Se requiere iniciar sesión en Benable"** durante Publish - primera configuración o sesión caducada. Inicia sesión vía la ventana de Chrome abierta, pulsa Reanudar.
 - **La colección publicada tiene menos elementos que la vista previa**: Benable rechaza ASIN no disponibles en el marketplace elegido. El log de publicación muestra cuáles se omitieron.
-- **Una lista de la vista previa no se publicó**: si una lista no pudo llegar al mínimo de 15 elementos, Butler la retiene para no publicar una lista que no puede ganar la insignia Optimized. El resumen de la ejecución muestra qué se retuvo y su número de elementos. Amplía el nicho, o baja el mínimo en Ajustes avanzados, para publicarla de todos modos.
+- **Una lista de la vista previa no se publicó**: si una lista no pudo llegar al mínimo de elementos, Butler la retiene para no publicar una lista que no puede posicionarse. El resumen de la ejecución muestra qué se retuvo y su número de elementos. Amplía el nicho, o baja el mínimo en Ajustes avanzados, para publicarla de todos modos.
 - **Nicho demasiado estrecho**: si Dry run devuelve <5 ASIN candidatos, tu nicho es demasiado ajustado. Amplía un escalón.
 
 ## Relacionado
