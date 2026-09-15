@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealFromAmazonUrl, extractDeals, extractShortLinks } from "./extract";
+import { dealFromAmazonUrl, extractDeals, extractShortLinks, matchAmazonProductUrl } from "./extract";
 import { findingKey } from "../../transport/types";
 import type { DealFinding } from "../../transport/types";
 
@@ -146,6 +146,25 @@ describe("dealFromAmazonUrl", () => {
     const url = "https://www.amazon.com/dp/B0016HF5GK";
     expect(dealFromAmazonUrl(url, "https://x.shop/")?.asin).toBe("B0016HF5GK");
     expect(dealFromAmazonUrl(url, "https://x.shop/")?.asin).toBe("B0016HF5GK");
+  });
+});
+
+describe("matchAmazonProductUrl", () => {
+  it("returns asin + marketplace for an absolute product link", () => {
+    expect(matchAmazonProductUrl("https://www.amazon.com/dp/B0AAAAAAAA?th=1&psc=1")).toEqual({
+      asin: "B0AAAAAAAA",
+      marketplace: "amazon.com",
+    });
+  });
+
+  it("returns null for a non-product URL", () => {
+    expect(matchAmazonProductUrl("https://www.amazon.com/errors/404")).toBeNull();
+  });
+
+  it("is stateful-regex safe across repeated calls (per-anchor scan on a page)", () => {
+    const url = "https://www.amazon.com/dp/B0AAAAAAAA";
+    expect(matchAmazonProductUrl(url)).toEqual({ asin: "B0AAAAAAAA", marketplace: "amazon.com" });
+    expect(matchAmazonProductUrl(url)).toEqual({ asin: "B0AAAAAAAA", marketplace: "amazon.com" });
   });
 });
 

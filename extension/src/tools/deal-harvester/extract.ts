@@ -176,19 +176,27 @@ export function extractShortLinks(html: string): string[] {
 }
 
 /**
+ * Match a single absolute Amazon product URL and return its ASIN + marketplace,
+ * or null when the URL is not an ASIN-bearing Amazon URL. Shared by
+ * dealFromAmazonUrl (a resolved short link) and the on-page per-deal button
+ * (deal-badge/), which matches individual `<a>` elements on the live page
+ * rather than sweeping a whole HTML string.
+ */
+export function matchAmazonProductUrl(url: string): { asin: string; marketplace: string } | null {
+  ABSOLUTE_ASIN_RE.lastIndex = 0;
+  const m = ABSOLUTE_ASIN_RE.exec(url);
+  if (!m) return null;
+  return { asin: m[2] as string, marketplace: marketplaceFromHost(m[1] ?? DEFAULT_MARKETPLACE) };
+}
+
+/**
  * Turn a fully-resolved Amazon product URL (where a short link landed) into a
  * HarvestedDeal attributed to the aggregator page it came from. Returns null
  * when the URL is not an ASIN-bearing Amazon URL (expired link, bot wall
  * bounce, non-product landing page).
  */
 export function dealFromAmazonUrl(finalUrl: string, sourceUrl: string): HarvestedDeal | null {
-  ABSOLUTE_ASIN_RE.lastIndex = 0;
-  const m = ABSOLUTE_ASIN_RE.exec(finalUrl);
-  if (!m) return null;
-  return {
-    asin: m[2] as string,
-    marketplace: marketplaceFromHost(m[1] ?? DEFAULT_MARKETPLACE),
-    sourceUrl,
-    promoCode: null,
-  };
+  const match = matchAmazonProductUrl(finalUrl);
+  if (!match) return null;
+  return { asin: match.asin, marketplace: match.marketplace, sourceUrl, promoCode: null };
 }

@@ -1,4 +1,4 @@
-import { extractDeals } from "../tools/deal-harvester/extract";
+import { extractDeals, matchAmazonProductUrl } from "../tools/deal-harvester/extract";
 import { getSettings } from "../storage/store";
 import { resolveLocale } from "../i18n";
 import { DEALS_CATALOG, type DealsDict } from "../deals/strings";
@@ -29,6 +29,50 @@ async function init(): Promise<void> {
   const settings = await getSettings();
   const D = DEALS_CATALOG[resolveLocale(settings.locale)];
   showBadge(deals.length, D);
+  injectPerDealButtons(D);
+}
+
+// A small inline button next to EACH Amazon link on the page, so a creator can
+// open the review page pre-filled and pre-selected for just that one deal
+// instead of the whole page. Scans real <a> elements (not the html-string
+// regex sweep extractDeals uses) so each button can be tied to the exact
+// link the creator clicked next to; matchAmazonProductUrl is the same
+// per-URL match dealFromAmazonUrl uses for a resolved short link.
+function injectPerDealButtons(D: DealsDict): void {
+  const anchors = document.querySelectorAll<HTMLAnchorElement>("a[href]");
+  for (const anchor of anchors) {
+    if (anchor.dataset.ibDealBtn) continue;
+    const match = matchAmazonProductUrl(anchor.href);
+    if (!match) continue;
+    anchor.dataset.ibDealBtn = "1";
+    anchor.insertAdjacentElement("afterend", buildSendButton(match, D));
+  }
+}
+
+function buildSendButton(match: { asin: string; marketplace: string }, D: DealsDict): HTMLElement {
+  const host = document.createElement("span");
+  host.className = `${UI_PREFIX}-deal-send-host`;
+  const root = host.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  style.textContent = SEND_BUTTON_CSS;
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "send";
+  btn.textContent = D.badgeAction;
+  btn.onclick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const params = new URLSearchParams({
+      add: location.href,
+      asin: match.asin,
+      marketplace: match.marketplace,
+    });
+    window.open(chrome.runtime.getURL(`deals.html?${params.toString()}`), "_blank", "noopener");
+  };
+
+  root.append(style, btn);
+  return host;
 }
 
 function showBadge(count: number, D: DealsDict): void {
@@ -117,4 +161,20 @@ const CSS = `
   .wrap { color: #f3f4f6; background: #1f2937; border-color: #374151; }
   .close { color: #9ca3af; }
 }
+`;
+
+const SEND_BUTTON_CSS = `
+:host { all: initial; display: inline-block; vertical-align: middle; margin-left: 6px; }
+.send {
+  font: 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+  color: #fff;
+  background: #c2410c;
+  border: none;
+  border-radius: 999px;
+  padding: 4px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.send:hover { background: #9a3412; }
 `;

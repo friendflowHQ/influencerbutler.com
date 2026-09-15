@@ -40,6 +40,11 @@ type Row = {
 let rows: Row[] = [];
 let curatedSources: DealSource[] = [];
 let autoHarvest = false;
+// Set when arriving from a per-deal "Review" button (deal-badge/index.ts,
+// clicked next to one specific link on the page rather than the page-level
+// badge): after the harvest, the results narrow to just this one deal instead
+// of showing everything the page yielded.
+let focusDeal: { asin: string; marketplace: string } | null = null;
 
 const root = () => document.getElementById("root") as HTMLElement;
 
@@ -53,18 +58,22 @@ async function init(): Promise<void> {
   curatedSources = await sendToBackground<DealSource[]>({ kind: "GET_DEAL_SOURCES" });
   autoHarvest = await sendToBackground<boolean>({ kind: "GET_DEAL_AUTO_HARVEST" });
 
-  // Arrived from the on-page "N deals found" badge's Review button
-  // (deal-badge/index.ts opens deals.html?add=<url>): save that site and jump
-  // straight into a harvest of it, deep scan on since the badge only ever
-  // fires on a page whose OWN script-rendered DOM already had deals (a plain
-  // fetch would very likely find nothing there).
-  const addUrl = new URL(location.href).searchParams.get("add");
+  // Arrived from the on-page badge (deal-badge/index.ts opens
+  // deals.html?add=<url>, plus asin/marketplace when it was the per-deal
+  // button rather than the page-level one): save that site and jump straight
+  // into a harvest of it, deep scan on since the badge only ever fires on a
+  // page whose OWN script-rendered DOM already had deals (a plain fetch would
+  // very likely find nothing there).
+  const params = new URL(location.href).searchParams;
+  const addUrl = params.get("add");
+  const asin = params.get("asin");
   if (addUrl && /^https?:\/\//i.test(addUrl)) {
     const current = settings.dealSources;
     if (!current.includes(addUrl)) {
       await patchSettings({ dealSources: [...current, addUrl] });
     }
     deepScan = true;
+    if (asin) focusDeal = { asin, marketplace: params.get("marketplace") || "amazon.com" };
     history.replaceState(null, "", location.pathname);
   }
 
@@ -74,8 +83,26 @@ async function init(): Promise<void> {
     const btn = document.getElementById("harvest-btn") as HTMLButtonElement | null;
     const status = document.getElementById("harvest-status") as HTMLElement | null;
     const paste = document.getElementById("paste") as HTMLTextAreaElement | null;
-    if (btn && status && paste) void runHarvest(btn, status, paste);
+    if (btn && status && paste) {
+      await runHarvest(btn, status, paste);
+      narrowToFocusDeal();
+    }
   }
+}
+
+// After a per-deal-triggered harvest, keep only the row the creator actually
+// clicked next to (if the site's asin/marketplace pair made it into the
+// results) so the review page isn't a wall of everything else on the page.
+// Falls back to showing every found deal if that exact row is not among them
+// (a promo code paired to a different link, a dedup edge case) rather than
+// silently showing nothing.
+function narrowToFocusDeal(): void {
+  if (!focusDeal) return;
+  const match = rows.find(
+    (r) => r.deal.asin === focusDeal?.asin && r.deal.marketplace === focusDeal?.marketplace,
+  );
+  if (match) rows = [match];
+  renderResultsInto();
 }
 
 async function render(): Promise<void> {
@@ -507,6 +534,14 @@ function renderSend(): HTMLElement {
       opt.value = w.key;
       opt.textContent = w.label;
       picker.append(opt);
+    }
+    // Arrived from a per-deal button (deal-badge/): best-effort default the
+    // picker to the "Deals Hub" workspace instead of leaving it on whichever
+    // workspace happens to come first. Only a convenience - the picker stays
+    // visible and editable, so a wrong guess costs a click, never a misroute.
+    if (focusDeal) {
+      const preferred = workspaces.find((w) => /deals\s*hub/i.test(w.label));
+      if (preferred) picker.value = preferred.key;
     }
     if (!hud.connected) status.textContent = D.appNotConnected;
   });
