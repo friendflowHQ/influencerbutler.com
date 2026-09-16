@@ -11,6 +11,8 @@
  * nothing qualifies (the caller then files nothing). No em dashes in output.
  */
 
+import { condenseTranscript } from "@/lib/transcript-condense";
+
 export type CallTicketItem = {
   type: "bug" | "feature";
   title: string;
@@ -73,7 +75,12 @@ export async function extractSupportItems(
 ): Promise<CallTicketItem[]> {
   const provider = resolveProvider();
   if (!provider) { console.warn("[call-tickets] no GROQ_API_KEY / OPENAI_API_KEY configured"); return []; }
-  const text = (transcript || "").slice(0, MAX_TRANSCRIPT_CHARS).trim();
+  // Strip banter/filler before slicing so we spend tokens only on real content.
+  const condensed = condenseTranscript(transcript || "");
+  if (condensed.removedLines > 0) {
+    console.log(`[call-tickets] condensed ${condensed.originalChars}->${condensed.keptChars} chars (${condensed.removedLines} banter lines removed)`);
+  }
+  const text = condensed.text.slice(0, MAX_TRANSCRIPT_CHARS).trim();
   if (!text) return [];
 
   const userPrompt =

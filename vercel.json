@@ -89,6 +89,10 @@
       "schedule": "0 14,17,20,23,2 * * *"
     },
     {
+      "path": "/api/cron/engineering-queue",
+      "schedule": "0 13,21 * * *"
+    },
+    {
       "path": "/api/cron/email-marketing",
       "schedule": "*/5 * * * *"
     },

@@ -8,6 +8,8 @@
  * or the call fails; the caller stores the raw transcript regardless.
  */
 
+import { condenseTranscript } from "@/lib/transcript-condense";
+
 export type AiNotes = {
   summary: string;
   keyTopics: string[];
@@ -63,7 +65,8 @@ export async function summarizeTranscript(
 ): Promise<AiNotes | null> {
   const provider = resolveProvider();
   if (!provider) { console.warn("[ai-notes] no GROQ_API_KEY / OPENAI_API_KEY configured"); return null; }
-  const text = (transcript || "").slice(0, MAX_TRANSCRIPT_CHARS).trim();
+  // Strip banter/filler before slicing so we spend tokens only on real content.
+  const text = condenseTranscript(transcript || "").text.slice(0, MAX_TRANSCRIPT_CHARS).trim();
   if (!text) return null;
 
   const userPrompt =

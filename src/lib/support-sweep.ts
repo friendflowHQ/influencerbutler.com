@@ -147,11 +147,11 @@ export type DraftResult = {
   grounded: boolean;
 };
 
-function deepLink(id: string): string {
+export function deepLink(id: string): string {
   return `${SITE}/dashboard/admin/support?ticket=${encodeURIComponent(id)}`;
 }
 
-function ageHrs(submittedAt: number | null | undefined): number | null {
+export function ageHrs(submittedAt: number | null | undefined): number | null {
   if (!submittedAt) return null;
   const hrs = (Date.now() - submittedAt) / 3_600_000;
   return hrs >= 0 ? Math.round(hrs * 10) / 10 : null;
@@ -300,7 +300,7 @@ async function sendAutoReply(t: WorkerTicket, draft: DraftResult): Promise<boole
 }
 
 /** Best-effort: add a tag to a ticket without disturbing existing tags. */
-async function tagTicket(t: WorkerTicket, tag: string): Promise<void> {
+export async function tagTicket(t: WorkerTicket, tag: string): Promise<void> {
   const existing = (t.tags || "")
     .split(",")
     .map((s) => s.trim())
