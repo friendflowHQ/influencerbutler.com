@@ -16,6 +16,7 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
+import type { RelayClaimResult } from "./relay";
 import type { RelayStateView } from "../shared/messages";
 import {
   sendFeedback,
@@ -408,7 +409,21 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void applySync(message.direction).then(sendResponse);
       return true;
     case "RELAY_CLAIM_LINK":
-      void relayClaimLink(message.code, message.label).then(sendResponse);
+      void (async (): Promise<RelayClaimResult> => {
+        const r = await relayClaimLink(message.code, message.label);
+        // Make the first device the creator links the default relay target, so
+        // both deal fallback AND cross-device findings sync have a target with no
+        // extra "Make default" click. Never override a default already chosen.
+        if (r.ok && r.receiverInstanceId) {
+          const settings = await getSettings();
+          if (!settings.relayDefaultTarget) {
+            await patchSettings({
+              relayDefaultTarget: { instanceId: r.receiverInstanceId, label: r.receiverLabel ?? null },
+            });
+          }
+        }
+        return r;
+      })().then(sendResponse);
       return true;
     case "RELAY_LIST_TARGETS":
       void relayListTargets().then(sendResponse);

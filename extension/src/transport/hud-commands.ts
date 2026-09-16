@@ -5,6 +5,7 @@
 // extension serialize the same thing.
 
 import type { CreatorMode } from "../shared/creator-mode";
+import type { Finding } from "./types";
 
 export type ProductRef = {
   asin: string;
@@ -130,7 +131,14 @@ export type HudCommand =
   // extension sends "amazonbutler", the Amazon Creator Connections outreach
   // templates, since that is where the composer lives). The desktop upserts by
   // label and returns command.result { ok }. Idempotent per (workspace, label).
-  | { type: "template.save"; workspace: string; template: { label: string; body: string } };
+  | { type: "template.save"; workspace: string; template: { label: string; body: string } }
+  // Cross-device findings sync: the extension's passive findings stream (product
+  // scans, content gaps, storefront issues) delivered as a command so it can ride
+  // the relay to the desktop app on another computer or a phone, where it is
+  // ingested exactly like the local bridge's `findings` frame. Sent only when no
+  // local app is present here (see transport/relay-transport.ts), so a same-machine
+  // app is never double-fed.
+  | { type: "findings.push.batch"; findings: Finding[] };
 
 export type HudCommandResult = {
   ok: boolean;

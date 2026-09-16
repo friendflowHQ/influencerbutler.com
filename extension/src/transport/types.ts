@@ -151,7 +151,7 @@ export type Finding =
   | CampaignAcceptFinding;
 
 export interface FindingTransport {
-  id: "api" | "local";
+  id: "api" | "local" | "relay";
   isAvailable(): Promise<boolean>;
   send(batch: Finding[]): Promise<{ ok: boolean; retry: boolean }>;
 }
