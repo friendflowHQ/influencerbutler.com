@@ -26,6 +26,16 @@ The runner opens a Chrome window, logs in (if needed), and walks the orders page
 
 After the first catch-up, leave the scope on **Only new since last run** (the default). Orders Butler walks newest-first and stops as soon as it reaches orders you already have, so a routine sync finishes in seconds instead of re-walking your whole history. Set it to **run daily** in the Schedule card and it adds new orders incrementally. Reach for **All years (full catch-up)** only when you want a full reconciliation.
 
+## Use a different Amazon account for purchases
+
+If you buy the products you review on a different Amazon account than your storefront account, you can keep the two separate. Orders Butler then signs into your buying account in its own browser window, so your storefront login and your purchase login never overwrite each other.
+
+1. Open **Settings > Amazon Storefront & Rate Card**.
+2. Under **Purchase account**, turn on **Use a separate Amazon account for purchases**.
+3. Click **Sign in to purchase account** and sign in with the account you buy on. You only do this once.
+
+From then on, Orders Butler harvests your order history from that account instead of your storefront account. Leave this off if you buy and sell on the same account (most people do).
+
 ## Print a checklist PDF
 
 Click **Print checklist (PDF)** in the results toolbar to turn the table into a printable, ADHD-friendly filming checklist with Influencer Butler branding: big checkboxes, one clear action per product (take a photo, film a vertical video, film a horizontal video), commission info, and a "top 3 by payoff" callout so you know what to film first.
