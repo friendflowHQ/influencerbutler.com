@@ -1,10 +1,14 @@
 # Influencer Butler
 
-> Influencer Butler is an all-in-one desktop application for Amazon creators and
-> influencers, published by The Social Media Posse LLC. It bundles 40+ tools
+> Influencer Butler is an all-in-one toolkit for Amazon creators and
+> influencers, published by The Social Media Posse LLC. It pairs a desktop app
+> with a free companion Chrome extension and bundles 40+ tools
 > ("butlers") to automate Amazon Creator Connections auto-accept, brand outreach,
 > commission harvesting, deal posting, and storefront and content management.
-> It runs on Windows and macOS and ships with a free companion Chrome extension.
+> The desktop app runs on Windows and macOS. The free Chrome extension adds
+> product research and Creator Connections intel to the Amazon pages you browse,
+> and pairs with the desktop app on the same computer (a 6-digit code) so a
+> product you spot in the browser becomes a one-tap action in the app.
 
 ## What it does
 
@@ -12,7 +16,7 @@
 - Brand outreach: sends personalized pitches at scale with per-day rate caps and human-like pacing.
 - Commission harvesting: collects and totals affiliate commissions and highlights best-earning products.
 - Deals and content: posts deals, refreshes storefront links, and manages content.
-- 40+ tools in one desktop app, instead of stitching together single-purpose browser extensions.
+- 40+ tools across one desktop app and a free Chrome extension, instead of stitching together single-purpose point tools.
 
 ## Pricing
 

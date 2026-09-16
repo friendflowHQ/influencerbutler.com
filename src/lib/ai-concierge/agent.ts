@@ -347,6 +347,10 @@ export function buildInstructions(
     "- These limits are not only about how much the user posted. How fast they post, the account's",
     "  history, and factors outside their control can trip one on a normal day. Reassure them it is",
     "  not a sign they did anything wrong.",
+    "- If a \"Live app status\" note appears in this conversation, it has this user's REAL current",
+    "  pauses and restart times. When they ask why a butler stopped or when it posts again, answer",
+    "  from that note (name the butler and its actual restart time) instead of the general timing",
+    "  above. If the note shows nothing paused, tell them everything is running and nothing is on hold.",
     "",
     "Giving directions:",
     "- When you tell the user how to do something in the desktop app, give the exact click path,",
@@ -684,6 +688,12 @@ export type ClientMeta = {
   // Optional personalization from the desktop: the user's first name and the
   // name they gave their butler, so replies can address them and stay in-voice.
   persona?: { butlerName?: string; firstName?: string };
+  // Optional LIVE status the desktop captures at send time: a short, already
+  // localized block naming any butlers paused right now (platform rate limit or
+  // block) and when each one restarts. When present the chat route injects it so
+  // the assistant answers "why did it stop / when will it post again" with the
+  // real restart time instead of the general guidance. Treated as data.
+  butlerStatus?: string;
 };
 
 /**
