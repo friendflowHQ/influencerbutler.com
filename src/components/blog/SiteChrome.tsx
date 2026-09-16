@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
+import SiteSearch from "@/components/SiteSearch";
 
 /**
  * Header and footer for the /blog pages. These mirror the markup and styling of
@@ -64,6 +65,12 @@ export function SiteHeader() {
           ))}
         </ul>
 
+        {/* The link row is tight, so search is a magnifier that expands into a
+            field on click rather than a permanent inline box. */}
+        <div className="ml-3 hidden lg:block">
+          <SiteSearch variant="header" />
+        </div>
+
         <a
           href="/go/trial?src=blog-nav"
           className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-500 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 lg:inline-flex"
@@ -87,6 +94,9 @@ export function SiteHeader() {
       {open ? (
         <div className="border-t border-slate-200 bg-white lg:hidden">
           <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
+            <li className="mb-2">
+              <SiteSearch variant="inline" onNavigate={() => setOpen(false)} />
+            </li>
             {NAV_LINKS.map((item) => (
               <li key={item.href}>
                 <Link

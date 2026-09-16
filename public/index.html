@@ -197,6 +197,15 @@
                 <span class="logo-text">Influencer Butler</span>
             </a>
             <ul class="nav-menu" id="nav-menu">
+                <li class="nav-menu-search">
+                    <div class="ib-search">
+                        <div class="ib-search-field">
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.75"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                            <input type="search" class="ib-search-input" placeholder="Search the site..." aria-label="Search the site" autocomplete="off">
+                        </div>
+                        <div class="ib-search-panel" role="listbox" hidden></div>
+                    </div>
+                </li>
                 <li><a href="#features" class="nav-link">Features</a></li>
                 <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
                 <li><a href="#pricing" class="nav-link">Pricing</a></li>
@@ -209,6 +218,18 @@
                 <li><a href="/tools" class="nav-link">Free Tools</a></li>
                 <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
             </ul>
+            <div class="nav-search-wrap">
+                <button type="button" class="nav-search-toggle" id="nav-search-toggle" aria-label="Search the site" aria-expanded="false">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.75"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                </button>
+                <div class="ib-search nav-search" id="nav-search">
+                    <div class="ib-search-field">
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.75"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                        <input type="search" class="ib-search-input" placeholder="Search the site..." aria-label="Search the site" autocomplete="off">
+                    </div>
+                    <div class="ib-search-panel" role="listbox" hidden></div>
+                </div>
+            </div>
             <a href="/go/download?src=home-nav" class="btn btn-primary nav-cta">Start Free</a>
             <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
                 <span></span><span></span><span></span>
@@ -231,6 +252,161 @@
 
             authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
             authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <script>
+        // Site search: wire every .ib-search widget (the desktop header box and
+        // the one inside the collapsed mobile menu) to /api/search, the same
+        // endpoint the React marketing pages use. Debounced, keyboard-navigable,
+        // and it falls back to the /search results page for "see all" and for
+        // Enter with nothing highlighted. Results are built with textContent, so
+        // nothing from the API is interpreted as HTML.
+        (function () {
+            var TYPE_LABEL = { feature: 'Feature', page: 'Page', help: 'Help', blog: 'Blog' };
+
+            function setup(root) {
+                var input = root.querySelector('.ib-search-input');
+                var panel = root.querySelector('.ib-search-panel');
+                if (!input || !panel) return;
+
+                var results = [];
+                var active = -1;
+                var timer = null;
+                var controller = null;
+
+                function close() { panel.hidden = true; }
+                function open() { if (panel.children.length) panel.hidden = false; }
+
+                function goToPage() {
+                    var q = input.value.trim();
+                    if (q) window.location.href = '/search?q=' + encodeURIComponent(q);
+                }
+
+                function setActive(i) {
+                    active = i;
+                    var items = panel.querySelectorAll('.ib-search-item');
+                    for (var k = 0; k < items.length; k++) {
+                        items[k].classList.toggle('active', k === i);
+                    }
+                }
+
+                function render() {
+                    panel.textContent = '';
+                    if (!results.length) {
+                        var empty = document.createElement('div');
+                        empty.className = 'ib-search-empty';
+                        empty.textContent = 'No results. Press Enter to search the full site.';
+                        panel.appendChild(empty);
+                        open();
+                        return;
+                    }
+                    results.forEach(function (r) {
+                        var a = document.createElement('a');
+                        a.className = 'ib-search-item';
+                        a.href = r.url;
+
+                        var type = document.createElement('span');
+                        type.className = 'ib-search-type';
+                        type.textContent = TYPE_LABEL[r.type] || 'Page';
+                        a.appendChild(type);
+
+                        var text = document.createElement('span');
+                        text.className = 'ib-search-text';
+                        var title = document.createElement('span');
+                        title.className = 'ib-search-title';
+                        title.textContent = r.title || '';
+                        text.appendChild(title);
+                        if (r.summary) {
+                            var sum = document.createElement('span');
+                            sum.className = 'ib-search-sum';
+                            sum.textContent = r.summary;
+                            text.appendChild(sum);
+                        }
+                        a.appendChild(text);
+                        panel.appendChild(a);
+                    });
+
+                    var all = document.createElement('a');
+                    all.className = 'ib-search-all';
+                    all.href = '/search?q=' + encodeURIComponent(input.value.trim());
+                    all.textContent = 'See all results for “' + input.value.trim() + '”';
+                    panel.appendChild(all);
+
+                    active = -1;
+                    open();
+                }
+
+                function fetchResults() {
+                    var q = input.value.trim();
+                    if (q.length < 2) { results = []; close(); return; }
+                    if (controller) controller.abort();
+                    controller = new AbortController();
+                    fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=8', { signal: controller.signal })
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            results = (data && Array.isArray(data.results)) ? data.results : [];
+                            render();
+                        })
+                        .catch(function () { /* ignore aborts/failures */ });
+                }
+
+                input.addEventListener('input', function () {
+                    if (timer) clearTimeout(timer);
+                    timer = setTimeout(fetchResults, 150);
+                });
+                input.addEventListener('focus', function () { if (results.length) open(); });
+
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (results.length) { open(); setActive((active + 1) % results.length); }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (results.length) { open(); setActive(active <= 0 ? results.length - 1 : active - 1); }
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (!panel.hidden && active >= 0 && results[active]) window.location.href = results[active].url;
+                        else goToPage();
+                    } else if (e.key === 'Escape') {
+                        close();
+                    }
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!root.contains(e.target)) close();
+                });
+            }
+
+            document.querySelectorAll('.ib-search').forEach(setup);
+
+            // Desktop magnifier: expand/collapse the search popover on click and
+            // focus the field when it opens. Outside clicks close it.
+            var toggle = document.getElementById('nav-search-toggle');
+            var popover = document.getElementById('nav-search');
+            if (toggle && popover) {
+                var input = popover.querySelector('.ib-search-input');
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var willOpen = !popover.classList.contains('open');
+                    popover.classList.toggle('open', willOpen);
+                    toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                    if (willOpen && input) input.focus();
+                });
+                document.addEventListener('click', function (e) {
+                    if (!popover.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) {
+                        popover.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                popover.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') {
+                        popover.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                        toggle.focus();
+                    }
+                });
+            }
         })();
     </script>
 
