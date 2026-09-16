@@ -8,7 +8,7 @@ category: Other
 
 Influencer Butler fait tourner beaucoup de butlers à la fois. Parfois, vous voulez tous les arrêter vite, ou décider en un seul endroit si leurs fenêtres de navigateur s'affichent à l'écran. La fine barre juste sous l'en-tête, en haut de la fenêtre, vous donne deux contrôles qui atteignent chaque butler d'un coup, sans fouiller chaque espace de travail.
 
-Elle a deux parties : un bouton **Tout mettre en pause** et un interrupteur **Voir l'exécution (tout)**.
+Elle a trois parties : un bouton **Tout mettre en pause**, un interrupteur **Voir l'exécution (tout)** et un indicateur **Ce qui est en cours** qui montre quels butlers travaillent et quelles fenêtres de navigateur sont ouvertes.
 
 ## Tout mettre en pause d'un coup
 
@@ -31,10 +31,32 @@ Chaque butler a son propre interrupteur "Voir l'exécution" qui décide si vous 
 
 Le basculer met à jour l'interrupteur de chaque butler aussitôt. Cela s'applique à la prochaine exécution de chaque butler. Un butler déjà au milieu d'une exécution conserve sa fenêtre actuelle jusqu'à sa prochaine exécution, car une fenêtre de navigateur ne peut pas passer d'affichée à masquée une fois ouverte.
 
+## Voir ce qui est en cours et quel butler utilise chaque navigateur
+
+À côté de **Tout mettre en pause** se trouve un petit indicateur qui vous montre d'un coup d'œil si l'application est occupée. Il affiche **Rien en cours** quand tous les butlers sont à l'arrêt, ou un nombre comme **2 en cours** quand des butlers travaillent. Il affiche aussi **Navigateurs ouverts** avec le nombre de fenêtres de navigateur ouvertes.
+
+Cliquez sur l'indicateur pour ouvrir le panneau **Ce qui est en cours**. Il contient deux listes :
+
+- **Butlers** : chaque butler qui travaille en ce moment, ce qu'il fait (par exemple chercher des offres ou publier), depuis quelle heure, et s'il utilise un navigateur **Visible** ou **Masqué**. Cliquez sur un butler pour l'ouvrir directement.
+- **Fenêtres du navigateur** : chaque navigateur ouvert, avec **Utilisé par**, qui indique quels butlers l'utilisent en ce moment, et **Ouvert par**, qui indique quel butler l'a ouvert. C'est le moyen le plus rapide de savoir quel butler a ouvert une fenêtre.
+
+## Points d'activité dans la barre latérale
+
+Un point orange clignote à côté d'un butler dans la barre latérale pendant qu'il travaille. Cela inclut Amazon Deals, Walmart Deals et tous les Deals Butlers clonés pendant qu'ils publient ou cherchent des offres. Si un groupe de la barre latérale est replié, le groupe affiche un point quand quelque chose à l'intérieur est en cours, pour ne jamais manquer une activité cachée dans un menu fermé. Sur l'élément de menu sélectionné, le point devient blanc pour rester bien visible.
+
+## Quel butler utilise une fenêtre de navigateur
+
+Quand un butler pilote une fenêtre de navigateur, une pastille **Automatisation en cours** s'affiche à l'écran pour vous rappeler de ne pas cliquer ni écrire dans cette fenêtre. La pastille indique maintenant le nom du butler (ou des butlers) qui utilisent cette fenêtre, pour savoir exactement qui y travaille.
+
+## Quand un site vous demande de vous connecter
+
+Si un butler s'exécute avec **Voir l'exécution** désactivé et qu'un site vous demande de vous connecter, le butler s'arrête et vous recevez une alerte avec **Se connecter maintenant**. Pour Amazon, Instagram, TikTok, Walmart, Mavely et Benable, l'application ouvre maintenant automatiquement la fenêtre de connexion de ce site, et la notification vous indique qu'une fenêtre de connexion s'est ouverte. Il vous suffit de vous connecter dans cette fenêtre, puis de relancer le butler.
+
 ## Astuces
 
 - Le bouton **Tout mettre en pause** et la pastille **Automatisations** à côté fonctionnent ensemble. Tout mettre en pause bascule aussi Automatisations sur **En pause**, et reprendre la réactive.
 - Utilisez **Tout mettre en pause** comme un bouton rapide « tout arrêter » quand votre ordinateur semble chargé, puis reprenez un butler à la fois pour que la fenêtre reste fluide.
+- Si une fenêtre de navigateur s'ouvre sans que vous sachiez pourquoi, cliquez sur l'indicateur **Ce qui est en cours** et regardez **Ouvert par** dans la liste **Fenêtres du navigateur**.
 - Si vous voulez seulement que vos butlers travaillent en silence, désactivez **Voir l'exécution (tout)** une fois et chaque butler restera masqué à partir de là.
 
 ## Voir aussi

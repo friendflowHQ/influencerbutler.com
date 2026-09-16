@@ -8,7 +8,7 @@ category: Other
 
 Influencer Butler runs a lot of butlers at once. Sometimes you want to stop all of them fast, or decide in one place whether their browser windows show on screen. The slim bar just under the header at the top of the window gives you two controls that reach every butler at once, without hunting through each workspace.
 
-It has two parts: a **Pause all** button and a **Watch it run (all)** toggle.
+It has three parts: a **Pause all** button, a **Watch it run (all)** toggle, and a **What's running** chip that shows which butlers are working and which browser windows are open.
 
 ## Pause everything at once
 
@@ -31,10 +31,32 @@ Each butler has its own "Watch it run" toggle that decides whether you see its b
 
 Flipping it updates every butler's own toggle right away. It applies the next time each butler runs. A butler that is already in the middle of a run keeps its current window until it starts its next run, because a browser window cannot switch between shown and hidden once it has opened.
 
+## See what's running and which butler owns each browser
+
+Next to **Pause all** is a small chip that tells you at a glance how busy the app is. It reads **Nothing running** when every butler is idle, or a count such as **2 running** when butlers are working. It also shows **Browsers open** with the number of browser windows that are open.
+
+Click the chip to open the **What's running** panel. It has two lists:
+
+- **Butlers**: every butler that is working right now, what it is doing (for example searching for deals or posting), since what time, and whether it is using a **Visible** or **Hidden** browser. Click a butler to jump straight to it.
+- **Browser windows**: every open browser, with **Used by** showing which butlers are using it right now and **Opened by** showing which butler opened it. This is the quickest way to find out which butler opened a window.
+
+## Running dots in the sidebar
+
+An orange dot pulses next to a butler in the sidebar while it is working. That includes Amazon Deals, Walmart Deals, and any cloned Deals Butlers while they post or search for deals. If a group in the sidebar is collapsed, the group shows a dot when something inside it is running, so you never miss activity hidden in a folded menu. On the menu item you have selected, the dot turns white so it stays easy to see.
+
+## Which butler is using a browser window
+
+When a butler drives a browser window, an **Automation in progress** pill shows on screen as a reminder not to click or type in that window. The pill now names the butler (or butlers) using that window, so you know exactly who is at work there.
+
+## When a site asks you to sign in
+
+If a butler is running with **Watch it run** off and a site asks you to sign in, the butler stops and you get a **Sign in now** alert. For Amazon, Instagram, TikTok, Walmart, Mavely, and Benable, the app now opens that site's sign-in window for you automatically, and the notification lets you know a sign-in window has opened. Just sign in there, then start the butler again.
+
 ## Tips
 
 - The **Pause all** button and the **Automations** pill near it work together. Pausing everything also switches Automations to **Paused**, and resuming turns it back on.
 - Use **Pause all** as a quick "stop everything" button when your computer feels busy, then resume one butler at a time so the window stays smooth.
+- If a browser window pops open and you are not sure why, click the **What's running** chip and check **Opened by** in the **Browser windows** list.
 - If you only ever want your butlers to run quietly, flip **Watch it run (all)** off once and every butler stays hidden from then on.
 
 ## Related
