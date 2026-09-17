@@ -180,7 +180,13 @@ export async function scheduleEventInvite(
 
   const fallback = defaultInviteCopy(args.event);
   const subject = args.plan.subject || fallback.subject;
-  const body = args.plan.body || fallback.body;
+  // Custom bodies (hand-written or AI-drafted) may reference the register page
+  // with an {{EVENT_URL}} token, since the event id is only known here. Always
+  // guarantee the share link is present so a bad template can never drop it.
+  const shareUrl = eventShareUrl(args.event.id);
+  let body = args.plan.body || fallback.body;
+  body = body.split("{{EVENT_URL}}").join(shareUrl);
+  if (!body.includes(shareUrl)) body += `\n\nSave your spot: ${shareUrl}`;
 
   const insert: Record<string, unknown> = {
     name: `Event invite: ${args.event.title}`.slice(0, 200),

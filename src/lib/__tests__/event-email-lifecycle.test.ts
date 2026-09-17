@@ -107,8 +107,8 @@ describe("parseReplayPlan", () => {
       subject: null,
       body: null,
     });
-    expect(parseReplayPlan({ hoursAfter: 999 }).hoursAfter).toBe(240);
-    expect(parseReplayPlan({ hoursAfter: 0 }).hoursAfter).toBe(1);
+    expect(parseReplayPlan({ hoursAfter: 999 })?.hoursAfter).toBe(240);
+    expect(parseReplayPlan({ hoursAfter: 0 })?.hoursAfter).toBe(1);
   });
 });
 

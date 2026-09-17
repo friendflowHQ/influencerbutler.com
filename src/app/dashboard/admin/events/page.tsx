@@ -164,6 +164,7 @@ export default function AdminEventsPage() {
   const [imagingId, setImagingId] = useState<string | null>(null);
   const [rearmingId, setRearmingId] = useState<string | null>(null);
   const [youtubingId, setYoutubingId] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
@@ -296,6 +297,59 @@ export default function AdminEventsPage() {
     }
   };
 
+  // Phase 3: draft the description + invite/replay email copy with AI from the
+  // title + time (and the description box used as a rough brief). Fills the form
+  // for review; nothing is saved until the operator clicks Schedule.
+  const draftWithAi = async () => {
+    if (!form.title.trim() || !form.startsAt || !form.endsAt) {
+      setMessage("Add a title, start, and end time first.");
+      return;
+    }
+    setDrafting(true);
+    setMessage("Drafting with AI...");
+    try {
+      const res = await fetch("/api/admin/events/ai-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          startsAt: fromLocalInput(form.startsAt),
+          endsAt: fromLocalInput(form.endsAt),
+          timezone: form.timezone,
+          notes: form.description,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        draft?: {
+          description?: string;
+          inviteSubject?: string;
+          inviteBody?: string;
+          replaySubject?: string;
+          replayBody?: string;
+        };
+      };
+      if (!res.ok || !data.draft) {
+        setMessage(data.error || "Could not draft. Try again.");
+        return;
+      }
+      const d = data.draft;
+      setForm((f) => ({
+        ...f,
+        description: d.description || f.description,
+        inviteEnabled: true,
+        inviteSubject: d.inviteSubject || "",
+        inviteBody: d.inviteBody || "",
+        replayEnabled: true,
+        replaySubject: d.replaySubject || "",
+        replayBody: d.replayBody || "",
+      }));
+      setMessage("Draft ready. Review the copy, pick an invite audience, then Schedule.");
+    } finally {
+      setDrafting(false);
+    }
+  };
+
   const generateImage = async (id: string) => {
     setImagingId(id);
     setMessage("Generating event image...");
@@ -376,9 +430,28 @@ export default function AdminEventsPage() {
 
       {/* Create / edit form */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">
-          {form.id ? "Edit event" : "Schedule an event"}
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-900">
+            {form.id ? "Edit event" : "Schedule an event"}
+          </h2>
+          {!form.id ? (
+            <button
+              type="button"
+              onClick={draftWithAi}
+              disabled={drafting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+              title="Draft the description and invite/replay emails from the title and time"
+            >
+              {drafting ? "Drafting..." : "Draft with AI"}
+            </button>
+          ) : null}
+        </div>
+        {!form.id ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Fill in the title and times, add a rough brief in the description if you like, then
+            Draft with AI to write the description and the invite + replay emails for you to review.
+          </p>
+        ) : null}
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
             <span className="font-medium text-slate-700">Title</span>
@@ -635,7 +708,7 @@ export default function AdminEventsPage() {
                       onChange={(e) => setForm({ ...form, inviteBody: e.target.value })}
                       rows={3}
                       className="rounded-lg border border-slate-300 px-3 py-2"
-                      placeholder="Leave blank to auto-write from the title, time, and description."
+                      placeholder="Use {{EVENT_URL}} where the register link should go. Leave blank to auto-write from the title, time, and description."
                     />
                   </label>
                   <p className="sm:col-span-2 text-xs text-slate-500">
