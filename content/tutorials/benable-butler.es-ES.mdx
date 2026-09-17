@@ -72,6 +72,7 @@ Las colecciones generadas se registran por ejecución en la caché preseed (JSON
 - **"Se requiere iniciar sesión en Benable"** durante Publish - primera configuración o sesión caducada. Inicia sesión vía la ventana de Chrome abierta, pulsa Reanudar.
 - **La colección publicada tiene menos elementos que la vista previa**: Benable rechaza ASIN no disponibles en el marketplace elegido. El log de publicación muestra cuáles se omitieron.
 - **Una lista de la vista previa no se publicó**: si una lista no pudo llegar al mínimo de elementos, Butler la retiene para no publicar una lista que no puede posicionarse. El resumen de la ejecución muestra qué se retuvo y su número de elementos. Amplía el nicho, o baja el mínimo en Ajustes avanzados, para publicarla de todos modos.
+- **Todas las listas fallan con "por debajo del mínimo de artículos"**: **Publicar solo productos con campaña** (Ajustes avanzados, Publicación y portadas) está activado por defecto. Solo conserva productos de Amazon con una campaña de Creator Connections o SPCC, y la mayoría de los productos comunes no la tienen, así que las listas quedan por debajo del mínimo y se retienen. No necesitas tus propias campañas para usar Benable Butler. Desactiva ese ajuste para llenar las listas con productos normales y vuelve a ejecutarlo. Si una lista sigue corta, baja el **Mínimo de artículos** o afloja los filtros de valoración y reseñas.
 - **Nicho demasiado estrecho**: si Dry run devuelve <5 ASIN candidatos, tu nicho es demasiado ajustado. Amplía un escalón.
 
 ## Relacionado

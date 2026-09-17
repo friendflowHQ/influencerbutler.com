@@ -72,6 +72,7 @@ Generated collections are logged per-run in the preseed cache (JSON + HTML repor
 - **"Benable sign-in required"** during Publish - first-time setup or session expired. Sign in via the spawned Chrome window, click Resume.
 - **The published collection has fewer items than the preview**: Benable rejects ASINs that aren't available in the chosen marketplace. The publish log shows which ones were skipped.
 - **A list from the preview didn't publish**: if a list couldn't reach the item minimum, Butler holds it back so it doesn't publish a list that can't rank. The run summary lists what was held and its item count. Broaden the niche, or lower the minimum under Advanced settings, to publish it anyway.
+- **Every list fails with "below the item minimum"**: **Only publish products with a campaign** (Advanced settings, Publishing and covers) is on by default. It keeps only Amazon products that have a Creator Connections or SPCC campaign, and most everyday products do not have one, so lists drop under the minimum and are held. You do not need your own campaigns to use Benable Butler. Turn that setting off to fill lists with regular products, then run again. If a list is still short, lower **Item minimum** or loosen the product rating and review filters.
 - **Niche too narrow**: if Dry run returns <5 candidate ASINs, your niche is too tight. Broaden one notch.
 
 ## Related

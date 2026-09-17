@@ -353,6 +353,7 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 - **Instagram posts go to message requests, not inbox**: that's not a Deals Butler issue; that's Instagram's own routing for accounts you don't follow.
 - **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
 - **The same deal posts more than once**: the **Don't repost recently** guard in the Deal Filters holds a deal at publish time if a matching one already went out inside your window. It is on by default with a 30-day window. If you post product variants, also tick **Product title** under it, so different sizes or colors of the same item count as one deal.
+- **Deals you deleted keep coming back**: each search runs your same keywords, and Amazon often returns many of the same products, so a new search can find a product you just deleted. **Skip deals you deleted (days)** in the Deal Filters (on by default, 7 days) keeps any product you delete from Search Deals or your upcoming posts out of the next searches. To skip everything a recent search found, whether or not you deleted it, also set **Skip recently harvested (days)**, and add some fresh keywords. Prices are checked live on every search and again right before each deal posts, so a returning product still shows its current price.
 
 ## Clones (paid)
 
