@@ -90,11 +90,14 @@ function statTile(
   fg: string,
   bg: string,
   metric?: DigestMetric,
+  // How to render the month-to-date value. Counts stay as-is; money metrics
+  // (revenue) pass money() so cents get formatted like the headline value.
+  fmtMtd: (n: number) => string = String,
 ): string {
   const d = metric ? delta(metric.momDelta) : { text: "", color: C.sub };
   const mtd =
     metric && metric.mtd !== null
-      ? `<div style="font-size:12px;color:${C.sub};margin-top:2px;">${metric.mtd} this month</div>`
+      ? `<div style="font-size:12px;color:${C.sub};margin-top:2px;">${esc(fmtMtd(metric.mtd))} this month</div>`
       : "";
   const deltaLine = d.text
     ? `<div style="font-size:11px;color:${d.color};margin-top:4px;font-weight:600;">${d.text}</div>`
@@ -194,7 +197,7 @@ export function renderDigestHtml(d: DigestData): string {
       ${statTile("New subscriptions", String(m.newSubs.window), "⭐", C.green, C.greenBg, m.newSubs)}
     </tr>
     <tr>
-      ${statTile("Revenue", money(m.revenueCents.window), "\u{1F4B0}", C.amber, C.amberBg, m.revenueCents)}
+      ${statTile("Revenue", money(m.revenueCents.window), "\u{1F4B0}", C.amber, C.amberBg, m.revenueCents, money)}
       ${statTile("Cancellations", String(m.cancellations.window), "\u{1F44B}", C.red, C.redBg, m.cancellations)}
     </tr>
   </table>`;
@@ -322,18 +325,21 @@ export function renderDigestHtml(d: DigestData): string {
 
 export function renderDigestText(d: DigestData): string {
   const m = d.metrics;
-  const line = (label: string, v: string, mtd: number | null) =>
+  // mtd is preformatted so money metrics (revenue) show dollars, not raw cents.
+  const line = (label: string, v: string, mtd: string | null) =>
     `${label}: ${v}${mtd !== null ? ` (${mtd} this month)` : ""}`;
+  const mtdCount = (n: number | null) => (n === null ? null : String(n));
+  const mtdMoney = (n: number | null) => (n === null ? null : money(n));
   const lines = [
     `${d.variant === "morning" ? "Good morning" : "Evening update"} - ${d.windowLabel}`,
     ``,
     `Since your last digest:`,
-    line("  Trial clicks", String(m.trialClicks.window), m.trialClicks.mtd),
-    line("  Trials started", String(m.trialsStarted.window), m.trialsStarted.mtd),
-    line("  Conversions", String(m.conversions.window), m.conversions.mtd),
-    line("  New subscriptions", String(m.newSubs.window), m.newSubs.mtd),
-    line("  Revenue", money(m.revenueCents.window), m.revenueCents.mtd),
-    line("  Cancellations", String(m.cancellations.window), m.cancellations.mtd),
+    line("  Trial clicks", String(m.trialClicks.window), mtdCount(m.trialClicks.mtd)),
+    line("  Trials started", String(m.trialsStarted.window), mtdCount(m.trialsStarted.mtd)),
+    line("  Conversions", String(m.conversions.window), mtdCount(m.conversions.mtd)),
+    line("  New subscriptions", String(m.newSubs.window), mtdCount(m.newSubs.mtd)),
+    line("  Revenue", money(m.revenueCents.window), mtdMoney(m.revenueCents.mtd)),
+    line("  Cancellations", String(m.cancellations.window), mtdCount(m.cancellations.mtd)),
     ``,
     `Top locations (this window):`,
     ...(d.locations.length
