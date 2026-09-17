@@ -106,6 +106,20 @@ const nextConfig: NextConfig = {
         destination: `${SUPABASE_AUTH_BASE}/.well-known/oauth-authorization-server`,
         permanent: false,
       },
+      // The Book a Call page lives under the dashboard, but customers hear or
+      // read the address and type the short version. Send both short forms to
+      // the real page instead of a 404. Non-permanent so the target can move
+      // without a browser-cached 301 lock-in.
+      {
+        source: "/book",
+        destination: "/dashboard/book",
+        permanent: false,
+      },
+      {
+        source: "/book-a-call",
+        destination: "/dashboard/book",
+        permanent: false,
+      },
       // The drip emails linked /docs for months but the route never existed.
       // Real docs live at Help & Tutorials.
       {
