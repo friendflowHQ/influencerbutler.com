@@ -76,6 +76,10 @@ function toSignals(prod: WalmartProduct | null, url: string): ProductSignals {
     title: prod?.title ?? null,
     priceCents: prod?.priceCents ?? null,
     currency: prod?.currency ?? "USD",
+    // Walmart deal semantics ride the tile-level dealBadge / wasPriceCents path,
+    // not the Amazon buybox readers, so the product-panel deal fields stay null.
+    listPriceCents: null,
+    dealKind: null,
     inStock: prod?.inStock ?? true,
     boughtPastMonth: null,
     brand: prod?.brand ?? null,

@@ -1,6 +1,7 @@
 import { query, queryAll, queryMatchingText } from "./selectors";
 import { marketplaceFromUrl } from "./product-signals";
 import { parseBoughtFromBody } from "./bought-badge";
+import { parseDealBadgeText, type DealKind } from "./deal-kind";
 
 // Reads the product tiles off an Amazon search-results page (/s?k=...). Each
 // tile keeps the fields the search overlay needs to score and sort: identity,
@@ -27,6 +28,11 @@ export type SearchTile = {
   // A reduced-price badge on the tile ("rollback" / "clearance" / "reduced"),
   // when present. Walmart's native deal markers; absent on Amazon tiles.
   dealBadge?: "rollback" | "clearance" | "reduced" | null;
+  // A detected sale / deal kind read from the tile's Amazon deal badge (Prime
+  // Big Deal Days / Lightning Deal / coupon / a generic reduced marker), kept
+  // separate from the Walmart-specific dealBadge above so neither overloads the
+  // other. Null when the tile shows no deal.
+  dealKind?: DealKind | null;
   el: HTMLElement;
 };
 
@@ -49,10 +55,11 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
     // across an ad and its organic row; keep the first real one only.
     if (!/^[A-Z0-9]{10}$/.test(asin) || seen.has(asin)) continue;
     seen.add(asin);
+    const price = extractPrice(el);
     tiles.push({
       asin,
       title: cleanText(query(el, "searchTileTitle")?.textContent) ?? null,
-      ...extractPrice(el),
+      ...price,
       imageUrl: query<HTMLImageElement>(el, "searchTileImage")?.getAttribute("src") ?? null,
       href: hrefFor(el, asin, marketplace),
       sponsored: query(el, "searchTileSponsored") !== null,
@@ -60,6 +67,8 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
       rating: extractRating(el),
       reviewCount: extractReviewCount(el),
       hasCoupon: query(el, "searchTileCoupon") !== null,
+      wasPriceCents: extractListPrice(el, price.priceCents),
+      dealKind: extractDealKind(el),
       el,
     });
   }
@@ -80,6 +89,22 @@ function hrefFor(el: HTMLElement, asin: string, marketplace: string): string {
 
 function extractPrice(el: HTMLElement): { priceCents: number | null; currency: string } {
   return parsePriceText(cleanText(query(el, "searchTilePrice")?.textContent) ?? "");
+}
+
+// The strikethrough "was" price, kept only when it is strictly above the tile's
+// current price: Amazon sometimes renders a decoy strike node equal to the
+// current price, which is not a discount. Returns null on full-price tiles.
+function extractListPrice(el: HTMLElement, currentCents: number | null): number | null {
+  const { priceCents } = parsePriceText(cleanText(query(el, "searchTileListPrice")?.textContent) ?? "");
+  if (priceCents == null || currentCents == null || priceCents <= currentCents) return null;
+  return priceCents;
+}
+
+// The deal kind from the tile's badge text, filtered so a non-deal badge (e.g.
+// "Best Seller") never mislabels the chip.
+function extractDealKind(el: HTMLElement): DealKind | null {
+  const text = queryMatchingText(el, "searchTileDealBadge", (t) => parseDealBadgeText(t) !== null);
+  return text ? parseDealBadgeText(text) : null;
 }
 
 function extractBought(el: HTMLElement, marketplace: string): number | null {

@@ -1,6 +1,7 @@
 import { getShadowRoot } from "./host";
 import { t } from "../i18n";
 import { sendToBackground } from "../shared/messages";
+import type { HudStatus } from "../shared/messages";
 import logoUrl from "../../static/icons/icon-48.png";
 
 // The floating panel is shared by every tool on a page: each tool adds a
@@ -9,6 +10,8 @@ let panel: HTMLElement | null = null;
 let topbar: HTMLElement | null = null;
 let body: HTMLElement | null = null;
 let quickBar: HTMLElement | null = null;
+let syncChip: HTMLElement | null = null;
+let syncPollStarted = false;
 
 export function getPanel(title: string): HTMLElement {
   const root = getShadowRoot();
@@ -23,10 +26,11 @@ export function getPanel(title: string): HTMLElement {
   dot.alt = "";
   const titleEl = el("span", "title");
   titleEl.textContent = title;
+  syncChip = syncChipButton();
   const gear = gearButton();
   const chev = el("span", "chev");
   chev.textContent = t().panelChevronHide;
-  header.append(dot, titleEl, gear, chev);
+  header.append(dot, titleEl, syncChip, gear, chev);
   header.addEventListener("click", () => {
     panel?.classList.toggle("collapsed");
     chev.textContent = panel?.classList.contains("collapsed") ? t().panelChevronShow : t().panelChevronHide;
@@ -35,7 +39,55 @@ export function getPanel(title: string): HTMLElement {
   body = el("div", "body");
   panel.append(topbar, body);
   root.append(panel);
+  startSyncPolling();
   return body;
+}
+
+// The green "Synced" chip in the header: at-a-glance confirmation that the
+// extension is paired and talking to the running desktop app. Hidden unless
+// synced; clicking opens the settings page (the desktop-style Settings surface),
+// stopping propagation so it never collapses the panel like the header row does.
+function syncChipButton(): HTMLButtonElement {
+  const btn = el("button", "sync-chip") as HTMLButtonElement;
+  btn.type = "button";
+  btn.title = t().hudSynced;
+  btn.setAttribute("aria-label", t().hudSynced);
+  btn.append(el("span", "dot2"), el("span", "sync-label", t().hudSynced));
+  btn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    void sendToBackground({ kind: "OPEN_OPTIONS" });
+  });
+  return btn;
+}
+
+// "Synced" means the bridge answered AND this extension holds a pairing token.
+// `paired === false` is explicit so an older background that omits the field is
+// not treated as unpaired (mirrors the check in tools/hud-actions/panel.ts).
+function refreshSyncChip(): void {
+  if (!syncChip || !syncChip.isConnected) return;
+  const chipEl = syncChip;
+  void sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" })
+    .then((hud) => {
+      const synced = Boolean(hud && hud.connected && hud.paired !== false);
+      chipEl.classList.toggle("show", synced);
+    })
+    .catch(() => {
+      chipEl.classList.remove("show");
+    });
+}
+
+// The header is built once and the panel is long-lived, so poll to catch the
+// desktop app being launched or quit mid-session. The background caches its
+// probe (~15s), so a 20s cadence stays cheap. Guarded to a single interval.
+function startSyncPolling(): void {
+  refreshSyncChip();
+  if (syncPollStarted) return;
+  syncPollStarted = true;
+  setInterval(refreshSyncChip, 20000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshSyncChip();
+  });
 }
 
 // The pinned quick-links bar under the header (Get link / Scrub link). Lazily

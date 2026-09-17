@@ -839,18 +839,24 @@ function renderBadge(row: Row, settings: Settings): void {
     body.append(el("span", "tile-chip good", t().tileDeal));
   }
   if (row.tile.hasCoupon) body.append(el("span", "tile-chip", t().tileCoupon));
-  // Walmart reduced-price signal: a Rollback / Clearance / Reduced pill and how
-  // deep the cut is (from the strikethrough "was" price). The badge words are
-  // Walmart's own English marketing terms; "-N%" is locale-neutral. Amazon tiles
-  // never set these fields, so this chip is Walmart-only.
-  {
-    const { dealBadge, wasPriceCents, priceCents } = row.tile;
+  // Reduced-price signal: a deal pill and how deep the cut is (from the
+  // strikethrough "was" price). Walmart sets its own Rollback / Clearance /
+  // Reduced markers via dealBadge; Amazon sets dealKind (Prime Day / Lightning /
+  // reduced) and wasPriceCents read off the tile. "-N%" is locale-neutral. Gated
+  // by the dealSignals tool flag so the remote kill switch can disable it.
+  if (settings.tools.dealSignals) {
+    const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
     const discounted = wasPriceCents != null && priceCents != null && wasPriceCents > priceCents;
-    if (dealBadge || discounted) {
+    // A coupon-only dealKind is left to the coupon chip above, so it does not
+    // trigger a second (unpriced) deal chip here.
+    const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
+    if (dealBadge || amazonDeal || discounted) {
       const label =
         dealBadge === "clearance" ? "Clearance" :
         dealBadge === "reduced" ? "Reduced" :
         dealBadge === "rollback" ? "Rollback" :
+        dealKind === "primeday" ? t().tileDealPrimeDay :
+        dealKind === "lightning" ? t().tileDealLightning :
         t().tileDeal;
       const pct = discounted ? Math.round((1 - priceCents! / wasPriceCents!) * 100) : null;
       body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));

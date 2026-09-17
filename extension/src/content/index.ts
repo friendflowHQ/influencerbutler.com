@@ -31,6 +31,7 @@ import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
 import { renderOwnership } from "../tools/ownership/panel";
 import { renderPriceHistory } from "../tools/price-history/panel";
+import { renderDealSignals } from "../tools/deal-signals/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
@@ -458,6 +459,17 @@ async function runForPage(): Promise<void> {
       // Price history sparkline, built locally from prices seen while browsing.
       // Reserves a slot; reveals only once there are at least two observations.
       guard("price-history", () => renderPriceHistory(signals));
+
+      // Sale / deal signals: when Amazon shows a strikethrough list price and/or
+      // a deal badge (Prime Big Deal Days / Lightning / reduced) on this listing,
+      // an "On sale" section with the discount depth and list -> now prices.
+      // Renders nothing when the product is not on a deal; gated by its own tool
+      // flag so the remote kill switch can disable it.
+      if (settings.tools.dealSignals) {
+        guard("deal-signals", () => {
+          renderDealSignals(signals);
+        });
+      }
 
       // Inline card at the buybox: identity, Creator-API market availability,
       // and a one-tap Collab Butler action (injected into the page, not the

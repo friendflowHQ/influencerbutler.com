@@ -379,6 +379,15 @@ export interface Dict {
   tileLikelyFit: string;
   tileDeal: string;
   tileCoupon: string;
+  // Deal-kind chip labels for the sale/deal signals overlay: the word shown
+  // before the "-N%" discount on a tile and in the product panel. A generic
+  // reduced deal reuses tileDeal.
+  tileDealPrimeDay: string;
+  tileDealLightning: string;
+  // Sale / deal signals section on the product panel: the section title and the
+  // "List <was>, now <now>" line under it.
+  dealSignalsTitle: string;
+  dealSignalsWasNow: (was: string, now: string) => string;
   // Estimated monthly revenue (modeled sales x price) and best-seller rank,
   // shown per search tile from the shared catalogue. Revenue tooltip reuses
   // salesEstModeled / salesEstCalibrated.
@@ -424,6 +433,9 @@ export interface Dict {
   ideaListActive: string;
   toolDealsOverlay: string;
   sumDealsOverlay: string;
+  // Sale / deal signals popup toggle: label + hint.
+  toolDealSignals: string;
+  toolDealSignalsHint: string;
   navGrpBenable: string;
   groupBenable: string;
   toolBenableBadge: string;
@@ -833,6 +845,7 @@ export interface Dict {
   appCodePlaceholder: string;
   appPairSubmit: string;
   appConnected: string;
+  hudSynced: string;
   appUnpair: string;
   appRequestingCode: string;
   appCodeShown: string;
@@ -1345,6 +1358,10 @@ const en: Dict = {
   tileLikelyFit: "Likely fit",
   tileDeal: "Deal",
   tileCoupon: "Coupon",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Lightning",
+  dealSignalsTitle: "On sale",
+  dealSignalsWasNow: (was, now) => `List ${was}, now ${now}`,
   tileRevenue: (money) => `~${money}/mo`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} units/mo`,
@@ -1382,6 +1399,9 @@ const en: Dict = {
   ideaListActive: "Idea List signals are active.",
   toolDealsOverlay: "Today's Deals money signals",
   sumDealsOverlay: "Deals overlay",
+  toolDealSignals: "Sale & deal price signals",
+  toolDealSignalsHint:
+    'Shows a "-N%" chip on discounted search and deals tiles (highlighting Prime Day / Lightning deals), and an "On sale" line on product pages. Read from the page, no account needed.',
   navGrpBenable: "Benable",
   groupBenable: "Benable",
   toolBenableBadge: "Amazon money signals on Benable lists",
@@ -1805,6 +1825,7 @@ const en: Dict = {
   appCodePlaceholder: "123456",
   appPairSubmit: "Pair",
   appConnected: "Connected to the desktop app.",
+  hudSynced: "Synced",
   appUnpair: "Disconnect app",
   appRequestingCode: "Asking the app for a code...",
   appCodeShown: "The app is showing a 6-digit code. Type it above.",
@@ -2329,6 +2350,10 @@ const es: Dict = {
   tileLikelyFit: "Buen candidato",
   tileDeal: "Oferta",
   tileCoupon: "Cupón",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Oferta flash",
+  dealSignalsTitle: "En oferta",
+  dealSignalsWasNow: (was, now) => `Precio de lista ${was}, ahora ${now}`,
   tileRevenue: (money) => `~${money}/mes`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} uds./mes`,
@@ -2366,6 +2391,9 @@ const es: Dict = {
   ideaListActive: "Las señales de Idea List están activas.",
   toolDealsOverlay: "Señales de dinero en Ofertas del Día",
   sumDealsOverlay: "Overlay de ofertas",
+  toolDealSignals: "Señales de rebajas y ofertas",
+  toolDealSignalsHint:
+    'Muestra un chip "-N%" en las fichas de búsqueda y ofertas con descuento (destacando las ofertas de Prime Day / flash) y una línea "En oferta" en las páginas de producto. Se lee de la página, sin necesidad de cuenta.',
   navGrpBenable: "Benable",
   groupBenable: "Benable",
   toolBenableBadge: "Señales de dinero de Amazon en listas de Benable",
@@ -2790,6 +2818,7 @@ const es: Dict = {
   appCodePlaceholder: "123456",
   appPairSubmit: "Vincular",
   appConnected: "Conectado a la app de escritorio.",
+  hudSynced: "Sincronizado",
   appUnpair: "Desconectar app",
   appRequestingCode: "Pidiendo un código a la app...",
   appCodeShown: "La app muestra un código de 6 dígitos. Escríbelo arriba.",
@@ -3314,6 +3343,10 @@ const fr: Dict = {
   tileLikelyFit: "Bon candidat",
   tileDeal: "Promo",
   tileCoupon: "Coupon",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Vente flash",
+  dealSignalsTitle: "En promo",
+  dealSignalsWasNow: (was, now) => `Prix de liste ${was}, maintenant ${now}`,
   tileRevenue: (money) => `~${money}/mois`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} unités/mois`,
@@ -3351,6 +3384,9 @@ const fr: Dict = {
   ideaListActive: "Les signaux Idea List sont actifs.",
   toolDealsOverlay: "Signaux d'argent sur les Offres du jour",
   sumDealsOverlay: "Overlay des offres",
+  toolDealSignals: "Signaux de promotions et d'offres",
+  toolDealSignalsHint:
+    'Affiche un chip "-N%" sur les fiches de recherche et d\'offres en promotion (en mettant en avant les offres Prime Day / ventes flash), et une ligne "En promo" sur les pages produit. Lu depuis la page, sans compte.',
   navGrpBenable: "Benable",
   groupBenable: "Benable",
   toolBenableBadge: "Signaux d'argent Amazon sur les listes Benable",
@@ -3775,6 +3811,7 @@ const fr: Dict = {
   appCodePlaceholder: "123456",
   appPairSubmit: "Associer",
   appConnected: "Connecté à l'app de bureau.",
+  hudSynced: "Synchronisé",
   appUnpair: "Déconnecter l'app",
   appRequestingCode: "Demande d'un code à l'app...",
   appCodeShown: "L'app affiche un code à 6 chiffres. Saisissez-le ci-dessus.",

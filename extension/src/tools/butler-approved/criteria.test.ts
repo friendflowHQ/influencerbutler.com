@@ -11,6 +11,8 @@ const goodSignals: ProductSignals = {
   title: "Test product",
   priceCents: 3999,
   currency: "USD",
+  listPriceCents: null,
+  dealKind: null,
   inStock: true,
   boughtPastMonth: 200,
   brand: "TestBrand",

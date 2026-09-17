@@ -1,5 +1,6 @@
 import { query, queryMatchingText } from "./selectors";
 import { parseBoughtCount, parseBoughtFromBody } from "./bought-badge";
+import { parseDealBadgeText, type DealKind } from "./deal-kind";
 
 // Reads the non-video signals off a product page: identity, price,
 // availability, social proof. Accepts any Document so fetched pages from the
@@ -11,6 +12,13 @@ export type ProductSignals = {
   title: string | null;
   priceCents: number | null;
   currency: string;
+  // The strikethrough list ("was") price on the buybox, when Amazon shows one
+  // above the current price; null on full-price listings. The gap to priceCents
+  // is the deal depth the deal-signals panel reports.
+  listPriceCents: number | null;
+  // The deal kind read from the buybox deal badge (Prime Big Deal Days /
+  // Lightning Deal / coupon / reduced), or null when no deal badge is shown.
+  dealKind: DealKind | null;
   inStock: boolean;
   boughtPastMonth: number | null;
   brand: string | null;
@@ -46,11 +54,14 @@ const COMMISSION_RE = /commission\s*rate[:\s]*([\d.]+)\s*%/i;
 const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 
 export function extractSignals(doc: Document, url: string): ProductSignals {
+  const price = extractPrice(doc);
   return {
     asin: extractAsin(doc, url),
     marketplace: marketplaceFromUrl(url),
     title: cleanText(query(doc, "productTitle")?.textContent) ?? null,
-    ...extractPrice(doc),
+    ...price,
+    listPriceCents: extractListPrice(doc, price.priceCents),
+    dealKind: extractDealKind(doc),
     inStock: extractInStock(doc),
     boughtPastMonth: extractBoughtPastMonth(doc, marketplaceFromUrl(url)),
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
@@ -288,6 +299,27 @@ function extractPrice(doc: Document): { priceCents: number | null; currency: str
   const cents = match[3] ? parseInt(match[3], 10) : 0;
   const currency = match[1] === "€" ? "EUR" : match[1] === "£" ? "GBP" : "USD";
   return { priceCents: whole * 100 + cents, currency };
+}
+
+// The strikethrough list ("was") price on the buybox, kept only when it parses
+// above the current price (a decoy strike equal to the current price is not a
+// discount). Null when Amazon shows no reference price.
+function extractListPrice(doc: Document, currentCents: number | null): number | null {
+  const text = queryMatchingText(doc, "productListPrice", (t) => PRICE_RE.test(t)) ?? "";
+  const match = text.match(PRICE_RE);
+  if (!match || !match[2]) return null;
+  const whole = parseInt(match[2].replace(/,/g, ""), 10);
+  const cents = match[3] ? parseInt(match[3], 10) : 0;
+  const value = whole * 100 + cents;
+  if (currentCents == null || value <= currentCents) return null;
+  return value;
+}
+
+// The deal kind from the buybox deal badge, filtered so a non-deal badge never
+// mislabels the panel.
+function extractDealKind(doc: Document): DealKind | null {
+  const text = queryMatchingText(doc, "productDealBadge", (t) => parseDealBadgeText(t) !== null);
+  return text ? parseDealBadgeText(text) : null;
 }
 
 export function extractInStock(doc: Document): boolean {

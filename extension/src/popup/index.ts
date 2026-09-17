@@ -1172,6 +1172,7 @@ async function renderSettings(): Promise<void> {
     "storefront",
     "ordersButler",
     "searchOverlay",
+    "dealSignals",
     "socialSchedule",
     "storeOverlay",
     "trendRadar",

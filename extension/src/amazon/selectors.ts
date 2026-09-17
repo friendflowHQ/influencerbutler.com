@@ -13,6 +13,8 @@ export type SelectorId =
   | "productTitle"
   | "productByline"
   | "price"
+  | "productListPrice"
+  | "productDealBadge"
   | "availability"
   | "addToCart"
   | "boughtPastMonth"
@@ -36,6 +38,8 @@ export type SelectorId =
   | "searchTileRating"
   | "searchTileReviewCount"
   | "searchTileCoupon"
+  | "searchTileListPrice"
+  | "searchTileDealBadge"
   | "storeGrid"
   | "storeGridTile"
   | "storeTileLink"
@@ -132,6 +136,32 @@ const REGISTRY: Record<SelectorId, string[]> = {
     ".a-price:not(.a-text-price) .a-offscreen",
     "#priceblock_ourprice",
     "#priceblock_dealprice",
+  ],
+  // The struck-through list ("was") price on a product page: exactly the
+  // element the `price` list excludes with :not(.a-text-price). When it parses
+  // to a value above the current price, the gap is the deal depth. Amazon
+  // labels this the "List Price" / "Typical price" basis; best-effort, hidden
+  // when absent (many listings show no reference price).
+  productListPrice: [
+    "#corePriceDisplay_desktop_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePrice_feature_div .a-price.a-text-price .a-offscreen",
+    ".basisPrice .a-offscreen",
+    "span[data-a-strike='true'] .a-offscreen",
+    "#priceblock_listprice",
+    "#listPrice",
+  ],
+  // The deal label near the buybox ("Prime Big Deal Days", "Lightning Deal",
+  // "Limited time deal", "Prime exclusive", "-N%"). Matched by container, then
+  // the caller filters the text to a known deal kind (queryMatchingText), so a
+  // stray badge never mislabels the chip. Correctable live via a selector
+  // override.
+  productDealBadge: [
+    "#dealBadge_feature_div",
+    "#dealBadgeSupportingText",
+    ".dealBadgeTextColor",
+    "#corePriceDisplay_desktop_feature_div .savingsPercentage",
+    "#corePriceDisplay_desktop_feature_div .a-badge-text",
+    "#apex_desktop .a-badge-text",
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
@@ -265,6 +295,24 @@ const REGISTRY: Record<SelectorId, string[]> = {
     ".s-coupon-unclipped",
     "[data-component-type='s-coupon-component']",
     "span[class*='coupon']",
+  ],
+  // The struck-through list ("was") price on a search tile, the counterpart to
+  // searchTilePrice. `.a-text-price` is Amazon's strike class; the parser only
+  // keeps it when it is above the tile's current price. Absent on full-price
+  // tiles, so the deal chip simply does not render there.
+  searchTileListPrice: [
+    ".a-price.a-text-price .a-offscreen",
+    "span[data-a-strike='true'] .a-offscreen",
+    ".a-text-price .a-offscreen",
+  ],
+  // A deal badge on a search tile ("Prime Big Deal Days", "Lightning Deal",
+  // "Limited time deal", "-N%"). Matched by container, filtered to a known deal
+  // kind by the caller (queryMatchingText).
+  searchTileDealBadge: [
+    ".a-badge-text",
+    "[data-a-badge-type]",
+    ".s-savings-percentage",
+    "span[class*='dealBadge']",
   ],
   // Brand storefront (/stores/<Brand>/page/<id>): the React store builder.
   // Class names are hashed CSS modules, so only data-testid is stable.

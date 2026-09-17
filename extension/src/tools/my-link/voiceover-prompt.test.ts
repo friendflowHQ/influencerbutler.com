@@ -21,6 +21,8 @@ function signals(overrides: Partial<ProductSignals> = {}): ProductSignals {
     title: "Portable Blender for Smoothies",
     priceCents: 2999,
     currency: "USD",
+    listPriceCents: null,
+    dealKind: null,
     inStock: true,
     boughtPastMonth: 500,
     brand: "Visit the BlendCo Store",

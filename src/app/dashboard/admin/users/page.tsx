@@ -801,6 +801,16 @@ export default function AdminUsersPage() {
                           {can("billing.cancel") ? (
                             <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
                           ) : null}
+                          {can("billing.comp") && s.status === "on_trial" ? (
+                            <button type="button" onClick={() => {
+                              const raw = window.prompt("Extend trial by how many months? (1-12)", "1");
+                              if (raw === null) return;
+                              const months = Number(raw.trim());
+                              if (!Number.isInteger(months) || months < 1 || months > 12) { window.alert("Enter a whole number from 1 to 12."); return; }
+                              const notify = window.confirm("Email the customer about this extension?");
+                              void act("/api/admin/billing/extend-trial", { lsSubscriptionId: s.ls_subscription_id, months, notify }, "Trial extended.");
+                            }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Extend trial</button>
+                          ) : null}
                           {can("billing.comp") ? (
                             <button type="button" onClick={() => { if (!affiliateImpactOk(result.referral)) return; void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
                           ) : null}

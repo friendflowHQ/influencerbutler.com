@@ -250,6 +250,13 @@ export type Settings = {
     // research overlay; the kill-flag key is "benableBadge" in disabledTools. On
     // by default; backfilled to true by the tools shallow-merge in migrate().
     benableBadge: boolean;
+    // Sale / Deal signals: reads Amazon's own strikethrough list price and deal
+    // badge (Prime Big Deal Days / Lightning Deal / "Limited time deal" /
+    // coupon) off the page, then shows a "-N% off" chip on search + deals tiles
+    // and an on-sale line in the product panel. Onsite-only, no network call.
+    // The kill-flag key is "dealSignals" in disabledTools. On by default;
+    // backfilled to true by the tools shallow-merge in migrate().
+    dealSignals: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -654,7 +661,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 31,
+  schemaVersion: 32,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -743,6 +750,7 @@ export const DEFAULTS: StorageShape = {
       autoAccept: true,
       socialSchedule: true,
       benableBadge: true,
+      dealSignals: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -888,7 +896,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // v29 -> v30 added the socialSchedule tool flag ("click an image, schedule a
   // post", on by default); the tools shallow-merge backfills it. v30 -> v31
   // added the benableBadge tool flag (Amazon money-signal chip on benable.com
-  // list cards, on by default); the tools shallow-merge backfills it.
+  // list cards, on by default); the tools shallow-merge backfills it. v31 -> v32
+  // added the dealSignals tool flag (Amazon sale / deal price signals on search
+  // + deals tiles and the product panel, on by default); the tools shallow-merge
+  // backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -978,7 +989,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 31,
+    schemaVersion: 32,
   };
 }
 
