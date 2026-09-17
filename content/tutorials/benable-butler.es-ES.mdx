@@ -69,6 +69,7 @@ Las colecciones generadas se registran por ejecución en la caché preseed (JSON
 ## Tropiezos comunes
 
 - **"Falta la clave de OpenAI"**: configúrala en API Integrations.
+- **Una lista en cola se queda en Pendiente**: Pendiente significa que la idea sigue esperando en la cola de Ideas de listas. No hay nada ejecutándose en segundo plano y actualizar no cambia nada. Haz clic en **Publicar toda la cola** y deja en paz la ventana de Chrome que se abre hasta que termine, o activa la ejecución automática para ir avanzando con el tiempo. Ese mismo botón reintenta también las filas marcadas como Fallida, así que recoge todo lo que no esté marcado como Hecha. Publica una ejecución cada vez, porque varias a la vez se bloquean entre sí. Una fila que lleve unos veinte minutos en Ejecutando se marca como interrumpida en el historial, donde puedes pulsar Reanudar.
 - **"Se requiere iniciar sesión en Benable"** durante Publish - primera configuración o sesión caducada. Inicia sesión vía la ventana de Chrome abierta, pulsa Reanudar.
 - **La colección publicada tiene menos elementos que la vista previa**: Benable rechaza ASIN no disponibles en el marketplace elegido. El log de publicación muestra cuáles se omitieron.
 - **Una lista de la vista previa no se publicó**: si una lista no pudo llegar al mínimo de elementos, Butler la retiene para no publicar una lista que no puede posicionarse. El resumen de la ejecución muestra qué se retuvo y su número de elementos. Amplía el nicho, o baja el mínimo en Ajustes avanzados, para publicarla de todos modos.
