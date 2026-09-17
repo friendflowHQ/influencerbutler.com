@@ -60,6 +60,7 @@ Los items en cola viven en la caché preseed. Las decisiones aprobadas/rechazada
 - **Los items se acumulan durante semanas**: Action Queue no auto-limpia items viejos. Dedica 5 minutos a la semana a revisar o usa **Diferir** generosamente para que la cola no se infle.
 - **El espacio origen corrió pero no recogió tu aprobación**: el espacio sólo re-lee la cola en su siguiente ejecución programada. Dispara Run Now si quieres acción inmediata sobre una decisión.
 - **No aparecen items aunque un butler está corriendo**: ese butler no enruta por Action Queue. No todos los espacios lo hacen; la mayoría de decisiones son totalmente autónomas.
+- **Aparece "Accepted campaigns sync" y no recuerdas haber aceptado nada**: no se aceptó nada por ti. Esa tarea programada es de solo lectura. Abre Amazon, lee las campañas de Creator Connections que aceptaste tú y las registra para que tus datos estén al día. Aceptar campañas en tu nombre es otro butler distinto, y solo corre si tú lo inicias.
 
 ## Relacionado
 
