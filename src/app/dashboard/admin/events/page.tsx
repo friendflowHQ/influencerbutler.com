@@ -28,7 +28,18 @@ type AdminEvent = {
   youtubeUrl: string | null;
   youtubeError: string | null;
   registrations: number;
+  // Email lifecycle (null when the 20260917 migration is not applied yet).
+  inviteCampaignId: string | null;
+  inviteDaysBefore: number | null;
+  replayHoursAfter: number | null;
+  replaySubject: string | null;
+  replayBody: string | null;
+  replayEmailedAt: string | null;
 };
+
+// Audience choices offered for the invite campaign. "engaged" is the warm
+// re-engagement cohort (opened more than N of our emails, not unsubscribed).
+type InviteAudienceKind = "all_contacts" | "pro" | "trial" | "engaged" | "tag" | "pasted";
 
 type FormState = {
   id: string | null;
@@ -45,6 +56,20 @@ type FormState = {
   bannerStartsAt: string;
   bannerEndsAt: string;
   bannerSurfaces: BannerSurface[];
+  // Invite campaign (auto-scheduled N days before the event).
+  inviteEnabled: boolean;
+  inviteAudienceKind: InviteAudienceKind;
+  inviteTag: string;
+  invitePasted: string;
+  inviteMinOpens: number;
+  inviteDaysBefore: number;
+  inviteSubject: string;
+  inviteBody: string;
+  // Replay follow-up (sent hoursAfter the event ends, once a replay exists).
+  replayEnabled: boolean;
+  replayHoursAfter: number;
+  replaySubject: string;
+  replayBody: string;
 };
 
 const ALL_SURFACES: BannerSurface[] = ["web", "extension", "desktop"];
@@ -89,7 +114,43 @@ function emptyForm(): FormState {
     bannerStartsAt: "",
     bannerEndsAt: "",
     bannerSurfaces: [...ALL_SURFACES],
+    inviteEnabled: false,
+    inviteAudienceKind: "pro",
+    inviteTag: "",
+    invitePasted: "",
+    inviteMinOpens: 2,
+    inviteDaysBefore: 7,
+    inviteSubject: "",
+    inviteBody: "",
+    replayEnabled: true,
+    replayHoursAfter: 3,
+    replaySubject: "",
+    replayBody: "",
   };
+}
+
+/** Builds the invite audience object the API expects from the form fields. */
+function buildInviteAudience(f: FormState): Record<string, unknown> {
+  switch (f.inviteAudienceKind) {
+    case "pro":
+      return { kind: "segment", segment: "pro" };
+    case "trial":
+      return { kind: "segment", segment: "trial" };
+    case "engaged":
+      return { kind: "engaged", minOpens: f.inviteMinOpens };
+    case "tag":
+      return { kind: "tag", tag: f.inviteTag.trim() };
+    case "pasted":
+      return {
+        kind: "pasted",
+        emails: f.invitePasted
+          .split(/[\s,;]+/)
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
+    default:
+      return { kind: "all_contacts" };
+  }
 }
 
 export default function AdminEventsPage() {
@@ -139,6 +200,20 @@ export default function AdminEventsPage() {
       bannerStartsAt: toLocalInput(e.bannerStartsAt),
       bannerEndsAt: toLocalInput(e.bannerEndsAt),
       bannerSurfaces: e.bannerSurfaces.length ? e.bannerSurfaces : [...ALL_SURFACES],
+      // Invite is create-only per event (guarded server-side against duplicates);
+      // on edit we default it off and surface the existing scheduled campaign.
+      inviteEnabled: false,
+      inviteAudienceKind: "pro",
+      inviteTag: "",
+      invitePasted: "",
+      inviteMinOpens: 2,
+      inviteDaysBefore: e.inviteDaysBefore ?? 7,
+      inviteSubject: "",
+      inviteBody: "",
+      replayEnabled: e.replayHoursAfter !== null,
+      replayHoursAfter: e.replayHoursAfter ?? 3,
+      replaySubject: e.replaySubject ?? "",
+      replayBody: e.replayBody ?? "",
     });
     setMessage(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -172,6 +247,25 @@ export default function AdminEventsPage() {
         startsAt: fromLocalInput(form.bannerStartsAt),
         endsAt: fromLocalInput(form.bannerEndsAt),
         surfaces: form.bannerSurfaces,
+      },
+      // Only send an invite plan when the operator opted in, so an unrelated
+      // edit never schedules a campaign.
+      ...(form.inviteEnabled
+        ? {
+            invite: {
+              enabled: true,
+              audience: buildInviteAudience(form),
+              daysBefore: form.inviteDaysBefore,
+              subject: form.inviteSubject,
+              body: form.inviteBody,
+            },
+          }
+        : {}),
+      replay: {
+        enabled: form.replayEnabled,
+        hoursAfter: form.replayHoursAfter,
+        subject: form.replaySubject,
+        body: form.replayBody,
       },
     };
     try {
@@ -430,6 +524,185 @@ export default function AdminEventsPage() {
           ) : null}
         </div>
 
+        {/* Email plan block: auto-invite ahead of time + replay follow-up. The
+            24h/1h reminders to registrants are always automatic. */}
+        <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+          <p className="text-sm font-semibold text-emerald-900">Email plan</p>
+          <p className="mt-0.5 text-xs text-emerald-800/80">
+            Registrants always get automatic 24h and 1h reminders. Set up the invite and the replay
+            follow-up here.
+          </p>
+
+          {/* Invite */}
+          {form.id && form.id.length > 0 ? (
+            <p className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-xs text-slate-600">
+              Invite campaigns are set at creation. Manage or resend from Emails &gt; Campaigns.
+            </p>
+          ) : (
+            <div className="mt-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                <input
+                  type="checkbox"
+                  checked={form.inviteEnabled}
+                  onChange={(e) => setForm({ ...form, inviteEnabled: e.target.checked })}
+                />
+                Schedule an invite email to drive registrations
+              </label>
+              {form.inviteEnabled ? (
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="font-medium text-slate-700">Audience</span>
+                    <select
+                      value={form.inviteAudienceKind}
+                      onChange={(e) =>
+                        setForm({ ...form, inviteAudienceKind: e.target.value as InviteAudienceKind })
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      <option value="pro">Pro members</option>
+                      <option value="trial">Trial members</option>
+                      <option value="engaged">Engaged openers (opened more than N)</option>
+                      <option value="tag">Contacts with a tag</option>
+                      <option value="all_contacts">All contacts</option>
+                      <option value="pasted">Pasted list</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="font-medium text-slate-700">Send this many days before</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={form.inviteDaysBefore}
+                      onChange={(e) =>
+                        setForm({ ...form, inviteDaysBefore: Number(e.target.value) || 0 })
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  {form.inviteAudienceKind === "engaged" ? (
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="font-medium text-slate-700">Opened more than</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={form.inviteMinOpens}
+                        onChange={(e) =>
+                          setForm({ ...form, inviteMinOpens: Number(e.target.value) || 2 })
+                        }
+                        className="rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </label>
+                  ) : null}
+                  {form.inviteAudienceKind === "tag" ? (
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="font-medium text-slate-700">Tag</span>
+                      <input
+                        type="text"
+                        value={form.inviteTag}
+                        onChange={(e) => setForm({ ...form, inviteTag: e.target.value })}
+                        className="rounded-lg border border-slate-300 px-3 py-2"
+                        placeholder="cold-ig-amazon"
+                      />
+                    </label>
+                  ) : null}
+                  {form.inviteAudienceKind === "pasted" ? (
+                    <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
+                      <span className="font-medium text-slate-700">Emails (comma or newline separated)</span>
+                      <textarea
+                        value={form.invitePasted}
+                        onChange={(e) => setForm({ ...form, invitePasted: e.target.value })}
+                        rows={2}
+                        className="rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </label>
+                  ) : null}
+                  <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
+                    <span className="font-medium text-slate-700">Invite subject (optional)</span>
+                    <input
+                      type="text"
+                      value={form.inviteSubject}
+                      onChange={(e) => setForm({ ...form, inviteSubject: e.target.value })}
+                      className="rounded-lg border border-slate-300 px-3 py-2"
+                      placeholder="Auto: You are invited: <event title>"
+                    />
+                  </label>
+                  <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
+                    <span className="font-medium text-slate-700">Invite body (optional)</span>
+                    <textarea
+                      value={form.inviteBody}
+                      onChange={(e) => setForm({ ...form, inviteBody: e.target.value })}
+                      rows={3}
+                      className="rounded-lg border border-slate-300 px-3 py-2"
+                      placeholder="Leave blank to auto-write from the title, time, and description."
+                    />
+                  </label>
+                  <p className="sm:col-span-2 text-xs text-slate-500">
+                    This creates a scheduled draft in Emails &gt; Campaigns (sent{" "}
+                    {form.inviteDaysBefore} day{form.inviteDaysBefore === 1 ? "" : "s"} before, or at
+                    least an hour from now if the event is sooner). You can review, edit, or cancel it
+                    there before it sends.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Replay follow-up */}
+          <div className="mt-4 border-t border-emerald-100 pt-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+              <input
+                type="checkbox"
+                checked={form.replayEnabled}
+                onChange={(e) => setForm({ ...form, replayEnabled: e.target.checked })}
+              />
+              Send a replay follow-up to registrants after the event
+            </label>
+            {form.replayEnabled ? (
+              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-slate-700">Hours after it ends</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={240}
+                    value={form.replayHoursAfter}
+                    onChange={(e) =>
+                      setForm({ ...form, replayHoursAfter: Number(e.target.value) || 3 })
+                    }
+                    className="rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-slate-700">Replay subject (optional)</span>
+                  <input
+                    type="text"
+                    value={form.replaySubject}
+                    onChange={(e) => setForm({ ...form, replaySubject: e.target.value })}
+                    className="rounded-lg border border-slate-300 px-3 py-2"
+                    placeholder="Auto: Replay: <event title>"
+                  />
+                </label>
+                <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-slate-700">Replay body (optional)</span>
+                  <textarea
+                    value={form.replayBody}
+                    onChange={(e) => setForm({ ...form, replayBody: e.target.value })}
+                    rows={2}
+                    className="rounded-lg border border-slate-300 px-3 py-2"
+                    placeholder="Use {{REPLAY_URL}} where the link should go. Leave blank for the default."
+                  />
+                </label>
+                <p className="sm:col-span-2 text-xs text-slate-500">
+                  Sent once, only after a replay link exists (the YouTube upload, or the raw
+                  recording). Needs recording turned on above.
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
         <div className="mt-5 flex items-center gap-3">
           <button
             type="button"
@@ -496,6 +769,16 @@ export default function AdminEventsPage() {
                     {new Date(e.startsAt).toLocaleString()} · {e.registrations} registered ·{" "}
                     {e.meetingProvider === "google_meet" ? "Meet" : e.joinUrl ? "manual link" : "no link"} ·
                     recording: {e.recordingStatus}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Invite: {e.inviteCampaignId ? "scheduled" : "none"}
+                    {" · "}
+                    Replay:{" "}
+                    {e.replayEmailedAt
+                      ? "sent"
+                      : e.replayHoursAfter !== null
+                        ? `on (${e.replayHoursAfter}h after)`
+                        : "off"}
                   </p>
                   {e.joinUrl ? (
                     <a

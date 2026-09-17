@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/events";
 import { sendEventReminder, type EventEmailData } from "@/lib/event-emails";
+import { sendEventReplays } from "@/lib/event-email-lifecycle";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,8 +61,25 @@ export async function GET(request: Request) {
     .lte("starts_at", in24h);
   if (evErr) return NextResponse.json({ error: "Query failed" }, { status: 500 });
 
+  // Replay follow-up pass: send the replay email for any recently-ended event
+  // that is due and has a replay link. Runs every hour regardless of whether
+  // there are upcoming events, and is skipped in dry mode (it sends).
+  const replay = dry
+    ? { skipped: false, events: 0, sent: 0 }
+    : await sendEventReplays(admin, now);
+
   const events = (eventsData ?? []) as EventRow[];
-  if (events.length === 0) return NextResponse.json({ ok: true, dry, events: 0, sent24: 0, sent1: 0 });
+  if (events.length === 0) {
+    return NextResponse.json({
+      ok: true,
+      dry,
+      events: 0,
+      sent24: 0,
+      sent1: 0,
+      replayEvents: replay.events,
+      replaySent: replay.sent,
+    });
+  }
 
   const eventById = new Map(events.map((e) => [e.id, e]));
   const { data: regData, error: regErr } = await admin
@@ -120,5 +138,14 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, dry, events: events.length, candidates: regs.length, sent24, sent1 });
+  return NextResponse.json({
+    ok: true,
+    dry,
+    events: events.length,
+    candidates: regs.length,
+    sent24,
+    sent1,
+    replayEvents: replay.events,
+    replaySent: replay.sent,
+  });
 }

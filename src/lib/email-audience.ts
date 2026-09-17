@@ -16,6 +16,7 @@ export type Audience =
   | { kind: "tag"; tag: string }
   | { kind: "all_contacts" }
   | { kind: "segment"; segment: AudienceSegment }
+  | { kind: "engaged"; minOpens: number; withinDays?: number }
   | { kind: "pasted"; emails: string[] };
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,6 +28,12 @@ const PAGE = 1000;
 const CHUNK = 200;
 const MAX_AUDIENCE = 20000;
 const MAX_PASTED = 2000;
+
+// Ceiling on how many opened-email rows the "engaged" audience will scan, so a
+// large email_sends table can never turn a preview into a runaway query.
+const OPEN_SCAN_CAP = 200000;
+const MAX_MIN_OPENS = 50;
+const MAX_WITHIN_DAYS = 3650;
 
 /** Statuses that mean a user currently has live access. Mirrors winback. */
 const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
@@ -75,6 +82,22 @@ export function parseAudience(input: unknown): Audience | null {
     case "segment": {
       const segment = raw.segment as AudienceSegment;
       return SEGMENTS.has(segment) ? { kind: "segment", segment } : null;
+    }
+    case "engaged": {
+      // minOpens is the threshold recipients must beat: we keep anyone who has
+      // opened STRICTLY MORE than this many of our emails, so minOpens:2 means
+      // "opened more than two" (three or more). Defaults to 2.
+      const minOpens =
+        typeof raw.minOpens === "number" && Number.isFinite(raw.minOpens)
+          ? Math.max(1, Math.min(MAX_MIN_OPENS, Math.floor(raw.minOpens)))
+          : 2;
+      const withinDays =
+        typeof raw.withinDays === "number" && Number.isFinite(raw.withinDays)
+          ? Math.max(1, Math.min(MAX_WITHIN_DAYS, Math.floor(raw.withinDays)))
+          : undefined;
+      return withinDays
+        ? { kind: "engaged", minOpens, withinDays }
+        : { kind: "engaged", minOpens };
     }
     case "pasted": {
       if (!Array.isArray(raw.emails)) return null;
@@ -178,6 +201,92 @@ async function emailsForUserIds(
 }
 
 /**
+ * Collects addresses that appear in email_suppressions OR are marked
+ * unsubscribed in email_subscribers, restricted to the given candidate list
+ * (chunked .in()). Used to strip opted-out people from the "engaged" audience
+ * at resolve time: "did not unsubscribe" is part of that audience's definition,
+ * not just the send-time safety net that sendMarketingEmail already provides.
+ */
+async function collectOptedOut(
+  db: SupabaseClient,
+  emails: string[],
+  into: Set<string>,
+): Promise<void> {
+  for (const slice of chunk(emails, CHUNK)) {
+    const { data: suppressed } = await db
+      .from("email_suppressions")
+      .select("email")
+      .in("email", slice);
+    for (const row of suppressed ?? []) {
+      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+      if (email) into.add(email);
+    }
+    const { data: unsub } = await db
+      .from("email_subscribers")
+      .select("email")
+      .in("email", slice)
+      .not("unsubscribed_at", "is", null);
+    for (const row of unsub ?? []) {
+      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+      if (email) into.add(email);
+    }
+  }
+}
+
+/**
+ * Pages email_sends for delivered opens, tallies opens per recipient, and keeps
+ * anyone who opened STRICTLY MORE than minOpens of our emails, then drops
+ * opted-out addresses. opened_at is stamped first-open-only (one row per send),
+ * so a row count is an opened-email count. Returns false on a query error so
+ * the caller can surface the migration/setup banner.
+ */
+async function collectEngagedOpeners(
+  db: SupabaseClient,
+  minOpens: number,
+  withinDays: number | undefined,
+  into: Set<string>,
+): Promise<boolean> {
+  const counts = new Map<string, number>();
+  const sinceIso =
+    withinDays && withinDays > 0
+      ? new Date(Date.now() - withinDays * 86_400_000).toISOString()
+      : null;
+  let offset = 0;
+  let scanned = 0;
+  for (;;) {
+    let q = db
+      .from("email_sends")
+      .select("recipient")
+      .not("opened_at", "is", null)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE - 1);
+    if (sinceIso) q = q.gte("created_at", sinceIso);
+    const { data, error } = await q;
+    if (error) return false;
+    const rows = data ?? [];
+    for (const row of rows) {
+      const email = typeof row.recipient === "string" ? row.recipient.trim().toLowerCase() : "";
+      if (email) counts.set(email, (counts.get(email) ?? 0) + 1);
+    }
+    scanned += rows.length;
+    if (rows.length < PAGE || scanned >= OPEN_SCAN_CAP) break;
+    offset += PAGE;
+  }
+
+  const candidates: string[] = [];
+  for (const [email, n] of counts) {
+    if (n > minOpens) candidates.push(email);
+  }
+
+  const optedOut = new Set<string>();
+  await collectOptedOut(db, candidates, optedOut);
+  for (const email of candidates) {
+    if (!optedOut.has(email) && into.size < MAX_AUDIENCE) into.add(email);
+  }
+  return true;
+}
+
+/**
  * Resolves an audience to a concrete deduped list of lowercased addresses.
  * migrationPending is true when the contacts table (or its tags column) is
  * missing, so callers can surface the apply-the-migration banner.
@@ -199,6 +308,11 @@ export async function resolveAudience(
 
     case "tag": {
       const ok = await collectSubscribers(db, into, { tag: audience.tag });
+      return { emails: [...into], migrationPending: !ok };
+    }
+
+    case "engaged": {
+      const ok = await collectEngagedOpeners(db, audience.minOpens, audience.withinDays, into);
       return { emails: [...into], migrationPending: !ok };
     }
 

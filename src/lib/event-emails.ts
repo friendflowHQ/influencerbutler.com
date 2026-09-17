@@ -199,3 +199,47 @@ export async function sendEventRecap(
   ]);
   return sendResend(e.toEmail, `Recap: ${e.title}`, body, "event_recap", undefined, html);
 }
+
+/**
+ * Replay follow-up: sent once, a few hours after the event ends, with the
+ * public replay link (the YouTube upload, or the recording URL as a fallback).
+ * Distinct from the AI recap: this one is a short "watch or share the replay"
+ * nudge. Transactional (registrants asked for this event), so no unsubscribe
+ * footer, matching the confirmation/reminder/recap convention above.
+ *
+ * `subject`/`body` may be supplied (the admin's own copy, with a {{REPLAY_URL}}
+ * placeholder); when omitted a sensible default is used. The replay link is
+ * always appended if the body does not already reference it, so the link can
+ * never be lost to a bad template.
+ */
+export async function sendEventReplay(
+  e: EventEmailData,
+  replayUrl: string,
+  copy?: { subject?: string | null; body?: string | null },
+): Promise<boolean> {
+  const subject = (copy?.subject || "").trim() || `Replay: ${e.title}`;
+  let body = (copy?.body || "").trim();
+  if (body) {
+    body = body.split("{{REPLAY_URL}}").join(replayUrl);
+    if (!body.includes(replayUrl)) body += `\n\nWatch the replay: ${replayUrl}`;
+  } else {
+    body = [
+      `Hi ${firstName(e.toName, e.toEmail)},`,
+      ``,
+      `Thanks for registering for ${e.title}. The replay is ready:`,
+      ``,
+      `Watch the replay: ${replayUrl}`,
+      ``,
+      `Missed it live or want to revisit a part? The full recording is yours to watch and share.`,
+      `You can find upcoming events any time from your dashboard under Upcoming Events.`,
+      ``,
+      `Warmly,`,
+      `Your Influencer Butler Team`,
+    ].join("\n");
+  }
+  const html = htmlFrom(body, [
+    { phrase: "Upcoming Events", href: EVENTS_URL },
+    { phrase: replayUrl, href: replayUrl },
+  ]);
+  return sendResend(e.toEmail, subject, body, "event_replay", undefined, html);
+}

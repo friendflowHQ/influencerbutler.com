@@ -15,6 +15,12 @@ import { loadConfig } from "@/lib/scheduling-server";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured } from "@/lib/recall";
 import { ownerNotifyEmail } from "@/lib/call-emails";
+import {
+  parseInvitePlan,
+  parseReplayPlan,
+  scheduleEventInvite,
+  saveReplayPlan,
+} from "@/lib/event-email-lifecycle";
 import { parseEventInput, type EventInput } from "../shared";
 
 export const runtime = "nodejs";
@@ -124,13 +130,40 @@ export async function POST(request: Request) {
     }
   }
 
+  // Email lifecycle (best-effort, never blocks event creation): schedule the
+  // invite campaign for the chosen audience, and persist the replay follow-up
+  // plan. The 24h/1h reminders are handled by cron/event-reminders already.
+  let inviteCampaignId: string | null = null;
+  try {
+    const invitePlan = parseInvitePlan((raw as { invite?: unknown }).invite);
+    if (invitePlan) {
+      const res = await scheduleEventInvite(admin, {
+        event: {
+          id: eventId,
+          title: input.title,
+          description: input.description,
+          startMs: input.startMs,
+          endMs: input.endMs,
+          timezone: input.timezone,
+        },
+        plan: invitePlan,
+        createdBy: actor.email,
+      });
+      inviteCampaignId = res.campaignId;
+    }
+    const replayPlan = parseReplayPlan((raw as { replay?: unknown }).replay);
+    if (replayPlan) await saveReplayPlan(admin, eventId, replayPlan);
+  } catch (e) {
+    console.error("[admin/events/create] lifecycle", e);
+  }
+
   await logAdminAction({
     actor,
     action: "event.create",
     targetType: "event",
     targetId: eventId,
-    details: { title: input.title, provider, recordingStatus },
+    details: { title: input.title, provider, recordingStatus, inviteCampaignId },
   });
 
-  return NextResponse.json({ ok: true, id: eventId, joinUrl });
+  return NextResponse.json({ ok: true, id: eventId, joinUrl, inviteCampaignId });
 }

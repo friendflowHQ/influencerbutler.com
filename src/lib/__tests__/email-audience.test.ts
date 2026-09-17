@@ -96,6 +96,33 @@ describe("parseAudience", () => {
     expect(parseAudience({ kind: "pasted", emails: [] })).toBeNull();
   });
 
+  it("parses an engaged audience, defaulting minOpens and omitting withinDays", () => {
+    expect(parseAudience({ kind: "engaged" })).toEqual({ kind: "engaged", minOpens: 2 });
+    expect(parseAudience({ kind: "engaged", minOpens: 4 })).toEqual({ kind: "engaged", minOpens: 4 });
+    expect(parseAudience({ kind: "engaged", minOpens: 3, withinDays: 90 })).toEqual({
+      kind: "engaged",
+      minOpens: 3,
+      withinDays: 90,
+    });
+  });
+
+  it("clamps and sanitizes engaged parameters", () => {
+    // Floors, and clamps below 1 up to 1 / above the ceilings down.
+    expect(parseAudience({ kind: "engaged", minOpens: 0 })).toEqual({ kind: "engaged", minOpens: 1 });
+    expect(parseAudience({ kind: "engaged", minOpens: 999 })).toEqual({ kind: "engaged", minOpens: 50 });
+    expect(parseAudience({ kind: "engaged", minOpens: 2.9 })).toEqual({ kind: "engaged", minOpens: 2 });
+    // A non-numeric or non-finite minOpens falls back to the default of 2.
+    expect(parseAudience({ kind: "engaged", minOpens: "lots" })).toEqual({ kind: "engaged", minOpens: 2 });
+    // withinDays is dropped when garbage, clamped when out of range.
+    expect(parseAudience({ kind: "engaged", withinDays: 0 })).toEqual({ kind: "engaged", minOpens: 2, withinDays: 1 });
+    expect(parseAudience({ kind: "engaged", withinDays: 999999 })).toEqual({
+      kind: "engaged",
+      minOpens: 2,
+      withinDays: 3650,
+    });
+    expect(parseAudience({ kind: "engaged", withinDays: "recent" })).toEqual({ kind: "engaged", minOpens: 2 });
+  });
+
   it("rejects unknown or malformed shapes", () => {
     expect(parseAudience(null)).toBeNull();
     expect(parseAudience("all_contacts")).toBeNull();

@@ -9,7 +9,13 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { getAdmin } from "@/lib/events";
+import { getAdmin, getEvent } from "@/lib/events";
+import {
+  parseInvitePlan,
+  parseReplayPlan,
+  scheduleEventInvite,
+  saveReplayPlan,
+} from "@/lib/event-email-lifecycle";
 import { parseEventInput } from "../shared";
 
 export const runtime = "nodejs";
@@ -63,6 +69,35 @@ export async function POST(request: Request) {
   if (error) {
     console.error("[admin/events/update] update", error.message);
     return NextResponse.json({ error: "Could not update event." }, { status: 500 });
+  }
+
+  // Email lifecycle (best-effort): persist the replay plan, and schedule an
+  // invite campaign if one is requested and this event does not already have
+  // one (so re-saving an event never creates duplicate invites).
+  try {
+    const replayPlan = parseReplayPlan((raw as { replay?: unknown }).replay);
+    if (replayPlan) await saveReplayPlan(admin, id, replayPlan);
+
+    const invitePlan = parseInvitePlan((raw as { invite?: unknown }).invite);
+    if (invitePlan) {
+      const existing = await getEvent(admin, id);
+      if (!existing?.inviteCampaignId) {
+        await scheduleEventInvite(admin, {
+          event: {
+            id,
+            title: input.title,
+            description: input.description,
+            startMs: input.startMs,
+            endMs: input.endMs,
+            timezone: input.timezone,
+          },
+          plan: invitePlan,
+          createdBy: actor.email,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[admin/events/update] lifecycle", e);
   }
 
   await logAdminAction({

@@ -47,6 +47,16 @@ export type EventRow = {
   imageUrl: string | null;
   createdAt: string;
   cancelledAt: string | null;
+  // Email-lifecycle fields (migration 20260917_event_email_lifecycle). Read via
+  // a full-then-base fallback, so these are null when the migration has not been
+  // applied yet rather than breaking the whole event read.
+  inviteAudience: unknown | null;
+  inviteDaysBefore: number | null;
+  inviteCampaignId: string | null;
+  replaySubject: string | null;
+  replayBody: string | null;
+  replayHoursAfter: number | null;
+  replayEmailedAt: string | null;
 };
 
 export type EventRegistration = {
@@ -90,6 +100,26 @@ const EVENT_COLS =
   "youtube_status,youtube_video_id,youtube_url,youtube_error,youtube_uploaded_at," +
   "image_url,created_at,cancelled_at";
 
+// The email-lifecycle columns (migration 20260917) live only in the admin read
+// path. They are appended to EVENT_COLS for the "full" select; if that select
+// errors because the migration has not been applied, callers fall back to
+// EVENT_COLS and the lifecycle fields map to null. This keeps the public list,
+// banner feed, and reminder cron (which use EVENT_COLS) unaffected by the
+// migration ordering.
+const EVENT_LIFECYCLE_COLS =
+  "invite_audience,invite_days_before,invite_campaign_id," +
+  "replay_subject,replay_body,replay_hours_after,replay_emailed_at";
+const EVENT_COLS_FULL = `${EVENT_COLS},${EVENT_LIFECYCLE_COLS}`;
+
+/** True when a Postgres/PostgREST error is "column does not exist" (migration
+ * not applied yet), so a full select can fall back to the base columns. */
+function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42703" || error.code === "PGRST204") return true;
+  const m = (error.message || "").toLowerCase();
+  return m.includes("column") && (m.includes("does not exist") || m.includes("schema cache"));
+}
+
 function toEvent(r: Record<string, unknown>): EventRow {
   const surfaces = Array.isArray(r.banner_surfaces)
     ? (r.banner_surfaces as string[]).filter(
@@ -128,28 +158,67 @@ function toEvent(r: Record<string, unknown>): EventRow {
     imageUrl: (r.image_url as string | null) ?? null,
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
     cancelledAt: (r.cancelled_at as string | null) ?? null,
+    inviteAudience: r.invite_audience ?? null,
+    inviteDaysBefore:
+      typeof r.invite_days_before === "number" ? (r.invite_days_before as number) : null,
+    inviteCampaignId: (r.invite_campaign_id as string | null) ?? null,
+    replaySubject: (r.replay_subject as string | null) ?? null,
+    replayBody: (r.replay_body as string | null) ?? null,
+    replayHoursAfter:
+      typeof r.replay_hours_after === "number" ? (r.replay_hours_after as number) : null,
+    replayEmailedAt: (r.replay_emailed_at as string | null) ?? null,
   };
 }
 
 // ── Admin reads ──────────────────────────────────────────────────────────
 
+// Minimal error shape shared by the full/base fallback readers, so the two
+// differently-typed selects can be assigned to one binding without a clash.
+type QueryError = { code?: string; message?: string } | null;
+
 export async function listEvents(admin: Admin, limit = 100): Promise<EventRow[]> {
-  const { data, error } = await admin
-    .from("events")
-    .select(EVENT_COLS)
-    .order("starts_at", { ascending: false })
-    .limit(limit);
+  let data: unknown = null;
+  let error: QueryError = null;
+  {
+    const r = await admin
+      .from("events")
+      .select(EVENT_COLS_FULL)
+      .order("starts_at", { ascending: false })
+      .limit(limit);
+    data = r.data;
+    error = r.error;
+  }
+  if (error && isMissingColumn(error)) {
+    const r = await admin
+      .from("events")
+      .select(EVENT_COLS)
+      .order("starts_at", { ascending: false })
+      .limit(limit);
+    data = r.data;
+    error = r.error;
+  }
   if (error) {
     console.error("[events] listEvents", error.message);
     return [];
   }
-  return ((data ?? []) as unknown as Record<string, unknown>[]).map(toEvent);
+  return ((data ?? []) as Record<string, unknown>[]).map(toEvent);
 }
 
 export async function getEvent(admin: Admin, id: string): Promise<EventRow | null> {
-  const { data, error } = await admin.from("events").select(EVENT_COLS).eq("id", id).maybeSingle();
+  let data: unknown = null;
+  let error: QueryError = null;
+  {
+    const r = await admin.from("events").select(EVENT_COLS_FULL).eq("id", id).maybeSingle();
+    data = r.data;
+    error = r.error;
+  }
+  if (error && isMissingColumn(error)) {
+    const r = await admin.from("events").select(EVENT_COLS).eq("id", id).maybeSingle();
+    data = r.data;
+    error = r.error;
+  }
   if (error || !data) return null;
-  return toEvent(data as unknown as Record<string, unknown>);
+  return toEvent(data as Record<string, unknown>);
 }
 
 /** Upcoming, non-cancelled events for the customer-facing list. */
