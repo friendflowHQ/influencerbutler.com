@@ -18,9 +18,78 @@ import { accessTokenFrom, isGoogleConfigured } from "@/lib/google-meet";
 
 export type YouTubePrivacy = "public" | "unlisted" | "private";
 
+export type YouTubeChannel = { id: string; title: string; handle: string | null };
+
 export type YouTubeUploadResult =
-  | { ok: true; videoId: string; url: string }
-  | { ok: false; error: string };
+  | { ok: true; videoId: string; url: string; channel: YouTubeChannel | null; thumbnailSet: boolean }
+  | { ok: false; error: string; channel?: YouTubeChannel | null };
+
+/** Normalizes a channel id or handle for comparison: lowercased, no leading @. */
+function normChannel(s: string): string {
+  return s.trim().toLowerCase().replace(/^@/, "");
+}
+
+/** True when the bound channel matches the expected id or handle. */
+function channelMatches(ch: YouTubeChannel, expected: string): boolean {
+  const want = normChannel(expected);
+  return (
+    normChannel(ch.id) === want ||
+    (ch.handle ? normChannel(ch.handle) === want : false) ||
+    normChannel(ch.title) === want
+  );
+}
+
+/**
+ * Which YouTube channel the given refresh token uploads to. For a Google account
+ * with several channels (brand accounts), the OAuth token is bound to exactly
+ * one, and mine=true returns it. Used to verify the connection targets the right
+ * channel before (and after) an upload. Returns null on any failure.
+ */
+export async function getBoundChannel(refreshToken: string): Promise<YouTubeChannel | null> {
+  const accessToken = await accessTokenFrom(refreshToken);
+  if (!accessToken) return null;
+  return getBoundChannelWithToken(accessToken);
+}
+
+async function getBoundChannelWithToken(accessToken: string): Promise<YouTubeChannel | null> {
+  try {
+    const res = await fetch(
+      "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&maxResults=1",
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      items?: { id?: string; snippet?: { title?: string; customUrl?: string } }[];
+    };
+    const it = json.items?.[0];
+    if (!it?.id) return null;
+    return {
+      id: it.id,
+      title: it.snippet?.title ?? "",
+      handle: it.snippet?.customUrl ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort custom thumbnail. Needs a verified channel; a failure (unverified
+ *  channel, unfetchable image) is swallowed so it never fails the upload. */
+async function setThumbnail(accessToken: string, videoId: string, imageUrl: string): Promise<boolean> {
+  try {
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) return false;
+    const ct = (imgRes.headers.get("content-type") || "image/png").split(";")[0].trim();
+    const bytes = Buffer.from(await imgRes.arrayBuffer());
+    const put = await fetch(
+      `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${encodeURIComponent(videoId)}`,
+      { method: "POST", headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": ct }, body: bytes },
+    );
+    return put.ok;
+  } catch {
+    return false;
+  }
+}
 
 /** YouTube caps: title 100 chars, description 5000 chars. Trim defensively. */
 function clampTitle(s: string): string {
@@ -44,6 +113,11 @@ export async function uploadVideoFromUrl(args: {
   title: string;
   description: string;
   privacyStatus?: YouTubePrivacy;
+  /** If set (channel id or @handle), the upload is refused unless the connected
+   *  token is bound to this channel, so it can never land on the wrong one. */
+  expectedChannel?: string | null;
+  /** Public image URL to set as the video thumbnail (best-effort). */
+  thumbnailUrl?: string | null;
 }): Promise<YouTubeUploadResult> {
   if (!isGoogleConfigured()) return { ok: false, error: "Google OAuth not configured" };
   if (!args.refreshToken) return { ok: false, error: "No Google refresh token; connect Google in Scheduling" };
@@ -52,6 +126,22 @@ export async function uploadVideoFromUrl(args: {
   const accessToken = await accessTokenFrom(args.refreshToken);
   if (!accessToken) {
     return { ok: false, error: "Could not mint a Google access token (refresh token invalid or scope missing)" };
+  }
+
+  // Resolve which channel this token uploads to, and refuse if it is not the
+  // expected one (the account may have several channels / brand accounts).
+  const channel = await getBoundChannelWithToken(accessToken);
+  if (args.expectedChannel) {
+    if (!channel) {
+      return { ok: false, error: "Could not read the connected YouTube channel to verify it.", channel: null };
+    }
+    if (!channelMatches(channel, args.expectedChannel)) {
+      return {
+        ok: false,
+        channel,
+        error: `Connected to "${channel.title}" (${channel.handle ?? channel.id}), not ${args.expectedChannel}. Reconnect Google in Scheduling and pick the right channel.`,
+      };
+    }
   }
 
   // Open the source stream from Recall first so we can forward its Content-Length
@@ -140,7 +230,13 @@ export async function uploadVideoFromUrl(args: {
   } catch {
     /* fall through to the missing-id error */
   }
-  if (!videoId) return { ok: false, error: "Upload completed but YouTube returned no video id" };
+  if (!videoId) return { ok: false, error: "Upload completed but YouTube returned no video id", channel };
 
-  return { ok: true, videoId, url: `https://www.youtube.com/watch?v=${videoId}` };
+  // Best-effort custom thumbnail from the event cover image.
+  let thumbnailSet = false;
+  if (args.thumbnailUrl) {
+    thumbnailSet = await setThumbnail(accessToken, videoId, args.thumbnailUrl);
+  }
+
+  return { ok: true, videoId, url: `https://www.youtube.com/watch?v=${videoId}`, channel, thumbnailSet };
 }

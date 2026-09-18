@@ -39,7 +39,13 @@ type Row = {
   title: string;
   description: string | null;
   recording_url: string | null;
+  image_url: string | null;
 };
+
+// Optional guard: when set (a channel id or @handle), the upload is refused
+// unless the connected Google token is bound to this channel, so a multi-channel
+// account can never publish to the wrong one. Unset = no channel check.
+const TARGET_CHANNEL = process.env.YOUTUBE_TARGET_CHANNEL || null;
 
 /** Public YouTube description: event blurb + attribution + link. Never the
  *  transcript or any registrant data, since the video is Public. */
@@ -60,7 +66,7 @@ export async function GET(request: Request) {
   // Oldest waiting recording that actually has a video to push.
   const { data, error } = await admin
     .from("events")
-    .select("id,title,description,recording_url")
+    .select("id,title,description,recording_url,image_url")
     .eq("youtube_status", "pending")
     .not("recording_url", "is", null)
     .order("recorded_at", { ascending: true })
@@ -101,6 +107,8 @@ export async function GET(request: Request) {
     title: row.title,
     description: buildDescription(row),
     privacyStatus: "public",
+    expectedChannel: TARGET_CHANNEL,
+    thumbnailUrl: row.image_url,
   });
 
   if (res.ok) {
@@ -114,7 +122,13 @@ export async function GET(request: Request) {
         youtube_uploaded_at: new Date().toISOString(),
       })
       .eq("id", row.id);
-    return NextResponse.json({ ok: true, id: row.id, url: res.url });
+    return NextResponse.json({
+      ok: true,
+      id: row.id,
+      url: res.url,
+      channel: res.channel,
+      thumbnailSet: res.thumbnailSet,
+    });
   }
 
   await admin
