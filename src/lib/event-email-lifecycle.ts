@@ -6,9 +6,11 @@
  *             so the existing marketing cron materializes + sends it (throttled,
  *             suppression-safe, tracked). We just create the row and remember
  *             the link on the event.
- *   Replay  : a short follow-up to registrants with the replay video link, sent
- *             once, replay_hours_after hours after the event ends, and only once
- *             a YouTube (or recording) link exists. Idempotent via
+ *   Replay  : a short follow-up to registrants with the YouTube replay link,
+ *             sent once, replay_hours_after hours after the event ends, and only
+ *             once the recording is up on YouTube (a public, shareable link). It
+ *             deliberately does NOT fall back to the raw recording URL: if the
+ *             upload has not happened yet it waits. Idempotent via
  *             events.replay_emailed_at, mirroring the reminder stamps.
  *
  * The 24h/1h reminders to registrants are handled separately by
@@ -253,7 +255,6 @@ type ReplayEventRow = {
   join_url: string | null;
   image_url: string | null;
   youtube_url: string | null;
-  recording_url: string | null;
   replay_subject: string | null;
   replay_body: string | null;
   replay_hours_after: number | null;
@@ -262,14 +263,16 @@ type ReplayEventRow = {
 
 const REPLAY_SELECT =
   "id,title,description,starts_at,ends_at,timezone,join_url,image_url," +
-  "youtube_url,recording_url,replay_subject,replay_body,replay_hours_after,replay_emailed_at";
+  "youtube_url,replay_subject,replay_body,replay_hours_after,replay_emailed_at";
 
 /**
- * Sends the replay follow-up for any recently-ended event that is due, has a
- * replay link, has the follow-up enabled (replay_hours_after not null), and has
- * not been emailed yet. One email per active registrant, then the event is
- * stamped so it never re-sends. Returns per-run counts; skipped:true when the
- * lifecycle migration has not been applied (so the caller can no-op cleanly).
+ * Sends the replay follow-up for any recently-ended event that is due, is up on
+ * YouTube (youtube_url set), has the follow-up enabled (replay_hours_after not
+ * null), and has not been emailed yet. One email per active registrant, then the
+ * event is stamped so it never re-sends. An event whose upload has not landed
+ * yet is left alone and retried next run (bounded by REPLAY_LOOKBACK_MS), so we
+ * never email a raw recording link. Returns per-run counts; skipped:true when
+ * the lifecycle migration has not been applied (so the caller can no-op cleanly).
  */
 export async function sendEventReplays(
   admin: SupabaseClient,
@@ -299,8 +302,11 @@ export async function sendEventReplays(
 
   for (const ev of rows) {
     if (ev.replay_hours_after === null || ev.replay_hours_after === undefined) continue; // disabled
-    const replayUrl = ev.youtube_url || ev.recording_url;
-    if (!replayUrl) continue; // no replay to send yet
+    // YouTube-only: send only once the recording is uploaded to YouTube. Do NOT
+    // fall back to the raw recording URL - if the upload has not happened yet,
+    // skip (do not stamp) and retry next run so the replay waits for YouTube.
+    const replayUrl = ev.youtube_url;
+    if (!replayUrl) continue; // not on YouTube yet
     const endMs = Date.parse(ev.ends_at);
     if (!replayDue(endMs, ev.replay_hours_after, nowMs)) continue;
 

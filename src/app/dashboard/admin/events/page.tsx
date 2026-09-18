@@ -308,6 +308,12 @@ export default function AdminEventsPage() {
       setDraftNote("Add a title, a start time, and an end time first, then Draft with AI.");
       return;
     }
+    const startIso = fromLocalInput(form.startsAt);
+    const endIso = fromLocalInput(form.endsAt);
+    if (!startIso || !endIso || Date.parse(endIso) <= Date.parse(startIso)) {
+      setDraftNote("The end time must be after the start time. Check the Ends date.");
+      return;
+    }
     setDrafting(true);
     setDraftNote("Drafting with AI, this takes a few seconds...");
     try {
@@ -776,8 +782,9 @@ export default function AdminEventsPage() {
                   />
                 </label>
                 <p className="sm:col-span-2 text-xs text-slate-500">
-                  Sent once, only after a replay link exists (the YouTube upload, or the raw
-                  recording). Needs recording turned on above.
+                  Sent once, only after the recording is uploaded to YouTube (a public,
+                  shareable link). If it never reaches YouTube, no replay email goes out. Needs
+                  recording turned on above.
                 </p>
               </div>
             ) : null}

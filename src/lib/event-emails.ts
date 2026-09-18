@@ -202,10 +202,10 @@ export async function sendEventRecap(
 
 /**
  * Replay follow-up: sent once, a few hours after the event ends, with the
- * public replay link (the YouTube upload, or the recording URL as a fallback).
- * Distinct from the AI recap: this one is a short "watch or share the replay"
- * nudge. Transactional (registrants asked for this event), so no unsubscribe
- * footer, matching the confirmation/reminder/recap convention above.
+ * public YouTube replay link (the caller only invokes this once the upload
+ * exists, never with a raw recording URL). Distinct from the AI recap: this one
+ * is a short "watch or share the replay" nudge. Transactional (registrants asked
+ * for this event), so no unsubscribe footer, matching the convention above.
  *
  * `subject`/`body` may be supplied (the admin's own copy, with a {{REPLAY_URL}}
  * placeholder); when omitted a sensible default is used. The replay link is
