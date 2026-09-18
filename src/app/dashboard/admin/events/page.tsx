@@ -981,41 +981,82 @@ function RegistrationsPanel({ eventId }: { eventId: string }) {
   const [regs, setRegs] = useState<RegRow[]>([]);
   const [event, setEvent] = useState<RecapEvent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [regen, setRegen] = useState(false);
+  const [regenMsg, setRegenMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/events/registrations?id=${encodeURIComponent(eventId)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { registrations?: RegRow[]; event?: RecapEvent };
+      setRegs(data.registrations ?? []);
+      setEvent(data.event ?? null);
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch(`/api/admin/events/registrations?id=${encodeURIComponent(eventId)}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as { registrations?: RegRow[]; event?: RecapEvent };
-        if (!alive) return;
-        setRegs(data.registrations ?? []);
-        setEvent(data.event ?? null);
-      } finally {
-        if (alive) setLoading(false);
+    void load();
+  }, [load]);
+
+  const regenerate = async () => {
+    setRegen(true);
+    setRegenMsg("Generating recap from the transcript...");
+    try {
+      const res = await fetch("/api/admin/events/recap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: eventId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setRegenMsg(data.error || "Could not generate the recap.");
+        return;
       }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [eventId]);
+      setRegenMsg("Recap ready.");
+      await load();
+    } finally {
+      setRegen(false);
+    }
+  };
 
   if (loading) return <p className="mt-3 text-sm text-slate-500">Loading RSVPs...</p>;
 
   const active = regs.filter((r) => !r.cancelled);
   const notes = event?.aiNotes;
+  const canRecap = event?.recordingStatus === "ready" || !!notes;
 
   return (
     <div className="mt-4 border-t border-slate-100 pt-4">
       {notes ? (
         <div className="mb-4 rounded-lg bg-slate-50 p-3 text-sm">
-          <p className="font-semibold text-slate-800">
-            AI recap {event?.highlightsEmailedAt ? "(emailed to registrants)" : "(not emailed yet)"}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-semibold text-slate-800">
+              AI recap {event?.highlightsEmailedAt ? "(emailed to registrants)" : "(not emailed yet)"}
+            </p>
+            <button
+              type="button"
+              onClick={regenerate}
+              disabled={regen}
+              className="rounded border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-600 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
+            >
+              {regen ? "Working..." : "Regenerate"}
+            </button>
+          </div>
           {notes.summary ? <p className="mt-1 text-slate-700">{notes.summary}</p> : null}
+          {notes.keyTopics.length ? (
+            <div className="mt-2">
+              <p className="font-medium text-slate-700">Topics covered</p>
+              <ul className="ml-4 list-disc text-slate-600">
+                {notes.keyTopics.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {notes.actionItems.length ? (
             <div className="mt-2">
               <p className="font-medium text-slate-700">Action items</p>
@@ -1026,13 +1067,39 @@ function RegistrationsPanel({ eventId }: { eventId: string }) {
               </ul>
             </div>
           ) : null}
+          {notes.followUps.length ? (
+            <div className="mt-2">
+              <p className="font-medium text-slate-700">Follow-ups</p>
+              <ul className="ml-4 list-disc text-slate-600">
+                {notes.followUps.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {event?.recordingUrl ? (
             <a href={event.recordingUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-indigo-600 underline">
               Recording
             </a>
           ) : null}
         </div>
+      ) : canRecap ? (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+          <p className="text-amber-800">
+            No AI recap yet for this event. The transcript is captured, so you can generate one.
+          </p>
+          <button
+            type="button"
+            onClick={regenerate}
+            disabled={regen}
+            className="mt-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-60"
+          >
+            {regen ? "Generating..." : "Generate AI recap"}
+          </button>
+          {regenMsg ? <p className="mt-1 text-xs text-amber-700">{regenMsg}</p> : null}
+        </div>
       ) : null}
+      {notes && regenMsg ? <p className="mb-3 text-xs text-slate-500">{regenMsg}</p> : null}
 
       <p className="text-sm font-medium text-slate-700">{active.length} registered</p>
       {active.length === 0 ? (

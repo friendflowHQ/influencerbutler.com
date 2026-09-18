@@ -25,7 +25,10 @@ function resolveProvider(): Provider | null {
     return {
       url: "https://api.groq.com/openai/v1/chat/completions",
       key: process.env.GROQ_API_KEY,
-      model: override || "llama-3.3-70b-versatile",
+      // llama-3.3-70b-versatile was decommissioned on Groq (2026-08-16), which
+      // silently returned null recaps for every call/event. openai/gpt-oss-120b
+      // is the current near-free Groq model (matches ai-concierge/llm.ts).
+      model: override || "openai/gpt-oss-120b",
     };
   }
   if (process.env.OPENAI_API_KEY) {
