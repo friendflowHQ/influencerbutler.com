@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 import { getAdmin, getEvent, type EventRow } from "@/lib/events";
 import { formatEventDate, formatEventTime } from "@/lib/event-image-text";
+import { RECORDING_CONSENT_NOTICE } from "@/lib/event-consent";
 
 export const dynamic = "force-dynamic";
 
@@ -118,6 +119,11 @@ export default async function EventSharePage({
                 Registration opens in your dashboard. New here? You can start a free trial and join.
               </p>
             </div>
+            {event.recordEnabled ? (
+              <p className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                {RECORDING_CONSENT_NOTICE}
+              </p>
+            ) : null}
           </div>
         </div>
       </main>

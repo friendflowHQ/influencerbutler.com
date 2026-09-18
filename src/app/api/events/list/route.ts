@@ -34,6 +34,7 @@ export async function GET() {
     timezone: e.timezone,
     joinUrl: e.joinUrl,
     imageUrl: e.imageUrl,
+    recordEnabled: e.recordEnabled,
     registered: registeredIds.has(e.id),
   }));
 

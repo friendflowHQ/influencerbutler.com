@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
+import { RECORDING_CONSENT_NOTICE } from "@/lib/event-consent";
 
 type EventItem = {
   id: string;
@@ -11,6 +12,7 @@ type EventItem = {
   timezone: string;
   joinUrl: string | null;
   imageUrl: string | null;
+  recordEnabled: boolean;
   registered: boolean;
 };
 
@@ -219,6 +221,11 @@ export default function UpcomingEventsPage() {
                     {e.description ? (
                       <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">
                         {linkify(e.description)}
+                      </p>
+                    ) : null}
+                    {e.recordEnabled ? (
+                      <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                        {RECORDING_CONSENT_NOTICE}
                       </p>
                     ) : null}
                   </div>

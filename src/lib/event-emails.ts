@@ -12,6 +12,7 @@ import { buildIcs, icsBase64 } from "./ics";
 import { bodyToHtml } from "./newsletter";
 import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
+import { RECORDING_CONSENT_NOTICE } from "@/lib/event-consent";
 import type { AiNotes } from "@/lib/ai-notes";
 
 const FROM = transactionalFrom();
@@ -118,7 +119,7 @@ export async function sendEventRegistrationConfirmation(e: EventEmailData): Prom
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     `You can see all upcoming events any time from your dashboard under Upcoming Events.`,
-    `This session is recorded and AI-summarized, and we will email you the highlights afterward.`,
+    RECORDING_CONSENT_NOTICE + ` We will email you the highlights and the replay afterward.`,
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,
@@ -142,6 +143,8 @@ export async function sendEventReminder(e: EventEmailData, which: "24h" | "1h"):
     ``,
     whenLine(e.startMs, e.endMs, tz),
     e.joinUrl ? `Join link: ${e.joinUrl}` : `The join link will be emailed shortly.`,
+    ``,
+    RECORDING_CONSENT_NOTICE,
     ``,
     `See you there.`,
     ``,
