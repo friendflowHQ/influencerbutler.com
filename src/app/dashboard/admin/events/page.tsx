@@ -165,6 +165,7 @@ export default function AdminEventsPage() {
   const [rearmingId, setRearmingId] = useState<string | null>(null);
   const [youtubingId, setYoutubingId] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
+  const [draftNote, setDraftNote] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     try {
@@ -217,6 +218,7 @@ export default function AdminEventsPage() {
       replayBody: e.replayBody ?? "",
     });
     setMessage(null);
+    setDraftNote(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -288,6 +290,7 @@ export default function AdminEventsPage() {
       const savedId = form.id ?? data.id ?? null;
       setMessage(form.id ? "Event updated." : "Event scheduled.");
       setForm(emptyForm());
+      setDraftNote(null);
       await refetch();
       // Auto-generate the branded cover image (title + date + time) as a
       // follow-up step so saving stays fast. Best-effort: never blocks.
@@ -302,11 +305,11 @@ export default function AdminEventsPage() {
   // for review; nothing is saved until the operator clicks Schedule.
   const draftWithAi = async () => {
     if (!form.title.trim() || !form.startsAt || !form.endsAt) {
-      setMessage("Add a title, start, and end time first.");
+      setDraftNote("Add a title, a start time, and an end time first, then Draft with AI.");
       return;
     }
     setDrafting(true);
-    setMessage("Drafting with AI...");
+    setDraftNote("Drafting with AI, this takes a few seconds...");
     try {
       const res = await fetch("/api/admin/events/ai-draft", {
         method: "POST",
@@ -330,7 +333,7 @@ export default function AdminEventsPage() {
         };
       };
       if (!res.ok || !data.draft) {
-        setMessage(data.error || "Could not draft. Try again.");
+        setDraftNote(data.error || "Could not draft. Try again.");
         return;
       }
       const d = data.draft;
@@ -344,7 +347,9 @@ export default function AdminEventsPage() {
         replaySubject: d.replaySubject || "",
         replayBody: d.replayBody || "",
       }));
-      setMessage("Draft ready. Review the copy, pick an invite audience, then Schedule.");
+      setDraftNote("Draft ready below. Review the copy, pick an invite audience, then Schedule.");
+    } catch {
+      setDraftNote("Could not reach the drafter. Check your connection and try again.");
     } finally {
       setDrafting(false);
     }
@@ -451,6 +456,9 @@ export default function AdminEventsPage() {
             Fill in the title and times, add a rough brief in the description if you like, then
             Draft with AI to write the description and the invite + replay emails for you to review.
           </p>
+        ) : null}
+        {!form.id && draftNote ? (
+          <p className="mt-1 text-xs font-medium text-emerald-800">{draftNote}</p>
         ) : null}
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
