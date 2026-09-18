@@ -350,6 +350,7 @@ Las ofertas recolectadas viven en la caché preseed; el historial de publicacion
 ## Tropiezos comunes
 
 - **"Ninguna oferta coincide con tus filtros"**: normalmente una combinación de filtros demasiado estrecha. Quita uno a uno hasta que vuelvan a aparecer resultados.
+- **"Publicar una ahora" dice que no se pudo publicar y no sale nada**: revisa el Registro de consola antes de dar por hecho que ha fallado. La causa más habitual es que ya se alcanzó el límite de publicaciones de Facebook del día, así que Butler retiene la oferta en la cola a propósito en vez de saltarse un límite que puede acabar en restricciones de la cuenta. La oferta no se pierde y se publica sola cuando se libera la ventana. La línea del Registro de consola dice "Deferred 1 Facebook destination(s) ... It will post later." Lo mismo ocurre mientras las publicaciones se están espaciando, o mientras la publicación en Facebook está en pausa tras un bloqueo. Si quieres que las ofertas sigan saliendo mientras Facebook descansa, activa un segundo destino en Social Destinations.
 - **Las publicaciones a Telegram fallan en silencio**: token del bot revocado o permisos del chat cambiados. Vuelve a pegar el token en Social Destinations.
 - **Las publicaciones de Instagram acaban en solicitudes de mensaje, no en bandeja**: no es un problema de Deals Butler; es el propio enrutamiento de Instagram para cuentas que no sigues.
 - **El programador parece detenido**: revisa el banner de estado en la pestaña Scheduler. El runner se detiene solo si detecta credenciales malas y reporta el motivo allí.

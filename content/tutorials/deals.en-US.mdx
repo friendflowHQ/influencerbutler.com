@@ -350,6 +350,7 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 ## Common gotchas
 
 - **"No deals match your filters"**: usually a too-narrow filter combo. Drop one filter at a time until results return.
+- **"Post one now" says it could not post, and nothing goes out**: check the Console Log before assuming a failure. The most common cause is that the day's Facebook post limit is already reached, so Butler deliberately holds the deal in the queue rather than push past a limit that gets accounts restricted. The deal is not lost and goes out on its own once the window clears. The Console Log line says "Deferred 1 Facebook destination(s) ... It will post later." The same holding happens while posts are being spaced out, or while Facebook posting is paused after a block. If you want deals to keep flowing while Facebook rests, turn on a second destination in Social Destinations.
 - **Posts fail silently to Telegram**: bot token revoked or chat permissions changed. Re-paste the bot token in Social Destinations.
 - **Instagram posts go to message requests, not inbox**: that's not a Deals Butler issue; that's Instagram's own routing for accounts you don't follow.
 - **Scheduler appears stopped**: check the Scheduler tab's status banner. The runner stops itself if it detects bad credentials and reports the reason there.
