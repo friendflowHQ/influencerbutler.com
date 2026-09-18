@@ -16,7 +16,7 @@
 import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/events";
 import { loadConfig } from "@/lib/scheduling-server";
-import { uploadVideoFromUrl } from "@/lib/youtube";
+import { uploadVideoFromUrl, getBoundChannel } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,10 +58,21 @@ function buildDescription(row: Row): string {
 
 export async function GET(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const dry = new URL(request.url).searchParams.get("dry") === "1";
+  const url = new URL(request.url);
+  const dry = url.searchParams.get("dry") === "1";
+  // Optional per-request channel gate (id or @handle). Overrides the env, so the
+  // upload can be verified/gated on demand via the CRON_SECRET without setting an
+  // env var. Falls back to YOUTUBE_TARGET_CHANNEL.
+  const expectedChannel = url.searchParams.get("channel") || TARGET_CHANNEL;
 
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+
+  // Resolve which channel the connected token would publish to (independent of
+  // whether anything is queued), so a dry run can confirm the right channel is
+  // bound before we ever upload.
+  const cfg = await loadConfig(admin);
+  const boundChannel = cfg.googleRefreshToken ? await getBoundChannel(cfg.googleRefreshToken) : null;
 
   // Oldest waiting recording that actually has a video to push.
   const { data, error } = await admin
@@ -77,8 +88,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "query failed" }, { status: 500 });
   }
   const row = (data ?? [])[0] as Row | undefined;
-  if (!row) return NextResponse.json({ ok: true, processed: 0 });
-  if (dry) return NextResponse.json({ ok: true, dry: true, candidate: { id: row.id, title: row.title } });
+  if (!row) return NextResponse.json({ ok: true, processed: 0, boundChannel });
+  if (dry) {
+    return NextResponse.json({
+      ok: true,
+      dry: true,
+      candidate: { id: row.id, title: row.title },
+      boundChannel,
+      expectedChannel,
+    });
+  }
 
   // Claim it: only proceed if this update actually flips it out of 'pending', so
   // a concurrent run cannot pick up the same row.
@@ -92,7 +111,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, processed: 0, note: "already claimed" });
   }
 
-  const cfg = await loadConfig(admin);
   if (!cfg.googleRefreshToken) {
     await admin
       .from("events")
@@ -107,7 +125,7 @@ export async function GET(request: Request) {
     title: row.title,
     description: buildDescription(row),
     privacyStatus: "public",
-    expectedChannel: TARGET_CHANNEL,
+    expectedChannel,
     thumbnailUrl: row.image_url,
   });
 
