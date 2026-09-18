@@ -66,7 +66,13 @@ export async function uploadVideoFromUrl(args: {
     return { ok: false, error: `Recording URL returned HTTP ${videoRes.status}` };
   }
   const contentLength = videoRes.headers.get("content-length");
-  const contentType = videoRes.headers.get("content-type") || "video/mp4";
+  // YouTube's resumable upload only accepts a video/* media type. Recall serves
+  // the recording as binary/octet-stream (or application/octet-stream), which
+  // YouTube rejects with 400 "Media type not supported", so fall back to
+  // video/mp4 (Recall's recordings are mp4) unless the source already declares a
+  // real video type.
+  const rawType = (videoRes.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const contentType = rawType.startsWith("video/") ? rawType : "video/mp4";
 
   // 1) Initiate the resumable session. Metadata goes as JSON; YouTube replies
   //    with the upload URL in the Location header.
