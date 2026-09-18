@@ -1,6 +1,18 @@
 {
-  "lastUpdated": "2026-09-14",
+  "lastUpdated": "2026-09-18",
   "releases": [
+    {
+      "version": "0.1.17",
+      "date": "September 18, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "See at a glance whether each of your Amazon videos is already on YouTube. A chip now sits on your Creator Hub manage list, the video Edit post page, your storefront, and your My Content list: green On YouTube (links to the video) when your desktop app has cross-posted it, or Not on YouTube with an Upload to YouTube button that hands the video to your desktop app to upload. It also shows a Showing on Amazon or Not on detail pages chip read straight from the page. The YouTube status needs your desktop app running and paired; the Amazon chip works either way"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.16",
       "date": "September 14, 2026",

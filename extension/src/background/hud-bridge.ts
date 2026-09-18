@@ -19,6 +19,7 @@ import type {
   OwnershipLookupResult,
   PairResult,
   TemplatesLookupResult,
+  YouTubeStatusResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
 import type {
@@ -813,6 +814,88 @@ function fetchCampaignStatusOnPort(
           return;
         }
         if (frame.type === "campaign.status.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// Read-only YouTube upload-status lookup: given a batch of Amazon video content
+// ids (their /vdp/ identity), ask the desktop YouTube Butler which have already
+// been uploaded to YouTube (its per-video upload ledger). Read-only and authed.
+// Returns paired:false when the app has never been connected so the caller shows
+// a muted "connect the app" state (upload status lives only on the desktop, no
+// server fallback). Mirrors fetchCampaignStatus. Short-circuits an empty batch.
+export async function fetchYouTubeStatus(contentIds: string[]): Promise<YouTubeStatusResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(contentIds) ? contentIds : []).map((c) => String(c || "").trim().toLowerCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchYouTubeStatusOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchYouTubeStatusOnPort(
+  port: number,
+  contentIds: string[],
+  token: string,
+): Promise<YouTubeStatusResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: YouTubeStatusResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: YouTubeStatusResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "youtube.status.lookup", payload: { contentIds } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "youtube.result") {
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],

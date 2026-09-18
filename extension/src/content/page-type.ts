@@ -11,6 +11,8 @@ export type PageType =
   | "brand-store"
   | "creator-upload"
   | "creator-manage"
+  | "creator-post"
+  | "manage-content"
   | "campaign-grid"
   | "campaign-detail"
   | "search"
@@ -109,6 +111,13 @@ function detectAmazonPageType(parsed: URL): PageType {
   // performance. Video Money badges each row with earnings, EPV, the live
   // commission rate, and demand. Distinct path from the /video/ edit page above.
   if (/^\/creatorhub\/manage(?:\/|$)/.test(path)) return "creator-manage";
+  // The video "Edit post" page (/create/post?id=amzn1.vse.video...), where a
+  // single published video is edited. The content id is right in the ?id= query.
+  // The YouTube-status overlay stamps this one video with its cross-post state.
+  if (/^\/create\/post(?:\/|$)/.test(path)) return "creator-post";
+  // The "My content" list (/manage-content), the flat inventory of every posted
+  // video/photo/idea-list. The YouTube-status overlay badges each video row.
+  if (/^\/manage-content(?:\/|$)/.test(path)) return "manage-content";
   // A single campaign's detail page (singular /p/connect/request, distinct from
   // the plural /p/connect/requests grid), carrying ?adId=/?campaignId= and the
   // Products / requirements / Samples sections. The campaign-detail overlay reads

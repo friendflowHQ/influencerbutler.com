@@ -257,6 +257,16 @@ export type Settings = {
     // The kill-flag key is "dealSignals" in disabledTools. On by default;
     // backfilled to true by the tools shallow-merge in migrate().
     dealSignals: boolean;
+    // YouTube status: per-video "On YouTube / Not on YouTube" chip plus an
+    // "Upload to YouTube" action on the creator's own Amazon video surfaces
+    // (Creator Hub manage list, the /create/post edit page, the /manage-content
+    // list, and the storefront), read from the desktop YouTube Butler upload
+    // ledger over the bridge, alongside a page-DOM "Showing on Amazon / Not on
+    // detail pages" chip. Self-gates to paired users (the Amazon chip renders
+    // regardless). The kill-flag key is "youtubeStatus" in disabledTools. On by
+    // default; backfilled to true for existing users by the tools shallow-merge
+    // in migrate().
+    youtubeStatus: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -661,7 +671,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 32,
+  schemaVersion: 33,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -751,6 +761,7 @@ export const DEFAULTS: StorageShape = {
       socialSchedule: true,
       benableBadge: true,
       dealSignals: true,
+      youtubeStatus: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -899,7 +910,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // list cards, on by default); the tools shallow-merge backfills it. v31 -> v32
   // added the dealSignals tool flag (Amazon sale / deal price signals on search
   // + deals tiles and the product panel, on by default); the tools shallow-merge
-  // backfills it.
+  // backfills it. v32 -> v33 added the youtubeStatus tool flag (per-video "On
+  // YouTube / Not on YouTube" chip + "Upload to YouTube" action on the creator's
+  // own Amazon video surfaces, read from the desktop YouTube Butler over the
+  // bridge, on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -989,7 +1003,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 32,
+    schemaVersion: 33,
   };
 }
 

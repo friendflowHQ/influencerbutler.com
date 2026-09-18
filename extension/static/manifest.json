@@ -67,6 +67,10 @@
         "https://www.amazon.com/ideas/*",
         "https://www.amazon.com/stores/*",
         "https://www.amazon.com/creatorhub/*",
+
+        "https://www.amazon.com/create/post*",
+
+        "https://www.amazon.com/manage-content*",
         "https://affiliate-program.amazon.com/p/connect/*",
         "https://www.amazon.com/s*",
         "https://www.amazon.com/gp/bestsellers*",
@@ -84,6 +88,10 @@
         "https://www.amazon.ca/ideas/*",
         "https://www.amazon.ca/stores/*",
         "https://www.amazon.ca/creatorhub/*",
+
+        "https://www.amazon.ca/create/post*",
+
+        "https://www.amazon.ca/manage-content*",
         "https://affiliate-program.amazon.ca/p/connect/*",
         "https://www.amazon.ca/s*",
         "https://www.amazon.ca/gp/bestsellers*",
@@ -101,6 +109,10 @@
         "https://www.amazon.co.uk/ideas/*",
         "https://www.amazon.co.uk/stores/*",
         "https://www.amazon.co.uk/creatorhub/*",
+
+        "https://www.amazon.co.uk/create/post*",
+
+        "https://www.amazon.co.uk/manage-content*",
         "https://affiliate-program.amazon.co.uk/p/connect/*",
         "https://www.amazon.co.uk/s*",
         "https://www.amazon.co.uk/gp/bestsellers*",
@@ -118,6 +130,10 @@
         "https://www.amazon.com.au/ideas/*",
         "https://www.amazon.com.au/stores/*",
         "https://www.amazon.com.au/creatorhub/*",
+
+        "https://www.amazon.com.au/create/post*",
+
+        "https://www.amazon.com.au/manage-content*",
         "https://www.amazon.com.au/s*",
         "https://www.amazon.com.au/gp/bestsellers*",
         "https://www.amazon.com.au/gp/new-releases*",
@@ -134,6 +150,10 @@
         "https://www.amazon.de/ideas/*",
         "https://www.amazon.de/stores/*",
         "https://www.amazon.de/creatorhub/*",
+
+        "https://www.amazon.de/create/post*",
+
+        "https://www.amazon.de/manage-content*",
         "https://www.amazon.de/s*",
         "https://www.amazon.de/gp/bestsellers*",
         "https://www.amazon.de/gp/new-releases*",
@@ -150,6 +170,10 @@
         "https://www.amazon.fr/ideas/*",
         "https://www.amazon.fr/stores/*",
         "https://www.amazon.fr/creatorhub/*",
+
+        "https://www.amazon.fr/create/post*",
+
+        "https://www.amazon.fr/manage-content*",
         "https://www.amazon.fr/s*",
         "https://www.amazon.fr/gp/bestsellers*",
         "https://www.amazon.fr/gp/new-releases*",
@@ -166,6 +190,10 @@
         "https://www.amazon.it/ideas/*",
         "https://www.amazon.it/stores/*",
         "https://www.amazon.it/creatorhub/*",
+
+        "https://www.amazon.it/create/post*",
+
+        "https://www.amazon.it/manage-content*",
         "https://www.amazon.it/s*",
         "https://www.amazon.it/gp/bestsellers*",
         "https://www.amazon.it/gp/new-releases*",
@@ -182,6 +210,10 @@
         "https://www.amazon.es/ideas/*",
         "https://www.amazon.es/stores/*",
         "https://www.amazon.es/creatorhub/*",
+
+        "https://www.amazon.es/create/post*",
+
+        "https://www.amazon.es/manage-content*",
         "https://www.amazon.es/s*",
         "https://www.amazon.es/gp/bestsellers*",
         "https://www.amazon.es/gp/new-releases*",
@@ -198,6 +230,10 @@
         "https://www.amazon.co.jp/ideas/*",
         "https://www.amazon.co.jp/stores/*",
         "https://www.amazon.co.jp/creatorhub/*",
+
+        "https://www.amazon.co.jp/create/post*",
+
+        "https://www.amazon.co.jp/manage-content*",
         "https://www.amazon.co.jp/s*",
         "https://www.amazon.co.jp/gp/bestsellers*",
         "https://www.amazon.co.jp/gp/new-releases*",
@@ -214,6 +250,10 @@
         "https://www.amazon.in/ideas/*",
         "https://www.amazon.in/stores/*",
         "https://www.amazon.in/creatorhub/*",
+
+        "https://www.amazon.in/create/post*",
+
+        "https://www.amazon.in/manage-content*",
         "https://www.amazon.in/s*",
         "https://www.amazon.in/gp/bestsellers*",
         "https://www.amazon.in/gp/new-releases*",
@@ -230,6 +270,10 @@
         "https://www.amazon.com.mx/ideas/*",
         "https://www.amazon.com.mx/stores/*",
         "https://www.amazon.com.mx/creatorhub/*",
+
+        "https://www.amazon.com.mx/create/post*",
+
+        "https://www.amazon.com.mx/manage-content*",
         "https://www.amazon.com.mx/s*",
         "https://www.amazon.com.mx/gp/bestsellers*",
         "https://www.amazon.com.mx/gp/new-releases*",
@@ -246,6 +290,10 @@
         "https://www.amazon.com.br/ideas/*",
         "https://www.amazon.com.br/stores/*",
         "https://www.amazon.com.br/creatorhub/*",
+
+        "https://www.amazon.com.br/create/post*",
+
+        "https://www.amazon.com.br/manage-content*",
         "https://www.amazon.com.br/s*",
         "https://www.amazon.com.br/gp/bestsellers*",
         "https://www.amazon.com.br/gp/new-releases*",

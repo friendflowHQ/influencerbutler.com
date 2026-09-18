@@ -529,6 +529,18 @@ export interface Dict {
   vmCoolingHint: string;
   vmExport: string;
 
+  // YouTube status (per-video "On YouTube / Upload" chip + on-Amazon showing chip)
+  sumYouTubeStatus: string;
+  ytOnYouTube: string;
+  ytNotOnYouTube: string;
+  ytUpload: string;
+  ytUploading: string;
+  ytFailedRetry: string;
+  ytConnectApp: string;
+  ytUploadError: string;
+  ytShowingAmazon: string;
+  ytNotShowingAmazon: string;
+
   // Campaign Radar (Creator Connections campaign grid)
   sumCampaignRadar: string;
   toolCampaignRadar: string;
@@ -1488,6 +1500,17 @@ const en: Dict = {
   vmCooling: "Cooling / retire",
   vmCoolingHint: "Falling demand or ended campaign",
   vmExport: "Export CSV",
+
+  sumYouTubeStatus: "YouTube status",
+  ytOnYouTube: "On YouTube",
+  ytNotOnYouTube: "Not on YouTube",
+  ytUpload: "Upload to YouTube",
+  ytUploading: "Uploading...",
+  ytFailedRetry: "Upload failed, retry",
+  ytConnectApp: "Connect the app for YouTube status",
+  ytUploadError: "Could not reach the desktop app",
+  ytShowingAmazon: "Showing on Amazon",
+  ytNotShowingAmazon: "Not on detail pages",
 
   sumCampaignRadar: "Campaign Radar",
   toolCampaignRadar: "Campaign Radar (highlight campaigns)",
@@ -2482,6 +2505,17 @@ const es: Dict = {
   vmCoolingHint: "Demanda a la baja o campaña terminada",
   vmExport: "Exportar CSV",
 
+  sumYouTubeStatus: "Estado en YouTube",
+  ytOnYouTube: "En YouTube",
+  ytNotOnYouTube: "No está en YouTube",
+  ytUpload: "Subir a YouTube",
+  ytUploading: "Subiendo...",
+  ytFailedRetry: "Fallo al subir, reintentar",
+  ytConnectApp: "Conecta la app para ver el estado en YouTube",
+  ytUploadError: "No se pudo contactar con la app de escritorio",
+  ytShowingAmazon: "Se muestra en Amazon",
+  ytNotShowingAmazon: "No en páginas de producto",
+
   sumCampaignRadar: "Radar de campañas",
   toolCampaignRadar: "Radar de campañas (resaltar campañas)",
   campaignRadarActive: "El Radar de campañas está activo.",
@@ -3474,6 +3508,17 @@ const fr: Dict = {
   vmCooling: "En refroidissement / à retirer",
   vmCoolingHint: "Demande en baisse ou campagne terminée",
   vmExport: "Exporter CSV",
+
+  sumYouTubeStatus: "Statut YouTube",
+  ytOnYouTube: "Sur YouTube",
+  ytNotOnYouTube: "Pas sur YouTube",
+  ytUpload: "Publier sur YouTube",
+  ytUploading: "Publication...",
+  ytFailedRetry: "Échec de la publication, réessayer",
+  ytConnectApp: "Connectez l'app pour le statut YouTube",
+  ytUploadError: "Impossible de joindre l'app de bureau",
+  ytShowingAmazon: "Visible sur Amazon",
+  ytNotShowingAmazon: "Pas sur les fiches produit",
 
   sumCampaignRadar: "Radar de campagnes",
   toolCampaignRadar: "Radar de campagnes (mettre en évidence)",

@@ -181,6 +181,72 @@ function legacyRowContainer(anchor: HTMLElement): HTMLElement | null {
   return anchor.parentElement;
 }
 
+// Matches the video id carried in a "/create/post?id=amzn1.vse.video.<hash>"
+// edit-post link, and the bare `amzn1.vse.video.<hash>` id shape anywhere.
+const CREATE_POST_ID_RE = /[?&]id=amzn1\.vse\.video\.([0-9a-f]+)/i;
+const VSE_ID_RE = /amzn1\.vse\.video\.([0-9a-f]+)/i;
+
+// The bare-hex contentId from an `amzn1.vse.video.<hash>` id (the shape in the
+// /create/post?id= URL), or from an already-bare hex id. Lowercased to match the
+// `/vdp/<id>` key the desktop YouTube upload ledger uses. Null when unrecognized.
+export function contentIdFromVseId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? "").trim();
+  const hex = s.match(VSE_ID_RE)?.[1];
+  if (hex) return hex.toLowerCase();
+  return /^[0-9a-f]{16,}$/i.test(s) ? s.toLowerCase() : null;
+}
+
+// Reads the flat "My content" list (/manage-content) rows. Unlike the Creator Hub
+// manage list, its rows link to the "Edit post" page (/create/post?id=amzn1.vse.
+// video.<hash>), so the video id is read from that link first, then from a /vdp/
+// thumbnail link, then a preview image id. contentId is lowercased so it joins the
+// desktop ledger key. Selectors stay loose so a markup revision degrades rather
+// than breaks (this surface is newer and less battle-tested; verify live).
+export function readManageContentRows(doc: Document): ManageRow[] {
+  const rows: ManageRow[] = [];
+  const seen = new Set<string>();
+
+  const push = (contentId: string | null | undefined, seed: HTMLElement): void => {
+    const id = contentId?.trim().toLowerCase();
+    if (!id || seen.has(id)) return;
+    const row = genericRowContainer(seed);
+    if (!row) return;
+    seen.add(id);
+    rows.push({
+      el: row,
+      contentId: id,
+      title: rowTitle(row),
+      status: rowStatus(row),
+      views: rowViews(row),
+    });
+  };
+
+  for (const a of Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href*="/create/post"]'))) {
+    push((a.getAttribute("href") ?? "").match(CREATE_POST_ID_RE)?.[1], a);
+  }
+  for (const a of Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href*="/vdp/"]'))) {
+    push((a.getAttribute("href") ?? "").match(VDP_LINK_RE)?.[1], a);
+  }
+  for (const img of Array.from(doc.querySelectorAll<HTMLElement>("img[id]"))) {
+    if (CONTENT_ID_RE.test(img.id)) push(img.id, img);
+  }
+  return rows;
+}
+
+// Row-container climb for list rows that expose no preview-image count to anchor
+// on (the /manage-content list): prefer a real row element, else the first
+// ancestor that holds a handful of children (a whole card, not just the link).
+function genericRowContainer(seed: HTMLElement): HTMLElement | null {
+  const row = seed.closest<HTMLElement>('[role="row"], tr, li');
+  if (row) return row;
+  let node: HTMLElement | null = seed.parentElement;
+  for (let i = 0; i < 6 && node; i += 1) {
+    if (node.querySelectorAll("*").length > 6) return node;
+    node = node.parentElement;
+  }
+  return seed.parentElement ?? seed;
+}
+
 function rowStatus(row: HTMLElement): ManageRowStatus {
   const text = (row.textContent ?? "").toLowerCase();
   if (/\bdraft\b|\bbrouillon\b|\bborrador\b/.test(text)) return "draft";

@@ -69,6 +69,20 @@ export type IdeaListRef = {
   title: string;
 };
 
+// One Amazon influencer video handed to the desktop YouTube Butler for
+// cross-posting. `contentId` is the bare-hex `amzn1.vse.video.<id>` / `/vdp/<id>`
+// identity (the same id in the edit-page URL). `contentUrl` is the full
+// `.../vdp/<id>` page url when the surface already has it; otherwise the desktop
+// builds it from contentId + marketplace. `marketplace` is the host (e.g.
+// "amazon.com"). `asin` (a tagged product) sharpens the inventory dedupe key.
+export type YouTubeVideoRef = {
+  contentId: string;
+  asin?: string;
+  title?: string;
+  marketplace?: string;
+  contentUrl?: string;
+};
+
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
   // Batch push of harvested deals into one Deals Butler workspace, from the Deal
@@ -138,7 +152,15 @@ export type HudCommand =
   // ingested exactly like the local bridge's `findings` frame. Sent only when no
   // local app is present here (see transport/relay-transport.ts), so a same-machine
   // app is never double-fed.
-  | { type: "findings.push.batch"; findings: Finding[] };
+  | { type: "findings.push.batch"; findings: Finding[] }
+  // "Upload to YouTube": hand one Amazon influencer video to the desktop YouTube
+  // Butler, which adds it to its inventory, queues it, and kicks the guarded
+  // upload run. The run processes the whole queued set up to the daily cap, so
+  // this means "queue this + start uploading", not strictly one video.
+  // `startNow:false` queues only (the scheduler picks it up on its next run).
+  | { type: "youtube.upload"; video: YouTubeVideoRef; startNow?: boolean }
+  // Batch form: queue many videos, then one run uploads them all up to the cap.
+  | { type: "youtube.upload.batch"; videos: YouTubeVideoRef[] };
 
 export type HudCommandResult = {
   ok: boolean;
@@ -436,5 +458,32 @@ export type CampaignStatusResult = {
   ok: boolean;
   paired?: boolean;
   results: CampaignStatusRecord[];
+  message?: string;
+};
+
+// One Amazon video's YouTube upload answer, resolved by the desktop YouTube
+// Butler against its per-video upload ledger (upload-log.json). Keyed by the
+// video's `contentId` (the `/vdp/<id>` identity), unlike ownership's ASIN-keyed
+// "posted somewhere" coverage. `onYouTube` is true when the video was uploaded
+// (or published as a draft) and has a YouTube link. Only videos with an upload
+// record are returned; a paired-but-absent contentId means "not on YouTube yet",
+// while an unpaired socket (paired:false) is the distinct "unknown" state.
+export type YouTubeStatusRecord = {
+  contentId: string;
+  onYouTube: boolean;
+  status: string; // uploaded | draft | skipped-duplicate | failed | ...
+  youtubeUrl: string | null;
+  youtubeVideoId: string | null;
+  uploadedAt: string | null;
+};
+
+// Result of a youtube.status.lookup request against the desktop upload ledger.
+// `paired` is false when the extension has never connected the app (there is no
+// server-backed fallback: upload status lives only on the desktop), so the caller
+// shows a muted "connect the app" state rather than erroring.
+export type YouTubeStatusResult = {
+  ok: boolean;
+  paired?: boolean;
+  results: YouTubeStatusRecord[];
   message?: string;
 };

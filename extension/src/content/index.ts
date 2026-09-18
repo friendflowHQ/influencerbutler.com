@@ -45,6 +45,7 @@ import { initVideoLikes } from "../tools/video-likes/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { maybeCaptureStorefrontHandle } from "../tools/storefront-detect/capture";
 import { initVideoMoney } from "../tools/video-money/overlay";
+import { initYouTubeStatus } from "../tools/youtube-status/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
@@ -643,6 +644,11 @@ async function runForPage(): Promise<void> {
         guard("video-likes", () => initVideoLikes());
         watchStorefrontVideoLikes();
       }
+      // Per-video "On YouTube / Not on YouTube" chip + Upload action on each
+      // storefront video card (desktop YouTube Butler ledger over the bridge).
+      if (settings.tools.youtubeStatus) {
+        guard("youtube-status", () => initYouTubeStatus("storefront"));
+      }
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   } else if (pageType === "creator-upload") {
@@ -672,6 +678,27 @@ async function runForPage(): Promise<void> {
         lastStatus.toolSummaries.push({ label: t().sumVideoMoney, value: t().ready });
       }
     });
+    // Per-row "On YouTube / Not on YouTube" chip + Upload action on each managed
+    // video (desktop YouTube Butler ledger over the bridge).
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("creator-manage"));
+    }
+  } else if (pageType === "creator-post") {
+    // The single-video "Edit post" page (/create/post?id=amzn1.vse.video...).
+    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
+    if (!showOnsite) return; // onsite-only page (the creator's own video edit)
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("creator-post"));
+      lastStatus.toolSummaries.push({ label: t().sumYouTubeStatus, value: t().ready });
+    }
+  } else if (pageType === "manage-content") {
+    // The flat "My content" list (/manage-content): a YouTube-status chip per
+    // video row.
+    if (!showOnsite) return; // onsite-only page (the creator's own content list)
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("manage-content"));
+      lastStatus.toolSummaries.push({ label: t().sumYouTubeStatus, value: t().ready });
+    }
   } else if (pageType === "search") {
     guard("search-overlay", () => {
       if (settings.tools.searchOverlay) {

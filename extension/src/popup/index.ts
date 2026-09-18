@@ -1060,6 +1060,8 @@ async function renderPageStatus(): Promise<void> {
       storefront: t().storefrontCheckupReady,
       "creator-upload": t().uploadHelperReady,
       "creator-manage": t().sumVideoMoney,
+      "creator-post": t().sumYouTubeStatus,
+      "manage-content": t().sumYouTubeStatus,
       "campaign-grid": t().campaignRadarActive,
       "campaign-detail": t().sumCampaignDetail,
       search: t().searchOverlayActive,

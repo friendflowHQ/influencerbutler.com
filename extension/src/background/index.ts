@@ -14,7 +14,7 @@ import {
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import type { RelayClaimResult } from "./relay";
 import type { RelayStateView } from "../shared/messages";
@@ -381,6 +381,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "LOOKUP_CAMPAIGN_STATUS":
       void fetchCampaignStatus(message.asins).then(sendResponse);
+      return true;
+    case "LOOKUP_YOUTUBE_STATUS":
+      void fetchYouTubeStatus(message.contentIds).then(sendResponse);
       return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer, {

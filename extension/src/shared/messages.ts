@@ -23,6 +23,9 @@ import type {
   OwnershipRecord,
   PairResult,
   TemplatesLookupResult,
+  YouTubeStatusRecord,
+  YouTubeStatusResult,
+  YouTubeVideoRef,
 } from "../transport/hud-commands";
 import type {
   IntegrationsState,
@@ -71,6 +74,8 @@ export type PageStatus = {
     | "brand-store"
     | "creator-upload"
     | "creator-manage"
+    | "creator-post"
+    | "manage-content"
     | "campaign-grid"
     | "campaign-detail"
     | "search"
@@ -143,6 +148,13 @@ export type RuntimeMessage =
   // enrollment lives only on the desktop, so there is no server fallback: returns
   // paired:false when the app was never connected.
   | { kind: "LOOKUP_CAMPAIGN_STATUS"; asins: string[] }
+  // Ask the running desktop app which of a batch of Amazon influencer videos (by
+  // their /vdp/ content id) have already been uploaded to YouTube by the YouTube
+  // Butler (its per-video upload ledger), so the Creator Hub / storefront / edit
+  // surfaces can stamp each video "On YouTube" / "Not on YouTube". Upload status
+  // lives only on the desktop, so there is no server fallback: returns
+  // paired:false when the app was never connected.
+  | { kind: "LOOKUP_YOUTUBE_STATUS"; contentIds: string[] }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -1049,6 +1061,9 @@ export type {
   OwnershipRecord,
   PairResult,
   TemplatesLookupResult,
+  YouTubeStatusRecord,
+  YouTubeStatusResult,
+  YouTubeVideoRef,
 };
 export type { PricePoint };
 export type {
