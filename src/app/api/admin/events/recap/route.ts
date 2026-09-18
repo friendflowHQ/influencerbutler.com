@@ -13,6 +13,7 @@ import { summarizeTranscript, isAiNotesConfigured } from "@/lib/ai-notes";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+// (deploy retrigger)
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
