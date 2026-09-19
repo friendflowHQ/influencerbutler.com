@@ -103,6 +103,8 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 
 ## Common gotchas
 
+- **You cannot find the Amazon Creators API section on this page**: it moved. Each third-party integration now sits in the butler that uses it, and this page keeps the shared AI and data keys (OpenAI, Keepa, Fal.ai, Ideogram). The Amazon Creators API and your storefront ID are in **Amazon Butler**, then **Settings**. Mavely, deeplink routing, Geniuslink, URLGenius, Linktw.in, Archer, PostTap, affiliate routing and the per-country tags are in Link Butler, then Settings. Levanta is in Levanta Butler, then Settings. Your saved keys carried over, so nothing needs pasting again.
+- **The eligibility error is on screen but there is no backup credentials button under it**: press **Test Connection** once and the offer appears with the fresh result. App versions before 1.0.80 replayed the saved error after a restart without bringing the button back with it.
 - **Test Connection fails after a previously-working setup**: the provider rotated, revoked, or rate-limited the key. The topbar shows an "API Health" badge when this happens. Re-issue the key from the provider's dashboard, paste here, re-test.
 - **Creators API test says "failed" but Amazon shows it active**: almost always a marketplace mismatch. Set the Marketplace dropdown to the region where you created your API credentials. A US credential tested against a UK or AU marketplace (or an international credential left on the amazon.com default) will not pass. The app now detects this and tells you which region your credentials belong to.
 - **Creators API Partner Tag rejected**: that field needs your Amazon Associates tracking ID (like yourtag-20), not your storefront ID.
