@@ -69,6 +69,18 @@ Une fois l'analyse terminée, vous pouvez optimiser sans ouvrir chaque liste une
 
 L'optimisation groupée réécrit les titres et les descriptions et ajoute des produits sur vos listes en ligne, et consomme des crédits OpenAI par liste, donc la confirmation le précise d'abord. Le badge de chaque ligne reflète ce que Benable a montré au moment de l'analyse. Relancez une analyse plus tard pour voir les badges mis à jour.
 
+## Équilibrez votre profil avec des recommandations hors produits
+
+La propre documentation de Benable indique qu'un profil composé presque uniquement de listes d'achats est freiné, et que mêler de vraies recommandations hors produits (lieux locaux, tutoriels, applis et ressources utiles) fait progresser tout votre profil. La carte **Équilibre hors produits** en fait quelque chose que le butler réalise pour vous.
+
+Après **Analyser toutes**, une ligne vous indique si votre profil s'appuie trop sur des listes de produits et environ combien de listes hors produits l'équilibreraient. Trois interrupteurs pilotent ce qui se passe lors d'un balayage :
+
+- **Ajouter des recommandations hors produits** est l'interrupteur principal.
+- **Ajouter quelques recommandations hors produits aux listes uniquement de produits** glisse quelques lieux, vidéos ou ressources pertinents dans les listes de produits qui n'en ont pas encore.
+- **Créer de nouvelles listes hors produits** permet au butler d'écrire des listes entièrement nouvelles qui ne portent pas sur des produits (comme « San Diego Cooking Classes » ou « Fridge Organization Tips ») quand votre profil contient trop de produits. Réglez combien il peut en créer par exécution, et une zone de résidence qu'il peut utiliser pour les recommandations locales.
+
+D'où viennent les recommandations : les **lieux locaux** utilisent une clé Google Places, les **tutoriels** une clé YouTube (toutes deux saisies dans IA et clés de données), les **articles et ressources web** votre clé OpenAI, et les **applis** ne nécessitent aucune clé. Toute source sans sa clé reste simplement silencieuse, donc rien ne casse si vous n'en configurez que certaines. Une liste entièrement hors produits n'est jamais signalée comme une publicité, car il n'y a aucune affiliation à divulguer.
+
 ## Limites honnêtes
 
 - **Sur vos propres listes, les notes de chaque produit ne sont pas lisibles.** Benable affiche votre propre liste dans une vue modifiable qui ne nous expose pas les cartes des produits. Dans ce cas, l'outil marque la couverture des notes comme **indéterminée** et laisse le score des Notes de produits en **S.O.** au lieu d'inventer un verdict de "0 sur N ont des notes". Les notes restent l'une des plus grandes parties d'une liste bien organisée, donc l'analyse vous rappelle de les renforcer même quand elle ne peut pas les mesurer.
