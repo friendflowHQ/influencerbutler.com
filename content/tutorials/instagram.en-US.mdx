@@ -68,6 +68,7 @@ Per-DM outreach history is logged in the preseed cache. Once a DM is sent, the r
 
 ## Common gotchas
 
+- **You sign in to Instagram but Butler still says it is not connected**: the Chrome window Butler opens is a plain browser on purpose, so Instagram treats it as a normal sign-in and honours **Trust this device**. Chrome only writes that session to disk when the window closes, so signing in and leaving it open looks exactly like a failed connection. Sign in, tick **Trust this device**, then close that Chrome window completely, not just the tab, and come back to Butler. Opening the sign-in again before closing the previous one starts over, so let one finish.
 - **"Instagram action blocked"** banner - you sent too many DMs too fast. Butler detects the block, stops the run, and pauses ALL Instagram sending (messages, deal posts, likes, close friends changes) for a rest period so the block does not get worse; harvest-only tools keep running, and you get an email. By default the rest lasts 3 days; change it with **Pause after an Instagram block (days)** in the Instagram Butler settings, and repeat blocks rest longer on their own. Sending resumes automatically, or resume early with the Dashboard banner's **Resume Instagram sending** button. When it resumes, lower your daily cap.
 - **First DM sent to message requests, not inbox**: Instagram routes DMs from non-followers to "Requests" rather than inbox. Out of Butler's control.
 - **Templates feel scripted**: even rotating 5 variations gets old at scale. Refresh your variations every 2-3 weeks.
