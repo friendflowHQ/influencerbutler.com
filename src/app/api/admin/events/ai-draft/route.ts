@@ -40,9 +40,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No AI provider configured (set GROQ_API_KEY or OPENAI_API_KEY)." }, { status: 503 });
   }
 
-  const draft = await draftEventContent({ title, startMs, endMs, timezone, notes });
-  if (!draft) {
-    return NextResponse.json({ error: "Could not draft this one. Try again." }, { status: 502 });
+  const result = await draftEventContent({ title, startMs, endMs, timezone, notes });
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: `Could not draft this one (${result.reason}). Try again.` },
+      { status: 502 },
+    );
   }
-  return NextResponse.json({ ok: true, draft });
+  return NextResponse.json({ ok: true, draft: result.draft });
 }
