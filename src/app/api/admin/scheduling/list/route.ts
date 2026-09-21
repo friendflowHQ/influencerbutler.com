@@ -25,7 +25,10 @@ export async function GET(request: Request) {
   // Split upcoming/past by the call's END time, not its start, so a call that has
   // begun but is not over yet stays under "upcoming". Rows with a null ends_at
   // (legacy inserts) are treated as not-yet-past and kept in "upcoming".
-  if (scope === "upcoming") q = q.or(`ends_at.gte.${nowIso},ends_at.is.null`).neq("status", "cancelled").order("starts_at", { ascending: true });
+  // Terminal statuses drop out of "upcoming" regardless of time: a call marked
+  // done, no-show, or cancelled is resolved, so it should not linger just because
+  // its scheduled time is still in the future (it stays visible under All/Past).
+  if (scope === "upcoming") q = q.or(`ends_at.gte.${nowIso},ends_at.is.null`).not("status", "in", "(cancelled,completed,no_show)").order("starts_at", { ascending: true });
   else if (scope === "past") q = q.lt("ends_at", nowIso).order("starts_at", { ascending: false });
   else q = q.order("starts_at", { ascending: false });
 
