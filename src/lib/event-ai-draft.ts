@@ -141,26 +141,32 @@ async function callJson(system: string, user: string): Promise<CallResult> {
     (p): p is NonNullable<typeof p> => !!p,
   );
   const seen = new Set<string>();
-  let lastReason = "no provider configured";
+  // Collect the final reason from every distinct provider we actually try, so a
+  // persistent failure names each one (e.g. "groq HTTP 401; openai HTTP 429")
+  // and a missing provider is visible by its absence from the list.
+  const reasons: string[] = [];
+  if (providers.length === 0) return { ok: false, reason: "no provider configured" };
   for (const provider of providers) {
     if (seen.has(provider.url)) continue;
     seen.add(provider.url);
+    let providerReason = `${provider.kind} failed`;
     // One retry per provider: reasoning models occasionally return empty or
     // malformed content, and Groq's free tier can 429 on a burst.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const result = await callProviderOnce(provider, system, user);
         if (result.ok) return result;
-        lastReason = result.reason;
+        providerReason = result.reason;
         // Only bother retrying the same provider on transient failures.
         if (!result.reason.includes("(transient)") && !result.reason.includes("empty")) break;
       } catch (err) {
-        lastReason = `${provider.kind} threw`;
+        providerReason = `${provider.kind} threw`;
         console.error("[event-ai-draft] provider threw", provider.kind, err);
       }
     }
+    reasons.push(providerReason);
   }
-  return { ok: false, reason: lastReason };
+  return { ok: false, reason: reasons.join("; ") };
 }
 
 export function isDraftConfigured(): boolean {
