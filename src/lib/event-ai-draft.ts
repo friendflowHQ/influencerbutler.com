@@ -25,6 +25,7 @@ export type EventDraftInput = {
 
 export type EventDraft = {
   description: string;
+  bannerText: string;
   inviteSubject: string;
   inviteBody: string;
   replaySubject: string;
@@ -45,6 +46,10 @@ const SYSTEM = [
   "Return ONLY a JSON object with these string keys:",
   "  description  - 2 to 4 sentences describing the event for the event page and",
   "                 calendar. Say what it covers, who it is for, and what to bring.",
+  "  bannerText   - ONE short sentence (under 200 characters, hard limit 280) for a",
+  "                 cross-app banner that nudges people to register. Name the event",
+  "                 and its day and start time. No URL. Example shape:",
+  "                 'Join our Reupload Butlers session Tuesday at 11am MT.'",
   "  inviteSubject- a short email subject line inviting people to register.",
   "  inviteBody   - a plain-text invite email body driving registration. Put the",
   "                 literal token {{EVENT_URL}} on its own line where the register",
@@ -204,6 +209,7 @@ export async function draftEventContent(input: EventDraftInput): Promise<DraftRe
 
   const draft: EventDraft = {
     description: str(raw.description, 5000),
+    bannerText: str(raw.bannerText, 280),
     inviteSubject: str(raw.inviteSubject, 200),
     inviteBody: str(raw.inviteBody, 10000),
     replaySubject: str(raw.replaySubject, 200),

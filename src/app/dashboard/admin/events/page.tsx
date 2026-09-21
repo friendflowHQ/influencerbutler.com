@@ -332,6 +332,7 @@ export default function AdminEventsPage() {
         error?: string;
         draft?: {
           description?: string;
+          bannerText?: string;
           inviteSubject?: string;
           inviteBody?: string;
           replaySubject?: string;
@@ -346,6 +347,11 @@ export default function AdminEventsPage() {
       setForm((f) => ({
         ...f,
         description: d.description || f.description,
+        // Fill the banner with the drafted text (keeping any existing text only
+        // if the model returned none), and switch the banner on when we have text
+        // to show. Nothing goes live until the operator clicks Schedule.
+        bannerText: d.bannerText || f.bannerText,
+        bannerEnabled: f.bannerEnabled || !!d.bannerText,
         inviteEnabled: true,
         inviteSubject: d.inviteSubject || "",
         inviteBody: d.inviteBody || "",
