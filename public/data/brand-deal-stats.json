@@ -18,6 +18,7 @@
     "maxDealUsd": 8000,
     "averageDealUsd": 1230
   },
+  "audience": null,
   "byYear": [
     {
       "year": "2018",

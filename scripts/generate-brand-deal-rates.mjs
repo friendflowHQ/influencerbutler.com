@@ -48,7 +48,11 @@ const CATEGORY_LABELS = {
   other: "Everything else",
 };
 
-const { totals, coverage, acquisition, repeatBrands, pitchConversion } = stats;
+const { totals, coverage, acquisition, repeatBrands, pitchConversion, audience } = stats;
+// The follower history is hand-kept and may be empty or partial, so every
+// audience-dependent part of this page is conditional on real numbers existing.
+const hasAudience = Boolean(audience) && stats.byYear.some((row) => row.followers);
+const num = (n) => Number(n).toLocaleString("en-US");
 const title = `What Brands Actually Pay Influencers: ${totals.deals} Real Deals (${coverage.firstYear} to ${coverage.lastYear})`;
 const description =
   `Real influencer rate data from ${totals.deals} paid brand deals worth ${usd(totals.revenueUsd)} across ` +
@@ -66,15 +70,28 @@ const categoryRows = stats.byCategory
   .join("\n");
 
 const yearRows = stats.byYear
-  .map(
-    (row) => `                    <tr>
+  .map((row) => {
+    // A year with no recorded follower count gets empty cells rather than a
+    // zero, so a partial history never reads as a collapse to nothing.
+    const audienceCells = hasAudience
+      ? `
+                        <td>${row.followers ? num(row.followers) : ""}</td>
+                        <td>${row.medianPerThousandFollowers ? `<strong>$${row.medianPerThousandFollowers.toFixed(2)}</strong>` : ""}</td>`
+      : "";
+    return `                    <tr>
                         <th scope="row">${row.year}</th>
                         <td>${row.deals}</td>
                         <td>${usd(row.revenueUsd)}</td>
-                        <td><strong>${usd(row.medianDealUsd)}</strong></td>
-                    </tr>`,
-  )
+                        <td><strong>${usd(row.medianDealUsd)}</strong></td>${audienceCells}
+                    </tr>`;
+  })
   .join("\n");
+
+const yearHeadCells = hasAudience
+  ? `
+                                <th scope="col">Followers</th>
+                                <th scope="col">Per 1,000 followers</th>`
+  : "";
 
 const maxBucket = Math.max(...stats.dealSizeHistogram.map((b) => b.deals));
 const BUCKET_LABELS = {
@@ -96,6 +113,18 @@ const histogramRows = stats.dealSizeHistogram
                 </li>`;
   })
   .join("\n");
+
+const audienceNote = hasAudience
+  ? `
+                <p>
+                    Audience size is the other half of this. The account peaked at
+                    ${num(audience.peakFollowers)} followers in ${audience.peakYear} and sat at
+                    ${num(audience.latestFollowers)} by ${audience.latestYear}, so the last column is the
+                    fairer comparison: what a brand paid per 1,000 followers, which is the number you can
+                    hold your own rate card against. Follower counts are end-of-year for
+                    ${creatorLink} on Instagram.
+                </p>`
+  : "";
 
 const peakYear = stats.byYear.reduce((best, row) => (row.revenueUsd > best.revenueUsd ? row : best));
 const latestYear = stats.byYear[stats.byYear.length - 1];
@@ -345,7 +374,7 @@ ${categoryRows}
                     ${usd(peakYear.revenueUsd)} across ${peakYear.deals} deals, then softened. By
                     ${latestYear.year} the median campaign had dropped to ${usd(latestYear.medianDealUsd)}.
                     Volume matters more than it used to.
-                </p>
+                </p>${audienceNote}
                 <div class="bdr-table-wrap">
                     <table class="bdr-table">
                         <thead>
@@ -353,7 +382,7 @@ ${categoryRows}
                                 <th scope="col">Year</th>
                                 <th scope="col">Deals</th>
                                 <th scope="col">Total paid</th>
-                                <th scope="col">Median deal</th>
+                                <th scope="col">Median deal</th>${yearHeadCells}
                             </tr>
                         </thead>
                         <tbody>
