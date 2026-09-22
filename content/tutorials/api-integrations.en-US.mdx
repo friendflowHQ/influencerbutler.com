@@ -80,7 +80,7 @@ On the Mavely card:
 
 Once you're signed in, you have two ways to use it:
 
-- **As your deeplink provider**: pick **Mavely** in DeepLink Routing. Now when Deals Butler posts a Walmart or Target deal, the link is a commission-earning Mavely link automatically.
+- **For your Walmart deals**: open **Walmart Butler**, then **Settings**, and set **Walmart link provider** to **Mavely (mave.ly links)**. That switch is independent of DeepLink Routing, so Walmart deals earn through Mavely while your Amazon links stay on your own tag. Picking **Mavely** in **DeepLink Routing** monetizes non-Amazon deals too, but it sends your Amazon product pages through Mavely as well, so only choose that if you do not need those sales on your own Amazon tag.
 - **One-off links**: paste any product URL into the Mavely card's Product URL box and click **Create Link** to get a single Mavely link on the spot. The Chrome extension's link button does the same for non-Amazon pages.
 
 Mavely stays off your Amazon links unless you put it there. Two settings can hand Amazon to Mavely: picking **Mavely** under **DeepLink Routing**, which sends Amazon product pages through Mavely, and ticking Mavely under **Affiliate Routing Strategy**, where it competes on any product link and the higher commission wins. Leave both as they are and Mavely only covers the non-Amazon retailers. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
@@ -115,6 +115,7 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 - **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
 - **You signed in to Mavely but Influencer Butler still says not signed in**: the sign in only counts inside the browser Influencer Butler keeps for Mavely. Opening creators.joinmavely.com in your own browser, including from a link in the signed-out banner, signs you in somewhere the app cannot see. Use **Sign in to Mavely** on the Mavely card, sign in inside the window that opens, close it, then click **Check status**.
 - **You are looking for a Mavely API key**: there is not one. Mavely is the network that authenticates by signing in rather than by a pasted key, so its card has no key field on purpose.
+- **You cannot find where to set Mavely up for Walmart, Target or another store**: there is no per-store or per-account setup, which is why there is nothing to find. Mavely reads the merchant from the product link itself, so being signed in is the whole setup. Walmart is the one exception, because it has a choice of its own: **Walmart Butler**, then **Settings**, then **Walmart link provider**, where **Mavely (mave.ly links)** routes Walmart deals through Mavely and **Walmart Creator (walmrt.us links)** uses your own Walmart Creator links instead. For Target and the rest of the catalog, paste the product URL into the **Product URL** box on the Mavely card and click **Create Link**, or use the Chrome extension's link button on the product page.
 
 ## In the Chrome extension too
 
