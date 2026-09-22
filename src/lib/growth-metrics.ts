@@ -12,6 +12,7 @@
 // trial-funnel report.
 
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
+import { SEED_SOURCE } from "@/lib/recent-activity";
 
 export type MetricUnit = "count" | "cents";
 
@@ -285,7 +286,10 @@ export async function computeGrowthSnapshot(
     fbMemberRows,
     earnings,
   ] = await Promise.all([
-    windowRows("activity_events", "created_at", "created_at", (c) =>
+    // `source` comes back so seeded social-proof rows can be dropped below.
+    // Filtering in code, not with .neq(): a genuine click that arrived without
+    // a ?src= tag stores source NULL, and PostgREST's neq would discard it.
+    windowRows("activity_events", "created_at,source", "created_at", (c) =>
       c.eq("kind", "trial_click").eq("is_bot", false),
     ),
     windowRows("subscriptions", "trial_started_at", "trial_started_at", (c) =>
@@ -358,7 +362,15 @@ export async function computeGrowthSnapshot(
   ) =>
     rows ? bucketRows(rows, tsCol, prevMonth, month, bounds.days, value) : emptySnapshotMetric();
 
-  metrics.trial_clicks = bucket(trialClickRows, "created_at");
+  // Seeded demo events (source = 'seed', written by the seed-activity cron for
+  // the homepage social-proof widget) are not real trial interest, so they must
+  // not inflate this tile. src/lib/daily-digest.ts already filters them the same
+  // way; this tile did not, which made the number swing with the admin's "Run
+  // demo activity" switch rather than with the funnel.
+  const realTrialClickRows = trialClickRows
+    ? trialClickRows.filter((r) => String(r.source ?? "") !== SEED_SOURCE)
+    : null;
+  metrics.trial_clicks = bucket(realTrialClickRows, "created_at");
   metrics.trials_started = bucket(trialStartRows, "trial_started_at");
   if (trialConvRows) {
     metrics.trial_conversions = bucketRows(
