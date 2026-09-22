@@ -47,3 +47,10 @@ next-env.d.ts
 
 # local scratch capture output
 outputs-horse-channel/
+
+# Private source data: the brand-collab workbook and any contact-bearing
+# derivative. Only aggregate, name-free stats belong in this repo.
+*.xlsx
+*.xls
+/private/
+**/brand-contacts*.json

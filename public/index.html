@@ -463,6 +463,60 @@
             </div>
         </section>
 
+        <!-- ===================== FOUNDER TRACK RECORD =====================
+             Static, and every figure is real: it comes from the founder's own
+             brand-deal records, 2018 to 2025, aggregated in
+             /data/brand-deal-stats.json. Regenerate that file and
+             /brand-deal-rates together (scripts/generate-brand-deal-rates.mjs)
+             so these numbers never drift from the page they link to.
+             No brand is ever named next to a fee. -->
+        <section class="founder-proof" id="founder-proof" aria-label="Founder brand deal track record">
+            <style>
+                .founder-proof { padding: 56px 0; background: #0f172a; color: #e2e8f0; }
+                .founder-proof-label { text-align: center; margin: 0 0 8px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fb923c; }
+                .founder-proof h2 { text-align: center; margin: 0 auto 14px; max-width: 24ch; font-size: clamp(1.5rem, 3.2vw, 2.3rem); line-height: 1.15; color: #fff; }
+                .founder-proof-lede { text-align: center; max-width: 60ch; margin: 0 auto 32px; color: #94a3b8; font-size: 1rem; }
+                .founder-stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 44px; }
+                .founder-stat { text-align: center; min-width: 140px; }
+                .founder-stat strong { display: block; font-size: clamp(1.7rem, 3.8vw, 2.5rem); font-weight: 800; line-height: 1.05; color: #fb923c; font-variant-numeric: tabular-nums; }
+                .founder-stat span { display: block; margin-top: 4px; font-size: 0.88rem; font-weight: 600; color: #cbd5e1; }
+                .founder-proof-cta { text-align: center; margin: 32px 0 0; }
+                .founder-proof-cta a { color: #fb923c; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+                .founder-proof-note { text-align: center; margin: 14px 0 0; font-size: 0.8rem; color: #64748b; }
+            </style>
+            <div class="container">
+                <p class="founder-proof-label">Built by a creator who did the job first</p>
+                <h2>$542,419 in brand deals. Then she built the butler.</h2>
+                <p class="founder-proof-lede">
+                    441 paid campaigns across 342 brands, 2018 to 2025. 71% of that revenue came from
+                    pitching brands directly rather than waiting on an agency, and direct deals paid the
+                    same rate agencies did. Influencer Butler automates the part that earned it.
+                </p>
+                <div class="founder-stats">
+                    <div class="founder-stat">
+                        <strong>$542,419</strong>
+                        <span>In paid brand deals</span>
+                    </div>
+                    <div class="founder-stat">
+                        <strong>441</strong>
+                        <span>Campaigns booked</span>
+                    </div>
+                    <div class="founder-stat">
+                        <strong>71%</strong>
+                        <span>From pitching direct</span>
+                    </div>
+                    <div class="founder-stat">
+                        <strong>8 yrs</strong>
+                        <span>Of records, not guesses</span>
+                    </div>
+                </div>
+                <p class="founder-proof-cta">
+                    <a href="/brand-deal-rates">See what brands actually pay, by category and by year</a>
+                </p>
+                <p class="founder-proof-note">Real campaign records. No brand is named next to a fee.</p>
+            </div>
+        </section>
+
         <!-- ===================== LIVE NUMBERS (proof of numbers) =====================
              Stays hidden until /api/proof-numbers returns real totals, so no
              fabricated figure ever ships in the static HTML. Populated by

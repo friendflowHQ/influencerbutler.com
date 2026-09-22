@@ -1,0 +1,429 @@
+{
+  "schemaVersion": 1,
+  "lastUpdated": "2026-09-22",
+  "note": "Aggregate figures from one creator's own brand-deal history. No brand name is paired with a fee anywhere in this file.",
+  "coverage": {
+    "firstYear": "2018",
+    "lastYear": "2025",
+    "yearsTracked": 8
+  },
+  "totals": {
+    "deals": 441,
+    "revenueUsd": 542419,
+    "medianDealUsd": 1000,
+    "p25DealUsd": 500,
+    "p75DealUsd": 1500,
+    "brands": 342,
+    "minDealUsd": 20,
+    "maxDealUsd": 8000,
+    "averageDealUsd": 1230
+  },
+  "byYear": [
+    {
+      "year": "2018",
+      "deals": 17,
+      "revenueUsd": 12920,
+      "medianDealUsd": 800,
+      "p25DealUsd": 600,
+      "p75DealUsd": 850
+    },
+    {
+      "year": "2019",
+      "deals": 75,
+      "revenueUsd": 86655,
+      "medianDealUsd": 800,
+      "p25DealUsd": 600,
+      "p75DealUsd": 1500
+    },
+    {
+      "year": "2020",
+      "deals": 70,
+      "revenueUsd": 76850,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 500,
+      "p75DealUsd": 1300
+    },
+    {
+      "year": "2021",
+      "deals": 85,
+      "revenueUsd": 139025,
+      "medianDealUsd": 1400,
+      "p25DealUsd": 900,
+      "p75DealUsd": 2000
+    },
+    {
+      "year": "2022",
+      "deals": 68,
+      "revenueUsd": 109715,
+      "medianDealUsd": 1500,
+      "p25DealUsd": 1000,
+      "p75DealUsd": 2000
+    },
+    {
+      "year": "2023",
+      "deals": 42,
+      "revenueUsd": 42874,
+      "medianDealUsd": 625,
+      "p25DealUsd": 500,
+      "p75DealUsd": 1575
+    },
+    {
+      "year": "2024",
+      "deals": 50,
+      "revenueUsd": 45200,
+      "medianDealUsd": 650,
+      "p25DealUsd": 425,
+      "p75DealUsd": 1200
+    },
+    {
+      "year": "2025",
+      "deals": 29,
+      "revenueUsd": 20540,
+      "medianDealUsd": 500,
+      "p25DealUsd": 300,
+      "p75DealUsd": 900
+    }
+  ],
+  "acquisition": {
+    "direct": {
+      "deals": 313,
+      "revenueUsd": 385294,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 500,
+      "p75DealUsd": 1500
+    },
+    "agency": {
+      "deals": 115,
+      "revenueUsd": 138475,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 700,
+      "p75DealUsd": 1500
+    },
+    "unknown": {
+      "deals": 13,
+      "revenueUsd": 18650,
+      "medianDealUsd": 1500,
+      "p25DealUsd": 500,
+      "p75DealUsd": 2000
+    },
+    "directRevenueShare": 0.7103
+  },
+  "repeatBrands": {
+    "brands": 56,
+    "brandShare": 0.1637,
+    "revenueUsd": 197890,
+    "revenueShare": 0.3648
+  },
+  "pitchConversion": {
+    "brandsPitched": 840,
+    "brandsWon": 72,
+    "rateFloor": 0.0857,
+    "caveat": "Outcome was only recorded for a minority of pitches, so this is a floor rather than a measured conversion rate."
+  },
+  "dealSizeHistogram": [
+    {
+      "bucket": "under-250",
+      "deals": 27
+    },
+    {
+      "bucket": "250-499",
+      "deals": 36
+    },
+    {
+      "bucket": "500-999",
+      "deals": 136
+    },
+    {
+      "bucket": "1000-1999",
+      "deals": 163
+    },
+    {
+      "bucket": "2000-3999",
+      "deals": 70
+    },
+    {
+      "bucket": "4000-plus",
+      "deals": 9
+    }
+  ],
+  "byCategory": [
+    {
+      "category": "food-beverage",
+      "deals": 89,
+      "revenueUsd": 111690,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 750,
+      "p75DealUsd": 1500
+    },
+    {
+      "category": "home",
+      "deals": 81,
+      "revenueUsd": 96500,
+      "medianDealUsd": 1200,
+      "p25DealUsd": 600,
+      "p75DealUsd": 1500
+    },
+    {
+      "category": "health-wellness",
+      "deals": 49,
+      "revenueUsd": 62500,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 650,
+      "p75DealUsd": 1500
+    },
+    {
+      "category": "toys-games",
+      "deals": 39,
+      "revenueUsd": 38500,
+      "medianDealUsd": 600,
+      "p25DealUsd": 500,
+      "p75DealUsd": 1300
+    },
+    {
+      "category": "tech",
+      "deals": 37,
+      "revenueUsd": 58515,
+      "medianDealUsd": 1500,
+      "p25DealUsd": 800,
+      "p75DealUsd": 2200
+    },
+    {
+      "category": "apparel",
+      "deals": 34,
+      "revenueUsd": 31770,
+      "medianDealUsd": 600,
+      "p25DealUsd": 500,
+      "p75DealUsd": 1300
+    },
+    {
+      "category": "baby-kids",
+      "deals": 33,
+      "revenueUsd": 36264,
+      "medianDealUsd": 1000,
+      "p25DealUsd": 700,
+      "p75DealUsd": 1500
+    },
+    {
+      "category": "beauty",
+      "deals": 29,
+      "revenueUsd": 52400,
+      "medianDealUsd": 1500,
+      "p25DealUsd": 800,
+      "p75DealUsd": 2100
+    },
+    {
+      "category": "other",
+      "deals": 18,
+      "revenueUsd": 12800,
+      "medianDealUsd": 500,
+      "p25DealUsd": 325,
+      "p75DealUsd": 800
+    },
+    {
+      "category": "pet",
+      "deals": 11,
+      "revenueUsd": 7530,
+      "medianDealUsd": 500,
+      "p25DealUsd": 295,
+      "p75DealUsd": 850
+    },
+    {
+      "category": "travel",
+      "deals": 7,
+      "revenueUsd": 15100,
+      "medianDealUsd": 2000,
+      "p25DealUsd": 650,
+      "p75DealUsd": 3000
+    },
+    {
+      "category": "finance",
+      "deals": 6,
+      "revenueUsd": 14200,
+      "medianDealUsd": 2000,
+      "p25DealUsd": 1775,
+      "p75DealUsd": 2750
+    },
+    {
+      "category": "fitness",
+      "deals": 5,
+      "revenueUsd": 2600,
+      "medianDealUsd": 500,
+      "p25DealUsd": 400,
+      "p75DealUsd": 500
+    }
+  ],
+  "networks": [
+    {
+      "name": "Phlanx",
+      "url": "https://phlanx.com"
+    },
+    {
+      "name": "Activate.social",
+      "url": "https://activate.social"
+    },
+    {
+      "name": "Cohley",
+      "url": ""
+    },
+    {
+      "name": "Tapinfluence",
+      "url": ""
+    },
+    {
+      "name": "socialfabric.us",
+      "url": ""
+    },
+    {
+      "name": "Popular Pays",
+      "url": ""
+    },
+    {
+      "name": "Fohr.co",
+      "url": ""
+    },
+    {
+      "name": "Izea",
+      "url": "https://izea.com"
+    },
+    {
+      "name": "Obvious.ly",
+      "url": ""
+    },
+    {
+      "name": "Heartbeat",
+      "url": ""
+    },
+    {
+      "name": "Coopertize",
+      "url": ""
+    },
+    {
+      "name": "Mavrck",
+      "url": ""
+    },
+    {
+      "name": "The Shelf",
+      "url": ""
+    },
+    {
+      "name": "Influence Central",
+      "url": ""
+    },
+    {
+      "name": "Clever",
+      "url": ""
+    },
+    {
+      "name": "Collectively",
+      "url": ""
+    },
+    {
+      "name": "Influicity",
+      "url": ""
+    },
+    {
+      "name": "FYI",
+      "url": ""
+    },
+    {
+      "name": "Rakuten",
+      "url": ""
+    },
+    {
+      "name": "Everywhere",
+      "url": ""
+    },
+    {
+      "name": "Sway",
+      "url": ""
+    },
+    {
+      "name": "Social Native",
+      "url": "https://my.socialnative.com"
+    },
+    {
+      "name": "AspireIQ",
+      "url": ""
+    },
+    {
+      "name": "Glambassador",
+      "url": ""
+    },
+    {
+      "name": "Socialix",
+      "url": ""
+    },
+    {
+      "name": "docusign",
+      "url": ""
+    },
+    {
+      "name": "linqia",
+      "url": "https://resonate.linqia.com"
+    },
+    {
+      "name": "IG - Lizdean",
+      "url": ""
+    },
+    {
+      "name": "Acorn",
+      "url": ""
+    },
+    {
+      "name": "https://hashtagpaid.com/",
+      "url": ""
+    },
+    {
+      "name": "avanltink",
+      "url": ""
+    },
+    {
+      "name": "Insense",
+      "url": ""
+    },
+    {
+      "name": "Influence Central",
+      "url": ""
+    },
+    {
+      "name": "Intellifluence",
+      "url": "https://app.intellifluence.com"
+    },
+    {
+      "name": "Influence.co",
+      "url": "https://influence.co"
+    },
+    {
+      "name": "Publicfast",
+      "url": "https://www.publicfast.com"
+    },
+    {
+      "name": "Tribe",
+      "url": "https://app"
+    },
+    {
+      "name": "Shop Her Media",
+      "url": "https://login.shophermedia.net"
+    },
+    {
+      "name": "Heepsy",
+      "url": "https://go.heepsy.com"
+    },
+    {
+      "name": "Upfluence",
+      "url": "https://creators.upfluence.com"
+    },
+    {
+      "name": "Tomoson",
+      "url": "https://www.tomoson.com"
+    },
+    {
+      "name": "Social Book",
+      "url": "https://socialbook.io"
+    },
+    {
+      "name": "TaggerMedia",
+      "url": "https://creator.taggermedia.com"
+    }
+  ]
+}
