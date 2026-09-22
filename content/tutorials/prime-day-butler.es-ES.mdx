@@ -52,9 +52,10 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
 
 ## Primera ejecución
 
-1. Abre **Prime Day Butler** en la navegación izquierda (en el grupo de Amazon).
-2. Opcional: crea una **lista de palabras clave seguidas**. Escribe una palabra clave y haz clic en **Seguir**. Las palabras clave seguidas se usan en cada pasada y al buscar tendencias, así no las reescribes cada vez.
-3. Configura los filtros:
+1. Primero activa el espacio de trabajo. Viene oculto y solo se desbloquea cerca de un evento, así que no está en la navegación por defecto. Abre **Ajustes**, luego **Mostrar / Ocultar Butlers**, y activa **Prime Day Butler**.
+2. Abre **Prime Day Butler** en la navegación izquierda, dentro de **Amazon Butler**.
+3. Opcional: crea una **lista de palabras clave seguidas**. Escribe una palabra clave y haz clic en **Seguir**. Las palabras clave seguidas se usan en cada pasada y al buscar tendencias, así no las reescribes cada vez.
+4. Configura los filtros:
    - **Palabra clave**: búsqueda puntual opcional para esta ejecución.
    - **% de descuento mínimo**: predeterminado en 20%. Sube a 40-50% para una lista más ajustada.
    - **Precio máximo ($)**: opcional.
@@ -62,9 +63,9 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
    - **Buscar ofertas activas en productos que tengo**: actívalo para crear el grupo de última hora (usa llamadas extra a la Creators API).
    - **Solo elegibles para CC**: filtra a productos donde Creator Connections acepta el enlace de afiliado.
    - **Solo mínimo del año**: filtra a ofertas que superan el precio más bajo del año.
-4. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
-5. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año. Escribe en el cuadro **Filtrar por palabra clave o ASIN** para acotar las filas visibles, o usa los filtros **Estado de la oferta** y **Solo con contenido creado**.
-6. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Deals Butler** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
+5. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
+6. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año. Escribe en el cuadro **Filtrar por palabra clave o ASIN** para acotar las filas visibles, o usa los filtros **Estado de la oferta** y **Solo con contenido creado**.
+7. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Deals Butler** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
 
 ## Selecciona y publica en un par de clics
 
@@ -93,6 +94,7 @@ Haz clic en **Buscar tendencias** para traer ofertas actuales de Prime Day desde
 ## Detalles a tener en cuenta
 
 - **La lista caduca rápido durante Prime Day.** Vuelve a ejecutar cada 2-4 horas durante la ventana del evento. Los precios de Amazon cambian en tiempo real. El Deals Hub se vuelve a leer como mucho cada pocas horas, así que una ejecución reciente reutiliza la última recogida si es reciente.
+- **El Deals Hub no usa la API de Creators.** Lee las ofertas seleccionadas de Amazon desde tu sesión de Associates iniciada en la app, así que esta fuente sigue funcionando mientras Amazon tenga retenido tu acceso a la Creator API. Los descubrimientos nuevos y la comprobación de ofertas en productos que tienes son las partes que necesitan la API.
 - **El Deals Hub necesita una sesión iniciada en Amazon en la app.** Si la fuente vuelve vacía con un aviso de "inicia sesión y vuelve a ejecutar", abre Amazon Associates en la app una vez para refrescar la sesión.
 - **Las ofertas próximas están embargadas.** Su precio y fechas son confidenciales hasta que Amazon las publique. Usa la vista de próximas para planificar, pero espera a que una oferta esté en directo (o a su hora de publicación) antes de publicar.
 - **Las ganancias de Amazon necesitan la tarjeta de tarifas.** Si la columna Amazon % está vacía, descarga la Tarjeta de Tarifas de Asociados en Ajustes.

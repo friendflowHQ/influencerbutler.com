@@ -52,9 +52,10 @@ Si une source manque, l'espace de travail fonctionne quand même. Il affiche sim
 
 ## Première exécution
 
-1. Ouvre **Prime Day Butler** dans la navigation de gauche (dans le groupe Amazon).
-2. Optionnel : constitue une **liste de mots-clés suivis**. Saisis un mot-clé et clique sur **Suivre**. Les mots-clés suivis sont utilisés à chaque passage et lors de la recherche de tendances, donc tu ne les ressaisis pas à chaque fois.
-3. Règle les filtres :
+1. Active d'abord l'espace de travail. Il est masqué par défaut et ne se débloque qu'autour d'un événement, il n'est donc pas dans la navigation. Ouvre **Paramètres**, puis **Afficher / Masquer les Butlers**, et active **Prime Day Butler**.
+2. Ouvre **Prime Day Butler** dans la navigation de gauche, sous **Amazon Butler**.
+3. Optionnel : constitue une **liste de mots-clés suivis**. Saisis un mot-clé et clique sur **Suivre**. Les mots-clés suivis sont utilisés à chaque passage et lors de la recherche de tendances, donc tu ne les ressaisis pas à chaque fois.
+4. Règle les filtres :
    - **Mot-clé** : recherche ponctuelle optionnelle pour cette exécution.
    - **% de réduction min.** : 20% par défaut. Monte à 40-50% pour une liste plus serrée.
    - **Prix maximum ($)** : optionnel.
@@ -62,9 +63,9 @@ Si une source manque, l'espace de travail fonctionne quand même. Il affiche sim
    - **Vérifier les offres en cours sur mes produits** : active-le pour constituer le groupe dernière minute (utilise des appels API Creators supplémentaires).
    - **Éligibles CC uniquement** : filtre les produits où Creator Connections accepte le lien d'affiliation.
    - **Plus bas de l'année uniquement** : filtre les offres qui battent le prix le plus bas de l'année.
-4. Clique sur **Lancer maintenant**. La ligne d'état affiche le total, réparti en à venir, gains rapides et dernière minute.
-5. Utilise les onglets de groupe pour te concentrer, trie par **Gains est.** pour publier d'abord ce qui rapporte le plus, ou par **vs plus bas année** pour commencer par les meilleures offres de l'année. Saisis dans le champ **Filtrer par mot-clé ou ASIN** pour réduire les lignes affichées, ou utilise les filtres **Statut de l'offre** et **Avec contenu créé uniquement**.
-6. Par ligne : **Ouvrir** le produit, ouvrir les liens de la colonne **Contenu** ou **Télécharger** le fichier que tu as déjà créé, ou **Ajouter à Deals Butler** pour mettre un seul post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
+5. Clique sur **Lancer maintenant**. La ligne d'état affiche le total, réparti en à venir, gains rapides et dernière minute.
+6. Utilise les onglets de groupe pour te concentrer, trie par **Gains est.** pour publier d'abord ce qui rapporte le plus, ou par **vs plus bas année** pour commencer par les meilleures offres de l'année. Saisis dans le champ **Filtrer par mot-clé ou ASIN** pour réduire les lignes affichées, ou utilise les filtres **Statut de l'offre** et **Avec contenu créé uniquement**.
+7. Par ligne : **Ouvrir** le produit, ouvrir les liens de la colonne **Contenu** ou **Télécharger** le fichier que tu as déjà créé, ou **Ajouter à Deals Butler** pour mettre un seul post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
 
 ## Sélectionne et publie en deux clics
 
@@ -93,6 +94,7 @@ Clique sur **Trouver les tendances** pour rapporter les offres Prime Day actuell
 ## Points de vigilance
 
 - **La liste devient vite obsolète pendant Prime Day.** Relance toutes les 2 à 4 heures pendant la fenêtre de l'événement. Les prix Amazon changent en temps réel. Le Deals Hub est relu au plus toutes les quelques heures, donc une relance récente réutilise la dernière collecte si elle est récente.
+- **Le Deals Hub n'utilise pas l'API Creators.** Il lit les offres sélectionnées par Amazon depuis ta session Associates connectée dans l'app, donc cette source fonctionne toujours pendant qu'Amazon retient ton propre accès à la Creator API. Les nouvelles découvertes et la vérification des offres sur tes produits sont les parties qui ont besoin de l'API.
 - **Le Deals Hub a besoin d'une session Amazon connectée dans l'app.** Si la source revient vide avec une note "connecte-toi puis relance", ouvre Amazon Associates dans l'app une fois pour rafraîchir la session.
 - **Les offres à venir sont sous embargo.** Leur prix et leurs dates sont confidentiels jusqu'à leur publication par Amazon. Sers-toi de la vue à venir pour planifier, mais attends qu'une offre soit en direct (ou son heure de publication) avant de publier.
 - **Les gains Amazon ont besoin de la grille tarifaire.** Si la colonne Amazon % est vide, récupère la grille tarifaire des Partenaires dans Paramètres.

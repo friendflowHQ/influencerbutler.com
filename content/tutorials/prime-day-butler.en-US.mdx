@@ -52,9 +52,10 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
 
 ## First run
 
-1. Open **Prime Day Butler** in the left nav (under the Amazon group).
-2. Optional: build a **tracked-keyword watchlist**. Type a keyword and click **Track**. Tracked keywords run on every pass and on Find trending, so you don't retype them each time.
-3. Set the filters:
+1. Turn the workspace on first. It ships hidden and only unlocks around an event, so it is not in the nav by default. Open **Settings**, then **Show / Hide Butlers**, and switch on **Prime Day Butler**.
+2. Open **Prime Day Butler** in the left nav, under **Amazon Butler**.
+3. Optional: build a **tracked-keyword watchlist**. Type a keyword and click **Track**. Tracked keywords run on every pass and on Find trending, so you don't retype them each time.
+4. Set the filters:
    - **Keyword**: optional one-off search for this run.
    - **Min % off**: defaults to 20%. Bump to 40–50% for a tighter list.
    - **Max price ($)**: optional.
@@ -62,9 +63,9 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
    - **Check owned products for live deals**: turn on to build the last-minute bucket (uses extra Creators API calls).
    - **CC-eligible only**: filter to products where Creator Connections accepts the affiliate link.
    - **Lowest all year only**: filter to deals that beat the year's lowest price.
-4. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
-5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
-6. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+5. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
+6. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
+7. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
 
 ## Grab and post in a couple of clicks
 
@@ -93,6 +94,7 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 ## Gotchas
 
 - **The list goes stale fast during Prime Day.** Re-run every 2–4 hours during the event window. Amazon's prices flip in real time. The Deals Hub is re-read at most every few hours, so a fresh run reuses the last harvest if it's recent.
+- **The Deals Hub does not use the Creators API.** It reads Amazon's curated deals from your signed-in Associates session in the app, so this source still works while Amazon has your own Creator API access on hold. Fresh discoveries and the owned-product deal check are the parts that need the API.
 - **The Deals Hub needs a signed-in Amazon session in the app.** If the source comes back empty with a "sign in, then run again" note, open Amazon Associates in the app once to refresh the session.
 - **Upcoming deals are embargoed.** Their price and dates are confidential until Amazon publishes them. Use the upcoming view to plan, but wait until a deal is live (or its publish time) before you post.
 - **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Settings.
