@@ -8,6 +8,7 @@
 import { TRIAL_COPY, type TrialTier } from "@/lib/trial-emails";
 import { PRO_COPY, type ProTier } from "@/lib/pro-emails";
 import { ONBOARDING_COPY, type OnboardingTier } from "@/lib/free-onboarding-emails";
+import { APP_TRIAL_COPY, type AppTrialTier } from "@/lib/app-trial-emails";
 import { WINBACK_COPY, type WinbackSegment, type WinbackTier } from "@/lib/winback-emails";
 import { conversionSubject, buildConversionBody, type ConversionTier } from "@/lib/conversion-emails";
 
@@ -35,13 +36,14 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
     name: "Trial drip",
     description: "Sends over a new user's 14-day Pro trial, from start to the final-hours push.",
     tooltip:
-      "Enters automatically when a user starts the 14-day Pro trial. 6 emails from day 0 through the final hours on day 14.",
+      "Enters automatically when a user starts the 14-day Pro trial. 7 emails from day 0 through the final hours on day 14.",
     vars: ["firstName", "monthlyCode", "annualCode", "monthlyPercent", "annualPercent", "subscriptionUrl"],
     steps: [
       { tier: "day0", label: "Day 0 (welcome)", defaultDayOffset: 0, category: "trial_day0" },
       { tier: "day1", label: "Day 1", defaultDayOffset: 1, category: "trial_day1" },
       { tier: "day3", label: "Day 3", defaultDayOffset: 3, category: "trial_day3" },
       { tier: "day7", label: "Day 7", defaultDayOffset: 7, category: "trial_day7" },
+      { tier: "day11", label: "Day 11 (3 days left)", defaultDayOffset: 11, category: "trial_day11" },
       { tier: "day13", label: "Day 13 (24 hours left)", defaultDayOffset: 13, category: "trial_day13" },
       { tier: "day14", label: "Day 14 (ends tonight)", defaultDayOffset: 14, category: "trial_day14" },
     ],
@@ -72,6 +74,28 @@ export const SYSTEM_FUNNELS: SystemFunnelMeta[] = [
       { tier: "day2", label: "Day 2", defaultDayOffset: 2, category: "onboarding_day2" },
       { tier: "day5", label: "Day 5", defaultDayOffset: 5, category: "onboarding_day5" },
       { tier: "day10", label: "Day 10", defaultDayOffset: 10, category: "onboarding_day10" },
+    ],
+  },
+  {
+    key: "apptrial",
+    name: "App trial",
+    description:
+      "Runs over the 14-day desktop app trial, then a short lapsed tail. This is the no-card trial started inside the app, not the Lemon Squeezy checkout trial.",
+    tooltip:
+      "Enters automatically when someone installs the desktop app and enters their email in the startup walkthrough. 8 emails across the trial, then 3 more if they do not continue.",
+    vars: ["firstName", "pricingUrl", "helpUrl", "discountCode", "discountPercent"],
+    steps: [
+      { tier: "day0", label: "Day 0 (welcome)", defaultDayOffset: 0, category: "apptrial_day0" },
+      { tier: "day1", label: "Day 1", defaultDayOffset: 1, category: "apptrial_day1" },
+      { tier: "day3", label: "Day 3", defaultDayOffset: 3, category: "apptrial_day3" },
+      { tier: "day5", label: "Day 5", defaultDayOffset: 5, category: "apptrial_day5" },
+      { tier: "day7", label: "Day 7 (halfway)", defaultDayOffset: 7, category: "apptrial_day7" },
+      { tier: "day10", label: "Day 10", defaultDayOffset: 10, category: "apptrial_day10" },
+      { tier: "day12", label: "Day 12 (2 days left)", defaultDayOffset: 12, category: "apptrial_day12" },
+      { tier: "day14", label: "Day 14 (ends today)", defaultDayOffset: 14, category: "apptrial_day14" },
+      { tier: "day17", label: "Day 17 (lapsed)", defaultDayOffset: 17, category: "apptrial_day17" },
+      { tier: "day21", label: "Day 21 (lapsed)", defaultDayOffset: 21, category: "apptrial_day21" },
+      { tier: "day30", label: "Day 30 (last touch)", defaultDayOffset: 30, category: "apptrial_day30" },
     ],
   },
   {
@@ -131,6 +155,14 @@ export function previewVars(funnel: string): Record<string, unknown> {
         discountCode: "SAVE20",
         discountPercent: 20,
       };
+    case "apptrial":
+      return {
+        firstName: "Alex",
+        pricingUrl: `${site}/pricing`,
+        helpUrl: `${site}/help`,
+        discountCode: "SAVE20",
+        discountPercent: 20,
+      };
     case "winback":
       return {
         firstName: "Alex",
@@ -168,6 +200,12 @@ export function funnelDefaults(
       }
       case "onboarding": {
         const c = ONBOARDING_COPY[tier as OnboardingTier];
+        if (!c) break;
+        return { subject: renderSubject(c.subject, vars), body: c.build(vars as never) };
+      }
+
+      case "apptrial": {
+        const c = APP_TRIAL_COPY[tier as AppTrialTier];
         if (!c) break;
         return { subject: renderSubject(c.subject, vars), body: c.build(vars as never) };
       }

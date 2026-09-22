@@ -8,6 +8,7 @@ import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts
 import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
+import { sendAppTrialEmail, type AppTrialTier } from "@/lib/app-trial-emails";
 import { isUndeliverableTestEmail } from "@/lib/email-address";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
@@ -57,6 +58,7 @@ const STATIC_CODES: Record<Exclude<ConversionTier, "5d">, string> = {
 type SelectChain<T> = {
   eq: (col: string, value: unknown) => SelectChain<T>;
   is: (col: string, value: null) => SelectChain<T>;
+  not: (col: string, op: string, value: unknown) => SelectChain<T>;
   lte: (col: string, value: string) => SelectChain<T>;
   limit: (n: number) => Promise<{ data: T[] | null; error: unknown }>;
   maybeSingle: () => Promise<{ data: T | null; error: unknown }>;
@@ -855,6 +857,194 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
   return counts;
 }
 
+// --- Step G: app-trial nurture emails -------------------------------------
+
+// People who installed the desktop app and typed their email into the startup
+// walkthrough. The licensing worker forwards them to /api/app-trial/signup,
+// which stamps app_trial_started_at. They are on the LOCAL 14-day app trial:
+// no card, no Lemon Squeezy subscription, so nothing auto-charges and nothing
+// else in this cron would ever reach them. Anchored on app_trial_started_at,
+// not created_at, so a long-standing newsletter subscriber who installs today
+// starts at day0 instead of maturing straight into the lapsed tail.
+
+const MAX_APP_TRIAL_SEND_FAILURES = 5;
+const APP_TRIAL_TIERS: ReadonlyArray<{
+  tier: AppTrialTier;
+  thresholdMs: number;
+  sentCol: string;
+}> = [
+  // Most-aged first so we send the highest matured tier that is still pending.
+  { tier: "day30", thresholdMs: 30 * TRIAL_DAY_MS, sentCol: "app_trial_email_day30_sent_at" },
+  { tier: "day21", thresholdMs: 21 * TRIAL_DAY_MS, sentCol: "app_trial_email_day21_sent_at" },
+  { tier: "day17", thresholdMs: 17 * TRIAL_DAY_MS, sentCol: "app_trial_email_day17_sent_at" },
+  { tier: "day14", thresholdMs: TRIAL_LENGTH_DAYS * TRIAL_DAY_MS, sentCol: "app_trial_email_day14_sent_at" },
+  { tier: "day12", thresholdMs: (TRIAL_LENGTH_DAYS - 2) * TRIAL_DAY_MS, sentCol: "app_trial_email_day12_sent_at" },
+  { tier: "day10", thresholdMs: 10 * TRIAL_DAY_MS, sentCol: "app_trial_email_day10_sent_at" },
+  { tier: "day7", thresholdMs: 7 * TRIAL_DAY_MS, sentCol: "app_trial_email_day7_sent_at" },
+  { tier: "day5", thresholdMs: 5 * TRIAL_DAY_MS, sentCol: "app_trial_email_day5_sent_at" },
+  { tier: "day3", thresholdMs: 3 * TRIAL_DAY_MS, sentCol: "app_trial_email_day3_sent_at" },
+  { tier: "day1", thresholdMs: TRIAL_DAY_MS, sentCol: "app_trial_email_day1_sent_at" },
+  { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "app_trial_email_day0_sent_at" },
+];
+
+type AppTrialRow = {
+  email: string;
+  app_trial_started_at: string | null;
+  app_trial_email_day0_sent_at: string | null;
+  app_trial_email_day1_sent_at: string | null;
+  app_trial_email_day3_sent_at: string | null;
+  app_trial_email_day5_sent_at: string | null;
+  app_trial_email_day7_sent_at: string | null;
+  app_trial_email_day10_sent_at: string | null;
+  app_trial_email_day12_sent_at: string | null;
+  app_trial_email_day14_sent_at: string | null;
+  app_trial_email_day17_sent_at: string | null;
+  app_trial_email_day21_sent_at: string | null;
+  app_trial_email_day30_sent_at: string | null;
+  app_trial_send_failures: number | null;
+};
+
+function selectAppTrialTier(
+  row: AppTrialRow,
+  tiers: ReadonlyArray<(typeof APP_TRIAL_TIERS)[number]>,
+): (typeof APP_TRIAL_TIERS)[number] | null {
+  if (!row.app_trial_started_at) return null;
+  const startedAt = new Date(row.app_trial_started_at).getTime();
+  if (!Number.isFinite(startedAt)) return null;
+  const age = Date.now() - startedAt;
+
+  for (const t of tiers) {
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof AppTrialRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrialTier, number>> {
+  const counts: Record<AppTrialTier, number> = {
+    day0: 0, day1: 0, day3: 0, day5: 0, day7: 0, day10: 0,
+    day12: 0, day14: 0, day17: 0, day21: 0, day30: 0,
+  };
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const base = siteUrl.replace(/\/$/, "");
+  const helpUrl = `${base}/help`;
+
+  // Optional static discount for the day14 ask, same mechanic as the free-app
+  // onboarding drip: set a single reusable Lemon Squeezy code rather than
+  // minting one per lead, since these people have no subscription row to hang
+  // a unique code on. With no code configured, day14 sends without one.
+  const discountCode = process.env.APP_TRIAL_DISCOUNT_CODE || null;
+  const parsedPercent = Number.parseInt(process.env.APP_TRIAL_DISCOUNT_PERCENT ?? "", 10);
+  const discountPercent = Number.isFinite(parsedPercent) ? parsedPercent : 0;
+  const pricingUrl = discountCode
+    ? `${base}/pricing?code=${encodeURIComponent(discountCode)}`
+    : `${base}/pricing`;
+
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(APP_TRIAL_TIERS, "apptrial", overrides);
+
+  // Wrapped so that if the app-trial columns do not exist yet (prod schema lag
+  // before 20260922_app_trial_funnel.sql is applied), this step no-ops instead
+  // of breaking the rest of the cron.
+  try {
+    const { data, error } = await supabase
+      .from("email_subscribers")
+      .select(
+        "email,app_trial_started_at,app_trial_email_day0_sent_at,app_trial_email_day1_sent_at,app_trial_email_day3_sent_at,app_trial_email_day5_sent_at,app_trial_email_day7_sent_at,app_trial_email_day10_sent_at,app_trial_email_day12_sent_at,app_trial_email_day14_sent_at,app_trial_email_day17_sent_at,app_trial_email_day21_sent_at,app_trial_email_day30_sent_at,app_trial_send_failures",
+      )
+      .not("app_trial_started_at", "is", null)
+      .is("unsubscribed_at", null)
+      .is("app_trial_converted_at", null)
+      .is("app_trial_abandoned_at", null)
+      // day30 is the last tier, so a row that has had it is finished.
+      .is("app_trial_email_day30_sent_at", null)
+      .limit(PER_RUN_LIMIT);
+
+    if (error) {
+      console.error("cron: app-trial query failed (columns may not exist yet)", error);
+      return counts;
+    }
+
+    const rows = (data ?? []) as AppTrialRow[];
+
+    for (const row of rows) {
+      if (!row.email) continue;
+
+      if (isUndeliverableTestEmail(row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ app_trial_abandoned_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const tier = selectAppTrialTier(row, tiers);
+      if (!tier) continue;
+
+      // Stop nurturing anyone who has become a trial/paid customer: the day12
+      // and day14 copy tells them their trial is ending, which is wrong for
+      // someone who already subscribed.
+      if (await onboardingLeadConverted(supabase, row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ app_trial_converted_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const sent = await sendAppTrialEmail({
+        tier: tier.tier,
+        to: row.email,
+        name: "",
+        pricingUrl,
+        helpUrl,
+        discountCode,
+        discountPercent,
+      });
+
+      if (!sent) {
+        // Only a successful send stamps the tier, so without a failure counter a
+        // permanently undeliverable address would be re-picked every run forever.
+        const failures = (row.app_trial_send_failures ?? 0) + 1;
+        const patch: Record<string, unknown> = { app_trial_send_failures: failures };
+        if (failures >= MAX_APP_TRIAL_SEND_FAILURES) {
+          patch.app_trial_abandoned_at = new Date().toISOString();
+        }
+        const { error: failError } = await supabase
+          .from("email_subscribers")
+          .update(patch)
+          .eq("email", row.email);
+        if (failError) {
+          console.error("cron: app-trial failure-count update failed", { email: row.email, failError });
+        }
+        continue;
+      }
+
+      const { error: updateError } = await supabase
+        .from("email_subscribers")
+        // A good send clears any prior transient-failure streak on this lead.
+        .update({ [tier.sentCol]: new Date().toISOString(), app_trial_send_failures: 0 })
+        .eq("email", row.email);
+
+      if (updateError) {
+        console.error("cron: app-trial update failed", { email: row.email, tier: tier.tier, updateError });
+        continue;
+      }
+
+      counts[tier.tier] += 1;
+    }
+  } catch (err) {
+    console.error("cron: app-trial step threw", err);
+    return counts;
+  }
+
+  return counts;
+}
+
 // --- Step E: housekeeping - prune old webhook delivery logs ----------------
 
 type DeleteClient = {
@@ -910,6 +1100,7 @@ export async function GET(request: Request) {
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
   const onboarding = await sendFreeOnboardingEmails(supabase);
+  const appTrial = await sendAppTrialEmails(supabase);
   // Monthly affiliate swipe-kit. Guarded by an app_config period check inside
   // the runner, so on all but the first run of each month this is a single
   // cheap app_config read that returns "already sent".
@@ -923,6 +1114,7 @@ export async function GET(request: Request) {
     trial,
     pro,
     onboarding,
+    appTrial,
     swipeKit,
     webhookEventsPruned,
   });

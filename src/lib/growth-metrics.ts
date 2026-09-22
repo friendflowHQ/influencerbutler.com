@@ -287,7 +287,7 @@ export async function computeGrowthSnapshot(
     earnings,
   ] = await Promise.all([
     // `source` comes back so seeded social-proof rows can be dropped below.
-    // Filtering in code, not with .neq(): a genuine click that arrived without
+    // Filtering in code, not with .neq(): a real click that arrived without
     // a ?src= tag stores source NULL, and PostgREST's neq would discard it.
     windowRows("activity_events", "created_at,source", "created_at", (c) =>
       c.eq("kind", "trial_click").eq("is_bot", false),

@@ -18,6 +18,9 @@ import { resendKeyFor, type EmailStream } from "@/lib/email-senders";
 
 export type EmailFunnel =
   | "trial"
+  // Desktop-app trial leads (walkthrough email capture). Separate from
+  // "trial", which is the Lemon Squeezy checkout trial with a card on file.
+  | "apptrial"
   | "pro"
   | "conversion"
   | "onboarding"
