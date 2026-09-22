@@ -829,6 +829,11 @@ export interface Dict {
   connectedToApp: (version: string) => string;
   upsellSignedIn: string;
   upsellSignedOut: string;
+  // Shown in place of the install upsell when this install is already paired to
+  // the app but the local bridge did not answer right now (app closed, still
+  // starting, or its bridge port is blocked). A paired user has already
+  // installed and connected, so pitching them the download reads as broken.
+  upsellReconnect: string;
   ctaOpenApp: string;
   ctaStartTrial: string;
   toolsAlwaysFree: string;
@@ -1820,6 +1825,8 @@ const en: Dict = {
     "Open the Influencer Butler desktop app to push this product into your Deals Butler, Content Butler, and to auto-accept campaigns.",
   upsellSignedOut:
     "Do the rest with the app: push this product to Deals Butler with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.",
+  upsellReconnect:
+    "Your Influencer Butler app isn't responding. Make sure it's open, then reload this page.",
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
@@ -2824,6 +2831,8 @@ const es: Dict = {
     "Abre la app de escritorio de Influencer Butler para enviar este producto a tus Deals Butler, Content Butler y auto-aceptar campañas.",
   upsellSignedOut:
     "Haz el resto con la app: envía este producto a Deals Butler con tu plantilla de publicación y destinos sociales, mándalo a Content Butler y auto-acepta campañas de Creator Connections.",
+  upsellReconnect:
+    "Tu app de Influencer Butler no responde. Asegúrate de que esté abierta y recarga esta página.",
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
@@ -3828,6 +3837,8 @@ const fr: Dict = {
     "Ouvrez l'app de bureau Influencer Butler pour envoyer ce produit vers vos Deals Butler, Content Butler et auto-accepter les campagnes.",
   upsellSignedOut:
     "Faites le reste avec l'app: envoyez ce produit vers Deals Butler avec votre modèle de publication et vos destinations sociales, envoyez-le à Content Butler et auto-acceptez les campagnes Creator Connections.",
+  upsellReconnect:
+    "Votre app Influencer Butler ne répond pas. Assurez-vous qu'elle est ouverte, puis rechargez cette page.",
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",

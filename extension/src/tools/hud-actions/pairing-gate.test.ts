@@ -38,6 +38,21 @@ describe("Send-to-app panel pairing gate", () => {
   it("shows the existing pairing copy rather than inventing new wording", () => {
     expect(panel).toContain("t().connectAppToPair");
   });
+
+  it("offers reconnect (not the install upsell) to a paired-but-unreachable user", () => {
+    // A user who already installed and paired the app, but whose bridge is not
+    // answering right now, should see a reconnect hint rather than the cold
+    // "Open or install the app" download pitch a brand-new user gets.
+    const reconnect = panel.indexOf("} else if (hud.paired) {");
+    const upsell = panel.indexOf("renderUpsell(body, auth)");
+    expect(reconnect).toBeGreaterThan(-1);
+    expect(upsell).toBeGreaterThan(-1);
+    // The paired branch must come BEFORE the upsell fallthrough, or a paired
+    // user drops through to the install pitch anyway.
+    expect(reconnect).toBeLessThan(upsell);
+    expect(panel).toContain("renderReconnect(body, status)");
+    expect(panel).toContain("t().upsellReconnect");
+  });
 });
 
 describe("the background actually reports pairing state", () => {

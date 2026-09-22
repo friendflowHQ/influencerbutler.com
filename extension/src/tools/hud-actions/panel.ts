@@ -63,6 +63,11 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
       renderNeedsPairing(body, status);
     } else if (hud.connected) {
       renderConnected(body, status, product, hud, signals.brand, opts);
+    } else if (hud.paired) {
+      // Already installed and paired, but the local bridge did not answer this
+      // time (app closed, still starting, or its port is blocked). Pitching the
+      // download here reads as broken, so show a reconnect hint instead.
+      renderReconnect(body, status);
     } else {
       renderUpsell(body, auth);
     }
@@ -77,6 +82,21 @@ function renderNeedsPairing(body: HTMLElement, status: HTMLElement): void {
   card.style.display = "block";
   card.textContent = t().connectAppToPair;
   body.append(card);
+  status.textContent = "";
+}
+
+// Paired but the bridge did not answer right now: show a reconnect hint (and
+// keep the always-free note) instead of the install upsell a fresh user gets.
+function renderReconnect(body: HTMLElement, status: HTMLElement): void {
+  body.replaceChildren();
+  const card = el("div", "seal fail");
+  card.style.display = "block";
+  card.textContent = t().upsellReconnect;
+  body.append(card);
+
+  const note = el("p", "note");
+  note.textContent = t().toolsAlwaysFree;
+  body.append(note);
   status.textContent = "";
 }
 
