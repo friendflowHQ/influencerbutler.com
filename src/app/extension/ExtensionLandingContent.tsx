@@ -406,7 +406,7 @@ export default function ExtensionLandingContent() {
               The extension is free either way, and the desktop app has free butlers too: Like
               Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler stay free
               forever. When you are ready to automate the rest of your influencer business (deal
-              posting, Creator Connections outreach, commission tracking, and 40+ other butlers),
+              posting, Creator Connections outreach, commission tracking, and 50+ other butlers),
               start a 14-day Pro trial.
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">

@@ -2,7 +2,7 @@
 
 > Influencer Butler is an all-in-one toolkit for Amazon creators and
 > influencers, published by The Social Media Posse LLC. It pairs a desktop app
-> with a free companion Chrome extension and bundles 40+ tools
+> with a free companion Chrome extension and bundles 50+ tools
 > ("butlers") to automate Amazon Creator Connections auto-accept, brand outreach,
 > commission harvesting, deal posting, and storefront and content management.
 > The desktop app runs on Windows and macOS. The free Chrome extension adds
@@ -16,12 +16,12 @@
 - Brand outreach: sends personalized pitches at scale with per-day rate caps and human-like pacing.
 - Commission harvesting: collects and totals affiliate commissions and highlights best-earning products.
 - Deals and content: posts deals, refreshes storefront links, and manages content.
-- 40+ tools across one desktop app and a free Chrome extension, instead of stitching together single-purpose point tools.
+- 50+ tools across one desktop app and a free Chrome extension, instead of stitching together single-purpose point tools.
 
 ## Pricing
 
 - Free-forever tier: the Chrome extension plus a set of core tools, no card required.
-- Pro: $39 per month or $390 per year (a 17% saving), unlocks all 40+ tools.
+- Pro: $39 per month or $390 per year (a 17% saving), unlocks all 50+ tools.
 - Trial: a 14-day Pro trial that unlocks everything; cancel before day 14 to avoid charges.
 
 ## Platform

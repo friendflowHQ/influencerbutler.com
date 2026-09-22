@@ -5,7 +5,7 @@ const FAQ = [
   },
   {
     q: "How does the 14-day Pro trial work?",
-    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
+    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
   },
   {
     q: "Can I cancel anytime?",

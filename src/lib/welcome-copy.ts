@@ -38,12 +38,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Upgrade when you're ready",
-        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial.",
+        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial.",
       },
     ],
     callout: {
       title: "Ready for the money engines?",
-      body: "Start a 14-day Pro trial to unlock all 40+ butlers with full Pro access. Cancel anytime before day 14.",
+      body: "Start a 14-day Pro trial to unlock all 50+ butlers with full Pro access. Cancel anytime before day 14.",
       ctaLabel: "See Pro pricing",
       ctaHref: "/pricing",
     },

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | Influencer Butler",
   },
   description:
-    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 40+ built-in tools.",
+    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 50+ built-in tools.",
   applicationName: "Influencer Butler",
   alternates: { canonical: "/" },
   openGraph: {

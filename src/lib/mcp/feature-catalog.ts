@@ -90,7 +90,7 @@ export const PRICING_TIERS: PricingTier[] = [
     seats: 1,
     highlights: [
       "Full Pro Solo access for 14 days",
-      "All 40+ butlers unlocked",
+      "All 50+ butlers unlocked",
       "Cancel anytime before day 14",
     ],
     signupUrl: `${BASE}/pricing`,
@@ -101,7 +101,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 39,
     cadence: "monthly",
     seats: 1,
-    highlights: ["All 40+ butlers unlocked", "1 activated device", "Cancel anytime"],
+    highlights: ["All 50+ butlers unlocked", "1 activated device", "Cancel anytime"],
     signupUrl: `${BASE}/welcome/monthly`,
   },
   {
@@ -110,7 +110,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 390,
     cadence: "annual",
     seats: 1,
-    highlights: ["All 40+ butlers unlocked", "Save 17% vs monthly", "1 activated device"],
+    highlights: ["All 50+ butlers unlocked", "Save 17% vs monthly", "1 activated device"],
     signupUrl: `${BASE}/welcome/annual`,
   },
   {

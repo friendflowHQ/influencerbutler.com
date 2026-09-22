@@ -54,7 +54,7 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Welcome aboard - your 14-day Pro trial is active, with every one of the 40+ butlers unlocked.`,
+        `Welcome aboard - your 14-day Pro trial is active, with every one of the 50+ butlers unlocked.`,
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,

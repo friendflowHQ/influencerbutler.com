@@ -57,7 +57,7 @@ const ROWS: Row[] = [
   },
   {
     cap: "Number of tools",
-    ib: { v: "text", t: "40+ connected" },
+    ib: { v: "text", t: "50+ connected" },
     oink: { v: "text", t: "40+" },
     vue: { v: "text", t: "Several" },
     cha: { v: "text", t: "1 (video sync)" },
@@ -397,7 +397,7 @@ const COMPETITORS: Competitor[] = [
     credit:
       "For video specifically, Cha-Ching reaches more countries (13+), auto-translates and captions in the local language, and now offers optional AI voiceover dubbing, which Butler's Video Reload does not do today. If a creator's only goal is multilingual video-to-YouTube at scale, Cha-Ching is strong at that one thing.",
     win:
-      "As of our last check, Cha-Ching focuses on video only: no photo reload, brand outreach, CC/SPCC auto-accept, collab tracking, deal posting, or inbox. Influencer Butler is a full suite: Video Reload AND Photo Reload butlers, plus 40+ other connected tools. You would need Cha-Ching plus five other tools to match one Butler.",
+      "As of our last check, Cha-Ching focuses on video only: no photo reload, brand outreach, CC/SPCC auto-accept, collab tracking, deal posting, or inbox. Influencer Butler is a full suite: Video Reload AND Photo Reload butlers, plus 50+ other connected tools. You would need Cha-Ching plus five other tools to match one Butler.",
     points: [
       "Cha-Ching does one thing. Butler does that plus your photos, your brand deals, your posting, and your earnings tracking.",
       "It reloads videos but not photos. Butler reloads both, and revives your dead product links on top.",
@@ -432,7 +432,7 @@ const COMPETITORS: Competitor[] = [
       "As of our last check, JoyLink is a link-and-deal tool: it does not accept Creator Connections or SPCC for you, track a brand deal from shipped to filmed to paid, reload your deleted videos or photos, or unify your Amazon inbox. Influencer Butler runs that whole lifecycle, and its own branded deep links plus a Link Performance dashboard cover the linking too, so you are not renting a second tool for it. JoyLink also bills usage by the click, while Butler's extension is free with no per-click meter.",
     points: [
       "JoyLink links the sale. Butler lands the deal, films the coverage list, posts it everywhere, then links the sale too.",
-      "App-open deep links are one feature. Butler ships branded deep links and a click dashboard as part of a 40+ tool suite.",
+      "App-open deep links are one feature. Butler ships branded deep links and a click dashboard as part of a 50+ tool suite.",
       "Per-click billing punishes your best months. Butler's free extension has no click meter.",
     ],
     oneliner: "\u{1F517} JoyLink hands the shopper a link. \u{1F933} Butler runs the whole shop.",
@@ -464,7 +464,7 @@ const COMPETITORS: Competitor[] = [
       "As of our last check, link routing is all they do: no Creator Connections or SPCC, no brand outreach, no storefront or content coverage, no video or photo reload, no inbox, no deals or research. Influencer Butler integrates these providers AND ships its own branded deep links plus a Link Performance click dashboard, then does the other forty jobs around them.",
     points: [
       "A deep link routes the click. Butler creates the content, lands the deal, and tracks the commission the click pays out.",
-      "Butler already integrates Genius Link, URLGenius, and Linktw.in, or routes links itself. Either way, linking is one checkbox in a 40+ tool suite.",
+      "Butler already integrates Genius Link, URLGenius, and Linktw.in, or routes links itself. Either way, linking is one checkbox in a 50+ tool suite.",
       "Per-click pricing adds up at scale. Butler's branded links come with the subscription.",
     ],
     oneliner: "\u{1F9ED} Deeplink tools point the shopper. \u{1F933} Butler stocks the shelves they land on.",
@@ -712,7 +712,7 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
         </p>
         <p className="mt-2 text-sm text-slate-700">
           Why it is your best opener: a free install is the lowest-friction thing you can ask for, and
-          the extension syncs into the full 40+ butler desktop suite. So a free user is a warm lead
+          the extension syncs into the full 50+ butler desktop suite. So a free user is a warm lead
           who upsells themselves into the paid app, which is where your recurring commission comes
           from.
         </p>
