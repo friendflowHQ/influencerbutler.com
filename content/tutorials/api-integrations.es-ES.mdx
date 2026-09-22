@@ -83,7 +83,7 @@ Una vez con la sesión iniciada, tienes dos formas de usarlo:
 - **Como tu proveedor de deeplinks**: elige **Mavely** en DeepLink Routing. Ahora, cuando Deals Butler publique una oferta de Walmart o Target, el enlace será un enlace de Mavely que genera comisión, de forma automática.
 - **Enlaces sueltos**: pega cualquier URL de producto en el campo URL del producto de la tarjeta de Mavely y haz clic en **Crear enlace** para obtener un enlace de Mavely al momento. El botón de enlaces de la extensión de Chrome hace lo mismo para páginas fuera de Amazon.
 
-Tus enlaces de Amazon no se ven afectados: solo los comercios fuera de Amazon pasan por Mavely. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
+Mavely no toca tus enlaces de Amazon a menos que tú lo decidas. Dos ajustes pueden entregarle Amazon a Mavely: elegir **Mavely** en **DeepLink Routing**, que envía las páginas de producto de Amazon a través de Mavely, y marcar Mavely en **Affiliate Routing Strategy**, donde compite por cualquier enlace de producto y gana la comisión más alta. Deja ambos como están y Mavely solo cubrirá los comercios fuera de Amazon. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
 
 ## Test al arrancar
 
@@ -113,6 +113,8 @@ Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-sto
 - **La clave de OpenAI da verde pero la generación falla**: distintos productos de OpenAI usan distintos límites. Una clave válida para completions puede chocar con un problema de billing/quota en un modelo específico. Revisa la pestaña de billing del dashboard de OpenAI.
 - **El OAuth de YouTube caduca inesperadamente**: Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
 - **El enrutamiento de afiliados eligió el proveedor equivocado**: normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.
+- **Iniciaste sesión en Mavely pero Influencer Butler sigue diciendo que no**: el inicio de sesión solo cuenta dentro del navegador que Influencer Butler reserva para Mavely. Abrir creators.joinmavely.com en tu propio navegador, incluso desde un enlace del aviso de sesión cerrada, te conecta en un sitio que la aplicación no ve. Usa **Iniciar sesión en Mavely** en la tarjeta de Mavely, inicia sesión en la ventana que se abre, ciérrala y haz clic en **Comprobar estado**.
+- **Buscas una clave de API de Mavely**: no existe. Mavely es la red que se autentica iniciando sesión en lugar de con una clave pegada, así que su tarjeta no tiene campo de clave a propósito.
 
 ## También en la extensión de Chrome
 

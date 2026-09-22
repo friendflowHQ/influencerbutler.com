@@ -83,7 +83,7 @@ Once you're signed in, you have two ways to use it:
 - **As your deeplink provider**: pick **Mavely** in DeepLink Routing. Now when Deals Butler posts a Walmart or Target deal, the link is a commission-earning Mavely link automatically.
 - **One-off links**: paste any product URL into the Mavely card's Product URL box and click **Create Link** to get a single Mavely link on the spot. The Chrome extension's link button does the same for non-Amazon pages.
 
-Your Amazon links are untouched by this: only non-Amazon retailers route through Mavely. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
+Mavely stays off your Amazon links unless you put it there. Two settings can hand Amazon to Mavely: picking **Mavely** under **DeepLink Routing**, which sends Amazon product pages through Mavely, and ticking Mavely under **Affiliate Routing Strategy**, where it competes on any product link and the higher commission wins. Leave both as they are and Mavely only covers the non-Amazon retailers. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
 
 ## Test on startup
 
@@ -113,6 +113,8 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 - **OpenAI key tested green but generation fails**: different OpenAI products use different rate limits. A key valid for completions may hit a billing/quota issue on a specific model. Check the OpenAI dashboard's billing tab.
 - **YouTube OAuth expires unexpectedly**: Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
 - **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
+- **You signed in to Mavely but Influencer Butler still says not signed in**: the sign in only counts inside the browser Influencer Butler keeps for Mavely. Opening creators.joinmavely.com in your own browser, including from a link in the signed-out banner, signs you in somewhere the app cannot see. Use **Sign in to Mavely** on the Mavely card, sign in inside the window that opens, close it, then click **Check status**.
+- **You are looking for a Mavely API key**: there is not one. Mavely is the network that authenticates by signing in rather than by a pasted key, so its card has no key field on purpose.
 
 ## In the Chrome extension too
 
