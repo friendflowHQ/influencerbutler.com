@@ -48,6 +48,29 @@ You can stop at any time with **Stop**.
 
 The card shows when it last ran and when it runs next. **Stop Schedule** disarms it and is safe to press at any time. The app has to stay open and signed in to Facebook for scheduled runs to fire.
 
+## Reading your results
+
+Every run is recorded in the **Results** card, so you can see what the butler has actually done for you rather than guessing from the activity log.
+
+At the top are your running totals: how many people it has invited in total, how many distinct groups it has worked, and how many posts it has opened. Beside them is the last run, with the time it finished and how it ended.
+
+Below that is the run history, one row per run. Each row shows when it ran, how many people it invited, how many groups and posts it covered, and how it ended:
+
+- **Finished**: the run worked through every group it found.
+- **Stopped**: you pressed Stop. The invites already sent still count.
+- **Nothing to do**: the master toggle was off, so the run was a deliberate no-op.
+- **Session not confirmed**: it could not read your Facebook session in time. Just run it again.
+- **Error**: something went wrong part-way. Invites sent before that point are still recorded.
+
+Click any column heading to sort by it. The app remembers your choice for next time.
+
+**Invites by group** breaks the same data down the other way, one row per group, biggest first. It splits each group's invites into the ones that came from reactions and the ones that came from comments, and shows how many runs have touched that group. This is the view worth checking: groups near the top are where your audience actually is, and groups sitting at zero after several runs are candidates for your skip list.
+
+Two buttons sit in the card header:
+
+- **Export CSV** saves the whole history as a spreadsheet, one row per group per run, so you can pivot it by run or by group.
+- **Clear results** wipes the history. It does not undo any invites, it only clears this record of them.
+
 ## Common gotchas
 
 - **It says you're not signed in, but you are**: make sure the **Facebook account** you picked is one you actually signed in to in Deals Butler. Invites are sent from that exact account.
