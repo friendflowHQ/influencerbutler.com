@@ -38,6 +38,8 @@ type MetricsResponse = {
 // hints here (not in the shared metric catalog) so only this page shows them.
 const TILE_HINTS: Record<string, string> = {
   trial_clicks: "Anonymous download/CTA clicks. Not linked to the trials below.",
+  app_trials_started:
+    "Desktop app trials: walkthrough email captures and no-card claims. No card, so these do not auto-convert.",
   trials_started: "Paid-checkout trials (Lemon Squeezy). A separate population from clicks.",
   trial_conversions: "Trials that became paid subscriptions.",
   download_leads: "Emails captured at the app download. These are your named leads.",
@@ -46,6 +48,7 @@ const TILE_HINTS: Record<string, string> = {
 
 const TILE_ORDER: { key: string; accent: string }[] = [
   { key: "trial_clicks", accent: "#0ea5e9" },
+  { key: "app_trials_started", accent: "#14b8a6" },
   { key: "trials_started", accent: "#6366f1" },
   { key: "trial_conversions", accent: "#10b981" },
   { key: "download_leads", accent: "#0d9488" },

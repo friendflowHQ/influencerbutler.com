@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { issueInHouseComp } from "@/lib/comp-issue";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
 import { AFFILIATE_COMP_PLAN, AFFILIATE_COMP_SEATS } from "@/lib/affiliate-comps";
+import { enrollAppTrialLead } from "@/lib/app-trial-enroll";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -130,6 +131,13 @@ export async function POST(request: Request) {
     // 409 = already has a live subscription (issueInHouseComp guard); surface as-is.
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
+
+  // Put them on the app-trial drip. Without this a no-card trial is a silent
+  // 14 days: the comp-expiry cron emails the OWNER and then cancels, and the
+  // Lemon Squeezy trial funnel never sees them because a comp writes no
+  // trial_started_at. Best-effort, and deliberately after the comp is issued:
+  // a nurture failure must not cost someone the trial they just claimed.
+  await enrollAppTrialLead(email, { source: "no-card-trial" });
 
   return NextResponse.json({ ok: true, expiresAt: result.expiresAt });
 }

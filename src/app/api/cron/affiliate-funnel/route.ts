@@ -922,6 +922,45 @@ function selectAppTrialTier(
   return null;
 }
 
+// Like onboardingLeadConverted, but blind to comped subscriptions.
+//
+// A no-card trial is granted as an in-house comp, which writes a subscriptions
+// row with status 'active' and a sentinel ls_subscription_id of 'comp:<uuid>'.
+// The plain converted check treats that as a paying customer, so every no-card
+// trial would be stamped converted on its first pass and never hear from us,
+// which is the exact silence this drip exists to fix. Only a real (non-comp)
+// live subscription counts.
+async function appTrialLeadConverted(supabase: CronClient, email: string): Promise<boolean> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data: profile } = await fetchClient
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    const userId = profile && typeof profile.id === "string" ? profile.id : null;
+    if (!userId) return false;
+
+    const { data: subData } = await supabase
+      .from("subscriptions")
+      .select("status,ls_subscription_id")
+      .eq("user_id", userId)
+      .limit(20);
+    if (!Array.isArray(subData) || subData.length === 0) return false;
+
+    return subData.some((row) => {
+      const r = row as { status?: string | null; ls_subscription_id?: string | null };
+      const id = typeof r.ls_subscription_id === "string" ? r.ls_subscription_id : "";
+      if (id.startsWith("comp:")) return false;
+      const status = r.status ?? "";
+      return status === "active" || status === "on_trial" || status === "past_due" || status === "paused";
+    });
+  } catch (err) {
+    console.error("cron: app-trial conversion check threw", err);
+    return false;
+  }
+}
+
 async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrialTier, number>> {
   const counts: Record<AppTrialTier, number> = {
     day0: 0, day1: 0, day3: 0, day5: 0, day7: 0, day10: 0,
@@ -988,7 +1027,7 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
       // Stop nurturing anyone who has become a trial/paid customer: the day12
       // and day14 copy tells them their trial is ending, which is wrong for
       // someone who already subscribed.
-      if (await onboardingLeadConverted(supabase, row.email)) {
+      if (await appTrialLeadConverted(supabase, row.email)) {
         await supabase
           .from("email_subscribers")
           .update({ app_trial_converted_at: new Date().toISOString() })

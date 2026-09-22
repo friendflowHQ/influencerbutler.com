@@ -29,6 +29,7 @@ export type GrowthMetricDef = {
 export const GROWTH_METRICS: GrowthMetricDef[] = [
   { key: "trial_clicks", label: "Free-trial clicks", goalLabel: "trial clicks", unit: "count", goalable: true },
   { key: "trials_started", label: "Trials started", goalLabel: "trials started", unit: "count", goalable: true },
+  { key: "app_trials_started", label: "App trials started", goalLabel: "app trials started", unit: "count", goalable: true },
   { key: "trial_conversions", label: "Trial conversions", goalLabel: "trial conversions", unit: "count", goalable: true },
   { key: "download_leads", label: "Download leads", goalLabel: "download leads", unit: "count", goalable: true },
   { key: "new_subscriptions", label: "New subscriptions", goalLabel: "new subscriptions", unit: "count", goalable: true },
@@ -283,6 +284,7 @@ export async function computeGrowthSnapshot(
     affClickRows,
     testimonialRows,
     emailSubRows,
+    appTrialRows,
     fbMemberRows,
     earnings,
   ] = await Promise.all([
@@ -323,6 +325,14 @@ export async function computeGrowthSnapshot(
     windowRows("affiliate_clicks", "created_at", "created_at", (c) => c.eq("is_bot", false)),
     windowRows("testimonials", "created_at", "created_at"),
     windowRows("email_subscribers", "created_at,source", "created_at"),
+    // Desktop app trials: walkthrough email captures and no-card claims. These
+    // create no Lemon Squeezy subscription, so trials_started (which reads
+    // subscriptions.trial_started_at) cannot see them at all. Returns null
+    // until 20260922_app_trial_funnel.sql reaches prod, which leaves the tile
+    // empty rather than breaking the snapshot.
+    windowRows("email_subscribers", "app_trial_started_at", "app_trial_started_at", (c) =>
+      c.not("app_trial_started_at", "is", null),
+    ),
     // Point-in-time LEVEL: one member-count row per day. captured_on is a DATE,
     // so the window is filtered on date-only bounds.
     (async () => {
@@ -372,6 +382,7 @@ export async function computeGrowthSnapshot(
     : null;
   metrics.trial_clicks = bucket(realTrialClickRows, "created_at");
   metrics.trials_started = bucket(trialStartRows, "trial_started_at");
+  metrics.app_trials_started = bucket(appTrialRows, "app_trial_started_at");
   if (trialConvRows) {
     metrics.trial_conversions = bucketRows(
       trialConvRows,

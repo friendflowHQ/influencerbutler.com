@@ -20,6 +20,7 @@ import { GROWTH_METRICS, type GrowthSnapshot } from "@/lib/growth-metrics";
 export const DEFAULT_FLOOR: Record<string, number> = {
   trial_clicks: 10,
   trials_started: 2,
+  app_trials_started: 5,
   trial_conversions: 1,
   download_leads: 5,
   new_subscriptions: 1,
