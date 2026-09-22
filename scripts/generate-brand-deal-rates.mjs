@@ -19,6 +19,15 @@ const OUT = path.join(ROOT, "public", "brand-deal-rates.html");
 
 const stats = JSON.parse(fs.readFileSync(DATA, "utf8"));
 
+// Whose records these are. Attribution is the whole point of the page: an
+// anonymous rate table is just another guess, a named creator's own books are
+// not. Keep the handle here so both uses stay in step.
+const CREATOR_NAME = "Liz Dean";
+const CREATOR_HANDLE = "@lizdean";
+const CREATOR_URL = "https://www.instagram.com/lizdean/";
+const creatorLink =
+  `<a href="${CREATOR_URL}" rel="me noopener" target="_blank">${CREATOR_HANDLE}</a>`;
+
 const usd = (n) => `$${Number(n).toLocaleString("en-US")}`;
 const pct = (n) => `${Math.round(n * 100)}%`;
 
@@ -223,8 +232,9 @@ const html = `<!DOCTYPE html>
                 <p class="bdr-lede">
                     Almost every influencer rate guide is guesswork, or a survey where creators report
                     what they wish they charged. This one is not. It is every paid brand deal our founder
-                    booked between ${coverage.firstYear} and ${coverage.lastYear}: ${totals.deals} campaigns,
-                    ${totals.brands} brands, ${usd(totals.revenueUsd)}, taken straight from her own records.
+                    ${CREATOR_NAME} (${creatorLink} on Instagram) booked between ${coverage.firstYear} and
+                    ${coverage.lastYear}: ${totals.deals} campaigns, ${totals.brands} brands,
+                    ${usd(totals.revenueUsd)}, taken straight from her own books.
                 </p>
                 <div class="bdr-keystats">
                     <div class="bdr-keystat">
@@ -376,11 +386,11 @@ ${yearRows}
                 <div class="bdr-method">
                     <h2>How this data was put together</h2>
                     <ul>
-                        <li>Every figure comes from one creator's own campaign records, ${coverage.firstYear} to ${coverage.lastYear}. Nothing is modelled, surveyed, or estimated.</li>
+                        <li>Every figure comes from the campaign records of one creator, ${CREATOR_NAME} (${creatorLink}), ${coverage.firstYear} to ${coverage.lastYear}. Nothing is modelled, surveyed, or estimated.</li>
                         <li>Only campaigns that were actually paid in cash are counted. Gifted product, unpaid exchanges, and invoices that were never settled are excluded.</li>
                         <li>Figures are per campaign, not per post. A campaign may include several deliverables across Instagram, TikTok, and YouTube.</li>
                         <li>No brand is named next to a fee anywhere on this page or in the underlying data. Rates appear only as category aggregates covering many brands.</li>
-                        <li>This is one creator in the family, home, and lifestyle space. Your category, audience size, and market will move these numbers.</li>
+                        <li>This is one creator in the family, home, and lifestyle space, posting mainly to Instagram as ${creatorLink}. Your category, audience size, and market will move these numbers.</li>
                         <li>The underlying aggregate data is published at <a href="/data/brand-deal-stats.json">/data/brand-deal-stats.json</a>. Last updated ${stats.lastUpdated}.</li>
                     </ul>
                 </div>
