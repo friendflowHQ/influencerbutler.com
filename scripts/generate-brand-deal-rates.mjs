@@ -114,6 +114,24 @@ const histogramRows = stats.dealSizeHistogram
   })
   .join("\n");
 
+const anchorList = audience && Array.isArray(audience.anchors) ? audience.anchors : [];
+const fmtAnchor = (a) => {
+  const when = new Date(`${a.date}T00:00:00Z`).toLocaleDateString("en-US", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  });
+  return `${a.approximate ? "about " : ""}${num(a.followers)} in ${when}`;
+};
+const anchorNote = anchorList.length >= 2
+  ? `
+                <p>
+                    Audience size is the other half of this. The Instagram account behind these deals
+                    was at ${fmtAnchor(anchorList[0])} and ${fmtAnchor(anchorList[anchorList.length - 1])},
+                    so read the rates as what a creator in that range was paid, not what any audience size
+                    commands. A full year-by-year follower history is not published here because we will
+                    not estimate it.
+                </p>`
+  : "";
+
 const audienceNote = hasAudience
   ? `
                 <p>
@@ -374,7 +392,7 @@ ${categoryRows}
                     ${usd(peakYear.revenueUsd)} across ${peakYear.deals} deals, then softened. By
                     ${latestYear.year} the median campaign had dropped to ${usd(latestYear.medianDealUsd)}.
                     Volume matters more than it used to.
-                </p>${audienceNote}
+                </p>${audienceNote || anchorNote}
                 <div class="bdr-table-wrap">
                     <table class="bdr-table">
                         <thead>

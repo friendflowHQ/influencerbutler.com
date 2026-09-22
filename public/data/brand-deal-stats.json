@@ -18,7 +18,25 @@
     "maxDealUsd": 8000,
     "averageDealUsd": 1230
   },
-  "audience": null,
+  "audience": {
+    "platform": "instagram",
+    "handle": "lizdean",
+    "basis": "end-of-year",
+    "anchors": [
+      {
+        "date": "2020-11-03",
+        "followers": 102466,
+        "approximate": false,
+        "source": "Internet Archive capture of the Instagram profile, follower count read from the page data"
+      },
+      {
+        "date": "2026-09-22",
+        "followers": 93000,
+        "approximate": true,
+        "source": "Instagram profile, current, rounded"
+      }
+    ]
+  },
   "byYear": [
     {
       "year": "2018",
