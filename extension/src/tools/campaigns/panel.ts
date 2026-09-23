@@ -95,11 +95,13 @@ export async function renderCampaigns(
   const canAcceptCc = flags.cc && !ccEnrolled;
   const canAcceptSpcc = flags.spcc && !spccEnrolled;
   if (canAcceptCc || canAcceptSpcc) {
-    // The standalone route needs the campaign to open, and this page only knows
-    // the ASIN: resolve it through the daily cc-rates lookup (cached a day, and
-    // only for products the Bloom filter already flagged, so it is cheap).
-    const ccCampaignId =
-      canAcceptCc && standaloneAccept ? await lookupCampaignId(signals.asin) : null;
+    // Resolve the actual campaign id through the daily cc-rates lookup (cached a
+    // day, and only for products the Bloom filter already flagged, so it is
+    // cheap). The standalone route needs it to open Amazon's Accept tab; the
+    // paired route uses it to tell a confirmed campaign (show a definite "Accept
+    // CC campaign" button) from a bare Bloom hint with no known campaign yet
+    // (show the softer "Check for CC campaign" instead of over-promising).
+    const ccCampaignId = canAcceptCc ? await lookupCampaignId(signals.asin) : null;
     await renderAcceptActions(
       block,
       signals,
@@ -152,8 +154,13 @@ async function renderAcceptActions(
   const product = toProductRef(signals);
 
   if (flags.cc) {
-    const ccBtn = el("button", "btn secondary");
-    ccBtn.textContent = t().acceptCc;
+    // Availability is only a Bloom hint; the confident "Accept CC campaign" label
+    // should promise a campaign only when we actually resolved one. Without a
+    // known id, soften to a smaller "Check for CC campaign" so a bare hint does
+    // not read as a guaranteed campaign (the click still confirms via the app).
+    const confirmed = opts.ccCampaignId != null;
+    const ccBtn = el("button", confirmed ? "btn secondary" : "btn secondary small");
+    ccBtn.textContent = confirmed ? t().acceptCc : t().checkCc;
     ccBtn.addEventListener("click", () =>
       run({ type: "campaign.accept", kind: "cc", product }, t().checkingCc),
     );

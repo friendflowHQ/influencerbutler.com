@@ -26,6 +26,7 @@ import {
   campaignFillPct,
   campaignStatsConversion,
   computeCampaignScore,
+  computeSpccScore,
   computeCampaignConfidence,
   meetsRadarThresholds,
   type CampaignScore,
@@ -57,6 +58,12 @@ const DONE_ATTR = "data-ib-radar";
 // The highlight is applied as inline styles on the card (a light-DOM element the
 // shadow stylesheet cannot reach). Brand orange, not the competitor's pink.
 const HIGHLIGHT_OUTLINE = "2px solid #fb923c";
+
+// An EPC ceiling in cents rendered as a dollar string ("$0.06"). Cents in, so no
+// float drift; two decimals because EPCs run well under a dollar.
+function formatEpc(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 type Row = {
   campaign: Campaign;
@@ -150,6 +157,11 @@ export async function initCampaignRadar(
   });
   if (campaigns.length === 0) return;
 
+  // The two Creator Connections tabs never mix on one render, so the grid is
+  // wholly SPCC or wholly CC. The SPCC schema has no commission / date / budget
+  // floors, so its toolbar drops those controls and its picks gate on score band.
+  const isSpccGrid = campaigns.every((c) => c.isSpcc);
+
   lastCallEnabled = settings.tools.lastCallButler;
   campaignButlerEnabled = settings.tools.campaignButler;
   standaloneAcceptEnabled = settings.tools.standaloneAccept;
@@ -193,7 +205,7 @@ export async function initCampaignRadar(
       spcc,
       availability: null,
       videoCount: null,
-      score: computeCampaignScore(inputsFor(campaign, daysRemaining, null, null)),
+      score: scoreFor(campaign, inputsFor(campaign, daysRemaining, null, null)),
       badgeBody,
       watched: settings.tools.lastCallButler && campaign.campaignId !== null
         ? watchedIds.has(campaign.campaignId)
@@ -289,8 +301,7 @@ export async function initCampaignRadar(
 
   const applyFilter = (): void => {
     for (const row of rows) {
-      const inputs = inputsFor(row.campaign, row.daysRemaining, row.owned, row.provenEarner);
-      const hide = filterPassingOnly && !meetsRadarThresholds(inputs, thresholds);
+      const hide = filterPassingOnly && !passesRadar(row, thresholds);
       // Hide the card's own wrapper (its distinct parent) so filtering leaves no
       // empty grid cell; fall back to the card element itself.
       const target = (row.campaign.el.parentElement as HTMLElement | null) ?? row.campaign.el;
@@ -301,6 +312,7 @@ export async function initCampaignRadar(
   const toolbar = renderToolbar({
     count: rows.length,
     thresholds,
+    isSpcc: isSpccGrid,
     onThreshold: (next) => {
       Object.assign(thresholds, next);
       void patchSettings({ campaignRadar: { ...thresholds } });
@@ -329,11 +341,20 @@ function inputsFor(
     provenEarner,
     fillPct: campaignFillPct(campaign.slotsFilled, campaign.slotsTotal),
     fullyClaimed: campaign.fullyClaimed,
+    epcCents: campaign.epcCents,
+    budgetAvailability: campaign.budgetAvailability,
   };
 }
 
+// Pick the scorer by card schema: SPCC cards are ranked on EPC + budget
+// availability, classic CC cards on commission + timing + budget + fill.
+function scoreFor(campaign: Campaign, inputs: CampaignScoreInputs): CampaignScore {
+  return campaign.isSpcc ? computeSpccScore(inputs) : computeCampaignScore(inputs);
+}
+
 function rescore(row: Row): void {
-  row.score = computeCampaignScore(
+  row.score = scoreFor(
+    row.campaign,
     inputsFor(row.campaign, row.daysRemaining, row.owned, row.provenEarner),
   );
 }
@@ -397,6 +418,23 @@ function renderBadge(row: Row): void {
     const convChip = el("span", "tile-chip good", t().radarConversionChip(formatConversion(conv)));
     convChip.title = t().radarConversionTitle;
     body.append(convChip);
+  }
+
+  // SPCC money signals: Amazon's Estimated EPC ceiling and its budget-availability
+  // score. These are the SPCC card's headline numbers (it has no commission), so
+  // unlike the CC rate/budget they ARE surfaced as chips. Only present on SPCC.
+  if (row.campaign.epcCents !== null) {
+    const chip = el("span", "tile-chip", t().radarEpcChip(formatEpc(row.campaign.epcCents)));
+    chip.title = t().radarEpcTitle;
+    body.append(chip);
+  }
+  if (row.campaign.budgetAvailability) {
+    const avail = row.campaign.budgetAvailability;
+    const cls =
+      avail === "high" ? "tile-chip good" : avail === "low" ? "tile-chip bad" : "tile-chip";
+    const chip = el("span", cls, t().radarBudgetChip(t().radarBudgetValue(avail)));
+    chip.title = t().radarBudgetTitle;
+    body.append(chip);
   }
 
   // Personal signals lead: a product you own or have earned on is the strongest
@@ -831,8 +869,17 @@ async function enrichVideoCounts(rows: Row[]): Promise<void> {
 
 // Toggle the card highlight based on whether it clears the user's thresholds.
 function applyHighlight(row: Row, thresholds: RadarThresholds): void {
+  setHighlight(row.campaign.el, passesRadar(row, thresholds));
+}
+
+// A card is a "pick" (gets the outline, and survives the "only passing" filter)
+// when it clears the bar. SPCC cards carry none of the CC floors (commission /
+// days / budget), so they qualify on score band instead: a hot SPCC card is the
+// pick. CC cards use the user's tunable thresholds as before.
+function passesRadar(row: Row, thresholds: RadarThresholds): boolean {
+  if (row.campaign.isSpcc) return row.score.band === "hot";
   const inputs = inputsFor(row.campaign, row.daysRemaining, row.owned, row.provenEarner);
-  setHighlight(row.campaign.el, meetsRadarThresholds(inputs, thresholds));
+  return meetsRadarThresholds(inputs, thresholds);
 }
 
 // Dim a fully claimed campaign card (a closed door), applied as an inline style
@@ -858,6 +905,9 @@ function setHighlight(el: HTMLElement, on: boolean): void {
 type ToolbarCallbacks = {
   count: number;
   thresholds: RadarThresholds;
+  // SPCC grid: drop the commission / days / budget floors (SPCC has none) and
+  // relabel the filter, which then keeps only the strong (hot-band) picks.
+  isSpcc: boolean;
   onThreshold: (next: Partial<RadarThresholds>) => void;
   onFilter: (on: boolean) => void;
 };
@@ -870,28 +920,33 @@ function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   brand.append(el("span", "search-count", t().radarCount(cb.count)));
 
   bar.append(brand);
-  bar.append(
-    numberControl(t().radarMinCommission, cb.thresholds.minCommissionPct, 0, 1, (v) =>
-      cb.onThreshold({ minCommissionPct: v }),
-    ),
-  );
-  bar.append(
-    numberControl(t().radarMinDays, cb.thresholds.minDaysRemaining, 0, 1, (v) =>
-      cb.onThreshold({ minDaysRemaining: v }),
-    ),
-  );
-  bar.append(
-    numberControl(t().radarMinBudget, cb.thresholds.minRemainingBudget, 0, 100, (v) =>
-      cb.onThreshold({ minRemainingBudget: v }),
-    ),
-  );
+  // The tunable numeric floors apply only to the CC (Affiliate+) schema. The SPCC
+  // cards carry no commission, date, or remaining-budget, so those controls would
+  // have nothing to act on; the strong-picks filter carries the SPCC tab instead.
+  if (!cb.isSpcc) {
+    bar.append(
+      numberControl(t().radarMinCommission, cb.thresholds.minCommissionPct, 0, 1, (v) =>
+        cb.onThreshold({ minCommissionPct: v }),
+      ),
+    );
+    bar.append(
+      numberControl(t().radarMinDays, cb.thresholds.minDaysRemaining, 0, 1, (v) =>
+        cb.onThreshold({ minDaysRemaining: v }),
+      ),
+    );
+    bar.append(
+      numberControl(t().radarMinBudget, cb.thresholds.minRemainingBudget, 0, 100, (v) =>
+        cb.onThreshold({ minRemainingBudget: v }),
+      ),
+    );
+  }
 
-  // "Only passing" filter.
+  // "Only passing" filter (relabelled "strong picks" on the SPCC tab).
   const filterWrap = el("label", "search-control search-check");
   const filter = el("input");
   filter.type = "checkbox";
   filter.addEventListener("change", () => cb.onFilter(filter.checked));
-  filterWrap.append(filter, el("span", "", t().radarOnlyPassing));
+  filterWrap.append(filter, el("span", "", cb.isSpcc ? t().radarOnlyStrong : t().radarOnlyPassing));
   bar.append(filterWrap);
 
   root.append(bar);

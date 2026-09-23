@@ -390,6 +390,12 @@ button[disabled] {
   white-space: pre-wrap;
 }
 
+/* Chips and buttons below set their own display, which would otherwise beat the
+   browser's default rule for the hidden attribute and leave them on screen. */
+[hidden] {
+  display: none !important;
+}
+
 /* Small "Stored" tag next to a password field label, so a saved-but-blank
    secret box reads as intentional rather than empty. */
 .stored-chip {
@@ -416,6 +422,38 @@ button[disabled] {
   background: #fef2f2;
   border-color: #fecaca;
   color: #991b1b;
+}
+
+/* Creator API only: whether the saved keys have reached the user's account.
+   Passing the in-card Test proves Amazon accepts the keys; it says nothing
+   about server-side enrichment, which reads them from the account. An amber
+   callout (not red) because the keys themselves are fine. */
+.vault-sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  border: 1px solid transparent;
+}
+
+.vault-sync.synced {
+  background: var(--slate-50, #f8fafc);
+  border-color: var(--slate-200, #e2e8f0);
+  color: var(--slate-600, #475569);
+}
+
+.vault-sync.pending {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.vault-sync button {
+  flex: none;
 }
 
 /* Voiceover Butler length presets: preset-seconds chips plus a Custom chip

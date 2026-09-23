@@ -267,6 +267,17 @@ export type Settings = {
     // default; backfilled to true for existing users by the tools shallow-merge
     // in migrate().
     youtubeStatus: boolean;
+    // My video placement: on a product page, whether one of the carousel videos
+    // is the creator's OWN, and which carousel it is in ("Your video: Upper
+    // carousel, #2 of 6"), plus a "Yours" badge on that card. Also gates the
+    // passive capture of their own video ids on Creator Hub / My content / the
+    // edit-post page / their own storefront, which is what makes the answer
+    // possible. Renders inside the Video competition section, so it needs
+    // tools.videoCounts too; it exists as its own key so the remote kill switch
+    // ("myVideoPlacement" in disabledTools) can disable it alone. Stays silent
+    // for anyone we have no evidence for. On by default; backfilled to true for
+    // existing users by the tools shallow-merge in migrate().
+    myVideoPlacement: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -671,7 +682,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 33,
+  schemaVersion: 34,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -762,6 +773,7 @@ export const DEFAULTS: StorageShape = {
       benableBadge: true,
       dealSignals: true,
       youtubeStatus: true,
+      myVideoPlacement: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -913,7 +925,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // backfills it. v32 -> v33 added the youtubeStatus tool flag (per-video "On
   // YouTube / Not on YouTube" chip + "Upload to YouTube" action on the creator's
   // own Amazon video surfaces, read from the desktop YouTube Butler over the
-  // bridge, on by default); the tools shallow-merge backfills it.
+  // bridge, on by default); the tools shallow-merge backfills it. v33 -> v34
+  // added the myVideoPlacement tool flag ("your video is in the upper/lower
+  // carousel, #N of M" on a product page plus the own-video id capture that
+  // feeds it, on by default); the tools shallow-merge backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -1003,7 +1018,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 33,
+    schemaVersion: 34,
   };
 }
 

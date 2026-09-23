@@ -6,6 +6,7 @@ import { resolveRatePct } from "../score/rate";
 import { formatCents } from "../calculator/model";
 import { CREATOR_API_MARKETPLACES } from "../../shared/constants";
 import {
+  askBackground,
   sendToBackground,
   type EnrichResult,
   type GenerateLinkResult,
@@ -52,7 +53,9 @@ type Strings = {
   summaryLoading: string;
   summary: (abroad: number, total: number) => string;
   summaryNone: string;
+  summaryOffline: string;
   connectApi: string;
+  syncPending: string;
   getLink: string;
   copyAll: string;
   working: string;
@@ -72,7 +75,10 @@ const EN: Strings = {
   summaryLoading: "Checking marketplaces...",
   summary: (abroad, total) => `Available in ${total} markets (${abroad} beyond your home store).`,
   summaryNone: "Not found in other marketplaces yet.",
+  summaryOffline: "Could not reach the extension to check other marketplaces. Reload this page and try again.",
   connectApi: "Connect the Amazon Creator API in Settings to see price and availability per market.",
+  syncPending:
+    "Your Creator API keys have not reached your account yet. Open Settings and hit Retry to finish connecting them.",
   getLink: "Get link",
   copyAll: "Copy all international links",
   working: "Working...",
@@ -94,7 +100,10 @@ const CATALOG: Record<string, Strings> = {
     summaryLoading: "Revisando tiendas...",
     summary: (abroad, total) => `Disponible en ${total} tiendas (${abroad} fuera de tu tienda local).`,
     summaryNone: "Aún no se encontró en otras tiendas.",
+  summaryOffline: "No se pudo conectar con la extensión para revisar otras tiendas. Recarga esta página e inténtalo de nuevo.",
     connectApi: "Conecta la API de Creadores de Amazon en Ajustes para ver precio y disponibilidad por tienda.",
+    syncPending:
+      "Tus claves de la Creator API aún no han llegado a tu cuenta. Abre Ajustes y pulsa Reintentar para terminar de conectarlas.",
     getLink: "Obtener enlace",
     copyAll: "Copiar todos los enlaces internacionales",
     working: "Procesando...",
@@ -113,7 +122,10 @@ const CATALOG: Record<string, Strings> = {
     summaryLoading: "Vérification des boutiques...",
     summary: (abroad, total) => `Disponible dans ${total} boutiques (${abroad} hors de votre boutique locale).`,
     summaryNone: "Pas encore trouvé dans d'autres boutiques.",
+  summaryOffline: "Impossible de joindre l'extension pour vérifier les autres boutiques. Rechargez cette page et réessayez.",
     connectApi: "Connectez l'API Créateurs d'Amazon dans les Réglages pour voir le prix et la disponibilité par boutique.",
+    syncPending:
+      "Vos clés Creator API ne sont pas encore parvenues à votre compte. Ouvrez les Réglages et cliquez sur Réessayer pour terminer la connexion.",
     getLink: "Obtenir le lien",
     copyAll: "Copier tous les liens internationaux",
     working: "Traitement...",
@@ -232,20 +244,33 @@ async function enrich(
   s: Strings,
 ): Promise<void> {
   let result = await getCachedEnrich(asin);
+  let reachedBackground = true;
   if (!result) {
-    result = await sendToBackground<EnrichResult>({
-      kind: "ENRICH_PRODUCTS",
-      asins: [asin],
-    }).catch(() => null);
+    // askBackground, not a bare send: a dead service worker never answers at
+    // all, and an awaited send would leave "Checking marketplaces..." on screen
+    // forever. null means we never got to ask, which is not the same as an
+    // answer of "nothing found".
+    result = await askBackground<EnrichResult>({ kind: "ENRICH_PRODUCTS", asins: [asin] });
+    reachedBackground = result !== null;
     if (result) await setCachedEnrich(asin, result);
   }
-  if (!result) {
+  if (!reachedBackground) {
+    summary.textContent = s.summaryOffline;
+    return;
+  }
+  // A failed request (not signed in, network/server error) is not the same as
+  // "the Creator API is not configured": only a definitive `configured: false`
+  // from the server should surface the connect prompt, so a transient failure
+  // never tells a connected user to go connect.
+  if (!result || !result.ok) {
     summary.textContent = s.summaryNone;
     return;
   }
   if (!result.configured) {
     summary.textContent = s.summaryNone;
-    const connect = el("a", "inline-connect", s.connectApi);
+    // Telling someone who already pasted their keys to go connect is the wrong
+    // instruction: when a push is still owed, name that instead.
+    const connect = el("a", "inline-connect", result.syncPending ? s.syncPending : s.connectApi);
     connect.addEventListener("click", (event) => {
       event.preventDefault();
       void sendToBackground({ kind: "OPEN_OPTIONS" });

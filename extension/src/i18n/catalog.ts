@@ -13,6 +13,9 @@ export interface Dict {
   panelChevronHide: string;
   panelChevronShow: string;
   panelSettings: string;
+  // Shown in place of a section body when the background service worker did
+  // not answer (a dead worker, or a content script orphaned by a reload).
+  panelOffline: string;
   copy: string;
   copied: string;
   // Muted note under a copied Amazon link when app-opening links are on.
@@ -95,6 +98,7 @@ export interface Dict {
   inlineUnavailable: string;
   inlineNotListed: string;
   inlineConnectCreatorApi: string;
+  inlineCreatorApiSyncPending: string;
 
   // Popup: static chrome
   tagFree: string;
@@ -244,6 +248,19 @@ export interface Dict {
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
   influencerVideosMore: (n: number) => string;
+
+  // My video placement: which carousel the creator's OWN video is in. Presence
+  // and placement are separate claims (see tools/my-video/resolve.ts), so there
+  // is a string for "we know it is here but not where".
+  myVideoHere: (carousel: string, position: number, total: number) => string;
+  myVideoHereNoPosition: (carousel: string) => string;
+  myVideoSideUnknown: string;
+  myVideoSideUnreadable: string;
+  myVideoMultiple: (n: number) => string;
+  myVideoRowChip: string;
+  myVideoCardBadge: string;
+  myVideoCardBadgeTitle: (position: number) => string;
+  myVideoInfo: string;
 
   // Video competition: full video sweep (harvest every video)
   deepScan: string;
@@ -564,6 +581,9 @@ export interface Dict {
   radarMinDays: string;
   radarMinBudget: string;
   radarOnlyPassing: string;
+  // SPCC tab: keep only the strong (hot-band) picks. The commission / days /
+  // budget floors do not apply to SPCC, so its toolbar shows this filter alone.
+  radarOnlyStrong: string;
   radarSortLabel: string;
   radarSortScore: string;
   radarSortRate: string;
@@ -582,6 +602,13 @@ export interface Dict {
   // Campaign-wide conversion (orders / clicks) captured from Amazon's stats.
   radarConversionChip: (pct: string) => string;
   radarConversionTitle: string;
+  // SPCC-only card signals: Amazon's Estimated EPC ceiling and its qualitative
+  // budget-availability score.
+  radarEpcChip: (epc: string) => string;
+  radarEpcTitle: string;
+  radarBudgetChip: (value: string) => string;
+  radarBudgetValue: (v: "high" | "medium" | "low") => string;
+  radarBudgetTitle: string;
   popupAvailabilityLabel: string;
   popupAvailabilityHint: string;
   popupAvailabilityAuDenied: string;
@@ -815,6 +842,7 @@ export interface Dict {
   saveToLinkButler: string;
   savingLink: string;
   acceptCc: string;
+  checkCc: string;
   acceptSpcc: string;
   addToCollab: string;
   addingCollab: string;
@@ -1032,6 +1060,7 @@ const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
   panelSettings: "Settings",
+  panelOffline: "Butler could not reach the extension. Reload this page and try again.",
   copy: "Copy",
   copied: "Copied",
   appOpensNote: "Opens in the Amazon app on phones",
@@ -1103,6 +1132,7 @@ const en: Dict = {
   inlineUnavailable: "unavailable",
   inlineNotListed: "not listed",
   inlineConnectCreatorApi: "Connect the Creator API for live cross-country availability",
+  inlineCreatorApiSyncPending: "Your Creator API keys have not reached your account yet: open Settings and retry",
 
   tagFree: "Free",
   navUpdate: "Update",
@@ -1254,6 +1284,18 @@ const en: Dict = {
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
   influencerVideosMore: (n) => `+${n} more`,
+
+  myVideoHere: (carousel, position, total) => `Your video: ${carousel}, #${position} of ${total}`,
+  myVideoHereNoPosition: (carousel) => `Your video: ${carousel}`,
+  myVideoSideUnknown: "Your video is on this listing. Reading which carousel it is in...",
+  myVideoSideUnreadable:
+    "Your video is on this listing. Amazon did not expose which carousel it is in.",
+  myVideoMultiple: (n) => `You have ${n} videos on this listing:`,
+  myVideoRowChip: "Yours",
+  myVideoCardBadge: "Yours",
+  myVideoCardBadgeTitle: (position) => `Your video, #${position} in this carousel`,
+  myVideoInfo:
+    "The upper carousel sits next to the image gallery and is the best-earning video slot; the lower rail is the Videos for this product section further down. Position is Amazon's own order in that rail when this page loaded, and it rotates.",
 
   deepScan: "Sweep every video",
   deepScanIntro:
@@ -1566,6 +1608,7 @@ const en: Dict = {
   radarMinDays: "Min days left",
   radarMinBudget: "Min budget ($)",
   radarOnlyPassing: "Only campaigns that pass",
+  radarOnlyStrong: "Strong picks only",
   radarSortLabel: "Sort",
   radarSortScore: "Best match",
   radarSortRate: "Commission",
@@ -1587,6 +1630,11 @@ const en: Dict = {
   radarVideoChip: (n) => (n === 0 ? "No videos yet" : `${n} ${n === 1 ? "video" : "videos"}`),
   radarConversionChip: (pct) => `${pct} conversion`,
   radarConversionTitle: "Shopper conversion (orders per click) from Amazon's own campaign stats",
+  radarEpcChip: (epc) => `EPC up to ${epc}`,
+  radarEpcTitle: "Amazon's Estimated EPC (earnings per click), shown as an upper bound",
+  radarBudgetChip: (value) => `Budget: ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "High" : v === "medium" ? "Medium" : "Low"),
+  radarBudgetTitle: "Amazon's budget availability score for this campaign",
   radarVideoTitle:
     "Creator videos already on this product. Fewer means less competition for the spot.",
   popupAvailabilityLabel: "Show availability for",
@@ -1838,6 +1886,7 @@ const en: Dict = {
   saveToLinkButler: "Save to Link Butler",
   savingLink: "Saving link...",
   acceptCc: "Accept CC campaign",
+  checkCc: "Check for CC campaign",
   acceptSpcc: "Accept SPCC campaign",
   addToCollab: "Add to Collab Butler",
   addingCollab: "Adding to Collab Butler...",
@@ -2064,6 +2113,7 @@ const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
   panelSettings: "Ajustes",
+  panelOffline: "Butler no pudo conectar con la extensión. Recarga esta página e inténtalo de nuevo.",
   copy: "Copiar",
   copied: "Copiado",
   appOpensNote: "Se abre en la app de Amazon en el móvil",
@@ -2135,6 +2185,7 @@ const es: Dict = {
   inlineUnavailable: "no disponible",
   inlineNotListed: "no listado",
   inlineConnectCreatorApi: "Conecta la Creator API para disponibilidad en varios países",
+  inlineCreatorApiSyncPending: "Tus claves de la Creator API aún no han llegado a tu cuenta: abre Ajustes y reinténtalo",
 
   tagFree: "Gratis",
   navUpdate: "Actualizar",
@@ -2286,6 +2337,18 @@ const es: Dict = {
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
   influencerVideosMore: (n) => `+${n} más`,
+
+  myVideoHere: (carousel, position, total) => `Tu video: ${carousel}, n.º ${position} de ${total}`,
+  myVideoHereNoPosition: (carousel) => `Tu video: ${carousel}`,
+  myVideoSideUnknown: "Tu video está en esta ficha. Leyendo en qué carrusel aparece...",
+  myVideoSideUnreadable:
+    "Tu video está en esta ficha. Amazon no reveló en qué carrusel aparece.",
+  myVideoMultiple: (n) => `Tienes ${n} videos en esta ficha:`,
+  myVideoRowChip: "Tuyo",
+  myVideoCardBadge: "Tuyo",
+  myVideoCardBadgeTitle: (position) => `Tu video, n.º ${position} de este carrusel`,
+  myVideoInfo:
+    "El carrusel superior está junto a la galería de imágenes y es el espacio de video que más gana; el carril inferior es la sección Videos de este producto, más abajo. La posición es el orden de Amazon en ese carril al cargar la página, y rota.",
 
   deepScan: "Barrer todos los videos",
   deepScanIntro:
@@ -2599,6 +2662,7 @@ const es: Dict = {
   radarMinDays: "Días mín. restantes",
   radarMinBudget: "Presupuesto mín. ($)",
   radarOnlyPassing: "Solo campañas que cumplen",
+  radarOnlyStrong: "Solo las mejores",
   radarSortLabel: "Ordenar",
   radarSortScore: "Mejor coincidencia",
   radarSortRate: "Comisión",
@@ -2620,6 +2684,11 @@ const es: Dict = {
   radarVideoChip: (n) => (n === 0 ? "Sin vídeos aún" : `${n} ${n === 1 ? "vídeo" : "vídeos"}`),
   radarConversionChip: (pct) => `${pct} de conversión`,
   radarConversionTitle: "Conversión de compradores (pedidos por clic) según las estadísticas de campaña de Amazon",
+  radarEpcChip: (epc) => `EPC hasta ${epc}`,
+  radarEpcTitle: "EPC estimado de Amazon (ganancias por clic), mostrado como límite superior",
+  radarBudgetChip: (value) => `Presupuesto: ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "Alto" : v === "medium" ? "Medio" : "Bajo"),
+  radarBudgetTitle: "Puntuación de disponibilidad de presupuesto de Amazon para esta campaña",
   radarVideoTitle:
     "Vídeos de creadores que ya hay sobre este producto. Menos significa menos competencia.",
   popupAvailabilityLabel: "Mostrar disponibilidad para",
@@ -2871,6 +2940,7 @@ const es: Dict = {
   saveToLinkButler: "Guardar en Link Butler",
   savingLink: "Guardando enlace...",
   acceptCc: "Aceptar campaña CC",
+  checkCc: "Buscar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
   addToCollab: "Añadir a Collab Butler",
   addingCollab: "Añadiendo a Collab Butler...",
@@ -3097,6 +3167,7 @@ const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
   panelSettings: "Paramètres",
+  panelOffline: "Butler n'a pas pu joindre l'extension. Rechargez cette page et réessayez.",
   copy: "Copier",
   copied: "Copié",
   appOpensNote: "S'ouvre dans l'application Amazon sur mobile",
@@ -3168,6 +3239,7 @@ const fr: Dict = {
   inlineUnavailable: "indisponible",
   inlineNotListed: "non listé",
   inlineConnectCreatorApi: "Connectez la Creator API pour la disponibilité multi-pays",
+  inlineCreatorApiSyncPending: "Vos clés Creator API ne sont pas encore parvenues à votre compte : ouvrez les Réglages et réessayez",
 
   tagFree: "Gratuit",
   navUpdate: "Mise à jour",
@@ -3319,6 +3391,18 @@ const fr: Dict = {
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
   influencerVideosMore: (n) => `+${n} de plus`,
+
+  myVideoHere: (carousel, position, total) => `Votre vidéo : ${carousel}, n° ${position} sur ${total}`,
+  myVideoHereNoPosition: (carousel) => `Votre vidéo : ${carousel}`,
+  myVideoSideUnknown: "Votre vidéo est sur cette fiche. Lecture du carrousel où elle apparaît...",
+  myVideoSideUnreadable:
+    "Votre vidéo est sur cette fiche. Amazon n'a pas indiqué dans quel carrousel elle apparaît.",
+  myVideoMultiple: (n) => `Vous avez ${n} vidéos sur cette fiche :`,
+  myVideoRowChip: "La vôtre",
+  myVideoCardBadge: "La vôtre",
+  myVideoCardBadgeTitle: (position) => `Votre vidéo, n° ${position} de ce carrousel`,
+  myVideoInfo:
+    "Le carrousel supérieur se trouve à côté de la galerie d'images : c'est l'emplacement vidéo le plus rémunérateur. Le rail inférieur est la section Vidéos de ce produit, plus bas. La position est l'ordre d'Amazon dans ce rail au chargement de la page, et il change.",
 
   deepScan: "Balayer toutes les vidéos",
   deepScanIntro:
@@ -3632,6 +3716,7 @@ const fr: Dict = {
   radarMinDays: "Jours min. restants",
   radarMinBudget: "Budget min. ($)",
   radarOnlyPassing: "Seulement les campagnes qui passent",
+  radarOnlyStrong: "Seulement les meilleures",
   radarSortLabel: "Trier",
   radarSortScore: "Meilleure correspondance",
   radarSortRate: "Commission",
@@ -3653,6 +3738,11 @@ const fr: Dict = {
   radarVideoChip: (n) => (n === 0 ? "Aucune vidéo pour l'instant" : `${n} ${n === 1 ? "vidéo" : "vidéos"}`),
   radarConversionChip: (pct) => `${pct} de conversion`,
   radarConversionTitle: "Conversion des acheteurs (commandes par clic) selon les statistiques de campagne d'Amazon",
+  radarEpcChip: (epc) => `EPC jusqu'à ${epc}`,
+  radarEpcTitle: "EPC estimé d'Amazon (gains par clic), affiché comme limite supérieure",
+  radarBudgetChip: (value) => `Budget : ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "Élevé" : v === "medium" ? "Moyen" : "Faible"),
+  radarBudgetTitle: "Score de disponibilité du budget d'Amazon pour cette campagne",
   radarVideoTitle:
     "Vidéos de créateurs déjà présentes sur ce produit. Moins il y en a, moins la concurrence est forte.",
   popupAvailabilityLabel: "Afficher la disponibilité pour",
@@ -3904,6 +3994,7 @@ const fr: Dict = {
   saveToLinkButler: "Enregistrer dans Link Butler",
   savingLink: "Enregistrement du lien...",
   acceptCc: "Accepter la campagne CC",
+  checkCc: "Rechercher une campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
   addToCollab: "Ajouter à Collab Butler",
   addingCollab: "Ajout à Collab Butler...",

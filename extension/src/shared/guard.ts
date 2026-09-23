@@ -43,7 +43,12 @@ function recordBreakage(toolId: string, error: unknown): void {
   })();
 }
 
-export function guard(toolId: string, fn: () => void | Promise<void>): void {
+// `fn` may return a promise of anything (a tool entrypoint that resolves to a
+// score, say). Accepting `Promise<unknown>` means a call site never has to reach
+// for `void` to satisfy the type: a `void` there would hand guard `undefined`
+// instead of the promise, so an async failure would go uncaught, unlogged and
+// unrecorded, and the tool would sit half-rendered on the page.
+export function guard(toolId: string, fn: () => void | Promise<unknown>): void {
   if (disabled.has(toolId)) return;
   try {
     const result = fn();

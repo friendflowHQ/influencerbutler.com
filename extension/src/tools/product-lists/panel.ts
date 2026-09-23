@@ -1,6 +1,6 @@
 import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
-import { sendToBackground, type ProductListsResult } from "../../shared/messages";
+import { askBackground, type ProductListsResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 
 // Product-page "Add to list" panel. The search overlay's tile menu already adds
@@ -17,12 +17,18 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
 
   // List picker: existing lists plus a "New list..." entry that reveals a name
   // input. Matches the tile menu's create-or-pick behavior.
-  // Default to an empty result: sendToBackground resolves to undefined if the
-  // background channel closes without a response, and an unguarded destructure
-  // would crash the panel.
-  const { lists } = (await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" })) ?? {
-    lists: [],
-  };
+  //
+  // Everything below is built from the reply, so a background that never
+  // answers used to leave this section as a bare heading. askBackground resolves
+  // to null instead of hanging or rejecting; say why the section is empty and
+  // stop, rather than offering a picker whose adds would fail the same way.
+  const res = await askBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" });
+  if (!res) {
+    status.textContent = t().panelOffline;
+    section.append(status);
+    return;
+  }
+  const lists = res.lists ?? [];
   const NEW = "__new__";
   const picker = el("select") as HTMLSelectElement;
   for (const list of lists) {
@@ -63,12 +69,12 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
     const tgt = target();
     if (picker.value === NEW && !tgt.newListName) return;
     status.textContent = t().tileMenuWorking;
-    void sendToBackground<ProductListsResult>({
+    void askBackground<ProductListsResult>({
       kind: "ADD_TO_PRODUCT_LIST",
       listId: tgt.listId,
       newListName: tgt.newListName,
       item: { asin, marketplace, title: signals.title ?? null, imageUrl: signals.imageUrl },
-    }).then((res) => report(status, res, 1));
+    }).then((added) => report(status, added, 1));
   });
 
   const row = el("div", "row");
@@ -84,12 +90,12 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
       const tgt = target();
       if (picker.value === NEW && !tgt.newListName) return;
       status.textContent = t().tileMenuWorking;
-      void sendToBackground<ProductListsResult>({
+      void askBackground<ProductListsResult>({
         kind: "ADD_MANY_TO_PRODUCT_LIST",
         listId: tgt.listId,
         newListName: tgt.newListName,
         items: variations.map((v) => ({ asin: v, marketplace, title: null, imageUrl: null })),
-      }).then((res) => report(status, res, res.added ?? 0));
+      }).then((added) => report(status, added, added?.added ?? 0));
     });
     section.append(varBtn);
   }
@@ -105,7 +111,11 @@ function uniqueVariations(signals: ProductSignals): string[] {
   return [...set];
 }
 
-function report(status: HTMLElement, res: ProductListsResult, count: number): void {
+function report(status: HTMLElement, res: ProductListsResult | null, count: number): void {
+  if (!res) {
+    status.textContent = t().panelOffline;
+    return;
+  }
   if (res.atCap) {
     status.textContent = t().tileMenuListsCapped;
     return;

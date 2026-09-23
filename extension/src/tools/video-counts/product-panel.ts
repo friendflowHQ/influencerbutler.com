@@ -15,6 +15,12 @@ import type { VideoCounts } from "../../transport/types";
 import { buildVideoCsv, downloadCsv } from "./video-csv";
 import { fillCompetitionLine, renderLandscape } from "./landscape-panel";
 import { renderVideoPassport } from "./passport-panel";
+import {
+  matchesVideo,
+  sideIsStateable,
+  type MyVideoMatch,
+  type MyVideoVerdict,
+} from "../my-video/resolve";
 
 // Marketplace host for pool reads, e.g. "amazon.com" / "amazon.co.uk".
 function currentMarketplace(): string {
@@ -36,6 +42,10 @@ export function renderVideoCounts(
   // More video data is still expected (lower rail not hydrated, sides or
   // names unresolved): render "reading" states instead of implying zeros.
   pending = false,
+  // Which of these videos are the creator's own, and where they sit. Null when
+  // the My Video Placement tool is off or there is no evidence to judge with,
+  // in which case nothing about "your video" renders at all.
+  mine: MyVideoVerdict | null = null,
 ): void {
   const section = addSection(t().videoCompetition);
 
@@ -61,6 +71,11 @@ export function renderVideoCounts(
     if (heading) heading.after(competeLine);
     else section.prepend(competeLine);
   }
+
+  // "Your video: Upper carousel, #2 of 6". The first thing after the heading,
+  // because it is the only line on this panel that is about the creator rather
+  // than the competition.
+  renderMyVideoHeadline(section, mine, result, pending);
 
   if (result.strategy === "header") {
     const note = el("p", "note");
@@ -105,6 +120,7 @@ export function renderVideoCounts(
       result.videos,
       result.counts.influencer,
       showLandscape ? currentMarketplace() : null,
+      mine,
     );
   }
 
@@ -139,6 +155,7 @@ function renderInfluencerList(
   // When set (video landscape on), each row can expand into its placement
   // passport, read from the shared pool for this marketplace.
   passportMarketplace: string | null = null,
+  mine: MyVideoVerdict | null = null,
 ): void {
   const influencers = videos.filter(
     (v) => v.creatorType === "influencer" && (v.creatorName || v.title),
@@ -148,12 +165,19 @@ function renderInfluencerList(
   // old code labelled with the shown slice, making it look like videos were
   // missing). Show them all, with a high safety cap for the rare huge rail.
   const CAP = 25;
-  const shown = influencers.slice(0, CAP);
+  // The creator's own rows lead the list, so the CAP truncation below can never
+  // be what hides their own video from them.
+  const ordered = hoistOwn(influencers, mine);
+  const shown = ordered.slice(0, CAP);
   const content = collapsible(section, t().influencerVideosLabel(influencerCount), { open: true });
   const list = el("ul", "list");
   for (const video of shown) {
     const item = el("li");
     const head = el("div", "ls-card-head");
+    if (isOwn(video, mine)) {
+      item.classList.add("mine");
+      head.append(chip("good", t().myVideoRowChip));
+    }
     head.append(el("span", "t", video.creatorName ?? t().influencerFallback));
     if (passportMarketplace) attachPassport(head, item, video, passportMarketplace);
     item.append(head);
@@ -161,9 +185,82 @@ function renderInfluencerList(
     list.append(item);
   }
   content.append(list);
-  if (influencers.length > CAP) {
-    content.append(el("p", "note", t().influencerVideosMore(influencers.length - CAP)));
+  if (ordered.length > CAP) {
+    content.append(el("p", "note", t().influencerVideosMore(ordered.length - CAP)));
   }
+}
+
+function isOwn(video: CarouselVideo, mine: MyVideoVerdict | null): boolean {
+  if (!mine || mine.kind !== "present") return false;
+  return mine.matches.some((m) => matchesVideo(m, video));
+}
+
+// The creator's own rows first, the rest in Amazon's order behind them.
+function hoistOwn(videos: CarouselVideo[], mine: MyVideoVerdict | null): CarouselVideo[] {
+  if (!mine || mine.kind !== "present") return videos;
+  const own = videos.filter((v) => isOwn(v, mine));
+  if (own.length === 0) return videos;
+  return [...own, ...videos.filter((v) => !own.includes(v))];
+}
+
+// "Your video: Upper carousel, #2 of 6", and the honest degradations of it.
+//
+// Presence and placement are separate claims. A match resolved only by content
+// id knows the video is here but not where (the state-script list guesses the
+// side from the id namespace), so it prints the presence line alone. Nothing
+// renders when there is no match: we cannot know that a creator has no video on
+// a listing, so we never imply it.
+function renderMyVideoHeadline(
+  section: HTMLElement,
+  mine: MyVideoVerdict | null,
+  result: CarouselResult,
+  pending: boolean,
+): void {
+  if (!mine || mine.kind !== "present" || mine.matches.length === 0) return;
+
+  // The rail total is only worth printing once it has stopped moving. A
+  // "#2 of 3" that becomes "#2 of 11" a second later reads as a bug.
+  const countsFinal = result.counts.unknown === 0 && !pending;
+
+  if (mine.matches.length === 1) {
+    section.append(matchLine(mine.matches[0]!, countsFinal, pending));
+    return;
+  }
+
+  const lead = el("div", "seal pass");
+  lead.textContent = t().myVideoMultiple(mine.matches.length);
+  lead.append(infoTip(t().myVideoInfo));
+  section.append(lead);
+  for (const match of mine.matches) {
+    section.append(matchLine(match, countsFinal, pending, true));
+  }
+}
+
+function matchLine(
+  match: MyVideoMatch,
+  countsFinal: boolean,
+  pending: boolean,
+  sub = false,
+): HTMLElement {
+  if (!sideIsStateable(match)) {
+    // Present, placement unreadable. While the widget is still hydrating this is
+    // a "reading..." state; once it settles, say plainly that Amazon did not
+    // expose the side rather than guessing one.
+    return el("p", "note", pending ? t().myVideoSideUnknown : t().myVideoSideUnreadable);
+  }
+
+  const label = match.carousel === "upper" ? t().upperCarousel : t().lowerCarousel;
+  const total = match.railSize;
+  const text =
+    match.position !== null && total !== null && countsFinal
+      ? t().myVideoHere(label, match.position, total)
+      : t().myVideoHereNoPosition(label);
+
+  if (sub) return el("p", "note", text);
+  const seal = el("div", "seal pass");
+  seal.textContent = text;
+  seal.append(infoTip(t().myVideoInfo));
+  return seal;
 }
 
 // A lazy "placement history" toggle on a creator-video row: the passport is only

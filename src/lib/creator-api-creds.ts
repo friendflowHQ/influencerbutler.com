@@ -19,7 +19,7 @@
  */
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isMissingTableError } from "@/lib/extension-api";
+import { isMissingColumnError, isMissingTableError } from "@/lib/extension-api";
 import { marketplaceInfo, type CreatorsCreds } from "@/lib/creators-api";
 
 // One marketplace's credentials as stored in the marketplaces JSONB array. The
@@ -113,10 +113,18 @@ export function validateIncoming(raw: unknown): IncomingMarketplaceCreds | null 
 
 export type SaveResult = { ok: true } | { ok: false; migrationPending?: boolean; error: string };
 
+/**
+ * Save credentials, MERGING by marketplace host rather than replacing the whole
+ * array. Callers push only the marketplace they just edited (the extension's
+ * Settings card holds one at a time), so a replace would silently delete every
+ * other marketplace the user had stored. Incoming wins per host; hosts the
+ * caller did not mention are left exactly as they were. Use deleteCreds() for a
+ * genuine full clear.
+ */
 export async function saveCreds(userId: string, incoming: IncomingMarketplaceCreds[]): Promise<SaveResult> {
   if (!encryptionAvailable()) return { ok: false, error: "Server encryption key not configured" };
   const now = new Date().toISOString();
-  const stored: StoredMarketplaceCreds[] = incoming.map((c) => {
+  const fresh: StoredMarketplaceCreds[] = incoming.map((c) => {
     const { secretCipher, iv, authTag } = encryptSecret(c.credentialSecret);
     return {
       host: c.host,
@@ -128,6 +136,20 @@ export async function saveCreds(userId: string, incoming: IncomingMarketplaceCre
       authTag,
     };
   });
+
+  // Read-modify-write. A failed read is fatal rather than "assume empty": losing
+  // the other marketplaces is exactly the bug this merge exists to prevent.
+  const existing = await loadRow(userId);
+  if (existing.migrationPending) return { ok: false, migrationPending: true, error: "Migration not applied yet" };
+  if (existing.error) return { ok: false, error: existing.error };
+
+  const byHost = new Map<string, StoredMarketplaceCreds>();
+  for (const entry of existing.row?.marketplaces ?? []) {
+    if (entry?.host) byHost.set(entry.host, entry);
+  }
+  for (const entry of fresh) byHost.set(entry.host, entry);
+  const stored = [...byHost.values()];
+
   const admin = createAdminClient();
   const { error } = await admin
     .from("extension_creator_api_creds")
@@ -223,7 +245,9 @@ async function loadBackupRow(
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    if (isMissingTableError(error)) return { backup: null, migrationPending: true };
+    // The `backup` column arrives in a later migration than the table itself, so
+    // a lagging prod schema must soft-fail here the same way a missing table does.
+    if (isMissingTableError(error) || isMissingColumnError(error)) return { backup: null, migrationPending: true };
     console.error("creator-api-creds: load backup failed", error);
     return { backup: null, error: "Could not load backup state" };
   }
@@ -249,7 +273,9 @@ export async function saveBackup(userId: string, leased: LeasedBackupInput): Pro
     .from("extension_creator_api_creds")
     .upsert({ user_id: userId, backup, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   if (error) {
-    if (isMissingTableError(error)) return { ok: false, migrationPending: true, error: "Migration not applied yet" };
+    if (isMissingTableError(error) || isMissingColumnError(error)) {
+      return { ok: false, migrationPending: true, error: "Migration not applied yet" };
+    }
     console.error("creator-api-creds: save backup failed", error);
     return { ok: false, error: "Could not save backup state" };
   }
@@ -263,7 +289,9 @@ export async function clearBackup(userId: string): Promise<SaveResult> {
     .update({ backup: null, updated_at: new Date().toISOString() })
     .eq("user_id", userId);
   if (error) {
-    if (isMissingTableError(error)) return { ok: false, migrationPending: true, error: "Migration not applied yet" };
+    if (isMissingTableError(error) || isMissingColumnError(error)) {
+      return { ok: false, migrationPending: true, error: "Migration not applied yet" };
+    }
     console.error("creator-api-creds: clear backup failed", error);
     return { ok: false, error: "Could not clear backup state" };
   }

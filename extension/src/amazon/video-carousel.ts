@@ -37,6 +37,16 @@ export type CarouselVideo = {
   url: string | null;
   // Which on-page carousel the video came from (see carouselSourceFor).
   carousel: CarouselSource;
+  // Where `carousel` came from, and therefore whether it may be shown to the
+  // user as THIS video's placement.
+  //   "marker"  the side was derived from the owning state-script key, the
+  //             request URL, or the widget the card was rendered in. Real.
+  //   "assumed" the side was inferred from the content-id namespace (brand ->
+  //             upper, everything else -> lower). That is a sound heuristic for
+  //             a tally and wrong for any one video, because a creator video in
+  //             the hero slot still carries a vse content id. Never state it.
+  // Undefined on rows built before this field existed; treated as "assumed".
+  sideFrom?: "marker" | "assumed";
   // Stable Amazon content id (the `aciContentId`, e.g. amzn1.vse.video.<id>),
   // when the state-script `videos` array was the source. This is the durable
   // identity used to track a video across page loads and days; null when only
@@ -341,8 +351,10 @@ function extractFromVideoList(doc: Document): CarouselResult | null {
         creatorType: kind,
         url: null,
         // Seller videos live in the image block (upper); vse creator videos in
-        // the related-videos rail (lower).
+        // the related-videos rail (lower). A namespace guess, not a reading of
+        // where this video actually sits: see sideFrom.
         carousel,
+        sideFrom: "assumed",
         // The aciContentId IS the stable identity; keep it so the video can be
         // tracked across page loads (Phase 2) and deduped by content id.
         contentId: aci,
@@ -442,6 +454,8 @@ function accumulateFromText(
       creatorType: kind,
       url: decodeJsonString(alignedUrls[index] ?? null),
       carousel: source,
+      // The side came from the owning state-script key or the request URL.
+      sideFrom: "marker",
       // This strategy does not carry the aciContentId; identity falls back to a
       // hash of name/title downstream (see the video_id derivation).
       contentId: null,
@@ -491,8 +505,10 @@ function extractFromDom(doc: Document): CarouselResult {
       creatorType: kind,
       url: href,
       // The related-videos widget is the lower rail; the brand hero video lives
-      // in the image block, which is not part of this widget's cards.
+      // in the image block, which is not part of this widget's cards. The card
+      // was read out of that widget, so this is a real reading, not a guess.
       carousel: "lower",
+      sideFrom: "marker",
       // DOM cards do not expose the aciContentId; identity falls back downstream.
       contentId: null,
       position: (cardIndex += 1),

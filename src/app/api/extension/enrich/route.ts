@@ -25,7 +25,7 @@ import {
   optionsResponse,
 } from "@/lib/extension-api";
 import { loadDecryptedCreds, loadBackupCredsFor } from "@/lib/creator-api-creds";
-import { getItems, GET_ITEMS_MAX, type CreatorsCreds, type EnrichedItem } from "@/lib/creators-api";
+import { getItems, GET_ITEMS_MAX, type EnrichedItem } from "@/lib/creators-api";
 import { loadWalmartCreds, lookupItems, WALMART_LOOKUP_MAX } from "@/lib/walmart-api";
 
 export const runtime = "nodejs";
@@ -80,34 +80,63 @@ export async function POST(request: Request) {
   if (migrationPending) return migrationPendingResponse();
   if (error) return jsonWithCors({ error }, 500);
 
-  let selected = (filter ? creds.filter((c) => filter.has(c.host)) : creds).slice(0, MARKETPLACE_CAP);
+  const own = (filter ? creds.filter((c) => filter.has(c.host)) : creds).slice(0, MARKETPLACE_CAP);
 
-  // Fall back to leased backup credentials when the user has no own credentials
-  // for the requested marketplaces. House credentials are region-scoped, so
-  // loadBackupCredsFor only returns creds for a host in the lease's own group.
-  if (selected.length === 0) {
-    const candidateHosts = filter ? [...filter] : ["amazon.com"];
-    const backup: CreatorsCreds[] = [];
-    for (const host of candidateHosts.slice(0, MARKETPLACE_CAP)) {
-      const c = await loadBackupCredsFor(auth.auth.userId, host);
-      if (c) backup.push(c);
-    }
-    selected = backup;
-  }
-
-  if (selected.length === 0) {
-    return jsonWithCors({ ok: true, configured: false, items: [] });
-  }
-
+  // Run the user's own credentials first. Track whether any marketplace actually
+  // returned a found item: a new Associates account can hold valid credentials
+  // that Amazon has not unlocked Creator API access for yet, in which case every
+  // row comes back not-found and the leased backup credentials should take over.
   // Sequential across marketplaces to stay within the Creators API's per-second
   // throughput limits; one batched getItems call covers all ASINs per market.
   const byAsin = new Map<string, EnrichedItem[]>();
   for (const a of asins) byAsin.set(a, []);
-  for (const cred of selected) {
+  let ownFoundAny = false;
+  for (const cred of own) {
     const rows = await getItems(cred, asins);
     for (const row of rows) {
       if (row.asin) byAsin.get(row.asin)?.push(row);
+      if (row.found) ownFoundAny = true;
     }
+  }
+
+  // Backup fallback: when the user has no own credentials for the requested
+  // marketplaces, OR has them but they returned nothing usable (eligibility not
+  // unlocked yet), fill in from the leased house credentials. Without this, a
+  // vault holding not-yet-unlocked own creds would shadow a working backup lease
+  // and every enrichment would come back empty. House credentials are
+  // region-scoped, so loadBackupCredsFor only returns creds for a host in the
+  // lease's own group.
+  let backupConfigured = false;
+  if (!ownFoundAny) {
+    const candidateHosts = (
+      filter ? [...filter] : own.length ? own.map((c) => c.host) : ["amazon.com"]
+    ).slice(0, MARKETPLACE_CAP);
+    const backupByAsin = new Map<string, EnrichedItem[]>();
+    for (const a of asins) backupByAsin.set(a, []);
+    let backupFoundAny = false;
+    for (const host of candidateHosts) {
+      const c = await loadBackupCredsFor(auth.auth.userId, host);
+      if (!c) continue;
+      backupConfigured = true;
+      const rows = await getItems(c, asins);
+      for (const row of rows) {
+        if (row.asin) backupByAsin.get(row.asin)?.push(row);
+        if (row.found) backupFoundAny = true;
+      }
+    }
+    // Swap in the backup rows only when they carry real data, so a transient
+    // backup miss does not discard the own not-found rows already collected.
+    if (backupFoundAny) {
+      for (const a of asins) byAsin.set(a, backupByAsin.get(a) ?? []);
+    }
+  }
+
+  // "Configured" means the user has some credential source at all (their own, or
+  // an active backup lease), so the extension only shows the connect prompt when
+  // neither is set up: a configured-but-empty result is not "go connect".
+  const configured = own.length > 0 || backupConfigured;
+  if (!configured) {
+    return jsonWithCors({ ok: true, configured: false, items: [] });
   }
 
   const items = asins.map((asin) => ({ id: asin, asin, results: byAsin.get(asin) ?? [] }));

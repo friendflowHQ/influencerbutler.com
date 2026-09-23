@@ -97,6 +97,15 @@ export interface OptionsDict {
   creatorsBackupDisable: string;
   creatorsBackupWorking: string;
   creatorsBackupCovering: string;
+  // Creator API server-vault sync (the card's own credentials reaching the
+  // account, which is what Amazon-page enrichment reads).
+  vaultSynced: string;
+  vaultRetry: string;
+  vaultRetrying: string;
+  vaultPendingSignedOut: string;
+  vaultPendingMigration: string;
+  vaultPendingServer: string;
+  vaultPendingNetwork: string;
   // Walmart affiliate link provider select
   walmartLink: string;
   walmartLinkNone: string;
@@ -271,6 +280,17 @@ const en: OptionsDict = {
   creatorsBackupWorking: "Setting up backup credentials...",
   creatorsBackupCovering:
     "Product data is running on Influencer Butler's backup credentials. Add your own Credential ID and Secret above to switch to your own Creator API.",
+  vaultSynced: "Saved to your account. Amazon pages will use these keys.",
+  vaultRetry: "Retry",
+  vaultRetrying: "Retrying...",
+  vaultPendingSignedOut:
+    "Saved on this device only: sign in to Influencer Butler so these keys reach your account. Until then, Amazon pages keep asking you to connect.",
+  vaultPendingMigration:
+    "Saved on this device. Your account is not ready to store these keys yet - we are setting that up. Try again shortly.",
+  vaultPendingServer:
+    "Saved on this device, but we could not store them on your account. This one is on our side. Retry in a moment, and tell us if it keeps failing.",
+  vaultPendingNetwork:
+    "Saved on this device, but they have not reached your account yet: check your connection and retry. Until then, Amazon pages keep asking you to connect.",
   fieldPartnerTag: "Partner tag",
   fieldMarketplace: "Marketplace (optional)",
   fieldLinkTemplate: "Link pattern",
@@ -446,6 +466,17 @@ const es: OptionsDict = {
   creatorsBackupWorking: "Configurando las credenciales de respaldo...",
   creatorsBackupCovering:
     "Los datos de producto funcionan con las credenciales de respaldo de Influencer Butler. Añade tu propio Credential ID y Secret arriba para pasar a tu propia Creator API.",
+  vaultSynced: "Guardadas en tu cuenta. Las páginas de Amazon usarán estas claves.",
+  vaultRetry: "Reintentar",
+  vaultRetrying: "Reintentando...",
+  vaultPendingSignedOut:
+    "Guardadas solo en este dispositivo: inicia sesión en Influencer Butler para que estas claves lleguen a tu cuenta. Hasta entonces, las páginas de Amazon seguirán pidiéndote que conectes.",
+  vaultPendingMigration:
+    "Guardadas en este dispositivo. Tu cuenta aún no puede almacenar estas claves: lo estamos preparando. Inténtalo de nuevo en un momento.",
+  vaultPendingServer:
+    "Guardadas en este dispositivo, pero no pudimos almacenarlas en tu cuenta. Esto es cosa nuestra. Reinténtalo en un momento y avísanos si sigue fallando.",
+  vaultPendingNetwork:
+    "Guardadas en este dispositivo, pero aún no han llegado a tu cuenta: comprueba tu conexión y reinténtalo. Hasta entonces, las páginas de Amazon seguirán pidiéndote que conectes.",
   fieldPartnerTag: "Etiqueta de socio",
   fieldMarketplace: "Mercado (opcional)",
   fieldLinkTemplate: "Patrón de enlace",
@@ -621,6 +652,17 @@ const fr: OptionsDict = {
   creatorsBackupWorking: "Configuration des identifiants de secours...",
   creatorsBackupCovering:
     "Les données produit fonctionnent avec les identifiants de secours d'Influencer Butler. Ajoutez vos propres Credential ID et Secret ci-dessus pour passer à votre propre Creator API.",
+  vaultSynced: "Enregistrées sur votre compte. Les pages Amazon utiliseront ces clés.",
+  vaultRetry: "Réessayer",
+  vaultRetrying: "Nouvelle tentative...",
+  vaultPendingSignedOut:
+    "Enregistrées sur cet appareil uniquement : connectez-vous à Influencer Butler pour que ces clés parviennent à votre compte. D'ici là, les pages Amazon continueront de vous demander de vous connecter.",
+  vaultPendingMigration:
+    "Enregistrées sur cet appareil. Votre compte ne peut pas encore stocker ces clés : nous mettons cela en place. Réessayez dans un instant.",
+  vaultPendingServer:
+    "Enregistrées sur cet appareil, mais nous n'avons pas pu les stocker sur votre compte. Cela vient de chez nous. Réessayez dans un instant et dites-le-nous si cela persiste.",
+  vaultPendingNetwork:
+    "Enregistrées sur cet appareil, mais elles ne sont pas encore parvenues à votre compte : vérifiez votre connexion et réessayez. D'ici là, les pages Amazon continueront de vous demander de vous connecter.",
   fieldPartnerTag: "Balise partenaire",
   fieldMarketplace: "Place de marché (facultatif)",
   fieldLinkTemplate: "Modèle de lien",

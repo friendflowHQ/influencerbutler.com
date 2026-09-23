@@ -1,6 +1,6 @@
 import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
-import { sendToBackground, type WatchlistResult } from "../../shared/messages";
+import { askBackground, type WatchlistResult } from "../../shared/messages";
 import { WATCHLIST_CAP } from "../../storage/schema";
 import type { ProductSignals } from "../../amazon/product-signals";
 
@@ -18,16 +18,35 @@ export async function renderWatchButton(signals: ProductSignals): Promise<void> 
   const status = el("p", "note");
   section.append(button, status);
 
-  let watched = await sendToBackground<boolean>({ kind: "IS_WATCHED", asin, marketplace });
+  // Label the button before the round-trip. Painting only from the reply left
+  // an unlabeled empty pill whenever the background did not answer, which reads
+  // as "the watchlist is broken" rather than "we could not check it". Assume
+  // unwatched and correct it once the reply lands.
+  let watched = false;
   const paint = () => {
     button.textContent = watched ? t().watchRemove : t().watchAdd;
   };
   paint();
 
+  // null means the background never answered: say so instead of offering a
+  // toggle whose writes would fail the same way.
+  const current = await askBackground<boolean>({ kind: "IS_WATCHED", asin, marketplace });
+  if (current === null) {
+    button.disabled = true;
+    status.textContent = t().panelOffline;
+    return;
+  }
+  watched = current;
+  paint();
+
   button.addEventListener("click", () => {
     button.disabled = true;
-    const done = (res: WatchlistResult) => {
+    const done = (res: WatchlistResult | null) => {
       button.disabled = false;
+      if (!res) {
+        status.textContent = t().panelOffline;
+        return;
+      }
       if (!watched && res.atCap) {
         status.textContent = t().watchAtCap(WATCHLIST_CAP);
         return;
@@ -37,13 +56,13 @@ export async function renderWatchButton(signals: ProductSignals): Promise<void> 
       status.textContent = watched ? t().watchAdded : t().watchRemoved;
     };
     if (watched) {
-      void sendToBackground<WatchlistResult>({
+      void askBackground<WatchlistResult>({
         kind: "REMOVE_FROM_WATCHLIST",
         asin,
         marketplace,
       }).then(done);
     } else {
-      void sendToBackground<WatchlistResult>({
+      void askBackground<WatchlistResult>({
         kind: "ADD_TO_WATCHLIST",
         item: { asin, marketplace, title: signals.title ?? null, imageUrl: signals.imageUrl },
       }).then(done);

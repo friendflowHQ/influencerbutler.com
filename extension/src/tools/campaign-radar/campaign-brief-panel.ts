@@ -148,6 +148,9 @@ function scoreBreakdown(score: CampaignScore): HTMLElement {
     timing: "Runway",
     budget: "Budget",
     earner: "Proven earner",
+    // SPCC-only components (only ever present on an SPCC card's score).
+    epc: "EPC",
+    budgetAvail: "Budget availability",
   };
   const wrap = el("div");
   wrap.style.display = "flex";

@@ -1,6 +1,15 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
 import { normalizeMarketplace } from "../integrations/creators-api-client";
-import { clearCreatorApiVault, pushCreatorApiCreds, type VaultEntry } from "./creator-api-sync";
+import {
+  clearCreatorApiVault,
+  fetchVaultStatus,
+  getVaultSyncState,
+  isVaultSyncPending,
+  pushCreatorApiCreds,
+  setVaultSyncState,
+  type VaultEntry,
+} from "./creator-api-sync";
+import { clearEnrichCache } from "../tools/inline-card/enrich-cache";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
 import { getRateCard, rateForCategory } from "../rate-card/cache";
@@ -59,6 +68,7 @@ function nonSecretValues(id: string, creds: Record<string, string>): Record<stri
 
 export async function buildIntegrationsView(): Promise<IntegrationsView> {
   const integrations = await getIntegrations();
+  const vaultSync = await getVaultSyncState();
   const providers: IntegrationView[] = [];
   for (const adapter of ADAPTERS) {
     const state = integrations.providers[adapter.id];
@@ -99,6 +109,9 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
           : nonSecretValues(adapter.id, creds),
       lastTest: state?.lastTest ?? { status: "untested", at: null, message: null },
       routingParticipates: state?.routingParticipates ?? true,
+      // Only the Creator API mirrors its credentials to the server vault, so it
+      // is the only card with a sync state to report.
+      vaultSync: adapter.id === CREATORS_API ? vaultSync : undefined,
     });
   }
   return { global: integrations.global, providers };
@@ -162,17 +175,17 @@ export async function saveIntegration(
     if (routingParticipates !== undefined) s.routingParticipates = routingParticipates;
   });
   // Mirror Creator API credentials to the server vault so server-side enrichment
-  // can use them. Fire-and-forget: local save must not block on the network, and
-  // a failed push just means enrichment falls back to not-configured until the
-  // next save or a manual retry.
+  // can use them. Local save must not block on the network, so this stays
+  // fire-and-forget here; syncCreatorApiVault records success/failure to a
+  // pending flag so the reconciler can self-heal a push that did not land.
   if (id === CREATORS_API) void syncCreatorApiVault(merged);
   return viewFor(id);
 }
 
-// Build a single vault entry from the stored Creator API credentials and push it
-// to the server. Only pushes when fully configured; the marketplace value is
-// normalized to a bare host (e.g. "amazon.com").
-async function syncCreatorApiVault(creds: Record<string, string>): Promise<void> {
+// Turn the stored Creator API credentials into a vault entry. Only "complete"
+// entries (a host plus all three credential fields) are worth pushing; the
+// marketplace value is normalized to a bare host (e.g. "amazon.com").
+function vaultEntryFrom(creds: Record<string, string>): { entry: VaultEntry; complete: boolean } {
   const host = normalizeMarketplace(creds.marketplace ?? "").replace(/^www\./, "");
   const entry: VaultEntry = {
     host,
@@ -181,7 +194,75 @@ async function syncCreatorApiVault(creds: Record<string, string>): Promise<void>
     credentialSecret: (creds.credentialSecret ?? "").trim(),
     credentialVersion: (creds.credentialVersion ?? "").trim(),
   };
-  await pushCreatorApiCreds([entry]);
+  const complete = Boolean(entry.host && entry.partnerTag && entry.credentialId && entry.credentialSecret);
+  return { entry, complete };
+}
+
+// Push the stored Creator API credentials to the server vault and record the
+// outcome. On success the pending flag is cleared and the stale enrich cache is
+// dropped (so the inline card and global-reach panel stop showing a "connect"
+// prompt from before these creds landed). On failure the pending flag is set so
+// the reconciler retries later. Nothing to push (incomplete creds) clears the
+// flag: there is no sync owed.
+async function syncCreatorApiVault(creds: Record<string, string>): Promise<void> {
+  const { entry, complete } = vaultEntryFrom(creds);
+  if (!complete) {
+    await setVaultSyncState(null);
+    return;
+  }
+  const result = await pushCreatorApiCreds([entry]);
+  if (result.ok) {
+    await setVaultSyncState(null);
+    await clearEnrichCache();
+    return;
+  }
+  await setVaultSyncState({
+    pending: true,
+    reason: result.reason,
+    message: result.message ?? null,
+    at: Date.now(),
+  });
+}
+
+// Self-heal the server vault. A fire-and-forget push can fail silently (offline
+// at save time, a network blip, migration pending), leaving local creds that
+// pass the in-card Test but never reach server-side enrichment. This re-pushes
+// when a prior push is known to have failed, and - when asked to check the
+// server - when the vault is simply missing the marketplace we hold locally.
+// Driven from sign-in, browser startup, and the sync alarm.
+export async function reconcileCreatorApiVault(opts?: { checkRemote?: boolean }): Promise<void> {
+  const { auth } = await getState();
+  if (!auth.licenseKey) return; // not signed in; a pending sync waits for sign-in
+  const pending = await isVaultSyncPending();
+  // Cheap alarm path: with nothing recorded as owed and no remote check asked
+  // for, bail before decrypting anything.
+  if (!pending && !opts?.checkRemote) return;
+
+  const creds = await credsFor(CREATORS_API, await getIntegrations());
+  const { entry, complete } = vaultEntryFrom(creds);
+  if (!complete) {
+    await setVaultSyncState(null); // nothing configured locally; nothing owed
+    return;
+  }
+  if (pending) {
+    await syncCreatorApiVault(creds);
+    return;
+  }
+  // Remote check (sign-in / startup): re-push when the vault is simply missing
+  // the marketplace we hold locally. Unknown status (offline/migration) is not
+  // "missing", so it does not churn a push.
+  const status = await fetchVaultStatus();
+  if (status && !status.marketplaces.includes(entry.host)) {
+    await syncCreatorApiVault(creds);
+  }
+}
+
+// The Settings card's "Retry" button: reconcile, then hand back the refreshed
+// Creator API card so the UI can redraw the sync line without a second round
+// trip. Keeps the provider id inside this module.
+export async function retryCreatorApiVaultSync(): Promise<IntegrationView> {
+  await reconcileCreatorApiVault({ checkRemote: true });
+  return viewFor(CREATORS_API);
 }
 
 // Wipe a provider's stored credentials (the options page "Clear saved keys"
@@ -198,7 +279,11 @@ export async function clearIntegration(id: string): Promise<IntegrationView> {
   });
   // Clearing the card also clears the server vault, so enrichment stops using a
   // credential the user just removed locally.
-  if (id === CREATORS_API) void clearCreatorApiVault();
+  if (id === CREATORS_API) {
+    void clearCreatorApiVault();
+    void clearEnrichCache();
+    void setVaultSyncState(null); // nothing left to push
+  }
   return viewFor(id);
 }
 

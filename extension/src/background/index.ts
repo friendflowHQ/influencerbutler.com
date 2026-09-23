@@ -118,11 +118,14 @@ import {
   clearIntegration,
   maybeTestAllOnStartup,
   openaiComplete,
+  reconcileCreatorApiVault,
+  retryCreatorApiVaultSync,
   saveIntegration,
   testAllIntegrations,
   testIntegration,
 } from "./integrations";
 import { backupAction } from "./creator-api-sync";
+import { clearEnrichCache } from "../tools/inline-card/enrich-cache";
 import {
   bulkMintBranded,
   getOwnerPixels,
@@ -209,6 +212,9 @@ chrome.runtime.onInstalled.addListener((details) => {
   void refreshWalmartRateCard();
   void refreshFlags();
   void syncDealBadgeContentScripts();
+  // Heal a Creator API vault push that never landed (checks the server for a
+  // divergence, not just a recorded failure).
+  void reconcileCreatorApiVault({ checkRemote: true });
   // After an update applies, this drops the now-stale "update waiting" record.
   void getUpdateStateView();
 });
@@ -228,6 +234,8 @@ chrome.runtime.onStartup.addListener(() => {
   void refreshFlags();
   void syncDealBadgeContentScripts();
   void maybeTestAllOnStartup();
+  // Heal a Creator API vault push that never landed (see onInstalled).
+  void reconcileCreatorApiVault({ checkRemote: true });
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
   // was closed fires on the next launch.
   void ensureNudgeAlarms();
@@ -251,6 +259,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // fetch per stale window) so a remote kill switch reaches the browser in
     // minutes, not on the daily catalogue cadence.
     void refreshFlags();
+    // Cheap path: drains a known-pending Creator API vault sync (a no-op read of
+    // a local flag unless a prior push failed), so a transient push failure
+    // heals within a sync cycle rather than waiting for the next restart.
+    void reconcileCreatorApiVault();
   }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
@@ -301,7 +313,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void buildAuthStatus().then(sendResponse);
       return true;
     case "SIGN_IN":
-      void signIn(message.licenseKey).then(sendResponse);
+      void signIn(message.licenseKey).then((res) => {
+        // A sync owed while signed out (creds saved before a license key was
+        // present) can now be pushed; also catch any pre-existing divergence.
+        void reconcileCreatorApiVault({ checkRemote: true });
+        sendResponse(res);
+      });
       return true;
     case "SIGN_OUT":
       void signOut().then(() => sendResponse(undefined));
@@ -631,8 +648,20 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "TEST_ALL_INTEGRATIONS":
       void testAllIntegrations().then(sendResponse);
       return true;
+    case "RECONCILE_CREATOR_VAULT":
+      // checkRemote so a manual retry also catches the case where no push is
+      // recorded as owed but the vault simply does not hold this marketplace.
+      void retryCreatorApiVaultSync().then(sendResponse);
+      return true;
     case "CREATOR_API_BACKUP":
-      void backupAction(message.action).then(sendResponse);
+      void backupAction(message.action).then((res) => {
+        // Enabling or disabling the backup lease changes whether enrichment is
+        // configured; drop the cached enrich verdicts so the inline card and
+        // global-reach panel re-check on the next product view instead of
+        // showing a stale connect prompt.
+        if (message.action !== "backup-status") void clearEnrichCache();
+        sendResponse(res);
+      });
       return true;
     case "GENERATE_AFFILIATE_LINK":
       void generateAffiliateLink(

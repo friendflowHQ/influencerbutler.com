@@ -4,6 +4,7 @@ import {
   type OwnershipLookupResult,
   type OwnershipRecord,
 } from "../../shared/messages";
+import { rememberOwnVideos } from "../my-video/own-videos";
 
 const EMPTY_POSTED = { available: false, count: 0, platforms: [], lastAt: null, items: [] } as const;
 
@@ -27,7 +28,30 @@ export async function resolveOwnership(asins: string[]): Promise<OwnershipRecord
   // App installed but not running: fall back to the server-backed owned list.
   if (res.paired === false) return ownedOnlyFallback(want);
   if (!res.ok) return [];
-  return Array.isArray(res.results) ? res.results : [];
+  const records = Array.isArray(res.results) ? res.results : [];
+  rememberOwnAmazonVideos(records);
+  return records;
+}
+
+// The desktop content ledger already tells us, per ASIN, which Amazon videos the
+// creator has posted (posted.items carries their own /vdp/ urls). That is a
+// ready-made answer to "which of these videos is mine", so fold it into the
+// own-video index rather than adding a second bridge lookup for the same facts.
+// Paired users therefore get My Video Placement without ever opening Creator
+// Hub; unpaired users simply contribute no rows here.
+function rememberOwnAmazonVideos(records: OwnershipRecord[]): void {
+  const own = records.flatMap((rec) =>
+    (rec.posted?.items ?? [])
+      .filter((item) => item.platform === "amazon" && item.type === "video" && item.url)
+      .map((item) => ({
+        contentId: item.url,
+        title: item.title || null,
+        asins: [rec.asin.toUpperCase()],
+        marketplace: null,
+        source: "bridge" as const,
+      })),
+  );
+  if (own.length > 0) void rememberOwnVideos(own);
 }
 
 // Server-backed owned-only fallback for users who have not paired the desktop

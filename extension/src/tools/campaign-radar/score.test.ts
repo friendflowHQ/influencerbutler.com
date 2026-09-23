@@ -4,6 +4,7 @@ import {
   campaignFillPct,
   campaignStatsConversion,
   computeCampaignScore,
+  computeSpccScore,
   computeCampaignConfidence,
   meetsRadarThresholds,
   visibleBreakdownParts,
@@ -279,5 +280,47 @@ describe("campaignStatsConversion", () => {
 
   it("is null when clicks are missing (no honest denominator)", () => {
     expect(campaignStatsConversion(stats({ ordersLast30: 10 }))).toBeNull();
+  });
+});
+
+// SPCC ("Sponsored Products for Creators") scoring: EPC + budget availability
+// carry the money weight, the personal signals still apply, and there is no
+// commission / timing / budget / urgency component.
+describe("computeSpccScore", () => {
+  const base: CampaignScoreInputs = {
+    commissionRatePct: null,
+    daysRemaining: null,
+    remainingBudgetCents: null,
+    owned: null,
+    provenEarner: null,
+  };
+
+  it("scores a high-EPC, high-budget, owned+earner card hot", () => {
+    const result = computeSpccScore({
+      ...base,
+      epcCents: 105,
+      budgetAvailability: "high",
+      owned: true,
+      provenEarner: true,
+    });
+    expect(result.band).toBe("hot");
+    // EPC ceiling >= $1.00 saturates; the commission/timing/budget/urgency parts
+    // are zero on SPCC.
+    expect(result.parts.epc).toBeGreaterThan(0);
+    expect(result.parts.commission).toBe(0);
+    expect(result.parts.urgency).toBe(0);
+  });
+
+  it("keeps a low-EPC card out of the hot band", () => {
+    const result = computeSpccScore({ ...base, epcCents: 6, budgetAvailability: "medium" });
+    expect(result.score).toBeLessThan(70);
+  });
+
+  it("reads a missing EPC and budget as neutral halves, not penalties", () => {
+    const known = computeSpccScore({ ...base, epcCents: 6, budgetAvailability: "low" });
+    const unknown = computeSpccScore({ ...base, epcCents: null, budgetAvailability: null });
+    // An unknown EPC (0.5) scores at least as well as a known-tiny one, and an
+    // unknown budget (0.5) beats a known "low" (0.15).
+    expect(unknown.score).toBeGreaterThan(known.score);
   });
 });

@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
+import { isVaultSyncPending } from "./creator-api-sync";
 import type { EnrichResult } from "../shared/messages";
 
 // Creator API enrichment for the storefront checkup. The content script cannot
@@ -33,10 +34,14 @@ export async function enrichProducts(
     if (!res.ok || !data || !data.ok) {
       return { ...NOT_CONFIGURED, error: `Could not reach the Creator API (HTTP ${res.status}).` };
     }
+    const configured = Boolean(data.configured);
     return {
       ok: true,
-      configured: Boolean(data.configured),
+      configured,
       items: Array.isArray(data.items) ? data.items : [],
+      // Only worth asking when the account has nothing: it is the difference
+      // between "you never entered keys" and "your keys have not landed yet".
+      syncPending: configured ? undefined : await isVaultSyncPending(),
     };
   } catch {
     return { ...NOT_CONFIGURED, error: "Network error reaching the Creator API." };

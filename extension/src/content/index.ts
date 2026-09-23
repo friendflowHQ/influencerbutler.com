@@ -44,6 +44,11 @@ import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
 import { initVideoLikes } from "../tools/video-likes/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
 import { maybeCaptureStorefrontHandle } from "../tools/storefront-detect/capture";
+import { captureOwnVideos, type CaptureSurface } from "../tools/my-video/capture";
+import { loadOwnVideoIndex, ownIndexStamp, type OwnVideoIndex } from "../tools/my-video/own-videos";
+import { resolveMyVideos } from "../tools/my-video/resolve";
+import { renderMyVideoBadges } from "../tools/my-video/badge";
+import { readOwnCardPlacements } from "../amazon/my-video-card";
 import { initVideoMoney } from "../tools/video-money/overlay";
 import { initYouTubeStatus } from "../tools/youtube-status/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
@@ -75,6 +80,7 @@ import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
+import type { Settings } from "../storage/schema";
 import { removeHost } from "../ui/host";
 import {
   sendToBackground,
@@ -246,10 +252,10 @@ async function main(): Promise<void> {
   // Extension-update pill (Chrome has a new version staged). Lives in its own
   // shadow host and runs once per page load, so it belongs here rather than in
   // runForPage(), which re-runs on SPA navigation.
-  guard("update-banner", () => void maybeShowUpdateBanner());
+  guard("update-banner", () => maybeShowUpdateBanner());
   // Post-update "What's New" card (an update just installed): its own shadow
   // host, once per page load, same reasoning as the update pill above.
-  guard("whats-new", () => void maybeShowWhatsNew());
+  guard("whats-new", () => maybeShowWhatsNew());
   // Floating chat bubble (AI concierge + Report a bug + My reports). Its own
   // shadow host, mounted once per page load after runForPage() has set the
   // locale; survives SPA-nav rebuilds (removeHost only tears down the main panel).
@@ -271,7 +277,26 @@ function coverageFingerprint(result: CarouselResult): string {
     sides.lower.total,
     sides.lower.influencer,
     named,
+    // My Video Placement moves on two signals the tallies above cannot see: the
+    // creator's own card appearing in a rail (which is the only honest source of
+    // an upper verdict), and the own-video index growing when the desktop bridge
+    // answers the ownership lookup. Fold both in so a late resolution rebuilds
+    // the panel instead of waiting for the next page load.
+    ownCardCount(),
+    ownIndexStamp(),
   ].join("|");
+}
+
+// How many cards on the page carry the creator's own storefront handle. One
+// querySelectorAll, and it flips exactly when their card hydrates.
+function ownCardCount(): number {
+  const handle = ownVideoIndex?.handle;
+  if (!handle) return 0;
+  try {
+    return readOwnCardPlacements(document, handle).length;
+  } catch {
+    return 0;
+  }
 }
 
 function rebuildIfImproved(): void {
@@ -319,6 +344,11 @@ function watchStorefrontVideoLikes(): void {
   storefrontLikesObserver.observe(target, { childList: true, subtree: true });
 }
 
+// The creator's own video ids + storefront handle for this page render. Read
+// once before the (synchronous) product-tools guard, and re-read on every
+// rebuild, so the panel and the fingerprint above see the same snapshot.
+let ownVideoIndex: OwnVideoIndex | null = null;
+
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
   const pageType = detectPageType(currentUrl);
@@ -343,7 +373,7 @@ async function runForPage(): Promise<void> {
     }
     const killed = flags?.disabledTools.includes("benableBadge") ?? false;
     if (settings.tools.benableBadge && !killed) {
-      guard("benable-badge", () => void initBenableBadges());
+      guard("benable-badge", () => initBenableBadges());
       lastStatus.toolSummaries.push({ label: t().sumBenableBadge, value: t().ready });
     }
     return;
@@ -411,6 +441,13 @@ async function runForPage(): Promise<void> {
   const showOffsite = channelAllowed(settings.creatorMode, "offsite");
 
   if (pageType === "product") {
+    // My Video Placement needs the creator's own ids before the synchronous
+    // guard below runs. The read is memoized in own-videos.ts, so the repeated
+    // hydration rebuilds do not re-pay it.
+    const myVideoOn =
+      showOnsite && settings.tools.videoCounts && settings.tools.myVideoPlacement;
+    ownVideoIndex = myVideoOn ? await loadOwnVideoIndex(settings.storefrontHandle) : null;
+
     guard("product-tools", () => {
       const carousel = extractCarousel(document, capturedVideoData);
       renderedClassified = classifiedCount(carousel);
@@ -435,7 +472,7 @@ async function runForPage(): Promise<void> {
 
       // Pinned quick-links bar (Get link / Scrub link): built first so it sits
       // in the sticky topbar, one click away without scrolling past the sections.
-      guard("quick-links", () => void renderQuickLinks(signals));
+      guard("quick-links", () => renderQuickLinks(signals));
 
       // Identity card first: the ASINs, category, rank, and rate at a glance.
       // Its section is captured so the campaigns tool can append its availability
@@ -482,8 +519,22 @@ async function runForPage(): Promise<void> {
       // instead of hitting a dead link. Channel-neutral (research + links);
       // gated by its own tool flag.
       if (settings.tools.globalMaximizer) {
-        guard("global-maximizer", () => void renderGlobalMaximizer(signals));
+        guard("global-maximizer", () => renderGlobalMaximizer(signals));
       }
+
+      // Which of this listing's videos are the creator's own, and where they
+      // sit. Identity comes from their storefront handle on a rendered card
+      // (which also gives the rail and rank) or from a remembered content id;
+      // placement is only ever stated when the evidence supports it. Silent for
+      // anyone we have no evidence for: see tools/my-video/resolve.ts.
+      const mine = ownVideoIndex
+        ? resolveMyVideos(
+            carousel.videos,
+            ownVideoIndex,
+            ownVideoIndex.handle ? readOwnCardPlacements(document, ownVideoIndex.handle) : [],
+            breakdown,
+          )
+        : null;
 
       if (showOnsite && settings.tools.videoCounts) {
         guard("video-counts", () =>
@@ -493,8 +544,15 @@ async function runForPage(): Promise<void> {
             () => extractCarousel(document, capturedVideoData),
             settings.tools.videoLandscape,
             videosPending,
+            mine,
           ),
         );
+        // The "Yours" badge on the creator's own card inside Amazon's carousel.
+        // Mounted only from a card the handle matched, so it can never land on
+        // somebody else's video.
+        if (mine?.kind === "present") {
+          guard("my-video-badge", () => renderMyVideoBadges(mine.matches));
+        }
         lastStatus.toolSummaries.push({
           label: t().sumVideos,
           value: t().sumVideosValue(carousel.counts.total, carousel.counts.influencer),
@@ -531,7 +589,7 @@ async function runForPage(): Promise<void> {
       // cached rate card and campaign catalogue; pushes its popup summary line
       // once computed.
       guard("butler-score", () =>
-        void renderProductScore(signals, carousel.counts, settings).then((value) => {
+        renderProductScore(signals, carousel.counts, settings).then((value) => {
           if (value !== null) {
             lastStatus.toolSummaries.push({ label: t().sumScore, value: String(value) });
           }
@@ -566,7 +624,7 @@ async function runForPage(): Promise<void> {
       // My affiliate/deeplink for this product, plus an optional AI caption.
       // The flagship offsite action (share off-Amazon), so onsite-only creators
       // do not see it.
-      if (showOffsite) guard("my-link", () => void renderMyLink(signals));
+      if (showOffsite) guard("my-link", () => renderMyLink(signals));
 
       // A product-specific filming plan: the features to show plus best-practice
       // beats and the FTC disclosure. Pairs with Butler Approved (what to film)
@@ -575,12 +633,12 @@ async function runForPage(): Promise<void> {
 
       // Watch this product for a restock, an opening video slot, or a price drop.
       if (settings.tools.watchlist) {
-        guard("watchlist", () => void renderWatchButton(signals));
+        guard("watchlist", () => renderWatchButton(signals));
       }
 
       // Add this product (or every variation) to a named list. Free, channel-
       // neutral; the only surface that offers "Add all variations".
-      guard("product-lists", () => void renderProductListsPanel(signals));
+      guard("product-lists", () => renderProductListsPanel(signals));
 
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
@@ -619,6 +677,7 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {
+    captureOwnVideoIds("storefront", settings);
     if (!showOnsite) return; // onsite-only page (storefront checkup, matcher)
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
@@ -655,7 +714,8 @@ async function runForPage(): Promise<void> {
     // Capture the creator's own storefront handle off their Creator Hub even for
     // offsite-only creators (the handle drives links regardless of channel), and
     // before the onsite guard below. Non-destructive: fills only an empty handle.
-    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-upload", settings);
     if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
       initUploadHelper({
@@ -670,7 +730,8 @@ async function runForPage(): Promise<void> {
       videoMoney: settings.tools.videoMoney,
       creatorMode: settings.creatorMode,
     });
-    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-manage", settings);
     if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
     guard("video-money", () => {
       if (settings.tools.videoMoney) {
@@ -685,7 +746,8 @@ async function runForPage(): Promise<void> {
     }
   } else if (pageType === "creator-post") {
     // The single-video "Edit post" page (/create/post?id=amzn1.vse.video...).
-    guard("storefront-detect", () => void maybeCaptureStorefrontHandle());
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-post", settings);
     if (!showOnsite) return; // onsite-only page (the creator's own video edit)
     if (settings.tools.youtubeStatus) {
       guard("youtube-status", () => initYouTubeStatus("creator-post"));
@@ -694,6 +756,7 @@ async function runForPage(): Promise<void> {
   } else if (pageType === "manage-content") {
     // The flat "My content" list (/manage-content): a YouTube-status chip per
     // video row.
+    captureOwnVideoIds("manage-content", settings);
     if (!showOnsite) return; // onsite-only page (the creator's own content list)
     if (settings.tools.youtubeStatus) {
       guard("youtube-status", () => initYouTubeStatus("manage-content"));
@@ -812,7 +875,7 @@ function scheduleLastCallRefresh(): void {
       const settings = await getSettings();
       if (detectPageType(location.href) !== "campaign-grid") return;
       if (!settings.tools.campaignRadar || !channelAllowed(settings.creatorMode, "onsite")) return;
-      guard("campaign-radar-fill", () => void initCampaignRadar(settings, campaignFills));
+      guard("campaign-radar-fill", () => initCampaignRadar(settings, campaignFills));
     })();
   }, 400);
 }
@@ -832,7 +895,7 @@ function scheduleDealsRefresh(): void {
       if (detectPageType(location.href) !== "deals") return;
       const settings = await getSettings();
       if (!settings.tools.dealsOverlay) return;
-      guard("deals-overlay-refresh", () => void initDealsOverlay(settings));
+      guard("deals-overlay-refresh", () => initDealsOverlay(settings));
     })();
   }, 500);
 }
@@ -853,7 +916,7 @@ function scheduleBenableRefresh(): void {
       if (!settings.tools.benableBadge) return;
       const flags = await getFlags();
       if (flags?.disableAll || flags?.disabledTools.includes("benableBadge")) return;
-      guard("benable-badge-refresh", () => void initBenableBadges());
+      guard("benable-badge-refresh", () => initBenableBadges());
     })();
   }, 400);
 }
@@ -1026,4 +1089,13 @@ function watchSpaNavigation(): void {
     void runForPage();
   };
   watchNavigation(notice, { pageTypeForUrl: detectPageType });
+}
+
+// Remember the creator's own video ids from a surface where the videos are
+// unambiguously theirs, so a product page can later say which carousel video is
+// theirs. Passive, no network call, and gated by the My Video Placement flag so
+// the remote kill switch stops the capture as well as the readout.
+function captureOwnVideoIds(surface: CaptureSurface, settings: Settings): void {
+  if (!settings.tools.myVideoPlacement) return;
+  guard("my-video-capture", () => captureOwnVideos(surface, settings.storefrontHandle));
 }

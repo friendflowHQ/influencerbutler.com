@@ -89,6 +89,13 @@ describe("extractFromText", () => {
     expect(result?.videos.every((v) => v.carousel === "lower")).toBe(true);
   });
 
+  // The side here came from the request URL / state-script key, so it is a real
+  // reading of where the video sits and My Video Placement may state it.
+  it("marks the side as marker-derived", () => {
+    const result = extractFromText(payload, "upper");
+    expect(result?.videos.every((v) => v.sideFrom === "marker")).toBe(true);
+  });
+
   it("attaches a video url only when one aligns to each video", () => {
     const withUrls = JSON.stringify({
       videos: [
@@ -153,7 +160,12 @@ describe("parseClock", () => {
 });
 
 // Build a CarouselVideo fixture with only the fields the split logic reads.
-function vid(creatorType: CreatorClass, carousel: CarouselSource, creatorName?: string): CarouselVideo {
+function vid(
+  creatorType: CreatorClass,
+  carousel: CarouselSource,
+  creatorName?: string,
+  sideFrom?: CarouselVideo["sideFrom"],
+): CarouselVideo {
   return {
     title: null,
     creatorName: creatorName ?? null,
@@ -162,6 +174,7 @@ function vid(creatorType: CreatorClass, carousel: CarouselSource, creatorName?: 
     carousel,
     contentId: null,
     position: null,
+    sideFrom,
   };
 }
 
@@ -235,6 +248,23 @@ describe("mergeCarouselCandidates", () => {
     expect(merged?.counts.influencer).toBe(sides.upper.influencer + sides.lower.influencer);
     // Base strategy label is preserved (json won on classified count).
     expect(merged?.strategy).toBe("json");
+  });
+
+  // The merge picks one source per side, so each surviving video must keep the
+  // provenance its own source gave it: a videoList row stays "assumed" even when
+  // it lands beside marker-derived rows from another candidate.
+  it("preserves each video's side provenance across the merge", () => {
+    const videoList = resultOf([vid("brand", "upper", "BrandCo", "assumed")], "videoList");
+    const json = resultOf(
+      [vid("influencer", "lower", "Creator", "marker"), vid("influencer", "lower", "Other", "marker")],
+      "json",
+    );
+    const merged = mergeCarouselCandidates([json, videoList], 3);
+    const bySide = Object.fromEntries(
+      (merged?.videos ?? []).map((v) => [v.carousel, v.sideFrom]),
+    );
+    expect(bySide.upper).toBe("assumed");
+    expect(bySide.lower).toBe("marker");
   });
 
   it("falls back to the base candidate when the merge would exceed the header total", () => {

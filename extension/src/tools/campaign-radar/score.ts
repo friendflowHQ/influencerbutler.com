@@ -15,7 +15,7 @@
 // rather than as a penalty so the rate/days/budget score still stands on its own.
 
 import { conversionRate } from "../earnings-overlay/model";
-import type { CampaignStats } from "../../amazon/creator-campaigns";
+import type { BudgetAvailability, CampaignStats } from "../../amazon/creator-campaigns";
 
 export type CampaignScoreBand = "hot" | "warm" | "cool";
 
@@ -31,6 +31,9 @@ export type CampaignScore = {
     owned: number;
     earner: number;
     urgency: number;
+    // SPCC-only components (computeSpccScore). Absent on classic CC scores.
+    epc?: number;
+    budgetAvail?: number;
   };
   // The resolved personal signals, carried through so the UI can tell a genuine
   // "owns it" (true) from the neutral half it awards when the signal is simply
@@ -65,6 +68,11 @@ export type CampaignScoreInputs = {
   // The campaign has hit its creator cap and can no longer be accepted. When
   // true, urgency collapses to zero: there is no point ranking a closed door high.
   fullyClaimed?: boolean | null;
+  // SPCC-only: Amazon's Estimated EPC ceiling in cents ("Up to $X"), and its
+  // qualitative budget-availability score. Undefined/null on classic CC cards.
+  // Consumed only by computeSpccScore.
+  epcCents?: number | null;
+  budgetAvailability?: BudgetAvailability | null;
 };
 
 // Creator slots claimed vs. cap as a 0-1 fraction, or null when either count is
@@ -167,6 +175,66 @@ export function computeCampaignScore(inputs: CampaignScoreInputs): CampaignScore
   };
 }
 
+// SPCC ("Sponsored Products for Creators") weights. These cards carry no
+// commission and no date, so the money signal is Amazon's Estimated EPC
+// (earnings per click) and its budget-availability score. The two personal
+// signals (owned / proven earner) still apply because an SPCC card always
+// carries a product ASIN. There is no fill data from the DOM (the card exposes
+// no campaign id), so urgency is left out of the SPCC blend. Weights sum to 100.
+const SPCC_WEIGHTS = {
+  epc: 50,
+  budgetAvail: 20,
+  owned: 22,
+  earner: 8,
+} as const;
+
+// An Estimated EPC ceiling of $1.00 or more scores full marks on that component;
+// below it scales linearly. Observed SPCC EPCs ran ~$0.06 to ~$1.05, so this
+// saturates the top of the live range. EPC is a ceiling ("Up to $X"), so the
+// component ranks the best-forecasting products first; it is not a payout claim.
+const EPC_SATURATION_CENTS = 100;
+
+function budgetAvailUnit(v: BudgetAvailability | null | undefined): number {
+  if (v === "high") return 1;
+  if (v === "medium") return 0.5;
+  if (v === "low") return 0.15;
+  return 0.5; // unknown reads neutral, mirroring the other absent-signal halves
+}
+
+// Score an SPCC card 0-100. Same shape and band thresholds as the CC score so the
+// overlay and panels treat both uniformly, but built from the SPCC signals. The
+// commission / timing / budget / urgency parts are zero here (SPCC has none); the
+// EPC and budget-availability parts carry the weight instead.
+export function computeSpccScore(inputs: CampaignScoreInputs): CampaignScore {
+  const epcUnit =
+    inputs.epcCents === null || inputs.epcCents === undefined
+      ? 0.5
+      : clamp01(Math.max(0, inputs.epcCents) / EPC_SATURATION_CENTS);
+  const budgetUnit = budgetAvailUnit(inputs.budgetAvailability);
+  const ownedUnit = inputs.owned === null ? 0.5 : inputs.owned ? 1 : 0;
+  const earnerUnit = inputs.provenEarner === null ? 0.5 : inputs.provenEarner ? 1 : 0;
+
+  const parts = {
+    commission: 0,
+    timing: 0,
+    budget: 0,
+    owned: ownedUnit * SPCC_WEIGHTS.owned,
+    earner: earnerUnit * SPCC_WEIGHTS.earner,
+    urgency: 0,
+    epc: epcUnit * SPCC_WEIGHTS.epc,
+    budgetAvail: budgetUnit * SPCC_WEIGHTS.budgetAvail,
+  };
+
+  const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);
+  const score = Math.round(raw);
+  return {
+    score,
+    band: bandFor(score),
+    parts,
+    signals: { owned: inputs.owned, provenEarner: inputs.provenEarner },
+  };
+}
+
 // The parts to surface in the "why is it good" breakdown, largest contribution
 // first. Every part with points is shown EXCEPT the two personal signals, which
 // make a factual claim about the creator ("You own it", "Proven earner") and so
@@ -178,7 +246,7 @@ export type BreakdownPart = readonly [key: keyof CampaignScore["parts"], points:
 
 export function visibleBreakdownParts(score: CampaignScore): BreakdownPart[] {
   return (Object.keys(score.parts) as Array<keyof CampaignScore["parts"]>)
-    .map((k) => [k, score.parts[k]] as const)
+    .map((k) => [k, score.parts[k] ?? 0] as const)
     .filter(([k, v]) => {
       if (v <= 0) return false;
       if (k === "owned") return score.signals.owned === true;

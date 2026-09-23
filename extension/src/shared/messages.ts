@@ -229,6 +229,12 @@ export type RuntimeMessage =
   | { kind: "CLEAR_INTEGRATION"; id: string }
   | { kind: "TEST_INTEGRATION"; id: string }
   | { kind: "TEST_ALL_INTEGRATIONS" }
+  // Retry mirroring the saved Creator API credentials to the server vault (the
+  // Settings card's "Retry" button). The in-card Test only proves Amazon accepts
+  // the keys; enrichment on Amazon pages needs them in the vault as well, and a
+  // push can fail quietly (signed out, offline, our side down). Replies with the
+  // refreshed Creator API card view.
+  | { kind: "RECONCILE_CREATOR_VAULT" }
   // Creator API backup-credential lease (the options card's backup chips):
   // enable leases Influencer Butler's house credentials while Amazon has not
   // unlocked the user's own; disable clears them; status reports the lease.
@@ -620,6 +626,20 @@ export type IntegrationView = {
   values: Record<string, string>;
   lastTest: IntegrationTestResult;
   routingParticipates: boolean;
+  // Creator API only: whether the saved credentials have reached the server
+  // vault that server-side enrichment reads. Absent on every other provider.
+  // `pending: true` means the credentials work locally but Amazon pages will
+  // keep asking the user to connect until the push lands.
+  vaultSync?: VaultSyncView;
+};
+
+// Mirrors VaultSyncState in background/creator-api-sync.ts, minus anything
+// secret. `reason` says what the user (or we) has to do about it.
+export type VaultSyncView = {
+  pending: boolean;
+  reason: "signed-out" | "incomplete" | "migration" | "server" | "network" | null;
+  message: string | null;
+  at: number | null;
 };
 
 export type IntegrationsView = {
@@ -838,6 +858,10 @@ export type EnrichResult = {
   configured: boolean;
   items: Array<{ asin: string; results: EnrichedProduct[] }>;
   error?: string;
+  // The account holds no credentials, but this browser does and is still trying
+  // to push them. Lets the overlays say "they have not reached your account
+  // yet" instead of telling a user who already pasted their keys to go connect.
+  syncPending?: boolean;
 };
 
 // One popup row to enrich. `source`/`listId` tell the background where to write
@@ -1084,4 +1108,46 @@ export type { WhatsNewView, ResolvedBug } from "../background/whats-new";
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {
   return chrome.runtime.sendMessage(message);
+}
+
+// How long a UI-facing round-trip waits before it gives up on the background.
+// Generous: a cold service worker start plus a storage read is well under this.
+export const BACKGROUND_TIMEOUT_MS = 8000;
+
+// A background round-trip that can neither hang nor reject.
+//
+// Two failure modes leave `sendToBackground` pending or rejected forever: the
+// service worker is dead (a throw at the top of background.js means the
+// onMessage listener never registers, so nothing ever answers), or this content
+// script was orphaned by an extension reload and every sendMessage rejects with
+// "Extension context invalidated". A panel that awaits the raw call before
+// painting is then stuck half-rendered with no visible error, which is exactly
+// what the watchlist and product-list sections used to do.
+//
+// Callers that build UI from the reply use this instead and treat `null` as
+// "background unavailable", which they can say out loud.
+export function askBackground<T>(
+  message: RuntimeMessage,
+  timeoutMs: number = BACKGROUND_TIMEOUT_MS,
+): Promise<T | null> {
+  return new Promise<T | null>((resolve) => {
+    let settled = false;
+    const settle = (value: T | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => settle(null), timeoutMs);
+    try {
+      // An invalidated extension context throws synchronously in some Chrome
+      // builds and rejects in others, so both paths land on the same fallback.
+      void sendToBackground<T>(message).then(
+        (value) => settle(value ?? null),
+        () => settle(null),
+      );
+    } catch {
+      settle(null);
+    }
+  });
 }

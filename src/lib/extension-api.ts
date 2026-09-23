@@ -70,8 +70,15 @@ export function isMissingColumnError(error: { code?: string } | null): boolean {
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
+/**
+ * A soft-fail the extension can keep working around: the route is fine, the
+ * table/column it needs is not in prod yet. The 200 is deliberate (clients treat
+ * this as "no data", not as an outage), but `ok: false` has to be in the body -
+ * without it a client reading only `res.ok` records a save that stored nothing
+ * as a success.
+ */
 export function migrationPendingResponse(): NextResponse {
-  return jsonWithCors({ migrationPending: true, error: "Migration not applied yet" }, 200);
+  return jsonWithCors({ ok: false, migrationPending: true, error: "Migration not applied yet" }, 200);
 }
 
 export function clampInt(value: unknown, min: number, max: number): number | null {

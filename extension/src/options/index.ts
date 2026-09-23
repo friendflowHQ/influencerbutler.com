@@ -904,6 +904,12 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.
   const inputs = new Map<string, HTMLInputElement | HTMLSelectElement>();
+  // Password fields, so a save can redraw their "Stored" chips in place instead
+  // of waiting for the next full page load to admit the key is saved.
+  const secretLabels = new Map<
+    string,
+    { input: HTMLInputElement; chip: HTMLElement; placeholder: string }
+  >();
   if (adapter.id === ASSOCIATES) {
     block.append(renderTagGrid(pv, inputs));
   } else {
@@ -940,19 +946,16 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       input.type = field.type === "password" ? "password" : "text";
       input.autocomplete = "off";
       if (field.type === "password") {
-        // "Stored" is per field: a partner tag saved without its Credential ID/
-        // Secret must not make the empty secret boxes claim STORED.
-        const fieldStored = pv.storedFields.includes(field.name);
-        input.placeholder = fieldStored ? D.secretSavedPlaceholder : field.placeholder ?? "";
-        // A password box is never pre-filled, so a stored key otherwise looks like
-        // an empty field. A "Stored" chip on the label makes it obvious the key is
-        // still saved and the blank box is expected.
-        if (fieldStored) {
-          const chip = document.createElement("span");
-          chip.className = "stored-chip";
-          chip.textContent = D.storedBadge;
-          span.append(" ", chip);
-        }
+        // A password box is never pre-filled, so a stored key otherwise looks
+        // like an empty field. A "Stored" chip on the label makes it obvious the
+        // key is still saved and the blank box is expected. "Stored" is per
+        // field: a partner tag saved without its Credential ID/Secret must not
+        // make the empty secret boxes claim STORED.
+        const chip = document.createElement("span");
+        chip.className = "stored-chip";
+        chip.textContent = D.storedBadge;
+        span.append(" ", chip);
+        secretLabels.set(field.name, { input, chip, placeholder: field.placeholder ?? "" });
       } else {
         input.value = pv.values[field.name] ?? "";
         input.placeholder = field.placeholder ?? "";
@@ -1021,6 +1024,67 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       head.replaceChild(makeBadge(pv.lastTest.status), head.lastChild as Node);
     }
   });
+  // Creator API only: does the account actually hold these keys? The Test above
+  // talks to Amazon straight from this browser, so it can pass while the keys
+  // never reached the account that server-side enrichment reads - which is what
+  // leaves Amazon pages still asking the user to connect.
+  const vaultLine = document.createElement("div");
+  vaultLine.className = "vault-sync";
+  vaultLine.hidden = true;
+  const renderVaultSync = (): void => {
+    if (adapter.id !== CREATORS_API) return;
+    const current = providerView(adapter.id);
+    const sync = current.vaultSync;
+    vaultLine.replaceChildren();
+    // Nothing saved yet, or no sync state to report: stay out of the way.
+    if (!sync || !current.configured || sync.reason === "incomplete") {
+      vaultLine.hidden = true;
+      return;
+    }
+    vaultLine.hidden = false;
+    const text = document.createElement("span");
+    if (!sync.pending) {
+      vaultLine.className = "vault-sync synced";
+      text.textContent = D.vaultSynced;
+      vaultLine.append(text);
+      return;
+    }
+    vaultLine.className = "vault-sync pending";
+    text.textContent =
+      sync.reason === "signed-out"
+        ? D.vaultPendingSignedOut
+        : sync.reason === "migration"
+          ? D.vaultPendingMigration
+          : sync.reason === "network"
+            ? D.vaultPendingNetwork
+            : D.vaultPendingServer;
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "ghost";
+    retryBtn.textContent = D.vaultRetry;
+    retryBtn.onclick = async () => {
+      retryBtn.disabled = true;
+      retryBtn.textContent = D.vaultRetrying;
+      const updated = await sendToBackground<IntegrationView | null>({
+        kind: "RECONCILE_CREATOR_VAULT",
+      });
+      if (updated) replaceProviderView(updated);
+      renderVaultSync();
+    };
+    vaultLine.append(text, retryBtn);
+  };
+
+  // Push the credentials to the account and redraw the line with the real
+  // answer. The save itself never blocks on the network, so without this the
+  // card would report whatever the previous sync left behind.
+  const refreshVaultSync = async (): Promise<void> => {
+    if (adapter.id !== CREATORS_API) return;
+    const updated = await sendToBackground<IntegrationView | null>({
+      kind: "RECONCILE_CREATOR_VAULT",
+    });
+    if (updated) replaceProviderView(updated);
+    renderVaultSync();
+  };
+
   actions.append(saveBtn, testBtn);
   // "Show me where" opens the provider's own credentials page in a new tab, so
   // users can find these keys without leaving the flow. Matches the desktop app.
@@ -1036,13 +1100,15 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   // example when an update left the fields looking blank). Only shown when a
   // secret is actually stored, and only for providers that keep a secret field.
   const hasSecretField = adapter.fields.some((f) => f.type === "password");
-  if (hasSecretField && pv.configured) {
-    const clearBtn = document.createElement("button");
+  let clearBtn: HTMLButtonElement | null = null;
+  if (hasSecretField) {
+    clearBtn = document.createElement("button");
     clearBtn.className = "ghost";
     clearBtn.textContent = D.clearKeys;
+    clearBtn.hidden = !pv.configured;
     clearBtn.onclick = async () => {
       if (!window.confirm(D.clearKeysConfirm)) return;
-      clearBtn.disabled = true;
+      if (clearBtn) clearBtn.disabled = true;
       const updated = await sendToBackground<IntegrationView>({
         kind: "CLEAR_INTEGRATION",
         id: adapter.id,
@@ -1054,8 +1120,34 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     };
     actions.append(clearBtn);
   }
+
+  // Redraw everything that says "your keys are saved" from the current view.
+  // Called after a save or a test so the card tells the truth straight away; the
+  // boxes stay blank either way, so without this a passing test looks exactly
+  // like nothing was stored.
+  const renderStoredState = (): void => {
+    const current = providerView(adapter.id);
+    for (const [name, el] of secretLabels) {
+      const stored = current.storedFields.includes(name);
+      el.chip.hidden = !stored;
+      el.input.placeholder = stored ? D.secretSavedPlaceholder : el.placeholder;
+    }
+    if (clearBtn) clearBtn.hidden = !current.configured;
+  };
   block.append(actions);
   block.append(msg);
+  if (adapter.id === CREATORS_API) {
+    block.append(vaultLine);
+    renderVaultSync();
+    // Credentials saved before this card could report a sync state (or by a
+    // push that failed while the browser was closed) leave nothing recorded as
+    // owed, which would let the line claim "saved to your account" without ever
+    // having checked. Ask the server once on open so the claim is earned.
+    if (pv.configured) void refreshVaultSync();
+  }
+  // Draw the initial "Stored" chips / Clear button from the view, through the
+  // same path a later save uses, so the two can never drift apart.
+  renderStoredState();
 
   const collectValues = (): Record<string, string> => {
     const values: Record<string, string> = {};
@@ -1075,9 +1167,11 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
       routingParticipates: participatesBox ? participatesBox.checked : undefined,
     });
     replaceProviderView(updated);
+    renderStoredState();
     saveBtn.disabled = false;
     saveBtn.textContent = D.saved;
     window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
+    void refreshVaultSync();
   };
 
   testBtn.onclick = async () => {
@@ -1094,13 +1188,19 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
         return;
       }
     }
-    await sendToBackground<IntegrationView>({
+    // The returned view is what proves the keys are stored (password boxes are
+    // never pre-filled, so the "Stored" chip and the Clear button are the only
+    // signal). Dropping it is what made a passing test look like the keys had
+    // vanished until the page was reloaded.
+    const saved = await sendToBackground<IntegrationView>({
       kind: "SAVE_INTEGRATION",
       id: adapter.id,
       values: collectValues(),
       enabled: false,
       routingParticipates: participatesBox ? participatesBox.checked : undefined,
     });
+    replaceProviderView(saved);
+    renderStoredState();
     const outcome = await sendToBackground<IntegrationTestOutcome>({
       kind: "TEST_INTEGRATION",
       id: adapter.id,
@@ -1120,6 +1220,7 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     if (outcome.eligibilityBlocked) backupControls?.showOffer();
     testBtn.disabled = false;
     testBtn.textContent = D.testBtn;
+    void refreshVaultSync();
   };
 
   return block;

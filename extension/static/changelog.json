@@ -1,6 +1,29 @@
 {
-  "lastUpdated": "2026-09-18",
+  "lastUpdated": "2026-09-22",
   "releases": [
+    {
+      "version": "0.1.18",
+      "date": "September 22, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Campaign Radar now reads the Sponsored Products for Creators tab, not just Creator Connections. Every SPCC card gets a match score built from the signals SPCC actually gives you: an EPC up to $X chip from Amazon's own earnings-per-click forecast, a Budget: High, Medium or Low chip, and whether you already own the product or have earned on it. A Strong picks only switch keeps just the top band, so the best paying products rise to the top of the tab",
+            "On a product page, Butler now tells you when one of the videos on that listing is yours, and where it sits: \"Your video: Upper carousel, #2 of 6\", with a Yours badge on the card itself. It learns which videos are yours quietly as you visit your own Creator Hub, My content, and storefront pages, so nothing is guessed about videos it has no evidence for. Turn it off under Video competition if you would rather not see it"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Amazon Creator API keys you save in Settings now reach your Influencer Butler account, not just the browser you typed them into. Before, keys could sit on one device while Amazon pages kept asking you to connect. Settings now says plainly whether the keys made it to your account, and gives you a Retry when they did not",
+            "Panels that ask the extension for data (your watchlist, product lists, and international availability) no longer sit on a loading message forever when the extension's background worker is asleep or the page was left open through an update. They now say Butler could not reach the extension and ask you to reload the page, so a stuck panel is never mistaken for an empty one",
+            "Send to your butler app now tells you to reopen the app when it is installed and paired but not answering, instead of showing the same install pitch a brand-new user sees",
+            "A product that only hints at a Creator Connections campaign now offers Check for CC campaign rather than Accept CC campaign, so the button no longer promises a campaign that has not been confirmed",
+            "International availability no longer asks you to connect the Amazon Creator API after a request simply failed; the connect prompt now appears only when the API really is unconnected"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.17",
       "date": "September 18, 2026",

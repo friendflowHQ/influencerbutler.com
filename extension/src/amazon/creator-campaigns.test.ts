@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   applyCampaignFills,
   daysUntil,
+  parseBudgetAvailability,
   parseBudgetText,
   parseCampaignText,
   parseDateRange,
+  parseEpcCents,
   parsePctText,
   parseUsDate,
   type Campaign,
@@ -101,6 +103,34 @@ describe("per-field testid parsers", () => {
   });
 });
 
+// SPCC card text parsers. The strings mirror what the live SPCC grid renders per
+// card (verified 2026-09-22): "Estimated EPC: Up to $0.06" and "Budget
+// availability score:High" (Amazon omits the space after the colon).
+describe("parseEpcCents", () => {
+  it("reads the dollar ceiling as cents", () => {
+    expect(parseEpcCents("Estimated EPC: Up to $1.05")).toBe(105);
+    expect(parseEpcCents("Estimated EPC: Up to $0.06")).toBe(6);
+  });
+
+  it("returns null when no EPC line is present", () => {
+    expect(parseEpcCents("Commission rate: 10%")).toBeNull();
+    expect(parseEpcCents("")).toBeNull();
+  });
+});
+
+describe("parseBudgetAvailability", () => {
+  it("reads the score with or without a space after the colon", () => {
+    expect(parseBudgetAvailability("Budget availability score:High")).toBe("high");
+    expect(parseBudgetAvailability("Budget availability score: Medium")).toBe("medium");
+    expect(parseBudgetAvailability("budget availability score: low")).toBe("low");
+  });
+
+  it("returns null for an unknown or absent score", () => {
+    expect(parseBudgetAvailability("Budget availability score: Unknown")).toBeNull();
+    expect(parseBudgetAvailability("nothing here")).toBeNull();
+  });
+});
+
 // applyCampaignFills only touches plain fields (no DOM), so it is testable in the
 // node environment with a minimal cast campaign. Covers the Campaign Butler
 // widening: the captured conversion `stats` thread onto the card alongside fill.
@@ -120,6 +150,9 @@ describe("applyCampaignFills", () => {
       slotsTotal: null,
       fullyClaimed: null,
       stats: null,
+      epcCents: null,
+      budgetAvailability: null,
+      isSpcc: false,
     }) satisfies Campaign;
 
   it("merges fill and conversion stats onto the matching card", () => {

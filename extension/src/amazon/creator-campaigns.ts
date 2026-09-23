@@ -25,6 +25,10 @@
 // The text/date extraction functions are pure and unit-tested; the DOM readers
 // are validated by the live smoke test.
 
+// Amazon's qualitative campaign-budget signal on an SPCC card ("Budget
+// availability score: High"). Observed values High / Medium / Low.
+export type BudgetAvailability = "high" | "medium" | "low";
+
 export type Campaign = {
   // The full visual card element (image + stats + accept button), so the overlay
   // can border / dim / filter the whole card.
@@ -57,6 +61,17 @@ export type Campaign = {
   // when Amazon exposes them. Usually null: the Campaign Butler brief is
   // estimator-first and falls back to our catalogue demand. See connect-hook.
   stats: CampaignStats | null;
+  // SPCC ("Sponsored Products for Creators") tab signals. Estimated EPC is
+  // Amazon's own earnings-per-click forecast, rendered only as a ceiling ("Up to
+  // $1.05"); epcCents holds that ceiling in cents. budgetAvailability is Amazon's
+  // qualitative budget signal. Both null on the classic CC (Affiliate+) cards,
+  // which carry commission and dates instead.
+  epcCents: number | null;
+  budgetAvailability: BudgetAvailability | null;
+  // True for a card read off the SPCC tab (EPC + budget-availability schema, no
+  // commission / date / campaign id), false for a classic CC card. Selects the
+  // scorer and which chips the overlay draws.
+  isSpcc: boolean;
 };
 
 // Conversion stats a Creator Connections campaign record MIGHT carry, captured
@@ -225,6 +240,26 @@ export function parseDateRange(text: string | null | undefined): {
   };
 }
 
+// SPCC "Estimated EPC: Up to $1.05" -> 105 (cents). Amazon renders EPC only as an
+// upper bound ("Up to $X"), so this is a ceiling, not a payout estimate.
+const EPC_RE = /estimated\s+epc\s*:?\s*(?:up\s+to\s+)?\$?\s*([\d,]+(?:\.\d{1,2})?)/i;
+// SPCC "Budget availability score: High" (Amazon renders it with or without a
+// space after the colon, verified live 2026-09-22).
+const BUDGET_AVAIL_RE = /budget\s+availability\s+score\s*:?\s*(high|medium|low)/i;
+
+export function parseEpcCents(text: string | null | undefined): number | null {
+  const m = (text ?? "").match(EPC_RE);
+  return m && m[1] ? clampNum(Math.round(parseFloat(m[1].replace(/,/g, "")) * 100)) : null;
+}
+
+export function parseBudgetAvailability(
+  text: string | null | undefined,
+): BudgetAvailability | null {
+  const m = (text ?? "").match(BUDGET_AVAIL_RE);
+  const v = m?.[1]?.toLowerCase();
+  return v === "high" || v === "medium" || v === "low" ? v : null;
+}
+
 // The brand / campaign title. Best-effort: the first heading-ish element, else
 // the first non-empty text line. The commission/budget/date lines are stripped so
 // the title is not "Commission rate: 10%".
@@ -267,6 +302,9 @@ export function parseCampaignCard(el: HTMLElement): Campaign | null {
     slotsTotal: null,
     fullyClaimed: null,
     stats: null,
+    epcCents: null,
+    budgetAvailability: null,
+    isSpcc: false,
   };
 }
 
@@ -413,16 +451,90 @@ export function readCampaignGridByTestId(root: ParentNode): Campaign[] {
       slotsTotal: null,
       fullyClaimed: null,
       stats: null,
+      epcCents: null,
+      budgetAvailability: null,
+      isSpcc: false,
     });
   }
   return out;
 }
 
-// Read every campaign on the grid: stable testids first (verified layout), then
-// the whole-card text heuristic as a fallback if Amazon renames the testids.
+// The SPCC ("Sponsored Products for Creators") tab uses a different card schema
+// from the classic CC grid: each card shows an Estimated EPC and a budget
+// availability score instead of a commission rate and a date range, and its card
+// root is a hashed-class <div> with no data-testid. Verified live 2026-09-22
+// (US, littleprettyl-20): the stable per-card anchor is the brand line
+// [data-testid="spc-asin-brand"] (one per card); the card also carries
+// [data-testid="campaign-card-campaign-image"] and an Accept <button>. The ASIN,
+// EPC, budget availability, and price are plain text in the card ("ASIN:
+// B01D9291RI", "Estimated EPC: Up to $0.06", "Budget availability score:High").
+// Crucially the SPCC card exposes NO campaign id anywhere in the DOM (the Accept
+// button has only hashed classes), so campaignId stays null and the id-keyed
+// features (Last Call bell, accept-by-id, fill meter) do not apply to SPCC cards
+// read from the DOM. The ASIN-keyed signals (owned, proven earner, availability,
+// video count) all still work, and are the point of this reader.
+const SPCC_BRAND_TESTID = "spc-asin-brand";
+const SPCC_IMAGE_TESTID = "campaign-card-campaign-image";
+// How far to climb from the brand line to the card root that also holds the image
+// and the accept button. Observed at 2 hops; a small margin guards a wrapper.
+const MAX_SPCC_CLIMB = 5;
+
+export function readSpccGrid(root: ParentNode): Campaign[] {
+  const brands = Array.from(
+    root.querySelectorAll<HTMLElement>(`[data-testid="${SPCC_BRAND_TESTID}"]`),
+  );
+  const out: Campaign[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const brandEl of brands) {
+    let card: HTMLElement | null = brandEl;
+    for (let i = 0; i <= MAX_SPCC_CLIMB && card; i++) {
+      if (
+        card.querySelector(`[data-testid="${SPCC_IMAGE_TESTID}"]`) &&
+        card.querySelector("button")
+      ) {
+        break;
+      }
+      card = card.parentElement;
+    }
+    if (!card || seen.has(card) || card.tagName === "BODY") continue;
+    // A container that swept up more than one brand line means we climbed past the
+    // card; skip it so one wrapper does not stand in for two cards.
+    if (card.querySelectorAll(`[data-testid="${SPCC_BRAND_TESTID}"]`).length > 1) continue;
+    seen.add(card);
+    const text = card.textContent ?? "";
+    out.push({
+      el: card,
+      detailsEl: card,
+      brand: brandEl.textContent?.trim() || null,
+      commissionRatePct: null,
+      remainingBudgetCents: null,
+      startsAt: null,
+      endsAt: null,
+      asins: extractCampaignAsins(card),
+      campaignId: null,
+      slotsFilled: null,
+      slotsTotal: null,
+      fullyClaimed: null,
+      stats: null,
+      epcCents: parseEpcCents(text),
+      budgetAvailability: parseBudgetAvailability(text),
+      isSpcc: true,
+    });
+  }
+  return out;
+}
+
+// Read every campaign on the grid: stable CC testids first (verified layout),
+// then the SPCC tab schema (EPC + budget availability, no commission testid),
+// then the whole-card text heuristic as a fallback if Amazon renames the CC
+// testids. The two tabs are mutually exclusive, so at most one branch yields
+// cards on any given render.
 export function readCampaignGrid(doc: Document): Campaign[] {
   const byTestId = readCampaignGridByTestId(doc);
   if (byTestId.length > 0) return byTestId;
+
+  const spcc = readSpccGrid(doc);
+  if (spcc.length > 0) return spcc;
 
   const out: Campaign[] = [];
   for (const el of findCampaignCards(doc)) {

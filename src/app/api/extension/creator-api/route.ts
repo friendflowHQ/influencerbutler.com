@@ -17,6 +17,7 @@ import { jsonWithCors, migrationPendingResponse, optionsResponse } from "@/lib/e
 import {
   clearBackup,
   deleteCreds,
+  encryptionAvailable,
   getBackupStatus,
   getStatus,
   saveBackup,
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
 
   const { status, migrationPending, error } = await getStatus(auth.auth.userId);
   if (migrationPending) return migrationPendingResponse();
-  if (error) return jsonWithCors({ error }, 500);
+  if (error) return jsonWithCors({ ok: false, error }, 500);
   const { status: backup } = await getBackupStatus(auth.auth.userId);
   return jsonWithCors({ ok: true, ...status, backup });
 }
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
   if (action === "delete") {
     const result = await deleteCreds(auth.auth.userId);
     if (!result.ok && result.migrationPending) return migrationPendingResponse();
-    if (!result.ok) return jsonWithCors({ error: result.error }, 500);
+    if (!result.ok) return jsonWithCors({ ok: false, error: result.error }, 500);
     return jsonWithCors({ ok: true, deleted: true });
   }
 
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     if (action === "backup-disable") {
       const result = await clearBackup(auth.auth.userId);
       if (!result.ok && result.migrationPending) return migrationPendingResponse();
-      if (!result.ok) return jsonWithCors({ error: result.error }, 500);
+      if (!result.ok) return jsonWithCors({ ok: false, error: result.error }, 500);
       return jsonWithCors({ ok: true, backup: { enabled: false, active: false, expiresAt: null } });
     }
     if (action === "backup-enable") {
@@ -91,11 +92,11 @@ export async function POST(request: Request) {
         expiresAt: lease.expiresAt,
       });
       if (!saved.ok && saved.migrationPending) return migrationPendingResponse();
-      if (!saved.ok) return jsonWithCors({ error: saved.error }, 500);
+      if (!saved.ok) return jsonWithCors({ ok: false, error: saved.error }, 500);
     }
     const { status, migrationPending, error } = await getBackupStatus(auth.auth.userId);
     if (migrationPending) return migrationPendingResponse();
-    if (error) return jsonWithCors({ error }, 500);
+    if (error) return jsonWithCors({ ok: false, error }, 500);
     return jsonWithCors({ ok: true, backup: status });
   }
 
@@ -114,9 +115,18 @@ export async function POST(request: Request) {
     incoming.push(valid);
   }
 
+  // Without CREATOR_API_ENC_KEY there is nothing to encrypt the secret with, so
+  // the save cannot happen. Say so distinctly (503 + a stable code) instead of a
+  // generic 500: this is our misconfiguration, not the user's credentials, and
+  // the extension needs to tell them the difference.
+  if (!encryptionAvailable()) {
+    console.error("creator-api: CREATOR_API_ENC_KEY is not configured; refusing to store credentials");
+    return jsonWithCors({ ok: false, error: "server_encryption_unavailable" }, 503);
+  }
+
   const result = await saveCreds(auth.auth.userId, incoming);
   if (!result.ok && result.migrationPending) return migrationPendingResponse();
-  if (!result.ok) return jsonWithCors({ error: result.error }, 500);
+  if (!result.ok) return jsonWithCors({ ok: false, error: result.error }, 500);
 
   const { status } = await getStatus(auth.auth.userId);
   return jsonWithCors({ ok: true, ...status });
