@@ -2,6 +2,7 @@ import { DEALS_CATALOG, type DealsDict } from "./strings";
 import { resolveLocale } from "../i18n";
 import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
+import { currencySymbol } from "../amazon/marketplace";
 import {
   sendToBackground,
   type BrandedMintInput,
@@ -835,8 +836,7 @@ function hostOf(url: string): string {
 
 function formatPrice(cents: number | null, currency: string | null): string {
   if (cents == null) return "-";
-  const symbol = currency === "GBP" ? "£" : currency === "EUR" ? "€" : "$";
-  return `${symbol}${(cents / 100).toFixed(2)}`;
+  return `${currencySymbol(currency)}${(cents / 100).toFixed(2)}`;
 }
 
 function numCell(text: string): HTMLElement {

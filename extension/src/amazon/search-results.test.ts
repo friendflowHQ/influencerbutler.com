@@ -23,6 +23,26 @@ describe("parsePriceText", () => {
   it("returns null when there is no price", () => {
     expect(parsePriceText("No price")).toEqual({ priceCents: null, currency: "USD" });
   });
+
+  it("keeps amazon.com parsing unchanged when the marketplace is passed", () => {
+    expect(parsePriceText("$19.99", "amazon.com")).toEqual({ priceCents: 1999, currency: "USD" });
+    expect(parsePriceText("$1,299", "amazon.com")).toEqual({ priceCents: 129900, currency: "USD" });
+    expect(parsePriceText("No price", "amazon.com")).toEqual({ priceCents: null, currency: "USD" });
+  });
+
+  it("reads other marketplaces' formats", () => {
+    expect(parsePriceText("£8.50", "amazon.co.uk")).toEqual({ priceCents: 850, currency: "GBP" });
+    expect(parsePriceText("12,99 €", "amazon.de")).toEqual({ priceCents: 1299, currency: "EUR" });
+    expect(parsePriceText("€12,00")).toEqual({ priceCents: 1200, currency: "EUR" });
+    expect(parsePriceText("¥1,280", "amazon.co.jp")).toEqual({ priceCents: 128000, currency: "JPY" });
+    expect(parsePriceText("₹499", "amazon.in")).toEqual({ priceCents: 49900, currency: "INR" });
+    expect(parsePriceText("R$ 49,90", "amazon.com.br")).toEqual({ priceCents: 4990, currency: "BRL" });
+    expect(parsePriceText("$24.99", "amazon.ca")).toEqual({ priceCents: 2499, currency: "CAD" });
+  });
+
+  it("defaults a missing price's currency to the marketplace", () => {
+    expect(parsePriceText("No price", "amazon.co.uk")).toEqual({ priceCents: null, currency: "GBP" });
+  });
 });
 
 describe("parseBoughtText", () => {

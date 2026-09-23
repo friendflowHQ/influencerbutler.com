@@ -1,6 +1,8 @@
 // Break-even / profit math. Pure functions, no Chrome APIs, unit-tested.
 // All money in cents to avoid float drift; percentages as 0-100 numbers.
 
+import { currencySymbol } from "../../amazon/marketplace";
+
 export type CalculatorInputs = {
   priceCents: number;
   commissionRatePct: number;
@@ -88,7 +90,8 @@ export function calculate(inputs: CalculatorInputs): CalculatorResult {
 
 export function formatCents(cents: number, currency = "USD"): string {
   if (!Number.isFinite(cents)) return "n/a";
-  const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
+  // "$" for USD (and a missing currency), "£" / "€" / "CA$" / "¥" per marketplace.
+  const symbol = currencySymbol(currency);
   return `${symbol}${(cents / 100).toFixed(2)}`;
 }
 
@@ -97,7 +100,7 @@ export function formatCents(cents: number, currency = "USD"): string {
 // so false precision would only mislead.
 export function formatCompactMoney(cents: number, currency = "USD"): string {
   if (!Number.isFinite(cents)) return "n/a";
-  const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
+  const symbol = currencySymbol(currency);
   const dollars = Math.round(cents / 100);
   if (dollars >= 1_000_000) {
     const m = dollars / 1_000_000;

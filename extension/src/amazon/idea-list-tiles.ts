@@ -41,7 +41,7 @@ export function parseIdeaListTiles(root: ParentNode, url: string): IdeaListTile[
     if (!asin || seen.has(asin)) continue;
     seen.add(asin);
     const priceScope = query(el, "ideaListTilePrice");
-    const price = parsePriceText(cleanText(priceScope?.textContent) ?? "");
+    const price = parsePriceText(cleanText(priceScope?.textContent) ?? "", marketplace);
     tiles.push({
       asin,
       title: cleanText(query(el, "ideaListTileTitle")?.textContent) ?? null,

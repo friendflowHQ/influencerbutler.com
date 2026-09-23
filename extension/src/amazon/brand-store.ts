@@ -40,7 +40,7 @@ export function parseStoreTiles(root: ParentNode, url: string): StoreTile[] {
     tiles.push({
       asin,
       title: cleanText(query(el, "storeTileTitle")?.textContent) ?? null,
-      ...extractPrice(el),
+      ...extractPrice(el, marketplace),
       imageUrl: query<HTMLImageElement>(el, "storeTileImage")?.getAttribute("src") ?? null,
       href: `https://www.${marketplace}/dp/${asin}`,
       el,
@@ -57,11 +57,14 @@ function firstAsin(el: HTMLElement): string | null {
   return null;
 }
 
-function extractPrice(el: HTMLElement): { priceCents: number | null; currency: string } {
+function extractPrice(
+  el: HTMLElement,
+  marketplace: string,
+): { priceCents: number | null; currency: string } {
   // The tile has no verified price testid; the info block (title, rating,
   // price) is the smallest scope that carries it when the store shows prices.
   const scope = query(el, "storeTileInfo") ?? el;
-  return parsePriceText(cleanText(scope.textContent) ?? "");
+  return parsePriceText(cleanText(scope.textContent) ?? "", marketplace);
 }
 
 function cleanText(text: string | null | undefined): string | undefined {

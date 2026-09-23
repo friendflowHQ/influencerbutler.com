@@ -75,7 +75,7 @@ export function parseDealsTiles(root: ParentNode, url: string): SearchTile[] {
 }
 
 function tileFor(item: DealsFeedItem, card: HTMLElement, marketplace: string): SearchTile {
-  const domPrice = parsePriceText((card.textContent ?? "").replace(/\s+/g, " ").trim());
+  const domPrice = parsePriceText((card.textContent ?? "").replace(/\s+/g, " ").trim(), marketplace);
   const img = queryImages(card)[0] ?? null;
   return {
     asin: item.asin,

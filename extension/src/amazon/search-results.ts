@@ -2,6 +2,7 @@ import { query, queryAll, queryMatchingText } from "./selectors";
 import { marketplaceFromUrl } from "./product-signals";
 import { parseBoughtFromBody } from "./bought-badge";
 import { parseDealBadgeText, type DealKind } from "./deal-kind";
+import { currencyForMarketplace, parseMoney } from "./marketplace";
 
 // Reads the product tiles off an Amazon search-results page (/s?k=...). Each
 // tile keeps the fields the search overlay needs to score and sort: identity,
@@ -36,7 +37,6 @@ export type SearchTile = {
   el: HTMLElement;
 };
 
-const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 // "4.3 out of 5 stars" (en), "4,3 de 5 estrellas" (es), "4,3 sur 5 etoiles"
 // (fr), "4,3 von 5 Sternen" (de). A bare leading "4.3" is accepted as a last
 // resort because the icon alt text always leads with the value.
@@ -55,7 +55,7 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
     // across an ad and its organic row; keep the first real one only.
     if (!/^[A-Z0-9]{10}$/.test(asin) || seen.has(asin)) continue;
     seen.add(asin);
-    const price = extractPrice(el);
+    const price = extractPrice(el, marketplace);
     tiles.push({
       asin,
       title: cleanText(query(el, "searchTileTitle")?.textContent) ?? null,
@@ -67,7 +67,7 @@ export function parseSearchTiles(root: ParentNode, url: string): SearchTile[] {
       rating: extractRating(el),
       reviewCount: extractReviewCount(el),
       hasCoupon: query(el, "searchTileCoupon") !== null,
-      wasPriceCents: extractListPrice(el, price.priceCents),
+      wasPriceCents: extractListPrice(el, price.priceCents, marketplace),
       dealKind: extractDealKind(el),
       el,
     });
@@ -87,15 +87,25 @@ function hrefFor(el: HTMLElement, asin: string, marketplace: string): string {
   return `https://www.${marketplace}/dp/${asin}`;
 }
 
-function extractPrice(el: HTMLElement): { priceCents: number | null; currency: string } {
-  return parsePriceText(cleanText(query(el, "searchTilePrice")?.textContent) ?? "");
+function extractPrice(
+  el: HTMLElement,
+  marketplace: string,
+): { priceCents: number | null; currency: string } {
+  return parsePriceText(cleanText(query(el, "searchTilePrice")?.textContent) ?? "", marketplace);
 }
 
 // The strikethrough "was" price, kept only when it is strictly above the tile's
 // current price: Amazon sometimes renders a decoy strike node equal to the
 // current price, which is not a discount. Returns null on full-price tiles.
-function extractListPrice(el: HTMLElement, currentCents: number | null): number | null {
-  const { priceCents } = parsePriceText(cleanText(query(el, "searchTileListPrice")?.textContent) ?? "");
+function extractListPrice(
+  el: HTMLElement,
+  currentCents: number | null,
+  marketplace: string,
+): number | null {
+  const { priceCents } = parsePriceText(
+    cleanText(query(el, "searchTileListPrice")?.textContent) ?? "",
+    marketplace,
+  );
   if (priceCents == null || currentCents == null || priceCents <= currentCents) return null;
   return priceCents;
 }
@@ -130,13 +140,15 @@ function extractReviewCount(el: HTMLElement): number | null {
 
 // Pure parsers (exported for tests): the DOM readers above delegate to these so
 // the price/social-proof logic can be checked without a document.
-export function parsePriceText(text: string): { priceCents: number | null; currency: string } {
-  const match = text.match(PRICE_RE);
-  if (!match || !match[2]) return { priceCents: null, currency: "USD" };
-  const whole = parseInt(match[2].replace(/,/g, ""), 10);
-  const cents = match[3] ? parseInt(match[3], 10) : 0;
-  const currency = match[1] === "€" ? "EUR" : match[1] === "£" ? "GBP" : "USD";
-  return { priceCents: whole * 100 + cents, currency };
+// `marketplace` labels a bare "$" and supplies the currency when no price is
+// shown; omitted, it reads as amazon.com (USD), the original behavior.
+export function parsePriceText(
+  text: string,
+  marketplace?: string | null,
+): { priceCents: number | null; currency: string } {
+  const parsed = parseMoney(text, marketplace);
+  if (!parsed) return { priceCents: null, currency: currencyForMarketplace(marketplace) };
+  return parsed;
 }
 
 // Kept for callers/tests: reads the "bought in past month" count from a blob of

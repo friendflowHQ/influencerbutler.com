@@ -1,6 +1,7 @@
 import { query, queryMatchingText } from "./selectors";
 import { parseBoughtCount, parseBoughtFromBody } from "./bought-badge";
 import { parseDealBadgeText, type DealKind } from "./deal-kind";
+import { currencyForMarketplace, parseMoney } from "./marketplace";
 
 // Reads the non-video signals off a product page: identity, price,
 // availability, social proof. Accepts any Document so fetched pages from the
@@ -51,16 +52,15 @@ export type ProductSignals = {
 // can rebuild a canonical product url from an arbitrary pasted link.
 export const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
 const COMMISSION_RE = /commission\s*rate[:\s]*([\d.]+)\s*%/i;
-const PRICE_RE = /([$€£])\s*([\d,]+)(?:\.(\d{2}))?/;
 
 export function extractSignals(doc: Document, url: string): ProductSignals {
-  const price = extractPrice(doc);
+  const price = extractPrice(doc, marketplaceFromUrl(url));
   return {
     asin: extractAsin(doc, url),
     marketplace: marketplaceFromUrl(url),
     title: cleanText(query(doc, "productTitle")?.textContent) ?? null,
     ...price,
-    listPriceCents: extractListPrice(doc, price.priceCents),
+    listPriceCents: extractListPrice(doc, price.priceCents, marketplaceFromUrl(url)),
     dealKind: extractDealKind(doc),
     inStock: extractInStock(doc),
     boughtPastMonth: extractBoughtPastMonth(doc, marketplaceFromUrl(url)),
@@ -288,29 +288,34 @@ export function marketplaceFromUrl(url: string): string {
   }
 }
 
-function extractPrice(doc: Document): { priceCents: number | null; currency: string } {
+// Exported for tests. `marketplace` labels a bare "$" (USD on amazon.com, CAD on
+// amazon.ca) and supplies the currency when no price is shown.
+export function extractPrice(
+  doc: Document,
+  marketplace = "amazon.com",
+): { priceCents: number | null; currency: string } {
   // Take the first price-bearing element across all selectors: Amazon's
   // buybox often has an empty decoy price container (holding only a <style>
   // block) that matches before the real price element.
-  const text = queryMatchingText(doc, "price", (t) => PRICE_RE.test(t)) ?? "";
-  const match = text.match(PRICE_RE);
-  if (!match || !match[2]) return { priceCents: null, currency: "USD" };
-  const whole = parseInt(match[2].replace(/,/g, ""), 10);
-  const cents = match[3] ? parseInt(match[3], 10) : 0;
-  const currency = match[1] === "€" ? "EUR" : match[1] === "£" ? "GBP" : "USD";
-  return { priceCents: whole * 100 + cents, currency };
+  const text = queryMatchingText(doc, "price", (t) => parseMoney(t, marketplace) !== null) ?? "";
+  const parsed = parseMoney(text, marketplace);
+  if (!parsed) return { priceCents: null, currency: currencyForMarketplace(marketplace) };
+  return parsed;
 }
 
 // The strikethrough list ("was") price on the buybox, kept only when it parses
 // above the current price (a decoy strike equal to the current price is not a
 // discount). Null when Amazon shows no reference price.
-function extractListPrice(doc: Document, currentCents: number | null): number | null {
-  const text = queryMatchingText(doc, "productListPrice", (t) => PRICE_RE.test(t)) ?? "";
-  const match = text.match(PRICE_RE);
-  if (!match || !match[2]) return null;
-  const whole = parseInt(match[2].replace(/,/g, ""), 10);
-  const cents = match[3] ? parseInt(match[3], 10) : 0;
-  const value = whole * 100 + cents;
+function extractListPrice(
+  doc: Document,
+  currentCents: number | null,
+  marketplace: string,
+): number | null {
+  const text =
+    queryMatchingText(doc, "productListPrice", (t) => parseMoney(t, marketplace) !== null) ?? "";
+  const parsed = parseMoney(text, marketplace);
+  if (!parsed) return null;
+  const value = parsed.priceCents;
   if (currentCents == null || value <= currentCents) return null;
   return value;
 }

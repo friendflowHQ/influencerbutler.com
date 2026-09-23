@@ -44,7 +44,7 @@ export function parseDiscoveryTiles(root: ParentNode, url: string): DiscoveryTil
     tiles.push({
       asin,
       title: tileTitle(el, img),
-      ...extractPrice(el),
+      ...extractPrice(el, marketplace),
       imageUrl: img?.getAttribute("src") ?? null,
       href: `https://www.${marketplace}/dp/${asin}`,
       rank: parseRankBadge(cleanText(query(el, "discoveryRankBadge")?.textContent)) ?? ordinal,
@@ -71,8 +71,11 @@ function tileTitle(el: HTMLElement, img: HTMLImageElement | null): string | null
   return cleanText(img?.getAttribute("alt")) ?? null;
 }
 
-function extractPrice(el: HTMLElement): { priceCents: number | null; currency: string } {
-  return parsePriceText(cleanText(query(el, "discoveryTilePrice")?.textContent) ?? "");
+function extractPrice(
+  el: HTMLElement,
+  marketplace: string,
+): { priceCents: number | null; currency: string } {
+  return parsePriceText(cleanText(query(el, "discoveryTilePrice")?.textContent) ?? "", marketplace);
 }
 
 // Pure parsers (exported for tests).
