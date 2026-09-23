@@ -1,5 +1,6 @@
 /**
- * Generates /brand-deal-rates from public/data/brand-deal-stats.json.
+ * Generates /brand-deal-rates from data/brand-deal-stats.json (kept out of
+ * public/ on purpose: the raw aggregate file is not served to the web).
  *
  * The numbers come from one creator's complete brand-deal records, 2018 to
  * 2025. Refresh the JSON (see the InfluencerButler repo,
@@ -14,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const DATA = path.join(ROOT, "public", "data", "brand-deal-stats.json");
+const DATA = path.join(ROOT, "data", "brand-deal-stats.json");
 const OUT = path.join(ROOT, "public", "brand-deal-rates.html");
 
 const stats = JSON.parse(fs.readFileSync(DATA, "utf8"));
@@ -200,12 +201,7 @@ const html = `<!DOCTYPE html>
           "name": "Influencer brand deal rates ${coverage.firstYear} to ${coverage.lastYear}",
           "description": ${JSON.stringify(description)},
           "temporalCoverage": "${coverage.firstYear}/${coverage.lastYear}",
-          "creator": { "@type": "Organization", "name": "Influencer Butler" },
-          "distribution": {
-            "@type": "DataDownload",
-            "encodingFormat": "application/json",
-            "contentUrl": "https://www.influencerbutler.com/data/brand-deal-stats.json"
-          }
+          "creator": { "@type": "Organization", "name": "Influencer Butler" }
         }
       ]
     }
@@ -438,7 +434,7 @@ ${yearRows}
                         <li>Figures are per campaign, not per post. A campaign may include several deliverables across Instagram, TikTok, and YouTube.</li>
                         <li>No brand is named next to a fee anywhere on this page or in the underlying data. Rates appear only as category aggregates covering many brands.</li>
                         <li>This is one creator in the family, home, and lifestyle space, posting mainly to Instagram as ${creatorLink}. Your category, audience size, and market will move these numbers.</li>
-                        <li>The underlying aggregate data is published at <a href="/data/brand-deal-stats.json">/data/brand-deal-stats.json</a>. Last updated ${stats.lastUpdated}.</li>
+                        <li>Figures were last recompiled from those records on ${stats.lastUpdated}.</li>
                     </ul>
                 </div>
             </div>
