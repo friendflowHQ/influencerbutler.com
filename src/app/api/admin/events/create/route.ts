@@ -13,7 +13,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin } from "@/lib/events";
 import { loadConfig } from "@/lib/scheduling-server";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
-import { scheduleBot, isRecallConfigured } from "@/lib/recall";
+import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { ownerNotifyEmail } from "@/lib/call-emails";
 import {
   parseInvitePlan,
@@ -105,11 +105,11 @@ export async function POST(request: Request) {
   let recallBotId: string | null = null;
   if (!input.recordEnabled) {
     recordingStatus = "none";
-  } else if (provider !== "google_meet" || !joinUrl) {
+  } else if (!shouldScheduleRecordingBot(provider, joinUrl)) {
     recordingStatus = "skipped_no_meet";
   } else if (isRecallConfigured()) {
     const bot = await scheduleBot({
-      meetingUrl: joinUrl,
+      meetingUrl: joinUrl as string, // shouldScheduleRecordingBot guarantees non-null
       joinAtISO: new Date(input.startMs).toISOString(),
       botName: "Influencer Butler Notetaker",
       metadata: { eventId },

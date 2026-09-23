@@ -136,6 +136,23 @@ export default function SchedulingAdminPage() {
     } finally { setBusy(false); }
   }, [loadList, prep, openPrep]);
 
+  // Send a recording bot into a call now (or retry one that failed/was skipped).
+  const rearmRecording = useCallback(async (id: string) => {
+    setBusy(true); setActMsg(null);
+    try {
+      const res = await fetch("/api/admin/scheduling/rearm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) {
+        await loadList(); if (prep?.booking.id === id) await openPrep(id);
+        setActMsg({ ok: true, text: "Recorder sent. The Influencer Butler Notetaker will join shortly (admit it from the Meet lobby if it knocks)." });
+      } else {
+        setActMsg({ ok: false, text: j.error || `Could not send the recorder (server error ${res.status}).` });
+      }
+    } catch {
+      setActMsg({ ok: false, text: "Could not reach the server. Please try again." });
+    } finally { setBusy(false); }
+  }, [loadList, prep, openPrep]);
+
   // Returns true on success so the form can clear itself; surfaces the server
   // error (e.g. the slot_taken 409 that tells the admin to tick Force) otherwise.
   const createCall = useCallback(async (body: Record<string, unknown>): Promise<boolean> => {
@@ -376,9 +393,22 @@ export default function SchedulingAdminPage() {
                   : st === "recording" ? "Recording in progress."
                   : st === "processing" ? "Recording finished. Transcript and notes are being prepared."
                   : st === "failed" ? "Recording could not be captured for this call."
-                  : st === "skipped_no_meet" ? "Not recorded. Connect Google Calendar so calls get a Meet room the bot can join."
+                  : st === "skipped_no_meet" ? "Not recorded. Add a Google Meet link (or connect Google Calendar), then send the recorder."
                   : "Not recorded.";
-                return <p className="mt-1 text-sm text-slate-500">{msg}</p>;
+                // Recovery: for a call that has a Meet link but no live recording,
+                // let the owner send the bot in now (works mid-call).
+                const canRearm =
+                  ["failed", "skipped_no_meet", "none"].includes(st) &&
+                  !!prep.booking.join_url &&
+                  prep.booking.status !== "cancelled";
+                return (
+                  <div className="mt-1">
+                    <p className="text-sm text-slate-500">{msg}</p>
+                    {canRearm && (
+                      <button type="button" disabled={busy} onClick={() => rearmRecording(prep.booking.id)} className="mt-1.5 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">Send recorder now</button>
+                    )}
+                  </div>
+                );
               })()}
             </section>
 

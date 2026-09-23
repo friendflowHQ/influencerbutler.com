@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, getEvent } from "@/lib/events";
-import { scheduleBot, stopBot, isRecallConfigured } from "@/lib/recall";
+import { scheduleBot, stopBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,9 +49,9 @@ export async function POST(request: Request) {
   if (!event.recordEnabled) {
     return NextResponse.json({ error: "Recording is turned off for this event." }, { status: 400 });
   }
-  if (event.meetingProvider !== "google_meet" || !event.joinUrl) {
+  if (!shouldScheduleRecordingBot(event.meetingProvider, event.joinUrl)) {
     return NextResponse.json(
-      { error: "Recording needs an auto-created Google Meet link (a manual link has no room a bot can join)." },
+      { error: "Recording needs a Google Meet link (an auto-created room or a pasted meet.google.com link)." },
       { status: 400 },
     );
   }
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   }
 
   const bot = await scheduleBot({
-    meetingUrl: event.joinUrl,
+    meetingUrl: event.joinUrl as string, // shouldScheduleRecordingBot guarantees non-null
     joinAtISO: new Date(event.startsAt).toISOString(),
     botName: "Influencer Butler Notetaker",
     metadata: { eventId: id },

@@ -30,6 +30,30 @@ export function isRecallConfigured(): boolean {
   return !!apiKey();
 }
 
+/**
+ * True for a joinable Google Meet room URL (a recording bot can be sent into it),
+ * whether we created the room on the owner's calendar or an admin hand-pasted the
+ * link. Matches meet.google.com/<code>.
+ */
+export function isRecordableMeetingUrl(url: string | null | undefined): boolean {
+  return !!url && /\bmeet\.google\.com\/[a-z0-9-]{3,}/i.test(url);
+}
+
+/**
+ * Whether to schedule a recording bot for a booking/event. Yes when the provider
+ * is a Google Meet we made, OR the join link is a joinable Meet room. This is the
+ * key point: a hand-pasted meet.google.com link is stored with provider "manual"
+ * (so cancel does not try to delete a calendar event we do not own), but it is
+ * still a real room a bot can join, so it should record.
+ */
+export function shouldScheduleRecordingBot(
+  provider: string | null | undefined,
+  joinUrl: string | null | undefined,
+): boolean {
+  if (!joinUrl) return false;
+  return provider === "google_meet" || isRecordableMeetingUrl(joinUrl);
+}
+
 async function recallFetch(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${base()}/api/v1${path}`, {
     ...init,
