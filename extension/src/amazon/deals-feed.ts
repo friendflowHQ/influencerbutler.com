@@ -7,6 +7,8 @@
 // module is the isolated-world side that accumulates those records so the deals
 // overlay can join them back to the rendered tiles (by image, see deals-tiles).
 
+import { currencyForMarketplace } from "./marketplace";
+
 export type DealsFeedItem = {
   asin: string;
   // The product image URL from the feed, used to match the record to its
@@ -24,7 +26,10 @@ export type DealsFeedItem = {
 // upgraded in place once a richer payload for the same ASIN lands.
 const byAsin = new Map<string, DealsFeedItem>();
 
-export function setDealsFeed(items: DealsFeedItem[]): void {
+// `marketplace` (the page's bare host) supplies the currency for a record that
+// carries none; omitted, it reads as amazon.com (USD).
+export function setDealsFeed(items: DealsFeedItem[], marketplace?: string): void {
+  const fallbackCurrency = currencyForMarketplace(marketplace);
   for (const item of items) {
     const asin = item.asin.toUpperCase();
     if (!/^[A-Z0-9]{10}$/.test(asin)) continue;
@@ -36,7 +41,7 @@ export function setDealsFeed(items: DealsFeedItem[]): void {
       imageUrl: item.imageUrl ?? prev?.imageUrl ?? null,
       title: item.title ?? prev?.title ?? null,
       priceCents: item.priceCents ?? prev?.priceCents ?? null,
-      currency: item.currency || prev?.currency || "USD",
+      currency: item.currency || prev?.currency || fallbackCurrency,
     });
   }
 }

@@ -224,7 +224,7 @@ async function main(): Promise<void> {
       const items = (detail as { items?: unknown })?.items;
       if (!Array.isArray(items)) return;
       const before = dealsFeedSize();
-      setDealsFeed(items as DealsFeedItem[]);
+      setDealsFeed(items as DealsFeedItem[], marketplaceFromUrl(location.href));
       // Only a genuinely new ASIN warrants a rebuild; a repeat batch is a no-op.
       if (dealsFeedSize() > before) scheduleDealsRefresh();
     });

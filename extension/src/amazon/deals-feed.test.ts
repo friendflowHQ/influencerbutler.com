@@ -78,4 +78,14 @@ describe("setDealsFeed / getDealsFeed", () => {
     ]);
     expect(dealsFeedSize()).toBe(before + 1);
   });
+
+  it("fills a missing currency from the page marketplace", () => {
+    setDealsFeed(
+      [{ asin: "B0EEEE5555", imageUrl: null, title: null, priceCents: 999, currency: "" }],
+      "amazon.co.uk",
+    );
+    expect(getDealsFeed().find((i) => i.asin === "B0EEEE5555")?.currency).toBe("GBP");
+    setDealsFeed([{ asin: "B0FFFF6666", imageUrl: null, title: null, priceCents: 999, currency: "" }]);
+    expect(getDealsFeed().find((i) => i.asin === "B0FFFF6666")?.currency).toBe("USD");
+  });
 });

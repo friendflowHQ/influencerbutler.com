@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
+import { currencyForMarketplace } from "../amazon/marketplace";
 import type { Finding, FindingTransport } from "./types";
 
 // Website API transport. Groups a mixed batch by finding type and posts each
@@ -36,7 +37,7 @@ export const apiTransport: FindingTransport = {
             marketplace: f.marketplace,
             title: f.title ?? null,
             price_cents: f.priceCents ?? null,
-            currency: f.currency ?? "USD",
+            currency: f.currency ?? currencyForMarketplace(f.marketplace),
             brand_video_count: f.counts.brand,
             influencer_video_count: f.counts.influencer,
             customer_video_count: f.counts.customer + f.counts.unknown,
@@ -60,7 +61,7 @@ export const apiTransport: FindingTransport = {
           marketplace: f.marketplace,
           captured_at: f.scannedAt,
           price_cents: f.priceCents ?? null,
-          currency: f.currency ?? "USD",
+          currency: f.currency ?? currencyForMarketplace(f.marketplace),
           bsr_rank: f.bestsellerRank?.rank ?? null,
           bsr_category: f.bestsellerRank?.category ?? null,
           bought_past_month: f.boughtPastMonth ?? null,
@@ -137,7 +138,7 @@ export const apiTransport: FindingTransport = {
             marketplace: f.marketplace,
             title: f.title ?? null,
             price_cents: f.priceCents ?? null,
-            currency: f.currency ?? "USD",
+            currency: f.currency ?? currencyForMarketplace(f.marketplace),
             detected_at: f.detectedAt,
           })),
         }),
@@ -155,7 +156,7 @@ export const apiTransport: FindingTransport = {
             list_price_cents: f.listPriceCents ?? null,
             discount_pct: f.discountPct ?? null,
             commission_rate_pct: f.commissionRatePct ?? null,
-            currency: f.currency ?? "USD",
+            currency: f.currency ?? currencyForMarketplace(f.marketplace),
             image_url: f.imageUrl ?? null,
             source_url: f.sourceUrl,
             promo_code: f.promoCode ?? null,

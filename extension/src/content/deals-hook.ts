@@ -19,6 +19,8 @@
 // contract-stable, so the parser probes a handful of image/price/title keys and
 // leaves anything it cannot find null (the overlay still gets the ASIN).
 
+import { currencyForMarketplace } from "../amazon/marketplace";
+
 type DealItem = {
   asin: string;
   imageUrl: string | null;
@@ -37,6 +39,9 @@ type DealItem = {
   const PRODUCTS_URL_RE = /\/api\/marketplaces\/[^/]+\/products\/([A-Z0-9,]+)/i;
   const GRAPHQL_URL_RE = /appsync-api\.[^/]+\.amazonaws\.com\/graphql/i;
   const ASIN_RE = /^[A-Z0-9]{10}$/;
+  // The page's own marketplace currency (USD on amazon.com, GBP on
+  // amazon.co.uk), used when a record does not name its currency.
+  const PAGE_CURRENCY = currencyForMarketplace(location.hostname);
 
   const toNum = (v: unknown): number | null =>
     typeof v === "number" && isFinite(v) ? v : null;
@@ -96,7 +101,7 @@ type DealItem = {
 
   const readCurrency = (rec: Record<string, unknown>): string => {
     const code = toStr(pick(rec, ["currencyCode", "currency", "currencyId"]));
-    return code ? code.toUpperCase() : "USD";
+    return code ? code.toUpperCase() : PAGE_CURRENCY;
   };
 
   // Recursively collect any object that looks like a deal record (carries an
@@ -137,7 +142,7 @@ type DealItem = {
       const asin = raw.trim().toUpperCase();
       if (ASIN_RE.test(asin) && !seen.has(asin)) {
         seen.add(asin);
-        out.push({ asin, imageUrl: null, title: null, priceCents: null, currency: "USD" });
+        out.push({ asin, imageUrl: null, title: null, priceCents: null, currency: PAGE_CURRENCY });
       }
     }
     return out;
