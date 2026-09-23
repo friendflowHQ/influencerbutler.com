@@ -152,21 +152,51 @@ export function extractVariationAsins(doc: Document): string[] {
 const RANK_HEAD_RE = /#([\d,]+)\s+in\s+/g;
 const RANK_CATEGORY_END_RE = /\s*(?:[(#:•›»]|Customer\b|See Top\b|var\b|function\b|\{)/i;
 
-// Pure parser (exported for tests): the smallest "#N in Category" in a blob.
-export function parseBestsellerRank(source: string): { rank: number; category: string } | null {
-  RANK_HEAD_RE.lastIndex = 0;
+// Some marketplaces (amazon.co.uk among them) can write the rank without the
+// "#": "Best Sellers Rank: 1,234 in Beauty (See Top 100 in Beauty) 5 in Face
+// Creams". A bare "N in" is far too loose to scan a whole product-details table
+// for ("2 in pack"), so the hash-less form is only read from the text right
+// after a Best Sellers Rank label, up to the next "Label:" colon. The number may
+// use comma, dot, or space thousands (UK / DE / FR); "Top 100 in" is skipped.
+const RANK_LABEL_RE =
+  /(?:best\s*sellers?\s*rank|amazon\s+bestseller(?:-rang)?|bestseller-rang|classement des meilleures ventes d'amazon|posizione nella classifica bestseller di amazon|clasificaci[oó]n en los m[aá]s vendidos de amazon)\s*:?/i;
+const BARE_RANK_HEAD_RE =
+  /(?<!top\s)(?<![\w#.,])(?:nr\.\s*|n\.\s*|n[º°]\s*)?(\d{1,3}(?:[,.\u00a0\u202f ]\d{3})+|\d+)\s+(?:in|en)\s+/gi;
+const BARE_RANK_CATEGORY_END_RE =
+  /\s*(?:[(#:•›»]|Customer\b|See Top\b|var\b|function\b|\{|\s(?:nr\.\s*|n\.\s*)?\d[\d,.]*\s+(?:in|en)\s)/i;
+
+function collectRanks(
+  source: string,
+  head: RegExp,
+  end: RegExp,
+): { rank: number; category: string } | null {
+  head.lastIndex = 0;
   let best: { rank: number; category: string } | null = null;
   let match: RegExpExecArray | null;
-  while ((match = RANK_HEAD_RE.exec(source)) !== null) {
-    const rank = parseInt((match[1] ?? "").replace(/,/g, ""), 10);
+  while ((match = head.exec(source)) !== null) {
+    const rank = parseInt((match[1] ?? "").replace(/[^\d]/g, ""), 10);
     if (!Number.isFinite(rank)) continue;
-    const tail = source.slice(RANK_HEAD_RE.lastIndex);
-    const end = tail.search(RANK_CATEGORY_END_RE);
-    const category = (end >= 0 ? tail.slice(0, end) : tail).trim().slice(0, 60);
+    const tail = source.slice(head.lastIndex);
+    const stop = tail.search(end);
+    const category = (stop >= 0 ? tail.slice(0, stop) : tail).trim().slice(0, 60);
     if (!category) continue;
     if (!best || rank < best.rank) best = { rank, category };
   }
   return best;
+}
+
+// Pure parser (exported for tests): the smallest "#N in Category" in a blob.
+export function parseBestsellerRank(source: string): { rank: number; category: string } | null {
+  // The "#N in" form (amazon.com) is read exactly as it always was.
+  const hashed = collectRanks(source, RANK_HEAD_RE, RANK_CATEGORY_END_RE);
+  if (hashed) return hashed;
+  const label = RANK_LABEL_RE.exec(source);
+  if (!label) return null;
+  let region = source.slice(label.index + label[0].length);
+  // Stop at the next "Label:" so a later bullet never reads as a rank.
+  const nextLabel = region.search(/\S:\s/);
+  if (nextLabel >= 0) region = region.slice(0, nextLabel + 1);
+  return collectRanks(region, BARE_RANK_HEAD_RE, BARE_RANK_CATEGORY_END_RE);
 }
 
 export function extractBestsellerRank(doc: Document): { rank: number; category: string } | null {

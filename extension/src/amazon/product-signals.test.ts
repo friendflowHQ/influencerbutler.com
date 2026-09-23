@@ -65,6 +65,41 @@ describe("parseBestsellerRank", () => {
   it("returns null when there is no rank", () => {
     expect(parseBestsellerRank("Ships from Amazon")).toBeNull();
   });
+
+  it("reads the hash-less form after a Best Sellers Rank label (amazon.co.uk)", () => {
+    const text =
+      "Best Sellers Rank: 1,234 in Beauty (See Top 100 in Beauty) 5 in Face Moisturisers Customer Reviews: 4.5 out of 5 stars";
+    expect(parseBestsellerRank(text)).toEqual({ rank: 5, category: "Face Moisturisers" });
+  });
+
+  it("reads a single hash-less rank and skips the See Top 100 link", () => {
+    expect(
+      parseBestsellerRank("Best Sellers Rank : 12,345 in Kitchen & Home (See Top 100 in Kitchen & Home)"),
+    ).toEqual({ rank: 12345, category: "Kitchen & Home" });
+  });
+
+  it("reads dot and space thousands on EU marketplaces", () => {
+    expect(
+      parseBestsellerRank("Amazon Bestseller-Rang: Nr. 1.234 in Drogerie & Körperpflege (Siehe Top 100 in Drogerie)"),
+    ).toEqual({ rank: 1234, category: "Drogerie & Körperpflege" });
+    expect(
+      parseBestsellerRank(
+        "Classement des meilleures ventes d'Amazon : 3 725 en Beauté et Parfum (Voir les 100 premiers en Beauté et Parfum)",
+      ),
+    ).toEqual({ rank: 3725, category: "Beauté et Parfum" });
+  });
+
+  it("never reads a bare 'N in' outside the rank label", () => {
+    expect(parseBestsellerRank("Batteries: 2 in pack Item model number: X1")).toBeNull();
+    expect(parseBestsellerRank("Size: 10 in Colour: Blue")).toBeNull();
+  });
+
+  it("keeps the amazon.com #N form unchanged when a label is present", () => {
+    expect(parseBestsellerRank("Best Sellers Rank: #40 in Toys & Games (See Top 100 in Toys)")).toEqual({
+      rank: 40,
+      category: "Toys & Games",
+    });
+  });
 });
 
 describe("parseDateFirstAvailable", () => {
