@@ -63,6 +63,7 @@ Retag history is logged per row in your preseed cache. The Retag Log panel shows
 
 ## Common gotchas
 
+- **Runs forever without scanning, and every Amazon page says the page cannot be found**: your storefront link is still the example one Butler ships with. Open **Settings → Profile** and paste your own link (it looks like `https://www.amazon.com/shop/yourname`), or run the storefront check there to fill it in for you. Paste the link on its own, with no angle brackets around your name: Amazon reads `<yourname>` as a different address and returns the same empty result.
 - **"No candidates found"**: probably means Storefront Butler hasn't flagged any rows as unavailable yet. Re-sync Storefront Butler.
 - **Replacement looks wrong (e.g. unrelated category)**: raise min similarity to 60-65 to filter out weak matches.
 - **"Already-tagged this within cooldown"** banner - Retag Butler is honoring `skipRetaggedWithinDays`. Lower it or wait.

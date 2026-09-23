@@ -63,6 +63,7 @@ El historial de re-etiquetado se registra por fila en tu caché preseed. El pane
 
 ## Tropiezos comunes
 
+- **Se ejecuta sin parar sin escanear nada y todas las páginas de Amazon dicen que no se encuentra la página**: tu enlace de escaparate sigue siendo el de ejemplo que trae Butler. Abre **Configuración → Perfil** y pega el tuyo (tiene esta forma: `https://www.amazon.com/shop/tunombre`), o ejecuta allí la comprobación de escaparate para que lo rellene por ti. Pega el enlace solo, sin corchetes angulares alrededor de tu nombre: Amazon lee `<tunombre>` como otra dirección y devuelve el mismo resultado vacío.
 - **"No se encontraron candidatos"**: probablemente Storefront Butler aún no ha marcado ninguna fila como no disponible. Vuelve a sincronizar Storefront Butler.
 - **El reemplazo se ve mal (p. ej. categoría no relacionada)**: sube min similarity a 60-65 para filtrar matches débiles.
 - **Banner "Ya re-etiquetado dentro del cooldown"**: Retag Butler está respetando `skipRetaggedWithinDays`. Bájalo o espera.

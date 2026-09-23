@@ -63,6 +63,7 @@ L'historique de re-tagage est journalisé par ligne dans votre cache preseed. Le
 
 ## Pièges courants
 
+- **Tourne sans fin sans rien analyser, et toutes les pages Amazon indiquent que la page est introuvable**: votre lien de vitrine est encore celui donné en exemple par Butler. Ouvrez **Paramètres → Profil** et collez le vôtre (il ressemble à `https://www.amazon.com/shop/votrenom`), ou lancez-y la vérification de vitrine pour qu'elle le remplisse à votre place. Collez le lien seul, sans chevrons autour de votre nom: Amazon lit `<votrenom>` comme une autre adresse et renvoie le même résultat vide.
 - **"Aucun candidat trouvé"**: probablement Storefront Butler n'a encore marqué aucune ligne comme indisponible. Resync Storefront Butler.
 - **Le remplacement a l'air faux (par ex. catégorie sans rapport)**: montez min similarity à 60-65 pour filtrer les matches faibles.
 - **Bannière "Déjà re-tagué dans la fenêtre de cooldown"**: Retag Butler respecte `skipRetaggedWithinDays`. Baissez-le ou attendez.
