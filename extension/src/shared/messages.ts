@@ -26,6 +26,7 @@ import type {
   YouTubeStatusRecord,
   YouTubeStatusResult,
   YouTubeVideoRef,
+  ReachItem,
 } from "../transport/hud-commands";
 import type {
   IntegrationsState,
@@ -1064,6 +1065,7 @@ export type {
   YouTubeStatusRecord,
   YouTubeStatusResult,
   YouTubeVideoRef,
+  ReachItem,
 };
 export type { PricePoint };
 export type {

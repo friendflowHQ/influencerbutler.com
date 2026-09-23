@@ -83,6 +83,22 @@ export type YouTubeVideoRef = {
   contentUrl?: string;
 };
 
+// One Amazon creator item (video or photo) that Amazon is holding back from
+// product detail pages ("Improve reach"), reported to the desktop Reach Booster
+// workspace so it can list everything that needs a re-upload in one place. Read
+// purely from the page DOM by the improve-reach chip; `reason` is Amazon's own
+// words when the item edit page spelled them out, else null (list surfaces).
+export type ReachItem = {
+  contentId: string;
+  title?: string;
+  kind?: "video" | "photo" | "content";
+  marketplace?: string;
+  reason?: string | null;
+  contentUrl?: string;
+  editUrl?: string;
+  views?: number | null;
+};
+
 export type HudCommand =
   | { type: "deal.push"; workspace: string; product: ProductRef }
   // Batch push of harvested deals into one Deals Butler workspace, from the Deal
@@ -160,7 +176,12 @@ export type HudCommand =
   // `startNow:false` queues only (the scheduler picks it up on its next run).
   | { type: "youtube.upload"; video: YouTubeVideoRef; startNow?: boolean }
   // Batch form: queue many videos, then one run uploads them all up to the cap.
-  | { type: "youtube.upload.batch"; videos: YouTubeVideoRef[] };
+  | { type: "youtube.upload.batch"; videos: YouTubeVideoRef[] }
+  // Report the held-back ("Improve reach") items the chip found on a manage list
+  // or item page to the desktop Reach Booster workspace. Fire-and-forget upsert
+  // keyed by contentId; the desktop stores them for a single "what needs a
+  // re-upload" view. No-op when the app is not paired.
+  | { type: "reach.report.batch"; items: ReachItem[] };
 
 export type HudCommandResult = {
   ok: boolean;

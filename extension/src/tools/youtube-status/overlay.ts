@@ -10,24 +10,34 @@ import {
   contentIdFromVseId,
 } from "../../amazon/creator-hub";
 import { resolveYouTubeStatus, type YouTubeStatusLookup } from "./status";
-import { youtubeChipState, amazonShowingState } from "./model";
+import {
+  youtubeChipState,
+  amazonShowingState,
+  parseReachBanner,
+  type ReachContentKind,
+} from "./model";
 import {
   sendToBackground,
   type HudCommandResult,
   type YouTubeVideoRef,
+  type ReachItem,
 } from "../../shared/messages";
 
 // Per-video "On YouTube / Not on YouTube" chip fed by the desktop YouTube Butler
 // upload ledger over the local bridge, plus an "Upload to YouTube" action that
-// hands the video to the desktop uploader, and a page-DOM "Showing on Amazon /
-// Not on detail pages" chip. Runs on five Amazon surfaces:
+// hands the video to the desktop uploader, and a page-DOM reach chip: "Showing on
+// Amazon" when live on detail pages, or an interactive "Improve reach" advisory
+// (Amazon's reason + a concrete fix checklist) when held back. Runs on five
+// Amazon surfaces:
 //   creator-manage  (/creatorhub/manage)   per-row, SPA-observed
 //   creator-post    (/create/post?id=...)  single video, id from URL/upload-state
 //   manage-content  (/manage-content)      per-row, SPA-observed
 //   storefront      (/shop/<handle>)       per video card, SPA-observed
-// The product /dp/ carousel is intentionally NOT stamped here: those videos are
-// mostly other creators', and we cannot safely tell the user's own apart, so
-// stamping "Upload" there would be wrong (tracked as a follow-up).
+// The product /dp/ carousel is still NOT stamped here. tools/my-video now does
+// tell the creator's own carousel video apart (by their storefront handle on the
+// rendered card, or by a remembered content id), so the old blocker is gone, but
+// an "Upload" action wants a verified card mount on both rails before it moves
+// onto a page full of other creators' videos. Tracked as a follow-up.
 //
 // Self-gating: when the desktop app is not paired/running the chip shows a muted
 // "connect the app" state (upload status lives only on the desktop). The Amazon
@@ -53,6 +63,8 @@ type Target = {
   contentUrl: string | null; // full /vdp/ url when the surface exposed it
   published: boolean;
   notShowing: boolean;
+  reachReason: string | null; // Amazon's own reason clause when the banner spelled it out
+  reachKind: ReachContentKind;
   // Filled at mount time. The chip strip lives in a closed shadow root, so we
   // keep the body reference to repaint it (a closed root can't be re-queried).
   body?: HTMLElement;
@@ -61,6 +73,9 @@ type Target = {
 
 let controller: AbortController | null = null;
 let rowObserver: MutationObserver | null = null;
+// contentIds already reported to the desktop Reach Booster this run, so SPA
+// re-renders don't re-send the same held-back items on every mutation pass.
+const reportedReach = new Set<string>();
 
 export function initYouTubeStatus(surface: YouTubeSurface): void {
   controller?.abort();
@@ -68,6 +83,7 @@ export function initYouTubeStatus(surface: YouTubeSurface): void {
   controller = run;
   rowObserver?.disconnect();
   rowObserver = null;
+  reportedReach.clear();
   teardown();
 
   const marketplace = marketplaceFromUrl(location.href);
@@ -83,6 +99,7 @@ export function initYouTubeStatus(surface: YouTubeSurface): void {
       tg.marketplace = marketplace;
       mountChips(tg);
     }
+    reportReach(targets);
     void resolveAndRender(targets, run.signal);
   };
 
@@ -107,29 +124,39 @@ function collectTargets(surface: YouTubeSurface): Target[] {
 }
 
 function collectManageRows(): Target[] {
-  return readManageRows(document).map((r) => ({
-    contentId: r.contentId.toLowerCase(),
-    doneEl: r.el,
-    mountEl: r.el,
-    title: r.title,
-    asin: null,
-    contentUrl: vdpUrlIn(r.el),
-    published: r.status === "published",
-    notShowing: detectNotShowing(r.el),
-  }));
+  return readManageRows(document).map((r) => {
+    const reach = readReach(r.el);
+    return {
+      contentId: r.contentId.toLowerCase(),
+      doneEl: r.el,
+      mountEl: r.el,
+      title: r.title,
+      asin: null,
+      contentUrl: vdpUrlIn(r.el),
+      published: r.status === "published",
+      notShowing: reach.notShowing,
+      reachReason: reach.reason,
+      reachKind: reach.kind,
+    };
+  });
 }
 
 function collectManageContentRows(): Target[] {
-  return readManageContentRows(document).map((r) => ({
-    contentId: r.contentId.toLowerCase(),
-    doneEl: r.el,
-    mountEl: r.el,
-    title: r.title,
-    asin: null,
-    contentUrl: vdpUrlIn(r.el),
-    published: r.status === "published",
-    notShowing: detectNotShowing(r.el),
-  }));
+  return readManageContentRows(document).map((r) => {
+    const reach = readReach(r.el);
+    return {
+      contentId: r.contentId.toLowerCase(),
+      doneEl: r.el,
+      mountEl: r.el,
+      title: r.title,
+      asin: null,
+      contentUrl: vdpUrlIn(r.el),
+      published: r.status === "published",
+      notShowing: reach.notShowing,
+      reachReason: reach.reason,
+      reachKind: reach.kind,
+    };
+  });
 }
 
 // Storefront /shop/ video cards: each carries a /vdp/<contentId> link. Climb to
@@ -153,6 +180,8 @@ function collectStorefrontCards(): Target[] {
       // The storefront always shows the video; no on-detail-page banner here.
       published: true,
       notShowing: false,
+      reachReason: null,
+      reachKind: "video",
     });
   }
   return out;
@@ -168,6 +197,7 @@ function collectCreatorPost(): Target[] {
   if (!contentId) return [];
   const anchor = createPostAnchor();
   if (!anchor) return [];
+  const reach = readReach(document.body);
   return [
     {
       contentId,
@@ -177,7 +207,9 @@ function collectCreatorPost(): Target[] {
       asin: state?.asins[0] ?? null,
       contentUrl: `https://${location.host}/vdp/${contentId}`,
       published: (state?.statusState ?? "").toUpperCase() === "PUBLISHED",
-      notShowing: detectNotShowing(document.body),
+      notShowing: reach.notShowing,
+      reachReason: reach.reason,
+      reachKind: reach.kind,
     },
   ];
 }
@@ -216,12 +248,14 @@ function renderChips(
   if (!body.isConnected) return;
   body.replaceChildren();
 
-  // 1) The on-Amazon "showing on detail pages" chip (pure DOM, no bridge).
+  // 1) The on-Amazon "showing on detail pages" chip (pure DOM, no bridge). When
+  // held back, the chip becomes an interactive "Improve reach" advisory naming
+  // Amazon's reason and the concrete fix (see renderReachAdvice).
   const showing = amazonShowingState({ published: tg.published, notShowing: tg.notShowing });
   if (showing === "showing") {
     body.append(el("span", "tile-chip good", t().ytShowingAmazon));
   } else if (showing === "not-showing") {
-    body.append(el("span", "tile-chip bad", t().ytNotShowingAmazon));
+    renderReachAdvice(body, tg);
   }
 
   // 2) The YouTube upload-status chip.
@@ -251,6 +285,113 @@ function renderChips(
   const failed = chip.record?.status === "failed";
   body.append(el("span", `tile-chip ${failed ? "bad" : "muted"}`, failed ? t().ytFailedRetry : t().ytNotOnYouTube));
   body.append(uploadButton(tg, body));
+}
+
+// Report the held-back items in this decorate pass to the desktop Reach Booster
+// workspace (fire-and-forget, deduped by contentId). The desktop upserts them
+// into a durable store so the creator gets one "what needs a re-upload" list.
+// Silent when the app is not paired; the chip still renders regardless.
+function reportReach(targets: Target[]): void {
+  const items: ReachItem[] = [];
+  for (const tg of targets) {
+    if (!tg.notShowing || reportedReach.has(tg.contentId)) continue;
+    reportedReach.add(tg.contentId);
+    items.push({
+      contentId: tg.contentId,
+      title: tg.title ?? undefined,
+      kind: tg.reachKind,
+      marketplace: tg.marketplace || undefined,
+      reason: tg.reachReason,
+      contentUrl: tg.contentUrl ?? undefined,
+      editUrl: editUrlFor(tg) ?? undefined,
+    });
+  }
+  if (items.length === 0) return;
+  void sendToBackground<HudCommandResult>({
+    kind: "SEND_HUD_COMMAND",
+    command: { type: "reach.report.batch", items },
+  }).catch(() => {
+    // Not paired / app closed: the store just misses this pass. Harmless.
+  });
+}
+
+// The "Improve reach" chip: an amber, clickable pill that expands a card naming
+// Amazon's reason the item is held back from product detail pages and a concrete
+// per-kind fix checklist. Pure DOM read; no bridge. Replaces the old static "Not
+// on detail pages" chip so the creator sees exactly what to change.
+function renderReachAdvice(body: HTMLElement, tg: Target): void {
+  const chip = el("button", "tile-chip warn reach-chip") as HTMLButtonElement;
+  chip.type = "button";
+  chip.append(document.createTextNode(t().reachImprove));
+  const caret = el("span", "reach-caret", "▸"); // right triangle; flips down when open
+  chip.append(caret);
+
+  const panel = el("div", "reach-advice");
+  panel.hidden = true;
+  buildReachPanel(panel, tg);
+
+  chip.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    chip.classList.toggle("open", opening);
+    caret.textContent = opening ? "▾" : "▸";
+  });
+
+  body.append(chip);
+  body.append(panel);
+}
+
+function buildReachPanel(panel: HTMLElement, tg: Target): void {
+  panel.append(el("div", "reach-title", t().reachPanelTitle));
+
+  panel.append(el("div", "reach-label", t().reachWhy));
+  const reason = tg.reachReason
+    ? capitalizeFirst(tg.reachReason)
+    : tg.reachKind === "photo"
+      ? t().reachReasonPhoto
+      : tg.reachKind === "video"
+        ? t().reachReasonVideo
+        : t().reachReasonGeneric;
+  panel.append(el("div", "reach-reason", reason));
+
+  panel.append(el("div", "reach-label", t().reachFix));
+  const tips = tg.reachKind === "photo" ? t().reachTipsPhoto : t().reachTipsVideo;
+  const list = el("ul");
+  for (const tip of tips) list.append(el("li", undefined, tip));
+  panel.append(list);
+
+  panel.append(el("div", "reach-remedy", t().reachRemedy));
+
+  // On the list surfaces, jump to the item's edit page (where Amazon's full
+  // banner and best-practice link live). On /create/post we are already there.
+  if (!/\/create\/post/i.test(location.pathname)) {
+    const url = editUrlFor(tg);
+    if (url) {
+      const link = el("a", "reach-open", t().reachOpenItem) as HTMLAnchorElement;
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.addEventListener("click", (event) => event.stopPropagation());
+      panel.append(link);
+    }
+  }
+}
+
+// The item's "Edit post" URL: a real /create/post link inside the row when
+// present, else reconstructed from the bare-hex contentId (video shape).
+function editUrlFor(tg: Target): string | null {
+  const a = tg.mountEl.querySelector<HTMLAnchorElement>('a[href*="/create/post"]');
+  if (a) return absoluteUrl(a.getAttribute("href") ?? "");
+  if (/^[0-9a-f]{16,}$/i.test(tg.contentId)) {
+    return `https://${location.host}/create/post?id=amzn1.vse.video.${tg.contentId}`;
+  }
+  return null;
+}
+
+function capitalizeFirst(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 function uploadButton(tg: Target, body: HTMLElement): HTMLButtonElement {
@@ -351,17 +492,18 @@ function createPostAnchor(): HTMLElement | null {
   return heading ?? save ?? document.querySelector<HTMLElement>("main") ?? document.body;
 }
 
-// The Amazon "published but not showing on product detail pages" state, read from
-// the page/row text (the "Reach more shoppers" quality banner or the "Improve
-// reach" row affordance). Locale-tolerant on the English phrasing Amazon uses.
-function detectNotShowing(scope: ParentNode): boolean {
-  const text = ((scope as HTMLElement).textContent ?? "").toLowerCase();
-  return (
-    text.includes("improve reach") ||
-    text.includes("isn't being shown on product detail") ||
-    text.includes("not being shown on product detail") ||
-    text.includes("published but not showing")
-  );
+// The Amazon "published but not showing on product detail pages" state, parsed
+// from the page/row text (the "Reach more shoppers" quality banner on the item
+// edit page, or the compact "Improve reach" affordance on the list rows). Returns
+// whether it is held back plus, when the edit-page banner spelled it out, Amazon's
+// own reason clause and the content kind, so the chip can name the exact fix.
+function readReach(scope: ParentNode): {
+  notShowing: boolean;
+  reason: string | null;
+  kind: ReachContentKind;
+} {
+  const banner = parseReachBanner((scope as HTMLElement).textContent ?? "");
+  return { notShowing: banner.notShowing, reason: banner.reason, kind: banner.kind };
 }
 
 async function decorateWhenReady(signal: AbortSignal, decorate: () => void): Promise<void> {

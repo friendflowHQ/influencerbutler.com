@@ -723,6 +723,57 @@ a.tile-chip:hover { filter: brightness(0.97); }
 }
 .tile-chip.yt-upload-btn:hover { filter: brightness(0.97); }
 .tile-chip.yt-upload-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Improve Reach chip + advisory: the "not on detail pages" state becomes a
+   clickable amber chip that expands a card naming Amazon's reason and a concrete
+   fix checklist. The card drops onto its own line under the chip row. */
+.tile-chip.reach-chip { cursor: pointer; }
+.tile-chip.reach-chip .reach-caret { margin-left: 4px; font-size: 9px; opacity: 0.8; }
+.tile-chip.reach-chip.open { outline: 2px solid #f97316; outline-offset: 1px; }
+.reach-advice {
+  flex-basis: 100%;
+  width: 320px;
+  max-width: 90vw;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  padding: 10px 12px;
+  text-align: left;
+  color: #334155;
+}
+.reach-advice .reach-title { font-weight: 800; font-size: 12.5px; color: #0f172a; }
+.reach-advice .reach-label {
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.reach-advice .reach-reason { margin-top: 3px; font-size: 11.5px; line-height: 1.45; }
+.reach-advice ul { margin: 4px 0 0; padding-left: 16px; }
+.reach-advice li { margin: 3px 0; font-size: 11.5px; line-height: 1.4; }
+.reach-advice .reach-remedy {
+  margin-top: 8px;
+  padding: 7px 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #9a3412;
+}
+.reach-advice .reach-open {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #c2410c;
+  text-decoration: none;
+}
+.reach-advice .reach-open:hover { text-decoration: underline; }
 /* Benable list-card badge (benable.com): the chip reuses .tile-chip, and the
    expandable detail drops below it as a small card, kept narrow so it never
    covers the whole Benable tile. */
@@ -1623,3 +1674,23 @@ a.tile-chip:hover { filter: brightness(0.97); }
   cursor: pointer;
 }
 .link-inline:hover { color: #1e40af; }
+
+/* My video placement: the creator's own row in the influencer list, and the
+   badge that sits on their own card inside Amazon's carousel. The accent colors
+   match .chip.good so "yours" reads as the same signal in both places. */
+.list li.mine {
+  border-left: 3px solid #bbf7d0;
+  padding-left: 8px;
+  background: #f0fdf4;
+}
+.myvideo-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font: 600 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  white-space: nowrap;
+}

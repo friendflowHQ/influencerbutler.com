@@ -541,6 +541,20 @@ export interface Dict {
   ytShowingAmazon: string;
   ytNotShowingAmazon: string;
 
+  // Improve Reach advisory (expands from the "not on detail pages" chip): the
+  // specific reason Amazon gave and a concrete fix checklist per content kind.
+  reachImprove: string;
+  reachPanelTitle: string;
+  reachWhy: string;
+  reachReasonVideo: string;
+  reachReasonPhoto: string;
+  reachReasonGeneric: string;
+  reachFix: string;
+  reachRemedy: string;
+  reachTipsVideo: string[];
+  reachTipsPhoto: string[];
+  reachOpenItem: string;
+
   // Campaign Radar (Creator Connections campaign grid)
   sumCampaignRadar: string;
   toolCampaignRadar: string;
@@ -1516,6 +1530,33 @@ const en: Dict = {
   ytUploadError: "Could not reach the desktop app",
   ytShowingAmazon: "Showing on Amazon",
   ytNotShowingAmazon: "Not on detail pages",
+  reachImprove: "Improve reach",
+  reachPanelTitle: "Boost this content's reach",
+  reachWhy: "Why it's held back",
+  reachReasonVideo:
+    "It's published to your Storefront but blocked from product detail pages because it didn't pass Amazon's video quality bar.",
+  reachReasonPhoto:
+    "It's published to your Storefront but blocked from product detail pages because it didn't pass Amazon's photo quality bar.",
+  reachReasonGeneric:
+    "It's published to your Storefront but isn't being shown on product detail pages, the highest-traffic placement.",
+  reachFix: "How to fix it",
+  reachRemedy:
+    "Editing in place won't trigger a re-review. Delete this and upload an improved version - Amazon re-checks new uploads within 48 hours.",
+  reachTipsVideo: [
+    "Film in good, even lighting so the product is clearly visible.",
+    "Hold the shot steady - avoid shaky or blurry footage.",
+    "Clearly show and demonstrate the product in use.",
+    "Keep it native to Amazon - no other-app watermarks (TikTok, Reels) or heavy text overlays.",
+    "Use clear audio and a natural, informative voiceover.",
+  ],
+  reachTipsPhoto: [
+    "Use a sharp, high-resolution image - no blur or heavy compression.",
+    "Light the product evenly; avoid dark or cluttered backgrounds.",
+    "Show the actual product clearly and in context.",
+    "No watermarks, logos, or promotional text over the image.",
+    "Frame the product as the clear subject of the shot.",
+  ],
+  reachOpenItem: "Open item to edit",
 
   sumCampaignRadar: "Campaign Radar",
   toolCampaignRadar: "Campaign Radar (highlight campaigns)",
@@ -2522,6 +2563,33 @@ const es: Dict = {
   ytUploadError: "No se pudo contactar con la app de escritorio",
   ytShowingAmazon: "Se muestra en Amazon",
   ytNotShowingAmazon: "No en páginas de producto",
+  reachImprove: "Mejorar alcance",
+  reachPanelTitle: "Aumenta el alcance de este contenido",
+  reachWhy: "Por qué está limitado",
+  reachReasonVideo:
+    "Está publicado en tu Storefront pero bloqueado en las páginas de producto porque no pasó el nivel de calidad de video de Amazon.",
+  reachReasonPhoto:
+    "Está publicado en tu Storefront pero bloqueado en las páginas de producto porque no pasó el nivel de calidad de foto de Amazon.",
+  reachReasonGeneric:
+    "Está publicado en tu Storefront pero no aparece en las páginas de producto, la ubicación con más tráfico.",
+  reachFix: "Cómo solucionarlo",
+  reachRemedy:
+    "Editar sobre la marcha no activa una nueva revisión. Elimina esto y sube una versión mejorada: Amazon revisa las subidas nuevas en 48 horas.",
+  reachTipsVideo: [
+    "Graba con buena luz y uniforme para que el producto se vea claramente.",
+    "Mantén la toma estable: evita imágenes movidas o borrosas.",
+    "Muestra y demuestra claramente el producto en uso.",
+    "Que sea nativo de Amazon: sin marcas de agua de otras apps (TikTok, Reels) ni texto excesivo.",
+    "Usa audio claro y una voz en off natural e informativa.",
+  ],
+  reachTipsPhoto: [
+    "Usa una imagen nítida y de alta resolución: sin desenfoque ni compresión excesiva.",
+    "Ilumina el producto de forma uniforme; evita fondos oscuros o recargados.",
+    "Muestra el producto real con claridad y en contexto.",
+    "Sin marcas de agua, logotipos ni texto promocional sobre la imagen.",
+    "Encuadra el producto como el tema claro de la foto.",
+  ],
+  reachOpenItem: "Abrir para editar",
 
   sumCampaignRadar: "Radar de campañas",
   toolCampaignRadar: "Radar de campañas (resaltar campañas)",
@@ -3528,6 +3596,33 @@ const fr: Dict = {
   ytUploadError: "Impossible de joindre l'app de bureau",
   ytShowingAmazon: "Visible sur Amazon",
   ytNotShowingAmazon: "Pas sur les fiches produit",
+  reachImprove: "Améliorer la portée",
+  reachPanelTitle: "Augmentez la portée de ce contenu",
+  reachWhy: "Pourquoi elle est limitée",
+  reachReasonVideo:
+    "C'est publié sur votre Storefront mais bloqué sur les fiches produit car cela n'a pas passé le seuil de qualité vidéo d'Amazon.",
+  reachReasonPhoto:
+    "C'est publié sur votre Storefront mais bloqué sur les fiches produit car cela n'a pas passé le seuil de qualité photo d'Amazon.",
+  reachReasonGeneric:
+    "C'est publié sur votre Storefront mais n'apparaît pas sur les fiches produit, l'emplacement le plus fréquenté.",
+  reachFix: "Comment corriger",
+  reachRemedy:
+    "Modifier sur place ne déclenche pas de nouvelle vérification. Supprimez ceci et importez une version améliorée : Amazon revérifie les nouveaux imports sous 48 heures.",
+  reachTipsVideo: [
+    "Filmez avec une lumière bonne et homogène pour que le produit soit bien visible.",
+    "Gardez le plan stable : évitez les images tremblantes ou floues.",
+    "Montrez et démontrez clairement le produit en cours d'utilisation.",
+    "Restez natif à Amazon : pas de filigranes d'autres applis (TikTok, Reels) ni de texte envahissant.",
+    "Utilisez un son clair et une voix off naturelle et informative.",
+  ],
+  reachTipsPhoto: [
+    "Utilisez une image nette et haute résolution : sans flou ni compression excessive.",
+    "Éclairez le produit de façon homogène ; évitez les arrière-plans sombres ou chargés.",
+    "Montrez le vrai produit clairement et en contexte.",
+    "Pas de filigranes, logos ni texte promotionnel sur l'image.",
+    "Cadrez le produit comme le sujet clair de la photo.",
+  ],
+  reachOpenItem: "Ouvrir pour modifier",
 
   sumCampaignRadar: "Radar de campagnes",
   toolCampaignRadar: "Radar de campagnes (mettre en évidence)",
