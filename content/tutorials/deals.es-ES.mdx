@@ -72,6 +72,26 @@ Varios ajustes de la Receta de filtros deciden lo estricta que es tu recolecció
 
 En resumen: Solo descuentos reales recorta tu recolección a rebajas auténticas, y Completar hasta tu objetivo vuelve a llenarla cuando ese recorte te deja por debajo de tu objetivo.
 
+## Completar: rellena el día después de borrar ofertas
+
+Cada búsqueda encuentra más ofertas válidas de las que conserva el **Máximo de ofertas recopiladas**. Ahora Butler guarda esas ofertas de más en lugar de descartarlas, así que cuando repases tus resultados y borres las que no quieres, puedes dejar el día como lo habías planeado con un solo clic.
+
+El botón **Completar** está junto a **Buscar ofertas** y se lee como "Completar hasta 15", con una línea debajo que muestra cómo vas: cuántas ofertas tienes, tu objetivo y cuántas ofertas guardadas hay listas para usar. Al pulsarlo, Butler rellena el hueco con esas ofertas guardadas al momento, sin una búsqueda nueva. Si las guardadas no llegan, entonces hace una búsqueda corta del tamaño de lo que falta.
+
+Las ofertas que borraste no vuelven. Completar respeta todos los filtros de omisión que ya tienes (**Omitir ofertas que borraste**, **Omitir publicadas recientemente**, **Omitir recopiladas recientemente** y la protección de republicación), además de lo que ya está en tu tabla o en la cola. Una oferta guardada que solo se está omitiendo sigue guardada, así que vuelve a estar disponible cuando pase esa ventana de omisión.
+
+Las ofertas guardadas duran tres días y Butler conserva hasta 300 por tienda. Los precios cambian, así que lo más antiguo se descarta en vez de publicarse desactualizado. Lo que sí se use se vuelve a comprobar contra el precio actual justo antes de publicarse, igual que cualquier otra oferta.
+
+**Recargar solo** (desactivado por defecto) está debajo del **Máximo de ofertas recopiladas**. Actívalo y Butler rellena la tienda cuando tu cola baja, sin que pulses nada. Se mantiene en silencio durante tus horas de descanso, espera una hora entre recargas y escribe una línea en tu Registro de consola cada vez que actúa. No hace nada mientras tu modo de envío sea Manual, porque ahí nada llega a la cola para poder medirlo.
+
+## Ofertas para publicar al día, en todas las tiendas
+
+Amazon Deals y Walmart Deals tienen cada una su propio **Máximo de ofertas recopiladas**, lo que hace difícil ver el número que de verdad te importa: cuántas ofertas salen hoy. La pestaña **Programador** del centro **Deals Butler** lo muestra en un solo sitio, en una tarjeta llamada **Ofertas para publicar al día**: tu número combinado, con el reparto entre tus tiendas debajo.
+
+Escribe el número combinado y se reparte entre las tiendas que publican. Cambia el número de una tienda y el combinado se ajusta. Un botón **Completar todas las tiendas** rellena cada tienda hasta su propio objetivo de una vez.
+
+La tarjeta cuenta solo las tiendas activadas en **Qué tiendas publican** y que no estén desactivadas por el interruptor de minorista, así que una tienda que nunca configuraste ya no infla el número.
+
 ## Productos a precio normal
 
 Por defecto Butler conserva solo productos con una rebaja real. A veces, sin embargo, un buen producto a precio habitual y por debajo de cierto precio vale la pena compartirlo. La sección **Productos a precio normal**, dentro de la Receta de filtros de la pestaña **Search Deals**, te deja mezclarlos, sin fingir nunca que están de oferta. Está plegada y desactivada hasta que la abras, así que nada cambia a menos que la actives.

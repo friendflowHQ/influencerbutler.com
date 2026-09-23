@@ -72,6 +72,26 @@ Quelques réglages de la Recette de filtres décident de la sévérité de votre
 
 En bref : Vraies remises uniquement réduit votre récolte aux vraies démarques, et Compléter jusqu'à votre objectif la remplit à nouveau quand cette réduction vous laisse sous votre objectif.
 
+## Compléter : remplir la journée après avoir supprimé des offres
+
+Chaque recherche trouve plus d'offres valables que le **Nombre max d'offres récoltées** n'en conserve. Butler enregistre maintenant ce surplus au lieu de le jeter : quand vous parcourez vos résultats et supprimez celles que vous ne voulez pas, vous pouvez remettre la journée au niveau prévu en un clic.
+
+Le bouton **Compléter** se trouve à côté de **Rechercher des offres** et affiche par exemple "Compléter jusqu'à 15", avec une ligne en dessous qui montre où vous en êtes : combien d'offres vous avez, votre objectif, et combien d'offres enregistrées sont prêtes à servir. Un clic et Butler comble l'écart avec ces offres enregistrées immédiatement, sans nouvelle recherche. Si elles ne suffisent pas, il lance alors une courte recherche de la taille de ce qui manque.
+
+Les offres que vous avez supprimées ne reviennent pas. Compléter respecte tous les filtres d'exclusion déjà en place (**Ignorer les offres supprimées**, **Ignorer les offres publiées récemment**, **Ignorer les offres récoltées récemment** et la protection contre la republication), ainsi que tout ce qui est déjà dans votre tableau ou dans la file. Une offre enregistrée simplement ignorée reste enregistrée : elle redevient disponible une fois cette période passée.
+
+Les offres enregistrées se conservent trois jours, et Butler en garde jusqu'à 300 par boutique. Les prix bougent : tout ce qui est plus ancien est abandonné plutôt que publié périmé. Ce qui est effectivement utilisé est revérifié contre le prix en cours juste avant publication, comme n'importe quelle autre offre.
+
+**Recharger tout seul** (désactivé par défaut) se trouve sous le **Nombre max d'offres récoltées**. Activez-le et Butler recharge la boutique quand votre file s'épuise, sans que vous cliquiez. Il reste silencieux pendant vos heures calmes, attend une heure entre deux recharges, et écrit une ligne dans votre Journal de console à chaque fois. Il ne fait rien tant que votre mode d'envoi est Manuel, car rien n'atteint la file pour qu'il puisse mesurer quoi que ce soit.
+
+## Offres à publier par jour, toutes boutiques confondues
+
+Amazon Deals et Walmart Deals ont chacune leur propre **Nombre max d'offres récoltées**, ce qui rend difficile à voir le chiffre qui compte vraiment : combien d'offres partent aujourd'hui. L'onglet **Planificateur** du hub **Deals Butler** l'affiche au même endroit, dans une carte nommée **Offres à publier par jour** : votre chiffre combiné, avec la répartition entre vos boutiques en dessous.
+
+Saisissez le chiffre combiné et il se répartit entre les boutiques qui publient. Changez le chiffre d'une boutique et le combiné suit. Un bouton **Compléter toutes les boutiques** recharge chaque boutique jusqu'à son propre objectif d'un coup.
+
+La carte ne compte que les boutiques activées dans **Quelles boutiques publient** et non désactivées par l'interrupteur de revendeur : une boutique que vous n'avez jamais configurée ne gonfle donc plus le chiffre.
+
 ## Trouvailles au prix normal
 
 Par défaut, Butler ne conserve que les produits en vraie démarque. Parfois, pourtant, un bon produit à son prix habituel et sous un certain prix vaut la peine d'être partagé. La section **Trouvailles au prix normal**, dans la Recette de filtres de l'onglet **Search Deals**, vous permet de les mélanger, sans jamais faire croire qu'ils sont en promotion. Elle est repliée et désactivée jusqu'à ce que vous l'ouvriez, donc rien ne change tant que vous ne l'activez pas.
