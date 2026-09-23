@@ -31,6 +31,20 @@ Ser administrador de un grupo activo de tu nicho es muy valioso: controlas las p
 11. Mientras trabaja, la tabla **Grupos en los que trabajo el Butler** se va llenando debajo de tus numeros de progreso. Cada grupo revisado aparece una vez, con su estado actual, su tamano, si es publico o privado, la palabra clave que lo encontro y cuando se reviso por ultima vez. Filtra con los chips de estado (por ejemplo **Esperando concesion**), busca un grupo con el cuadro de busqueda, ordena por cualquier encabezado de columna y usa **Exportar CSV** para guardar lo que estas viendo.
 12. Opcional: en **Programador**, define una **Hora de inicio** y un intervalo **Repetir cada**, y luego haz clic en **Activar programacion** para dejarlo en piloto automatico.
 
+## Escribir a los administradores de grupos inactivos
+
+Algunos grupos de tu nicho ya tienen administrador, pero nadie publica desde hace meses. Facebook Admin Butler puede encontrarlos y escribir a sus administradores para preguntarles si te cederian el grupo.
+
+1. Abre la tarjeta **Escribir a los administradores de grupos inactivos** y marca **Escribir a los administradores de grupos inactivos**.
+2. En **Sin publicaciones en los ultimos**, indica cuanto tiempo sin actividad debe tener un grupo para escribir a sus administradores. El valor predeterminado es 90 dias (unos 3 meses).
+3. En **Como se envian los mensajes**, elige **Quiero revisar cada uno antes** (recomendado) o **Enviarlos automaticamente**.
+4. Configura **Maximo de mensajes a administradores por dia**. Mantenlo bajo: escribir a desconocidos es lo que Facebook vigila mas de cerca, por eso los mensajes tambien se envian con uno o dos minutos de diferencia.
+5. Edita el **Mensaje**. `{firstName}` se reemplaza por el nombre del administrador y `{groupName}` por el nombre del grupo. Usa `{Hola|Buenas|Que tal}` para variar el texto y que no haya dos mensajes iguales.
+6. Haz clic en **Iniciar Facebook Admin Butler**. Revisa los mismos grupos que ya examina. Cuando un grupo tiene administrador y su publicacion mas reciente es mas antigua que tu ajuste, prepara un mensaje por administrador.
+7. En el modo de revision, abre la tarjeta **Mensajes a administradores**. Los borradores esperan en **Pendientes de revision**. Edita el que quieras, marca los que desees y haz clic en **Aprobar y enviar**, u **Omitir** los que no.
+
+Solo se escribe a administradores, nunca a moderadores, y a nadie se le pregunta dos veces por el mismo grupo. Si Facebook pausa las acciones de tu cuenta tras un bloqueo, los mensajes a administradores tambien se pausan y esperan en la cola. La columna **Ultima publicacion** de **Grupos en los que trabajo el Butler** muestra la publicacion mas reciente que el Butler encontro en cada grupo.
+
 ## Notas
 
 - **Facebook Admin Butler esta en fase beta.** Algunos pasos dependen del diseno actual de Facebook, que cambia a menudo, asi que los resultados pueden variar. Si algo se ve raro, ejecutalo una vez con **Ver en accion** activado para observar que ocurre.

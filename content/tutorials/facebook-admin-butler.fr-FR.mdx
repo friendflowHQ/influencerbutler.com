@@ -31,6 +31,20 @@ Etre administrateur d'un groupe actif de votre niche a beaucoup de valeur : vous
 11. Pendant qu'il travaille, le tableau **Groupes traites par le Butler** se remplit sous vos chiffres de progression. Chaque groupe verifie apparait une fois, avec son statut actuel, sa taille, s'il est public ou prive, le mot-cle qui l'a trouve et la date de la derniere verification. Filtrez avec les puces de statut (par exemple **En attente d'attribution**), trouvez un groupe avec le champ de recherche, triez par n'importe quel en-tete de colonne et utilisez **Exporter CSV** pour enregistrer ce que vous voyez.
 12. Optionnel : sous **Planificateur**, definissez une **Heure de debut** et un intervalle **Repeter tous les**, puis cliquez sur **Activer la planification** pour le laisser tourner en pilote automatique.
 
+## Ecrire aux admins des groupes inactifs
+
+Certains groupes de votre niche ont deja un admin, mais personne n'y publie depuis des mois. Facebook Admin Butler peut les trouver et ecrire a leurs admins pour leur demander s'ils vous cederaient le groupe.
+
+1. Ouvrez la carte **Ecrire aux admins des groupes inactifs** et cochez **Ecrire aux admins des groupes inactifs**.
+2. Dans **Aucune publication depuis**, indiquez depuis combien de temps un groupe doit etre silencieux avant d'ecrire a ses admins. La valeur par defaut est 90 jours (environ 3 mois).
+3. Dans **Envoi des messages**, choisissez **Je veux relire chaque message avant** (recommande) ou **Les envoyer automatiquement**.
+4. Reglez **Messages aux admins par jour (maximum)**. Gardez ce nombre bas : ecrire a des inconnus est ce que Facebook surveille le plus, c'est pourquoi les messages sont aussi espaces d'une ou deux minutes.
+5. Modifiez le **Message**. `{firstName}` devient le prenom de l'admin et `{groupName}` le nom du groupe. Utilisez `{Bonjour|Salut|Coucou}` pour varier le texte afin qu'aucun message ne soit identique.
+6. Cliquez sur **Demarrer Facebook Admin Butler**. Il verifie les memes groupes qu'il examine deja. Quand un groupe a un admin et que sa publication la plus recente est plus ancienne que votre reglage, il prepare un message par admin.
+7. En mode relecture, ouvrez la carte **Messages aux admins**. Les brouillons attendent dans **A relire**. Modifiez ceux que vous voulez, cochez ceux a envoyer puis cliquez sur **Approuver et envoyer**, ou **Ignorer** les autres.
+
+Seuls les admins recoivent un message, jamais les moderateurs, et personne n'est sollicite deux fois pour le meme groupe. Si Facebook met en pause les actions de votre compte apres un blocage, les messages aux admins sont aussi mis en pause et attendent dans la file. La colonne **Derniere publication** de **Groupes traites par le Butler** montre la publication la plus recente trouvee sur chaque groupe.
+
 ## Notes
 
 - **Facebook Admin Butler est en version beta.** Certaines etapes dependent de la mise en page actuelle de Facebook, qui change souvent, donc les resultats peuvent varier. Si quelque chose semble anormal, lancez-le une fois avec **Regarder l'execution** active pour voir ce qui se passe.

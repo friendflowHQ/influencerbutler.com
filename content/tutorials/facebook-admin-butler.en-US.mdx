@@ -31,6 +31,20 @@ Owning admin of an active niche group is valuable: you control the posts, the pi
 11. As it works, the **Groups the Butler worked on** table fills in under your progress numbers. Every group it has checked appears once, with its current status, its size, whether it is public or private, the keyword that found it, and when it was last checked. Narrow it with the status chips (for example **Awaiting grant**), find a group with the search box, sort by any column heading, and use **Export CSV** to save whatever you are looking at.
 12. Optional: under **Scheduler**, set a **Start time** and a **Repeat every** interval, then click **Enable Schedule** to keep it running on autopilot.
 
+## Message the admins of inactive groups
+
+Some groups in your niche already have an admin, but nobody has posted in months. Facebook Admin Butler can find those and message their admins to ask if they would hand the group over to you.
+
+1. Open the **Message inactive group admins** card and check **Message the admins of inactive groups**.
+2. In **No posts in the last**, set how quiet a group must be before its admins are messaged. The default is 90 days (about 3 months).
+3. In **How messages go out**, choose **Let me review each one first** (recommended) or **Send them automatically**.
+4. Set **Max admin messages per day**. Keep it low: messaging people you don't know is what Facebook watches most closely, so messages are also spaced a minute or two apart.
+5. Edit the **Message**. `{firstName}` becomes the admin's first name and `{groupName}` the group's name. Use `{Hi|Hello|Hey}` to vary the wording so no two messages are identical.
+6. Click **Start Facebook Admin Butler**. It checks the same groups it already looks at. When a group has an admin and its newest post is older than your setting, it drafts one message per admin.
+7. In review mode, open the **Admin messages** card. Drafts wait under **Waiting for review**. Edit any draft, tick the ones you want, then click **Approve & send**, or **Skip** the ones you don't.
+
+Only admins are messaged, never moderators, and nobody is asked twice about the same group. If Facebook pauses your account's actions after a block, admin messages pause too and wait in the queue. The **Last post** column in **Groups the Butler worked on** shows the newest post the Butler found on each group.
+
 ## Notes
 
 - **Facebook Admin Butler is in beta.** Some steps depend on Facebook's current layout, which changes often, so results can vary. If something looks off, run it once with **Watch it run** on so you can see what happens.
