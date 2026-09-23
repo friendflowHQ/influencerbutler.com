@@ -394,3 +394,22 @@ export function formatWholeMoney(cents: number, currency = "USD", locale = "en")
     return `${currencySymbol(currency)}${Math.round(cents / 100)}`;
   }
 }
+
+/**
+ * The creator's home marketplace, read from their per-country Associates tags
+ * ({ US: "tag-20", UK: "tag-21" }). A US tag, or no tags at all, means
+ * amazon.com (the US tag falls back to the storefront handle elsewhere); a
+ * UK-only creator reads as amazon.co.uk.
+ */
+export function homeMarketplaceForTags(tags: Record<string, string> | null | undefined): string {
+  const entries = Object.entries(tags ?? {}).filter(([, tag]) => String(tag ?? "").trim());
+  if (entries.length === 0 || entries.some(([code]) => code.toUpperCase() === "US")) {
+    return DEFAULT_MARKETPLACE;
+  }
+  return marketplaceForCountry(entries[0]?.[0]);
+}
+
+/** The Creator Hub video list ("Manage content") on a marketplace. */
+export function creatorHubManageUrl(marketplace: string | null | undefined): string {
+  return `https://www.${marketplaceOrDefault(marketplace)}/creatorhub/manage`;
+}

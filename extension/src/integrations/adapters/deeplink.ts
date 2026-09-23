@@ -2,7 +2,7 @@ import type { IntegrationAdapter, LinkTarget, TestResult } from "../types";
 import { PROVIDER_CREDENTIALS_URLS } from "../../shared/constants";
 import {
   REQUEST_TIMEOUT_MS,
-  TEST_TARGET_URL,
+  testTargetUrl,
   firstString,
   obj,
   providerError,
@@ -117,12 +117,12 @@ const urlGeniusAdapter: IntegrationAdapter = {
   hosts: ["https://api.urlgeni.us/*"],
   credentialsUrl: PROVIDER_CREDENTIALS_URLS.urlgenius,
   fields: [{ name: "apiKey", labelKey: "fieldApiKey", type: "password" }],
-  async test(creds): Promise<TestResult> {
+  async test(creds, ctx): Promise<TestResult> {
     const apiKey = str(creds.apiKey);
     if (!apiKey) return { ok: false, message: "Paste your URLGenius API key first." };
     let res: Response;
     try {
-      res = await urlGeniusCreate(apiKey, TEST_TARGET_URL);
+      res = await urlGeniusCreate(apiKey, testTargetUrl(ctx?.marketplace));
     } catch {
       return { ok: false, message: "Could not reach URLGenius. Are you online?" };
     }

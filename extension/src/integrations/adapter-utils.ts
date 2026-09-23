@@ -1,6 +1,7 @@
 import type { LinkTarget } from "./types";
 import { withAffiliateTag } from "./url";
 import { withAppOpenParams } from "./app-link";
+import { marketplaceOrDefault } from "../amazon/marketplace";
 
 // Small helpers shared by the real API adapters (deeplink providers and
 // affiliate networks). Kept tiny and dependency-light so every adapter parses
@@ -10,6 +11,11 @@ export const REQUEST_TIMEOUT_MS = 30_000;
 
 // A neutral, always-valid target for read-only test calls that need a url.
 export const TEST_TARGET_URL = "https://www.amazon.com/";
+// The same, on the creator's home marketplace (www.amazon.co.uk for a UK
+// creator). Omitted or unknown, it is TEST_TARGET_URL.
+export function testTargetUrl(marketplace?: string | null): string {
+  return `https://www.${marketplaceOrDefault(marketplace)}/`;
+}
 
 export function str(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";

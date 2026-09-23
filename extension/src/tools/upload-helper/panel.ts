@@ -8,6 +8,7 @@ import { resolveCampaignStatus } from "../campaigns/status";
 import { describeAcceptResult, requestAccept, type AcceptKind } from "../campaigns/accept";
 import { campaignPromptsFor } from "./campaign-prompt";
 import type { Availability } from "../../background/market-availability";
+import { creatorHubManageUrl } from "../../amazon/marketplace";
 
 // Creator Hub "Edit Video" helper (/creatorhub/video/<id>). Mirrors the
 // competitor's upload overlay, in our branding: per-country availability of the
@@ -16,7 +17,6 @@ import type { Availability } from "../../background/market-availability";
 // no-op safely when Amazon's markup is missing.
 
 const MARKETS = ["US", "CA", "UK"] as const;
-const MANAGE_URL = "https://www.amazon.com/creatorhub/manage";
 
 // The Creator Hub reports the home marketplace as a short code; the accept
 // request wants the storefront host (the campaign is on that store).
@@ -328,7 +328,9 @@ async function submitAndClose(status: HTMLElement): Promise<void> {
   // "Close": return to the video list, but only if Amazon has not already
   // navigated us away as part of its own submit flow.
   if (/^\/creatorhub\/video\//.test(location.pathname)) {
-    window.location.assign(MANAGE_URL);
+    // Back to the video list on the marketplace this Creator Hub lives on
+    // (www.amazon.co.uk/creatorhub/manage for a UK creator).
+    window.location.assign(creatorHubManageUrl(location.hostname));
   }
 }
 

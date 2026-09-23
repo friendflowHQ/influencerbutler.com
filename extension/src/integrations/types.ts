@@ -53,6 +53,12 @@ export type FieldSpec = {
   normalize?: (value: string) => string;
 };
 
+// Context the caller hands a provider's test(), beyond its credentials.
+export type TestContext = {
+  // The creator's home marketplace ("amazon.com", "amazon.co.uk").
+  marketplace?: string;
+};
+
 export type TestResult = {
   ok: boolean;
   message: string;
@@ -93,7 +99,9 @@ export type IntegrationAdapter = {
   // this page in a new tab, matching the desktop app's button of the same name.
   credentialsUrl?: string;
   // Read-only verification. Never mutates anything on the provider side.
-  test(creds: Record<string, string>): Promise<TestResult>;
+  // `ctx.marketplace` is the creator's home marketplace (from their
+  // per-country tags), for a test call that needs a sample Amazon url.
+  test(creds: Record<string, string>, ctx?: TestContext): Promise<TestResult>;
   // Deeplink providers turn an Amazon url into a wrapped/tracked link.
   generateLink?(target: LinkTarget, creds: Record<string, string>): Promise<string>;
   // Best-effort commission rate (as a percentage, for example 5 for 5%) this

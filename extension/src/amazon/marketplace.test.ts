@@ -5,8 +5,10 @@ import {
   ccHostForMarketplace,
   countryForMarketplace,
   currencyForMarketplace,
+  creatorHubManageUrl,
   currencySymbol,
   formatWholeMoney,
+  homeMarketplaceForTags,
   marketplaceForCcHost,
   marketplaceForCountry,
   marketplaceOrDefault,
@@ -115,5 +117,27 @@ describe("formatWholeMoney", () => {
     expect(formatWholeMoney(123400, "USD", "en")).toBe("$1,234");
     expect(formatWholeMoney(123400, "GBP", "en")).toBe("£1,234");
     expect(formatWholeMoney(99, "USD", "en")).toBe("$1");
+  });
+});
+
+describe("homeMarketplaceForTags", () => {
+  it("reads US for a US tag or no tags", () => {
+    expect(homeMarketplaceForTags({})).toBe("amazon.com");
+    expect(homeMarketplaceForTags(null)).toBe("amazon.com");
+    expect(homeMarketplaceForTags({ US: "me-20", UK: "me-21" })).toBe("amazon.com");
+    expect(homeMarketplaceForTags({ US: "  ", UK: "me-21" })).toBe("amazon.co.uk");
+  });
+
+  it("reads a non-US home from its only tag", () => {
+    expect(homeMarketplaceForTags({ UK: "me-21" })).toBe("amazon.co.uk");
+    expect(homeMarketplaceForTags({ DE: "me-21" })).toBe("amazon.de");
+  });
+});
+
+describe("creatorHubManageUrl", () => {
+  it("builds the manage URL on the page's marketplace", () => {
+    expect(creatorHubManageUrl("www.amazon.com")).toBe("https://www.amazon.com/creatorhub/manage");
+    expect(creatorHubManageUrl("www.amazon.co.uk")).toBe("https://www.amazon.co.uk/creatorhub/manage");
+    expect(creatorHubManageUrl(null)).toBe("https://www.amazon.com/creatorhub/manage");
   });
 });

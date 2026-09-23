@@ -17,6 +17,7 @@ import { retailerFromHost } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
+import { homeMarketplaceForTags } from "../amazon/marketplace";
 import type { SyncProviderPayload, SyncSettingsPayload } from "../transport/sync-settings";
 import type {
   GenerateLinkResult,
@@ -301,7 +302,11 @@ export async function testIntegration(id: string): Promise<IntegrationTestOutcom
   const creds = await credsFor(id, integrations);
   let outcome: IntegrationTestOutcome;
   try {
-    outcome = await adapter.test(creds);
+    // A test call that needs a sample Amazon url uses the creator's home
+    // marketplace (amazon.co.uk for a UK-only tag set; amazon.com otherwise).
+    outcome = await adapter.test(creds, {
+      marketplace: homeMarketplaceForTags(integrations.global.perCountryTags),
+    });
   } catch {
     outcome = { ok: false, message: "Test failed unexpectedly. Try again." };
   }
