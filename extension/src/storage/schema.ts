@@ -501,6 +501,10 @@ export type CampaignWatchItem = {
   lastFillPct: number | null;
   lastFullyClaimed: boolean | null;
   notifiedAt: number | null;
+  // The retail marketplace whose Creator Connections grid lists this campaign
+  // ("amazon.co.uk" for affiliate-program.amazon.co.uk). Absent on watches made
+  // before marketplaces were tracked; those read as amazon.com.
+  marketplace?: string;
 };
 
 // The campaign watchlist is bounded like the product one. The poll opens the

@@ -5,7 +5,7 @@ import {
   ACCEPT_LEDGER_KEY,
   ACCEPT_TAB_DWELL_MS,
   CAMPAIGN_DETAIL_URL,
-  CAMPAIGN_GRID_URL,
+  campaignGridUrl,
 } from "../shared/constants";
 import { getFlags } from "../flags/cache";
 import { getState } from "../storage/store";
@@ -282,10 +282,12 @@ async function runAccept(input: AcceptInTabInput): Promise<AcceptOutcome> {
   // Attempt 1: the campaign's own page. UNVERIFIED URL shape (see
   // CAMPAIGN_DETAIL_URL); if that page never shows the campaign, fall back to
   // the grid, where the runner finds the card by id.
-  let outcome = await driveTab(CAMPAIGN_DETAIL_URL(campaignId), campaignId);
+  // Both open on the product's marketplace Creator Connections host
+  // (affiliate-program.amazon.co.uk for an amazon.co.uk product; US otherwise).
+  let outcome = await driveTab(CAMPAIGN_DETAIL_URL(campaignId, input.marketplace), campaignId);
   if (!outcome.ok && (outcome.reason === "not-found" || outcome.reason === "timeout")) {
     log("campaign-accept", `detail page did not resolve (${outcome.reason}); trying the grid`);
-    outcome = await driveTab(CAMPAIGN_GRID_URL, campaignId);
+    outcome = await driveTab(campaignGridUrl(input.marketplace), campaignId);
   }
 
   if (!outcome.ok && outcome.reason === "blocked") {

@@ -127,8 +127,14 @@ const COMMISSION_RE = /commission\s*rate\s*:?\s*([\d.]+)\s*%/i;
 const PCT_RE = /([\d.]+)\s*%/;
 // "Remaining budget: $5,000.00" (also matches "Budget: $10,000" and a bare
 // "$1,000,000.00" from the budget testid element).
-const BUDGET_RE = /(?:remaining\s*)?budget\s*:?\s*\$?\s*([\d,]+(?:\.\d{1,2})?)/i;
-const BARE_MONEY_RE = /\$?\s*([\d,]+(?:\.\d{1,2})?)/;
+// The currency marker is optional and covers every Creator Connections host:
+// "$" (US), "CA$" / "C$" (CA), "£" (UK), "€".
+const CUR = "(?:[A-Z]{1,2}\\$|[$£€])?";
+const BUDGET_RE = new RegExp(
+  `(?:remaining\\s*)?budget\\s*:?\\s*${CUR}\\s*([\\d,]+(?:\\.\\d{1,2})?)`,
+  "i",
+);
+const BARE_MONEY_RE = new RegExp(`${CUR}\\s*([\\d,]+(?:\\.\\d{1,2})?)`);
 // Two M/D/YY dates separated by a hyphen, an en/em dash (U+2013 / U+2014, written
 // as escapes to keep the source dash-free), or "to". The date-range testid holds
 // just "7/13/26 - 8/13/26"; DATES_RE additionally requires a "Dates:" label for
@@ -147,6 +153,13 @@ export function parseUsDate(raw: string): Date | null {
   const day = Number(m[2]);
   let year = Number(m[3]);
   if (year < 100) year += 2000;
+  // A first number above 12 cannot be a month: read it day-first (D/M/YY, as a
+  // non-US Creator Connections host may render it). An M/D date never gets here.
+  if (month > 12 && day <= 12) return buildDate(year, day, month);
+  return buildDate(year, month, day);
+}
+
+function buildDate(year: number, month: number, day: number): Date | null {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   const d = new Date(year, month - 1, day);
   // Reject overflow (e.g. 2/31 rolling into March).
@@ -242,7 +255,10 @@ export function parseDateRange(text: string | null | undefined): {
 
 // SPCC "Estimated EPC: Up to $1.05" -> 105 (cents). Amazon renders EPC only as an
 // upper bound ("Up to $X"), so this is a ceiling, not a payout estimate.
-const EPC_RE = /estimated\s+epc\s*:?\s*(?:up\s+to\s+)?\$?\s*([\d,]+(?:\.\d{1,2})?)/i;
+const EPC_RE = new RegExp(
+  `estimated\\s+epc\\s*:?\\s*(?:up\\s+to\\s+)?${CUR}\\s*([\\d,]+(?:\\.\\d{1,2})?)`,
+  "i",
+);
 // SPCC "Budget availability score: High" (Amazon renders it with or without a
 // space after the colon, verified live 2026-09-22).
 const BUDGET_AVAIL_RE = /budget\s+availability\s+score\s*:?\s*(high|medium|low)/i;

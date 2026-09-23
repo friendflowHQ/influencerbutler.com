@@ -6,6 +6,7 @@ import {
   countryForMarketplace,
   currencyForMarketplace,
   currencySymbol,
+  formatWholeMoney,
   marketplaceForCcHost,
   marketplaceForCountry,
   marketplaceOrDefault,
@@ -106,5 +107,13 @@ describe("parseMoney", () => {
     expect(parseMoney("MX$199.00")).toEqual({ priceCents: 19900, currency: "MXN" });
     // A dollar price on a non-dollar marketplace stays USD.
     expect(parseMoney("$10.00", "amazon.co.uk")).toEqual({ priceCents: 1000, currency: "USD" });
+  });
+});
+
+describe("formatWholeMoney", () => {
+  it("formats per currency", () => {
+    expect(formatWholeMoney(123400, "USD", "en")).toBe("$1,234");
+    expect(formatWholeMoney(123400, "GBP", "en")).toBe("£1,234");
+    expect(formatWholeMoney(99, "USD", "en")).toBe("$1");
   });
 });

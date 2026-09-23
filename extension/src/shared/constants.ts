@@ -1,3 +1,5 @@
+import { associatesHostForMarketplace, ccHostForMarketplace } from "../amazon/marketplace";
+
 export const API_BASE = "https://www.influencerbutler.com";
 
 export const ENDPOINTS = {
@@ -117,6 +119,11 @@ export const IB_RELAY_ENDPOINTS = {
 export const ONBOARDING_VIDEO_ID = "plZS_nXX-BE";
 export const ASSOCIATES_CREDENTIALS_URL =
   "https://affiliate-program.amazon.com/assoc_credentials/home";
+// The Associates credentials page for a marketplace's own Associates Central
+// (partnernet.amazon.de, affiliate-program.amazon.co.uk, ...). Omitted or
+// unknown, it is the US page above.
+export const associatesCredentialsUrl = (marketplace?: string | null): string =>
+  `https://${associatesHostForMarketplace(marketplace)}/assoc_credentials/home`;
 // Where the OAuth2 Creator API Credential ID + Secret are issued, per region.
 // Same destinations the desktop app's "Show me where" opens. NA is the default;
 // the options page uses the EU/FE entries for the per-region subsections.
@@ -329,8 +336,14 @@ export const CAMPAIGN_WATCH_PERIOD_MINUTES = 30;
 // The grid page the poll opens: the Affiliate+ opportunities tab (the verified
 // source of the fill fields). A logged-out or ineligible load simply never fires
 // the campaign/search fetch, so the poll no-ops rather than false-alerting.
-export const CAMPAIGN_GRID_URL =
-  "https://affiliate-program.amazon.com/p/connect/requests?status=opportunity&type=affiliate-plus&sortBy=recommended_for_you&campaignStatuses=active%2Cpending&nonFullyClaimedOnly=false";
+// campaignGridUrl(marketplace) opens the grid on that marketplace's Creator
+// Connections host (affiliate-program.amazon.co.uk for amazon.co.uk); only the
+// hosts the manifest grants are used, anything else opens the US grid.
+const CAMPAIGN_GRID_QUERY =
+  "/p/connect/requests?status=opportunity&type=affiliate-plus&sortBy=recommended_for_you&campaignStatuses=active%2Cpending&nonFullyClaimedOnly=false";
+export const campaignGridUrl = (marketplace?: string | null): string =>
+  `https://${ccHostForMarketplace(marketplace)}${CAMPAIGN_GRID_QUERY}`;
+export const CAMPAIGN_GRID_URL = campaignGridUrl("amazon.com");
 
 // Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
 // day 1 invites the user to the Facebook community, day 3 invites them to
@@ -415,7 +428,9 @@ export const AUTO_ACCEPT_PER_RUN_HARD_CAP = 5;
 // long, so the rule-based pass never re-tries a campaign it already took
 // (Amazon may keep showing an accepted card with a "pending" state).
 export const ACCEPT_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
-export const CAMPAIGN_DETAIL_URL = (campaignId: string): string =>
-  `https://affiliate-program.amazon.com/p/connect/request?adId=${encodeURIComponent(
+// Opened on the campaign's marketplace Creator Connections host (US when
+// omitted or not granted by the manifest).
+export const CAMPAIGN_DETAIL_URL = (campaignId: string, marketplace?: string | null): string =>
+  `https://${ccHostForMarketplace(marketplace)}/p/connect/request?adId=${encodeURIComponent(
     campaignId,
   )}&campaignId=${encodeURIComponent(campaignId)}&type=affiliate-plus`;

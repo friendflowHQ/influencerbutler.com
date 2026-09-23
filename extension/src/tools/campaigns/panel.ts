@@ -8,6 +8,7 @@ import { describeAcceptResult, lookupCampaignId, requestAccept } from "./accept"
 import { showToast } from "../../ui/toast";
 import type { CampaignStatusRecord, HudStatus } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
+import { currencyForMarketplace, currencySymbol } from "../../amazon/marketplace";
 
 // Shows whether this product likely has a Creator Connections or Sponsored
 // Products (SPCC) campaign, checked locally against the downloaded membership
@@ -83,9 +84,10 @@ export async function renderCampaigns(
       pills.append(chip("good", t().enrolledRate(enrolled.ratePct)));
     }
     if (enrolled.epc !== null) {
-      // No currency travels with the record; realized EPC is overwhelmingly USD
-      // (Amazon Associates US). Format as dollars; localize if that changes.
-      pills.append(chip("good", t().epc(`$${enrolled.epc.toFixed(2)}`)));
+      // No currency travels with the record, so it is shown in the product
+      // page's marketplace currency ("$" on amazon.com, "£" on amazon.co.uk).
+      const symbol = currencySymbol(currencyForMarketplace(signals.marketplace));
+      pills.append(chip("good", t().epc(`${symbol}${enrolled.epc.toFixed(2)}`)));
     }
     if (pills.childElementCount > 0) block.append(pills);
   }

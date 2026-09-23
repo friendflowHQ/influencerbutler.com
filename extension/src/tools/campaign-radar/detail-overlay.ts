@@ -18,6 +18,7 @@ import { getCachedVideoCounts, putCachedVideoCount } from "./video-count-cache";
 import { sendToBackground } from "../../shared/messages";
 import type { MarketBatchResult, MarketProduct } from "../../shared/messages";
 import type { Settings } from "../../storage/schema";
+import { currencyForMarketplace, formatWholeMoney, marketplaceForCcHost } from "../../amazon/marketplace";
 
 // Campaign detail overlay: a persistent panel on a SINGLE campaign's
 // /p/connect/request page (distinct from the grid). The grid's per-card badge and
@@ -28,9 +29,12 @@ import type { Settings } from "../../storage/schema";
 // FETCH_VIDEO_COUNT, the video-count cache); a floating card rather than a modal so
 // the creator can still read the page while it is open.
 
-// The detail page is amazon.com (US associates host); its product ASINs are
-// amazon.com products, so both reads target that marketplace.
-const MARKETPLACE = "amazon.com";
+// The detail page's product ASINs belong to its associates host's marketplace
+// (amazon.com on affiliate-program.amazon.com, amazon.co.uk on
+// affiliate-program.amazon.co.uk), so both reads target that marketplace.
+function detailMarketplace(): string {
+  return marketplaceForCcHost(typeof location === "undefined" ? null : location.hostname);
+}
 const HOST_CLASS = "radar-detail-host";
 // Cap the products we fetch so a campaign with a long catalogue does not fan out
 // into dozens of product-page fetches; the first several are the representative set.
@@ -140,7 +144,7 @@ async function enrichDemand(mine: number, rows: ProductRow[]): Promise<void> {
     const res = await sendToBackground<MarketBatchResult>({
       kind: "GET_MARKET_BATCH",
       asins: rows.map((r) => r.asin),
-      marketplace: MARKETPLACE,
+      marketplace: detailMarketplace(),
     });
     if (mine !== epoch) return;
     const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
@@ -154,7 +158,7 @@ async function enrichDemand(mine: number, rows: ProductRow[]): Promise<void> {
 }
 
 async function enrichVideoCounts(mine: number, rows: ProductRow[]): Promise<void> {
-  const cached = await getCachedVideoCounts(rows.map((r) => r.asin), MARKETPLACE);
+  const cached = await getCachedVideoCounts(rows.map((r) => r.asin), detailMarketplace());
   if (mine !== epoch) return;
   const pending: ProductRow[] = [];
   for (const row of rows) {
@@ -173,13 +177,13 @@ async function enrichVideoCounts(mine: number, rows: ProductRow[]): Promise<void
     const count = await sendToBackground<number | null>({
       kind: "FETCH_VIDEO_COUNT",
       asin: row.asin,
-      marketplace: MARKETPLACE,
+      marketplace: detailMarketplace(),
     }).catch(() => null);
     if (mine !== epoch) return;
     if (count !== null) {
       row.videoCount = count;
       renderRow(row);
-      void putCachedVideoCount(row.asin, MARKETPLACE, count);
+      void putCachedVideoCount(row.asin, detailMarketplace(), count);
     }
   }
 }
@@ -198,17 +202,11 @@ function readProductTitles(root: ParentNode): Map<string, string> {
   return map;
 }
 
-function money(cents: number | null, locale: string): string | null {
+// Whole-unit money in the product's currency (from the catalogue when it has
+// one, else the detail page's marketplace currency).
+function money(cents: number | null, locale: string, currency?: string | null): string | null {
   if (cents === null) return null;
-  try {
-    return new Intl.NumberFormat(locale || "en", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(cents / 100);
-  } catch {
-    return `$${Math.round(cents / 100)}`;
-  }
+  return formatWholeMoney(cents, currency || currencyForMarketplace(detailMarketplace()), locale);
 }
 
 // The saturation chip's colour: 0 videos is a wide-open spot (green), a crowded
@@ -249,12 +247,13 @@ function renderRow(row: ProductRow): void {
 
   const m = row.market;
   if (m) {
-    const price = money(m.priceCents, locale);
+    const price = money(m.priceCents, locale, m.currency);
     if (price) facts.append(factChip(price));
     if (m.estMonthlySales !== null) {
       const rev = money(
         m.priceCents !== null ? m.estMonthlySales * m.priceCents : null,
         locale,
+        m.currency,
       );
       facts.append(factChip(t().campaignBriefPickEst(String(Math.round(m.estMonthlySales)), rev ?? "?")));
     }

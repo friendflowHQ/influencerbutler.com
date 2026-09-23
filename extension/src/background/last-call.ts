@@ -1,6 +1,7 @@
 import { getState, patchState } from "../storage/store";
 import { log } from "../shared/log";
-import { CAMPAIGN_GRID_URL } from "../shared/constants";
+import { campaignGridUrl } from "../shared/constants";
+import { amazonMarketplaceOf } from "../amazon/marketplace";
 import { CAMPAIGN_WATCHLIST_CAP, type CampaignWatchItem } from "../storage/schema";
 import { campaignFillPct } from "../tools/campaign-radar/score";
 import { t } from "../i18n";
@@ -48,6 +49,7 @@ export async function addCampaignWatch(
       atCap = true;
       return;
     }
+    const marketplace = amazonMarketplaceOf(input.marketplace);
     s.campaignWatchlist.push({
       campaignId,
       brand: input.brand,
@@ -55,6 +57,8 @@ export async function addCampaignWatch(
       lastFillPct: null,
       lastFullyClaimed: null,
       notifiedAt: null,
+      // Only recorded when known, so a US watch stays shaped exactly as before.
+      ...(marketplace ? { marketplace } : {}),
     });
   });
   return { campaignIds: idsOf(state.campaignWatchlist), atCap };
@@ -136,11 +140,23 @@ function notify(
 }
 
 // A Last Call notification was clicked: open the campaign grid so the creator can
-// accept. The URL is a fixed constant, never derived from page content.
+// accept, on the watched campaign's own marketplace host. The URL is built from a
+// fixed allowlist of Creator Connections hosts, never from page content.
 export function handleLastCallNotificationClick(notificationId: string): boolean {
   if (!notificationId.startsWith(NOTIF_PREFIX)) return false;
-  void chrome.tabs.create({ url: CAMPAIGN_GRID_URL });
+  const campaignId = notificationId.slice(NOTIF_PREFIX.length);
+  void getState()
+    .then((s) => s.campaignWatchlist.find((w) => w.campaignId === campaignId)?.marketplace)
+    .catch(() => undefined)
+    .then((marketplace) => chrome.tabs.create({ url: campaignGridUrl(marketplace) }));
   return true;
+}
+
+// Pure (exported for tests): the distinct grid URLs the poll must open, one per
+// Creator Connections host among the watched campaigns, in first-watched order.
+// A watch with no recorded marketplace reads as amazon.com.
+export function pollGridUrls(items: ReadonlyArray<Pick<CampaignWatchItem, "marketplace">>): string[] {
+  return [...new Set(items.map((w) => campaignGridUrl(w.marketplace)))];
 }
 
 // ---- Background poll --------------------------------------------------------
@@ -167,9 +183,15 @@ export async function refreshLastCall(): Promise<void> {
   const state = await getState();
   if (!state.settings.tools.lastCallButler || state.campaignWatchlist.length === 0) return;
 
+  // One background tab per Creator Connections host being watched (just the US
+  // grid for a US-only watchlist, exactly as before).
+  await Promise.all(pollGridUrls(state.campaignWatchlist).map((url) => pollGrid(url)));
+}
+
+async function pollGrid(url: string): Promise<void> {
   let tab: chrome.tabs.Tab;
   try {
-    tab = await chrome.tabs.create({ url: CAMPAIGN_GRID_URL, active: false });
+    tab = await chrome.tabs.create({ url, active: false });
   } catch (error) {
     log("last-call", "could not open grid tab", error);
     return;

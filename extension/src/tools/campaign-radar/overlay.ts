@@ -39,6 +39,7 @@ import { runAcceptOnPage } from "./accept-runner";
 import { describeAcceptResult } from "../campaigns/accept";
 import type { AcceptOutcome } from "../../shared/messages";
 import type { Settings } from "../../storage/schema";
+import { currencyForMarketplace, currencySymbol, marketplaceForCcHost } from "../../amazon/marketplace";
 
 // Campaign Radar overlay: score and highlight the campaigns on the Creator
 // Connections grid, with the user's own thresholds live in a toolbar. This is our
@@ -59,10 +60,11 @@ const DONE_ATTR = "data-ib-radar";
 // shadow stylesheet cannot reach). Brand orange, not the competitor's pink.
 const HIGHLIGHT_OUTLINE = "2px solid #fb923c";
 
-// An EPC ceiling in cents rendered as a dollar string ("$0.06"). Cents in, so no
-// float drift; two decimals because EPCs run well under a dollar.
+// An EPC ceiling in cents rendered in the grid's currency ("$0.06" on the US
+// host, "£0.06" on the UK host). Cents in, so no float drift; two decimals
+// because EPCs run well under a dollar.
 function formatEpc(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+  return `${currencySymbol(currencyForMarketplace(radarMarketplace()))}${(cents / 100).toFixed(2)}`;
 }
 
 type Row = {
@@ -103,9 +105,13 @@ let availabilityObserver: IntersectionObserver | null = null;
 // the previous run's observer instead of leaking it against removed nodes.
 let videoCountObserver: IntersectionObserver | null = null;
 
-// The Creator Connections Affiliate+ grid is the US marketplace; the card ASINs
-// are amazon.com products, so both the demand and the video-count reads target it.
-const RADAR_MARKETPLACE = "amazon.com";
+// The retail marketplace behind this Creator Connections grid: the card ASINs of
+// affiliate-program.amazon.com are amazon.com products, those of
+// affiliate-program.amazon.co.uk are amazon.co.uk products, and so on. Both the
+// demand and the video-count reads target it. Defaults to amazon.com.
+function radarMarketplace(): string {
+  return marketplaceForCcHost(typeof location === "undefined" ? null : location.hostname);
+}
 
 // Whether Last Call Butler is on for this run, so renderBadge (called from many
 // enrichment callbacks) can decide whether to draw the watch bell without
@@ -566,7 +572,7 @@ async function toggleWatch(row: Row): Promise<void> {
       next
         ? {
             kind: "CAMPAIGN_WATCH_ADD",
-            item: { campaignId, brand: row.campaign.brand },
+            item: { campaignId, brand: row.campaign.brand, marketplace: radarMarketplace() },
           }
         : { kind: "CAMPAIGN_WATCH_REMOVE", campaignId },
     );
@@ -689,9 +695,10 @@ function openBrief(row: Row): void {
     confidence,
     ccStats: campaign.stats,
     asins: campaign.asins,
-    // The Creator Connections Affiliate+ grid is the US marketplace; the card
-    // ASINs are amazon.com products, so the catalogue read targets that store.
-    marketplace: "amazon.com",
+    // The card ASINs belong to the grid's own marketplace (amazon.com on the US
+    // associates host, amazon.co.uk on the UK one), so the catalogue read
+    // targets that store.
+    marketplace: radarMarketplace(),
     locale: getLocale(),
   };
 
@@ -715,6 +722,7 @@ function openBrief(row: Row): void {
     confidence,
     conversion: campaignStatsConversion(campaign.stats),
     locale: getLocale(),
+    currency: currencyForMarketplace(signals.marketplace),
     request: () =>
       sendToBackground<CampaignBriefResult>({ kind: "GET_CAMPAIGN_BRIEF", signals }),
     onAccept,
@@ -815,7 +823,8 @@ async function enrichVideoCounts(rows: Row[]): Promise<void> {
   if (candidates.length === 0) return;
 
   const firstAsin = (row: Row): string => row.campaign.asins[0]!.toUpperCase();
-  const cached = await getCachedVideoCounts(candidates.map(firstAsin), RADAR_MARKETPLACE);
+  const marketplace = radarMarketplace();
+  const cached = await getCachedVideoCounts(candidates.map(firstAsin), marketplace);
 
   const pending: Row[] = [];
   for (const row of candidates) {
@@ -842,12 +851,12 @@ async function enrichVideoCounts(rows: Row[]): Promise<void> {
         const count = await sendToBackground<number | null>({
           kind: "FETCH_VIDEO_COUNT",
           asin,
-          marketplace: RADAR_MARKETPLACE,
+          marketplace,
         }).catch(() => null);
         if (count !== null) {
           row.videoCount = count;
           renderBadge(row);
-          void putCachedVideoCount(asin, RADAR_MARKETPLACE, count);
+          void putCachedVideoCount(asin, marketplace, count);
         }
       }
     } finally {

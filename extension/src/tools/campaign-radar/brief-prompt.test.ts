@@ -50,6 +50,16 @@ describe("buildBriefPrompt", () => {
     expect(prompt).toContain("Respond ONLY with a JSON object");
   });
 
+  it("states money in the marketplace currency", () => {
+    const us = buildBriefPrompt(signals, demand);
+    expect(us).toContain("Remaining budget: $20,000");
+    expect(us).toContain("price $40");
+    const uk = buildBriefPrompt({ ...signals, marketplace: "amazon.co.uk" }, demand);
+    expect(uk).toContain("Remaining budget: £20,000");
+    expect(uk).toContain("price £40");
+    expect(uk).not.toContain("$");
+  });
+
   it("states unknowns and no-demand rather than omitting them", () => {
     const bare: CampaignBriefSignals = {
       ...signals,

@@ -37,6 +37,29 @@ describe("parseUsDate", () => {
     expect(parseUsDate("13/40/26")).toBeNull();
     expect(parseUsDate("2/31/26")).toBeNull(); // Feb 31 overflow
   });
+
+  it("reads an unambiguous day-first date (non-US hosts) and leaves M/D alone", () => {
+    const d = parseUsDate("25/12/26");
+    expect(d?.getMonth()).toBe(11);
+    expect(d?.getDate()).toBe(25);
+    // Ambiguous dates keep the US reading.
+    expect(parseUsDate("3/4/26")?.getMonth()).toBe(2);
+  });
+});
+
+describe("non-US currency markers", () => {
+  it("reads UK and CA budgets and EPCs", () => {
+    expect(parseCampaignText("Remaining budget: £5,000.00").remainingBudgetCents).toBe(500000);
+    expect(parseCampaignText("Budget: CA$10,000").remainingBudgetCents).toBe(1000000);
+    expect(parseBudgetText("£1,000,000.00")).toBe(100000000);
+    expect(parseEpcCents("Estimated EPC: Up to £0.06")).toBe(6);
+    expect(parseEpcCents("Estimated EPC: Up to C$1.05")).toBe(105);
+  });
+
+  it("still reads US dollars", () => {
+    expect(parseCampaignText("Remaining budget: $5,000.00").remainingBudgetCents).toBe(500000);
+    expect(parseBudgetText("$1,000,000.00")).toBe(100000000);
+  });
 });
 
 describe("daysUntil", () => {

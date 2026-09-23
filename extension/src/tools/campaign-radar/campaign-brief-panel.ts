@@ -5,6 +5,7 @@ import { visibleBreakdownParts } from "./score";
 import type { CampaignScore, CampaignScoreBand } from "./score";
 import { formatConversion } from "../earnings-overlay/model";
 import { sendToBackground } from "../../shared/messages";
+import { formatWholeMoney } from "../../amazon/marketplace";
 import type {
   CampaignBriefDemand,
   CampaignBriefResult,
@@ -27,6 +28,9 @@ export type CampaignBriefOpen = {
   conversion: number | null;
   // 2-letter locale for currency/number formatting of the demand figures.
   locale: string;
+  // ISO currency of the grid's marketplace (GBP on the UK associates host).
+  // Omitted, the demand figures read as USD.
+  currency?: string;
   // Fires the GET_CAMPAIGN_BRIEF round trip (built by the overlay, which holds
   // the campaign signals + license-safe background channel).
   request: () => Promise<CampaignBriefResult>;
@@ -54,17 +58,9 @@ export function closeCampaignBrief(): void {
   openHost = null;
 }
 
-function money(cents: number | null, locale: string): string | null {
+function money(cents: number | null, locale: string, currency = "USD"): string | null {
   if (cents === null) return null;
-  try {
-    return new Intl.NumberFormat(locale || "en", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(cents / 100);
-  } catch {
-    return `$${Math.round(cents / 100)}`;
-  }
+  return formatWholeMoney(cents, currency, locale);
 }
 
 function verdictFallback(band: CampaignScoreBand): string {
@@ -116,6 +112,7 @@ function briefToText(
   sections: CampaignBriefSections | null,
   demand: CampaignBriefDemand | null,
   locale: string,
+  currency = "USD",
 ): string {
   const lines: string[] = [];
   lines.push(`${t().campaignBriefTitle}${brand ? `: ${brand}` : ""}`);
@@ -125,7 +122,7 @@ function briefToText(
     if (sections.whyTake.length) lines.push("", t().campaignBriefWhy, ...sections.whyTake.map((s) => `- ${s}`));
     if (sections.whatToFilm.length) lines.push("", t().campaignBriefFilm, ...sections.whatToFilm.map((s) => `- ${s}`));
     if (demand) {
-      const est = money(demand.estMonthlyRevenueCents, locale);
+      const est = money(demand.estMonthlyRevenueCents, locale, currency);
       lines.push("", t().campaignBriefPick, `${demand.asin}${est ? ` - ${est}/month est.` : ""}`);
       if (demand.videoCount !== null) lines.push(t().campaignBriefSaturation(demand.videoCount));
       if (sections.pickReason) lines.push(sections.pickReason);
@@ -337,6 +334,7 @@ export function openCampaignBrief(opts: CampaignBriefOpen): void {
       latest.sections,
       latest.demand,
       opts.locale,
+      opts.currency,
     );
     void navigator.clipboard?.writeText(text).then(() => {
       copy.textContent = t().campaignBriefCopied;
@@ -414,7 +412,7 @@ function renderBody(body: HTMLElement, opts: CampaignBriefOpen, res: CampaignBri
   }
   if (res.demand) {
     body.append(sectionTitle(t().campaignBriefPick));
-    const est = money(res.demand.estMonthlyRevenueCents, opts.locale);
+    const est = money(res.demand.estMonthlyRevenueCents, opts.locale, opts.currency);
     const units = res.demand.estMonthlySales !== null ? String(Math.round(res.demand.estMonthlySales)) : "?";
     const line = el(
       "div",

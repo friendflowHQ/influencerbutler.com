@@ -707,7 +707,9 @@ export type ProductListsResult = {
 };
 
 // What the grid's "watch this campaign" bell sends to add a Last Call watch.
-export type CampaignWatchInput = { campaignId: string; brand: string | null };
+// `marketplace` is the retail marketplace of the grid the bell was tapped on
+// ("amazon.co.uk" on the UK associates host), so the poll re-opens that grid.
+export type CampaignWatchInput = { campaignId: string; brand: string | null; marketplace?: string };
 
 // Returned by the campaign watch add/remove/list messages: the set of currently
 // watched campaign ids (for the grid overlay to reflect bell state), plus atCap

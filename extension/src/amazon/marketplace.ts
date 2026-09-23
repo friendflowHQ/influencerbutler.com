@@ -378,3 +378,19 @@ export function currencySymbol(currency: string | null | undefined): string {
   const code = String(currency ?? "").toUpperCase();
   return CURRENCY_SYMBOLS[code] ?? (code && code !== "USD" ? `${code} ` : "$");
 }
+
+/**
+ * Whole-unit money for display ("$1,234", "£1,234"), localized through Intl when
+ * the runtime knows the currency, else the symbol plus a rounded amount.
+ */
+export function formatWholeMoney(cents: number, currency = "USD", locale = "en"): string {
+  try {
+    return new Intl.NumberFormat(locale || "en", {
+      style: "currency",
+      currency: currency || "USD",
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
+  } catch {
+    return `${currencySymbol(currency)}${Math.round(cents / 100)}`;
+  }
+}

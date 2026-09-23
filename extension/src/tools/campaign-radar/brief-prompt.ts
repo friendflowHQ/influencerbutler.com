@@ -3,6 +3,7 @@ import type {
   CampaignBriefSections,
   CampaignBriefSignals,
 } from "../../shared/messages";
+import { currencyForMarketplace, currencySymbol } from "../../amazon/marketplace";
 
 // Local (extension-side) port of the Campaign Butler brief prompt + parser, used
 // when the creator has connected their own OpenAI key in API Integrations. The
@@ -42,9 +43,11 @@ const INSTRUCTIONS = [
   "audiences: 3-6 short audience labels. Use empty arrays where you have nothing.",
 ].join(" ");
 
-function dollars(cents: number | null): string {
+// Money in the campaign's marketplace currency ("$1,234" for amazon.com,
+// "£1,234" for amazon.co.uk).
+function dollars(cents: number | null, currency = "USD"): string {
   if (cents === null) return "unknown";
-  return `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return `${currencySymbol(currency)}${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
 // Render the campaign signals as a compact, labelled block (mirrors the server
@@ -55,11 +58,13 @@ function buildSignalBlock(
   demand: CampaignBriefDemand | null,
 ): string {
   const lines: string[] = [];
+  const currency = currencyForMarketplace(signals.marketplace);
+  const money = (cents: number | null): string => dollars(cents, currency);
   lines.push(`Brand: ${signals.brand ?? "unknown"}`);
   lines.push(
     `Commission rate: ${signals.commissionRatePct === null ? "unknown" : `${signals.commissionRatePct}%`}`,
   );
-  lines.push(`Remaining budget: ${dollars(signals.remainingBudgetCents)}`);
+  lines.push(`Remaining budget: ${money(signals.remainingBudgetCents)}`);
   lines.push(
     `Days of runway left: ${signals.daysRemaining === null ? "unknown" : signals.daysRemaining}`,
   );
@@ -78,7 +83,7 @@ function buildSignalBlock(
     if (s.ordersLast30 !== null) parts.push(`${s.ordersLast30} orders in the last 30 days`);
     if (s.clicksLast30 !== null) parts.push(`${s.clicksLast30} clicks in the last 30 days`);
     if (s.salesLast30Cents !== null)
-      parts.push(`${dollars(s.salesLast30Cents)} sales in the last 30 days`);
+      parts.push(`${money(s.salesLast30Cents)} sales in the last 30 days`);
     if (s.roas !== null) parts.push(`ROAS ${s.roas}`);
     if (s.ordersTotal !== null) parts.push(`${s.ordersTotal} orders tracked in campaign history`);
     const conv =
@@ -91,13 +96,13 @@ function buildSignalBlock(
 
   if (demand) {
     const parts: string[] = [`ASIN ${demand.asin}`];
-    if (demand.priceCents !== null) parts.push(`price ${dollars(demand.priceCents)}`);
+    if (demand.priceCents !== null) parts.push(`price ${money(demand.priceCents)}`);
     if (demand.boughtPastMonth !== null)
       parts.push(`${demand.boughtPastMonth}+ bought in the past month (Amazon's own figure)`);
     if (demand.estMonthlySales !== null)
       parts.push(`estimated ${Math.round(demand.estMonthlySales)} units/month`);
     if (demand.estMonthlyRevenueCents !== null)
-      parts.push(`estimated ${dollars(demand.estMonthlyRevenueCents)}/month revenue`);
+      parts.push(`estimated ${money(demand.estMonthlyRevenueCents)}/month revenue`);
     if (demand.category) parts.push(`category ${demand.category}`);
     if (demand.videoCount !== null)
       parts.push(
