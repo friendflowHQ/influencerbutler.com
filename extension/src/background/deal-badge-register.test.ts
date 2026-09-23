@@ -55,6 +55,30 @@ describe("syncDealBadgeContentScripts", () => {
     });
   });
 
+  it("registers a bundled site even when the curated list came back empty", async () => {
+    // A failed deal-sources fetch returns [], but a site we ship a static
+    // host_permission for is granted from install and must still get the badge.
+    getDealSources.mockResolvedValue([]);
+    getSettings.mockResolvedValue({ dealSources: [] });
+    hasOriginPermission.mockResolvedValue(true);
+
+    const register = vi.fn(async () => {});
+    vi.stubGlobal("chrome", {
+      scripting: {
+        registerContentScripts: register,
+        updateContentScripts: vi.fn(),
+        unregisterContentScripts: vi.fn(),
+        getRegisteredContentScripts: vi.fn(async () => []),
+      },
+    });
+
+    const sync = await importSync();
+    await sync();
+
+    const call = register.mock.calls[0] as unknown as [Array<Record<string, unknown>>];
+    expect(call[0][0]).toMatchObject({ matches: ["https://www.savewithcindy.shop/*"] });
+  });
+
   it("updates (not registers) when a script is already registered", async () => {
     getDealSources.mockResolvedValue([{ url: "https://www.savewithcindy.shop/", label: "x" }]);
     getSettings.mockResolvedValue({ dealSources: [] });

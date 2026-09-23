@@ -255,3 +255,52 @@ describe("migrate: v27 standalone accept + upload campaign prompt flags", () => 
     expect(out.settings.tools.uploadCampaignPrompt).toBe(false);
   });
 });
+
+describe("migrate: v35 deals settings", () => {
+  it("backfills settings.deals onto v34 state", () => {
+    const settings = structuredClone(DEFAULTS.settings) as Record<string, unknown>;
+    delete settings.deals;
+    const v34 = { schemaVersion: 34, settings } as unknown as Partial<StorageShape>;
+    const out = migrate(v34);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.settings.deals).toEqual({ workspace: "default", placement: "end", cardChip: true });
+  });
+
+  it("normalizes a placement the desktop would not understand", () => {
+    const bad = {
+      schemaVersion: 35,
+      settings: {
+        ...structuredClone(DEFAULTS.settings),
+        deals: { workspace: "prime-day", placement: "tomorrow", cardChip: true },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(bad);
+    expect(out.settings.deals.placement).toBe("end");
+    // A bad placement must not cost the creator their workspace choice.
+    expect(out.settings.deals.workspace).toBe("prime-day");
+  });
+
+  it("completes a partial block and keeps an explicit chip off", () => {
+    const partial = {
+      schemaVersion: 35,
+      settings: {
+        ...structuredClone(DEFAULTS.settings),
+        deals: { workspace: "garden-bargains", cardChip: false },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(partial);
+    expect(out.settings.deals).toEqual({
+      workspace: "garden-bargains",
+      placement: "end",
+      cardChip: false,
+    });
+  });
+
+  it("leaves unrelated settings alone", () => {
+    const v34 = {
+      schemaVersion: 34,
+      settings: { ...structuredClone(DEFAULTS.settings), commissionRatePct: 7.5 },
+    } as unknown as Partial<StorageShape>;
+    expect(migrate(v34).settings.commissionRatePct).toBe(7.5);
+  });
+});

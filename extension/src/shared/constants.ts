@@ -262,6 +262,22 @@ export const DEAL_HARVEST_RENDER_CAP = 8;
 export const DEAL_HARVEST_RENDER_SETTLE_MS = 2500; // dwell after load for late XHR
 export const DEAL_HARVEST_RENDER_TIMEOUT_MS = 20_000; // hard per-tab ceiling
 
+// On-page "Send to Deals" chip: how long to wait after the page stops changing
+// before decorating the new cards, the ceiling on that wait so a page that
+// never settles still gets chips, and a hard cap on chips per page so a
+// pathological document cannot be turned into thousands of shadow roots.
+export const DEAL_CHIP_SCAN_DEBOUNCE_MS = 300;
+export const DEAL_CHIP_SCAN_MAX_WAIT_MS = 1500;
+export const DEAL_CHIP_MAX_PER_PAGE = 500;
+
+// Deal-aggregator sites we ship a static host_permission for in manifest.json,
+// so the on-page badge and the automatic harvest work from the moment the
+// extension is installed instead of waiting for the user to grant that origin
+// from the deals page. Kept alongside the curated list rather than replacing
+// it: everything else still needs the runtime grant, and these are merged in
+// so a failed curated-list fetch cannot hide a site we already hold.
+export const BUNDLED_DEAL_SITE_URLS: readonly string[] = ["https://www.savewithcindy.shop/"];
+
 // Automatic background harvesting (opt-in, off by default): when enabled, the
 // DEAL_AUTO_HARVEST_ALARM runs harvestDealSites (with deep scan) against the
 // curated + saved sources on this cadence, with no tab/page open. Long period

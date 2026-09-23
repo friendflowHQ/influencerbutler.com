@@ -3,6 +3,7 @@ import type { LocaleSetting } from "../i18n";
 import type { CreatorMode } from "../shared/creator-mode";
 import type { LinkPixel } from "../integrations/ib-links-client";
 import type { CampaignScoreBand } from "../tools/campaign-radar/score";
+import type { DealPlacement } from "../transport/hud-commands";
 import {
   AUTO_ACCEPT_DAILY_HARD_CAP,
   AUTO_ACCEPT_PER_RUN_HARD_CAP,
@@ -117,6 +118,11 @@ export type Settings = {
   // My Link panel. The options page writes this whole object at once (never a
   // partial nested patch) because patchSettings shallow-merges.
   voiceover: VoiceoverSettings;
+  // Deal Sites Harvester: where a deal goes when it is sent from the on-page
+  // "Send to Deals" chip, and whether that chip is shown at all. The options
+  // page writes this whole object at once (never a partial nested patch)
+  // because patchSettings shallow-merges.
+  deals: DealsSettings;
   // Marketplace codes (US/CA/UK/AU) whose buy-box availability Campaign Radar
   // checks per campaign product, rendering per-country chips on the grid.
   // Empty (the default) = feature off, zero extra fetches. Top-level rather
@@ -672,6 +678,47 @@ export function normalizeAutoAccept(raw: unknown): AutoAcceptSettings {
   };
 }
 
+export type DealsSettings = {
+  // Deals Butler workspace key (not label) the chip pushes into. "default" lets
+  // the desktop route the deal to the retailer's own store on its side.
+  workspace: string;
+  // Where the deal lands in that workspace's queue. Sent on the wire, so an
+  // invalid stored value must never survive normalization.
+  placement: DealPlacement;
+  // The on-page chip itself. On out of the box; turning it off leaves the
+  // page-level badge (and the harvester) working.
+  cardChip: boolean;
+};
+
+export const DEAL_PLACEMENTS: readonly DealPlacement[] = [
+  "draft",
+  "next",
+  "shuffle",
+  "end",
+  "now",
+] as const;
+
+// Pure: coerce an untrusted (stored / typed) deals block into a valid one. An
+// unknown placement falls back to the default rather than travelling to the
+// desktop, and a missing cardChip backfills to on (same convention as the
+// tools flags), so only an explicit false hides the chip.
+export function normalizeDealsSettings(raw: unknown): DealsSettings {
+  const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const workspace = typeof obj.workspace === "string" ? obj.workspace.trim() : "";
+  const placement = DEAL_PLACEMENTS.find((p) => p === obj.placement);
+  return {
+    workspace: workspace || DEFAULT_DEALS.workspace,
+    placement: placement ?? DEFAULT_DEALS.placement,
+    cardChip: obj.cardChip !== false,
+  };
+}
+
+const DEFAULT_DEALS: DealsSettings = {
+  workspace: "default",
+  placement: "end",
+  cardChip: true,
+};
+
 const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
   enabled: false,
   minCommissionPct: 12,
@@ -682,7 +729,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 34,
+  schemaVersion: 35,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -704,6 +751,7 @@ export const DEFAULTS: StorageShape = {
       alertAtPct: 90,
     },
     autoAccept: { ...DEFAULT_AUTO_ACCEPT, bands: [...DEFAULT_AUTO_ACCEPT.bands] },
+    deals: { workspace: "default", placement: "end", cardChip: true },
     voiceover: {
       tone: "",
       niche: "",
@@ -929,6 +977,9 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // added the myVideoPlacement tool flag ("your video is in the upper/lower
   // carousel, #N of M" on a product page plus the own-video id capture that
   // feeds it, on by default); the tools shallow-merge backfills it.
+  // v34 -> v35 added settings.deals (which Deals Butler workspace the on-page
+  // "Send to Deals" chip pushes into, where the deal lands in that queue, and
+  // whether the chip is shown); normalizeDealsSettings backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -992,6 +1043,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
           : [],
       },
       tools: { ...DEFAULTS.settings.tools, ...(raw.settings?.tools ?? {}) },
+      deals: normalizeDealsSettings({
+        ...DEFAULTS.settings.deals,
+        ...(raw.settings?.deals ?? {}),
+      }),
       availabilityMarkets: Array.isArray(raw.settings?.availabilityMarkets)
         ? raw.settings.availabilityMarkets
         : [],
@@ -1018,7 +1073,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 34,
+    schemaVersion: 35,
   };
 }
 

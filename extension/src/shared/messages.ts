@@ -367,6 +367,11 @@ export type RuntimeMessage =
   // permissions. Called right after a permission grant (or a saved-source
   // edit) so the badge does not wait for the next periodic sync.
   | { kind: "SYNC_DEAL_BADGE_SCRIPTS" }
+  // Open the Deal Sites Harvester page (optionally pre-filled for one deal) in
+  // a new tab. Content scripts cannot navigate to an extension page themselves
+  // unless it is web-accessible, which we deliberately do not make deals.html,
+  // so the on-page badge asks the worker to open it instead.
+  | { kind: "OPEN_DEALS_PAGE"; query?: string }
   // Instagram Goldmine (self-hosted build only): fetch a creator's bio-link
   // site cross-origin from the worker (content scripts on instagram.com cannot)
   // and return the first email found on it. The Goldmine page requests the

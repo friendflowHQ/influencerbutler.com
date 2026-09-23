@@ -612,6 +612,14 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "SYNC_DEAL_BADGE_SCRIPTS":
       void syncDealBadgeContentScripts().then(() => sendResponse(undefined));
       return true;
+    case "OPEN_DEALS_PAGE":
+      // Same reason as OPEN_URL below: the badge lives in a content script, and
+      // a content script cannot navigate to deals.html (it is not a
+      // web_accessible_resource, and we would rather not make it one). Only the
+      // three keys the deals page reads are forwarded, so the query string can
+      // never be used to smuggle anything else into the page.
+      void openDealsPage(message.query).then(() => sendResponse(undefined));
+      return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from
       // inside the overlay's shadow DOM, so open the tab here. Only our own
@@ -762,6 +770,28 @@ async function rewriteLink(url: string): Promise<import("../shared/messages").Ge
   } catch {
     return { ok: false, error: "That is not a valid product URL." };
   }
+}
+
+// Open deals.html for the on-page badge, copying across only the keys the
+// deals page itself understands (which site to harvest, and optionally the one
+// ASIN to narrow the review to). Anything else in the query is dropped.
+const DEALS_PAGE_PARAMS = ["add", "asin", "marketplace"] as const;
+
+async function openDealsPage(query?: string): Promise<void> {
+  const params = new URLSearchParams();
+  try {
+    const incoming = new URLSearchParams(query ?? "");
+    for (const key of DEALS_PAGE_PARAMS) {
+      const value = incoming.get(key);
+      if (value) params.set(key, value);
+    }
+  } catch {
+    // malformed query: open the page bare rather than not at all
+  }
+  const suffix = params.toString();
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL(suffix ? `deals.html?${suffix}` : "deals.html"),
+  });
 }
 
 async function openAllowedUrl(url: string): Promise<void> {

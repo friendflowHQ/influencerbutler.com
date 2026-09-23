@@ -166,6 +166,21 @@ export interface OptionsDict {
   voDenyGroup: string;
   voDenyLabel: string;
   voDenyHint: string;
+  // Deals section (the on-page "Send to Deals" chip)
+  dealsHeading: string;
+  dealsIntro: string;
+  dealsWorkspace: string;
+  dealsWorkspaceHint: string;
+  dealsWorkspaceOffline: string;
+  dealsPlacement: string;
+  dealsPlacementHint: string;
+  dealsPlaceDraft: string;
+  dealsPlaceNext: string;
+  dealsPlaceShuffle: string;
+  dealsPlaceEnd: string;
+  dealsPlaceNow: string;
+  dealsChipLabel: string;
+  dealsChipHint: string;
   // Settings shell + left-hand section nav
   navGeneral: string;
   navApiIntegrations: string;
@@ -353,6 +368,23 @@ const en: OptionsDict = {
   voDenyLabel: "Brands to never mention (comma separated)",
   voDenyHint:
     "Scripts are told to avoid these brand names, and every draft is checked afterward: if one slips through you get a warning under the script.",
+  dealsHeading: "Deals",
+  dealsIntro:
+    "When you are browsing a deal site the extension knows, each product gets a Send to Deals button. These settings decide where those deals go.",
+  dealsWorkspace: "Send deals to",
+  dealsWorkspaceHint:
+    "Deals Butler picks the Amazon or Walmart captions and comments for you, based on where the product came from.",
+  dealsWorkspaceOffline: "(saved, app closed)",
+  dealsPlacement: "When a deal arrives",
+  dealsPlacementHint:
+    "Older versions of the app ignore this and use whatever the workspace is already set to.",
+  dealsPlaceDraft: "Save it as a draft for me to review",
+  dealsPlaceNext: "Put it next in the queue",
+  dealsPlaceShuffle: "Drop it somewhere random in the queue",
+  dealsPlaceEnd: "Add it to the end of the queue",
+  dealsPlaceNow: "Post it right now",
+  dealsChipLabel: "Show the Send to Deals button on deal sites",
+  dealsChipHint: "Turn this off to keep the page counter and the harvester without the per-product button.",
   navGeneral: "General",
   navApiIntegrations: "API Integrations",
   navAffiliateRouting: "Affiliate Routing",
@@ -539,6 +571,23 @@ const es: OptionsDict = {
   voDenyLabel: "Marcas que nunca se deben mencionar (separadas por comas)",
   voDenyHint:
     "Se indica a los guiones que eviten estas marcas y cada borrador se revisa después: si alguna se cuela, verás un aviso debajo del guion.",
+  dealsHeading: "Ofertas",
+  dealsIntro:
+    "Cuando navegas por un sitio de ofertas que la extension conoce, cada producto muestra un boton Enviar a Ofertas. Estos ajustes deciden a donde van esas ofertas.",
+  dealsWorkspace: "Enviar ofertas a",
+  dealsWorkspaceHint:
+    "Deals Butler elige los textos y comentarios de Amazon o Walmart por ti, segun de donde venga el producto.",
+  dealsWorkspaceOffline: "(guardado, app cerrada)",
+  dealsPlacement: "Cuando llega una oferta",
+  dealsPlacementHint:
+    "Las versiones antiguas de la app ignoran esto y usan lo que ya tenga configurado el espacio de trabajo.",
+  dealsPlaceDraft: "Guardarla como borrador para revisarla",
+  dealsPlaceNext: "Ponerla la siguiente en la cola",
+  dealsPlaceShuffle: "Colocarla en un punto aleatorio de la cola",
+  dealsPlaceEnd: "Anadirla al final de la cola",
+  dealsPlaceNow: "Publicarla ahora mismo",
+  dealsChipLabel: "Mostrar el boton Enviar a Ofertas en los sitios de ofertas",
+  dealsChipHint: "Desactivalo para conservar el contador de la pagina y el recolector sin el boton por producto.",
   navGeneral: "General",
   navApiIntegrations: "Integraciones de API",
   navAffiliateRouting: "Enrutado de afiliados",
@@ -725,6 +774,23 @@ const fr: OptionsDict = {
   voDenyLabel: "Marques à ne jamais mentionner (séparées par des virgules)",
   voDenyHint:
     "Les scripts reçoivent la consigne d'éviter ces marques et chaque brouillon est vérifié ensuite : si l'une d'elles passe, un avertissement s'affiche sous le script.",
+  dealsHeading: "Offres",
+  dealsIntro:
+    "Quand vous parcourez un site d'offres que l'extension connait, chaque produit recoit un bouton Envoyer aux offres. Ces reglages decident ou vont ces offres.",
+  dealsWorkspace: "Envoyer les offres vers",
+  dealsWorkspaceHint:
+    "Deals Butler choisit les legendes et commentaires Amazon ou Walmart pour vous, selon la provenance du produit.",
+  dealsWorkspaceOffline: "(enregistre, app fermee)",
+  dealsPlacement: "A l'arrivee d'une offre",
+  dealsPlacementHint:
+    "Les anciennes versions de l'application ignorent ce choix et utilisent le reglage de l'espace de travail.",
+  dealsPlaceDraft: "L'enregistrer comme brouillon a relire",
+  dealsPlaceNext: "La mettre en tete de file",
+  dealsPlaceShuffle: "La placer au hasard dans la file",
+  dealsPlaceEnd: "L'ajouter a la fin de la file",
+  dealsPlaceNow: "La publier tout de suite",
+  dealsChipLabel: "Afficher le bouton Envoyer aux offres sur les sites d'offres",
+  dealsChipHint: "Desactivez pour garder le compteur de page et le collecteur sans le bouton par produit.",
   navGeneral: "Général",
   navApiIntegrations: "Intégrations API",
   navAffiliateRouting: "Routage d'affiliation",

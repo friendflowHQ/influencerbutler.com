@@ -23,6 +23,12 @@ export interface DealsDict {
   // On-page badge shown on a known deal-aggregator site itself (deal-badge/).
   badgeCount: (n: number) => string;
   badgeAction: string;
+  cardAction: string;
+  cardSending: string;
+  cardSent: string;
+  cardFailed: string;
+  cardAppNotRunning: string;
+  cardNeedsPairing: string;
   badgeDismiss: string;
   stop: string;
   resultsHeading: string;
@@ -84,6 +90,12 @@ const en: DealsDict = {
   autoHarvestHint: "Runs in the background with deep scan on, and records new deals to your dashboard. You still pick which ones to send to a workspace here.",
   badgeCount: (n) => `${n} Amazon deal${n === 1 ? "" : "s"} on this page`,
   badgeAction: "Review",
+  cardAction: "Send to Deals",
+  cardSending: "Sending",
+  cardSent: "Sent",
+  cardFailed: "Could not send",
+  cardAppNotRunning: "The Influencer Butler app is not running. Open it, then click again.",
+  cardNeedsPairing: "Connect the app to the extension, then click again.",
   badgeDismiss: "Dismiss",
   stop: "Stop",
   resultsHeading: "Found deals",
@@ -146,6 +158,12 @@ const es: DealsDict = {
   autoHarvestHint: "Se ejecuta en segundo plano con el escaneo profundo activado y registra las nuevas ofertas en tu panel. Tú sigues eligiendo cuáles enviar a un espacio aquí.",
   badgeCount: (n) => `${n} oferta${n === 1 ? "" : "s"} de Amazon en esta página`,
   badgeAction: "Revisar",
+  cardAction: "Enviar a Ofertas",
+  cardSending: "Enviando",
+  cardSent: "Enviado",
+  cardFailed: "No se pudo enviar",
+  cardAppNotRunning: "La app Influencer Butler no esta abierta. Abrela y vuelve a hacer clic.",
+  cardNeedsPairing: "Conecta la app con la extension y vuelve a hacer clic.",
   badgeDismiss: "Descartar",
   stop: "Detener",
   resultsHeading: "Ofertas encontradas",
@@ -208,6 +226,12 @@ const fr: DealsDict = {
   autoHarvestHint: "S'exécute en arrière-plan avec l'analyse approfondie activée et enregistre les nouvelles offres dans votre tableau de bord. Vous choisissez toujours lesquelles envoyer vers un espace ici.",
   badgeCount: (n) => `${n} offre${n === 1 ? "" : "s"} Amazon sur cette page`,
   badgeAction: "Examiner",
+  cardAction: "Envoyer aux offres",
+  cardSending: "Envoi",
+  cardSent: "Envoye",
+  cardFailed: "Envoi impossible",
+  cardAppNotRunning: "L'application Influencer Butler n'est pas ouverte. Ouvrez-la puis recliquez.",
+  cardNeedsPairing: "Connectez l'application a l'extension puis recliquez.",
   badgeDismiss: "Ignorer",
   stop: "Arrêter",
   resultsHeading: "Offres trouvées",

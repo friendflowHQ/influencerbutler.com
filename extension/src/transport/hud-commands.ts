@@ -99,11 +99,21 @@ export type ReachItem = {
   views?: number | null;
 };
 
+// Where a pushed deal should land in the Deals Butler queue, chosen in the
+// extension's own Settings and sent with the push. Same vocabulary as the
+// desktop's persisted "extension push mode" field so both sides speak one
+// language: "draft" saves it for review, "next" puts it at the front of the
+// queue, "shuffle" drops it at a random slot inside the queue, "end" puts it
+// behind everything, and "now" puts it at the front and publishes it. Omitted
+// means "use whatever the desktop workspace is already set to", which is also
+// what an older desktop build does with a value it does not understand.
+export type DealPlacement = "draft" | "next" | "shuffle" | "end" | "now";
+
 export type HudCommand =
-  | { type: "deal.push"; workspace: string; product: ProductRef }
+  | { type: "deal.push"; workspace: string; product: ProductRef; placement?: DealPlacement }
   // Batch push of harvested deals into one Deals Butler workspace, from the Deal
   // Sites Harvester. Same target as deal.push, many products at once.
-  | { type: "deal.push.batch"; workspace: string; products: ProductRef[] }
+  | { type: "deal.push.batch"; workspace: string; products: ProductRef[]; placement?: DealPlacement }
   | { type: "content.push"; product: ProductRef }
   // Batch push of harvested order products into the Content Butler planner.
   | { type: "content.push.batch"; products: ProductRef[] }

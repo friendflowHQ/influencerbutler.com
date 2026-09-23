@@ -1,6 +1,7 @@
 import { getDealSources, hasOriginPermission } from "./deal-harvest";
 import { getSettings } from "../storage/store";
 import { log } from "../shared/log";
+import { BUNDLED_DEAL_SITE_URLS } from "../shared/constants";
 
 // Keeps the on-page "N deals found" badge (deal-badge/index.ts) registered as
 // a DYNAMIC content script (chrome.scripting, MV3) on exactly the curated +
@@ -18,7 +19,9 @@ export async function syncDealBadgeContentScripts(): Promise<void> {
   if (!chrome.scripting?.registerContentScripts) return; // older Chrome: no-op
 
   const [settings, curated] = await Promise.all([getSettings(), getDealSources()]);
-  const candidates = [...new Set([...curated.map((s) => s.url), ...settings.dealSources])];
+  const candidates = [
+    ...new Set([...BUNDLED_DEAL_SITE_URLS, ...curated.map((s) => s.url), ...settings.dealSources]),
+  ];
   const matches = await grantedOriginPatterns(candidates);
 
   try {

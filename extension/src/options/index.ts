@@ -9,7 +9,11 @@ import type { IntegrationAdapter, IntegrationCategory } from "../integrations/ty
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
 import { resolveLocale } from "../i18n";
 import { getSettings, patchSettings } from "../storage/store";
+import { DEAL_PLACEMENTS } from "../storage/schema";
+import { DEAL_WORKSPACES } from "../shared/constants";
+import type { DealPlacement } from "../transport/hud-commands";
 import type {
+  DealsSettings,
   Settings,
   VoiceoverDisclosureKey,
   VoiceoverHookStyle,
@@ -25,6 +29,7 @@ import {
 import {
   sendToBackground,
   type CreatorApiBackupStatus,
+  type HudStatus,
   type IntegrationsView,
   type IntegrationTestOutcome,
   type IntegrationView,
@@ -48,6 +53,7 @@ const IB_LINKS = "influencerbutler";
 let D: OptionsDict;
 let view: IntegrationsView;
 let settings: Settings;
+let hud: HudStatus | null = null;
 
 void init();
 
@@ -55,11 +61,16 @@ async function init(): Promise<void> {
   settings = await getSettings();
   D = OPTIONS_CATALOG[resolveLocale(settings.locale)];
   view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
+  // The live workspace list comes from the running app. A dead worker or a
+  // closed app must not blank the whole page, so this failure is swallowed and
+  // the Deals section falls back to the built-in list.
+  hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }).catch(() => null);
   renderChrome();
   renderGeneral();
   renderAffiliateRoutingStrategy();
   renderCategories();
   renderVoiceover();
+  renderDeals();
   // Nav depends on the sections above already being in the DOM.
   renderSideNav();
   setupScrollSpy();
@@ -88,6 +99,7 @@ function renderSideNav(): void {
       ],
     },
     { title: null, items: [{ id: "sec-voiceover", text: D.voHeading }] },
+    { title: null, items: [{ id: "sec-deals", text: D.dealsHeading }] },
   ];
 
   for (const group of groups) {
@@ -720,6 +732,125 @@ function renderVoiceover(): void {
 
   section.append(heading, card);
   root.append(section);
+}
+
+// Where the on-page "Send to Deals" chip sends a deal, and whether that chip
+// is shown at all. Mirrors renderVoiceover: one Save that writes the whole
+// nested object, because patchSettings shallow-merges.
+function renderDeals(): void {
+  const root = byId("deals");
+  root.replaceChildren();
+  const current = settings.deals;
+
+  const section = document.createElement("section");
+  section.className = "settings-section";
+  section.id = "sec-deals";
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = D.dealsHeading;
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.textContent = D.dealsIntro;
+  card.append(intro);
+
+  const field = (labelText: string, control: HTMLElement): void => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    wrap.append(span, control);
+    card.append(wrap);
+  };
+
+  const hint = (text: string): void => {
+    const p = document.createElement("p");
+    p.className = "muted small";
+    p.textContent = text;
+    card.append(p);
+  };
+
+  const workspaceSelect = document.createElement("select");
+  for (const workspace of workspaceOptions(current.workspace)) {
+    const option = document.createElement("option");
+    option.value = workspace.key;
+    option.textContent = workspace.label;
+    workspaceSelect.append(option);
+  }
+  workspaceSelect.value = current.workspace;
+  field(D.dealsWorkspace, workspaceSelect);
+  hint(D.dealsWorkspaceHint);
+
+  const placementSelect = document.createElement("select");
+  for (const placement of DEAL_PLACEMENTS) {
+    const option = document.createElement("option");
+    option.value = placement;
+    option.textContent = placementLabel(placement);
+    placementSelect.append(option);
+  }
+  placementSelect.value = current.placement;
+  field(D.dealsPlacement, placementSelect);
+  hint(D.dealsPlacementHint);
+
+  const toggle = document.createElement("label");
+  toggle.className = "toggle";
+  const chipBox = document.createElement("input");
+  chipBox.type = "checkbox";
+  chipBox.checked = current.cardChip;
+  const chipSpan = document.createElement("span");
+  chipSpan.textContent = D.dealsChipLabel;
+  toggle.append(chipBox, chipSpan);
+  card.append(toggle);
+  hint(D.dealsChipHint);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = D.save;
+  actions.append(saveBtn);
+  card.append(actions);
+
+  saveBtn.onclick = async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = D.saving;
+    const deals: DealsSettings = {
+      workspace: workspaceSelect.value || "default",
+      placement: placementSelect.value as DealPlacement,
+      cardChip: chipBox.checked,
+    };
+    settings = await patchSettings({ deals });
+    saveBtn.disabled = false;
+    saveBtn.textContent = D.saved;
+    window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
+  };
+
+  section.append(heading, card);
+  root.append(section);
+}
+
+// The app's own workspace list when it is running, else the built-in one. A
+// stored key that is in neither is kept at the top rather than dropped, so
+// saving with the app closed cannot quietly rewrite the creator's choice.
+function workspaceOptions(stored: string): Array<{ key: string; label: string }> {
+  const live: ReadonlyArray<{ key: string; label: string }> = hud?.dealWorkspaces?.length
+    ? hud.dealWorkspaces
+    : DEAL_WORKSPACES;
+  const options = live.map((workspace) => ({ key: workspace.key, label: workspace.label }));
+  if (stored && !options.some((w) => w.key === stored)) {
+    options.unshift({ key: stored, label: `${stored} ${D.dealsWorkspaceOffline}` });
+  }
+  return options;
+}
+
+function placementLabel(placement: DealPlacement): string {
+  if (placement === "draft") return D.dealsPlaceDraft;
+  if (placement === "next") return D.dealsPlaceNext;
+  if (placement === "shuffle") return D.dealsPlaceShuffle;
+  if (placement === "end") return D.dealsPlaceEnd;
+  return D.dealsPlaceNow;
 }
 
 function makeBadge(status: "ok" | "fail" | "untested"): HTMLElement {

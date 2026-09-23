@@ -1,4 +1,5 @@
 import {
+  BUNDLED_DEAL_SITE_URLS,
   DEAL_HARVEST_ASIN_CAP,
   DEAL_HARVEST_DELAY_MAX_MS,
   DEAL_HARVEST_DELAY_MIN_MS,
@@ -308,7 +309,9 @@ export async function runAutoHarvest(): Promise<void> {
   if (!(await getDealAutoHarvest())) return;
 
   const [settings, curated] = await Promise.all([getSettings(), getDealSources()]);
-  const candidates = [...new Set([...curated.map((s) => s.url), ...settings.dealSources])];
+  const candidates = [
+    ...new Set([...BUNDLED_DEAL_SITE_URLS, ...curated.map((s) => s.url), ...settings.dealSources]),
+  ];
   // An alarm has no user gesture to request a NEW host permission, so only
   // visit sites the extension already holds permission for (granted the first
   // time the user harvested manually, or when they turned this setting on).
