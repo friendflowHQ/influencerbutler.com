@@ -11,7 +11,7 @@ Sheetsyncer Butler envoie le contenu généré par vos autres butlers vers une f
 Deux sources existent aujourd'hui, chacune sur sa propre carte:
 
 - **Publications Facebook Group Builder**: les publications de bienvenue, d'engagement et virales de votre dernier plan généré, une ligne par publication. Les publications n'ont pas de fichiers image, vous obtenez donc le texte plus une colonne d'idée d'image, pas de miniatures.
-- **Deals Butler**: connectez une feuille distincte pour chaque espace de travail d'offres (votre Deals Butler de base et chaque clone). Les offres sont envoyées automatiquement après chaque recherche lorsque l'envoi automatique est activé dans l'onglet Rechercher des offres de cet espace.
+- **Deals Butler**: une carte par espace d'offres qui recherche, donc **Amazon Deals**, **Walmart Deals** et **TikTok Shop Deals** connectent chacun leur propre feuille (ainsi que la boutique de chaque clone). Les offres sont envoyées automatiquement après chaque recherche lorsque l'envoi automatique est activé dans l'onglet Rechercher des offres de cet espace.
 
 Il y a aussi une carte **Votre feuille en direct** qui intègre la feuille connectée dans l'app, pour la modifier sans quitter Influencer Butler.
 
@@ -38,6 +38,6 @@ Il vous faut:
 - **La connexion échoue avec une page de connexion (HTTP 403)**: l'accès de votre application web n'est pas réglé sur **Tout le monde**. Dans Deploy, changez **Qui a accès** en Tout le monde, redéployez, puis collez la nouvelle URL **/exec** et connectez à nouveau. Le bouton **Test in browser** est le moyen le plus rapide de le confirmer avant de connecter.
 - **"Cela ne ressemble pas à une URL d'application web Apps Script"**: l'URL doit se terminer par **/exec**, pas par **/dev**. Copiez-la depuis la boîte de dialogue Deploy, pas depuis l'éditeur de script.
 - **Délai dépassé en contactant le script**: vérifiez votre connexion et reconnectez. La connexion attend un court instant, puis s'arrête au lieu de tourner indéfiniment.
-- **Chaque espace Deals garde sa propre feuille.** Connecter un clone n'en touche pas un autre. Utilisez **Copy this setup to your other deals workspaces** pour réutiliser une disposition de colonnes, puis connectez la feuille propre à chacun.
+- **Chaque espace Deals garde sa propre feuille.** Connecter Amazon Deals ne touche pas Walmart Deals, et un clone n'en touche pas un autre. Utilisez **Copy this setup to your other deals workspaces** pour réutiliser une disposition de colonnes entre eux, puis connectez la feuille propre à chacun.
 - **La feuille en direct reste vide**: connectez votre feuille dans le panneau ci-dessus, redéployez l'Apps Script, ou collez le lien de votre feuille dans **Paste your Google Sheet link** et cliquez sur **Show sheet**. Si Google vous demande de vous connecter dans l'intégration, faites-le une fois et ce sera mémorisé.
 - Sheetsyncer Butler est une fonctionnalité **Pro** après votre essai gratuit.

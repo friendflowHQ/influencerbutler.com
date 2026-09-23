@@ -11,7 +11,7 @@ Sheetsyncer Butler sends content your other butlers generate into a Google Sheet
 Two sources ship today, each on its own card:
 
 - **Facebook Group Builder posts**: the welcome, engagement, and viral posts from your latest generated plan, one row per post. Posts have no image files, so you get the caption plus an image idea column, not thumbnails.
-- **Deals Butler**: connect a separate sheet for each deals workspace (your base Deals Butler plus every clone). Deals are sent automatically after each search when auto send is turned on in that workspace's Search Deals tab.
+- **Deals Butler**: one card per deals workspace that searches, so **Amazon Deals**, **Walmart Deals**, and **TikTok Shop Deals** each connect their own sheet (and so does every clone's store). Deals are sent automatically after each search when auto send is turned on in that workspace's Search Deals tab.
 
 There is also a **Your live sheet** card that embeds the connected sheet right in the app, so you can edit it without leaving Influencer Butler.
 
@@ -38,6 +38,6 @@ You need:
 - **Connect fails with a sign-in page (HTTP 403)**: your Web app access is not set to **Anyone**. In Deploy, change **Who has access** to Anyone, redeploy, then paste the fresh **/exec** URL and Connect again. The **Test in browser** button is the quickest way to confirm this before you Connect.
 - **"That does not look like an Apps Script Web app URL"**: the URL must end with **/exec**, not **/dev**. Copy it from the Deploy dialog, not the script editor.
 - **Timed out reaching the script**: check your connection and Connect again. Connecting waits a short while, then stops rather than spinning forever.
-- **Each Deals workspace keeps its own sheet.** Connecting one clone does not touch another. Use **Copy this setup to your other deals workspaces** to reuse a column layout, then connect each one's own sheet.
+- **Each Deals workspace keeps its own sheet.** Connecting Amazon Deals does not touch Walmart Deals, and one clone does not touch another. Use **Copy this setup to your other deals workspaces** to reuse a column layout across them, then connect each one's own sheet.
 - **Live sheet stays blank**: connect your sheet in the panel above, redeploy the Apps Script, or paste your sheet link into **Paste your Google Sheet link** and click **Show sheet**. If Google asks you to sign in inside the embed, do it once and it is remembered.
 - Sheetsyncer Butler is a **Pro** feature after your free trial.
