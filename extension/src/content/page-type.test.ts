@@ -78,6 +78,12 @@ describe("detectRetailerForUrl", () => {
       "amazon",
     );
     expect(detectRetailerForUrl("https://www.amazon.co.uk/dp/B01JGG5CH4")).toBe("amazon");
+    expect(detectRetailerForUrl("https://affiliate-program.amazon.co.uk/p/connect/requests")).toBe(
+      "amazon",
+    );
+    expect(detectRetailerForUrl("https://www.amazon.de/dp/B01JGG5CH4")).toBe("amazon");
+    // A search query mentioning amazon.com is not an Amazon page.
+    expect(detectRetailerForUrl("https://www.google.com/search?q=amazon.com")).toBeNull();
     expect(detectRetailerForUrl("https://www.walmart.com/ip/10450114")).toBe("walmart");
     expect(detectRetailerForUrl("https://example.com/x")).toBeNull();
     expect(detectRetailerForUrl("not a url")).toBeNull();

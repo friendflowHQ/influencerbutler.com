@@ -1001,7 +1001,8 @@ function wireFeedback(): void {
     let pageUrl: string | undefined;
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.url?.includes("amazon.com")) pageUrl = tab.url.split("?")[0];
+      // Any Amazon marketplace (amazon.com, amazon.co.uk, ...) counts as context.
+      if (tab?.url && detectRetailerForUrl(tab.url) === "amazon") pageUrl = tab.url.split("?")[0];
     } catch {
       // page url is best-effort context, not required
     }
@@ -1043,8 +1044,9 @@ async function renderPageStatus(): Promise<void> {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     // Amazon and Walmart are both supported; the content script answers
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
-    const onSupportedSite =
-      tab?.url?.includes("amazon.com") || tab?.url?.includes("walmart.com");
+    // detectRetailerForUrl recognizes every Amazon marketplace host
+    // (amazon.co.uk, amazon.de, ...), not just amazon.com.
+    const onSupportedSite = tab?.url ? detectRetailerForUrl(tab.url) !== null : false;
     if (!tab?.id || !onSupportedSite) {
       text.textContent = t().openAmazonToStart;
       return;
