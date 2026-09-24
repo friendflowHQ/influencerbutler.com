@@ -70,6 +70,27 @@ catalog refreshes, which is a few times a day. A very short interval will not
 surface campaigns any sooner. The schedule is there to keep auto-accept running
 on its own, and to let you pick the timing that suits you.
 
+### Auto-accept by keyword, from any brand
+
+Sometimes you want to catch campaigns from brands you are not following yet, for
+example during a busy event like Prime Day when new campaigns drop and fill fast.
+Turn on **Also auto-accept new campaigns matching keywords, from any brand** and
+type the words you care about (one per line, or comma separated, for example
+`prime day, kitchen`).
+
+Campaign Alert Butler then accepts any new campaign whose title or brand contains
+one of your keywords, across every brand in the catalog, not just the ones you
+follow. A few honest notes:
+
+- This looks across the whole catalog, so it turns on the catalog sync even if
+  you follow no brands.
+- It is a separate switch from the followed-brand auto-accept above. Use either
+  one, or both together.
+- Every guardrail still applies: the per-check cap, the never-accept-twice
+  memory, the retry on a failed accept, and the global pause.
+- Change your keywords whenever you like. Remove a keyword and it stops accepting
+  matches for it right away.
+
 ## Good to know
 
 - **Following a brand and accepting its campaigns are two different things.**
