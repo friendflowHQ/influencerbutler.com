@@ -13,6 +13,7 @@ import {
 import { askBackground, sendToBackground } from "../shared/messages";
 import type { HudCommandResult, ProductRef } from "../transport/hud-commands";
 import { allProductAnchors, countProductLinksByAncestor, resolveCardHost } from "./card-scope";
+import { canonicalProductUrl } from "../integrations/url";
 import { CHIP_HOST_CLASS, mountChip } from "./chip";
 import { createSendQueue, type ChipHandle } from "./send";
 
@@ -101,10 +102,23 @@ function injectCardChips(
     const product: ProductRef = {
       asin: hit.asin,
       marketplace: hit.marketplace,
-      // The desktop persists this rather than rebuilding an Amazon-shaped url.
-      url: "https://www." + hit.marketplace + "/dp/" + hit.asin,
+      // The desktop persists this rather than rebuilding the url itself, and a
+      // Walmart item lives at /ip/ rather than /dp/, so build it per retailer.
+      url: canonicalProductUrl(
+        hit.asin,
+        hit.marketplace,
+        "",
+        /walmart/.test(hit.marketplace) ? "walmart" : "amazon",
+      ),
     };
-    const chip = mountChip(card, D, () => enqueue(product, handle));
+    // resolveCardHost falls back to the anchor itself when the page has no card
+    // around the link, which is what an article-style deal blog looks like.
+    const chip = mountChip(
+      card,
+      D,
+      () => enqueue(product, handle),
+      card === (hit.anchor as HTMLElement) ? "inline" : "corner",
+    );
     if (!chip) continue;
     const handle = chip;
     card.setAttribute(CARD_DONE_ATTR, hit.marketplace + ":" + hit.asin);

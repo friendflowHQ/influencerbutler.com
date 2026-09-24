@@ -2,6 +2,7 @@ import { DEALS_CATALOG, type DealsDict } from "./strings";
 import { resolveLocale } from "../i18n";
 import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
+import { canonicalProductUrl } from "../integrations/url";
 import {
   sendToBackground,
   type BrandedMintInput,
@@ -822,7 +823,13 @@ function parseUrls(text: string): string[] {
 }
 
 function productUrl(asin: string, marketplace: string): string {
-  return `https://www.${marketplace}/dp/${asin}`;
+  // A Walmart item id lives at /ip/, not /dp/, so the retailer decides the path.
+  return canonicalProductUrl(
+    asin,
+    marketplace,
+    "",
+    /walmart/.test(marketplace) ? "walmart" : "amazon",
+  );
 }
 
 function hostOf(url: string): string {

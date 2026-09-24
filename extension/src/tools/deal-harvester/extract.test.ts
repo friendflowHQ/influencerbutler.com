@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { dealFromAmazonUrl, extractDeals, extractShortLinks, matchAmazonProductUrl } from "./extract";
+import {
+  dealFromAmazonUrl,
+  extractDeals,
+  extractShortLinks,
+  matchAmazonProductUrl,
+  siteLinkMatcher,
+} from "./extract";
 import { findingKey } from "../../transport/types";
 import type { DealFinding } from "../../transport/types";
 
@@ -180,5 +186,81 @@ describe("findingKey for deals", () => {
     const later: DealFinding = { ...base, detectedAt: "2026-07-07T18:30:00.000Z" };
     expect(findingKey(base)).toBe(findingKey(later));
     expect(findingKey(base)).toBe("deal:B0AAAAAAAA:amazon.com:2026-07-07");
+  });
+});
+
+describe("SITE_PARSERS: koupon.ai", () => {
+  // Shape taken from the live Next.js payload: productLink then code, with the
+  // ampersand unicode-escaped and koupon's own Associates tag on the link.
+  const payload =
+    '{"items":[' +
+    '{"productLink":"https://www.amazon.com/gp/product/B0H8DJ7VDV?psc=1\u0026tag=koupondesk-20","code":"Q4RT8WZ2"},' +
+    '{"productLink":"https://www.amazon.com/dp/B0GSD9JVB2?psc=1\u0026tag=koupondesk-20","code":"9KMP3XQD"}' +
+    "]}";
+
+  it("pairs each product with its promo code", () => {
+    const deals = extractDeals(payload, "https://www.koupon.ai/collection/amazon-promo-codes");
+    const byAsin = new Map(deals.map((d) => [d.asin, d]));
+    expect(byAsin.get("B0H8DJ7VDV")?.promoCode).toBe("Q4RT8WZ2");
+    expect(byAsin.get("B0GSD9JVB2")?.promoCode).toBe("9KMP3XQD");
+  });
+
+  it("never carries the aggregator's own affiliate tag into the deal", () => {
+    const deals = extractDeals(payload, "https://www.koupon.ai/collection/amazon-promo-codes");
+    expect(deals.length).toBeGreaterThan(0);
+    for (const deal of deals) {
+      expect(JSON.stringify(deal)).not.toMatch(/koupondesk/);
+    }
+  });
+
+  it("leaves a page with no pairs to the generic sweep", () => {
+    const html = '<a href="https://www.amazon.com/dp/B0AAAAAAAA">x</a>';
+    const deals = extractDeals(html, "https://www.koupon.ai/collection/amazon-promo-codes");
+    expect(deals).toEqual([
+      { asin: "B0AAAAAAAA", marketplace: "amazon.com", sourceUrl: "https://www.koupon.ai/collection/amazon-promo-codes", promoCode: null },
+    ]);
+  });
+});
+
+describe("SITE_PARSERS: onlineatthelake.com", () => {
+  // The site never links to a retailer: every card routes through its own
+  // click-tracked redirect, which names the retailer and the id outright.
+  const html =
+    '<a href="/d/amazon_asin_B0CYV4H86N?src=All+Finds">a</a>' +
+    '<a href="/d/walmart_sku_17566810931?src=All+Finds">b</a>' +
+    '<a href="/d/amazon_asin_B0CYV4H86N?src=Deal+Detail">dupe</a>';
+  const source = "https://onlineatthelake.com/all-finds";
+
+  it("reads both retailers out of the redirect, with no link on the page at all", () => {
+    const deals = extractDeals(html, source);
+    expect(deals).toEqual([
+      { asin: "B0CYV4H86N", marketplace: "amazon.com", sourceUrl: source, promoCode: null },
+      { asin: "17566810931", marketplace: "walmart.com", sourceUrl: source, promoCode: null },
+    ]);
+  });
+
+  it("rejects a malformed id rather than inventing a product", () => {
+    const deals = extractDeals('<a href="/d/amazon_asin_NOPE12">x</a>', source);
+    expect(deals).toEqual([]);
+  });
+});
+
+describe("siteLinkMatcher", () => {
+  it("lets the on-page chip recognise a site's own redirect link", () => {
+    const match = siteLinkMatcher("https://onlineatthelake.com/all-finds");
+    expect(match).toBeTruthy();
+    expect(match?.("/d/amazon_asin_B0CYV4H86N?src=All+Finds")).toEqual({
+      asin: "B0CYV4H86N",
+      marketplace: "amazon.com",
+    });
+    expect(match?.("/d/walmart_sku_17566810931")).toEqual({
+      asin: "17566810931",
+      marketplace: "walmart.com",
+    });
+    expect(match?.("/about")).toBeNull();
+  });
+
+  it("is null for a host with no override, so the generic Amazon matcher stands alone", () => {
+    expect(siteLinkMatcher("https://www.savewithcindy.shop/")).toBeNull();
   });
 });

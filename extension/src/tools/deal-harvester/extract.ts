@@ -50,6 +50,9 @@ const DATA_PAIR_RE =
   /data-asin=["']([A-Z0-9]{10})["'][^>]*?data-(?:code|promo|coupon)=["']([^"']{2,40})["']/gi;
 
 const DEFAULT_MARKETPLACE = "amazon.com";
+// Walmart rows carry a numeric item id rather than an ASIN; the marketplace
+// string is what tells the rest of the pipeline which retailer a row belongs to.
+const WALMART_MARKETPLACE = "walmart.com";
 
 // Per-host parser: given the raw html and the deals the generic pass already
 // found, return the final list (augmented or filtered). Registered by bare
@@ -66,7 +69,100 @@ export const SITE_PARSERS: Record<string, SiteParser> = {
   // sweep already captures; this override simply drops rows with no ASIN link
   // (the site also renders non-Amazon affiliate cards we do not want).
   "jungle.deals": (_html, _sourceUrl, generic) => generic,
+
+  /* koupon.ai ships its whole catalogue inside the Next.js payload in the page,
+   * so the generic ASIN sweep already finds every product. What it cannot do is
+   * pair each one with its promo code, and a promo code is most of why a deal is
+   * worth posting. The payload puts them adjacent:
+   *   "productLink":"https://www.amazon.com/dp/B0..?tag=koupondesk-20","code":"ABC12345"
+   * so one pass over those pairs upgrades the generic rows in place. The link
+   * carries koupon's own Associates tag; only the ASIN is taken from it, and the
+   * posted link is rebuilt from that ASIN with the creator's tag downstream. */
+  "koupon.ai": (html, sourceUrl, generic) => {
+    const codes = new Map<string, string>();
+    KOUPON_PAIR_RE.lastIndex = 0;
+    for (let m = KOUPON_PAIR_RE.exec(html); m; m = KOUPON_PAIR_RE.exec(html)) {
+      const match = matchAmazonProductUrl(m[1] ?? "");
+      const code = (m[2] ?? "").trim().toUpperCase();
+      if (!match || !code) continue;
+      const key = `${match.marketplace}:${match.asin}`;
+      if (!codes.has(key)) codes.set(key, code);
+    }
+    if (codes.size === 0) return generic;
+    const merged = generic.map((deal) => {
+      const code = codes.get(`${deal.marketplace}:${deal.asin}`);
+      return code && !deal.promoCode ? { ...deal, promoCode: code } : deal;
+    });
+    // A product the generic sweep missed but the payload named is still a deal.
+    const seen = new Set(merged.map((deal) => `${deal.marketplace}:${deal.asin}`));
+    for (const [key, promoCode] of codes) {
+      if (seen.has(key)) continue;
+      const [marketplace, asin] = key.split(":");
+      if (!marketplace || !asin) continue;
+      merged.push({ asin, marketplace, sourceUrl, promoCode });
+    }
+    return merged;
+  },
+
+  /* onlineatthelake.com never puts a retailer link on the page: every card and
+   * every detail page routes through its own click-tracked redirect. That
+   * redirect is the thing worth reading, because it names the retailer and the
+   * product id outright (/d/amazon_asin_B0CYV4H86N, /d/walmart_sku_17566810931),
+   * so there is no redirect to follow and no network call to make. The generic
+   * sweep finds nothing here, so this parser is the only source. */
+  "onlineatthelake.com": (html, sourceUrl, generic) => {
+    const out = [...generic];
+    const seen = new Set(out.map((deal) => `${deal.marketplace}:${deal.asin}`));
+    LAKE_REDIRECT_RE.lastIndex = 0;
+    for (let m = LAKE_REDIRECT_RE.exec(html); m; m = LAKE_REDIRECT_RE.exec(html)) {
+      const deal = lakeDeal(m[1] ?? "", m[2] ?? "", sourceUrl);
+      if (!deal) continue;
+      const key = `${deal.marketplace}:${deal.asin}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(deal);
+    }
+    return out;
+  },
 };
+
+// "productLink" is always followed immediately by "code" in koupon.ai's payload.
+const KOUPON_PAIR_RE = /"productLink"\s*:\s*"([^"]+)"\s*,\s*"code"\s*:\s*"([^"]{4,24})"/g;
+
+// onlineatthelake's own outbound redirect: /d/<retailer>_<idKind>_<id>.
+const LAKE_REDIRECT_RE = /\/d\/(amazon|walmart)_(?:asin|sku)_([A-Za-z0-9]{6,20})/g;
+
+function lakeDeal(retailer: string, id: string, sourceUrl: string): HarvestedDeal | null {
+  if (retailer === "walmart") {
+    if (!/^\d{3,15}$/.test(id)) return null;
+    return { asin: id, marketplace: WALMART_MARKETPLACE, sourceUrl, promoCode: null };
+  }
+  const asin = id.toUpperCase();
+  if (!/^[A-Z0-9]{10}$/.test(asin)) return null;
+  return { asin, marketplace: DEFAULT_MARKETPLACE, sourceUrl, promoCode: null };
+}
+
+/* Per-host matcher for a single <a href>, used by the on-page chip. The chip
+ * decorates one card at a time, so it needs to recognise the ONE link on that
+ * card rather than sweep the whole document the way SITE_PARSERS does. A site
+ * whose cards link through its own redirect (onlineatthelake) is invisible to
+ * matchAmazonProductUrl, so it registers here too. Keyed by bare hostname. */
+export type SiteLinkMatcher = (href: string) => { asin: string; marketplace: string } | null;
+
+export const SITE_LINK_MATCHERS: Record<string, SiteLinkMatcher> = {
+  "onlineatthelake.com": (href) => {
+    LAKE_REDIRECT_RE.lastIndex = 0;
+    const m = LAKE_REDIRECT_RE.exec(href);
+    if (!m) return null;
+    const deal = lakeDeal(m[1] ?? "", m[2] ?? "", "");
+    return deal ? { asin: deal.asin, marketplace: deal.marketplace } : null;
+  },
+};
+
+/** The matcher for a page's own host, or null when the host has no override. */
+export function siteLinkMatcher(pageUrl: string): SiteLinkMatcher | null {
+  return SITE_LINK_MATCHERS[hostOf(pageUrl)] ?? null;
+}
 
 function hostOf(url: string): string {
   try {

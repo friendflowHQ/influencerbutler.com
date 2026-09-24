@@ -1,4 +1,4 @@
-import { matchAmazonProductUrl } from "../tools/deal-harvester/extract";
+import { matchAmazonProductUrl, siteLinkMatcher } from "../tools/deal-harvester/extract";
 
 // Finding the "card" a deal link belongs to, on a site we did not build.
 //
@@ -41,8 +41,12 @@ export function pickOutermostSingleOwner(counts: number[]): number {
 // each sweep, so it stays cheap: one querySelectorAll plus a regex per href.
 export function allProductAnchors(): AnchorHit[] {
   const out: AnchorHit[] = [];
+  // Some aggregators never link to the retailer directly: every card goes
+  // through their own click-tracked redirect, which still names the product.
+  // Those sites register a matcher for their own host.
+  const siteMatch = siteLinkMatcher(location.href);
   for (const anchor of Array.from(document.querySelectorAll<HTMLAnchorElement>("a[href]"))) {
-    const match = matchAmazonProductUrl(anchor.href);
+    const match = matchAmazonProductUrl(anchor.href) ?? siteMatch?.(anchor.href) ?? null;
     if (!match) continue;
     out.push({ anchor, asin: match.asin, marketplace: match.marketplace });
   }

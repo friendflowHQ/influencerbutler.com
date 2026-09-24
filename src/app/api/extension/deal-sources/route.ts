@@ -25,6 +25,13 @@ type SourcesFile = { version?: string; sources?: Array<{ url?: unknown; label?: 
 const SEED: DealSource[] = [
   { url: "https://www.jungle.deals/", label: "Jungle.Deals" },
   { url: "https://www.savewithcindy.shop/", label: "Save With Cindy" },
+  { url: "https://dailydealswithjat.com/", label: "Daily Deals with Jat" },
+  { url: "https://elvasdailydeals.com/", label: "Elva's Daily Deals" },
+  { url: "https://simplypicksapp.com/promo-codes", label: "Simply Picks" },
+  { url: "https://noelsdailydeals.com/", label: "Noel's Daily Deals" },
+  { url: "https://www.koupon.ai/collection/amazon-promo-codes", label: "Koupon" },
+  { url: "https://onlineatthelake.com/all-finds", label: "Online at the Lake" },
+  { url: "https://hip2save.com/save-money-with/amazon/", label: "Hip2Save (open a deal post)" },
 ];
 
 export async function OPTIONS() {

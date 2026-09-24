@@ -13,6 +13,10 @@ export function mountChip(
   card: HTMLElement,
   dict: DealsDict,
   onSend: () => void,
+  // A grid card gets the chip pinned to its corner. An article page has no card
+  // to pin to (a blog post links one product from inside a sentence), so the
+  // chip sits inline after the link instead of floating over the prose.
+  placement: "corner" | "inline" = "corner",
 ): ChipHandle | null {
   if (card.querySelector(`:scope > .${CHIP_HOST_CLASS}`)) return null;
 
@@ -37,10 +41,16 @@ export function mountChip(
 
   root.append(style, btn);
 
-  // Anchor the chip to the card. A card that lays out statically has to be
-  // promoted first, or the chip would position against the page instead.
-  if (getComputedStyle(card).position === "static") card.style.position = "relative";
-  card.append(host);
+  if (placement === "inline") {
+    host.dataset.ibChipInline = "1";
+    // After the link, in the flow, so nothing is covered up.
+    card.insertAdjacentElement("afterend", host);
+  } else {
+    // Anchor the chip to the card. A card that lays out statically has to be
+    // promoted first, or the chip would position against the page instead.
+    if (getComputedStyle(card).position === "static") card.style.position = "relative";
+    card.append(host);
+  }
 
   const setState: ChipHandle["setState"] = (state, detail) => {
     btn.dataset.state = state;
@@ -65,6 +75,8 @@ function labelFor(state: ChipState, dict: DealsDict): string {
 
 const CHIP_CSS = `
 :host { all: initial; }
+:host([data-ib-chip-inline]) { display: inline-block; vertical-align: middle; }
+:host([data-ib-chip-inline]) .chip { position: static; margin-left: 6px; }
 .chip {
   position: absolute;
   top: 8px;
