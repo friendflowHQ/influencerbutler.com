@@ -136,18 +136,29 @@ AS $$
 DECLARE
   v_id UUID;
 BEGIN
-  -- Overlap with another confirmed booking's blocked range?
+  -- Guard the incoming range: tstzrange() throws "range lower bound must be less
+  -- than or equal to range upper bound" if end precedes start, so reject it with
+  -- a clear signal instead of a cryptic constructor error.
+  IF p_ends_at <= p_starts_at THEN
+    RAISE EXCEPTION 'bad_range';
+  END IF;
+  -- Overlap with another confirmed booking's blocked range? Skip any row whose
+  -- own range is inverted/empty (ends_at <= starts_at): building tstzrange() on
+  -- such a row would throw and fail every booking, so a single bad row must not
+  -- poison the check.
   IF EXISTS (
     SELECT 1 FROM call_bookings
     WHERE status = 'confirmed'
+      AND ends_at > starts_at
       AND tstzrange(starts_at, ends_at, '[)') && tstzrange(p_starts_at, p_ends_at, '[)')
   ) THEN
     RAISE EXCEPTION 'slot_taken';
   END IF;
-  -- Overlap with an owner manual block?
+  -- Overlap with an owner manual block? Same guard against a bad-range row.
   IF EXISTS (
     SELECT 1 FROM call_blocks
-    WHERE tstzrange(starts_at, ends_at, '[)') && tstzrange(p_starts_at, p_ends_at, '[)')
+    WHERE ends_at > starts_at
+      AND tstzrange(starts_at, ends_at, '[)') && tstzrange(p_starts_at, p_ends_at, '[)')
   ) THEN
     RAISE EXCEPTION 'slot_taken';
   END IF;

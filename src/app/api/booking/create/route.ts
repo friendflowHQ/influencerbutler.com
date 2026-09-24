@@ -93,7 +93,17 @@ export async function POST(request: Request) {
     if (/slot_taken/.test(error.message || "")) {
       return NextResponse.json({ error: "That time was just taken. Please pick another." }, { status: 409 });
     }
-    console.error("[booking/create] rpc", error.message);
+    // Log every PostgREST field so a prod schema-drift failure (missing/mismatched
+    // book_call function, missing column, constraint) is diagnosable from the log
+    // line alone, not just the message.
+    console.error("[booking/create] rpc", JSON.stringify({
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      type: type,
+      startMs,
+    }));
     return NextResponse.json({ error: "Could not book that time." }, { status: 500 });
   }
 

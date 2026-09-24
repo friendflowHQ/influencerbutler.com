@@ -69,6 +69,13 @@ export async function POST(request: Request) {
       }
       case "addBlock": {
         if (!body.block) return NextResponse.json({ error: "Missing block" }, { status: 400 });
+        // Reject an inverted/empty range: a block whose end is not after its start
+        // would break the booking overlap check for every customer (tstzrange throws).
+        const bStart = Date.parse(body.block.starts_at);
+        const bEnd = Date.parse(body.block.ends_at);
+        if (!Number.isFinite(bStart) || !Number.isFinite(bEnd) || bEnd <= bStart) {
+          return NextResponse.json({ error: "Block end time must be after the start time." }, { status: 400 });
+        }
         await admin.from("call_blocks").insert(body.block);
         break;
       }

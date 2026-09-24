@@ -433,12 +433,16 @@ function AddBlock({ onAdd }: { onAdd: (b: { starts_at: string; ends_at: string; 
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [label, setLabel] = useState("");
+  // End must be after start: an inverted block breaks the booking overlap check
+  // for every customer (the DB range constructor throws), so never let one be added.
+  const valid = start !== "" && end !== "" && new Date(end).getTime() > new Date(start).getTime();
+  const inverted = start !== "" && end !== "" && new Date(end).getTime() <= new Date(start).getTime();
   return (
     <div className="mt-3 flex flex-wrap items-end gap-2">
       <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
-      <label className="text-xs text-slate-500">End<input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">End<input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" />{inverted && <span className="mt-0.5 block text-[11px] text-rose-600">End must be after start.</span>}</label>
       <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Break" /></label>
-      <button type="button" disabled={!start || !end} onClick={() => { onAdd({ starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(), label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add block</button>
+      <button type="button" disabled={!valid} onClick={() => { onAdd({ starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(), label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add block</button>
     </div>
   );
 }
