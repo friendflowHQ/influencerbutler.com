@@ -4,6 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 
 type BannerSurface = "web" | "extension" | "desktop";
 
+// Last-known Recall.ai recording-credit status (from /api/admin/recall-credits).
+type RecallCreditStatusView = {
+  ok: boolean;
+  insufficientCredits: boolean;
+  status: number | null;
+  detail: string;
+  checkedAt: string;
+} | null;
+
 type AdminEvent = {
   id: string;
   title: string;
@@ -80,6 +89,18 @@ function browserTz(): string {
   } catch {
     return "America/Denver";
   }
+}
+
+/** Compact "3m ago" / "2h ago" for a status timestamp. */
+function timeAgo(iso: string): string {
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms)) return "just now";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 /** ISO -> value for a <input type="datetime-local"> in the browser's local tz. */
@@ -166,6 +187,8 @@ export default function AdminEventsPage() {
   const [youtubingId, setYoutubingId] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
   const [draftNote, setDraftNote] = useState<string | null>(null);
+  const [creditStatus, setCreditStatus] = useState<RecallCreditStatusView | null>(null);
+  const [checkingCredit, setCheckingCredit] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
@@ -182,9 +205,27 @@ export default function AdminEventsPage() {
     }
   }, []);
 
+  // Last-known Recall credit status: a cheap read (no live probe) so the page can
+  // warn when recording is disabled for lack of credit. Refreshed on load and
+  // after a retry (rearm records a fresh status), and on-demand via Re-check.
+  const fetchCredit = useCallback(async (refresh = false) => {
+    if (refresh) setCheckingCredit(true);
+    try {
+      const res = await fetch(`/api/admin/recall-credits${refresh ? "?refresh=1" : ""}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { status: RecallCreditStatusView };
+      setCreditStatus(data.status ?? null);
+    } finally {
+      if (refresh) setCheckingCredit(false);
+    }
+  }, []);
+
   useEffect(() => {
     void refetch();
-  }, [refetch]);
+    void fetchCredit();
+  }, [refetch, fetchCredit]);
 
   const startEdit = (e: AdminEvent) => {
     setForm({
@@ -401,6 +442,36 @@ export default function AdminEventsPage() {
     }
   };
 
+  // Publish a recording captured OUTSIDE Recall (Loom, Google Meet, a file host)
+  // to YouTube: prompts for the recording URL, then streams it up with the event's
+  // branded cover as the thumbnail and the event title/description as metadata. A
+  // loom.com/share link is resolved to its MP4 server-side.
+  const uploadRecordingLink = async (id: string) => {
+    const url = window.prompt(
+      "Recording URL to publish to YouTube (a loom.com/share link, a signed Loom MP4 URL, or any direct video URL):",
+      "",
+    );
+    if (!url || !url.trim()) return;
+    setYoutubingId(id);
+    setMessage("Uploading recording to YouTube (this can take a few minutes for a long call)...");
+    try {
+      const res = await fetch("/api/admin/events/youtube-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, videoUrl: url.trim() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string; thumbnailSet?: boolean };
+      setMessage(
+        res.ok && data.url
+          ? `Uploaded to YouTube: ${data.url}${data.thumbnailSet ? " (branded thumbnail set)" : ""}`
+          : data.error || "Upload failed.",
+      );
+      await refetch();
+    } finally {
+      setYoutubingId(null);
+    }
+  };
+
   const cancelEvent = async (id: string) => {
     if (!window.confirm("Cancel this event? Registrants keep their RSVP but the banner and reminders stop.")) return;
     const res = await fetch("/api/admin/events/cancel", {
@@ -423,6 +494,8 @@ export default function AdminEventsPage() {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       setMessage(res.ok ? "Recording re-armed." : data.error || "Could not re-arm recording.");
       await refetch();
+      // The retry just probed Recall live; refresh the credit warning to match.
+      await fetchCredit();
     } finally {
       setRearmingId(null);
     }
@@ -444,6 +517,46 @@ export default function AdminEventsPage() {
         Schedule group calls, control the cross-app banner (web, extension, desktop), and see who
         registered. Enter times in your local timezone ({browserTz()}).
       </p>
+
+      {/* Recording-credit warning: Recall.ai is pay-per-use, and when its balance
+          hits zero no recording bot can join, so every call ends 'failed' and
+          Retry keeps failing. Surface it here so it is caught before a call. */}
+      {creditStatus && creditStatus.insufficientCredits ? (
+        <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-rose-800">
+                Call recording is disabled: Recall.ai is out of credits
+              </p>
+              <p className="mt-1 text-sm text-rose-700">
+                No recording bot can join upcoming calls until the balance is topped up. Add credit
+                (or turn on auto-recharge) at{" "}
+                <a
+                  href="https://www.recall.ai/dashboard"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold underline"
+                >
+                  recall.ai
+                </a>
+                , then click Retry recording on the affected call. As a fallback right now, use
+                Google Meet&apos;s own Record meeting.
+              </p>
+              <p className="mt-1 text-xs text-rose-500">
+                Last checked {timeAgo(creditStatus.checkedAt)}.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void fetchCredit(true)}
+              disabled={checkingCredit}
+              className="shrink-0 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+            >
+              {checkingCredit ? "Checking..." : "Re-check"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Create / edit form */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -945,6 +1058,17 @@ export default function AdminEventsPage() {
                             : "Upload to YouTube"}
                     </button>
                   ) : null}
+                  {/* Publish a recording captured outside Recall (Loom, Meet, a
+                      file host) by pasting its link. Always available so a call
+                      that never ran a Recall bot can still go up on YouTube. */}
+                  <button
+                    type="button"
+                    onClick={() => uploadRecordingLink(e.id)}
+                    disabled={youtubingId === e.id || e.youtubeStatus === "uploading"}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-[#f97316] hover:text-[#c2410c] disabled:opacity-60"
+                  >
+                    Upload from link
+                  </button>
                   {e.status === "scheduled" && e.recordEnabled && e.recordingStatus === "failed" ? (
                     <button
                       type="button"

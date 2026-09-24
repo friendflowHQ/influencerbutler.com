@@ -13,7 +13,8 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin } from "@/lib/scheduling-server";
-import { scheduleBot, stopBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
+import { scheduleBotResult, stopBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
+import { recordRecallCreditCheck } from "@/lib/recall-credit-alert";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,12 +87,22 @@ export async function POST(request: Request) {
   const startMs = Date.parse(b.starts_at);
   const joinAtISO = new Date(Math.max(Date.now(), Number.isFinite(startMs) ? startMs : Date.now())).toISOString();
 
-  const bot = await scheduleBot({
+  const result = await scheduleBotResult({
     meetingUrl: b.join_url as string,
     joinAtISO,
     botName: "Influencer Butler Notetaker",
     metadata: { bookingId: id },
   });
+  const bot = result.bot;
+
+  // A manual retry is a live signal about the account's credit state: record it
+  // (and alert, throttled) so the Events-page warning reflects reality at once.
+  if (bot || result.insufficientCredits) {
+    await recordRecallCreditCheck(
+      { configured: true, ok: !!bot, insufficientCredits: result.insufficientCredits, status: result.status, detail: result.detail },
+      { admin, upcoming: "1:1 call (retry)" },
+    ).catch(() => {});
+  }
 
   const recordingStatus = bot ? "scheduled" : "failed";
   const { error: upErr } = await admin
@@ -107,7 +118,11 @@ export async function POST(request: Request) {
 
   if (!bot) {
     return NextResponse.json(
-      { error: "Recall rejected the bot. Check RECALL_API_KEY and RECALL_API_BASE (region), then look for a [recall] scheduleBot log line." },
+      {
+        error: result.insufficientCredits
+          ? result.detail // "Recall.ai has no recording credits left (HTTP 402). Add credit at recall.ai, then retry."
+          : "Recall rejected the bot. Check RECALL_API_KEY and RECALL_API_BASE (region), then look for a [recall] scheduleBot log line.",
+      },
       { status: 502 },
     );
   }

@@ -67,19 +67,54 @@ async function recallFetch(path: string, init?: RequestInit): Promise<Response> 
 
 export type ScheduledBot = { id: string };
 
+/** The recording_config every bot-create uses. Kept in one spot so scheduleBot,
+ *  the deep health probe, and the credit check all send an identical payload
+ *  shape (so a probe's result is a faithful stand-in for a real schedule). */
+const RECORDING_CONFIG = {
+  // Record the mixed A/V and transcribe with Recall's own engine. This account's
+  // Recall API version does not accept the older recallai_async provider (it 400s
+  // "Must provide exactly one of ... recallai_streaming ..."); recallai_streaming
+  // is the Recall-native option that needs no third-party transcription key and
+  // still produces the downloadable transcript artifact fetchTranscriptText reads
+  // once the call ends.
+  transcript: { provider: { recallai_streaming: {} } },
+} as const;
+
 /**
- * Schedule a bot to join `meetingUrl` at `joinAtISO` and record + transcribe.
- * `metadata` is echoed back on webhooks so we can map the bot to its booking.
- * Returns null on any failure (caller records the failure but never fails the
- * booking over it).
+ * True when a Recall bot-create response means "the account is out of recording
+ * credits" rather than a config/auth problem. Recall returns HTTP 402 with a body
+ * like {"code":"insufficient_credit_balance", ...}. We match on either signal so a
+ * future status-code tweak on Recall's side still classifies correctly.
  */
-export async function scheduleBot(args: {
+export function isInsufficientCreditsResponse(status: number | null, body: string): boolean {
+  return status === 402 || /insufficient_credit_balance/i.test(body);
+}
+
+export type ScheduleBotResult = {
+  bot: ScheduledBot | null;
+  status: number | null;
+  /** True when the failure was Recall refusing for lack of credit balance. */
+  insufficientCredits: boolean;
+  /** Short, admin-facing reason when bot is null (empty on success). */
+  detail: string;
+};
+
+/**
+ * Schedule a bot to join `meetingUrl` at `joinAtISO` and record + transcribe, and
+ * report WHY it failed. `metadata` is echoed back on webhooks so we can map the
+ * bot to its booking. Never throws; on any failure `bot` is null and `detail`
+ * (plus `insufficientCredits`) explains it so callers can show a precise message
+ * and record the account's credit state.
+ */
+export async function scheduleBotResult(args: {
   meetingUrl: string;
   joinAtISO: string;
   botName: string;
   metadata: Record<string, string>;
-}): Promise<ScheduledBot | null> {
-  if (!isRecallConfigured()) return null;
+}): Promise<ScheduleBotResult> {
+  if (!isRecallConfigured()) {
+    return { bot: null, status: null, insufficientCredits: false, detail: "RECALL_API_KEY is not set." };
+  }
   try {
     const res = await recallFetch("/bot/", {
       method: "POST",
@@ -88,27 +123,99 @@ export async function scheduleBot(args: {
         bot_name: args.botName,
         join_at: args.joinAtISO,
         metadata: args.metadata,
-        // Record the mixed A/V and transcribe with Recall's own engine. This
-        // account's Recall API version does not accept the older recallai_async
-        // provider (it 400s "Must provide exactly one of ... recallai_streaming
-        // ..."); recallai_streaming is the Recall-native option that needs no
-        // third-party transcription key and still produces the downloadable
-        // transcript artifact fetchTranscriptText reads once the call ends.
-        recording_config: {
-          transcript: { provider: { recallai_streaming: {} } },
-        },
+        recording_config: RECORDING_CONFIG,
       }),
     });
     if (!res.ok) {
-      console.error("[recall] scheduleBot", res.status, await res.text().catch(() => ""));
-      return null;
+      const body = await res.text().catch(() => "");
+      console.error("[recall] scheduleBot", res.status, body);
+      const insufficientCredits = isInsufficientCreditsResponse(res.status, body);
+      return {
+        bot: null,
+        status: res.status,
+        insufficientCredits,
+        detail: insufficientCredits
+          ? "Recall.ai has no recording credits left (HTTP 402). Add credit at recall.ai, then retry."
+          : `Recall rejected the bot (HTTP ${res.status}).`,
+      };
     }
     const json = (await res.json()) as { id?: string };
-    return json.id ? { id: json.id } : null;
+    return {
+      bot: json.id ? { id: json.id } : null,
+      status: res.status,
+      insufficientCredits: false,
+      detail: json.id ? "" : "Recall accepted the request but returned no bot id.",
+    };
   } catch (err) {
     console.error("[recall] scheduleBot threw", err);
-    return null;
+    return {
+      bot: null,
+      status: null,
+      insufficientCredits: false,
+      detail: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    };
   }
+}
+
+/**
+ * Schedule a bot to join `meetingUrl` at `joinAtISO` and record + transcribe.
+ * `metadata` is echoed back on webhooks so we can map the bot to its booking.
+ * Returns null on any failure (caller records the failure but never fails the
+ * booking over it). Use scheduleBotResult when you need the failure reason.
+ */
+export async function scheduleBot(args: {
+  meetingUrl: string;
+  joinAtISO: string;
+  botName: string;
+  metadata: Record<string, string>;
+}): Promise<ScheduledBot | null> {
+  return (await scheduleBotResult(args)).bot;
+}
+
+export type RecallCreditStatus = {
+  configured: boolean;
+  /** True when Recall can currently create a recording bot (has credit + healthy). */
+  ok: boolean;
+  insufficientCredits: boolean;
+  status: number | null;
+  detail: string;
+};
+
+/**
+ * Live check of whether Recall will accept a new recording bot right now, used by
+ * the proactive credit alert. Attempts a real POST /bot/ with a throwaway Meet URL
+ * (identical payload shape to a real schedule) and reads the result:
+ *  - HTTP 402 / insufficient_credit_balance -> out of credits (NO bot is created,
+ *    so this path costs nothing).
+ *  - 2xx -> credits are fine; the throwaway bot is stopped immediately so no real
+ *    recorder is left scheduled.
+ *  - anything else -> a config/auth problem, surfaced verbatim.
+ * Only call this when a check is actually warranted (e.g. an upcoming recordable
+ * call), since the happy path creates and then removes one bot.
+ */
+export async function checkRecallCredits(): Promise<RecallCreditStatus> {
+  if (!isRecallConfigured()) {
+    return { configured: false, ok: false, insufficientCredits: false, status: null, detail: "RECALL_API_KEY is not set." };
+  }
+  const probe = await scheduleBotResult({
+    meetingUrl: "https://meet.google.com/aaa-bbbb-ccc",
+    joinAtISO: new Date(Date.now() + 15 * 60_000).toISOString(),
+    botName: "Influencer Butler Credit Check",
+    metadata: { purpose: "credit_check" },
+  });
+  // Never leave a throwaway recorder scheduled.
+  if (probe.bot) {
+    try { await stopBot(probe.bot.id); } catch { /* best-effort cleanup */ }
+  }
+  return {
+    configured: true,
+    ok: !!probe.bot,
+    insufficientCredits: probe.insufficientCredits,
+    status: probe.status,
+    detail: probe.bot
+      ? "Recall has recording credit and accepted a test bot (removed immediately)."
+      : probe.detail,
+  };
 }
 
 export type RecallHealth = {
@@ -205,7 +312,7 @@ export async function probeBotCreate(): Promise<BotCreateProbe> {
         meeting_url: "https://meet.google.com/aaa-bbbb-ccc",
         bot_name: "Influencer Butler Healthcheck",
         join_at: new Date(Date.now() + 15 * 60_000).toISOString(),
-        recording_config: { transcript: { provider: { recallai_streaming: {} } } },
+        recording_config: RECORDING_CONFIG,
       }),
     });
     out.status = res.status;
@@ -218,6 +325,8 @@ export async function probeBotCreate(): Promise<BotCreateProbe> {
         if (j.id) { out.createdBotId = j.id; await stopBot(j.id); out.cleanedUp = true; }
       } catch { /* body was not the expected shape */ }
       out.diagnosis = "POST /bot/ succeeded, so the payload scheduleBot sends is accepted. The throwaway bot was cleaned up. If real bookings still fail, the difference is the meeting URL or join_at value, not the request shape.";
+    } else if (isInsufficientCreditsResponse(out.status, body)) {
+      out.diagnosis = "Recall has no recording credits left (HTTP 402, insufficient_credit_balance). This is a BILLING issue, not code: no bot can be created until the account is topped up. Add credit (or enable auto-recharge) on the recall.ai dashboard, then Retry recording on the call/event.";
     } else if (out.status === 400) {
       out.diagnosis = "Recall rejected the bot-creation payload (HTTP 400). The request body shape does not match this account's Recall API version. The body snippet names the offending field: adjust scheduleBot's request in src/lib/recall.ts to match (commonly the recording_config / transcript block).";
     } else {
