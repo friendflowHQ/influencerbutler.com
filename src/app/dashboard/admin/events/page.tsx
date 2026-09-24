@@ -472,6 +472,35 @@ export default function AdminEventsPage() {
     }
   };
 
+  // Send the replay follow-up to all active registrants right now, using the
+  // event's YouTube link and its replay copy. Confirms first; if the replay was
+  // already sent, offers to force a re-send.
+  const sendReplayNow = async (id: string, force = false) => {
+    if (!force && !window.confirm("Send the replay email to all registrants now? It uses the event's YouTube link and replay copy.")) return;
+    setYoutubingId(id);
+    setMessage("Sending replay email...");
+    try {
+      const res = await fetch("/api/admin/events/send-replay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, force }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; sent?: number; total?: number };
+      if (res.status === 409 && !force) {
+        if (window.confirm(`${data.error || "Already sent."}\n\nSend it again anyway?`)) {
+          await sendReplayNow(id, true);
+          return;
+        }
+        setMessage(data.error || "Already sent.");
+      } else {
+        setMessage(res.ok ? `Replay sent to ${data.sent ?? 0} of ${data.total ?? 0} registrants.` : data.error || "Could not send the replay.");
+      }
+      await refetch();
+    } finally {
+      setYoutubingId(null);
+    }
+  };
+
   const cancelEvent = async (id: string) => {
     if (!window.confirm("Cancel this event? Registrants keep their RSVP but the banner and reminders stop.")) return;
     const res = await fetch("/api/admin/events/cancel", {
@@ -1069,6 +1098,19 @@ export default function AdminEventsPage() {
                   >
                     Upload from link
                   </button>
+                  {/* Send the replay email on demand, once the recording is up on
+                      YouTube (so there is a link to send). */}
+                  {e.youtubeUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => sendReplayNow(e.id)}
+                      disabled={youtubingId === e.id}
+                      className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+                      title={e.replayEmailedAt ? `Replay already sent ${new Date(e.replayEmailedAt).toLocaleString()}` : "Send the replay email to all registrants now"}
+                    >
+                      {e.replayEmailedAt ? "Resend replay" : "Send replay now"}
+                    </button>
+                  ) : null}
                   {e.status === "scheduled" && e.recordEnabled && e.recordingStatus === "failed" ? (
                     <button
                       type="button"
