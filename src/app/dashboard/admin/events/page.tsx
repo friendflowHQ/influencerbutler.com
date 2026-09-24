@@ -453,8 +453,44 @@ export default function AdminEventsPage() {
     );
     if (!url || !url.trim()) return;
     setYoutubingId(id);
-    setMessage("Uploading recording to YouTube (this can take a few minutes for a long call)...");
     try {
+      // Confirm the destination channel by eye before publishing, so a wrong
+      // connection (e.g. bound to a personal channel instead of the brand one)
+      // is caught even when the YOUTUBE_TARGET_CHANNEL guard is not set.
+      setMessage("Checking the connected YouTube channel...");
+      let channelLabel = "";
+      try {
+        const chRes = await fetch("/api/admin/events/youtube-channel", { cache: "no-store" });
+        const chData = (await chRes.json().catch(() => ({}))) as {
+          ok?: boolean;
+          channel?: { title?: string; handle?: string | null };
+          error?: string;
+        };
+        if (chData.ok && chData.channel) {
+          channelLabel = chData.channel.handle
+            ? `${chData.channel.title} (${chData.channel.handle})`
+            : chData.channel.title || "an unknown channel";
+        } else if (!window.confirm(`Could not read the connected YouTube channel (${chData.error || "unknown"}). Upload anyway?`)) {
+          setMessage("Upload cancelled.");
+          return;
+        }
+      } catch {
+        if (!window.confirm("Could not check the connected YouTube channel. Upload anyway?")) {
+          setMessage("Upload cancelled.");
+          return;
+        }
+      }
+      if (
+        channelLabel &&
+        !window.confirm(
+          `This will publish to the "${channelLabel}" YouTube channel.\n\nIf that is not the channel you want (e.g. it shows a personal channel), cancel and reconnect Google to the right channel first.\n\nPublish now?`,
+        )
+      ) {
+        setMessage("Upload cancelled.");
+        return;
+      }
+
+      setMessage("Uploading recording to YouTube (this can take a few minutes for a long call)...");
       const res = await fetch("/api/admin/events/youtube-upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
