@@ -91,11 +91,16 @@ export async function POST(request: Request) {
     if (ok) sent += 1;
   }
 
-  // Stamp so the hourly replay cron does not also send it.
-  await admin
-    .from("events")
-    .update({ replay_emailed_at: new Date().toISOString() })
-    .eq("id", id);
+  // Stamp so the hourly replay cron does not also send it. If the link sent is a
+  // YouTube link that differs from the stored one, correct the event's youtube_url
+  // too, so the card, the public event page, and any automation point at the same
+  // video we just emailed (a manual upload, or a fix to a wrong stored link).
+  const update: Record<string, unknown> = { replay_emailed_at: new Date().toISOString() };
+  if (/youtu\.?be/i.test(replayUrl) && replayUrl !== event.youtubeUrl) {
+    update.youtube_url = replayUrl;
+    update.youtube_status = "uploaded";
+  }
+  await admin.from("events").update(update).eq("id", id);
 
   await logAdminAction({
     actor,

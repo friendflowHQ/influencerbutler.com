@@ -514,19 +514,19 @@ export default function AdminEventsPage() {
   // video can still go out. Confirms first; if already sent, offers a re-send.
   const sendReplayNow = async (id: string, opts: { force?: boolean; replayUrl?: string } = {}) => {
     const ev = events.find((e) => e.id === id);
-    let replayUrl = opts.replayUrl ?? ev?.youtubeUrl ?? "";
-    let prompted = false;
-    if (!replayUrl) {
+    let replayUrl: string;
+    if (opts.replayUrl) {
+      // Forced re-send: reuse the link the operator already confirmed.
+      replayUrl = opts.replayUrl;
+    } else {
+      // Always show the link (pre-filled with the stored one, which may be
+      // wrong) so the operator verifies or corrects it before emailing everyone.
       const entered = window.prompt(
-        "Replay video URL (the YouTube link) to send to all registrants:",
-        "",
+        "Replay YouTube link to email all registrants. Check this is the correct video before sending:",
+        ev?.youtubeUrl ?? "",
       );
       if (!entered || !entered.trim()) return;
       replayUrl = entered.trim();
-      prompted = true;
-    }
-    if (!prompted && !opts.force && !opts.replayUrl) {
-      if (!window.confirm(`Send the replay email to all registrants now, linking ${replayUrl}?`)) return;
     }
     setYoutubingId(id);
     setMessage("Sending replay email...");
@@ -1030,8 +1030,8 @@ export default function AdminEventsPage() {
                   className="mb-3 w-full max-w-md rounded-lg border border-slate-200"
                 />
               ) : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 sm:flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold text-slate-900">{e.title}</h3>
                     <span
@@ -1099,7 +1099,7 @@ export default function AdminEventsPage() {
                     </p>
                   ) : null}
                 </div>
-                <div className="flex flex-none items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 sm:max-w-[62%] sm:justify-end">
                   <button
                     type="button"
                     onClick={() => setOpenId(openId === e.id ? null : e.id)}
