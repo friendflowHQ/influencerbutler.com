@@ -508,23 +508,38 @@ export default function AdminEventsPage() {
     }
   };
 
-  // Send the replay follow-up to all active registrants right now, using the
-  // event's YouTube link and its replay copy. Confirms first; if the replay was
-  // already sent, offers to force a re-send.
-  const sendReplayNow = async (id: string, force = false) => {
-    if (!force && !window.confirm("Send the replay email to all registrants now? It uses the event's YouTube link and replay copy.")) return;
+  // Send the replay follow-up to all active registrants right now. Uses the
+  // event's stored YouTube link when present; if the recording was uploaded
+  // manually (no youtube_url on the row), prompts for the link so a hand-uploaded
+  // video can still go out. Confirms first; if already sent, offers a re-send.
+  const sendReplayNow = async (id: string, opts: { force?: boolean; replayUrl?: string } = {}) => {
+    const ev = events.find((e) => e.id === id);
+    let replayUrl = opts.replayUrl ?? ev?.youtubeUrl ?? "";
+    let prompted = false;
+    if (!replayUrl) {
+      const entered = window.prompt(
+        "Replay video URL (the YouTube link) to send to all registrants:",
+        "",
+      );
+      if (!entered || !entered.trim()) return;
+      replayUrl = entered.trim();
+      prompted = true;
+    }
+    if (!prompted && !opts.force && !opts.replayUrl) {
+      if (!window.confirm(`Send the replay email to all registrants now, linking ${replayUrl}?`)) return;
+    }
     setYoutubingId(id);
     setMessage("Sending replay email...");
     try {
       const res = await fetch("/api/admin/events/send-replay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, force }),
+        body: JSON.stringify({ id, replayUrl, force: !!opts.force }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; sent?: number; total?: number };
-      if (res.status === 409 && !force) {
+      if (res.status === 409 && !opts.force) {
         if (window.confirm(`${data.error || "Already sent."}\n\nSend it again anyway?`)) {
-          await sendReplayNow(id, true);
+          await sendReplayNow(id, { force: true, replayUrl });
           return;
         }
         setMessage(data.error || "Already sent.");
@@ -1134,9 +1149,10 @@ export default function AdminEventsPage() {
                   >
                     Upload from link
                   </button>
-                  {/* Send the replay email on demand, once the recording is up on
-                      YouTube (so there is a link to send). */}
-                  {e.youtubeUrl ? (
+                  {/* Send the replay email on demand once the event has ended.
+                      Uses the stored YouTube link if present, otherwise prompts
+                      for the link (for a recording uploaded by hand). */}
+                  {Date.parse(e.endsAt) < Date.now() ? (
                     <button
                       type="button"
                       onClick={() => sendReplayNow(e.id)}
