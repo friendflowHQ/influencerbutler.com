@@ -19,6 +19,7 @@ Gmail and Yahoo both require an app password (they refuse normal passwords from 
 1. Turn on 2-step verification for your email account if it is not already on. App passwords are only available once 2-step verification is active.
 2. Create an app password in your account's security settings. On Gmail: Google Account, then **Security**, then **2-Step Verification**, then **App passwords**. On Yahoo: **Account Security**, then **Generate app password**.
 3. Copy the 16-character password it shows you. It is only shown once.
+4. **Create the app password while signed in to the exact account you are connecting.** If you have more than one Google account open, the App passwords page can default to the wrong one, and the password it gives you will not work for this address.
 
 Then in the **Email account** card:
 
@@ -28,6 +29,10 @@ Then in the **Email account** card:
 4. Click **Test** to confirm the sign-in works, then **Connect**.
 
 The status chip switches to **Connected as** your address. Any provider that offers IMAP works the same way; only the server name changes.
+
+### If Test says sign-in failed
+
+The password is almost always the cause. Check three things: it is a 16-character app password and not your normal password; 2-step verification is on for this account; and you created the app password while signed in to this exact account, not a different Google account you also have open. Spaces in the pasted password are fine. If it still fails, delete the app password, sign out of every other account, sign in to only this one, and create a fresh app password.
 
 ## Step 2: add the seller senders to watch
 

@@ -19,6 +19,7 @@ Gmail et Yahoo exigent un mot de passe d'application (ils refusent les mots de p
 1. Activez la validation en deux étapes sur votre compte e-mail si ce n'est pas déjà fait. Les mots de passe d'application ne sont disponibles qu'avec la validation en deux étapes active.
 2. Créez un mot de passe d'application dans les paramètres de sécurité de votre compte. Sur Gmail : Compte Google, puis **Sécurité**, puis **Validation en deux étapes**, puis **Mots de passe des applications**. Sur Yahoo : **Sécurité du compte**, puis **Générer un mot de passe d'application**.
 3. Copiez le mot de passe de 16 caractères affiché. Il n'est montré qu'une seule fois.
+4. **Créez le mot de passe d'application en étant connecté au compte exact que vous voulez relier.** Si plusieurs comptes Google sont ouverts, la page des mots de passe d'application peut utiliser le mauvais compte, et le mot de passe fourni ne fonctionnera pas pour cette adresse.
 
 Ensuite, dans la carte **Compte e-mail** :
 
@@ -28,6 +29,10 @@ Ensuite, dans la carte **Compte e-mail** :
 4. Cliquez sur **Tester** pour confirmer que la connexion fonctionne, puis sur **Connecter**.
 
 La pastille d'état passe à **Connecté en tant que** votre adresse. Tout fournisseur proposant IMAP fonctionne de la même façon ; seul le nom du serveur change.
+
+### Si Tester indique que la connexion a échoué
+
+La cause est presque toujours le mot de passe. Vérifiez trois points : c'est bien un mot de passe d'application de 16 caractères et non votre mot de passe habituel ; la validation en deux étapes est active sur ce compte ; et vous avez créé le mot de passe d'application en étant connecté à ce compte précis, pas à un autre compte Google également ouvert. Les espaces dans le mot de passe collé ne posent pas de problème. Si cela échoue encore, supprimez le mot de passe d'application, déconnectez-vous de tous les autres comptes, connectez-vous uniquement à celui-ci et créez un nouveau mot de passe d'application.
 
 ## Étape 2 : ajoutez les expéditeurs à surveiller
 
