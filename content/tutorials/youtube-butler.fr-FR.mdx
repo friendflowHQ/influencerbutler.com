@@ -113,6 +113,16 @@ L'onglet **Sauvegarder mes vidéos** télécharge toutes les vidéos de votre ch
 - Relancez-la quand vous voulez : seules les nouvelles vidéos sont téléchargées. **Arrêter** termine l'exécution après la vidéo en cours.
 - Les vidéos encore en traitement sur YouTube sont ignorées jusqu'à ce qu'elles soient prêtes.
 
+## Accepter Creator Connections et soumettre votre vidéo automatiquement
+
+Si un produit que vous mettez en ligne a une campagne Amazon Creator Connections ou SPCC ouverte, YouTube Butler peut vous obtenir le bonus de la campagne sans aucune étape manuelle. Avec **Accepter Creator Connections** activé (la case à côté de Mettre en ligne la file, activée par défaut), chaque mise en ligne se déroule ainsi :
+
+1. Avant la mise en ligne de la vidéo, Butler vérifie si ce produit a une campagne ouverte.
+2. Si c'est le cas, Butler accepte la campagne pour vous.
+3. Une fois la vidéo mise en ligne, Butler revient et soumet votre nouveau lien YouTube comme contenu de la campagne, pour que la vidéo compte pour celle-ci.
+
+Les tableaux Inventaire et Journal des mises en ligne ajoutent une colonne **CC / SPCC** : une étiquette quand une campagne est disponible, et une étiquette verte **CC ✓** ou **SPCC ✓** une fois acceptée et votre lien soumis. Butler n'ouvre Amazon que lorsqu'une campagne est réellement trouvée, donc les mises en ligne de produits sans campagne ne sont pas touchées. Si votre session Amazon est déconnectée, Butler le note et poursuit les mises en ligne ; la vidéo elle-même n'échoue jamais à cause d'une étape de campagne. Décochez la case à tout moment pour mettre en ligne sans toucher à Creator Connections.
+
 ## Où vont les données
 
 Le statut d'upload par vidéo vit dans le panneau Upload Log (filtrable par statut, recherche, marketplace, etc.). Les IDs de vidéos uploadées sont stockés en local pour que YouTube Butler n'upload jamais deux fois.

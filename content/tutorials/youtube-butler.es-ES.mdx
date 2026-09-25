@@ -113,6 +113,16 @@ La pestaña **Copia de mis vídeos** descarga todos los vídeos de tu canal cone
 - Ejecútalo cuando quieras: solo se descargan los vídeos nuevos. **Detener** termina la ejecución tras el vídeo actual.
 - Los vídeos que YouTube aún está procesando se omiten hasta que estén listos.
 
+## Acepta Creator Connections y envía tu vídeo automáticamente
+
+Si un producto que subes tiene una campaña abierta de Amazon Creator Connections o SPCC, YouTube Butler puede conseguirte el bono de la campaña sin pasos manuales. Con **Aceptar Creator Connections** activado (la casilla junto a Subir en cola, activada por defecto), cada subida funciona así:
+
+1. Antes de subir el vídeo, Butler comprueba si ese producto tiene una campaña abierta.
+2. Si la tiene, Butler acepta la campaña por ti.
+3. Cuando el vídeo termina de subirse, Butler vuelve y envía tu nuevo enlace de YouTube como contenido de la campaña, para que el vídeo cuente para ella.
+
+Las tablas de Inventario y Registro de subidas incorporan una columna **CC / SPCC**: una etiqueta cuando hay una campaña disponible, y una etiqueta verde **CC ✓** o **SPCC ✓** una vez aceptada y enviado tu enlace. Butler solo abre Amazon cuando de verdad encuentra una campaña, así que las subidas de productos sin campaña no se tocan. Si tu sesión de Amazon está cerrada, Butler lo anota y sigue subiendo; el vídeo en sí nunca falla por un paso de la campaña. Desactiva la casilla cuando quieras para subir sin tocar Creator Connections.
+
 ## Dónde van los datos
 
 El estado de subida por vídeo vive en el panel Upload Log (filtrable por estado, búsqueda, marketplace, etc.). Los IDs de vídeos subidos se guardan localmente para que YouTube Butler no suba nada dos veces.

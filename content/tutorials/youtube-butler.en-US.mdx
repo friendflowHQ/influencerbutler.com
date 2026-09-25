@@ -113,6 +113,16 @@ The **Back up my videos** tab downloads every video on your connected channel to
 - Run it again any time: only new videos are downloaded. **Stop** ends the run after the current video.
 - Videos YouTube is still processing are skipped until they are ready.
 
+## Accept Creator Connections and submit your video automatically
+
+If a product you upload has an open Amazon Creator Connections or SPCC campaign, YouTube Butler can earn you the campaign bonus with no manual steps. With **Accept Creator Connections** on (the checkbox next to Upload Queued, on by default), each upload works like this:
+
+1. Before the video uploads, Butler checks whether that product has an open campaign.
+2. If it does, Butler accepts the campaign for you.
+3. After the video finishes uploading, Butler goes back and submits your new YouTube link as the campaign's content, so the video counts toward the campaign.
+
+The Inventory and Upload Log tables gain a **CC / SPCC** column: a chip when a campaign is available, and a green **CC ✓** or **SPCC ✓** once it has been accepted and your link submitted. Butler only opens Amazon when a campaign is actually found, so uploads for products with no campaign are left untouched. If your Amazon session is signed out, Butler notes it and keeps uploading; the video itself never fails because of a campaign step. Turn the checkbox off any time to upload without touching Creator Connections.
+
 ## Where the data goes
 
 Per-video upload status lives in the Upload Log panel (filterable by status, search, marketplace, etc.). Uploaded video IDs are stored locally so YouTube Butler won't re-upload anything twice.
