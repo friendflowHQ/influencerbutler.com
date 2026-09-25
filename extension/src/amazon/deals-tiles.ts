@@ -3,14 +3,16 @@ import { parsePriceText, type SearchTile } from "./search-results";
 import { marketplaceFromUrl } from "./product-signals";
 import { getDealsFeed, imageIdFromUrl, type DealsFeedItem } from "./deals-feed";
 
-// Reads the product tiles off the Today's Deals grid (amazon.com/deals*). Unlike
-// search / best-sellers / idea-list, the deals cards carry NO ASIN in the DOM
-// (they link to javascript:void(0) and open an in-page overlay), so the ASINs
-// come from the MAIN-world deals hook's captured feed (src/content/deals-hook.ts
-// -> src/amazon/deals-feed.ts). This parser joins each feed record back to its
-// rendered card so the shared search overlay can badge it in place.
+// Reads the product tiles off the Today's Deals grid (amazon.com/deals*). The
+// current grid stamps data-asin on each product-card (and links it to /dp/), so
+// the primary path reads ASINs straight off the tiles like search / best-sellers
+// / idea-list. Older grids hid the ASIN (cards linked to javascript:void(0) and
+// opened an in-page overlay); for those this parser falls back to the MAIN-world
+// deals hook's captured feed (src/content/deals-hook.ts -> src/amazon/deals-feed
+// .ts), joining each feed record back to its rendered card so the shared search
+// overlay can badge it in place.
 //
-// The join key is the product image: Amazon serves the same photo under one
+// The feed join key is the product image: Amazon serves the same photo under one
 // media id with different size suffixes, so a feed record's image and its tile's
 // <img> share that id. Records the feed carried ASIN-only (e.g. from the
 // products batch URL), or that fail to image-match, fall back to matching the
@@ -20,12 +22,31 @@ import { getDealsFeed, imageIdFromUrl, type DealsFeedItem } from "./deals-feed";
 // deals overlay is just initSearchOverlay driven by a deals RetailerModule.
 
 export function parseDealsTiles(root: ParentNode, url: string): SearchTile[] {
-  const feed = getDealsFeed();
-  if (feed.length === 0) return [];
-
   const marketplace = marketplaceFromUrl(url);
   const grid = query<HTMLElement>(root, "dealsGrid") ?? (root as unknown as HTMLElement);
   if (!grid) return [];
+
+  // Preferred path: the current Today's Deals grid stamps data-asin on every
+  // product-card (and links each card to /dp/<ASIN>), so read the ASINs straight
+  // off the tiles the way search and best-sellers do. This needs no deals-hook
+  // feed, which the redesigned grid no longer drives (its records ship in the
+  // server-rendered HTML, not a fetch/XHR the hook can wrap).
+  const domTiles = queryAll<HTMLElement>(grid, "dealsTile");
+  const direct: SearchTile[] = [];
+  const seenDirect = new Set<string>();
+  for (const card of domTiles) {
+    const tile = tileFromDom(card, marketplace);
+    if (tile && !seenDirect.has(tile.asin)) {
+      seenDirect.add(tile.asin);
+      direct.push(tile);
+    }
+  }
+  if (direct.length > 0) return direct;
+
+  // Fallback for older / ASIN-less deal grids: join the MAIN-world deals-hook
+  // feed to the rendered cards by image, then by DOM order.
+  const feed = getDealsFeed();
+  if (feed.length === 0) return [];
 
   // Index the grid's images by media id, so a feed record can find its card.
   const imgsById = new Map<string, HTMLImageElement>();
@@ -72,6 +93,31 @@ export function parseDealsTiles(root: ParentNode, url: string): SearchTile[] {
   }
 
   return tiles;
+}
+
+// Build a tile straight from a deals card that carries its own data-asin (the
+// current grid). Price, title, and image come from the card's own DOM; the
+// overlay's money signals are all ASIN-keyed from here.
+function tileFromDom(card: HTMLElement, marketplace: string): SearchTile | null {
+  const raw = card.getAttribute("data-asin");
+  const asin = raw ? raw.trim().toUpperCase() : "";
+  if (!/^[A-Z0-9]{10}$/.test(asin)) return null;
+  const domPrice = parsePriceText((card.textContent ?? "").replace(/\s+/g, " ").trim());
+  const img = queryImages(card)[0] ?? null;
+  return {
+    asin,
+    title: cleanText(img?.getAttribute("alt")) ?? null,
+    priceCents: domPrice.priceCents,
+    currency: domPrice.currency || "USD",
+    imageUrl: img?.getAttribute("src") ?? null,
+    href: `https://www.${marketplace}/dp/${asin}`,
+    sponsored: false,
+    boughtPastMonth: null,
+    rating: null,
+    reviewCount: null,
+    hasCoupon: false,
+    el: card,
+  };
 }
 
 function tileFor(item: DealsFeedItem, card: HTMLElement, marketplace: string): SearchTile {

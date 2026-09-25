@@ -40,7 +40,11 @@ export async function initBenableBadges(): Promise<void> {
 
   const entries: CardEntry[] = [];
   for (const card of findCards()) {
-    const rec = matchRec(index, { photoId: card.photoId, text: card.text });
+    const rec = matchRec(index, {
+      recObjectId: card.recObjectId,
+      photoId: card.photoId,
+      text: card.text,
+    });
     if (!rec) continue;
     card.card.setAttribute(DONE_ATTR, "1");
     entries.push({ card: card.card, asin: rec.asin });
@@ -64,19 +68,40 @@ export async function initBenableBadges(): Promise<void> {
   }
 }
 
-// Every rendered card: anchored on the note element Benable stamps with
-// data-rec-id, climbed up to the wrapper that also holds the product image, so
-// the badge sits on the whole card and the photo id (the join key) is in reach.
-function findCards(): Array<{ card: HTMLElement; photoId: string | null; text: string }> {
-  const out: Array<{ card: HTMLElement; photoId: string | null; text: string }> = [];
+// Every rendered card. Benable stamps data-rec-object-id (the rec_object id, the
+// primary join key) on every card up front, present whether or not the card's
+// image has lazy-loaded, so anchor on that and badge its card wrapper. Older
+// lists exposed only the inner data-rec-id note, so fall back to it and climb to
+// the card by its product image the way this overlay always did.
+function findCards(): Array<{
+  card: HTMLElement;
+  recObjectId: string | null;
+  photoId: string | null;
+  text: string;
+}> {
+  const out: Array<{
+    card: HTMLElement;
+    recObjectId: string | null;
+    photoId: string | null;
+    text: string;
+  }> = [];
   const seen = new Set<Element>();
-  for (const note of Array.from(document.querySelectorAll("[data-rec-id]"))) {
-    const card = cardContainer(note);
+  const byRecObject = Array.from(document.querySelectorAll<HTMLElement>("[data-rec-object-id]"));
+  const anchors =
+    byRecObject.length > 0
+      ? byRecObject
+      : Array.from(document.querySelectorAll<HTMLElement>("[data-rec-id]"));
+  for (const anchor of anchors) {
+    const recObjectId = anchor.getAttribute("data-rec-object-id");
+    const card =
+      anchor.closest<HTMLElement>(".grid-rec-object-container") ??
+      cardContainer(anchor) ??
+      (recObjectId ? anchor : null);
     if (!card || seen.has(card) || card.getAttribute(DONE_ATTR)) continue;
     seen.add(card);
     const img = card.querySelector<HTMLImageElement>('img[src*="/rec_object_photos/"]');
     const photoId = img ? (img.src.match(PHOTO_ID_RE)?.[1] ?? null) : null;
-    out.push({ card, photoId, text: card.textContent ?? "" });
+    out.push({ card, recObjectId, photoId, text: card.textContent ?? "" });
   }
   return out;
 }

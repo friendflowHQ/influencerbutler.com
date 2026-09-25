@@ -127,6 +127,17 @@ let standaloneAcceptEnabled = false;
 // newer run has started, leaving exactly one run to decorate the grid.
 let initEpoch = 0;
 
+// True when the campaign grid has cards Campaign Radar has not decorated yet:
+// either the grid rendered after the first init pass (the SPCC tab does this -
+// its cards land late and its discovery API never drives the connect-hook fill
+// re-run) or Amazon paged in more cards. The content orchestrator watches the
+// DOM and calls this to decide whether a re-run is worth it. A fully decorated
+// grid returns false, so a DOM-triggered re-run never loops on the overlay's
+// own host mounts.
+export function hasUndecoratedCampaignCards(): boolean {
+  return readCampaignGrid(document).some((c) => !c.el.getAttribute(DONE_ATTR));
+}
+
 export async function initCampaignRadar(
   settings: Settings,
   fills: Record<string, CampaignFill> = {},

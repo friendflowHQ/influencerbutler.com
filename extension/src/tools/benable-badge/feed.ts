@@ -21,6 +21,7 @@ export function setBenableFeed(incoming: BenableRec[]): void {
     const rec: BenableRec = {
       asin,
       title: raw.title ?? null,
+      id: raw.id != null ? String(raw.id) : null,
       photoIds: Array.isArray(raw.photoIds) ? raw.photoIds.map(String).filter(Boolean) : [],
     };
     const key = `${asin}|${normalizeTitle(rec.title)}`;

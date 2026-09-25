@@ -20,7 +20,7 @@
 // that appear in the card's <img src="…/rec_object_photos/<id>/…">, the join
 // key back to the rendered card).
 
-type BenableRec = { asin: string; title: string | null; photoIds: string[] };
+type BenableRec = { asin: string; title: string | null; id: string | null; photoIds: string[] };
 
 (() => {
   const w = window as typeof window & { __ibBenableHooked?: boolean };
@@ -89,7 +89,8 @@ type BenableRec = { asin: string; title: string | null; photoIds: string[] };
           const asin = parseAsin(rec.url) ?? parseAsin(rec.affiliate_url) ?? parseAsin(rec.weblink);
           if (!asin) continue;
           const title = typeof rec.display_name === "string" ? rec.display_name : typeof rec.name1 === "string" ? rec.name1 : null;
-          out.push({ asin, title, photoIds: photoIdsOf(rec) });
+          const id = rec.id != null ? String(rec.id) : null;
+          out.push({ asin, title, id, photoIds: photoIdsOf(rec) });
         }
         emit(out);
       })

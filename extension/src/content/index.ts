@@ -57,7 +57,7 @@ import { initTrendRadar } from "../tools/trend-radar/overlay";
 import { initDealsOverlay } from "../tools/deals-overlay/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
-import { initCampaignRadar } from "../tools/campaign-radar/overlay";
+import { hasUndecoratedCampaignCards, initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
 import { runAcceptOnPage } from "../tools/campaign-radar/accept-runner";
 import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
@@ -115,6 +115,13 @@ let renderedFingerprint = "";
 // drop the Affiliate+ fills. Fed into Campaign Radar's Last Call meter.
 let campaignFills: Record<string, CampaignFill> = {};
 let lastCallRefreshTimer: number | null = null;
+// Watches the campaign grid so Campaign Radar re-runs once Amazon renders (or
+// pages in) real cards, not only on URL change or a connect-hook fill event.
+// The SPCC tab needs this: its cards land after the first init pass and its
+// discovery API never drives the fill re-run, so without a DOM watcher the grid
+// stays unscored. See watchCampaignGrid / scheduleCampaignGridRefresh.
+let campaignGridObserver: MutationObserver | null = null;
+let campaignGridRefreshTimer: number | null = null;
 // Whether the last product render was still waiting on video data (see
 // videosPending in runForPage). Read by the hydration watcher so it can stop
 // as soon as a rebuild reports full coverage instead of running out its clock.
@@ -351,6 +358,9 @@ let ownVideoIndex: OwnVideoIndex | null = null;
 
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
+  // Leaving the grid (or re-entering it) resets the grid watcher; the
+  // campaign-grid branch below re-installs it when this view is the grid.
+  stopWatchingCampaignGrid();
   const pageType = detectPageType(currentUrl);
   const retailer = detectRetailerForUrl(currentUrl) ?? "amazon";
   const settings = await getSettings();
@@ -822,6 +832,10 @@ async function runForPage(): Promise<void> {
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
         void initCampaignRadar(settings, campaignFills);
+        // Amazon renders the grid asynchronously and can rewrite it after this
+        // first pass (the SPCC tab lands its cards late). Keep watching so the
+        // grid gets scored once the cards actually appear.
+        watchCampaignGrid();
         lastStatus.toolSummaries.push({ label: t().sumCampaignRadar, value: t().ready });
       }
     });
@@ -878,6 +892,43 @@ function scheduleLastCallRefresh(): void {
       guard("campaign-radar-fill", () => initCampaignRadar(settings, campaignFills));
     })();
   }, 400);
+}
+
+// Re-run Campaign Radar when the grid gains cards it has not decorated. Debounced
+// (a single 400ms timer) so a burst of Amazon DOM writes coalesces into one pass,
+// and guarded by hasUndecoratedCampaignCards() so a fully scored grid never
+// re-triggers: the overlay mounts its own badge hosts into the grid, which the
+// observer would otherwise treat as a fresh change and loop on.
+function scheduleCampaignGridRefresh(): void {
+  if (campaignGridRefreshTimer !== null) return;
+  campaignGridRefreshTimer = window.setTimeout(() => {
+    campaignGridRefreshTimer = null;
+    void (async () => {
+      if (detectPageType(location.href) !== "campaign-grid") return;
+      if (!hasUndecoratedCampaignCards()) return;
+      const settings = await getSettings();
+      if (!settings.tools.campaignRadar || !channelAllowed(settings.creatorMode, "onsite")) return;
+      guard("campaign-radar-grid", () => initCampaignRadar(settings, campaignFills));
+    })();
+  }, 400);
+}
+
+// Start watching the DOM for late-rendered or newly paged campaign cards while on
+// the campaign grid. Re-installed on each runForPage for the grid, and torn down
+// by stopWatchingCampaignGrid() at the top of every runForPage.
+function watchCampaignGrid(): void {
+  campaignGridObserver?.disconnect();
+  campaignGridObserver = new MutationObserver(() => scheduleCampaignGridRefresh());
+  campaignGridObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopWatchingCampaignGrid(): void {
+  campaignGridObserver?.disconnect();
+  campaignGridObserver = null;
+  if (campaignGridRefreshTimer !== null) {
+    window.clearTimeout(campaignGridRefreshTimer);
+    campaignGridRefreshTimer = null;
+  }
 }
 
 // The deals-hook delivers ASINs asynchronously (after the grid's own product

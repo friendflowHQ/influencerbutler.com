@@ -7,9 +7,9 @@ import { buildIndex, matchRec, normalizeTitle, type BenableRec } from "./model";
 // carries the real logic.
 
 const recs: BenableRec[] = [
-  { asin: "B01D1XVQ64", title: "GUSTO Clear Plastic Cups with Flat Lids 16oz", photoIds: ["68471232", "68471233"] },
-  { asin: "B0G25HHLFL", title: "Lemonade Stand Supplies Kids Apron & Decor", photoIds: ["68471878"] },
-  { asin: "B0AMAZON123", title: "Lemonade Apron - Amazon.com", photoIds: [] },
+  { asin: "B01D1XVQ64", id: "20785638", title: "GUSTO Clear Plastic Cups with Flat Lids 16oz", photoIds: ["68471232", "68471233"] },
+  { asin: "B0G25HHLFL", id: "20785663", title: "Lemonade Stand Supplies Kids Apron & Decor", photoIds: ["68471878"] },
+  { asin: "B0AMAZON123", id: "20785698", title: "Lemonade Apron - Amazon.com", photoIds: [] },
 ];
 
 describe("normalizeTitle", () => {
@@ -25,7 +25,18 @@ describe("normalizeTitle", () => {
 describe("matchRec", () => {
   const index = buildIndex(recs);
 
-  it("joins by photo id first", () => {
+  it("joins by rec_object id first, before any image or text", () => {
+    // The card carries data-rec-object-id up front even when its image has not
+    // lazy-loaded (photoId null) and its text is empty or misleading.
+    expect(matchRec(index, { recObjectId: "20785663", photoId: null, text: "" })?.asin).toBe(
+      "B0G25HHLFL",
+    );
+    expect(
+      matchRec(index, { recObjectId: "20785638", photoId: "68471878", text: "wrong title" })?.asin,
+    ).toBe("B01D1XVQ64");
+  });
+
+  it("joins by photo id when there is no rec_object id", () => {
     expect(matchRec(index, { photoId: "68471233", text: "anything" })?.asin).toBe("B01D1XVQ64");
     expect(matchRec(index, { photoId: "68471878", text: "" })?.asin).toBe("B0G25HHLFL");
   });
@@ -49,7 +60,7 @@ describe("matchRec", () => {
   });
 
   it("does not match on a too-short title coincidence", () => {
-    const shortIndex = buildIndex([{ asin: "B00SHORT001", title: "Cup", photoIds: [] }]);
+    const shortIndex = buildIndex([{ asin: "B00SHORT001", id: null, title: "Cup", photoIds: [] }]);
     expect(matchRec(shortIndex, { photoId: null, text: "a cup of tea" })).toBeNull();
   });
 });

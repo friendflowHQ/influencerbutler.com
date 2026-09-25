@@ -1,6 +1,20 @@
 {
-  "lastUpdated": "2026-09-22",
+  "lastUpdated": "2026-09-25",
   "releases": [
+    {
+      "version": "0.1.19",
+      "date": "September 25, 2026",
+      "sections": [
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Butler scores are back on the Sponsored Products for Creators tab. After Amazon rebuilt that tab, the match score and the EPC and Budget chips stopped appearing on its cards; they show again now, and keep showing as you switch between the Affiliate+ and Sponsored Products tabs or scroll for more",
+            "Today's Deals gets its Butler chips back. An Amazon redesign of the deals grid had left the badges off every deal card; each deal now shows its Butler Score, estimated commission, and campaign eligibility again, and newly loaded deals get scored as you scroll",
+            "Benable list pages score reliably again. The Amazon money chip was missing from most cards because it waited on each card's image to finish loading; it now reads each card directly, so every Amazon item on a list gets its commission and campaign signals right away"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.18",
       "date": "September 22, 2026",

@@ -371,15 +371,17 @@ const REGISTRY: Record<SelectorId, string[]> = {
   ],
   ideaListTileImage: ["img.product-image", "img"],
   // Today's Deals grid (amazon.com/deals*). The grid container is a stable
-  // data-testid; the product cards are hashed CSS-module classes that Amazon
-  // A/B tests, so the tile list is a best-effort set of fallbacks and is meant
-  // to be corrected live via a remote selector override if it drifts. Verified
-  // container 2026-08-25: [data-testid='discount-asin-grid']. The tiles carry
-  // NO ASIN in the DOM, so the overlay joins them to the deals-hook feed by
-  // image; dealsTile is used only to find each card element to badge and, as a
-  // last resort, for positional order.
+  // data-testid; the tile list is a best-effort set of fallbacks meant to be
+  // corrected live via a remote selector override if it drifts. Verified
+  // 2026-09-25 (US): container [data-testid='discount-asin-grid'], tiles are
+  // [data-testid='product-card'] each carrying data-asin and a /dp/ link, so the
+  // overlay reads ASINs straight off the tiles. Earlier grids used deal-card* and
+  // hid the ASIN (joined to the deals-hook feed by image); those selectors stay
+  // as fallbacks below.
   dealsGrid: ["[data-testid='discount-asin-grid']", "[data-testid='virtualized-grid']"],
   dealsTile: [
+    "[data-testid='product-card']",
+    "[data-asin][data-deal-id]",
     "[data-testid^='deal-card']",
     "[data-testid*='DealCard']",
     "[class*='DealGridItem']",
