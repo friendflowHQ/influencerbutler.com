@@ -329,18 +329,27 @@ export default function ExtensionLandingContent() {
             The whole money panel, right where you shop.
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
-            One floating panel on every Amazon product page, from the video competition at the top
-            to break-even math and your own deep link at the bottom. No tab-switching, no separate
-            dashboard, no throttling.
+            One floating panel on every Amazon product page, from your deep link and Product
+            Snapshot at the top, through the video competition, down to the break-even math at the
+            bottom. No tab-switching, no separate dashboard, no throttling.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
+              {
+                src: "/assets/extension/extension_panel_3_link_and_snapshot.png",
+                width: 295,
+                height: 670,
+                title: "Deep link and Product Snapshot",
+                alt: "The top of the extension panel: the deep-link tools (Copy my link, Draft caption and voiceover), then the Product Snapshot with category, rank, and live commission from SiteStripe, Creator Connections availability, and price history with estimated monthly units and revenue",
+                caption:
+                  "Your tagged link, live commission from SiteStripe, Creator Connections status, and price history.",
+              },
               {
                 src: "/assets/extension/extension_panel_1_video_landscape.png",
                 width: 295,
                 height: 667,
                 title: "Video Landscape and Butler Approved",
-                alt: "The extension's Video Landscape: how many creators you would compete with, known and currently placed videos, unique and repeat creators, the content mix by creator type, and the Butler Approved criteria",
+                alt: "The middle of the extension panel: the Video Landscape (how many creators you would compete with, known and currently placed videos, unique and repeat creators), the content mix by creator type, and the Butler Approved criteria",
                 caption:
                   "Who you would compete with, the content mix by creator type, and the pass or fail Butler Approved criteria.",
               },
@@ -349,18 +358,9 @@ export default function ExtensionLandingContent() {
                 width: 292,
                 height: 671,
                 title: "Break-even math",
-                alt: "The extension's break-even math: purchase price and time to earn back, the sales and views needed, profit per month and per filming minute, and the Send to your Butler app buttons",
+                alt: "The bottom of the extension panel: the break-even math (purchase price and time to earn back, the sales and views needed, profit per month and per filming minute) and the Send to your Butler app buttons",
                 caption:
                   "Sales and views to earn back your time, profit per filming minute, and one tap to send it to a butler.",
-              },
-              {
-                src: "/assets/extension/extension_panel_3_link_and_snapshot.png",
-                width: 295,
-                height: 670,
-                title: "Deep link and Product Snapshot",
-                alt: "The extension's link tools and Product Snapshot: Copy my link, Draft caption and voiceover, category and rank, live commission from SiteStripe, Creator Connections availability, and price history with estimated monthly units and revenue",
-                caption:
-                  "Your tagged link, live commission from SiteStripe, Creator Connections status, and price history.",
               },
             ].map((shot) => (
               <figure
