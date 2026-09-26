@@ -20,11 +20,16 @@ export type MetricSnapshot = {
   series: number[] | null;
 };
 
+export type ProjectionFigure = {
+  trials: number;
+  trialCents: number;
+  totalCents: number | null;
+};
+
 export type EarningsProjection = {
   securedCents: number | null;
-  trialsInProgress: number;
-  projectedTrialCents: number;
-  totalCents: number | null;
+  bestCase: ProjectionFigure;
+  thisMonth: ProjectionFigure;
 };
 
 export function formatUsdFromCents(cents: number): string {

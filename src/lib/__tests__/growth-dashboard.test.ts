@@ -19,6 +19,7 @@ import {
   monthBounds,
   bucketLevelRows,
   projectedTrialConversionCents,
+  billsWithinWindow,
 } from "../growth-metrics";
 import { PRICE_CENTS } from "../pricing-constants";
 import { buildJwtParts } from "../ga4";
@@ -165,6 +166,39 @@ describe("projectedTrialConversionCents", () => {
     expect(
       projectedTrialConversionCents(["v-duo-monthly", "nope"], PRICE_CENTS.solo.monthly),
     ).toBe(PRICE_CENTS.duo.monthly + PRICE_CENTS.solo.monthly);
+  });
+});
+
+describe("billsWithinWindow", () => {
+  // September 2026, UTC.
+  const start = Date.parse("2026-09-01T00:00:00.000Z");
+  const next = Date.parse("2026-10-01T00:00:00.000Z");
+
+  it("keeps a charge date inside the month", () => {
+    expect(billsWithinWindow("2026-09-15T12:00:00Z", start, next)).toBe(true);
+    expect(billsWithinWindow("2026-09-01T00:00:00Z", start, next)).toBe(true);
+  });
+
+  it("excludes next-month and prior-month charge dates", () => {
+    // Common near month-end: a trial that started mid-Sept renews in Oct.
+    expect(billsWithinWindow("2026-10-01T00:00:00Z", start, next)).toBe(false);
+    expect(billsWithinWindow("2026-10-08T09:30:00Z", start, next)).toBe(false);
+    expect(billsWithinWindow("2026-08-31T23:59:59Z", start, next)).toBe(false);
+  });
+
+  it("handles offset timezones by absolute instant, not string order", () => {
+    // 2026-09-30T23:00:00-02:00 == 2026-10-01T01:00Z, which is next month.
+    expect(billsWithinWindow("2026-09-30T23:00:00-02:00", start, next)).toBe(false);
+    // 2026-10-01T01:00:00+03:00 == 2026-09-30T22:00Z, still September.
+    expect(billsWithinWindow("2026-10-01T01:00:00+03:00", start, next)).toBe(true);
+  });
+
+  it("treats a missing or unparseable date as not billing this month", () => {
+    expect(billsWithinWindow(null, start, next)).toBe(false);
+    expect(billsWithinWindow(undefined, start, next)).toBe(false);
+    expect(billsWithinWindow("", start, next)).toBe(false);
+    expect(billsWithinWindow("not-a-date", start, next)).toBe(false);
+    expect(billsWithinWindow(12345, start, next)).toBe(false);
   });
 });
 

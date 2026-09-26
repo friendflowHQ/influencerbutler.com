@@ -55,20 +55,33 @@ export type MetricSnapshot = {
 };
 
 /**
- * Forward-looking "what could this month total" estimate. Money already
- * secured this month plus the first-payment value of the trials in progress
- * right now, on the optimistic assumption that every one converts and none
- * cancel. A "now" concept, so it is only populated for the current month.
+ * One projected-earnings figure: how many trials feed it, the estimated
+ * first-payment value of those trials converting, and that value added to
+ * this month's secured revenue.
+ */
+export type ProjectionFigure = {
+  /** Trials feeding this figure. */
+  trials: number;
+  /** Estimated first-payment value of those trials converting, in cents. */
+  trialCents: number;
+  /** securedCents + trialCents, or null when secured revenue is unknown. */
+  totalCents: number | null;
+};
+
+/**
+ * Forward-looking "what could this month total" estimate. A "now" concept, so
+ * it is only populated for the current month. It carries two figures over the
+ * same secured revenue:
+ *   - bestCase:  every trial open right now, valued at its full first payment
+ *                (an optimistic ceiling: assumes all convert and none cancel).
+ *   - thisMonth: only the trials whose next charge date falls within this
+ *                calendar month, i.e. cash that could actually land this month.
  */
 export type EarningsProjection = {
   /** Revenue already paid to us this month, in cents (null if unknowable). */
   securedCents: number | null;
-  /** Trials in progress right now: the pool that could still convert. */
-  trialsInProgress: number;
-  /** Estimated first-payment value of those trials converting, in cents. */
-  projectedTrialCents: number;
-  /** securedCents + projectedTrialCents, or null when secured is unknown. */
-  totalCents: number | null;
+  bestCase: ProjectionFigure;
+  thisMonth: ProjectionFigure;
 };
 
 export type GrowthSnapshot = {
@@ -135,6 +148,22 @@ export function projectedTrialConversionCents(
     total += meta ? meta.priceCents : fallbackCents;
   }
   return total;
+}
+
+/**
+ * Does a subscription's next charge date (`renews_at`) fall within the half-open
+ * window [startMs, nextMs)? Used to keep only the trials that would actually
+ * bill within the current calendar month. A missing or unparseable date reads
+ * as "no", so an unknown charge date never counts toward this-month cash.
+ */
+export function billsWithinWindow(
+  renewsAt: unknown,
+  startMs: number,
+  nextMs: number,
+): boolean {
+  if (typeof renewsAt !== "string") return false;
+  const t = Date.parse(renewsAt);
+  return Number.isFinite(t) && t >= startMs && t < nextMs;
 }
 
 // ---------------------------------------------------------------------------
@@ -353,7 +382,7 @@ export async function computeGrowthSnapshot(
       try {
         const res = await supabase
           .from("subscriptions")
-          .select("status,ls_variant_id")
+          .select("status,ls_variant_id,renews_at")
           .not("status", "in", '("cancelled","expired")')
           .limit(ROW_LIMIT);
         if (res.error) {
@@ -514,22 +543,48 @@ export async function computeGrowthSnapshot(
     };
   }
 
-  // Projected month total: secured revenue plus what the open trials would add
-  // if they all converted. Only for the current month (see isCurrentMonth), and
-  // only when we could read the live subscriptions at all.
+  // Projected earnings: secured revenue plus what the open trials would add if
+  // they converted. Two figures over the same secured base (see
+  // EarningsProjection): a best-case ceiling counting every open trial, and a
+  // tighter figure counting only trials that would bill this calendar month.
+  // Only for the current month (see isCurrentMonth), and only when we could
+  // read the live subscriptions at all.
   if (isCurrentMonth && activeRows) {
-    const projectedTrialCents = projectedTrialConversionCents(
-      onTrialLive.map((r) => (r.ls_variant_id == null ? null : String(r.ls_variant_id))),
-      // Fall back to the entry (Pro Solo monthly) price for any trial whose
-      // variant we cannot map, so an unrecognised SKU still counts.
-      PRICE_CENTS.solo.monthly,
+    // Fall back to the entry (Pro Solo monthly) price for any trial whose
+    // variant we cannot map, so an unrecognised SKU still counts.
+    const fallbackCents = PRICE_CENTS.solo.monthly;
+    const toVariant = (r: Record<string, unknown>) =>
+      r.ls_variant_id == null ? null : String(r.ls_variant_id);
+
+    const bestCaseCents = projectedTrialConversionCents(
+      onTrialLive.map(toVariant),
+      fallbackCents,
     );
+
+    const startMs = Date.parse(bounds.startIso);
+    const nextMs = Date.parse(bounds.nextIso);
+    const billingThisMonth = onTrialLive.filter((r) =>
+      billsWithinWindow(r.renews_at, startMs, nextMs),
+    );
+    const thisMonthCents = projectedTrialConversionCents(
+      billingThisMonth.map(toVariant),
+      fallbackCents,
+    );
+
     const securedCents = metrics.revenue_cents.current;
+    const withSecured = (cents: number) => (securedCents === null ? null : securedCents + cents);
     projection = {
       securedCents,
-      trialsInProgress: onTrialLive.length,
-      projectedTrialCents,
-      totalCents: securedCents === null ? null : securedCents + projectedTrialCents,
+      bestCase: {
+        trials: onTrialLive.length,
+        trialCents: bestCaseCents,
+        totalCents: withSecured(bestCaseCents),
+      },
+      thisMonth: {
+        trials: billingThisMonth.length,
+        trialCents: thisMonthCents,
+        totalCents: withSecured(thisMonthCents),
+      },
     };
   }
 
