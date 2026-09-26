@@ -16,6 +16,21 @@ import { allProductAnchors, countProductLinksByAncestor, resolveCardHost } from 
 import { canonicalProductUrl } from "../integrations/url";
 import { CHIP_HOST_CLASS, mountChip } from "./chip";
 import { createSendQueue, type ChipHandle } from "./send";
+import logoUrl from "../../static/icons/icon-48.png";
+import {
+  FONT_STACK,
+  CARD_BG,
+  CARD_BORDER,
+  CARD_RADIUS,
+  CARD_SHADOW,
+  TEXT,
+  HEADER_WASH,
+  DIVIDER,
+  WORDMARK_GRADIENT,
+  PRIMARY_GRADIENT,
+  PRIMARY_SHADOW,
+  PRIMARY_SHADOW_HOVER,
+} from "./theme";
 
 // On-page tools for a known deal-aggregator site (curated or user-saved in the
 // Deal Sites Harvester). Dynamically registered by
@@ -168,8 +183,34 @@ function showBadge(count: number, D: DealsDict): void {
   style.textContent = CSS;
   root.append(style);
 
-  const wrap = document.createElement("div");
-  wrap.className = "wrap";
+  // A branded mini-panel that mirrors the Amazon floating panel: logo +
+  // gradient wordmark header, then the deal count and a gradient action.
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const header = document.createElement("div");
+  header.className = "header";
+
+  const logo = document.createElement("img");
+  logo.className = "logo";
+  logo.src = logoUrl;
+  logo.alt = "";
+
+  const brand = document.createElement("span");
+  brand.className = "brand";
+  brand.textContent = "Influencer Butler";
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "close";
+  close.textContent = "×";
+  close.setAttribute("aria-label", D.badgeDismiss);
+  close.onclick = () => host.remove();
+
+  header.append(logo, brand, close);
+
+  const body = document.createElement("div");
+  body.className = "body";
 
   const text = document.createElement("span");
   text.className = "count";
@@ -189,15 +230,9 @@ function showBadge(count: number, D: DealsDict): void {
     });
   };
 
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "close";
-  close.textContent = "×";
-  close.setAttribute("aria-label", D.badgeDismiss);
-  close.onclick = () => host.remove();
-
-  wrap.append(text, action, close);
-  root.append(wrap);
+  body.append(text, action);
+  card.append(header, body);
+  root.append(card);
   document.documentElement.append(host);
 }
 
@@ -205,50 +240,79 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Tokens mirror the Amazon panel (see deal-badge/theme.ts -> overlay.css) so
+// the badge reads as the same product. Light only, like the panel, which
+// always renders as a white card regardless of the host page's theme.
 const CSS = `
 :host { all: initial; }
-.wrap {
+.card {
   position: fixed;
   right: 16px;
   bottom: 16px;
   z-index: 2147483647;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  font: 14px/1.5 ${FONT_STACK};
+  color: ${TEXT};
+  background: ${CARD_BG};
+  border: 1px solid ${CARD_BORDER};
+  border-radius: ${CARD_RADIUS};
+  box-shadow: ${CARD_SHADOW};
+  overflow: hidden;
+}
+.header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #1f2937;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #c2410c;
-  border-radius: 10px;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.22);
-  padding: 10px 12px;
+  gap: 9px;
+  padding: 11px 14px;
+  background: ${HEADER_WASH};
+  border-bottom: 1px solid ${DIVIDER};
 }
-.count { font-weight: 600; white-space: nowrap; }
-.action {
-  background: #c2410c;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+.logo { width: 22px; height: 22px; flex: none; object-fit: contain; display: block; }
+.brand {
+  flex: 1;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   white-space: nowrap;
+  background: ${WORDMARK_GRADIENT};
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.action:hover { background: #9a3412; }
 .close {
+  flex: none;
   background: none;
   border: none;
-  color: #9ca3af;
-  font-size: 16px;
+  color: #94a3b8;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
+  transition: color 0.12s ease;
 }
-.close:hover { color: #4b5563; }
-@media (prefers-color-scheme: dark) {
-  .wrap { color: #f3f4f6; background: #1f2937; border-color: #374151; }
-  .close { color: #9ca3af; }
+.close:hover { color: #ea580c; }
+.body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
 }
+.count { flex: 1; font-weight: 600; }
+.action {
+  flex: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #fff;
+  background: ${PRIMARY_GRADIENT};
+  box-shadow: ${PRIMARY_SHADOW};
+  transition: filter 0.12s ease, box-shadow 0.12s ease, transform 0.02s ease;
+}
+.action:hover { filter: brightness(0.96); box-shadow: ${PRIMARY_SHADOW_HOVER}; }
+.action:active { transform: translateY(1px); }
 `;

@@ -1,6 +1,15 @@
 import { UI_PREFIX } from "../shared/constants";
 import type { DealsDict } from "../deals/strings";
 import type { ChipHandle, ChipState } from "./send";
+import {
+  FONT_STACK,
+  PRIMARY_GRADIENT,
+  PRIMARY_SHADOW,
+  PRIMARY_SHADOW_HOVER,
+  GOOD,
+  BAD,
+  PENDING,
+} from "./theme";
 
 // The "Send to Deals" chip that sits in the top right corner of each product
 // card. Closed shadow root with its own CSS text (no import of the shared ui
@@ -73,6 +82,9 @@ function labelFor(state: ChipState, dict: DealsDict): string {
   return dict.cardAction;
 }
 
+// A branded gradient pill matching the Amazon panel's primary button (see
+// deal-badge/theme.ts -> overlay.css .btn), with the panel's semantic
+// palette for the sent / error / pending feedback states.
 const CHIP_CSS = `
 :host { all: initial; }
 :host([data-ib-chip-inline]) { display: inline-block; vertical-align: middle; }
@@ -82,19 +94,22 @@ const CHIP_CSS = `
   top: 8px;
   right: 8px;
   z-index: 2147483000;
-  font: 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-weight: 600;
+  font: 11.5px/1 ${FONT_STACK};
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: #fff;
-  background: #c2410c;
+  background: ${PRIMARY_GRADIENT};
   border: none;
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 6px 11px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+  box-shadow: ${PRIMARY_SHADOW};
+  transition: filter 0.12s ease, box-shadow 0.12s ease, transform 0.02s ease;
 }
-.chip:hover { background: #9a3412; }
-.chip[data-state="pending"] { background: #9a3412; cursor: default; opacity: 0.8; }
-.chip[data-state="sent"] { background: #15803d; cursor: default; }
-.chip[data-state="error"] { background: #b91c1c; cursor: pointer; }
+.chip:hover { filter: brightness(0.96); box-shadow: ${PRIMARY_SHADOW_HOVER}; }
+.chip:active { transform: translateY(1px); }
+.chip[data-state="pending"] { background: ${PENDING}; box-shadow: none; cursor: default; opacity: 0.85; }
+.chip[data-state="sent"] { background: ${GOOD}; box-shadow: none; cursor: default; }
+.chip[data-state="error"] { background: ${BAD}; box-shadow: none; cursor: pointer; }
 `;
