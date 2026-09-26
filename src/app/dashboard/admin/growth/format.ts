@@ -20,6 +20,13 @@ export type MetricSnapshot = {
   series: number[] | null;
 };
 
+export type EarningsProjection = {
+  securedCents: number | null;
+  trialsInProgress: number;
+  projectedTrialCents: number;
+  totalCents: number | null;
+};
+
 export function formatUsdFromCents(cents: number): string {
   return (cents / 100).toLocaleString("en-US", {
     style: "currency",

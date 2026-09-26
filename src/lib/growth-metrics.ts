@@ -13,6 +13,8 @@
 
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
+import { planForVariantId } from "@/lib/lemonsqueezy";
+import { planMetaFor, PRICE_CENTS } from "@/lib/pricing-constants";
 
 export type MetricUnit = "count" | "cents";
 
@@ -52,11 +54,30 @@ export type MetricSnapshot = {
   series: number[] | null;
 };
 
+/**
+ * Forward-looking "what could this month total" estimate. Money already
+ * secured this month plus the first-payment value of the trials in progress
+ * right now, on the optimistic assumption that every one converts and none
+ * cancel. A "now" concept, so it is only populated for the current month.
+ */
+export type EarningsProjection = {
+  /** Revenue already paid to us this month, in cents (null if unknowable). */
+  securedCents: number | null;
+  /** Trials in progress right now: the pool that could still convert. */
+  trialsInProgress: number;
+  /** Estimated first-payment value of those trials converting, in cents. */
+  projectedTrialCents: number;
+  /** securedCents + projectedTrialCents, or null when secured is unknown. */
+  totalCents: number | null;
+};
+
 export type GrowthSnapshot = {
   month: string;
   prevMonth: string;
   migrationPending: boolean;
   metrics: Record<string, MetricSnapshot>;
+  /** Only present for the current month; null for historical snapshots. */
+  projection: EarningsProjection | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -93,6 +114,27 @@ export function deltaPercent(current: number | null, previous: number | null): n
   if (current === null || previous === null) return null;
   if (previous === 0) return current === 0 ? 0 : null;
   return (current - previous) / previous;
+}
+
+/**
+ * Estimated first-payment value, in cents, of the trials in progress if they
+ * all convert. Each on-trial subscription contributes its plan's list price:
+ * a monthly plan adds one month, an annual plan adds the full year, since
+ * that is what Lemon Squeezy charges on the first renewal after the trial.
+ * A row whose variant we cannot map to a known plan falls back to
+ * `fallbackCents` so an unrecognised SKU still counts rather than silently
+ * reading as $0.
+ */
+export function projectedTrialConversionCents(
+  onTrialVariantIds: (string | null | undefined)[],
+  fallbackCents: number,
+): number {
+  let total = 0;
+  for (const variantId of onTrialVariantIds) {
+    const meta = planMetaFor(planForVariantId(variantId));
+    total += meta ? meta.priceCents : fallbackCents;
+  }
+  return total;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,6 +284,10 @@ export async function computeGrowthSnapshot(
   const metrics: Record<string, MetricSnapshot> = {};
   for (const def of GROWTH_METRICS) metrics[def.key] = emptySnapshotMetric();
   let migrationPending = false;
+  let projection: EarningsProjection | null = null;
+  // The projection blends this month's secured revenue with the trials open
+  // right now, so it only makes sense for the current month.
+  const isCurrentMonth = month === monthKey(new Date());
 
   /** Two-month window fetch; returns rows or null on error. */
   async function windowRows(
@@ -406,15 +452,17 @@ export async function computeGrowthSnapshot(
       one,
     );
   }
+  let onTrialLive: Record<string, unknown>[] = [];
   if (activeRows) {
     const live = activeRows.filter((r) => !isAddon(r));
+    onTrialLive = live.filter((r) => r.status === "on_trial");
     metrics.active_subscriptions = {
       current: live.filter((r) => r.status === "active").length,
       previous: null,
       series: null,
     };
     metrics.on_trial_subscriptions = {
-      current: live.filter((r) => r.status === "on_trial").length,
+      current: onTrialLive.length,
       previous: null,
       series: null,
     };
@@ -466,5 +514,24 @@ export async function computeGrowthSnapshot(
     };
   }
 
-  return { month, prevMonth, migrationPending, metrics };
+  // Projected month total: secured revenue plus what the open trials would add
+  // if they all converted. Only for the current month (see isCurrentMonth), and
+  // only when we could read the live subscriptions at all.
+  if (isCurrentMonth && activeRows) {
+    const projectedTrialCents = projectedTrialConversionCents(
+      onTrialLive.map((r) => (r.ls_variant_id == null ? null : String(r.ls_variant_id))),
+      // Fall back to the entry (Pro Solo monthly) price for any trial whose
+      // variant we cannot map, so an unrecognised SKU still counts.
+      PRICE_CENTS.solo.monthly,
+    );
+    const securedCents = metrics.revenue_cents.current;
+    projection = {
+      securedCents,
+      trialsInProgress: onTrialLive.length,
+      projectedTrialCents,
+      totalCents: securedCents === null ? null : securedCents + projectedTrialCents,
+    };
+  }
+
+  return { month, prevMonth, migrationPending, metrics, projection };
 }

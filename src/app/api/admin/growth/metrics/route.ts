@@ -45,5 +45,6 @@ export async function GET(request: Request) {
     migrationPending: snapshot.migrationPending,
     catalog: GROWTH_METRICS,
     metrics: snapshot.metrics,
+    projection: snapshot.projection,
   });
 }

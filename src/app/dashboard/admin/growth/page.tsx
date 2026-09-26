@@ -12,6 +12,7 @@ import SearchSection, { type SearchResponse } from "./SearchSection";
 import GoalsSection from "./GoalsSection";
 import ChecklistSection from "./ChecklistSection";
 import MetricTile from "./MetricTile";
+import ProjectedEarnings from "./ProjectedEarnings";
 import {
   catalogEntry,
   currentMonthKey,
@@ -19,6 +20,7 @@ import {
   monthLabel,
   shiftMonth,
   type CatalogEntry,
+  type EarningsProjection,
   type MetricSnapshot,
 } from "./format";
 
@@ -28,6 +30,7 @@ type MetricsResponse = {
   migrationPending?: boolean;
   catalog?: CatalogEntry[];
   metrics?: Record<string, MetricSnapshot>;
+  projection?: EarningsProjection | null;
   error?: string;
 };
 
@@ -247,6 +250,13 @@ export default function AdminGrowthPage() {
           ))}
         </div>
       </section>
+
+      {/* Projected month total: secured revenue + trials that could still
+          convert. Only appears for the current month. */}
+      <ProjectedEarnings
+        projection={metrics?.projection ?? null}
+        loading={metricsLoading && isCurrentMonth}
+      />
 
       <GoalsSection month={month} catalog={catalog} onCelebrate={celebrate} />
 
