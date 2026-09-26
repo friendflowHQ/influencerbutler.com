@@ -67,6 +67,7 @@ Retag history is logged per row in your preseed cache. The Retag Log panel shows
 - **"No candidates found"**: probably means Storefront Butler hasn't flagged any rows as unavailable yet. Re-sync Storefront Butler.
 - **Replacement looks wrong (e.g. unrelated category)**: raise min similarity to 60-65 to filter out weak matches.
 - **"Already-tagged this within cooldown"** banner - Retag Butler is honoring `skipRetaggedWithinDays`. Lower it or wait.
+- **A run finds only one or two items, and my variant items never get their parent ASIN**: **Run** only looks for items whose product is no longer available on Amazon and suggests a replacement, so items with live products are left alone on purpose. In Review mode nothing changes until you click **Tag this** on a row. To add the parent ASIN to every variant item on your storefront, use the separate **Backfill parent IDs (all items)** button instead.
 - **"Backfill parent IDs (all items)" looks stuck on Running**: it is slow by design, not frozen. It opens every piece of content on your storefront in the browser, loads the product pages it needs and edits the post, which is roughly a minute per piece. It also covers your photos and lists, not just your videos, so a small-looking storefront can still be several hundred pieces. It saves its place as it goes, so you can stop it and start it again without losing work.
 - **Tagging fails silently**: Creator Hub session expired. Re-sign in via the spawned Chrome window.
 
