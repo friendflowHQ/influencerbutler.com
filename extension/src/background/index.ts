@@ -138,6 +138,8 @@ import { applySync, initSettingsSyncOnChange, previewSync } from "./settings-syn
 import { API_BASE } from "../shared/constants";
 import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
+import { warn } from "../shared/log";
+import { isAndroid } from "../shared/platform";
 
 // Wire the debounced extension -> desktop settings push. Cheap for the common
 // case: it establishes a baseline and only pushes after a syncable field changes
@@ -178,8 +180,14 @@ async function injectIntoOpenTabs(): Promise<void> {
 
 // Wire the "Schedule to Social Posting Butler" right-click menu (and keep it in
 // sync with the tool setting / kill flag). Registers its listeners at top level,
-// as MV3 requires.
-initSocialContextMenu();
+// as MV3 requires. Wrapped so a browser without the contextMenus API (Android
+// extension browsers such as Lemur) cannot abort the worker before the message
+// handler below is registered.
+try {
+  initSocialContextMenu();
+} catch (error) {
+  warn("context-menu", "unavailable", error);
+}
 
 chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
@@ -220,7 +228,11 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  // Idempotent: re-arm the watchlist alarm for installs that predate it.
+  // Idempotent: re-arm every periodic alarm, not only the ones added after
+  // launch. Mobile browsers can drop alarms when the app process is killed, and
+  // sync/catalogue were previously armed only in onInstalled.
+  void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
+  void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
   void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
     periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
@@ -250,6 +262,11 @@ chrome.runtime.onUpdateAvailable.addListener((details) => {
   void noteUpdateAvailable(details.version);
 });
 
+async function skipOnAndroid(job: () => Promise<void>): Promise<void> {
+  if (await isAndroid()) return;
+  await job();
+}
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) {
     void flush();
@@ -272,10 +289,15 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // fires onUpdateAvailable above. No-op on unpacked installs.
     void checkForUpdate();
   }
-  if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
-  if (alarm.name === CAMPAIGN_WATCH_ALARM) void refreshLastCall();
+  // The watchlist check, Last Call poll (which also drives auto-accept), and the
+  // automatic deal harvest each work by opening hidden background tabs. Android
+  // extension browsers (Lemur) show those as real tabs in the user's tab strip
+  // and suspend them when the app is backgrounded, so these stay desktop-only.
+  // The manual, button-triggered versions still run everywhere.
+  if (alarm.name === WATCHLIST_ALARM) void skipOnAndroid(refreshWatchlist);
+  if (alarm.name === CAMPAIGN_WATCH_ALARM) void skipOnAndroid(refreshLastCall);
   if (alarm.name === DEAL_AUTO_HARVEST_ALARM) {
-    void runAutoHarvest();
+    void skipOnAndroid(runAutoHarvest);
     // Piggyback the badge registration resync here too: it is cheap/idempotent
     // and this is the one alarm guaranteed to fire even for users who never
     // open the deals page again after granting a site once.
@@ -285,8 +307,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 // A nudge notification was clicked: open its target and record that the user
-// acted (so the matching in-page modal is suppressed).
-chrome.notifications.onClicked.addListener((notificationId) => {
+// acted (so the matching in-page modal is suppressed). Optional chaining: a
+// browser without the notifications API must not abort worker startup.
+chrome.notifications?.onClicked?.addListener((notificationId) => {
   // Watchlist alerts open the product directly; Last Call alerts open the
   // campaign grid; anything else is a nudge.
   if (handleWatchNotificationClick(notificationId)) return;
@@ -764,7 +787,7 @@ async function rewriteLink(url: string): Promise<import("../shared/messages").Ge
     const state = await getState();
     if (!state.integrations.global.affiliateRoutingEnabled) return { ok: true, url };
     const parsed = new URL(url);
-    const asin = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})/.exec(parsed.pathname)?.[1] ?? "";
+    const asin = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/.exec(parsed.pathname)?.[1] ?? "";
     const marketplace = parsed.hostname.replace(/^www\./, "");
     return await generateAffiliateLink(asin, marketplace, url);
   } catch {

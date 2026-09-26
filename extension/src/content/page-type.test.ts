@@ -26,6 +26,11 @@ describe("detectPageType", () => {
     expect(detectPageType("https://www.amazon.com/shop/handle/photo/12345")).toBe("storefront");
   });
 
+  it("treats the mobile-web /gp/aw/d/ product URL as a product page", () => {
+    expect(detectPageType("https://www.amazon.com/gp/aw/d/B01JGG5CH4")).toBe("product");
+    expect(detectPageType("https://www.amazon.co.uk/gp/aw/d/B01JGG5CH4/?ref_=x")).toBe("product");
+  });
+
   it("still detects the other page families", () => {
     expect(detectPageType("https://www.amazon.com/dp/B01JGG5CH4")).toBe("product");
     expect(detectPageType("https://www.amazon.com/s?k=nail+lamp")).toBe("search");
