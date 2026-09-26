@@ -5,7 +5,7 @@
  * Dependencies: vitest, ../growth-goals, ../growth-ideas, ../growth-metrics, ../ga4.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { suggestTarget, DEFAULT_FLOOR } from "../growth-goals";
 import {
   pickMonthlyIdeas,
@@ -18,7 +18,10 @@ import {
   prevMonthKey,
   monthBounds,
   bucketLevelRows,
+  projectedTrialConversionCents,
+  billsWithinWindow,
 } from "../growth-metrics";
+import { PRICE_CENTS } from "../pricing-constants";
 import { buildJwtParts } from "../ga4";
 
 describe("suggestTarget", () => {
@@ -115,6 +118,87 @@ describe("date + delta helpers", () => {
     expect(deltaPercent(5, 0)).toBeNull();
     expect(deltaPercent(null, 100)).toBeNull();
     expect(deltaPercent(100, null)).toBeNull();
+  });
+});
+
+describe("projectedTrialConversionCents", () => {
+  // planForVariantId resolves an LS variant id via these env vars, so stub a
+  // few so a known variant maps to a real price and everything else falls back.
+  const SAVED: Record<string, string | undefined> = {};
+  const STUBS = {
+    LEMONSQUEEZY_VARIANT_MONTHLY: "v-solo-monthly",
+    LEMONSQUEEZY_VARIANT_ANNUAL: "v-solo-annual",
+    LEMONSQUEEZY_VARIANT_DUO_MONTHLY: "v-duo-monthly",
+  };
+
+  beforeAll(() => {
+    for (const [k, v] of Object.entries(STUBS)) {
+      SAVED[k] = process.env[k];
+      process.env[k] = v;
+    }
+  });
+
+  afterAll(() => {
+    for (const k of Object.keys(STUBS)) {
+      if (SAVED[k] === undefined) delete process.env[k];
+      else process.env[k] = SAVED[k];
+    }
+  });
+
+  it("is zero for no trials", () => {
+    expect(projectedTrialConversionCents([], PRICE_CENTS.solo.monthly)).toBe(0);
+  });
+
+  it("values each trial at its plan's first payment", () => {
+    expect(
+      projectedTrialConversionCents(
+        ["v-solo-monthly", "v-solo-annual", "v-duo-monthly"],
+        PRICE_CENTS.solo.monthly,
+      ),
+    ).toBe(PRICE_CENTS.solo.monthly + PRICE_CENTS.solo.annual + PRICE_CENTS.duo.monthly);
+  });
+
+  it("falls back for unmapped or missing variants", () => {
+    expect(
+      projectedTrialConversionCents(["nope", null, undefined], PRICE_CENTS.solo.monthly),
+    ).toBe(PRICE_CENTS.solo.monthly * 3);
+    // A known variant plus one unmapped: real price + one fallback.
+    expect(
+      projectedTrialConversionCents(["v-duo-monthly", "nope"], PRICE_CENTS.solo.monthly),
+    ).toBe(PRICE_CENTS.duo.monthly + PRICE_CENTS.solo.monthly);
+  });
+});
+
+describe("billsWithinWindow", () => {
+  // September 2026, UTC.
+  const start = Date.parse("2026-09-01T00:00:00.000Z");
+  const next = Date.parse("2026-10-01T00:00:00.000Z");
+
+  it("keeps a charge date inside the month", () => {
+    expect(billsWithinWindow("2026-09-15T12:00:00Z", start, next)).toBe(true);
+    expect(billsWithinWindow("2026-09-01T00:00:00Z", start, next)).toBe(true);
+  });
+
+  it("excludes next-month and prior-month charge dates", () => {
+    // Common near month-end: a trial that started mid-Sept renews in Oct.
+    expect(billsWithinWindow("2026-10-01T00:00:00Z", start, next)).toBe(false);
+    expect(billsWithinWindow("2026-10-08T09:30:00Z", start, next)).toBe(false);
+    expect(billsWithinWindow("2026-08-31T23:59:59Z", start, next)).toBe(false);
+  });
+
+  it("handles offset timezones by absolute instant, not string order", () => {
+    // 2026-09-30T23:00:00-02:00 == 2026-10-01T01:00Z, which is next month.
+    expect(billsWithinWindow("2026-09-30T23:00:00-02:00", start, next)).toBe(false);
+    // 2026-10-01T01:00:00+03:00 == 2026-09-30T22:00Z, still September.
+    expect(billsWithinWindow("2026-10-01T01:00:00+03:00", start, next)).toBe(true);
+  });
+
+  it("treats a missing or unparseable date as not billing this month", () => {
+    expect(billsWithinWindow(null, start, next)).toBe(false);
+    expect(billsWithinWindow(undefined, start, next)).toBe(false);
+    expect(billsWithinWindow("", start, next)).toBe(false);
+    expect(billsWithinWindow("not-a-date", start, next)).toBe(false);
+    expect(billsWithinWindow(12345, start, next)).toBe(false);
   });
 });
 
