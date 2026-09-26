@@ -34,7 +34,7 @@ export default function ProjectedEarnings({
             {totalCents === null ? "n/a" : formatUsdFromCents(totalCents)}
           </p>
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
-            Projected total this month
+            Projected month total (best case)
           </p>
         </div>
         <p className="mt-2 text-sm text-slate-600">
@@ -55,9 +55,10 @@ export default function ProjectedEarnings({
           )}
         </p>
         <p className="mt-1 text-[11px] leading-snug text-slate-400">
-          Estimate only: assumes every trial converts to paid and none cancel. Each trial is valued
-          at its plan&apos;s first payment (a monthly plan adds one month, an annual plan adds the
-          full year). Secured revenue is money already paid to us.
+          Best-case ceiling: assumes every trial in progress converts to paid and none cancel. Each
+          trial is valued at its plan&apos;s first payment (a monthly plan adds one month, an annual
+          plan adds the full year). Some trials will not bill until next month, so this is an upper
+          bound, not guaranteed cash this month. Secured revenue is money already paid to us.
         </p>
       </div>
     </section>

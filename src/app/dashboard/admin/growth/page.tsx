@@ -252,9 +252,12 @@ export default function AdminGrowthPage() {
       </section>
 
       {/* Projected month total: secured revenue + trials that could still
-          convert. Only appears for the current month. */}
+          convert. Only appears for the current month. Gate the projection on
+          isCurrentMonth at render time too, so a stale current-month response
+          never shows under a historical month heading while its refetch is in
+          flight (or if that refetch fails). */}
       <ProjectedEarnings
-        projection={metrics?.projection ?? null}
+        projection={isCurrentMonth ? (metrics?.projection ?? null) : null}
         loading={metricsLoading && isCurrentMonth}
       />
 
