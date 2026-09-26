@@ -1,6 +1,7 @@
 import { getSettings } from "../storage/store";
 import { getFlags } from "../flags/cache";
 import type { SocialComposeContext } from "../shared/social";
+import { isAndroid } from "../shared/platform";
 
 // The right-click entry point and the compose-window opener for the "click an
 // image, schedule a post" flow. The compose surface is a small extension popup
@@ -18,6 +19,12 @@ export async function openComposeWindow(context: SocialComposeContext): Promise<
   if (context.imageUrl) url.searchParams.set("src", context.imageUrl);
   if (context.pageUrl) url.searchParams.set("page", context.pageUrl);
   if (context.title) url.searchParams.set("title", context.title);
+  // Android extension browsers have no floating popup windows (and may not
+  // expose chrome.windows at all): open compose as a normal tab there.
+  if (!chrome.windows?.create || (await isAndroid())) {
+    await chrome.tabs.create({ url: url.toString() }).catch(() => undefined);
+    return;
+  }
   try {
     await chrome.windows.create({
       url: url.toString(),
@@ -48,6 +55,9 @@ async function scheduleEnabled(): Promise<boolean> {
 
 /** Create or remove the right-click menu item to match the current setting. */
 export async function reconcileContextMenu(): Promise<void> {
+  // No context menus on Android extension browsers (no right-click); the
+  // popup, tile menu, and HUD Actions entry points still open compose.
+  if (!chrome.contextMenus) return;
   const on = await scheduleEnabled();
   // Remove first so this is idempotent across worker restarts and setting flips.
   await new Promise<void>((resolve) => {
@@ -74,6 +84,7 @@ export async function reconcileContextMenu(): Promise<void> {
 
 /** Wire the context-menu lifecycle. Call once from the background entry. */
 export function initSocialContextMenu(): void {
+  if (!chrome.contextMenus?.onClicked) return;
   chrome.contextMenus.onClicked.addListener((info) => {
     if (info.menuItemId !== CONTEXT_MENU_ID) return;
     void openComposeWindow({

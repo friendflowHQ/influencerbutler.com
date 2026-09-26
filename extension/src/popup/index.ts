@@ -32,6 +32,8 @@ import {
 } from "../background/market-availability";
 import { channelAllowed } from "../shared/creator-mode";
 import { isPairedLocal } from "../shared/bridge-token";
+import { isAndroid, isMobileUserAgent } from "../shared/platform";
+import { activePageTab } from "./active-tab";
 import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
 import { resolveLocale, setLocale, t } from "../i18n";
 
@@ -55,7 +57,14 @@ const WALMART_PROVIDER_NAMES: Record<string, string> = {
 void init();
 
 async function init(): Promise<void> {
-  restorePopupSize();
+  // Android extension browsers (Lemur) open the popup full screen or as a tab:
+  // switch popup.css to its fluid, full-width layout and skip the desktop
+  // resize-and-remember behavior, which would pin a saved desktop size.
+  if (isMobileUserAgent()) {
+    document.documentElement.classList.add("mobile");
+  } else {
+    restorePopupSize();
+  }
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
@@ -578,7 +587,7 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
   // Is the active tab a product page we can build a link for? Both Amazon /dp/
   // and Walmart /ip/ URLs carry the id in the path, so a pure URL parse (no page
   // DOM, no content-script round trip) covers the common case.
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await activePageTab();
   const url = tab?.url ?? "";
   const retailer = url ? detectRetailerForUrl(url) : null;
   if (!retailer) return; // not Amazon/Walmart: card stays hidden
@@ -819,6 +828,16 @@ async function renderAppBridge(): Promise<void> {
     pairing.hidden = state !== "pairing";
     connected.hidden = state !== "connected";
   };
+  // Android (Lemur): the app cannot answer on this device's loopback, so swap
+  // the pairing flow for a pointer to the relay card below.
+  if (await isAndroid()) {
+    show("disconnected");
+    disconnected.hidden = true;
+    byId("app-bridge-text").hidden = true;
+    byId("app-next-step").hidden = true;
+    byId("app-bridge-mobile").hidden = false;
+    return;
+  }
   const paired = await isPairedLocal();
   show(paired ? "connected" : "disconnected");
 
@@ -1000,7 +1019,7 @@ function wireFeedback(): void {
     status.textContent = t().feedbackSending;
     let pageUrl: string | undefined;
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tab = await activePageTab();
       if (tab?.url?.includes("amazon.com")) pageUrl = tab.url.split("?")[0];
     } catch {
       // page url is best-effort context, not required
@@ -1040,7 +1059,7 @@ async function renderPageStatus(): Promise<void> {
     notice.hidden = true;
   }
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = await activePageTab();
     // Amazon and Walmart are both supported; the content script answers
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
     const onSupportedSite =
@@ -1324,6 +1343,8 @@ async function renderWatchlist(): Promise<void> {
     return;
   }
   card.hidden = false;
+  // The watchlist poller opens hidden tabs, which stays desktop-only.
+  byId("watchlist-mobile-note").hidden = !(await isAndroid());
 
   const { items } = await sendToBackground<WatchlistResult>({ kind: "GET_WATCHLIST" });
   list.replaceChildren();
