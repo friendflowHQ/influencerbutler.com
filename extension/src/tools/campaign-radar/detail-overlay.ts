@@ -190,7 +190,7 @@ async function enrichVideoCounts(mine: number, rows: ProductRow[]): Promise<void
 function readProductTitles(root: ParentNode): Map<string, string> {
   const map = new Map<string, string>();
   for (const a of Array.from(root.querySelectorAll<HTMLAnchorElement>("a[href]"))) {
-    const m = (a.getAttribute("href") ?? "").match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/);
+    const m = (a.getAttribute("href") ?? "").match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/);
     const asin = m?.[1]?.toUpperCase();
     const title = a.textContent?.trim();
     if (asin && title && title.length > 4 && !map.has(asin)) map.set(asin, title);

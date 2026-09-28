@@ -31,9 +31,9 @@ type BenableRec = { asin: string; title: string | null; id: string | null; photo
   // of the calls the page makes on load (embedded_posts, rec_requests, config)
   // matches, so we learn the id before the app has rendered the cards.
   const GROUP_URL_RE = /api\.benable\.com\/api\/groups\/([0-9a-f-]{36})\b/i;
-  // A product ASIN out of a /dp/ or /gp/product/ url. Mirrors ASIN_URL_RE in
+  // A product ASIN out of a /dp/, /gp/product/, or /gp/aw/d/ url. Mirrors ASIN_URL_RE in
   // src/amazon/product-signals.ts; kept inline so this shim pulls in no DOM deps.
-  const ASIN_URL_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+  const ASIN_URL_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/;
 
   // Keep the page's real fetch so our own rec_objects request bypasses the
   // wrapper (and so no site code observes an extra hooked call).

@@ -623,6 +623,8 @@ export interface Dict {
   lastCallNotifTitle: string;
   lastCallNotifNearFull: (name: string, pct: number) => string;
   lastCallNotifFilled: (name: string) => string;
+  // Android (Lemur): the background re-check is desktop-only.
+  lastCallMobileNote: string;
 
   // Campaign Butler: "The Butler's Brief" per-campaign advisory panel
   campaignBriefButton: string;
@@ -898,6 +900,8 @@ export interface Dict {
   obSentToVoiceover: (n: number) => string;
   appBridgeHeading: string;
   appBridgeBlurb: string;
+  // Replaces the pairing flow on Android, where the desktop app cannot connect.
+  appBridgeMobile: string;
   appNextStepHint: string;
   appConnect: string;
   appEnterCode: string;
@@ -979,6 +983,7 @@ export interface Dict {
   watchNotifPriceDrop: (name: string) => string;
   popupWatchlistHeading: string;
   popupWatchlistEmpty: string;
+  popupWatchlistMobileNote: string;
   popupListsHeading: string;
   popupListsEmpty: string;
   popupListItems: (n: number) => string;
@@ -1653,6 +1658,8 @@ const en: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Last Call: ${name} is ${pct}% full. Accept before it closes.`,
   lastCallNotifFilled: (name) => `${name} just filled up.`,
+  lastCallMobileNote:
+    "On Android, Last Call alerts fire when you open Creator Connections. Automatic background checks run on a Windows or Mac computer.",
 
   campaignBriefButton: "Brief",
   campaignBriefTitle: "The Butler's Brief",
@@ -1938,6 +1945,8 @@ const en: Dict = {
   appBridgeHeading: "Desktop app",
   appBridgeBlurb:
     "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
+  appBridgeMobile:
+    "The desktop app runs on Windows or Mac, so it cannot connect to this Android browser directly. To send deals to it, link that computer from the extension popup under \"Send to another computer\".",
   appNextStepHint:
     "You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.",
   appConnect: "Connect the desktop app",
@@ -2024,6 +2033,8 @@ const en: Dict = {
   watchNotifPriceDrop: (name) => `The price dropped on ${name}.`,
   popupWatchlistHeading: "Watchlist",
   popupWatchlistEmpty: "No products watched yet. Open a product and click Watch.",
+  popupWatchlistMobileNote:
+    "On Android, Watchlist alerts are paused: the automatic background checks run on a Windows or Mac computer. Your watched products stay saved.",
   popupListsHeading: "My lists",
   popupListsEmpty: "No lists yet. Add a product to a list from the search overlay's action menu.",
   popupListItems: (n) => (n === 1 ? "1 product" : `${n} products`),
@@ -2707,6 +2718,8 @@ const es: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Última Llamada: ${name} está ${pct}% ocupada. Acepta antes de que se cierre.`,
   lastCallNotifFilled: (name) => `${name} acaba de completarse.`,
+  lastCallMobileNote:
+    "En Android, las alertas de Última Llamada saltan cuando abres Creator Connections. Las comprobaciones automáticas en segundo plano se ejecutan en un ordenador con Windows o Mac.",
 
   campaignBriefButton: "Informe",
   campaignBriefTitle: "El informe del Butler",
@@ -2992,6 +3005,8 @@ const es: Dict = {
   appBridgeHeading: "App de escritorio",
   appBridgeBlurb:
     "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
+  appBridgeMobile:
+    "La app de escritorio funciona en Windows o Mac, así que no puede conectarse directamente a este navegador de Android. Para enviarle ofertas, vincula ese ordenador desde la ventana de la extensión, en \"Send to another computer\".",
   appNextStepHint:
     "Ya estás sincronizado con tu panel. Para también aceptar campañas y enviar productos a tus butlers, conecta la app de escritorio abajo. Este paso es opcional.",
   appConnect: "Conectar la app de escritorio",
@@ -3078,6 +3093,8 @@ const es: Dict = {
   watchNotifPriceDrop: (name) => `Bajó el precio de ${name}.`,
   popupWatchlistHeading: "Lista de seguimiento",
   popupWatchlistEmpty: "Aún no sigues productos. Abre un producto y pulsa Seguir.",
+  popupWatchlistMobileNote:
+    "En Android, las alertas de seguimiento están en pausa: las comprobaciones automáticas en segundo plano se ejecutan en un ordenador con Windows o Mac. Tus productos seguidos se conservan.",
   popupListsHeading: "Mis listas",
   popupListsEmpty: "Aún no tienes listas. Añade un producto a una lista desde el menú de acciones del overlay de búsqueda.",
   popupListItems: (n) => (n === 1 ? "1 producto" : `${n} productos`),
@@ -3761,6 +3778,8 @@ const fr: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Dernier Appel : ${name} est remplie à ${pct}%. Acceptez avant la fermeture.`,
   lastCallNotifFilled: (name) => `${name} vient de se remplir.`,
+  lastCallMobileNote:
+    "Sur Android, les alertes Dernier Appel se déclenchent quand vous ouvrez Creator Connections. Les vérifications automatiques en arrière-plan fonctionnent sur un ordinateur Windows ou Mac.",
 
   campaignBriefButton: "Fiche",
   campaignBriefTitle: "La fiche du Butler",
@@ -4046,6 +4065,8 @@ const fr: Dict = {
   appBridgeHeading: "App de bureau",
   appBridgeBlurb:
     "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
+  appBridgeMobile:
+    "L'app de bureau fonctionne sous Windows ou Mac, elle ne peut donc pas se connecter directement à ce navigateur Android. Pour lui envoyer des offres, associez cet ordinateur depuis la fenêtre de l'extension, dans \"Send to another computer\".",
   appNextStepHint:
     "Vous êtes synchronisé avec votre tableau de bord. Pour aussi accepter des campagnes et envoyer des produits à vos butlers, connectez l'app de bureau ci-dessous. Cette étape est facultative.",
   appConnect: "Connecter l'app de bureau",
@@ -4132,6 +4153,8 @@ const fr: Dict = {
   watchNotifPriceDrop: (name) => `Le prix a baissé sur ${name}.`,
   popupWatchlistHeading: "Liste de suivi",
   popupWatchlistEmpty: "Aucun produit suivi pour l'instant. Ouvrez un produit et cliquez sur Suivre.",
+  popupWatchlistMobileNote:
+    "Sur Android, les alertes de suivi sont en pause : les vérifications automatiques en arrière-plan fonctionnent sur un ordinateur Windows ou Mac. Vos produits suivis restent enregistrés.",
   popupListsHeading: "Mes listes",
   popupListsEmpty: "Aucune liste pour l'instant. Ajoutez un produit à une liste depuis le menu d'actions de l'overlay de recherche.",
   popupListItems: (n) => (n === 1 ? "1 produit" : `${n} produits`),

@@ -5,6 +5,7 @@ import { visibleBreakdownParts } from "./score";
 import type { CampaignScore, CampaignScoreBand } from "./score";
 import { formatConversion } from "../earnings-overlay/model";
 import { sendToBackground } from "../../shared/messages";
+import { isMobileUserAgent } from "../../shared/platform";
 import type {
   CampaignBriefDemand,
   CampaignBriefResult,
@@ -360,6 +361,16 @@ export function openCampaignBrief(opts: CampaignBriefOpen): void {
   }
 
   card.append(header, headline, body, actions);
+  // Android (Lemur): the background re-check that powers Last Call alerts is
+  // desktop-only, so say when alerts will actually fire.
+  if (opts.onToggleWatch && isMobileUserAgent()) {
+    const note = el("div", "", t().lastCallMobileNote);
+    note.style.fontSize = "12px";
+    note.style.lineHeight = "1.45";
+    note.style.color = "#374151";
+    note.style.marginTop = "8px";
+    card.append(note);
+  }
   backdrop.append(card);
   backdrop.addEventListener("click", closeCampaignBrief);
   root.append(backdrop);

@@ -274,6 +274,17 @@ const CSS = `
 .iconbtn { width: 26px; height: 26px; border: 0; background: transparent;
   color: #6b7280; font-size: 18px; cursor: pointer; border-radius: 6px; flex: 0 0 auto; }
 .iconbtn:hover { background: rgba(0,0,0,.06); color: #111827; }
+/* Phones: the tool panel owns the bottom-right corner, so the chat launcher
+   moves bottom-left and the open chat becomes a full-width sheet. */
+@media (max-width: 600px) {
+  .wrap { right: auto; left: 12px; bottom: 12px; align-items: flex-start; }
+  .launcher { width: 48px; height: 48px; font-size: 22px; }
+  .panel { width: calc(100vw - 24px); max-width: none;
+    height: min(540px, calc(100vh - 88px)); }
+}
+@media (pointer: coarse) {
+  .iconbtn { width: 36px; height: 36px; }
+}
 .transcript { flex: 1 1 auto; overflow-y: auto; padding: 14px; display: flex;
   flex-direction: column; gap: 10px; }
 .msg { max-width: 86%; padding: 9px 12px; border-radius: 14px; font-size: 13px;

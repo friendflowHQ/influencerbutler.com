@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Influencer Butler</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
@@ -126,6 +127,9 @@
         <p id="app-bridge-text" class="muted small" data-i18n="appBridgeBlurb">
           Connect the Influencer Butler desktop app to accept campaigns and send
           products to your butlers straight from Amazon.
+        </p>
+        <p id="app-bridge-mobile" class="muted small" hidden data-i18n="appBridgeMobile">
+          The desktop app runs on Windows or Mac, so it cannot connect to this Android browser directly. To send deals to it, link that computer from the extension popup under "Send to another computer".
         </p>
         <div id="app-bridge-disconnected">
           <button id="app-connect-btn" class="primary" data-i18n="appConnect">Connect the desktop app</button>
@@ -304,6 +308,7 @@
 
       <section id="watchlist-card" class="card">
         <h2 data-i18n="popupWatchlistHeading">Watchlist</h2>
+        <p id="watchlist-mobile-note" class="muted small" hidden data-i18n="popupWatchlistMobileNote">On Android, Watchlist alerts are paused: the automatic background checks run on a Windows or Mac computer. Your watched products stay saved.</p>
         <p id="watchlist-empty" class="muted small" data-i18n="popupWatchlistEmpty">No products watched yet. Open a product and click Watch.</p>
         <ul id="watchlist-list" class="watchlist"></ul>
       </section>

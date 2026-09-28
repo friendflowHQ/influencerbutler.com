@@ -1694,3 +1694,41 @@ a.tile-chip:hover { filter: brightness(0.97); }
   box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
   white-space: nowrap;
 }
+
+/* ---- Phones (Android extension browsers such as Lemur) --------------------
+   Layout keys off viewport width: mobile sites set a device-width viewport, so
+   these only apply on a phone-sized page. The panel starts collapsed there
+   (components.ts) and expands into a bottom sheet instead of a floating card
+   that would cover Amazon's sticky buy bar. */
+@media (max-width: 600px) {
+  .panel {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-width: none;
+    max-height: 70vh;
+  }
+  /* Collapsed: a compact pill in the corner, not a full-width bar. */
+  .panel.collapsed { left: auto; }
+  /* The What's New card spans the width like the panel. */
+  .whats-new-card { left: 8px; right: 8px; bottom: 8px; width: auto; }
+  /* Campaign Radar: the desktop toolbar forces one wide row; on a phone let the
+     controls wrap inside the screen instead of scrolling sideways. */
+  .radar-toolbar { flex-wrap: wrap; width: auto; max-width: 100%; }
+}
+
+/* Touch screens: grow the small controls to finger-sized hit areas. Keyed on
+   pointer, not width, so a touch laptop gets them and a narrow desktop window
+   does not. */
+@media (pointer: coarse) {
+  .header .gear { width: 36px; height: 36px; }
+  .infotip-mark { width: 22px; height: 22px; }
+  .toggle input[type="checkbox"],
+  .search-check input { width: 22px; height: 22px; }
+  .tile-menu-btn { min-width: 32px; height: 32px; }
+  .mtpl-del { width: 36px; min-height: 36px; }
+  .update-banner-close,
+  .whats-new-close { width: 36px; height: 36px; }
+  .btn { min-height: 40px; }
+}

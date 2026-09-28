@@ -13,7 +13,7 @@ export const STOREFRONT_CARD_SELECTOR =
   "[class*='item-hero-container'], [class*='media-list-container']";
 
 const ASIN_RE = /^[A-Z0-9]{10}$/;
-const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})/g;
+const ASIN_HREF_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/g;
 
 export function cardContentType(card: Element): StorefrontContentType | null {
   const c = card.className || "";

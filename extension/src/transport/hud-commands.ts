@@ -221,6 +221,11 @@ export type HudStatus = {
   // needsPairing. Surfaced so a panel can say so BEFORE the user clicks, rather
   // than rendering buttons that look ready and appear to do nothing.
   paired?: boolean;
+  // True when this browser runs on Android (e.g. Lemur): the desktop app can
+  // never answer on this device's loopback, so no probe is made and surfaces
+  // hide the pairing flow instead of offering a step that cannot succeed. The
+  // cloud relay to a desktop on another computer still works.
+  mobile?: boolean;
   appVersion?: string;
   // Workspaces the app actually has, when it reports them; the extension
   // falls back to DEAL_WORKSPACES otherwise.

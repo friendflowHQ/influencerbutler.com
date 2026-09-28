@@ -31,7 +31,7 @@ const CONTENT_BUTLER_CHUNK = 200;
 // open during a full run; incremental runs stop at the cached cursor and
 // finish in seconds.
 
-const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+const ASIN_HREF_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/;
 const ORDER_ID_RE = /\b\d{3}-\d{7}-\d{7}\b/;
 const PAGE_SIZE = 10;
 
@@ -367,7 +367,7 @@ function extractItems(card: HTMLElement): LineItem[] {
   const seen = new Set<string>();
   const items: LineItem[] = [];
   const anchors = card.querySelectorAll<HTMLAnchorElement>(
-    "a[href*='/dp/'], a[href*='/gp/product/']",
+    "a[href*='/dp/'], a[href*='/gp/product/'], a[href*='/gp/aw/d/']",
   );
   for (const anchor of Array.from(anchors)) {
     const match = (anchor.getAttribute("href") ?? "").match(ASIN_HREF_RE);

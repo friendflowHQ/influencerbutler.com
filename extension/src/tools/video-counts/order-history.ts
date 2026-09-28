@@ -29,7 +29,7 @@ type OrderItem = {
 
 type Loaded = Partial<Record<CatalogueKind, LoadedFilter>>;
 
-const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+const ASIN_HREF_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/;
 
 export function initOrderHistory(contentGapThreshold: number, marketplace: string): void {
   const items = findOrderItems();
@@ -142,7 +142,7 @@ function findOrderItems(): OrderItem[] {
   const seen = new Set<string>();
   const items: OrderItem[] = [];
   for (const anchor of Array.from(
-    document.querySelectorAll<HTMLAnchorElement>("a[href*='/dp/'], a[href*='/gp/product/']"),
+    document.querySelectorAll<HTMLAnchorElement>("a[href*='/dp/'], a[href*='/gp/product/'], a[href*='/gp/aw/d/']"),
   )) {
     const match = (anchor.getAttribute("href") ?? "").match(ASIN_HREF_RE);
     if (!match || !match[1] || seen.has(match[1])) continue;

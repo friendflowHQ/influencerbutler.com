@@ -424,3 +424,52 @@ button.linklike:hover { filter: brightness(0.9); }
 }
 .whats-new-group ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
 .whats-new-group li { font-size: 12px; color: var(--slate-900); overflow-wrap: anywhere; }
+
+/* Android extension browsers (Lemur): popup/index.ts adds html.mobile when the
+   user agent is mobile. The popup opens full screen or as a tab there, so drop
+   the fixed desktop size and the resize grabber, stack the section nav above
+   the content as a horizontal strip, and size controls for touch. A class, not
+   a width media query: the desktop popup is itself narrow (460px). */
+html.mobile body {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  resize: none;
+  font-size: 15px;
+}
+html.mobile main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+html.mobile .side-nav {
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0 6px;
+  border-right: none;
+  border-bottom: 1px solid var(--slate-200);
+  font-size: 13px;
+}
+html.mobile .side-nav ul { display: flex; gap: 4px; }
+html.mobile .side-nav li { flex: none; }
+html.mobile .side-nav > ul > li + li { margin-top: 0; }
+/* The Settings sub-groups are reachable by scrolling the Settings card; keep
+   the strip to one row of top-level sections. */
+html.mobile .side-nav ul ul { display: none; }
+html.mobile .side-nav a { padding: 10px 12px; }
+html.mobile .gear { width: 40px; height: 40px; }
+html.mobile button { min-height: 40px; }
+html.mobile button.ghost.small { min-height: 36px; padding: 6px 12px; }
+html.mobile input[type="text"],
+html.mobile input[type="password"],
+html.mobile select,
+html.mobile textarea { min-height: 40px; font-size: 16px; }
+html.mobile .toggle { min-height: 36px; align-items: center; }
+html.mobile .toggle input { width: 20px; height: 20px; }
+html.mobile #license-input,
+html.mobile #app-code-input { flex: 1 1 auto; max-width: none; }

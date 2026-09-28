@@ -2,6 +2,7 @@ import { getShadowRoot } from "./host";
 import { t } from "../i18n";
 import { sendToBackground } from "../shared/messages";
 import type { HudStatus } from "../shared/messages";
+import { isMobileUserAgent } from "../shared/platform";
 import logoUrl from "../../static/icons/icon-48.png";
 
 // The floating panel is shared by every tool on a page: each tool adds a
@@ -38,6 +39,12 @@ export function getPanel(title: string): HTMLElement {
   topbar.append(header);
   body = el("div", "body");
   panel.append(topbar, body);
+  // On a phone the expanded panel would cover most of the page (and Amazon's
+  // sticky buy bar), so start collapsed; a tap on the header opens it.
+  if (isMobileUserAgent()) {
+    panel.classList.add("collapsed");
+    chev.textContent = t().panelChevronShow;
+  }
   root.append(panel);
   startSyncPolling();
   return body;

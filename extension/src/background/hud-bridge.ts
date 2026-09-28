@@ -5,6 +5,7 @@ import {
 } from "../shared/constants";
 import { normalizeCreatorMode } from "../shared/creator-mode";
 import { log } from "../shared/log";
+import { isAndroid } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
 import type {
   BrandEnrichmentResult,
@@ -79,6 +80,10 @@ export async function getClientId(): Promise<string> {
 let cached: { status: HudStatus; at: number } | null = null;
 
 export async function getHudStatus(force = false): Promise<HudStatus> {
+  // Android extension browsers (Lemur): there is no desktop app on this
+  // device's loopback, so skip the three-port probe the sync chip would
+  // otherwise repeat every 20s.
+  if (await isAndroid()) return { connected: false, paired: false, mobile: true };
   // Read pairing OUTSIDE the probe cache: a token can be granted while a cached
   // "connected" status is still warm, and a stale paired:false would keep
   // showing the pairing prompt after the user had already paired.
@@ -1222,11 +1227,16 @@ function pollNotificationsOnPort(
 }
 
 // ── Pairing ────────────────────────────────────────────────────────────────
+// Surfaces hide pairing on Android (HudStatus.mobile); this is the backstop
+// message if a stale page still asks.
+const PAIRING_DESKTOP_ONLY =
+  "Pairing works on a Windows or Mac computer. On Android, link a desktop app on another computer instead.";
 // Two round trips driven from the popup: first ask the app to show a 6-digit
 // code (it pops the code in the HUD), then submit the code the user typed. On
 // success the token is persisted and every later command authenticates with it.
 
 export async function requestPairing(): Promise<PairResult> {
+  if (await isAndroid()) return { ok: false, stage: "error", message: PAIRING_DESKTOP_ONLY };
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair.request", clientId }, "pair.pending");
@@ -1236,6 +1246,7 @@ export async function requestPairing(): Promise<PairResult> {
 }
 
 export async function submitPairingCode(code: string): Promise<PairResult> {
+  if (await isAndroid()) return { ok: false, stage: "error", message: PAIRING_DESKTOP_ONLY };
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair", clientId, code }, "paired");

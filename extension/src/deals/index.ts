@@ -1,5 +1,6 @@
 import { DEALS_CATALOG, type DealsDict } from "./strings";
 import { resolveLocale } from "../i18n";
+import { isMobileUserAgent } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
 import { canonicalProductUrl } from "../integrations/url";
@@ -227,6 +228,14 @@ function renderAutoHarvestToggle(saved: string[]): HTMLElement {
   const hint = el("p", "muted small");
   hint.textContent = D.autoHarvestHint;
   wrap.append(row, hint);
+  // Android (Lemur): the background worker skips the auto-harvest alarm there
+  // (it opens hidden tabs), so show the toggle as unavailable, not as a no-op.
+  if (isMobileUserAgent()) {
+    box.checked = false;
+    box.disabled = true;
+    hint.textContent = D.autoHarvestMobile;
+    return wrap;
+  }
 
   box.onchange = () => {
     void (async () => {

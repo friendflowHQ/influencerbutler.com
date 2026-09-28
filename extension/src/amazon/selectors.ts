@@ -133,6 +133,10 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#corePriceDisplay_desktop_feature_div .a-price:not(.a-text-price) .a-offscreen",
     "#corePrice_feature_div .a-price:not(.a-text-price) .a-offscreen",
     "#apex_desktop .a-price:not(.a-text-price) .a-offscreen",
+    // Mobile web (Android extension browsers). Unverified on a device yet; the
+    // generic fallback below still catches it if these ids differ.
+    "#corePriceDisplay_mobile_feature_div .a-price:not(.a-text-price) .a-offscreen",
+    "#corePrice_mobile_feature_div .a-price:not(.a-text-price) .a-offscreen",
     ".a-price:not(.a-text-price) .a-offscreen",
     "#priceblock_ourprice",
     "#priceblock_dealprice",
@@ -145,6 +149,8 @@ const REGISTRY: Record<SelectorId, string[]> = {
   productListPrice: [
     "#corePriceDisplay_desktop_feature_div .a-price.a-text-price .a-offscreen",
     "#corePrice_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePriceDisplay_mobile_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePrice_mobile_feature_div .a-price.a-text-price .a-offscreen",
     ".basisPrice .a-offscreen",
     "span[data-a-strike='true'] .a-offscreen",
     "#priceblock_listprice",
@@ -162,6 +168,8 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#corePriceDisplay_desktop_feature_div .savingsPercentage",
     "#corePriceDisplay_desktop_feature_div .a-badge-text",
     "#apex_desktop .a-badge-text",
+    "#corePriceDisplay_mobile_feature_div .savingsPercentage",
+    "#corePriceDisplay_mobile_feature_div .a-badge-text",
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
@@ -172,6 +180,11 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#buybox",
     "#rightCol",
     "#apex_desktop",
+    // Mobile web has no right column: mount above the add-to-cart block.
+    // Unverified on a device yet; correctable live via a selector override.
+    "#mobile_buybox",
+    "#addToCart_feature_div",
+    "#addToCart",
   ],
   boughtPastMonth: [
     "#socialProofingAsinFaceout_feature_div",

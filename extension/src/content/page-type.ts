@@ -91,7 +91,7 @@ export function detectPageType(url: string): PageType {
 
 function detectAmazonPageType(parsed: URL): PageType {
   const path = parsed.pathname;
-  if (/\/(?:dp|gp\/product)\/[A-Z0-9]{10}(?:[/?]|$)/.test(path)) return "product";
+  if (/\/(?:dp|gp\/product|gp\/aw\/d)\/[A-Z0-9]{10}(?:[/?]|$)/.test(path)) return "product";
   if (path.startsWith("/gp/css/order-history") || path.startsWith("/your-orders")) {
     return "order-history";
   }

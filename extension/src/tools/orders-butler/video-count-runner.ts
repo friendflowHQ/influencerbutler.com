@@ -26,7 +26,7 @@ import { log } from "../../shared/log";
 // the highest-return gap. A coverage summary (F19) totals how much of what you
 // own already has your content.
 
-const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+const ASIN_HREF_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/;
 // A small gap between products so the pass reads like a person opening tabs.
 // The tab scan itself already dwells for seconds, so this stays short.
 const BETWEEN_MS = 900;
@@ -187,7 +187,7 @@ function gatherOnPageItems(marketplace: string): OrderAsinItem[] {
   const seen = new Set<string>();
   const items: OrderAsinItem[] = [];
   for (const anchor of Array.from(
-    document.querySelectorAll<HTMLAnchorElement>("a[href*='/dp/'], a[href*='/gp/product/']"),
+    document.querySelectorAll<HTMLAnchorElement>("a[href*='/dp/'], a[href*='/gp/product/'], a[href*='/gp/aw/d/']"),
   )) {
     const match = (anchor.getAttribute("href") ?? "").match(ASIN_HREF_RE);
     if (!match || !match[1] || seen.has(match[1])) continue;

@@ -4,6 +4,7 @@ import { sendToBackground, type AuthStatus, type PairResult, type SignInResult }
 import { API_BASE } from "../shared/constants";
 import type { Settings } from "../storage/schema";
 import { isPairedLocal } from "../shared/bridge-token";
+import { isAndroid } from "../shared/platform";
 import { runSyncReconcile, autoFillFromDesktop } from "../tools/settings-sync/ui";
 
 // First-run walkthrough page (opened on fresh install, replayable from the
@@ -235,6 +236,14 @@ async function wireApp(): Promise<void> {
 }
 
 async function refreshApp(): Promise<void> {
+  // Android (Lemur): pairing cannot succeed on this device; explain instead of
+  // offering a Connect button that can only fail.
+  if (await isAndroid()) {
+    showAppState("disconnected");
+    (document.getElementById("ob-app-disconnected") as HTMLElement).hidden = true;
+    (document.getElementById("ob-app-mobile") as HTMLElement).hidden = false;
+    return;
+  }
   const paired = await isPairedLocal();
   showAppState(paired ? "connected" : "disconnected");
   if (paired) void offerSyncAfterPair();
