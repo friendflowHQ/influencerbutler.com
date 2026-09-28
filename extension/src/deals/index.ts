@@ -781,6 +781,12 @@ function toProductRef(row: Row): ProductRef {
     currency: row.currency ?? undefined,
     imageUrl: row.imageUrl ?? undefined,
     commissionRatePct: row.commissionRatePct,
+    // Aggregator-carried deal facts (savewithcindy.shop, etc.). Only set when the
+    // harvest actually carried them, so a plain product push stays unchanged.
+    ...(row.deal.promoCode ? { promoCode: row.deal.promoCode } : {}),
+    ...(row.deal.promoPercentOff != null ? { promoPercentOff: row.deal.promoPercentOff } : {}),
+    ...(row.deal.startDate ? { startDate: row.deal.startDate } : {}),
+    ...(row.deal.endDate ? { endDate: row.deal.endDate } : {}),
   };
 }
 

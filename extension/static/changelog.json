@@ -1,6 +1,18 @@
 {
-  "lastUpdated": "2026-09-25",
+  "lastUpdated": "2026-09-28",
   "releases": [
+    {
+      "version": "0.1.20",
+      "date": "September 28, 2026",
+      "sections": [
+        {
+          "heading": "Improvements",
+          "items": [
+            "Deals harvested from savewithcindy.shop now carry the full deal, not just the product. Butler reads each card's promo code, the code's own percent off, and the deal's start and end dates, and hands them to your desktop app. The code stacks on any Amazon coupon, the end date lets Expired Butler retire a deal once it is over, and the start date holds an upcoming deal until it opens"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.19",
       "date": "September 25, 2026",

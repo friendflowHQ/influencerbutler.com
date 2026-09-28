@@ -17,6 +17,19 @@ export type HarvestedDeal = {
   marketplace: string;
   sourceUrl: string;
   promoCode: string | null;
+  // Fields a few aggregators print on the card that the generic ASIN sweep
+  // cannot infer. Optional: absent on every generic-sweep row, so nothing has to
+  // change at the many places a bare deal is constructed. savewithcindy.shop
+  // populates all three (see parseSaveWithCindy).
+  //   promoPercentOff: the code's own "N% off" (e.g. "50% off Code: XZ6YABJ5"),
+  //     carried as the promo-code discount so it stacks on any Amazon coupon.
+  //   startDate / endDate: the deal window, normalized to a Date.parse-able ISO
+  //     8601 string with a numeric offset, so the desktop's Expired Butler can
+  //     tell when a deal has ended (endDate) and the upcoming hold can tell when
+  //     it begins (startDate).
+  promoPercentOff?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 // A 10-char Amazon id in a link path (/dp/, /gp/product/, /gp/aw/d/) or an
@@ -69,6 +82,22 @@ export const SITE_PARSERS: Record<string, SiteParser> = {
   // sweep already captures; this override simply drops rows with no ASIN link
   // (the site also renders non-Amazon affiliate cards we do not want).
   "jungle.deals": (_html, _sourceUrl, generic) => generic,
+
+  /* savewithcindy.shop (a front-end skin over usdealhunter.com) renders each
+   * deal as one <p> block with <br>-separated lines in a fixed order:
+   *   <strong>50% off ANRABESS ... Dress</strong>
+   *   50% off Code: XZ6YABJ5
+   *   16.99(Reg.33.99)
+   *   <a href="https://www.amazon.com/dp/B0F8BXM4QD">...</a>
+   *   End Date: 2026-10-4 23:59 PDT
+   *   Start Date: 2026-9-28 00:00 PDT
+   * The generic sweep already finds the ASINs (the harvester deep-scans this
+   * JS-rendered site in a real tab, so extractDeals sees the rendered DOM). What
+   * it cannot do is pair each ASIN with its promo code, the code's own percent,
+   * and the deal window. This block-parses those and merges them onto the
+   * generic rows. The code's "N% off" is carried as the PROMO-code discount so
+   * it stacks on any Amazon coupon, per the deal's own framing. */
+  "savewithcindy.shop": (html, sourceUrl, generic) => parseSaveWithCindy(html, sourceUrl, generic),
 
   /* koupon.ai ships its whole catalogue inside the Next.js payload in the page,
    * so the generic ASIN sweep already finds every product. What it cannot do is
@@ -140,6 +169,109 @@ function lakeDeal(retailer: string, id: string, sourceUrl: string): HarvestedDea
   const asin = id.toUpperCase();
   if (!/^[A-Z0-9]{10}$/.test(asin)) return null;
   return { asin, marketplace: DEFAULT_MARKETPLACE, sourceUrl, promoCode: null };
+}
+
+// One savewithcindy.shop deal <p> block: everything between a <p ...> and its
+// </p>. Non-greedy so adjacent cards never merge into one block.
+const SWC_BLOCK_RE = /<p\b[^>]*>([\s\S]*?)<\/p>/gi;
+// "Code: XZ6YABJ5" (the token is the checkout promo code) and, separately, the
+// code line's own "N% off" that precedes it ("50% off Code: XZ6YABJ5"). The
+// percent on the code line is the CODE's discount, kept distinct from a title
+// percent (which can be the combined total) or a separate "N% Price drop".
+const SWC_CODE_RE = /Code:\s*([A-Za-z0-9]{4,20})/i;
+const SWC_CODE_PCT_RE = /(\d{1,3})%\s*off\s*Code:/i;
+const SWC_END_RE = /End Date:\s*(\d{4}-\d{1,2}-\d{1,2}[^<\n]*)/i;
+const SWC_START_RE = /Start Date:\s*(\d{4}-\d{1,2}-\d{1,2}[^<\n]*)/i;
+
+// Named US timezone abbreviations the site prints, mapped to a fixed numeric
+// offset so the normalized date is Date.parse-able everywhere (V8's Date.parse
+// is unreliable with a bare zone name like "PDT").
+const SWC_TZ_OFFSETS: Record<string, string> = {
+  PDT: "-07:00", PST: "-08:00", MDT: "-06:00", MST: "-07:00",
+  CDT: "-05:00", CST: "-06:00", EDT: "-04:00", EST: "-05:00",
+  UTC: "+00:00", GMT: "+00:00",
+};
+
+/**
+ * "2026-10-4 23:59 PDT" -> "2026-10-04T23:59:00-07:00". Null when there is no
+ * recognizable date. The offset is dropped when the zone is not one we map, in
+ * which case Date.parse reads it as local time (the safest fallback rather than
+ * inventing an offset).
+ *
+ * When the source gives a date with no time, `endOfDay` decides the default:
+ * false (a start date) -> 00:00:00, true (an end date) -> 23:59:59, so a bare
+ * "End Date: 2026-10-6" stays live through all of Oct 6 instead of expiring the
+ * instant that day begins.
+ */
+export function normalizeDealDate(raw: string, endOfDay = false): string | null {
+  const m = String(raw || "").match(
+    /(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?\s*([A-Za-z]{2,4})?/,
+  );
+  if (!m) return null;
+  const pad = (n: string) => n.padStart(2, "0");
+  const date = `${m[1]}-${pad(m[2] as string)}-${pad(m[3] as string)}`;
+  const time = m[4] != null ? `${pad(m[4] as string)}:${m[5]}:00` : endOfDay ? "23:59:59" : "00:00:00";
+  const off = SWC_TZ_OFFSETS[(m[6] || "").toUpperCase()] ?? "";
+  return `${date}T${time}${off}`;
+}
+
+type SwcExtras = Pick<HarvestedDeal, "promoCode" | "promoPercentOff" | "startDate" | "endDate">;
+
+/**
+ * savewithcindy.shop per-card parser (registered in SITE_PARSERS). Block-parses
+ * each deal <p> for its promo code, the code's own percent, and the deal window,
+ * then merges those onto the generic rows the ASIN sweep already produced (first
+ * card per ASIN wins). Any card the sweep missed is added. A field the generic
+ * row already carries is never overwritten.
+ */
+function parseSaveWithCindy(
+  html: string,
+  sourceUrl: string,
+  generic: HarvestedDeal[],
+): HarvestedDeal[] {
+  const extras = new Map<string, SwcExtras>();
+  SWC_BLOCK_RE.lastIndex = 0;
+  for (let m = SWC_BLOCK_RE.exec(html); m; m = SWC_BLOCK_RE.exec(html)) {
+    const block = m[1] ?? "";
+    const link = matchAmazonProductUrl(block);
+    if (!link) continue;
+    const key = `${link.marketplace}:${link.asin}`;
+    if (extras.has(key)) continue; // first card for this product wins
+    const codeM = block.match(SWC_CODE_RE);
+    const pctM = block.match(SWC_CODE_PCT_RE);
+    const endM = block.match(SWC_END_RE);
+    const startM = block.match(SWC_START_RE);
+    const pct = pctM ? Number(pctM[1]) : NaN;
+    extras.set(key, {
+      promoCode: codeM ? (codeM[1] as string) : null,
+      promoPercentOff: Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : null,
+      startDate: startM ? normalizeDealDate(startM[1] as string) : null,
+      endDate: endM ? normalizeDealDate(endM[1] as string, true) : null,
+    });
+  }
+  if (extras.size === 0) return generic;
+
+  const seen = new Set<string>();
+  const merged = generic.map((deal) => {
+    const key = `${deal.marketplace}:${deal.asin}`;
+    seen.add(key);
+    const ex = extras.get(key);
+    if (!ex) return deal;
+    return {
+      ...deal,
+      promoCode: deal.promoCode ?? ex.promoCode,
+      promoPercentOff: deal.promoPercentOff ?? ex.promoPercentOff,
+      startDate: deal.startDate ?? ex.startDate,
+      endDate: deal.endDate ?? ex.endDate,
+    };
+  });
+  for (const [key, ex] of extras) {
+    if (seen.has(key)) continue;
+    const [marketplace, asin] = key.split(":");
+    if (!marketplace || !asin) continue;
+    merged.push({ asin, marketplace, sourceUrl, ...ex });
+  }
+  return merged;
 }
 
 /* Per-host matcher for a single <a href>, used by the on-page chip. The chip

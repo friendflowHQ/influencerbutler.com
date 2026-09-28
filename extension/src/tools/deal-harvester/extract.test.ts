@@ -4,6 +4,7 @@ import {
   extractDeals,
   extractShortLinks,
   matchAmazonProductUrl,
+  normalizeDealDate,
   siteLinkMatcher,
 } from "./extract";
 import { findingKey } from "../../transport/types";
@@ -262,5 +263,142 @@ describe("siteLinkMatcher", () => {
 
   it("is null for a host with no override, so the generic Amazon matcher stands alone", () => {
     expect(siteLinkMatcher("https://www.savewithcindy.shop/")).toBeNull();
+  });
+});
+
+describe("normalizeDealDate", () => {
+  it("normalizes a non-padded date with a named US zone to Date.parse-able ISO", () => {
+    expect(normalizeDealDate("2026-10-4 23:59 PDT")).toBe("2026-10-04T23:59:00-07:00");
+    expect(normalizeDealDate("2026-9-28 00:00 PDT")).toBe("2026-09-28T00:00:00-07:00");
+    expect(normalizeDealDate("2026-1-2 08:30 EST")).toBe("2026-01-02T08:30:00-05:00");
+  });
+
+  it("defaults the time to midnight and drops an unknown/absent zone", () => {
+    expect(normalizeDealDate("2026-12-01")).toBe("2026-12-01T00:00:00");
+    expect(normalizeDealDate("2026-1-2 08:30 XYZ")).toBe("2026-01-02T08:30:00");
+  });
+
+  it("end-of-days a bare date when asked, so an end date does not expire early", () => {
+    expect(normalizeDealDate("2026-10-6", true)).toBe("2026-10-06T23:59:59");
+    expect(normalizeDealDate("2026-10-6")).toBe("2026-10-06T00:00:00");
+    // A date that already carries a time is unaffected by the flag.
+    expect(normalizeDealDate("2026-10-6 23:59 PDT", true)).toBe("2026-10-06T23:59:00-07:00");
+  });
+
+  it("is null for text with no date", () => {
+    expect(normalizeDealDate("soon")).toBeNull();
+    expect(normalizeDealDate("")).toBeNull();
+  });
+
+  it("always yields a string Date.parse accepts", () => {
+    const iso = normalizeDealDate("2026-10-4 23:59 PDT");
+    expect(iso).not.toBeNull();
+    expect(Number.isNaN(Date.parse(iso as string))).toBe(false);
+  });
+});
+
+describe("extractDeals: savewithcindy.shop cards", () => {
+  const card = (
+    title: string,
+    code: string,
+    pct: number,
+    dp: string,
+    end: string,
+    start: string,
+  ) =>
+    `<p style="line-height:1.57;"><strong>${pct}% off ${title}</strong>` +
+    `<br>${pct}% off Code: ${code}\n` +
+    `<br>16.99(Reg.33.99)\n` +
+    `<br><a href="https://www.amazon.com/dp/${dp}" target="_blank">https://www.amazon.com/dp/${dp}</a>\n` +
+    `<br>End Date: ${end}\n<br>Start Date: ${start}\n<br></p>`;
+
+  it("pairs each ASIN with its code, the code's percent, and the deal window", () => {
+    const html =
+      card("Sweater Dress", "XZ6YABJ5", 50, "B0F8BXM4QD", "2026-10-4 23:59 PDT", "2026-9-28 00:00 PDT") +
+      card("Wool Coat", "F0BXCSX5", 54, "B0H5C4QDSV", "2026-10-1 23:59 PDT", "2026-9-28 00:00 PDT");
+    const deals = extractDeals(html, "https://www.savewithcindy.shop/");
+    expect(deals).toEqual([
+      {
+        asin: "B0F8BXM4QD",
+        marketplace: "amazon.com",
+        sourceUrl: "https://www.savewithcindy.shop/",
+        promoCode: "XZ6YABJ5",
+        promoPercentOff: 50,
+        startDate: "2026-09-28T00:00:00-07:00",
+        endDate: "2026-10-04T23:59:00-07:00",
+      },
+      {
+        asin: "B0H5C4QDSV",
+        marketplace: "amazon.com",
+        sourceUrl: "https://www.savewithcindy.shop/",
+        promoCode: "F0BXCSX5",
+        promoPercentOff: 54,
+        startDate: "2026-09-28T00:00:00-07:00",
+        endDate: "2026-10-01T23:59:00-07:00",
+      },
+    ]);
+  });
+
+  it("takes the CODE's percent, not a combined title percent or a separate price drop", () => {
+    // Real card shape: title 73% is the combined total; the code itself is 50%
+    // and there is a separate 46% price drop on the same line.
+    const html =
+      `<p><strong>73% off Two Piece Outfits</strong>` +
+      `<br>50% off Code: JDCS6QSX + 46% Price drop\n` +
+      `<br>13.49-14.99(Reg.49.99)\n` +
+      `<br><a href="https://www.amazon.com/dp/B0H5V6PS8P">link</a>\n` +
+      `<br>End Date: 2026-9-30 23:59 PDT\n<br>Start Date: 2026-9-28 01:00 PDT\n<br></p>`;
+    const [deal] = extractDeals(html, "https://savewithcindy.shop/");
+    expect(deal?.promoCode).toBe("JDCS6QSX");
+    expect(deal?.promoPercentOff).toBe(50);
+    expect(deal?.endDate).toBe("2026-09-30T23:59:00-07:00");
+  });
+
+  it("captures a flat-dollar code (no percent) and end-of-days a bare end date", () => {
+    // Real card: "$16 off Code: TC9T3IOE", dates with no time component.
+    const html =
+      `<p><strong>57% off EKOUAER Pajamas Set</strong>` +
+      `<br>$16 off Code: TC9T3IOE\n<br>11.99(Reg.19.99-27.99)\n` +
+      `<br><a href="https://www.amazon.com/dp/B0H6MCV64T">link</a>\n` +
+      `<br>End Date: 2026-10-6\n<br>Start Date: 2026-9-26\n<br></p>`;
+    const [deal] = extractDeals(html, "https://savewithcindy.shop/");
+    expect(deal?.promoCode).toBe("TC9T3IOE");
+    expect(deal?.promoPercentOff).toBeNull();
+    expect(deal?.endDate).toBe("2026-10-06T23:59:59");
+    expect(deal?.startDate).toBe("2026-09-26T00:00:00");
+  });
+
+  it("leaves absent fields null but still returns the ASIN and any date present", () => {
+    const html =
+      `<p><strong>Mystery Deal</strong>` +
+      `<br><a href="https://www.amazon.com/dp/B0NOCODEAA">link</a>` +
+      `<br>End Date: 2026-10-5 23:59 PDT<br></p>`;
+    const [deal] = extractDeals(html, "https://savewithcindy.shop/");
+    expect(deal).toEqual({
+      asin: "B0NOCODEAA",
+      marketplace: "amazon.com",
+      sourceUrl: "https://savewithcindy.shop/",
+      promoCode: null,
+      promoPercentOff: null,
+      startDate: null,
+      endDate: "2026-10-05T23:59:00-07:00",
+    });
+  });
+
+  it("adds no coupon/date fields for a site with no parser, so generic rows stay bare", () => {
+    const html =
+      `<p>50% off Code: ABC12345<br>` +
+      `<a href="https://www.amazon.com/dp/B0GENERICX">link</a>` +
+      `<br>End Date: 2026-10-5 23:59 PDT</p>`;
+    // jungle.deals' parser returns the generic result untouched.
+    const deals = extractDeals(html, "https://www.jungle.deals/");
+    expect(deals).toEqual([
+      {
+        asin: "B0GENERICX",
+        marketplace: "amazon.com",
+        sourceUrl: "https://www.jungle.deals/",
+        promoCode: null,
+      },
+    ]);
   });
 });

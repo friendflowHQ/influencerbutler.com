@@ -28,6 +28,20 @@ export type ProductRef = {
   // this retailer (e.g. a Walmart Creator / Mavely link). Absent when no link
   // provider is configured; the desktop then falls back to `url`.
   affiliateUrl?: string;
+  // Deal facts an aggregator page printed on the card (savewithcindy.shop, etc.)
+  // that the extension harvested. Sent so a pushed deal keeps the source's own
+  // promo code, the code's percent, and the deal window instead of the desktop
+  // having to re-derive them from a live Amazon offer. Absent when the harvest
+  // did not carry them (the desktop then backfills from PA-API as before).
+  //   promoCode / promoPercentOff: the checkout code and its own "N% off", which
+  //     the desktop stacks as the promo-code discount.
+  //   startDate / endDate: the deal window as a Date.parse-able ISO 8601 string,
+  //     mapped to dealStartTime / dealEndTime so the Expired Butler (endDate) and
+  //     the upcoming hold (startDate) can act on it.
+  promoCode?: string | null;
+  promoPercentOff?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 // One Instagram Goldmine creator, sent in a batch to the desktop Pitch / Group
