@@ -2023,7 +2023,7 @@
       "title": "Know Your Baseline Before Prime Big Deal Days",
       "category": "Growth",
       "summary": "You cannot tell if the event worked if you never wrote down where you started. Here is the five-minute snapshot to take now so October actually teaches you something.",
-      "date": "2026-09-29",
+      "date": "2026-09-30",
       "author": "The Influencer Butler Team",
       "readingTime": "5 min read",
       "keywords": "track prime big deal days results, creator metrics, amazon influencer earnings baseline, measure event lift",
@@ -2241,6 +2241,20 @@
       "imageAlt": "Illustration of a video uploading while a campaign-accepted checkmark badge appears beside it",
       "imagePrompt": "a video uploading with a green checkmark campaign badge appearing beside it, two wins happening at once, confident and clean",
       "order": 221
+    },
+    {
+      "id": "auto-post-deals-instagram-butler",
+      "title": "Post Your Deals to Instagram Automatically with Deals Butler",
+      "category": "Instagram",
+      "summary": "Manually dropping deals into Instagram all day is the grind that kills deal accounts. Deals Butler posts your filtered Amazon and Walmart deals to Instagram on a schedule: broadcast channels, your feed, and Threads.",
+      "date": "2026-09-29",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "auto post deals instagram, instagram broadcast channel deals, deals butler instagram, schedule instagram deal posts, post amazon deals to instagram",
+      "image": "/assets/blog/auto-post-deals-instagram-butler.png",
+      "imageAlt": "Illustration of a phone showing an Instagram channel filling with deal posts on a schedule",
+      "imagePrompt": "a phone screen showing an Instagram-style channel filling itself with deal posts, a small scheduling clock beside it, friendly hands-off automation",
+      "order": 222
     }
   ]
 }
