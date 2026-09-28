@@ -84,3 +84,15 @@ export function shiftMonth(month: string, delta: number): string {
   const d = new Date(Date.UTC(y, m - 1 + delta, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
+
+/** Whole months from `from` to `to` (both 'YYYY-MM'); positive when `to` is later. */
+export function monthsBetween(from: string, to: string): number {
+  const [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  return (ty - fy) * 12 + (tm - fm);
+}
+
+/** True when `month` is later than the current UTC month. */
+export function isFutureMonth(month: string): boolean {
+  return monthsBetween(currentMonthKey(), month) > 0;
+}

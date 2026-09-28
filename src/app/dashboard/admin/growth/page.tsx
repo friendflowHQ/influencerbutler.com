@@ -13,16 +13,24 @@ import GoalsSection from "./GoalsSection";
 import ChecklistSection from "./ChecklistSection";
 import MetricTile from "./MetricTile";
 import ProjectedEarnings from "./ProjectedEarnings";
+import GrowthForecast from "./GrowthForecast";
 import {
   catalogEntry,
   currentMonthKey,
   formatMetricValue,
+  isFutureMonth,
   monthLabel,
+  monthsBetween,
   shiftMonth,
   type CatalogEntry,
   type EarningsProjection,
   type MetricSnapshot,
 } from "./format";
+import {
+  MAX_MONTHS_AHEAD,
+  type ForecastAssumptions,
+  type ForecastBaseline,
+} from "@/lib/growth-forecast";
 
 type MetricsResponse = {
   month?: string;
@@ -32,6 +40,13 @@ type MetricsResponse = {
   metrics?: Record<string, MetricSnapshot>;
   projection?: EarningsProjection | null;
   error?: string;
+};
+
+type ForecastResponse = {
+  currentMonth: string;
+  maxMonthsAhead: number;
+  baseline: ForecastBaseline;
+  defaults: ForecastAssumptions;
 };
 
 // Clarifying captions for the trial funnel tiles. These three measure DIFFERENT,
@@ -79,8 +94,15 @@ export default function AdminGrowthPage() {
   const [searchRefreshing, setSearchRefreshing] = useState(false);
   const [search, setSearch] = useState<SearchResponse | null>(null);
   const [confettiBursts, setConfettiBursts] = useState(0);
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState<string | null>(null);
 
   const isCurrentMonth = month === currentMonthKey();
+  const isFuture = isFutureMonth(month);
+  const monthsAhead = monthsBetween(currentMonthKey(), month);
+  const maxMonthsAhead = forecast?.maxMonthsAhead ?? MAX_MONTHS_AHEAD;
+  const atMaxFuture = monthsAhead >= maxMonthsAhead;
 
   const loadMetrics = useCallback(async () => {
     setMetricsLoading(true);
@@ -137,9 +159,39 @@ export default function AdminGrowthPage() {
     }
   }, []);
 
+  // The forecast baseline is month-agnostic (always derived from the current
+  // month), so fetch it once, lazily, the first time a future month is opened.
+  const loadForecast = useCallback(async () => {
+    setForecastLoading(true);
+    setForecastError(null);
+    try {
+      const res = await fetch("/api/admin/growth/forecast", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      if (!res.ok) {
+        setForecastError(`Failed to load forecast (${res.status})`);
+        return;
+      }
+      setForecast((await res.json()) as ForecastResponse);
+    } catch (err) {
+      console.error(err);
+      setForecastError("Network error loading the forecast.");
+    } finally {
+      setForecastLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadMetrics();
   }, [loadMetrics]);
+
+  useEffect(() => {
+    if (isFuture && !forecast && !forecastLoading && !forecastError) {
+      void loadForecast();
+    }
+  }, [isFuture, forecast, forecastLoading, forecastError, loadForecast]);
 
   useEffect(() => {
     void loadGa();
@@ -216,7 +268,7 @@ export default function AdminGrowthPage() {
           <button
             type="button"
             onClick={() => setMonth((prev) => shiftMonth(prev, 1))}
-            disabled={isCurrentMonth}
+            disabled={atMaxFuture}
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
             aria-label="Next month"
           >
@@ -225,8 +277,24 @@ export default function AdminGrowthPage() {
         </div>
       </div>
 
-      {fetchError ? <p className="mt-8 text-rose-600">{fetchError}</p> : null}
+      {!isFuture && fetchError ? <p className="mt-8 text-rose-600">{fetchError}</p> : null}
 
+      {isFuture ? (
+        forecastLoading ? (
+          <div className="mt-6 h-64 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
+        ) : forecastError ? (
+          <p className="mt-8 text-rose-600">{forecastError}</p>
+        ) : forecast ? (
+          <GrowthForecast
+            baseline={forecast.baseline}
+            defaults={forecast.defaults}
+            currentMonth={forecast.currentMonth}
+            targetMonth={month}
+            monthsAhead={monthsBetween(forecast.currentMonth, month)}
+          />
+        ) : null
+      ) : (
+        <>
       {/* Right now */}
       <section className="mt-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -318,6 +386,8 @@ export default function AdminGrowthPage() {
       />
 
       <ChecklistSection month={month} isCurrentMonth={isCurrentMonth} onCelebrate={celebrate} />
+        </>
+      )}
     </div>
   );
 }
