@@ -5,11 +5,32 @@ import { sendConversionEmail, type ConversionTier } from "@/lib/conversion-email
 import { createUniqueDiscount } from "@/lib/lemonsqueezy-discounts";
 import { sendTrialEmail, type TrialTier } from "@/lib/trial-emails";
 import { mintTrialDiscounts, trialDiscountPercents } from "@/lib/trial-discounts";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
+import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
+import { sendAppTrialEmail, type AppTrialTier } from "@/lib/app-trial-emails";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
+import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
+import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * Applies admin day_offset overrides to a funnel's tier thresholds and re-sorts
+ * most-aged-first, so an edited step reschedules while unedited steps keep their
+ * exact code timing. Returns a fresh array (the module TIERS consts are const).
+ */
+function withOverrides<T extends { tier: string; thresholdMs: number }>(
+  base: ReadonlyArray<T>,
+  funnel: string,
+  overrides: Map<string, FunnelOverride>,
+): T[] {
+  return base
+    .map((t) => ({ ...t, thresholdMs: tierThresholdMs(overrides, funnel, t.tier, t.thresholdMs) }) as T)
+    .sort((a, b) => b.thresholdMs - a.thresholdMs);
+}
 
 // --- Constants ------------------------------------------------------------
 
@@ -37,6 +58,7 @@ const STATIC_CODES: Record<Exclude<ConversionTier, "5d">, string> = {
 type SelectChain<T> = {
   eq: (col: string, value: unknown) => SelectChain<T>;
   is: (col: string, value: null) => SelectChain<T>;
+  not: (col: string, op: string, value: unknown) => SelectChain<T>;
   lte: (col: string, value: string) => SelectChain<T>;
   limit: (n: number) => Promise<{ data: T[] | null; error: unknown }>;
   maybeSingle: () => Promise<{ data: T | null; error: unknown }>;
@@ -148,13 +170,16 @@ async function hasPurchased(supabase: CronClient, userId: string): Promise<boole
   return false;
 }
 
-function selectTier(row: ApprovedAppRow): (typeof TIERS)[number] | null {
+function selectTier(
+  row: ApprovedAppRow,
+  tiers: ReadonlyArray<(typeof TIERS)[number]>,
+): (typeof TIERS)[number] | null {
   if (!row.reviewed_at) return null;
   const approvedAt = new Date(row.reviewed_at).getTime();
   if (!Number.isFinite(approvedAt)) return null;
   const age = Date.now() - approvedAt;
 
-  for (const t of TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof ApprovedAppRow];
     if (sent) continue;
@@ -167,8 +192,12 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
   const counts: Record<ConversionTier, number> = { "1h": 0, "3d": 0, "5d": 0 };
 
   // Pull approved applications that have at least one pending tier (reviewed
-  // more than 1h ago, which is the smallest threshold).
-  const oldestPossible = new Date(Date.now() - TIERS[TIERS.length - 1].thresholdMs).toISOString();
+  // longer ago than the smallest effective threshold).
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(TIERS, "conversion", overrides);
+  const oldestPossible = new Date(
+    Date.now() - Math.min(...tiers.map((t) => t.thresholdMs)),
+  ).toISOString();
 
   const { data, error } = await supabase
     .from("affiliate_applications")
@@ -188,7 +217,7 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
   const rows = (data ?? []) as ApprovedAppRow[];
 
   for (const row of rows) {
-    const tier = selectTier(row);
+    const tier = selectTier(row, tiers);
     if (!tier) continue;
 
     // Skip if the affiliate has already purchased.
@@ -275,9 +304,11 @@ const TRIAL_TIERS: ReadonlyArray<{
 }> = [
   // Most-aged first so we send the highest matured tier that's still pending.
   // Thresholds derive from TRIAL_LENGTH_DAYS: day13/day14 are the "24 hours
-  // left" and "ends tonight" urgency emails, timed to the trial's final days.
+  // left" and "ends tonight" urgency emails; day11 is the personal "3 days left"
+  // founder nudge that lands a couple of days before them.
   { tier: "day14", thresholdMs: TRIAL_LENGTH_DAYS * TRIAL_DAY_MS, sentCol: "trial_email_day14_sent_at" },
   { tier: "day13", thresholdMs: (TRIAL_LENGTH_DAYS - 1) * TRIAL_DAY_MS, sentCol: "trial_email_day13_sent_at" },
+  { tier: "day11", thresholdMs: (TRIAL_LENGTH_DAYS - 3) * TRIAL_DAY_MS, sentCol: "trial_email_day11_sent_at" },
   { tier: "day7", thresholdMs: 7 * TRIAL_DAY_MS, sentCol: "trial_email_day7_sent_at" },
   { tier: "day3", thresholdMs: 3 * TRIAL_DAY_MS, sentCol: "trial_email_day3_sent_at" },
   { tier: "day1", thresholdMs: 24 * 60 * 60 * 1000, sentCol: "trial_email_day1_sent_at" },
@@ -297,17 +328,21 @@ type TrialSubRow = {
   trial_email_day1_sent_at: string | null;
   trial_email_day3_sent_at: string | null;
   trial_email_day7_sent_at: string | null;
+  trial_email_day11_sent_at: string | null;
   trial_email_day13_sent_at: string | null;
   trial_email_day14_sent_at: string | null;
 };
 
-function selectTrialTier(row: TrialSubRow): (typeof TRIAL_TIERS)[number] | null {
+function selectTrialTier(
+  row: TrialSubRow,
+  tiers: ReadonlyArray<(typeof TRIAL_TIERS)[number]>,
+): (typeof TRIAL_TIERS)[number] | null {
   if (!row.trial_started_at) return null;
   const startedAt = new Date(row.trial_started_at).getTime();
   if (!Number.isFinite(startedAt)) return null;
   const age = Date.now() - startedAt;
 
-  for (const t of TRIAL_TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof TrialSubRow];
     if (sent) continue;
@@ -344,7 +379,7 @@ async function fetchUserContact(
 }
 
 async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, number>> {
-  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day3: 0, day7: 0, day13: 0, day14: 0 };
+  const counts: Record<TrialTier, number> = { day0: 0, day1: 0, day3: 0, day7: 0, day11: 0, day13: 0, day14: 0 };
 
   const siteUrl =
     process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -352,13 +387,15 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   const { monthlyPercent, annualPercent } = trialDiscountPercents();
   const annualVariant = process.env.LEMONSQUEEZY_VARIANT_ANNUAL ?? null;
 
-  // Pull trial rows that are at least day0-old (5 min) and still active or on trial.
-  const oldest = new Date(Date.now() - TRIAL_TIERS[TRIAL_TIERS.length - 1].thresholdMs).toISOString();
+  // Pull trial rows older than the smallest effective threshold, still active or on trial.
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(TRIAL_TIERS, "trial", overrides);
+  const oldest = new Date(Date.now() - Math.min(...tiers.map((t) => t.thresholdMs))).toISOString();
 
   const { data, error } = await supabase
     .from("subscriptions")
     .select(
-      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day3_sent_at,trial_email_day7_sent_at,trial_email_day13_sent_at,trial_email_day14_sent_at",
+      "user_id,status,ls_variant_id,trial_started_at,trial_discount_code_monthly,trial_discount_code_annual,ls_discount_id_monthly,ls_discount_id_annual,trial_email_day0_sent_at,trial_email_day1_sent_at,trial_email_day3_sent_at,trial_email_day7_sent_at,trial_email_day11_sent_at,trial_email_day13_sent_at,trial_email_day14_sent_at",
     )
     .lte("trial_started_at", oldest)
     .limit(PER_RUN_LIMIT);
@@ -373,7 +410,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   for (const row of rows) {
     if (row.status !== "on_trial" && row.status !== "active") continue;
 
-    const tier = selectTrialTier(row);
+    const tier = selectTrialTier(row, tiers);
     if (!tier) continue;
 
     // A trial that already converted to paid (early in-app upgrade, or the
@@ -385,11 +422,15 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     // they're onboarding content, and the pro welcome track deliberately
     // excludes trial converts (see the pro_started_at comment in the LS
     // webhook), so this is their only onboarding sequence.
-    if (row.status === "active" && (tier.tier === "day13" || tier.tier === "day14")) {
+    if (
+      row.status === "active" &&
+      (tier.tier === "day11" || tier.tier === "day13" || tier.tier === "day14")
+    ) {
       const nowIso = new Date().toISOString();
       await supabase
         .from("subscriptions")
         .update({
+          trial_email_day11_sent_at: row.trial_email_day11_sent_at ?? nowIso,
           trial_email_day13_sent_at: row.trial_email_day13_sent_at ?? nowIso,
           trial_email_day14_sent_at: row.trial_email_day14_sent_at ?? nowIso,
         })
@@ -416,7 +457,10 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     // missing while the trial is running.
     if (
       row.status === "on_trial" &&
-      (!row.trial_discount_code_monthly || !row.trial_discount_code_annual)
+      (!row.trial_discount_code_monthly || !row.trial_discount_code_annual) &&
+      // No-stacking: don't back-fill a member code for a customer who already
+      // redeemed an affiliate/welcome discount at checkout.
+      !(await hasRedeemedDiscount(supabase, row.user_id))
     ) {
       // trial_ends_at isn't stored on the row; the trial is TRIAL_LENGTH_DAYS
       // long (matching the LS SKU trial period), so reconstruct it from
@@ -517,13 +561,16 @@ type ProSubRow = {
   pro_email_day10_sent_at: string | null;
 };
 
-function selectProTier(row: ProSubRow): (typeof PRO_TIERS)[number] | null {
+function selectProTier(
+  row: ProSubRow,
+  tiers: ReadonlyArray<(typeof PRO_TIERS)[number]>,
+): (typeof PRO_TIERS)[number] | null {
   if (!row.pro_started_at) return null;
   const startedAt = new Date(row.pro_started_at).getTime();
   if (!Number.isFinite(startedAt)) return null;
   const age = Date.now() - startedAt;
 
-  for (const t of PRO_TIERS) {
+  for (const t of tiers) {
     if (age < t.thresholdMs) continue;
     const sent = row[t.sentCol as keyof ProSubRow];
     if (sent) continue;
@@ -540,7 +587,9 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
   const subscriptionUrl = `${siteUrl.replace(/\/$/, "")}/dashboard/subscription`;
 
   // Pull direct-subscriber rows that are at least day0-old (5 min).
-  const oldest = new Date(Date.now() - PRO_TIERS[PRO_TIERS.length - 1].thresholdMs).toISOString();
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(PRO_TIERS, "pro", overrides);
+  const oldest = new Date(Date.now() - Math.min(...tiers.map((t) => t.thresholdMs))).toISOString();
 
   const { data, error } = await supabase
     .from("subscriptions")
@@ -563,7 +612,7 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
     // "thanks for subscribing" follow-ups.
     if (row.status !== "active") continue;
 
-    const tier = selectProTier(row);
+    const tier = selectProTier(row, tiers);
     if (!tier) continue;
 
     const contact = await fetchUserContact(supabase, row.user_id);
@@ -590,6 +639,446 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
     }
 
     counts[tier.tier] += 1;
+  }
+
+  return counts;
+}
+
+// --- Step F: free-app onboarding emails -----------------------------------
+
+// People who downloaded the free desktop app and left their email on the
+// /downloading interstitial (email_subscribers rows with source = 'download-app').
+// They have not entered a card or started a paid trial. This short drip walks
+// them from install -> first win -> the Pro upgrade. Anchored on created_at.
+
+const ONBOARDING_SOURCE = "download-app";
+// After this many consecutive failed sends we stop retrying a lead and mark it
+// abandoned, so one permanently-undeliverable address can't loop forever (a
+// single dead address once logged 5,251 failed sends). A later success resets
+// the count, so transient Resend hiccups don't burn through the budget.
+const MAX_ONBOARDING_SEND_FAILURES = 5;
+const ONBOARDING_TIERS: ReadonlyArray<{
+  tier: OnboardingTier;
+  thresholdMs: number;
+  sentCol: string;
+}> = [
+  // Most-aged first so we send the highest matured tier that's still pending.
+  { tier: "day10", thresholdMs: 240 * 60 * 60 * 1000, sentCol: "onboarding_email_day10_sent_at" },
+  { tier: "day5", thresholdMs: 120 * 60 * 60 * 1000, sentCol: "onboarding_email_day5_sent_at" },
+  { tier: "day2", thresholdMs: 48 * 60 * 60 * 1000, sentCol: "onboarding_email_day2_sent_at" },
+  { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "onboarding_email_day0_sent_at" },
+];
+
+type OnboardingRow = {
+  email: string;
+  created_at: string | null;
+  onboarding_email_day0_sent_at: string | null;
+  onboarding_email_day2_sent_at: string | null;
+  onboarding_email_day5_sent_at: string | null;
+  onboarding_email_day10_sent_at: string | null;
+  onboarding_send_failures: number | null;
+};
+
+function selectOnboardingTier(
+  row: OnboardingRow,
+  tiers: ReadonlyArray<(typeof ONBOARDING_TIERS)[number]>,
+): (typeof ONBOARDING_TIERS)[number] | null {
+  if (!row.created_at) return null;
+  const createdAt = new Date(row.created_at).getTime();
+  if (!Number.isFinite(createdAt)) return null;
+  const age = Date.now() - createdAt;
+
+  for (const t of tiers) {
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof OnboardingRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+// Has this email already become a trial/paid customer? If so we stamp
+// onboarding_converted_at and stop the free-app nurture (a paying user should
+// not be told to "install the app"). Best-effort: on any lookup error we return
+// false (fail open) and just let the drip continue.
+async function onboardingLeadConverted(supabase: CronClient, email: string): Promise<boolean> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data: profile } = await fetchClient
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    const userId = profile && typeof profile.id === "string" ? profile.id : null;
+    if (!userId) return false;
+
+    const { data: subData } = await supabase
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", userId)
+      .limit(1);
+    if (!Array.isArray(subData) || subData.length === 0) return false;
+    const status = (subData[0] as { status?: string | null }).status ?? "";
+    return status === "active" || status === "on_trial" || status === "past_due" || status === "paused";
+  } catch (err) {
+    console.error("cron: onboarding conversion check threw", err);
+    return false;
+  }
+}
+
+async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<OnboardingTier, number>> {
+  const counts: Record<OnboardingTier, number> = { day0: 0, day2: 0, day5: 0, day10: 0 };
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const base = siteUrl.replace(/\/$/, "");
+  const helpUrl = `${base}/help`;
+  const extensionUrl = `${base}/extension`;
+
+  // Optional static first-timer discount for the day10 upgrade ask. If no code
+  // is configured, day10 sends without a code (still a valid email). Set a
+  // single reusable LS code (e.g. WELCOME15) and FREE_ONBOARDING_DISCOUNT_CODE /
+  // _PERCENT to turn the incentive on - no per-lead LS minting needed.
+  const discountCode = process.env.FREE_ONBOARDING_DISCOUNT_CODE || null;
+  const discountPercent = Number.parseInt(process.env.FREE_ONBOARDING_DISCOUNT_PERCENT ?? "", 10);
+  const pricingUrl = discountCode
+    ? `${base}/pricing?code=${encodeURIComponent(discountCode)}`
+    : `${base}/pricing`;
+
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(ONBOARDING_TIERS, "onboarding", overrides);
+
+  // Wrapped so that if the onboarding columns do not exist yet (prod schema lag
+  // before 20260813_free_onboarding_funnel.sql is applied), this step no-ops
+  // instead of breaking the rest of the cron.
+  try {
+    const { data, error } = await supabase
+      .from("email_subscribers")
+      .select(
+        "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at,onboarding_send_failures",
+      )
+      .eq("source", ONBOARDING_SOURCE)
+      .is("unsubscribed_at", null)
+      .is("onboarding_converted_at", null)
+      // Leads that failed too many times are parked, so a dead address can't
+      // hog the per-run budget forever.
+      .is("onboarding_abandoned_at", null)
+      // Exclude rows that already finished the drip (day10 is the last tier) so
+      // the per-run budget goes to leads still in progress.
+      .is("onboarding_email_day10_sent_at", null)
+      .limit(PER_RUN_LIMIT);
+
+    if (error) {
+      // Missing columns on schema lag land here - log and move on.
+      console.error("cron: onboarding query failed (columns may not exist yet)", error);
+      return counts;
+    }
+
+    const rows = (data ?? []) as OnboardingRow[];
+
+    for (const row of rows) {
+      if (!row.email) continue;
+
+      // A reserved test address (e.g. drip-test@example.com) can never be
+      // delivered, so every send fails and the lead is re-picked every run.
+      // Park it up front instead of burning the retry budget on it. The
+      // MAX_ONBOARDING_SEND_FAILURES counter is the backstop for addresses that
+      // only turn out to be dead at send time; this catches the ones we can
+      // tell are undeliverable before we ever call Resend.
+      if (isUndeliverableTestEmail(row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ onboarding_abandoned_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const tier = selectOnboardingTier(row, tiers);
+      if (!tier) continue;
+
+      // Stop nurturing anyone who already became a trial/paid customer.
+      if (await onboardingLeadConverted(supabase, row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ onboarding_converted_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const sent = await sendOnboardingEmail({
+        tier: tier.tier,
+        to: row.email,
+        pricingUrl,
+        helpUrl,
+        extensionUrl,
+        discountCode,
+        discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
+      });
+
+      if (!sent) {
+        // Only a successful send stamps the tier, so without this a permanently
+        // undeliverable address would be re-picked and re-sent every run
+        // forever. Count the failure; once it crosses the cap, park the lead so
+        // it drops out of the pool. A transient failure below the cap just waits
+        // for the next run.
+        const failures = (row.onboarding_send_failures ?? 0) + 1;
+        const patch: Record<string, unknown> = { onboarding_send_failures: failures };
+        if (failures >= MAX_ONBOARDING_SEND_FAILURES) {
+          patch.onboarding_abandoned_at = new Date().toISOString();
+        }
+        const { error: failError } = await supabase
+          .from("email_subscribers")
+          .update(patch)
+          .eq("email", row.email);
+        if (failError) {
+          console.error("cron: onboarding failure-count update failed", { email: row.email, failError });
+        }
+        continue;
+      }
+
+      const { error: updateError } = await supabase
+        .from("email_subscribers")
+        // A good send clears any prior transient-failure streak on this lead.
+        .update({ [tier.sentCol]: new Date().toISOString(), onboarding_send_failures: 0 })
+        .eq("email", row.email);
+
+      if (updateError) {
+        console.error("cron: onboarding update failed", { email: row.email, tier: tier.tier, updateError });
+        continue;
+      }
+
+      counts[tier.tier] += 1;
+    }
+  } catch (err) {
+    console.error("cron: onboarding step threw", err);
+    return counts;
+  }
+
+  return counts;
+}
+
+// --- Step G: app-trial nurture emails -------------------------------------
+
+// People who installed the desktop app and typed their email into the startup
+// walkthrough. The licensing worker forwards them to /api/app-trial/signup,
+// which stamps app_trial_started_at. They are on the LOCAL 14-day app trial:
+// no card, no Lemon Squeezy subscription, so nothing auto-charges and nothing
+// else in this cron would ever reach them. Anchored on app_trial_started_at,
+// not created_at, so a long-standing newsletter subscriber who installs today
+// starts at day0 instead of maturing straight into the lapsed tail.
+
+const MAX_APP_TRIAL_SEND_FAILURES = 5;
+const APP_TRIAL_TIERS: ReadonlyArray<{
+  tier: AppTrialTier;
+  thresholdMs: number;
+  sentCol: string;
+}> = [
+  // Most-aged first so we send the highest matured tier that is still pending.
+  { tier: "day30", thresholdMs: 30 * TRIAL_DAY_MS, sentCol: "app_trial_email_day30_sent_at" },
+  { tier: "day21", thresholdMs: 21 * TRIAL_DAY_MS, sentCol: "app_trial_email_day21_sent_at" },
+  { tier: "day17", thresholdMs: 17 * TRIAL_DAY_MS, sentCol: "app_trial_email_day17_sent_at" },
+  { tier: "day14", thresholdMs: TRIAL_LENGTH_DAYS * TRIAL_DAY_MS, sentCol: "app_trial_email_day14_sent_at" },
+  { tier: "day12", thresholdMs: (TRIAL_LENGTH_DAYS - 2) * TRIAL_DAY_MS, sentCol: "app_trial_email_day12_sent_at" },
+  { tier: "day10", thresholdMs: 10 * TRIAL_DAY_MS, sentCol: "app_trial_email_day10_sent_at" },
+  { tier: "day7", thresholdMs: 7 * TRIAL_DAY_MS, sentCol: "app_trial_email_day7_sent_at" },
+  { tier: "day5", thresholdMs: 5 * TRIAL_DAY_MS, sentCol: "app_trial_email_day5_sent_at" },
+  { tier: "day3", thresholdMs: 3 * TRIAL_DAY_MS, sentCol: "app_trial_email_day3_sent_at" },
+  { tier: "day1", thresholdMs: TRIAL_DAY_MS, sentCol: "app_trial_email_day1_sent_at" },
+  { tier: "day0", thresholdMs: 5 * 60 * 1000, sentCol: "app_trial_email_day0_sent_at" },
+];
+
+type AppTrialRow = {
+  email: string;
+  app_trial_started_at: string | null;
+  app_trial_email_day0_sent_at: string | null;
+  app_trial_email_day1_sent_at: string | null;
+  app_trial_email_day3_sent_at: string | null;
+  app_trial_email_day5_sent_at: string | null;
+  app_trial_email_day7_sent_at: string | null;
+  app_trial_email_day10_sent_at: string | null;
+  app_trial_email_day12_sent_at: string | null;
+  app_trial_email_day14_sent_at: string | null;
+  app_trial_email_day17_sent_at: string | null;
+  app_trial_email_day21_sent_at: string | null;
+  app_trial_email_day30_sent_at: string | null;
+  app_trial_send_failures: number | null;
+};
+
+function selectAppTrialTier(
+  row: AppTrialRow,
+  tiers: ReadonlyArray<(typeof APP_TRIAL_TIERS)[number]>,
+): (typeof APP_TRIAL_TIERS)[number] | null {
+  if (!row.app_trial_started_at) return null;
+  const startedAt = new Date(row.app_trial_started_at).getTime();
+  if (!Number.isFinite(startedAt)) return null;
+  const age = Date.now() - startedAt;
+
+  for (const t of tiers) {
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof AppTrialRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+// Like onboardingLeadConverted, but blind to comped subscriptions.
+//
+// A no-card trial is granted as an in-house comp, which writes a subscriptions
+// row with status 'active' and a sentinel ls_subscription_id of 'comp:<uuid>'.
+// The plain converted check treats that as a paying customer, so every no-card
+// trial would be stamped converted on its first pass and never hear from us,
+// which is the exact silence this drip exists to fix. Only a real (non-comp)
+// live subscription counts.
+async function appTrialLeadConverted(supabase: CronClient, email: string): Promise<boolean> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data: profile } = await fetchClient
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    const userId = profile && typeof profile.id === "string" ? profile.id : null;
+    if (!userId) return false;
+
+    const { data: subData } = await supabase
+      .from("subscriptions")
+      .select("status,ls_subscription_id")
+      .eq("user_id", userId)
+      .limit(20);
+    if (!Array.isArray(subData) || subData.length === 0) return false;
+
+    return subData.some((row) => {
+      const r = row as { status?: string | null; ls_subscription_id?: string | null };
+      const id = typeof r.ls_subscription_id === "string" ? r.ls_subscription_id : "";
+      if (id.startsWith("comp:")) return false;
+      const status = r.status ?? "";
+      return status === "active" || status === "on_trial" || status === "past_due" || status === "paused";
+    });
+  } catch (err) {
+    console.error("cron: app-trial conversion check threw", err);
+    return false;
+  }
+}
+
+async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrialTier, number>> {
+  const counts: Record<AppTrialTier, number> = {
+    day0: 0, day1: 0, day3: 0, day5: 0, day7: 0, day10: 0,
+    day12: 0, day14: 0, day17: 0, day21: 0, day30: 0,
+  };
+
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const base = siteUrl.replace(/\/$/, "");
+  const helpUrl = `${base}/help`;
+
+  // Optional static discount for the day14 ask, same mechanic as the free-app
+  // onboarding drip: set a single reusable Lemon Squeezy code rather than
+  // minting one per lead, since these people have no subscription row to hang
+  // a unique code on. With no code configured, day14 sends without one.
+  const discountCode = process.env.APP_TRIAL_DISCOUNT_CODE || null;
+  const parsedPercent = Number.parseInt(process.env.APP_TRIAL_DISCOUNT_PERCENT ?? "", 10);
+  const discountPercent = Number.isFinite(parsedPercent) ? parsedPercent : 0;
+  const pricingUrl = discountCode
+    ? `${base}/pricing?code=${encodeURIComponent(discountCode)}`
+    : `${base}/pricing`;
+
+  const overrides = await getFunnelOverrides();
+  const tiers = withOverrides(APP_TRIAL_TIERS, "apptrial", overrides);
+
+  // Wrapped so that if the app-trial columns do not exist yet (prod schema lag
+  // before 20260922_app_trial_funnel.sql is applied), this step no-ops instead
+  // of breaking the rest of the cron.
+  try {
+    const { data, error } = await supabase
+      .from("email_subscribers")
+      .select(
+        "email,app_trial_started_at,app_trial_email_day0_sent_at,app_trial_email_day1_sent_at,app_trial_email_day3_sent_at,app_trial_email_day5_sent_at,app_trial_email_day7_sent_at,app_trial_email_day10_sent_at,app_trial_email_day12_sent_at,app_trial_email_day14_sent_at,app_trial_email_day17_sent_at,app_trial_email_day21_sent_at,app_trial_email_day30_sent_at,app_trial_send_failures",
+      )
+      .not("app_trial_started_at", "is", null)
+      .is("unsubscribed_at", null)
+      .is("app_trial_converted_at", null)
+      .is("app_trial_abandoned_at", null)
+      // day30 is the last tier, so a row that has had it is finished.
+      .is("app_trial_email_day30_sent_at", null)
+      .limit(PER_RUN_LIMIT);
+
+    if (error) {
+      console.error("cron: app-trial query failed (columns may not exist yet)", error);
+      return counts;
+    }
+
+    const rows = (data ?? []) as AppTrialRow[];
+
+    for (const row of rows) {
+      if (!row.email) continue;
+
+      if (isUndeliverableTestEmail(row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ app_trial_abandoned_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const tier = selectAppTrialTier(row, tiers);
+      if (!tier) continue;
+
+      // Stop nurturing anyone who has become a trial/paid customer: the day12
+      // and day14 copy tells them their trial is ending, which is wrong for
+      // someone who already subscribed.
+      if (await appTrialLeadConverted(supabase, row.email)) {
+        await supabase
+          .from("email_subscribers")
+          .update({ app_trial_converted_at: new Date().toISOString() })
+          .eq("email", row.email);
+        continue;
+      }
+
+      const sent = await sendAppTrialEmail({
+        tier: tier.tier,
+        to: row.email,
+        name: "",
+        pricingUrl,
+        helpUrl,
+        discountCode,
+        discountPercent,
+      });
+
+      if (!sent) {
+        // Only a successful send stamps the tier, so without a failure counter a
+        // permanently undeliverable address would be re-picked every run forever.
+        const failures = (row.app_trial_send_failures ?? 0) + 1;
+        const patch: Record<string, unknown> = { app_trial_send_failures: failures };
+        if (failures >= MAX_APP_TRIAL_SEND_FAILURES) {
+          patch.app_trial_abandoned_at = new Date().toISOString();
+        }
+        const { error: failError } = await supabase
+          .from("email_subscribers")
+          .update(patch)
+          .eq("email", row.email);
+        if (failError) {
+          console.error("cron: app-trial failure-count update failed", { email: row.email, failError });
+        }
+        continue;
+      }
+
+      const { error: updateError } = await supabase
+        .from("email_subscribers")
+        // A good send clears any prior transient-failure streak on this lead.
+        .update({ [tier.sentCol]: new Date().toISOString(), app_trial_send_failures: 0 })
+        .eq("email", row.email);
+
+      if (updateError) {
+        console.error("cron: app-trial update failed", { email: row.email, tier: tier.tier, updateError });
+        continue;
+      }
+
+      counts[tier.tier] += 1;
+    }
+  } catch (err) {
+    console.error("cron: app-trial step threw", err);
+    return counts;
   }
 
   return counts;
@@ -649,6 +1138,12 @@ export async function GET(request: Request) {
   const emails = await sendTierEmails(supabase);
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
+  const onboarding = await sendFreeOnboardingEmails(supabase);
+  const appTrial = await sendAppTrialEmails(supabase);
+  // Monthly affiliate swipe-kit. Guarded by an app_config period check inside
+  // the runner, so on all but the first run of each month this is a single
+  // cheap app_config read that returns "already sent".
+  const swipeKit = await runSwipeKitBroadcast(supabase as unknown as SwipeKitDb, new Date());
   const webhookEventsPruned = await pruneWebhookEvents(supabase);
 
   return NextResponse.json({
@@ -657,6 +1152,9 @@ export async function GET(request: Request) {
     emails,
     trial,
     pro,
+    onboarding,
+    appTrial,
+    swipeKit,
     webhookEventsPruned,
   });
 }

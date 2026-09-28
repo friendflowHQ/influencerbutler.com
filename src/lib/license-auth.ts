@@ -22,7 +22,8 @@
  */
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { validateLicenseWithLs } from "@/lib/lemonsqueezy";
 
 export type ResolvedSessionAuth = {
   kind: "session";
@@ -65,7 +66,15 @@ type AdminLookupClient = {
     select: (cols: string) => {
       eq: (col: string, value: string) => {
         maybeSingle: () => Promise<{
-          data: { user_id?: string | null; key_hash?: string | null } | null;
+          data:
+            | { id?: string | null; user_id?: string | null; key_hash?: string | null }
+            | null;
+          error: { message?: string } | null;
+        }>;
+        limit: (count: number) => Promise<{
+          data:
+            | { id?: string | null; user_id?: string | null; key_hash?: string | null }[]
+            | null;
           error: { message?: string } | null;
         }>;
       };
@@ -75,6 +84,10 @@ type AdminLookupClient = {
         error: { message?: string } | null;
       }>;
     };
+    upsert: (
+      values: Record<string, unknown>,
+      options?: { onConflict?: string },
+    ) => Promise<{ error: { message?: string } | null }>;
   };
   auth: {
     admin: {
@@ -85,6 +98,106 @@ type AdminLookupClient = {
     };
   };
 };
+
+// A Lemon Squeezy / in-house comp key is always a UUID (comp keys are minted
+// as randomUUID().toUpperCase()). Gating the LS backfill on this shape means an
+// attacker spraying arbitrary strings at a bearer route never reaches the LS
+// API; only UUID-shaped guesses do, and those still have to hit a real key in
+// an unguessable keyspace.
+const LS_KEY_FORMAT_RE =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+// Per-instance negative cache so a repeated bad (but UUID-shaped) key does not
+// hit the LS API on every request. Keyed by license hash -> expiry epoch ms.
+// This is abuse dampening, not security; security is the format gate plus the
+// keyspace. Best-effort and bounded.
+const LS_BACKFILL_NEGATIVE_TTL_MS = 10 * 60 * 1000;
+const LS_BACKFILL_NEGATIVE_MAX = 500;
+const lsBackfillNegativeCache = new Map<string, number>();
+
+function negativeCacheHas(hash: string): boolean {
+  const expiry = lsBackfillNegativeCache.get(hash);
+  if (expiry == null) return false;
+  if (expiry <= Date.now()) {
+    lsBackfillNegativeCache.delete(hash);
+    return false;
+  }
+  return true;
+}
+
+function negativeCacheAdd(hash: string): void {
+  if (lsBackfillNegativeCache.size >= LS_BACKFILL_NEGATIVE_MAX) {
+    const oldest = lsBackfillNegativeCache.keys().next().value;
+    if (oldest !== undefined) lsBackfillNegativeCache.delete(oldest);
+  }
+  lsBackfillNegativeCache.set(hash, Date.now() + LS_BACKFILL_NEGATIVE_TTL_MS);
+}
+
+/**
+ * Last-resort self-heal for a bearer key with no local license_keys row: the LS
+ * license_key_created webhook drops silently (it returns 200, so LS never
+ * retries), leaving a paying customer's key unknown to us. Mirrors the read-time
+ * backfill in /api/me/subscription-details, but works from the bare key alone
+ * (no session, no email) via the public LS validate endpoint. Returns the owning
+ * user_id on success, or null (leaving the caller to fail as before).
+ *
+ * Deliberately does NOT create a stub user: this runs on unauthenticated bearer
+ * routes, unlike the signature-verified webhook. If LS knows the key but no
+ * local profile matches the customer email, we log and give up.
+ */
+async function backfillLicenseRowFromLs(
+  admin: AdminLookupClient,
+  key: string,
+  licenseHash: string,
+): Promise<string | null> {
+  if (!LS_KEY_FORMAT_RE.test(key)) return null;
+  if (negativeCacheHas(licenseHash)) return null;
+
+  const lsLicense = await validateLicenseWithLs(key);
+  if (!lsLicense) {
+    negativeCacheAdd(licenseHash);
+    return null;
+  }
+
+  const email = lsLicense.customerEmail?.trim().toLowerCase() || null;
+  if (!email) {
+    negativeCacheAdd(licenseHash);
+    return null;
+  }
+
+  const profile = await admin
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  const userId = profile.data?.id ? String(profile.data.id) : null;
+  if (!userId) {
+    // LS knows the key but we have no account for the buyer (e.g. a guest
+    // checkout where every webhook dropped). Nothing safe to attach it to.
+    console.warn("license-auth: LS backfill found no local profile for buyer");
+    negativeCacheAdd(licenseHash);
+    return null;
+  }
+
+  const upsert = await admin.from("license_keys").upsert(
+    {
+      ls_license_key_id: lsLicense.lsLicenseKeyId,
+      user_id: userId,
+      subscription_id: null,
+      key: lsLicense.key,
+      key_hash: hashLicenseKey(lsLicense.key),
+      status: lsLicense.status,
+      activation_limit: lsLicense.activationLimit,
+    },
+    { onConflict: "ls_license_key_id" },
+  );
+  if (upsert.error) {
+    console.error("license-auth: LS backfill upsert failed", upsert.error);
+    return null;
+  }
+  console.info("license-auth: self-healed missing license_keys row from LS");
+  return userId;
+}
 
 function sha256Hex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -101,21 +214,30 @@ async function resolveLicenseBearer(
   if (key.length < LICENSE_KEY_MIN || key.length > LICENSE_KEY_MAX) {
     return { ok: false, status: 401, error: "Invalid license key" };
   }
-  const admin = createAdminClient() as unknown as AdminLookupClient | null;
-  if (!admin) {
+  let admin: AdminLookupClient;
+  try {
+    admin = createAdminClient() as unknown as AdminLookupClient;
+  } catch (err) {
+    console.error("license-auth: service-role client unavailable", err);
     return { ok: false, status: 503, error: "Server misconfigured" };
   }
   const licenseHash = hashLicenseKey(key);
+  // .limit(1) (not .maybeSingle()) on purpose: duplicate license_keys rows can
+  // share one key_hash (the LS self-heal upsert keys on ls_license_key_id, not
+  // key_hash, so a re-issued/re-subscribed key can leave two rows). maybeSingle
+  // ERRORS on 2+ rows, which used to 500 the whole assistant for that user with
+  // "License lookup failed". Any matching row resolves the same owning user, so
+  // taking the first is correct and can never error on duplicates.
   const hashLookup = await admin
     .from("license_keys")
     .select("user_id, key_hash")
     .eq("key_hash", licenseHash)
-    .maybeSingle();
+    .limit(1);
   if (hashLookup.error) {
     console.error("license-auth: license_keys lookup failed", hashLookup.error);
     return { ok: false, status: 500, error: "License lookup failed" };
   }
-  let row = hashLookup.data;
+  let row = hashLookup.data?.[0] ?? null;
   // Self-heal fallback: a valid row may exist with a null or stale key_hash
   // (e.g. written before the key_hash backfill, or by a path that did not
   // compute it). Match on the plaintext key, then backfill the hash so the
@@ -125,7 +247,7 @@ async function resolveLicenseBearer(
       .from("license_keys")
       .select("user_id, key_hash")
       .eq("key", key)
-      .maybeSingle();
+      .limit(1);
     if (keyLookup.error) {
       console.error(
         "license-auth: license_keys key fallback failed",
@@ -133,9 +255,10 @@ async function resolveLicenseBearer(
       );
       return { ok: false, status: 500, error: "License lookup failed" };
     }
-    if (keyLookup.data && keyLookup.data.user_id) {
-      row = keyLookup.data;
-      if (keyLookup.data.key_hash !== licenseHash) {
+    const keyRow = keyLookup.data?.[0] ?? null;
+    if (keyRow && keyRow.user_id) {
+      row = keyRow;
+      if (keyRow.key_hash !== licenseHash) {
         const upd = await admin
           .from("license_keys")
           .update({ key_hash: licenseHash })
@@ -146,6 +269,14 @@ async function resolveLicenseBearer(
           console.warn("license-auth: key_hash backfill failed", upd.error);
         }
       }
+    }
+  }
+  // Still no row: the license_key_created webhook may have dropped. Try a
+  // one-shot self-heal from the LS API (UUID-shaped keys only, negative-cached).
+  if (!row || !row.user_id) {
+    const healedUserId = await backfillLicenseRowFromLs(admin, key, licenseHash);
+    if (healedUserId) {
+      row = { user_id: healedUserId, key_hash: licenseHash };
     }
   }
   if (!row || !row.user_id) {

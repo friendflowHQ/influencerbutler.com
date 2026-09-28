@@ -16,6 +16,7 @@ export const TRIAL_LENGTH_DAYS = 14;
 // Per-plan price in cents (used by promo-resolver math).
 export const PRICE_CENTS = {
   solo: { monthly: 3900, annual: 39000 },
+  duo: { monthly: 6900, annual: 69000 },
   team: { monthly: 12900, annual: 129000 },
   agency: { monthly: 29900, annual: 299000 },
 } as const;
@@ -23,6 +24,7 @@ export const PRICE_CENTS = {
 // Per-tier seat count (mirrors LS product activation_limit setting).
 export const SEAT_LIMIT = {
   solo: 1,
+  duo: 3,
   team: 10,
   agency: 25,
 } as const;
@@ -51,9 +53,10 @@ export function annualSavingsPct(tier: keyof typeof PRICE_CENTS): number {
 
 // Per-tier label used in the marketing copy. Solo intentionally says
 // "1 device" to underline the upgrade pressure - if the customer wants
-// a 2nd device, they upgrade to Team.
+// a 2nd device, they upgrade to Trio.
 export const SEAT_COPY = {
   solo: "1 device",
+  duo: "Up to 3 devices",
   team: "Up to 10 devices",
   agency: "Up to 25 devices",
 } as const;
@@ -65,12 +68,16 @@ export type Interval = "monthly" | "annual";
 // price change can't ship without thinking about the user-facing copy.
 export const TIER_NAME: Record<Tier, string> = {
   solo: "Pro Solo",
+  // Display name is "Pro Trio" (matches the LS product); the internal tier
+  // key, plan strings, and env vars keep the original "duo"/"DUO" spelling.
+  duo: "Pro Trio",
   team: "Pro Team",
   agency: "Pro Agency",
 };
 
 export const TIER_TAGLINE: Record<Tier, string> = {
   solo: "Full power, 1 device",
+  duo: "For small teams - up to 3 devices",
   team: "For creator teams - up to 10 devices",
   agency: "For agencies - up to 25 devices",
 };
@@ -79,15 +86,20 @@ export const TIER_TAGLINE: Record<Tier, string> = {
 // the public /pricing page both render these verbatim.
 export const TIER_FEATURES: Record<Tier, readonly string[]> = {
   solo: [
-    "All 40+ automation tools",
+    "All 50+ automation tools",
     "Unlimited CC brand messages",
     "Unlimited Instagram DMs",
     "Commission harvesting",
     "Deep link & affiliate integrations",
     "1 activated device",
   ],
-  team: [
+  duo: [
     "Everything in Pro Solo",
+    "Up to 3 activated devices",
+    "Shared seat pool",
+  ],
+  team: [
+    "Everything in Pro Trio",
     "Up to 10 activated devices",
     "Shared seat pool for your team",
     "Priority email support",
@@ -124,6 +136,8 @@ export type PlanString =
   | "annual"
   | "solo-monthly"
   | "solo-annual"
+  | "duo-monthly"
+  | "duo-annual"
   | "team-monthly"
   | "team-annual"
   | "agency-monthly"
@@ -135,6 +149,8 @@ const TIER_BY_PLAN: Record<string, Tier | "addon"> = {
   annual: "solo",
   "solo-monthly": "solo",
   "solo-annual": "solo",
+  "duo-monthly": "duo",
+  "duo-annual": "duo",
   "team-monthly": "team",
   "team-annual": "team",
   "agency-monthly": "agency",
@@ -147,6 +163,8 @@ const CADENCE_BY_PLAN: Record<string, Interval | null> = {
   annual: "annual",
   "solo-monthly": "monthly",
   "solo-annual": "annual",
+  "duo-monthly": "monthly",
+  "duo-annual": "annual",
   "team-monthly": "monthly",
   "team-annual": "annual",
   "agency-monthly": "monthly",

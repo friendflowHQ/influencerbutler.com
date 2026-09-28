@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
+import SiteSearch from "@/components/SiteSearch";
 
 /**
  * Header and footer for the /blog pages. These mirror the markup and styling of
@@ -17,10 +18,13 @@ const NAV_LINKS = [
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#pricing", label: "Pricing" },
+  { href: "/download", label: "Download" },
+  { href: "/extension", label: "Extension" },
   { href: "/#faq", label: "FAQ" },
   { href: "/course/amazon-influencer", label: "Free Course" },
   { href: "/blog", label: "Blog", current: true },
   { href: "/about", label: "About" },
+  { href: "/tools", label: "Free Tools" },
   { href: "/login", label: "Login" },
 ];
 
@@ -44,15 +48,15 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-5 lg:flex">
           {NAV_LINKS.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
                 className={
                   item.current
-                    ? "text-[0.95rem] font-medium text-orange-500"
-                    : "text-[0.95rem] font-medium text-slate-500 transition-colors hover:text-orange-500"
+                    ? "whitespace-nowrap text-[0.9rem] font-medium text-orange-500"
+                    : "whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-500"
                 }
               >
                 {item.label}
@@ -61,9 +65,15 @@ export function SiteHeader() {
           ))}
         </ul>
 
+        {/* The link row is tight, so search is a magnifier that expands into a
+            field on click rather than a permanent inline box. */}
+        <div className="ml-3 hidden lg:block">
+          <SiteSearch variant="header" />
+        </div>
+
         <a
           href="/go/trial?src=blog-nav"
-          className="ml-4 hidden rounded-[14px] bg-orange-500 px-6 py-2.5 text-[0.95rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 md:inline-flex"
+          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-500 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 lg:inline-flex"
         >
           Start Free Trial
         </a>
@@ -73,7 +83,7 @@ export function SiteHeader() {
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle navigation menu"
           aria-expanded={open}
-          className="flex flex-col gap-1.5 md:hidden"
+          className="flex flex-col gap-1.5 lg:hidden"
         >
           <span className="h-0.5 w-6 bg-slate-900" />
           <span className="h-0.5 w-6 bg-slate-900" />
@@ -82,8 +92,11 @@ export function SiteHeader() {
       </nav>
 
       {open ? (
-        <div className="border-t border-slate-200 bg-white md:hidden">
+        <div className="border-t border-slate-200 bg-white lg:hidden">
           <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
+            <li className="mb-2">
+              <SiteSearch variant="inline" onNavigate={() => setOpen(false)} />
+            </li>
             {NAV_LINKS.map((item) => (
               <li key={item.href}>
                 <Link
@@ -175,8 +188,17 @@ export function SiteFooter() {
               <Link href="/course/amazon-influencer" className="block text-slate-500 hover:text-orange-500">
                 Free Amazon Influencer Course
               </Link>
+              <Link href="/tools" className="block text-slate-500 hover:text-orange-500">
+                Free Tools
+              </Link>
               <Link href="/affiliates" className="block text-slate-500 hover:text-orange-500">
                 Affiliates: Earn 30%
+              </Link>
+              <Link href="/download" className="block text-slate-500 hover:text-orange-500">
+                Download the App
+              </Link>
+              <Link href="/extension" className="block text-slate-500 hover:text-orange-500">
+                Chrome Extension: Free
               </Link>
               <Link href="/about" className="block text-slate-500 hover:text-orange-500">
                 About Liz
@@ -209,12 +231,12 @@ export function SiteFooter() {
               Support
             </h4>
             <div className="space-y-2.5 text-sm">
-              <a
-                href="mailto:hello@influencerbutler.com"
+              <Link
+                href="/contact"
                 className="block text-slate-500 hover:text-orange-500"
               >
                 Contact Us
-              </a>
+              </Link>
               <Link href="/dashboard" className="block text-slate-500 hover:text-orange-500">
                 My Account
               </Link>

@@ -9,13 +9,19 @@ export const dynamic = "force-dynamic";
 /**
  * Year-end 1099-NEC prep: per-affiliate total of SUCCESSFUL payouts in a
  * calendar year, joined to their tax form. Flags US affiliates at or above the
- * $600 reporting threshold. Does NOT reveal the full TIN (only tin_last4) - use
- * admin-tax-reveal for the actual number when filing. Super-admin only; audited.
+ * 1099-NEC reporting threshold for that year. Does NOT reveal the full TIN
+ * (only tin_last4) - use admin-tax-reveal for the actual number when filing.
+ * Super-admin only; audited.
  *
  * Query: ?year=YYYY (defaults to the prior calendar year).
  */
 
-const REPORTABLE_THRESHOLD_CENTS = 60000; // $600
+// One Big Beautiful Bill Act (July 2025): the 1099-NEC/1099-MISC threshold
+// rises from $600 to $2,000 for payments made in calendar year 2026, indexed
+// for inflation in later years. Tax years 2025 and earlier keep $600.
+function reportableThresholdCents(taxYear: number): number {
+  return taxYear >= 2026 ? 200000 : 60000;
+}
 
 export async function GET(request: Request) {
   const actor = await requirePermission("affiliates.tax.view", request);
@@ -28,6 +34,8 @@ export async function GET(request: Request) {
   const now = new Date();
   const year =
     yearParam && /^\d{4}$/.test(yearParam) ? Number(yearParam) : now.getUTCFullYear() - 1;
+
+  const thresholdCents = reportableThresholdCents(year);
 
   const start = new Date(Date.UTC(year, 0, 1)).toISOString();
   const end = new Date(Date.UTC(year + 1, 0, 1)).toISOString();
@@ -90,7 +98,7 @@ export async function GET(request: Request) {
           region: (form?.region as string | null) ?? null,
           postalCode: (form?.postal_code as string | null) ?? null,
         },
-        reportable: isUs && totals.totalCents >= REPORTABLE_THRESHOLD_CENTS,
+        reportable: isUs && totals.totalCents >= thresholdCents,
       };
     })
     .sort((a, b) => b.totalCents - a.totalCents);
@@ -105,7 +113,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     year,
-    thresholdCents: REPORTABLE_THRESHOLD_CENTS,
+    thresholdCents,
     affiliates,
   });
 }

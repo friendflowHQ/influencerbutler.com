@@ -28,6 +28,9 @@ import { hashLicenseKey } from "@/lib/license-auth";
 import { addMonthsUtc, addDaysUtc, FOREVER_TOKEN, COMP_PLACEHOLDER_DOMAIN } from "@/lib/comp-codes";
 import { SEAT_LIMIT, TIER_NAME, tierForPlan, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { resolveVariantId } from "@/lib/lemonsqueezy";
+import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export type IssueCompInput = {
   /**
@@ -50,7 +53,7 @@ export type IssueCompInput = {
   /**
    * Devices allowed on the key at once (the license_keys.activation_limit).
    * Omitted -> the plan's default seat count (Solo 1 / Team 10 / Agency 25,
-   * Daily Deals add-on 1).
+   * Deals add-on 1).
    */
   seats?: number | null;
   /** When true, the comp never expires and is never auto-cancelled. */
@@ -155,15 +158,15 @@ async function sendCompEmail(params: {
   days: number | null;
   forever: boolean;
   signInLink: string | null;
+  /** Human name of the granted plan for the body, with any needed article
+   *  (e.g. "Influencer Butler Pro" or "the Deals Butler Workspace"). */
+  planPhrase: string;
+  /** Subject line for this plan (e.g. "Your free Influencer Butler Pro license"). */
+  subject: string;
   /** Affiliate branded checkout link (attribution) and issuer name, when gifted. */
   convertLink?: string | null;
   issuerName?: string | null;
 }): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("comp-issue: RESEND_API_KEY not set - comp email skipped");
-    return;
-  }
   const siteUrl = (
     process.env.SITE_URL ??
     process.env.NEXT_PUBLIC_SITE_URL ??
@@ -172,10 +175,10 @@ async function sendCompEmail(params: {
 
   const durationPhrase =
     params.forever || (params.months == null && params.days == null)
-      ? "Influencer Butler Pro, free forever"
+      ? `${params.planPhrase}, free forever`
       : params.days != null
-        ? `${params.days} day${params.days === 1 ? "" : "s"} of Influencer Butler Pro, free`
-        : `${params.months} month${params.months === 1 ? "" : "s"} of Influencer Butler Pro, free`;
+        ? `${params.days} day${params.days === 1 ? "" : "s"} of ${params.planPhrase}, free`
+        : `${params.months} month${params.months === 1 ? "" : "s"} of ${params.planPhrase}, free`;
 
   const gifted = params.issuerName ? ` from ${params.issuerName}` : "";
   const lines = [
@@ -187,6 +190,7 @@ async function sendCompEmail(params: {
     ``,
     `1. Download the desktop app: ${siteUrl}/download`,
     `2. Open it and paste the license key above when prompted.`,
+    `3. New here? Our quick-start guides walk you through the butlers: ${siteUrl}/help`,
   ];
   if (params.signInLink) {
     lines.push(
@@ -199,11 +203,17 @@ async function sendCompEmail(params: {
   if (params.convertLink) {
     lines.push(
       ``,
-      `Want to keep Pro when your free time is up? Upgrade any time here:`,
+      `Want to keep it when your free time is up? Upgrade any time here:`,
       ``,
       `    ${params.convertLink}`,
     );
   }
+  lines.push(
+    ``,
+    `Come say hi in our free Facebook community: swap tips and get help from other creators:`,
+    ``,
+    `    ${FACEBOOK_GROUP_URL}`,
+  );
   lines.push(
     ``,
     `Questions? Just reply to this email and a real human will answer.`,
@@ -211,24 +221,13 @@ async function sendCompEmail(params: {
     `- The Influencer Butler team`,
   );
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [params.to],
-        subject: "Your free Influencer Butler Pro license",
-        text: lines.join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("comp-issue: Resend send failed", { status: res.status, body: text.slice(0, 500) });
-    }
-  } catch (error) {
-    console.error("comp-issue: Resend send threw", error);
-  }
+  await sendEmail({
+    from: transactionalFrom(),
+    to: params.to,
+    subject: params.subject,
+    text: lines.join("\n"),
+    category: "comp_issue",
+  });
 }
 
 export async function issueInHouseComp(input: IssueCompInput): Promise<IssueCompResult> {
@@ -267,9 +266,9 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     console.error("comp-issue: variant resolve failed", { plan: input.plan, variant });
     return { ok: false, status: 500, error: "Server misconfiguration" };
   }
-  const planName = isDailyDeals ? "Deals Influencer Butler Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
+  const planName = isDailyDeals ? "Deals Butler Workspace (comp)" : `${TIER_NAME[tier!]} (comp)`;
   // Seat limit written to the key: the admin's chosen count when valid, else the
-  // plan's default (Solo 1 / Team 10 / Agency 25, Daily Deals add-on 1).
+  // plan's default (Solo 1 / Team 10 / Agency 25, Deals add-on 1).
   const planDefaultSeats = isDailyDeals ? 1 : SEAT_LIMIT[tier!];
   const activationLimit =
     typeof input.seats === "number" && Number.isInteger(input.seats) && input.seats >= 1
@@ -283,7 +282,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
   if (!userId) return { ok: false, status: 502, error: "Could not create the recipient account." };
 
   // Never stack a second PRIMARY comp on someone who already has live access,
-  // unless the admin explicitly overrides (allowExisting). The Daily Deals
+  // unless the admin explicitly overrides (allowExisting). The Deals
   // add-on is meant to sit ON TOP of a plan, so it is always exempt. Unassigned
   // comps get a fresh placeholder user, so this never trips for them.
   if (!isDailyDeals && !input.allowExisting) {
@@ -407,6 +406,12 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     } catch (err) {
       console.error("comp-issue: generateLink threw", err);
     }
+    // Word the email around the plan that was actually granted, so an add-on
+    // comp does not read as "Influencer Butler Pro".
+    const planPhrase = isDailyDeals ? "the Deals Butler Workspace" : "Influencer Butler Pro";
+    const compSubject = isDailyDeals
+      ? "Your free Deals Butler Workspace"
+      : "Your free Influencer Butler Pro license";
     await sendCompEmail({
       to: email,
       key,
@@ -414,6 +419,8 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
       days,
       forever,
       signInLink,
+      planPhrase,
+      subject: compSubject,
       convertLink: input.convertLink ?? null,
       issuerName: input.issuerName ?? null,
     });

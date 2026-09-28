@@ -1,0 +1,36 @@
+---
+title: "TikTok Message Followers: DM your new TikTok followers automatically"
+summary: Send personalized DMs to your new TikTok followers, or to a custom list of usernames, with rotating message templates, follow-ups, and safety-first rate limits.
+category: TikTok
+---
+
+## What TikTok Message Followers does
+
+TikTok Message Followers sends direct messages on TikTok for you. It can welcome people who recently followed you (**Message New Followers**) or reach out to a specific list you provide (**Message Select Usernames**). You write one or more message templates, the butler rotates through them, spaces the sends out with human-like delays, and can send an optional follow-up if someone has not replied. It uses the same templates, follow-ups, and run controls as Amazon Butler, so it should feel familiar.
+
+## Before you start
+
+- Open **TikTok Butler** in the left menu, then **TikTok Message Followers**.
+- This workspace is **In Beta**. Some parts may not work fully yet while we build it out.
+- Click **Sign in to TikTok (opens Chrome)** so TikTok remembers this device. Do this first if you keep getting asked to log in.
+- For **Message New Followers**, enter **Your TikTok username** (without the @) so the butler can find your followers list.
+- Keep **👀 Watch it run** on (the default) if you want to watch the browser work.
+
+## How to use it
+
+1. Set **Your TikTok username** if you plan to message new followers.
+2. Pick a **Message Mode**: **Message New Followers** or **Message Select Usernames**. For the second option, type one username per line in the **Message Select Usernames** box, or click **Import CSV** (usernames in column A, no header).
+3. Write your **Initial messages**. Click **Add message** to create more variants, and choose **Random** or **Round robin** for how they rotate. Use `{handle}` and `{storefront}` to drop in each follower's handle and your saved storefront link. Type `\n` or `/n` to split one template into separate DMs.
+4. Set your safety limits: **Delay between messages** (min to max seconds), **Messages per hour**, and **Messages per day**. Each run also uses **New followers to message** as a min-to-max cap, or leave both blank for no cap.
+5. (Optional) Add usernames to **Skip Usernames**, one per line, to never contact them. Keep **Exclude followers with messages already sent** checked so nobody gets a second welcome.
+6. (Optional) Check **Enable follow-ups**, write your **Follow-up messages**, and pick **Send follow-up after** (6, 12, 24 hours, or a custom amount).
+7. Click **Run**. Use **Pause** or **Stop** to control the run. Watch **Messages sent**, **Followers harvested**, and **Next send** in the header.
+8. Review sends under **Results / History**. Use **Export all** to save them or **Delete all** to clear them.
+
+## Notes
+
+- This workspace is in beta: treat sends as unproven and start conservatively.
+- New accounts: keep **Messages per hour** at 20 or below and start **Messages per day** around 50 to 100, then ramp up over weeks. Sending too fast can get your account restricted.
+- If TikTok blocks messaging, every TikTok sender rests for **Pause after a TikTok block (days)**. Repeat blocks rest longer. You can resume early from the Dashboard banner.
+- Everything auto-saves as you type. There is no Save button.
+- The **Automations: comment to DM** block at the bottom can DM people who comment a keyword on your videos. It runs quietly in the background and is separate from a manual run.

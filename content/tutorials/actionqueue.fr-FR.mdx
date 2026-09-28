@@ -60,6 +60,7 @@ Les items en file vivent dans le cache preseed. Les décisions approuvées/rejet
 - **Les items s'accumulent pendant des semaines**: Action Queue n'auto-nettoie pas les items obsolètes. Passez 5 minutes par semaine à revoir, ou utilisez **Différer** généreusement pour que la file ne gonfle pas.
 - **L'espace source a tourné mais n'a pas pris votre approbation**: l'espace ne relit la file qu'à son prochain run planifié. Déclenchez Run Now si vous voulez une action immédiate sur une décision.
 - **Aucun item n'apparaît même qu'un butler tourne**: ce butler ne route pas via Action Queue. Tous les espaces ne le font pas ; la plupart des décisions sont entièrement autonomes.
+- **"Accepted campaigns sync" apparaît et vous ne vous souvenez d'avoir rien accepté**: rien n'a été accepté à votre place. Cette tâche planifiée est en lecture seule. Elle ouvre Amazon, lit les campagnes Creator Connections que vous avez acceptées vous-même et les enregistre pour tenir vos données à jour. Accepter des campagnes à votre place est un autre butler, qui ne tourne que si vous le lancez.
 
 ## Relié
 

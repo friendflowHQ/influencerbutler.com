@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
+import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,9 +29,6 @@ async function sendLinkEmail(
   actionLink: string,
   isNew: boolean,
 ): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
-
   const subject =
     mode === "reset"
       ? isNew
@@ -62,21 +61,14 @@ async function sendLinkEmail(
     `- The Influencer Butler team`,
   ].join("\n");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject,
-        text,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: transactionalFrom(),
+    to,
+    subject,
+    text,
+    category: mode === "reset" ? "password_reset" : "login_link",
+  });
+  return ok;
 }
 
 /**

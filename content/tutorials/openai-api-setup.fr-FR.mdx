@@ -1,0 +1,72 @@
+---
+title: "Configurer l'API OpenAI (ce n'est pas ChatGPT)"
+summary: Les butlers IA ont besoin d'une clé API OpenAI depuis platform.openai.com, pas d'un abonnement ChatGPT. Voici la différence et comment créer une clé, ajouter la facturation et la connecter en quelques minutes.
+category: Other
+---
+
+## ChatGPT vs l'API OpenAI : quelle est la différence
+
+C'est la confusion la plus courante, alors clarifions-la d'abord. OpenAI vend deux choses totalement distinctes, et Influencer Butler a besoin de la seconde :
+
+- **ChatGPT** est l'application de chat que vous utilisez dans un navigateur sur **chat.openai.com**. "ChatGPT Plus" est un abonnement mensuel qui améliore cette fenêtre de chat (modèles plus rapides, plus d'usage). C'est pour *vous*, qui tapez dans une case.
+- **L'API OpenAI** est un service pour développeurs sur **platform.openai.com**. Elle fournit une **clé API** (un long secret qui commence par `sk-`) pour que *d'autres applications* puissent parler à OpenAI en votre nom. Elle a sa propre facturation au paiement à l'usage, totalement séparée de ChatGPT.
+
+Influencer Butler est l'une de ces "autres applications." Il a besoin d'une clé API.
+
+> Un abonnement ChatGPT Plus **ne** fonctionne **pas** ici, et ne vous donne pas de clé API. ChatGPT et l'API OpenAI sont facturés séparément, donc payer l'un ne paie pas l'autre.
+
+## Pourquoi Influencer Butler a besoin de l'API, pas de l'app de chat
+
+Les butlers IA (Générateur de mots-clés IA, Voiceover Butler, Benable Butler, Comment Butler, Facebook Group Builder et la rédaction des textes de deals) génèrent du texte et des images pour vous automatiquement, en arrière-plan, pendant que vous faites autre chose. Pour cela, ils appellent OpenAI de façon programmatique, et OpenAI ne l'autorise qu'avec une clé API.
+
+La bonne nouvelle : l'usage de l'API se fait au **paiement à l'usage** et, dans la façon dont la plupart des créateurs utilisent ces butlers, cela coûte quelques centimes, pas un abonnement mensuel. Vous ne payez que ce que vous générez réellement. Vous n'avez pas besoin de ChatGPT Plus du tout.
+
+## Étape 1 : Créez un compte API OpenAI
+
+1. Allez sur **[platform.openai.com](https://platform.openai.com)**.
+2. Cliquez sur **Sign up** et créez un compte, ou **Log in** si vous en avez déjà un.
+
+Si vous utilisez déjà ChatGPT, cette même connexion vous connecte aussi ici. C'est normal, mais remarquez que vous arrivez ailleurs : la **plateforme développeurs**, avec ses propres sections **Billing** (facturation) et **API keys** (clés). Être connecté à ChatGPT n'équivaut pas à avoir configuré cette partie.
+
+## Étape 2 : Ajoutez la facturation (c'est l'étape que l'on oublie)
+
+Un compte API tout neuf n'a aucun solde, et une clé sans solde derrière elle échouera même si la clé elle-même est valide.
+
+1. Ouvrez **Settings > Billing** (sur [platform.openai.com/settings/organization/billing](https://platform.openai.com/settings/organization/billing)).
+2. Ajoutez un moyen de paiement.
+3. Ajoutez un petit crédit de départ (même le minimum suffit largement pour commencer).
+
+Si vous sautez cette étape, les butlers se connecteront mais chaque génération renverra une erreur `insufficient_quota`. Ajouter quelques dollars de crédit règle le problème.
+
+## Étape 3 : Créez votre clé API
+
+1. Allez sur la page **API keys** : **[platform.openai.com/api-keys](https://platform.openai.com/api-keys)**.
+2. Cliquez sur **Create new secret key**, donnez-lui un nom comme "Influencer Butler" et créez-la.
+3. **Copiez la clé immédiatement.** Elle commence par `sk-` et OpenAI ne vous la montre **qu'une seule fois**. Si vous la perdez, vous ne pouvez plus la revoir, vous en créez simplement une nouvelle.
+
+Traitez cette clé comme un mot de passe. Ne la publiez nulle part et ne la collez pas dans un chat. Elle va directement dans Influencer Butler et nulle part ailleurs.
+
+## Étape 4 : Connectez-la dans Influencer Butler
+
+1. Dans l'app, ouvrez **[API Integrations](/help/tutorials/api-integrations)**.
+2. Trouvez la section **OpenAI** et collez votre clé `sk-` dans le champ.
+3. Cliquez sur **Test Connection** et attendez que le badge devienne **vert**.
+
+Voilà : chaque espace qui utilise OpenAI récupère la clé automatiquement. Vous ne la saisissez pas à nouveau pour chaque butler.
+
+L'**[extension Chrome](/help/tutorials/extension)** gratuite possède le même panneau API Integrations (cliquez sur l'icône engrenage dans le popup). Là, votre clé reste sur votre appareil, chiffrée dans le navigateur, et n'est envoyée qu'à l'API d'OpenAI, jamais aux serveurs d'Influencer Butler.
+
+## Problèmes fréquents
+
+- **"J'ai ChatGPT Plus, pourquoi ça ne marche pas ?"** : ChatGPT Plus est l'app de chat, pas l'API. Voyez le haut de cette page. Vous devez quand même créer une clé API sur platform.openai.com et y ajouter la facturation.
+- **La clé passe au vert mais la génération échoue** : c'est presque toujours un souci de facturation ou de quota, pas une mauvaise clé. Ouvrez **Billing** sur le tableau de bord OpenAI et vérifiez que vous avez un moyen de paiement et du crédit restant.
+- **Erreur `insufficient_quota` sur une clé toute neuve** : vous avez créé la clé mais pas encore ajouté de crédit. Faites l'étape 2.
+- **Le champ OpenAI apparaît vide après un redémarrage de l'app** : c'est normal. Les clés enregistrées sont masquées par sécurité. Pas besoin de la recoller, cliquez simplement à nouveau sur **Test Connection**.
+- **La clé a cessé de fonctionner après plusieurs mois** : les clés peuvent être révoquées ou renouvelées. Créez-en une nouvelle sur platform.openai.com/api-keys, collez-la et retestez.
+
+## En lien
+
+- [API Integrations](/help/tutorials/api-integrations) : où vit la clé et comment fonctionne Test Connection.
+- [Mots-clés et filtres : créez des listes de mots-clés avec l'IA](/help/tutorials/ai-keyword-generator) : l'un des butlers qui a besoin de cette clé.
+- [Voiceover Butler](/help/tutorials/voiceover-butler) : scripts de voix off par IA, également alimentés par votre clé OpenAI.
+- [Facebook Group Builder](/help/tutorials/facebook-group-builder) : utilise votre clé pour le texte comme pour les images de couverture.

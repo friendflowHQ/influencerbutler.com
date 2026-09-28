@@ -19,7 +19,7 @@ It also handles **affiliate routing** - the logic that decides which provider's 
 Nothing required - but each integration is independent, so you can add them one at a time as you wire up new workspaces. Common first integrations:
 
 - **Amazon Creators API**: needed by Storefront Butler, Daily Commission Butler, Voiceover Butler, anything that reads product details.
-- **OpenAI**: needed by AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
+- **OpenAI**: needed by AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler. Need a key? See [Set up the OpenAI API (it is not ChatGPT)](/help/tutorials/openai-api-setup): it is not the same as a ChatGPT subscription.
 - **Your deeplink provider**: needed once you want shortened/tracked affiliate links instead of raw Amazon URLs.
 
 ## Adding an integration
@@ -27,7 +27,7 @@ Nothing required - but each integration is independent, so you can add them one 
 The panel is organized by section. Each section has:
 
 - A **paste-key field** - where you put the credential.
-- A **Test Connection** button - fires a single read-only request against the provider's API to verify the key.
+- A **Test Connection** button - fires a request against the provider's API to verify the key. Most providers get a read-only check; GeniusLink's test also creates one real short link, so a green check proves link creation works, and the minted link is shown so you can open it and see which country store your group routes to.
 - A **status badge** - green when verified, red when invalid, grey when untested.
 
 To add: open the section, paste the key, click Test Connection. If green, you're done - every workspace that uses this provider will pick the key up automatically.
@@ -45,6 +45,16 @@ The full provider list:
 - **Mavely**: multi-brand network for non-Amazon deals (Walmart, Target, and a large brand catalog). Sign in instead of pasting a key. See the Mavely section below.
 - **Benable**: referral link.
 - **Deeplink providers**: Influencer Butler (branded links with a built-in click dashboard), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Choose one as primary.
+
+## Creator API backup credentials
+
+Amazon does not unlock the Creator API until your account has made enough qualifying sales, so a brand-new influencer can create credentials that look right but fail Test Connection with an eligibility error (HTTP 403). You do not have to wait it out: Influencer Butler can lend you its own backup credentials.
+
+When a Creators API test fails with that eligibility block, a button appears under the result: **Use Influencer Butler's backup credentials**. One click and every workspace that reads product data starts working right away through the backup set. Before you click it, double check your Partner Tag: it must be your Associates tracking ID (like yourtag-20), not a storefront ID, because a wrong tag produces the exact same error.
+
+While the backup is active the panel shows a **Backup credentials active** chip. Your own credentials stay saved, and the app quietly re-tests them once a day. The moment Amazon unlocks your account, the app switches back to your own credentials automatically and lets you know with a notification. You can also click **Stop using backup** at any time, or re-run Test Connection yourself; a passing test switches you back on the spot.
+
+The backup is available to every signed-in user, including free trials. Product lookups made through it use Influencer Butler's account; your own affiliate links and tags are untouched, so your commissions still track to you.
 
 ## Affiliate routing
 
@@ -70,10 +80,10 @@ On the Mavely card:
 
 Once you're signed in, you have two ways to use it:
 
-- **As your deeplink provider**: pick **Mavely** in DeepLink Routing. Now when Deals Influencer Butler posts a Walmart or Target deal, the link is a commission-earning Mavely link automatically.
+- **For your Walmart deals**: open **Walmart Butler**, then **Settings**, and set **Walmart link provider** to **Mavely (mave.ly links)**. That switch is independent of DeepLink Routing, so Walmart deals earn through Mavely while your Amazon links stay on your own tag. Picking **Mavely** in **DeepLink Routing** monetizes non-Amazon deals too, but it sends your Amazon product pages through Mavely as well, so only choose that if you do not need those sales on your own Amazon tag.
 - **One-off links**: paste any product URL into the Mavely card's Product URL box and click **Create Link** to get a single Mavely link on the spot. The Chrome extension's link button does the same for non-Amazon pages.
 
-Your Amazon links are untouched by this: only non-Amazon retailers route through Mavely. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
+Mavely stays off your Amazon links unless you put it there. Two settings can hand Amazon to Mavely: picking **Mavely** under **DeepLink Routing**, which sends Amazon product pages through Mavely, and ticking Mavely under **Affiliate Routing Strategy**, where it competes on any product link and the higher commission wins. Leave both as they are and Mavely only covers the non-Amazon retailers. If you ever sign out of Mavely, links quietly fall back to the plain product URL so a post never goes out broken.
 
 ## Test on startup
 
@@ -93,10 +103,19 @@ API keys are stored encrypted in `{userData}/InfluencerButler/secure-store/`. Th
 
 ## Common gotchas
 
+- **You cannot find the Amazon Creators API section on this page**: it moved. Each third-party integration now sits in the butler that uses it, and this page keeps the shared AI and data keys (OpenAI, Keepa, Fal.ai, Ideogram). The Amazon Creators API and your storefront ID are in **Amazon Butler**, then **Settings**. Mavely, deeplink routing, Geniuslink, URLGenius, Linktw.in, Archer, PostTap, affiliate routing and the per-country tags are in Link Butler, then Settings. Levanta is in Levanta Butler, then Settings. Your saved keys carried over, so nothing needs pasting again.
+- **The eligibility error is on screen but there is no backup credentials button under it**: press **Test Connection** once and the offer appears with the fresh result. App versions before 1.0.80 replayed the saved error after a restart without bringing the button back with it.
 - **Test Connection fails after a previously-working setup**: the provider rotated, revoked, or rate-limited the key. The topbar shows an "API Health" badge when this happens. Re-issue the key from the provider's dashboard, paste here, re-test.
+- **Creators API test says "failed" but Amazon shows it active**: almost always a marketplace mismatch. Set the Marketplace dropdown to the region where you created your API credentials. A US credential tested against a UK or AU marketplace (or an international credential left on the amazon.com default) will not pass. The app now detects this and tells you which region your credentials belong to.
+- **Creators API Partner Tag rejected**: that field needs your Amazon Associates tracking ID (like yourtag-20), not your storefront ID.
+- **Creators API credential fields look blank after a restart**: that is expected. Saved keys are hidden for security. Just pick your marketplace and press Test Connection. You do not need to re-paste them.
+- **A brand-new Creators API key fails right after you create it**: newly issued keys can take up to 24 hours to activate on Amazon's side. Wait and re-test. If the failure is the eligibility block instead, use the backup credentials button (see the Creator API backup credentials section above) rather than waiting.
 - **OpenAI key tested green but generation fails**: different OpenAI products use different rate limits. A key valid for completions may hit a billing/quota issue on a specific model. Check the OpenAI dashboard's billing tab.
 - **YouTube OAuth expires unexpectedly**: Google rotates OAuth tokens roughly annually. Re-run the YouTube Butler Setup Wizard to refresh.
 - **Affiliate routing picked the wrong provider**: usually means the wrong provider was checked. Open the routing section and verify the participating-providers checkboxes.
+- **You signed in to Mavely but Influencer Butler still says not signed in**: the sign in only counts inside the browser Influencer Butler keeps for Mavely. Opening creators.joinmavely.com in your own browser, including from a link in the signed-out banner, signs you in somewhere the app cannot see. Use **Sign in to Mavely** on the Mavely card, sign in inside the window that opens, close it, then click **Check status**.
+- **You are looking for a Mavely API key**: there is not one. Mavely is the network that authenticates by signing in rather than by a pasted key, so its card has no key field on purpose.
+- **You cannot find where to set Mavely up for Walmart, Target or another store**: there is no per-store or per-account setup, which is why there is nothing to find. Mavely reads the merchant from the product link itself, so being signed in is the whole setup. Walmart is the one exception, because it has a choice of its own: **Walmart Butler**, then **Settings**, then **Walmart link provider**, where **Mavely (mave.ly links)** routes Walmart deals through Mavely and **Walmart Creator (walmrt.us links)** uses your own Walmart Creator links instead. For Target and the rest of the catalog, paste the product URL into the **Product URL** box on the Mavely card and click **Create Link**, or use the Chrome extension's link button on the product page.
 
 ## In the Chrome extension too
 
@@ -113,11 +132,17 @@ Note: live Test Connection currently makes a real read-only call for OpenAI and 
 - Every Amazon-side workspace ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) reads from here.
 - [Relink Butler tutorial](/help/tutorials/relink-butler) - uses the affiliate routing config to know what to swap published links to.
 
+## Amazon native deep link
+
+At the top of **DeepLink Routing** is the **Amazon native deep link** switch, on by default. When it's on, every Amazon product link your tools build opens straight in the Amazon app on a phone instead of a mobile browser, which is a smoother tap-to-buy for your shoppers. It's separate from the provider list below: the provider picks the redirect/shortener, while this switch controls the in-app open. Turn it off if you'd rather post plain browser links.
+
+One thing to know: for the link to actually open the app, your Amazon Associates account also needs "Deep linking enabled" in SiteStripe. The switch adds the right link format; your account setting is what tells Amazon to honor it.
+
 ## Per-country affiliate tags
 
 Under **DeepLink Routing** there's a collapsible **Per-country affiliate tags** list. Most of these fill in for you: when you run the Storefront ID check in **Settings**, it reads the associate tags on your Amazon account and populates the matching countries automatically. Re-run the check any time to refresh them. You can still type a tag into any country by hand to override it, and a tag you type is kept. Your US tag defaults to your CC Storefront ID; leave a country blank to skip it.
 
-These tags power the **Marketplace links** options in Deals Influencer Butler. A tag is what makes a commission track in that country, so a foreign link only gets posted when you've added its tag.
+These tags power the **Marketplace links** options in Deals Butler. A tag is what makes a commission track in that country, so a foreign link only gets posted when you've added its tag.
 
 ## Link Performance dashboard
 

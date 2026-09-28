@@ -1,0 +1,85 @@
+---
+title: Link Butler: branded, tracked links that open the shopping app
+summary: Turn any product link into a branded Calling Card that opens the Amazon app, then see where you posted it, how it is trending, and whether it is still healthy, all in one ledger.
+category: Amazon
+---
+
+## What Link Butler does
+
+Link Butler (the Influencer Deeplink Butler) turns any product link into a short, branded "Calling Card." When a shopper taps it, the link opens the Amazon shopping app instead of a browser tab, which converts far better, and every tap is tracked. Because the Calling Card routes through Influencer Butler, you can re-point it later and the printed or posted link never goes stale.
+
+This is the same job Geniuslink and urlgenius do. Link Butler goes further: it ties each link back to the product, to where you posted it, and to its live health, in one ledger.
+
+## Minting your first Calling Card
+
+1. Open **Link Butler**, then **Influencer Deeplink Butler**, under the Link Butler group.
+2. On the **Links** tab, paste a product link into **Product link**.
+3. Optionally add a **Title** (only you see it) and a **Campaign** so its clicks group together in Performance.
+4. Click **Add Butler Link**. Your Calling Card appears in the ledger below.
+
+To mint many at once, open **Add several at once** and paste one product link per line.
+
+## The ledger: more than a list of links
+
+Every Butler Link is a row in **Your Butler Links**. Each row shows:
+
+- **Product**: the product photo, title, and its brand, ASIN, and retailer, resolved automatically so you recognize the link at a glance.
+- **Calling Card**: the short branded link, with one-click copy.
+- **Posted to**: a badge for each place the link was shared (Facebook, Threads, Telegram, Reddit, and more). Click a badge to open the live social post. Links you post through Deals Butler are added here automatically, so you always know which link went where.
+- **Trend**: a small sparkline of clicks per day over the last two weeks, so you can spot a link heating up without opening the drill-down.
+- **Clicks**: total taps.
+- **Health**: a pill that reads Live, Healed, or Broken. The Butler re-routes behind your link to keep it working; this tells you at a glance if anything needs attention.
+- **Notes & tags**: your own note and colored tags for the link. Both save as you type, no Save button.
+
+The **Overview** cards at the top total your links, clicks, posted links, and healthy links.
+
+## Managing your links
+
+- **Click any product** in the ledger to open that link's own analytics.
+- **Search and filter** by health, posted / not posted, retailer, campaign, or tag, and **Group by campaign** to see subtotals per campaign.
+- **Broken links** surface in a banner at the top; one click sends a dead link to a new destination.
+- **Edit a link's destination** any time. The short link and its QR code stay the same, so anything you already posted keeps working.
+- **Copy** a link as a plain URL, Markdown, HTML, or a ready-to-post caption with an #ad disclosure.
+- **Select several** links to tag, export, download their QR codes, or delete them in one go.
+
+## QR Studio
+
+The **QR Studio** tab turns any Calling Card into a branded QR code with your colors and an optional center logo. Print it once: because it points at your Calling Card, you can re-route behind it and it never goes stale. Scans show up as a "qr" campaign in Performance.
+
+## Performance
+
+The **Performance** tab is your click dashboard: totals, app-open rate, self-heal rate, top links, and breakdowns by platform, referrer, campaign, country, region, city, device, and more, plus a map and a best-time-to-post heatmap. Amazon does not report earnings per link, so these are click metrics.
+
+Butler Link clicks and the clicks in your Amazon reports are two different counts, so expect them to differ. This tab counts only visits that travelled through one of your Butler Links. Amazon counts every visit that reached Amazon carrying your tag, including links you posted without Butler, so Amazon's number is normally the larger one. If your daily activity email says "No Butler Link clicks yet" while you are posting Butler Links, that is not the same as a count of zero: it means this copy of the app is holding no click data at all. Open Link Butler and check the **Total clicks** tile first. If it reads 0 while your links are listed, click **Feedback** in the top bar and send a report from there, so your logs come with it.
+
+## Settings
+
+The **Settings** tab holds account-wide defaults for new links: your default associate tag, the confirmation page ("The Doorman"), and optional retargeting pixels ("The Doorbell") that fire when a shopper opens a Calling Card.
+
+## Allowed links: post your own sites too
+
+Influencer Butler never posts or sends a link that cannot earn you commission. Amazon and Walmart links get your tag added automatically, and a link that cannot be tagged, like your Etsy shop, your blog, or a giveaway page, is held instead of posted. That way a missing tracking ID never quietly costs you sales.
+
+When a link like that is one you meant to share, add it to your allowed links:
+
+1. In the left menu, open **Link Butler**, then **Settings** (the page under the Link Butler group).
+2. Find **Allowed links (advanced)**.
+3. Add one link or website per line, like `yourshop.etsy.com` or `https://myblog.com`. The whole website counts, so every page on it is allowed. It saves as you type.
+
+Allowed links apply everywhere Butler posts or messages: Deals Butler posts and comments, Instagram, TikTok, and Facebook messages, TikTok comments, and Pinterest pins. Message runs that are already going pick up the change within about a minute. Deals that were already held for that link stay in Upcoming posts, so publish them again from there.
+
+Your Amazon and Walmart product links still always need your tag. Adding amazon.com or walmart.com here does not let an untagged product link through.
+
+## Use your own domain (paid plans)
+
+On a paid plan you can put your own brand on your links, so they read as your domain instead of `influencerbutler.com`. In **Settings**, open **Your own domain** and enter a domain you own, like `go.yourbrand.com`. Add the two DNS records we show you at your domain provider:
+
+- a **CNAME** record that points your domain at our link service, and
+- a **TXT** record that proves you own the domain so we can issue its security certificate.
+
+We keep checking until both records are live. This can take a few minutes to a couple of hours, depending on your DNS provider. Once your domain is active, every new Butler Link uses it in place of `influencerbutler.com`. Links you already posted keep working, and you can remove or change your domain any time.
+
+## Related
+
+- [Relink Butler tutorial](/help/tutorials/relink-butler) - rewrite the affiliate links in content you already published.
+- [API Integrations tutorial](/help/tutorials/api-integrations) - configure deeplink providers and other services.

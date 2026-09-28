@@ -1,14 +1,20 @@
 import { DEALS_CATALOG, type DealsDict } from "./strings";
 import { resolveLocale } from "../i18n";
+import { isMobileUserAgent } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
+import { canonicalProductUrl } from "../integrations/url";
 import {
   sendToBackground,
+  type BrandedMintInput,
+  type BulkMintResult,
   type DealSource,
   type EnrichResult,
   type HarvestResult,
   type HudCommandResult,
   type HudStatus,
+  type RelaySendResult,
+  type RelayStateView,
 } from "../shared/messages";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type { ProductRef } from "../transport/hud-commands";
@@ -18,7 +24,7 @@ import type { DealFinding, Finding } from "../transport/types";
 // It gathers aggregator URLs (curated + saved + pasted), asks the background to
 // fetch and parse them, enriches the products through the Creator API, shows a
 // review list, records the finds to the dashboard, and pushes the selected
-// deals into a Deals Influencer Butler workspace in the desktop app.
+// deals into a Deals Butler workspace in the desktop app.
 
 let D: DealsDict;
 
@@ -35,6 +41,12 @@ type Row = {
 
 let rows: Row[] = [];
 let curatedSources: DealSource[] = [];
+let autoHarvest = false;
+// Set when arriving from a per-deal "Review" button (deal-badge/index.ts,
+// clicked next to one specific link on the page rather than the page-level
+// badge): after the harvest, the results narrow to just this one deal instead
+// of showing everything the page yielded.
+let focusDeal: { asin: string; marketplace: string } | null = null;
 
 const root = () => document.getElementById("root") as HTMLElement;
 
@@ -46,7 +58,53 @@ async function init(): Promise<void> {
   document.title = `Influencer Butler: ${D.pageTitle}`;
   (document.getElementById("page-title") as HTMLElement).textContent = D.pageTitle;
   curatedSources = await sendToBackground<DealSource[]>({ kind: "GET_DEAL_SOURCES" });
+  autoHarvest = await sendToBackground<boolean>({ kind: "GET_DEAL_AUTO_HARVEST" });
+
+  // Arrived from the on-page badge (deal-badge/index.ts opens
+  // deals.html?add=<url>, plus asin/marketplace when it was the per-deal
+  // button rather than the page-level one): save that site and jump straight
+  // into a harvest of it, deep scan on since the badge only ever fires on a
+  // page whose OWN script-rendered DOM already had deals (a plain fetch would
+  // very likely find nothing there).
+  const params = new URL(location.href).searchParams;
+  const addUrl = params.get("add");
+  const asin = params.get("asin");
+  if (addUrl && /^https?:\/\//i.test(addUrl)) {
+    const current = settings.dealSources;
+    if (!current.includes(addUrl)) {
+      await patchSettings({ dealSources: [...current, addUrl] });
+    }
+    deepScan = true;
+    if (asin) focusDeal = { asin, marketplace: params.get("marketplace") || "amazon.com" };
+    history.replaceState(null, "", location.pathname);
+  }
+
   await render();
+
+  if (addUrl && /^https?:\/\//i.test(addUrl)) {
+    const btn = document.getElementById("harvest-btn") as HTMLButtonElement | null;
+    const status = document.getElementById("harvest-status") as HTMLElement | null;
+    const paste = document.getElementById("paste") as HTMLTextAreaElement | null;
+    if (btn && status && paste) {
+      await runHarvest(btn, status, paste);
+      narrowToFocusDeal();
+    }
+  }
+}
+
+// After a per-deal-triggered harvest, keep only the row the creator actually
+// clicked next to (if the site's asin/marketplace pair made it into the
+// results) so the review page isn't a wall of everything else on the page.
+// Falls back to showing every found deal if that exact row is not among them
+// (a promo code paired to a different link, a dedup edge case) rather than
+// silently showing nothing.
+function narrowToFocusDeal(): void {
+  if (!focusDeal) return;
+  const match = rows.find(
+    (r) => r.deal.asin === focusDeal?.asin && r.deal.marketplace === focusDeal?.marketplace,
+  );
+  if (match) rows = [match];
+  renderResultsInto();
 }
 
 async function render(): Promise<void> {
@@ -64,6 +122,9 @@ async function render(): Promise<void> {
 
 // The sources card: curated toggle, the user's saved list, and a paste box.
 let includeCurated = true;
+// Opt-in deep scan: re-read zero-yield sites in a real tab so script-rendered
+// deal lists are captured. Off by default (slower, opens tabs).
+let deepScan = false;
 
 async function renderSources(saved: string[]): Promise<HTMLElement> {
   const card = section(D.sourcesHeading);
@@ -94,6 +155,7 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
       rm.onclick = async () => {
         const next = (await getSettings()).dealSources.filter((s) => s !== url);
         await patchSettings({ dealSources: next });
+        void sendToBackground<void>({ kind: "SYNC_DEAL_BADGE_SCRIPTS" });
         await render();
       };
       li.append(u, rm);
@@ -101,6 +163,18 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
     }
     card.append(list);
   }
+
+  const deepRow = el("label", "toggle");
+  const deepBox = el("input") as HTMLInputElement;
+  deepBox.type = "checkbox";
+  deepBox.checked = deepScan;
+  deepBox.onchange = () => (deepScan = deepBox.checked);
+  const deepSpan = el("span");
+  deepSpan.textContent = D.deepScanLabel;
+  deepRow.append(deepBox, deepSpan);
+  card.append(deepRow);
+
+  card.append(renderAutoHarvestToggle(saved));
 
   const label = el("label", "field");
   const span = el("span");
@@ -125,6 +199,7 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
   };
 
   const harvestBtn = el("button", "primary");
+  harvestBtn.id = "harvest-btn";
   harvestBtn.textContent = D.harvest;
   const status = el("span", "muted small");
   status.id = "harvest-status";
@@ -133,6 +208,52 @@ async function renderSources(saved: string[]): Promise<HTMLElement> {
   actions.append(saveBtn, harvestBtn, status);
   card.append(actions);
   return card;
+}
+
+// "Pull deals automatically" toggle: when turned on, requests host permission
+// for every current source (same click-gated prompt as a manual harvest) and
+// tells the background to run a periodic deep-scan harvest with no page open
+// (DEAL_AUTO_HARVEST_ALARM in background/index.ts). Turning it off just stops
+// the alarm's early-return check; it does not revoke the granted permissions,
+// so turning it back on later needs no re-prompt.
+function renderAutoHarvestToggle(saved: string[]): HTMLElement {
+  const wrap = el("div");
+  const row = el("label", "toggle");
+  const box = el("input") as HTMLInputElement;
+  box.type = "checkbox";
+  box.checked = autoHarvest;
+  const span = el("span");
+  span.textContent = D.autoHarvestLabel;
+  row.append(box, span);
+  const hint = el("p", "muted small");
+  hint.textContent = D.autoHarvestHint;
+  wrap.append(row, hint);
+  // Android (Lemur): the background worker skips the auto-harvest alarm there
+  // (it opens hidden tabs), so show the toggle as unavailable, not as a no-op.
+  if (isMobileUserAgent()) {
+    box.checked = false;
+    box.disabled = true;
+    hint.textContent = D.autoHarvestMobile;
+    return wrap;
+  }
+
+  box.onchange = () => {
+    void (async () => {
+      if (box.checked) {
+        const urls = [...new Set([...curatedSources.map((s) => s.url), ...saved])];
+        const granted = urls.length === 0 || (await requestOrigins(urls));
+        if (!granted) {
+          box.checked = false;
+          hint.textContent = D.permissionDenied;
+          return;
+        }
+      }
+      autoHarvest = box.checked;
+      await sendToBackground<void>({ kind: "SET_DEAL_AUTO_HARVEST", enabled: autoHarvest });
+      hint.textContent = D.autoHarvestHint;
+    })();
+  };
+  return wrap;
 }
 
 async function runHarvest(
@@ -161,9 +282,15 @@ async function runHarvest(
 
   btn.disabled = true;
   btn.textContent = D.harvesting;
-  status.textContent = D.harvesting;
+  // Deep scan opens a tab per zero-yield site, so it runs noticeably longer;
+  // say so up front instead of leaving the plain "Harvesting..." line.
+  status.textContent = deepScan ? D.deepScanning : D.harvesting;
   try {
-    const result = await sendToBackground<HarvestResult>({ kind: "HARVEST_DEAL_SITES", urls: unique });
+    const result = await sendToBackground<HarvestResult>({
+      kind: "HARVEST_DEAL_SITES",
+      urls: unique,
+      render: deepScan,
+    });
     rows = result.deals.map((deal) => ({
       deal,
       title: null,
@@ -183,10 +310,60 @@ async function runHarvest(
     }
     renderResultsInto();
     status.textContent = harvestSummary(result);
+    renderPerSite(btn.closest(".card") as HTMLElement | null, unique, result);
   } finally {
     btn.disabled = false;
     btn.textContent = D.harvest;
   }
+}
+
+// Per-site breakdown under the harvest status: every attempted site with its
+// deal count, so a site that fetched fine but yielded nothing is visible
+// instead of silently missing (the usual cause: script-rendered pages).
+function renderPerSite(card: HTMLElement | null, attempted: string[], result: HarvestResult): void {
+  if (!card) return;
+  document.getElementById("per-site-breakdown")?.remove();
+
+  const wrap = el("div");
+  wrap.id = "per-site-breakdown";
+  const h = el("p", "muted small");
+  h.textContent = D.perSiteHeading;
+  wrap.append(h);
+
+  const errorByUrl = new Map(result.errors.map((e) => [e.url, e.error]));
+  const renderedUrls = new Set(result.rendered ?? []);
+  const countByUrl = new Map<string, number>();
+  for (const row of rows) {
+    countByUrl.set(row.deal.sourceUrl, (countByUrl.get(row.deal.sourceUrl) ?? 0) + 1);
+  }
+
+  const list = el("ul", "saved-list");
+  for (const url of attempted) {
+    const li = el("li");
+    const site = el("span", "url");
+    site.textContent = hostOf(url);
+    const note = el("span", "muted small");
+    const error = errorByUrl.get(url);
+    const count = countByUrl.get(url) ?? 0;
+    const deepScanned = renderedUrls.has(url);
+    if (error) {
+      note.textContent = ` ${D.perSiteReadError} (${error})`;
+    } else if (count === 0) {
+      // A deep-scanned-but-still-empty site is genuinely unreadable; a plain
+      // zero site can suggest turning deep scan on.
+      note.textContent = deepScanned
+        ? ` ${D.perSiteCount(0)}. ${D.perSiteZeroAfterDeepScan}`
+        : ` ${D.perSiteCount(0)}. ${D.perSiteZeroHint}`;
+    } else {
+      note.textContent = deepScanned
+        ? ` ${D.perSiteCount(count)} (${D.perSiteDeepScanned})`
+        : ` ${D.perSiteCount(count)}`;
+    }
+    li.append(site, note);
+    list.append(li);
+  }
+  wrap.append(list);
+  card.append(wrap);
 }
 
 function harvestSummary(result: HarvestResult): string {
@@ -368,11 +545,87 @@ function renderSend(): HTMLElement {
       opt.textContent = w.label;
       picker.append(opt);
     }
+    // Arrived from a per-deal button (deal-badge/): best-effort default the
+    // picker to the "Deals Hub" workspace instead of leaving it on whichever
+    // workspace happens to come first. Only a convenience - the picker stays
+    // visible and editable, so a wrong guess costs a click, never a misroute.
+    if (focusDeal) {
+      const preferred = workspaces.find((w) => /deals\s*hub/i.test(w.label));
+      if (preferred) picker.value = preferred.key;
+    }
     if (!hud.connected) status.textContent = D.appNotConnected;
   });
 
   sendBtn.onclick = () => void sendSelected(picker, sendBtn, status);
+
+  // Mint a branded Influencer Butler link for each selected product. Uses the
+  // creator's per-country tags and (when smart routing is on) publishes routing
+  // so the links route at the edge, exactly like "Copy my link".
+  const mintRow = el("div", "row");
+  const mintBtn = el("button", "ghost");
+  mintBtn.textContent = D.mintLinks;
+  const mintStatus = el("span", "muted small");
+  mintRow.append(mintBtn, mintStatus);
+  const mintOut = el("div");
+  mintOut.id = "mint-out";
+  wrap.append(mintRow, mintOut);
+  mintBtn.onclick = () => void mintSelected(mintBtn, mintStatus, mintOut);
+
   return wrap;
+}
+
+async function mintSelected(
+  btn: HTMLButtonElement,
+  status: HTMLElement,
+  out: HTMLElement,
+): Promise<void> {
+  const selected = rows.filter((r) => r.selected);
+  if (selected.length === 0) {
+    status.textContent = D.nothingSelected;
+    return;
+  }
+  const targets: BrandedMintInput[] = selected.map((r) => ({
+    asin: r.deal.asin,
+    marketplace: r.deal.marketplace,
+    label: r.title ?? undefined,
+  }));
+
+  btn.disabled = true;
+  status.textContent = D.minting;
+  out.replaceChildren();
+  const result = await sendToBackground<BulkMintResult>({ kind: "LINK_MINT_BULK", targets });
+  btn.disabled = false;
+  status.textContent = D.mintSummary(result.minted, result.failed) + (result.capped ? ` ${D.mintCapped}` : "");
+  renderMintedLinks(out, result);
+}
+
+function renderMintedLinks(out: HTMLElement, result: BulkMintResult): void {
+  const urls = result.items.filter((i) => i.ok && i.shortUrl).map((i) => i.shortUrl as string);
+  if (urls.length === 0) return;
+
+  const list = el("ul", "saved-list");
+  for (const url of urls) {
+    const li = el("li");
+    const a = el("a") as HTMLAnchorElement;
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.className = "url";
+    a.textContent = url;
+    li.append(a);
+    list.append(li);
+  }
+  out.append(list);
+
+  const copy = el("button", "ghost small");
+  copy.textContent = D.copyLinks;
+  copy.onclick = () => {
+    void navigator.clipboard.writeText(urls.join("\n")).then(() => {
+      copy.textContent = D.copied;
+      window.setTimeout(() => (copy.textContent = D.copyLinks), 1200);
+    });
+  };
+  out.append(copy);
 }
 
 async function sendSelected(
@@ -388,24 +641,135 @@ async function sendSelected(
   const workspace = picker.value || "default";
   const products: ProductRef[] = selected.map(toProductRef);
 
+  // Prefer the desktop app on THIS computer. When it is not running here, fall
+  // back to a linked desktop on another computer over the cloud relay, so a deal
+  // found on this laptop can still queue to post from the machine that runs the
+  // app. If neither is available, show the usual "app not connected" line.
+  const hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" });
+  if (!hud.connected) {
+    const relay = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+    const target = pickRelayTarget(relay);
+    if (target) {
+      await sendSelectedViaRelay(products, workspace, target, btn, status);
+      return;
+    }
+    // Not connected locally and no remote device linked: fall through to the
+    // local path so the user still sees the app-not-connected message (and its
+    // needsPairing prompt) exactly as before this feature existed.
+  }
+
   btn.disabled = true;
   status.textContent = D.sending;
   let sent = 0;
   let lastMessage = "";
+  // Older desktop apps do not know deal.push.batch; when the router answers
+  // "Unknown command" once, fall back to sequential single deal.push for the
+  // rest of the run (the documented compatibility path in
+  // docs/extension-local-bridge.md).
+  let useSinglePush = false;
   for (let i = 0; i < products.length; i += DEAL_PUSH_CHUNK) {
     const chunk = products.slice(i, i + DEAL_PUSH_CHUNK);
-    const result = await sendToBackground<HudCommandResult>({
-      kind: "SEND_HUD_COMMAND",
-      command: { type: "deal.push.batch", workspace, products: chunk },
-    });
-    if (!result.ok) {
-      lastMessage = result.message ?? D.appNotConnected;
+    if (!useSinglePush) {
+      const result = await sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "deal.push.batch", workspace, products: chunk },
+      });
+      if (result.ok) {
+        sent += chunk.length;
+        continue;
+      }
+      if (!/^Unknown command/i.test(result.message ?? "")) {
+        lastMessage = result.message ?? D.appNotConnected;
+        break;
+      }
+      useSinglePush = true;
+    }
+    const single = await sendChunkOneByOne(chunk, workspace);
+    sent += single.sent;
+    if (single.stopped) {
+      lastMessage = single.lastMessage || D.appNotConnected;
       break;
     }
-    sent += chunk.length;
   }
   btn.disabled = false;
   status.textContent = sent > 0 ? `${D.sentToApp} (${sent})` : lastMessage || D.appNotConnected;
+}
+
+// Sequential single-product pushes for desktop apps that predate
+// deal.push.batch. A few consecutive failures means the app side is down (not
+// one bad product), so stop rather than burn hundreds of doomed round trips.
+async function sendChunkOneByOne(
+  chunk: ProductRef[],
+  workspace: string,
+): Promise<{ sent: number; stopped: boolean; lastMessage: string }> {
+  let sent = 0;
+  let consecutiveFailures = 0;
+  let lastMessage = "";
+  for (const product of chunk) {
+    const result = await sendToBackground<HudCommandResult>({
+      kind: "SEND_HUD_COMMAND",
+      command: { type: "deal.push", workspace, product },
+    });
+    if (result.ok) {
+      sent += 1;
+      consecutiveFailures = 0;
+      continue;
+    }
+    consecutiveFailures += 1;
+    lastMessage = result.message ?? "";
+    if (consecutiveFailures >= 5) return { sent, stopped: true, lastMessage };
+  }
+  return { sent, stopped: false, lastMessage };
+}
+
+// Choose which linked remote desktop to send to: the user's saved default when
+// it is still linked, otherwise the only linked device (so a one-computer setup
+// needs no picking). Null when there is nothing to send to.
+function pickRelayTarget(
+  relay: RelayStateView,
+): { instanceId: string; label: string | null } | null {
+  if (!relay || !relay.signedIn) return null;
+  if (relay.defaultTarget) return relay.defaultTarget;
+  const only = relay.targets.length === 1 ? relay.targets[0] : null;
+  if (only) return { instanceId: only.receiverInstanceId, label: only.receiverLabel };
+  return null;
+}
+
+// Queue the selected deals to a linked desktop on another computer. Chunked like
+// the local path; each chunk is one deal.push.batch command the relay drops into
+// that device's inbox. Fire-and-forget: the desktop posts on its own schedule,
+// so success here means "queued to <device>".
+async function sendSelectedViaRelay(
+  products: ProductRef[],
+  workspace: string,
+  target: { instanceId: string; label: string | null },
+  btn: HTMLButtonElement,
+  status: HTMLElement,
+): Promise<void> {
+  const name = target.label || "your other computer";
+  btn.disabled = true;
+  status.textContent = `Sending to ${name}...`;
+  let sent = 0;
+  let lastError = "";
+  for (let i = 0; i < products.length; i += DEAL_PUSH_CHUNK) {
+    const chunk = products.slice(i, i + DEAL_PUSH_CHUNK);
+    const result = await sendToBackground<RelaySendResult>({
+      kind: "RELAY_SEND",
+      command: { type: "deal.push.batch", workspace, products: chunk },
+      targetInstanceId: target.instanceId,
+    });
+    if (result.ok) {
+      sent += chunk.length;
+    } else {
+      lastError = result.error || "Could not reach your other device.";
+      break;
+    }
+  }
+  btn.disabled = false;
+  status.textContent =
+    sent > 0
+      ? `Queued ${sent} deal(s) to ${name}. They will post from that computer.`
+      : lastError || "Could not reach your other device.";
 }
 
 function toProductRef(row: Row): ProductRef {
@@ -421,11 +785,21 @@ function toProductRef(row: Row): ProductRef {
 }
 
 // Request host permission for the origins of the given URLs, from the current
-// user gesture. Returns true when granted (or nothing new was needed).
+// user gesture. Returns true when granted (or nothing new was needed). Amazon's
+// short-link hosts ride along on every request: deal pages link products
+// through amzn.to / a.co, and the background can only follow those redirects
+// with host permission.
+const SHORT_LINK_ORIGINS = [
+  "https://amzn.to/*",
+  "https://a.co/*",
+  "https://amzn.eu/*",
+  "https://amzn.asia/*",
+];
+
 async function requestOrigins(urls: string[]): Promise<boolean> {
   const origins = [
-    ...new Set(
-      urls
+    ...new Set([
+      ...urls
         .map((u) => {
           try {
             return `${new URL(u).origin}/*`;
@@ -434,11 +808,17 @@ async function requestOrigins(urls: string[]): Promise<boolean> {
           }
         })
         .filter(Boolean),
-    ),
+      ...SHORT_LINK_ORIGINS,
+    ]),
   ];
   if (origins.length === 0) return true;
   try {
-    return await chrome.permissions.request({ origins });
+    const granted = await chrome.permissions.request({ origins });
+    // A fresh grant means the on-page badge can now run there too; resync its
+    // dynamic content-script registration right away rather than waiting for
+    // the next periodic sync.
+    if (granted) void sendToBackground<void>({ kind: "SYNC_DEAL_BADGE_SCRIPTS" });
+    return granted;
   } catch {
     return false;
   }
@@ -452,7 +832,13 @@ function parseUrls(text: string): string[] {
 }
 
 function productUrl(asin: string, marketplace: string): string {
-  return `https://www.${marketplace}/dp/${asin}`;
+  // A Walmart item id lives at /ip/, not /dp/, so the retailer decides the path.
+  return canonicalProductUrl(
+    asin,
+    marketplace,
+    "",
+    /walmart/.test(marketplace) ? "walmart" : "amazon",
+  );
 }
 
 function hostOf(url: string): string {

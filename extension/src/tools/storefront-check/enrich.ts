@@ -1,4 +1,5 @@
 import { extractInStock } from "../../amazon/product-signals";
+import { BLOCKED_RE } from "../../amazon/dp-static";
 import type { HarvestedItem } from "./harvest";
 
 // Opt-in deep passes for the storefront checkup. All are OFF by default and
@@ -24,11 +25,9 @@ const BLOCK_GIVE_UP = 8;
 const DP_RE = /\/dp\/([A-Z0-9]{10})/;
 const CSA_ASIN_RE = /amzn1\.asin\.([A-Z0-9]{10})/i;
 const PARENT_RE = /"parentAsin"\s*:\s*"([A-Z0-9]{10})"/;
-// Amazon's automated-access / captcha interstitials. If we parsed these as
-// product pages, extractInStock would read "not available" and we would flag
-// every product as unavailable, which is wrong.
-const BLOCKED_RE =
-  /validateCaptcha|Enter the characters you see|Type the characters you see|Robot Check|To discuss automated access/i;
+// The robot-check regex (BLOCKED_RE) lives in amazon/dp-static.ts now, shared
+// with the store overlay's static enrichment. Misreading a block page as a
+// product page would flag every product as unavailable, which is wrong.
 
 export type ProductDetail = { available: boolean; parentAsin: string | null };
 

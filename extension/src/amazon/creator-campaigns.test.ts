@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyCampaignFills,
   daysUntil,
+  parseBudgetAvailability,
   parseBudgetText,
   parseCampaignText,
   parseDateRange,
+  parseEpcCents,
   parsePctText,
   parseUsDate,
+  type Campaign,
 } from "./creator-campaigns";
 
 // The DOM-walking pieces (extractCampaignAsins, parseCampaignCard,
@@ -96,5 +100,98 @@ describe("per-field testid parsers", () => {
     const { startsAt, endsAt } = parseDateRange("Ongoing");
     expect(startsAt).toBeNull();
     expect(endsAt).toBeNull();
+  });
+});
+
+// SPCC card text parsers. The strings mirror what the live SPCC grid renders per
+// card (verified 2026-09-22): "Estimated EPC: Up to $0.06" and "Budget
+// availability score:High" (Amazon omits the space after the colon).
+describe("parseEpcCents", () => {
+  it("reads the dollar ceiling as cents", () => {
+    expect(parseEpcCents("Estimated EPC: Up to $1.05")).toBe(105);
+    expect(parseEpcCents("Estimated EPC: Up to $0.06")).toBe(6);
+  });
+
+  it("returns null when no EPC line is present", () => {
+    expect(parseEpcCents("Commission rate: 10%")).toBeNull();
+    expect(parseEpcCents("")).toBeNull();
+  });
+});
+
+describe("parseBudgetAvailability", () => {
+  it("reads the score with or without a space after the colon", () => {
+    expect(parseBudgetAvailability("Budget availability score:High")).toBe("high");
+    expect(parseBudgetAvailability("Budget availability score: Medium")).toBe("medium");
+    expect(parseBudgetAvailability("budget availability score: low")).toBe("low");
+  });
+
+  it("returns null for an unknown or absent score", () => {
+    expect(parseBudgetAvailability("Budget availability score: Unknown")).toBeNull();
+    expect(parseBudgetAvailability("nothing here")).toBeNull();
+  });
+});
+
+// applyCampaignFills only touches plain fields (no DOM), so it is testable in the
+// node environment with a minimal cast campaign. Covers the Campaign Butler
+// widening: the captured conversion `stats` thread onto the card alongside fill.
+describe("applyCampaignFills", () => {
+  const bare = (campaignId: string | null): Campaign =>
+    ({
+      el: null as unknown as HTMLElement,
+      detailsEl: null as unknown as HTMLElement,
+      brand: null,
+      commissionRatePct: null,
+      remainingBudgetCents: null,
+      startsAt: null,
+      endsAt: null,
+      asins: [],
+      campaignId,
+      slotsFilled: null,
+      slotsTotal: null,
+      fullyClaimed: null,
+      stats: null,
+      epcCents: null,
+      budgetAvailability: null,
+      isSpcc: false,
+    }) satisfies Campaign;
+
+  it("merges fill and conversion stats onto the matching card", () => {
+    const c = bare("amzn1.campaign.ABC");
+    applyCampaignFills([c], {
+      "amzn1.campaign.ABC": {
+        accepted: 3,
+        required: 10,
+        fullyClaimed: false,
+        stats: {
+          ordersLast30: 72,
+          salesLast30Cents: 233581,
+          roas: 6.69,
+          ordersTotal: 203,
+          clicksLast30: 300,
+          clicksTotal: 900,
+        },
+      },
+    });
+    expect(c.slotsFilled).toBe(3);
+    expect(c.slotsTotal).toBe(10);
+    expect(c.stats?.ordersLast30).toBe(72);
+    expect(c.stats?.roas).toBeCloseTo(6.69);
+    expect(c.stats?.clicksLast30).toBe(300);
+  });
+
+  it("leaves stats null when the capture carried none", () => {
+    const c = bare("amzn1.campaign.NOSTATS");
+    applyCampaignFills([c], {
+      "amzn1.campaign.NOSTATS": { accepted: 1, required: 5, fullyClaimed: false },
+    });
+    expect(c.slotsTotal).toBe(5);
+    expect(c.stats).toBeNull();
+  });
+
+  it("keeps a card untouched when no fill matches its id", () => {
+    const c = bare("amzn1.campaign.X");
+    applyCampaignFills([c], {});
+    expect(c.slotsFilled).toBeNull();
+    expect(c.stats).toBeNull();
   });
 });

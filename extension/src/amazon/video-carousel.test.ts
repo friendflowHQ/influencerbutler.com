@@ -1,10 +1,40 @@
 import { describe, expect, it } from "vitest";
 import {
+  carouselBreakdown,
   carouselSourceFor,
   classifiedCount,
   classifyCreatorType,
+  classifyVideoAci,
   extractFromText,
+  mergeCarouselCandidates,
+  parseClock,
+  upperInfluencerSlot,
+  type CarouselResult,
+  type CarouselSource,
+  type CarouselVideo,
+  type CreatorClass,
 } from "./video-carousel";
+
+describe("classifyVideoAci", () => {
+  it("classifies seller/brand content ids", () => {
+    expect(classifyVideoAci("amzn1.ive.seller.video.06916f1ebbbd4c518f2f9339c4758c32")).toBe("brand");
+  });
+
+  it("classifies vse creator ids as influencer", () => {
+    expect(classifyVideoAci("amzn1.vse.video.0f9cd810cfea4600ad66d9e94687cc46")).toBe("influencer");
+    expect(classifyVideoAci("amzn1.ive.influencer.video.abc")).toBe("influencer");
+  });
+
+  it("classifies customer review ids", () => {
+    expect(classifyVideoAci("amzn1.customer.video.abc")).toBe("customer");
+    expect(classifyVideoAci("amzn1.customer.review.abc")).toBe("customer");
+  });
+
+  it("reports unrecognized namespaces as unknown instead of guessing", () => {
+    expect(classifyVideoAci("amzn1.ive.somethingnew.video.x")).toBe("unknown");
+    expect(classifyVideoAci("")).toBe("unknown");
+  });
+});
 
 describe("classifyCreatorType", () => {
   it("classifies influencers", () => {
@@ -59,6 +89,13 @@ describe("extractFromText", () => {
     expect(result?.videos.every((v) => v.carousel === "lower")).toBe(true);
   });
 
+  // The side here came from the request URL / state-script key, so it is a real
+  // reading of where the video sits and My Video Placement may state it.
+  it("marks the side as marker-derived", () => {
+    const result = extractFromText(payload, "upper");
+    expect(result?.videos.every((v) => v.sideFrom === "marker")).toBe(true);
+  });
+
   it("attaches a video url only when one aligns to each video", () => {
     const withUrls = JSON.stringify({
       videos: [
@@ -71,6 +108,197 @@ describe("extractFromText", () => {
       "https://www.amazon.com/vdp/1",
       "https://www.amazon.com/vdp/2",
     ]);
+  });
+
+  it("captures durationSeconds when one aligns to each video", () => {
+    // Verified live 2026-08-18: the widget payload carries durationSeconds.
+    const withDurations = JSON.stringify({
+      videos: [
+        { creatorType: "Influencer", title: "A", durationSeconds: 21 },
+        { creatorType: "Vendor", title: "B", durationSeconds: 52 },
+      ],
+    });
+    const result = extractFromText(withDurations);
+    expect(result?.videos.map((v) => v.durationSec)).toEqual([21, 52]);
+  });
+
+  it("drops durations when they do not align one-per-video", () => {
+    // Only one duration for two videos: a positional map would misattach it.
+    const misaligned = JSON.stringify({
+      videos: [
+        { creatorType: "Influencer", title: "A", durationSeconds: 21 },
+        { creatorType: "Vendor", title: "B" },
+      ],
+    });
+    const result = extractFromText(misaligned);
+    expect(result?.videos.map((v) => v.durationSec)).toEqual([null, null]);
+  });
+});
+
+describe("parseClock", () => {
+  it("parses m:ss and h:mm:ss badges to seconds", () => {
+    expect(parseClock("0:22")).toBe(22);
+    expect(parseClock("1:43")).toBe(103);
+    expect(parseClock("10:00")).toBe(600);
+    expect(parseClock(" 1:02:03 ")).toBe(3723);
+  });
+
+  it("rejects the main player's live countdown (leading '-')", () => {
+    // The active player reads "-0:22"; it is not a static thumbnail badge and
+    // must never be scraped into the length sample.
+    expect(parseClock("-0:22")).toBeNull();
+  });
+
+  it("rejects junk, out-of-range fields, and non-clock text", () => {
+    expect(parseClock("")).toBeNull();
+    expect(parseClock("0:00")).toBeNull(); // zero-length is not a real runtime
+    expect(parseClock("1:99")).toBeNull(); // seconds out of range
+    expect(parseClock("$19.98")).toBeNull();
+    expect(parseClock("Video duration 1:43")).toBeNull(); // must be the whole value
+    expect(parseClock("42")).toBeNull();
+  });
+});
+
+// Build a CarouselVideo fixture with only the fields the split logic reads.
+function vid(
+  creatorType: CreatorClass,
+  carousel: CarouselSource,
+  creatorName?: string,
+  sideFrom?: CarouselVideo["sideFrom"],
+): CarouselVideo {
+  return {
+    title: null,
+    creatorName: creatorName ?? null,
+    creatorType,
+    url: null,
+    carousel,
+    contentId: null,
+    position: null,
+    sideFrom,
+  };
+}
+
+function resultOf(videos: CarouselVideo[], strategy: CarouselResult["strategy"] = "json"): CarouselResult {
+  const counts = { total: 0, influencer: 0, brand: 0, customer: 0, unknown: 0 };
+  for (const v of videos) {
+    counts[v.creatorType] += 1;
+    counts.total += 1;
+  }
+  return { counts, videos, strategy };
+}
+
+describe("carouselBreakdown", () => {
+  it("tallies videos into their carousel side", () => {
+    const result = resultOf([
+      vid("brand", "upper"),
+      vid("influencer", "upper"),
+      vid("influencer", "lower"),
+      vid("customer", "lower"),
+      vid("unknown", "unknown"),
+    ]);
+    const sides = carouselBreakdown(result);
+    expect(sides.upper).toEqual({ total: 2, influencer: 1, brand: 1, customer: 0, unknown: 0 });
+    expect(sides.lower).toEqual({ total: 2, influencer: 1, brand: 0, customer: 1, unknown: 0 });
+    expect(sides.unknown.total).toBe(1);
+  });
+
+  it("returns empty buckets for a null result", () => {
+    const sides = carouselBreakdown(null);
+    expect(sides.upper.total + sides.lower.total + sides.unknown.total).toBe(0);
+  });
+});
+
+describe("upperInfluencerSlot", () => {
+  it("is on when an influencer video is in the upper carousel", () => {
+    expect(upperInfluencerSlot(resultOf([vid("influencer", "upper"), vid("brand", "upper")]))).toBe("on");
+  });
+
+  it("is off when the upper carousel has videos but influencers are only in the lower rail", () => {
+    expect(
+      upperInfluencerSlot(resultOf([vid("brand", "upper"), vid("influencer", "lower")])),
+    ).toBe("off");
+  });
+
+  it("is unknown when the upper carousel has not been observed", () => {
+    expect(upperInfluencerSlot(resultOf([vid("influencer", "lower")]))).toBe("unknown");
+    expect(upperInfluencerSlot(resultOf([]))).toBe("unknown");
+    expect(upperInfluencerSlot(null)).toBe("unknown");
+  });
+});
+
+describe("mergeCarouselCandidates", () => {
+  it("keeps both carousels when different sources see different rails", () => {
+    // videoList strategy: 3 brand videos it filed as upper hero.
+    const videoList = resultOf([vid("brand", "upper"), vid("brand", "upper"), vid("brand", "upper")], "videoList");
+    // Network payload: the lower rail hydrated with 9 influencers + 1 brand.
+    const lowerVideos = [
+      ...Array.from({ length: 9 }, (_, i) => vid("influencer", "lower", `Creator ${i}`)),
+      vid("brand", "lower", "BrandCo"),
+    ];
+    const json = resultOf(lowerVideos, "json");
+
+    const merged = mergeCarouselCandidates([json, videoList], 13);
+    expect(merged).not.toBeNull();
+    const sides = carouselBreakdown(merged);
+    expect(sides.upper).toEqual({ total: 3, influencer: 0, brand: 3, customer: 0, unknown: 0 });
+    expect(sides.lower.total).toBe(10);
+    expect(sides.lower.influencer).toBe(9);
+    expect(merged?.counts.total).toBe(13);
+    // Aggregate influencer count (what Butler Approved reads) is the sum of sides.
+    expect(merged?.counts.influencer).toBe(sides.upper.influencer + sides.lower.influencer);
+    // Base strategy label is preserved (json won on classified count).
+    expect(merged?.strategy).toBe("json");
+  });
+
+  // The merge picks one source per side, so each surviving video must keep the
+  // provenance its own source gave it: a videoList row stays "assumed" even when
+  // it lands beside marker-derived rows from another candidate.
+  it("preserves each video's side provenance across the merge", () => {
+    const videoList = resultOf([vid("brand", "upper", "BrandCo", "assumed")], "videoList");
+    const json = resultOf(
+      [vid("influencer", "lower", "Creator", "marker"), vid("influencer", "lower", "Other", "marker")],
+      "json",
+    );
+    const merged = mergeCarouselCandidates([json, videoList], 3);
+    const bySide = Object.fromEntries(
+      (merged?.videos ?? []).map((v) => [v.carousel, v.sideFrom]),
+    );
+    expect(bySide.upper).toBe("assumed");
+    expect(bySide.lower).toBe("marker");
+  });
+
+  it("falls back to the base candidate when the merge would exceed the header total", () => {
+    const videoList = resultOf([vid("brand", "upper"), vid("brand", "lower")], "videoList");
+    const json = resultOf([vid("influencer", "lower"), vid("influencer", "lower")], "json");
+    // Header says only 2 videos exist, but per-side union would total 3+.
+    const merged = mergeCarouselCandidates([json, videoList], 2);
+    // Guard trips: returns the plain best candidate unchanged.
+    expect(merged).toBe(json);
+  });
+
+  it("does not union two candidates that both saw the same side", () => {
+    const a = resultOf([vid("influencer", "lower"), vid("influencer", "lower")], "json");
+    const b = resultOf(
+      [vid("influencer", "lower"), vid("influencer", "lower"), vid("customer", "lower")],
+      "json",
+    );
+    const merged = mergeCarouselCandidates([a, b], null);
+    // Only the stronger single lower source is taken, not a + b.
+    expect(merged?.counts.total).toBe(3);
+    expect(carouselBreakdown(merged).lower.total).toBe(3);
+  });
+
+  it("takes side-unknown videos only from the base candidate", () => {
+    const base = resultOf([vid("influencer", "lower"), vid("unknown", "unknown")], "json");
+    const other = resultOf([vid("brand", "upper"), vid("unknown", "unknown")], "videoList");
+    const merged = mergeCarouselCandidates([base, other], null);
+    expect(carouselBreakdown(merged).unknown.total).toBe(1);
+  });
+
+  it("degenerates to the single candidate when only one is present", () => {
+    const only = resultOf([vid("influencer", "lower")], "json");
+    expect(mergeCarouselCandidates([only], null)).toBe(only);
+    expect(mergeCarouselCandidates([], null)).toBeNull();
   });
 });
 

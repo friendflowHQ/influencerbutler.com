@@ -5,7 +5,7 @@ const FAQ = [
   },
   {
     q: "How does the 14-day Pro trial work?",
-    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
+    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
   },
   {
     q: "Can I cancel anytime?",
@@ -13,7 +13,7 @@ const FAQ = [
   },
   {
     q: "Do you offer refunds?",
-    a: "If you're charged unexpectedly or run into a serious issue, email hello@influencerbutler.com within 14 days and we'll make it right.",
+    a: "If you're charged unexpectedly or run into a serious issue, contact us at influencerbutler.com/contact within 14 days and we'll make it right.",
   },
   {
     q: "What payment methods do you accept?",

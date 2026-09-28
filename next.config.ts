@@ -2,10 +2,11 @@ import type { NextConfig } from "next";
 
 const SUPABASE_AUTH_BASE = "https://khutiiojhafblabtixpp.supabase.co/auth/v1";
 
-// Single source of truth for the Chrome Web Store listing. The site's
-// /extension short link (used across the landing page, footer, help pages, and
-// the desktop app's install buttons) redirects here, so the extension id lives
-// in exactly one place.
+// Single source of truth for the Chrome Web Store listing. /extension is now
+// the indexable landing page (src/app/extension); the store short link is
+// /go/extension, which redirects here so the extension id lives in exactly one
+// place. Anything that explicitly wants the Web Store (desktop app install
+// buttons, "Add to Chrome" deep links) should use /go/extension.
 const CHROME_EXTENSION_URL =
   "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
@@ -17,6 +18,10 @@ const connectSrc = [
   "https://www.google-analytics.com",
   "https://*.analytics.google.com",
   "https://*.googletagmanager.com",
+  // The AI concierge voice call POSTs its WebRTC SDP offer straight from the
+  // browser to OpenAI (/v1/realtime/calls) with the minted ephemeral token.
+  // Without this entry the CSP rejects that fetch and voice can never connect.
+  "https://api.openai.com",
 ];
 const imgSrc = [
   "'self'",
@@ -30,12 +35,12 @@ const imgSrc = [
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com https://www.googletagmanager.com",
+  "script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com https://www.googletagmanager.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src ${imgSrc.join(" ")}`,
   `connect-src ${connectSrc.join(" ")}`,
-  "frame-src 'self' https://*.lemonsqueezy.com https://www.youtube.com https://www.youtube-nocookie.com",
+  "frame-src 'self' https://*.lemonsqueezy.com https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
@@ -65,8 +70,13 @@ const nextConfig: NextConfig = {
       { source: "/stop-messaging-brands", destination: "/stop-messaging-brands.html" },
       { source: "/best-amazon-influencer-tools", destination: "/best-amazon-influencer-tools.html" },
       { source: "/email-sequences", destination: "/email-sequences.html" },
+      { source: "/brand-deal-rates", destination: "/brand-deal-rates.html" },
       { source: "/unsubscribe", destination: "/unsubscribe.html" },
       { source: "/features/:slug", destination: "/features/:slug.html" },
+      { source: "/compare/:slug", destination: "/compare/:slug.html" },
+      { source: "/guides/:slug", destination: "/guides/:slug.html" },
+      { source: "/for-agencies", destination: "/for-agencies.html" },
+      { source: "/for-agencies/:slug", destination: "/for-agencies/:slug.html" },
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
       { source: "/legal/eula", destination: "/legal/eula.html" },
@@ -77,21 +87,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // /extension is the Web Store short link referenced across the landing
-      // page, footer, and help tutorials, so it lands on the live Web Store
-      // listing. Kept non-permanent so the target can be retargeted without a
-      // browser-cached 301 lock-in.
+      // /extension is the extension landing page (src/app/extension/page.tsx),
+      // linked from the top nav, footer, and help tutorials, and it renders
+      // normally. /go/extension is the Web Store short link: it lands on the
+      // live listing. Kept non-permanent so the target can be retargeted
+      // without a browser-cached 301 lock-in.
       {
-        source: "/extension",
+        source: "/go/extension",
         destination: CHROME_EXTENSION_URL,
-        permanent: false,
-      },
-      // /help/chrome-extension is a help link baked into already-shipped desktop
-      // app builds, so it lands on the extension's help article rather than the
-      // install listing. Non-permanent for the same retargeting reason.
-      {
-        source: "/help/chrome-extension",
-        destination: "/help/tutorials/extension",
         permanent: false,
       },
       {
@@ -102,6 +105,20 @@ const nextConfig: NextConfig = {
       {
         source: "/.well-known/oauth-authorization-server",
         destination: `${SUPABASE_AUTH_BASE}/.well-known/oauth-authorization-server`,
+        permanent: false,
+      },
+      // The Book a Call page lives under the dashboard, but customers hear or
+      // read the address and type the short version. Send both short forms to
+      // the real page instead of a 404. Non-permanent so the target can move
+      // without a browser-cached 301 lock-in.
+      {
+        source: "/book",
+        destination: "/dashboard/book",
+        permanent: false,
+      },
+      {
+        source: "/book-a-call",
+        destination: "/dashboard/book",
         permanent: false,
       },
       // The drip emails linked /docs for months but the route never existed.

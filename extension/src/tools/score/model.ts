@@ -38,6 +38,9 @@ export type ScoreInputs = {
   // (search tiles never have it until "Scan videos" runs).
   influencerVideos: number | null;
   boughtPastMonth: number | null;
+  // Lifetime review count off the tile: only a demand fallback for when
+  // "bought in past month" is absent (see demandUnit below).
+  reviewCount: number | null;
   inStock: boolean | null;
   membership: { cc: boolean; spcc: boolean };
 };
@@ -82,11 +85,15 @@ export function computeButlerScore(inputs: ScoreInputs, settings: Settings): But
       : clamp01(1 - inputs.influencerVideos / (approved.maxInfluencerVideos + 1));
 
   // Demand: "bought in past month" against the approved floor, full marks at
-  // 4x the floor.
+  // 4x the floor. When Amazon does not show that, the lifetime review count
+  // stands in, capped at 0.7: reviews prove popularity but not current
+  // velocity, so they can never outscore a live bought figure.
   const demandUnit =
-    inputs.boughtPastMonth === null
-      ? 0.5
-      : clamp01(inputs.boughtPastMonth / Math.max(1, approved.minBoughtPerMonth * 4));
+    inputs.boughtPastMonth !== null
+      ? clamp01(inputs.boughtPastMonth / Math.max(1, approved.minBoughtPerMonth * 4))
+      : inputs.reviewCount !== null
+        ? Math.min(0.7, clamp01(inputs.reviewCount / 2000))
+        : 0.5;
 
   const availabilityUnit = inputs.inStock === null ? 0.5 : inputs.inStock ? 1 : 0;
 

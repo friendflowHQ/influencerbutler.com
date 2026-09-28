@@ -8,7 +8,7 @@ category: Other
 
 Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from four sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), fresh discoveries pulled from the Creators API, and the **Amazon Associates Deals Hub** (the curated deals catalogue, including upcoming deals that haven't started yet). Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's upcoming, a quick win, or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
 
-The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Deals Influencer Butler in one click, with the video or photo you already made attached to the post.
+The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Deals Butler in one click, with the video or photo you already made attached to the post.
 
 ## The Deals Hub source (and upcoming deals)
 
@@ -16,7 +16,7 @@ The Deals Hub is Amazon's own curated list of deals for creators. It is the only
 
 Each Deals Hub row carries a **Status** of Upcoming or Live, the deal schedule, and the deal tags Amazon applies (Best Deal, Prime Exclusive, Creator Favorite).
 
-> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Deals Influencer Butler, so you don't post embargoed pricing early.
+> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Deals Butler, so you don't post embargoed pricing early.
 
 ## Lowest price all year
 
@@ -52,32 +52,33 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
 
 ## First run
 
-1. Open **Prime Day Butler** in the left nav (under the Amazon group).
-2. Optional: build a **tracked-keyword watchlist**. Type a keyword and click **Track**. Tracked keywords run on every pass and on Find trending, so you don't retype them each time.
-3. Set the filters:
+1. Turn the workspace on first. It ships hidden and only unlocks around an event, so it is not in the nav by default. Open **Settings**, then **Show / Hide Butlers**, and switch on **Prime Day Butler**.
+2. Open **Prime Day Butler** in the left nav, under **Amazon Butler**.
+3. Optional: build a **tracked-keyword watchlist**. Type a keyword and click **Track**. Tracked keywords run on every pass and on Find trending, so you don't retype them each time.
+4. Set the filters:
    - **Keyword**: optional one-off search for this run.
    - **Min % off**: defaults to 20%. Bump to 40–50% for a tighter list.
    - **Max price ($)**: optional.
    - **Source toggles**: leave them on for the widest net. **Include Deals Hub** adds the curated catalogue and upcoming deals.
    - **Check owned products for live deals**: turn on to build the last-minute bucket (uses extra Creators API calls).
-   - **CC-eligible only**: filter to products where Creator Connections accepts the affiliate link.
+   - **Programs**: filter by opportunity type. Choose **Any** (default), **Creator Connections** (rows with a CC campaign), **SPCC** (rows with a Sponsored Products for Creators offer), or **CC and SPCC** (only rows that have both). Each row keeps showing its commission signals, so you can see what you'd make: the CC rate, the SPCC earnings-per-click, and the best per-sale **Est. earnings**.
    - **Lowest all year only**: filter to deals that beat the year's lowest price.
-4. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
-5. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
-6. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Influencer Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+5. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
+6. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
+7. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
 
 ## Grab and post in a couple of clicks
 
 You don't have to queue deals one at a time. Tick the checkbox on each row you want (or **Select visible** to grab the whole filtered list), then pick how ready they should be under **Send as**:
 
-- **Drafts to review**: the deals land in the Deals Influencer Butler queue as drafts. You review them and choose destinations there before anything posts.
+- **Drafts to review**: the deals land in the Deals Butler queue as drafts. You review them and choose destinations there before anything posts.
 - **Ready to post**: the deals arrive already targeting your enabled Social Destinations, so they're one click from going out.
 
-Click **Send selected to Deals Influencer Butler**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
+Click **Send selected to Deals Butler**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
 
 ## Hands-off with Deals Hub Auto-Pilot
 
-If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Deals Influencer Butler) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Deals Influencer Butler queue your manual sends feed.
+If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Deals Butler) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Deals Butler queue your manual sends feed.
 
 ## Customize the table
 
@@ -93,6 +94,7 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 ## Gotchas
 
 - **The list goes stale fast during Prime Day.** Re-run every 2–4 hours during the event window. Amazon's prices flip in real time. The Deals Hub is re-read at most every few hours, so a fresh run reuses the last harvest if it's recent.
+- **The Deals Hub does not use the Creators API.** It reads Amazon's curated deals from your signed-in Associates session in the app, so this source still works while Amazon has your own Creator API access on hold. Fresh discoveries and the owned-product deal check are the parts that need the API.
 - **The Deals Hub needs a signed-in Amazon session in the app.** If the source comes back empty with a "sign in, then run again" note, open Amazon Associates in the app once to refresh the session.
 - **Upcoming deals are embargoed.** Their price and dates are confidential until Amazon publishes them. Use the upcoming view to plan, but wait until a deal is live (or its publish time) before you post.
 - **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Settings.
@@ -101,6 +103,6 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 
 ## Related
 
-- [Deals Influencer Butler tutorial](/help/tutorials/daily-deals): where most users send the picks next.
+- [Deals Butler tutorial](/help/tutorials/deals): where most users send the picks next.
 - [Black Friday Butler tutorial](/help/tutorials/black-friday): same seasonal-radar shape for the BFCM window.
 - [Storefront Butler tutorial](/help/tutorials/storefrontbutler): keeps the "content I already made" source fresh.

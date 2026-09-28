@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { normalizeWouldReturn } from "@/lib/cancel-reasons";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,8 @@ type CancelRequestBody = {
   subscriptionId?: string;
   reason?: string;
   feedback?: string;
+  intendedOutcome?: string;
+  wouldReturn?: string;
   offerShown?: boolean;
 };
 
@@ -18,6 +21,8 @@ export async function POST(request: Request) {
     const subscriptionId = body.subscriptionId?.toString();
     const reason = body.reason?.toString() ?? "unspecified";
     const feedback = body.feedback?.toString() ?? null;
+    const intendedOutcome = body.intendedOutcome?.toString().trim() || null;
+    const wouldReturn = normalizeWouldReturn(body.wouldReturn);
     const offerShown = Boolean(body.offerShown);
 
     if (!subscriptionId) {
@@ -98,6 +103,10 @@ export async function POST(request: Request) {
         subscription_id: subscriptionId,
         reason,
         feedback,
+        intended_outcome: intendedOutcome,
+        would_return: wouldReturn,
+        source: "in_app",
+        completed_at: new Date().toISOString(),
         offer_shown: offerShown,
         offer_accepted: false,
       });

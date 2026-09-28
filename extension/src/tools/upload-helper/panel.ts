@@ -2,7 +2,11 @@ import { addSection, chip, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { readStorefrontHandle, readUploadState, type UploadState } from "../../amazon/creator-hub";
 import { harvestStorefront } from "../storefront-check/harvest";
-import { sendToBackground } from "../../shared/messages";
+import { sendToBackground, type CampaignStatusRecord } from "../../shared/messages";
+import { getCache, loadFilters } from "../../catalogue/cache";
+import { resolveCampaignStatus } from "../campaigns/status";
+import { describeAcceptResult, requestAccept, type AcceptKind } from "../campaigns/accept";
+import { campaignPromptsFor } from "./campaign-prompt";
 import type { Availability } from "../../background/market-availability";
 
 // Creator Hub "Edit Video" helper (/creatorhub/video/<id>). Mirrors the
@@ -14,13 +18,37 @@ import type { Availability } from "../../background/market-availability";
 const MARKETS = ["US", "CA", "UK"] as const;
 const MANAGE_URL = "https://www.amazon.com/creatorhub/manage";
 
-export function initUploadHelper(): void {
+// The Creator Hub reports the home marketplace as a short code; the accept
+// request wants the storefront host (the campaign is on that store).
+const MARKETPLACE_HOST: Record<string, string> = {
+  US: "amazon.com",
+  CA: "amazon.ca",
+  UK: "amazon.co.uk",
+  DE: "amazon.de",
+  FR: "amazon.fr",
+  IT: "amazon.it",
+  ES: "amazon.es",
+  JP: "amazon.co.jp",
+  IN: "amazon.in",
+  MX: "amazon.com.mx",
+  AU: "amazon.com.au",
+};
+
+export type UploadHelperOptions = {
+  // tools.uploadCampaignPrompt: flag tagged products that have a campaign.
+  campaignPrompt?: boolean;
+  // tools.standaloneAccept (remote flags applied): whether an unpaired accept
+  // may run through our own tab, or must point at the app.
+  standaloneAccept?: boolean;
+};
+
+export function initUploadHelper(opts: UploadHelperOptions = {}): void {
   let done = false;
   const tryRender = (): boolean => {
     const state = readUploadState(document);
     if (!state) return false;
     done = true;
-    render(state);
+    render(state, opts);
     return true;
   };
   if (tryRender()) return;
@@ -32,11 +60,92 @@ export function initUploadHelper(): void {
   }, 600);
 }
 
-function render(state: UploadState): void {
+function render(state: UploadState, opts: UploadHelperOptions): void {
   const section = addSection(t().uploadHelperTitle);
   renderProducts(section, state);
+  if (opts.campaignPrompt !== false) {
+    // A placeholder keeps the prompts between the products and the duplicate
+    // check while the (async) filter + enrollment reads resolve.
+    const holder = el("div", "uh-campaigns");
+    section.append(holder);
+    void renderCampaignPrompts(holder, state, opts).catch(() => undefined);
+  }
   renderDuplicateCheck(section, state);
   renderSubmit(section);
+}
+
+// Campaign prompts for the tagged products: any product with a Creator
+// Connections / SPCC campaign (local membership filters) gets a chip and an
+// Accept button, so the campaign is joined BEFORE the video goes live and the
+// first views earn the campaign rate. A product the desktop app reports as
+// already enrolled shows the Enrolled badge instead. Silent when no filter is
+// downloaded yet or nothing matches.
+async function renderCampaignPrompts(
+  section: HTMLElement,
+  state: UploadState,
+  opts: UploadHelperOptions,
+): Promise<void> {
+  if (state.asins.length === 0) return;
+  const loaded = loadFilters(await getCache());
+  if (!loaded.cc && !loaded.spcc) return;
+  let enrolled: CampaignStatusRecord[] = [];
+  try {
+    enrolled = await resolveCampaignStatus(state.asins);
+  } catch {
+    enrolled = [];
+  }
+  const prompts = campaignPromptsFor(state.asins, loaded, enrolled);
+  if (prompts.length === 0) return;
+
+  const marketplace = MARKETPLACE_HOST[(state.marketplaceCode ?? "US").toUpperCase()] ?? "amazon.com";
+  section.append(el("p", "note", t().uhCampaignAcceptTitle));
+  for (const p of prompts) {
+    const row = el("div", "row");
+    row.append(el("span", "idrow-value", p.asin));
+    if (p.ccEnrolled) row.append(chip("good", t().enrolledCc));
+    else if (p.cc) row.append(chip("good", t().ccAvailable));
+    if (p.spccEnrolled) row.append(chip("good", t().enrolledSpcc));
+    else if (p.spcc) row.append(chip("good", t().spccAvailable));
+    section.append(row);
+
+    const needCc = p.cc && !p.ccEnrolled;
+    const needSpcc = p.spcc && !p.spccEnrolled;
+    if (!needCc && !needSpcc) continue;
+    section.append(el("p", "note", t().uhCampaignAvailable(p.asin)));
+    const actions = el("div", "row");
+    const status = el("p", "progress");
+    if (needCc) actions.append(acceptButton(t().acceptCc, "cc", p.asin, marketplace, status, opts));
+    if (needSpcc) actions.append(acceptButton(t().acceptSpcc, "spcc", p.asin, marketplace, status, opts));
+    section.append(actions, status);
+  }
+}
+
+function acceptButton(
+  label: string,
+  kind: AcceptKind,
+  asin: string,
+  marketplace: string,
+  status: HTMLElement,
+  opts: UploadHelperOptions,
+): HTMLElement {
+  const btn = el("button", "btn secondary");
+  btn.textContent = label;
+  btn.addEventListener("click", () => {
+    void (async () => {
+      btn.disabled = true;
+      status.textContent = t().acceptWorking;
+      const result = await requestAccept({
+        asin,
+        marketplace,
+        kind,
+        allowStandalone: opts.standaloneAccept !== false,
+      });
+      status.textContent = describeAcceptResult(result);
+      if (result.ok) btn.remove();
+      else btn.disabled = false;
+    })();
+  });
+  return btn;
 }
 
 function renderProducts(section: HTMLElement, state: UploadState): void {

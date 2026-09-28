@@ -61,7 +61,7 @@ Si vous activez la suppression avant republication, prouvez-le sur deux ou trois
 
 ## Recharger les photos supprimées
 
-L'onglet **Supprimées d'Amazon** liste les photos retirées de votre vitrine, chacune avec son original enregistré localement. Cliquez sur **Recharger les photos supprimées** pour les remettre sur le marketplace d'origine. Activez **Ignorer les photos déjà rechargées (par ASIN)** si vous lancez cela régulièrement et ne voulez pas recharger deux fois la même photo.
+L'onglet **Supprimées d'Amazon** liste les photos retirées de votre vitrine, chacune avec son original enregistré localement. Cliquez sur **Recharger les photos supprimées** pour les remettre sur le marketplace d'origine. Activez **Ignorer les photos déjà rechargées (par ASIN)** si vous lancez cela régulièrement et ne voulez pas recharger deux fois la même photo. Laissez **M'envoyer un e-mail si une exécution s'arrête avant la fin** activé pour recevoir un e-mail avec la raison et l'heure à laquelle le butler la relancera tout seul.
 
 ## Trouvez une correspondance par titre quand l'ASIN n'existe pas à l'étranger
 
@@ -74,6 +74,23 @@ Les correspondances ne sont pas publiées au hasard. Chacune apparaît dans le *
 - **Période** : limitez une exécution aux photos récentes, ou activez **Toute la période / toutes les photos** pour un balayage complet (cela ignore les limites de date et le maximum par exécution, à utiliser de façon délibérée).
 - **Ignorer les doublons** : correspondance par titre, ASIN, titre et ASIN, ou "déjà publiée sur ce marketplace" pour qu'une exécution ne republie jamais la même image.
 - **Conserver l'original s'il a été ajouté au cours des N derniers jours** : avec la suppression avant republication activée, cela protège les photos récemment ajoutées contre la suppression.
+
+## Approuvé par Butler : repartir de zéro (republication complète de la bibliothèque)
+
+La formule **Approuvé par Butler : vues en berne + grande bibliothèque (repartir de zéro)** supprime chaque photo de votre vitrine américaine (chacune est d'abord enregistrée sur votre ordinateur) puis la republie comme nouveau contenu avec son titre d'origine, identifiée au produit actuellement disponible. Un rechargement réinitialise la date d'ajout de chaque photo pour qu'Amazon reteste toute votre bibliothèque comme nouveau contenu. Vous devez taper RELOAD pour confirmer avant l'activation, et les suppressions sont espacées entre les exécutions par sécurité ; les photos déjà rechargées sont ignorées automatiquement.
+
+## Recharger mes photos gagnantes (meilleures ventes)
+
+Repartir de zéro republie toute votre bibliothèque de photos. **Recharger mes photos gagnantes** en est la version sélective : au lieu de tout retester, elle republie uniquement les photos des produits qui ont réellement généré des commissions, pour que vos meilleures ventes remportent le test de placement récent d'Amazon pendant que le reste ne bouge pas. Dans **Formules préférées**, cliquez sur **Recharger mes photos gagnantes (meilleures ventes, supprimer d'abord)**.
+
+Les photos n'ont pas de données de rétention comme les vidéos, donc cela s'appuie sur deux choses : vos produits qui rapportent déjà (gagnants d'abord) et la réinitialisation de fraîcheur. Elle supprime d'abord chaque original pour qu'Amazon reteste la republication comme contenu récent, rafraîchit le titre pour qu'elle ne soit pas lue comme un doublon identique, et ignore les produits en rupture. Comme elle supprime d'Amazon, vous tapez **DELETE** pour confirmer au démarrage de l'exécution, alors prouvez-la d'abord sur un petit lot : désactivez Process All et réglez un maximum bas.
+
+## Gagnants d'abord + titres rafraîchis
+
+Deux interrupteurs optionnels dans les filtres rendent un rechargement plus intelligent :
+
+- **Gagnants d'abord : ne recharger que les photos dont les produits ont généré des commissions**. L'exécution ignore toute photo sauf si l'un de ses produits identifiés a généré une commission dans la fenêtre de recherche (365 jours par défaut), d'après les données de gains déjà sur votre ordinateur. Combiné au Max par exécution, cela consacre toute l'exécution à vos valeurs sûres plutôt qu'à de vieux envois au hasard. Le classement suit les gains connus : une photo que ce butler n'a jamais traitée peut ne pas encore avoir de correspondance de gains, alors élargissez la fenêtre ou désactivez l'interrupteur pour un balayage complet.
+- **Rafraîchir le titre lors du rechargement**. Amazon déprioritise parfois une republication qu'il reconnaît comme identique, un rechargement fonctionne donc mieux avec un vrai changement de métadonnées. Ceci réécrit chaque titre avec une nouvelle accroche avant la republication. Le style intégré ne nécessite aucune clé API ; le style IA utilise votre clé Anthropic et revient aux accroches intégrées si la réécriture échoue. Quand aucune réécriture n'est possible, le titre original est conservé.
 
 ## Où vont les données
 

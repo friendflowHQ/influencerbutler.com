@@ -28,6 +28,17 @@ Debajo, un seguimiento de ritmo trimestral muestra si vas bien encaminado para a
 
 Si tu escaparate aún no muestra acceso a Creator Connections, Amazon Butler añade una nota: Creator Connections y Sponsored Products son solo por invitación y puede que aún no estén disponibles en tu nivel actual. Subir tu nivel Star es la forma de desbloquearlos.
 
+## Solo marcas que envían a tu país
+
+Si vives fuera de EE. UU. (por ejemplo en Reino Unido, Australia o Canadá), una campaña llena de productos solo disponibles en EE. UU. es esfuerzo perdido: tu audiencia no puede comprarlos. La tarjeta **Filtro de disponibilidad por país** en **Message Brands** lo resuelve:
+
+1. Elige tu país en **País a comprobar**. Los países aparecen atenuados hasta que la región correspondiente de la API de Creators esté conectada en **Ajustes → Integraciones de API**: US, CA, MX y BR usan tus credenciales predeterminadas, Reino Unido y los demás países europeos usan credenciales EU, y AU, JP, SG e IN usan credenciales FE.
+2. Activa **Solo enviar mensajes a marcas con productos disponibles en tu país**.
+
+Durante una ejecución, Butler comprueba los productos de cada campaña en la tienda de Amazon de ese país y omite las marcas sin nada comprable allí, indicando el motivo en la lista de omitidos. Una campaña pasa en cuanto un producto está disponible. Los resultados se guardan en caché durante dos días, así que las ejecuciones repetidas siguen siendo rápidas.
+
+Dos advertencias: la comprobación busca los listados exactos de la campaña, así que un artículo vendido en tu país con otro listado local puede aparecer como no disponible. Y como con los demás filtros, una campaña que Butler no puede verificar se omite en lugar de adivinarse.
+
 ## Próximos pasos
 
 Cuando el contacto funcione, configura **Daily Commission Butler** para que las campañas aceptadas se recojan automáticamente. Juntos cierran el ciclo: Amazon Butler encuentra marcas, Daily Commission Butler acepta los acuerdos que ofrecen.

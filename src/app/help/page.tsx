@@ -30,6 +30,9 @@ export default async function HelpLandingPage() {
             <Link href="/course/amazon-influencer" className="text-slate-700 hover:text-slate-900">
               Free Course
             </Link>
+            <Link href="/dashboard/book" className="text-slate-400 hover:text-slate-600">
+              Talk to a human
+            </Link>
           </nav>
         </div>
       </header>

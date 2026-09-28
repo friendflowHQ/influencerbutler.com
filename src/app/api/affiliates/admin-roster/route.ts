@@ -1,22 +1,27 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { listStoreAffiliates, type StoreAffiliate } from "@/lib/affiliates";
+import { loadAffiliateCommissions, type AffiliateStatement } from "@/lib/affiliate-commissions-data";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Read-only affiliate roster for the admin dashboard. Merges three sources into
+ * Read-only affiliate roster for the admin dashboard. Merges these sources into
  * one row per user:
  *
  *  - affiliate_applications: name, email, application status, applied date.
  *  - profiles: branded code, is_affiliate flag, ls_affiliate_id link state.
- *  - Lemon Squeezy (store-wide list): earnings for linked affiliates.
+ *  - Our own commission engine (orders): earnings for each affiliate.
  *
- * Earnings come straight from the LS affiliates list, so the whole roster needs
- * just one paginated LS call (no per-affiliate fetch). LS has no exact
- * "last paid" date, so we surface paid-to-date (total minus unpaid) instead.
+ * The program is self-hosted: referrals are never handed to Lemon Squeezy, so LS
+ * records no commissions and the money columns come from loadAffiliateCommissions
+ * (the same engine the Owed / Payouts tabs use), NOT from the LS affiliate list.
+ * The LS list is still fetched, but only to show link state (lsLinked/lsStatus).
+ *   Total earned = full promised rate on every commissionable order.
+ *   Owed         = still-outstanding top-up + open make-whole adjustments.
+ *   Paid out     = total earned minus owed.
  */
 
 type AppStatus = "pending" | "approved" | "rejected" | "none";
@@ -194,20 +199,33 @@ export async function GET(request: Request) {
       console.error("admin-roster: LEMONSQUEEZY_STORE_ID missing");
     }
 
-    const buildEarnings = (lsAffiliateId: string | null) => {
-      if (!lsAffiliateId || !lsAvailable) {
+    // Self-hosted commission numbers from our own engine (orders), keyed by
+    // affiliate user id. Degrade gracefully: on failure the money columns show
+    // "-" rather than 500ing the whole roster.
+    const commissionByUser = new Map<string, AffiliateStatement>();
+    try {
+      const res = await loadAffiliateCommissions({});
+      for (const s of res?.statements ?? []) commissionByUser.set(s.userId, s);
+    } catch (err) {
+      console.error("admin-roster: commission load failed", err);
+    }
+
+    // Owed  = outstanding order top-up + open make-whole adjustments.
+    // Total = all-time earned commission + those same open adjustments, so
+    //         Paid (Total - Owed) collapses cleanly to earned-minus-outstanding.
+    // A user with no statement (not an affiliate, or no commissionable orders)
+    // returns nulls, which the UI renders as "-".
+    const buildEarnings = (userId: string) => {
+      const s = commissionByUser.get(userId);
+      if (!s) {
         return { totalEarningsCents: null, paidCents: null, unpaidEarningsCents: null };
       }
-      const ls = lsById.get(lsAffiliateId);
-      if (!ls) {
-        return { totalEarningsCents: null, paidCents: null, unpaidEarningsCents: null };
-      }
-      const total = ls.totalEarningsCents;
-      const unpaid = ls.unpaidEarningsCents;
+      const owed = s.owedCents + s.adjustmentCents;
+      const total = s.earnedCents + s.adjustmentCents;
       return {
         totalEarningsCents: total,
-        unpaidEarningsCents: unpaid,
-        paidCents: Math.max(0, total - unpaid),
+        unpaidEarningsCents: owed,
+        paidCents: Math.max(0, total - owed),
       };
     };
 
@@ -221,7 +239,7 @@ export async function GET(request: Request) {
       seen.add(userId);
       const profile = profileByUser.get(userId);
       const lsAffiliateId = profile?.lsAffiliateId ?? null;
-      const earnings = buildEarnings(lsAffiliateId);
+      const earnings = buildEarnings(userId);
       rows.push({
         userId,
         name: str(row.full_name) ?? (lsAffiliateId ? lsById.get(lsAffiliateId)?.name ?? null : null),
@@ -247,7 +265,7 @@ export async function GET(request: Request) {
     for (const [userId, profile] of profileByUser) {
       if (seen.has(userId)) continue;
       if (!profile.isAffiliate && !profile.affiliateCode) continue;
-      const earnings = buildEarnings(profile.lsAffiliateId);
+      const earnings = buildEarnings(userId);
       rows.push({
         userId,
         name: profile.lsAffiliateId ? lsById.get(profile.lsAffiliateId)?.name ?? null : null,

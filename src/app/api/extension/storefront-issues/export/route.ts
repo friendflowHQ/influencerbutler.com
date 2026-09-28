@@ -4,10 +4,10 @@
  * products) as a CSV report. Session cookie or Bearer license key, so a plain
  * <a href download> from the dashboard works.
  */
-import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTableError, jsonWithCors, optionsResponse } from "@/lib/extension-api";
+import { csvResponse, toCsv } from "@/lib/csv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,11 +20,6 @@ type IssueRow = {
   storefront_url: string | null;
   detected_at: string;
 };
-
-function csvCell(value: string | null): string {
-  const v = value ?? "";
-  return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-}
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -49,28 +44,11 @@ export async function GET(request: Request) {
   }
 
   const rows = (data ?? []) as IssueRow[];
-  const header = "issue_type,severity,subject,detail,storefront_url,detected_at";
-  const body = rows
-    .map((r) =>
-      [
-        r.issue_type,
-        r.severity,
-        csvCell(r.subject),
-        csvCell(r.detail),
-        csvCell(r.storefront_url),
-        r.detected_at,
-      ].join(","),
-    )
-    .join("\n");
-  const csv = `${header}\n${body}\n`;
+  const csv = toCsv(
+    ["issue_type", "severity", "subject", "detail", "storefront_url", "detected_at"],
+    rows.map((r) => [r.issue_type, r.severity, r.subject, r.detail, r.storefront_url, r.detected_at]),
+  );
 
   const today = new Date().toISOString().slice(0, 10);
-  return new NextResponse(csv, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="storefront-checkup-${today}.csv"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  return csvResponse(csv, `storefront-checkup-${today}.csv`);
 }

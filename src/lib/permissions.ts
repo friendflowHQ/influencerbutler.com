@@ -18,9 +18,13 @@ export type PermissionDomain =
   | "Licenses"
   | "Users"
   | "Community"
+  | "Support"
+  | "Scheduling"
+  | "Events"
   | "Catalogue"
   | "Marketing"
   | "Operations"
+  | "Finance"
   | "Staff";
 
 export type PermissionDef = {
@@ -64,11 +68,26 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "users.resend_auth", label: "Resend welcome / magic link", description: "Re-send a sign-in magic link to a user.", domain: "Users", risk: "normal", built: true },
   { key: "users.impersonate", label: "Impersonate user", description: "Generate a link to sign in as a user for support debugging. High risk.", domain: "Users", risk: "destructive", built: true },
   { key: "users.delete", label: "Delete user", description: "Permanently delete a user account. Irreversible.", domain: "Users", risk: "destructive", built: true },
+  { key: "users.notes.view", label: "View user notes", description: "Read the internal admin note log on a user account.", domain: "Users", risk: "normal", built: true },
+  { key: "users.notes.edit", label: "Edit user notes", description: "Add and delete internal admin notes on a user account.", domain: "Users", risk: "normal", built: true },
 
   // Community
   { key: "community.view", label: "View community Q&A", description: "See questions and answers across all statuses.", domain: "Community", risk: "normal", built: true },
   { key: "community.moderate", label: "Moderate community Q&A", description: "Hide, restore, or change the status of questions and answers.", domain: "Community", risk: "normal", built: true },
   { key: "community.delete", label: "Delete community Q&A", description: "Permanently delete a question or answer.", domain: "Community", risk: "destructive", built: true },
+
+  // Support (the feedback/bug/feature-request ticket queue backed by the
+  // feedback Worker's D1. The support-bot triages automatically; these gate
+  // the human take-over surface in the admin dashboard.)
+  { key: "support.view", label: "View support tickets", description: "See the support ticket queue (bugs, questions, feature requests) and each ticket's reply thread.", domain: "Support", risk: "normal", built: true },
+  { key: "support.respond", label: "Respond to & triage tickets", description: "Reply to a customer, change a ticket's status/priority/tags, take over from the bot, mark spam, or resolve.", domain: "Support", risk: "normal", built: true },
+
+  // Scheduling (1:1 support + demo call bookings)
+  { key: "scheduling.view", label: "View call bookings", description: "See upcoming and past 1:1 calls with each customer's prep sheet (subscription + support history).", domain: "Scheduling", risk: "normal", built: true },
+  { key: "scheduling.manage", label: "Manage calls & availability", description: "Set your bookable hours, cancel or reschedule calls, add manual blocks, and edit scheduling settings.", domain: "Scheduling", risk: "normal", built: true },
+
+  // Events (scheduled group calls with RSVP, cross-app banners, and AI recaps)
+  { key: "events.manage", label: "Manage events", description: "Schedule group events, control the cross-app banner (web, extension, desktop), view the RSVP list, and read the AI recap after the call.", domain: "Events", risk: "normal", built: true },
 
   // Catalogue
   { key: "catalogue.view", label: "View catalogue harvest", description: "See harvest status and history.", domain: "Catalogue", risk: "normal", built: true },
@@ -77,11 +96,17 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   // Marketing
   { key: "activity.manage", label: "Manage recent-activity widget", description: "Configure the social-proof popup (window, count, on/off) and hide specific events.", domain: "Marketing", risk: "normal", built: true },
   { key: "testimonials.moderate", label: "Moderate testimonials", description: "Review, approve, hide, edit, reply to, and feature customer testimonials, and set auto-approval.", domain: "Marketing", risk: "normal", built: true },
+  { key: "marketing.send", label: "Send marketing email", description: "Import contacts, tag them, and create and send campaigns and drip sequences to customers and leads.", domain: "Marketing", risk: "destructive", built: true },
+  { key: "blog.manage", label: "Manage blog", description: "Create, edit, schedule, and publish blog posts, and generate hero images. Every save commits to the site repo and deploys.", domain: "Marketing", risk: "normal", built: true },
 
   // Operations
   { key: "reports.view", label: "View KPIs & reports", description: "Subscription counts, trial funnel, and conversion metrics on the admin overview and growth dashboard.", domain: "Operations", risk: "normal", built: true },
   { key: "webhooks.view", label: "View webhook log", description: "Recent Lemon Squeezy webhook deliveries and processing errors.", domain: "Operations", risk: "normal", built: true },
   { key: "audit.view", label: "View admin audit log", description: "Read the append-only log of admin and assistant actions. Super-admin only.", domain: "Operations", risk: "normal", built: true, adminOnly: true },
+
+  // Finance (super-admin only; every route additionally requires an email 2FA code)
+  { key: "finance.view", label: "View finance dashboard", description: "Revenue recognition, bank payouts, expenses, tax planning, and the P&L report. Requires an email 2FA code. Super-admin only.", domain: "Finance", risk: "money", built: true, adminOnly: true },
+  { key: "finance.manage", label: "Manage finance records", description: "Record bank payouts, add or edit expenses, run the order backfill, and change finance settings. Super-admin only.", domain: "Finance", risk: "money", built: true, adminOnly: true },
 
   // Staff (super-admin only)
   { key: "staff.manage", label: "Manage assistants", description: "Invite assistants and set their permissions. Super-admin only.", domain: "Staff", risk: "destructive", built: true, adminOnly: true },
@@ -119,8 +144,12 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
   "Licenses",
   "Users",
   "Community",
+  "Support",
+  "Scheduling",
+  "Events",
   "Catalogue",
   "Marketing",
   "Operations",
+  "Finance",
   "Staff",
 ];

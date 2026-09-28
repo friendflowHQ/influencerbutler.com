@@ -1,0 +1,936 @@
+/**
+ * Butler AI concierge - the shared "brain" for both the voice (OpenAI Realtime)
+ * and text (Groq chat) surfaces of the instant AI demo/support call.
+ *
+ * It reuses knowledge that already lives in the repo rather than inventing a new
+ * store:
+ *   - persona/instructions stay lean (Groq free-tier TPM is tight); feature and
+ *     pricing facts are fetched on demand via list_features / get_pricing,
+ *   - `search_help` grounds "how do I set up X" answers in the tutorial keyword
+ *     index (loadSearchIndex, the same index the /help search box uses),
+ *   - `list_features` / `get_pricing` / `get_earnings_summary` reuse the MCP
+ *     TOOL_REGISTRY handlers.
+ *
+ * Dependencies: ../mcp/tools, ../mcp/feature-catalog, ../tutorials,
+ * ../mcp/auth, ../scheduling-server, ../entitlements.
+ */
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { callTool } from "@/lib/mcp/tools";
+import type { Principal } from "@/lib/mcp/auth";
+import { loadSearchIndex } from "@/lib/tutorials";
+import { getAdmin } from "@/lib/scheduling-server";
+import { tierForSubscriptionStatus } from "@/lib/entitlements";
+import { isPlaceholderCompEmail } from "@/lib/comp-codes";
+
+export const BOOK_CALL_PATH = "/dashboard/book";
+const SITE = "https://www.influencerbutler.com";
+const SEARCH_RESULT_LIMIT = 4;
+const MAX_HIT_IMAGES = 3;
+
+/**
+ * The desktop app's left menu, in display order, so the model can give exact
+ * click paths ("In the left menu, click API Integrations"). Mirrors the nav in
+ * the desktop repo's renderer/index.html; groups are hub entries that expand
+ * into sub-tools. Each item carries its data-section key in [brackets] in the
+ * rendered map: the start_walkthrough tool's `steps[].section` must use those
+ * keys. Update this list when the desktop nav changes.
+ */
+type NavLeaf = { label: string; key: string };
+const DESKTOP_NAV: Array<{ label: string; key?: string; items?: NavLeaf[] }> = [
+  { label: "Dashboard", key: "dashboard" },
+  {
+    label: "Amazon Butler",
+    items: [
+      { label: "Message Brands", key: "outreach" },
+      { label: "Keywords & Filters", key: "ai-keyword-generator" },
+      { label: "Orders Butler", key: "orders-butler" },
+      { label: "Daily Commission Butler", key: "harvest" },
+      { label: "Storefront Butler", key: "storefrontbutler" },
+      { label: "CC Check", key: "cc-check" },
+      { label: "Campaign Deals", key: "cc-deals" },
+      { label: "Campaign Alert Butler", key: "campaign-alert-butler" },
+      { label: "Brand Release Butler", key: "brand-release-butler" },
+      { label: "Data Refresh Butler", key: "data-refresh-butler" },
+      { label: "Like Butler", key: "like-butler" },
+      { label: "Goldmine Butler", key: "goldmine-butler" },
+      { label: "Earnings Intelligence", key: "earnings-intelligence" },
+      { label: "Black Friday Butler", key: "black-friday" },
+      { label: "Prime Day Butler", key: "prime-day-butler" },
+      { label: "Video Reload Butler", key: "video-reload-butler" },
+      { label: "Photo Reload Butler", key: "photo-reload-butler" },
+      { label: "Retag Butler", key: "retag-butler" },
+      { label: "Ads Goldmine", key: "ads-goldmine" },
+      { label: "Product Research", key: "product-research" },
+      { label: "YouTube Butler", key: "youtube-butler" },
+    ],
+  },
+  {
+    label: "Instagram Butler",
+    items: [
+      { label: "Instagram Close Friends Butler", key: "closefriends-butler" },
+      { label: "Instagram Message Followers", key: "instagram-outreach" },
+      { label: "Instagram Email Collection", key: "instagram-email" },
+      { label: "Instagram Goldmine", key: "instagram-goldmine" },
+      { label: "Instagram Like Butler", key: "instagram-like-butler" },
+    ],
+  },
+  {
+    label: "Messenger Butler",
+    items: [
+      { label: "Messages", key: "messenger" },
+      { label: "Templates", key: "messenger-templates" },
+    ],
+  },
+  { label: "Collab Butler", key: "collab" },
+  { label: "Content Butler", key: "content-butler" },
+  { label: "Pitch Butler", key: "pitchbutler" },
+  {
+    label: "Deals Butler",
+    items: [
+      { label: "Deals Butler", key: "deals" },
+      { label: "Best Seller Butler", key: "best-seller-butler" },
+      { label: "Pricecrash Butler", key: "pricecrash-butler" },
+    ],
+  },
+  { label: "Social Posting Butler", key: "social-posting-butler" },
+  {
+    label: "Collage Butler",
+    items: [
+      { label: "Collage Butler", key: "collage-butler" },
+      { label: "Keywords & Filters", key: "collage-keywords" },
+      { label: "Collage Gallery", key: "collage-gallery" },
+      { label: "Collage Templates", key: "collage-templates" },
+    ],
+  },
+  {
+    label: "Levanta Butler",
+    items: [
+      { label: "Message Brands", key: "levanta-message-brands" },
+      { label: "Email Extractor", key: "levanta-email-extractor" },
+    ],
+  },
+  { label: "Action Queue", key: "action-queue" },
+  { label: "Pinterest Butler", key: "pinterest-butler" },
+  { label: "Voiceover Butler", key: "voiceover-butler" },
+  {
+    label: "Facebook Butler",
+    items: [
+      { label: "Facebook Inviter", key: "facebook-influencer" },
+      { label: "Group Invite Butler", key: "group-invite-butler" },
+      { label: "Facebook Group Builder", key: "facebook-group-builder" },
+      { label: "Facebook Message Butler", key: "facebook-message-butler" },
+      { label: "Delete Posts & Comments", key: "delete-posts-comments" },
+    ],
+  },
+  {
+    label: "Benable Butler",
+    items: [
+      { label: "List Publishing", key: "benable-butler" },
+      { label: "Benable Like Butler", key: "benable-like-butler" },
+      { label: "Comment Butler", key: "benable-comment-butler" },
+    ],
+  },
+  {
+    label: "Link Butler",
+    items: [
+      { label: "Influencer Deeplink Butler", key: "link-butler" },
+      { label: "Relink Butler", key: "relink-butler" },
+    ],
+  },
+  { label: "Content Planner", key: "content-planner" },
+  { label: "Sheetsyncer Butler", key: "google-sheets-export" },
+  { label: "Temu Butler", key: "temu" },
+  { label: "API Integrations", key: "api-integrations" },
+  { label: "Console", key: "audit" },
+  { label: "Feedback", key: "feedback" },
+  { label: "AI Assistant", key: "ai-assistant" },
+  { label: "Help & Tutorials", key: "help" },
+  { label: "Settings", key: "settings" },
+];
+
+/**
+ * The generated nav map: every workspace/sub-panel with its EXACT click path
+ * and one-line description, produced from the desktop's live nav tree by
+ * `scripts/help/build-nav-map.js` in the desktop repo and published here as
+ * content/nav-map.json. This supersedes the hand-maintained DESKTOP_NAV above
+ * (kept only as a fallback), so the concierge's click paths stay correct and
+ * complete as the app adds workspaces. Read once at module load.
+ */
+type NavMapEntry = { section: string; label: string; path: string; description?: string };
+const NAV_MAP: NavMapEntry[] = (() => {
+  try {
+    const raw = readFileSync(join(process.cwd(), "content", "nav-map.json"), "utf8");
+    const parsed = JSON.parse(raw) as { entries?: NavMapEntry[] };
+    return Array.isArray(parsed.entries) ? parsed.entries : [];
+  } catch {
+    return [];
+  }
+})();
+
+function navMapLines(): string {
+  // Prefer the generated map: one line per screen with its full path + the
+  // [section] key start_walkthrough steps must use, plus what it does.
+  if (NAV_MAP.length) {
+    return NAV_MAP.map((e) =>
+      `- ${e.path} [${e.section}]${e.description ? `: ${e.description}` : ""}`,
+    ).join("\n");
+  }
+  // Fallback to the hand-maintained tree if the generated map is unavailable.
+  const leaf = (l: { label: string; key?: string }) =>
+    l.key ? `${l.label} [${l.key}]` : l.label;
+  return DESKTOP_NAV.map((entry) =>
+    entry.items && entry.items.length
+      ? `- ${entry.label} (group): ${entry.items.map(leaf).join(", ")}`
+      : `- ${leaf(entry)}`,
+  ).join("\n");
+}
+
+/**
+ * Curated desktop walkthrough tours (defined in the desktop repo's
+ * renderer/hud/assistant-tours.js). The model prefers one of these ids;
+ * anything else falls back to AI-composed section steps.
+ */
+const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
+  { id: "deals-setup", about: "Deals Butler filters, post builder, destinations, scheduler" },
+  { id: "deals-harvest", about: "Deals Butler deal harvest and send" },
+  { id: "api-integrations", about: "API Integrations and DeepLink Routing setup" },
+  { id: "deeplink-mint", about: "Mint a short Butler Link in Link Butler" },
+  { id: "daily-commission-harvest", about: "Daily Commission Butler run and schedule" },
+  { id: "feedback-report", about: "Send feedback from the Feedback panel" },
+  { id: "instagram-goldmine-harvest", about: "Instagram Goldmine: harvest follower emails from accounts or hashtags" },
+  { id: "group-invite-butler-setup", about: "Group Invite Butler: invite harvested people to a Facebook group" },
+  { id: "ig-to-fb-group", about: "Full flow: harvest Instagram followers then invite them to a Facebook group" },
+  { id: "facebook-message-setup", about: "Facebook Message Butler: message group or page members and schedule it" },
+  { id: "content-butler-plan", about: "Content Butler: quick-add products and plan them on the calendar" },
+  { id: "messenger-setup", about: "Messenger Butler: harvest conversations and schedule it" },
+  { id: "pitch-butler-setup", about: "Pitch Butler: import brands into the CRM and add them by hand" },
+  { id: "like-butler-setup", about: "Like Butler: like posts on creator storefronts, run and schedule" },
+  { id: "storefront-butler-harvest", about: "Storefront Butler: harvest your storefront products, lists and videos" },
+  { id: "benable-butler-setup", about: "Benable Butler: publish a niche list to Benable and schedule it" },
+  { id: "collab-butler-setup", about: "Collab Butler: track brand collaborations in the CRM board" },
+  { id: "orders-butler-harvest", about: "Orders Butler: harvest your Amazon order history" },
+  { id: "retag-butler-setup", about: "Retag Butler: rescan posts to retag products, run and schedule" },
+];
+
+/**
+ * The curated tour ids the model may always pass, even when the desktop sends
+ * no catalog. This is the single source for the start_walkthrough enum below.
+ * The desktop's LIVE catalog (window.ibAssistantTours.list(), sent on every
+ * chat turn) is unioned on top of this at request time, so a tour newly shipped
+ * in the desktop build becomes selectable here without editing this list. Keep
+ * these in sync with the always-present tours in the desktop registry.
+ */
+export const BASE_TOUR_IDS: string[] = [
+  "deals-guided-setup", "deals-setup", "deals-harvest", "api-integrations",
+  "deeplink-mint", "daily-commission-harvest", "feedback-report",
+  "instagram-goldmine-harvest", "group-invite-butler-setup", "ig-to-fb-group",
+  "facebook-message-setup", "content-butler-plan", "messenger-setup",
+  "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest",
+  "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest",
+  "retag-butler-setup",
+];
+
+/** One catalog entry the desktop sends: a tour id and its human title. */
+export type TourCatalogEntry = { id: string; title?: string };
+
+/**
+ * Normalize the desktop-sent tour catalog (window.ibAssistantTours.list()).
+ * Drops junk, dedupes, and caps length so a tampered payload cannot bloat the
+ * tool schema or the system prompt.
+ */
+export function sanitizeTourCatalog(raw: unknown): TourCatalogEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TourCatalogEntry[] = [];
+  const seen = new Set<string>();
+  for (const row of raw as Array<Record<string, unknown>>) {
+    if (!row || typeof row !== "object") continue;
+    const id = typeof row.id === "string" ? row.id.trim().slice(0, 60) : "";
+    if (!id || seen.has(id)) continue;
+    const title = typeof row.title === "string" ? row.title.trim().slice(0, 120) : "";
+    seen.add(id);
+    out.push(title ? { id, title } : { id });
+    if (out.length >= 200) break;
+  }
+  return out;
+}
+
+/** BASE_TOUR_IDS unioned with the desktop's live catalog ids (deduped). */
+function tourIdEnum(extra: TourCatalogEntry[]): string[] {
+  const ids = new Set<string>(BASE_TOUR_IDS);
+  for (const t of extra) ids.add(t.id);
+  return [...ids];
+}
+
+/**
+ * The "prefer a curated tour" prompt line: the curated tours (with their rich
+ * descriptions) plus any extra tours the desktop shipped that we do not describe
+ * here, listed by title so the model knows what each one is for.
+ */
+function walkthroughListLine(extra: TourCatalogEntry[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const t of WALKTHROUGH_TOURS) {
+    parts.push(`${t.id} (${t.about})`);
+    seen.add(t.id);
+  }
+  for (const t of extra) {
+    if (seen.has(t.id)) continue;
+    seen.add(t.id);
+    parts.push(t.title ? `${t.id} (${t.title})` : t.id);
+  }
+  return parts.join("; ");
+}
+
+/**
+ * The system prompt / persona shared by voice and text. Kept factual and short;
+ * the deep how-to knowledge is fetched on demand via the search_help tool rather
+ * than dumped in here.
+ */
+export function buildInstructions(
+  persona?: { butlerName?: string; firstName?: string },
+  tours: TourCatalogEntry[] = [],
+): string {
+  const firstName = persona && typeof persona.firstName === "string" ? persona.firstName.trim() : "";
+  const butlerName = persona && typeof persona.butlerName === "string" ? persona.butlerName.trim() : "";
+  return [
+    "You are Butler AI, the friendly on-demand concierge for Influencer Butler, a desktop app by",
+    "The Social Media Posse LLC that helps Amazon creators and influencers automate Creator",
+    "Connections, brand outreach, commission harvesting, deal posting, and storefront and content",
+    "management. The individual tools are called \"butlers.\"",
+    "",
+    firstName ? `The user's first name is ${firstName}. Address them by their first name naturally, not in every sentence.` : "",
+    butlerName ? `The user has named their assistant "${butlerName}". You ARE ${butlerName}: refer to yourself as ${butlerName} when it reads naturally, and do not call yourself "Butler AI" to them.` : "",
+    (firstName || butlerName) ? "" : "",
+    "Your job: give a live product demo and answer setup questions in real time, like a helpful",
+    "pre-sales and onboarding specialist. Be warm, concise, and concrete. In voice mode, speak in",
+    "short spoken sentences. Ask a clarifying question when the user's goal is unclear.",
+    "",
+    "Language:",
+    "- Always reply in the language the user's own messages are written in. Match them exactly:",
+    "  English question, English answer.",
+    "- If you cannot tell what language the user is using (a short greeting, a product name, or",
+    "  unclear audio), default to English. Never guess a language the user has not used.",
+    "- Never switch languages mid-conversation unless the user switches first.",
+    "- In voice mode, if you could not hear the user clearly, ask them to repeat in the language",
+    "  they last spoke, or in English if they have not spoken yet.",
+    "",
+    "Grounding rules:",
+    "- For any specific how-to, setup, or troubleshooting question, CALL the search_help tool and",
+    "  base your answer on what it returns. Do not guess steps.",
+    "- For pricing or plan questions, call get_pricing. For what a feature (butler) does and its",
+    "  tier, call list_features.",
+    "- When the signed-in user asks about their own earnings or plan, call get_earnings_summary or",
+    "  get_subscription. Only share their data with them.",
+    "- Never invent features, numbers, or steps. If you are not sure, say so and offer to point them",
+    "  to a tutorial or book a human call.",
+    "- For why a butler paused or stopped, or when it will post again after a platform rate limit or",
+    "  block, answer from the \"When a butler pauses\" facts below. Do not guess a resume time and do",
+    "  not send the user to a platform status page.",
+    "",
+    "When a butler pauses (platform rate limits and blocks):",
+    "- Facebook, Instagram, and TikTok sometimes limit how often an account can post. When that",
+    "  happens Butler pauses that butler, rests, and starts again on its own. The user does not need",
+    "  to do anything to resume it.",
+    "- A soft rate limit (the \"we limit how often you can post\" message) is short. Butler rests about",
+    "  2 hours the first time, and only steps up to longer rests (about 8, then 12, then 24 hours) if",
+    "  it keeps happening several times in a row. A harder block (\"you're temporarily blocked\", a",
+    "  feature block, a checkpoint, or a security check) lasts longer, often a day or more.",
+    "- Butler shows its own restart time in the app, and it retries automatically at that time. That",
+    "  is the time to trust.",
+    "- A soft rate limit does NOT show up on Facebook's status page or the account quality page. Those",
+    "  only list hard blocks and checkpoints, so seeing \"no issues, no dates\" there is normal and does",
+    "  not mean the pause is a mistake. Butler does not watch Facebook's status to decide when to",
+    "  resume; it rests on its own timer. Never tell the user to check Facebook's status or account",
+    "  quality page to learn when a soft limit lifts, because the answer is not there.",
+    "- These limits are not only about how much the user posted. How fast they post, the account's",
+    "  history, and factors outside their control can trip one on a normal day. Reassure them it is",
+    "  not a sign they did anything wrong.",
+    "- If a \"Live app status\" note appears in this conversation, it has this user's REAL current",
+    "  pauses and restart times. When they ask why a butler stopped or when it posts again, answer",
+    "  from that note (name the butler and its actual restart time) instead of the general timing",
+    "  above. If the note shows nothing paused, tell them everything is running and nothing is on hold.",
+    "",
+    "Finding coupon and promo-code deals (Deals Butler):",
+    "- Clippable Amazon coupons (the \"clip this coupon\" kind) are an OPT-IN source that is OFF by",
+    "  default. To turn it on: in Deals Butler, in the Search Deals area, open the \"Amazon coupons\"",
+    "  panel and switch on \"Include Amazon coupon deals.\" The search then also scans Amazon's coupons",
+    "  page and keeps the coupon products that pass the user's deal filters.",
+    "- Yes, Butler does scan (scrape) Amazon's own coupons page for these, because Amazon's product",
+    "  data feed does not expose clippable coupons. For it to pull anything the user must be signed in",
+    "  to Amazon in the app's browser, and the coupon items still have to clear their deal filters",
+    "  (min percent off, etc.). If they turned it on and see nothing, check both of those first.",
+    "- Promo CODES (the kind typed at checkout) are different from coupons. Amazon retired its public",
+    "  promo-codes page, so NO tool can scan Amazon for codes anymore (that is an Amazon change, not a",
+    "  Butler limit, and it applies to every competitor too). Amazon codes now come only from brands",
+    "  directly. Butler pulls them from the user's OWN Creator Connections campaigns: in the Promo Code",
+    "  Hub, the \"Scan my Amazon campaigns\" button reads codes from the brands they are accepted with,",
+    "  and they can also paste or add codes they find. Many campaigns carry no code, so a scan finding",
+    "  few or none is normal.",
+    "",
+    "Giving directions:",
+    "- When you tell the user how to do something in the desktop app, give the exact click path,",
+    "  starting from the left menu. Example: In the left menu, click API Integrations. Sub-tools",
+    "  live under their group hub, for example: In the left menu, open Instagram Butler, then click",
+    "  Instagram Goldmine.",
+    "- Every screen with its EXACT click path from the left menu and what it does. Give the user",
+    "  the full path verbatim, for example: In the left menu, open Amazon Butler, then Message",
+    "  Brands, then Keywords & Filters. The [section-key] on each line is what start_walkthrough",
+    "  steps must use. Never shorten a path or send the user to a generic Settings screen:",
+    navMapLines(),
+    "",
+    "Screenshots:",
+    "- search_help results may include screenshots as images with url and alt. In text chat, when a",
+    "  screenshot shows the screen you are describing, attach the single most helpful one by putting",
+    "  its markdown form ![alt](url) on its own line at the end of your answer, with no lead-in",
+    "  sentence. Never write \"here is a screenshot\" or otherwise announce an image in prose: either",
+    "  attach the markdown silently or say nothing about screenshots.",
+    "- Never invent image urls; only use urls returned by search_help. If search_help returned no",
+    "  image for the screen, do not mention screenshots at all; offer a guided walkthrough instead.",
+    "- In voice mode, never read out urls. Describe where things are in words instead.",
+    "",
+    "Guided walkthroughs (desktop app only):",
+    "- After you answer a how-to, setup, or demo question about a butler, END your reply by offering",
+    "  to walk them through it on screen, and call start_walkthrough. Say it plainly, for example:",
+    "  \"Want me to walk you through it? I can show you each step, or fast-track it and set it up for",
+    "  you.\" Keep the text answer to one or two sentences; the walkthrough carries the detail.",
+    "- The app renders the buttons. A step-by-step spotlight navigates to each screen and highlights",
+    "  the control while the user clicks Next. A fast-track wizard asks a few questions and writes the",
+    "  settings for them. The app shows the Fast track button only where a wizard exists, so you do",
+    "  not need to work out which modes are available; just call start_walkthrough with the tour id.",
+    `- Prefer a curated tour when one matches: ${walkthroughListLine(tours)}.`,
+    "- Use deals-guided-setup when the user wants deal posting set up for them, or is struggling to",
+    "  configure the Deals Butler (destinations, schedule, keywords); it opens the",
+    "  question-driven wizard. Offer it proactively to strugglers.",
+    "- If no curated tour fits, compose up to 8 short steps yourself. Each step needs section (a [key]",
+    "  from the menu map above), a short title, and one sentence of body text.",
+    "- Never offer or call start_walkthrough for website or extension users; give written steps instead.",
+    "",
+    "Filing feedback:",
+    "- When the user reports a bug, describes something broken, or wishes for a feature that does",
+    "  not exist, offer to file it with the team for them using submit_feedback.",
+    "- First show a short draft: the type (bug or feature), a one line title, and a one or two",
+    "  sentence description. Ask for an explicit yes. Only call submit_feedback AFTER the user",
+    "  confirms. Never file without confirmation, and never file the same report twice.",
+    "- After filing, confirm it was sent and that the team reads every report and replies by email.",
+    "- If the filing result comes back with needsContactEmail, the account has no address the team",
+    "  can reply to. Say so plainly, ask whether they would like to add one for the reply, and if",
+    "  they give you an address call submit_feedback again with the same title and contact_email set.",
+    "  Never tell the user to expect a reply when needsContactEmail came back true.",
+    "",
+    "Boundaries:",
+    "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
+    "  desktop app for them. Give exact click paths; they do the clicking.",
+    "- No financial or investment advice. If asked, say you are not a licensed advisor.",
+    "- Never name or compare against specific competitor products by name.",
+    "- Do not use em-dashes. Use a colon, comma, or two sentences instead.",
+    "- When you cannot help, or the user wants a person, call offer_human_call and let them know they",
+    `  can book a human demo or support call at ${SITE}${BOOK_CALL_PATH}.`,
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Tools (OpenAI function-calling). One canonical list, adapted to the two
+// slightly different shapes the chat and realtime APIs expect.
+// ---------------------------------------------------------------------------
+
+type JsonSchema = Record<string, unknown>;
+type AgentTool = { name: string; description: string; parameters: JsonSchema };
+
+const NO_ARGS: JsonSchema = { type: "object", properties: {}, additionalProperties: false };
+
+export const AGENT_TOOLS: AgentTool[] = [
+  {
+    name: "search_help",
+    description:
+      "Search the Influencer Butler tutorials and help content for setup steps, how-tos, and troubleshooting. Call this for any specific 'how do I...' question and ground your answer in the results.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "A few keywords describing what the user wants to do." },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_features",
+    description: "List every Influencer Butler feature (butler) with its title, description, and tier.",
+    parameters: NO_ARGS,
+  },
+  {
+    name: "get_pricing",
+    description: "Return the current pricing tiers (free, Pro monthly/annual, team, agency) and the free trial.",
+    parameters: NO_ARGS,
+  },
+  {
+    name: "get_earnings_summary",
+    description: "Return the signed-in user's own affiliate earnings summary. Only use when they ask about their earnings.",
+    parameters: NO_ARGS,
+  },
+  {
+    name: "get_subscription",
+    description: "Return the signed-in user's own subscription tier and plan. Only use when they ask about their plan or account.",
+    parameters: NO_ARGS,
+  },
+  {
+    name: "offer_human_call",
+    description: "Signal that the user should book a human demo or support call. Returns the booking link to share.",
+    parameters: {
+      type: "object",
+      properties: { reason: { type: "string", description: "Why a human call is being offered." } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "start_walkthrough",
+    description:
+      "Start an on-screen guided walkthrough in the DESKTOP app: it navigates to each screen and highlights the control while the user clicks Next/Back. Desktop app users only. Pass a curated tourId when one matches the topic (use 'deals-guided-setup' when the user wants deal posting set up for them: it opens a wizard that asks a few questions and writes the settings); otherwise pass steps composed from the menu map's [section keys].",
+    parameters: {
+      type: "object",
+      properties: {
+        tourId: {
+          type: "string",
+          // Base curated ids; toChatTools() unions the desktop's live catalog on
+          // top at request time so newly shipped tours are selectable too.
+          enum: [...BASE_TOUR_IDS],
+          description: "A curated tour id. Preferred when the topic matches.",
+        },
+        steps: {
+          type: "array",
+          maxItems: 8,
+          description: "Fallback when no curated tour fits: short section-level steps.",
+          items: {
+            type: "object",
+            properties: {
+              section: { type: "string", description: "A [section key] from the left-menu map." },
+              title: { type: "string", description: "Short step title." },
+              body: { type: "string", description: "One sentence telling the user what to do here." },
+            },
+            required: ["section", "title", "body"],
+            additionalProperties: false,
+          },
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "submit_feedback",
+    description:
+      "File a bug report or feature request with the Influencer Butler team on the user's behalf. Only call this AFTER showing the user a draft (type, title, description) in the conversation and getting an explicit yes.",
+    parameters: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["bug", "feature"],
+          description: "bug for something broken, feature for a request or wish.",
+        },
+        title: { type: "string", description: "Short one line summary, max 200 characters." },
+        description: {
+          type: "string",
+          description: "What happened or what they want, including steps and context from the conversation.",
+        },
+        contact_email: {
+          type: "string",
+          description:
+            "Reply address, only when the tool has told you no reply address is on the account and the user has given you one. Leave this out otherwise.",
+        },
+      },
+      required: ["type", "title", "description"],
+      additionalProperties: false,
+    },
+  },
+];
+
+/**
+ * Shape for OpenAI chat/completions `tools`. Pass the desktop's live tour
+ * catalog to widen the start_walkthrough tourId enum to every tour the current
+ * desktop build ships; with no catalog it returns the base curated enum.
+ */
+export function toChatTools(extraTours: TourCatalogEntry[] = []) {
+  const enumIds = tourIdEnum(extraTours);
+  return AGENT_TOOLS.map((t) => {
+    let parameters = t.parameters;
+    if (t.name === "start_walkthrough") {
+      // Deep-clone so we never mutate the shared AGENT_TOOLS schema.
+      parameters = JSON.parse(JSON.stringify(t.parameters)) as JsonSchema;
+      const props = (parameters as { properties?: Record<string, { enum?: string[] }> }).properties;
+      if (props && props.tourId) props.tourId.enum = enumIds;
+    }
+    return {
+      type: "function" as const,
+      function: { name: t.name, description: t.description, parameters },
+    };
+  });
+}
+
+/** Shape for the OpenAI Realtime session `tools` (flattened). */
+export function toRealtimeTools() {
+  return AGENT_TOOLS.map((t) => ({
+    type: "function" as const,
+    name: t.name,
+    description: t.description,
+    parameters: t.parameters,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Tool execution (server-side, with the caller's identity)
+// ---------------------------------------------------------------------------
+
+export type HelpImage = { url: string; alt: string };
+export type HelpHit = {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  snippet: string;
+  images?: HelpImage[];
+};
+
+// Generic English filler that carries no topic signal. Without this a whole
+// support ticket dumped in as a query ("still dragging... please help") scores
+// mostly on stopwords, and long tutorials win on sheer length. Only tokens
+// longer than 2 chars reach here, so 1-2 char words ("is", "a") need no entry.
+const SEARCH_STOPWORDS = new Set([
+  "the", "and", "for", "are", "was", "were", "but", "you", "your", "yours",
+  "this", "that", "these", "those", "with", "from", "have", "has", "had",
+  "not", "can", "cant", "cannot", "get", "got", "its", "use", "used", "using",
+  "when", "what", "why", "how", "all", "any", "our", "who", "please", "help",
+  "still", "also", "than", "then", "them", "they", "will", "would", "could",
+  "should", "been", "being", "does", "did", "doing", "into", "just", "like",
+  "some", "more", "most", "very", "much", "only", "able", "about", "after",
+  "before", "dont", "doesnt", "isnt", "wasnt", "here", "there", "where",
+  "which", "while", "because", "now", "out", "off", "one", "two", "set",
+]);
+
+/**
+ * Rank tutorials against a query with term-frequency over
+ * title + summary + category + body, and return the top matches with a short
+ * snippet. Reuses the existing lexical index; no embeddings needed. Terms are
+ * deduped, stopword-filtered, and matched on word boundaries so a noisy query
+ * (like a full support ticket) grounds on the on-topic tutorial rather than the
+ * longest one, and "app" no longer matches inside "applying".
+ */
+export async function searchHelp(query: string, locale?: string): Promise<HelpHit[]> {
+  const terms = [...new Set(
+    (query || "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t.length > 2 && !SEARCH_STOPWORDS.has(t)),
+  )];
+  if (terms.length === 0) return [];
+
+  const matchers = terms.map((t) => new RegExp(`\\b${t}\\b`, "g"));
+
+  const index = await loadSearchIndex(locale);
+  const scored = index
+    .map((e) => {
+      const hay = `${e.title} ${e.summary} ${e.category} ${e.text}`.toLowerCase();
+      const titleHay = `${e.title} ${e.summary}`.toLowerCase();
+      let score = 0;
+      for (const re of matchers) {
+        const inBody = (hay.match(re) || []).length;
+        const inTitle = (titleHay.match(re) || []).length;
+        score += inBody + inTitle * 5; // weight title/summary hits
+      }
+      return { e, score };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, SEARCH_RESULT_LIMIT);
+
+  return scored.map(({ e }) => {
+    const hit: HelpHit = {
+      id: e.id,
+      title: e.title,
+      summary: e.summary,
+      url: `${SITE}/help/tutorials/${e.id}`,
+      snippet: snippetFor(e.text, terms),
+    };
+    // Screenshots come from the tutorial body ( /assets/-only, see tutorials.ts ).
+    // Absolute urls so every chat surface can render them without a base.
+    const images = (e.images || [])
+      .slice(0, MAX_HIT_IMAGES)
+      .map((img) => ({ url: `${SITE}${img.src}`, alt: img.alt }));
+    if (images.length) hit.images = images;
+    return hit;
+  });
+}
+
+function snippetFor(text: string, terms: string[]): string {
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  let at = -1;
+  for (const term of terms) {
+    const i = lower.indexOf(term);
+    if (i >= 0 && (at < 0 || i < at)) at = i;
+  }
+  const start = Math.max(0, (at < 0 ? 0 : at) - 120);
+  return text.slice(start, start + 320).trim();
+}
+
+async function getSubscription(principal: Principal): Promise<unknown> {
+  const admin = getAdmin();
+  if (!admin) return { error: "subscription lookup unavailable" };
+  const { data } = await admin
+    .from("subscriptions")
+    .select("status,plan_name")
+    .eq("user_id", principal.userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const status = (data?.status as string) ?? null;
+  const tier = tierForSubscriptionStatus(status);
+  return { tier, status, planName: (data?.plan_name as string) ?? null };
+}
+
+/** Unwrap a mcp ToolResult (JSON-in-text) back to a plain object. */
+function unwrapMcp(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { text };
+  }
+}
+
+/** Client metadata the chat surfaces may send along (desktop app version etc). */
+export type ClientMeta = {
+  surface?: string;
+  appVersion?: string;
+  platform?: string;
+  // Optional personalization from the desktop: the user's first name and the
+  // name they gave their butler, so replies can address them and stay in-voice.
+  persona?: { butlerName?: string; firstName?: string };
+  // Optional LIVE status the desktop captures at send time: a short, already
+  // localized block naming any butlers paused right now (platform rate limit or
+  // block) and when each one restarts. When present the chat route injects it so
+  // the assistant answers "why did it stop / when will it post again" with the
+  // real restart time instead of the general guidance. Treated as data.
+  butlerStatus?: string;
+};
+
+/**
+ * Validated start_walkthrough payload. The desktop resolves tourId against its
+ * curated registry; steps are AI-composed section-level fallbacks. Shared by
+ * the tool executor (ack) and the chat route (which forwards the payload to
+ * the desktop in the response).
+ */
+export type WalkthroughPayload =
+  | { tourId: string }
+  | { steps: Array<{ section: string; title: string; body: string; target?: string }> };
+
+export function sanitizeWalkthroughArgs(raw: unknown): WalkthroughPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const a = raw as Record<string, unknown>;
+  if (typeof a.tourId === "string" && a.tourId.trim()) {
+    return { tourId: a.tourId.trim().slice(0, 60) };
+  }
+  if (Array.isArray(a.steps)) {
+    const steps: Array<{ section: string; title: string; body: string; target?: string }> = [];
+    for (const s of a.steps as Array<Record<string, unknown>>) {
+      if (!s || typeof s !== "object") continue;
+      const section = typeof s.section === "string" ? s.section.trim().slice(0, 60) : "";
+      const title = typeof s.title === "string" ? s.title.slice(0, 120) : "";
+      const body = typeof s.body === "string" ? s.body.slice(0, 500) : "";
+      if (!section || (!title && !body)) continue;
+      const step: { section: string; title: string; body: string; target?: string } = { section, title, body };
+      if (typeof s.target === "string" && s.target.trim()) step.target = s.target.slice(0, 200);
+      steps.push(step);
+      if (steps.length >= 8) break;
+    }
+    if (steps.length) return { steps };
+  }
+  return null;
+}
+
+const MAX_REPLY_IMAGES = 4;
+
+/**
+ * A line whose whole job is to announce a screenshot ("Here's a screenshot of
+ * the X:", "And here's a screenshot below", "See the screenshot of Y"). When
+ * extractReplyImages kept zero images, these lead-ins point at nothing and are
+ * removed, so the reply never promises an image it did not attach. The persona
+ * also tells the model not to narrate screenshots; this is the safety net for
+ * when it does anyway.
+ */
+const SCREENSHOT_LEADIN_RE =
+  /^\s*(?:and\s+)?(?:here(?:'|’)?s|below\s+is|see)\b[^\n]*\bscreenshots?\b[^\n]*$/i;
+
+function stripOrphanScreenshotProse(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !SCREENSHOT_LEADIN_RE.test(line))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * Pull ![alt](url) markdown out of the model's reply into a structured images
+ * array (absolute urls, /assets/-only) and strip it from the text, so every
+ * chat surface renders screenshots without a markdown parser. Non-whitelisted
+ * image markdown is dropped entirely.
+ */
+export function extractReplyImages(reply: string): { text: string; images: HelpImage[] } {
+  const images: HelpImage[] = [];
+  let text = reply
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_whole, alt: string, src: string) => {
+      let url = "";
+      if (src.startsWith("/assets/")) url = `${SITE}${src}`;
+      else if (src.startsWith(`${SITE}/assets/`)) url = src;
+      if (!url) return "";
+      if (images.length < MAX_REPLY_IMAGES && !images.some((i) => i.url === url)) {
+        images.push({ url, alt: alt || "" });
+      }
+      return "";
+    })
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  // No screenshot actually survived the whitelist? Then drop any orphaned
+  // "here's a screenshot" prose so the reply does not describe an image the
+  // user will never see (the reported bug).
+  if (images.length === 0) text = stripOrphanScreenshotProse(text);
+  return { text, images };
+}
+
+/**
+ * True for something we can actually send a support reply to. Deliberately
+ * loose (the worker and Resend do the real validation); this only has to reject
+ * chat noise like "yes" or "my email" and the comp placeholder domain.
+ */
+function isUsableReplyEmail(email: string): boolean {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  return !isPlaceholderCompEmail(email);
+}
+
+/**
+ * File a bug/feature report into the same Cloudflare feedback worker inbox the
+ * desktop Feedback panel submits to, so chat-filed reports land in the standard
+ * support triage flow. The worker only enforces the x-ib-key header when it has
+ * FEEDBACK_SHARED_KEY set (today it does not), so the key is optional here too:
+ * when the env var exists we send it, otherwise we submit without it, exactly
+ * like the desktop client.
+ */
+async function submitFeedback(
+  args: Record<string, unknown>,
+  principal: Principal | null,
+  client?: ClientMeta,
+): Promise<unknown> {
+  const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
+  const type = args.type === "feature" ? "feature" : "bug";
+  const title = typeof args.title === "string" ? args.title.trim().slice(0, 200) : "";
+  const description = typeof args.description === "string" ? args.description.trim().slice(0, 7000) : "";
+  if (!title) return { error: "A title is required." };
+
+  // Reply address. A comp grant that was never assigned to a person carries a
+  // synthetic `comp-<uuid>@unassigned.comp.influencerbutler.com` address that is
+  // deliberately never emailed (see COMP_PLACEHOLDER_DOMAIN in @/lib/comp-codes).
+  // Filing that as the ticket's userEmail produced tickets that LOOKED
+  // contactable but could never be answered, so support kept "replying" into a
+  // void. Treat a placeholder as no address, and let the user supply a real one.
+  const argEmail = typeof args.contact_email === "string" ? args.contact_email.trim() : "";
+  const accountEmail = isPlaceholderCompEmail(principal?.email) ? "" : (principal?.email ?? "");
+  const replyEmail = isUsableReplyEmail(argEmail) ? argEmail : accountEmail;
+
+  const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (sharedKey) headers["x-ib-key"] = sharedKey;
+  try {
+    const res = await fetch(`${base}/submit`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        type,
+        title,
+        description:
+          `${description}\n\n[Filed via Butler AI chat${client?.surface ? ` (${client.surface})` : ""}]` +
+          (replyEmail ? "" : "\n[No reply address on file: this reporter cannot be emailed back.]"),
+        userEmail: replyEmail,
+        appVersion: client?.appVersion || "",
+        platform: client?.platform || "concierge",
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as { ok?: boolean; id?: string } | null;
+    if (!res.ok || !json?.ok) {
+      console.error("[ai-concierge] submit_feedback failed", res.status, json);
+      return { error: "Could not file the report. Point the user at the Feedback panel in the left menu instead." };
+    }
+    return {
+      ok: true,
+      id: json.id ?? null,
+      needsContactEmail: !replyEmail,
+      note: replyEmail
+        ? "Filed. The team reads every report and replies by email."
+        : "Filed, but there is no reply address on this account, so the team has no way to write back. Tell the user that plainly, and ask whether they want to add an email address for the reply. If they give you one, call submit_feedback again with the same title and contact_email set.",
+    };
+  } catch (err) {
+    console.error("[ai-concierge] submit_feedback threw", err);
+    return { error: "Could not file the report right now. Point the user at the Feedback panel in the left menu instead." };
+  }
+}
+
+/**
+ * Execute one agent tool call and return a JSON-serializable result. `principal`
+ * is null for anonymous callers (the account tools then return an auth message).
+ */
+export async function executeAgentTool(
+  name: string,
+  args: Record<string, unknown>,
+  principal: Principal | null,
+  client?: ClientMeta,
+): Promise<unknown> {
+  switch (name) {
+    case "search_help": {
+      const q = typeof args.query === "string" ? args.query : "";
+      return { results: await searchHelp(q) };
+    }
+    case "start_walkthrough": {
+      if (client?.surface !== "desktop") {
+        return { error: "Guided walkthroughs only work in the desktop app. Give written steps instead." };
+      }
+      const payload = sanitizeWalkthroughArgs(args);
+      if (!payload) return { error: "No usable walkthrough steps. Give written steps instead." };
+      // The chat route forwards the payload to the desktop; this ack is what
+      // the model narrates over.
+      return { ok: true, note: "The walkthrough will start on the user's screen. Tell them to follow the Next buttons." };
+    }
+    case "submit_feedback":
+      return submitFeedback(args, principal, client);
+    case "offer_human_call":
+      return {
+        bookUrl: `${SITE}${BOOK_CALL_PATH}`,
+        note: "Offer to book a human demo or support call from the dashboard under Book a Call.",
+      };
+    case "start_walkthrough": {
+      // The walkthrough itself runs client-side in the desktop app: the chat
+      // route attaches { walkthrough: { tourId } } to the reply JSON and the
+      // desktop renders a Start button (voice executes it locally). This
+      // result just tells the model it worked.
+      const tourId = typeof args.tourId === "string" ? args.tourId : "";
+      if (!tourId) return { error: "tourId is required." };
+      return {
+        started: true,
+        tourId,
+        note: "The walkthrough opens in the desktop app. Tell the user it is starting and what it will do.",
+      };
+    }
+    case "get_subscription":
+      if (!principal) return { error: "The user is not signed in." };
+      return getSubscription(principal);
+    case "list_features":
+    case "get_pricing":
+    case "get_earnings_summary": {
+      const res = await callTool(name, args, principal);
+      const textPart = res.content.find((c) => c.type === "text")?.text ?? "{}";
+      return res.isError ? { error: textPart } : unwrapMcp(textPart);
+    }
+    default:
+      return { error: `unknown tool: ${name}` };
+  }
+}

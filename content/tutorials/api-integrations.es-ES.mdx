@@ -19,7 +19,7 @@ También maneja el **enrutamiento de afiliados** - la lógica que decide por qu�
 Nada obligatorio - pero cada integración es independiente, así que las puedes añadir una a una a medida que conectas espacios nuevos. Integraciones habituales para empezar:
 
 - **Amazon Creators API**: la necesitan Storefront Butler, Daily Commission Butler, Voiceover Butler, todo lo que lee detalles de producto.
-- **OpenAI**: la necesitan AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler.
+- **OpenAI**: la necesitan AI Content Butler, Voiceover Butler, Benable Butler, Comment Butler. ¿Necesitas una clave? Mira [Configura la API de OpenAI (no es ChatGPT)](/help/tutorials/openai-api-setup): no es lo mismo que una suscripción a ChatGPT.
 - **Tu proveedor de deeplinks**: la necesitas en cuanto quieras enlaces de afiliado acortados/trackeados en vez de URLs crudas de Amazon.
 
 ## Añadir una integración
@@ -27,7 +27,7 @@ Nada obligatorio - pero cada integración es independiente, así que las puedes 
 El panel está organizado por sección. Cada sección tiene:
 
 - Un **campo para pegar la clave** - donde metes la credencial.
-- Un botón **Test Connection** - dispara una petición de sólo lectura contra la API del proveedor para verificar la clave.
+- Un botón **Test Connection** - dispara una petición contra la API del proveedor para verificar la clave. La mayoría de proveedores reciben una comprobación de sólo lectura; el test de GeniusLink además crea un enlace corto real, así que un check verde demuestra que la creación de enlaces funciona, y el enlace creado se muestra para que puedas abrirlo y ver a qué tienda de país redirige tu grupo.
 - Un **badge de estado** - verde cuando se verifica, rojo si es inválida, gris si no se ha probado.
 
 Para añadir: abre la sección, pega la clave, pulsa Test Connection. Si está verde, listo - cada espacio que use este proveedor cogerá la clave automáticamente.
@@ -45,6 +45,16 @@ Lista completa de proveedores:
 - **Mavely**: red multimarca para ofertas fuera de Amazon (Walmart, Target y un amplio catálogo de marcas). Inicias sesión en vez de pegar una clave. Mira la sección de Mavely más abajo.
 - **Benable**: enlace de referido.
 - **Proveedores de deeplinks**: Influencer Butler (enlaces de marca con un panel de clics integrado), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Elige uno como principal.
+
+## Credenciales de respaldo de la Creator API
+
+Amazon no desbloquea la Creator API hasta que tu cuenta ha hecho suficientes ventas que cualifiquen, así que un influencer recién llegado puede crear credenciales que parecen correctas pero fallan en Test Connection con un error de elegibilidad (HTTP 403). No hace falta esperar: Influencer Butler puede prestarte sus propias credenciales de respaldo.
+
+Cuando un test de la Creators API falla con ese bloqueo de elegibilidad, aparece un botón bajo el resultado: **Usar las credenciales de respaldo de Influencer Butler**. Con un clic, todos los espacios de trabajo que leen datos de producto empiezan a funcionar de inmediato con el juego de respaldo. Antes de pulsarlo, revisa tu Partner Tag: debe ser tu ID de seguimiento de Associates (como tutag-20), no un ID de escaparate, porque un tag incorrecto produce exactamente el mismo error.
+
+Mientras el respaldo está activo, el panel muestra el distintivo **Credenciales de respaldo activas**. Tus propias credenciales siguen guardadas y la aplicación las vuelve a probar en silencio una vez al día. En cuanto Amazon desbloquee tu cuenta, la aplicación vuelve automáticamente a tus credenciales y te avisa con una notificación. También puedes pulsar **Dejar de usar el respaldo** en cualquier momento, o repetir Test Connection tú mismo; un test superado te devuelve a las tuyas al instante.
+
+El respaldo está disponible para cualquier usuario con sesión iniciada, incluidas las pruebas gratuitas. Las consultas de producto hechas con él usan la cuenta de Influencer Butler; tus enlaces y tags de afiliado no se tocan, así que tus comisiones siguen siendo tuyas.
 
 ## Enrutamiento de afiliados
 
@@ -70,10 +80,10 @@ En la tarjeta de Mavely:
 
 Una vez con la sesión iniciada, tienes dos formas de usarlo:
 
-- **Como tu proveedor de deeplinks**: elige **Mavely** en DeepLink Routing. Ahora, cuando Deals Influencer Butler publique una oferta de Walmart o Target, el enlace será un enlace de Mavely que genera comisión, de forma automática.
+- **Para tus ofertas de Walmart**: abre **Walmart Butler**, luego **Ajustes**, y pon **Walmart link provider** en **Mavely (mave.ly links)**. Ese ajuste es independiente de DeepLink Routing, así que tus ofertas de Walmart ganan comisión con Mavely mientras tus enlaces de Amazon siguen con tu propia etiqueta. Elegir **Mavely** en **DeepLink Routing** también monetiza las ofertas que no son de Amazon, pero además envía tus páginas de producto de Amazon a través de Mavely, así que elige eso solo si no necesitas esas ventas con tu propia etiqueta de Amazon.
 - **Enlaces sueltos**: pega cualquier URL de producto en el campo URL del producto de la tarjeta de Mavely y haz clic en **Crear enlace** para obtener un enlace de Mavely al momento. El botón de enlaces de la extensión de Chrome hace lo mismo para páginas fuera de Amazon.
 
-Tus enlaces de Amazon no se ven afectados: solo los comercios fuera de Amazon pasan por Mavely. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
+Mavely no toca tus enlaces de Amazon a menos que tú lo decidas. Dos ajustes pueden entregarle Amazon a Mavely: elegir **Mavely** en **DeepLink Routing**, que envía las páginas de producto de Amazon a través de Mavely, y marcar Mavely en **Affiliate Routing Strategy**, donde compite por cualquier enlace de producto y gana la comisión más alta. Deja ambos como están y Mavely solo cubrirá los comercios fuera de Amazon. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
 
 ## Test al arrancar
 
@@ -93,10 +103,19 @@ Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-sto
 
 ## Tropiezos comunes
 
+- **No encuentras la sección de la API de Creadores de Amazon en esta página**: se ha movido. Cada integración de terceros vive ahora en el butler que la usa, y esta página conserva las claves compartidas de IA y datos (OpenAI, Keepa, Fal.ai, Ideogram). La API de Creadores de Amazon y tu ID de tienda están en **Amazon Butler**, luego **Configuración**. Mavely, el enrutamiento de enlaces profundos, Geniuslink, URLGenius, Linktw.in, Archer, PostTap, el enrutamiento de afiliados y las etiquetas por país están en Link Butler, luego Configuración. Levanta está en Levanta Butler, luego Configuración. Tus claves guardadas se conservaron, así que no hay que volver a pegar nada.
+- **El error de elegibilidad aparece en pantalla pero no hay botón de credenciales de respaldo debajo**: pulsa **Probar conexión** una vez y la oferta aparece con el resultado nuevo. Las versiones de la app anteriores a la 1.0.80 volvían a mostrar el error guardado tras reiniciar sin traer de vuelta el botón.
 - **Test Connection falla en un setup que antes funcionaba**: el proveedor rotó, revocó o rate-limitó la clave. La barra superior muestra un badge "API Health" cuando esto pasa. Vuelve a emitir la clave en el dashboard del proveedor, pega aquí, re-prueba.
+- **La prueba de la Creators API dice "failed" pero Amazon la muestra activa**: casi siempre es un desajuste de marketplace. Ajusta el desplegable Marketplace a la región donde creaste tus credenciales de API. Una credencial de US probada contra un marketplace de UK o AU (o una credencial internacional dejada en el amazon.com por defecto) no pasará. La app ahora lo detecta y te dice a qué región pertenecen tus credenciales.
+- **La Partner Tag de la Creators API es rechazada**: ese campo necesita tu ID de seguimiento de Amazon Associates (como yourtag-20), no tu ID de escaparate.
+- **Los campos de credenciales de la Creators API aparecen vacíos tras reiniciar**: es lo esperado. Las claves guardadas se ocultan por seguridad. Solo elige tu marketplace y pulsa Test Connection. No necesitas volver a pegarlas.
+- **Una clave nueva de la Creators API falla justo después de crearla**: las claves recién emitidas pueden tardar hasta 24 horas en activarse del lado de Amazon. Espera y vuelve a probar. Si el fallo es el bloqueo de elegibilidad, usa el botón de credenciales de respaldo (mira la sección de credenciales de respaldo más arriba) en vez de esperar.
 - **La clave de OpenAI da verde pero la generación falla**: distintos productos de OpenAI usan distintos límites. Una clave válida para completions puede chocar con un problema de billing/quota en un modelo específico. Revisa la pestaña de billing del dashboard de OpenAI.
 - **El OAuth de YouTube caduca inesperadamente**: Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
 - **El enrutamiento de afiliados eligió el proveedor equivocado**: normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.
+- **Iniciaste sesión en Mavely pero Influencer Butler sigue diciendo que no**: el inicio de sesión solo cuenta dentro del navegador que Influencer Butler reserva para Mavely. Abrir creators.joinmavely.com en tu propio navegador, incluso desde un enlace del aviso de sesión cerrada, te conecta en un sitio que la aplicación no ve. Usa **Iniciar sesión en Mavely** en la tarjeta de Mavely, inicia sesión en la ventana que se abre, ciérrala y haz clic en **Comprobar estado**.
+- **Buscas una clave de API de Mavely**: no existe. Mavely es la red que se autentica iniciando sesión en lugar de con una clave pegada, así que su tarjeta no tiene campo de clave a propósito.
+- **No encuentras dónde configurar Mavely para Walmart, Target u otra tienda**: no hay configuración por tienda ni por cuenta, por eso no hay nada que encontrar. Mavely deduce el comercio del propio enlace del producto, así que tener la sesión iniciada es toda la configuración. Walmart es la única excepción, porque tiene una opción propia: **Walmart Butler**, luego **Ajustes**, luego **Walmart link provider**, donde **Mavely (mave.ly links)** envía las ofertas de Walmart por Mavely y **Walmart Creator (walmrt.us links)** usa tus propios enlaces de Walmart Creator. Para Target y el resto del catálogo, pega la URL del producto en el cuadro **Product URL** de la tarjeta de Mavely y pulsa **Create Link**, o usa el botón de enlace de la extensión de Chrome en la página del producto.
 
 ## También en la extensión de Chrome
 
@@ -113,11 +132,17 @@ Nota: la prueba de conexión en vivo hace ahora una llamada real de solo lectura
 - Cada espacio del lado Amazon ([Storefront Butler](/help/tutorials/storefrontbutler), [Daily Commission Butler](/help/tutorials/dailycommissionbutler), [Voiceover Butler](/help/tutorials/voiceover-butler)) lee desde aquí.
 - [Tutorial de Relink Butler](/help/tutorials/relink-butler) - usa la config de enrutamiento de afiliados para saber a qué cambiar los enlaces publicados.
 
+## Enlace profundo nativo de Amazon
+
+En la parte superior de **DeepLink Routing** está el interruptor **Enlace profundo nativo de Amazon**, activado por defecto. Cuando está activado, cada enlace de producto de Amazon que crean tus herramientas se abre directamente en la app de Amazon en el móvil en lugar de en el navegador, lo que hace la compra más fluida para tus compradores. Es independiente de la lista de proveedores de abajo: el proveedor elige la redirección/acortador, mientras que este interruptor controla la apertura en la app. Desactívalo si prefieres publicar enlaces normales de navegador.
+
+Ten en cuenta una cosa: para que el enlace abra realmente la app, tu cuenta de Amazon Associates también necesita "Deep linking enabled" en SiteStripe. El interruptor añade el formato de enlace correcto; el ajuste de tu cuenta es lo que le dice a Amazon que lo respete.
+
 ## Etiquetas de afiliado por país
 
 En **DeepLink Routing** hay una lista desplegable **Etiquetas de afiliado por país**. La mayoría se rellenan solas: cuando ejecutas la comprobación de ID de tienda en **Ajustes**, lee las etiquetas de afiliado de tu cuenta de Amazon y completa automáticamente los países correspondientes. Vuelve a ejecutar la comprobación cuando quieras para actualizarlas. Puedes escribir una etiqueta a mano en cualquier país para anularla, y una etiqueta que escribas se conserva. Tu etiqueta de EE. UU. usa por defecto tu ID de tienda CC; deja un país en blanco para omitirlo.
 
-Estas etiquetas activan las opciones de **Enlaces por país** en Deals Influencer Butler. La etiqueta es lo que hace que la comisión se registre en ese país, así que un enlace extranjero solo se publica cuando has añadido su etiqueta.
+Estas etiquetas activan las opciones de **Enlaces por país** en Deals Butler. La etiqueta es lo que hace que la comisión se registre en ese país, así que un enlace extranjero solo se publica cuando has añadido su etiqueta.
 
 ## Panel de rendimiento de enlaces
 

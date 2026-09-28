@@ -1,18 +1,18 @@
 ---
 title: "Configuration du bot Telegram : publiez des offres dans un canal Telegram"
-summary: Créez un bot avec BotFather, ajoutez-le à votre canal et connectez-le sur le panneau API Integrations pour qu'Deals Influencer Butler publie automatiquement.
+summary: Créez un bot avec BotFather, ajoutez-le à votre canal et connectez-le sur le panneau API Integrations pour qu'Deals Butler publie automatiquement.
 category: Other
 ---
 
 ## Ce que cela fait
 
-Deals Influencer Butler peut publier les images de vos produits et leurs légendes directement dans un canal Telegram. Pour le configurer, vous connectez un bot Telegram sur le panneau **API Integrations**. Il vous faut deux valeurs : un **token du bot** et l'**ID du canal (chat)** dans lequel vous voulez publier. Toute la configuration prend environ cinq minutes. Voici le guide complet.
+Deals Butler peut publier les images de vos produits et leurs légendes directement dans un canal Telegram. Pour le configurer, vous connectez un bot Telegram sur le panneau **API Integrations**. Il vous faut deux valeurs : un **token du bot** et l'**ID du canal (chat)** dans lequel vous voulez publier. Toute la configuration prend environ cinq minutes. Voici le guide complet.
 
 ## 1. Créez un bot avec BotFather
 
 Dans Telegram, recherchez **@BotFather** (le bot officiel, il porte la coche bleue de vérification) et ouvrez une discussion avec lui. Envoyez la commande `/newbot`. BotFather demande un nom affiché, puis un nom d'utilisateur qui doit se terminer par `bot`, par exemple `gardenlovers_deals_bot`.
 
-<div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Capture : discussion BotFather après l'envoi de /newbot, montrant les demandes de nom et de nom d'utilisateur ]</div>
+![Recherche globale de @BotFather dans Telegram, avec le bot officiel vérifié mis en évidence en haut des résultats](/assets/tutorials/telegram-bot/telegram-botfather-newbot.png)
 
 ## 2. Copiez le token du bot
 
@@ -47,7 +47,7 @@ Collez l'identifiant ou l'ID numérique dans le champ **Channel / Chat ID**, pui
 
 ## Ce qui est publié
 
-Une fois connecté, Deals Influencer Butler publie dans ce canal via l'endpoint `sendPhoto` de la Bot API de Telegram. Chaque publication porte l'image du produit de votre ligne d'offre et une légende construite à partir du modèle de votre compositeur de publications. Rien n'est envoyé tant que vous ne publiez pas, donc connecter le bot à l'avance est sans risque.
+Une fois connecté, Deals Butler publie dans ce canal via l'endpoint `sendPhoto` de la Bot API de Telegram. Chaque publication porte l'image du produit de votre ligne d'offre et une légende construite à partir du modèle de votre compositeur de publications. Rien n'est envoyé tant que vous ne publiez pas, donc connecter le bot à l'avance est sans risque.
 
 ## Problèmes courants
 
@@ -58,4 +58,4 @@ Une fois connecté, Deals Influencer Butler publie dans ce canal via l'endpoint 
 ## Relié
 
 - [API Integrations](/help/tutorials/api-integrations) est l'endroit où se trouve la carte du bot Telegram, avec toutes les autres clés d'API que Butler utilise.
-- [Deals Influencer Butler](/help/tutorials/daily-deals) construit les publications envoyées dans ce canal.
+- [Deals Butler](/help/tutorials/deals) construit les publications envoyées dans ce canal.

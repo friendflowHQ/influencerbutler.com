@@ -9,28 +9,32 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ProTier = "day0" | "day2" | "day5" | "day10";
 
-type TierCopy = {
+export type TierCopy = {
   subject: string;
   build: (vars: ProVars) => string;
 };
 
-type ProVars = {
+export type ProVars = {
   firstName: string;
   planName: string; // e.g. "Pro Solo" - falls back to "Influencer Butler Pro"
   subscriptionUrl: string;
 };
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const HELP_URL = "https://www.influencerbutler.com/help";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 // Chooser page so Mac recipients get the right build, not the Windows .exe.
 const DOWNLOAD_URL = "https://www.influencerbutler.com/download";
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
-const COPY: Record<ProTier, TierCopy> = {
+export const PRO_COPY: Record<ProTier, TierCopy> = {
   day0: {
     subject: "You're in: welcome to Influencer Butler Pro",
     build: (v) => {
@@ -66,7 +70,7 @@ const COPY: Record<ProTier, TierCopy> = {
         ``,
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
-        `  3. Set up the Deals Influencer Butler to find deals in your niche and post them automatically.`,
+        `  3. Set up the Deals Butler to find deals in your niche and post them automatically.`,
         ``,
         `Step-by-step tutorials for every butler: ${HELP_URL}`,
         ``,
@@ -129,14 +133,40 @@ export type ProEmailPayload = {
 };
 
 export async function sendProEmail(payload: ProEmailPayload): Promise<boolean> {
-  const copy = COPY[payload.tier];
+  const copy = PRO_COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
-  const body = copy.build({
+  const vars: ProVars = {
     firstName,
     planName: payload.planName && payload.planName.trim().length > 0 ? payload.planName : "Influencer Butler Pro",
     subscriptionUrl: payload.subscriptionUrl,
-  });
+  };
+  const subject = copy.subject;
+  const body = copy.build(vars);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: copy.subject, text: body });
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "pro",
+    tier: payload.tier,
+    vars: vars as unknown as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject: resolved.subject,
+    text: resolved.body,
+    category: `pro_${payload.tier}`,
+    funnel: "pro",
+    trackOpens: true,
+  });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [payload.to], resolved.applyTag, "funnel:pro");
+    } catch (err) {
+      console.error("pro-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }

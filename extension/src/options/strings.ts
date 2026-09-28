@@ -14,8 +14,15 @@ export interface OptionsDict {
   runningTests: string;
   testOnStartup: string;
   affiliateRouting: string;
+  // App-opening Amazon links (SiteStripe linkCode=ssc + creativeASIN params).
+  appOpeningLinks: string;
+  appOpeningLinksHint: string;
   primaryDeeplink: string;
   primaryDeeplinkNone: string;
+  primaryDeeplinkHint: string;
+  // Shown under the dropdown when the branded-link provider is selected but the
+  // extension has no license key, so every link stays a plain Amazon link.
+  primaryDeeplinkSignIn: string;
   perCountryHeading: string;
   perCountryHint: string;
   addCountry: string;
@@ -27,8 +34,13 @@ export interface OptionsDict {
   saving: string;
   saved: string;
   showMeWhere: string;
+  watchSetupVideo: string;
+  openFullTutorial: string;
   participatesLabel: string;
   secretSavedPlaceholder: string;
+  storedBadge: string;
+  clearKeys: string;
+  clearKeysConfirm: string;
   statusOk: string;
   statusFail: string;
   statusUntested: string;
@@ -39,9 +51,11 @@ export interface OptionsDict {
   catAffiliateTag: string;
   catDeeplink: string;
   catAffiliateNetwork: string;
+  catWalmartLink: string;
   // Provider labels (referenced by adapter.labelKey)
   provOpenai: string;
   provCreatorsApi: string;
+  creatorsApiHint: string;
   provAssociates: string;
   provInfluencerButler: string;
   provInfluencerButlerDesc: string;
@@ -51,26 +65,141 @@ export interface OptionsDict {
   provSelfhosted: string;
   provLevanta: string;
   provArcher: string;
-  provLogie: string;
   provBenable: string;
+  provWalmartCreator: string;
+  provWalmartCreatorDesc: string;
+  provMavely: string;
+  provMavelyDesc: string;
   // Field labels (referenced by field.labelKey)
   fieldApiKey: string;
   fieldApiSecret: string;
   fieldGroupId: string;
-  fieldToken: string;
   fieldUsername: string;
   fieldPassword: string;
   fieldModel: string;
-  fieldAccessKey: string;
-  fieldSecretKey: string;
+  recommendedSuffix: string;
+  fieldCredentialId: string;
+  fieldCredentialSecret: string;
+  fieldCredentialVersion: string;
   fieldPartnerTag: string;
   fieldMarketplace: string;
   fieldLinkTemplate: string;
   fieldReferralUrl: string;
+  // Creator API per-region (EU/FE) credential subsections
+  creatorsRegionsSummary: string;
+  creatorsRegionEuTitle: string;
+  creatorsRegionFeTitle: string;
+  creatorsRegionTest: string;
+  // Creator API backup-credential leasing
+  creatorsBackupOfferHint: string;
+  creatorsBackupEnable: string;
+  creatorsBackupActive: string;
+  creatorsBackupDisable: string;
+  creatorsBackupWorking: string;
+  creatorsBackupCovering: string;
+  // Creator API server-vault sync (the card's own credentials reaching the
+  // account, which is what Amazon-page enrichment reads).
+  vaultSynced: string;
+  vaultRetry: string;
+  vaultRetrying: string;
+  vaultPendingSignedOut: string;
+  vaultPendingMigration: string;
+  vaultPendingServer: string;
+  vaultPendingNetwork: string;
+  // Walmart affiliate link provider select
+  walmartLink: string;
+  walmartLinkNone: string;
+  walmartLinkHint: string;
+  // Voiceover Butler section
+  voHeading: string;
+  voIntro: string;
+  voProfileGroup: string;
+  voTone: string;
+  voTonePlaceholder: string;
+  voNiche: string;
+  voNichePlaceholder: string;
+  voAudience: string;
+  voAudiencePlaceholder: string;
+  voDefaultsGroup: string;
+  voLength: string;
+  voLengthCustom: string;
+  voVideoType: string;
+  voVtSocialHook: string;
+  voVtTutorial: string;
+  voVtUnboxing: string;
+  voVtProblemSolution: string;
+  voVtEduStory: string;
+  voVtProductSetup: string;
+  voHookStyle: string;
+  voHookJokePun: string;
+  voHookRelatable: string;
+  voHook30Day: string;
+  voHookTiredOf: string;
+  voHookBoldClaim: string;
+  voHookQuestion: string;
+  voHookSurprise: string;
+  voHookCustomOption: string;
+  voHookCustomLine: string;
+  voHookCustomPlaceholder: string;
+  voPacing: string;
+  voPaceSlow: string;
+  voPaceStandard: string;
+  voPaceFast: string;
+  voDisclosure: string;
+  voDiscHonestPaid: string;
+  voDiscAffiliate: string;
+  voDiscFreePr: string;
+  voDiscNone: string;
+  voAboutGroup: string;
+  voAboutHint: string;
+  voHeight: string;
+  voTopSize: string;
+  voBustSize: string;
+  voDressSize: string;
+  voPantSize: string;
+  voShoeSize: string;
+  voHairColor: string;
+  voEyeColor: string;
+  voSkinTone: string;
+  voPreferredColors: string;
+  voPreferredStyles: string;
+  voDenyGroup: string;
+  voDenyLabel: string;
+  voDenyHint: string;
+  // Deals section (the on-page "Send to Deals" chip)
+  dealsHeading: string;
+  dealsIntro: string;
+  dealsWorkspace: string;
+  dealsWorkspaceHint: string;
+  dealsWorkspaceOffline: string;
+  dealsPlacement: string;
+  dealsPlacementHint: string;
+  dealsPlaceDraft: string;
+  dealsPlaceNext: string;
+  dealsPlaceShuffle: string;
+  dealsPlaceEnd: string;
+  dealsPlaceNow: string;
+  dealsChipLabel: string;
+  dealsChipHint: string;
+  // Settings shell + left-hand section nav
+  navGeneral: string;
+  navApiIntegrations: string;
+  navAffiliateRouting: string;
+  // Affiliate Routing Strategy card
+  routingStrategyTitle: string;
+  routingStrategyHint: string;
+  routingUseHighest: string;
+  routingUseHighestHint: string;
+  routingRowAmazon: string;
+  routingRowWalmart: string;
+  // Extra routing-roster status pills (statusOk doubles as "Connected")
+  statusSignedIn: string;
+  statusReady: string;
+  statusNotConnected: string;
 }
 
 const en: OptionsDict = {
-  pageTitle: "API Integrations",
+  pageTitle: "Settings",
   pageIntro:
     "Connect the same providers the desktop app uses. Paste a key, test it, and the extension uses it while you browse Amazon.",
   securityNote:
@@ -81,8 +210,15 @@ const en: OptionsDict = {
   runningTests: "Testing every saved integration...",
   testOnStartup: "Test all integrations when the browser starts",
   affiliateRouting: "Rewrite Amazon links through my affiliate setup",
+  appOpeningLinks: "Links open the Amazon app on phones",
+  appOpeningLinksHint:
+    "Adds Amazon's own share parameters to every Amazon link so it opens in the Amazon app instead of the mobile browser. Free, and harmless on desktop.",
   primaryDeeplink: "Primary deeplink provider",
   primaryDeeplinkNone: "None (affiliate tag only)",
+  primaryDeeplinkHint:
+    "This decides what Copy my link hands you. With none selected you get the full Amazon url with your affiliate tag showing in it. Pick Influencer Butler branded links to get a short link instead: your tag stays out of what you post and your clicks are counted. It is free on any plan and needs no setup beyond being signed in.",
+  primaryDeeplinkSignIn:
+    "You are not signed in, so branded links cannot be created yet. Open the Influencer Butler extension popup and enter your license key. Until then your links stay plain Amazon links with your affiliate tag.",
   perCountryHeading: "Affiliate tag per country",
   perCountryHint: "US falls back to your storefront handle when left blank.",
   addCountry: "Add country",
@@ -94,8 +230,13 @@ const en: OptionsDict = {
   saving: "Saving...",
   saved: "Saved",
   showMeWhere: "Show me where",
+  watchSetupVideo: "Watch the setup walkthrough:",
+  openFullTutorial: "Open the full tutorial",
   participatesLabel: "Use in affiliate routing",
-  secretSavedPlaceholder: "Saved. Leave blank to keep it.",
+  secretSavedPlaceholder: "Key stored. Leave blank to keep it, or paste a new key to replace it.",
+  storedBadge: "Stored",
+  clearKeys: "Clear saved keys",
+  clearKeysConfirm: "Remove the saved keys for this provider? You will need to paste them again to use it.",
   statusOk: "Connected",
   statusFail: "Not working",
   statusUntested: "Not tested",
@@ -105,8 +246,11 @@ const en: OptionsDict = {
   catAffiliateTag: "Affiliate tags",
   catDeeplink: "Deeplink providers",
   catAffiliateNetwork: "Affiliate networks",
+  catWalmartLink: "Walmart affiliate links",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Use the Credential ID and Credential Secret from the Amazon Creator Connections console (they start with amzn1.). This is the OAuth2 Creator API, not the older Product Advertising API access key.",
   provAssociates: "Amazon Associates tags",
   provInfluencerButler: "Influencer Butler branded links",
   provInfluencerButlerDesc:
@@ -117,25 +261,148 @@ const en: OptionsDict = {
   provSelfhosted: "Self-hosted",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "The Walmart Creator program. Sign in at creator.walmart.com in this browser and the butler mints real walmrt.us short links from your session. No ids or API keys needed.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Mavely link minting. Sign in at creators.joinmavely.com in this browser and your Walmart links mint as mave.ly short links. There is no API key.",
+  walmartLink: "Walmart affiliate links",
+  walmartLinkNone: "None (plain Walmart links)",
+  walmartLinkHint:
+    "Which provider mints your Walmart links when you Copy my link on a Walmart product. Both work from a signed-in browser session: join Walmart Creator at creator.walmart.com (no follower minimum) or Mavely at creators.joinmavely.com, sign in there, then pick it here.",
   fieldApiKey: "API key",
   fieldApiSecret: "API secret",
   fieldGroupId: "Group id",
-  fieldToken: "Token or API key",
   fieldUsername: "Username or email",
   fieldPassword: "Password",
-  fieldModel: "Model (optional)",
-  fieldAccessKey: "Access key",
-  fieldSecretKey: "Secret key",
+  fieldModel: "Model",
+  recommendedSuffix: "(recommended)",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Credential Version",
+  creatorsRegionsSummary: "International credentials (EU and FE)",
+  creatorsRegionEuTitle: "EU credentials (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "FE credentials (AU, JP, SG, IN)",
+  creatorsRegionTest: "Test",
+  creatorsBackupOfferHint:
+    "Amazon has not unlocked the Creator API for your account yet. You can use Influencer Butler's backup credentials while you wait.",
+  creatorsBackupEnable: "Use Influencer Butler's backup credentials",
+  creatorsBackupActive:
+    "Backup credentials active. Your own Creator API is re-tested and takes over as soon as Amazon unlocks it.",
+  creatorsBackupDisable: "Stop using backup",
+  creatorsBackupWorking: "Setting up backup credentials...",
+  creatorsBackupCovering:
+    "Product data is running on Influencer Butler's backup credentials. Add your own Credential ID and Secret above to switch to your own Creator API.",
+  vaultSynced: "Saved to your account. Amazon pages will use these keys.",
+  vaultRetry: "Retry",
+  vaultRetrying: "Retrying...",
+  vaultPendingSignedOut:
+    "Saved on this device only: sign in to Influencer Butler so these keys reach your account. Until then, Amazon pages keep asking you to connect.",
+  vaultPendingMigration:
+    "Saved on this device. Your account is not ready to store these keys yet - we are setting that up. Try again shortly.",
+  vaultPendingServer:
+    "Saved on this device, but we could not store them on your account. This one is on our side. Retry in a moment, and tell us if it keeps failing.",
+  vaultPendingNetwork:
+    "Saved on this device, but they have not reached your account yet: check your connection and retry. Until then, Amazon pages keep asking you to connect.",
   fieldPartnerTag: "Partner tag",
   fieldMarketplace: "Marketplace (optional)",
   fieldLinkTemplate: "Link pattern",
   fieldReferralUrl: "Referral link",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Draft spoken video scripts on any Amazon product page with the Draft voiceover (AI) button in the My link panel. It uses your own OpenAI key from the AI section above. These settings shape every script.",
+  voProfileGroup: "Creator profile",
+  voTone: "Tone",
+  voTonePlaceholder: "Friendly, dry humor, high energy...",
+  voNiche: "Niche",
+  voNichePlaceholder: "Home organization, budget beauty...",
+  voAudience: "Target audience",
+  voAudiencePlaceholder: "Busy moms, college students...",
+  voDefaultsGroup: "Script defaults",
+  voLength: "Script length (seconds)",
+  voLengthCustom: "Custom",
+  voVideoType: "Video type",
+  voVtSocialHook: "Social media hook & script",
+  voVtTutorial: "Tutorial",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problem / solution",
+  voVtEduStory: "Educational & storytelling",
+  voVtProductSetup: "Product setup / introduction",
+  voHookStyle: "Opening hook",
+  voHookJokePun: "Joke or pun",
+  voHookRelatable: "Relatable scenario",
+  voHook30Day: "30-day review",
+  voHookTiredOf: "Tired of [problem]?",
+  voHookBoldClaim: "Bold claim or stat",
+  voHookQuestion: "Direct question",
+  voHookSurprise: "Surprise reveal",
+  voHookCustomOption: "Custom",
+  voHookCustomLine: "Custom hook line",
+  voHookCustomPlaceholder: "Your exact opening line",
+  voPacing: "Pacing",
+  voPaceSlow: "Slow & contemplative",
+  voPaceStandard: "Standard",
+  voPaceFast: "Fast & punchy",
+  voDisclosure: "FTC disclosure",
+  voDiscHonestPaid: "Honest paid sample",
+  voDiscAffiliate: "Affiliate link",
+  voDiscFreePr: "Free PR sample",
+  voDiscNone: "No disclosure (organic)",
+  voAboutGroup: "About Me: fit & styling",
+  voAboutHint:
+    'Only used when the product looks like clothing, shoes, or beauty: the script can ground sizing in your own fit (for example "I\'m 5\'6 and wear a medium"). Leave blank to skip.',
+  voHeight: "Height",
+  voTopSize: "Top size",
+  voBustSize: "Bust size",
+  voDressSize: "Dress size",
+  voPantSize: "Pant size",
+  voShoeSize: "Shoe size",
+  voHairColor: "Hair color",
+  voEyeColor: "Eye color",
+  voSkinTone: "Skin tone / undertone",
+  voPreferredColors: "Preferred colors",
+  voPreferredStyles: "Preferred styles",
+  voDenyGroup: "Brand denylist",
+  voDenyLabel: "Brands to never mention (comma separated)",
+  voDenyHint:
+    "Scripts are told to avoid these brand names, and every draft is checked afterward: if one slips through you get a warning under the script.",
+  dealsHeading: "Deals",
+  dealsIntro:
+    "When you are browsing a deal site the extension knows, each product gets a Send to Deals button. These settings decide where those deals go.",
+  dealsWorkspace: "Send deals to",
+  dealsWorkspaceHint:
+    "Deals Butler picks the Amazon or Walmart captions and comments for you, based on where the product came from.",
+  dealsWorkspaceOffline: "(saved, app closed)",
+  dealsPlacement: "When a deal arrives",
+  dealsPlacementHint:
+    "Older versions of the app ignore this and use whatever the workspace is already set to.",
+  dealsPlaceDraft: "Save it as a draft for me to review",
+  dealsPlaceNext: "Put it next in the queue",
+  dealsPlaceShuffle: "Drop it somewhere random in the queue",
+  dealsPlaceEnd: "Add it to the end of the queue",
+  dealsPlaceNow: "Post it right now",
+  dealsChipLabel: "Show the Send to Deals button on deal sites",
+  dealsChipHint: "Turn this off to keep the page counter and the harvester without the per-product button.",
+  navGeneral: "General",
+  navApiIntegrations: "API Integrations",
+  navAffiliateRouting: "Affiliate Routing",
+  routingStrategyTitle: "Affiliate Routing Strategy",
+  routingStrategyHint:
+    "How the extension decides which link Copy my link hands you for each product. The deeplink and Walmart choices below feed this too.",
+  routingUseHighest: "Pick the highest-commission provider for each product",
+  routingUseHighestHint:
+    "When on, each product link routes through whichever connected provider pays the most for that product, using the rates the extension can read. When a provider does not report a rate, routing falls back to the fixed order (connected networks first, then Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Signed in",
+  statusReady: "Ready",
+  statusNotConnected: "Not connected",
 };
 
 const es: OptionsDict = {
-  pageTitle: "Integraciones de API",
+  pageTitle: "Ajustes",
   pageIntro:
     "Conecta los mismos proveedores que usa la app de escritorio. Pega una clave, pruébala y la extensión la usa mientras navegas por Amazon.",
   securityNote:
@@ -146,8 +413,15 @@ const es: OptionsDict = {
   runningTests: "Probando cada integración guardada...",
   testOnStartup: "Probar todas las integraciones al iniciar el navegador",
   affiliateRouting: "Reescribir enlaces de Amazon con mi configuración de afiliado",
+  appOpeningLinks: "Los enlaces abren la app de Amazon en el móvil",
+  appOpeningLinksHint:
+    "Añade los parámetros de compartir de Amazon a cada enlace de Amazon para que se abra en la app de Amazon en lugar del navegador móvil. Gratis, y sin efecto en escritorio.",
   primaryDeeplink: "Proveedor de deeplink principal",
   primaryDeeplinkNone: "Ninguno (solo etiqueta de afiliado)",
+  primaryDeeplinkHint:
+    "Esto decide qué te da Copiar mi enlace. Sin ninguno seleccionado obtienes la url completa de Amazon con tu etiqueta de afiliado a la vista. Elige Enlaces de marca de Influencer Butler para obtener un enlace corto: tu etiqueta no aparece en lo que publicas y se cuentan tus clics. Es gratis en cualquier plan y no necesita más configuración que haber iniciado sesión.",
+  primaryDeeplinkSignIn:
+    "No has iniciado sesión, así que todavía no se pueden crear enlaces de marca. Abre la ventana de la extensión Influencer Butler e introduce tu clave de licencia. Hasta entonces, tus enlaces seguirán siendo enlaces normales de Amazon con tu etiqueta de afiliado.",
   perCountryHeading: "Etiqueta de afiliado por país",
   perCountryHint: "EE. UU. usa tu identificador de tienda si lo dejas en blanco.",
   addCountry: "Añadir país",
@@ -159,8 +433,13 @@ const es: OptionsDict = {
   saving: "Guardando...",
   saved: "Guardado",
   showMeWhere: "Muéstrame dónde",
+  watchSetupVideo: "Mira el tutorial de configuración:",
+  openFullTutorial: "Abrir el tutorial completo",
   participatesLabel: "Usar en el enrutado de afiliados",
-  secretSavedPlaceholder: "Guardada. Déjalo en blanco para conservarla.",
+  secretSavedPlaceholder: "Clave guardada. Déjalo en blanco para conservarla, o pega una nueva clave para reemplazarla.",
+  storedBadge: "Guardada",
+  clearKeys: "Borrar claves guardadas",
+  clearKeysConfirm: "¿Quitar las claves guardadas de este proveedor? Tendrás que volver a pegarlas para usarlo.",
   statusOk: "Conectado",
   statusFail: "No funciona",
   statusUntested: "Sin probar",
@@ -170,8 +449,11 @@ const es: OptionsDict = {
   catAffiliateTag: "Etiquetas de afiliado",
   catDeeplink: "Proveedores de deeplink",
   catAffiliateNetwork: "Redes de afiliados",
+  catWalmartLink: "Enlaces de afiliado de Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Usa el Credential ID y el Credential Secret de la consola de Amazon Creator Connections (empiezan por amzn1.). Es la Creator API OAuth2, no la Access Key de la antigua Product Advertising API.",
   provAssociates: "Etiquetas de Amazon Associates",
   provInfluencerButler: "Enlaces de marca de Influencer Butler",
   provInfluencerButlerDesc:
@@ -182,25 +464,148 @@ const es: OptionsDict = {
   provSelfhosted: "Autoalojado",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "El programa Walmart Creator. Inicia sesión en creator.walmart.com en este navegador y el butler crea enlaces cortos walmrt.us reales desde tu sesión. Sin ids ni claves de API.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Creación de enlaces con Mavely. Inicia sesión en creators.joinmavely.com en este navegador y tus enlaces de Walmart se crean como enlaces cortos mave.ly. No hay clave de API.",
+  walmartLink: "Enlaces de afiliado de Walmart",
+  walmartLinkNone: "Ninguno (enlaces de Walmart sin seguimiento)",
+  walmartLinkHint:
+    "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. Ambos funcionan con una sesión iniciada en el navegador: únete a Walmart Creator en creator.walmart.com (sin mínimo de seguidores) o a Mavely en creators.joinmavely.com, inicia sesión allí y elígelo aquí.",
   fieldApiKey: "Clave de API",
   fieldApiSecret: "Secreto de API",
   fieldGroupId: "Id de grupo",
-  fieldToken: "Token o clave de API",
   fieldUsername: "Usuario o correo",
   fieldPassword: "Contraseña",
-  fieldModel: "Modelo (opcional)",
-  fieldAccessKey: "Clave de acceso",
-  fieldSecretKey: "Clave secreta",
+  fieldModel: "Modelo",
+  recommendedSuffix: "(recomendado)",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Versión de credencial",
+  creatorsRegionsSummary: "Credenciales internacionales (EU y FE)",
+  creatorsRegionEuTitle: "Credenciales EU (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "Credenciales FE (AU, JP, SG, IN)",
+  creatorsRegionTest: "Probar",
+  creatorsBackupOfferHint:
+    "Amazon aún no ha habilitado la Creator API para tu cuenta. Puedes usar las credenciales de respaldo de Influencer Butler mientras esperas.",
+  creatorsBackupEnable: "Usar las credenciales de respaldo de Influencer Butler",
+  creatorsBackupActive:
+    "Credenciales de respaldo activas. Tu propia Creator API se vuelve a probar y toma el relevo en cuanto Amazon la habilite.",
+  creatorsBackupDisable: "Dejar de usar el respaldo",
+  creatorsBackupWorking: "Configurando las credenciales de respaldo...",
+  creatorsBackupCovering:
+    "Los datos de producto funcionan con las credenciales de respaldo de Influencer Butler. Añade tu propio Credential ID y Secret arriba para pasar a tu propia Creator API.",
+  vaultSynced: "Guardadas en tu cuenta. Las páginas de Amazon usarán estas claves.",
+  vaultRetry: "Reintentar",
+  vaultRetrying: "Reintentando...",
+  vaultPendingSignedOut:
+    "Guardadas solo en este dispositivo: inicia sesión en Influencer Butler para que estas claves lleguen a tu cuenta. Hasta entonces, las páginas de Amazon seguirán pidiéndote que conectes.",
+  vaultPendingMigration:
+    "Guardadas en este dispositivo. Tu cuenta aún no puede almacenar estas claves: lo estamos preparando. Inténtalo de nuevo en un momento.",
+  vaultPendingServer:
+    "Guardadas en este dispositivo, pero no pudimos almacenarlas en tu cuenta. Esto es cosa nuestra. Reinténtalo en un momento y avísanos si sigue fallando.",
+  vaultPendingNetwork:
+    "Guardadas en este dispositivo, pero aún no han llegado a tu cuenta: comprueba tu conexión y reinténtalo. Hasta entonces, las páginas de Amazon seguirán pidiéndote que conectes.",
   fieldPartnerTag: "Etiqueta de socio",
   fieldMarketplace: "Mercado (opcional)",
   fieldLinkTemplate: "Patrón de enlace",
   fieldReferralUrl: "Enlace de referido",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Redacta guiones de voz para vídeos en cualquier página de producto de Amazon con el botón Redactar guion de voz (IA) del panel Mi enlace. Usa tu propia clave de OpenAI de la sección IA de arriba. Estos ajustes dan forma a cada guion.",
+  voProfileGroup: "Perfil de creador",
+  voTone: "Tono",
+  voTonePlaceholder: "Cercano, humor seco, mucha energía...",
+  voNiche: "Nicho",
+  voNichePlaceholder: "Organización del hogar, belleza económica...",
+  voAudience: "Audiencia objetivo",
+  voAudiencePlaceholder: "Madres ocupadas, estudiantes...",
+  voDefaultsGroup: "Valores por defecto del guion",
+  voLength: "Duración del guion (segundos)",
+  voLengthCustom: "Personalizada",
+  voVideoType: "Tipo de vídeo",
+  voVtSocialHook: "Gancho y guion para redes",
+  voVtTutorial: "Tutorial",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problema / solución",
+  voVtEduStory: "Educativo y narrativo",
+  voVtProductSetup: "Preparación / presentación del producto",
+  voHookStyle: "Gancho de apertura",
+  voHookJokePun: "Broma o juego de palabras",
+  voHookRelatable: "Escena cotidiana",
+  voHook30Day: "Reseña a 30 días",
+  voHookTiredOf: "¿Cansado de [problema]?",
+  voHookBoldClaim: "Afirmación o dato llamativo",
+  voHookQuestion: "Pregunta directa",
+  voHookSurprise: "Revelación sorpresa",
+  voHookCustomOption: "Personalizado",
+  voHookCustomLine: "Frase de gancho personalizada",
+  voHookCustomPlaceholder: "Tu frase de apertura exacta",
+  voPacing: "Ritmo",
+  voPaceSlow: "Lento y contemplativo",
+  voPaceStandard: "Estándar",
+  voPaceFast: "Rápido y directo",
+  voDisclosure: "Divulgación FTC",
+  voDiscHonestPaid: "Muestra pagada honesta",
+  voDiscAffiliate: "Enlace de afiliado",
+  voDiscFreePr: "Muestra de PR gratuita",
+  voDiscNone: "Sin divulgación (orgánico)",
+  voAboutGroup: "Sobre mí: talla y estilo",
+  voAboutHint:
+    'Solo se usa cuando el producto parece ropa, calzado o belleza: el guion puede basar las tallas en tu propio cuerpo (por ejemplo "mido 1,68 y uso la talla M"). Déjalo en blanco para omitirlo.',
+  voHeight: "Estatura",
+  voTopSize: "Talla de camiseta",
+  voBustSize: "Talla de pecho",
+  voDressSize: "Talla de vestido",
+  voPantSize: "Talla de pantalón",
+  voShoeSize: "Talla de calzado",
+  voHairColor: "Color de pelo",
+  voEyeColor: "Color de ojos",
+  voSkinTone: "Tono de piel / subtono",
+  voPreferredColors: "Colores preferidos",
+  voPreferredStyles: "Estilos preferidos",
+  voDenyGroup: "Lista de marcas prohibidas",
+  voDenyLabel: "Marcas que nunca se deben mencionar (separadas por comas)",
+  voDenyHint:
+    "Se indica a los guiones que eviten estas marcas y cada borrador se revisa después: si alguna se cuela, verás un aviso debajo del guion.",
+  dealsHeading: "Ofertas",
+  dealsIntro:
+    "Cuando navegas por un sitio de ofertas que la extension conoce, cada producto muestra un boton Enviar a Ofertas. Estos ajustes deciden a donde van esas ofertas.",
+  dealsWorkspace: "Enviar ofertas a",
+  dealsWorkspaceHint:
+    "Deals Butler elige los textos y comentarios de Amazon o Walmart por ti, segun de donde venga el producto.",
+  dealsWorkspaceOffline: "(guardado, app cerrada)",
+  dealsPlacement: "Cuando llega una oferta",
+  dealsPlacementHint:
+    "Las versiones antiguas de la app ignoran esto y usan lo que ya tenga configurado el espacio de trabajo.",
+  dealsPlaceDraft: "Guardarla como borrador para revisarla",
+  dealsPlaceNext: "Ponerla la siguiente en la cola",
+  dealsPlaceShuffle: "Colocarla en un punto aleatorio de la cola",
+  dealsPlaceEnd: "Anadirla al final de la cola",
+  dealsPlaceNow: "Publicarla ahora mismo",
+  dealsChipLabel: "Mostrar el boton Enviar a Ofertas en los sitios de ofertas",
+  dealsChipHint: "Desactivalo para conservar el contador de la pagina y el recolector sin el boton por producto.",
+  navGeneral: "General",
+  navApiIntegrations: "Integraciones de API",
+  navAffiliateRouting: "Enrutado de afiliados",
+  routingStrategyTitle: "Estrategia de enrutado de afiliados",
+  routingStrategyHint:
+    "Cómo decide la extensión qué enlace te da Copiar mi enlace para cada producto. Las opciones de deeplink y de Walmart de abajo también alimentan esto.",
+  routingUseHighest: "Elegir el proveedor con mayor comisión para cada producto",
+  routingUseHighestHint:
+    "Cuando está activado, cada enlace de producto se enruta por el proveedor conectado que más paga por ese producto, usando las tarifas que la extensión puede leer. Cuando un proveedor no informa de una tarifa, el enrutado vuelve al orden fijo (primero las redes conectadas, luego Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Sesión iniciada",
+  statusReady: "Listo",
+  statusNotConnected: "Sin conectar",
 };
 
 const fr: OptionsDict = {
-  pageTitle: "Intégrations API",
+  pageTitle: "Paramètres",
   pageIntro:
     "Connectez les mêmes fournisseurs que l'app de bureau. Collez une clé, testez-la, et l'extension l'utilise pendant que vous naviguez sur Amazon.",
   securityNote:
@@ -211,8 +616,15 @@ const fr: OptionsDict = {
   runningTests: "Test de chaque intégration enregistrée...",
   testOnStartup: "Tester toutes les intégrations au démarrage du navigateur",
   affiliateRouting: "Réécrire les liens Amazon avec ma configuration d'affiliation",
+  appOpeningLinks: "Les liens ouvrent l'application Amazon sur mobile",
+  appOpeningLinksHint:
+    "Ajoute les paramètres de partage d'Amazon à chaque lien Amazon pour qu'il s'ouvre dans l'application Amazon plutôt que dans le navigateur mobile. Gratuit, et sans effet sur ordinateur.",
   primaryDeeplink: "Fournisseur de deeplink principal",
   primaryDeeplinkNone: "Aucun (balise d'affiliation seule)",
+  primaryDeeplinkHint:
+    "Ce choix determine ce que Copier mon lien vous donne. Sans fournisseur selectionne, vous obtenez l'url Amazon complete avec votre balise d'affiliation visible. Choisissez Liens de marque Influencer Butler pour obtenir un lien court : votre balise reste hors de ce que vous publiez et vos clics sont comptes. C'est gratuit sur toute offre et ne demande aucune configuration au-dela de la connexion.",
+  primaryDeeplinkSignIn:
+    "Vous n'êtes pas connecté, donc les liens de marque ne peuvent pas encore être créés. Ouvrez la fenêtre de l'extension Influencer Butler et saisissez votre clé de licence. D'ici là, vos liens resteront des liens Amazon simples avec votre balise d'affiliation.",
   perCountryHeading: "Balise d'affiliation par pays",
   perCountryHint: "Les États-Unis utilisent votre identifiant de vitrine si laissé vide.",
   addCountry: "Ajouter un pays",
@@ -224,8 +636,13 @@ const fr: OptionsDict = {
   saving: "Enregistrement...",
   saved: "Enregistré",
   showMeWhere: "Montrez-moi où",
+  watchSetupVideo: "Regardez le tutoriel de configuration :",
+  openFullTutorial: "Ouvrir le tutoriel complet",
   participatesLabel: "Utiliser dans le routage d'affiliation",
-  secretSavedPlaceholder: "Enregistrée. Laissez vide pour la conserver.",
+  secretSavedPlaceholder: "Clé enregistrée. Laissez vide pour la conserver, ou collez une nouvelle clé pour la remplacer.",
+  storedBadge: "Enregistrée",
+  clearKeys: "Effacer les clés enregistrées",
+  clearKeysConfirm: "Supprimer les clés enregistrées de ce fournisseur ? Vous devrez les recoller pour l'utiliser.",
   statusOk: "Connecté",
   statusFail: "Ne fonctionne pas",
   statusUntested: "Non testé",
@@ -235,8 +652,11 @@ const fr: OptionsDict = {
   catAffiliateTag: "Balises d'affiliation",
   catDeeplink: "Fournisseurs de deeplink",
   catAffiliateNetwork: "Réseaux d'affiliation",
+  catWalmartLink: "Liens d'affiliation Walmart",
   provOpenai: "OpenAI",
   provCreatorsApi: "Amazon Creators API",
+  creatorsApiHint:
+    "Utilisez le Credential ID et le Credential Secret depuis la console Amazon Creator Connections (ils commencent par amzn1.). Il s'agit de la Creator API OAuth2, pas de l'Access Key de l'ancienne Product Advertising API.",
   provAssociates: "Balises Amazon Associates",
   provInfluencerButler: "Liens de marque Influencer Butler",
   provInfluencerButlerDesc:
@@ -247,21 +667,144 @@ const fr: OptionsDict = {
   provSelfhosted: "Auto-hébergé",
   provLevanta: "Levanta",
   provArcher: "Archer",
-  provLogie: "Logie",
   provBenable: "Benable",
+  provWalmartCreator: "Walmart Creator",
+  provWalmartCreatorDesc:
+    "Le programme Walmart Creator. Connectez-vous sur creator.walmart.com dans ce navigateur et le butler crée de vrais liens courts walmrt.us depuis votre session. Aucun id ni clé API.",
+  provMavely: "Mavely",
+  provMavelyDesc:
+    "Création de liens avec Mavely. Connectez-vous sur creators.joinmavely.com dans ce navigateur et vos liens Walmart deviennent des liens courts mave.ly. Il n'y a pas de clé API.",
+  walmartLink: "Liens d'affiliation Walmart",
+  walmartLinkNone: "Aucun (liens Walmart simples)",
+  walmartLinkHint:
+    "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Les deux fonctionnent avec une session connectée dans le navigateur : rejoignez Walmart Creator sur creator.walmart.com (sans minimum d'abonnés) ou Mavely sur creators.joinmavely.com, connectez-vous, puis choisissez-le ici.",
   fieldApiKey: "Clé API",
   fieldApiSecret: "Secret API",
   fieldGroupId: "Id de groupe",
-  fieldToken: "Jeton ou clé API",
   fieldUsername: "Nom d'utilisateur ou e-mail",
   fieldPassword: "Mot de passe",
-  fieldModel: "Modèle (facultatif)",
-  fieldAccessKey: "Clé d'accès",
-  fieldSecretKey: "Clé secrète",
+  fieldModel: "Modèle",
+  recommendedSuffix: "(recommandé)",
+  fieldCredentialId: "Credential ID",
+  fieldCredentialSecret: "Credential Secret",
+  fieldCredentialVersion: "Version de la credential",
+  creatorsRegionsSummary: "Identifiants internationaux (EU et FE)",
+  creatorsRegionEuTitle: "Identifiants EU (UK, DE, FR, IT, ES)",
+  creatorsRegionFeTitle: "Identifiants FE (AU, JP, SG, IN)",
+  creatorsRegionTest: "Tester",
+  creatorsBackupOfferHint:
+    "Amazon n'a pas encore débloqué la Creator API pour votre compte. Vous pouvez utiliser les identifiants de secours d'Influencer Butler en attendant.",
+  creatorsBackupEnable: "Utiliser les identifiants de secours d'Influencer Butler",
+  creatorsBackupActive:
+    "Identifiants de secours actifs. Votre propre Creator API est retestée et prend le relais dès qu'Amazon la débloque.",
+  creatorsBackupDisable: "Arrêter d'utiliser le secours",
+  creatorsBackupWorking: "Configuration des identifiants de secours...",
+  creatorsBackupCovering:
+    "Les données produit fonctionnent avec les identifiants de secours d'Influencer Butler. Ajoutez vos propres Credential ID et Secret ci-dessus pour passer à votre propre Creator API.",
+  vaultSynced: "Enregistrées sur votre compte. Les pages Amazon utiliseront ces clés.",
+  vaultRetry: "Réessayer",
+  vaultRetrying: "Nouvelle tentative...",
+  vaultPendingSignedOut:
+    "Enregistrées sur cet appareil uniquement : connectez-vous à Influencer Butler pour que ces clés parviennent à votre compte. D'ici là, les pages Amazon continueront de vous demander de vous connecter.",
+  vaultPendingMigration:
+    "Enregistrées sur cet appareil. Votre compte ne peut pas encore stocker ces clés : nous mettons cela en place. Réessayez dans un instant.",
+  vaultPendingServer:
+    "Enregistrées sur cet appareil, mais nous n'avons pas pu les stocker sur votre compte. Cela vient de chez nous. Réessayez dans un instant et dites-le-nous si cela persiste.",
+  vaultPendingNetwork:
+    "Enregistrées sur cet appareil, mais elles ne sont pas encore parvenues à votre compte : vérifiez votre connexion et réessayez. D'ici là, les pages Amazon continueront de vous demander de vous connecter.",
   fieldPartnerTag: "Balise partenaire",
   fieldMarketplace: "Place de marché (facultatif)",
   fieldLinkTemplate: "Modèle de lien",
   fieldReferralUrl: "Lien de parrainage",
+  voHeading: "Voiceover Butler",
+  voIntro:
+    "Rédigez des scripts voix off sur n'importe quelle page produit Amazon avec le bouton Rédiger un script voix off (IA) du panneau Mon lien. Il utilise votre propre clé OpenAI de la section IA ci-dessus. Ces réglages façonnent chaque script.",
+  voProfileGroup: "Profil de créateur",
+  voTone: "Ton",
+  voTonePlaceholder: "Chaleureux, humour pince-sans-rire, très énergique...",
+  voNiche: "Niche",
+  voNichePlaceholder: "Organisation de la maison, beauté petit budget...",
+  voAudience: "Audience cible",
+  voAudiencePlaceholder: "Mamans débordées, étudiants...",
+  voDefaultsGroup: "Réglages par défaut du script",
+  voLength: "Durée du script (secondes)",
+  voLengthCustom: "Personnalisée",
+  voVideoType: "Type de vidéo",
+  voVtSocialHook: "Accroche et script pour les réseaux",
+  voVtTutorial: "Tutoriel",
+  voVtUnboxing: "Unboxing",
+  voVtProblemSolution: "Problème / solution",
+  voVtEduStory: "Éducatif et narratif",
+  voVtProductSetup: "Installation / présentation du produit",
+  voHookStyle: "Accroche d'ouverture",
+  voHookJokePun: "Blague ou jeu de mots",
+  voHookRelatable: "Scène du quotidien",
+  voHook30Day: "Bilan après 30 jours",
+  voHookTiredOf: "Fatigué de [problème] ?",
+  voHookBoldClaim: "Affirmation ou statistique forte",
+  voHookQuestion: "Question directe",
+  voHookSurprise: "Révélation surprise",
+  voHookCustomOption: "Personnalisée",
+  voHookCustomLine: "Phrase d'accroche personnalisée",
+  voHookCustomPlaceholder: "Votre phrase d'ouverture exacte",
+  voPacing: "Rythme",
+  voPaceSlow: "Lent et contemplatif",
+  voPaceStandard: "Standard",
+  voPaceFast: "Rapide et percutant",
+  voDisclosure: "Mention FTC",
+  voDiscHonestPaid: "Échantillon rémunéré honnête",
+  voDiscAffiliate: "Lien d'affiliation",
+  voDiscFreePr: "Échantillon PR gratuit",
+  voDiscNone: "Sans mention (organique)",
+  voAboutGroup: "À propos de moi : taille et style",
+  voAboutHint:
+    'Utilisé seulement quand le produit ressemble à un vêtement, une chaussure ou un produit de beauté : le script peut appuyer les tailles sur votre propre morphologie (par exemple "je mesure 1,68 m et porte du M"). Laissez vide pour ignorer.',
+  voHeight: "Taille (stature)",
+  voTopSize: "Taille de haut",
+  voBustSize: "Tour de poitrine",
+  voDressSize: "Taille de robe",
+  voPantSize: "Taille de pantalon",
+  voShoeSize: "Pointure",
+  voHairColor: "Couleur de cheveux",
+  voEyeColor: "Couleur des yeux",
+  voSkinTone: "Carnation / sous-ton",
+  voPreferredColors: "Couleurs préférées",
+  voPreferredStyles: "Styles préférés",
+  voDenyGroup: "Liste de marques interdites",
+  voDenyLabel: "Marques à ne jamais mentionner (séparées par des virgules)",
+  voDenyHint:
+    "Les scripts reçoivent la consigne d'éviter ces marques et chaque brouillon est vérifié ensuite : si l'une d'elles passe, un avertissement s'affiche sous le script.",
+  dealsHeading: "Offres",
+  dealsIntro:
+    "Quand vous parcourez un site d'offres que l'extension connait, chaque produit recoit un bouton Envoyer aux offres. Ces reglages decident ou vont ces offres.",
+  dealsWorkspace: "Envoyer les offres vers",
+  dealsWorkspaceHint:
+    "Deals Butler choisit les legendes et commentaires Amazon ou Walmart pour vous, selon la provenance du produit.",
+  dealsWorkspaceOffline: "(enregistre, app fermee)",
+  dealsPlacement: "A l'arrivee d'une offre",
+  dealsPlacementHint:
+    "Les anciennes versions de l'application ignorent ce choix et utilisent le reglage de l'espace de travail.",
+  dealsPlaceDraft: "L'enregistrer comme brouillon a relire",
+  dealsPlaceNext: "La mettre en tete de file",
+  dealsPlaceShuffle: "La placer au hasard dans la file",
+  dealsPlaceEnd: "L'ajouter a la fin de la file",
+  dealsPlaceNow: "La publier tout de suite",
+  dealsChipLabel: "Afficher le bouton Envoyer aux offres sur les sites d'offres",
+  dealsChipHint: "Desactivez pour garder le compteur de page et le collecteur sans le bouton par produit.",
+  navGeneral: "Général",
+  navApiIntegrations: "Intégrations API",
+  navAffiliateRouting: "Routage d'affiliation",
+  routingStrategyTitle: "Stratégie de routage d'affiliation",
+  routingStrategyHint:
+    "Comment l'extension choisit le lien que Copier mon lien vous donne pour chaque produit. Les choix de deeplink et de Walmart ci-dessous l'alimentent aussi.",
+  routingUseHighest: "Choisir le fournisseur avec la commission la plus élevée pour chaque produit",
+  routingUseHighestHint:
+    "Quand c'est activé, chaque lien produit passe par le fournisseur connecté qui paie le plus pour ce produit, selon les taux que l'extension peut lire. Quand un fournisseur n'indique pas de taux, le routage revient à l'ordre fixe (d'abord les réseaux connectés, puis Amazon).",
+  routingRowAmazon: "Amazon",
+  routingRowWalmart: "Walmart",
+  statusSignedIn: "Connecté",
+  statusReady: "Prêt",
+  statusNotConnected: "Non connecté",
 };
 
 export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };

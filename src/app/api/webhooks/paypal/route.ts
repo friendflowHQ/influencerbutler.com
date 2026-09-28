@@ -67,7 +67,7 @@ export async function POST(request: Request) {
   if (payoutBatchId) {
     const { data } = await admin
       .from("affiliate_payouts")
-      .select("id,user_id,status,order_ids,paypal_batch_id,sender_item_id")
+      .select("id,user_id,status,gross_cents,order_ids,paypal_batch_id,sender_item_id")
       .eq("paypal_batch_id", payoutBatchId)
       .maybeSingle();
     row = (data as PayoutRow | null) ?? null;
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   if (!row && senderItemId) {
     const { data } = await admin
       .from("affiliate_payouts")
-      .select("id,user_id,status,order_ids,paypal_batch_id,sender_item_id")
+      .select("id,user_id,status,gross_cents,order_ids,paypal_batch_id,sender_item_id")
       .eq("sender_item_id", senderItemId)
       .maybeSingle();
     row = (data as PayoutRow | null) ?? null;

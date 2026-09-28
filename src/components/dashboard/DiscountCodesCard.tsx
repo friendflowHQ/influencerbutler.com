@@ -65,7 +65,7 @@ export default function DiscountCodesCard() {
     }
   };
 
-  const useCode = (code: string) => {
+  const applyCode = (code: string) => {
     const target = `/dashboard/subscription?code=${encodeURIComponent(code)}`;
     if (pathname === "/dashboard/subscription") {
       // Already on the page: replace so the promo input picks up the code.
@@ -109,7 +109,7 @@ export default function DiscountCodesCard() {
               </div>
               <button
                 type="button"
-                onClick={() => useCode(c.code)}
+                onClick={() => applyCode(c.code)}
                 className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#ea580c]"
               >
                 Use this code
@@ -118,6 +118,9 @@ export default function DiscountCodesCard() {
           );
         })}
       </div>
+      <p className="mt-3 text-xs text-orange-700/80">
+        One discount per account: this can&apos;t be combined with a referral or welcome code.
+      </p>
     </article>
   );
 }

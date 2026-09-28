@@ -124,6 +124,32 @@ type ApiRow = {
   position?: number;
 };
 
+// One dimension query either yields rows or fails with a human-readable reason.
+// The reason is what makes the admin panel self-diagnosing instead of just
+// saying "did not respond".
+type DimensionResult = { rows: GscRow[] | null; error: string | null };
+
+// Turn Google's HTTP status + JSON body into a short admin-facing sentence.
+// Google returns { error: { code, message, status } }; we lead with the message
+// because it names the exact cause (permission, unknown property, API disabled).
+function describeGscError(status: number, body: string): string {
+  let message = "";
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string } };
+    message = parsed.error?.message?.trim() ?? "";
+  } catch {
+    // Non-JSON body (e.g. an HTML error page); fall back to the status alone.
+  }
+  const hint =
+    status === 403
+      ? " Add the service-account email under Search Console Settings > Users and permissions, enable the Search Console API in Google Cloud, and confirm GSC_SITE_URL matches a verified property."
+      : status === 401
+        ? " The service-account token was rejected; check GA_SERVICE_ACCOUNT_JSON."
+        : "";
+  const detail = message ? `: ${message.replace(/\.$/, "")}.` : ".";
+  return `Search Console returned ${status}${detail}${hint}`;
+}
+
 // Search Console counts data with a ~2-3 day lag, so the window ends 3 days ago
 // rather than "yesterday" to avoid a misleadingly empty tail.
 function windowDates(): { startDate: string; endDate: string } {
@@ -134,10 +160,16 @@ function windowDates(): { startDate: string; endDate: string } {
   return { startDate: iso(start), endDate: iso(end) };
 }
 
-async function queryDimension(dimension: "query" | "page", rowLimit: number): Promise<GscRow[] | null> {
+async function queryDimension(dimension: "query" | "page", rowLimit: number): Promise<DimensionResult> {
   const token = await getAccessToken();
   const site = gscSiteUrl();
-  if (!token || !site) return null;
+  if (!site) return { rows: null, error: "GSC_SITE_URL is not set." };
+  if (!token) {
+    return {
+      rows: null,
+      error: "Could not obtain a Google access token; check GA_SERVICE_ACCOUNT_JSON.",
+    };
+  }
 
   const { startDate, endDate } = windowDates();
   try {
@@ -158,36 +190,52 @@ async function queryDimension(dimension: "query" | "page", rowLimit: number): Pr
       },
     );
     if (!res.ok) {
-      console.error(`gsc: ${dimension} query failed`, res.status, await res.text());
-      return null;
+      const body = await res.text();
+      console.error(`gsc: ${dimension} query failed`, res.status, body);
+      return { rows: null, error: describeGscError(res.status, body) };
     }
     const json = (await res.json()) as { rows?: ApiRow[] };
-    return (json.rows ?? []).map((r) => ({
+    const rows = (json.rows ?? []).map((r) => ({
       key: r.keys?.[0] ?? "",
       clicks: Math.round(r.clicks ?? 0),
       impressions: Math.round(r.impressions ?? 0),
       ctr: r.ctr ?? 0,
       position: r.position ?? 0,
     }));
+    return { rows, error: null };
   } catch (err) {
     console.error(`gsc: ${dimension} query threw`, err);
-    return null;
+    const reason = err instanceof Error ? err.message : String(err);
+    return { rows: null, error: `Request to Search Console failed: ${reason}.` };
   }
 }
 
+// A null summary carries the reason both dimension calls failed so the caller
+// can show it; a present summary may still carry an error if one dimension
+// failed while the other succeeded (partial outage).
+export type GscFetchResult = { summary: GscSummary | null; error: string | null };
+
 /**
  * Top search queries and top landing pages from search over the last 28 days
- * (ending 3 days ago for data completeness). Returns null only if BOTH calls
- * fail, so a partial outage still shows what it can.
+ * (ending 3 days ago for data completeness). Returns a null summary only if BOTH
+ * calls fail, so a partial outage still shows what it can.
  */
-export async function fetchGscSummary(): Promise<GscSummary | null> {
-  const [topQueries, topPages] = await Promise.all([
+export async function fetchGscSummary(): Promise<GscFetchResult> {
+  const [queries, pages] = await Promise.all([
     queryDimension("query", 15),
     queryDimension("page", 10),
   ]);
-  if (topQueries === null && topPages === null) return null;
+  if (queries.rows === null && pages.rows === null) {
+    return {
+      summary: null,
+      error: queries.error ?? pages.error ?? "Search Console did not respond.",
+    };
+  }
   return {
-    topQueries: topQueries ?? [],
-    topPages: topPages ?? [],
+    summary: {
+      topQueries: queries.rows ?? [],
+      topPages: pages.rows ?? [],
+    },
+    error: queries.error ?? pages.error,
   };
 }

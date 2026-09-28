@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import AuthorChip from "@/components/community/AuthorChip";
 import type { CommunityAuthor } from "@/lib/community-authors";
 
@@ -174,7 +175,7 @@ export default function AdminCommunityPage() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Moderation</h1>
         <p className="text-sm text-slate-600">
           {adminEmail ? `Signed in as ${adminEmail}. ` : null}
-          Hide content to keep it out of <a href="/help/community" className="text-[#f97316] hover:underline">/help/community</a>,
+          Hide content to keep it out of <Link href="/help/community" className="text-[#f97316] hover:underline">/help/community</Link>,
           restore to make it visible again, or delete to remove permanently.
         </p>
       </header>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { crossSiteBlocked } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,9 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function POST(request: Request) {
   try {
+    const blocked = crossSiteBlocked(request);
+    if (blocked) return blocked;
+
     const actor = await requirePermission("affiliates.payout", request);
     if (!actor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -1,0 +1,102 @@
+---
+title: "Benable List Optimize: audit a Benable list and get specific fixes"
+summary: Paste a Benable list URL and get a prioritized, ready-to-use set of improvements. The score is our own quality signal, and we never claim to know Benable's ranking rules.
+category: Partnerships
+---
+
+> **Honest by design.** Benable List Optimize separates what we measured on your page from our suggestions and from things we cannot see. We do not know Benable's private ranking rules, and we never promise that a change will earn an Optimized badge, a ranking, traffic, or sales.
+
+## What Benable List Optimize does
+
+You paste one of your Benable list URLs. Influencer Butler opens it in your signed-in Chrome, measures it, and hands you a prioritized set of fixes: a clearer title, a stronger description, better sections, and ready-to-paste replacement copy. It is built for the moment when a list will not get "optimized" and you want a concrete plan instead of guesswork.
+
+The audit is organized around a simple split:
+
+- **What we measured** on the page (facts): your title, description, sections, item count, and badge status.
+- **What we suggest** (heuristics): our own recommendations for making the list more useful to shoppers.
+- **What we cannot tell** from the page: anything Benable does not render for us, which we mark plainly rather than guess.
+
+## It is built to protect your OpenAI credits
+
+The whole audit, including the score and the prioritized fixes, is computed **locally with no OpenAI cost**. You can audit as many lists as you like for free.
+
+The only step that spends OpenAI credits is the **Generate AI fixes** button, which writes ready-to-use replacement copy (a new title, description, sections, and note ideas). Those results are saved per list, so re-auditing the same list does not spend again. An optional screenshot toggle (off by default) can send a picture of the list to the AI for a visual read; leave it off to keep costs down.
+
+## Before you start
+
+- **A signed-in Benable session** in Chrome. The tool uses your existing session, the same as the other Benable butlers.
+- **A Benable list URL** that you own, like `https://benable.com/<your-name>/<your-list>`.
+- **An OpenAI key in AI & Data Keys** only if you want the "Generate AI fixes" copy. The audit and scores work without it.
+
+## Auditing a list
+
+1. Open **Benable List Optimize** under Benable Butler (nested under the Benable Butler toggle).
+2. Paste your list URL into **Audit a list** and click **Audit list**.
+3. A Chrome window opens, the tool reads the list, and the audit appears.
+
+You get an **optimization score out of 100**, the **Optimized badge status**, a set of **category scores** you can expand to see exactly why each number was assigned, and a **Fix these first** list of the highest-impact changes.
+
+## Reading the score
+
+The score is our quality signal, not a Benable metric. Click any category to expand its breakdown and see the facts behind the number, for example "7 of 7 sections have no description" or "1 section contains only one product."
+
+The **Optimized badge** line reads straight from your Benable profile, where the badge actually appears. It shows **Optimized**, **Near optimized**, **Not detected**, or **Could not tell** when we were unable to check. We never label a list "not optimized" unless we actually confirmed the badge was absent.
+
+## Generate AI fixes
+
+Click **Generate AI fixes** to get ready-to-use copy: a stronger title, a rewritten description, suggested sections with descriptions, note ideas for weak products, content gaps shoppers expect, and search keywords. Every piece has a **Copy** button.
+
+The AI is instructed to write honest recommendation language ("Great for...", "Worth considering if...") and never to invent personal experience like "I use this." If a first-person claim ever slips through, we rewrite it before you see it.
+
+## Auto-improve this list
+
+Click **Auto-improve this list** to apply the safe fixes in one step, after a single confirmation you approve. It only rewrites a **title** or **description** that actually needs work: if yours already scores well, it leaves it alone and keeps the suggestion as copy-only. When the list is thin on products, it also **adds more products** for you, using the niche, marketplace, quality filters, and target count from your List Publishing settings, and writes a note for each. Leave **Watch it run** on to follow along, and each title or description change it applies gets an **Undo**.
+
+Prefer to do one part at a time? The **new title** and **new description** each keep their own **Apply to list** button, and the **Add products** button on the improve card tops up the list on its own.
+
+Everything else (sections, product removals, cover) is copy-only for now. You paste those in yourself.
+
+## Scan all my lists
+
+Open **Or scan all my lists**, paste your Benable profile URL, and click **Scan all**. The tool audits every list on your profile locally (no OpenAI cost) and sorts them so the least optimized show first. Click any row to open its full audit.
+
+### Optimize from the triage view
+
+Once the scan finishes, you can optimize without opening each list one by one:
+
+- **Every row has its own Optimize button.** It runs the same Auto-improve flow on that single list, after one confirmation. Rows that already carry the Optimized badge show the button disabled, so you never touch a finished list.
+- **Optimize several at once.** Pick a filter (**Not yet optimized**, which covers near optimized and not detected, or **Near optimized only**), then click **Optimize these lists**. The button shows how many lists it will process. It confirms once, then works through them one at a time, and you can **Stop** between lists. Already-optimized lists are always skipped, whatever the filter.
+
+Bulk optimize rewrites titles and descriptions and adds products on your live lists, and it spends OpenAI credits per list, so the confirmation spells that out first. The badge on each row reflects what Benable showed at scan time. Re-scan later to see updated badges.
+
+## Balance your profile with non-product recommendations
+
+Benable's own guidance is that a profile made almost entirely of shopping lists gets held back, and that mixing in authentic non-product recommendations (local places, tutorials, apps, and helpful resources) lifts your whole profile. The **Non-product balance** card turns that into something the butler does for you.
+
+After **Scan all**, a one-line read tells you whether your profile leans too heavily on product lists and roughly how many non-product lists would balance it. Three switches control what happens on a sweep:
+
+- **Add non-product recommendations** is the master switch.
+- **Add a few non-product picks to product-only lists** slips a couple of relevant places, videos, or resources into product lists that do not have any yet.
+- **Create new non-product lists** lets the butler write brand-new lists that are not about products (like "San Diego Cooking Classes" or "Fridge Organization Tips") when your profile is product-heavy. Set how many it may create per run, and a home area it can use for local picks.
+
+Where the recommendations come from: with your **OpenAI key** connected, local places, tutorials, web articles, and apps all work out of the box, and every suggestion is verified before it lands on your list (videos against YouTube, places against OpenStreetMap, articles by opening the link). Adding a **Google Places** key (for local) or a **YouTube** key (for videos) in AI & Data Keys gives fresher, higher-quality results, but is optional. A purely non-product list is never labeled as an ad, because there is nothing affiliate to disclose.
+
+## Honest limitations
+
+- **On your own lists, individual product notes are not readable.** Benable renders your own list in an editable view that does not expose the item cards to us. When that happens, the tool marks note coverage as **undetermined** and leaves the Product notes score as **N/A** rather than inventing a "0 of N have notes" verdict. Notes are still one of the biggest parts of a well-curated list, so the audit reminds you to strengthen them even when it cannot measure them.
+- **The badge lives on your profile, not the list page**, which is why the tool briefly visits your profile to read it.
+- **We do not read Benable's private data API.** The tool stays on what the page renders.
+
+## Common gotchas
+
+- **"Enter a benable.com list URL."**: the URL is not a Benable list link. It should look like `https://benable.com/<name>/<list>`.
+- **"Connect OpenAI to generate AI fixes"**: the audit worked, but the AI copy needs your OpenAI key in AI & Data Keys. Add it and click Generate AI fixes again.
+- **"Connect your Amazon Creators API to add products"**: adding products searches Amazon for on-topic picks, so it needs your Amazon Creators API connected in AI & Data Keys. Notes for the new products also use your OpenAI key, but products still add without it.
+- **The score looks high but the list is not optimized**: on your own lists we cannot see the notes, so the score reflects structure only. Read the "notes undetermined" note and strengthen your product notes.
+- **A scan came back thin**: the list may be private, empty, or still loading. Try again, and make sure you are signed in.
+
+## Related
+
+- [Benable Butler tutorial](/help/tutorials/benable-butler) publish your own Benable collections.
+- [Benable Like Butler tutorial](/help/tutorials/benable-like-butler) stay visible to other creators.
+- [Benable Comment Butler tutorial](/help/tutorials/benable-comment-butler) auto-comment on Benable collections.

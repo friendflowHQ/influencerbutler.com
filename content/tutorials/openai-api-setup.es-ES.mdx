@@ -1,0 +1,72 @@
+---
+title: "Configura la API de OpenAI (no es ChatGPT)"
+summary: Los butlers con IA necesitan una clave de API de OpenAI de platform.openai.com, no una suscripción a ChatGPT. Aquí tienes la diferencia y cómo crear una clave, añadir facturación y conectarla en unos minutos.
+category: Other
+---
+
+## ChatGPT vs la API de OpenAI: cuál es la diferencia
+
+Es la confusión más habitual, así que aclarémosla primero. OpenAI vende dos cosas completamente distintas, e Influencer Butler necesita la segunda:
+
+- **ChatGPT** es la app de chat que usas en el navegador en **chat.openai.com**. "ChatGPT Plus" es una suscripción mensual que mejora esa ventana de chat (modelos más rápidos, más uso). Es para *ti*, escribiendo en una caja.
+- **La API de OpenAI** es un servicio para desarrolladores en **platform.openai.com**. Te entrega una **clave de API** (un secreto largo que empieza por `sk-`) para que *otras apps* puedan hablar con OpenAI en tu nombre. Tiene su propia facturación de pago por uso, totalmente separada de ChatGPT.
+
+Influencer Butler es una de esas "otras apps." Necesita una clave de API.
+
+> Una suscripción a ChatGPT Plus **no** funciona aquí, y no te da una clave de API. ChatGPT y la API de OpenAI se facturan por separado, así que pagar una no paga la otra.
+
+## Por qué Influencer Butler necesita la API, no la app de chat
+
+Los butlers con IA (Generador de Palabras Clave con IA, Voiceover Butler, Benable Butler, Comment Butler, Facebook Group Builder y la redacción de textos para deals) generan texto e imágenes automáticamente, en segundo plano, mientras haces otras cosas. Para eso llaman a OpenAI de forma programática, y OpenAI solo lo permite con una clave de API.
+
+La buena noticia: el uso de la API es de **pago por uso** y, tal como la mayoría de creadores usan estos butlers, cuesta céntimos, no una cuota mensual. Solo pagas por lo que generas de verdad. No necesitas ChatGPT Plus para nada.
+
+## Paso 1: Crea una cuenta de la API de OpenAI
+
+1. Ve a **[platform.openai.com](https://platform.openai.com)**.
+2. Haz clic en **Sign up** y crea una cuenta, o **Log in** si ya tienes una.
+
+Si ya usas ChatGPT, ese mismo inicio de sesión te entra también aquí. No pasa nada, pero fíjate en que llegas a otro sitio: la **plataforma de desarrolladores**, con sus propias secciones de **Billing** (facturación) y **API keys** (claves). Tener sesión iniciada en ChatGPT no es lo mismo que haber configurado esta parte.
+
+## Paso 2: Añade facturación (este es el paso que la gente se salta)
+
+Una cuenta de API recién creada no tiene saldo, y una clave sin saldo detrás fallará aunque la clave en sí sea válida.
+
+1. Abre **Settings > Billing** (en [platform.openai.com/settings/organization/billing](https://platform.openai.com/settings/organization/billing)).
+2. Añade un método de pago.
+3. Añade una pequeña cantidad de crédito inicial (incluso el mínimo sobra para empezar).
+
+Si te saltas esto, los butlers se conectarán pero cada generación devolverá un error `insufficient_quota`. Añadir unos pocos dólares de crédito lo soluciona.
+
+## Paso 3: Crea tu clave de API
+
+1. Ve a la página de **API keys**: **[platform.openai.com/api-keys](https://platform.openai.com/api-keys)**.
+2. Haz clic en **Create new secret key**, ponle un nombre como "Influencer Butler" y créala.
+3. **Copia la clave enseguida.** Empieza por `sk-` y OpenAI te la muestra **solo una vez**. Si la pierdes, no puedes volver a verla, solo crear una nueva.
+
+Trata esta clave como una contraseña. No la publiques en ningún sitio ni la pegues en un chat. Va directa a Influencer Butler y a ningún otro lado.
+
+## Paso 4: Conéctala en Influencer Butler
+
+1. En la app, abre **[API Integrations](/help/tutorials/api-integrations)**.
+2. Busca la sección **OpenAI** y pega tu clave `sk-` en el campo.
+3. Haz clic en **Test Connection** y espera a que la insignia se ponga **verde**.
+
+Ya está: cada espacio que use OpenAI recoge la clave automáticamente. No hay que volver a introducirla en cada butler.
+
+La **[extensión de Chrome](/help/tutorials/extension)** gratuita tiene el mismo panel de API Integrations (haz clic en el icono del engranaje en el popup). Allí tu clave se queda en tu dispositivo, cifrada en el navegador, y solo se envía a la propia API de OpenAI, nunca a los servidores de Influencer Butler.
+
+## Problemas frecuentes
+
+- **"Tengo ChatGPT Plus, ¿por qué no funciona?"**: ChatGPT Plus es la app de chat, no la API. Mira el principio de esta página. Aun así tienes que crear una clave de API en platform.openai.com y añadir facturación allí.
+- **La clave da verde pero la generación falla**: casi siempre es un tema de facturación o cuota, no una clave mala. Abre **Billing** en el panel de OpenAI y confirma que tienes método de pago y crédito restante.
+- **Error `insufficient_quota` con una clave recién creada**: creaste la clave pero aún no has añadido crédito. Haz el Paso 2.
+- **El campo de OpenAI aparece en blanco tras reiniciar la app**: es lo esperado. Las claves guardadas se ocultan por seguridad. No hace falta volver a pegarla, solo pulsa **Test Connection** otra vez.
+- **La clave dejó de funcionar tras unos meses**: las claves pueden revocarse o rotarse. Crea una nueva en platform.openai.com/api-keys, pégala y vuelve a probar.
+
+## Relacionado
+
+- [API Integrations](/help/tutorials/api-integrations): dónde vive la clave y cómo funciona Test Connection.
+- [Palabras Clave y Filtros: crea listas de palabras clave con IA](/help/tutorials/ai-keyword-generator): uno de los butlers que necesita esta clave.
+- [Voiceover Butler](/help/tutorials/voiceover-butler): guiones de voz con IA, también con tu clave de OpenAI.
+- [Facebook Group Builder](/help/tutorials/facebook-group-builder): usa tu clave tanto para texto como para imágenes de portada.

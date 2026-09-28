@@ -12,6 +12,7 @@
 // Lemon Squeezy already credited (30%), and "owed" is the top-up we still pay.
 
 import { bodyToHtml } from "@/lib/newsletter";
+import { sendEmail } from "@/lib/email-send";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
 
@@ -77,14 +78,27 @@ export function buildStatementBody(statement: AffiliateStatement, period: string
       );
     }
   }
+  // Manual/make-whole adjustments (e.g. a customer given a deeper discount, where
+  // we top you up to what you were referred at). The note explains each one.
+  if (statement.adjustments.length > 0) {
+    lines.push("");
+    lines.push("Adjustments this month:");
+    for (const a of statement.adjustments) {
+      lines.push(`  ${formatUsdFromCents(a.amountCents)}  ${a.note ?? ""}`.trimEnd());
+    }
+  }
   lines.push("");
-  lines.push(`Total earned this month: ${formatUsdFromCents(earnedCents(statement))}`);
+  lines.push(`Total earned this month: ${formatUsdFromCents(earnedCents(statement) + statement.adjustmentCents)}`);
   // During the transition off Lemon Squeezy, some renewals may still have been
   // credited by LS; only mention it when there's actually a nonzero amount.
   if (statement.lsPaidCents > 0) {
     lines.push(`Already credited by Lemon Squeezy: ${formatUsdFromCents(statement.lsPaidCents)}`);
   }
-  lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents)}`);
+  lines.push(`Order commissions owed: ${formatUsdFromCents(statement.owedCents)}`);
+  if (statement.adjustmentCents > 0) {
+    lines.push(`Adjustments owed: ${formatUsdFromCents(statement.adjustmentCents)}`);
+  }
+  lines.push(`Balance we owe you (paid via PayPal): ${formatUsdFromCents(statement.owedCents + statement.adjustmentCents)}`);
   lines.push("");
   lines.push(
     "We pay via PayPal monthly. Earnings for a month clear after a short hold (about 30 days, to cover any refunds) and pay out on or around the 1st of the following month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less. Make sure your tax form and PayPal email are set in your dashboard. Questions? Just reply to this email.",
@@ -118,13 +132,20 @@ export function buildCombinedBody(
   let totalEarned = 0;
   let totalLs = 0;
   let totalBlocked = 0;
+  let totalAdjust = 0;
   for (const s of statements) {
     const who = s.fullName || s.email || s.affiliateCode || s.userId;
     lines.push(`${who}${s.affiliateCode ? ` (${s.affiliateCode})` : ""} - rate ${s.ratePercent}%`);
     lines.push(
-      `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s))}, ` +
-        `owed via PayPal ${formatUsdFromCents(s.owedCents)}`,
+      `  ${s.orderCount} order(s), earned ${formatUsdFromCents(earnedCents(s) + s.adjustmentCents)}, ` +
+        `owed via PayPal ${formatUsdFromCents(s.owedCents + s.adjustmentCents)}`,
     );
+    if (s.adjustmentCents > 0) {
+      lines.push(
+        `  includes ${formatUsdFromCents(s.adjustmentCents)} in adjustments/make-whole ` +
+          `(pay via the "Mark make-whole paid" action, not the Owed disburse)`,
+      );
+    }
     const blocked = notReady?.get(s.userId);
     if (blocked) {
       lines.push(`  NOT PAYABLE YET: missing ${notReadyReason(blocked)} (reminder sent)`);
@@ -134,18 +155,22 @@ export function buildCombinedBody(
     totalOwed += s.owedCents;
     totalEarned += earnedCents(s);
     totalLs += s.lsPaidCents;
+    totalAdjust += s.adjustmentCents;
   }
   lines.push("----------------------------------------");
-  lines.push(`Total earned: ${formatUsdFromCents(totalEarned)}`);
+  lines.push(`Total earned: ${formatUsdFromCents(totalEarned + totalAdjust)}`);
   if (totalLs > 0) {
     lines.push(`Total already credited by Lemon Squeezy: ${formatUsdFromCents(totalLs)}`);
   }
-  lines.push(`Total owed this month: ${formatUsdFromCents(totalOwed)}`);
+  lines.push(`Total order commissions owed: ${formatUsdFromCents(totalOwed)}`);
+  if (totalAdjust > 0) {
+    lines.push(`Total adjustments / make-whole owed: ${formatUsdFromCents(totalAdjust)}`);
+  }
   if (totalBlocked > 0) {
     lines.push(`Total not yet payable (missing tax form / PayPal): ${formatUsdFromCents(totalBlocked)}`);
   }
   lines.push("");
-  lines.push('Disburse each affiliate via PayPal in the Owed tab (or mark paid if you paid another way).');
+  lines.push('Disburse order commissions via PayPal in the Owed tab (or mark paid if you paid another way). Adjustments / make-whole are recorded separately via their "Mark make-whole paid" action.');
   return lines.join("\n");
 }
 
@@ -153,38 +178,18 @@ async function sendViaResend(params: {
   to: string;
   subject: string;
   text: string;
+  category: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - commission statement skipped");
-    return false;
-  }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        reply_to: REPLY_TO,
-        to: [params.to],
-        subject: params.subject,
-        text: params.text,
-        html: bodyToHtml(params.text),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("Commission statement send failed", { status: res.status, body: body.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("Commission statement send threw", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: FROM_ADDRESS,
+    to: params.to,
+    subject: params.subject,
+    text: params.text,
+    html: bodyToHtml(params.text),
+    replyTo: REPLY_TO,
+    category: params.category,
+  });
+  return ok;
 }
 
 /** Send one affiliate their own statement. No-op (returns false) with no email. */
@@ -200,6 +205,7 @@ export async function sendAffiliateStatement(
     to: statement.email,
     subject: `Your commission statement: ${formatPeriod(period)}`,
     text: buildStatementBody(statement, period),
+    category: "commission_statement",
   });
 }
 
@@ -213,6 +219,60 @@ export async function sendCombinedStatement(
     to: statementInbox(),
     subject: `Affiliate commissions: ${formatPeriod(period)}`,
     text: buildCombinedBody(statements, period, notReady),
+    category: "commission_statement",
+  });
+}
+
+// -------------------------------------------------------------------------
+// Payment-sent receipt
+//
+// Sent to an affiliate the moment a PayPal payout to them actually SUCCEEDS
+// (from applyPayoutStatus, so it fires exactly once whether the payout was
+// disbursed by the admin button or the auto-pay cron). Transactional: it
+// confirms money we sent, so it uses the same direct-to-Resend path.
+// -------------------------------------------------------------------------
+
+export type PaymentSentParams = {
+  to: string;
+  name: string | null;
+  amountCents: number;
+  paypalEmail: string | null;
+};
+
+/** Receipt body (plain text). */
+export function buildPaymentSentBody(params: PaymentSentParams): string {
+  const first = params.name?.split(" ")[0] || "there";
+  const lines: string[] = [];
+  lines.push(`Hi ${first},`);
+  lines.push("");
+  lines.push(
+    `We've just sent you ${formatUsdFromCents(params.amountCents)} in Influencer Butler affiliate commission via PayPal` +
+      `${params.paypalEmail ? ` to ${params.paypalEmail}` : ""}.`,
+  );
+  lines.push("");
+  lines.push(
+    "It can take a little while to land depending on PayPal. Receiving and currency-conversion fees are not covered by us, so the amount that arrives may be slightly less.",
+  );
+  lines.push("");
+  lines.push(`See your full history any time: ${DASHBOARD_URL}`);
+  lines.push("");
+  lines.push("Thanks for spreading the word.");
+  lines.push("");
+  lines.push("- The Influencer Butler team");
+  return lines.join("\n");
+}
+
+/** Send an affiliate a "you've been paid" receipt. No-op (false) with no email. */
+export async function sendAffiliatePaymentSent(params: PaymentSentParams): Promise<boolean> {
+  if (!params.to) {
+    console.error("sendAffiliatePaymentSent: no recipient email");
+    return false;
+  }
+  return sendViaResend({
+    to: params.to,
+    subject: `You've been paid ${formatUsdFromCents(params.amountCents)} in affiliate commission`,
+    text: buildPaymentSentBody(params),
+    category: "payout_paid",
   });
 }
 
@@ -274,5 +334,10 @@ export async function sendTaxFormReminder(params: TaxReminderParams): Promise<bo
   const subject = params.missingTax
     ? `Action needed: add your tax form to get your ${amount} commission`
     : `Action needed: add your PayPal email to get your ${amount} commission`;
-  return sendViaResend({ to: params.to, subject, text: buildTaxReminderBody(params) });
+  return sendViaResend({
+    to: params.to,
+    subject,
+    text: buildTaxReminderBody(params),
+    category: "tax_form_reminder",
+  });
 }

@@ -11,6 +11,21 @@ export type VideoCounts = {
   unknown: number;
 };
 
+// One creator video observed in a product's carousel at scan time. Rides along
+// on the product_scan finding so the opt-in video-placement pool (video-intel)
+// can record which videos hold which carousels over time. De-identified: only
+// placement facts, never personal data.
+export type VideoObservation = {
+  videoId: string;
+  creatorId: string | null;
+  creatorName: string | null;
+  creatorType: "influencer" | "brand" | "customer" | "unknown";
+  carousel: "upper" | "lower" | "unknown";
+  position: number | null;
+  title: string | null;
+  url: string | null;
+};
+
 export type ProductScanFinding = {
   type: "product_scan";
   asin: string;
@@ -21,7 +36,19 @@ export type ProductScanFinding = {
   // Availability read off the page, used by the watchlist restock check. The
   // server ignores it; it rides along so the background tab-scan can surface it.
   inStock?: boolean;
+  // Product-research signals scraped alongside price. The desktop bridge banks
+  // these into its durable price/rank time-series so browsing builds Keepa /
+  // Jungle Scout-style history (price + best-seller rank + a real sales proxy).
+  // Optional so older desktop builds and non-product callers stay compatible.
+  boughtPastMonth?: number | null;
+  brand?: string | null;
+  category?: string | null;
+  bestsellerRank?: { rank: number; category: string } | null;
+  imageUrl?: string | null;
   counts: VideoCounts;
+  // Per-video carousel placements observed at scan time. Only sent to the pool
+  // when the user has opted in to catalogue contribution; ignored otherwise.
+  videos?: VideoObservation[];
   approved: boolean;
   approvedCriteria?: Record<string, boolean>;
   scannedAt: string;
@@ -103,16 +130,28 @@ export type InstagramCreatorFinding = {
   detectedAt: string;
 };
 
+// One Creator Connections campaign accept, reported for the public
+// "proof of numbers" counter. Carries no campaign detail beyond the id (used
+// only for same-day dedupe) and whether it was an auto or manual accept; the
+// server records an aggregate count, never per-campaign rows.
+export type CampaignAcceptFinding = {
+  type: "campaign_accept";
+  campaignId: string;
+  source: "auto" | "manual";
+  detectedAt: string;
+};
+
 export type Finding =
   | ProductScanFinding
   | ContentGapFinding
   | StorefrontIssueFinding
   | OrderFinding
   | DealFinding
-  | InstagramCreatorFinding;
+  | InstagramCreatorFinding
+  | CampaignAcceptFinding;
 
 export interface FindingTransport {
-  id: "api" | "local";
+  id: "api" | "local" | "relay";
   isAvailable(): Promise<boolean>;
   send(batch: Finding[]): Promise<{ ok: boolean; retry: boolean }>;
 }
@@ -142,5 +181,9 @@ export function findingKey(finding: Finding): string {
     // while a fresh day records the deal again (price and discount move daily).
     case "deal":
       return `${finding.type}:${finding.asin}:${finding.marketplace}:${day}`;
+    // A campaign accept keys on (campaignId, day): a re-report of the same
+    // accept on the same day counts once, not once per retry or re-click.
+    case "campaign_accept":
+      return `${finding.type}:${finding.campaignId}:${day}`;
   }
 }

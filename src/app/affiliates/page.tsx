@@ -41,6 +41,24 @@ export default function AffiliatesLandingPage() {
               Blog
             </Link>
             <Link
+              href="/leaderboard"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Leaderboard
+            </Link>
+            <Link
+              href="/download"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Download
+            </Link>
+            <Link
+              href="/extension"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Extension
+            </Link>
+            <Link
               href="/login?next=/dashboard/affiliates"
               className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
@@ -89,6 +107,16 @@ export default function AffiliatesLandingPage() {
               Affiliate login
             </Link>
           </div>
+
+          <p className="mt-6 text-sm text-slate-600">
+            Running our end-of-month push?{" "}
+            <Link
+              href="/leaderboard"
+              className="font-semibold text-[#c2410c] underline underline-offset-2 hover:text-[#9a3412]"
+            >
+              See the Top Affiliates leaderboard →
+            </Link>
+          </p>
 
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
@@ -292,6 +320,8 @@ export default function AffiliatesLandingPage() {
             <a href="/#how-it-works" className="text-sm text-slate-500 transition hover:text-[#f97316]">How It Works</a>
             <a href="/#faq" className="text-sm text-slate-500 transition hover:text-[#f97316]">FAQ</a>
             <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates - Earn 30%</Link>
+            <a href="/download" className="text-sm text-slate-500 transition hover:text-[#f97316]">Download the App</a>
+            <a href="/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Chrome Extension: Free</a>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>
@@ -301,7 +331,7 @@ export default function AffiliatesLandingPage() {
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
-            <a href="mailto:hello@influencerbutler.com" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</a>
+            <Link href="/contact" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</Link>
             <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
           </div>
         </div>

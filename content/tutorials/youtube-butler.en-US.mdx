@@ -1,6 +1,6 @@
 ---
 title: YouTube Butler: upload Amazon storefront videos to YouTube with affiliate links
-summary: Cross-post your shoppable Amazon videos to YouTube with affiliate links in the description or pinned comment, including automatic Shorts detection.
+summary: Load your whole Amazon storefront to YouTube with a guided setup, AI titles and descriptions, affiliate links, thumbnails, and an automatic daily upload schedule.
 category: Amazon
 ---
 
@@ -8,18 +8,25 @@ category: Amazon
 
 YouTube Butler takes the videos from your Amazon storefront (synced by Storefront Butler) and uploads them to your YouTube channel as either regular videos or Shorts. Each upload gets:
 
-- A title and description you control via a template.
-- Affiliate-tagged Amazon links in the description or pinned comment.
-- Automatic detection of YouTube Shorts format (vertical, ≤60 seconds) vs regular landscape.
+- A title, description, hashtags, and search tags, written by AI or from a template you control.
+- Affiliate-tagged Amazon links in the description or pinned comment, with the parent product optionally linked too.
+- A thumbnail captured from the video (or an AI-generated one).
+- Automatic detection of YouTube Shorts format (vertical or square, 3 minutes or less) vs regular landscape, with options to avoid Shorts entirely.
 - A QR code image option for product-overlay use.
 
-The point is to turn your Amazon storefront catalog into a YouTube content feed without re-editing each clip.
+The point is to turn your Amazon storefront catalog into a YouTube content feed without re-editing each clip. With the daily schedule on, even a 4,000-video storefront uploads itself, a batch a day, until the whole catalog is live.
+
+## Guided Setup: the fastest way to start
+
+New to YouTube Butler? Click **Guided Setup** at the top of the workspace (or answer the banner that appears when nothing is set up yet). It walks you through everything in order: bringing in your videos, signing in to YouTube, avoiding Shorts, AI titles, thumbnails, links, hashtags, country links, and your daily upload schedule, then queues and starts your first batch.
+
+Pick **Fast Track** to answer about four questions and get the recommended setup, or **Step by step** to walk every option with an explanation. You can close it any time; it remembers where you were and offers to resume. You can also ask the AI Assistant to walk you through it.
 
 ## Before you start
 
 - **A YouTube channel**: personal or brand channel both work.
 - **Storefront Butler has synced your videos at least once**: YouTube Butler reads from that inventory.
-- **An OAuth token** for your YouTube channel. The **Setup Wizard** walks you through it in 5 steps; it's a one-time setup.
+- **Signed into YouTube in your browser**: this is all uploads need. Butler uploads to the channel your browser is signed into. Connecting the YouTube API (the **Connect API** tab) is optional, only for choosing a channel when you manage more than one, or for the Back up my videos tab.
 - **Your Amazon affiliate tag** in Settings → Amazon, so links in descriptions are tagged correctly.
 
 ## First-time setup
@@ -47,23 +54,74 @@ You only do this once. After it succeeds, the wizard tab shows a green "Setup co
 
 YouTube Butler runs through the queue with built-in rate-limit delays. The **Upload Log** tab streams each result. A batch of 10 typically takes 15-25 minutes depending on file size.
 
-## YouTube rate-limit rules
+## Daily cap and automatic daily uploads
 
-New YouTube channels (under 30 days, under ~50 subscribers) are rate-limited aggressively. YouTube Butler has conservative built-in delays for this reason - **don't disable them**. Some rules of thumb:
+YouTube limits how many videos a channel can upload per day, and new channels get flagged for uploading too fast. Two settings in **Settings → Upload settings** handle this for you:
 
-- **First week**: 3-5 uploads/day.
-- **Weeks 2-4**: 10-15/day.
-- **After 30 days**: 20-30/day is sustainable; 50/day starts to attract attention.
+- **Max uploads per day**: Butler counts your uploads over the last 24 hours and stops each session at the cap. 25 a day suits most channels; new channels should start at 10. The **Ease in new channels** option automatically lowers the cap during a channel's first weeks.
+- **Upload automatically every day**: turns on a daily schedule that runs a session once a day until every queued video is uploaded. Queue your whole catalog once, leave the app running, and Butler works through it day after day. The status pill shows campaign progress, like "212 of 4,000 total".
 
-Stick to ≤15 uploads per session even on older channels; YouTube tolerates batches better than a steady drip if you queue overnight and let the delays do the work.
+If YouTube itself says the daily limit is reached mid-run, Butler ends the day's session and keeps the remaining videos queued for tomorrow instead of failing them. Videos interrupted by a crash or force-quit are requeued automatically on the next run.
 
-## The Shorts auto-detector
+## The Shorts auto-detector, and how to avoid Shorts
 
-Videos that are vertical (taller than wide) AND ≤60 seconds get uploaded as Shorts automatically. Shorts get a different feed in YouTube's algorithm, so this matters - you don't manually flag anything.
+Videos that are vertical or square AND 3 minutes or less get uploaded as Shorts automatically. Shorts get a different feed in YouTube's algorithm, so this matters - you don't manually flag anything.
+
+Most storefront videos are vertical, so without a fix your whole catalog would land on the Shorts shelf. The **Avoid Shorts** setting (Settings → Video Processing) gives you three choices:
+
+- **Convert vertical videos to landscape** (recommended): pads them to 1920x1080 so they upload as regular videos.
+- **Extend videos past 3 minutes**: keeps the vertical look and adds an outro until the video clears the Shorts limit.
+- **Off**: uploads as-is; vertical clips become Shorts with a #Shorts hashtag.
+
+## AI titles, descriptions, hashtags, and tags
+
+Turn on **AI titles and descriptions** (Settings) and AI writes a search-friendly title, a description with a hook, a call to action, your affiliate links, and hashtags, plus 10-15 search tags, for every video. It uses your OpenAI key from API Integrations and costs about a tenth of a cent per video (roughly $4 for 4,000 videos). Each video is only ever written once, so re-runs are free, and a monthly spend cap keeps the bill bounded. If anything fails, your templates are used instead, so uploads never stop.
+
+## Post only Shorts, or only regular videos
+
+In **Settings → Upload settings**, the **Post which videos** control lets you filter a run by format:
+
+- **Shorts and regular videos** (default): upload everything you queued.
+- **Only Shorts**: skip anything that isn't a Short this run.
+- **Only regular videos**: skip the Shorts.
+
+This is handy when you keep Shorts and long-form on separate channels, or want to drip one format at a time. Skipped videos stay queued and show up in the Upload Log with the reason, so nothing is lost.
+
+## Post to a secondary channel
+
+If your account has more than one channel, the Setup Wizard lets you pick a **secondary channel** alongside your primary. Then, in **Settings → Upload settings**, turn on **Post to my secondary channel** and the run uploads to that channel instead. Both channels must be on the same signed-in Google account. Leave the toggle off to keep uploading to your primary channel as usual.
+
+## Localization: captions or dubbed audio
+
+The **Localization** card reaches viewers in another language. Turn it on, pick the **target language** and the **source language**, then choose a mode:
+
+- **Translated captions**: the app transcribes the audio and burns translated subtitles into the video. Turn on **Closed Captions** first to control the subtitle font, size, and position.
+- **AI dub (replaces audio)**: the app swaps in an AI **voice** speaking the translation, so the video is narrated in the target language.
+
+To also translate the title and description, turn on **Translate my title and description** in Settings. This needs your OpenAI key in **AI & Data Keys** and spends tokens per run. If the target language matches the source, nothing changes. When the key is missing, the app tells you and uploads with the original audio instead of quietly skipping it.
 
 ## Product QR codes
 
 The **Product QR** tab generates a QR code per ASIN that you can overlay on a video before uploading. Useful for shoppable content where viewers can scan instead of clicking through.
+
+## Back up my videos (download your whole channel)
+
+The **Back up my videos** tab downloads every video on your connected channel to a folder on your computer, with its thumbnail and a small details file. The butler lists your uploads through the YouTube connection from the Setup Wizard, then fetches each file with YouTube Studio's own **Download** option in the butler's signed-in browser, so nothing on YouTube is changed.
+
+- Connect YouTube in the **Setup Wizard** first, and keep **Watch it run** on for the first run so you can sign in to YouTube Studio if it asks.
+- **Save to** shows the folder (default: *Influencer Butler Backups / YouTube* inside your Videos folder). **Choose folder** points it somewhere else.
+- Run it again any time: only new videos are downloaded. **Stop** ends the run after the current video.
+- Videos YouTube is still processing are skipped until they are ready.
+
+## Accept Creator Connections and submit your video automatically
+
+If a product you upload has an open Amazon Creator Connections or SPCC campaign, YouTube Butler can earn you the campaign bonus with no manual steps. With **Accept Creator Connections** on (the checkbox next to Upload Queued, on by default), each upload works like this:
+
+1. Before the video uploads, Butler checks whether that product has an open campaign.
+2. If it does, Butler accepts the campaign for you.
+3. After the video finishes uploading, Butler goes back and submits your new YouTube link as the campaign's content, so the video counts toward the campaign.
+
+The Inventory and Upload Log tables gain a **CC / SPCC** column: a chip when a campaign is available, and a green **CC ✓** or **SPCC ✓** once it has been accepted and your link submitted. Butler only opens Amazon when a campaign is actually found, so uploads for products with no campaign are left untouched. If your Amazon session is signed out, Butler notes it and keeps uploading; the video itself never fails because of a campaign step. Turn the checkbox off any time to upload without touching Creator Connections.
 
 ## Where the data goes
 
@@ -90,3 +148,8 @@ If your viewers come from more than one country, the **Marketplace links** setti
 - **Single redirect link**: one link that forwards each viewer to their country's store automatically (uses your DeepLink provider).
 
 Enter your per-country associate tags first in [API Integrations](/help/tutorials/api-integrations). A country with no tag is left out, so you never post a link that earns nothing.
+
+Two extras for international audiences:
+
+- **Add a native-language shop line for each country link**: country links get a local call to action, like "France (Achetez ici)".
+- **Translate my title and description to the AI voiceover language**: when you dub the audio with AI voiceover, the title, description, and tags post in the same language, so international stores and viewers see a consistent upload. AI-written titles follow the voiceover language automatically.

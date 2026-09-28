@@ -14,6 +14,9 @@
 // never synced order history or never paired the desktop app, and read neutral
 // rather than as a penalty so the rate/days/budget score still stands on its own.
 
+import { conversionRate } from "../earnings-overlay/model";
+import type { BudgetAvailability, CampaignStats } from "../../amazon/creator-campaigns";
+
 export type CampaignScoreBand = "hot" | "warm" | "cool";
 
 export type CampaignScore = {
@@ -27,6 +30,18 @@ export type CampaignScore = {
     budget: number;
     owned: number;
     earner: number;
+    urgency: number;
+    // SPCC-only components (computeSpccScore). Absent on classic CC scores.
+    epc?: number;
+    budgetAvail?: number;
+  };
+  // The resolved personal signals, carried through so the UI can tell a genuine
+  // "owns it" (true) from the neutral half it awards when the signal is simply
+  // unknown (null). Without this the panel cannot distinguish +22 (owns) from
+  // +11 (unknown) and would mislabel the unknown case as "You own it".
+  signals: {
+    owned: boolean | null;
+    provenEarner: boolean | null;
   };
 };
 
@@ -45,7 +60,28 @@ export type CampaignScoreInputs = {
   // The creator has already earned affiliate commission on this product (from
   // the desktop app ledger). Null when the app was never paired.
   provenEarner: boolean | null;
+  // How full the campaign is: creator slots claimed / cap, as 0-1. Null when the
+  // fill map has not arrived (or Amazon stopped exposing it). Optional so callers
+  // that never had fill data still type-check and read as neutral. This is the
+  // Last Call Butler signal: a nearly-full-but-open campaign is the most urgent.
+  fillPct?: number | null;
+  // The campaign has hit its creator cap and can no longer be accepted. When
+  // true, urgency collapses to zero: there is no point ranking a closed door high.
+  fullyClaimed?: boolean | null;
+  // SPCC-only: Amazon's Estimated EPC ceiling in cents ("Up to $X"), and its
+  // qualitative budget-availability score. Undefined/null on classic CC cards.
+  // Consumed only by computeSpccScore.
+  epcCents?: number | null;
+  budgetAvailability?: BudgetAvailability | null;
 };
+
+// Creator slots claimed vs. cap as a 0-1 fraction, or null when either count is
+// missing or the cap is zero. Shared by the overlay meter, the score, and the
+// background Last Call poll so they all read fill the same way.
+export function campaignFillPct(filled: number | null, total: number | null): number | null {
+  if (filled === null || total === null || total <= 0) return null;
+  return clamp01(filled / total);
+}
 
 // The user-tunable floors. This is the differentiator: Oink's highlight
 // thresholds are fixed; ours are these, editable on the options page and live in
@@ -59,12 +95,16 @@ export type RadarThresholds = {
 // Weights sum to 100. Commission dominates because the rate is what actually
 // decides whether a video here earns. "Owned" is weighted heavily too: a product
 // the creator already has on hand is the fastest, most authentic content to make.
+// "Urgency" (how close to full) is the Last Call Butler signal: it never drags a
+// healthy campaign below neutral, it only lifts a nearly-full-but-open one and
+// zeroes out a campaign that has already closed.
 const WEIGHTS = {
-  commission: 40,
-  timing: 15,
-  budget: 10,
-  owned: 25,
-  earner: 10,
+  commission: 35,
+  timing: 12,
+  budget: 8,
+  owned: 22,
+  earner: 8,
+  urgency: 15,
 } as const;
 
 // A commission rate at or above 20% scores full marks on that component; below it
@@ -108,23 +148,164 @@ export function computeCampaignScore(inputs: CampaignScoreInputs): CampaignScore
   const ownedUnit = inputs.owned === null ? 0.5 : inputs.owned ? 1 : 0;
   const earnerUnit = inputs.provenEarner === null ? 0.5 : inputs.provenEarner ? 1 : 0;
 
+  // Urgency (Last Call): a fully claimed campaign is a closed door => 0. Unknown
+  // fill reads neutral (0.5). Otherwise it ranges 0.5 (empty, not urgent) up to
+  // 1.0 (nearly full but still open, grab it now), so fill only ever lifts a
+  // healthy campaign, never sinks it below neutral for being fresh.
+  const fillPct = inputs.fillPct ?? null;
+  const fullyClaimed = inputs.fullyClaimed ?? null;
+  const urgencyUnit = fullyClaimed ? 0 : fillPct === null ? 0.5 : 0.5 + 0.5 * clamp01(fillPct);
+
   const parts = {
     commission: commissionUnit * WEIGHTS.commission,
     timing: timingUnit * WEIGHTS.timing,
     budget: budgetUnit * WEIGHTS.budget,
     owned: ownedUnit * WEIGHTS.owned,
     earner: earnerUnit * WEIGHTS.earner,
+    urgency: urgencyUnit * WEIGHTS.urgency,
   };
 
   const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);
   const score = Math.round(raw);
-  return { score, band: bandFor(score), parts };
+  return {
+    score,
+    band: bandFor(score),
+    parts,
+    signals: { owned: inputs.owned, provenEarner: inputs.provenEarner },
+  };
+}
+
+// SPCC ("Sponsored Products for Creators") weights. These cards carry no
+// commission and no date, so the money signal is Amazon's Estimated EPC
+// (earnings per click) and its budget-availability score. The two personal
+// signals (owned / proven earner) still apply because an SPCC card always
+// carries a product ASIN. There is no fill data from the DOM (the card exposes
+// no campaign id), so urgency is left out of the SPCC blend. Weights sum to 100.
+const SPCC_WEIGHTS = {
+  epc: 50,
+  budgetAvail: 20,
+  owned: 22,
+  earner: 8,
+} as const;
+
+// An Estimated EPC ceiling of $1.00 or more scores full marks on that component;
+// below it scales linearly. Observed SPCC EPCs ran ~$0.06 to ~$1.05, so this
+// saturates the top of the live range. EPC is a ceiling ("Up to $X"), so the
+// component ranks the best-forecasting products first; it is not a payout claim.
+const EPC_SATURATION_CENTS = 100;
+
+function budgetAvailUnit(v: BudgetAvailability | null | undefined): number {
+  if (v === "high") return 1;
+  if (v === "medium") return 0.5;
+  if (v === "low") return 0.15;
+  return 0.5; // unknown reads neutral, mirroring the other absent-signal halves
+}
+
+// Score an SPCC card 0-100. Same shape and band thresholds as the CC score so the
+// overlay and panels treat both uniformly, but built from the SPCC signals. The
+// commission / timing / budget / urgency parts are zero here (SPCC has none); the
+// EPC and budget-availability parts carry the weight instead.
+export function computeSpccScore(inputs: CampaignScoreInputs): CampaignScore {
+  const epcUnit =
+    inputs.epcCents === null || inputs.epcCents === undefined
+      ? 0.5
+      : clamp01(Math.max(0, inputs.epcCents) / EPC_SATURATION_CENTS);
+  const budgetUnit = budgetAvailUnit(inputs.budgetAvailability);
+  const ownedUnit = inputs.owned === null ? 0.5 : inputs.owned ? 1 : 0;
+  const earnerUnit = inputs.provenEarner === null ? 0.5 : inputs.provenEarner ? 1 : 0;
+
+  const parts = {
+    commission: 0,
+    timing: 0,
+    budget: 0,
+    owned: ownedUnit * SPCC_WEIGHTS.owned,
+    earner: earnerUnit * SPCC_WEIGHTS.earner,
+    urgency: 0,
+    epc: epcUnit * SPCC_WEIGHTS.epc,
+    budgetAvail: budgetUnit * SPCC_WEIGHTS.budgetAvail,
+  };
+
+  const raw = Object.values(parts).reduce((sum, p) => sum + p, 0);
+  const score = Math.round(raw);
+  return {
+    score,
+    band: bandFor(score),
+    parts,
+    signals: { owned: inputs.owned, provenEarner: inputs.provenEarner },
+  };
+}
+
+// The parts to surface in the "why is it good" breakdown, largest contribution
+// first. Every part with points is shown EXCEPT the two personal signals, which
+// make a factual claim about the creator ("You own it", "Proven earner") and so
+// are shown only when the signal is genuinely true, never for the neutral half
+// awarded when the signal is unknown (order history never synced / app never
+// paired). The non-personal parts report a weighted contribution, not a claim,
+// so their neutral halves are fine to show.
+export type BreakdownPart = readonly [key: keyof CampaignScore["parts"], points: number];
+
+export function visibleBreakdownParts(score: CampaignScore): BreakdownPart[] {
+  return (Object.keys(score.parts) as Array<keyof CampaignScore["parts"]>)
+    .map((k) => [k, score.parts[k] ?? 0] as const)
+    .filter(([k, v]) => {
+      if (v <= 0) return false;
+      if (k === "owned") return score.signals.owned === true;
+      if (k === "earner") return score.signals.provenEarner === true;
+      return true;
+    })
+    .sort((a, b) => b[1] - a[1]);
 }
 
 export function bandFor(score: number): CampaignScoreBand {
   if (score >= 70) return "hot";
   if (score >= 40) return "warm";
   return "cool";
+}
+
+// Campaign-wide conversion (orders / clicks) from the stats Amazon MIGHT expose
+// on a Creator Connections record, or null when either side is missing (the
+// common case: these fields are unverified and usually absent, so the caller
+// shows no chip rather than a zero). Prefers the last-30-day window, falling
+// back to lifetime totals. Reuses the shared conversionRate so the campaign grid
+// and the product page read a rate the same way.
+export function campaignStatsConversion(stats: CampaignStats | null): number | null {
+  if (!stats) return null;
+  return (
+    conversionRate(stats.ordersLast30, stats.clicksLast30) ??
+    conversionRate(stats.ordersTotal, stats.clicksTotal)
+  );
+}
+
+// Extra signals (beyond the score inputs) that raise the Butler's confidence in
+// its read of a campaign: whether our catalogue had the standout product's
+// demand, and whether Amazon exposed real conversion stats for the campaign.
+export type CampaignConfidenceExtras = {
+  hasDemand: boolean;
+  hasCcStats: boolean;
+};
+
+// How sure the Butler is of a campaign read, 0-100. This is NOT the score: it is
+// data completeness. A campaign whose commission, budget, runway, fill, and
+// product demand are all known is read with high confidence; one where the grid
+// surfaced only a commission rate is a low-confidence read even if that rate is
+// great. Weights sum to 100 and each present signal contributes its weight, so
+// the panel can say "83/100, 70 confidence" the way the competitor does, but
+// honestly derived from what we actually had rather than invented by the model.
+export function computeCampaignConfidence(
+  inputs: CampaignScoreInputs,
+  extras?: Partial<CampaignConfidenceExtras>,
+): number {
+  const signals: ReadonlyArray<readonly [boolean, number]> = [
+    [inputs.commissionRatePct !== null, 30],
+    [inputs.remainingBudgetCents !== null, 15],
+    [inputs.daysRemaining !== null, 15],
+    [(inputs.fillPct ?? null) !== null || (inputs.fullyClaimed ?? null) !== null, 10],
+    [inputs.owned !== null || inputs.provenEarner !== null, 10],
+    [Boolean(extras?.hasDemand), 12],
+    [Boolean(extras?.hasCcStats), 8],
+  ];
+  const raw = signals.reduce((sum, [ok, w]) => sum + (ok ? w : 0), 0);
+  return Math.round(Math.min(100, raw));
 }
 
 // Whether a campaign clears every user-set floor. The overlay highlights (draws

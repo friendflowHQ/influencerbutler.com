@@ -92,13 +92,13 @@ export default function WelcomeTierContent({ tier }: Props) {
       ) : null}
 
       <p className="mt-8 text-xs text-slate-500">
-        Questions? Email{" "}
-        <a
-          href="mailto:hello@influencerbutler.com"
+        Questions?{" "}
+        <Link
+          href="/contact"
           className="font-medium text-slate-700 hover:text-[#f97316]"
         >
-          hello@influencerbutler.com
-        </a>
+          Contact us
+        </Link>
         .
       </p>
     </section>

@@ -18,7 +18,11 @@ export type Geo = {
   country: string | null;
 };
 
-export type ActivityKind = "trial_click" | "purchase";
+export type ActivityKind =
+  | "trial_click"
+  | "purchase"
+  | "extension_install"
+  | "trial_start";
 
 /** Public-safe shape returned to the marketing-site widget. */
 export type PublicActivity = {
@@ -52,6 +56,16 @@ export const DEFAULT_ACTIVITY_CONFIG: ActivityConfig = {
 };
 
 const CONFIG_KEY = "activity_widget";
+
+// Purchases are the strongest social proof but far rarer than trial clicks,
+// so the public widget looks further back for them (and plays them first).
+const PURCHASE_LOOKBACK_MINUTES = 7 * 24 * 60;
+
+// Purchases lead the rotation, but only up to this many, so a busy sales week
+// can't fill every slot and crowd out the trial-click "checking out" cards.
+// The rest of maxCount goes to trial clicks (with purchases backfilling if
+// there aren't enough trial clicks to fill the widget).
+const PURCHASE_LEAD = 2;
 
 // Loose service-role client. We hand-roll the minimal surface we use so we
 // don't depend on a generated Database type. Mirrors the casting pattern in
@@ -204,6 +218,74 @@ export async function logPurchaseActivity(params: {
   }
 }
 
+/**
+ * Records a Chrome-extension install for the widget feed. Geo only, no name:
+ * the install itself carries no identity. Called when the auto-opened welcome
+ * tab loads (see src/app/extension-welcome). Never throws.
+ */
+export async function logExtensionInstallActivity(params: {
+  geo: Geo;
+}): Promise<void> {
+  try {
+    const db = serviceDb();
+    if (!db) return;
+    const { error } = await db.from("activity_events").insert({
+      kind: "extension_install",
+      city: params.geo.city,
+      region: params.geo.region,
+      country: params.geo.country,
+      is_bot: false,
+    });
+    if (error) console.error("logExtensionInstallActivity: insert failed", error);
+  } catch (err) {
+    console.error("logExtensionInstallActivity threw", err);
+  }
+}
+
+/**
+ * Records a real 14-day trial start for the widget feed, pulling geo from
+ * checkout_geo the same way logPurchaseActivity does. Fired from the Lemon
+ * Squeezy on_trial webhook branch. firstName is optional (the widget falls back
+ * to "Someone"). Never throws.
+ */
+export async function logTrialStartActivity(params: {
+  geoKey: string | null;
+  firstName: string | null;
+}): Promise<void> {
+  try {
+    const db = serviceDb();
+    if (!db) return;
+
+    let geo: Geo = { city: null, region: null, country: null };
+    if (params.geoKey) {
+      const { data } = await db
+        .from("checkout_geo")
+        .select("city,region,country")
+        .eq("welcome_token", params.geoKey)
+        .maybeSingle();
+      if (data) {
+        geo = {
+          city: (data.city as string | null) ?? null,
+          region: (data.region as string | null) ?? null,
+          country: (data.country as string | null) ?? null,
+        };
+      }
+    }
+
+    const { error } = await db.from("activity_events").insert({
+      kind: "trial_start",
+      first_name: params.firstName,
+      city: geo.city,
+      region: geo.region,
+      country: geo.country,
+      is_bot: false,
+    });
+    if (error) console.error("logTrialStartActivity: insert failed", error);
+  } catch (err) {
+    console.error("logTrialStartActivity threw", err);
+  }
+}
+
 // --------------------------------------------------------------------------
 // Config
 // --------------------------------------------------------------------------
@@ -282,7 +364,12 @@ function toPublic(row: Record<string, unknown>): PublicActivity {
   };
 }
 
-/** Latest non-hidden, non-bot events within the configured window. */
+/**
+ * Latest non-hidden, non-bot events for the public widget. Purchases come
+ * first (with their longer lookback), then trial clicks within the configured
+ * window, capped at maxCount. The widget plays the array in order, so this
+ * ordering is what makes "subscribed" alerts lead the rotation.
+ */
 export async function getPublicRecentActivity(): Promise<{
   enabled: boolean;
   events: PublicActivity[];
@@ -293,21 +380,74 @@ export async function getPublicRecentActivity(): Promise<{
   const db = serviceDb();
   if (!db) return { enabled: true, events: [] };
 
-  const sinceIso = new Date(Date.now() - config.windowMinutes * 60_000).toISOString();
-  try {
-    const { data, error } = await db
+  const now = Date.now();
+  const trialSinceIso = new Date(now - config.windowMinutes * 60_000).toISOString();
+  const purchaseWindowMinutes = Math.max(config.windowMinutes, PURCHASE_LOOKBACK_MINUTES);
+  const purchaseSinceIso = new Date(now - purchaseWindowMinutes * 60_000).toISOString();
+
+  const query = (kind: ActivityKind, sinceIso: string) =>
+    db
       .from("activity_events")
       .select("kind,first_name,city,region,country,created_at")
+      .eq("kind", kind)
       .eq("hidden", false)
       .eq("is_bot", false)
       .gte("created_at", sinceIso)
       .order("created_at", { ascending: false })
       .limit(config.maxCount);
-    if (error || !data) return { enabled: true, events: [] };
-    return { enabled: true, events: data.map(toPublic) };
+
+  try {
+    const [purchases, trialStarts, extensionInstalls, trialClicks] = await Promise.all([
+      query("purchase", purchaseSinceIso),
+      query("trial_start", trialSinceIso),
+      query("extension_install", trialSinceIso),
+      query("trial_click", trialSinceIso),
+    ]);
+    const rows = composePublicRows(
+      purchases,
+      [trialStarts, extensionInstalls, trialClicks],
+      config.maxCount,
+    );
+    return { enabled: true, events: rows.map(toPublic) };
   } catch {
     return { enabled: true, events: [] };
   }
+}
+
+type KindQueryResult = { data: Array<Record<string, unknown>> | null; error: unknown };
+
+/**
+ * Purchases lead (up to PURCHASE_LEAD of them, newest-first), then the
+ * engagement kinds (trial starts, extension installs, trial clicks) merged
+ * newest-first fill the remaining slots, then any leftover purchases backfill if
+ * there aren't enough engagement events. Capped at maxCount. This keeps
+ * subscriptions up front as the strongest proof while guaranteeing the "checking
+ * out" / "installed" / "started a trial" cards still appear even during a busy
+ * sales week. A failed per-kind query degrades to an empty list rather than
+ * sinking the whole response. Exported for tests.
+ */
+export function composePublicRows(
+  purchases: KindQueryResult,
+  engagement: KindQueryResult[],
+  maxCount: number,
+): Array<Record<string, unknown>> {
+  const ok = (r: KindQueryResult) => (r.error || !r.data ? [] : r.data);
+  const cap = Math.max(0, maxCount);
+  const buys = ok(purchases);
+
+  // Each engagement kind is already newest-first from its own query; merge them
+  // into one newest-first stream so the freshest signal of any kind leads.
+  const engaged = engagement
+    .flatMap((r) => ok(r))
+    .sort((a, b) => {
+      const at = String(a.created_at ?? "");
+      const bt = String(b.created_at ?? "");
+      return at < bt ? 1 : at > bt ? -1 : 0;
+    });
+
+  const lead = buys.slice(0, PURCHASE_LEAD);
+  const backfill = buys.slice(PURCHASE_LEAD);
+  return [...lead, ...engaged, ...backfill].slice(0, cap);
 }
 
 /** Recent events for the admin curation list (includes hidden + bot rows). */

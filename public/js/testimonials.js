@@ -91,6 +91,27 @@
     return card;
   }
 
+  // The scroll-reveal observer in main.js snapshots the .anim-up cards once at
+  // page load, so the cards we inject here are never observed and would stay at
+  // opacity:0 (the section looks empty). Reveal our own cards: observe them so
+  // the fade-in still plays, falling back to showing them all immediately.
+  function reveal(cards) {
+    if (!cards.length) return;
+    if ("IntersectionObserver" in window) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      cards.forEach(function (card) { observer.observe(card); });
+    } else {
+      cards.forEach(function (card) { card.classList.add("visible"); });
+    }
+  }
+
   function render(list) {
     var grid = document.querySelector(".testimonials .testimonial-grid");
     if (!grid) return;
@@ -100,20 +121,31 @@
     }
     grid.textContent = "";
     grid.appendChild(frag);
+    reveal(Array.prototype.slice.call(grid.querySelectorAll(".testimonial-card.anim-up")));
     // Let the carousel controller rebuild its pagination for the new cards.
     document.dispatchEvent(new CustomEvent("testimonials:rendered"));
+  }
+
+  // There are no static fallback cards anymore, so when there is nothing to
+  // show (feed disabled, empty, or failed) hide the whole section rather than
+  // leave an empty "What Creators Are Saying" heading.
+  function hideSection() {
+    var section = document.getElementById("testimonials");
+    if (section) section.style.display = "none";
   }
 
   function init() {
     fetch("/api/testimonials/feed", { headers: { accept: "application/json" } })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
-        if (!data || data.enabled === false) return;
-        var list = Array.isArray(data.testimonials) ? data.testimonials : [];
-        if (list.length === 0) return; // keep static fallback cards
+        var list =
+          data && data.enabled !== false && Array.isArray(data.testimonials)
+            ? data.testimonials
+            : [];
+        if (list.length === 0) { hideSection(); return; }
         render(list);
       })
-      .catch(function () { /* keep static fallback */ });
+      .catch(hideSection);
   }
 
   if (document.readyState === "loading") {

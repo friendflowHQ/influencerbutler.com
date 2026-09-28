@@ -34,6 +34,7 @@ type AnswerRow = {
   body: string;
   author_id: string | null;
   author_email: string | null;
+  parent_answer_id: string | null;
   created_at: string;
 };
 
@@ -86,7 +87,7 @@ export async function GET(
 
   const { data: answers } = await supabase
     .from("community_answers")
-    .select("id, question_id, body, author_id, author_email, created_at")
+    .select("id, question_id, body, author_id, author_email, parent_answer_id, created_at")
     .eq("question_id", id)
     .order("created_at", { ascending: true });
 
@@ -136,6 +137,7 @@ export async function GET(
       id: a.id,
       body: a.body,
       author: authorFor(a.author_id),
+      parentAnswerId: a.parent_answer_id ?? null,
       createdAt: a.created_at,
     })),
   });

@@ -1,0 +1,546 @@
+"use client";
+
+/**
+ * Owner scheduling console. Upcoming/past calls, a per-call prep sheet
+ * (subscription + support history + "what Claude fixed"), per-call actions
+ * (complete/no-show/cancel/reschedule/link/notes), and settings (availability
+ * windows, manual blocks, config). Gated server-side by scheduling.view/manage.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import { CALL_TYPES } from "@/lib/scheduling";
+
+type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
+type Booking = {
+  id: string; user_email: string; user_name: string | null; call_type: "support" | "demo";
+  starts_at: string; user_ends_at: string; user_timezone: string | null; status: string;
+  topic: string | null; join_url: string | null; meeting_provider: string | null; host_notes: string | null;
+  recording_status?: string | null; recording_url?: string | null;
+  transcript?: string | null; ai_notes?: AiNotes | null; recorded_at?: string | null;
+  filed_ticket_ids?: string[] | null;
+};
+type Prep = {
+  booking: Booking & { user_id: string | null };
+  displayName: string | null;
+  subscription: { status: string | null; plan_name: string | null; renews_at: string | null; ends_at: string | null; badge: { label: string; className: string } } | null;
+  priorCalls: { id: string; call_type: string; starts_at: string; status: string; topic: string | null }[];
+  support: {
+    total: number; open: number;
+    tickets: { id: string; title: string; status: string; priority: string; submittedAt: number | null }[];
+    fixedHighlights: { id: string; title: string; resolvedVersion: string | null; fixCommitSha: string | null; note: string }[];
+  };
+};
+type Rule = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null };
+type Block = { id: string; starts_at: string; ends_at: string; label: string | null };
+type RecurringBlock = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; label: string | null };
+type Config = { booking_horizon_days: number; lead_time_hours: number; decoy_min_per_day: number; decoy_max_per_day: number; default_join_url: string | null };
+
+const REPO = "https://github.com/friendflowHQ/InfluencerButler";
+const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function hhmm(min: number): string { const h = Math.floor(min / 60), m = min % 60; return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`; }
+// Renders in the admin's own (browser) timezone, with a short zone label so
+// there's no ambiguity about whose clock the time is on.
+function fmtWhen(iso: string): string {
+  try { return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
+  catch { return new Date(iso).toLocaleString("en-US"); }
+}
+// Renders in a specific IANA zone (used to show the customer's local time on the prep sheet).
+function fmtWhenIn(iso: string, tz: string | null): string {
+  try { return new Intl.DateTimeFormat("en-US", { timeZone: tz || "UTC", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
+  catch { return new Date(iso).toLocaleString("en-US"); }
+}
+// The admin's own resolved timezone, used to decide whether the customer is in a different zone.
+function localTz(): string { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } }
+
+// Human-readable confirmation per action, so a successful click is never silent.
+function actLabel(action: string, emailSent: boolean, email: string): string {
+  switch (action) {
+    case "complete": return "Marked done.";
+    case "no_show": return "Marked no-show.";
+    case "no_show_email": return emailSent
+      ? `Marked no-show. Rebooking email sent to ${email}.`
+      : `Marked no-show, but the rebooking email could not be sent (check email logs).`;
+    case "cancel": return emailSent
+      ? `Call cancelled. Cancellation email sent to ${email}.`
+      : `Call cancelled, but the cancellation email could not be sent (check email logs).`;
+    case "notes": return "Notes saved.";
+    case "link": return "Join link updated.";
+    case "reschedule": return "Call rescheduled.";
+    default: return "Done.";
+  }
+}
+
+export default function SchedulingAdminPage() {
+  const [forbidden, setForbidden] = useState(false);
+  const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
+  const [prep, setPrep] = useState<Prep | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [tab, setTab] = useState<"calls" | "settings">("calls");
+  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addMsg, setAddMsg] = useState<string | null>(null);
+  const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const loadList = useCallback(async () => {
+    const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
+    if (res.status === 403) { setForbidden(true); return; }
+    if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
+    else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
+  }, [scope]);
+
+  const loadSettings = useCallback(async () => {
+    const res = await fetch("/api/admin/scheduling/settings", { cache: "no-store" });
+    if (res.status === 403) { setForbidden(true); return; }
+    if (res.ok) setSettings(await res.json());
+  }, []);
+
+  const [googleMsg, setGoogleMsg] = useState("");
+  useEffect(() => { loadList(); }, [loadList]);
+  useEffect(() => { if (tab === "settings") loadSettings(); }, [tab, loadSettings]);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("google");
+    if (!p) return;
+    setTab("settings");
+    setGoogleMsg(p === "connected" ? "Google Calendar connected. A Meet link is now created for each booking."
+      : p === "notconfigured" ? "Google OAuth is not configured yet (set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in Vercel)."
+      : "Could not connect Google Calendar. Please try again.");
+  }, []);
+
+  const openPrep = useCallback(async (id: string) => {
+    setActMsg(null);
+    const res = await fetch(`/api/admin/scheduling/prep?bookingId=${id}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const p = (await res.json()) as Prep;
+    setPrep(p); setNotes(p.booking.host_notes || "");
+  }, []);
+
+  const act = useCallback(async (id: string, body: Record<string, unknown>) => {
+    setBusy(true); setActMsg(null);
+    const action = String(body.action || "");
+    const email = prep?.booking.user_email || "the customer";
+    try {
+      const res = await fetch("/api/admin/scheduling/update", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, ...body }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // Reload first (openPrep clears actMsg), then post the confirmation so it survives.
+        await loadList(); if (prep?.booking.id === id) await openPrep(id);
+        setActMsg({ ok: true, text: actLabel(action, Boolean(j.emailSent), email) });
+      } else {
+        setActMsg({ ok: false, text: j.error || `Action failed (server error ${res.status}).` });
+      }
+    } catch {
+      setActMsg({ ok: false, text: "Action failed: could not reach the server. Please try again." });
+    } finally { setBusy(false); }
+  }, [loadList, prep, openPrep]);
+
+  // Send a recording bot into a call now (or retry one that failed/was skipped).
+  const rearmRecording = useCallback(async (id: string) => {
+    setBusy(true); setActMsg(null);
+    try {
+      const res = await fetch("/api/admin/scheduling/rearm", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) {
+        await loadList(); if (prep?.booking.id === id) await openPrep(id);
+        setActMsg({ ok: true, text: "Recorder sent. The Influencer Butler Notetaker will join shortly (admit it from the Meet lobby if it knocks)." });
+      } else {
+        setActMsg({ ok: false, text: j.error || `Could not send the recorder (server error ${res.status}).` });
+      }
+    } catch {
+      setActMsg({ ok: false, text: "Could not reach the server. Please try again." });
+    } finally { setBusy(false); }
+  }, [loadList, prep, openPrep]);
+
+  // Returns true on success so the form can clear itself; surfaces the server
+  // error (e.g. the slot_taken 409 that tells the admin to tick Force) otherwise.
+  const createCall = useCallback(async (body: Record<string, unknown>): Promise<boolean> => {
+    setBusy(true); setAddMsg(null);
+    try {
+      const res = await fetch("/api/admin/scheduling/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      if (res.ok) {
+        // A call whose time is already past is hidden by the "upcoming" filter, so
+        // switch to a scope that shows it (auto-reloads via the scope effect) and
+        // say where it went, instead of it silently vanishing.
+        const past = typeof body.startMs === "number" && (body.startMs as number) < Date.now();
+        if (past && scope === "upcoming") { setScope("all"); setAddMsg("Call added. Its start time is in the past, so it appears under All / Past, not Upcoming."); }
+        else { setAddMsg("Call added."); await loadList(); }
+        return true;
+      }
+      const j = await res.json().catch(() => ({}));
+      setAddMsg(j.error || `Could not add the call (server error ${res.status}).`);
+      return false;
+    } finally { setBusy(false); }
+  }, [loadList, scope]);
+
+  const mutateSettings = useCallback(async (body: Record<string, unknown>) => {
+    setBusy(true);
+    try { await fetch("/api/admin/scheduling/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); await loadSettings(); }
+    finally { setBusy(false); }
+  }, [loadSettings]);
+
+  if (forbidden) return <div className="rounded-xl border border-slate-200 bg-white p-6"><h1 className="text-lg font-semibold">Scheduling</h1><p className="mt-2 text-sm text-slate-600">Admin only.</p></div>;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-slate-900">Scheduling</h1>
+        <div className="flex gap-1">
+          {(["calls", "settings"] as const).map((t) => (
+            <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-[#f97316] text-white" : "bg-slate-100 text-slate-600"}`}>{t === "calls" ? "Calls" : "Availability & settings"}</button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "calls" && (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1">
+              {(["upcoming", "past", "all"] as const).map((s) => (
+                <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
+              ))}
+            </div>
+            <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">{showAdd ? "Close" : "Add call"}</button>
+          </div>
+          {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} />}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table className="min-w-full divide-y divide-slate-100 text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {listError ? <tr><td colSpan={5} className="px-3 py-8 text-center text-rose-600">{listError}</td></tr> :
+                  bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
+                  bookings.map((b) => (
+                    <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
+                      <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at)}</td>
+                      <td className="px-3 py-2">{b.call_type}</td>
+                      <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
+                      <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
+                      <td className="px-3 py-2 max-w-xs truncate text-slate-500">{b.topic || "—"}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {tab === "settings" && googleMsg && <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">{googleMsg}</div>}
+      {tab === "settings" && settings && (
+        <div className="space-y-5">
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-700">Config</h2>
+            {settings.config && (
+              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {([["booking_horizon_days", "Horizon (days)"], ["lead_time_hours", "Lead time (hours)"], ["decoy_min_per_day", "Decoys min/day"], ["decoy_max_per_day", "Decoys max/day"]] as const).map(([k, label]) => (
+                  <label key={k} className="text-sm"><span className="block text-xs text-slate-500">{label}</span>
+                    <input type="number" defaultValue={settings.config![k] as number} onBlur={(e) => mutateSettings({ action: "config", config: { [k]: Number(e.target.value) } })} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+                ))}
+                <label className="col-span-2 text-sm sm:col-span-3"><span className="block text-xs text-slate-500">Fallback join link (used if Google Meet is not connected)</span>
+                  <input defaultValue={settings.config.default_join_url || ""} onBlur={(e) => mutateSettings({ action: "config", config: { default_join_url: e.target.value } })} className="mt-0.5 w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" /></label>
+              </div>
+            )}
+            {/* Google Meet connection */}
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="text-xs font-medium text-slate-500">Google Meet</div>
+              {settings.googleConnected ? (
+                <div className="mt-1 flex items-center gap-3 text-sm">
+                  <span className="text-emerald-700">Connected{settings.googleEmail ? ` as ${settings.googleEmail}` : ""}. A Meet link is created for each booking.</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "disconnectGoogle" })} className="text-xs text-slate-400 hover:text-rose-600">Disconnect</button>
+                </div>
+              ) : (
+                <div className="mt-1 text-sm">
+                  <a href="/api/admin/scheduling/google/connect" className="inline-block rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">Connect Google Calendar</a>
+                  <span className="ml-2 text-xs text-slate-500">Until connected, bookings use the fallback link above.</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-700">Weekly availability</h2>
+            <p className="mt-1 text-xs text-slate-500">Windows per weekday + timezone, with effective-date ranges (the Eastern to Mountain move is two sets of rows). A few random blocks inside each window are decoy-held automatically.</p>
+            <ul className="mt-2 divide-y divide-slate-100 text-sm">
+              {settings.rules.map((r) => (
+                <li key={r.id} className="flex items-center justify-between py-1.5">
+                  <span className="text-slate-700">{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone} {r.effective_from ? `from ${r.effective_from}` : ""}{r.effective_to ? ` until ${r.effective_to}` : ""}</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteRule", id: r.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-700">Manual blocks (personal holds)</h2>
+            <ul className="mt-2 divide-y divide-slate-100 text-sm">
+              {settings.blocks.length === 0 && <li className="py-1.5 text-slate-400">None.</li>}
+              {settings.blocks.map((b) => (
+                <li key={b.id} className="flex items-center justify-between py-1.5">
+                  <span className="text-slate-700">{new Date(b.starts_at).toLocaleString("en-US")} → {new Date(b.ends_at).toLocaleTimeString("en-US")} {b.label ? `· ${b.label}` : ""}</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteBlock", id: b.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
+                </li>
+              ))}
+            </ul>
+            <AddBlock onAdd={(block) => mutateSettings({ action: "addBlock", block })} />
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-700">Weekly protected time (recurring)</h2>
+            <p className="mt-1 text-xs text-slate-500">Always-on holds that repeat every week (deep-work focus, standing personal time). Slots overlapping these never appear. For flexible or one-off time, use your connected Google Calendar or the manual blocks above.</p>
+            <ul className="mt-2 divide-y divide-slate-100 text-sm">
+              {(settings.recurringBlocks ?? []).length === 0 && <li className="py-1.5 text-slate-400">None.</li>}
+              {(settings.recurringBlocks ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between py-1.5">
+                  <span className="text-slate-700">{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone}{r.label ? ` · ${r.label}` : ""}</span>
+                  <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteRecurringBlock", id: r.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
+                </li>
+              ))}
+            </ul>
+            <AddRecurringBlock defaultTz={settings.rules[0]?.timezone || "America/Denver"} onAdd={(recurringBlock) => mutateSettings({ action: "addRecurringBlock", recurringBlock })} />
+          </section>
+        </div>
+      )}
+
+      {/* Prep sheet drawer */}
+      {prep && (
+        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/30" onClick={() => { setPrep(null); setActMsg(null); }}>
+          <div className="h-full w-full max-w-2xl overflow-y-auto bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">{CALL_TYPES[prep.booking.call_type].label}</h2>
+                <p className="text-sm text-slate-500">{fmtWhen(prep.booking.starts_at)}</p>
+                {prep.booking.user_timezone && prep.booking.user_timezone !== localTz() && (
+                  <p className="text-xs text-slate-400">Customer&apos;s time: {fmtWhenIn(prep.booking.starts_at, prep.booking.user_timezone)} ({prep.booking.user_timezone})</p>
+                )}
+              </div>
+              <button type="button" onClick={() => { setPrep(null); setActMsg(null); }} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+            </div>
+
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div><dt className="text-slate-400">Customer</dt><dd className="text-slate-700">{prep.displayName || prep.booking.user_name || "—"} &lt;{prep.booking.user_email}&gt;</dd></div>
+              <div><dt className="text-slate-400">Subscription</dt><dd>{prep.subscription ? <span className={`rounded px-1.5 py-0.5 text-xs ${prep.subscription.badge.className}`}>{prep.subscription.badge.label}</span> : <span className="text-slate-400">none</span>}{prep.subscription?.plan_name ? ` · ${prep.subscription.plan_name}` : ""}</dd></div>
+              <div><dt className="text-slate-400">Status</dt><dd className="text-slate-700">{prep.booking.status}</dd></div>
+              <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}</dd></div>
+            </dl>
+
+            {prep.booking.topic && <section className="mt-3"><h3 className="text-xs font-semibold uppercase text-slate-500">What they want to cover</h3><p className="mt-1 rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{prep.booking.topic}</p></section>}
+
+            <section className="mt-3">
+              <h3 className="text-xs font-semibold uppercase text-slate-500">Support history ({prep.support.open} open / {prep.support.total} total)</h3>
+              {prep.support.fixedHighlights.length > 0 && (
+                <div className="mt-1">
+                  <p className="text-xs text-slate-500">What Claude fixed:</p>
+                  <ul className="mt-1 space-y-1">
+                    {prep.support.fixedHighlights.map((f) => (
+                      <li key={f.id} className="text-sm text-slate-700">• {f.title}{f.resolvedVersion ? ` (v${String(f.resolvedVersion).replace(/^v/i, "")})` : ""}{f.fixCommitSha ? <> · <a className="text-[#f97316] hover:underline" href={`${REPO}/commit/${f.fixCommitSha}`} target="_blank" rel="noreferrer">commit ↗</a></> : null}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <ul className="mt-2 space-y-1">
+                {prep.support.tickets.slice(0, 8).map((t) => (
+                  <li key={t.id} className="text-sm text-slate-600">[{t.status}] {t.title} <span className="text-xs text-slate-400">{t.priority}</span></li>
+                ))}
+                {prep.support.total === 0 && <li className="text-sm text-slate-400">No prior support tickets.</li>}
+              </ul>
+            </section>
+
+            {prep.priorCalls.length > 0 && (
+              <section className="mt-3"><h3 className="text-xs font-semibold uppercase text-slate-500">Prior calls</h3>
+                <ul className="mt-1 space-y-1">{prep.priorCalls.map((c) => <li key={c.id} className="text-sm text-slate-600">{c.call_type} · {new Date(c.starts_at).toLocaleDateString("en-US")} · {c.status}</li>)}</ul>
+              </section>
+            )}
+
+            <section className="mt-4">
+              <h3 className="text-xs font-semibold uppercase text-slate-500">Private notes</h3>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />
+              <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "notes", hostNotes: notes })} className="mt-1 rounded-lg bg-slate-800 px-3 py-1 text-xs text-white disabled:opacity-50">Save notes</button>
+            </section>
+
+            <section className="mt-4">
+              <h3 className="text-xs font-semibold uppercase text-slate-500">Recording &amp; notes</h3>
+              {(() => {
+                const st = prep.booking.recording_status || "none";
+                const n = prep.booking.ai_notes || null;
+                if (st === "ready") {
+                  return (
+                    <div className="mt-1 space-y-2">
+                      {prep.booking.recording_url && (
+                        <a href={prep.booking.recording_url} target="_blank" rel="noreferrer" className="inline-block text-sm text-[#f97316] hover:underline">Open recording ↗</a>
+                      )}
+                      {n?.summary && <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{n.summary}</p>}
+                      {n?.keyTopics && n.keyTopics.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Key topics</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.keyTopics.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {n?.actionItems && n.actionItems.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Action items</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.actionItems.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {n?.followUps && n.followUps.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Follow-ups</p><ul className="ml-4 list-disc text-sm text-slate-700">{n.followUps.map((t, i) => <li key={i}>{t}</li>)}</ul></div>
+                      )}
+                      {prep.booking.filed_ticket_ids && prep.booking.filed_ticket_ids.length > 0 && (
+                        <div><p className="text-xs font-medium text-slate-500">Auto-filed tickets</p><ul className="ml-4 list-disc text-sm text-slate-700">{prep.booking.filed_ticket_ids.map((id) => <li key={id}><a href={`/dashboard/admin/support?ticket=${encodeURIComponent(id)}`} className="text-[#f97316] hover:underline">{id}</a></li>)}</ul></div>
+                      )}
+                      {prep.booking.transcript && (
+                        <details className="mt-1"><summary className="cursor-pointer text-xs text-slate-500">Full transcript</summary><pre className="mt-1 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{prep.booking.transcript}</pre></details>
+                      )}
+                    </div>
+                  );
+                }
+                const msg = st === "scheduled" ? "A recording bot is scheduled to join this call."
+                  : st === "recording" ? "Recording in progress."
+                  : st === "processing" ? "Recording finished. Transcript and notes are being prepared."
+                  : st === "failed" ? "Recording could not be captured for this call."
+                  : st === "skipped_no_meet" ? "Not recorded. Add a Google Meet link (or connect Google Calendar), then send the recorder."
+                  : "Not recorded.";
+                // Recovery: for a call that has a Meet link but no live recording,
+                // let the owner send the bot in now (works mid-call).
+                const canRearm =
+                  ["failed", "skipped_no_meet", "none"].includes(st) &&
+                  !!prep.booking.join_url &&
+                  prep.booking.status !== "cancelled";
+                return (
+                  <div className="mt-1">
+                    <p className="text-sm text-slate-500">{msg}</p>
+                    {canRearm && (
+                      <button type="button" disabled={busy} onClick={() => rearmRecording(prep.booking.id)} className="mt-1.5 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">Send recorder now</button>
+                    )}
+                  </div>
+                );
+              })()}
+            </section>
+
+            <section className="mt-4 flex flex-wrap gap-2">
+              <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "complete" })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Mark done</button>
+              <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "no_show" })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show</button>
+              <button type="button" disabled={busy} onClick={() => { if (confirm("Mark no-show and email the customer to rebook?")) act(prep.booking.id, { action: "no_show_email" }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show + email</button>
+              <button type="button" disabled={busy} onClick={() => { const url = prompt("Join link:", prep.booking.join_url || ""); if (url != null) act(prep.booking.id, { action: "link", joinUrl: url }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Set link</button>
+              <button type="button" disabled={busy} onClick={() => { if (confirm("Cancel and email the customer?")) act(prep.booking.id, { action: "cancel" }); }} className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Cancel</button>
+            </section>
+            {actMsg && (
+              <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${actMsg.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{actMsg.text}</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddBlock({ onAdd }: { onAdd: (b: { starts_at: string; ends_at: string; label: string }) => void }) {
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [label, setLabel] = useState("");
+  // End must be after start: an inverted block breaks the booking overlap check
+  // for every customer (the DB range constructor throws), so never let one be added.
+  const valid = start !== "" && end !== "" && new Date(end).getTime() > new Date(start).getTime();
+  const inverted = start !== "" && end !== "" && new Date(end).getTime() <= new Date(start).getTime();
+  return (
+    <div className="mt-3 flex flex-wrap items-end gap-2">
+      <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">End<input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" />{inverted && <span className="mt-0.5 block text-[11px] text-rose-600">End must be after start.</span>}</label>
+      <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Break" /></label>
+      <button type="button" disabled={!valid} onClick={() => { onAdd({ starts_at: new Date(start).toISOString(), ends_at: new Date(end).toISOString(), label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add block</button>
+    </div>
+  );
+}
+
+// Manually add a call without the customer going through the front-end booking
+// flow. Times are entered in the admin's own browser timezone; the browser IANA
+// zone is sent along so the customer-facing invite renders in the same clock.
+function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAdd: (body: Record<string, unknown>) => Promise<boolean> }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"support" | "demo">("support");
+  const [start, setStart] = useState("");
+  const [topic, setTopic] = useState("");
+  const [joinUrl, setJoinUrl] = useState("");
+  const [meetingId, setMeetingId] = useState<string | null>(null); // set when the link is a generated Google Meet room
+  const [gen, setGen] = useState(false);
+  const [genMsg, setGenMsg] = useState<string | null>(null);
+  const [sendEmail, setSendEmail] = useState(false);
+  const [force, setForce] = useState(false);
+  const valid = email.includes("@") && start !== "";
+  const startInPast = start !== "" && new Date(start).getTime() < Date.now();
+
+  const generateMeet = async () => {
+    setGenMsg(null);
+    // datetime-local reads as "" until BOTH date and time are set, so guide the
+    // owner instead of silently doing nothing.
+    if (!email.includes("@")) { setGenMsg("Enter the customer email first."); return; }
+    if (start === "") { setGenMsg("Pick a start date and time first (the time is still blank)."); return; }
+    setGen(true);
+    try {
+      const res = await fetch("/api/admin/scheduling/meet", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, startMs: new Date(start).getTime(), email: email.trim(), topic: topic.trim() || undefined }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.joinUrl) { setJoinUrl(j.joinUrl); setMeetingId(j.meetingId || null); setGenMsg("Google Meet link created."); }
+      else setGenMsg(j.error || `Could not create a link (server error ${res.status}).`);
+    } finally { setGen(false); }
+  };
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-slate-700">Add a call</h2>
+      <p className="mt-1 text-xs text-slate-500">Drops a call onto the schedule directly. The time is in your timezone ({localTz()}).</p>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="text-xs text-slate-500">Customer email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="name@example.com" /></label>
+        <label className="text-xs text-slate-500">Name (optional)<input value={name} onChange={(e) => setName(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">Type
+          <select value={type} onChange={(e) => setType(e.target.value as "support" | "demo")} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm">
+            <option value="support">Priority 1:1</option>
+            <option value="demo">Setup</option>
+          </select>
+        </label>
+        <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />{startInPast && <span className="mt-0.5 block text-[11px] text-amber-600">This time is in the past, so the call will land under Past, not Upcoming.</span>}</label>
+        <label className="text-xs text-slate-500 sm:col-span-2">Topic (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
+        <div className="text-xs text-slate-500 sm:col-span-2">
+          <div className="flex items-center justify-between">
+            <span>Join link (optional){meetingId ? <span className="ml-1 rounded bg-emerald-50 px-1 py-0.5 text-[10px] text-emerald-700">Google Meet</span> : null}</span>
+            <button type="button" disabled={gen} onClick={generateMeet} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50">{gen ? "Generating..." : "Generate Meet link"}</button>
+          </div>
+          <input value={joinUrl} onChange={(e) => { setJoinUrl(e.target.value); setMeetingId(null); }} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
+          {genMsg && <p className="mt-1 text-[11px] text-slate-500">{genMsg}</p>}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />Email the customer a confirmation</label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />Force / allow overlap</label>
+      </div>
+      {msg && <p className="mt-2 text-xs text-slate-600">{msg}</p>}
+      <button
+        type="button"
+        disabled={!valid || busy}
+        onClick={async () => {
+          const startMs = new Date(start).getTime();
+          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, joinUrl: joinUrl.trim() || undefined, meetingId: meetingId || undefined, meetingProvider: meetingId ? "google_meet" : undefined, sendEmail, force });
+          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setJoinUrl(""); setMeetingId(null); setGenMsg(null); setSendEmail(false); setForce(false); }
+        }}
+        className="mt-3 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50"
+      >Add call</button>
+    </div>
+  );
+}
+
+function toMin(hhmmStr: string): number { const [h, m] = hhmmStr.split(":").map(Number); return (h || 0) * 60 + (m || 0); }
+
+function AddRecurringBlock({ defaultTz, onAdd }: { defaultTz: string; onAdd: (b: { weekday: number; start_min: number; end_min: number; timezone: string; label: string }) => void }) {
+  const [weekday, setWeekday] = useState(1);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [label, setLabel] = useState("");
+  const valid = start !== "" && end !== "" && toMin(end) > toMin(start);
+  return (
+    <div className="mt-3 flex flex-wrap items-end gap-2">
+      <label className="text-xs text-slate-500">Day
+        <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm">
+          {WD.map((d, i) => <option key={i} value={i}>{d}</option>)}
+        </select>
+      </label>
+      <label className="text-xs text-slate-500">Start<input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">End<input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+      <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Deep work" /></label>
+      <button type="button" disabled={!valid} onClick={() => { onAdd({ weekday, start_min: toMin(start), end_min: toMin(end), timezone: defaultTz, label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add protected time</button>
+    </div>
+  );
+}

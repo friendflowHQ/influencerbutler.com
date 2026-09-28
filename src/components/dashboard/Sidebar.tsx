@@ -22,6 +22,7 @@ type NavItem = { href: string; label: string; children?: NavChild[] };
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/earnings", label: "Earnings" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/billing", label: "Billing" },
@@ -33,7 +34,10 @@ const navItems: NavItem[] = [
       { href: "/dashboard/affiliates/playbook", label: "Competitor Playbook" },
     ],
   },
+  { href: "/dashboard/events", label: "Upcoming Events" },
   { href: "/dashboard/extension", label: "Extension" },
+  { href: "/dashboard/ai-concierge", label: "AI Assistant" },
+  { href: "/dashboard/book", label: "Book a Call" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
 ];
@@ -48,6 +52,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [adminRole, setAdminRole] = useState<"admin" | "assistant" | null>(null);
   const [adminPerms, setAdminPerms] = useState<string[]>([]);
+  const [pendingTestimonials, setPendingTestimonials] = useState(0);
   const { setHelpOpen } = useKeyboardShortcutsContext();
 
   useEffect(() => {
@@ -117,6 +122,19 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
         if (!cancelled && json.isStaff) {
           setAdminRole(json.role ?? null);
           setAdminPerms(json.permissions ?? []);
+          // Badge on the Testimonials nav link. Staff-only, so regular users
+          // never make this call. Route returns { count: 0 } without the
+          // testimonials.moderate permission.
+          void fetch("/api/admin/testimonials/pending-count", { cache: "no-store" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((payload: { count?: number } | null) => {
+              if (!cancelled && typeof payload?.count === "number") {
+                setPendingTestimonials(payload.count);
+              }
+            })
+            .catch(() => {
+              // ignore - badge just won't show
+            });
         }
       } catch {
         // not staff / network error: no admin nav
@@ -136,11 +154,19 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     const items = [
       { href: "/dashboard/admin", label: "Overview", perm: "reports.view", built: true },
       { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/finance", label: "Finance", perm: "finance.view", built: true },
+      { href: "/dashboard/admin/emails", label: "Emails", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/bundle", label: "Bundle", perm: "marketing.send", built: true },
+      { href: "/dashboard/admin/blog", label: "Blog", perm: "blog.manage", built: true },
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
       { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
+      { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
+      { href: "/dashboard/admin/scheduling", label: "Scheduling", perm: "scheduling.view", built: true },
+      { href: "/dashboard/admin/events", label: "Events", perm: "events.manage", built: true },
       { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
       { href: "/dashboard/admin/activity", label: "Activity widget", perm: "activity.manage", built: true },
       { href: "/dashboard/admin/testimonials", label: "Testimonials", perm: "testimonials.moderate", built: true },
+      { href: "/dashboard/admin/cancellations", label: "Cancellations", perm: "reports.view", built: true },
       { href: "/dashboard/admin/users", label: "Users", perm: "users.view", built: true },
       { href: "/dashboard/admin/comps", label: "Comps", perm: "licenses.view", built: true },
       { href: "/dashboard/admin/webhooks", label: "Webhooks", perm: "webhooks.view", built: true },
@@ -288,19 +314,34 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             <nav className="mt-2 flex flex-col gap-1" aria-label="Admin navigation">
               {adminNavItems.map((item) => {
                 const isActive = pathname === item.href;
+                const badge =
+                  item.href === "/dashboard/admin/testimonials" && pendingTestimonials > 0
+                    ? pendingTestimonials
+                    : null;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileOpen(false)}
                     className={[
-                      "rounded-lg px-3 py-2 text-sm font-medium transition",
+                      "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
                       isActive
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
                     ].join(" ")}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    {badge !== null ? (
+                      <span
+                        className={[
+                          "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+                          isActive ? "bg-white text-indigo-700" : "bg-rose-500 text-white",
+                        ].join(" ")}
+                        aria-label={`${badge} awaiting review`}
+                      >
+                        {badge}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}

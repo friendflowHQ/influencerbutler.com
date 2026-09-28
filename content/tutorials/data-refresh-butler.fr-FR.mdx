@@ -11,7 +11,7 @@ Data Refresh Butler est le planificateur des deux catalogues Amazon dont tout le
 - Le **catalogue des campagnes Creator Connections (CC)** - toutes les campagnes actives visibles pour votre boutique.
 - Le **catalogue SPCC** - taux de commission Sponsored Products for Creators.
 
-Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence et Deals Influencer Butler lisent depuis ces catalogues. S'ils sont obsolètes, ces espaces prennent des décisions avec des données périmées. Data Refresh Butler est l'endroit où vous fixez la cadence.
+Daily Commission Butler, Goldmine Butler, Ads Goldmine Butler, Earnings Intelligence et Deals Butler lisent depuis ces catalogues. S'ils sont obsolètes, ces espaces prennent des décisions avec des données périmées. Data Refresh Butler est l'endroit où vous fixez la cadence.
 
 Il n'a pas de runner propre - il configure et déclenche simplement le
 rafraîchissement des catalogues selon la planification que vous choisissez.
@@ -26,15 +26,15 @@ seulement les ASIN par rapport à ce que ces rafraîchissements produisent.
 
 ## Configuration initiale (le chemin facile)
 
-La configuration par défaut couple les rafraîchissements à la cadence de recherche de Deals Influencer Butler : CC + SPCC se re-téléchargent **1 heure avant chaque recherche Deals Influencer Butler planifiée**. Si vous utilisez Deals Influencer Butler, c'est la bonne configuration - vous ne touchez rien d'autre.
+La configuration par défaut couple les rafraîchissements à la cadence de recherche de Deals Butler : CC + SPCC se re-téléchargent **1 heure avant chaque recherche Deals Butler planifiée**. Si vous utilisez Deals Butler, c'est la bonne configuration - vous ne touchez rien d'autre.
 
 1. Ouvrez **Data Refresh Butler** sous Amazon Butler.
-2. Vérifiez que la puce de couplage en haut indique : *"Se rafraîchit 1 h avant chaque recherche planifiée de Deals Influencer Butler."*
+2. Vérifiez que la puce de couplage en haut indique : *"Se rafraîchit 1 h avant chaque recherche planifiée de Deals Butler."*
 3. C'est fait.
 
-## Cadence manuelle (si vous n'utilisez pas Deals Influencer Butler)
+## Cadence manuelle (si vous n'utilisez pas Deals Butler)
 
-Si Deals Influencer Butler ne tourne pas selon un planning, cliquez sur **Dissocier** sur la puce de couplage et définissez une cadence manuelle :
+Si Deals Butler ne tourne pas selon un planning, cliquez sur **Dissocier** sur la puce de couplage et définissez une cadence manuelle :
 
 1. Dans **Planning de rafraîchissement**, la valeur par défaut est **Personnalisé - quotidien à 04:00**. Cela suffit pour la plupart des utilisateurs ; un rafraîchissement nocturne une fois par jour garde les catalogues à jour sans surcharger Amazon. Les préréglages horaires sont agressifs et rarement nécessaires.
 2. **Rafraîchir à cette heure** permet d'ancrer le rafraîchissement quotidien à une heure précise (4:00 par défaut).
@@ -58,16 +58,16 @@ Les cartes CC et SPCC affichent une **date et heure de dernier rafraîchissement
 - **Lancer maintenant** sous SPCC - rafraîchit uniquement le catalogue SPCC.
 - **Rafraîchir les deux**: exécute les deux en séquence.
 
-Utile avant une recherche Deals Influencer Butler manuelle ou avant d'examiner les candidates de Daily Commission Butler.
+Utile avant une recherche Deals Butler manuelle ou avant d'examiner les candidates de Daily Commission Butler.
 
 ## Pièges courants
 
 - **"Rafraîchissement échoué : pas de boutique"**: configurez d'abord votre ID de boutique CC dans la barre du haut.
-- **La puce de couplage est absente**: Deals Influencer Butler n'a pas de planning actif, donc rien à coupler. Définissez d'abord un planning Deals Influencer Butler, ou utilisez la cadence manuelle.
+- **La puce de couplage est absente**: Deals Butler n'a pas de planning actif, donc rien à coupler. Définissez d'abord un planning Deals Butler, ou utilisez la cadence manuelle.
 - **Le catalogue reste vide après un rafraîchissement**: généralement le runner cc-check sous-jacent a rencontré une invite de connexion Amazon. Ouvrez cc-check, connectez-vous et relancez.
 
 ## Relié
 
 - [Tutoriel CC Check](/help/tutorials/cc-check) - où vous vérifiez les ASIN et acceptez les campagnes par rapport aux catalogues que cet espace rafraîchit.
 - [Tutoriel Daily Commission Butler](/help/tutorials/dailycommissionbutler) - le principal consommateur d'un catalogue CC à jour.
-- [Tutoriel Deals Influencer Butler](/help/tutorials/daily-deals) - la source de couplage par défaut.
+- [Tutoriel Deals Butler](/help/tutorials/deals) - la source de couplage par défaut.

@@ -25,9 +25,18 @@
 // The text/date extraction functions are pure and unit-tested; the DOM readers
 // are validated by the live smoke test.
 
+// Amazon's qualitative campaign-budget signal on an SPCC card ("Budget
+// availability score: High"). Observed values High / Medium / Low.
+export type BudgetAvailability = "high" | "medium" | "low";
+
 export type Campaign = {
-  // The card element, so the overlay can badge / border / reorder it.
+  // The full visual card element (image + stats + accept button), so the overlay
+  // can border / dim / filter the whole card.
   el: HTMLElement;
+  // The inner stats block (brand / rate / budget / dates). The overlay anchors
+  // the score badge here so it renders next to the numbers it explains rather
+  // than below the card's buttons. Same node as `el` on the fallback text path.
+  detailsEl: HTMLElement;
   brand: string | null;
   commissionRatePct: number | null;
   remainingBudgetCents: number | null;
@@ -37,7 +46,78 @@ export type Campaign = {
   // products may hide behind a "Check Product Opportunities" expander); Phase 2
   // enrichment degrades gracefully when this is empty.
   asins: string[];
+  // The Amazon campaign id (e.g. "amzn1.campaign.116OEQZBQCQ9V"), read from the
+  // accept/decline button testid. The join key that matches a card to the fill
+  // data captured from the campaign/search API (Last Call Butler). Null if the
+  // testid is absent (e.g. the text-heuristic fallback path).
+  campaignId: string | null;
+  // Campaign fill / capacity, merged in from the connect-hook API capture (not
+  // present in the card DOM). null until the fill map arrives, or if Amazon
+  // stops exposing it. slotsFilled/slotsTotal are creator slots claimed vs cap.
+  slotsFilled: number | null;
+  slotsTotal: number | null;
+  fullyClaimed: boolean | null;
+  // Conversion stats (orders / sales / ROAS) captured from the same API record,
+  // when Amazon exposes them. Usually null: the Campaign Butler brief is
+  // estimator-first and falls back to our catalogue demand. See connect-hook.
+  stats: CampaignStats | null;
+  // SPCC ("Sponsored Products for Creators") tab signals. Estimated EPC is
+  // Amazon's own earnings-per-click forecast, rendered only as a ceiling ("Up to
+  // $1.05"); epcCents holds that ceiling in cents. budgetAvailability is Amazon's
+  // qualitative budget signal. Both null on the classic CC (Affiliate+) cards,
+  // which carry commission and dates instead.
+  epcCents: number | null;
+  budgetAvailability: BudgetAvailability | null;
+  // True for a card read off the SPCC tab (EPC + budget-availability schema, no
+  // commission / date / campaign id), false for a classic CC card. Selects the
+  // scorer and which chips the overlay draws.
+  isSpcc: boolean;
 };
+
+// Conversion stats a Creator Connections campaign record MIGHT carry, captured
+// by the MAIN-world connect-hook alongside fill. Every field is nullable and
+// often the whole object is null (unverified that Amazon exposes these).
+export type CampaignStats = {
+  ordersLast30: number | null;
+  salesLast30Cents: number | null;
+  roas: number | null;
+  ordersTotal: number | null;
+  // Clicks, when the record carries them, so a conversion rate (orders / clicks)
+  // can be shown on the card and in the brief. Nullable like the rest.
+  clicksLast30: number | null;
+  clicksTotal: number | null;
+};
+
+// Campaign fill / capacity captured from the campaign/search API by the
+// MAIN-world connect-hook, keyed by campaignId. This is the shape the content
+// script receives over the "ib-ext-campaign-fill" DOM event and merges onto the
+// DOM-parsed cards. See src/content/connect-hook.ts.
+export type CampaignFill = {
+  accepted: number | null;
+  required: number | null;
+  fullyClaimed: boolean | null;
+  // Conversion stats captured from the same record, when present. Optional so an
+  // older capture (or the Last Call poll, which only cares about fill) still
+  // type-checks; absent reads as "no stats".
+  stats?: CampaignStats | null;
+};
+
+// Merge a { campaignId -> fill } map (from the API capture) onto DOM-parsed
+// campaigns. Fill data is API-only: it is not in the card DOM, so this is how a
+// card learns how full it is. Cards without a matching id keep their null fill.
+export function applyCampaignFills(
+  campaigns: Campaign[],
+  fills: Record<string, CampaignFill>,
+): void {
+  for (const c of campaigns) {
+    const fill = c.campaignId ? fills[c.campaignId] : undefined;
+    if (!fill) continue;
+    c.slotsFilled = fill.accepted;
+    c.slotsTotal = fill.required;
+    c.fullyClaimed = fill.fullyClaimed;
+    c.stats = fill.stats ?? null;
+  }
+}
 
 const ASIN_LINK_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/g;
 // "ASIN: B0F8VC16BM" rendered in an SPCC card's text.
@@ -160,6 +240,26 @@ export function parseDateRange(text: string | null | undefined): {
   };
 }
 
+// SPCC "Estimated EPC: Up to $1.05" -> 105 (cents). Amazon renders EPC only as an
+// upper bound ("Up to $X"), so this is a ceiling, not a payout estimate.
+const EPC_RE = /estimated\s+epc\s*:?\s*(?:up\s+to\s+)?\$?\s*([\d,]+(?:\.\d{1,2})?)/i;
+// SPCC "Budget availability score: High" (Amazon renders it with or without a
+// space after the colon, verified live 2026-09-22).
+const BUDGET_AVAIL_RE = /budget\s+availability\s+score\s*:?\s*(high|medium|low)/i;
+
+export function parseEpcCents(text: string | null | undefined): number | null {
+  const m = (text ?? "").match(EPC_RE);
+  return m && m[1] ? clampNum(Math.round(parseFloat(m[1].replace(/,/g, "")) * 100)) : null;
+}
+
+export function parseBudgetAvailability(
+  text: string | null | undefined,
+): BudgetAvailability | null {
+  const m = (text ?? "").match(BUDGET_AVAIL_RE);
+  const v = m?.[1]?.toLowerCase();
+  return v === "high" || v === "medium" || v === "low" ? v : null;
+}
+
 // The brand / campaign title. Best-effort: the first heading-ish element, else
 // the first non-empty text line. The commission/budget/date lines are stripped so
 // the title is not "Commission rate: 10%".
@@ -190,13 +290,36 @@ export function parseCampaignCard(el: HTMLElement): Campaign | null {
   if (fields.commissionRatePct === null && fields.endsAt === null) return null;
   return {
     el,
+    detailsEl: el,
     brand: readBrand(el),
     commissionRatePct: fields.commissionRatePct,
     remainingBudgetCents: fields.remainingBudgetCents,
     startsAt: fields.startsAt,
     endsAt: fields.endsAt,
     asins: extractCampaignAsins(el),
+    campaignId: readCampaignId(el),
+    slotsFilled: null,
+    slotsTotal: null,
+    fullyClaimed: null,
+    stats: null,
+    epcCents: null,
+    budgetAvailability: null,
+    isSpcc: false,
   };
+}
+
+// The campaign id lives in the accept/decline button testid, e.g.
+// "amzn1.campaign.116OEQZBQCQ9V-campaign-card-accept-btn". Returns the
+// "amzn1.campaign.<id>" prefix, or null if no such testid is on the card. This
+// is the join key against the fill map captured from the campaign/search API.
+const CAMPAIGN_ID_RE = /^(amzn1\.campaign\.[A-Za-z0-9]+)-campaign-card-(?:accept|decline)-btn$/;
+export function readCampaignId(card: HTMLElement): string | null {
+  const btn = card.querySelector<HTMLElement>(
+    '[data-testid$="-campaign-card-accept-btn"], [data-testid$="-campaign-card-decline-btn"]',
+  );
+  const testid = btn?.getAttribute("data-testid") ?? "";
+  const m = CAMPAIGN_ID_RE.exec(testid);
+  return m?.[1] ?? null;
 }
 
 // The element's own direct text (its immediate text-node children), so we can
@@ -258,20 +381,44 @@ const TESTID = {
   dateRange: "campaign-card-campaign-date-range",
 } as const;
 
-// From a commission-rate element, climb to the card root: the nearest ancestor
-// that also holds the brand and date-range testids.
-function cardRootFrom(rateEl: HTMLElement): HTMLElement {
+// The accept / decline buttons, whose testid carries the campaign id.
+const CARD_BTN_SELECTOR =
+  '[data-testid$="-campaign-card-accept-btn"], [data-testid$="-campaign-card-decline-btn"]';
+
+// Extra hops allowed past the stats block while looking for the card element
+// that also contains the accept/decline button row.
+const MAX_BTN_CLIMB = 4;
+
+// From a commission-rate element, climb to the card's two parts. `details` is
+// the nearest ancestor holding the brand and date-range testids: the stats
+// block the badge anchors to. `card` keeps climbing until the accept/decline
+// button is inside too, because on the live grid (verified 2026-08-16) the
+// button row is a SIBLING of the stats block: stopping at the stats block left
+// the campaign id (embedded in the button testid) unreachable, which silently
+// killed every Last Call feature, and drew the highlight outline around only
+// half the card. The climb stops before any ancestor that spans more than one
+// card (a second commission testid), so a card whose button is missing (e.g.
+// already accepted) safely falls back to the stats block.
+function cardPartsFrom(rateEl: HTMLElement): { card: HTMLElement; details: HTMLElement } {
+  let details: HTMLElement | null = null;
   let node: HTMLElement | null = rateEl;
-  for (let i = 0; i <= MAX_CARD_CLIMB && node; i++) {
+  for (let i = 0; i <= MAX_CARD_CLIMB + MAX_BTN_CLIMB && node; i++) {
+    if (node.querySelectorAll(`[data-testid="${TESTID.commission}"]`).length > 1) break;
     if (
+      !details &&
+      i <= MAX_CARD_CLIMB &&
       node.querySelector(`[data-testid="${TESTID.brand}"]`) &&
       node.querySelector(`[data-testid="${TESTID.dateRange}"]`)
     ) {
-      return node;
+      details = node;
+    }
+    if (details && node.querySelector(CARD_BTN_SELECTOR)) {
+      return { card: node, details };
     }
     node = node.parentElement;
   }
-  return rateEl;
+  const fallback = details ?? rateEl;
+  return { card: fallback, details: fallback };
 }
 
 // Preferred reader: one Campaign per CC card, fields read from the stable
@@ -284,7 +431,7 @@ export function readCampaignGridByTestId(root: ParentNode): Campaign[] {
   const out: Campaign[] = [];
   const seen = new Set<HTMLElement>();
   for (const rateEl of rateEls) {
-    const card = cardRootFrom(rateEl);
+    const { card, details } = cardPartsFrom(rateEl);
     if (seen.has(card)) continue;
     seen.add(card);
     const field = (id: string): string | null =>
@@ -292,22 +439,102 @@ export function readCampaignGridByTestId(root: ParentNode): Campaign[] {
     const { startsAt, endsAt } = parseDateRange(field(TESTID.dateRange));
     out.push({
       el: card,
+      detailsEl: details,
       brand: field(TESTID.brand) ?? field(TESTID.name),
       commissionRatePct: parsePctText(field(TESTID.commission)),
       remainingBudgetCents: parseBudgetText(field(TESTID.budget)),
       startsAt,
       endsAt,
       asins: extractCampaignAsins(card),
+      campaignId: readCampaignId(card),
+      slotsFilled: null,
+      slotsTotal: null,
+      fullyClaimed: null,
+      stats: null,
+      epcCents: null,
+      budgetAvailability: null,
+      isSpcc: false,
     });
   }
   return out;
 }
 
-// Read every campaign on the grid: stable testids first (verified layout), then
-// the whole-card text heuristic as a fallback if Amazon renames the testids.
+// The SPCC ("Sponsored Products for Creators") tab uses a different card schema
+// from the classic CC grid: each card shows an Estimated EPC and a budget
+// availability score instead of a commission rate and a date range, and its card
+// root is a hashed-class <div> with no data-testid. Verified live 2026-09-22
+// (US, littleprettyl-20): the stable per-card anchor is the brand line
+// [data-testid="spc-asin-brand"] (one per card); the card also carries
+// [data-testid="campaign-card-campaign-image"] and an Accept <button>. The ASIN,
+// EPC, budget availability, and price are plain text in the card ("ASIN:
+// B01D9291RI", "Estimated EPC: Up to $0.06", "Budget availability score:High").
+// Crucially the SPCC card exposes NO campaign id anywhere in the DOM (the Accept
+// button has only hashed classes), so campaignId stays null and the id-keyed
+// features (Last Call bell, accept-by-id, fill meter) do not apply to SPCC cards
+// read from the DOM. The ASIN-keyed signals (owned, proven earner, availability,
+// video count) all still work, and are the point of this reader.
+const SPCC_BRAND_TESTID = "spc-asin-brand";
+const SPCC_IMAGE_TESTID = "campaign-card-campaign-image";
+// How far to climb from the brand line to the card root that also holds the image
+// and the accept button. Observed at 2 hops; a small margin guards a wrapper.
+const MAX_SPCC_CLIMB = 5;
+
+export function readSpccGrid(root: ParentNode): Campaign[] {
+  const brands = Array.from(
+    root.querySelectorAll<HTMLElement>(`[data-testid="${SPCC_BRAND_TESTID}"]`),
+  );
+  const out: Campaign[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const brandEl of brands) {
+    let card: HTMLElement | null = brandEl;
+    for (let i = 0; i <= MAX_SPCC_CLIMB && card; i++) {
+      if (
+        card.querySelector(`[data-testid="${SPCC_IMAGE_TESTID}"]`) &&
+        card.querySelector("button")
+      ) {
+        break;
+      }
+      card = card.parentElement;
+    }
+    if (!card || seen.has(card) || card.tagName === "BODY") continue;
+    // A container that swept up more than one brand line means we climbed past the
+    // card; skip it so one wrapper does not stand in for two cards.
+    if (card.querySelectorAll(`[data-testid="${SPCC_BRAND_TESTID}"]`).length > 1) continue;
+    seen.add(card);
+    const text = card.textContent ?? "";
+    out.push({
+      el: card,
+      detailsEl: card,
+      brand: brandEl.textContent?.trim() || null,
+      commissionRatePct: null,
+      remainingBudgetCents: null,
+      startsAt: null,
+      endsAt: null,
+      asins: extractCampaignAsins(card),
+      campaignId: null,
+      slotsFilled: null,
+      slotsTotal: null,
+      fullyClaimed: null,
+      stats: null,
+      epcCents: parseEpcCents(text),
+      budgetAvailability: parseBudgetAvailability(text),
+      isSpcc: true,
+    });
+  }
+  return out;
+}
+
+// Read every campaign on the grid: stable CC testids first (verified layout),
+// then the SPCC tab schema (EPC + budget availability, no commission testid),
+// then the whole-card text heuristic as a fallback if Amazon renames the CC
+// testids. The two tabs are mutually exclusive, so at most one branch yields
+// cards on any given render.
 export function readCampaignGrid(doc: Document): Campaign[] {
   const byTestId = readCampaignGridByTestId(doc);
   if (byTestId.length > 0) return byTestId;
+
+  const spcc = readSpccGrid(doc);
+  if (spcc.length > 0) return spcc;
 
   const out: Campaign[] = [];
   for (const el of findCampaignCards(doc)) {

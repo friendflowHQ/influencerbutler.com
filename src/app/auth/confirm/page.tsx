@@ -32,6 +32,11 @@ function ConfirmSignIn() {
       setPhase("invalid");
       return;
     }
+    // Meta CompleteRegistration for fresh magic-link signups: verifyOtp runs
+    // client-side, so /api/auth/callback (where the password-signup event
+    // fires) never sees these sessions. keepalive lets the ping survive the
+    // hard redirect below; best-effort, never awaited.
+    void fetch("/api/analytics/signup", { method: "POST", keepalive: true }).catch(() => {});
     // Hard redirect so the middleware sees the fresh session cookies.
     window.location.href = next;
   };

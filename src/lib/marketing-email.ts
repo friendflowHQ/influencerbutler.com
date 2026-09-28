@@ -1,26 +1,54 @@
-// Shared sender for marketing / funnel emails. Wraps the raw Resend call so
-// every funnel email gets identical compliance treatment in one place: skip
+// Shared sender for marketing / funnel emails. Wraps sendEmail() so every
+// funnel email gets identical compliance treatment in one place: skip
 // suppressed addresses, append the unsubscribe footer, and set the RFC 8058
-// List-Unsubscribe headers.
+// List-Unsubscribe headers. All sends (and suppressed skips) are logged to
+// email_sends via src/lib/email-send.ts for the admin Emails dashboard.
 //
 // Used by: trial-emails, pro-emails, conversion-emails, testimonial-email.
 //
 // Transactional mail (magic links, license keys, receipts, staff invites,
-// commission statements) does NOT use this: it posts to api.resend.com/emails
-// directly with no unsubscribe affordance, because those messages are required
-// for a paid account to function.
+// commission statements) does NOT use this: it calls sendEmail() directly with
+// no unsubscribe affordance, because those messages are required for a paid
+// account to function.
 
 import {
   isEmailSuppressed,
   unsubscribeFooterText,
+  unsubscribeFooterHtml,
   unsubscribeHeaders,
 } from "@/lib/email-unsubscribe";
+import { sendEmail, logSuppressedSkip, type EmailFunnel } from "@/lib/email-send";
+import { plainTextToTrackableHtml } from "@/lib/email-marketing";
+import type { EmailStream } from "@/lib/email-senders";
 
 export type MarketingEmail = {
   from: string;
   to: string;
   subject: string;
   text: string;
+  /** Optional HTML body. When set, the unsubscribe footer is appended to it
+   * too so the HTML rendering stays compliant. */
+  html?: string;
+  /** Optional Resend attachments (base64). Inline images carry content_id and
+   * are referenced from the HTML body via cid:. */
+  attachments?: { filename: string; content: string; content_type?: string; content_id?: string }[];
+  /** Stable per-template key, e.g. 'trial_day0'. Shows up in the admin log. */
+  category: string;
+  funnel?: EmailFunnel;
+  /** Sending stream (domain + Resend key). Marketing mail is "lifecycle" by
+   * default (brand domain); cold sequences/campaigns pass "cold". */
+  stream?: EmailStream;
+  /** When true and no `html` is supplied, wrap `text` in minimal HTML via
+   * plainTextToTrackableHtml so Resend can inject its open-tracking pixel: a
+   * text-only send carries no pixel and can never record an open. Set on
+   * lifecycle funnels (mail to known users, where engagement should be
+   * tracked); cold sequences opt in separately via their own track_opens flag. */
+  trackOpens?: boolean;
+  /** When true, send even if the recipient is on the suppression list. Used only
+   * by admin test sends (a staff member previewing a funnel in their own inbox),
+   * never by the bulk cron. The unsubscribe footer + headers are still appended,
+   * so the test email is byte-for-byte what a real recipient would receive. */
+  bypassSuppression?: boolean;
 };
 
 /**
@@ -34,43 +62,30 @@ export type MarketingEmail = {
  * exception), which tells the caller to retry on the next run.
  */
 export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY not set - marketing email skipped");
-    return false;
-  }
-
-  if (await isEmailSuppressed(email.to)) {
+  if (!email.bypassSuppression && (await isEmailSuppressed(email.to))) {
     // Recipient opted out. Report "handled" so the caller stamps it as done and
-    // stops reconsidering this row every run. Nothing is sent.
+    // stops reconsidering this row every run. Nothing is sent, but the skip is
+    // logged so it stays visible in the admin dashboard.
+    await logSuppressedSkip(email);
     return true;
   }
 
-  const text = email.text + unsubscribeFooterText(email.to);
+  // An explicit HTML body wins; otherwise trackOpens synthesizes a minimal one
+  // from the text so Resend has somewhere to inject its open pixel. Either way,
+  // the compliant footer is appended to whatever HTML goes out.
+  const htmlBody = email.html ?? (email.trackOpens ? plainTextToTrackableHtml(email.text) : undefined);
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: email.from,
-        to: [email.to],
-        subject: email.subject,
-        text,
-        headers: unsubscribeHeaders(email.to),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("Marketing email send failed", { status: res.status, body: body.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error("Marketing email send threw", err);
-    return false;
-  }
+  const result = await sendEmail({
+    from: email.from,
+    to: email.to,
+    subject: email.subject,
+    text: email.text + unsubscribeFooterText(email.to),
+    ...(htmlBody ? { html: htmlBody + unsubscribeFooterHtml(email.to) } : {}),
+    ...(email.attachments?.length ? { attachments: email.attachments } : {}),
+    headers: unsubscribeHeaders(email.to),
+    category: email.category,
+    funnel: email.funnel,
+    stream: email.stream ?? "lifecycle",
+  });
+  return result.ok;
 }

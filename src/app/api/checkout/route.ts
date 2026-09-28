@@ -10,6 +10,7 @@ import { appendAffRef, selfHostedAffiliatesEnabled } from "@/lib/affiliate-looku
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  coerceTier,
   readAffiliateSourceCookie,
   readPromoTier,
   writeAffiliateSourceCookieIfMissing,
@@ -29,6 +30,13 @@ type CheckoutRequestBody = {
    * Falls back to the ib_aff_src cookie when not supplied.
    */
   affiliateSource?: string;
+  /**
+   * The welcome tier the pricing page actually rendered to the buyer
+   * ("first" | "returning"). Honored over the live ib_pv cookie so the buyer
+   * is charged the discount they were shown, not one silently downgraded by
+   * the page's own on-mount /api/promo/touch call. See coerceTier in promo.ts.
+   */
+  shownTier?: string;
 };
 
 type LsCheckoutResponse = {
@@ -46,6 +54,7 @@ export async function POST(request: Request) {
       variantId: variantIdFromBody,
       code: rawCode,
       affiliateSource: rawAffiliateSource,
+      shownTier: rawShownTier,
     } = (await request.json()) as CheckoutRequestBody;
 
     const variantResolution = resolveVariantId(plan, variantIdFromBody);
@@ -99,7 +108,7 @@ export async function POST(request: Request) {
     // back to Lemon Squeezy by email. The LS fallback fails open, so a transient
     // LS error never blocks a legitimate first-time signup.
     //
-    // Exempt: the Daily Deals add-on is a legitimate additive second sub. The
+    // Exempt: the Deals add-on is a legitimate additive second sub. The
     // guest checkout route (/api/checkout/guest) is exempt by nature (guests
     // have no session and therefore no existing subscription).
     if (!isAddon) {
@@ -127,7 +136,10 @@ export async function POST(request: Request) {
     }
 
     const cookieStore = await cookies();
-    const cookieTier = readPromoTier(cookieStore);
+    // Honor the tier the pricing page rendered to the buyer; fall back to the
+    // live cookie only when the client didn't send one (older clients, other
+    // callers). This closes the WELCOME30 -> WELCOME15 downgrade race.
+    const cookieTier = coerceTier(rawShownTier) ?? readPromoTier(cookieStore);
     const typedCode = typeof rawCode === "string" ? rawCode.trim() : "";
     const urlCode =
       (typeof rawAffiliateSource === "string" && rawAffiliateSource.trim().length > 0
@@ -163,6 +175,16 @@ export async function POST(request: Request) {
     // order_created webhook reads it back. Best-effort, fire-and-forget.
     void upsertCheckoutGeo(`user:${userId}`, readGeo(request.headers));
 
+    // Meta Pixel browser identifiers, round-tripped through LS custom_data so
+    // the order_created webhook (a server-to-server call with no browser
+    // context) can attach them to the Conversions API Purchase event. Only
+    // present when the pixel is live and unblocked; omit otherwise.
+    const fbp = cookieStore.get("_fbp")?.value;
+    const fbc = cookieStore.get("_fbc")?.value;
+    // Advertising consent at checkout time. The webhook fires the CAPI Purchase
+    // only when this flag is present, since it has no visitor cookie of its own.
+    const metaConsent = cookieStore.get("ib_ads_consent")?.value === "1";
+
     const checkoutAttributes: Record<string, unknown> = {
       checkout_data: {
         email,
@@ -172,6 +194,9 @@ export async function POST(request: Request) {
           // Capture the intended affiliate even when LS can't be credited yet
           // (pre-activation gap). order_created persists these onto the order.
           ...affiliateCaptureCustom(resolved.intendedAffiliate),
+          ...(metaConsent ? { meta_consent: "1" } : {}),
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
         },
       },
       product_options: {

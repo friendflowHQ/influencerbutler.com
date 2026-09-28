@@ -5,8 +5,13 @@
 
 import { describe, it, expect } from "vitest";
 import {
+  amortizationPeriods,
+  applyClawbacks,
+  computeAffiliateEarnedCents,
   computeAffiliateOwed,
+  computeAffiliatePayable,
   computeOrderOwed,
+  orderCommission,
   orderEconomics,
   resolveRatePercent,
   resolveDurationMonths,
@@ -31,6 +36,7 @@ function order(overrides: Partial<CommissionOrder>): CommissionOrder {
     attributionStatus: overrides.attributionStatus ?? "live",
     reconciledAt: overrides.reconciledAt ?? null,
     createdAt: overrides.createdAt ?? "2026-01-15T00:00:00.000Z",
+    billingInterval: overrides.billingInterval ?? null,
   };
 }
 
@@ -142,6 +148,187 @@ describe("computeAffiliateOwed", () => {
     expect(result.owedCents).toBe(15000);
     expect(result.ratePercent).toBe(70);
     expect(result.durationMonths).toBeNull();
+  });
+});
+
+describe("computeAffiliateEarnedCents", () => {
+  it("counts full earnings on all orders, INCLUDING reconciled ones", () => {
+    const orders: CommissionOrder[] = [
+      // pending, unreconciled: full 70% of $100 = 7000.
+      order({ lsOrderId: "a", buyerUserId: "b1", attributionStatus: "pending" }),
+      // pending, already reconciled: computeAffiliateOwed excludes it, earned counts it.
+      order({
+        lsOrderId: "b",
+        buyerUserId: "b2",
+        attributionStatus: "pending",
+        reconciledAt: "2026-02-01T00:00:00.000Z",
+      }),
+    ];
+    // Owed excludes the reconciled order.
+    expect(computeAffiliateOwed(LIFETIME_70, orders).owedCents).toBe(7000);
+    // Earned includes both: 7000 + 7000.
+    expect(computeAffiliateEarnedCents(LIFETIME_70, orders)).toBe(14000);
+  });
+
+  it("earned on a live in-window order is the full promised rate (lsPaid + owed)", () => {
+    // $100 live within LS window: LS paid 30% (3000), we owe 40% (4000), earned = 70% (7000).
+    const orders = [
+      order({
+        createdAt: "2026-03-01T00:00:00.000Z",
+        attributionStatus: "live",
+        buyerUserId: "b1",
+      }),
+    ];
+    const anchor: CommissionOrder[] = [
+      order({ lsOrderId: "anchor", createdAt: "2026-01-01T00:00:00.000Z", buyerUserId: "b1" }),
+      ...orders,
+    ];
+    expect(computeAffiliateEarnedCents(LIFETIME_70, orders, anchor)).toBe(7000);
+  });
+
+  it("excludes non-commissionable orders (refunded / out of window)", () => {
+    const orders: CommissionOrder[] = [order({ status: "refunded" })];
+    expect(computeAffiliateEarnedCents(LIFETIME_70, orders)).toBe(0);
+  });
+});
+
+describe("amortizationPeriods", () => {
+  it("annual spreads over 12, everything else is a single period", () => {
+    expect(amortizationPeriods("year")).toBe(12);
+    expect(amortizationPeriods("month")).toBe(1);
+    expect(amortizationPeriods(null)).toBe(1);
+    expect(amortizationPeriods(undefined)).toBe(1);
+  });
+});
+
+describe("orderCommission (recognition + clearing)", () => {
+  const ms = (iso: string) => new Date(iso).getTime();
+
+  it("monthly order inside the 14-day clear is recognized but NOT payable", () => {
+    const o = order({ createdAt: "2026-01-01T00:00:00.000Z", attributionStatus: "pending" });
+    const oc = orderCommission(o, LIFETIME_70, null, ms("2026-01-06T00:00:00.000Z"));
+    expect(oc).not.toBeNull();
+    expect(oc!.fullOwedCents).toBe(7000); // 70% of $100
+    expect(oc!.recognizedOwedCents).toBe(7000);
+    expect(oc!.payableOwedCents).toBe(0);
+    expect(oc!.clearingOwedCents).toBe(7000);
+  });
+
+  it("monthly order past the 14-day clear is fully payable", () => {
+    const o = order({ createdAt: "2026-01-01T00:00:00.000Z", attributionStatus: "pending" });
+    const oc = orderCommission(o, LIFETIME_70, null, ms("2026-01-20T00:00:00.000Z"));
+    expect(oc!.payableOwedCents).toBe(7000);
+    expect(oc!.clearingOwedCents).toBe(0);
+    expect(oc!.upcomingOwedCents).toBe(0);
+  });
+
+  it("annual order amortizes 1/12 per month; only cleared twelfths are payable", () => {
+    // $1200 annual, 70% => $840 full owed, $70 per twelfth.
+    const o = order({
+      totalCents: 120000,
+      createdAt: "2026-01-15T00:00:00.000Z",
+      attributionStatus: "pending",
+      billingInterval: "year",
+    });
+    // By Mar 20: twelfths recognized at Jan15, Feb15, Mar15 => 3 recognized.
+    // Payable (recognition + 14d): Jan29, Mar01, Mar29 <= Mar20 => 2 payable.
+    const oc = orderCommission(o, LIFETIME_70, null, ms("2026-03-20T00:00:00.000Z"));
+    expect(oc!.fullOwedCents).toBe(84000);
+    expect(oc!.recognizedOwedCents).toBe(21000); // 3/12
+    expect(oc!.payableOwedCents).toBe(14000); // 2/12
+    expect(oc!.clearingOwedCents).toBe(7000); // 1/12
+    expect(oc!.upcomingOwedCents).toBe(63000); // 9/12
+  });
+
+  it("annual order past a full year is fully recognized and payable", () => {
+    const o = order({
+      totalCents: 120000,
+      createdAt: "2026-01-15T00:00:00.000Z",
+      attributionStatus: "pending",
+      billingInterval: "year",
+    });
+    const oc = orderCommission(o, LIFETIME_70, null, ms("2027-06-01T00:00:00.000Z"));
+    expect(oc!.recognizedOwedCents).toBe(84000);
+    expect(oc!.payableOwedCents).toBe(84000);
+    expect(oc!.upcomingOwedCents).toBe(0);
+  });
+});
+
+describe("computeAffiliatePayable", () => {
+  const ms = (iso: string) => new Date(iso).getTime();
+
+  it("nets already-paid amounts out of the payable bucket", () => {
+    const o = order({
+      lsOrderId: "annual1",
+      totalCents: 120000,
+      createdAt: "2026-01-15T00:00:00.000Z",
+      attributionStatus: "pending",
+      billingInterval: "year",
+    });
+    // Same anchor as above: 2/12 = $140 payable, we've already paid $70 (1/12).
+    const paid = new Map<string, number>([["annual1", 7000]]);
+    const res = computeAffiliatePayable(LIFETIME_70, [o], paid, ms("2026-03-20T00:00:00.000Z"));
+    expect(res.fullOwedCents).toBe(84000);
+    expect(res.paidCents).toBe(7000);
+    expect(res.payableCents).toBe(7000); // 14000 payable - 7000 already paid
+    expect(res.clearingCents).toBe(7000);
+    expect(res.upcomingCents).toBe(63000);
+    expect(res.lines).toEqual([
+      { lsOrderId: "annual1", fullOwedCents: 84000, paidCents: 7000, payableNowCents: 7000 },
+    ]);
+  });
+
+  it("a monthly order in the clearing window contributes 0 payable", () => {
+    const o = order({
+      lsOrderId: "m1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      attributionStatus: "pending",
+    });
+    const res = computeAffiliatePayable(
+      LIFETIME_70,
+      [o],
+      new Map(),
+      ms("2026-01-05T00:00:00.000Z"),
+    );
+    expect(res.payableCents).toBe(0);
+    expect(res.clearingCents).toBe(7000);
+    expect(res.lines).toEqual([]); // nothing payable yet -> no payout lines
+  });
+});
+
+describe("applyClawbacks", () => {
+  it("nets a fully-covered clawback and reports the id", () => {
+    const res = applyClawbacks(10000, [{ id: "c1", amountCents: -3000 }]);
+    expect(res.netPayableCents).toBe(7000);
+    expect(res.clawbackCents).toBe(3000);
+    expect(res.appliedAdjustmentIds).toEqual(["c1"]);
+  });
+
+  it("leaves a clawback larger than the payable OPEN (no partial settle)", () => {
+    const res = applyClawbacks(2000, [{ id: "c1", amountCents: -3000 }]);
+    expect(res.netPayableCents).toBe(2000);
+    expect(res.clawbackCents).toBe(0);
+    expect(res.appliedAdjustmentIds).toEqual([]);
+  });
+
+  it("ignores positive (make-whole) adjustments", () => {
+    const res = applyClawbacks(5000, [
+      { id: "p1", amountCents: 4000 },
+      { id: "c1", amountCents: -1500 },
+    ]);
+    expect(res.netPayableCents).toBe(3500);
+    expect(res.appliedAdjustmentIds).toEqual(["c1"]);
+  });
+
+  it("applies multiple clawbacks greedily while they fit", () => {
+    const res = applyClawbacks(5000, [
+      { id: "c1", amountCents: -2000 },
+      { id: "c2", amountCents: -2000 },
+      { id: "c3", amountCents: -2000 }, // would overflow the remaining 1000 -> stays open
+    ]);
+    expect(res.netPayableCents).toBe(1000);
+    expect(res.clawbackCents).toBe(4000);
+    expect(res.appliedAdjustmentIds).toEqual(["c1", "c2"]);
   });
 });
 

@@ -20,7 +20,9 @@ import { GROWTH_METRICS, type GrowthSnapshot } from "@/lib/growth-metrics";
 export const DEFAULT_FLOOR: Record<string, number> = {
   trial_clicks: 10,
   trials_started: 2,
+  app_trials_started: 5,
   trial_conversions: 1,
+  download_leads: 5,
   new_subscriptions: 1,
   affiliate_signups: 1,
   affiliate_clicks: 10,
@@ -162,7 +164,14 @@ export async function ensureSuggestions(
     if (!def.goalable) continue;
     const snap = snapshot.metrics[def.key];
     if (!snap) continue;
-    const baseline = def.key === "active_subscriptions" ? snap.current : snap.previous;
+    // Point-in-time LEVEL metrics baseline on where they are now, not on a
+    // monthly flow: active_subscriptions and the Facebook group headcount.
+    const baseline =
+      def.key === "active_subscriptions"
+        ? snap.current
+        : def.key === "facebook_members"
+          ? (snap.current ?? snap.previous)
+          : snap.previous;
     const target = suggestTarget(def.key, baseline);
     if (target === null) continue;
     rows.push({

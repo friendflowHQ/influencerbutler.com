@@ -8,8 +8,9 @@
 
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 export type TestimonialEmailPayload = {
@@ -44,5 +45,11 @@ export async function sendTestimonialEmail(payload: TestimonialEmailPayload): Pr
   const firstName = payload.name.split(" ")[0] || "there";
   const body = buildBody(firstName, payload.feedbackUrl);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject: SUBJECT, text: body });
+  return sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject: SUBJECT,
+    text: body,
+    category: "testimonial_request",
+  });
 }

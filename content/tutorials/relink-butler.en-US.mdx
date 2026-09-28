@@ -1,6 +1,6 @@
 ---
 title: Relink Butler: swap affiliate link providers across published content (beta)
-summary: Rewrite the affiliate links in your already-published Deals Influencer Butler, YouTube, Pinterest, and Benable content without re-editing each post manually.
+summary: Rewrite the affiliate links in your already-published Deals Butler, YouTube, Pinterest, and Benable content without re-editing each post manually.
 category: Amazon
 ---
 
@@ -23,7 +23,7 @@ The point is the same in every mode: keep the published content the same, change
 
 - **The new affiliate provider configured** in **API Integrations**. Whatever you're switching to needs to be live first; Relink Butler routes new links through it.
 - **At least one content scope** populated:
-  - **Deals Influencer Butler posts** in `daily-deals/`'s post history.
+  - **Deals Butler posts** in `deals/`'s post history.
   - **YouTube videos** uploaded via YouTube Butler.
   - **Pinterest pins** posted via Pinterest Butler (when it ships).
   - **Benable lists** published via Benable Butler.
@@ -34,12 +34,12 @@ If you haven't used the corresponding workspace, that scope has nothing for Reli
 
 1. Open **Relink Butler** under Amazon Butler.
 2. In **Mode**, pick the swap type. **Remint provider** is the most common - use it when changing providers.
-3. In **Scope**, tick which content surfaces to rewrite. Deals Influencer Butler is on by default; tick others as needed.
+3. In **Scope**, tick which content surfaces to rewrite. Deals Butler is on by default; tick others as needed.
 4. **Preview rewrites**: Relink Butler walks each scope, finds every affiliate link, and shows you a side-by-side diff: old link vs proposed new link, per row.
 5. Review the diff. Untick anything that looks wrong.
 6. Click **Apply approved** to commit the swap.
 
-Deals Influencer Butler + Pinterest swaps happen in-app (just updating local databases). YouTube + Benable swaps require Chrome sessions because they have to edit published content remotely - Relink Butler launches Chrome the same way other workspaces do.
+Deals Butler + Pinterest swaps happen in-app (just updating local databases). YouTube + Benable swaps require Chrome sessions because they have to edit published content remotely - Relink Butler launches Chrome the same way other workspaces do.
 
 ## What Relink Butler does NOT do
 
@@ -49,7 +49,7 @@ Deals Influencer Butler + Pinterest swaps happen in-app (just updating local dat
 
 ## Common gotchas
 
-- **Preview is empty**: usually means the scope is empty. Verify Deals Influencer Butler (or whichever scope) has post history first.
+- **Preview is empty**: usually means the scope is empty. Verify Deals Butler (or whichever scope) has post history first.
 - **"New provider not configured"**: finish setup in API Integrations before running. The Remint mode needs the new provider's API key to generate replacement links.
 - **YouTube swaps slow**: YouTube only allows ~10 edits/hour without rate-limiting. Relink Butler honors this; let the run take its time.
 

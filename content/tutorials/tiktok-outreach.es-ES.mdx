@@ -1,0 +1,36 @@
+---
+title: "TikTok Message Followers: envía DMs automáticos a tus nuevos seguidores de TikTok"
+summary: Envía mensajes directos personalizados a tus nuevos seguidores de TikTok, o a una lista de usuarios que elijas, con plantillas rotativas, seguimientos y límites de envío pensados para proteger tu cuenta.
+category: TikTok
+---
+
+## Qué hace TikTok Message Followers
+
+TikTok Message Followers envía mensajes directos en TikTok por ti. Puede dar la bienvenida a quienes te han seguido hace poco (**Message New Followers**) o contactar con una lista concreta que tú indiques (**Message Select Usernames**). Escribes una o varias plantillas de mensaje, el butler las va rotando, espacia los envíos con pausas que parecen humanas y puede mandar un seguimiento opcional si alguien no ha respondido. Usa las mismas plantillas, seguimientos y controles de ejecución que Amazon Butler, así que te resultará familiar.
+
+## Antes de empezar
+
+- Abre **TikTok Butler** en el menú de la izquierda y luego **TikTok Message Followers**.
+- Este espacio está **En beta**. Es posible que algunas partes aún no funcionen del todo mientras lo terminamos.
+- Haz clic en **Sign in to TikTok (opens Chrome)** para que TikTok recuerde este dispositivo. Empieza por aquí si te sigue pidiendo iniciar sesión.
+- Para **Message New Followers**, escribe **Your TikTok username** (sin la @) para que el butler pueda encontrar tu lista de seguidores.
+- Deja activado **👀 Watch it run** (viene marcado) si quieres ver el navegador trabajar.
+
+## Cómo se usa
+
+1. Escribe **Your TikTok username** si vas a contactar con nuevos seguidores.
+2. Elige un **Message Mode**: **Message New Followers** o **Message Select Usernames**. Para la segunda opción, escribe un usuario por línea en el cuadro **Message Select Usernames**, o pulsa **Import CSV** (usuarios en la columna A, sin encabezado).
+3. Redacta tus **Initial messages**. Pulsa **Add message** para crear más variantes y elige **Random** o **Round robin** para su rotación. Usa `{handle}` y `{storefront}` para insertar el usuario de cada seguidor y tu enlace de tienda guardado. Escribe `\n` o `/n` para dividir una plantilla en varios DMs.
+4. Ajusta tus límites de seguridad: **Delay between messages** (de mínimo a máximo en segundos), **Messages per hour** y **Messages per day**. Cada ejecución usa además **New followers to message** como tope de mínimo a máximo, o déjalo en blanco para no poner límite.
+5. (Opcional) Añade usuarios a **Skip Usernames**, uno por línea, para no contactar nunca con ellos. Deja marcado **Exclude followers with messages already sent** para que nadie reciba una segunda bienvenida.
+6. (Opcional) Marca **Enable follow-ups**, escribe tus **Follow-up messages** y elige **Send follow-up after** (6, 12, 24 horas o una cantidad personalizada).
+7. Pulsa **Run**. Usa **Pause** o **Stop** para controlar la ejecución. Sigue **Messages sent**, **Followers harvested** y **Next send** en la cabecera.
+8. Revisa los envíos en **Results / History**. Usa **Export all** para guardarlos o **Delete all** para borrarlos.
+
+## Notas
+
+- Este espacio está en beta: trata los envíos como algo aún sin probar y empieza con calma.
+- Cuentas nuevas: mantén **Messages per hour** en 20 o menos y empieza **Messages per day** entre 50 y 100, subiendo poco a poco a lo largo de semanas. Enviar demasiado rápido puede hacer que restrinjan tu cuenta.
+- Si TikTok bloquea los mensajes, todos los enviadores de TikTok descansan los días de **Pause after a TikTok block (days)**. Los bloqueos repetidos descansan más tiempo. Puedes reanudar antes desde el aviso del Dashboard.
+- Todo se guarda solo mientras escribes. No hay botón de guardar.
+- El bloque **Automations: comment to DM** de abajo puede enviar un DM a quien comente una palabra clave en tus vídeos. Funciona en segundo plano y es independiente de una ejecución manual.

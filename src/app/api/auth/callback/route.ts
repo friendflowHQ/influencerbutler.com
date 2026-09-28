@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { captureSignupReferral } from "@/lib/referral-signup-capture";
+import { captureFriendReferral } from "@/lib/referral-program";
+import { hasAdsConsent, sendSignupMetaEvent } from "@/lib/meta-capi";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -25,12 +27,32 @@ export async function GET(request: Request) {
       // internal new-account guard skips ordinary logins of old accounts.
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
+        const cookieStore = await cookies();
         await captureSignupReferral({
           userId: userData.user.id,
           userCreatedAt: userData.user.created_at ?? null,
           userEmail: userData.user.email ?? null,
-          cookieStore: await cookies(),
+          cookieStore,
         });
+        // Consumer referral: give a referred friend their free month of Pro.
+        // Gated by REFERRAL_PROGRAM_ENABLED inside; best-effort.
+        await captureFriendReferral({
+          userId: userData.user.id,
+          userCreatedAt: userData.user.created_at ?? null,
+          userEmail: userData.user.email ?? null,
+          cookieStore,
+        });
+        // Meta Conversions API CompleteRegistration for lookalike seeding.
+        // The helper's own new-account guard (1 hour) skips ordinary logins;
+        // gated on advertising consent, best-effort, never throws.
+        if (hasAdsConsent(request.headers.get("cookie"))) {
+          void sendSignupMetaEvent({
+            userId: userData.user.id,
+            email: userData.user.email ?? null,
+            createdAt: userData.user.created_at ?? null,
+            headers: request.headers,
+          });
+        }
       }
     }
 

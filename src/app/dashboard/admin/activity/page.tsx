@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+type ActivityKind = "trial_click" | "purchase" | "extension_install" | "trial_start";
+
 type Activity = {
   id: number;
-  kind: "trial_click" | "purchase";
+  kind: ActivityKind;
   firstName: string | null;
   city: string | null;
   region: string | null;
@@ -53,7 +55,32 @@ function headline(e: Activity): string {
   if (e.kind === "purchase") {
     return `${e.firstName || "Someone"} from ${where} subscribed`;
   }
+  if (e.kind === "trial_start") {
+    return `${e.firstName || "Someone"} in ${where} started a 14-day free trial`;
+  }
+  if (e.kind === "extension_install") {
+    return `Someone in ${where} installed the free extension`;
+  }
   return `Someone in ${where} is checking out Influencer Butler`;
+}
+
+const KIND_LABELS: Record<ActivityKind, string> = {
+  purchase: "Purchase",
+  trial_start: "Trial start",
+  extension_install: "Extension install",
+  trial_click: "Trial click",
+};
+
+function kindLabel(kind: ActivityKind): string {
+  return KIND_LABELS[kind] ?? "Activity";
+}
+
+// Purchases (revenue) stay emerald; everything else uses the orange
+// engagement treatment so the list scans the same way it did before.
+function kindBadgeClass(kind: ActivityKind): string {
+  return kind === "purchase"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : "border-orange-200 bg-orange-50 text-orange-700";
 }
 
 export default function AdminActivityPage() {
@@ -292,8 +319,10 @@ export default function AdminActivityPage() {
             <p className="mt-1 text-xs text-slate-500">
               Genuine visitor trial clicks and customer purchases only (seeded demo events are
               excluded). This is what real visitors see in the social-proof popup, which now runs on
-              every page of the site, not just the homepage. &quot;Live now&quot; counts the events
-              currently eligible to appear (not hidden, not a bot, within the window above).
+              every page of the site, not just the homepage. Purchases are prioritized: they play
+              first in the popup rotation and use a 7-day lookback (trial clicks keep the window
+              above). &quot;Live now&quot; counts the events currently eligible to appear (not
+              hidden, not a bot, within the window above).
             </p>
             <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
               {realEvents.length === 0 ? (
@@ -307,13 +336,11 @@ export default function AdminActivityPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${
-                            e.kind === "purchase"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-orange-200 bg-orange-50 text-orange-700"
-                          }`}
+                          className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass(
+                            e.kind,
+                          )}`}
                         >
-                          {e.kind === "purchase" ? "Purchase" : "Trial click"}
+                          {kindLabel(e.kind)}
                         </span>
                         {e.hidden ? (
                           <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
@@ -435,13 +462,11 @@ export default function AdminActivityPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${
-                            e.kind === "purchase"
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-orange-200 bg-orange-50 text-orange-700"
-                          }`}
+                          className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass(
+                            e.kind,
+                          )}`}
                         >
-                          {e.kind === "purchase" ? "Purchase" : "Trial click"}
+                          {kindLabel(e.kind)}
                         </span>
                         {e.source === "seed" ? (
                           <span className="inline-flex items-center rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">

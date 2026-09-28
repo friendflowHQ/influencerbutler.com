@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const ok = await recordSuppression(email, "unsubscribe");
   if (!ok) {
     return NextResponse.json(
-      { error: "Something went wrong. Email hello@influencerbutler.com and we'll remove you by hand." },
+      { error: "Something went wrong. Contact us at influencerbutler.com/contact and we'll remove you by hand." },
       { status: 500 },
     );
   }

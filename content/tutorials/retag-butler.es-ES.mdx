@@ -52,6 +52,7 @@ Se abre una ventana de Chrome, recorre tu tienda, identifica ASIN no disponibles
 ## Ajustes con el tiempo
 
 - **detectParentOnly**: activado, Retag Butler sólo marca familias enteras de ASIN padre como muertas, no variantes hijo. Reduce falsos positivos al precio de perder algunos swaps reales.
+- **Etiquetar también el producto padre**: activado por defecto. Cuando se encuentra una coincidencia, Retag Butler etiqueta tanto el producto exacto como su ficha padre en la misma pieza, así el mosaico cubre la variante concreta y toda la familia. Desactívalo si sólo quieres etiquetar la variante exacta. Se omite en las correcciones de sólo padre, donde el objetivo es el contrario.
 - **mobileLens**: usa el motor de similitud visual de Amazon (más lento pero más listo para productos visualmente distintos como decoración del hogar). Apagado por defecto; actívalo si la similitud por título da matches débiles en tu categoría.
 - **skipRetaggedWithinDays**: por defecto 7. Una vez has reetiquetado una fila, Retag Butler no la considera durante ese plazo. Evita que des vueltas en círculo.
 - **Programador**: pon una cadencia diaria o semanal para que Retag Butler corra solo. La combinación Auto + programador es "configurar y olvidar" para tiendas establecidas.
@@ -62,9 +63,12 @@ El historial de re-etiquetado se registra por fila en tu caché preseed. El pane
 
 ## Tropiezos comunes
 
+- **Se ejecuta sin parar sin escanear nada y todas las páginas de Amazon dicen que no se encuentra la página**: tu enlace de escaparate sigue siendo el de ejemplo que trae Butler. Abre **Configuración → Perfil** y pega el tuyo (tiene esta forma: `https://www.amazon.com/shop/tunombre`), o ejecuta allí la comprobación de escaparate para que lo rellene por ti. Pega el enlace solo, sin corchetes angulares alrededor de tu nombre: Amazon lee `<tunombre>` como otra dirección y devuelve el mismo resultado vacío.
 - **"No se encontraron candidatos"**: probablemente Storefront Butler aún no ha marcado ninguna fila como no disponible. Vuelve a sincronizar Storefront Butler.
 - **El reemplazo se ve mal (p. ej. categoría no relacionada)**: sube min similarity a 60-65 para filtrar matches débiles.
 - **Banner "Ya re-etiquetado dentro del cooldown"**: Retag Butler está respetando `skipRetaggedWithinDays`. Bájalo o espera.
+- **Una ejecución solo encuentra uno o dos elementos y mis variantes nunca reciben su ASIN padre**: **Run** solo busca elementos cuyo producto ya no está disponible en Amazon y sugiere un reemplazo, así que los elementos con productos activos se dejan tal cual a propósito. En el modo Revisión no cambia nada hasta que apruebas una fila. Para añadir el ASIN padre a todas las variantes de tu tienda, usa el botón aparte **Rellenar IDs de producto principal (todos los elementos)**.
+- **"Rellenar IDs de producto principal (todos los elementos)" parece atascado en Running**: es lento a propósito, no está bloqueado. Abre en el navegador cada pieza de contenido de tu escaparate, carga las páginas de producto que necesita y edita la publicación, aproximadamente un minuto por pieza. Además incluye tus fotos y listas, no solo tus vídeos, así que un escaparate que parece pequeño puede ser de varios cientos de piezas. Va guardando por dónde se quedó, así que puedes detenerlo y volver a iniciarlo sin perder trabajo.
 - **El etiquetado falla en silencio**: la sesión de Creator Hub expiró. Vuelve a iniciar sesión en la ventana de Chrome abierta.
 
 ## Relacionado

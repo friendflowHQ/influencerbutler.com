@@ -288,8 +288,10 @@ export async function getPublicTestimonials(): Promise<{
       .select("id,author_name,author_role,rating,body,photo_url,avatar_url,team_response,created_at,featured,approved_at")
       .eq("status", "approved")
       .eq("consent", true)
-      // featured first, then most recently approved.
-      .order("featured", { ascending: false })
+      // Only reviews the team explicitly featured show on the site; approving a
+      // review (incl. auto-approve) records it but does not publish it. Most
+      // recently approved first.
+      .eq("featured", true)
       .order("approved_at", { ascending: false })
       .limit(config.publicMaxCount);
     if (error || !data) return { enabled: true, testimonials: [] };

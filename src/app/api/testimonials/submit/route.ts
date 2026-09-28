@@ -13,6 +13,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin";
 import { submitTestimonial } from "@/lib/testimonials";
+import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -168,6 +170,40 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error("testimonial submit: stamp failed", err);
     }
+  }
+
+  // Owner alert on every new testimonial. Best-effort: a mail failure must never
+  // break the submission. Plain text only (heavy HTML gets Gmail-spam-filtered),
+  // and this is an internal owner inbox so the raw plan label (incl. "(comp)")
+  // is fine to include for context.
+  try {
+    const ownerTo = process.env.OWNER_ALERT_EMAIL ?? "elizabethdean30@gmail.com";
+    const stars = "★".repeat(Math.max(1, Math.min(5, Math.round(rating))));
+    const statusLine =
+      result.status === "approved"
+        ? "Auto-published to the site."
+        : "Held for review (pending).";
+    const lines = [
+      `${authorName} left a ${rating}-star review ${stars}`,
+      "",
+      `"${quote}"`,
+      "",
+      statusLine,
+      `Plan: ${planName ?? "n/a"}`,
+      `From: ${user.email ?? "unknown"}`,
+      `Source: ${body.source === "email" ? "email" : "in_app"}`,
+      "",
+      "Manage: https://www.influencerbutler.com/dashboard/admin/testimonials",
+    ];
+    await sendEmail({
+      from: transactionalFrom(),
+      to: ownerTo,
+      subject: `New ${rating}-star testimonial from ${authorName}`,
+      text: lines.join("\n"),
+      category: "new_testimonial",
+    });
+  } catch (err) {
+    console.error("testimonial submit: owner alert failed", err);
   }
 
   return NextResponse.json({ ok: true, published: result.status === "approved" });

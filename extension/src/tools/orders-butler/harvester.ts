@@ -31,7 +31,7 @@ const CONTENT_BUTLER_CHUNK = 200;
 // open during a full run; incremental runs stop at the cached cursor and
 // finish in seconds.
 
-const ASIN_HREF_RE = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:[/?]|$)/;
+const ASIN_HREF_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?]|$)/;
 const ORDER_ID_RE = /\b\d{3}-\d{7}-\d{7}\b/;
 const PAGE_SIZE = 10;
 
@@ -270,19 +270,36 @@ async function renderContentButlerAction(actionsRow: HTMLElement, products: Prod
   if (!hud.connected) return; // app absent: dashboard sync is the path
 
   const status = el("p", "note");
-  const btn = el("button", "btn secondary");
-  btn.textContent = t().obSendToContentButler(products.length);
-  btn.addEventListener("click", () => {
-    btn.disabled = true;
+
+  const contentBtn = el("button", "btn secondary");
+  contentBtn.textContent = t().obSendToContentButler(products.length);
+  contentBtn.addEventListener("click", () => {
+    contentBtn.disabled = true;
     status.textContent = t().obSendingToContentButler;
     void pushProductsToContentButler(products).then((result) => {
-      btn.disabled = false;
+      contentBtn.disabled = false;
       status.textContent = result.ok
         ? t().obSentToContentButler(result.sent)
         : (result.message ?? t().couldNotReachApp);
     });
   });
-  actionsRow.replaceChildren(btn, status);
+
+  // Same harvested set, straight into Voiceover Butler for shoppable-video
+  // scripts. Sibling of the Content Butler push above.
+  const voiceoverBtn = el("button", "btn secondary");
+  voiceoverBtn.textContent = t().obSendToVoiceover(products.length);
+  voiceoverBtn.addEventListener("click", () => {
+    voiceoverBtn.disabled = true;
+    status.textContent = t().obSendingToVoiceover;
+    void pushProductsToVoiceover(products).then((result) => {
+      voiceoverBtn.disabled = false;
+      status.textContent = result.ok
+        ? t().obSentToVoiceover(result.sent)
+        : (result.message ?? t().couldNotReachApp);
+    });
+  });
+
+  actionsRow.replaceChildren(contentBtn, voiceoverBtn, status);
 }
 
 // Push the products in chunks so one huge history is not a single command.
@@ -296,6 +313,25 @@ async function pushProductsToContentButler(
     const r = await sendToBackground<HudCommandResult>({
       kind: "SEND_HUD_COMMAND",
       command: { type: "content.push.batch", products: chunk },
+    });
+    if (!r.ok) return { ok: false, sent, message: r.message };
+    sent += chunk.length;
+  }
+  return { ok: true, sent };
+}
+
+// Push the harvested products into Voiceover Butler in chunks, mirroring the
+// Content Butler batch above. Stops on the first failed chunk and reports how
+// many made it.
+async function pushProductsToVoiceover(
+  products: ProductRef[],
+): Promise<{ ok: boolean; sent: number; message?: string }> {
+  let sent = 0;
+  for (let i = 0; i < products.length; i += CONTENT_BUTLER_CHUNK) {
+    const chunk = products.slice(i, i + CONTENT_BUTLER_CHUNK);
+    const r = await sendToBackground<HudCommandResult>({
+      kind: "SEND_HUD_COMMAND",
+      command: { type: "voiceover.push.batch", products: chunk },
     });
     if (!r.ok) return { ok: false, sent, message: r.message };
     sent += chunk.length;
@@ -331,7 +367,7 @@ function extractItems(card: HTMLElement): LineItem[] {
   const seen = new Set<string>();
   const items: LineItem[] = [];
   const anchors = card.querySelectorAll<HTMLAnchorElement>(
-    "a[href*='/dp/'], a[href*='/gp/product/']",
+    "a[href*='/dp/'], a[href*='/gp/product/'], a[href*='/gp/aw/d/']",
   );
   for (const anchor of Array.from(anchors)) {
     const match = (anchor.getAttribute("href") ?? "").match(ASIN_HREF_RE);

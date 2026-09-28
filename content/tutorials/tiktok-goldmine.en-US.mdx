@@ -1,0 +1,35 @@
+---
+title: "TikTok Goldmine: discover brand-collab leads from TikTok creators"
+summary: A research-only crawler that walks TikTok creators and their suggested-account graph to surface qualifying videos (#ad, paid partnerships, brand mentions) plus creator contact info.
+category: TikTok
+---
+
+## What TikTok Goldmine does
+
+TikTok Goldmine is a research-only crawler for finding brand-collaboration leads. You give it a handful of seed TikTok usernames (or hashtags), and it visits those profiles, walks their suggested-accounts graph, and inspects each creator's recent videos. Any video that matches your qualification rules (a #ad or sponsorship disclosure, a "Paid partnership" label, or a tagged or mentioned brand) lands in the **Qualifying videos** table, along with the creator's follower count, engagement, and a contact email pulled from their profile.
+
+It only reads public metadata. It does not copy media, bypass private accounts, or evade rate limits. If TikTok asks for a sign-in, a manual window opens so you can log in yourself.
+
+## Before you start
+
+- Open the workspace: in the left menu, open **TikTok Butler**, then **TikTok Goldmine**.
+- Have a few seed creators in mind: accounts in your niche whose audience and collaborators you want to map.
+- Leave **Watch it run** on (the default) for your first run so you can see the browser work and complete any TikTok sign-in prompt.
+
+## How to use it
+
+1. In **Seeds and filters**, paste one creator into **Seed usernames** per line. The @ is optional, and full profile URLs (`https://www.tiktok.com/@handle`) work too.
+2. Pick a **Run mode**: **Seeds plus suggested profiles** (the default) walks each seed and the accounts TikTok suggests next. Other options: **Seed profiles only**, **Suggested profiles only**, **Hashtags: harvest video authors**, and **Commenters on a seed's latest videos**.
+3. Set your **Limits**: **Min followers** (default 10000), **Max videos checked per profile**, **Max suggested per seed**, **Max profiles per run**, and optionally **Skip creators over this many followers** (0 means no cap).
+4. Under **Video qualification**, tick the rules that keep a video: **Videos with #ad or sponsorship disclosures**, **Videos with a "Paid partnership" label**, **Videos with tagged or mentioned brands**, and **Only verified accounts**. A video is kept if it matches any enabled rule.
+5. Under **Behavior**, choose whether to **Capture a contact email from each creator's profile** (on by default), **Harvest engagement rate (slower)**, **Save a screenshot on failure**, and **Safe mode (2x human delays)**.
+6. Click **Start Discovery**. The **Discovery totals** cards track **Profiles Visited**, **Videos Scanned**, and **Qualifying Videos** as it runs. Use **Stop** to end early.
+7. Work the results in the **Qualifying videos** table. Filter with the **All / Has #ad / Paid partnership / Brand mention** chips, search captions and hashtags, and sort any column. **Discovered accounts** below lists every creator found.
+8. Export with **Export CSV** or **Export JSON**, use **Copy emails** to grab contacts for outreach, or **Open exports folder** to find the files on disk.
+
+## Notes
+
+- **Beta.** TikTok Butler is still in beta, so some behavior may change or not work fully yet.
+- The **Live status** panel (collapsed by default) shows the current username, queue remaining, last screenshot, and last error if a run stalls.
+- Settings, filters, and table layout auto-save, so your setup is ready next time you open the workspace.
+- Engagement rate is only harvested when you enable it, since sampling recent videos adds browsing time.

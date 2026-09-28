@@ -56,7 +56,7 @@ export async function mintTrialDiscounts(input: {
   }
   if (!monthlyVariant || !annualVariant) {
     // Without variant scoping the discount would apply to every SKU,
-    // including the Daily Deals add-on (promo-exclusion contract). Refuse
+    // including the Deals add-on (promo-exclusion contract). Refuse
     // to mint an unscoped code rather than mint a dangerous one.
     console.error("mintTrialDiscounts: variant env missing", {
       hasMonthlyVariant: Boolean(monthlyVariant),

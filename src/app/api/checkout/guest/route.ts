@@ -8,6 +8,7 @@ import {
   generateWelcomeToken,
 } from "@/lib/welcome-token";
 import {
+  coerceTier,
   readAffiliateSourceCookie,
   readPromoTier,
   writeAffiliateSourceCookieIfMissing,
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
     const variantIdFromQuery = url.searchParams.get("variantId") ?? undefined;
     const rawCode = url.searchParams.get("code") ?? "";
     const rawAffiliateSource = url.searchParams.get("affiliateSource") ?? "";
+    const rawShownTier = url.searchParams.get("shownTier");
 
     const variantResolution = resolveVariantId(plan ?? undefined, variantIdFromQuery ?? undefined);
 
@@ -113,7 +115,11 @@ export async function GET(request: Request) {
     }
 
     const cookieStore = await cookies();
-    const cookieTier = readPromoTier(cookieStore);
+    // Honor the tier the pricing page rendered to the buyer; fall back to the
+    // live cookie only when the client didn't send one. This closes the
+    // WELCOME30 -> WELCOME15 downgrade race (the page's on-mount promo/touch
+    // sets ib_pv before the buyer clicks Buy).
+    const cookieTier = coerceTier(rawShownTier) ?? readPromoTier(cookieStore);
     const typedCode = rawCode.trim();
     const urlCode =
       (rawAffiliateSource.trim().length > 0 ? rawAffiliateSource.trim() : null) ??
@@ -147,12 +153,25 @@ export async function GET(request: Request) {
     // recent-activity widget. Best-effort, fire-and-forget.
     void upsertCheckoutGeo(welcomeToken, readGeo(request.headers));
 
+    // Meta Pixel browser identifiers, round-tripped through LS custom_data so
+    // the order_created webhook (a server-to-server call with no browser
+    // context) can attach them to the Conversions API Purchase event. Only
+    // present when the pixel is live and unblocked; omit otherwise.
+    const fbp = cookieStore.get("_fbp")?.value;
+    const fbc = cookieStore.get("_fbc")?.value;
+    // Advertising consent at checkout time. The webhook fires the CAPI Purchase
+    // only when this flag is present, since it has no visitor cookie of its own.
+    const metaConsent = cookieStore.get("ib_ads_consent")?.value === "1";
+
     const checkoutData: Record<string, unknown> = {
       custom: {
         welcome_token: welcomeToken,
         // Capture the intended affiliate even when LS can't be credited yet
         // (pre-activation gap). order_created persists these onto the order.
         ...affiliateCaptureCustom(resolved.intendedAffiliate),
+        ...(metaConsent ? { meta_consent: "1" } : {}),
+        ...(fbp ? { fbp } : {}),
+        ...(fbc ? { fbc } : {}),
       },
     };
     if (discountCode) {

@@ -8,7 +8,7 @@ import logoUrl from "../../../static/icons/icon-48.png";
 // kick off the optional per-tile video scan. Pure UI: every action calls back
 // into the overlay, which owns the row model and the DOM reordering.
 
-export type SortKey = "score" | "commission" | "price-asc" | "price-desc" | "relevance";
+export type SortKey = "score" | "commission" | "revenue" | "price-asc" | "price-desc" | "relevance";
 export type FilterState = { campaignOnly: boolean; minPriceCents: number | null };
 
 export type ToolbarCallbacks = {
@@ -19,9 +19,27 @@ export type ToolbarCallbacks = {
   // resolves when done or stopped.
   onScanStart: (setStatus: (text: string) => void) => Promise<void>;
   onScanStop: () => void;
+  // Controls that only apply to a retailer with the underlying feature. Default
+  // true (Amazon); Walmart passes false to hide the video Scan and the
+  // campaign-eligible filter, which it has no data for.
+  showScan?: boolean;
+  showCampaignFilter?: boolean;
+  // "Send deals to app": batch-push the page's discounted tiles into the desktop
+  // Deals Butler. Shown only when the overlay wires onSendDeals (the
+  // Walmart rollback/deals + search grids); the overlay owns the row model and
+  // the bridge call, and reports progress through setStatus.
+  showSendDeals?: boolean;
+  onSendDeals?: (setStatus: (text: string) => void) => Promise<void>;
 };
 
-export function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
+export type SearchToolbar = {
+  host: HTMLElement;
+  // Progress line for the automatic detail enrichment ("Checking details
+  // 3/12" / the paused notice); empty string clears it.
+  setEnrichStatus: (text: string) => void;
+};
+
+export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   const { host, root } = createInlineShadow("search-toolbar-host");
   const bar = el("div", "search-toolbar");
 
@@ -38,6 +56,7 @@ export function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   const sortOptions: Array<[SortKey, string]> = [
     ["score", t().sortScore],
     ["commission", t().sortCommission],
+    ["revenue", t().sortRevenue],
     ["price-asc", t().sortPriceAsc],
     ["price-desc", t().sortPriceDesc],
     ["relevance", t().sortRelevance],
@@ -102,7 +121,40 @@ export function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   stopBtn.addEventListener("click", () => cb.onScanStop());
   scanWrap.append(scanBtn, stopBtn, status);
 
-  bar.append(brand, sortWrap, campaignWrap, priceWrap, scanWrap);
+  // "Send deals to app": one click batches the page's discounted tiles into the
+  // desktop Deals Butler. Its own status line, and it disables while
+  // in flight so a double click cannot double-send.
+  const sendWrap = el("div", "search-control search-send-deals");
+  const sendBtn = el("button", "btn secondary") as HTMLButtonElement;
+  sendBtn.type = "button";
+  sendBtn.textContent = t().searchSendDeals;
+  const sendStatus = el("span", "search-status");
+  sendBtn.addEventListener("click", () => {
+    if (!cb.onSendDeals) return;
+    sendBtn.disabled = true;
+    void cb.onSendDeals((text) => {
+      sendStatus.textContent = text;
+    }).finally(() => {
+      sendBtn.disabled = false;
+    });
+  });
+  sendWrap.append(sendBtn, sendStatus);
+
+  // Automatic-enrichment progress, separate from the scan status so the two
+  // never overwrite each other.
+  const enrichStatus = el("span", "search-status");
+
+  bar.append(brand, sortWrap);
+  if (cb.showCampaignFilter !== false) bar.append(campaignWrap);
+  bar.append(priceWrap);
+  if (cb.showScan !== false) bar.append(scanWrap);
+  if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
+  bar.append(enrichStatus);
   root.append(bar);
-  return host;
+  return {
+    host,
+    setEnrichStatus: (text: string) => {
+      enrichStatus.textContent = text;
+    },
+  };
 }

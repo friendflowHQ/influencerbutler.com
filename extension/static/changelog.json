@@ -1,0 +1,235 @@
+{
+  "lastUpdated": "2026-09-25",
+  "releases": [
+    {
+      "version": "0.1.19",
+      "date": "September 25, 2026",
+      "sections": [
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Butler scores are back on the Sponsored Products for Creators tab. After Amazon rebuilt that tab, the match score and the EPC and Budget chips stopped appearing on its cards; they show again now, and keep showing as you switch between the Affiliate+ and Sponsored Products tabs or scroll for more",
+            "Today's Deals gets its Butler chips back. An Amazon redesign of the deals grid had left the badges off every deal card; each deal now shows its Butler Score, estimated commission, and campaign eligibility again, and newly loaded deals get scored as you scroll",
+            "Benable list pages score reliably again. The Amazon money chip was missing from most cards because it waited on each card's image to finish loading; it now reads each card directly, so every Amazon item on a list gets its commission and campaign signals right away"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.18",
+      "date": "September 22, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Campaign Radar now reads the Sponsored Products for Creators tab, not just Creator Connections. Every SPCC card gets a match score built from the signals SPCC actually gives you: an EPC up to $X chip from Amazon's own earnings-per-click forecast, a Budget: High, Medium or Low chip, and whether you already own the product or have earned on it. A Strong picks only switch keeps just the top band, so the best paying products rise to the top of the tab",
+            "On a product page, Butler now tells you when one of the videos on that listing is yours, and where it sits: \"Your video: Upper carousel, #2 of 6\", with a Yours badge on the card itself. It learns which videos are yours quietly as you visit your own Creator Hub, My content, and storefront pages, so nothing is guessed about videos it has no evidence for. Turn it off under Video competition if you would rather not see it",
+            "See at a glance whether each of your Amazon videos is already on YouTube. A chip now sits on your Creator Hub manage list, the video Edit post page, your storefront, and your My Content list: green On YouTube (links to the video) when your desktop app has cross-posted it, or Not on YouTube with an Upload to YouTube button that hands the video to your desktop app to upload. It also shows a Showing on Amazon or Not on detail pages chip read straight from the page. The YouTube status needs your desktop app running and paired; the Amazon chip works either way",
+            "Schedule a social post in two clicks: right-click any image on the web (a retailer grid, Instagram, Pinterest, a blog) and pick Schedule to Social Posting Butler, or use the Schedule action on Amazon and Walmart product and search tiles. Write a caption or draft one with AI, choose a one-time or repeating time on a mini calendar, and your desktop app posts it. No more saving the image, opening the app, and setting it all up by hand"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Amazon Creator API keys you save in Settings now reach your Influencer Butler account, not just the browser you typed them into. Before, keys could sit on one device while Amazon pages kept asking you to connect. Settings now says plainly whether the keys made it to your account, and gives you a Retry when they did not",
+            "Panels that ask the extension for data (your watchlist, product lists, and international availability) no longer sit on a loading message forever when the extension's background worker is asleep or the page was left open through an update. They now say Butler could not reach the extension and ask you to reload the page, so a stuck panel is never mistaken for an empty one",
+            "Send to your butler app now tells you to reopen the app when it is installed and paired but not answering, instead of showing the same install pitch a brand-new user sees",
+            "A product that only hints at a Creator Connections campaign now offers Check for CC campaign rather than Accept CC campaign, so the button no longer promises a campaign that has not been confirmed",
+            "International availability no longer asks you to connect the Amazon Creator API after a request simply failed; the connect prompt now appears only when the API really is unconnected"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.17",
+      "date": "September 18, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "See at a glance whether each of your Amazon videos is already on YouTube. A chip now sits on your Creator Hub manage list, the video Edit post page, your storefront, and your My Content list: green On YouTube (links to the video) when your desktop app has cross-posted it, or Not on YouTube with an Upload to YouTube button that hands the video to your desktop app to upload. It also shows a Showing on Amazon or Not on detail pages chip read straight from the page. The YouTube status needs your desktop app running and paired; the Amazon chip works either way"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.16",
+      "date": "September 14, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Schedule a social post in two clicks: right-click any image on the web (a retailer grid, Instagram, Pinterest, a blog) and pick Schedule to Social Posting Butler, or use the Schedule action on Amazon and Walmart product and search tiles. Write a caption or draft one with AI, choose a one-time or repeating time on a mini calendar, and your desktop app posts it. No more saving the image, opening the app, and setting it all up by hand"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.15",
+      "date": "September 14, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Video Likes: an orange heart badge on Amazon video and content cards shows how many likes each video has, both on your storefront and on product pages. It is on by default, with an off switch under Video like counts in settings",
+            "The Product snapshot now shows how old a listing is and how many sellers share the buy box, so you can read a product's freshness and how crowded it is at a glance (the seller chip turns amber once five or more sellers are on the listing)",
+            "Conversion rate (orders per click) now appears where it helps: your product's earnings panel headlines its best-converting campaign, the full breakdown tags the best converter, and campaign cards and The Butler's Brief show a campaign's conversion whenever Amazon exposes it",
+            "The price history panel adds a 12-month sales histogram with the peak month called out, plus a 90-day rank trend with a one-word read of rising, steady, or slipping",
+            "Search-results tiles that are in a clicks-based Amazon campaign but have no fixed commission now show Amazon's own per-click forecast (Campaign: up to $X/click) instead of a bare Campaign label"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Tile badges on Amazon Idea List pages no longer hide behind the next row of tiles, so every badge stays visible"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.14",
+      "date": "September 8, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Accept Creator Connections campaigns right from the extension, without opening the desktop app, with an optional rule-based auto-accept that keeps a 30-day history so the same campaign is never taken twice",
+            "A floating chat bubble on the pages the extension runs on: chat with the AI concierge, or file a bug, feature request, or question with screenshots, and review your past reports",
+            "Highest-commission routing is now on out of the box for new installs, so each product's link automatically picks the provider that pays the most (if you turned it off, it stays off)"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Butler's Brief campaign verdict now waits for the campaign's product list to finish loading before deciding, so it no longer flashes a No products detected card on slower pages",
+            "Tile badges on Amazon search results no longer paint over the product title",
+            "The Product data card no longer shows a red credential error while Influencer Butler's backup credentials are covering product data, and the per-field STORED badges now appear only on the fields you actually saved"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.13",
+      "date": "September 6, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "The Amazon Creators API card now takes the official Creator API credentials (Credential ID, Secret, and Version) instead of the older Product Advertising API keys, and warns you if you paste the wrong kind of key"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Typical length stat on product pages now comes from the real runtimes of the videos in the carousel, and stays hidden when there are too few to be trustworthy",
+            "The Creators API setup video on the settings page plays again instead of showing an error"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Creator Connections and SPCC status now lives at the bottom of the Product snapshot card, and each program always shows enrolled, available, or not available once its list is downloaded"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.12",
+      "date": "September 4, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "A guided setup walkthrough opens on first install and can be replayed any time from the Setup guide link in the popup",
+            "Your storefront handle is filled in automatically the first time you visit your Creator Hub, so you never have to type it",
+            "Settings sync with the desktop app: pairing fills in empty fields on both sides, and a Sync now button reconciles the rest",
+            "The popup can be resized by dragging its corner, and it remembers the size you choose",
+            "The Creators API setup video now plays right on the settings card where you paste your keys"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Send to app panel now tells you the desktop app is not paired yet instead of showing buttons that do nothing"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "The popup side menu scrolls on its own and uses shorter labels so every item fits on one line"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.11",
+      "date": "September 1, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Product pages show an Enrolled badge when you are already accepted into a Creator Connections or SPCC campaign for that item, along with your accepted rate and earnings per click",
+            "A welcome page opens right after a fresh install to help you get set up",
+            "A friendly community reminder a few days after install explains that the Facebook group is for tips and wins, with a Report a bug button that takes issues straight to Feedback Butler"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Sending feedback from the extension is more reliable"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.10",
+      "date": "August 25, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Money signals now appear on the Amazon Today's Deals grid, including Coupons, Lightning Deals, and Outlet, with the same Butler Score, verdict, commission, and sorting tools as search results",
+            "When The Butler's Brief cannot be written, Campaign Butler now explains that connecting an OpenAI key gets you a full brief and offers a shortcut to settings"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Butler's Brief now recovers when the first AI provider fails, and shows a short reason when a brief still cannot be written",
+            "Video Money badges are back on the redesigned Creator Hub Manage videos page, and the page no longer freezes while your storefront loads",
+            "The popup no longer crashes when your product lists cannot be loaded"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.9",
+      "date": "August 25, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "What's New: after the extension updates, you now get a quick note of what changed, right on the page and in the popup, including any issues you reported that we fixed",
+            "Campaign Butler: a per-campaign verdict panel that tells you at a glance whether a Creator Connections campaign is worth your time",
+            "Last Call Butler: a fill meter and a watch bell so you can jump on campaigns before they fill up"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Connect buttons in the popup stay in view, and the two-step sync is easier to follow",
+            "Amazon Creators API (PA-API) Test Connection now explains exactly what went wrong instead of failing silently",
+            "The extension now activates on tabs you already had open when it installs or updates, so you do not have to reload"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Link Butler now shows the product and campaign behind each branded link",
+            "Book a call shows a friendly timezone name next to the technical id"
+          ]
+        }
+      ]
+    }
+  ]
+}

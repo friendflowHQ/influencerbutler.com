@@ -8,9 +8,27 @@ export async function signIn(licenseKey: string): Promise<SignInResult> {
     return { ok: false, error: "That does not look like a license key." };
   }
   try {
+    // Hand over any affiliate code captured on the site (see the site-referral
+    // content script + storage.affiliate). This is the one moment we can tie the
+    // referral to a real account, so the affiliate is credited even after the
+    // 30-day web cookie is gone. Best-effort: the server ignores an absent or
+    // unrecognized code, and older accounts simply send none.
+    const state = await getState();
+    const referral = state.affiliate;
+    const body =
+      referral && referral.code
+        ? JSON.stringify({
+            affiliateCode: referral.code,
+            affiliateCapturedAt: referral.capturedAt,
+          })
+        : undefined;
+    const headers: Record<string, string> = { Authorization: `Bearer ${trimmed}` };
+    if (body) headers["Content-Type"] = "application/json";
+
     const response = await fetch(ENDPOINTS.authCheck, {
       method: "POST",
-      headers: { Authorization: `Bearer ${trimmed}` },
+      headers,
+      body,
     });
     if (!response.ok) {
       return {

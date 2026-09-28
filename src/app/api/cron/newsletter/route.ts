@@ -78,15 +78,22 @@ export async function GET(request: Request) {
     });
   }
 
-  const ok = await sendNewsletterBroadcast(issue);
-  if (!ok) {
+  const result = await sendNewsletterBroadcast(issue);
+  if (!result.ok) {
     return NextResponse.json({ ok: false, sent: false, reason: "send-failed", index: idx });
   }
 
+  const sentAt = new Date().toISOString();
   await writeNewsletterState({
     enabled: true,
     lastSentIndex: idx,
-    lastSentAt: new Date().toISOString(),
+    lastSentAt: sentAt,
+    broadcasts: [
+      ...state.broadcasts,
+      ...(result.broadcastId
+        ? [{ index: idx, id: result.broadcastId, subject: issue.subject, sentAt }]
+        : []),
+    ],
   });
 
   return NextResponse.json({

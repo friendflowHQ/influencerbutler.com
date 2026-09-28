@@ -38,12 +38,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       },
       {
         title: "Upgrade when you're ready",
-        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 40+ butlers), start a 14-day Pro trial.",
+        body: "When you want the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial.",
       },
     ],
     callout: {
       title: "Ready for the money engines?",
-      body: "Start a 14-day Pro trial to unlock all 40+ butlers with full Pro access. Cancel anytime before day 14.",
+      body: "Start a 14-day Pro trial to unlock all 50+ butlers with full Pro access. Cancel anytime before day 14.",
       ctaLabel: "See Pro pricing",
       ctaHref: "/pricing",
     },
@@ -137,7 +137,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
 // resolves the current version live from the release feed's latest-mac.yml,
 // so this pin is only used when that feed is unreachable. Still worth bumping
 // on each desktop release.
-export const DESKTOP_APP_VERSION = "1.0.49";
+export const DESKTOP_APP_VERSION = "1.0.86";
 
 // Windows installer host. NOTE: this host redirects *everything* to the Windows
 // .exe, so never point a Mac button at it.

@@ -13,6 +13,8 @@
  */
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { addToResendAudience } from "@/lib/resend-audience";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,32 +42,6 @@ function serviceDb(): ServiceDb | null {
   }) as unknown as ServiceDb;
 }
 
-/**
- * Best-effort: add the contact to the Resend newsletter segment. Never throws.
- * RESEND_AUDIENCE_ID holds a Resend *segment* id (Resend renamed Audiences to
- * Segments); the current contacts API is POST /contacts with a `segments` array.
- */
-async function addToResendAudience(email: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const segmentId = process.env.RESEND_AUDIENCE_ID;
-  if (!apiKey || !segmentId) return;
-  try {
-    const res = await fetch("https://api.resend.com/contacts", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, unsubscribed: false, segments: [segmentId] }),
-    });
-    if (!res.ok) {
-      console.error("newsletter: Resend contact add failed", res.status);
-    }
-  } catch (err) {
-    console.error("newsletter: Resend contact add threw", err);
-  }
-}
-
 export async function POST(request: Request) {
   let body: SubscribeBody;
   try {
@@ -77,6 +53,14 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
+  }
+
+  // Reserved test domains (example.com, *.test, ...) can never receive mail, so
+  // storing one would seed the newsletter/onboarding send pools with an address
+  // that fails every send forever. Accept quietly (a test/probe still sees 200)
+  // but do not persist or add to the audience.
+  if (isUndeliverableTestEmail(email)) {
+    return NextResponse.json({ ok: true });
   }
 
   const source =

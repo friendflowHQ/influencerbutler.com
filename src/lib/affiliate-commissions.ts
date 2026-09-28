@@ -40,6 +40,12 @@ export type AffiliateTerms = {
   commissionDurationMonths: number | null;
 };
 
+/** Billing cadence of the charge behind an order. Drives amortization: an
+ *  annual charge is a big upfront payment, so we recognize its commission 1/12
+ *  per month of service rather than all at once. Null/unknown behaves monthly
+ *  (single recognition), matching the pre-amortization behavior. */
+export type BillingInterval = "month" | "year";
+
 /** A single order row, narrowed to the fields the engine needs. */
 export type CommissionOrder = {
   lsOrderId: string;
@@ -54,6 +60,8 @@ export type CommissionOrder = {
   /** Already-reconciled orders are excluded (their top-up was paid). */
   reconciledAt: string | null;
   createdAt: string | null;
+  /** Billing cadence, for amortization. Optional: undefined/null = monthly. */
+  billingInterval?: BillingInterval | null;
 };
 
 export type CommissionLine = {
@@ -252,6 +260,217 @@ export function computeAffiliateOwed(
     lsPaidCents,
     owedCents,
   };
+}
+
+/**
+ * All-time earned commission for one affiliate: the FULL promised commission
+ * across every commissionable order, INCLUDING already-reconciled (paid) ones.
+ * Where computeAffiliateOwed returns only what is still outstanding, this is the
+ * lifetime "Total earned" figure used by the admin roster. Mirrors how
+ * computeMonthlyEarnings sums per-order (lsPaid + owed). `orders` should already
+ * be filtered to this affiliate's referrals; pass the full order set as
+ * `allOrders` so each buyer's first-order window is anchored accurately.
+ */
+export function computeAffiliateEarnedCents(
+  terms: AffiliateTerms | null | undefined,
+  orders: CommissionOrder[],
+  allOrders?: CommissionOrder[],
+): number {
+  const firstByBuyer = buildFirstOrderByBuyer(allOrders ?? orders);
+  let earned = 0;
+  for (const order of orders) {
+    const firstMs = order.buyerUserId ? firstByBuyer.get(order.buyerUserId) ?? null : null;
+    const econ = orderEconomics(order, terms, firstMs);
+    if (!econ) continue;
+    earned += econ.lsPaidCents + econ.owedCents;
+  }
+  return earned;
+}
+
+// ---------------------------------------------------------------------------
+// Recognition + clearing (refund/chargeback safety)
+// ---------------------------------------------------------------------------
+//
+// Two protections layer on top of the raw owed amount:
+//
+//  1. Clearing period: an order's commission is not PAYABLE until CLEARING_DAYS
+//     after the charge, so a same-week dispute settles before we pay.
+//  2. Annual amortization: an annual charge pre-pays 12 months, so we recognize
+//     its commission 1/12 per month of service (period k recognized at
+//     order + (k-1) months). A late chargeback then only costs us the months
+//     already recognized, not the whole year. Monthly/one-time orders have a
+//     single period, so they recognize in full at purchase.
+//
+// A period is PAYABLE once it is both recognized AND past the clearing buffer.
+
+export const CLEARING_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Amortization periods for a billing interval. Annual spreads over 12. */
+export function amortizationPeriods(interval: BillingInterval | null | undefined): number {
+  return interval === "year" ? 12 : 1;
+}
+
+/** Money breakdown for one order at a point in time (`nowMs`). */
+export type OrderCommission = {
+  grossCents: number;
+  lsPaidCents: number;
+  /** Full commission owed once every period is recognized. */
+  fullOwedCents: number;
+  /** Recognized to date (annual amortized by month), <= fullOwedCents. */
+  recognizedOwedCents: number;
+  /** Recognized AND past the clearing buffer: safe to pay now. */
+  payableOwedCents: number;
+  /** Recognized but still inside the clearing buffer. */
+  clearingOwedCents: number;
+  /** Not yet recognized (future amortization periods). */
+  upcomingOwedCents: number;
+  periods: number;
+};
+
+/**
+ * Full recognition/clearing breakdown for one order at time `nowMs`. Built on
+ * orderEconomics (returns null for non-commissionable orders), so it inherits
+ * the duration-window and paid-status rules. Ignores the reconciled flag: the
+ * caller nets already-paid amounts, so this stays a pure function of time.
+ */
+export function orderCommission(
+  order: CommissionOrder,
+  terms: AffiliateTerms | null | undefined,
+  firstOrderMs: number | null,
+  nowMs: number,
+): OrderCommission | null {
+  const econ = orderEconomics(order, terms, firstOrderMs);
+  if (!econ) return null;
+  if (!order.createdAt) return null;
+  const orderMs = new Date(order.createdAt).getTime();
+  if (!Number.isFinite(orderMs)) return null;
+
+  const fullOwed = econ.owedCents;
+  const periods = amortizationPeriods(order.billingInterval);
+  const orderIso = new Date(orderMs).toISOString();
+
+  let recognized = 0;
+  let payable = 0;
+  for (let k = 1; k <= periods; k++) {
+    const recMs = addMonths(orderIso, k - 1); // period 1 recognizes at purchase
+    if (recMs <= nowMs) recognized += 1;
+    if (recMs + CLEARING_DAYS * DAY_MS <= nowMs) payable += 1;
+  }
+
+  const recognizedOwed = Math.round((fullOwed * recognized) / periods);
+  const payableOwed = Math.round((fullOwed * payable) / periods);
+  return {
+    grossCents: econ.grossCents,
+    lsPaidCents: econ.lsPaidCents,
+    fullOwedCents: fullOwed,
+    recognizedOwedCents: recognizedOwed,
+    payableOwedCents: payableOwed,
+    clearingOwedCents: Math.max(0, recognizedOwed - payableOwed),
+    upcomingOwedCents: Math.max(0, fullOwed - recognizedOwed),
+    periods,
+  };
+}
+
+/** One order's outstanding payable detail, for the incremental payout path. */
+export type PayableLine = {
+  lsOrderId: string;
+  /** Full commission owed for this order once fully recognized. */
+  fullOwedCents: number;
+  /** Already reconciled (paid) on this order. */
+  paidCents: number;
+  /** Recognized, cleared, still unpaid: the amount to pay now. */
+  payableNowCents: number;
+};
+
+/** Per-affiliate outstanding buckets, netting what has already been paid. */
+export type AffiliatePayable = {
+  /** Full commission across all commissionable orders (paid + unpaid). */
+  fullOwedCents: number;
+  /** Already paid on those orders (from reconciled_amount_cents). */
+  paidCents: number;
+  /** Recognized, cleared, still unpaid: safe to disburse now. */
+  payableCents: number;
+  /** Recognized but inside the clearing buffer. */
+  clearingCents: number;
+  /** Not yet recognized (future amortization periods). */
+  upcomingCents: number;
+  /** Per-order payable detail (only orders with a positive payable amount). */
+  lines: PayableLine[];
+};
+
+/**
+ * Aggregates orderCommission across an affiliate's orders and nets the amount
+ * already paid per order (`paidByOrder`, keyed by lsOrderId), yielding the
+ * outstanding payable / clearing / upcoming buckets. Assumes we never pay more
+ * than the payable amount (paid <= payable), so paid offsets payable first.
+ */
+export function computeAffiliatePayable(
+  terms: AffiliateTerms | null | undefined,
+  orders: CommissionOrder[],
+  paidByOrder: Map<string, number>,
+  nowMs: number,
+  allOrders?: CommissionOrder[],
+): AffiliatePayable {
+  const firstByBuyer = buildFirstOrderByBuyer(allOrders ?? orders);
+  let fullOwedCents = 0;
+  let paidCents = 0;
+  let payableCents = 0;
+  let clearingCents = 0;
+  let upcomingCents = 0;
+  const lines: PayableLine[] = [];
+
+  for (const order of orders) {
+    const firstMs = order.buyerUserId ? firstByBuyer.get(order.buyerUserId) ?? null : null;
+    const oc = orderCommission(order, terms, firstMs, nowMs);
+    if (!oc) continue;
+    const paid = Math.max(0, paidByOrder.get(order.lsOrderId) ?? 0);
+    const payableNow = Math.max(0, oc.payableOwedCents - paid);
+    fullOwedCents += oc.fullOwedCents;
+    paidCents += Math.min(paid, oc.fullOwedCents);
+    payableCents += payableNow;
+    clearingCents += oc.clearingOwedCents;
+    upcomingCents += oc.upcomingOwedCents;
+    if (payableNow > 0) {
+      lines.push({
+        lsOrderId: order.lsOrderId,
+        fullOwedCents: oc.fullOwedCents,
+        paidCents: Math.min(paid, oc.fullOwedCents),
+        payableNowCents: payableNow,
+      });
+    }
+  }
+
+  return { fullOwedCents, paidCents, payableCents, clearingCents, upcomingCents, lines };
+}
+
+/** An open (unpaid) adjustment, narrowed to what the clawback netting needs. */
+export type OpenAdjustment = { id: string; amountCents: number };
+
+/**
+ * Nets open CLAWBACK (negative) adjustments against a payable amount for the
+ * automated disburse. Applies only clawbacks the payable FULLY covers, greedily
+ * in the order given, so a clawback bigger than what is currently payable stays
+ * open for a later payout rather than being partially settled. Positive
+ * adjustments (make-whole) are ignored here: they settle on their own path.
+ */
+export function applyClawbacks(
+  payableCents: number,
+  openAdjustments: OpenAdjustment[],
+): { netPayableCents: number; clawbackCents: number; appliedAdjustmentIds: string[] } {
+  let coverage = payableCents;
+  let clawbackCents = 0;
+  const appliedAdjustmentIds: string[] = [];
+  for (const a of openAdjustments) {
+    if (!a.id || a.amountCents >= 0) continue;
+    const debt = -a.amountCents;
+    if (debt > 0 && debt <= coverage) {
+      coverage -= debt;
+      clawbackCents += debt;
+      appliedAdjustmentIds.push(a.id);
+    }
+  }
+  return { netPayableCents: payableCents - clawbackCents, clawbackCents, appliedAdjustmentIds };
 }
 
 /** Human label for a duration ("Lifetime" or "N months"). */

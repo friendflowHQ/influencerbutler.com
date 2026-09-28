@@ -66,17 +66,28 @@ Una vez que se vea bien, vuelve a activar **Process All** para toda la bibliotec
 
 - **skipViewsAtLeast**: el control más importante. Súbelo para proteger más vídeos de buen rendimiento; bájalo para ser más agresivo refrescando contenido viejo.
 - **deleteOriginal / deleteBeforeReupload**: con ambos apagados, los originales se quedan. La sección "Limpieza" permite borrarlos por lotes después de verificar las re-subidas. Con "Eliminar antes de re-subir" activado, el campo **No eliminar si se añadió en los últimos (días)** evita que se borre cualquier vídeo añadido a Amazon dentro de ese número de días, para que las publicaciones recientes se queden. 0 lo desactiva.
+- **Espera entre subidas (segundos)**: fija un mínimo y un máximo, y cada subida empieza un número aleatorio de segundos después de la anterior dentro de ese rango. Úsalo para frenar al butler si Amazon sigue pausando tu cuenta tras una ráfaga de publicaciones. Con ambos en 0 se mantiene la pausa corta por defecto.
+- **Avísame por correo si una ejecución se detiene antes de tiempo**: activado por defecto. Cuando Amazon pausa una ejecución, recibes un correo con el motivo y la hora a la que el butler la reanudará solo. La ejecución también se reanuda sola mientras la app siga abierta; pulsa Ejecutar para intentarlo antes o Detener para cancelar el reinicio automático.
 - **joinMode + joinClip**: pega un clip corto de intro/outro a cada re-subida. Útil para coherencia de marca.
 - **Overlays de subtítulos / marca de agua**: hay un panel aparte; sobreviven a la re-codificación.
 
-## Publica en el idioma de cada país
+## Traducción y doblaje con IA para cada mercado
 
-Cuando expandes un vídeo a un mercado no anglófono, puedes publicarlo en el idioma de ese país en lugar de en inglés. Abre **Localiza para cada mercado** y actívalo. A partir de entonces, para cada destino no anglófono Video Reload Butler:
+Cuando expandes un vídeo a un mercado no anglófono, Video Reload Butler puede publicarlo en el idioma de ese país. Abre la tarjeta **Localiza para cada mercado** y pon **Habilitado** en Habilitado. Después elige:
 
-- **Traduce el título de la publicación** al idioma del mercado antes de escribirlo en el compositor.
-- **Incrusta subtítulos en el idioma local en el vídeo** cuando los Subtítulos están activados. Transcribe el audio una vez y luego traduce e incrusta una copia por idioma, de modo que una publicación en alemán lleva subtítulos en alemán y una en japonés lleva subtítulos en japonés.
+- **Traducir el título de la publicación**: activado por defecto. El título se traduce al idioma del mercado antes de escribirlo en el compositor.
+- **Para cada mercado: Solo título**: el vídeo se publica sin cambios; solo se traduce el título.
+- **Para cada mercado: Subtítulos traducidos**: el audio se transcribe una vez y luego se traduce e incrusta como subtítulos por idioma, de modo que una publicación en alemán lleva subtítulos en alemán y una en japonés lleva subtítulos en japonés. Requiere tener activados los **Subtítulos** más arriba; la tarjeta te lo recuerda si están apagados.
+- **Para cada mercado: Doblaje con IA (reemplaza el audio)**: la transcripción se traduce y la lee una voz de IA, y ese nuevo audio sustituye a la pista original para ese mercado.
+- **Voz del doblaje**: aparece al elegir el doblaje con IA. Elige Alloy, Echo, Fable, Onyx, Nova o Shimmer.
+- **Idioma de origen**: el idioma en el que está hablado tu vídeo (inglés por defecto). Los mercados que comparten ese idioma se publican sin cambios.
 
-Los mercados en inglés (US, CA, UK, AU, SG) se publican sin cambios, y los mercados que comparten idioma reutilizan la misma traducción y codificación, así que expandir a varios países sigue siendo rápido. La traducción usa tu propia clave de OpenAI de **Integraciones de API** y consume una pequeña cantidad de tokens por ejecución, por lo que está desactivada por defecto.
+Algunas cosas que conviene saber:
+
+- Los mercados en inglés (US, CA, UK, AU, SG) se publican sin cambios, y los mercados que comparten idioma reutilizan la misma traducción y el mismo archivo, así que expandir a varios países sigue siendo rápido.
+- La traducción, la transcripción y el doblaje usan tu propia clave de OpenAI de **Integraciones de API** y consumen tokens por ejecución; por eso la tarjeta está desactivada por defecto. El audio doblado se guarda en caché: volver a ejecutar el mismo vídeo con la misma voz no vuelve a cobrar.
+- Si el doblaje con IA está activado pero no hay clave de OpenAI configurada, el registro de la ejecución te avisa una vez y el vídeo se publica con su audio original, que las tiendas no anglófonas pueden rechazar. Si el doblaje falla en un fragmento, ese fragmento se omite; si no llega audio en absoluto, se conserva el audio original.
+- ¿Subtítulos o doblaje? Los subtítulos conservan tu voz real y cuestan menos, pero el espectador tiene que leer. El doblaje suena nativo y funciona con el sonido activado, pero sustituye tu voz por una sintética y cuesta más por ejecución. Empieza con subtítulos y pasa al doblaje en los mercados donde importe.
 
 ## Opciones de etiquetado de productos
 
@@ -187,9 +198,72 @@ Selecciónalo en **Modo de ejecución** y elige tus reglas:
 
 Es a prueba de fallos: un vídeo se borra solo cuando se confirma que sus productos no están disponibles (o no tiene ninguno). Todo lo que Video Reload Butler no pueda confirmar se deja como está. Cada vídeo borrado se descarga primero, así que **Recargar seleccionados** en la pestaña Borrados de Amazon lo vuelve a publicar cuando quieras.
 
+## Copia de seguridad de mis vídeos (descarga toda tu biblioteca)
+
+Los creadores oyen hablar de tiendas perdidas y nos preguntan: "¿cómo descargo todos mis vídeos a mi PC?". El panel **Copia de seguridad de mis vídeos de Amazon**, al final del espacio de trabajo, hace justo eso. Pulsa **Descargar todos mis vídeos** y el butler recorre cada página de tu biblioteca de Creator Hub, abre cada vídeo y guarda el archivo original en una carpeta de tu ordenador, junto con su miniatura y un pequeño archivo de detalles (título, fecha, visualizaciones, productos etiquetados). No se toca nada en Amazon.
+
+- **Guardar en** muestra la carpeta. Por defecto es una carpeta *Influencer Butler Backups / Amazon* dentro de tu carpeta Vídeos; pulsa **Elegir carpeta** para apuntar a un disco externo o a una carpeta sincronizada.
+- **Ejecútalo cuando quieras.** El butler recuerda lo que ya guardó, así que una segunda ejecución solo descarga los vídeos nuevos. Si mueves o borras un archivo guardado, se vuelve a descargar la próxima vez.
+- **Detener** termina la ejecución tras el vídeo actual; la siguiente continúa donde lo dejaste.
+- Deja **Ver cómo funciona** activado en la primera ejecución para poder iniciar sesión en Amazon si el navegador lo pide.
+
+El mismo botón **Copia de mis vídeos** está en **YouTube Butler** (para tu canal) y en **TikTok Video Butler** (para tu perfil), así que un solo hábito cubre las tres plataformas.
+
 ## Flujo "Recientemente borrados"
 
 El panel inferior lista los vídeos que has borrado (dentro de la ventana de recuperación de Amazon) con un botón **Recargar seleccionados**. Si una pasada de borrado quitó de más, puedes recuperarlos desde aquí - no hace falta volver a editar desde cero.
+
+## Enviar un vídeo terminado a tu teléfono
+
+Cada vídeo que crea Video Reload Butler se guarda en tu ordenador, así que puedes pasar cualquiera de ellos a tu teléfono en segundos. Abre el **Registro de vídeos**, expande la fila de un vídeo y haz clic en **Enviar al teléfono**. Para mover varios a la vez, usa el botón **Enviar al teléfono** de la parte superior del espacio de trabajo y marca los vídeos que quieras.
+
+Después eliges cómo enviarlo. En ambos casos la app muestra un código QR: abre la cámara de tu teléfono, apúntala al código y toca el enlace que aparece. Tu teléfono abre una página sencilla donde puedes reproducir cada vídeo y tocar **Descargar** para guardarlo.
+
+### Misma Wi-Fi (privado e instantáneo)
+
+El vídeo se envía directamente entre tu ordenador y tu teléfono por tu red local, así que no sale nada de tu casa. Tu teléfono y tu ordenador deben estar en la misma Wi-Fi. El enlace es de un solo uso y deja de funcionar después de unos diez minutos, así que un código QR antiguo nunca se puede reutilizar. Es la mejor opción cuando tienes el teléfono cerca.
+
+### Enlace en la nube (funciona en cualquier red)
+
+Cuando tu teléfono no está en la misma Wi-Fi (por ejemplo, estás fuera con datos móviles), elige el enlace en la nube. El vídeo se sube a nuestros servidores y obtienes un enlace que funciona desde cualquier lugar. La subida se borra automáticamente al cabo de un día, y el enlace es imposible de adivinar, así que solo puede abrirlo alguien a quien le muestres el QR. Se te avisa antes de subir nada.
+
+En ambos casos obtienes el vídeo terminado con marca de agua, el mismo archivo que se publicó en Amazon, no una copia sin procesar.
+
+## Aprobado por Butler: empezar de cero (recarga completa de la biblioteca)
+
+Si tus vistas onsite están en caída pero tienes una gran biblioteca de contenido, la fórmula **Aprobado por Butler: vistas en caída + biblioteca enorme (empezar de cero)** recarga TODA tu biblioteca de EE. UU.: cada vídeo se elimina (cada uno se guarda antes en tu ordenador, recuperable desde la pestaña Eliminados de Amazon) y se vuelve a subir como contenido nuevo con su título y miniatura originales, etiquetado al producto disponible actual más su ASIN padre. Una recarga restablece la fecha de añadido de cada vídeo, y Amazon impulsa los vídeos nuevos para probar su conversión, así que toda la biblioteca recibe una segunda oportunidad en el algoritmo.
+
+Como solo los vídeos horizontales de más de 30 segundos convierten bien onsite, la fórmula convierte los vídeos verticales a horizontal y rellena los vídeos de menos de 31 segundos hasta 31 segundos; tú eliges si los vídeos cortos reciben tu propio clip de unos 30 segundos añadido al final, o se repiten a sí mismos. Los vídeos de 31 segundos o más conservan su duración completa.
+
+Al aplicar la fórmula se te pide escribir RELOAD en un diálogo de confirmación que detalla todo lo anterior. El ritmo es deliberado: cada ejecución elimina como máximo unos 25 vídeos y los vuelve a subir en la siguiente ejecución tras 15 minutos de espera, así que una biblioteca grande requiere muchas ejecuciones durante días. Los vídeos ya recargados se omiten automáticamente, así que simplemente sigue ejecutándola hasta terminar.
+
+## Recarga mis vídeos ganadores (más vendidos + alto % visto)
+
+Empezar de cero recarga toda tu biblioteca. **Recarga mis vídeos ganadores** es la versión selectiva: en lugar de volver a probar todo, vuelve a subir solo los vídeos que ya se han probado, para que tu mejor contenido gane la prueba de colocación nueva de Amazon mientras el contenido flojo se queda al margen. En **Fórmulas preferidas**, haz clic en **Recarga mis vídeos ganadores (más vendidos + alto % visto, horizontal 31s+)**.
+
+Un vídeo solo califica cuando supera dos barreras a la vez:
+
+- **Está en un producto que generó comisiones** (ganadores primero), así que vuelves a probar contenido que de verdad convierte.
+- **Retuvo a los espectadores**: su **% visto medio** en Amazon es igual o superior al 40%. Video Reload Butler ahora lee esa columna directamente de tu lista de vídeos de Creator Hub. Los vídeos que aún no tienen porcentaje (una fila nueva con cero vistas) se conservan, no se omiten, así que nunca pierdes una subida recién hecha por este filtro.
+
+Los vídeos que califican se convierten a horizontal y deben durar 31 segundos o más, porque los vídeos horizontales de más de 30 segundos rinden mejor en el sitio. Cada original se elimina primero (se guarda en tu ordenador, recuperable desde la pestaña Borrados de Amazon) para que Amazon vuelva a probar la nueva subida como contenido nuevo, y el título se renueva para que la nueva publicación no se lea como un duplicado idéntico.
+
+Como elimina cada original antes de volver a publicar, escribes **DELETE** para confirmar cuando empieza la ejecución, igual que en cualquier ejecución que borra. Pruébalo antes en un lote pequeño: pon un Máximo bajo, ejecútalo y confirma que solo vuelven tus ganadores probados con fechas nuevas.
+
+También puedes ajustar a mano el filtro **Mínimo % visto medio** (déjalo en 0 para desactivarlo) si quieres una barra de retención distinta al 40% de la fórmula.
+
+### Limpia el contenido flojo en la misma ejecución
+
+Esta fórmula es la mitad de "reforzar a los ganadores". La otra mitad es quitar los vídeos obsoletos que diluyen tu escaparate. Activa **Limpiar también el contenido flojo antes de recargar** (en las opciones de re-subida, desactivado por defecto) y la misma ejecución hace las dos cosas: primero elimina tus vídeos con cero vistas y baja retención, y luego recarga a tus ganadores. Protege tus ventas recientes, las publicaciones patrocinadas, las campañas activas y todo lo que aún es demasiado nuevo para juzgar, y hace una copia de seguridad de cada vídeo antes de borrarlo. Como elimina de Amazon, escribes **DELETE** para confirmar cuando empieza la ejecución.
+
+Recargar a los ganadores y quitar el contenido flojo es la jugada completa: tu contenido probado trabaja para el algoritmo y los que rinden poco dejan de diluir tu carrusel. ¿Prefieres mantenerlas separadas? Deja la casilla sin marcar y ejecuta la pestaña **Limpieza** por su cuenta cuando quieras.
+
+## Ganadores primero + títulos renovados
+
+Dos interruptores opcionales en los filtros hacen más inteligente una recarga:
+
+- **Ganadores primero: recargar solo vídeos cuyos productos generaron comisiones**. La ejecución omite cualquier vídeo salvo que uno de sus productos etiquetados haya generado una comisión dentro de la ventana de búsqueda (365 días por defecto), usando los datos de ganancias que ya están en tu ordenador. Combinado con el Máximo por ejecución, dedica toda la ejecución a tus ganadores probados en lugar de subidas antiguas al azar. Clasifica por ganancias conocidas: un vídeo que este butler nunca ha procesado puede no tener coincidencia de ganancias todavía, así que amplía la ventana o apaga el interruptor cuando quieras un barrido completo.
+- **Renovar el título al recargar**. Amazon a veces desprioriza una republicación que reconoce como idéntica, así que una recarga funciona mejor con un cambio real de metadatos. Esto reescribe cada título con un gancho nuevo antes de republicar. El estilo integrado no necesita clave de API; el estilo con IA usa tu clave de Anthropic y recurre a los ganchos integrados si la reescritura falla. Cuando no es posible reescribir, se conserva el título original.
 
 ## Dónde van los datos
 

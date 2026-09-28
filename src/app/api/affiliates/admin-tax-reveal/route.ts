@@ -1,30 +1,25 @@
 import { NextResponse } from "next/server";
-import { requirePermission, getAdminSession } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { decryptTin, taxKeyConfigured } from "@/lib/tax-crypto";
+import { requireTaxReveal } from "@/lib/tax-stepup";
+import { logDbError } from "@/lib/log-db-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Reveals a single affiliate's full TIN plus their tax-form details, for 1099
- * preparation. Highly sensitive: gated on BOTH the affiliates.tax.view
- * permission AND a super-admin session (ADMIN_EMAILS), and EVERY call is
- * audited. The decrypted value is returned once and never persisted.
+ * preparation. Highly sensitive: gated on the affiliates.tax.view permission,
+ * a super-admin session (ADMIN_EMAILS), AND an email step-up window
+ * (requireTaxReveal), and EVERY call is audited. The decrypted value is
+ * returned once and never persisted.
  */
 
 export async function GET(request: Request) {
-  const actor = await requirePermission("affiliates.tax.view", request);
-  if (!actor) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  // Belt-and-suspenders: reveal is super-admin only, never delegated to an
-  // assistant even if the permission were somehow granted.
-  const superAdmin = await getAdminSession();
-  if (!superAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireTaxReveal(request);
+  if (!gate.ok) return gate.response;
+  const actor = gate.actor;
   if (!taxKeyConfigured()) {
     return NextResponse.json({ error: "Encryption key not configured" }, { status: 503 });
   }
@@ -46,7 +41,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (formErr) {
-    console.error("admin-tax-reveal: form query failed", formErr);
+    logDbError("admin-tax-reveal: form query failed", formErr);
     return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
   }
   if (!form) {
@@ -60,7 +55,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (tinErr) {
-    console.error("admin-tax-reveal: tin query failed", tinErr);
+    logDbError("admin-tax-reveal: tin query failed", tinErr);
     return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
   }
 

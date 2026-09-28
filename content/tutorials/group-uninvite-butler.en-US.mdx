@@ -1,0 +1,42 @@
+---
+title: "Group Uninvite Butler: cancel pending invites in your Facebook group"
+summary: Withdraw the pending invites you sent into a Facebook group you manage, one at a time, at a natural pace. Choose whether to clear all of them, only profile and Page invites, or only email invites, with a delay between each so the activity looks human.
+category: Other
+---
+
+## What Group Uninvite Butler does
+
+Group Uninvite Butler cancels pending invites in a Facebook group you manage, one at a time, with a delay between each. It is the counterpart to Group Invite Butler: where that one sends invites, this one withdraws the ones still sitting in "Invited" that nobody has accepted yet.
+
+For each invite it cancels, it notes whether it was a profile, a Page, or an email invite, so you can see exactly what was cleared. It is handy when you invited a batch you no longer want pending, or you want a clean slate before a fresh invite push.
+
+## Before you start
+
+Two things need to be in place:
+
+- **You are signed in to Facebook in the app.** Group Uninvite Butler uses the same Facebook accounts as Deals Butler. If you have not signed in yet, open Deals Butler first and sign in to Facebook there once. If you manage groups from more than one account, sign in to each one there.
+- **You manage the group.** You can only cancel invites in a group where you have invite permissions. Paste that group's URL into the settings, and pick the Facebook account that manages it.
+
+## How to use it
+
+1. In the left menu, open **Facebook Butler**, then **Group Uninvite Butler**.
+2. In **Run settings**, paste your **Facebook group URL**. This is required, and Butler will not start without it.
+3. Pick the **Facebook account** that manages the group. It defaults to your **Default** account. If a different account manages the group, choose it here so the removals come from the right place.
+4. Under **Which invites to remove**, choose **All pending invites**, **Profiles and Pages only**, or **Email invites only**.
+5. (Optional) Set **Only remove invites older than** to a number of days. `0` removes pending invites of any age. Set `7` to only cancel invites at least a week old. When an invite's date cannot be read, it is left in place.
+6. (Optional) Adjust the pacing under **Pacing**: **Seconds between removals** plus **Random extra seconds** on top, so the timing looks natural. Slower is safer.
+7. (Optional) Set **Removal limits**: **Removals per day** (a daily cap that carries across runs, `0` means no cap) and **Removals per run** (`0` clears every pending invite in scope).
+8. Click **Start Group Uninvite Butler**. Leave **Watch it run** on to bring the browser to the front and watch each removal go out, or turn it off to let it work in the background.
+9. Watch the **Results** table fill in. It shows each cancelled invite with its **Type**, who **Invited** it, the **Status**, and the **Time**, plus live **Removed** and **Failed** counts. Use the **All**, **Profiles**, and **Emails** chips to filter, **Export CSV** to save the list, or **Clear results** to reset the table. Click **Stop** any time.
+
+## Notes
+
+- Everything auto-saves as you type. There is no Save button.
+- To run on a repeat, use the **Schedule** card: pick a **Start time**, choose a **Repeat every** cadence (15 or 30 minutes, or 1, 2, 3, 6, 12, or 24 hours, or **Custom** hours), and click **Enable Schedule**. Each scheduled run uses the same run settings and respects your limits. Click **Stop Schedule** to turn it off. The app has to stay open and signed in to Facebook for scheduled runs to fire.
+- If it will not start, check that the group URL is filled in and that you are signed in to Facebook (via Deals Butler).
+- If it says you are not signed in but you are, make sure the **Facebook account** you picked is one you actually signed in to in Deals Butler. Removals come from that exact account.
+- Go slow at first. High volume with short gaps is what trips Facebook's limits. Start with a modest delay, then loosen up once you see it running clean.
+
+## Related
+
+- [Group Invite Butler tutorial](/help/tutorials/group-invite-butler), the counterpart that sends the invites this butler withdraws.

@@ -14,7 +14,7 @@
  * Returns the shape the worker's /license/validate reshapes for the desktop:
  *   { valid, email, status, variantId, productId, activationLimit, addons }
  * where variantId maps to a tier via the desktop's tierForVariantId, and addons
- * carries { type: "daily-deals-workspace" } for a comped Daily Deals add-on.
+ * carries { type: "daily-deals-workspace" } for a comped Deals add-on.
  */
 import { NextResponse, after } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
@@ -24,7 +24,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
-const DEAD_KEY_STATUSES = new Set(["revoked", "disabled", "expired", "cancelled"]);
+// "revoked" is the only status our own flows write as a deliberate kill switch
+// (the admin licenses.revoke route). Every other dead-looking value
+// (disabled, inactive, expired, cancelled) is a Lemon Squeezy mirror: LS keeps
+// a subscription's key disabled/inactive until the first payment clears, so a
+// legitimate on_trial customer's key can carry one. Those keys are judged
+// instead by the live-subscription check below, which is the real entitlement
+// gate: a genuinely churned customer has no live subscription and still fails.
+const DEAD_KEY_STATUSES = new Set(["revoked"]);
 
 export async function POST(request: Request) {
   const secret = process.env.LICENSING_WORKER_SECRET;
@@ -63,7 +70,7 @@ export async function POST(request: Request) {
   const activationLimit = typeof lic?.activation_limit === "number" ? lic.activation_limit : null;
 
   // The entitlement is a live subscription for this user (Pro tier and/or the
-  // Daily Deals add-on). No live subscription -> not valid.
+  // Deals add-on). No live subscription -> not valid.
   const subs =
     (
       await svc

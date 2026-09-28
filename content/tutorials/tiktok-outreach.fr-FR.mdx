@@ -1,0 +1,36 @@
+---
+title: "TikTok Message Followers: envoyez des DM automatiques à vos nouveaux abonnés TikTok"
+summary: Envoyez des messages privés personnalisés à vos nouveaux abonnés TikTok, ou à une liste de comptes de votre choix, avec des modèles en rotation, des relances et des limites d'envoi qui protègent votre compte.
+category: TikTok
+---
+
+## Ce que fait TikTok Message Followers
+
+TikTok Message Followers envoie des messages privés sur TikTok à votre place. Il peut accueillir les personnes qui vous ont suivi récemment (**Message New Followers**) ou contacter une liste précise que vous fournissez (**Message Select Usernames**). Vous rédigez un ou plusieurs modèles de message, le butler les fait tourner, espace les envois avec des pauses d'allure humaine et peut envoyer une relance facultative si quelqu'un n'a pas répondu. Il reprend les mêmes modèles, relances et commandes d'exécution qu'Amazon Butler, vous serez donc en terrain connu.
+
+## Avant de commencer
+
+- Ouvrez **TikTok Butler** dans le menu de gauche, puis **TikTok Message Followers**.
+- Cet espace est **En bêta**. Certaines parties peuvent ne pas être totalement opérationnelles pendant que nous le finalisons.
+- Cliquez sur **Sign in to TikTok (opens Chrome)** pour que TikTok retienne cet appareil. Commencez par là si on vous redemande sans cesse de vous connecter.
+- Pour **Message New Followers**, saisissez **Your TikTok username** (sans le @) afin que le butler puisse retrouver votre liste d'abonnés.
+- Laissez **👀 Watch it run** activé (coché par défaut) si vous voulez voir le navigateur travailler.
+
+## Comment l'utiliser
+
+1. Renseignez **Your TikTok username** si vous comptez contacter de nouveaux abonnés.
+2. Choisissez un **Message Mode**: **Message New Followers** ou **Message Select Usernames**. Pour la seconde option, saisissez un compte par ligne dans le champ **Message Select Usernames**, ou cliquez sur **Import CSV** (comptes dans la colonne A, sans en-tête).
+3. Rédigez vos **Initial messages**. Cliquez sur **Add message** pour créer d'autres variantes et choisissez **Random** ou **Round robin** pour leur rotation. Utilisez `{handle}` et `{storefront}` pour insérer le compte de chaque abonné et votre lien de boutique enregistré. Tapez `\n` ou `/n` pour scinder un modèle en plusieurs DM.
+4. Réglez vos limites de sécurité: **Delay between messages** (du minimum au maximum en secondes), **Messages per hour** et **Messages per day**. Chaque passe utilise aussi **New followers to message** comme plafond du minimum au maximum, ou laissez les deux champs vides pour ne pas plafonner.
+5. (Facultatif) Ajoutez des comptes dans **Skip Usernames**, un par ligne, pour ne jamais les contacter. Laissez **Exclude followers with messages already sent** coché pour que personne ne reçoive un deuxième message de bienvenue.
+6. (Facultatif) Cochez **Enable follow-ups**, rédigez vos **Follow-up messages** et choisissez **Send follow-up after** (6, 12, 24 heures ou une durée personnalisée).
+7. Cliquez sur **Run**. Utilisez **Pause** ou **Stop** pour piloter la passe. Suivez **Messages sent**, **Followers harvested** et **Next send** dans l'en-tête.
+8. Passez en revue les envois sous **Results / History**. Utilisez **Export all** pour les enregistrer ou **Delete all** pour les effacer.
+
+## Notes
+
+- Cet espace est en bêta: considérez les envois comme non éprouvés et commencez prudemment.
+- Nouveaux comptes: gardez **Messages per hour** à 20 ou moins et démarrez **Messages per day** entre 50 et 100, puis augmentez peu à peu sur plusieurs semaines. Envoyer trop vite peut faire restreindre votre compte.
+- Si TikTok bloque la messagerie, tous les expéditeurs TikTok se mettent au repos pendant le nombre de jours de **Pause after a TikTok block (days)**. Les blocages répétés durent plus longtemps. Vous pouvez reprendre plus tôt depuis le bandeau du Dashboard.
+- Tout s'enregistre automatiquement à mesure que vous tapez. Il n'y a pas de bouton d'enregistrement.
+- Le bloc **Automations: comment to DM** en bas peut envoyer un DM aux personnes qui commentent un mot-clé sous vos vidéos. Il tourne discrètement en arrière-plan, indépendamment d'une passe manuelle.

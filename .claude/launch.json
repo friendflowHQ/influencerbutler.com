@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "ext-popup-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "extension/dist", "-p", "8734", "-c-1"],
+      "port": 8734
+    },
+    {
       "name": "dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],

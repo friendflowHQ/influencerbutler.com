@@ -1,0 +1,61 @@
+---
+title: "Earnings Intelligence: see which ASINs actually earned"
+summary: Track your Amazon commissions by source, storefront, and ASIN over time, so you can tell which products made money versus which just drove clicks.
+category: Amazon
+---
+
+## What Earnings Intelligence does
+
+Earnings Intelligence cross-references the ASINs your butlers have harvested against your real earnings data. Instead of guessing which products are worth featuring again, you get a clear picture of which ones actually paid, which just drove clicks, and how your commissions trend month to month.
+
+Everything is read-only. It does not run a browser or change anything on Amazon. It reads from the data your other butlers already collect (Daily Commission, Storefront Butler, Orders Butler, cc-check) and pivots it six ways through the tabs across the top:
+
+- **ASIN Explorer**: row-by-row detail for every earning ASIN (commission, units, active days, last seen, marketplaces).
+- **Top Performers**: your lifetime winners, ranked.
+- **Recovered Winners**: past earners that dropped out of the Creator Connections catalog and later came back.
+- **Harvest Funnel**: a source-type breakdown, from harvested ASINs down to earning ASINs.
+- **Monthly Breakdown**: your commissions by month, split across every revenue source.
+- **Conversion Leak**: posted deals that went dead, and the clicks and commission you likely lost.
+
+## Before you start
+
+- **Earnings Intelligence is a Pro feature** (see Notes). Confirm you are signed in on a Pro subscription.
+- **Your butlers have already harvested some data.** The tabs draw on Daily Commission, Storefront, Orders, and cc-check runs, so let those run at least once first.
+- For **Recovered Winners**, run a Creator Connections catalog refresh so Butler can tell which past earners left the catalog.
+- For **Conversion Leak**, post some deals from Deals Butler with Butler Link routing on, so clicks are measurable.
+
+## How to use it
+
+1. In the left menu, open **Amazon Butler**, then **Earnings Intelligence**.
+2. Pick a time window. Use a **Quick date ranges** chip (**Today**, **This week**, **Last week**, **This month**, **Last month**, **Year to date**, **All time**), or set **Date from** and **Date to** by hand.
+3. Narrow the view with the filters if you want: **Source type** (for example dailycommission or storefront), **Marketplace** (an ISO country code like US or UK), **Storefront** (your CC storefront slug), and **Tag** (an Amazon affiliate tag).
+4. Click **Refresh** to re-query. The filters and date range apply to every tab, so always Refresh after you change them.
+5. Switch between **ASIN Explorer**, **Top Performers**, **Recovered Winners**, **Harvest Funnel**, **Monthly Breakdown**, and **Conversion Leak** to pivot the same filtered data.
+6. In **ASIN Explorer**, read the summary bar (total commission, total units, ASIN count) above the table, then scan the rows. The **CC** and **SPCC** markers flag ASINs with an active campaign or a sponsored offer.
+7. Use the row quick actions to jump straight to work: **Open in Daily Commission** or **Open in Storefront** for a promising ASIN.
+8. To keep a record, click **Export CSV** or **Export Excel** (both the main table and the Monthly Breakdown have their own export buttons).
+
+## Notes
+
+- **Pro subscription required.** Earnings Intelligence is a Pro feature and is available after your free trial. The nav entry shows a **Pro** pill.
+- The numbers are only as complete as your harvests. If a tab looks empty, run the butler that feeds it (Daily Commission, Storefront, Orders, or cc-check) and Refresh.
+- **Recovered Winners** stays empty until a Creator Connections catalog refresh has run, since that is how Butler knows which earners left the catalog.
+- **Conversion Leak** counts deals without a Butler Link as unmeasurable. Turn on Butler Link routing for deals so every posted deal shows up.
+- Nothing here posts, edits, or deletes. It is a reporting view, safe to open any time.
+
+## See your earnings on the web and your phone
+
+Earnings Intelligence lives in the desktop app, but you can push a read-only copy to your Influencer Butler account and check it from any browser, including your phone. The web view is available on every plan, including Free.
+
+1. In the desktop app, open **Amazon Butler**, then **Earnings Intelligence**.
+2. Click **Sync to web**. Butler uploads your monthly totals (on-site, Creator Connections, off-site, brand deals, international, bonuses) and your top earning ASINs for all time and for the last 12 months. Nothing else leaves your computer.
+3. On any device, sign in at influencerbutler.com and open **Dashboard**, then **Earnings**. You will see when the desktop app last synced, a stacked bar for each month, category totals for the last 12 months, and your top products with an **All time** / **Last 12 months** toggle.
+4. Use **Download months CSV** or **Download top ASINs CSV** to take the numbers into a spreadsheet.
+
+Notes:
+
+- The web page never changes anything. Sync again from the desktop app whenever you want fresh numbers; each sync replaces the months and periods it covers.
+- If you see **Off-site commissions are not tracked yet**, the desktop app is not harvesting off-site earnings for your account, so the totals cover the other categories only.
+- If the page says **Nothing synced yet**, the desktop app has not pushed data for this account. Make sure the desktop app is signed in with the same account, then click **Sync to web** again.
+- Butler also syncs automatically after each Daily Commission harvest. Turn that off in **Settings** under **Web dashboard sync** if you prefer to sync by hand.
+- You need to be signed in with your license key. Only totals and product identifiers are sent, never your Amazon login.

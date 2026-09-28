@@ -1,0 +1,42 @@
+---
+title: "Group Uninvite Butler: annulez les invitations en attente de votre groupe Facebook"
+summary: Retirez les invitations en attente que vous avez envoyées dans un groupe Facebook que vous gérez, une par une et à un rythme naturel. Choisissez d'annuler toutes les invitations, seulement celles des profils et Pages, ou seulement celles par e-mail, avec un délai entre chacune pour que l'activité paraisse humaine.
+category: Other
+---
+
+## Ce que fait Group Uninvite Butler
+
+Group Uninvite Butler annule les invitations en attente d'un groupe Facebook que vous gérez, une par une, avec un délai entre chacune. C'est le pendant de Group Invite Butler: là où celui-ci envoie des invitations, celui-ci retire celles qui restent dans « Invité » et que personne n'a encore acceptées.
+
+Pour chaque invitation qu'il annule, il note s'il s'agissait d'un profil, d'une Page ou d'une invitation par e-mail, pour que vous voyiez exactement ce qui a été retiré. C'est pratique quand vous avez invité un lot que vous ne voulez plus laisser en attente, ou quand vous voulez repartir de zéro avant une nouvelle vague d'invitations.
+
+## Avant de commencer
+
+Deux choses doivent être en place:
+
+- **Vous êtes connecté à Facebook dans l'application.** Group Uninvite Butler utilise les mêmes comptes Facebook que Deals Butler. Si vous ne vous êtes pas encore connecté, ouvrez d'abord Deals Butler et connectez-vous à Facebook là-bas une fois. Si vous gérez des groupes depuis plusieurs comptes, connectez-vous à chacun là-bas.
+- **Vous gérez le groupe.** Vous ne pouvez annuler des invitations que dans un groupe où vous avez les autorisations d'invitation. Collez l'URL de ce groupe dans les paramètres et choisissez le compte Facebook qui le gère.
+
+## Comment l'utiliser
+
+1. Dans le menu de gauche, ouvrez **Facebook Butler**, puis **Group Uninvite Butler**.
+2. Dans **Paramètres d'exécution**, collez l'**URL du groupe Facebook**. Elle est obligatoire, et Butler ne démarre pas sans elle.
+3. Choisissez le **Compte Facebook** qui gère le groupe. Il utilise par défaut votre compte **Par défaut**. Si un autre compte gère le groupe, sélectionnez-le ici pour que les annulations partent du bon endroit.
+4. Dans **Quelles invitations annuler**, choisissez **Toutes les invitations en attente**, **Profils et Pages uniquement** ou **Invitations par e-mail uniquement**.
+5. (Facultatif) Réglez **N'annuler que les invitations plus anciennes que** sur un nombre de jours. `0` annule les invitations en attente de tout âge. Mettez `7` pour n'annuler que celles d'au moins une semaine. Quand la date d'une invitation ne peut pas être lue, elle est laissée en place.
+6. (Facultatif) Ajustez le rythme dans **Rythme**: **Secondes entre les annulations** plus **Secondes supplémentaires aléatoires** par-dessus, pour que le timing paraisse naturel. Plus lent est plus sûr.
+7. (Facultatif) Définissez les **Limites d'annulation**: **Annulations par jour** (un plafond quotidien conservé d'une exécution à l'autre, `0` signifie aucune limite) et **Annulations par exécution** (`0` annule toutes les invitations en attente concernées).
+8. Cliquez sur **Démarrer Group Uninvite Butler**. Laissez **Regarder l'exécution** activé pour mettre le navigateur au premier plan et voir chaque annulation, ou désactivez-le pour un travail en arrière-plan.
+9. Regardez le tableau **Résultats** se remplir. Il affiche chaque invitation annulée avec son **Type**, qui l'a envoyée (**Invitée par**), le **Statut** et l'**Heure**, ainsi que les compteurs en direct **Annulées** et **Échouées**. Utilisez les puces **Toutes**, **Profils** et **E-mails** pour filtrer, **Exporter en CSV** pour enregistrer la liste, ou **Effacer les résultats** pour réinitialiser le tableau. Cliquez sur **Arrêter** à tout moment.
+
+## Notes
+
+- Tout s'enregistre automatiquement pendant la saisie. Il n'y a pas de bouton Enregistrer.
+- Pour une exécution récurrente, utilisez la carte **Planification**: choisissez une **Heure de début**, une cadence dans **Répéter toutes les** (15 ou 30 minutes, ou 1, 2, 3, 6, 12 ou 24 heures, ou **Heures personnalisées**), puis cliquez sur **Activer la planification**. Chaque exécution planifiée utilise les mêmes paramètres et respecte vos limites. Cliquez sur **Arrêter la planification** pour la désactiver. L'application doit rester ouverte et connectée à Facebook pour que les exécutions planifiées se déclenchent.
+- Si cela ne démarre pas, vérifiez que l'URL du groupe est renseignée et que vous êtes connecté à Facebook (via Deals Butler).
+- S'il indique que vous n'êtes pas connecté alors que vous l'êtes, assurez-vous que le **Compte Facebook** choisi est bien un compte auquel vous vous êtes connecté dans Deals Butler. Les annulations partent de ce compte précis.
+- Allez-y doucement au début. Un gros volume avec des intervalles courts, c'est ce qui déclenche les limites de Facebook. Commencez avec un délai modéré, puis assouplissez une fois que vous le voyez tourner proprement.
+
+## Associé
+
+- [Tutoriel Group Invite Butler](/help/tutorials/group-invite-butler), le pendant qui envoie les invitations que ce butler retire.

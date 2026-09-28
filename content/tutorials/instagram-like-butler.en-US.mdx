@@ -42,9 +42,12 @@ A Chrome window opens on each profile, collects the most recent posts, opens eac
 Instagram Like Butler has a built-in scheduler:
 
 1. Set a **start time** and a **repeat interval** (e.g. every 12 hours).
-2. Click **Enable Schedule**.
+2. To keep likes inside part of the day, turn on **Only like during set hours** and pick a **From** and **To** time.
+3. Click **Enable Schedule**.
 
 While the schedule is active, the account list and run settings lock. Click **Stop Schedule** before editing them. Once a day or every 12 hours is plenty - more often risks rate-limiting and rarely adds value.
+
+With set hours on, a scheduled run that falls outside your window is held back until the window reopens, and a run still going when the window closes stops at the next account. Starting the butler yourself is never held back. A window can run overnight (10 PM to 2 AM, say). Leaving From and To the same means any hour, so likes are never blocked by a half-filled form.
 
 ## Where the data goes
 

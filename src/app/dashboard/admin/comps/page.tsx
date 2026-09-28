@@ -23,6 +23,7 @@ type CompRow = {
   expiresAt: string | null;
   daysRemaining: number | null;
   subscriptionStatus: string | null;
+  planLabel: string | null;
   renewsAt: string | null;
   licenseStatus: string | null;
   state: CompState;
@@ -54,10 +55,11 @@ const FILTERS = [
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
-// Default seat count per plan (Solo 1 / Team 10 / Agency 25, Daily Deals 1).
+// Default seat count per plan (Solo 1 / Trio 3 / Team 10 / Agency 25, Deals 1).
 // Mirrors SEAT_LIMIT server-side; used only to prefill the editable Seats field.
 const PLAN_DEFAULT_SEATS: Record<string, number> = {
   monthly: 1,
+  "duo-monthly": 3,
   "team-monthly": 10,
   "agency-monthly": 25,
   "daily-deals-addon": 1,
@@ -139,6 +141,7 @@ type SortKey =
   | "user"
   | "source"
   | "code"
+  | "plan"
   | "months"
   | "issued"
   | "expires"
@@ -151,6 +154,7 @@ const COLUMNS: { key: SortKey | null; label: string }[] = [
   { key: "user", label: "User" },
   { key: "source", label: "Source" },
   { key: "code", label: "Code" },
+  { key: "plan", label: "Plan" },
   { key: "months", label: "Months" },
   { key: "issued", label: "Issued" },
   { key: "expires", label: "Expires" },
@@ -178,6 +182,8 @@ function sortValue(row: CompRow, key: SortKey): string | number | null {
       return row.source;
     case "code":
       return (row.discountCode ?? "").toLowerCase() || null;
+    case "plan":
+      return (row.planLabel ?? "").toLowerCase() || null;
     case "months":
       return row.months;
     case "issued":
@@ -226,6 +232,7 @@ export default function AdminCompsPage() {
   const [migrationPending, setMigrationPending] = useState(false);
   const [rows, setRows] = useState<CompRow[]>([]);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -282,20 +289,46 @@ export default function AdminCompsPage() {
     void load();
   }, [load]);
 
+  // Prefill the search filter from a ?q= param, so links like the Users page's
+  // "Manage comp" land already filtered to that recipient.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearch(q);
+  }, []);
+
   const filtered = useMemo(() => {
+    let byState: CompRow[];
     switch (filter) {
       case "needs-months":
-        return rows.filter((r) => r.state === "unknown-months");
+        byState = rows.filter((r) => r.state === "unknown-months");
+        break;
       case "expiring-7":
-        return rows.filter((r) => r.state === "expiring-7");
+        byState = rows.filter((r) => r.state === "expiring-7");
+        break;
       case "expiring-30":
-        return rows.filter((r) => r.state === "expiring-7" || r.state === "expiring-30");
+        byState = rows.filter((r) => r.state === "expiring-7" || r.state === "expiring-30");
+        break;
       case "expired":
-        return rows.filter((r) => r.state === "expired");
+        byState = rows.filter((r) => r.state === "expired");
+        break;
       default:
-        return rows;
+        byState = rows;
     }
-  }, [rows, filter]);
+    const q = search.trim().toLowerCase();
+    if (!q) return byState;
+    return byState.filter((r) =>
+      [
+        r.email,
+        r.name,
+        r.discountCode,
+        r.licenseKey,
+        r.subscriptionStatus,
+        r.source,
+        r.issuedByAffiliateName,
+        r.issuedByAffiliateEmail,
+      ].some((v) => v != null && v.toLowerCase().includes(q)),
+    );
+  }, [rows, filter, search]);
 
   // Clicking a header sorts by that column ascending; clicking it again flips
   // the direction. Sort is applied on top of the active filter.
@@ -380,6 +413,35 @@ export default function AdminCompsPage() {
       await load();
     } catch {
       window.alert("Network error saving. Please retry.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const extendComp = async (row: CompRow) => {
+    const who = row.email ?? row.name ?? "this comp";
+    const raw = window.prompt(`Add how many days to ${who} (code ${row.discountCode ?? "?"})?`, "14");
+    if (raw == null) return;
+    const days = Number(raw.trim());
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      window.alert("Enter a whole number of days between 1 and 365.");
+      return;
+    }
+    setBusyId(row.lsSubscriptionId);
+    try {
+      const res = await fetch("/api/admin/comps/extend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lsSubscriptionId: row.lsSubscriptionId, days }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        window.alert(json.error ?? "Could not extend.");
+        return;
+      }
+      await load();
+    } catch {
+      window.alert("Network error extending. Please retry.");
     } finally {
       setBusyId(null);
     }
@@ -583,9 +645,10 @@ export default function AdminCompsPage() {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             >
               <option value="monthly">Solo Monthly</option>
+              <option value="duo-monthly">Trio Monthly</option>
               <option value="team-monthly">Team Monthly</option>
               <option value="agency-monthly">Agency Monthly</option>
-              <option value="daily-deals-addon">Deals Influencer Butler Workspace (add-on)</option>
+              <option value="daily-deals-addon">Deals Butler Workspace (add-on)</option>
             </select>
           </label>
           <label className="text-sm">
@@ -701,6 +764,13 @@ export default function AdminCompsPage() {
             {f.label}
           </button>
         ))}
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search email, name, or code"
+          className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+        />
         <span className="ml-auto text-sm text-slate-500">
           {filtered.length} {filtered.length === 1 ? "comp" : "comps"}
         </span>
@@ -711,10 +781,12 @@ export default function AdminCompsPage() {
       ) : fetchError ? (
         <p className="mt-8 text-rose-600">{fetchError}</p>
       ) : filtered.length === 0 ? (
-        <p className="mt-8 text-slate-500">No comps in this view.</p>
+        <p className="mt-8 text-slate-500">
+          {search.trim() ? "No comps match your search." : "No comps in this view."}
+        </p>
       ) : (
         <section className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="w-full min-w-[1250px] text-left text-sm">
+          <table className="w-full min-w-[1360px] text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
               <tr>
                 {COLUMNS.map((col, i) =>
@@ -786,6 +858,9 @@ export default function AdminCompsPage() {
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">
                       {row.discountCode ?? "-"}
                     </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {row.planLabel ?? "-"}
+                    </td>
                     <td className="px-4 py-3">
                       {row.state === "forever" ? (
                         <span className="font-medium text-indigo-600">Forever</span>
@@ -839,28 +914,43 @@ export default function AdminCompsPage() {
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {done ? (
-                        <span className="text-xs text-slate-400">done</span>
-                      ) : (
-                        <div className="flex flex-col items-end gap-1">
-                          {row.months != null ? (
-                            <button
-                              onClick={() => void setMonths(row)}
-                              disabled={busy}
-                              className="text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50"
-                            >
-                              edit months
-                            </button>
-                          ) : null}
+                      <div className="flex flex-col items-end gap-1">
+                        {/* Extend is how you revive a lapsed in-house comp, so it
+                            shows even when done (cancelled), unlike the actions below. */}
+                        {row.source === "in_house" ? (
                           <button
-                            onClick={() => void cancelNow(row)}
+                            onClick={() => void extendComp(row)}
                             disabled={busy}
-                            className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                           >
-                            {busy ? "..." : "Cancel now"}
+                            {busy ? "..." : "Extend"}
                           </button>
-                        </div>
-                      )}
+                        ) : null}
+                        {done ? (
+                          row.source === "in_house" ? null : (
+                            <span className="text-xs text-slate-400">done</span>
+                          )
+                        ) : (
+                          <>
+                            {row.months != null ? (
+                              <button
+                                onClick={() => void setMonths(row)}
+                                disabled={busy}
+                                className="text-xs text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                              >
+                                edit months
+                              </button>
+                            ) : null}
+                            <button
+                              onClick={() => void cancelNow(row)}
+                              disabled={busy}
+                              className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                              {busy ? "..." : "Cancel now"}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

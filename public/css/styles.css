@@ -63,7 +63,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--brand);
+  color: var(--brand-700);
   margin-bottom: 0.75rem;
 }
 .section-sub { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0.75rem auto 0; }
@@ -82,11 +82,11 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   white-space: nowrap;
 }
 .btn-primary {
-  background: var(--brand);
+  background: var(--brand-700);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(249,115,22,.3);
+  box-shadow: 0 2px 8px rgba(194,65,12,.3);
 }
-.btn-primary:hover { background: var(--brand-600); box-shadow: 0 4px 16px rgba(249,115,22,.35); transform: translateY(-1px); }
+.btn-primary:hover { background: var(--brand-800); box-shadow: 0 4px 16px rgba(194,65,12,.35); transform: translateY(-1px); }
 .btn-outline {
   border: 2px solid var(--border);
   color: var(--text);
@@ -130,19 +130,144 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 2rem;
+  gap: 1.25rem;
+  padding: 0.85rem 1.5rem;
 }
-.logo { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.25rem; }
+.logo { display: flex; align-items: center; gap: 0.55rem; font-weight: 700; font-size: 1.25rem; flex: 0 0 auto; }
+#site-header .logo { font-size: 1.15rem; }
 .logo-img { width: 40px; height: 40px; object-fit: contain; }
-.nav-menu { display: flex; gap: 2rem; align-items: center; }
-.nav-link { font-size: 0.95rem; font-weight: 500; color: var(--muted); transition: color var(--transition); }
+.nav-menu { display: flex; gap: 1.35rem; align-items: center; }
+.nav-link { font-size: 0.9rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color var(--transition); }
 .nav-link:hover { color: var(--brand); }
-.nav-cta { margin-left: 1rem; }
+.nav-cta { margin-left: 0; white-space: nowrap; flex: 0 0 auto; }
 .hamburger { display: none; flex-direction: column; gap: 5px; width: 28px; padding: 4px 0; }
 .hamburger span { display: block; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s ease; }
 .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+/* Collapse the nav to a hamburger before the full link row would crowd or wrap.
+   The content width is capped at --max-w (1200px), so below ~1180px the row of
+   links no longer fits comfortably and the mobile menu takes over. */
+@media (max-width: 1180px) {
+  .hamburger { display: flex; }
+  .nav-menu {
+    position: fixed;
+    top: 62px;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem 2rem;
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transform: translateY(-120%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+  }
+  .nav-menu.open { transform: translateY(0); }
+}
+
+/* ================================================================
+   HEADER SITE SEARCH
+   A search box with an as-you-type dropdown, calling /api/search (the
+   same endpoint the React marketing pages use). The full box shows only
+   on wide screens; between the collapse point and there a magnifier icon
+   links to /search; inside the collapsed mobile menu a full box shows as
+   the first item. Wired by the inline script in index.html.
+   ================================================================ */
+.ib-search { position: relative; width: 190px; }
+.ib-search-field { position: relative; display: flex; align-items: center; }
+.ib-search-field svg { position: absolute; left: 10px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.ib-search-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem 0.5rem 2rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.ib-search-input::placeholder { color: var(--muted); }
+.ib-search-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-100); }
+.ib-search-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 1001;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  overflow: hidden;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.ib-search-item { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.55rem 0.85rem; text-decoration: none; }
+.ib-search-item:hover, .ib-search-item.active { background: var(--brand-50); }
+.ib-search-type {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+.ib-search-text { min-width: 0; }
+.ib-search-title { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ib-search-sum { display: block; margin-top: 1px; font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ib-search-all { display: block; padding: 0.55rem 0.85rem; font-size: 0.82rem; font-weight: 600; color: var(--brand-600); text-decoration: none; background: var(--bg-subtle); border-top: 1px solid var(--border); }
+.ib-search-all:hover { background: var(--brand-50); }
+.ib-search-empty { padding: 0.85rem; font-size: 0.82rem; color: var(--muted); }
+
+/* Desktop search: the link row is tight, so search is a magnifier that expands
+   into a field on click (a popover under the icon) rather than a permanent
+   inline box. Hidden below the mobile-collapse point, where the full-width box
+   inside the collapsed menu takes over instead. */
+.nav-search-wrap { position: relative; display: none; flex: 0 0 auto; }
+@media (min-width: 1181px) { .nav-search-wrap { display: block; } }
+.nav-search-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+.nav-search-toggle:hover { color: var(--brand); border-color: var(--brand); }
+.nav-search-toggle svg { width: 16px; height: 16px; }
+.nav-search {
+  display: none;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+}
+.nav-search.open { display: block; }
+/* Inside the fixed-width popover the panel just fills the box. */
+.nav-search .ib-search { width: 100%; }
+.nav-search .ib-search-panel { left: 0; right: 0; }
+
+/* The full-width search box inside the collapsed mobile menu. */
+.nav-menu-search { display: none; }
+@media (max-width: 1180px) {
+  .nav-menu-search { display: block; width: 100%; }
+  .nav-menu-search .ib-search { width: 100%; }
+  .nav-search-wrap { display: none; }
+}
 
 /* ================================================================
    HERO
@@ -210,7 +335,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 }
 .persona-pill:hover { border-color: var(--brand); color: var(--brand-600); transform: translateY(-1px); }
 
-/* App window mockup */
+/* Hero product shot */
 .hero-visual { position: relative; z-index: 1; }
 .app-window {
   border-radius: var(--radius-lg);
@@ -219,59 +344,36 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   border: 1px solid var(--border);
   background: var(--bg);
 }
-.app-window-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
-  background: #f3f4f6;
-  border-bottom: 1px solid var(--border);
-}
 .dot { width: 10px; height: 10px; border-radius: 50%; }
 .dot.red { background: #ef4444; }
 .dot.yellow { background: #f59e0b; }
 .dot.green { background: #22c55e; }
-.app-window-title { margin-left: 8px; font-size: 0.75rem; color: var(--muted); font-weight: 500; }
-.app-window-body { padding: 0; }
+.hero-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1276 / 687; /* reserve space, avoid layout shift */
+}
 
-/* Mock layout inside window */
-.app-mock { display: flex; min-height: 300px; }
-.mock-sidebar {
-  width: 60px;
-  background: #1e1e2e;
-  padding: 16px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Floating brand chip, overhangs the window corner sticker-style */
+.hero-badge {
+  position: absolute;
+  right: -14px;
+  bottom: -14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  box-shadow: var(--shadow-lg);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
 }
-.mock-nav-item {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255,255,255,.12);
-}
-.mock-nav-item.active { background: var(--brand); }
-.mock-main {
-  flex: 1;
-  padding: 20px;
-  background: #fafafa;
-}
-.mock-header-row { display: flex; gap: 12px; margin-bottom: 16px; }
-.mock-stat-card {
-  flex: 1;
-  height: 52px;
-  border-radius: var(--radius-sm);
-  background: #fff;
-  border: 1px solid #eee;
-}
-.mock-content-area { display: flex; flex-direction: column; gap: 8px; }
-.mock-table-row {
-  height: 28px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid #eee;
-}
-.mock-table-row:nth-child(odd) { width: 100%; }
-.mock-table-row:nth-child(even) { width: 90%; }
+.hero-badge img { width: 26px; height: 26px; border-radius: 6px; }
 
 /* ================================================================
    TRUST STRIP
@@ -342,7 +444,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   transition: all var(--transition);
 }
 .tab-btn:hover { border-color: var(--brand-300); color: var(--brand-600); }
-.tab-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.tab-btn.active { background: var(--brand-700); color: #fff; border-color: var(--brand-700); }
 .tab-count {
   display: inline-flex;
   align-items: center;
@@ -355,7 +457,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   margin-left: 4px;
   padding: 0 5px;
 }
-.tab-btn.active .tab-count { background: rgba(255,255,255,.3); }
+.tab-btn.active .tab-count { background: rgba(0,0,0,.3); }
 
 /* Feature grid */
 .feature-grid {
@@ -685,7 +787,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .pricing h2 { margin-bottom: 0.5rem; }
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-top: 3rem;
   align-items: start;
@@ -756,7 +858,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 }
 .billing-opt:hover { color: var(--text); }
 .billing-opt.is-active {
-  background: var(--brand);
+  background: var(--brand-700);
   color: #fff;
 }
 .billing-save {
@@ -768,7 +870,7 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   color: #065f46;
 }
 .billing-opt.is-active .billing-save {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
   color: #fff;
 }
 .pricing-header h3 { font-size: 1.3rem; margin-bottom: 0.25rem; }
@@ -847,16 +949,27 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
   margin-top: 1.5rem;
 }
 .testimonial-dot {
-  width: 0.6rem;
-  height: 0.6rem;
+  /* 24x24 hit area for accessible tap targets; the visible dot is drawn
+     smaller via ::before so the design stays unchanged. */
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 0;
   padding: 0;
-  background: var(--border);
+  background: transparent;
   cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+}
+.testimonial-dot::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--border);
   transition: background 0.15s ease, transform 0.15s ease;
 }
-.testimonial-dot.is-active { background: var(--brand); transform: scale(1.25); }
+.testimonial-dot.is-active::before { background: var(--brand); transform: scale(1.25); }
 .testimonial-dot:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .testimonial-dots:empty { display: none; }
 .testimonial-card {
@@ -1048,7 +1161,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
   margin-bottom: 2.5rem;
 }
 .footer-brand p { color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; max-width: 260px; }
-.footer-links h4 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-bottom: 1rem; }
+.footer-links h3, .footer-links h4 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-bottom: 1rem; }
 .footer-links a { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 0.6rem; transition: color var(--transition); }
 .footer-links a:hover { color: var(--brand); }
 .footer-bottom { border-top: 1px solid var(--border); padding-top: 1.5rem; }
@@ -1064,6 +1177,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
   .hero-visual { order: -1; max-width: 500px; margin: 0 auto; }
   .feature-grid { grid-template-columns: repeat(3, 1fr); }
   .pain-grid { grid-template-columns: repeat(2, 1fr); }
+  .pricing-grid { grid-template-columns: repeat(2, 1fr); }
   .spotlight { grid-template-columns: 1fr; gap: 2rem; }
   .spotlight.reverse { direction: ltr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -1071,23 +1185,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
 
 @media (max-width: 768px) {
   .container { padding-left: 1.25rem; padding-right: 1.25rem; }
-  .hamburger { display: flex; }
-  .nav-menu {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background: var(--bg);
-    flex-direction: column;
-    padding: 1.5rem 2rem;
-    gap: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    transform: translateY(-120%);
-    transition: transform 0.3s ease;
-    z-index: 999;
-  }
-  .nav-menu.open { transform: translateY(0); }
+  /* Hamburger + slide-down nav-menu are defined in the max-width:1180px block. */
   .nav-cta { display: none; }
   .hero { padding: 6rem 0 3rem; }
   h1 { font-size: 2.1rem; }
@@ -1135,7 +1233,6 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
   .sc-header,
   .sc-body { padding: 0.75rem 1rem; }
   .section-header h2 { font-size: 1.5rem; }
-  .app-mock { flex-direction: column; min-height: 0; }
 }
 
 /* ================================================================

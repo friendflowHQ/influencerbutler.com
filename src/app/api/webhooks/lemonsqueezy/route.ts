@@ -1,11 +1,18 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/webhooks";
 import { mintTrialDiscounts } from "@/lib/trial-discounts";
-import { firstNameFrom, logPurchaseActivity } from "@/lib/recent-activity";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
+import { firstNameFrom, logPurchaseActivity, logTrialStartActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
-import { lsApi } from "@/lib/lemonsqueezy";
+import { lsApi, planForVariantId, setLicenseKeyActivationLimit } from "@/lib/lemonsqueezy";
+import { SEAT_LIMIT, tierForPlan } from "@/lib/pricing-constants";
+import { rewardReferrerForSubscription } from "@/lib/referral-program";
+import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
+import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
+import { sendMetaEvent } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 
@@ -23,6 +30,9 @@ type LsWebhookPayload = {
       ref_affiliate_user_id?: string;
       ref_affiliate_code?: string;
       ref_attribution_status?: string;
+      fbp?: string;
+      fbc?: string;
+      meta_consent?: string;
     };
   };
   data?: {
@@ -67,6 +77,7 @@ type SupabaseServiceClient = {
       payload: Record<string, unknown>,
       options?: { onConflict: string },
     ) => Promise<WriteResult>;
+    insert: (payload: Record<string, unknown>) => Promise<WriteResult>;
     update: (payload: Record<string, unknown>) => {
       eq: (column: string, value: string) => UpdateFilter;
     };
@@ -150,12 +161,6 @@ async function sendWelcomeMagicLink(params: {
   to: string;
   actionLink: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("sendWelcomeMagicLink: RESEND_API_KEY not set - magic link email skipped");
-    return false;
-  }
-
   const body = [
     `Welcome to Influencer Butler - your payment is confirmed.`,
     ``,
@@ -170,33 +175,14 @@ async function sendWelcomeMagicLink(params: {
     `- The Influencer Butler team`,
   ].join("\n");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [params.to],
-        subject: "Your Influencer Butler sign-in link",
-        text: body,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("sendWelcomeMagicLink: Resend send failed", {
-        status: res.status,
-        body: text.slice(0, 500),
-      });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("sendWelcomeMagicLink: fetch threw", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: transactionalFrom(),
+    to: params.to,
+    subject: "Your Influencer Butler sign-in link",
+    text: body,
+    category: "purchase_welcome",
+  });
+  return ok;
 }
 
 /**
@@ -421,6 +407,28 @@ async function findSubscriptionByLsId(
   return { id: getString(data?.id), userId: getString(data?.user_id) };
 }
 
+/**
+ * Resolves a local order (by its LS order id) to the owning user and, when the
+ * order is a subscription order, the LS subscription id stored on it. Used as a
+ * fallback for events whose payload carries an order_id but no usable user
+ * context: license_key_created payloads carry order_id + user_email but NO
+ * subscription_id, so guest-checkout licenses could never resolve a user.
+ */
+async function findOrderByLsId(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+): Promise<{ userId: string | null; lsSubscriptionId: string | null }> {
+  const { data } = await supabase
+    .from("orders")
+    .select("user_id,ls_subscription_id")
+    .eq("ls_order_id", lsOrderId)
+    .maybeSingle();
+  return {
+    userId: getString(data?.user_id),
+    lsSubscriptionId: getString(data?.ls_subscription_id),
+  };
+}
+
 async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
   const { data } = await supabase.from(table).select("id").eq(column, value).maybeSingle();
   return Boolean(data);
@@ -462,7 +470,7 @@ async function stampTrialConversion(
  * prevent, for the cases the guard can't catch (guest/manual LS-dashboard
  * checkouts, or a pre-guard race).
  *
- * Only ever cancels trials, never a paid 'active' sub and never the Daily Deals
+ * Only ever cancels trials, never a paid 'active' sub and never the Deals
  * add-on (which is 'active', so already excluded by the status filter).
  * Cancelling a trial in LS stops it converting to paid; the resulting
  * subscription_cancelled webhook reconciles the row, but we also mark it here so
@@ -533,6 +541,51 @@ async function supersedeStaleTrials(
  * never affect webhook processing. An empty redemption result is an accepted
  * loss - the redemption record can lag the order webhook by a moment.
  */
+/**
+ * Best-effort capture of the Lemon Squeezy money breakdown (USD cents) onto
+ * the order row, for the admin Finance dashboard. Never throws and swallows
+ * column-missing errors (42703): prod migrations are applied by hand, so this
+ * must not break order processing while the finance migration is pending.
+ */
+async function captureOrderMoneyBreakdown(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+  attrs: Record<string, unknown>,
+): Promise<void> {
+  const cents = (value: unknown): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null;
+
+  const currency = getString(attrs.currency)?.toUpperCase() ?? null;
+  // Prefer the *_usd fields; fall back to the raw fields only for USD orders.
+  const usdFallback = (usd: unknown, raw: unknown): number | null =>
+    cents(usd) ?? (currency === "USD" ? cents(raw) : null);
+
+  const payload: Record<string, unknown> = {};
+  const subtotal = usdFallback(attrs.subtotal_usd, attrs.subtotal);
+  const tax = usdFallback(attrs.tax_usd, attrs.tax);
+  const total = usdFallback(attrs.total_usd, attrs.total);
+  const refunded = usdFallback(attrs.refunded_amount_usd, attrs.refunded_amount);
+  if (subtotal !== null) payload.subtotal_usd_cents = subtotal;
+  if (tax !== null) payload.tax_usd_cents = tax;
+  if (total !== null) payload.total_usd_cents = total;
+  if (refunded !== null) payload.refunded_usd_cents = refunded;
+  const refundedAt = getString(attrs.refunded_at);
+  if (refundedAt) payload.refunded_at = refundedAt;
+  if (Object.keys(payload).length === 0) return;
+
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update(payload)
+      .eq("ls_order_id", lsOrderId);
+    if (error && error.code !== "42703") {
+      console.error("captureOrderMoneyBreakdown: update failed", error, { lsOrderId });
+    }
+  } catch (error) {
+    console.error("captureOrderMoneyBreakdown: update threw", error, { lsOrderId });
+  }
+}
+
 async function captureOrderDiscount(
   supabase: SupabaseServiceClient,
   lsOrderId: string,
@@ -650,6 +703,16 @@ export async function POST(request: Request) {
     refAttributionStatusRaw === "live" || refAttributionStatusRaw === "pending"
       ? refAttributionStatusRaw
       : null;
+  // Meta Pixel browser identifiers stamped into checkout custom_data by the
+  // checkout routes. Renewal orders carry no custom_data, so these are null
+  // there and the Conversions API events match on email/external_id only.
+  const metaFbp = getString(payload.meta?.custom_data?.fbp);
+  const metaFbc = getString(payload.meta?.custom_data?.fbc);
+  // Advertising consent stamped by the checkout routes. The Conversions API
+  // Purchase/StartTrial events only fire when the buyer consented; renewals
+  // carry no custom_data (so no meta_consent) and are intentionally skipped
+  // rather than sent without a consent record.
+  const metaConsent = getString(payload.meta?.custom_data?.meta_consent) === "1";
 
   const handlers: Record<string, () => Promise<void>> = {
     order_created: async () => {
@@ -699,6 +762,7 @@ export async function POST(request: Request) {
 
       // Analytics only - never throws, never blocks order processing.
       await captureOrderDiscount(supabase, recordId, attrs.discount_total);
+      await captureOrderMoneyBreakdown(supabase, recordId, attrs);
 
       if (lsCustomerId) {
         await assertWrite(
@@ -724,6 +788,39 @@ export async function POST(request: Request) {
         planLabel:
           getString(firstItem?.variant_name) ?? getString(firstItem?.product_name),
       });
+
+      // Meta Conversions API Purchase for lookalike seeding. Deterministic
+      // event_id (the LS order id) turns LS webhook retries into a Meta-side
+      // dedup (48h window), so no DB guard or new migration is needed. $0
+      // orders (the trial-start order) are skipped: StartTrial covers that
+      // moment and a value-0 Purchase would pollute the seed. Renewals fire
+      // again on purpose: repeat purchasers are the best seed. No ip/ua here:
+      // this request comes from Lemon Squeezy's server, not the buyer.
+      if (metaConsent && typeof attrs.total === "number" && attrs.total > 0) {
+        const buyerName = getString(attrs.user_name);
+        const nameSplitIdx = buyerName ? buyerName.indexOf(" ") : -1;
+        void sendMetaEvent({
+          eventName: "Purchase",
+          eventId: `purchase-${recordId}`,
+          userData: {
+            email: orderEmail,
+            firstName: firstNameFrom(buyerName),
+            lastName:
+              buyerName && nameSplitIdx > 0
+                ? buyerName.slice(nameSplitIdx + 1).trim() || null
+                : null,
+            externalId: userId,
+            fbp: metaFbp,
+            fbc: metaFbc,
+          },
+          customData: {
+            value: attrs.total / 100,
+            currency: (getString(attrs.currency) ?? "USD").toUpperCase(),
+            content_name:
+              getString(firstItem?.variant_name) ?? getString(firstItem?.product_name) ?? "order",
+          },
+        });
+      }
     },
 
     // Mirror LS refunds onto orders.status so the owed-commissions report
@@ -732,14 +829,78 @@ export async function POST(request: Request) {
     // returned. LS sends the new status ('refunded' or 'partial_refund') in the
     // payload; we only update an existing row (no upsert) so a stray refund
     // event for an unknown order is a no-op rather than a phantom insert.
+    //
+    // Clawback: if we had ALREADY paid the affiliate commission on this order
+    // (reconciled_amount_cents > 0), flipping status is not enough - the money is
+    // gone. Record a negative, open affiliate_commission_adjustments row for what
+    // we paid, so the next automated disburse nets it back. Idempotent on the
+    // order id (related_customer) so a re-delivered refund event never doubles it.
     order_refunded: async () => {
       if (!recordId) return;
+
+      // Read the order first so we know whether commission was already paid and
+      // who the referring affiliate was.
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("ref_affiliate_user_id,reconciled_amount_cents,currency")
+        .eq("ls_order_id", recordId)
+        .maybeSingle();
+
       await assertWrite(
         "orders.update(order_refunded)",
         supabase
           .from("orders")
           .update({ status: getString(attrs.status) ?? "refunded" })
           .eq("ls_order_id", recordId),
+      );
+
+      // Finance enrichment: refunded amount + timestamp (best-effort).
+      await captureOrderMoneyBreakdown(supabase, recordId, {
+        ...attrs,
+        // A full refund without an explicit amount refunds the whole total.
+        refunded_amount_usd:
+          attrs.refunded_amount_usd ??
+          (getString(attrs.status) === "refunded" ? attrs.total_usd : undefined),
+        refunded_at: attrs.refunded_at ?? new Date().toISOString(),
+      });
+
+      const affiliateUserId =
+        typeof existingOrder?.ref_affiliate_user_id === "string"
+          ? existingOrder.ref_affiliate_user_id
+          : null;
+      const paidCents =
+        typeof existingOrder?.reconciled_amount_cents === "number"
+          ? existingOrder.reconciled_amount_cents
+          : 0;
+      if (!affiliateUserId || paidCents <= 0) return; // nothing was paid -> no clawback
+
+      // Idempotency: skip if a clawback for this order already exists. Filter the
+      // negative amount in JS (the typed client only chains .eq here).
+      const { data: prior } = await supabase
+        .from("affiliate_commission_adjustments")
+        .select("id,amount_cents")
+        .eq("related_customer", recordId);
+      if (
+        Array.isArray(prior) &&
+        prior.some((r) => typeof r.amount_cents === "number" && r.amount_cents < 0)
+      ) {
+        return;
+      }
+
+      await assertWrite(
+        "affiliate_commission_adjustments.insert(clawback)",
+        supabase.from("affiliate_commission_adjustments").insert({
+          user_id: affiliateUserId,
+          amount_cents: -paidCents,
+          currency:
+            typeof existingOrder?.currency === "string" ? existingOrder.currency : "USD",
+          note: `Refund/chargeback clawback on order ${recordId}`,
+          // 'manual' keeps within the source CHECK constraint (makewhole|manual);
+          // related_customer carries the order id for idempotency + admin context.
+          source: "manual",
+          related_customer: recordId,
+          created_by: "ls-webhook:order_refunded",
+        }),
       );
     },
 
@@ -796,12 +957,50 @@ export async function POST(request: Request) {
       if (isTrial && !isAddonSubscription) {
         basePayload.trial_started_at = new Date().toISOString();
 
-        const trialDiscounts = await mintTrialDiscounts({
-          trialEndsAt,
-          userId,
+        // Record the real trial start for the public recent-activity widget.
+        // Best-effort and non-throwing so it can never break the webhook.
+        // Location comes from the geo stashed at checkout under user:<id> (the
+        // same key logPurchaseActivity uses in order_created); no name is
+        // required (the widget falls back to "Someone").
+        void logTrialStartActivity({
+          geoKey: `user:${userId}`,
+          firstName: firstNameFrom(getString(attrs.user_name)),
         });
-        if (trialDiscounts) {
-          Object.assign(basePayload, trialDiscounts);
+
+        // No-stacking: do not mint a member trial discount when the customer
+        // already redeemed one at checkout. The referring-affiliate stamp on
+        // this very delivery is the most reliable signal (the trial-start order
+        // may not have landed yet); hasRedeemedDiscount also catches a
+        // welcome/promo code once the order row exists.
+        const alreadyDiscounted =
+          Boolean(refAffiliateUserId || refAffiliateCode) ||
+          (await hasRedeemedDiscount(supabase, userId));
+
+        if (!alreadyDiscounted) {
+          const trialDiscounts = await mintTrialDiscounts({
+            trialEndsAt,
+            userId,
+          });
+          if (trialDiscounts) {
+            Object.assign(basePayload, trialDiscounts);
+          }
+        }
+
+        // Meta Conversions API StartTrial: the $0 trial-start order fires no
+        // Purchase (see order_created), so this is the trial moment's
+        // audience signal. Deterministic event_id (the LS subscription id)
+        // turns webhook retries into a Meta-side dedup. Gated on the consent
+        // flag stamped at checkout.
+        if (metaConsent) {
+          void sendMetaEvent({
+            eventName: "StartTrial",
+            eventId: `trial-${recordId}`,
+            userData: { email: subEmail, externalId: userId, fbp: metaFbp, fbc: metaFbc },
+            customData: {
+              content_name:
+                getString(attrs.product_name) ?? getString(attrs.variant_name) ?? "trial",
+            },
+          });
         }
       } else if (status === "active" && !isAddonSubscription) {
         // Direct Pro subscriber: paid from day one, no free trial. Anchor the
@@ -846,6 +1045,14 @@ export async function POST(request: Request) {
       if (!isAddonSubscription && (status === "on_trial" || status === "active")) {
         await supersedeStaleTrials(supabase, userId, recordId);
       }
+
+      // Consumer referral: a direct paid signup (active from day one) by a
+      // referred friend rewards their referrer. Gated + idempotent inside;
+      // best-effort so it never fails the webhook. Trials reward later, on the
+      // subscription_updated -> active conversion below.
+      if (status === "active" && !isAddonSubscription) {
+        await rewardReferrerForSubscription(recordId);
+      }
     },
 
     subscription_updated: async () => {
@@ -873,6 +1080,57 @@ export async function POST(request: Request) {
       // analytics stamp; guards inside make it idempotent and trials-only.
       if (getString(attrs.status) === "active") {
         await stampTrialConversion(supabase, recordId);
+        // A referred friend's trial just converted to paid: reward the referrer.
+        await rewardReferrerForSubscription(recordId);
+      }
+
+      // Seat resync after a plan change: LS does not reliably re-apply the new
+      // product's activation_limit to an existing license key on a variant
+      // swap, so bring the key's device cap in line with the tier ourselves.
+      // Mismatch-gated (zero LS calls in the steady state) and best-effort: a
+      // resync failure must never fail the webhook.
+      try {
+        const plan = planForVariantId(getIdString(attrs.variant_id));
+        const tier = tierForPlan(plan);
+        if (tier) {
+          const expected = SEAT_LIMIT[tier];
+          const { id: subId } = await findSubscriptionByLsId(supabase, recordId);
+          if (subId) {
+            const { data: keys } = await supabase
+              .from("license_keys")
+              .select("ls_license_key_id,status,activation_limit,created_at")
+              .eq("subscription_id", subId);
+            const rows = ((keys ?? []) as {
+              ls_license_key_id?: string | null;
+              status?: string | null;
+              activation_limit?: number | null;
+              created_at?: string | null;
+            }[]).sort(
+              // Newest first, so the fallback below matches "prefer active,
+              // then newest" everywhere else license keys are picked.
+              (a, b) =>
+                new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+            );
+            const active = rows.find((k) => k.status === "active") ?? rows[0];
+            if (
+              active?.ls_license_key_id &&
+              active.activation_limit !== expected
+            ) {
+              const patched = await setLicenseKeyActivationLimit(
+                active.ls_license_key_id,
+                expected,
+              );
+              if (patched) {
+                await supabase
+                  .from("license_keys")
+                  .update({ activation_limit: expected })
+                  .eq("ls_license_key_id", active.ls_license_key_id);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("subscription_updated: seat resync failed", error);
       }
     },
 
@@ -888,6 +1146,48 @@ export async function POST(request: Request) {
           })
           .eq("ls_subscription_id", recordId),
       );
+
+      // If this cancellation never went through our in-app funnel (which would
+      // have left a subscription_cancel_reasons row), email a one-question
+      // survey so no churn goes unmeasured. Best-effort: never fail the webhook.
+      try {
+        const alreadySurveyed = await recordExists(
+          supabase,
+          "subscription_cancel_reasons",
+          "subscription_id",
+          recordId,
+        );
+        if (!alreadySurveyed) {
+          const { userId } = await findSubscriptionByLsId(supabase, recordId);
+          const email = getString(attrs.user_email);
+          if (userId && email) {
+            const token = randomUUID();
+            const { error: insertError } = await supabase
+              .from("subscription_cancel_reasons")
+              .insert({
+                user_id: userId,
+                subscription_id: recordId,
+                reason: "unspecified",
+                source: "email",
+                survey_token: token,
+                emailed_at: new Date().toISOString(),
+                offer_shown: false,
+                offer_accepted: false,
+              });
+            if (!insertError) {
+              await sendCancelSurveyEmail({
+                to: email,
+                token,
+                name: firstNameFrom(getString(attrs.user_name)),
+              });
+            } else {
+              console.error("cancel-survey pending insert failed", insertError);
+            }
+          }
+        }
+      } catch (surveyErr) {
+        console.error("cancel-survey email side effect failed", surveyErr);
+      }
     },
 
     subscription_paused: async () => {
@@ -923,7 +1223,19 @@ export async function POST(request: Request) {
       const sub = lsSubscriptionId
         ? await findSubscriptionAttribution(supabase, lsSubscriptionId)
         : { userId: null, refAffiliateUserId: null, refAffiliateCode: null, attributionStatus: null };
-      const userId = directUserId || sub.userId;
+      let userId = directUserId || sub.userId;
+
+      // Fallback: the initial payment can arrive before subscription_created has
+      // written the subscription row, so the subscription lookup misses. The
+      // invoice carries user_email; resolve to an existing profile without
+      // sending a welcome email (findUserIdByEmail, not ensureUserForEmail) so a
+      // routine renewal never re-mails a sign-in link.
+      if (!userId) {
+        const payEmail = getString(attrs.user_email);
+        if (payEmail) {
+          userId = await findUserIdByEmail(supabase, payEmail);
+        }
+      }
 
       if (!userId) {
         throw new Error(
@@ -960,6 +1272,7 @@ export async function POST(request: Request) {
       // A successful payment on a trial subscription is also its conversion
       // moment (belt-and-braces alongside subscription_updated).
       await captureOrderDiscount(supabase, renewalOrderId, attrs.discount_total);
+      await captureOrderMoneyBreakdown(supabase, renewalOrderId, attrs);
       if (lsSubscriptionId) {
         await stampTrialConversion(supabase, lsSubscriptionId);
       }
@@ -978,6 +1291,9 @@ export async function POST(request: Request) {
     },
 
     affiliate_activated: async () => {
+      // Legacy path: new affiliates onboard self-hosted (AFFILIATE_SELF_HOSTED,
+      // default on) and never touch the LS portal, but LS still delivers this
+      // event for affiliates activated in its own system, so keep it working.
       if (!recordId) return;
 
       const rawEmail =
@@ -1071,17 +1387,36 @@ export async function POST(request: Request) {
         );
       }
 
-      await assertWrite(
-        "profiles.upsert(affiliate_activated)",
-        supabase.from("profiles").upsert(
-          {
+      // Split update/insert instead of upsert: profiles.email is NOT NULL and
+      // Postgres validates the proposed insert row BEFORE on-conflict
+      // resolution, so an email-less upsert 23502s even when the row already
+      // exists. The update side must NOT carry email (the account email may
+      // have changed since the affiliate application); the insert side must
+      // (fresh row for an auth-only or application-only match).
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profileRow) {
+        await assertWrite(
+          "profiles.update(affiliate_activated)",
+          supabase
+            .from("profiles")
+            .update({ is_affiliate: true, ls_affiliate_id: recordId })
+            .eq("id", userId),
+        );
+      } else {
+        await assertWrite(
+          "profiles.insert(affiliate_activated)",
+          supabase.from("profiles").insert({
             id: userId,
+            email,
             is_affiliate: true,
             ls_affiliate_id: recordId,
-          },
-          { onConflict: "id" },
-        ),
-      );
+          }),
+        );
+      }
 
       // LS exposes no activation timestamp, so stamp our own the FIRST time we
       // learn they are active. The is(null) guard keeps the original date if
@@ -1099,15 +1434,52 @@ export async function POST(request: Request) {
     license_key_created: async () => {
       if (!recordId) return;
 
-      const lsSubscriptionId = getIdString(attrs.subscription_id);
-      const subscription = lsSubscriptionId
+      // LS license_key_created payloads carry NO subscription_id attribute (only
+      // order_id, customer_id, user_email), so for guest checkouts (no
+      // custom_data.supabase_user_id) neither directUserId nor the subscription
+      // lookup can resolve a user - every such delivery failed with
+      // "no user context for sub=null" and, because we return 200, LS never
+      // retried. Resolve through a fallback chain: the LS subscription id (rarely
+      // present here) -> the local order row (written by order_created) -> the
+      // invoice email (always present, provisions a guest buyer).
+      let lsSubscriptionId = getIdString(attrs.subscription_id);
+      let subscription = lsSubscriptionId
         ? await findSubscriptionByLsId(supabase, lsSubscriptionId)
-        : { id: null, userId: null };
-      const userId = directUserId || subscription.userId;
+        : { id: null as string | null, userId: null as string | null };
+      let userId: string | null = directUserId || subscription.userId;
+
+      // Fallback 1: resolve via the order this license belongs to. The local
+      // order row carries user_id and, for a subscription order, the
+      // ls_subscription_id the payload omitted - so we can also link the license
+      // to its subscription immediately instead of waiting for the
+      // subscription_created backfill.
+      const lsOrderId = getIdString(attrs.order_id);
+      if (!userId && lsOrderId) {
+        const order = await findOrderByLsId(supabase, lsOrderId);
+        userId = order.userId;
+        if (!subscription.id && order.lsSubscriptionId) {
+          lsSubscriptionId = order.lsSubscriptionId;
+          subscription = await findSubscriptionByLsId(supabase, order.lsSubscriptionId);
+          userId = userId || subscription.userId;
+        }
+      }
+
+      // Fallback 2: provision from the invoice email (guest checkout, or the
+      // license event racing ahead of order_created). ensureUserForEmail is
+      // idempotent and its welcome email is dedup-guarded, so re-provisioning an
+      // already-known buyer is safe.
+      if (!userId) {
+        const licenseEmail = getString(attrs.user_email);
+        if (licenseEmail) {
+          userId = await ensureUserForEmail(supabase, licenseEmail, {
+            lsCustomerId: getIdString(attrs.customer_id),
+          });
+        }
+      }
 
       if (!userId) {
         throw new Error(
-          `license_key_created: no user context for sub=${lsSubscriptionId ?? "null"}`,
+          `license_key_created: no user context - sub=${lsSubscriptionId ?? "null"}, order=${lsOrderId ?? "null"}, email=${getString(attrs.user_email) ?? "null"}`,
         );
       }
 
@@ -1136,11 +1508,18 @@ export async function POST(request: Request) {
 
     license_key_updated: async () => {
       if (!recordId) return;
+      // Also resync activation_limit so an LS-side seat change (plan switch,
+      // manual edit in the LS dashboard) self-heals our mirror. Only written
+      // when present in the payload.
+      const updatedLimit = attrs.activation_limit;
       await assertWrite(
         "license_keys.update(license_key_updated)",
         supabase
           .from("license_keys")
-          .update({ status: getString(attrs.status) })
+          .update({
+            status: getString(attrs.status),
+            ...(typeof updatedLimit === "number" ? { activation_limit: updatedLimit } : {}),
+          })
           .eq("ls_license_key_id", recordId),
       );
     },

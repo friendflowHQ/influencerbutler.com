@@ -18,6 +18,7 @@ type OverviewResponse = {
   pendingAffiliates?: number | null;
   pendingTestimonials?: number | null;
   pendingCommunity?: number | null;
+  newExtensionFeedback?: number | null;
   webhookErrors24h?: number | null;
   error?: string;
 };
@@ -139,7 +140,7 @@ function TrialFunnelSection() {
         </table>
       </div>
       <p className="mt-2 text-xs text-slate-400">
-        Cohort conversion counts a conversion in the week the trial STARTED; the current week's
+        Cohort conversion counts a conversion in the week the trial STARTED; the current week&apos;s
         trials are still in progress.
       </p>
     </section>
@@ -202,6 +203,7 @@ export default function AdminOverviewPage() {
     { label: "Affiliate applications", count: data?.pendingAffiliates, href: "/dashboard/admin/affiliates" },
     { label: "Testimonials to review", count: data?.pendingTestimonials, href: "/dashboard/admin/testimonials" },
     { label: "Community posts to review", count: data?.pendingCommunity, href: "/dashboard/admin/community" },
+    { label: "New extension feedback", count: data?.newExtensionFeedback, href: "/dashboard/admin/extension-feedback" },
     { label: "Webhook errors (24h)", count: data?.webhookErrors24h, href: "/dashboard/admin/webhooks" },
   ].filter((t) => t.count !== undefined);
 
@@ -225,12 +227,32 @@ export default function AdminOverviewPage() {
                   Subscriptions
                 </h2>
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {STATUS_LABELS.map((s) => (
-                    <div key={s.key} className="rounded-xl border border-slate-200 bg-white p-4">
-                      <p className={`text-2xl font-bold ${s.tone}`}>{num(subs.byStatus[s.key])}</p>
-                      <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
-                    </div>
-                  ))}
+                  {STATUS_LABELS.map((s) => {
+                    const body = (
+                      <>
+                        <p className={`text-2xl font-bold ${s.tone}`}>{num(subs.byStatus[s.key])}</p>
+                        <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+                      </>
+                    );
+                    // The Cancelled tile links to the full cancellations list, where
+                    // each churned customer's automatic 3-month win-back comp shows.
+                    if (s.key === "cancelled") {
+                      return (
+                        <Link
+                          key={s.key}
+                          href="/dashboard/admin/cancellations"
+                          className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-rose-300 hover:shadow-sm"
+                        >
+                          {body}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <div key={s.key} className="rounded-xl border border-slate-200 bg-white p-4">
+                        {body}
+                      </div>
+                    );
+                  })}
                 </div>
                 {subs.other !== null && subs.other > 0 ? (
                   <p className="mt-2 text-xs text-slate-500">

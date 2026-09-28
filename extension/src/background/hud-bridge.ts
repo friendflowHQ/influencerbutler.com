@@ -5,16 +5,31 @@ import {
 } from "../shared/constants";
 import { normalizeCreatorMode } from "../shared/creator-mode";
 import { log } from "../shared/log";
+import { isAndroid } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
 import type {
+  BrandEnrichmentResult,
+  CampaignStatusResult,
+  DesktopHistoryResult,
   EarningsLookupResult,
   HudCommand,
   HudCommandResult,
   HudStatus,
   NotifyPollResult,
+  OutreachKeywordsResult,
+  OwnershipLookupResult,
   PairResult,
+  TemplatesLookupResult,
+  YouTubeStatusResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
+import type {
+  DesktopSettingsResult,
+  PushSettingsResult,
+  SyncMode,
+  SyncSettingsPayload,
+} from "../transport/sync-settings";
+import { coerceSyncPayload } from "../tools/settings-sync/merge";
 
 // Where the pairing token + this extension install's stable client id live.
 // The client id is generated once and reused so re-pairing rotates the token
@@ -65,8 +80,16 @@ export async function getClientId(): Promise<string> {
 let cached: { status: HudStatus; at: number } | null = null;
 
 export async function getHudStatus(force = false): Promise<HudStatus> {
+  // Android extension browsers (Lemur): there is no desktop app on this
+  // device's loopback, so skip the three-port probe the sync chip would
+  // otherwise repeat every 20s.
+  if (await isAndroid()) return { connected: false, paired: false, mobile: true };
+  // Read pairing OUTSIDE the probe cache: a token can be granted while a cached
+  // "connected" status is still warm, and a stale paired:false would keep
+  // showing the pairing prompt after the user had already paired.
+  const paired = !!(await getToken());
   if (!force && cached && Date.now() - cached.at < BRIDGE_STATUS_TTL_MS) {
-    return cached.status;
+    return { ...cached.status, paired };
   }
   const status = await probe();
   cached = { status, at: Date.now() };
@@ -84,7 +107,7 @@ export async function getHudStatus(force = false): Promise<HudStatus> {
       // storage may be unavailable; filtering falls back to the stored default
     }
   }
-  return status;
+  return { ...status, paired };
 }
 
 async function probe(): Promise<HudStatus> {
@@ -130,6 +153,7 @@ function probePort(port: number): Promise<HudStatus | null> {
           appVersion?: string;
           dealWorkspaces?: Array<{ key: string; label: string }>;
           creatorMode?: unknown;
+          ideaLists?: Array<{ listId?: unknown; title?: unknown }>;
         };
         if (frame.type === "hello" || frame.type === "status") {
           done({
@@ -137,6 +161,13 @@ function probePort(port: number): Promise<HudStatus | null> {
             appVersion: frame.appVersion,
             dealWorkspaces: frame.dealWorkspaces,
             creatorMode: normalizeCreatorMode(frame.creatorMode),
+            // Idea List capture targets; absent on older app builds. Kept to
+            // well-shaped rows so a malformed frame cannot poison the menu.
+            ideaLists: Array.isArray(frame.ideaLists)
+              ? frame.ideaLists
+                  .filter((l) => typeof l?.listId === "string" && typeof l?.title === "string")
+                  .map((l) => ({ listId: l.listId as string, title: l.title as string }))
+              : undefined,
           });
           return;
         }
@@ -225,6 +256,149 @@ function sendToPort(
         if (frame.type === "command.result") {
           log("hud", `command ${command.type} -> ${frame.ok ? "ok" : "fail"}`);
           done({ ok: frame.ok === true, message: frame.message, needsPairing: frame.needsPairing });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Settings sync ────────────────────────────────────────────────────────────
+// Pull the desktop app's integration settings, or push the extension's, over the
+// local bridge with greenfield frames (settings.get / settings.push). An older
+// app ignores unknown frame types, so a paired-but-silent result surfaces as
+// app-unavailable and the UI asks the user to update the app. These frames can
+// carry decrypted secrets, so they ride the LOCAL bridge only, never the relay.
+
+export async function fetchDesktopSettings(): Promise<DesktopSettingsResult> {
+  const token = await getToken();
+  if (!token) return { status: "not-paired" };
+  for (const port of BRIDGE_PORTS) {
+    const payload = await fetchSettingsOnPort(port, token);
+    if (payload) return { status: "ok", payload };
+  }
+  cached = null; // nothing answered; refresh status next time
+  return { status: "app-unavailable" };
+}
+
+function fetchSettingsOnPort(port: number, token: string): Promise<SyncSettingsPayload | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: SyncSettingsPayload | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as { type?: string; payload?: unknown };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "settings.get" }));
+          return;
+        }
+        if (frame.type === "settings.result") {
+          done(coerceSyncPayload(frame.payload));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done(null);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+export async function pushDesktopSettings(
+  payload: SyncSettingsPayload,
+  mode: SyncMode,
+): Promise<PushSettingsResult> {
+  const token = await getToken();
+  if (!token) return { status: "not-paired" };
+  for (const port of BRIDGE_PORTS) {
+    const applied = await pushSettingsOnPort(port, payload, mode, token);
+    if (applied !== null) return { status: "ok", applied };
+  }
+  cached = null;
+  return { status: "app-unavailable" };
+}
+
+function pushSettingsOnPort(
+  port: number,
+  payload: SyncSettingsPayload,
+  mode: SyncMode,
+  token: string,
+): Promise<number | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: number | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          applied?: number;
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "settings.push", mode, payload }));
+          return;
+        }
+        if (frame.type === "settings.push.result") {
+          done(frame.ok === true ? (typeof frame.applied === "number" ? frame.applied : 0) : null);
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done(null);
           return;
         }
       } catch {
@@ -378,9 +552,587 @@ function lookupEarningsOnPort(
           return;
         }
         if (frame.type === "earnings.result") {
+          // The whole AsinEarnings[] is forwarded as-is, so the optional
+          // byStore/byYear/byMonth/campaigns buckets a newer app sends reach the
+          // page without any transform here; older apps just omit them.
           done({
             ok: frame.ok === true,
             results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Outreach keywords (brand -> searched keyword) ────────────────────────────
+// Ask the running app which brands the creator messaged with the "Message
+// Brands" tool and the search keyword that surfaced each one, so the Creator
+// Connections Messages widget can badge every conversation with its keyword.
+// Read-only; authed with the pairing token because it returns the creator's
+// private outreach ledger. Returns paired:false when never connected so the
+// caller stays silent (no chips) instead of erroring.
+
+export async function fetchOutreachKeywords(): Promise<OutreachKeywordsResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, records: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchOutreachKeywordsOnPort(port, token);
+    if (result) return result;
+  }
+  cached = null;
+  return { ok: false, records: [] };
+}
+
+function fetchOutreachKeywordsOnPort(
+  port: number,
+  token: string,
+): Promise<OutreachKeywordsResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: OutreachKeywordsResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          records?: OutreachKeywordsResult["records"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "outreach.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, records: [] });
+          return;
+        }
+        if (frame.type === "outreach.result") {
+          done({
+            ok: frame.ok === true,
+            records: Array.isArray(frame.records) ? frame.records : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Message templates (desktop template store -> composer picker) ────────────
+// Ask the running app for the creator's own message templates (and the resolved
+// placeholder values from the same workspace) so the Message Templates picker on
+// the Creator Connections Messages composer can offer them next to the
+// extension's local templates. Read-only; authed with the pairing token because
+// the templates are the creator's private copy. Returns paired:false when never
+// connected so the caller stays silent (local templates only) instead of
+// erroring. Mirrors fetchOutreachKeywords exactly.
+
+export async function fetchMessageTemplates(): Promise<TemplatesLookupResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, templates: [], values: {} };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchMessageTemplatesOnPort(port, token);
+    if (result) return result;
+  }
+  return { ok: false, templates: [], values: {} };
+}
+
+// Ownership lookup: given a batch of ASINs the creator is browsing, ask the
+// desktop app whether they already own each (Orders Butler history) and whether
+// they already posted/promoted it (Storefront / Deals / YouTube). Read-only
+// and authed. Returns paired:false when the app has never been connected so the
+// caller can fall back to the server-backed owned list or stay silent. Mirrors
+// fetchMessageTemplates. Short-circuits an empty batch (no socket).
+export async function fetchOwnership(asins: string[]): Promise<OwnershipLookupResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(asins) ? asins : []).map((a) => String(a || "").trim().toUpperCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchOwnershipOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchOwnershipOnPort(
+  port: number,
+  asins: string[],
+  token: string,
+): Promise<OwnershipLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: OwnershipLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: OwnershipLookupResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "ownership.lookup", payload: { asins } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "ownership.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// Campaign-status lookup: given a batch of ASINs the creator is browsing, ask the
+// desktop app whether they are already ENROLLED in a Creator Connections / SPCC
+// campaign for each (its accepted-history ledger, kept fresh by the app's hourly
+// sync), plus the accepted rate and their realized EPC. Read-only and authed.
+// Returns paired:false when the app has never been connected so the caller stays
+// silent (enrollment lives only on the desktop, no server fallback). Mirrors
+// fetchOwnership. Short-circuits an empty batch (no socket).
+export async function fetchCampaignStatus(asins: string[]): Promise<CampaignStatusResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(asins) ? asins : []).map((a) => String(a || "").trim().toUpperCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchCampaignStatusOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchCampaignStatusOnPort(
+  port: number,
+  asins: string[],
+  token: string,
+): Promise<CampaignStatusResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: CampaignStatusResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: CampaignStatusResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "campaign.status.lookup", payload: { asins } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "campaign.status.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// Read-only YouTube upload-status lookup: given a batch of Amazon video content
+// ids (their /vdp/ identity), ask the desktop YouTube Butler which have already
+// been uploaded to YouTube (its per-video upload ledger). Read-only and authed.
+// Returns paired:false when the app has never been connected so the caller shows
+// a muted "connect the app" state (upload status lives only on the desktop, no
+// server fallback). Mirrors fetchCampaignStatus. Short-circuits an empty batch.
+export async function fetchYouTubeStatus(contentIds: string[]): Promise<YouTubeStatusResult> {
+  const unique = Array.from(
+    new Set((Array.isArray(contentIds) ? contentIds : []).map((c) => String(c || "").trim().toLowerCase()).filter(Boolean)),
+  );
+  if (unique.length === 0) return { ok: true, results: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, results: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchYouTubeStatusOnPort(port, unique, token);
+    if (result) return result;
+  }
+  return { ok: false, results: [] };
+}
+
+function fetchYouTubeStatusOnPort(
+  port: number,
+  contentIds: string[],
+  token: string,
+): Promise<YouTubeStatusResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: YouTubeStatusResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          results?: YouTubeStatusResult["results"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "youtube.status.lookup", payload: { contentIds } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, results: [] });
+          return;
+        }
+        if (frame.type === "youtube.result") {
+          done({
+            ok: frame.ok === true,
+            results: Array.isArray(frame.results) ? frame.results : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+function fetchMessageTemplatesOnPort(
+  port: number,
+  token: string,
+): Promise<TemplatesLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: TemplatesLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          templates?: TemplatesLookupResult["templates"];
+          values?: TemplatesLookupResult["values"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "templates.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, templates: [], values: {} });
+          return;
+        }
+        if (frame.type === "templates.result") {
+          done({
+            ok: frame.ok === true,
+            templates: Array.isArray(frame.templates) ? frame.templates : [],
+            values: frame.values && typeof frame.values === "object" ? frame.values : {},
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Brand enrichment (inbound brands -> CC signal) ───────────────────────────
+// Ask the running app to resolve a batch of brand names (read from the Messages
+// inbox) against the global CC brand index, so an *inbound* conversation the
+// creator never pitched can still show a commission-rate/cadence chip. Read-only
+// and authed like the outreach lookup. Returns paired:false when never connected
+// so the caller stays silent (no chips) instead of erroring.
+
+export async function fetchBrandEnrichment(brands: string[]): Promise<BrandEnrichmentResult> {
+  const list = Array.from(new Set(brands.map((b) => (b ?? "").trim()).filter(Boolean)));
+  if (list.length === 0) return { ok: true, records: [] };
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, records: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchBrandEnrichmentOnPort(port, token, list);
+    if (result) return result;
+  }
+  return { ok: false, records: [] };
+}
+
+function fetchBrandEnrichmentOnPort(
+  port: number,
+  token: string,
+  brands: string[],
+): Promise<BrandEnrichmentResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: BrandEnrichmentResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          records?: BrandEnrichmentResult["records"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "brand.enrichment", payload: { brands } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, records: [] });
+          return;
+        }
+        if (frame.type === "brand.enrichment.result") {
+          done({
+            ok: frame.ok === true,
+            records: Array.isArray(frame.records) ? frame.records : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Product history (durable desktop store) ──────────────────────────────────
+// Ask the running app for an ASIN's full price/rank history from its durable
+// time-series (the app may in turn backfill from a deep-history provider, at
+// most once per ASIN). The overlay prefers this over the extension's capped
+// local store. Authed with the pairing token because it returns the creator's
+// private research data. Returns paired:false when never connected so the
+// caller silently falls back to the local sparkline.
+
+export async function fetchDesktopHistory(asin: string): Promise<DesktopHistoryResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, points: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchDesktopHistoryOnPort(port, asin, token);
+    if (result) return result;
+  }
+  cached = null;
+  return { ok: false, points: [] };
+}
+
+function fetchDesktopHistoryOnPort(
+  port: number,
+  asin: string,
+  token: string,
+): Promise<DesktopHistoryResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: DesktopHistoryResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    // A first-time backfill can call out to a provider, so allow a little
+    // longer than the pure-local lookups before giving up.
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 6);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          asin?: string;
+          points?: DesktopHistoryResult["points"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "history.backfill", payload: { asin } }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, points: [] });
+          return;
+        }
+        if (frame.type === "history.result") {
+          done({
+            ok: frame.ok === true,
+            asin: frame.asin,
+            points: Array.isArray(frame.points) ? frame.points : [],
           });
           return;
         }
@@ -475,11 +1227,16 @@ function pollNotificationsOnPort(
 }
 
 // ── Pairing ────────────────────────────────────────────────────────────────
+// Surfaces hide pairing on Android (HudStatus.mobile); this is the backstop
+// message if a stale page still asks.
+const PAIRING_DESKTOP_ONLY =
+  "Pairing works on a Windows or Mac computer. On Android, link a desktop app on another computer instead.";
 // Two round trips driven from the popup: first ask the app to show a 6-digit
 // code (it pops the code in the HUD), then submit the code the user typed. On
 // success the token is persisted and every later command authenticates with it.
 
 export async function requestPairing(): Promise<PairResult> {
+  if (await isAndroid()) return { ok: false, stage: "error", message: PAIRING_DESKTOP_ONLY };
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair.request", clientId }, "pair.pending");
@@ -489,6 +1246,7 @@ export async function requestPairing(): Promise<PairResult> {
 }
 
 export async function submitPairingCode(code: string): Promise<PairResult> {
+  if (await isAndroid()) return { ok: false, stage: "error", message: PAIRING_DESKTOP_ONLY };
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair", clientId, code }, "paired");

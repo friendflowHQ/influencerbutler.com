@@ -10,6 +10,7 @@ const strong: ScoreInputs = {
   commissionRatePct: 5,
   influencerVideos: 0,
   boughtPastMonth: 400,
+  reviewCount: null,
   inStock: true,
   membership: { cc: true, spcc: false },
 };
@@ -27,6 +28,7 @@ describe("computeButlerScore", () => {
       commissionRatePct: 1,
       influencerVideos: 20,
       boughtPastMonth: 0,
+      reviewCount: null,
       inStock: false,
       membership: { cc: false, spcc: false },
     };
@@ -41,6 +43,7 @@ describe("computeButlerScore", () => {
       commissionRatePct: null,
       influencerVideos: null,
       boughtPastMonth: null,
+      reviewCount: null,
       inStock: null,
       membership: { cc: false, spcc: false },
     };
@@ -66,6 +69,29 @@ describe("computeButlerScore", () => {
     const result = computeButlerScore(strong, settings);
     const sum = Object.values(result.parts).reduce((a, b) => a + b, 0);
     expect(Math.round(sum)).toBe(result.score);
+  });
+});
+
+describe("review-count demand fallback", () => {
+  it("uses reviews when bought-per-month is absent, capped at 0.7", () => {
+    const base = { ...strong, boughtPastMonth: null, reviewCount: null };
+    const withReviews = computeButlerScore({ ...base, reviewCount: 5000 }, settings);
+    // 5000 reviews clamps to the 0.7 cap: 0.7 * 20 demand points.
+    expect(withReviews.parts.demand).toBeCloseTo(14, 5);
+  });
+
+  it("ignores reviews when bought-per-month is present", () => {
+    const withBoth = computeButlerScore({ ...strong, reviewCount: 1 }, settings);
+    const withoutReviews = computeButlerScore(strong, settings);
+    expect(withBoth.parts.demand).toBe(withoutReviews.parts.demand);
+  });
+
+  it("stays neutral when both demand signals are missing", () => {
+    const neither = computeButlerScore(
+      { ...strong, boughtPastMonth: null, reviewCount: null },
+      settings,
+    );
+    expect(neither.parts.demand).toBeCloseTo(10, 5);
   });
 });
 

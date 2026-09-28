@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   const { data: rows, error } = await admin
     .from("affiliate_payouts")
-    .select("id,user_id,status,order_ids,paypal_batch_id,sender_item_id")
+    .select("id,user_id,status,gross_cents,order_ids,paypal_batch_id,sender_item_id")
     .eq("status", "processing")
     .not("paypal_batch_id", "is", null)
     .limit(100);

@@ -70,6 +70,10 @@ export type BillingInvoice = {
   statusLabel: string | null;
   billingReason: string | null;
   currency: string | null;
+  subtotal: number | null;
+  subtotalFormatted: string | null;
+  discountTotal: number | null;
+  discountTotalFormatted: string | null;
   total: number | null;
   totalFormatted: string | null;
   refundedAmount: number | null;
@@ -90,6 +94,13 @@ function toInvoice(raw: LsInvoice): BillingInvoice | null {
     statusLabel: a.status_formatted ?? a.status ?? null,
     billingReason: a.billing_reason ?? null,
     currency: a.currency ?? null,
+    subtotal: typeof a.subtotal === "number" ? a.subtotal : null,
+    subtotalFormatted: a.subtotal_formatted ?? null,
+    // Carried through so the customer sees an itemized discount line (e.g. a
+    // referral, welcome, or support/loyalty discount) rather than an
+    // unexplained lower total.
+    discountTotal: typeof a.discount_total === "number" ? a.discount_total : null,
+    discountTotalFormatted: a.discount_total_formatted ?? null,
     total: typeof a.total === "number" ? a.total : null,
     totalFormatted: a.total_formatted ?? null,
     refundedAmount: typeof a.refunded_amount === "number" ? a.refunded_amount : null,

@@ -1,10 +1,31 @@
-import { addSection, chip, collapsible, el } from "../../ui/components";
+import { addSection, chip, collapsible, el, infoTip } from "../../ui/components";
 import { t } from "../../i18n";
-import { classifiedCount, type CarouselResult, type CarouselVideo } from "../../amazon/video-carousel";
+import {
+  carouselBreakdown,
+  classifiedCount,
+  scanCarouselDurations,
+  upperInfluencerSlot,
+  type CarouselResult,
+  type CarouselVideo,
+} from "../../amazon/video-carousel";
+import { computeLandscape } from "../../amazon/video-landscape";
 import { query } from "../../amazon/selectors";
 import { harvestVideos, type VideoHarvestResult } from "../../amazon/video-harvest";
 import type { VideoCounts } from "../../transport/types";
 import { buildVideoCsv, downloadCsv } from "./video-csv";
+import { fillCompetitionLine, renderLandscape } from "./landscape-panel";
+import { renderVideoPassport } from "./passport-panel";
+import {
+  matchesVideo,
+  sideIsStateable,
+  type MyVideoMatch,
+  type MyVideoVerdict,
+} from "../my-video/resolve";
+
+// Marketplace host for pool reads, e.g. "amazon.com" / "amazon.co.uk".
+function currentMarketplace(): string {
+  return location.hostname.replace(/^www\./, "").toLowerCase();
+}
 
 const POLL_TRIES = 12;
 const POLL_INTERVAL_MS = 1200;
@@ -17,6 +38,14 @@ export function renderVideoCounts(
   result: CarouselResult,
   endpoints: string[] = [],
   reextract?: () => CarouselResult,
+  showLandscape = false,
+  // More video data is still expected (lower rail not hydrated, sides or
+  // names unresolved): render "reading" states instead of implying zeros.
+  pending = false,
+  // Which of these videos are the creator's own, and where they sit. Null when
+  // the My Video Placement tool is off or there is no evidence to judge with,
+  // in which case nothing about "your video" renders at all.
+  mine: MyVideoVerdict | null = null,
 ): void {
   const section = addSection(t().videoCompetition);
 
@@ -30,33 +59,92 @@ export function renderVideoCounts(
     return;
   }
 
+  // Competition sentence: the FIRST line of the section (right under the
+  // heading, outside every collapsible) so it reads without expanding anything.
+  // Gated on the video landscape tool; hidden until classified videos exist and
+  // refreshed in place when Deep Scan hands back the fuller snapshot.
+  let competeLine: HTMLElement | undefined;
+  if (showLandscape) {
+    competeLine = el("p", "ls-compete");
+    competeLine.style.display = "none";
+    const heading = section.querySelector("h4");
+    if (heading) heading.after(competeLine);
+    else section.prepend(competeLine);
+  }
+
+  // "Your video: Upper carousel, #2 of 6". The first thing after the heading,
+  // because it is the only line on this panel that is about the creator rather
+  // than the competition.
+  renderMyVideoHeadline(section, mine, result, pending);
+
   if (result.strategy === "header") {
-    const pending = el("p", "note");
-    pending.textContent = t().videosPending(result.counts.total);
-    section.append(pending);
+    const note = el("p", "note");
+    note.textContent = t().videosPending(result.counts.total);
+    section.append(note);
+    renderUpperSlotIndicator(section, result, pending);
   } else {
-    const counts = el("div", "counts");
-    counts.append(
-      chip("influencer", t().chipInfluencer(result.counts.influencer)),
-      chip("brand", t().chipBrand(result.counts.brand)),
-      chip("customer", t().chipCustomer(result.counts.customer)),
-    );
-    if (result.counts.unknown > 0) {
-      counts.append(chip("", t().chipUnclassified(result.counts.unknown)));
+    const sides = carouselBreakdown(result);
+    if (sides.upper.total + sides.lower.total === 0) {
+      // No carousel-side data at all (an untagged payload): fall back to the
+      // aggregate chips rather than two empty side rows.
+      const counts = el("div", "counts");
+      counts.append(
+        chip("influencer", t().chipInfluencer(result.counts.influencer)),
+        chip("brand", t().chipBrand(result.counts.brand)),
+        chip("customer", t().chipCustomer(result.counts.customer)),
+      );
+      if (result.counts.unknown > 0) {
+        counts.append(chip("", t().chipUnclassified(result.counts.unknown)));
+      }
+      section.append(counts);
+    } else {
+      // The split view: who owns each carousel. An empty side still being read
+      // shows as "reading" rather than a misleading zero.
+      section.append(carouselSideRow(t().upperCarousel, sides.upper, pending));
+      section.append(carouselSideRow(t().lowerCarousel, sides.lower, pending));
+      if (result.counts.unknown > 0) {
+        const rest = el("div", "counts");
+        rest.append(chip("", t().chipUnclassified(result.counts.unknown)));
+        section.append(rest);
+      }
     }
-    section.append(counts);
 
     const summary = el("p", "note");
     summary.textContent = t().videosTotalVia(result.counts.total, result.strategy === "json");
     section.append(summary);
 
-    renderInfluencerList(section, result.videos, result.counts.influencer);
+    renderUpperSlotIndicator(section, result, pending);
+
+    renderInfluencerList(
+      section,
+      result.videos,
+      result.counts.influencer,
+      showLandscape ? currentMarketplace() : null,
+      mine,
+    );
+  }
+
+  // Video landscape: the aggregate competitor-parity view. It only renders once
+  // we actually have classified videos to aggregate (not the header-only pending
+  // state), and Deep Scan re-renders it from the fuller harvested set. The host
+  // is created either way so the harvest handler always has somewhere to draw.
+  let landscapeHost: HTMLElement | undefined;
+  if (showLandscape) {
+    landscapeHost = el("div");
+    section.append(landscapeHost);
+    if (result.videos.length > 0) {
+      const landscape = computeLandscape(result.videos, result.counts.total, {
+        domDurations: scanCarouselDurations(document),
+      });
+      if (competeLine) fillCompetitionLine(competeLine, landscape);
+      renderLandscape(landscapeHost, landscape);
+    }
   }
 
   // Deep Scan is only worth offering when Amazon claims more videos than we
   // have classified so far (the shortfall lives in counts.unknown).
   if (result.counts.unknown > 0) {
-    renderDeepScan(section, result, endpoints, reextract);
+    renderDeepScan(section, result, endpoints, reextract, landscapeHost, competeLine);
   }
 }
 
@@ -64,6 +152,10 @@ function renderInfluencerList(
   section: HTMLElement,
   videos: CarouselVideo[],
   influencerCount: number,
+  // When set (video landscape on), each row can expand into its placement
+  // passport, read from the shared pool for this marketplace.
+  passportMarketplace: string | null = null,
+  mine: MyVideoVerdict | null = null,
 ): void {
   const influencers = videos.filter(
     (v) => v.creatorType === "influencer" && (v.creatorName || v.title),
@@ -73,19 +165,129 @@ function renderInfluencerList(
   // old code labelled with the shown slice, making it look like videos were
   // missing). Show them all, with a high safety cap for the rare huge rail.
   const CAP = 25;
-  const shown = influencers.slice(0, CAP);
+  // The creator's own rows lead the list, so the CAP truncation below can never
+  // be what hides their own video from them.
+  const ordered = hoistOwn(influencers, mine);
+  const shown = ordered.slice(0, CAP);
   const content = collapsible(section, t().influencerVideosLabel(influencerCount), { open: true });
   const list = el("ul", "list");
   for (const video of shown) {
     const item = el("li");
-    item.append(el("span", "t", video.creatorName ?? t().influencerFallback));
+    const head = el("div", "ls-card-head");
+    if (isOwn(video, mine)) {
+      item.classList.add("mine");
+      head.append(chip("good", t().myVideoRowChip));
+    }
+    head.append(el("span", "t", video.creatorName ?? t().influencerFallback));
+    if (passportMarketplace) attachPassport(head, item, video, passportMarketplace);
+    item.append(head);
     if (video.title) item.append(el("span", "", video.title.slice(0, 70)));
     list.append(item);
   }
   content.append(list);
-  if (influencers.length > CAP) {
-    content.append(el("p", "note", t().influencerVideosMore(influencers.length - CAP)));
+  if (ordered.length > CAP) {
+    content.append(el("p", "note", t().influencerVideosMore(ordered.length - CAP)));
   }
+}
+
+function isOwn(video: CarouselVideo, mine: MyVideoVerdict | null): boolean {
+  if (!mine || mine.kind !== "present") return false;
+  return mine.matches.some((m) => matchesVideo(m, video));
+}
+
+// The creator's own rows first, the rest in Amazon's order behind them.
+function hoistOwn(videos: CarouselVideo[], mine: MyVideoVerdict | null): CarouselVideo[] {
+  if (!mine || mine.kind !== "present") return videos;
+  const own = videos.filter((v) => isOwn(v, mine));
+  if (own.length === 0) return videos;
+  return [...own, ...videos.filter((v) => !own.includes(v))];
+}
+
+// "Your video: Upper carousel, #2 of 6", and the honest degradations of it.
+//
+// Presence and placement are separate claims. A match resolved only by content
+// id knows the video is here but not where (the state-script list guesses the
+// side from the id namespace), so it prints the presence line alone. Nothing
+// renders when there is no match: we cannot know that a creator has no video on
+// a listing, so we never imply it.
+function renderMyVideoHeadline(
+  section: HTMLElement,
+  mine: MyVideoVerdict | null,
+  result: CarouselResult,
+  pending: boolean,
+): void {
+  if (!mine || mine.kind !== "present" || mine.matches.length === 0) return;
+
+  // The rail total is only worth printing once it has stopped moving. A
+  // "#2 of 3" that becomes "#2 of 11" a second later reads as a bug.
+  const countsFinal = result.counts.unknown === 0 && !pending;
+
+  if (mine.matches.length === 1) {
+    section.append(matchLine(mine.matches[0]!, countsFinal, pending));
+    return;
+  }
+
+  const lead = el("div", "seal pass");
+  lead.textContent = t().myVideoMultiple(mine.matches.length);
+  lead.append(infoTip(t().myVideoInfo));
+  section.append(lead);
+  for (const match of mine.matches) {
+    section.append(matchLine(match, countsFinal, pending, true));
+  }
+}
+
+function matchLine(
+  match: MyVideoMatch,
+  countsFinal: boolean,
+  pending: boolean,
+  sub = false,
+): HTMLElement {
+  if (!sideIsStateable(match)) {
+    // Present, placement unreadable. While the widget is still hydrating this is
+    // a "reading..." state; once it settles, say plainly that Amazon did not
+    // expose the side rather than guessing one.
+    return el("p", "note", pending ? t().myVideoSideUnknown : t().myVideoSideUnreadable);
+  }
+
+  const label = match.carousel === "upper" ? t().upperCarousel : t().lowerCarousel;
+  const total = match.railSize;
+  const text =
+    match.position !== null && total !== null && countsFinal
+      ? t().myVideoHere(label, match.position, total)
+      : t().myVideoHereNoPosition(label);
+
+  if (sub) return el("p", "note", text);
+  const seal = el("div", "seal pass");
+  seal.textContent = text;
+  seal.append(infoTip(t().myVideoInfo));
+  return seal;
+}
+
+// A lazy "placement history" toggle on a creator-video row: the passport is only
+// fetched (one pool read) the first time the row is expanded.
+function attachPassport(
+  head: HTMLElement,
+  item: HTMLElement,
+  video: CarouselVideo,
+  marketplace: string,
+): void {
+  const toggle = el("button", "pp-toggle") as HTMLButtonElement;
+  toggle.type = "button";
+  toggle.textContent = t().passportOpen;
+  const body = el("div", "pp-body");
+  body.style.display = "none";
+  let loaded = false;
+  toggle.addEventListener("click", () => {
+    const open = body.style.display === "none";
+    body.style.display = open ? "grid" : "none";
+    toggle.textContent = open ? t().passportClose : t().passportOpen;
+    if (open && !loaded) {
+      loaded = true;
+      renderVideoPassport(body, video, marketplace);
+    }
+  });
+  head.append(toggle);
+  item.append(body);
 }
 
 function renderDeepScan(
@@ -93,6 +295,8 @@ function renderDeepScan(
   seed: CarouselResult,
   endpoints: string[],
   reextract?: () => CarouselResult,
+  landscapeHost?: HTMLElement,
+  competeLine?: HTMLElement,
 ): void {
   // The header top-up already made counts.total authoritative (Amazon's own
   // #videoCount), so it is the target the harvest counts up toward.
@@ -139,6 +343,17 @@ function renderDeepScan(
       .then((hydrated) => harvestVideos(endpoints, hydrated, headerTotal, onProgress, signal))
       .then((harvest) => {
         renderHarvest(results, harvest);
+        // Refresh the landscape from the fuller harvested set (Amazon's own
+        // #videoCount is the authoritative total when present).
+        if (landscapeHost) {
+          const landscape = computeLandscape(
+            harvest.videos,
+            harvest.headerTotal ?? harvest.counts.total,
+            { domDurations: scanCarouselDurations(document) },
+          );
+          if (competeLine) fillCompetitionLine(competeLine, landscape);
+          renderLandscape(landscapeHost, landscape);
+        }
         const classified = harvest.counts.total;
         const total = Math.max(harvest.headerTotal ?? classified, classified);
         progress.textContent = t().deepScanDone(classified, total);
@@ -258,6 +473,35 @@ function renderHarvest(container: HTMLElement, harvest: VideoHarvestResult): voi
   });
   exportRow.append(csvBtn, copyBtn);
   container.append(exportRow);
+}
+
+// One carousel side in the passive split view. While hydration is still
+// pending, an empty side renders as "reading" instead of a zero row that the
+// arriving data would contradict seconds later.
+function carouselSideRow(label: string, counts: VideoCounts, pending: boolean): HTMLElement {
+  if (counts.total === 0 && pending) {
+    return el("p", "note", t().carouselReading(label));
+  }
+  return sourceRow(label, counts);
+}
+
+// Whether the brand has influencer videos enabled in the upper (image-block)
+// carousel: the money signal. When it is on, a new creator video can land in
+// the top slot next to the gallery instead of only the lower rail.
+function renderUpperSlotIndicator(
+  section: HTMLElement,
+  result: CarouselResult,
+  pending: boolean,
+): void {
+  const state = upperInfluencerSlot(result);
+  if (state === "unknown") {
+    section.append(el("p", "note", pending ? t().upperSlotChecking : t().upperSlotUnknown));
+    return;
+  }
+  const seal = el("div", state === "on" ? "seal pass" : "seal warn");
+  seal.textContent = state === "on" ? t().upperSlotOn : t().upperSlotOff;
+  seal.append(infoTip(t().upperSlotInfo));
+  section.append(seal);
 }
 
 function sourceRow(label: string, counts: VideoCounts): HTMLElement {

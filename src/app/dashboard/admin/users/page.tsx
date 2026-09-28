@@ -34,6 +34,7 @@ type License = {
   key: string;
   status: string;
   activation_limit: number | null;
+  subscription_id: string | null;
 };
 
 type Referral = {
@@ -45,6 +46,15 @@ type Referral = {
   attributedAt: string | null;
 };
 
+type Pricing = {
+  planLabel: string | null;
+  listCents: number | null;
+  netCents: number | null;
+  appliedCode: string | null;
+  discountCents: number | null;
+  alreadyDiscounted: boolean;
+};
+
 type LookupResult = {
   found: boolean;
   userId?: string;
@@ -54,7 +64,15 @@ type LookupResult = {
   licenses?: License[];
   staff?: { role?: string; permissions?: string[]; is_active?: boolean } | null;
   referral?: Referral | null;
+  pricing?: Pricing | null;
   error?: string;
+};
+
+type UserNote = {
+  id: string;
+  body: string;
+  created_by: string | null;
+  created_at: string | null;
 };
 
 // One row of the browsable directory (from /api/admin/users/list). Kept lean:
@@ -118,6 +136,19 @@ type DirectorySort = "newest" | "cancelled" | "email";
 // access-ends date so cancelled rows without a logged reason still sort sensibly.
 function cancelSortKey(r: DirectoryRow): string {
   return r.cancelledAt ?? r.endsAt ?? "";
+}
+
+// Guardrail for price-lowering actions on a referred customer: reducing their
+// price shrinks the referring affiliate's commission (commission is 30% of the
+// net actually charged), and discounts do not stack. Returns true when there is
+// no affiliate to protect, or the operator confirms.
+function affiliateImpactOk(referral: Referral | null | undefined): boolean {
+  if (!referral) return true;
+  const who =
+    referral.affiliateName || referral.affiliateEmail || referral.code || "an affiliate";
+  return window.confirm(
+    `This customer was referred by ${who}. Reducing their price reduces that affiliate's commission, and discounts do not stack. If you honor a deeper discount, use the make-whole tool to compensate the affiliate. Continue?`,
+  );
 }
 
 function referralText(referral: Referral | null | undefined): string {
@@ -185,6 +216,13 @@ export default function AdminUsersPage() {
   const [result, setResult] = useState<LookupResult | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [impersonateLink, setImpersonateLink] = useState<string | null>(null);
+
+  // Per-user internal note log. Loaded separately from the lookup (gated by its
+  // own permission) so note content never reaches users.view-only operators.
+  const [notes, setNotes] = useState<UserNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteBusy, setNoteBusy] = useState(false);
 
   // Directory tab state.
   const [tab, setTab] = useState<"directory" | "lookup">("directory");
@@ -312,6 +350,82 @@ export default function AdminUsersPage() {
       await lookup();
     } catch {
       setMsg("Network error.");
+    }
+  };
+
+  // Load the note log for the currently looked-up user. Separate from lookup so
+  // it is gated by users.notes.view and can refresh on its own after add/delete.
+  const loadNotes = useCallback(
+    async (userId: string) => {
+      setNotesLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users/notes?userId=${encodeURIComponent(userId)}`, {
+          cache: "no-store",
+        });
+        const json = (await res.json().catch(() => ({}))) as { notes?: UserNote[] };
+        setNotes(res.ok ? json.notes ?? [] : []);
+      } catch {
+        setNotes([]);
+      } finally {
+        setNotesLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const userId = result?.found ? result.userId : null;
+    if (userId && can("users.notes.view")) {
+      void loadNotes(userId);
+    } else {
+      setNotes([]);
+    }
+    setNoteDraft("");
+  }, [result?.userId, result?.found, can, loadNotes]);
+
+  const addNote = async () => {
+    const userId = result?.userId;
+    const body = noteDraft.trim();
+    if (!userId || !body) return;
+    setNoteBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/admin/users/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, body }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(json.error ?? `Failed to save note (${res.status})`);
+        return;
+      }
+      setNoteDraft("");
+      await loadNotes(userId);
+    } catch {
+      setMsg("Network error saving note.");
+    } finally {
+      setNoteBusy(false);
+    }
+  };
+
+  const deleteNote = async (noteId: string) => {
+    const userId = result?.userId;
+    if (!userId) return;
+    try {
+      const res = await fetch("/api/admin/users/notes/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noteId }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(json.error ?? `Failed to delete note (${res.status})`);
+        return;
+      }
+      await loadNotes(userId);
+    } catch {
+      setMsg("Network error deleting note.");
     }
   };
 
@@ -486,8 +600,53 @@ export default function AdminUsersPage() {
               ) : null}
             </div>
 
+            {/* Pricing + discount insight: shows the list price, any discount
+                already redeemed, and a no-stacking warning so an operator does
+                not grant a second discount (or silently cut an affiliate's
+                commission) without knowing. */}
+            {result.pricing && (result.pricing.listCents != null || result.pricing.alreadyDiscounted) ? (
+              <div
+                className={`mt-3 rounded-lg border px-3 py-2 text-sm ${
+                  result.pricing.alreadyDiscounted
+                    ? "border-amber-300 bg-amber-50 text-amber-900"
+                    : "border-slate-200 bg-slate-50 text-slate-700"
+                }`}
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-medium">{result.pricing.planLabel ?? "Plan"}</span>
+                  {result.pricing.listCents != null ? (
+                    <span>List {fmtMoney(result.pricing.listCents, "USD")}</span>
+                  ) : null}
+                  {result.pricing.netCents != null ? (
+                    <span>: last charge {fmtMoney(result.pricing.netCents, "USD")}</span>
+                  ) : null}
+                  {result.pricing.appliedCode ? (
+                    <span>
+                      : code <span className="font-mono">{result.pricing.appliedCode}</span>
+                      {result.pricing.discountCents != null
+                        ? ` (-${fmtMoney(result.pricing.discountCents, "USD")})`
+                        : ""}
+                    </span>
+                  ) : null}
+                </div>
+                {result.pricing.alreadyDiscounted ? (
+                  <p className="mt-1 text-xs">
+                    Already discounted or referred. Discounts do not stack (one per account).
+                    Confirm the exact rate in Lemon Squeezy before granting another, and use the
+                    make-whole tool if you lower a referred customer&apos;s price.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             {/* Account actions */}
             <div className="mt-4 flex flex-wrap gap-2">
+              <a
+                href={`/dashboard/admin/emails?recipient=${encodeURIComponent(result.profile?.email ?? "")}`}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Email history
+              </a>
               {can("users.resend_auth") ? (
                 <button
                   type="button"
@@ -529,9 +688,92 @@ export default function AdminUsersPage() {
             </div>
           </section>
 
+          {/* Notes: an internal, timestamped note log for this account. */}
+          {can("users.notes.view") ? (
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">Notes</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Internal only. Record why a decision was made on this account (never shown to the user).
+              </p>
+
+              {can("users.notes.edit") ? (
+                <div className="mt-3">
+                  <textarea
+                    value={noteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    rows={2}
+                    placeholder="e.g. Cancelled Pro Solo Monthly, gave a year of Pro Trio comp. Owe Kay (KAY) the make-whole."
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none"
+                  />
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => void addNote()}
+                      disabled={noteBusy || !noteDraft.trim()}
+                      className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#ea580c] disabled:opacity-60"
+                    >
+                      {noteBusy ? "Saving…" : "Add note"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <ul className="mt-4 space-y-2">
+                {notesLoading ? (
+                  <li className="text-sm text-slate-500">Loading notes…</li>
+                ) : notes.length === 0 ? (
+                  <li className="text-sm text-slate-500">No notes yet.</li>
+                ) : (
+                  notes.map((n) => (
+                    <li key={n.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <p className="whitespace-pre-wrap break-words text-slate-800">{n.body}</p>
+                      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                        <span>
+                          {n.created_by ?? "unknown"} · {fmtDate(n.created_at)}
+                        </span>
+                        {can("users.notes.edit") ? (
+                          <button
+                            type="button"
+                            onClick={() => void deleteNote(n.id)}
+                            className="text-red-500 hover:text-red-700 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+          ) : null}
+
           {/* Subscriptions */}
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Subscriptions</h2>
+
+            {/* Comp make-whole nudge: a referred customer on a comp means their
+                affiliate stops earning. Point the operator at the tool to make
+                the affiliate whole for the comp period. */}
+            {result.referral &&
+            (result.subscriptions ?? []).some((s) => (s.ls_subscription_id ?? "").startsWith("comp:")) ? (
+              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <p>
+                  This referred customer is on a comp, so their affiliate
+                  {result.referral.affiliateName ? ` (${result.referral.affiliateName})` : ""} stops
+                  earning commission. Record a comp make-whole to keep them whole for the comp period.
+                </p>
+                <a
+                  href={`/dashboard/admin/affiliates?tab=credit&customer=${encodeURIComponent(
+                    result.profile?.email ?? "",
+                  )}&code=${encodeURIComponent(result.referral.code ?? "")}`}
+                  className="mt-1 inline-block font-semibold underline"
+                >
+                  Open comp make-whole
+                </a>
+              </div>
+            ) : null}
+
             {(result.subscriptions ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-slate-500">None.</p>
             ) : (
@@ -549,15 +791,34 @@ export default function AdminUsersPage() {
                       <span className="font-mono text-xs text-slate-400">{s.ls_subscription_id}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {can("billing.cancel") ? (
-                        <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
-                      ) : null}
-                      {can("billing.comp") ? (
-                        <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
-                      ) : null}
-                      {can("billing.plan.edit") ? (
-                        <button type="button" onClick={() => void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
-                      ) : null}
+                      {(s.ls_subscription_id ?? "").startsWith("comp:") ? (
+                        // In-house comp: nothing lives in Lemon Squeezy, so the LS
+                        // guided buttons do not apply. Send the admin to the Comps
+                        // page (source of truth) which owns Extend + Cancel now.
+                        <a href={`/dashboard/admin/comps?q=${encodeURIComponent(result.profile?.email ?? "")}`} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Manage comp (in-house)</a>
+                      ) : (
+                        <>
+                          {can("billing.cancel") ? (
+                            <button type="button" disabled={isSubscriptionInactive(s.status)} onClick={() => { if (window.confirm("Cancel this subscription via Lemon Squeezy?")) void act("/api/admin/billing/cancel", { lsSubscriptionId: s.ls_subscription_id }, "Cancelled."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent">{isSubscriptionInactive(s.status) ? "Cancelled" : "Cancel"}</button>
+                          ) : null}
+                          {can("billing.comp") && s.status === "on_trial" ? (
+                            <button type="button" onClick={() => {
+                              const raw = window.prompt("Extend trial by how many months? (1-12)", "1");
+                              if (raw === null) return;
+                              const months = Number(raw.trim());
+                              if (!Number.isInteger(months) || months < 1 || months > 12) { window.alert("Enter a whole number from 1 to 12."); return; }
+                              const notify = window.confirm("Email the customer about this extension?");
+                              void act("/api/admin/billing/extend-trial", { lsSubscriptionId: s.ls_subscription_id, months, notify }, "Trial extended.");
+                            }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Extend trial</button>
+                          ) : null}
+                          {can("billing.comp") ? (
+                            <button type="button" onClick={() => { if (!affiliateImpactOk(result.referral)) return; void act("/api/admin/billing/guided", { action: "comp", lsSubscriptionId: s.ls_subscription_id }, "Logged."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Comp / extend</button>
+                          ) : null}
+                          {can("billing.plan.edit") ? (
+                            <button type="button" onClick={() => { if (!affiliateImpactOk(result.referral)) return; void act("/api/admin/billing/guided", { action: "plan", lsSubscriptionId: s.ls_subscription_id }, "Logged."); }} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Change plan</button>
+                          ) : null}
+                        </>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -591,12 +852,22 @@ export default function AdminUsersPage() {
               <p className="mt-2 text-sm text-slate-500">None.</p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {result.licenses!.map((l) => (
+                {result.licenses!.map((l) => {
+                  // license_keys.subscription_id references the local
+                  // subscriptions row id, so surface that plan's name to tell
+                  // an operator which subscription a key belongs to.
+                  const planName = l.subscription_id
+                    ? (result.subscriptions ?? []).find((s) => s.id === l.subscription_id)?.plan_name ?? null
+                    : null;
+                  return (
                   <li key={l.ls_license_key_id} className="rounded-lg border border-slate-200 p-3 text-sm">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-mono text-xs break-all">{l.key}</span>
                       <span className={`rounded px-1.5 py-0.5 text-xs ${statusBadgeClass(l.status)}`}>{l.status}</span>
                     </div>
+                    {planName ? (
+                      <div className="mt-1 text-xs text-slate-500">{planName}</div>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {can("licenses.resend") ? (
                         <button type="button" onClick={() => void act("/api/admin/licenses/resend", { lsLicenseKeyId: l.ls_license_key_id }, "License emailed.")} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Resend</button>
@@ -609,7 +880,8 @@ export default function AdminUsersPage() {
                       ) : null}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>

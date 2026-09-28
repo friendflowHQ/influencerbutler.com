@@ -1,11 +1,12 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
+import { isVaultSyncPending } from "./creator-api-sync";
 import type { EnrichResult } from "../shared/messages";
 
-// Creator API (PA-API) enrichment for the storefront checkup. The content
-// script cannot hold the license key or hit our origin directly, so it sends a
-// batch of ASINs here and the worker POSTs /api/extension/enrich with the
-// Bearer token. Signing and the encrypted secret stay entirely server-side.
+// Creator API enrichment for the storefront checkup. The content script cannot
+// hold the license key or hit our origin directly, so it sends a batch of ASINs
+// here and the worker POSTs /api/extension/enrich with the Bearer token. The
+// OAuth token mint and the encrypted secret stay entirely server-side.
 
 const NOT_CONFIGURED: EnrichResult = { ok: false, configured: false, items: [] };
 
@@ -33,10 +34,14 @@ export async function enrichProducts(
     if (!res.ok || !data || !data.ok) {
       return { ...NOT_CONFIGURED, error: `Could not reach the Creator API (HTTP ${res.status}).` };
     }
+    const configured = Boolean(data.configured);
     return {
       ok: true,
-      configured: Boolean(data.configured),
+      configured,
       items: Array.isArray(data.items) ? data.items : [],
+      // Only worth asking when the account has nothing: it is the difference
+      // between "you never entered keys" and "your keys have not landed yet".
+      syncPending: configured ? undefined : await isVaultSyncPending(),
     };
   } catch {
     return { ...NOT_CONFIGURED, error: "Network error reaching the Creator API." };

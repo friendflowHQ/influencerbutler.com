@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-image-lightbox.mjs && node scripts/inject-gtag.mjs && node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-image-lightbox.mjs && node scripts/inject-gtag.mjs && node scripts/inject-meta-pixel.mjs && node scripts/generate-sitemap.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -13,11 +13,13 @@
     "inject:webmcp": "node scripts/inject-webmcp.mjs",
     "inject:image-lightbox": "node scripts/inject-image-lightbox.mjs",
     "inject:gtag": "node scripts/inject-gtag.mjs",
+    "inject:meta-pixel": "node scripts/inject-meta-pixel.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
+    "luxon": "^3.7.2",
     "next": "16.2.3",
     "node-html-markdown": "^1.3.0",
     "react": "19.2.4",
@@ -25,11 +27,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/luxon": "^3.7.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.7"

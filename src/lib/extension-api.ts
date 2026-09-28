@@ -17,7 +17,16 @@ import { NextResponse } from "next/server";
 
 export const EXT_MAX_BATCH = 50;
 export const ASIN_RE = /^[A-Z0-9]{10}$/;
+// A Walmart item id is a variable-length numeric string (from /ip/<slug>/<id>).
+export const WALMART_ITEM_ID_RE = /^\d{3,15}$/;
 export const MARKETPLACE_RE = /^[a-z0-9.-]{2,40}$/;
+
+// The retailer discriminator carried on retailer-aware extension routes.
+export type Retailer = "amazon" | "walmart";
+
+export function parseRetailer(value: unknown): Retailer {
+  return value === "walmart" ? "walmart" : "amazon";
+}
 export const EXT_TITLE_MAX = 300;
 export const EXT_DETAIL_MAX = 500;
 
@@ -50,8 +59,26 @@ export function isMissingTableError(error: { code?: string } | null): boolean {
   return error?.code === "42P01" || error?.code === "PGRST205";
 }
 
+/**
+ * A column referenced in the query does not exist yet: Postgres 42703
+ * (undefined_column) or PostgREST PGRST204 ("column not found in schema
+ * cache"). Used by retailer-aware routes whose Walmart path adds columns the
+ * lagging prod schema may not have yet, so they can soft-fail as
+ * "migration pending" instead of hard-erroring, exactly like a missing table.
+ */
+export function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
+/**
+ * A soft-fail the extension can keep working around: the route is fine, the
+ * table/column it needs is not in prod yet. The 200 is deliberate (clients treat
+ * this as "no data", not as an outage), but `ok: false` has to be in the body -
+ * without it a client reading only `res.ok` records a save that stored nothing
+ * as a success.
+ */
 export function migrationPendingResponse(): NextResponse {
-  return jsonWithCors({ migrationPending: true, error: "Migration not applied yet" }, 200);
+  return jsonWithCors({ ok: false, migrationPending: true, error: "Migration not applied yet" }, 200);
 }
 
 export function clampInt(value: unknown, min: number, max: number): number | null {

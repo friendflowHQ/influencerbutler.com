@@ -11,38 +11,68 @@ export type DeeplinkProviderId =
   | "geniuslink"
   | "selfhosted";
 
-export type AffiliateNetworkId = "levanta" | "archer" | "logie" | "benable";
+export type AffiliateNetworkId = "levanta" | "archer" | "benable";
+
+// Walmart affiliate link providers. Both are session-based (no credential
+// fields): Walmart Creator mints walmrt.us links from the signed-in
+// creator.walmart.com portal, Mavely mints mave.ly links from the signed-in
+// creators.joinmavely.com session. The user picks one in options.
+export type WalmartLinkId = "walmartCreator" | "mavely";
 
 export type IntegrationId =
   | "openai"
   | "creatorsApi"
   | "associates"
   | DeeplinkProviderId
-  | AffiliateNetworkId;
+  | AffiliateNetworkId
+  | WalmartLinkId;
 
 export type IntegrationCategory =
   | "ai"
   | "productData"
   | "affiliateTag"
   | "deeplink"
-  | "affiliateNetwork";
+  | "affiliateNetwork"
+  | "walmartLink";
+
+// Option values (model ids and the like) are shown verbatim; only the
+// "(recommended)" suffix is localized by the options page.
+export type FieldOption = { value: string; recommended?: boolean };
 
 export type FieldSpec = {
   name: string;
   // Label/help are i18n keys resolved by the options page (src/options/strings).
   labelKey: string;
-  type: "password" | "text";
+  type: "password" | "text" | "select";
   placeholder?: string;
   optional?: boolean;
+  options?: FieldOption[]; // for type "select"
+  // Optional cleanup applied to a saved value before it is stored (for example
+  // stripping a leading "@" and stray spaces from a partner tag). Runs after the
+  // generic trim in saveIntegration, so it only sees an already-trimmed value.
+  normalize?: (value: string) => string;
 };
 
-export type TestResult = { ok: boolean; message: string };
+export type TestResult = {
+  ok: boolean;
+  message: string;
+  // Set by the Creator API adapter when Amazon accepts the credentials but has
+  // not yet unlocked Creator API access for the account (an eligibility 4xx).
+  // The options page uses this to offer Influencer Butler's backup credentials.
+  eligibilityBlocked?: boolean;
+};
 
 export type LinkTarget = {
+  // The retailer's product id: an Amazon ASIN or a Walmart item id. Named `asin`
+  // for back-compat across the adapters; on Walmart it holds the item id.
   asin: string;
-  marketplace: string; // for example "amazon.com"
+  marketplace: string; // for example "amazon.com" / "walmart.com"
   url: string; // canonical product url
   tag?: string; // resolved affiliate tag for this marketplace, if any
+  retailer?: "amazon" | "walmart"; // defaults to "amazon" when absent
+  // When true, the tagged Amazon url also carries the SiteStripe app-opening
+  // params (see app-link.ts) so every wrapper points at an app-opening target.
+  appOpen?: boolean;
 };
 
 export type IntegrationAdapter = {
@@ -66,6 +96,12 @@ export type IntegrationAdapter = {
   test(creds: Record<string, string>): Promise<TestResult>;
   // Deeplink providers turn an Amazon url into a wrapped/tracked link.
   generateLink?(target: LinkTarget, creds: Record<string, string>): Promise<string>;
+  // Best-effort commission rate (as a percentage, for example 5 for 5%) this
+  // provider pays for the target product, or null when it does not report one.
+  // Used by highest-commission routing to compare providers; a null result just
+  // means this provider cannot compete on rate and falls back to priority order.
+  // Only affiliate networks that can read a product rate implement this.
+  estimateRate?(target: LinkTarget, creds: Record<string, string>): Promise<number | null>;
   // OpenAI turns a prompt into text.
   complete?(prompt: string, creds: Record<string, string>): Promise<string>;
 };

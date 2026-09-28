@@ -107,10 +107,17 @@ async function enrich(
     );
     if (result) await setCachedEnrich(asin, result);
   }
-  if (!result) return;
+  // A failed request (not signed in, network/server error) is not "not
+  // configured"; only a definitive `configured: false` should prompt the user to
+  // connect, so a transient failure does not show "connect" to a connected user.
+  if (!result || !result.ok) return;
 
   if (!result.configured) {
-    const connect = el("a", "inline-connect", t().inlineConnectCreatorApi);
+    const connect = el(
+      "a",
+      "inline-connect",
+      result.syncPending ? t().inlineCreatorApiSyncPending : t().inlineConnectCreatorApi,
+    );
     connect.addEventListener("click", (event) => {
       event.preventDefault();
       void sendToBackground({ kind: "OPEN_OPTIONS" });

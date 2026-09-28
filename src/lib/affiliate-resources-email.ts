@@ -9,6 +9,8 @@
 // number-agnostic on commission (custom-rate affiliates exist), and it names no
 // competitors, per the repo copy rule.
 
+import { sendMarketingEmail } from "@/lib/marketing-email";
+
 const SITE = "https://www.influencerbutler.com";
 const FROM = "Influencer Butler <affiliates@influencerbutler.com>";
 
@@ -82,7 +84,7 @@ export function buildAffiliateResourcesEmail(params: {
   lines.push(...affiliateResourcesLines());
 
   lines.push(
-    `Should you require anything at all, do write to hello@influencerbutler.com and I shall attend to you promptly.`,
+    `Should you require anything at all, do reach us through our contact form at https://www.influencerbutler.com/contact and I shall attend to you promptly.`,
     ``,
     ``,
     `At your service,`,
@@ -105,29 +107,23 @@ export function affiliateShareLink(code: string): string {
 }
 
 /**
- * Transactional send (direct Resend), mirroring the approval email. The admin
- * chose a "reach every affiliate" send, so this bypasses the marketing
- * suppression/unsubscribe path. Returns true on Resend acceptance.
+ * Bulk "reach every affiliate" broadcast to external recipients. Sent via the
+ * marketing path so it carries the suppression check, unsubscribe footer + link,
+ * postal address, and RFC 8058 List-Unsubscribe headers that a bulk send to
+ * outside addresses requires. Returns true when handled (sent or suppressed).
  */
 export async function sendAffiliateResourcesEmail(
   to: string,
   subject: string,
   text: string,
 ): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from: FROM, to: [to], subject, text }),
-    });
-    return res.ok;
-  } catch (error) {
-    console.error("affiliate resources email send failed", error);
-    return false;
-  }
+  return sendMarketingEmail({
+    from: FROM,
+    to,
+    subject,
+    text,
+    category: "affiliate_resources",
+    funnel: "campaign",
+    trackOpens: true,
+  });
 }

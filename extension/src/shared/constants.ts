@@ -1,5 +1,3 @@
-export const EXT_VERSION = "0.1.1";
-
 export const API_BASE = "https://www.influencerbutler.com";
 
 export const ENDPOINTS = {
@@ -9,37 +7,125 @@ export const ENDPOINTS = {
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,
   orders: `${API_BASE}/api/extension/orders`,
   feedback: `${API_BASE}/api/extension/feedback`,
+  // Read side of the Feedback Butler: the signed-in user's own bug reports that
+  // have since been marked resolved, so the "What's New" notice can show
+  // "issues you reported that we fixed". License Bearer required (anonymous
+  // feedback has no identifier to key on); returns an empty list otherwise.
+  feedbackResolved: `${API_BASE}/api/extension/feedback/resolved`,
+  // Support-reply threads: the signed-in user's own answered tickets (GET) and
+  // replying back to one (POST .../<ticketId>). License Bearer required.
+  feedbackReplies: `${API_BASE}/api/extension/feedback/replies`,
   // Creator API (PA-API) credential vault + product enrichment. The vault only
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,
   enrich: `${API_BASE}/api/extension/enrich`,
+  // AI concierge text chat (same brain as the website + desktop app).
+  aiChat: `${API_BASE}/api/ai-concierge/chat`,
+  // AI concierge voice (OpenAI Realtime over WebRTC). The background worker mints
+  // the ephemeral token / runs tool calls / saves the transcript with the license
+  // bearer; the chat page owns the peer connection + mic.
+  voiceSession: `${API_BASE}/api/ai-concierge/session`,
+  voiceTool: `${API_BASE}/api/ai-concierge/tool`,
+  voiceTranscript: `${API_BASE}/api/ai-concierge/transcript`,
   // Deal Sites Harvester: sync harvested deals for the dashboard record, and
   // fetch the curated list of aggregator sites to offer in the picker.
   deals: `${API_BASE}/api/extension/deals`,
   dealSources: `${API_BASE}/api/extension/deal-sources`,
+  // Campaign accepts: aggregate counts of Creator Connections campaigns the
+  // extension accepted (auto + manual), for the public "proof of numbers"
+  // counter. Reports how many were accepted, not per-campaign detail.
+  accepts: `${API_BASE}/api/extension/accepts`,
+  // Real Creator Connections commission rates for a batch of ASINs (built
+  // daily from the CC catalogue). Public like the catalogue endpoint.
+  ccRates: `${API_BASE}/api/extension/cc-rates`,
+  // Amazon's own SPCC ("Earn on Clicks") $/click forecast for a batch of ASINs
+  // (built daily from the SPCC catalogue). Public like ccRates.
+  spccRates: `${API_BASE}/api/extension/spcc-rates`,
   // Instagram Goldmine (self-hosted build only): harvested creator + email rows.
   instagramCreators: `${API_BASE}/api/extension/instagram-creators`,
+  // Shared product catalogue ("internal Keepa"): POST contributes product facts
+  // (opt-in), GET reads pooled price/rank history + estimated monthly sales.
+  market: `${API_BASE}/api/extension/market`,
+  // Campaign Butler: POST one campaign's signals + demand, get a butler-voiced
+  // brief (verdict / why-take / what-to-film / best product / audiences). The
+  // score + confidence are computed locally; this only writes the prose.
+  campaignBrief: `${API_BASE}/api/extension/campaign-brief`,
+  // Shared video-placement catalogue: POST contributes which creator videos hold
+  // a product's carousel (opt-in, same consent as market), GET reads the
+  // longitudinal per-video "passport" (presence, rotation, daily visibility).
+  videoIntel: `${API_BASE}/api/extension/video-intel`,
+  // Social Posting scheduler: the "click an image, schedule a post" flow. POST
+  // creates a scheduled post (Bearer license), GET lists the creator's own posts
+  // for the mini calendar / upcoming view, and PATCH/DELETE .../<id> edits or
+  // cancels a still-pending one. The desktop app pulls these to publish.
+  socialPosts: `${API_BASE}/api/extension/social-posts`,
+  // Image-bytes fallback for sources the desktop cannot download server-side
+  // (e.g. Instagram's CDN blocks hotlinking): multipart upload, returns a public
+  // URL the scheduled post stores as image_source 'upload'.
+  socialPostsUpload: `${API_BASE}/api/extension/social-posts/upload`,
+  // Free ("Influencer Butler AI") caption engine for the compose box. The
+  // creator can instead use their own connected OpenAI key (OPENAI_COMPLETE).
+  socialCaption: `${API_BASE}/api/extension/social-caption`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),
 // the same worker the desktop app's "selfhosted" DeepLink Routing option calls.
 // The extension authenticates each request with the signed-in Lemon Squeezy
 // license key (no separate credential), mirroring SelfHostedLinkClient in the
-// desktop repo. `create` mints/looks up a branded link; `list` is a read-only,
-// paid-gated endpoint used to verify the license and tier without minting.
+// desktop repo. `create` mints/looks up a branded link; `list` is the
+// owner-scoped registry; `stats`/`events` are the Ledger analytics; `repoint`
+// self-heals an already-posted link; `publish` pushes the routing definition so
+// the edge does Passport / Best-Rate / heal at click time; `pixels` saves the
+// account-wide retargeting pixels (the Doorbell).
 export const IB_LINKS_BASE = "https://links.influencerbutler.com";
 export const IB_LINKS_ENDPOINTS = {
   create: `${IB_LINKS_BASE}/api/links`,
   list: `${IB_LINKS_BASE}/api/links/list`,
+  stats: `${IB_LINKS_BASE}/api/links/stats`,
+  events: `${IB_LINKS_BASE}/api/links/events`,
+  repoint: `${IB_LINKS_BASE}/api/links/repoint`,
+  publish: `${IB_LINKS_BASE}/api/links/publish`,
+  pixels: `${IB_LINKS_BASE}/api/links/pixels`,
+} as const;
+
+// Bulk mint from a harvested batch (Deal Sites, Orders Butler, storefront). The
+// worker mints one link per POST, so a bulk run is a capped, paced sequence of
+// creates (there is no batch endpoint), mirroring the desktop mintBulkLinks cap
+// of 100. Paced with jitter like the other harvest loops so it reads like a
+// person creating links, not a burst.
+export const LINK_MINT_BULK_CAP = 100;
+export const LINK_MINT_DELAY_MIN_MS = 250;
+export const LINK_MINT_DELAY_MAX_MS = 600;
+
+// Licensing Worker cross-device relay. Lets the extension send bridge commands
+// to the desktop app running on ANOTHER computer (the local bridge above only
+// reaches an app on the SAME machine). Authenticated with the signed-in Lemon
+// Squeezy license key (Bearer), the same credential as the branded-links
+// service. See workers/licensing/src/routes/relay.js in the desktop repo.
+export const IB_RELAY_BASE = "https://licensing.influencerbutler.com";
+export const IB_RELAY_ENDPOINTS = {
+  linkClaim: `${IB_RELAY_BASE}/relay/link/claim`,
+  targets: `${IB_RELAY_BASE}/relay/targets`,
+  send: `${IB_RELAY_BASE}/relay/send`,
+  results: `${IB_RELAY_BASE}/relay/results`,
 } as const;
 
 // The Start Here onboarding walkthrough (opened on install). The Creator API
 // setup step embeds this YouTube walkthrough (same video as the desktop app's
 // API Integrations > Creator API screen and the api-integrations tutorial), and
-// the "Show me where" button points at the Amazon Associates credentials page.
+// the "Show me where" button points at the Amazon Creator API credentials page.
 export const ONBOARDING_VIDEO_ID = "plZS_nXX-BE";
 export const ASSOCIATES_CREDENTIALS_URL =
   "https://affiliate-program.amazon.com/assoc_credentials/home";
+// Where the OAuth2 Creator API Credential ID + Secret are issued, per region.
+// Same destinations the desktop app's "Show me where" opens. NA is the default;
+// the options page uses the EU/FE entries for the per-region subsections.
+export const CREATOR_API_CREDENTIALS_URLS = {
+  NA: "https://affiliate-program.amazon.com/creatorsapi",
+  EU: "https://affiliate-program.amazon.co.uk/creatorsapi",
+  FE: "https://affiliate.amazon.com.au/creatorsapi",
+} as const;
+export const CREATOR_API_CREDENTIALS_URL = CREATOR_API_CREDENTIALS_URLS.NA;
 export const API_INTEGRATIONS_TUTORIAL_URL = `${API_BASE}/help/tutorials/api-integrations`;
 
 // "Show me where" destinations for the deeplink and affiliate-network
@@ -52,12 +138,11 @@ export const PROVIDER_CREDENTIALS_URLS = {
   linktwin: "https://linktw.in/",
   levanta: "https://app.levanta.io/",
   archer: "https://app.archeraffiliates.com/",
-  logie: "https://www.mylogie.com/",
 } as const;
 
 // Marketplaces the onboarding credential form offers. Host is what the
 // extension records from the page URL; label is shown to the user. Kept in sync
-// with MARKETPLACES in src/lib/paapi.ts on the server.
+// with MARKETPLACES in src/lib/creators-api.ts on the server.
 export const CREATOR_API_MARKETPLACES: ReadonlyArray<{ host: string; label: string }> = [
   { host: "amazon.com", label: "United States (amazon.com)" },
   { host: "amazon.co.uk", label: "United Kingdom (amazon.co.uk)" },
@@ -85,6 +170,35 @@ export const CATALOGUE_STALE_MS = 20 * 60 * 60 * 1000;
 // on the same alarm as the catalogue.
 export const RATE_CARD_BASE = `${API_BASE}/api/extension/rate-card`;
 export const RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Walmart's affiliate commission schedule (Impact category rates), served as a
+// static in-code table in the same shape as the Amazon rate card so the
+// extension reuses its category matcher. Refreshed on the same daily alarm.
+export const WALMART_RATE_CARD_BASE = `${API_BASE}/api/extension/walmart-rate-card`;
+export const WALMART_RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Walmart affiliate onsite commission defaults by category, the offline fallback
+// for the calculator (mirrors COMMISSION_DEFAULTS). Starting points, not a
+// promise of what Walmart/Impact pays.
+export const WALMART_COMMISSION_DEFAULTS: ReadonlyArray<{ key: string; label: string; ratePct: number }> = [
+  { key: "default", label: "Most categories", ratePct: 1 },
+  { key: "home", label: "Home and garden", ratePct: 4 },
+  { key: "beauty", label: "Beauty", ratePct: 4 },
+  { key: "baby", label: "Baby", ratePct: 4 },
+  { key: "toys", label: "Toys", ratePct: 4 },
+  { key: "fashion", label: "Clothing and accessories", ratePct: 4 },
+  { key: "sports", label: "Sports and outdoors", ratePct: 4 },
+  { key: "electronics", label: "Electronics", ratePct: 1 },
+  { key: "grocery", label: "Grocery", ratePct: 1 },
+];
+
+// Remote operational flags (kill switch + selector overrides). Polled far more
+// often than the daily feeds so a tool misbehaving in the wild can be disabled
+// site-wide within the half hour, without a Chrome Web Store review. Checked on
+// the frequent sync alarm but only actually re-fetched once past the stale
+// window, so the cost is one small cached GET every ~30 min per active browser.
+export const FLAGS_BASE = `${API_BASE}/api/extension/flags`;
+export const FLAGS_STALE_MS = 30 * 60 * 1000;
 
 // Sync queue.
 export const SYNC_ALARM = "ib-sync";
@@ -131,6 +245,46 @@ export const DEAL_HARVEST_DELAY_MAX_MS = 1800;
 export const DEAL_HARVEST_FETCH_TIMEOUT_MS = 15_000;
 export const DEAL_PUSH_CHUNK = 200;
 export const DEAL_SOURCES_STALE_MS = 20 * 60 * 60 * 1000;
+// Amazon short links (amzn.to / a.co / amzn.eu / amzn.asia) found on a page
+// carry no ASIN in the URL, so each is resolved by following its redirect to
+// the real product URL. Capped per run and paced lighter than page fetches
+// (the redirector is Amazon's own: one hop, no body read).
+export const DEAL_HARVEST_SHORTLINK_CAP = 100;
+export const DEAL_HARVEST_SHORTLINK_DELAY_MIN_MS = 150;
+export const DEAL_HARVEST_SHORTLINK_DELAY_MAX_MS = 400;
+
+// Deep scan (opt-in): some deal sites render their product list with JavaScript,
+// so a plain fetch of the HTML finds no Amazon links. For sites that came back
+// empty, the render pass opens each one in a real background tab, lets it run,
+// reads the rendered DOM, and closes the tab. Heavier than a fetch (a whole tab
+// per site), so it is capped tightly and only ever runs on the zero-yield sites.
+export const DEAL_HARVEST_RENDER_CAP = 8;
+export const DEAL_HARVEST_RENDER_SETTLE_MS = 2500; // dwell after load for late XHR
+export const DEAL_HARVEST_RENDER_TIMEOUT_MS = 20_000; // hard per-tab ceiling
+
+// On-page "Send to Deals" chip: how long to wait after the page stops changing
+// before decorating the new cards, the ceiling on that wait so a page that
+// never settles still gets chips, and a hard cap on chips per page so a
+// pathological document cannot be turned into thousands of shadow roots.
+export const DEAL_CHIP_SCAN_DEBOUNCE_MS = 300;
+export const DEAL_CHIP_SCAN_MAX_WAIT_MS = 1500;
+export const DEAL_CHIP_MAX_PER_PAGE = 500;
+
+// Deal-aggregator sites we ship a static host_permission for in manifest.json,
+// so the on-page badge and the automatic harvest work from the moment the
+// extension is installed instead of waiting for the user to grant that origin
+// from the deals page. Kept alongside the curated list rather than replacing
+// it: everything else still needs the runtime grant, and these are merged in
+// so a failed curated-list fetch cannot hide a site we already hold.
+export const BUNDLED_DEAL_SITE_URLS: readonly string[] = ["https://www.savewithcindy.shop/"];
+
+// Automatic background harvesting (opt-in, off by default): when enabled, the
+// DEAL_AUTO_HARVEST_ALARM runs harvestDealSites (with deep scan) against the
+// curated + saved sources on this cadence, with no tab/page open. Long period
+// because each run can open several deep-scan tabs; this is a "check a few
+// times a day" cadence, not a live feed.
+export const DEAL_AUTO_HARVEST_ALARM = "deal-auto-harvest";
+export const DEAL_AUTO_HARVEST_PERIOD_MINUTES = 6 * 60;
 
 // Instagram Goldmine (self-hosted build only). Harvested creator rows are
 // pushed into the desktop app's Pitch / Group Invite butlers in chunks so one
@@ -165,6 +319,12 @@ export const BRIDGE_STATUS_TTL_MS = 15_000;
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;
 export const APP_LEARN_URL = `${API_BASE}/extension`;
 
+// Opened in a new tab on FIRST install only (not on updates): a short welcome
+// page that optionally captures an email for setup tips and, ~10 days later, the
+// review + feedback nudge. The extension is anonymous, so this on-site page is
+// where the email is collected rather than in the popup.
+export const EXTENSION_WELCOME_URL = `${API_BASE}/extension-welcome?src=install`;
+
 // ASIN watchlist. The background poller opens each watched product in a
 // background tab on this alarm, but only a small batch per run (least-recently
 // checked first) so the MV3 worker's awake time stays bounded and a killed
@@ -174,21 +334,104 @@ export const WATCHLIST_ALARM = "ib-watchlist";
 export const WATCHLIST_PERIOD_MINUTES = 3 * 60;
 export const WATCHLIST_RUN_CAP = 8;
 
+// Last Call Butler. When the creator is watching one or more Creator Connections
+// campaigns, this alarm opens the campaign grid in a single background tab so the
+// MAIN-world connect-hook re-captures how full each campaign is; a watched
+// campaign crossing the user's fill threshold fires a "Last Call" notification.
+// One tab per run regardless of list size (the grid holds every campaign), so
+// the cadence can be tighter than the product watchlist without extra tabs.
+export const CAMPAIGN_WATCH_ALARM = "ib-last-call";
+export const CAMPAIGN_WATCH_PERIOD_MINUTES = 30;
+// The grid page the poll opens: the Affiliate+ opportunities tab (the verified
+// source of the fill fields). A logged-out or ineligible load simply never fires
+// the campaign/search fetch, so the poll no-ops rather than false-alerting.
+export const CAMPAIGN_GRID_URL =
+  "https://affiliate-program.amazon.com/p/connect/requests?status=opportunity&type=affiliate-plus&sortBy=recommended_for_you&campaignStatuses=active%2Cpending&nonFullyClaimedOnly=false";
+
 // Re-engagement nudges. Anchored to first actual use (see storage.firstUseAt):
 // day 1 invites the user to the Facebook community, day 3 invites them to
-// download the free desktop app. Each fires once via an OS notification (on the
-// alarm below) and once via an in-page modal on the next Amazon visit.
+// download the free desktop app, day 5 reinforces that the community is for
+// tips (not bug reports) and points issues at Feedback Butler. Each fires once
+// via an OS notification (on the alarm below) and once via an in-page modal on
+// the next Amazon visit.
 export const FACEBOOK_GROUP_URL = "https://www.facebook.com/groups/influencerbutler";
+// Public Feedback Butler page (same-origin, so it passes the OPEN_URL
+// allowlist). Where the day-5 "report a bug" actions send the user.
+export const EXTENSION_FEEDBACK_URL = `${API_BASE}/extension-feedback`;
 export const NUDGE_FB_ALARM = "ib-nudge-fb";
 export const NUDGE_APP_ALARM = "ib-nudge-app";
+export const NUDGE_COMMUNITY_ALARM = "ib-nudge-community";
 export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
 export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
+export const NUDGE_COMMUNITY_DELAY_MS = 5 * 24 * 60 * 60 * 1000; // 5 days after first use
 
-// Deals Influencer Butler workspaces the extension can target. This is a hint list for
+// Extension self-update banner. Chrome stages extension updates itself (and in
+// MV3 applies them shortly after the worker idles); we just record what is
+// pending so the on-page banner and popup card can tell the user. State lives
+// in its own storage key (no schema bump, like the app-notification cursor).
+// "Remind me later" snoozes the banner for the window below.
+export const UPDATE_STORAGE_KEY = "ib-update";
+export const UPDATE_REMIND_MS = 3 * 24 * 60 * 60 * 1000;
+
+// Post-update "What's New" notice. Chrome applies extension updates silently,
+// so after one lands we show what changed (from the bundled changelog.json plus
+// the user's own resolved bug reports) as a corner card on the next retailer
+// page and a card in the popup. State is a single "last shown version" in its
+// own storage key (no schema bump, like UPDATE_STORAGE_KEY above): the notice
+// shows while the running version is ahead of it, and dismissing from either
+// surface advances it so both stop.
+export const WHATS_NEW_STORAGE_KEY = "ib-whatsnew";
+
+// Deals Butler workspaces the extension can target. This is a hint list for
 // the picker; the app is the source of truth and may add or rename its own.
 export const DEAL_WORKSPACES: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "default", label: "Deals Influencer Butler (main)" },
+  { key: "default", label: "Deals Butler (main)" },
   { key: "garden-bargains", label: "Garden Bargains" },
   { key: "prime-day", label: "Prime Day Butler" },
   { key: "black-friday", label: "Black Friday Butler" },
 ];
+
+// Standalone campaign accept (no desktop app). The extension drives Amazon's
+// OWN Accept button on the campaign's page in a background tab (never a replay
+// of Amazon's accept API): open the campaign, wait for the tab's content script
+// to report ready, ask it to click Accept, read the outcome, close the tab. One
+// accept tab at a time. The desktop bridge stays the preferred route when the
+// app is paired; this is the fallback for creators without the app.
+//
+// The single-campaign detail URL is UNVERIFIED: the one observed live shape is
+// /p/connect/request?creatorId=<creator>&adId=<campaignId>&type=<tab> (see
+// content/page-type.test.ts), and we do not know the creator id, so we pass
+// the campaign id as both adId and campaignId and rely on the runner's grid
+// fallback (background/campaign-accept.ts) when the page does not resolve.
+export const ACCEPT_TAB_DWELL_MS = 30_000;
+// After a robot-check page, stop opening accept tabs for this long so a
+// blocked session is not hammered.
+export const ACCEPT_BLOCK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+// Own storage keys (no schema bump, like UPDATE_STORAGE_KEY): the daily accept
+// ledger and the robot-check cooldown stamp.
+export const ACCEPT_LEDGER_KEY = "ib-accept-ledger";
+export const ACCEPT_COOLDOWN_KEY = "ib-accept-cooldown";
+// Rule-based accept ("accept campaigns that match rules you set"): an OPT-IN
+// pass that rides the Last Call poll tab (background/last-call.ts). Once the
+// grid's fill report lands, the worker asks the tab to run the creator's rules
+// (tools/campaign-radar/auto-accept.ts) and keeps the tab open this long for
+// the clicks to finish; the tab reports AUTO_ACCEPT_DONE and is closed.
+export const AUTO_ACCEPT_TAB_DWELL_MS = 60_000;
+// A human-paced gap between two accepts in one run (jittered in this range).
+export const AUTO_ACCEPT_DELAY_MIN_MS = 4_000;
+export const AUTO_ACCEPT_DELAY_MAX_MS = 9_000;
+// The absolute ceiling on accepts per day from the rule-based pass, whatever
+// the creator types into the daily-cap field (settings clamp to 1..this).
+export const AUTO_ACCEPT_DAILY_HARD_CAP = 20;
+// Per-run cap ceiling: a run must finish inside AUTO_ACCEPT_TAB_DWELL_MS, and
+// each accept can take up to ~27s (jitter + find + confirm), so more than a
+// few per pass would just time out.
+export const AUTO_ACCEPT_PER_RUN_HARD_CAP = 5;
+// The accept ledger keeps a rolling history of every accepted campaign id this
+// long, so the rule-based pass never re-tries a campaign it already took
+// (Amazon may keep showing an accepted card with a "pending" state).
+export const ACCEPT_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
+export const CAMPAIGN_DETAIL_URL = (campaignId: string): string =>
+  `https://affiliate-program.amazon.com/p/connect/request?adId=${encodeURIComponent(
+    campaignId,
+  )}&campaignId=${encodeURIComponent(campaignId)}&type=affiliate-plus`;

@@ -61,7 +61,7 @@ If you turn on delete-before-repost, prove it on a couple of photos before runni
 
 ## Reload photos that were deleted
 
-The **Deleted from Amazon** tab lists photos that were removed from your storefront, each with its locally saved original. Click **Reload Deleted Photos** to put them back on the marketplace they came from. Turn on **Skip photos already reloaded (by ASIN)** if you run this regularly and do not want to reload the same photo twice.
+The **Deleted from Amazon** tab lists photos that were removed from your storefront, each with its locally saved original. Click **Reload Deleted Photos** to put them back on the marketplace they came from. Turn on **Skip photos already reloaded (by ASIN)** if you run this regularly and do not want to reload the same photo twice. Leave **Email me if a run stops early** on to get one email with why a run stopped and when the butler restarts it on its own.
 
 ## Find a match by title when the ASIN doesn't exist abroad
 
@@ -74,6 +74,23 @@ Matches are not posted on a guess. Each one shows up in the **Photo Log** as a *
 - **Timeframe**: limit a run to recent photos, or turn on **All time / all photos** for a full sweep (this overrides the date limits and the per-run max, so use it deliberately).
 - **Skip duplicates**: match by title, ASIN, title and ASIN, or "already posted to that marketplace" so a run never re-posts the same image.
 - **Keep original if it was added in the last N days**: with delete-before-repost on, this protects freshly added photos from being deleted.
+
+## Butler Approved: Start Fresh (full library re-post)
+
+The **Butler Approved: views in a slump + huge library (start fresh)** formula deletes every photo on your US storefront (each is saved to your computer first) and re-posts it as new content with its original title, tagged to the currently available product. A reload resets each photo's added date so Amazon re-tests your whole library as new content. You must type RELOAD to confirm before it arms, and deletions are paced across runs for safety; already reloaded photos are skipped automatically.
+
+## Reload my proven winners (best sellers)
+
+Start Fresh re-posts your whole photo library. **Reload my proven winners** is the selective version: instead of re-testing everything, it re-posts only the photos on products that have actually earned commissions, so your best sellers win Amazon's fresh-placement trial while the rest stay put. Under **Preferred Formulas**, click **Reload my proven winners (best sellers, delete first)**.
+
+Photos have no view-retention data the way videos do, so this leans on two things: your proven earners (winners first) and the freshness reset. It deletes each original first so Amazon re-tests the re-post as fresh content, refreshes the title so it is not read as an identical duplicate, and skips out-of-stock products. Because it deletes from Amazon, you type **DELETE** to confirm when the run starts, so prove it on a small batch first: turn Process All off and set a low max.
+
+## Winners first + fresh titles
+
+Two optional switches in the filters make a reload run smarter:
+
+- **Winners first: only reload photos whose products earned commissions**. The run skips any photo unless one of its tagged products earned a commission inside the lookback window (default 365 days), using the earnings data already on your computer. Combined with the per-run Max, this spends the whole run on your proven earners instead of random old uploads. It ranks by earnings where known: a photo this butler has never processed may have no earnings match yet, so widen the lookback or turn the switch off when you want a full sweep.
+- **Refresh the title on reload**. Amazon sometimes deprioritizes a re-post it recognizes as identical, so a reload lands best with a real metadata change. This rewrites each title with a fresh hook before reposting. The built-in style needs no API key; the AI style uses your Anthropic key and falls back to the built-in hooks if the rewrite fails. When no rewrite is possible, the original title is kept.
 
 ## Where the data goes
 

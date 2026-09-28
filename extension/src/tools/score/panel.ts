@@ -32,6 +32,7 @@ export async function renderProductScore(
       commissionRatePct: ratePct,
       influencerVideos: counts ? counts.influencer : null,
       boughtPastMonth: signals.boughtPastMonth,
+      reviewCount: null,
       inStock: signals.inStock,
       membership: { cc: flags.cc, spcc: flags.spcc },
     },

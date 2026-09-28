@@ -1,5 +1,6 @@
 import type { LinkTarget } from "./types";
 import { withAffiliateTag } from "./url";
+import { withAppOpenParams } from "./app-link";
 
 // Small helpers shared by the real API adapters (deeplink providers and
 // affiliate networks). Kept tiny and dependency-light so every adapter parses
@@ -37,7 +38,12 @@ export async function providerError(res: Response, fallback: string): Promise<st
   }
 }
 
-// The product url with the resolved affiliate tag applied, if any.
+// The product url with the resolved affiliate tag applied, if any, plus the
+// app-opening SiteStripe params when the target asks for them (Amazon only).
+// Every deeplink wrapper and branded-link mint takes its destination from here,
+// so the wrapped url opens the Amazon app on phones too.
 export function taggedUrlFor(target: LinkTarget): string {
-  return target.tag ? withAffiliateTag(target.url, target.tag) : target.url;
+  const tagged = target.tag ? withAffiliateTag(target.url, target.tag) : target.url;
+  if (!target.appOpen || (target.retailer ?? "amazon") !== "amazon") return tagged;
+  return withAppOpenParams(tagged, target.asin);
 }

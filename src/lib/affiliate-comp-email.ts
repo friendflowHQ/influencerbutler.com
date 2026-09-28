@@ -10,6 +10,8 @@
  * can never break the admin request that triggered it.
  */
 
+import { sendEmail } from "@/lib/email-send";
+
 const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
 const REPLY_TO = "affiliates@influencerbutler.com";
 
@@ -34,34 +36,16 @@ function bodyToHtml(text: string): string {
 }
 
 async function sendViaResend(params: { to: string; subject: string; text: string }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("affiliate-comp-email: RESEND_API_KEY not set - email skipped");
-    return false;
-  }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        reply_to: REPLY_TO,
-        to: [params.to],
-        subject: params.subject,
-        text: params.text,
-        html: bodyToHtml(params.text),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("affiliate-comp-email: send failed", { status: res.status, body: body.slice(0, 500) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error("affiliate-comp-email: send threw", error);
-    return false;
-  }
+  const { ok } = await sendEmail({
+    from: FROM_ADDRESS,
+    to: params.to,
+    subject: params.subject,
+    text: params.text,
+    html: bodyToHtml(params.text),
+    replyTo: REPLY_TO,
+    category: "affiliate_comp",
+  });
+  return ok;
 }
 
 /** First name for the greeting (leading token), or null when we have no name. */

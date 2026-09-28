@@ -11,15 +11,37 @@
 
 * { box-sizing: border-box; }
 
+html { height: 100%; }
+
 body {
-  width: 340px;
+  /* User-resizable popup. Chrome sizes the popup window to the document, so an
+     explicit size on <body> plus `resize: both` gives a native drag grabber in
+     the bottom-right corner and Chrome follows it live. The chosen size is saved
+     to localStorage and reapplied on open (see popup/index.ts). Stay a hair under
+     Chrome's 800x600 popup cap so the grabber never fights the window edge.
+     Default to a roomy size (near the height cap, comfortably wide) so the popup
+     opens big enough that content is not cramped out of the box; anyone who
+     resizes gets their own size restored on top of this default. */
+  width: 460px;
+  height: 590px;
+  min-width: 300px;
+  min-height: 360px;
+  max-width: 780px;
+  max-height: 590px;
+  resize: both;
+  /* overflow must not be `visible` for the resize grabber to appear; children
+     scroll in their own panes, so hide the body's own overflow. */
+  overflow: hidden;
   margin: 0;
+  display: flex;
+  flex-direction: column;
   font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--slate-900);
   background: var(--slate-50);
 }
 
 .head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,6 +60,16 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.ver {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--slate-600);
+  /* The brand wrapper clips its gradient to text, which would make child text
+     transparent; force a solid fill so the version stays readable. */
+  -webkit-text-fill-color: var(--slate-600);
 }
 
 .tag {
@@ -76,13 +108,98 @@ body {
   border-color: var(--orange);
 }
 
-main { padding: 10px 12px; display: grid; gap: 10px; }
+/* The flexible middle: fills the space between the fixed header and footer, so
+   a taller (resized) popup shows more content. min-height:0 lets the two inner
+   scroll columns own the overflow instead of the whole body. */
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 10px 10px 10px;
+  display: grid;
+  /* minmax(0, 1fr) so the pane can never grow past the space left of the nav:
+     a plain 1fr track has a min-content floor, and wide card content (number
+     inputs side by side) was pushing the pane into sideways scrolling. */
+  grid-template-columns: 128px minmax(0, 1fr); /* left rail + content pane */
+  gap: 12px;
+}
+
+/* Left-hand section navigation: its own scroll column, full height of main, with
+   a hairline divider so it reads as a rail beside the content pane. A thin
+   scrollbar keeps the labels from being clipped by a chunky one. */
+.side-nav {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  padding-right: 8px;
+  border-right: 1px solid var(--slate-200);
+  font-size: 11.5px;
+}
+.side-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.side-nav > ul > li + li { margin-top: 1px; }
+.side-nav a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: var(--slate-600);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Settings sub-items: indented under a soft guide line, lighter than their
+   parent so the hierarchy reads at a glance. */
+.side-nav ul ul {
+  margin: 2px 0 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--slate-200);
+}
+.side-nav ul ul a {
+  padding: 5px 8px;
+  font-weight: 500;
+  font-size: 11px;
+  color: #64748b;
+}
+.side-nav a:hover {
+  background: var(--slate-50);
+  color: var(--slate-900);
+}
+.side-nav a.active {
+  color: var(--orange-dark);
+  background: #fff7ed;
+  font-weight: 700;
+}
+
+/* Bounded content pane: the cards scroll here while the nav stays put. */
+.pane {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  display: grid;
+  /* minmax(0, 1fr): an implicit auto track sizes to the widest card's
+     min-content, so one long unbreakable string (a What's New bullet, a URL)
+     widened every card past the pane and overflow-x clipped the right edge. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-content: start;
+  padding-right: 2px;
+}
 
 .card {
   background: #fff;
   border: 1px solid #eef2f7;
   border-radius: 14px;
   padding: 12px;
+  /* Keep a hair of room above so scrollIntoView() jumps don't tuck the heading
+     under the pane's top edge. */
+  scroll-margin-top: 6px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.05);
 }
 
@@ -108,13 +225,31 @@ p { margin: 4px 0; }
 .muted { color: var(--slate-600); }
 .small { font-size: 12px; }
 .error { color: var(--red); font-size: 12px; }
+.notice {
+  font-size: 12px;
+  color: var(--orange-dark);
+  background: #fff7ed;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 0 0 8px;
+}
 
 .stats { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
 .stats li { display: flex; justify-content: space-between; }
 .stats li b { font-variant-numeric: tabular-nums; }
 
 .row { display: flex; gap: 8px; align-items: center; margin: 8px 0 0; }
-.row input[type="password"], .row input[type="text"] { flex: 1; }
+/* min-width:0 lets the field shrink to share the row instead of overflowing and
+   pushing the button (Connect / Pair) out of view. */
+.row input[type="password"], .row input[type="text"] { flex: 1; min-width: 0; }
+/* The license key is long, but we only ever show masked dots, so the field
+   needs no more than a modest width. Cap it (and keep it able to shrink) so
+   Connect always sits beside it, visible without any horizontal scrolling. */
+#license-input { flex: 0 1 200px; max-width: 200px; }
+/* The desktop-app pairing field only ever holds a 6-digit code, so keep it
+   short with Pair right beside it, no need to scroll sideways. */
+#app-code-input { flex: 0 1 120px; max-width: 120px; }
 
 input[type="password"], input[type="text"], input[type="number"], select, textarea {
   border: 1px solid var(--slate-200);
@@ -122,6 +257,9 @@ input[type="password"], input[type="text"], input[type="number"], select, textar
   padding: 7px 9px;
   font: inherit;
   width: 100%;
+  /* Fields shrink to their column instead of holding their intrinsic width,
+     which was forcing the whole pane to scroll sideways. */
+  min-width: 0;
   background: #fff;
 }
 
@@ -153,17 +291,36 @@ button.ghost { background: transparent; color: var(--slate-600); border: 1px sol
 button.ghost:hover { color: var(--red); border-color: var(--red); }
 button[disabled] { opacity: 0.6; cursor: default; }
 
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* minmax(0, 1fr) columns: number inputs and selects have wide intrinsic
+   minimums that would otherwise stretch the card sideways. */
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .grid label { display: grid; gap: 3px; font-size: 12px; color: var(--slate-600); }
 .grid label.wide { grid-column: 1 / -1; }
 
 .toggle { font-size: 13px; color: var(--slate-900); }
 .toggle input { width: auto; }
 
+/* Tool subgroup headings (Walmart / Amazon: product pages / ...) inside the
+   Settings card, so the long tool list scans by platform and purpose. */
+.tool-group {
+  margin: 12px 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate-600);
+  scroll-margin-top: 6px;
+}
+.tool-group:first-of-type { margin-top: 6px; }
+/* An indented sub-toggle (e.g. Video landscape under Video counts). */
+.row.toggle.tool-sub { margin-left: 22px; }
+
 .foot {
+  flex: none;
   display: flex;
   justify-content: space-between;
   padding: 8px 14px 12px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .foot a { color: var(--slate-600); text-decoration: none; }
@@ -196,4 +353,123 @@ button[disabled] { opacity: 0.6; cursor: default; }
   cursor: pointer;
 }
 .watchlist-cond input { width: auto; accent-color: var(--orange); }
+
+/* Product thumbnail on a watchlist / list row (matches the desktop Orders
+   Butler's image column). A placeholder box shows until an image is known. */
+.row-thumb {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--slate-200);
+  border: 1px solid var(--slate-200);
+}
+.row-thumb.placeholder { background: var(--slate-200); }
+
+/* One product per saved list: thumb, title link, signal chips, remove. */
+.list-item-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.list-item-row .linklike { flex: 1; }
+
+/* CC / SPCC / commission chips under a row. Empty until enrichment lands. */
+.row-signals { display: flex; flex-wrap: wrap; gap: 6px; }
+.watchlist-head + .row-signals:not(:empty) { margin-top: 6px; margin-left: 42px; }
+.row-chip, .row-rate {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.row-chip.cc { background: #dcfce7; color: #166534; }
+.row-chip.spcc { background: #ede9fe; color: #5b21b6; }
+.row-rate { background: #ffedd5; color: var(--orange-dark); }
+
 button.ghost.small { margin-top: 0; padding: 2px 9px; font-size: 12px; }
+/* Text-only button that opens a product from a saved list. */
+button.linklike {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--orange);
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+button.linklike:hover { filter: brightness(0.9); }
+
+/* Campaign Radar availability market picker (indented under the Radar toggle). */
+.avail-markets { margin-left: 22px; flex-wrap: wrap; }
+.avail-market { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--slate-900); }
+.avail-market input { width: auto; margin: 0; }
+.avail-hint { margin-left: 22px; }
+#avail-au-denied { margin-left: 22px; }
+
+/* Post-update "What's New" card sections (built in popup/index.ts). */
+.whats-new-group { margin: 10px 0; }
+.whats-new-group h3 {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-600);
+}
+.whats-new-group ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.whats-new-group li { font-size: 12px; color: var(--slate-900); overflow-wrap: anywhere; }
+
+/* Android extension browsers (Lemur): popup/index.ts adds html.mobile when the
+   user agent is mobile. The popup opens full screen or as a tab there, so drop
+   the fixed desktop size and the resize grabber, stack the section nav above
+   the content as a horizontal strip, and size controls for touch. A class, not
+   a width media query: the desktop popup is itself narrow (460px). */
+html.mobile body {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  resize: none;
+  font-size: 15px;
+}
+html.mobile main {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+html.mobile .side-nav {
+  height: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0 6px;
+  border-right: none;
+  border-bottom: 1px solid var(--slate-200);
+  font-size: 13px;
+}
+html.mobile .side-nav ul { display: flex; gap: 4px; }
+html.mobile .side-nav li { flex: none; }
+html.mobile .side-nav > ul > li + li { margin-top: 0; }
+/* The Settings sub-groups are reachable by scrolling the Settings card; keep
+   the strip to one row of top-level sections. */
+html.mobile .side-nav ul ul { display: none; }
+html.mobile .side-nav a { padding: 10px 12px; }
+html.mobile .gear { width: 40px; height: 40px; }
+html.mobile button { min-height: 40px; }
+html.mobile button.ghost.small { min-height: 36px; padding: 6px 12px; }
+html.mobile input[type="text"],
+html.mobile input[type="password"],
+html.mobile select,
+html.mobile textarea { min-height: 40px; font-size: 16px; }
+html.mobile .toggle { min-height: 36px; align-items: center; }
+html.mobile .toggle input { width: 20px; height: 20px; }
+html.mobile #license-input,
+html.mobile #app-code-input { flex: 1 1 auto; max-width: none; }

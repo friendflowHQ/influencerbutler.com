@@ -67,16 +67,27 @@ Once that looks good, turn **Process All** back on for the full library.
 - **skipViewsAtLeast**: the most important knob. Raise to protect more high-performers from re-upload; lower to be more aggressive about refreshing older content.
 - **deleteOriginal / deleteBeforeReupload**: when both off, originals stay. The "Cleanup" section lets you batch-delete originals later after you've verified the re-uploads. With "Delete before re-upload" on, the **Don't delete if added within (days)** field keeps any video added to Amazon within that many days from being deleted, so fresh listings stay put. 0 disables it.
 - **joinMode + joinClip**: splice a short intro/outro clip onto every re-upload. Useful for brand consistency.
+- **Wait between uploads (seconds)**: set a minimum and maximum, and each upload starts a random number of seconds after the previous one inside that range. Use it to slow the butler down if Amazon keeps pausing your account after a burst of posts. Both at 0 keeps the default short pause.
+- **Email me if a run stops early**: on by default. When Amazon pauses a run, you get one email with why it stopped and when the butler restarts it on its own. The run also restarts by itself while the app stays open; click Run to try sooner or Stop to cancel the automatic restart.
 - **Caption / watermark overlays**: there's a separate panel for these; they survive re-encoding.
 
-## Post in each country's language
+## AI translation and dubbing for each marketplace
 
-When you fan a video out to a non-English marketplace, you can post it in that country's language instead of English. Open **Localize for each marketplace** and turn it on. From then on, for every non-English destination Video Reload Butler:
+When you fan a video out to a non-English marketplace, Video Reload Butler can post it in that country's language. Open the **Localize for each marketplace** card and set **Enabled** to Enabled. Then choose:
 
-- **Translates the post title** into the marketplace's language before it types it into the composer.
-- **Burns local-language captions into the video** when Closed Captions are on. It transcribes the audio once, then translates and burns a copy per language, so a German post carries German subtitles and a Japanese post carries Japanese subtitles.
+- **Translate the post title**: on by default. The title is translated into the marketplace's language before it is typed into the composer.
+- **For each market: Title only**: the video is posted unchanged; only the title is translated.
+- **For each market: Translated captions**: the audio is transcribed once, then translated and burned in as subtitles per language, so a German post carries German subtitles and a Japanese post carries Japanese subtitles. This needs **Closed Captions** turned on above; the card reminds you if it is off.
+- **For each market: AI dub (replaces audio)**: the transcript is translated and spoken by an AI voice, and that new audio replaces the original track for that market.
+- **Dub voice**: shown when AI dub is chosen. Pick Alloy, Echo, Fable, Onyx, Nova, or Shimmer.
+- **Source language**: the language your video is spoken in (English by default). Markets that share it post unchanged.
 
-English markets (US, CA, UK, AU, SG) post unchanged, and markets that share a language reuse the same translation and encode, so a fan-out to several countries stays fast. Translation uses your own OpenAI key from **API Integrations** and spends a small amount of tokens per run, so it is off by default.
+A few things to know:
+
+- English markets (US, CA, UK, AU, SG) post unchanged, and markets that share a language reuse the same translation and the same file, so a fan-out to several countries stays fast.
+- Translation, transcription, and dubbing use your own OpenAI key from **API Integrations** and spend tokens per run, which is why the card is off by default. Dubbed audio is cached, so re-running the same video with the same voice does not bill again.
+- If AI dub is on but no OpenAI key is set, the run log warns you once and the video posts with its original audio, which non-English storefronts may reject. If the dub fails for one segment, that segment is skipped; if no audio comes back at all, the original audio is kept.
+- Captions or dub? Captions keep your real voice and cost less, but the viewer has to read. A dub sounds native and works with the sound on, but replaces your voice with a synthetic one and costs more per run. Start with captions and switch to a dub on the markets where it matters.
 
 ## Product tagging options
 
@@ -187,9 +198,72 @@ Pick it from **Run mode**, then choose your rules:
 
 It is fail-safe: a video is deleted only when its products are confirmed unavailable (or it has none). Anything Video Reload Butler can't confirm is left in place. Every deleted video is downloaded first, so **Re-load selected** on the Deleted from Amazon tab puts it back whenever you're ready.
 
+## Back up my videos (download your whole library)
+
+Creators keep hearing about storefronts being lost, and the question we get is "how do I just download all my videos to my PC?" The **Back up my Amazon videos** panel at the bottom of the workspace does exactly that. Click **Download all my videos** and the butler walks every page of your Creator Hub library, opens each video, and saves the original file to a folder on your computer, along with its thumbnail and a small details file (title, date, views, product tags). Nothing on Amazon is touched.
+
+- **Save to** shows the folder. The default is a *Influencer Butler Backups / Amazon* folder inside your Videos folder; click **Choose folder** to point it at an external drive or a synced folder instead.
+- **Run it again any time.** The butler remembers what it already saved, so a second run only downloads new videos. If you move or delete a saved file, it is simply fetched again next time.
+- **Stop** ends the run after the current video; the next run picks up where you left off.
+- Keep **Watch it run** on for the first run so you can sign in to Amazon if the browser asks.
+
+The same **Back up my videos** button lives in **YouTube Butler** (for your channel) and **TikTok Video Butler** (for your profile), so one habit covers all three.
+
 ## The "Recently deleted" recovery flow
 
 The bottom panel lists videos you've deleted (within Amazon's recovery window) with a **Re-load selected** button. If a delete pass removed too much, you can recover from this list - no need to re-edit from scratch.
+
+## Get a finished video onto your phone
+
+Every video Video Reload Butler makes is saved on your computer, so you can pull any one of them onto your phone in seconds. Open the **Video Log**, expand a video's row, and click **Get on your phone**. To move several at once, use the **Get on your phone** button at the top of the workspace and tick the videos you want.
+
+You then pick how to send it. Either way the app shows a QR code: open your phone's camera, point it at the code, and tap the link that appears. Your phone opens a simple page where you can play each video and tap **Download** to save it.
+
+### Same Wi-Fi (private and instant)
+
+The video is sent directly between your computer and your phone over your local network, so nothing leaves your home. Your phone and your computer must be on the same Wi-Fi. The link is one-time and stops working after about ten minutes, so an old QR code can never be reused. This is the best choice when your phone is nearby.
+
+### Cloud link (works on any network)
+
+When your phone is not on the same Wi-Fi (for example you are out and about on cellular), choose the cloud link. The video is uploaded to our servers, and you get a link that works from anywhere. The upload is deleted automatically after a day, and the link is unguessable, so only someone you show the QR to can open it. You are told before anything is uploaded.
+
+Either way, you get the finished, watermarked video, the same file that was posted to Amazon, not a raw copy.
+
+## Butler Approved: Start Fresh (full library reload)
+
+If your onsite views are in a slump but you have a big content library, the **Butler Approved: views in a slump + huge library (start fresh)** formula reloads your ENTIRE US library: every video is deleted (each is saved to your computer first, recoverable from the Deleted from Amazon tab) and re-uploaded as new content with its original title and thumbnail, tagged to the currently available product plus its parent ASIN. A reload resets each video's added date, and Amazon boosts new videos to test their conversion, so the whole library gets a second chance in the algorithm.
+
+Because only horizontal videos over 30 seconds convert well onsite, the formula converts vertical videos to horizontal and pads videos under 31 seconds to 31 seconds; you choose whether short videos get your own ~30 second clip added to the end, or loop themselves. Videos already 31 seconds or longer keep their full length.
+
+Applying the formula asks you to type RELOAD in an agree dialog that spells out everything above. Pacing is deliberate: each run deletes at most about 25 videos and re-uploads them on the next run after a 15 minute wait, so a large library takes many runs over days. Already reloaded videos are skipped automatically, so just keep running it until done.
+
+## Reload my proven winners (best sellers + high % viewed)
+
+Start Fresh reloads your whole library. **Reload my proven winners** is the selective version: instead of re-testing everything, it re-uploads only the videos that have already proven themselves, so your best content wins Amazon's fresh-placement trial while the dead weight stays out of the way. Under **Preferred Formulas**, click **Reload my proven winners (best-sellers + high % viewed, horizontal 31s+)**.
+
+A video only qualifies when it clears two bars at once:
+
+- **It is on a product that earned commissions** (winners first), so you are re-testing content that actually converts.
+- **It kept viewers**: its Amazon **Avg % viewed** is at or above 40%. Video Reload Butler now reads that column straight from your Creator Hub video list. Videos with no percentage yet (a fresh 0-view row) are kept, not skipped, so you never lose a brand-new upload to this filter.
+
+Qualifying videos are converted to horizontal and must be 31 seconds or longer, because horizontal videos over 30 seconds perform best onsite. Each original is deleted first (saved to your computer, recoverable from the Deleted from Amazon tab) so Amazon re-tests the re-upload as fresh content, and the title is refreshed so the re-post is not read as an identical duplicate.
+
+Because it deletes each original before re-posting, you type **DELETE** to confirm when the run starts, the same as any deleting run. Prove it on a small batch first: set a low Max, run it, and confirm only your proven winners come back with fresh dates.
+
+You can also set the **Minimum avg % viewed** filter by hand (leave it at 0 to turn it off) if you want a different retention bar than the formula's 40%.
+
+### Cull dead weight in the same run
+
+This formula is the "double down on winners" half. The other half is clearing the stale videos that dilute your storefront. Turn on **Also cull dead weight before reloading** (in the re-upload options, off by default) and the same run does both: it first deletes your zero-view and low-retention videos, then reloads your winners. It protects your recent sellers, sponsored posts, active campaigns, and anything still too new to judge, and it backs up each video before deleting. Because it deletes from Amazon, you type **DELETE** to confirm when the run starts.
+
+Reloading winners plus culling dead weight is the full play: your proven content works for the algorithm, and low performers stop diluting your carousel. Prefer to keep the two apart? Leave the box unchecked and run the **Cleanup** pass on its own whenever you like.
+
+## Winners first + fresh titles
+
+Two optional switches in the filters make a reload run smarter:
+
+- **Winners first: only reload videos whose products earned commissions**. The run skips any video unless one of its tagged products earned a commission inside the lookback window (default 365 days), using the earnings data already on your computer. Combined with the per-run Max, this spends the whole run on your proven earners instead of random old uploads. It ranks by earnings where known: a video this butler has never processed may have no earnings match yet, so widen the lookback or turn the switch off when you want a full sweep.
+- **Refresh the title on reload**. Amazon sometimes deprioritizes a re-post it recognizes as identical, so a reload lands best with a real metadata change. This rewrites each title with a fresh hook before reposting. The built-in style needs no API key; the AI style uses your Anthropic key and falls back to the built-in hooks if the rewrite fails. When no rewrite is possible, the original title is kept.
 
 ## Where the data goes
 

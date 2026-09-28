@@ -1,11 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   deriveReferredSignups,
+  type CompMakeWholeEntry,
   type ReferredEvent,
   type ReferredFunnel,
+  type ReferredInsights,
   type ReferredProfileRow,
   type ReferredSubscriptionRow,
 } from "@/lib/referred-signups";
+import { billingIntervalForVariantId } from "@/lib/lemonsqueezy";
 
 /**
  * Loads the "Referred signups" funnel for one affiliate, using an already
@@ -21,28 +24,73 @@ import {
 export async function loadReferredSignups(
   admin: SupabaseClient,
   affiliateUserId: string,
-): Promise<{ migrationPending: boolean; funnel: ReferredFunnel; events: ReferredEvent[] }> {
+): Promise<{
+  migrationPending: boolean;
+  funnel: ReferredFunnel;
+  events: ReferredEvent[];
+  insights: ReferredInsights;
+}> {
   let migrationPending = false;
+
+  // Attach the billing cadence (from ls_variant_id) so the funnel can report a
+  // plan mix. Tolerates the reduced (no pro_started_at) shape from the retry.
+  const withInterval = (rows: Record<string, unknown>[]): ReferredSubscriptionRow[] =>
+    rows.map((r) => ({
+      user_id: (r.user_id as string | null) ?? null,
+      status: (r.status as string | null) ?? null,
+      trial_started_at: (r.trial_started_at as string | null) ?? null,
+      trial_converted_at: (r.trial_converted_at as string | null) ?? null,
+      pro_started_at: (r.pro_started_at as string | null) ?? null,
+      ends_at: (r.ends_at as string | null) ?? null,
+      billing_interval: billingIntervalForVariantId(
+        (r.ls_variant_id as string | number | null) ?? null,
+      ),
+    }));
+
+  // id + ref_channel let the derivation attach a lead source (web/extension/
+  // desktop) to each event. id is used only to join a channel onto this
+  // account's subscription events; it is never returned to the client.
+  const toProfileRows = (rows: Record<string, unknown>[]): ReferredProfileRow[] =>
+    rows.map((r) => ({
+      created_at: (r.created_at as string | null) ?? null,
+      ref_captured_at: (r.ref_captured_at as string | null) ?? null,
+      user_id: (r.id as string | null) ?? null,
+      ref_channel: (r.ref_channel as ReferredProfileRow["ref_channel"]) ?? null,
+    }));
 
   let profileRows: ReferredProfileRow[] = [];
   const { data: signupData, error: signupErr } = await admin
     .from("profiles")
-    .select("created_at,ref_captured_at")
+    .select("id,ref_channel,created_at,ref_captured_at")
     .eq("ref_affiliate_user_id", affiliateUserId)
     .order("ref_captured_at", { ascending: false })
     .limit(200);
   if (signupErr) {
-    // Most likely the ref_* columns don't exist in prod yet.
-    console.warn("referred-signups: signups read skipped", signupErr);
-    migrationPending = true;
+    // ref_channel lands after the ref_* columns (migration 20260826). Retry
+    // without it so a prod that has ref_* but not ref_channel still loads;
+    // those events fall back to a "web" label in the derivation.
+    console.warn("referred-signups: full signups read failed, retrying reduced", signupErr);
+    const { data: reducedData, error: reducedErr } = await admin
+      .from("profiles")
+      .select("id,created_at,ref_captured_at")
+      .eq("ref_affiliate_user_id", affiliateUserId)
+      .order("ref_captured_at", { ascending: false })
+      .limit(200);
+    if (reducedErr) {
+      // Most likely the ref_* columns don't exist in prod yet.
+      console.warn("referred-signups: signups read skipped", reducedErr);
+      migrationPending = true;
+    } else {
+      profileRows = toProfileRows((reducedData ?? []) as Record<string, unknown>[]);
+    }
   } else {
-    profileRows = (signupData ?? []) as ReferredProfileRow[];
+    profileRows = toProfileRows((signupData ?? []) as Record<string, unknown>[]);
   }
 
   let subRows: ReferredSubscriptionRow[] = [];
   const { data: subData, error: subErr } = await admin
     .from("subscriptions")
-    .select("user_id,status,trial_started_at,trial_converted_at,pro_started_at,ends_at")
+    .select("user_id,status,trial_started_at,trial_converted_at,pro_started_at,ends_at,ls_variant_id")
     .eq("ref_affiliate_user_id", affiliateUserId)
     .limit(200);
   if (subErr) {
@@ -52,20 +100,56 @@ export async function loadReferredSignups(
     console.warn("referred-signups: full subscriptions read failed, retrying reduced", subErr);
     const { data: reducedData, error: reducedErr } = await admin
       .from("subscriptions")
-      .select("user_id,status,trial_started_at,trial_converted_at,ends_at")
+      .select("user_id,status,trial_started_at,trial_converted_at,ends_at,ls_variant_id")
       .eq("ref_affiliate_user_id", affiliateUserId)
       .limit(200);
     if (reducedErr) {
       console.warn("referred-signups: subscriptions read skipped", reducedErr);
     } else {
-      subRows = ((reducedData ?? []) as Omit<ReferredSubscriptionRow, "pro_started_at">[]).map(
-        (row) => ({ ...row, pro_started_at: null }),
-      );
+      subRows = withInterval((reducedData ?? []) as Record<string, unknown>[]);
     }
   } else {
-    subRows = (subData ?? []) as ReferredSubscriptionRow[];
+    subRows = withInterval((subData ?? []) as Record<string, unknown>[]);
   }
 
-  const { funnel, events } = deriveReferredSignups(profileRows, subRows);
-  return { migrationPending, funnel, events };
+  // Comp make-whole earnings owed to THIS affiliate, so the funnel's recent
+  // activity can show them (a comped referral otherwise reads as just a
+  // cancellation). Best-effort: the adjustments table is a manual-apply
+  // migration that can lag prod, and this must never break the funnel. Only
+  // DUE installments (period <= current month) are shown, matching how the owed
+  // total surfaces them one month at a time.
+  let compMakeWholes: CompMakeWholeEntry[] = [];
+  try {
+    const nowMonth = new Date().toISOString().slice(0, 7);
+    const { data: adjData } = await admin
+      .from("affiliate_commission_adjustments")
+      .select("amount_cents,period,created_at,source")
+      .eq("user_id", affiliateUserId);
+    compMakeWholes = ((adjData ?? []) as Record<string, unknown>[])
+      .filter((r) => (r.source as string | null) === "comp")
+      .map((r) => {
+        const period = typeof r.period === "string" ? r.period : null;
+        const createdAt = typeof r.created_at === "string" ? r.created_at : null;
+        const dueMonth = period ?? (createdAt ? createdAt.slice(0, 7) : null);
+        const at = period ? `${period}-01T00:00:00.000Z` : createdAt;
+        return {
+          amountCents: typeof r.amount_cents === "number" ? r.amount_cents : 0,
+          at,
+          dueMonth,
+        };
+      })
+      .filter((r): r is { amountCents: number; at: string; dueMonth: string | null } => Boolean(r.at))
+      .filter((r) => !r.dueMonth || r.dueMonth <= nowMonth)
+      .map(({ amountCents, at }) => ({ amountCents, at }));
+  } catch (error) {
+    console.warn("referred-signups: comp make-whole read skipped", error);
+  }
+
+  const { funnel, events, insights } = deriveReferredSignups(
+    profileRows,
+    subRows,
+    Date.now(),
+    compMakeWholes,
+  );
+  return { migrationPending, funnel, events, insights };
 }

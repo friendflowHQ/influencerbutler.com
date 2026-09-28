@@ -1,8 +1,23 @@
 import { decryptFields, encryptFields } from "../integrations/crypto";
+import { normalizeMarketplace } from "../integrations/creators-api-client";
+import {
+  clearCreatorApiVault,
+  fetchVaultStatus,
+  getVaultSyncState,
+  isVaultSyncPending,
+  pushCreatorApiCreds,
+  setVaultSyncState,
+  type VaultEntry,
+} from "./creator-api-sync";
+import { clearEnrichCache } from "../tools/inline-card/enrich-cache";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
-import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal } from "../storage/store";
+import { getRateCard, rateForCategory } from "../rate-card/cache";
+import { retailerFromHost } from "../shared/retailer";
+import { maybePublishGeneratedLink } from "./links";
+import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
+import type { SyncProviderPayload, SyncSettingsPayload } from "../transport/sync-settings";
 import type {
   GenerateLinkResult,
   IntegrationsView,
@@ -19,6 +34,10 @@ const ASSOCIATES = "associates";
 // Influencer Butler branded links authenticate with the signed-in license key
 // instead of a stored, user-typed credential (see adapters/influencerbutler).
 const IB_LINKS = "influencerbutler";
+// The Amazon Creators API: besides storing credentials locally (for the in-card
+// Test), they are mirrored to the server vault so server-side enrichment can
+// mint a token and call Amazon. See background/creator-api-sync.ts.
+const CREATORS_API = "creatorsApi";
 
 // Decrypt a provider's stored credentials. Two providers have no encrypted blob:
 // Associates' "credentials" are the per-country affiliate tags in global state,
@@ -49,6 +68,7 @@ function nonSecretValues(id: string, creds: Record<string, string>): Record<stri
 
 export async function buildIntegrationsView(): Promise<IntegrationsView> {
   const integrations = await getIntegrations();
+  const vaultSync = await getVaultSyncState();
   const providers: IntegrationView[] = [];
   for (const adapter of ADAPTERS) {
     const state = integrations.providers[adapter.id];
@@ -58,11 +78,30 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
         ? Object.values(integrations.global.perCountryTags).some((v) => v.trim())
         : adapter.id === IB_LINKS
           ? Boolean(creds.licenseKey)
-          : Boolean(state?.credentialsEnc);
+          : adapter.fields.length === 0
+            ? // Session-based providers (the Walmart link providers) store no
+              // credentials; Save or a passing Test marks them enabled, and that
+              // is what "set up" means for them.
+              (state?.enabled ?? false)
+            : // "Configured" means a stored credential actually decrypts to a
+              // value, not merely that a blob exists. After an update that resets
+              // the wrapping key the blob is present but unreadable (credsFor
+              // returns {}); reporting that as unconfigured prompts a clean
+              // re-entry instead of showing an empty field that claims "Saved".
+              adapter.fields.some((f) => (creds[f.name] ?? "").trim() !== "");
+    // The specific fields that decrypt to a value, so the UI can put a "Stored"
+    // chip only on the fields that really hold one (a partner tag saved without
+    // its Credential ID/Secret should not make the empty secret boxes claim
+    // STORED). Field-based providers only; the others have no per-field secrets.
+    const storedFields =
+      adapter.id === ASSOCIATES || adapter.id === IB_LINKS || adapter.fields.length === 0
+        ? []
+        : adapter.fields.filter((f) => (creds[f.name] ?? "").trim() !== "").map((f) => f.name);
     providers.push({
       id: adapter.id,
       enabled: state?.enabled ?? false,
       configured,
+      storedFields,
       // Associates has no secret fields; its "values" are the per-country tags.
       values:
         adapter.id === ASSOCIATES
@@ -70,6 +109,9 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
           : nonSecretValues(adapter.id, creds),
       lastTest: state?.lastTest ?? { status: "untested", at: null, message: null },
       routingParticipates: state?.routingParticipates ?? true,
+      // Only the Creator API mirrors its credentials to the server vault, so it
+      // is the only card with a sync state to report.
+      vaultSync: adapter.id === CREATORS_API ? vaultSync : undefined,
     });
   }
   return { global: integrations.global, providers };
@@ -122,7 +164,9 @@ export async function saveIntegration(
     if (incoming === undefined) continue;
     const trimmed = incoming.trim();
     if (field.type === "password" && trimmed === "") continue; // keep stored secret
-    merged[field.name] = trimmed;
+    // Per-field cleanup (for example strip a leading "@" from a partner tag) so a
+    // pasted value is stored in the canonical form the provider expects.
+    merged[field.name] = field.normalize ? field.normalize(trimmed) : trimmed;
   }
   const credentialsEnc = await encryptFields(merged);
   await patchIntegration(id, (s) => {
@@ -130,6 +174,116 @@ export async function saveIntegration(
     if (enabled !== undefined) s.enabled = enabled;
     if (routingParticipates !== undefined) s.routingParticipates = routingParticipates;
   });
+  // Mirror Creator API credentials to the server vault so server-side enrichment
+  // can use them. Local save must not block on the network, so this stays
+  // fire-and-forget here; syncCreatorApiVault records success/failure to a
+  // pending flag so the reconciler can self-heal a push that did not land.
+  if (id === CREATORS_API) void syncCreatorApiVault(merged);
+  return viewFor(id);
+}
+
+// Turn the stored Creator API credentials into a vault entry. Only "complete"
+// entries (a host plus all three credential fields) are worth pushing; the
+// marketplace value is normalized to a bare host (e.g. "amazon.com").
+function vaultEntryFrom(creds: Record<string, string>): { entry: VaultEntry; complete: boolean } {
+  const host = normalizeMarketplace(creds.marketplace ?? "").replace(/^www\./, "");
+  const entry: VaultEntry = {
+    host,
+    partnerTag: (creds.partnerTag ?? "").trim(),
+    credentialId: (creds.credentialId ?? "").trim(),
+    credentialSecret: (creds.credentialSecret ?? "").trim(),
+    credentialVersion: (creds.credentialVersion ?? "").trim(),
+  };
+  const complete = Boolean(entry.host && entry.partnerTag && entry.credentialId && entry.credentialSecret);
+  return { entry, complete };
+}
+
+// Push the stored Creator API credentials to the server vault and record the
+// outcome. On success the pending flag is cleared and the stale enrich cache is
+// dropped (so the inline card and global-reach panel stop showing a "connect"
+// prompt from before these creds landed). On failure the pending flag is set so
+// the reconciler retries later. Nothing to push (incomplete creds) clears the
+// flag: there is no sync owed.
+async function syncCreatorApiVault(creds: Record<string, string>): Promise<void> {
+  const { entry, complete } = vaultEntryFrom(creds);
+  if (!complete) {
+    await setVaultSyncState(null);
+    return;
+  }
+  const result = await pushCreatorApiCreds([entry]);
+  if (result.ok) {
+    await setVaultSyncState(null);
+    await clearEnrichCache();
+    return;
+  }
+  await setVaultSyncState({
+    pending: true,
+    reason: result.reason,
+    message: result.message ?? null,
+    at: Date.now(),
+  });
+}
+
+// Self-heal the server vault. A fire-and-forget push can fail silently (offline
+// at save time, a network blip, migration pending), leaving local creds that
+// pass the in-card Test but never reach server-side enrichment. This re-pushes
+// when a prior push is known to have failed, and - when asked to check the
+// server - when the vault is simply missing the marketplace we hold locally.
+// Driven from sign-in, browser startup, and the sync alarm.
+export async function reconcileCreatorApiVault(opts?: { checkRemote?: boolean }): Promise<void> {
+  const { auth } = await getState();
+  if (!auth.licenseKey) return; // not signed in; a pending sync waits for sign-in
+  const pending = await isVaultSyncPending();
+  // Cheap alarm path: with nothing recorded as owed and no remote check asked
+  // for, bail before decrypting anything.
+  if (!pending && !opts?.checkRemote) return;
+
+  const creds = await credsFor(CREATORS_API, await getIntegrations());
+  const { entry, complete } = vaultEntryFrom(creds);
+  if (!complete) {
+    await setVaultSyncState(null); // nothing configured locally; nothing owed
+    return;
+  }
+  if (pending) {
+    await syncCreatorApiVault(creds);
+    return;
+  }
+  // Remote check (sign-in / startup): re-push when the vault is simply missing
+  // the marketplace we hold locally. Unknown status (offline/migration) is not
+  // "missing", so it does not churn a push.
+  const status = await fetchVaultStatus();
+  if (status && !status.marketplaces.includes(entry.host)) {
+    await syncCreatorApiVault(creds);
+  }
+}
+
+// The Settings card's "Retry" button: reconcile, then hand back the refreshed
+// Creator API card so the UI can redraw the sync line without a second round
+// trip. Keeps the provider id inside this module.
+export async function retryCreatorApiVaultSync(): Promise<IntegrationView> {
+  await reconcileCreatorApiVault({ checkRemote: true });
+  return viewFor(CREATORS_API);
+}
+
+// Wipe a provider's stored credentials (the options page "Clear saved keys"
+// button). Nulls the encrypted blob, disables the provider so nothing keeps
+// using a half-removed credential, and resets the test badge. Lets a user who is
+// unsure whether an old key is still saved deliberately start clean.
+export async function clearIntegration(id: string): Promise<IntegrationView> {
+  const adapter = getAdapter(id);
+  if (!adapter) throw new Error(`unknown integration: ${id}`);
+  await patchIntegration(id, (s) => {
+    s.credentialsEnc = null;
+    s.enabled = false;
+    s.lastTest = { status: "untested", at: null, message: null };
+  });
+  // Clearing the card also clears the server vault, so enrichment stops using a
+  // credential the user just removed locally.
+  if (id === CREATORS_API) {
+    void clearCreatorApiVault();
+    void clearEnrichCache();
+    void setVaultSyncState(null); // nothing left to push
+  }
   return viewFor(id);
 }
 
@@ -185,37 +339,122 @@ export async function generateAffiliateLink(
   asin: string,
   marketplace: string,
   url?: string,
+  retailer?: "amazon" | "walmart",
+  category?: string,
+  ratePctHint?: number,
 ): Promise<GenerateLinkResult> {
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
+    // Retailer is explicit when the caller knows it, else derived from the host.
+    const resolvedRetailer = retailer ?? retailerFromHost(marketplace);
+    const roster = integrations.global.routingProviders ?? {};
     // Affiliate networks that are enabled, take part in routing, have saved
     // credentials, and can mint their own link. Tried before the deeplink
-    // wrapper (see buildAffiliateLink), in registry order.
+    // wrapper (see buildAffiliateLink), in registry order. Also gated by the
+    // Affiliate Routing Strategy roster (a missing roster key means enabled).
     const affiliateNetworks = AFFILIATE_NETWORK_IDS.filter((id) => {
       const state = integrations.providers[id];
       return Boolean(
-        state?.enabled &&
+        roster[id] !== false &&
+          state?.enabled &&
           state.routingParticipates &&
           state.credentialsEnc &&
           getAdapter(id)?.generateLink,
       );
     });
-    const link = await buildAffiliateLink(
-      { asin, marketplace, url },
+    // Under highest-commission routing, resolve the Amazon Associates rate for
+    // this product so it can compete: a caller-supplied hint wins, else the rate
+    // card matched by category, else the card's default rate, else unknown.
+    let amazonRatePct: number | null = null;
+    if (integrations.global.useHighestCommission && resolvedRetailer === "amazon") {
+      if (typeof ratePctHint === "number" && ratePctHint > 0) {
+        amazonRatePct = ratePctHint;
+      } else {
+        const card = await getRateCard();
+        if (card) {
+          const match = rateForCategory(card, category ?? null);
+          amazonRatePct = match ? match.ratePct : card.defaultRatePct;
+        }
+      }
+    }
+    const built = await buildAffiliateLink(
+      { asin, marketplace, url, retailer: resolvedRetailer },
       {
         // Explicit "Copy my link" always applies the affiliate setup; the
         // global toggle only governs automatic rewriting (see rewriteLink).
         enabled: true,
         primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
         affiliateNetworks,
+        walmartLinkProvider: integrations.global.walmartLinkProvider,
         perCountryTags: integrations.global.perCountryTags,
         storefrontHandle: settings.storefrontHandle,
+        useHighestCommission: integrations.global.useHighestCommission,
+        amazonRatePct,
+        amazonParticipates: roster.amazon !== false,
+        appOpeningLinks: integrations.global.appOpeningLinks !== false,
       },
       async (providerId) => credsFor(providerId, integrations),
     );
-    return { ok: true, url: link };
+    // When the resolved link is a branded short url and smart routing is on,
+    // publish its routing definition so the edge does Passport / Best-Rate /
+    // heal at click time. Best-effort: never blocks handing back the link.
+    void maybePublishGeneratedLink(built.url);
+    // `notice` rides along so the caller can say why this is a plain link
+    // instead of the branded one the user picked. The link is still good.
+    return { ok: true, url: built.url, notice: built.notice };
   } catch {
     return { ok: false, error: "Could not build a link." };
+  }
+}
+
+// Settings sync with the desktop app. buildSyncPayload decrypts the syncable
+// providers into a flat payload (this is the ONLY place that leaves the encrypted
+// store, and it is sent over the loopback bridge only); writeSyncPayload folds an
+// already-merged payload back in, re-encrypting each provider through
+// saveIntegration. Only credential-based providers participate: session-based
+// (Walmart link) and license-based (branded links, Associates tags-in-global)
+// providers have no portable secret and are covered by the global fields.
+export async function buildSyncPayload(): Promise<SyncSettingsPayload> {
+  const [settings, integrations] = await Promise.all([getSettings(), getIntegrations()]);
+  const providers: Record<string, SyncProviderPayload> = {};
+  for (const adapter of ADAPTERS) {
+    if (adapter.fields.length === 0) continue; // no stored credential to sync
+    const state = integrations.providers[adapter.id];
+    const creds = await credsFor(adapter.id, integrations);
+    const filtered: Record<string, string> = {};
+    for (const field of adapter.fields) {
+      const value = creds[field.name];
+      if (typeof value === "string" && value.trim()) filtered[field.name] = value;
+    }
+    providers[adapter.id] = {
+      enabled: state?.enabled ?? false,
+      routingParticipates: state?.routingParticipates ?? true,
+      creds: filtered,
+    };
+  }
+  return {
+    storefrontHandle: settings.storefrontHandle,
+    primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
+    walmartLinkProvider: integrations.global.walmartLinkProvider,
+    affiliateRoutingEnabled: integrations.global.affiliateRoutingEnabled,
+    perCountryTags: { ...integrations.global.perCountryTags },
+    providers,
+  };
+}
+
+export async function writeSyncPayload(payload: SyncSettingsPayload): Promise<void> {
+  await patchSettings({ storefrontHandle: payload.storefrontHandle });
+  await patchIntegrationsGlobal({
+    primaryDeeplinkProvider: payload.primaryDeeplinkProvider,
+    walmartLinkProvider: payload.walmartLinkProvider,
+    affiliateRoutingEnabled: payload.affiliateRoutingEnabled,
+    perCountryTags: { ...payload.perCountryTags },
+  });
+  for (const [id, provider] of Object.entries(payload.providers)) {
+    if (!getAdapter(id)) continue; // ignore a provider this build does not know
+    // saveIntegration re-encrypts and keeps a stored secret when an incoming
+    // password field is blank, so re-saving unchanged creds is a safe no-op.
+    await saveIntegration(id, provider.creds, provider.enabled, provider.routingParticipates);
   }
 }
 

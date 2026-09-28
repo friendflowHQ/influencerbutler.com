@@ -16,14 +16,14 @@ The output is a complete Benable collection: header, sub-lists, products under e
 
 - **A Benable account** with your referral link saved in **API Integrations**.
 - **OpenAI API key** in API Integrations - the model that picks products and writes copy.
-- **Amazon affiliate tag** for the marketplace you're targeting (amazon.com, amazon.co.uk, amazon.ca etc).
+- **Amazon affiliate tag** for the Amazon marketplace you're targeting (amazon.com, amazon.co.uk, amazon.ca etc). For **Walmart**, no tag is needed: signed-in users resolve Walmart products through the shared lookup service, and Benable attributes the published links to your creator account.
 - **First-time Publish** also needs you to sign into Benable in the Chrome window Butler spawns - a manual sign-in once, then your session persists for future runs.
 
 ## The three modes (read this first)
 
 Benable Butler has three buttons that look similar but do very different things:
 
-- **Dry run**: runs the OpenAI + Amazon pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
+- **Dry run**: runs the OpenAI + product-search pipeline only. No browser, no publish. Outputs a console-only summary of what Butler *would* build. Free OpenAI tokens; takes ~1 minute.
 - **Preview**: same as Dry run plus writes a JSON + HTML report you can open in your browser. Lets you see the full collection structure before committing. Recommended for your first run in any niche.
 - **Publish**: actually creates the collection on Benable via Puppeteer (browser automation). Uses your saved Benable session. Takes 5-15 minutes depending on collection size.
 
@@ -31,10 +31,10 @@ Benable Butler has three buttons that look similar but do very different things:
 
 ## Running your first collection
 
-1. Open **Benable Butler** under Amazon Butler.
+1. Open **Benable Butler** in the left sidebar, then **List Publishing**.
 2. In **What should we publish?**, type a niche keyword (e.g. "minimalist kitchen", "running gear for beginners", "small-apartment storage"). Specific niches outperform broad ones.
-3. Pick a **Marketplace** (amazon.com is the default).
-4. Confirm your **Benable handle** auto-fills correctly. Edit if it's wrong.
+3. Pick a **Marketplace** (amazon.com is the default). Choose **Walmart** to build the collection from Walmart products instead of Amazon.
+4. There is no handle to fill in. Butler publishes to whichever Benable account is signed in on this computer, and the sign-in control at the top of the panel names it once it knows.
 5. Click **Dry run**. Review the console output - does Butler understand your niche?
 6. If yes, click **Preview**. Open the generated HTML report when it finishes. Walk through every list + product. Reject anything that doesn't fit.
 7. If the preview looks right, click **Publish**.
@@ -44,8 +44,24 @@ Publish opens a Chrome window. On first run, you sign into Benable manually; sub
 ## Tuning over time
 
 - **Niche keyword**: the single biggest knob. "Kitchen gadgets" is too broad → Butler returns 50 random products. "Compact kitchen tools for studio apartments" is right-sized → Butler returns a coherent collection.
-- **Priority CC / SPCC** in settings - when on, Butler prioritizes products that have active Creator Connections campaigns or Sponsored Products offers in your niche. Useful for monetization; turn off if you want pure curation regardless of commission.
-- **Collection size**: Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists of 5-7 items; broad niches get 6-8 lists.
+- **Only publish products with a campaign** (Advanced settings, Publishing and covers) - on by default. When on, Butler keeps only Amazon products with an active Creator Connections or SPCC campaign, which is great for monetization but can leave a niche list too short to publish. Turn it off to fill lists with regular products regardless of commission (see the "held as too short to rank" note under Common gotchas).
+- **Collection size**: Butler picks list count + items-per-list automatically based on the niche. Tight niches get 3-4 lists; broad niches get more.
+- **Audience and Creator voice**: two optional fields at the top. Fill them in ("budget-conscious moms", "warm, funny, practical") and Butler writes every title, description, and note for that audience in that voice.
+- **Show the % off on each post** (Advanced settings, on by default): when you post from a Deals hub, Butler starts each product's note with the discount, like "🔥 43% off", so followers can tell at a glance it is a real deal instead of a plain post. Choose the wording under **Deal wording**: the percentage on its own, or the percentage with the sale and list price. Turn the toggle off to post plain notes.
+
+## What makes a list win (the engagement playbook)
+
+We studied 6,226 real Benable lists to learn what actually drives engagement, and Benable Butler now builds every list to those findings automatically. You can see the same rules any time in the **Winning-list playbook** card at the top of the panel:
+
+- **16 to 30 items** is the sweet spot. Fewer than 12 is the single biggest drop in engagement, and there is no need to pad past 30.
+- **Short titles win**: 3 to 6 words, no leading number, no colon, at most one emoji. First-person warmth belongs in the description, not the title.
+- **A warm, first-person description** that says who the list is for, gives a quick reason to trust your pick, and previews what is inside.
+- **A cover image or emoji** on every list, and a **verified** Benable account when you can, both lift engagement.
+
+Benable also gives a well-formed list its **Optimized badge** and the Discover-feed visibility that comes with it. Butler builds to both at once.
+
+- **List size**: Butler aims for the 16 to 30 sweet spot. If a list comes back thin, Butler pulls extra products to top it up toward your **Target list size**. If it still can't clear Benable's 16-item ranking floor, Butler **holds that list back** rather than publish one that can never rank. The run summary shows which lists were held and why. Under **Advanced settings** you can set the **Target list size** and a **Maximum list size** (lists are trimmed to it before publishing), or turn the **Hold lists too short to rank** safety off to publish at any size.
+- **Retailer mix**: Amazon stays the backbone of every list, but you can let Butler add a few high-value non-Amazon items where they genuinely fit. Turn on the sources you want under **Advanced settings**: **your own links** (paste your Etsy shop, brand site, or app, one per line), **Walmart** (when your Walmart account is set up), **App Store apps**, and **Target**. Butler keeps the mix light and only adds a non-Amazon item where it belongs.
 
 ## Where the data goes
 
@@ -53,10 +69,23 @@ Generated collections are logged per-run in the preseed cache (JSON + HTML repor
 
 ## Common gotchas
 
+- **There is no Etsy switch under Retailer mix**: Etsy is not one of the stores Benable Butler can search on its own. The Retailer mix covers Walmart, Target, App Store apps, local places, YouTube videos and web resources. You can still feature Etsy items: open **Settings**, scroll to **Retailer mix**, and paste your Etsy listing or shop URLs into **Your own links to feature**, one per line. Butler recognises Etsy links and places them in lists where they fit. Each list keeps only a couple of non-Amazon slots, so put your most important links first. If you found the Etsy card on the AI and Data Keys page, that key is held for a future Etsy source and is not used yet, so saving one there will not add a toggle.
+- **Benable Butler has no List Publishing in the left menu**: on older versions List Publishing shipped switched off, so the hub opened to Published Products, Benable Deals and List Optimize with nothing there that builds a list. Open **Settings**, scroll to **Workspace visibility**, and tick **List Publishing**. It appears under Benable Butler right away and the choice sticks. Newer versions switch it on from the start.
+- **The Niche keyword box has no button next to it**: it runs from **Dry run**, **Preview**, and **Publish** at the very top of the panel, in the header. Scroll down to type a niche and those buttons leave the screen, which makes the field look like it does nothing. Scroll back up and click **Publish** to run that niche. The keyword ideas queue lower down is separate and runs with its own **Publish all queued** button.
 - **"OpenAI key missing"**: set it in API Integrations.
+- **A queued list sits on Pending**: Pending means the idea is still waiting in the List Ideas queue. Nothing runs in the background, and refreshing changes nothing. To send out just that one idea, click **Publish** on its own row and leave the Chrome window that opens alone until it finishes. **Publish all queued** works through every row that is not Done yet, and Auto-run does the same over time. Both paths also retry rows marked Failed. Publish one run at a time, since several at once stall each other, which is what the per-row **Publish** button is for. A row left on Running for about twenty minutes is marked as interrupted in the run history, where you can click Resume.
+- **"Benable could not finish creating a list"**: the run stopped because two list creations in a row did not complete. A failed creation usually leaves an empty list called **My new list** on Benable, and that leftover is what trips the next attempt. Open your Benable account, delete any list still named **My new list**, check that the Benable window is signed in, then click **Resume** on that run in the run history. If the same message comes back straight away, make sure only one publish is running. On older versions this same message could also appear when the Chrome window closed part-way through, which has nothing to do with leftover lists or your sign-in: if the window is gone when the run stops, read the next-but-one bullet instead.
 - **"Benable sign-in required"** during Publish - first-time setup or session expired. Sign in via the spawned Chrome window, click Resume.
+- **A published list has its title but nothing in it, or the run stops with "The Benable browser window closed"**: the Chrome window Benable Butler opened went away part-way through, so nothing after that point could be added. Leave that window alone while a run is working: do not close it, quit Chrome, or sign out from it, and avoid starting another butler that drives a browser at the same time. To recover, open your Benable account, delete the half-built list, then start the run again. A run that ends with roughly the back half of its items marked as errors is the same thing: the error count marks the moment the window went away, not products that were wrong.
 - **The published collection has fewer items than the preview**: Benable rejects ASINs that aren't available in the chosen marketplace. The publish log shows which ones were skipped.
+- **A list from the preview didn't publish**: if a list couldn't clear Benable's 16-item ranking floor, Butler holds it back so it doesn't publish a list that can't rank. The run summary lists what was held and its item count. Broaden the niche, or turn off **Hold lists too short to rank** under Advanced settings, to publish it anyway.
+- **Nothing publishes and the run closes after a minute or two**: Benable finds its products through your Amazon Creators API connection, so if Amazon is rejecting those credentials, every search comes back empty and the run ends early with nothing to show. The giveaway is Deals Butler failing on every keyword in the same session. Open **Amazon Butler**, then **Settings**, find the Creators API card, and click **Test connection**: it reports the exact reason, usually a Client ID or Client Secret that needs re-copying from your Amazon Creator Connections account. Newer versions say this in the run itself instead of reporting "not enough matching products".
+- **You have no Amazon Creators API connection yet**: Benable builds its Amazon lists entirely from that connection, so until it is set up an Amazon run finds nothing and closes with nothing published. You can still use Benable in the meantime. Set **List source** to **Retailers only (Target, Walmart, App Store)** for whole lists that skip Amazon and are monetized through Benable, or **Curated, no links (Maps, apps, your own links)** for lists with no affiliate product links at all. Switch back to **Marketplace (left)** once Test connection passes in Amazon Butler, then Settings.
+- **You picked a non-Amazon list source and Amazon still opens**: make sure the app is up to date. On versions before this was fixed, the **List source** setting was honored by the main **Publish** button but not by the **Publish all queued** keyword ideas queue, which ran the Amazon path anyway and left the queued ideas on Pending. Those versions also opened an Amazon page before every publishing run to look for sponsored links, whatever list source you picked. On an older version, publish with the main Publish button rather than the ideas queue, and turn off **Publish only Amazon SPCC or Creator Connections products**, since that filter keeps only Amazon campaign products and so empties a Retailers or Curated list.
+- **Every list is held as too short to rank**: **Only publish products with a campaign** (Advanced settings, Publishing and covers) is on by default. It keeps only Amazon products that have a Creator Connections or SPCC campaign, and most everyday products do not have one, so lists drop under the 16-item ranking floor and are held. You do not need your own campaigns to use Benable Butler. Turn that setting off to fill lists with regular products, then run again. If a list is still short, turn off **Hold lists too short to rank** or loosen the product rating and review filters.
 - **Niche too narrow**: if Dry run returns <5 candidate ASINs, your niche is too tight. Broaden one notch.
+- **Your GeniusLink (or other DeepLink Routing) provider is not used on Benable lists**: DeepLink Routing in API Integrations covers the butlers that post links themselves, such as Deals Butler and Link Butler. Benable Butler is different, because the link lives on Benable rather than in a post, so items are added through Benable's own affiliate linking, or with the real Sponsored Products for Creators link when the product has an accepted campaign. Picking GeniusLink there will not change what a published Benable item links to. Routing Benable items through a smart link is a feature request on our list, not a setting you are missing.
+- **Your niche gets rewritten into a shopping list, or every item comes from one store**: two different settings, both next to each other at the top of List Publishing. The **Marketplace** picker on the left decides which store the products come from, so leaving it on Walmart or Amazon + Walmart is why a whole list arrives from Walmart. **List source** decides what kind of thing a list is made of. On **Marketplace (left)** every item has to be something you can buy, so a niche that is not shoppable gets steered to the nearest thing that is: ask for "downtown Charleston hotels" and you get travel pillows, with the list renamed to match. For places, choose **Non-product recommendations (places, videos, apps, resources)** and switch on **Mix in local places** under Retailer mix. For whole lists from other stores, choose **Retailers only (Target, Walmart, App Store)**. The Retailer mix toggles, including **Mix in Target**, only add a few non-Amazon items to a mostly-Amazon list; they do not change the marketplace. Local places, YouTube videos, and web resources need your OpenAI key connected in API Integrations.
 
 ## Related
 

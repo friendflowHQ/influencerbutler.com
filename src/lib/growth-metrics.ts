@@ -12,6 +12,9 @@
 // trial-funnel report.
 
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
+import { SEED_SOURCE } from "@/lib/recent-activity";
+import { planForVariantId } from "@/lib/lemonsqueezy";
+import { planMetaFor, PRICE_CENTS } from "@/lib/pricing-constants";
 
 export type MetricUnit = "count" | "cents";
 
@@ -28,7 +31,9 @@ export type GrowthMetricDef = {
 export const GROWTH_METRICS: GrowthMetricDef[] = [
   { key: "trial_clicks", label: "Free-trial clicks", goalLabel: "trial clicks", unit: "count", goalable: true },
   { key: "trials_started", label: "Trials started", goalLabel: "trials started", unit: "count", goalable: true },
+  { key: "app_trials_started", label: "App trials started", goalLabel: "app trials started", unit: "count", goalable: true },
   { key: "trial_conversions", label: "Trial conversions", goalLabel: "trial conversions", unit: "count", goalable: true },
+  { key: "download_leads", label: "Download leads", goalLabel: "download leads", unit: "count", goalable: true },
   { key: "new_subscriptions", label: "New subscriptions", goalLabel: "new subscriptions", unit: "count", goalable: true },
   { key: "active_subscriptions", label: "Active subscribers", goalLabel: "active subscribers", unit: "count", goalable: true },
   { key: "on_trial_subscriptions", label: "On trial right now", goalLabel: "trials in progress", unit: "count", goalable: false },
@@ -39,6 +44,7 @@ export const GROWTH_METRICS: GrowthMetricDef[] = [
   { key: "commission_owed_cents", label: "Commission top-ups owed", goalLabel: "commission owed", unit: "cents", goalable: false },
   { key: "testimonials", label: "New testimonials", goalLabel: "new testimonials", unit: "count", goalable: true },
   { key: "email_subscribers", label: "Newsletter signups", goalLabel: "newsletter signups", unit: "count", goalable: true },
+  { key: "facebook_members", label: "Facebook group members", goalLabel: "Facebook members", unit: "count", goalable: true },
 ];
 
 export type MetricSnapshot = {
@@ -48,11 +54,43 @@ export type MetricSnapshot = {
   series: number[] | null;
 };
 
+/**
+ * One projected-earnings figure: how many trials feed it, the estimated
+ * first-payment value of those trials converting, and that value added to
+ * this month's secured revenue.
+ */
+export type ProjectionFigure = {
+  /** Trials feeding this figure. */
+  trials: number;
+  /** Estimated first-payment value of those trials converting, in cents. */
+  trialCents: number;
+  /** securedCents + trialCents, or null when secured revenue is unknown. */
+  totalCents: number | null;
+};
+
+/**
+ * Forward-looking "what could this month total" estimate. A "now" concept, so
+ * it is only populated for the current month. It carries two figures over the
+ * same secured revenue:
+ *   - bestCase:  every trial open right now, valued at its full first payment
+ *                (an optimistic ceiling: assumes all convert and none cancel).
+ *   - thisMonth: only the trials whose next charge date falls within this
+ *                calendar month, i.e. cash that could actually land this month.
+ */
+export type EarningsProjection = {
+  /** Revenue already paid to us this month, in cents (null if unknowable). */
+  securedCents: number | null;
+  bestCase: ProjectionFigure;
+  thisMonth: ProjectionFigure;
+};
+
 export type GrowthSnapshot = {
   month: string;
   prevMonth: string;
   migrationPending: boolean;
   metrics: Record<string, MetricSnapshot>;
+  /** Only present for the current month; null for historical snapshots. */
+  projection: EarningsProjection | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -89,6 +127,43 @@ export function deltaPercent(current: number | null, previous: number | null): n
   if (current === null || previous === null) return null;
   if (previous === 0) return current === 0 ? 0 : null;
   return (current - previous) / previous;
+}
+
+/**
+ * Estimated first-payment value, in cents, of the trials in progress if they
+ * all convert. Each on-trial subscription contributes its plan's list price:
+ * a monthly plan adds one month, an annual plan adds the full year, since
+ * that is what Lemon Squeezy charges on the first renewal after the trial.
+ * A row whose variant we cannot map to a known plan falls back to
+ * `fallbackCents` so an unrecognised SKU still counts rather than silently
+ * reading as $0.
+ */
+export function projectedTrialConversionCents(
+  onTrialVariantIds: (string | null | undefined)[],
+  fallbackCents: number,
+): number {
+  let total = 0;
+  for (const variantId of onTrialVariantIds) {
+    const meta = planMetaFor(planForVariantId(variantId));
+    total += meta ? meta.priceCents : fallbackCents;
+  }
+  return total;
+}
+
+/**
+ * Does a subscription's next charge date (`renews_at`) fall within the half-open
+ * window [startMs, nextMs)? Used to keep only the trials that would actually
+ * bill within the current calendar month. A missing or unparseable date reads
+ * as "no", so an unknown charge date never counts toward this-month cash.
+ */
+export function billsWithinWindow(
+  renewsAt: unknown,
+  startMs: number,
+  nextMs: number,
+): boolean {
+  if (typeof renewsAt !== "string") return false;
+  const t = Date.parse(renewsAt);
+  return Number.isFinite(t) && t >= startMs && t < nextMs;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +225,75 @@ function bucketRows(
   return { current, previous, series };
 }
 
+/**
+ * Buckets daily LEVEL rows (a running headcount, not a per-day flow) into
+ * {previous, current, series}. Unlike bucketRows, each day holds the recorded
+ * level, not a sum, and the sparkline carries the last known value forward so
+ * a day without a snapshot does not read as a drop to zero.
+ *
+ *   current  = the latest recorded level in `month`
+ *   previous = the latest recorded level in `prevMonth` (the month's end level)
+ *   series   = one carried-forward level per day of `month`, seeded from the
+ *              previous month's end so the line starts where last month left off
+ *
+ * Rows must expose `dayCol` as a 'YYYY-MM-DD...' string and `valueCol` as a
+ * number. Duplicate days keep the highest day index seen (upserts make one row
+ * per day anyway).
+ */
+export function bucketLevelRows(
+  rows: Record<string, unknown>[],
+  dayCol: string,
+  valueCol: string,
+  prevMonth: string,
+  month: string,
+  days: number,
+): MetricSnapshot {
+  const byDay = new Map<number, number>();
+  let curLatestDay = -1;
+  let curLatestVal: number | null = null;
+  let prevLatestDay = -1;
+  let prevLatestVal: number | null = null;
+
+  for (const row of rows) {
+    const raw = row[dayCol];
+    if (typeof raw !== "string" || raw.length < 10) continue;
+    const rowMonth = raw.slice(0, 7);
+    const day = Number(raw.slice(8, 10));
+    const val = Number(row[valueCol]);
+    if (!Number.isFinite(val)) continue;
+    if (rowMonth === month) {
+      if (day >= 1 && day <= days) byDay.set(day, val);
+      if (day >= curLatestDay) {
+        curLatestDay = day;
+        curLatestVal = val;
+      }
+    } else if (rowMonth === prevMonth) {
+      if (day >= prevLatestDay) {
+        prevLatestDay = day;
+        prevLatestVal = val;
+      }
+    }
+  }
+
+  const series = new Array<number>(days).fill(0);
+  let last = prevLatestVal ?? 0;
+  let seen = prevLatestVal !== null;
+  for (let i = 0; i < days; i++) {
+    const day = i + 1;
+    if (byDay.has(day)) {
+      last = byDay.get(day)!;
+      seen = true;
+    }
+    series[i] = seen ? last : 0;
+  }
+
+  return {
+    current: curLatestVal,
+    previous: prevLatestVal,
+    series: seen ? series : null,
+  };
+}
+
 const one = () => 1;
 
 /**
@@ -169,6 +313,10 @@ export async function computeGrowthSnapshot(
   const metrics: Record<string, MetricSnapshot> = {};
   for (const def of GROWTH_METRICS) metrics[def.key] = emptySnapshotMetric();
   let migrationPending = false;
+  let projection: EarningsProjection | null = null;
+  // The projection blends this month's secured revenue with the trials open
+  // right now, so it only makes sense for the current month.
+  const isCurrentMonth = month === monthKey(new Date());
 
   /** Two-month window fetch; returns rows or null on error. */
   async function windowRows(
@@ -211,9 +359,14 @@ export async function computeGrowthSnapshot(
     affClickRows,
     testimonialRows,
     emailSubRows,
+    appTrialRows,
+    fbMemberRows,
     earnings,
   ] = await Promise.all([
-    windowRows("activity_events", "created_at", "created_at", (c) =>
+    // `source` comes back so seeded social-proof rows can be dropped below.
+    // Filtering in code, not with .neq(): a real click that arrived without
+    // a ?src= tag stores source NULL, and PostgREST's neq would discard it.
+    windowRows("activity_events", "created_at,source", "created_at", (c) =>
       c.eq("kind", "trial_click").eq("is_bot", false),
     ),
     windowRows("subscriptions", "trial_started_at", "trial_started_at", (c) =>
@@ -229,7 +382,7 @@ export async function computeGrowthSnapshot(
       try {
         const res = await supabase
           .from("subscriptions")
-          .select("status,ls_variant_id")
+          .select("status,ls_variant_id,renews_at")
           .not("status", "in", '("cancelled","expired")')
           .limit(ROW_LIMIT);
         if (res.error) {
@@ -246,7 +399,36 @@ export async function computeGrowthSnapshot(
     windowRows("affiliate_applications", "created_at", "created_at"),
     windowRows("affiliate_clicks", "created_at", "created_at", (c) => c.eq("is_bot", false)),
     windowRows("testimonials", "created_at", "created_at"),
-    windowRows("email_subscribers", "created_at", "created_at"),
+    windowRows("email_subscribers", "created_at,source", "created_at"),
+    // Desktop app trials: walkthrough email captures and no-card claims. These
+    // create no Lemon Squeezy subscription, so trials_started (which reads
+    // subscriptions.trial_started_at) cannot see them at all. Returns null
+    // until 20260922_app_trial_funnel.sql reaches prod, which leaves the tile
+    // empty rather than breaking the snapshot.
+    windowRows("email_subscribers", "app_trial_started_at", "app_trial_started_at", (c) =>
+      c.not("app_trial_started_at", "is", null),
+    ),
+    // Point-in-time LEVEL: one member-count row per day. captured_on is a DATE,
+    // so the window is filtered on date-only bounds.
+    (async () => {
+      try {
+        const res = await supabase
+          .from("social_snapshots")
+          .select("captured_on,member_count,platform")
+          .eq("platform", "facebook")
+          .gte("captured_on", prevBounds!.startIso.slice(0, 10))
+          .lt("captured_on", bounds!.nextIso.slice(0, 10))
+          .limit(ROW_LIMIT);
+        if (res.error) {
+          console.error("growth snapshot: social_snapshots query failed", res.error);
+          return null;
+        }
+        return res.data ?? [];
+      } catch (err) {
+        console.error("growth snapshot: social_snapshots query threw", err);
+        return null;
+      }
+    })(),
     (async () => {
       try {
         const [y, m] = month.split("-").map(Number);
@@ -265,8 +447,17 @@ export async function computeGrowthSnapshot(
   ) =>
     rows ? bucketRows(rows, tsCol, prevMonth, month, bounds.days, value) : emptySnapshotMetric();
 
-  metrics.trial_clicks = bucket(trialClickRows, "created_at");
+  // Seeded demo events (source = 'seed', written by the seed-activity cron for
+  // the homepage social-proof widget) are not real trial interest, so they must
+  // not inflate this tile. src/lib/daily-digest.ts already filters them the same
+  // way; this tile did not, which made the number swing with the admin's "Run
+  // demo activity" switch rather than with the funnel.
+  const realTrialClickRows = trialClickRows
+    ? trialClickRows.filter((r) => String(r.source ?? "") !== SEED_SOURCE)
+    : null;
+  metrics.trial_clicks = bucket(realTrialClickRows, "created_at");
   metrics.trials_started = bucket(trialStartRows, "trial_started_at");
+  metrics.app_trials_started = bucket(appTrialRows, "app_trial_started_at");
   if (trialConvRows) {
     metrics.trial_conversions = bucketRows(
       trialConvRows,
@@ -290,15 +481,17 @@ export async function computeGrowthSnapshot(
       one,
     );
   }
+  let onTrialLive: Record<string, unknown>[] = [];
   if (activeRows) {
     const live = activeRows.filter((r) => !isAddon(r));
+    onTrialLive = live.filter((r) => r.status === "on_trial");
     metrics.active_subscriptions = {
       current: live.filter((r) => r.status === "active").length,
       previous: null,
       series: null,
     };
     metrics.on_trial_subscriptions = {
-      current: live.filter((r) => r.status === "on_trial").length,
+      current: onTrialLive.length,
       previous: null,
       series: null,
     };
@@ -310,6 +503,30 @@ export async function computeGrowthSnapshot(
   metrics.affiliate_clicks = bucket(affClickRows, "created_at");
   metrics.testimonials = bucket(testimonialRows, "created_at");
   metrics.email_subscribers = bucket(emailSubRows, "created_at");
+  // Download leads: the subset of email_subscribers captured at the gated app
+  // download (source = 'download-app'). Broken out from the newsletter total so
+  // the funnel's actual named-lead volume is visible on its own.
+  metrics.download_leads = bucket(
+    emailSubRows
+      ? emailSubRows.filter((r) => String(r.source ?? "") === "download-app")
+      : null,
+    "created_at",
+  );
+  // Facebook group members: a daily headcount level from social_snapshots,
+  // written by the daily scheduled task. current is the latest count in the
+  // month, previous is last month's ending count, and the sparkline carries the
+  // last known value forward. Leaves the metric null (n/a) if the table is not
+  // in prod yet or has no rows for the window.
+  if (fbMemberRows && fbMemberRows.length > 0) {
+    metrics.facebook_members = bucketLevelRows(
+      fbMemberRows,
+      "captured_on",
+      "member_count",
+      prevMonth,
+      month,
+      bounds.days,
+    );
+  }
 
   if (earnings && earnings.totals.length >= 1) {
     const cur = earnings.totals.find((b) => b.month === month) ?? null;
@@ -326,5 +543,50 @@ export async function computeGrowthSnapshot(
     };
   }
 
-  return { month, prevMonth, migrationPending, metrics };
+  // Projected earnings: secured revenue plus what the open trials would add if
+  // they converted. Two figures over the same secured base (see
+  // EarningsProjection): a best-case ceiling counting every open trial, and a
+  // tighter figure counting only trials that would bill this calendar month.
+  // Only for the current month (see isCurrentMonth), and only when we could
+  // read the live subscriptions at all.
+  if (isCurrentMonth && activeRows) {
+    // Fall back to the entry (Pro Solo monthly) price for any trial whose
+    // variant we cannot map, so an unrecognised SKU still counts.
+    const fallbackCents = PRICE_CENTS.solo.monthly;
+    const toVariant = (r: Record<string, unknown>) =>
+      r.ls_variant_id == null ? null : String(r.ls_variant_id);
+
+    const bestCaseCents = projectedTrialConversionCents(
+      onTrialLive.map(toVariant),
+      fallbackCents,
+    );
+
+    const startMs = Date.parse(bounds.startIso);
+    const nextMs = Date.parse(bounds.nextIso);
+    const billingThisMonth = onTrialLive.filter((r) =>
+      billsWithinWindow(r.renews_at, startMs, nextMs),
+    );
+    const thisMonthCents = projectedTrialConversionCents(
+      billingThisMonth.map(toVariant),
+      fallbackCents,
+    );
+
+    const securedCents = metrics.revenue_cents.current;
+    const withSecured = (cents: number) => (securedCents === null ? null : securedCents + cents);
+    projection = {
+      securedCents,
+      bestCase: {
+        trials: onTrialLive.length,
+        trialCents: bestCaseCents,
+        totalCents: withSecured(bestCaseCents),
+      },
+      thisMonth: {
+        trials: billingThisMonth.length,
+        trialCents: thisMonthCents,
+        totalCents: withSecured(thisMonthCents),
+      },
+    };
+  }
+
+  return { month, prevMonth, migrationPending, metrics, projection };
 }

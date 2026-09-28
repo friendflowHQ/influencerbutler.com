@@ -2,23 +2,24 @@ import { addSection, el } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
-import type { AuthStatus, HudCommandResult, HudStatus } from "../../shared/messages";
-import type { ProductRef, HudCommand } from "../../transport/hud-commands";
+import type { AuthStatus, HudStatus } from "../../shared/messages";
+import type { ProductRef } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
-import { getCache, loadFilters, membership } from "../../catalogue/cache";
-
-// Which campaigns the local CC/SPCC catalogue says this product has. Drives
-// whether the Accept buttons render at all: no point offering to accept (and
-// having the app open a browser) for a product with no campaign.
-type CampaignFlags = { cc: boolean; spcc: boolean };
+import { makeCommandRunner, toProductRef } from "./runner";
 
 // "Send to your butler app" section. When the desktop app is running, its
-// buttons push the current product straight into a workspace (Deals Influencer Butler,
-// Content Butler) or accept its Creator Connections campaign, all over the
-// local bridge. When the app is not running, every button becomes a targeted
-// upsell: this is the extension-to-subscription funnel.
+// buttons push the current product straight into a workspace (Deals Butler,
+// Content Butler), all over the local bridge. Campaign acceptance lives in the
+// Campaigns section above. When the app is not running, every button becomes a
+// targeted upsell: this is the extension-to-subscription funnel.
 
-export function renderHudActions(signals: ProductSignals): void {
+// Options let a non-Amazon caller (the Walmart product overlay) reuse this same
+// section but limit it to the actions whose desktop handlers are retailer-ready.
+// `onlyDeals` renders just the Deals Butler push (verified end-to-end
+// for Walmart) and skips the Amazon-only actions (Idea Lists, video/photo, etc.).
+export type HudActionsOptions = { onlyDeals?: boolean };
+
+export function renderHudActions(signals: ProductSignals, opts: HudActionsOptions = {}): void {
   if (!signals.asin) return;
   const section = addSection(t().sendToApp);
   const body = el("div");
@@ -27,28 +28,76 @@ export function renderHudActions(signals: ProductSignals): void {
 
   const product = toProductRef(signals);
 
+  // Schedule a social post from this product's image. Lives on `section` (not
+  // `body`, which the connect-state branches replace) so it is always shown: it
+  // goes to the backend queue and the desktop app publishes it, so it works even
+  // when the app is not paired. The compose window checks the signed-in license.
+  const scheduleRow = el("div", "row");
+  const scheduleBtn = el("button", "btn secondary");
+  scheduleBtn.textContent = t().tileMenuSchedulePost;
+  scheduleBtn.addEventListener("click", () => {
+    void sendToBackground<{ ok: boolean }>({
+      kind: "OPEN_SOCIAL_COMPOSE",
+      context: {
+        imageUrl: product.imageUrl ?? null,
+        pageUrl: product.url ?? location.href,
+        title: product.title ?? null,
+      },
+    });
+  });
+  scheduleRow.append(scheduleBtn);
+  section.append(scheduleRow);
+
   void Promise.all([
     sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
-    campaignFlagsFor(signals.asin),
-  ]).then(([hud, auth, flags]) => {
-    if (hud.connected) {
-      renderConnected(body, status, product, hud, flags, signals.brand);
+  ]).then(([hud, auth]) => {
+    if (hud.connected && hud.paired === false) {
+      // App running but this extension was never paired to it. Every command
+      // would come back needsPairing, and the only place that showed was a
+      // small status line AFTER a click, so the buttons looked ready and then
+      // appeared to do nothing (reported for Send to Deals Butler, Send to
+      // Collab Butler, and Generate AI photo alike). Say it up front instead.
+      // Explicit === false so an older background that omits `paired` keeps the
+      // previous behavior rather than being treated as unpaired.
+      renderNeedsPairing(body, status);
+    } else if (hud.connected) {
+      renderConnected(body, status, product, hud, signals.brand, opts);
+    } else if (hud.paired) {
+      // Already installed and paired, but the local bridge did not answer this
+      // time (app closed, still starting, or its port is blocked). Pitching the
+      // download here reads as broken, so show a reconnect hint instead.
+      renderReconnect(body, status);
     } else {
       renderUpsell(body, auth);
     }
   });
 }
 
-// Local, zero-cost CC/SPCC membership check against the downloaded bloom
-// filters. Degrades to "no campaigns" if the catalogue has not been downloaded.
-async function campaignFlagsFor(asin: string): Promise<CampaignFlags> {
-  try {
-    const flags = membership(loadFilters(await getCache()), asin);
-    return { cc: flags.cc, spcc: flags.spcc };
-  } catch {
-    return { cc: false, spcc: false };
-  }
+// The app is reachable but unpaired: show the pairing instruction in place of
+// the action buttons, so the user learns it before clicking rather than after.
+function renderNeedsPairing(body: HTMLElement, status: HTMLElement): void {
+  body.replaceChildren();
+  const card = el("div", "seal fail");
+  card.style.display = "block";
+  card.textContent = t().connectAppToPair;
+  body.append(card);
+  status.textContent = "";
+}
+
+// Paired but the bridge did not answer right now: show a reconnect hint (and
+// keep the always-free note) instead of the install upsell a fresh user gets.
+function renderReconnect(body: HTMLElement, status: HTMLElement): void {
+  body.replaceChildren();
+  const card = el("div", "seal fail");
+  card.style.display = "block";
+  card.textContent = t().upsellReconnect;
+  body.append(card);
+
+  const note = el("p", "note");
+  note.textContent = t().toolsAlwaysFree;
+  body.append(note);
+  status.textContent = "";
 }
 
 function renderConnected(
@@ -56,23 +105,14 @@ function renderConnected(
   status: HTMLElement,
   product: ProductRef,
   hud: HudStatus,
-  flags: CampaignFlags,
   brand: string | null,
+  opts: HudActionsOptions,
 ): void {
   body.replaceChildren();
 
-  const run = (command: HudCommand, pending: string) => {
-    status.textContent = pending;
-    disableAll(body, true);
-    void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command }).then((result) => {
-      disableAll(body, false);
-      status.textContent = result.ok
-        ? (result.message ?? t().sentToApp)
-        : (result.message ?? t().couldNotReachApp);
-    });
-  };
+  const run = makeCommandRunner(body, status);
 
-  // Deals Influencer Butler: workspace picker + send.
+  // Deals Butler: workspace picker + send.
   const workspaces = hud.dealWorkspaces?.length ? hud.dealWorkspaces : DEAL_WORKSPACES;
   const dealRow = el("div", "row");
   const picker = el("select");
@@ -90,6 +130,16 @@ function renderConnected(
   dealRow.append(picker, dealBtn);
   body.append(dealRow);
 
+  // Non-Amazon retailers only get the retailer-ready actions above for now; the
+  // rest of the section is Amazon-specific (Idea Lists, video/photo, CC).
+  if (opts.onlyDeals) {
+    const note = el("p", "note");
+    const version = hud.appVersion ? ` (app ${hud.appVersion})` : "";
+    note.textContent = t().connectedToApp(version);
+    body.append(note);
+    return;
+  }
+
   // Content Butler + campaign acceptance.
   const contentBtn = el("button", "btn secondary");
   contentBtn.textContent = t().sendToContentButler;
@@ -103,31 +153,16 @@ function renderConnected(
     run({ type: "collaboration.add", product }, t().addingCollab),
   );
 
+  // Send to Voiceover Butler: enqueue the product for a shoppable-video script.
+  const voiceoverBtn = el("button", "btn secondary");
+  voiceoverBtn.textContent = t().sendToVoiceover;
+  voiceoverBtn.addEventListener("click", () =>
+    run({ type: "voiceover.push", product }, t().sendingVoiceover),
+  );
+
   const grid = el("div", "row");
   grid.style.flexWrap = "wrap";
-  grid.append(contentBtn);
-
-  // Accept buttons only appear when the local CC/SPCC catalogue says this
-  // product actually has a campaign, so we never ask the app to open a browser
-  // for a product with nothing to accept.
-  if (flags.cc) {
-    const ccBtn = el("button", "btn secondary");
-    ccBtn.textContent = t().acceptCc;
-    ccBtn.addEventListener("click", () =>
-      run({ type: "campaign.accept", kind: "cc", product }, t().checkingCc),
-    );
-    grid.append(ccBtn);
-  }
-  if (flags.spcc) {
-    const spccBtn = el("button", "btn secondary");
-    spccBtn.textContent = t().acceptSpcc;
-    spccBtn.addEventListener("click", () =>
-      run({ type: "campaign.accept", kind: "spcc", product }, t().checkingSpcc),
-    );
-    grid.append(spccBtn);
-  }
-
-  grid.append(collabBtn);
+  grid.append(contentBtn, collabBtn, voiceoverBtn);
 
   // Save to Link Butler: mint + record a branded, app-opening Calling Card for
   // this product in the desktop Link Butler (so it lands in The Ledger).
@@ -138,8 +173,18 @@ function renderConnected(
   );
   grid.append(linkBtn);
 
-  // Pitch this brand: only when the page named a brand. Turns the product into
-  // an outreach lead in Pitch Butler (brand + prospect deal), no browser.
+  // Generate AI photo: ask the desktop app to render a shoppable AI image for
+  // this product with its existing image engine (reusing its ASIN->image cache).
+  const photoBtn = el("button", "btn secondary");
+  photoBtn.textContent = t().generatePhoto;
+  photoBtn.addEventListener("click", () =>
+    run({ type: "photo.generate", product, style: "shoppable" }, t().generatingPhoto),
+  );
+  grid.append(photoBtn);
+
+  // Pitch this brand + Request a sample: only when the page named a brand. Both
+  // turn the product into an outreach lead in Pitch Butler (brand + deal), no
+  // browser. Request-a-sample pre-stages the deal for the free-sample template.
   if (brand && brand.trim()) {
     const pitchBtn = el("button", "btn secondary");
     pitchBtn.textContent = t().pitchThisBrand(brand.trim());
@@ -147,9 +192,56 @@ function renderConnected(
       run({ type: "pitch.add", brand: brand.trim(), product }, t().pitchingBrand),
     );
     grid.append(pitchBtn);
+
+    const sampleBtn = el("button", "btn secondary");
+    sampleBtn.textContent = t().requestSample;
+    sampleBtn.addEventListener("click", () =>
+      run({ type: "sample.request", brand: brand.trim(), product }, t().requestingSample),
+    );
+    grid.append(sampleBtn);
   }
 
   body.append(grid);
+
+  // Idea List Butler: pick an existing Amazon Idea List (from the app's known
+  // lists) or name a new one, then queue this product for the butler's next
+  // publish run. Mirrors the Deals workspace picker row above.
+  const NEW_LIST_VALUE = "__new__";
+  const ideaRow = el("div", "row");
+  const ideaPicker = el("select");
+  for (const list of hud.ideaLists ?? []) {
+    const opt = el("option");
+    opt.value = list.listId;
+    opt.textContent = list.title;
+    ideaPicker.append(opt);
+  }
+  const newOpt = el("option");
+  newOpt.value = NEW_LIST_VALUE;
+  newOpt.textContent = t().ideaListNewListOption;
+  ideaPicker.append(newOpt);
+  const nameInput = el("input") as HTMLInputElement;
+  nameInput.type = "text";
+  nameInput.placeholder = t().tileMenuNewListPlaceholder;
+  nameInput.maxLength = 100;
+  const syncNameInput = (): void => {
+    nameInput.style.display = ideaPicker.value === NEW_LIST_VALUE ? "" : "none";
+  };
+  ideaPicker.addEventListener("change", syncNameInput);
+  syncNameInput();
+  const ideaBtn = el("button", "btn secondary");
+  ideaBtn.textContent = t().addToIdeaList;
+  ideaBtn.addEventListener("click", () => {
+    const target = ideaPicker.value === NEW_LIST_VALUE
+      ? { newListTitle: nameInput.value.trim() }
+      : { listId: ideaPicker.value };
+    if (target.newListTitle === "") {
+      nameInput.focus();
+      return;
+    }
+    run({ type: "idealist.push", product, target }, t().addingToIdeaList);
+  });
+  ideaRow.append(ideaPicker, nameInput, ideaBtn);
+  body.append(ideaRow);
 
   const note = el("p", "note");
   const version = hud.appVersion ? ` (app ${hud.appVersion})` : "";
@@ -185,22 +277,4 @@ function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
   const note = el("p", "note");
   note.textContent = t().toolsAlwaysFree;
   body.append(note);
-}
-
-function toProductRef(signals: ProductSignals): ProductRef {
-  return {
-    asin: signals.asin as string,
-    marketplace: signals.marketplace,
-    title: signals.title?.slice(0, 200),
-    priceCents: signals.priceCents,
-    currency: signals.currency,
-    imageUrl: signals.imageUrl ?? undefined,
-    commissionRatePct: signals.commissionRatePct,
-  };
-}
-
-function disableAll(root: HTMLElement, disabled: boolean): void {
-  for (const btn of Array.from(root.querySelectorAll("button"))) {
-    (btn as HTMLButtonElement).disabled = disabled;
-  }
 }

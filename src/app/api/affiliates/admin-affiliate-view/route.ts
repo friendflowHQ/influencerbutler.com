@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAdminAction } from "@/lib/admin-audit";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 
 export const runtime = "nodejs";
@@ -120,6 +121,14 @@ export async function GET(request: Request) {
           verifiedAt: (tax.verified_at as string | null) ?? null,
           rejectedReason: (tax.rejected_reason as string | null) ?? null,
         };
+        // Audit that this actor viewed an affiliate's tax PII (name + last-4).
+        await logAdminAction({
+          actor,
+          action: "affiliate.tax.view_one",
+          targetType: "user",
+          targetId: userId,
+          details: { formType: taxFormType, status: taxStatus },
+        });
       }
     } catch (err) {
       console.warn("admin-affiliate-view: tax read skipped", err);
@@ -134,6 +143,11 @@ export async function GET(request: Request) {
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,
       durationMonths: stmt ? stmt.durationMonths : 12,
+      // Refund/chargeback-safety breakdown of the outstanding owed (see
+      // me-selfhosted): cleared-and-payable now, still clearing, not yet recognized.
+      payableCents: stmt?.payableCents ?? 0,
+      clearingCents: stmt?.clearingCents ?? 0,
+      upcomingCents: stmt?.upcomingCents ?? 0,
       paidCents,
       paypalEmail: (profile.paypal_email as string | null) ?? null,
       taxStatus,

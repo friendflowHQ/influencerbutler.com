@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Influencer Butler</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
@@ -10,6 +11,7 @@
       <div class="brand">
         <img src="icons/icon-32.png" alt="" width="20" height="20" />
         <span>Influencer Butler</span>
+        <span class="ver" id="ext-version"></span>
       </div>
       <div class="head-right">
         <span class="tag" data-i18n="tagFree">Free</span>
@@ -23,8 +25,62 @@
     </header>
 
     <main>
+      <nav class="side-nav" aria-label="Jump to section">
+        <ul>
+          <li data-nav-for="update-card" hidden><a href="#update-card" data-i18n="navUpdate">Update</a></li>
+          <li data-nav-for="whats-new-card" hidden><a href="#whats-new-card" data-i18n="navWhatsNew">What's new</a></li>
+          <li data-nav-for="quick-link-card" hidden><a href="#quick-link-card" id="nav-quick-link">Get my link</a></li>
+          <li><a href="#page-status" data-i18n="thisPageHeading">This page</a></li>
+          <li><a href="#account" data-i18n="accountHeading">Account</a></li>
+          <li><a href="#app-bridge" data-i18n="appBridgeHeading">Desktop app</a></li>
+          <li><a href="#ai-assistant-card" data-i18n="navAiAssistant">AI Assistant</a></li>
+          <li data-nav-for="deal-harvester"><a href="#deal-harvester" data-i18n="navDeals">Deal Harvester</a></li>
+          <li><a href="#link-butler" data-i18n="navLinkButler">Link Butler</a></li>
+          <li><a href="#clean-link-card" id="nav-clean-link">Clean link</a></li>
+          <li><a href="#settings-card" data-i18n="settingsHeading">Settings</a>
+            <ul>
+              <li><a href="#grp-walmart" data-i18n="navGrpWalmart">Walmart</a></li>
+              <li><a href="#grp-cross" data-i18n="navGrpCross">Cross-platform</a></li>
+              <li><a href="#grp-product" data-i18n="navGrpProduct">Product pages</a></li>
+              <li><a href="#grp-research" data-i18n="navGrpResearch">Research</a></li>
+              <li><a href="#grp-campaigns" data-i18n="navGrpCampaigns">Campaigns</a></li>
+              <li><a href="#grp-earnings" data-i18n="navGrpEarnings">Earnings</a></li>
+              <li><a href="#grp-benable" data-i18n="navGrpBenable">Benable</a></li>
+            </ul>
+          </li>
+          <li data-nav-for="watchlist-card"><a href="#watchlist-card" data-i18n="popupWatchlistHeading">Watchlist</a></li>
+          <li data-nav-for="lists-card"><a href="#lists-card" data-i18n="popupListsHeading">My lists</a></li>
+          <li><a href="#feedback-card" data-i18n="feedbackHeading">Feedback</a></li>
+        </ul>
+      </nav>
+      <div class="pane" id="popup-pane">
+      <section id="update-card" class="card" hidden>
+        <h2 id="update-heading">Update available</h2>
+        <p id="update-blurb" class="muted small"></p>
+        <button id="update-apply" class="primary">Update now</button>
+      </section>
+
+      <section id="whats-new-card" class="card" hidden>
+        <h2 id="whats-new-heading" data-i18n="whatsNewTitle">What's new</h2>
+        <p id="whats-new-meta" class="muted small"></p>
+        <div id="whats-new-sections"></div>
+        <button id="whats-new-dismiss" class="primary" data-i18n="whatsNewDismiss">Got it</button>
+      </section>
+
+      <section id="quick-link-card" class="card" hidden>
+        <h2 id="ql-heading">Get my link for this page</h2>
+        <p class="muted small" id="ql-blurb">
+          You're on a product page. Generate your affiliate link (or branded
+          deeplink) for it and copy it in one tap.
+        </p>
+        <button id="ql-generate" class="primary">Get my link</button>
+        <p id="ql-status" class="muted small" hidden></p>
+        <div id="ql-results" hidden></div>
+      </section>
+
       <section id="page-status" class="card">
         <h2 data-i18n="thisPageHeading">This page</h2>
+        <p id="page-status-notice" class="notice" hidden></p>
         <p id="page-status-text" class="muted" data-i18n="checkingTab">Checking the current tab...</p>
         <ul id="page-status-list" class="stats" hidden></ul>
       </section>
@@ -52,15 +108,28 @@
             <span data-i18n="syncToggleLabel">Sync findings to my dashboard</span>
           </label>
           <p id="sync-status" class="muted small"></p>
+          <p class="muted small" data-i18n="syncDashboardHint">Findings upload to your web dashboard on their own. No desktop app is needed for this.</p>
+          <p class="muted small" data-i18n="syncStatsHint">While sync is on, anonymized counts of automated actions (like campaigns accepted) are added to our public activity totals. See our Privacy Policy.</p>
+          <label class="row toggle">
+            <input id="contribute-toggle" type="checkbox" />
+            <span data-i18n="contributeToggleLabel">Contribute to the shared product catalogue</span>
+          </label>
+          <p id="contribute-blurb" class="muted small" data-i18n="contributeBlurb"></p>
           <button id="disconnect-btn" class="ghost" data-i18n="disconnect">Disconnect</button>
         </div>
       </section>
 
       <section id="app-bridge" class="card">
         <h2 data-i18n="appBridgeHeading">Desktop app</h2>
+        <p id="app-next-step" class="notice" hidden data-i18n="appNextStepHint">
+          You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.
+        </p>
         <p id="app-bridge-text" class="muted small" data-i18n="appBridgeBlurb">
           Connect the Influencer Butler desktop app to accept campaigns and send
           products to your butlers straight from Amazon.
+        </p>
+        <p id="app-bridge-mobile" class="muted small" hidden data-i18n="appBridgeMobile">
+          The desktop app runs on Windows or Mac, so it cannot connect to this Android browser directly. To send deals to it, link that computer from the extension popup under "Send to another computer".
         </p>
         <div id="app-bridge-disconnected">
           <button id="app-connect-btn" class="primary" data-i18n="appConnect">Connect the desktop app</button>
@@ -74,21 +143,93 @@
         </div>
         <div id="app-bridge-connected" hidden>
           <p class="muted small" data-i18n="appConnected">Connected to the desktop app.</p>
+          <p class="muted small" data-i18n="syncBlurb">Copy your link providers, affiliate tags, and storefront ID between this extension and the desktop app.</p>
+          <div class="row">
+            <button id="app-sync-btn" class="ghost" data-i18n="syncNow">Sync now</button>
+            <span id="app-sync-status" class="muted small"></span>
+          </div>
           <button id="app-unpair-btn" class="ghost" data-i18n="appUnpair">Disconnect app</button>
         </div>
         <p id="app-pair-status" class="muted small"></p>
+      </section>
+
+      <section id="relay-card" class="card" hidden>
+        <h2 data-i18n="relayHeading">Send to another computer</h2>
+        <p class="muted small" data-i18n="relayBlurb">
+          Run the desktop app on a different computer? Link it here to send deals
+          and actions to it from this browser. In the app on that computer, open
+          Settings, Chrome extension, Remote devices, turn on receiving, and click
+          Link a device to get a code.
+        </p>
+        <div id="relay-signed-out" hidden>
+          <p class="muted small" data-i18n="relaySignedOut">Sign in with your license key above to use this.</p>
+        </div>
+        <div id="relay-body" hidden>
+          <div class="row">
+            <input id="relay-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="off" />
+            <button id="relay-link-btn" class="primary" data-i18n="relayLink">Link device</button>
+          </div>
+          <p id="relay-targets-label" class="muted small" data-i18n="relayTargetsLabel" hidden>Linked computers (deals send here when the app is not running on this one):</p>
+          <div id="relay-targets"></div>
+        </div>
+        <p id="relay-status" class="muted small"></p>
+      </section>
+
+      <section id="ai-assistant-card" class="card">
+        <h2 id="chat-heading">AI Assistant</h2>
+        <p class="muted small" id="chat-blurb">
+          Ask setup and how-to questions and get instant answers from our help guides.
+        </p>
+        <button id="open-chat" class="primary">Open AI Assistant</button>
+      </section>
+
+      <section id="social-schedule-card" class="card">
+        <h2 id="social-heading">Schedule a post</h2>
+        <p class="muted small" id="social-blurb">
+          Right-click any image on the web to schedule it as a social post, or
+          open the composer to write a caption, pick a time, and see your calendar.
+        </p>
+        <button id="open-compose" class="primary">Open composer and calendar</button>
       </section>
 
       <section id="deal-harvester" class="card">
         <h2 id="deals-heading">Deal Sites Harvester</h2>
         <p class="muted small" id="deals-blurb">
           Pull deals from the daily-deal sites you follow and send them into a
-          Deals Influencer Butler workspace in the app.
+          Deals Butler workspace in the app.
         </p>
         <button id="open-deals" class="primary">Open Deal Sites Harvester</button>
       </section>
 
-      <section class="card">
+      <section id="link-butler" class="card">
+        <h2 id="lb-heading">Link Butler</h2>
+        <p class="muted small" id="lb-blurb">
+          See how your branded links are performing, fix a posted link, and
+          manage retargeting pixels.
+        </p>
+        <button id="open-links" class="primary">Open Link Butler</button>
+        <label class="row toggle">
+          <input id="lb-branded" type="checkbox" />
+          <span id="lb-branded-label">Copy short branded links</span>
+        </label>
+        <p class="muted small" id="lb-branded-hint"></p>
+      </section>
+
+      <section id="clean-link-card" class="card">
+        <h2 id="cl-heading">Clean a link</h2>
+        <p class="muted small" id="cl-blurb">
+          Paste a product link that has someone else's tracking on it. We strip
+          their attribution and give you a clean link plus one with your own tag.
+        </p>
+        <div class="row">
+          <input id="cl-input" type="text" placeholder="Paste a product link" autocomplete="off" spellcheck="false" />
+          <button id="cl-clean" class="primary">Clean</button>
+        </div>
+        <p id="cl-status" class="muted small" hidden></p>
+        <div id="cl-results" hidden></div>
+      </section>
+
+      <section id="settings-card" class="card">
         <h2 data-i18n="settingsHeading">Settings</h2>
         <div class="grid">
           <label class="wide"><span data-i18n="languageLabel">Language</span>
@@ -116,24 +257,69 @@
           </label>
         </div>
         <h3 data-i18n="toolsHeading">Tools</h3>
+
+        <h4 id="grp-walmart" class="tool-group" data-i18n="groupWalmart">Walmart</h4>
+        <label class="row toggle"><input id="tool-walmart" type="checkbox" /><span data-i18n="toolWalmart">Walmart support</span></label>
+        <p class="muted small" data-i18n="toolWalmartHint">Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.</p>
+
+        <h4 id="grp-cross" class="tool-group" data-i18n="groupCrossPlatform">Amazon &amp; Walmart</h4>
+        <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
+        <label class="row toggle"><input id="tool-dealSignals" type="checkbox" /><span data-i18n="toolDealSignals">Sale &amp; deal price signals</span></label>
+        <p class="muted small" data-i18n="toolDealSignalsHint">Shows a "-N%" chip on discounted search and deals tiles (highlighting Prime Day / Lightning deals), and an "On sale" line on product pages. Read from the page, no account needed.</p>
+        <label class="row toggle"><input id="tool-socialSchedule" type="checkbox" /><span>Schedule posts (right-click any image)</span></label>
+
+        <h4 id="grp-product" class="tool-group" data-i18n="groupAmazonProduct">Amazon: product pages</h4>
         <label class="row toggle"><input id="tool-videoCounts" type="checkbox" /><span data-i18n="toolVideoCounts">Video counts</span></label>
+        <label class="row toggle tool-sub"><input id="tool-videoLandscape" type="checkbox" /><span data-i18n="toolVideoLandscape">Video landscape</span></label>
+        <label class="row toggle"><input id="tool-videoLikes" type="checkbox" /><span data-i18n="toolVideoLikes">Video like counts</span></label>
         <label class="row toggle"><input id="tool-approved" type="checkbox" /><span data-i18n="toolApproved">Butler Approved seal</span></label>
         <label class="row toggle"><input id="tool-calculator" type="checkbox" /><span data-i18n="toolCalculator">Profit calculator</span></label>
+        <label class="row toggle"><input id="tool-globalMaximizer" type="checkbox" /><span data-i18n="toolGlobalMaximizer">Global reach (multi-marketplace)</span></label>
+
+        <h4 id="grp-research" class="tool-group" data-i18n="groupAmazonResearch">Amazon: research &amp; discovery</h4>
+        <label class="row toggle"><input id="tool-storeOverlay" type="checkbox" /><span data-i18n="toolStoreOverlay">Brand store overlay</span></label>
+        <label class="row toggle"><input id="tool-trendRadar" type="checkbox" /><span data-i18n="toolTrendRadar">Trend Radar (Best Sellers &amp; Movers)</span></label>
+        <label class="row toggle"><input id="tool-ideaListOverlay" type="checkbox" /><span data-i18n="toolIdeaList">Idea List money signals</span></label>
+        <label class="row toggle"><input id="tool-dealsOverlay" type="checkbox" /><span data-i18n="toolDealsOverlay">Today's Deals money signals</span></label>
+
+        <h4 id="grp-campaigns" class="tool-group" data-i18n="groupAmazonCampaigns">Amazon: campaigns &amp; storefront</h4>
         <label class="row toggle"><input id="tool-storefront" type="checkbox" /><span data-i18n="toolStorefront">Storefront checks</span></label>
         <label class="row toggle"><input id="tool-ordersButler" type="checkbox" /><span data-i18n="toolOrdersButler">Orders Butler (sync order history)</span></label>
-        <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
         <label class="row toggle"><input id="tool-campaignMatcher" type="checkbox" /><span data-i18n="toolCampaignMatcher">Campaign matcher</span></label>
         <label class="row toggle"><input id="tool-campaignRadar" type="checkbox" /><span data-i18n="toolCampaignRadar">Campaign Radar (highlight campaigns)</span></label>
+        <div class="row avail-markets">
+          <span class="muted small" data-i18n="popupAvailabilityLabel">Show availability for</span>
+          <label class="avail-market"><input id="avail-US" type="checkbox" /><span>US</span></label>
+          <label class="avail-market"><input id="avail-CA" type="checkbox" /><span>CA</span></label>
+          <label class="avail-market"><input id="avail-UK" type="checkbox" /><span>UK</span></label>
+          <label class="avail-market"><input id="avail-AU" type="checkbox" /><span>AU</span></label>
+        </div>
+        <p class="muted small avail-hint" data-i18n="popupAvailabilityHint">Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.</p>
+        <p id="avail-au-denied" class="muted small" hidden data-i18n="popupAvailabilityAuDenied">Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.</p>
+
+        <h4 id="grp-earnings" class="tool-group" data-i18n="groupAmazonEarnings">Amazon: earnings &amp; alerts</h4>
+        <label class="row toggle"><input id="tool-earningsOverlay" type="checkbox" /><span data-i18n="toolEarningsOverlay">Earnings overlay (storefront badges)</span></label>
         <label class="row toggle"><input id="tool-watchlist" type="checkbox" /><span data-i18n="toolWatchlist">Watchlist alerts</span></label>
+
+        <h4 id="grp-benable" class="tool-group" data-i18n="groupBenable">Benable</h4>
+        <label class="row toggle"><input id="tool-benableBadge" type="checkbox" /><span data-i18n="toolBenableBadge">Amazon money signals on Benable lists</span></label>
+        <p class="muted small" data-i18n="toolBenableBadgeHint">On benable.com, badges each Amazon item with its Creator Connections / SPCC status and commission. Click a badge for enrollment, earnings, and ownership.</p>
       </section>
 
       <section id="watchlist-card" class="card">
         <h2 data-i18n="popupWatchlistHeading">Watchlist</h2>
+        <p id="watchlist-mobile-note" class="muted small" hidden data-i18n="popupWatchlistMobileNote">On Android, Watchlist alerts are paused: the automatic background checks run on a Windows or Mac computer. Your watched products stay saved.</p>
         <p id="watchlist-empty" class="muted small" data-i18n="popupWatchlistEmpty">No products watched yet. Open a product and click Watch.</p>
         <ul id="watchlist-list" class="watchlist"></ul>
       </section>
 
-      <section class="card">
+      <section id="lists-card" class="card">
+        <h2 data-i18n="popupListsHeading">My lists</h2>
+        <p id="lists-empty" class="muted small" data-i18n="popupListsEmpty">No lists yet. Add a product to a list from the search overlay's action menu.</p>
+        <ul id="lists-list" class="watchlist"></ul>
+      </section>
+
+      <section id="feedback-card" class="card">
         <h2 data-i18n="feedbackHeading">Feedback Butler</h2>
         <p class="muted small" data-i18n="feedbackBlurb">Found a bug or want a feature? Tell us. No account needed.</p>
         <div class="grid">
@@ -155,9 +341,11 @@
           <span id="fb-status" class="muted small"></span>
         </div>
       </section>
+      </div>
     </main>
 
     <footer class="foot">
+      <a href="#" id="open-onboarding" data-i18n="obReplayLink">Setup guide</a>
       <a href="https://www.influencerbutler.com/extension" target="_blank" rel="noreferrer" data-i18n="footerHelp">Help</a>
       <a href="https://www.influencerbutler.com/dashboard/extension" target="_blank" rel="noreferrer" data-i18n="footerDashboard">My dashboard</a>
     </footer>

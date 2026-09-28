@@ -1,0 +1,365 @@
+/**
+ * Events data layer: scheduled group calls with RSVP, cross-app banners, and an
+ * AI recap. All access is server-side with the service-role key (the `events`
+ * and `event_registrations` tables are RLS deny-all), mirroring
+ * scheduling-server.ts's getAdmin() pattern.
+ *
+ * If migration 20260909_events.sql has not been applied to prod yet, reads
+ * return empty and writes fail loudly (the route reports an error), so the
+ * feature stays inert rather than crashing.
+ */
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { AiNotes } from "@/lib/ai-notes";
+
+export type EventStatus = "draft" | "scheduled" | "cancelled" | "completed";
+export type BannerSurface = "web" | "extension" | "desktop";
+
+export type EventRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  status: EventStatus;
+  joinUrl: string | null;
+  meetingProvider: string | null;
+  meetingId: string | null;
+  bannerEnabled: boolean;
+  bannerText: string | null;
+  bannerCtaLabel: string | null;
+  bannerStartsAt: string | null;
+  bannerEndsAt: string | null;
+  bannerSurfaces: BannerSurface[];
+  recordEnabled: boolean;
+  recallBotId: string | null;
+  recordingStatus: string;
+  recordingUrl: string | null;
+  aiNotes: AiNotes | null;
+  recordedAt: string | null;
+  highlightsEmailedAt: string | null;
+  youtubeStatus: string;
+  youtubeVideoId: string | null;
+  youtubeUrl: string | null;
+  youtubeError: string | null;
+  youtubeUploadedAt: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  cancelledAt: string | null;
+  // Email-lifecycle fields (migration 20260917_event_email_lifecycle). Read via
+  // a full-then-base fallback, so these are null when the migration has not been
+  // applied yet rather than breaking the whole event read.
+  inviteAudience: unknown | null;
+  inviteDaysBefore: number | null;
+  inviteCampaignId: string | null;
+  replaySubject: string | null;
+  replayBody: string | null;
+  replayHoursAfter: number | null;
+  replayEmailedAt: string | null;
+};
+
+export type EventRegistration = {
+  id: string;
+  eventId: string;
+  userId: string | null;
+  userEmail: string;
+  userName: string | null;
+  userTimezone: string | null;
+  registeredAt: string;
+  cancelledAt: string | null;
+};
+
+export type ActiveBanner = {
+  id: string;
+  text: string;
+  ctaLabel: string | null;
+  ctaUrl: string;
+  startsAt: string;
+  endsAt: string | null;
+};
+
+type Admin = SupabaseClient;
+
+export function getAdmin(): Admin | null {
+  try {
+    return createAdminClient();
+  } catch (e) {
+    console.error("[events] admin client", e);
+    return null;
+  }
+}
+
+const SITE =
+  process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+
+const EVENT_COLS =
+  "id,title,description,starts_at,ends_at,timezone,status,join_url,meeting_provider,meeting_id," +
+  "banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces," +
+  "record_enabled,recall_bot_id,recording_status,recording_url,ai_notes,recorded_at,highlights_emailed_at," +
+  "youtube_status,youtube_video_id,youtube_url,youtube_error,youtube_uploaded_at," +
+  "image_url,created_at,cancelled_at";
+
+// The email-lifecycle columns (migration 20260917) live only in the admin read
+// path. They are appended to EVENT_COLS for the "full" select; if that select
+// errors because the migration has not been applied, callers fall back to
+// EVENT_COLS and the lifecycle fields map to null. This keeps the public list,
+// banner feed, and reminder cron (which use EVENT_COLS) unaffected by the
+// migration ordering.
+const EVENT_LIFECYCLE_COLS =
+  "invite_audience,invite_days_before,invite_campaign_id," +
+  "replay_subject,replay_body,replay_hours_after,replay_emailed_at";
+const EVENT_COLS_FULL = `${EVENT_COLS},${EVENT_LIFECYCLE_COLS}`;
+
+/** True when a Postgres/PostgREST error is "column does not exist" (migration
+ * not applied yet), so a full select can fall back to the base columns. */
+function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42703" || error.code === "PGRST204") return true;
+  const m = (error.message || "").toLowerCase();
+  return m.includes("column") && (m.includes("does not exist") || m.includes("schema cache"));
+}
+
+function toEvent(r: Record<string, unknown>): EventRow {
+  const surfaces = Array.isArray(r.banner_surfaces)
+    ? (r.banner_surfaces as string[]).filter(
+        (s): s is BannerSurface => s === "web" || s === "extension" || s === "desktop",
+      )
+    : [];
+  return {
+    id: String(r.id),
+    title: (r.title as string) ?? "",
+    description: (r.description as string | null) ?? null,
+    startsAt: (r.starts_at as string) ?? "",
+    endsAt: (r.ends_at as string) ?? "",
+    timezone: (r.timezone as string) ?? "America/Denver",
+    status: ((r.status as string) ?? "scheduled") as EventStatus,
+    joinUrl: (r.join_url as string | null) ?? null,
+    meetingProvider: (r.meeting_provider as string | null) ?? null,
+    meetingId: (r.meeting_id as string | null) ?? null,
+    bannerEnabled: r.banner_enabled === true,
+    bannerText: (r.banner_text as string | null) ?? null,
+    bannerCtaLabel: (r.banner_cta_label as string | null) ?? null,
+    bannerStartsAt: (r.banner_starts_at as string | null) ?? null,
+    bannerEndsAt: (r.banner_ends_at as string | null) ?? null,
+    bannerSurfaces: surfaces,
+    recordEnabled: r.record_enabled === true,
+    recallBotId: (r.recall_bot_id as string | null) ?? null,
+    recordingStatus: (r.recording_status as string) ?? "none",
+    recordingUrl: (r.recording_url as string | null) ?? null,
+    aiNotes: (r.ai_notes as AiNotes | null) ?? null,
+    recordedAt: (r.recorded_at as string | null) ?? null,
+    highlightsEmailedAt: (r.highlights_emailed_at as string | null) ?? null,
+    youtubeStatus: (r.youtube_status as string) ?? "none",
+    youtubeVideoId: (r.youtube_video_id as string | null) ?? null,
+    youtubeUrl: (r.youtube_url as string | null) ?? null,
+    youtubeError: (r.youtube_error as string | null) ?? null,
+    youtubeUploadedAt: (r.youtube_uploaded_at as string | null) ?? null,
+    imageUrl: (r.image_url as string | null) ?? null,
+    createdAt: (r.created_at as string) ?? new Date().toISOString(),
+    cancelledAt: (r.cancelled_at as string | null) ?? null,
+    inviteAudience: r.invite_audience ?? null,
+    inviteDaysBefore:
+      typeof r.invite_days_before === "number" ? (r.invite_days_before as number) : null,
+    inviteCampaignId: (r.invite_campaign_id as string | null) ?? null,
+    replaySubject: (r.replay_subject as string | null) ?? null,
+    replayBody: (r.replay_body as string | null) ?? null,
+    replayHoursAfter:
+      typeof r.replay_hours_after === "number" ? (r.replay_hours_after as number) : null,
+    replayEmailedAt: (r.replay_emailed_at as string | null) ?? null,
+  };
+}
+
+// ── Admin reads ──────────────────────────────────────────────────────────
+
+// Minimal error shape shared by the full/base fallback readers, so the two
+// differently-typed selects can be assigned to one binding without a clash.
+type QueryError = { code?: string; message?: string } | null;
+
+export async function listEvents(admin: Admin, limit = 100): Promise<EventRow[]> {
+  let data: unknown = null;
+  let error: QueryError = null;
+  {
+    const r = await admin
+      .from("events")
+      .select(EVENT_COLS_FULL)
+      .order("starts_at", { ascending: false })
+      .limit(limit);
+    data = r.data;
+    error = r.error;
+  }
+  if (error && isMissingColumn(error)) {
+    const r = await admin
+      .from("events")
+      .select(EVENT_COLS)
+      .order("starts_at", { ascending: false })
+      .limit(limit);
+    data = r.data;
+    error = r.error;
+  }
+  if (error) {
+    console.error("[events] listEvents", error.message);
+    return [];
+  }
+  return ((data ?? []) as Record<string, unknown>[]).map(toEvent);
+}
+
+export async function getEvent(admin: Admin, id: string): Promise<EventRow | null> {
+  let data: unknown = null;
+  let error: QueryError = null;
+  {
+    const r = await admin.from("events").select(EVENT_COLS_FULL).eq("id", id).maybeSingle();
+    data = r.data;
+    error = r.error;
+  }
+  if (error && isMissingColumn(error)) {
+    const r = await admin.from("events").select(EVENT_COLS).eq("id", id).maybeSingle();
+    data = r.data;
+    error = r.error;
+  }
+  if (error || !data) return null;
+  return toEvent(data as Record<string, unknown>);
+}
+
+/** Upcoming, non-cancelled events for the customer-facing list. */
+export async function listUpcomingEvents(admin: Admin, limit = 50): Promise<EventRow[]> {
+  const { data, error } = await admin
+    .from("events")
+    .select(EVENT_COLS)
+    .eq("status", "scheduled")
+    .gte("ends_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+  if (error) {
+    console.error("[events] listUpcomingEvents", error.message);
+    return [];
+  }
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map(toEvent);
+}
+
+// ── Registrations ──────────────────────────────────────────────────────────
+
+export async function listRegistrations(
+  admin: Admin,
+  eventId: string,
+): Promise<EventRegistration[]> {
+  const { data, error } = await admin
+    .from("event_registrations")
+    .select("id,event_id,user_id,user_email,user_name,user_timezone,registered_at,cancelled_at")
+    .eq("event_id", eventId)
+    .order("registered_at", { ascending: true });
+  if (error) {
+    console.error("[events] listRegistrations", error.message);
+    return [];
+  }
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    eventId: String(r.event_id),
+    userId: (r.user_id as string | null) ?? null,
+    userEmail: (r.user_email as string) ?? "",
+    userName: (r.user_name as string | null) ?? null,
+    userTimezone: (r.user_timezone as string | null) ?? null,
+    registeredAt: (r.registered_at as string) ?? "",
+    cancelledAt: (r.cancelled_at as string | null) ?? null,
+  }));
+}
+
+/** Active (non-cancelled) registrations for an event, used by reminders + recap. */
+export async function activeRegistrations(
+  admin: Admin,
+  eventId: string,
+): Promise<EventRegistration[]> {
+  return (await listRegistrations(admin, eventId)).filter((r) => !r.cancelledAt);
+}
+
+/** Count of active registrations, keyed by event id, for the admin list. */
+export async function registrationCounts(
+  admin: Admin,
+  eventIds: string[],
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  if (eventIds.length === 0) return counts;
+  const { data, error } = await admin
+    .from("event_registrations")
+    .select("event_id,cancelled_at")
+    .in("event_id", eventIds);
+  if (error || !data) return counts;
+  for (const r of data) {
+    if ((r as { cancelled_at: string | null }).cancelled_at) continue;
+    const id = String((r as { event_id: string }).event_id);
+    counts[id] = (counts[id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/** The event ids the given email is actively registered for. */
+export async function registeredEventIdsForEmail(
+  admin: Admin,
+  email: string,
+): Promise<Set<string>> {
+  const { data, error } = await admin
+    .from("event_registrations")
+    .select("event_id,cancelled_at")
+    .eq("user_email", email);
+  const set = new Set<string>();
+  if (error || !data) return set;
+  for (const r of data) {
+    if ((r as { cancelled_at: string | null }).cancelled_at) continue;
+    set.add(String((r as { event_id: string }).event_id));
+  }
+  return set;
+}
+
+// ── Banner feed (shared by web / extension / desktop) ──────────────────────
+
+/**
+ * Events whose banner is currently active for `surface`: banner enabled, the
+ * event not cancelled, now inside the banner window (an unset start/end means
+ * open-ended), and the surface targeted. Falls back to the event window when no
+ * explicit banner window is set. Ordered soonest-event first.
+ */
+export async function activeBanners(
+  admin: Admin,
+  surface: BannerSurface,
+  nowMs = Date.now(),
+): Promise<ActiveBanner[]> {
+  const { data, error } = await admin
+    .from("events")
+    .select(
+      "id,title,starts_at,ends_at,banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces,status",
+    )
+    .eq("banner_enabled", true)
+    .eq("status", "scheduled")
+    .order("starts_at", { ascending: true });
+  if (error || !data) {
+    if (error) console.error("[events] activeBanners", error.message);
+    return [];
+  }
+
+  const out: ActiveBanner[] = [];
+  for (const raw of data) {
+    const r = raw as Record<string, unknown>;
+    const surfaces = Array.isArray(r.banner_surfaces) ? (r.banner_surfaces as string[]) : [];
+    if (!surfaces.includes(surface)) continue;
+    const text = ((r.banner_text as string | null) ?? "").trim();
+    if (!text) continue;
+
+    // Banner window: explicit banner_starts_at/ends_at, else the event window.
+    const startIso = (r.banner_starts_at as string | null) ?? null;
+    const endIso = (r.banner_ends_at as string | null) ?? (r.ends_at as string | null) ?? null;
+    const startMs = startIso ? Date.parse(startIso) : null;
+    const endMs = endIso ? Date.parse(endIso) : null;
+    if (startMs !== null && Number.isFinite(startMs) && nowMs < startMs) continue;
+    if (endMs !== null && Number.isFinite(endMs) && nowMs > endMs) continue;
+
+    out.push({
+      id: String(r.id),
+      text,
+      ctaLabel: (r.banner_cta_label as string | null) ?? null,
+      ctaUrl: `${SITE}/events/${String(r.id)}`,
+      startsAt: (r.starts_at as string) ?? "",
+      endsAt: (r.ends_at as string | null) ?? null,
+    });
+  }
+  return out;
+}

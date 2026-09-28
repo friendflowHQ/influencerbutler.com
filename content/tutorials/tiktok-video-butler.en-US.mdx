@@ -1,0 +1,43 @@
+---
+title: "TikTok Video Butler: upload videos to your TikTok account"
+summary: Send a video straight to your connected TikTok account, either to your drafts to finish in the app or as a direct post once TikTok approves the app.
+category: TikTok
+---
+
+## What TikTok Video Butler does
+
+TikTok Video Butler uploads a video to the TikTok account you connected, using TikTok's official Content Posting API. You pick a video file (or paste a direct video URL), add a caption, choose how to post, and Video Butler hands it to TikTok and reports the status.
+
+There are two ways to post:
+
+- **Upload to my TikTok drafts (recommended to start).** The video lands in your TikTok inbox and you finish and publish it in the TikTok app. This works right away and needs no special approval.
+- **Direct post to my profile.** The video publishes straight to your profile with your caption. This mode stays locked until TikTok approves the app for direct posting; until then, and while the app is unaudited, TikTok forces direct posts to a private (only-you) audience, so drafts is the mode to use.
+
+## Before you start
+
+- **Connect TikTok.** Open **API Integrations**, find the **TikTok Account** card, and click **Connect TikTok**. If you want to try direct posting later, tick the "request direct posting" option before connecting.
+- Have your video ready as an mp4 file, or a direct URL to the video.
+
+## Uploading a video
+
+1. Open **TikTok Video Butler** under TikTok Butler.
+2. Choose a video file, or paste a direct video URL.
+3. Add a caption (used only for a direct post).
+4. Pick **Upload to my TikTok drafts** or, if available, **Direct post to my profile**.
+5. Click **Upload to TikTok**.
+
+Video Butler uploads the file, then checks the status a few times. When it finishes, open the TikTok app to finish the draft or view the published post.
+
+## Back up my videos (download your whole profile)
+
+The **Back up my TikTok videos** card downloads every video on your TikTok profile to a folder on your computer, with its cover image and a small details file. It uses the TikTok sign-in your other TikTok butlers share, opens your profile, and saves each video's original file. Nothing on TikTok is changed.
+
+- Leave the **@handle** blank to use the account signed in to the TikTok butler browser, or type it if the butler cannot tell which account is yours.
+- **Save to** shows the folder (default: *Influencer Butler Backups / TikTok* inside your Videos folder). **Choose folder** points it somewhere else.
+- Run it again any time: only new videos are downloaded. **Stop** ends the run after the current video.
+- Photo posts are skipped. TikTok limits fast browsing, so a large profile is saved at a gentle pace.
+
+## Notes
+
+- Direct Post stays greyed out with an "unlocks after TikTok approves the app" note until the account has the direct-posting permission.
+- If the upload fails, TikTok's reason is shown in the status line. Large files take longer, so give the upload a moment before retrying.

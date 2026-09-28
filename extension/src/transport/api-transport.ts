@@ -23,7 +23,9 @@ export const apiTransport: FindingTransport = {
     const gaps = batch.filter((f) => f.type === "content_gap");
     const issues = batch.filter((f) => f.type === "storefront_issue");
     const orders = batch.filter((f) => f.type === "order");
+    const deals = batch.filter((f) => f.type === "deal");
     const creators = batch.filter((f) => f.type === "instagram_creator");
+    const accepts = batch.filter((f) => f.type === "campaign_accept");
 
     const posts: Array<Promise<Response>> = [];
     if (scans.length > 0) {
@@ -44,6 +46,57 @@ export const apiTransport: FindingTransport = {
           })),
         }),
       );
+    }
+    // Shared product-catalogue contribution (opt-in, OFF by default). Only when
+    // the user has turned it on do the research signals (best-seller rank,
+    // bought-past-month, category, brand) leave the machine for the pool; with
+    // it off, nothing here is transmitted. Only send observations that carry a
+    // real market signal, so we never write empty rows.
+    if (state.settings.contributeCatalogue && scans.length > 0) {
+      const items = scans
+        .filter((f) => f.bestsellerRank != null || f.boughtPastMonth != null || f.priceCents != null)
+        .map((f) => ({
+          asin: f.asin,
+          marketplace: f.marketplace,
+          captured_at: f.scannedAt,
+          price_cents: f.priceCents ?? null,
+          currency: f.currency ?? "USD",
+          bsr_rank: f.bestsellerRank?.rank ?? null,
+          bsr_category: f.bestsellerRank?.category ?? null,
+          bought_past_month: f.boughtPastMonth ?? null,
+          category_label: f.category ?? null,
+          brand: f.brand ?? null,
+          source: "browse",
+        }));
+      if (items.length > 0) {
+        posts.push(post(ENDPOINTS.market, key, { items }));
+      }
+    }
+    // Shared video-placement contribution (same opt-in as the market pool). One
+    // item per scanned product carrying the creator videos in its carousel, so
+    // the pool can track placement over days. Only scans that actually captured
+    // videos are sent; with the opt-in off, nothing here is transmitted.
+    if (state.settings.contributeCatalogue && scans.length > 0) {
+      const videoItems = scans
+        .filter((f) => f.videos && f.videos.length > 0)
+        .map((f) => ({
+          asin: f.asin,
+          marketplace: f.marketplace,
+          observed_at: f.scannedAt,
+          videos: (f.videos ?? []).map((v) => ({
+            video_id: v.videoId,
+            creator_id: v.creatorId,
+            creator_name: v.creatorName,
+            creator_type: v.creatorType,
+            carousel: v.carousel,
+            position: v.position,
+            title: v.title,
+            video_url: v.url,
+          })),
+        }));
+      if (videoItems.length > 0) {
+        posts.push(post(ENDPOINTS.videoIntel, key, { items: videoItems }));
+      }
     }
     if (gaps.length > 0) {
       posts.push(
@@ -86,6 +139,39 @@ export const apiTransport: FindingTransport = {
             price_cents: f.priceCents ?? null,
             currency: f.currency ?? "USD",
             detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+
+    if (deals.length > 0) {
+      posts.push(
+        post(ENDPOINTS.deals, key, {
+          deals: deals.map((f) => ({
+            asin: f.asin,
+            marketplace: f.marketplace,
+            title: f.title ?? null,
+            price_cents: f.priceCents ?? null,
+            list_price_cents: f.listPriceCents ?? null,
+            discount_pct: f.discountPct ?? null,
+            commission_rate_pct: f.commissionRatePct ?? null,
+            currency: f.currency ?? "USD",
+            image_url: f.imageUrl ?? null,
+            source_url: f.sourceUrl,
+            promo_code: f.promoCode ?? null,
+            detected_at: f.detectedAt,
+          })),
+        }),
+      );
+    }
+
+    if (accepts.length > 0) {
+      posts.push(
+        post(ENDPOINTS.accepts, key, {
+          accepts: accepts.map((f) => ({
+            campaignId: f.campaignId,
+            source: f.source,
+            accepted_at: f.detectedAt,
           })),
         }),
       );

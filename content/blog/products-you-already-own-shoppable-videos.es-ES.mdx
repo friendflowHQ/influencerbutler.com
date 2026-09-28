@@ -26,24 +26,43 @@ Así que la solución es sencilla de decir y potente en la práctica: graba prod
 
 Para la mayoría de principiantes, "demanda y competencia" suena genial pero parece imposible de medir. ¿Cómo vas a saber cuánta gente compra un producto, o cuántos vídeos existen ya para él?
 
-Eso es exactamente lo que hace Orders Butler por ti. Lee tu historial de pedidos de Amazon y, para cada producto que has comprado, muestra dos números uno al lado del otro:
+Eso es exactamente lo que hace Orders Butler por ti. Lee tu historial de pedidos de Amazon y, para cada producto que has comprado, muestra dos números uno al lado del otro en su tabla de resultados:
 
-- **Ventas mensuales estimadas**: una lectura de la demanda, para que veas cuáles de tus productos está comprando la gente en volumen.
-- **Vídeos de influencer existentes**: un recuento de cuántos vídeos comprables hay ya en esa página de producto, para que veas la competencia de un vistazo.
+- **Ventas estimadas al mes**: una lectura de la demanda, tomada de la insignia "comprado el mes pasado" de Amazon, para que veas cuáles de tus productos está comprando la gente en volumen.
+- **Vídeos de influencer**: un recuento de cuántos vídeos comprables hay ya en esa página de producto, para que veas la competencia de un vistazo.
 
-Ambos números se pueden ordenar y filtrar. Eso convierte un historial de pedidos gigante y desordenado en una lista breve y ordenada de ideas en aproximadamente un minuto. Sin adivinar, sin hojas de cálculo, sin scraping.
+Un clic en **Comprobar vídeos de influencers** rellena ambas columnas de tu lista (de paso también recoge el ranking de ventas y la tasa de comisión). Cada columna se puede ordenar y filtrar, así que un historial de pedidos gigante y desordenado se convierte en una lista breve y ordenada de ideas en aproximadamente un minuto. Sin adivinar, sin hojas de cálculo, sin scraping.
+
+![La tabla de resultados de Orders Butler mostrando las columnas Ranking de ventas, Vídeos de influencer y Ventas estimadas al mes](/assets/blog/products-you-already-own-shoppable-videos/01-orders-butler-results.png)
 
 ## El flujo de trabajo ganador, paso a paso
 
 Esta es la rutina exacta que recomendamos para decidir qué productos grabar para vídeos comprables de Amazon. Solo lleva unos minutos.
 
 1. **Abre Orders Butler y actualiza tu historial de pedidos.** Deja que cargue tus compras recientes para que trabajes con una lista completa.
-2. **Ordena por ventas mensuales estimadas, de mayor a menor.** Ahora los productos con más demanda de compradores suben arriba. Este es tu filtro de demanda.
-3. **Filtra a productos con solo unos pocos vídeos de influencer.** Pon el filtro de vídeos existentes bajo, idealmente entre 0 y 3. Este es tu filtro de competencia.
-4. **Lee la lista breve que queda.** Lo que queda es lo bueno: cosas que ya tienes, que la gente está comprando activamente, en páginas que aún no están saturadas de otros creadores.
-5. **Elige tus primeros tres y grábalos.** No le des demasiadas vueltas. Coge los primeros y ya tienes planificada tu próxima sesión de grabación.
+2. **Haz clic en Comprobar vídeos de influencers.** Esto rellena las columnas Vídeos de influencer y Ventas estimadas al mes, los dos números que vas a filtrar.
+3. **Haz clic en el filtro Graba estos primero.** Es un Filtro de inicio rápido, un chip de un solo clic justo encima de la tabla. Reduce al instante todo tu historial de pedidos a los productos que combinan demanda real con pocos vídeos de la competencia, y ordena lo que queda por oportunidad, con la mejor opción arriba.
+4. **Lee la lista breve y elige tus primeros tres.** No le des demasiadas vueltas. Coge los primeros, prioriza aquellos de los que puedas hablar con sinceridad, y tu próxima sesión de grabación queda planificada.
 
-Ese es todo el método. Mucha demanda, poca competencia, usando inventario que ya tienes.
+![La fila de Filtros de inicio rápido en Orders Butler con Graba estos primero seleccionado, reduciendo la tabla a los mejores productos para grabar](/assets/blog/products-you-already-own-shoppable-videos/02-film-these-first.png)
+
+Ese es todo el método. Mucha demanda, poca competencia, usando inventario que ya tienes, en aproximadamente un minuto.
+
+¿Prefieres hacerlo a mano? Puedes, y vale la pena entender qué hace el filtro por dentro: ordena por **Ventas estimadas al mes**, de mayor a menor, para subir la demanda arriba, y luego ordena o filtra por **Vídeos de influencer** para encontrar las páginas con solo un puñado de vídeos, idealmente entre 0 y 3. El punto ideal es la intersección: muchas ventas, pocos vídeos.
+
+## Filtros de inicio rápido: atajos de un solo clic
+
+Graba estos primero es el filtro en el que deberían vivir la mayoría de los principiantes, pero es uno de los cinco Filtros de inicio rápido que hay encima de la tabla. Cada uno es una respuesta guardada a "¿qué grabo ahora?", y al hacer clic filtra y ordena la tabla por ti:
+
+- **Graba estos primero**: productos con pocos vídeos de la competencia, una comisión sólida y demanda real, ordenados por una puntuación de oportunidad (comisión estimada por venta multiplicada por la demanda mensual, dividida entre el número de vídeos de la competencia). Los productos que ya has cubierto caen al fondo.
+- **Sin vídeos de influencers**: productos escaneados con cero vídeos de influencer, así que el tuyo sería el único en la página.
+- **Comisión alta**: productos que pagan una tasa de comisión del 4% o más, de mayor a menor.
+- **Más vendidos**: productos situados en el top 1.000 de su categoría.
+- **Ventas calientes**: productos con 500 o más comprados en el último mes.
+
+Graba estos primero también tiene sus propios ajustes. Haz clic en el engranaje que hay junto a él para afinar los umbrales: máximo de vídeos de influencer, porcentaje mínimo de comisión, ranking de ventas máximo y mínimo comprado al mes. Los valores por defecto (2 vídeos, 3% de comisión) son un buen punto de partida, pero si tu lista vuelve vacía, aflójalos un poco y ejecútalo de nuevo.
+
+![El panel de umbrales de Graba estos primero con campos para máximo de vídeos de influencer, comisión mínima, ranking de ventas máximo y mínimo comprado al mes](/assets/blog/products-you-already-own-shoppable-videos/03-film-first-thresholds.png)
 
 ## Por qué funciona: el carrusel y las matemáticas
 
@@ -77,8 +96,8 @@ Ten esto a mano la primera vez:
 
 - [ ] Abre Influencer Butler y ve a Orders Butler
 - [ ] Actualiza y enriquece tu historial de pedidos
-- [ ] Ordena por ventas mensuales estimadas, de mayor a menor
-- [ ] Filtra los vídeos de influencer existentes a entre 0 y 3
+- [ ] Haz clic en Comprobar vídeos de influencers para rellenar los números
+- [ ] Haz clic en el filtro rápido Graba estos primero
 - [ ] Marca los tres a cinco productos principales
 - [ ] Prioriza artículos perennes de los que puedas hablar con sinceridad
 - [ ] Grábalos en tandas en una sola sesión

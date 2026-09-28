@@ -2,9 +2,12 @@ import Image from "next/image";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ShortcutHelpOverlay from "@/components/dashboard/ShortcutHelpOverlay";
 import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner";
+import SwitchToAnnualBanner from "@/components/dashboard/SwitchToAnnualBanner";
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
+import EventBanner from "@/components/dashboard/EventBanner";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
+import OpenAppButton from "@/components/dashboard/OpenAppButton";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 
 export default async function DashboardLayout({
@@ -37,8 +40,11 @@ export default async function DashboardLayout({
             </div>
             <AdminBadge />
             <DashboardUserEmail />
+            <OpenAppButton />
           </div>
+          <EventBanner />
           <AffiliateUpsellBanner />
+          <SwitchToAnnualBanner />
           <TestimonialAskBanner />
           {children}
         </main>

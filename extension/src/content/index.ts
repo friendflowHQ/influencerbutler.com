@@ -1,13 +1,24 @@
-import { detectPageType, type PageType } from "./page-type";
+import { detectPageType, detectRetailerForUrl, isBenableListUrl, type PageType } from "./page-type";
+import { watchNavigation } from "./nav";
 import {
+  extractSignals as extractWalmartSignals,
+  extractWalmartProduct,
+} from "../walmart/product-signals";
+import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
+import { retailerModule } from "../retailers/module";
+import {
+  carouselBreakdown,
   carouselSourceFor,
   classifiedCount,
   extractCarousel,
   extractFromText,
+  upperInfluencerSlot,
   type CarouselResult,
 } from "../amazon/video-carousel";
-import { extractSignals, type ProductSignals } from "../amazon/product-signals";
-import { query } from "../amazon/selectors";
+import { deriveCreatorId, deriveVideoId } from "../amazon/video-identity";
+import { extractSignals, marketplaceFromUrl, type ProductSignals } from "../amazon/product-signals";
+import { query, applySelectorOverrides } from "../amazon/selectors";
+import { getFlags } from "../flags/cache";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
@@ -18,27 +29,68 @@ import { renderProductScore } from "../tools/score/panel";
 import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
+import { renderOwnership } from "../tools/ownership/panel";
 import { renderPriceHistory } from "../tools/price-history/panel";
+import { renderDealSignals } from "../tools/deal-signals/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
+import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
 import { renderHudActions } from "../tools/hud-actions/panel";
 import { renderMyLink } from "../tools/my-link/panel";
+import { renderQuickLinks } from "../tools/quick-links/panel";
 import { renderShotList } from "../tools/shot-list/panel";
 import { initStorefrontPanel } from "../tools/storefront-check/panel";
+import { initEarningsOverlay } from "../tools/earnings-overlay/overlay";
+import { initVideoLikes } from "../tools/video-likes/overlay";
 import { initUploadHelper } from "../tools/upload-helper/panel";
+import { maybeCaptureStorefrontHandle } from "../tools/storefront-detect/capture";
+import { captureOwnVideos, type CaptureSurface } from "../tools/my-video/capture";
+import { loadOwnVideoIndex, ownIndexStamp, type OwnVideoIndex } from "../tools/my-video/own-videos";
+import { resolveMyVideos } from "../tools/my-video/resolve";
+import { renderMyVideoBadges } from "../tools/my-video/badge";
+import { readOwnCardPlacements } from "../amazon/my-video-card";
+import { initVideoMoney } from "../tools/video-money/overlay";
+import { initYouTubeStatus } from "../tools/youtube-status/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
+import { initStoreOverlay } from "../tools/store-overlay/overlay";
+import { initTrendRadar } from "../tools/trend-radar/overlay";
+import { initDealsOverlay } from "../tools/deals-overlay/overlay";
+import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
-import { initCampaignRadar } from "../tools/campaign-radar/overlay";
+import { hasUndecoratedCampaignCards, initCampaignRadar } from "../tools/campaign-radar/overlay";
+import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
+import { runAcceptOnPage } from "../tools/campaign-radar/accept-runner";
+import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
+import { initMessageTemplates, teardownMessageTemplates } from "../tools/message-templates/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
+import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
+import { maybeShowUpdateBanner } from "../tools/update-banner";
+import { maybeShowWhatsNew } from "../tools/whats-new";
+import { initChatBubble } from "../tools/chat-bubble/panel";
+import { initBenableBadges } from "../tools/benable-badge/overlay";
+import {
+  setBenableFeed,
+  benableFeedCount,
+  resetBenableFeed,
+  type BenableRec,
+} from "../tools/benable-badge/feed";
 import { guard } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
+import type { Settings } from "../storage/schema";
 import { removeHost } from "../ui/host";
-import { sendToBackground, type PageStatus, type RuntimeMessage } from "../shared/messages";
+import {
+  sendToBackground,
+  type AcceptOutcome,
+  type PageStatus,
+  type RuntimeMessage,
+} from "../shared/messages";
+import { setDealsFeed, dealsFeedSize, type DealsFeedItem } from "../amazon/deals-feed";
 import type { Finding, ProductScanFinding } from "../transport/types";
+import type { CampaignFill } from "../amazon/creator-campaigns";
 
 // Content-script entry: detect the page, run the enabled tools, answer the
 // popup's status requests, and re-run on SPA navigation (the storefront is a
@@ -53,16 +105,80 @@ let capturedVideoData: CarouselResult[] = [];
 // widget's own endpoint with pagination instead of guessing one.
 let capturedVideoUrls: string[] = [];
 let renderedClassified = -1;
+// Coverage fingerprint of the render, so a payload that improves carousel-side
+// resolution or creator names WITHOUT raising the classified count (same
+// videos, better data) still triggers a rebuild.
+let renderedFingerprint = "";
+// Campaign fill / capacity captured by the MAIN-world connect-hook
+// (src/content/connect-hook.ts) from the campaign/search API, keyed by
+// campaignId. Merged so a later partial capture (e.g. the SPCC tab) does not
+// drop the Affiliate+ fills. Fed into Campaign Radar's Last Call meter.
+let campaignFills: Record<string, CampaignFill> = {};
+let lastCallRefreshTimer: number | null = null;
+// Watches the campaign grid so Campaign Radar re-runs once Amazon renders (or
+// pages in) real cards, not only on URL change or a connect-hook fill event.
+// The SPCC tab needs this: its cards land after the first init pass and its
+// discovery API never drives the fill re-run, so without a DOM watcher the grid
+// stays unscored. See watchCampaignGrid / scheduleCampaignGridRefresh.
+let campaignGridObserver: MutationObserver | null = null;
+let campaignGridRefreshTimer: number | null = null;
+// Whether the last product render was still waiting on video data (see
+// videosPending in runForPage). Read by the hydration watcher so it can stop
+// as soon as a rebuild reports full coverage instead of running out its clock.
+let videosStillPending = false;
+// Whether the current page has the Video Likes overlay enabled, so the video
+// hydration watcher (product pages) can re-render its heart badges as the widget
+// fills in.
+let videoLikesActive = false;
 
 void main();
 
 async function main(): Promise<void> {
+  // Re-injection guard. The background injects content.js into tabs that were
+  // already open when the extension installed/updated (chrome does not do this
+  // for us), so a tab that later reloads under the manifest, or a double
+  // injection during a race, must not boot a second instance in the same frame.
+  const g = window as unknown as { __ibExtLoaded?: boolean };
+  if (g.__ibExtLoaded) return;
+  g.__ibExtLoaded = true;
+
   const settings = await getSettings();
   setDebug(settings.debug);
   watchSpaNavigation();
   chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message.kind === "GET_PAGE_STATUS") {
       sendResponse(lastStatus);
+      return true;
+    }
+    // Standalone accept: the background opened this campaign tab and asks us to
+    // drive Amazon's Accept button. Re-read settings + remote flags here (not
+    // the boot-time copy) so a kill switch flipped after load still holds. The
+    // outcome goes back both as the reply and as ACCEPT_RESULT, which is what
+    // the worker resolves on.
+    if (message.kind === "RUN_ACCEPT") {
+      void (async () => {
+        let outcome: AcceptOutcome;
+        try {
+          const settings = await getSettings();
+          const flags = await getFlags();
+          const enabled =
+            settings.tools.standaloneAccept &&
+            !flags?.disableAll &&
+            !flags?.disabledTools.includes("standaloneAccept");
+          outcome = enabled
+            ? await runAcceptOnPage(message.campaignId)
+            : { ok: false, reason: "disabled" };
+        } catch (error) {
+          log("content", "accept runner failed", error);
+          outcome = { ok: false, reason: "error" };
+        }
+        void sendToBackground({
+          kind: "ACCEPT_RESULT",
+          campaignId: message.campaignId,
+          outcome,
+        }).catch(() => undefined);
+        sendResponse(outcome);
+      })();
       return true;
     }
     return false;
@@ -87,31 +203,243 @@ async function main(): Promise<void> {
       rebuildIfImproved();
     });
   });
+  // Campaign fill / capacity from the connect-hook (Last Call Butler). Merge the
+  // captured map, forward it to the background so it can alert on watched
+  // campaigns even when the grid is just being browsed, and re-render the radar
+  // so the fill meters appear on the cards.
+  document.addEventListener("ib-ext-campaign-fill", (event) => {
+    guard("campaign-fill-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const fills = (detail as { fills?: unknown })?.fills;
+      if (!fills || typeof fills !== "object") return;
+      campaignFills = { ...campaignFills, ...(fills as Record<string, CampaignFill>) };
+      void sendToBackground({
+        kind: "REPORT_CAMPAIGN_FILLS",
+        fills: campaignFills,
+      }).catch(() => undefined);
+      scheduleLastCallRefresh();
+    });
+  });
+  // Deal records from the deals-hook (Today's Deals grid). The grid carries no
+  // ASIN in the DOM, so the overlay cannot render until this feed arrives.
+  // Accumulate it and re-run the page so the deals overlay rebuilds over the now
+  // -identifiable tiles; debounced because the grid fires several batches as it
+  // pages in and filters.
+  document.addEventListener("ib-ext-deals-feed", (event) => {
+    guard("deals-feed-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const items = (detail as { items?: unknown })?.items;
+      if (!Array.isArray(items)) return;
+      const before = dealsFeedSize();
+      setDealsFeed(items as DealsFeedItem[]);
+      // Only a genuinely new ASIN warrants a rebuild; a repeat batch is a no-op.
+      if (dealsFeedSize() > before) scheduleDealsRefresh();
+    });
+  });
+  // Amazon rec feed from the benable-hook (benable.com list / rec pages). Benable
+  // renders its cards from server data and never puts the outbound Amazon link in
+  // the DOM, so the badge overlay cannot render until this feed (ASIN + title +
+  // photo ids per rec, fetched by the hook from Benable's rec_objects API) lands.
+  document.addEventListener("ib-ext-benable-feed", (event) => {
+    guard("benable-feed-hook", () => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      const recs = (detail as { recs?: unknown })?.recs;
+      if (!Array.isArray(recs)) return;
+      const before = benableFeedCount();
+      setBenableFeed(recs as BenableRec[]);
+      // Only a genuinely new rec warrants a rebuild; a repeat batch is a no-op.
+      if (benableFeedCount() > before) scheduleBenableRefresh();
+    });
+  });
   await runForPage();
   // Re-engagement nudges (join the group, get the free app). Records first use
   // on the first run and shows a timed modal on later visits. Guarded so a
   // failure here never breaks the tools.
   guard("nudges", () => maybeShowNudge());
+  // Extension-update pill (Chrome has a new version staged). Lives in its own
+  // shadow host and runs once per page load, so it belongs here rather than in
+  // runForPage(), which re-runs on SPA navigation.
+  guard("update-banner", () => maybeShowUpdateBanner());
+  // Post-update "What's New" card (an update just installed): its own shadow
+  // host, once per page load, same reasoning as the update pill above.
+  guard("whats-new", () => maybeShowWhatsNew());
+  // Floating chat bubble (AI concierge + Report a bug + My reports). Its own
+  // shadow host, mounted once per page load after runForPage() has set the
+  // locale; survives SPA-nav rebuilds (removeHost only tears down the main panel).
+  guard("chat-bubble", () => initChatBubble());
 }
 
 // The widget's classified data can land well after first render (it only
 // loads once the video section is on screen). Whenever a better source
-// appears, rebuild the panel from scratch.
+// appears, rebuild the panel from scratch. "Better" means more classified
+// videos OR (at no loss of classification) improved coverage: side resolution
+// for the upper/lower split, or creator names for the influencer list.
+function coverageFingerprint(result: CarouselResult): string {
+  const sides = carouselBreakdown(result);
+  const named = result.videos.filter((v) => v.creatorName).length;
+  return [
+    classifiedCount(result),
+    sides.upper.total,
+    sides.upper.influencer,
+    sides.lower.total,
+    sides.lower.influencer,
+    named,
+    // My Video Placement moves on two signals the tallies above cannot see: the
+    // creator's own card appearing in a rail (which is the only honest source of
+    // an upper verdict), and the own-video index growing when the desktop bridge
+    // answers the ownership lookup. Fold both in so a late resolution rebuilds
+    // the panel instead of waiting for the next page load.
+    ownCardCount(),
+    ownIndexStamp(),
+  ].join("|");
+}
+
+// How many cards on the page carry the creator's own storefront handle. One
+// querySelectorAll, and it flips exactly when their card hydrates.
+function ownCardCount(): number {
+  const handle = ownVideoIndex?.handle;
+  if (!handle) return 0;
+  try {
+    return readOwnCardPlacements(document, handle).length;
+  } catch {
+    return 0;
+  }
+}
+
 function rebuildIfImproved(): void {
   const probe = extractCarousel(document, capturedVideoData);
-  if (classifiedCount(probe) > renderedClassified) {
+  const classified = classifiedCount(probe);
+  if (
+    classified > renderedClassified ||
+    (classified === renderedClassified && coverageFingerprint(probe) !== renderedFingerprint)
+  ) {
     removeHost();
     void runForPage();
   }
 }
 
+// Re-render the Video Likes heart badges from the like counts Amazon has rendered
+// into the DOM. Cheap and idempotent (the overlay tears down its own prior
+// badges), so the video hydration watcher can call it as the widget fills in.
+function refreshVideoLikes(): void {
+  if (!videoLikesActive) return;
+  guard("video-likes", () => initVideoLikes());
+}
+
+// The creator storefront is a React app that lazy-loads more content cards as the
+// user scrolls, so re-run the Video Likes overlay on a debounced observer to badge
+// cards that appear after first paint. Self-disconnects when the overlay is no
+// longer active (navigated off the storefront) or the URL changed.
+let storefrontLikesObserver: MutationObserver | null = null;
+function watchStorefrontVideoLikes(): void {
+  if (storefrontLikesObserver) return;
+  const startedFor = currentUrl;
+  let timer: number | null = null;
+  const target = document.querySelector("main") ?? document.body;
+  storefrontLikesObserver = new MutationObserver(() => {
+    if (!videoLikesActive || location.href !== startedFor) {
+      storefrontLikesObserver?.disconnect();
+      storefrontLikesObserver = null;
+      return;
+    }
+    if (timer !== null) return;
+    timer = window.setTimeout(() => {
+      timer = null;
+      refreshVideoLikes();
+    }, 600);
+  });
+  storefrontLikesObserver.observe(target, { childList: true, subtree: true });
+}
+
+// The creator's own video ids + storefront handle for this page render. Read
+// once before the (synchronous) product-tools guard, and re-read on every
+// rebuild, so the panel and the fingerprint above see the same snapshot.
+let ownVideoIndex: OwnVideoIndex | null = null;
+
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
+  // Leaving the grid (or re-entering it) resets the grid watcher; the
+  // campaign-grid branch below re-installs it when this view is the grid.
+  stopWatchingCampaignGrid();
   const pageType = detectPageType(currentUrl);
+  const retailer = detectRetailerForUrl(currentUrl) ?? "amazon";
   const settings = await getSettings();
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
-  log("content", `page type: ${pageType}`);
+  videosStillPending = false;
+  videoLikesActive = false;
+  log("content", `page type: ${pageType} (${retailer})`);
+
+  // Benable.com is neither Amazon nor Walmart, so it is handled up front, before
+  // the retailer overlays. On a list / rec page we badge each card whose outbound
+  // link is an Amazon product with its Creator Connections / SPCC / commission
+  // signals (ASINs arrive from the MAIN-world benable-hook feed). Channel-neutral
+  // research overlay; gated by its own tool flag and the remote kill switch.
+  if (isBenableListUrl(currentUrl)) {
+    const flags = await getFlags();
+    if (flags?.disableAll) {
+      log("content", "all tools disabled by remote flag");
+      return;
+    }
+    const killed = flags?.disabledTools.includes("benableBadge") ?? false;
+    if (settings.tools.benableBadge && !killed) {
+      guard("benable-badge", () => initBenableBadges());
+      lastStatus.toolSummaries.push({ label: t().sumBenableBadge, value: t().ready });
+    }
+    return;
+  }
+
+  // Walmart.com. The neutral page classes (product / search / discovery /
+  // brand-store) are driven by the src/walmart extractors, which read Walmart's
+  // __NEXT_DATA__ JSON. Gated by the master Walmart setting. The Amazon
+  // extractors are never run against a Walmart page.
+  if (retailer === "walmart") {
+    if (!settings.tools.walmart) {
+      log("content", "walmart support disabled by setting");
+      return;
+    }
+    if (pageType === "product") {
+      guard("walmart-product", () => {
+        const signals = extractWalmartSignals(document, currentUrl);
+        const product = extractWalmartProduct(document, currentUrl);
+        initWalmartProduct(signals, product);
+      });
+    } else if (pageType === "search" || pageType === "discovery" || pageType === "brand-store") {
+      // Walmart grids reuse the exact Amazon search overlay (Butler Score badge,
+      // sort/filter toolbar, per-tile menu) via the Walmart RetailerModule; the
+      // Amazon-only data sources are skipped by the module's capability flags.
+      if (settings.tools.searchOverlay) {
+        guard("walmart-search", () => initSearchOverlay(settings, retailerModule("walmart")));
+      }
+    }
+    return;
+  }
+
+  // Brand Keywords and Message Templates each own a persistent MutationObserver
+  // on the Messages widget, so unlike the once-per-view tools they must be
+  // explicitly torn down on every SPA navigation. Tear them down here up front;
+  // the campaign-grid branch below re-inits them when we are (still) on Creator
+  // Connections.
+  teardownBrandKeywords();
+  teardownMessageTemplates();
+
+  // Remote operational flags win over the user's own settings: they are the
+  // site's kill switch for when a tool misbehaves in the wild. Apply selector
+  // overrides (config-level DOM repairs) before any tool queries the page,
+  // force off any remotely-disabled tool, and bail entirely on a hard kill.
+  const flags = await getFlags();
+  if (flags) {
+    applySelectorOverrides(flags.selectorOverrides);
+    if (flags.disableAll) {
+      log("content", "all tools disabled by remote flag");
+      return;
+    }
+    for (const tool of flags.disabledTools) {
+      if (tool in settings.tools) {
+        (settings.tools as Record<string, boolean>)[tool] = false;
+      }
+    }
+  }
 
   // Creator-mode channel filter (mirrored from the app). onsite tools are the
   // Amazon on-platform ones (video counts, Butler Approved, campaigns, shot
@@ -123,38 +451,132 @@ async function runForPage(): Promise<void> {
   const showOffsite = channelAllowed(settings.creatorMode, "offsite");
 
   if (pageType === "product") {
+    // My Video Placement needs the creator's own ids before the synchronous
+    // guard below runs. The read is memoized in own-videos.ts, so the repeated
+    // hydration rebuilds do not re-pay it.
+    const myVideoOn =
+      showOnsite && settings.tools.videoCounts && settings.tools.myVideoPlacement;
+    ownVideoIndex = myVideoOn ? await loadOwnVideoIndex(settings.storefrontHandle) : null;
+
     guard("product-tools", () => {
       const carousel = extractCarousel(document, capturedVideoData);
       renderedClassified = classifiedCount(carousel);
+      renderedFingerprint = coverageFingerprint(carousel);
       const signals = extractSignals(document, currentUrl);
 
+      // Whether more video data is still expected to arrive: unclassified
+      // videos, an unresolved upper-influencer-slot verdict, a lower rail we
+      // have not seen at all, or influencers counted without names. Drives both
+      // the panel's "reading" state and the auto-hydration below.
+      const breakdown = carouselBreakdown(carousel);
+      const namedInfluencers = carousel.videos.some(
+        (v) => v.creatorType === "influencer" && v.creatorName,
+      );
+      const videosPending =
+        carousel.counts.total > 0 &&
+        (carousel.counts.unknown > 0 ||
+          upperInfluencerSlot(carousel) === "unknown" ||
+          breakdown.lower.total === 0 ||
+          (carousel.counts.influencer > 0 && !namedInfluencers));
+      videosStillPending = videosPending;
+
+      // Pinned quick-links bar (Get link / Scrub link): built first so it sits
+      // in the sticky topbar, one click away without scrolling past the sections.
+      guard("quick-links", () => renderQuickLinks(signals));
+
       // Identity card first: the ASINs, category, rank, and rate at a glance.
-      guard("product-snapshot", () => renderProductSnapshot(signals));
+      // Its section is captured so the campaigns tool can append its availability
+      // block to the bottom of this same card.
+      let snapshotSection: HTMLElement | null = null;
+      guard("product-snapshot", () => {
+        snapshotSection = renderProductSnapshot(signals);
+      });
 
       // Your real earnings on this exact product (from the desktop app ledger,
       // over the bridge). Reserves a slot here; reveals only if paired and there
       // are earnings, so it stays invisible for everyone else.
       guard("earnings", () => renderProductEarnings(signals));
 
+      // "You already own / posted this" (from the desktop Orders Butler + content
+      // coverage, over the bridge; owned-only server fallback when unpaired).
+      // Reserves a slot; reveals only when the creator owns or already posted it.
+      if (settings.tools.ownership) {
+        guard("owned", () => renderOwnership(signals));
+      }
+
       // Price history sparkline, built locally from prices seen while browsing.
       // Reserves a slot; reveals only once there are at least two observations.
       guard("price-history", () => renderPriceHistory(signals));
+
+      // Sale / deal signals: when Amazon shows a strikethrough list price and/or
+      // a deal badge (Prime Big Deal Days / Lightning / reduced) on this listing,
+      // an "On sale" section with the discount depth and list -> now prices.
+      // Renders nothing when the product is not on a deal; gated by its own tool
+      // flag so the remote kill switch can disable it.
+      if (settings.tools.dealSignals) {
+        guard("deal-signals", () => {
+          renderDealSignals(signals);
+        });
+      }
 
       // Inline card at the buybox: identity, Creator-API market availability,
       // and a one-tap Collab Butler action (injected into the page, not the
       // floating panel).
       guard("inline-card", () => renderInlineCard(signals));
 
+      // Global Marketplace Maximizer: per-market availability, price, estimated
+      // commission, and localized affiliate links so international viewers earn
+      // instead of hitting a dead link. Channel-neutral (research + links);
+      // gated by its own tool flag.
+      if (settings.tools.globalMaximizer) {
+        guard("global-maximizer", () => renderGlobalMaximizer(signals));
+      }
+
+      // Which of this listing's videos are the creator's own, and where they
+      // sit. Identity comes from their storefront handle on a rendered card
+      // (which also gives the rail and rank) or from a remembered content id;
+      // placement is only ever stated when the evidence supports it. Silent for
+      // anyone we have no evidence for: see tools/my-video/resolve.ts.
+      const mine = ownVideoIndex
+        ? resolveMyVideos(
+            carousel.videos,
+            ownVideoIndex,
+            ownVideoIndex.handle ? readOwnCardPlacements(document, ownVideoIndex.handle) : [],
+            breakdown,
+          )
+        : null;
+
       if (showOnsite && settings.tools.videoCounts) {
         guard("video-counts", () =>
-          renderVideoCounts(carousel, capturedVideoUrls, () =>
-            extractCarousel(document, capturedVideoData),
+          renderVideoCounts(
+            carousel,
+            capturedVideoUrls,
+            () => extractCarousel(document, capturedVideoData),
+            settings.tools.videoLandscape,
+            videosPending,
+            mine,
           ),
         );
+        // The "Yours" badge on the creator's own card inside Amazon's carousel.
+        // Mounted only from a card the handle matched, so it can never land on
+        // somebody else's video.
+        if (mine?.kind === "present") {
+          guard("my-video-badge", () => renderMyVideoBadges(mine.matches));
+        }
         lastStatus.toolSummaries.push({
           label: t().sumVideos,
           value: t().sumVideosValue(carousel.counts.total, carousel.counts.influencer),
         });
+      }
+
+      // Video Likes: an orange heart + Amazon like-count badge on each "Videos
+      // for this product" card that Amazon renders a `.heart-count` for. Mark the
+      // overlay active so the video hydration watcher re-renders it as the widget
+      // fills in, and do a first pass now. Its own tool flag, onsite-only (an
+      // on-Amazon research signal), independent of Video counts.
+      if (showOnsite && settings.tools.videoLikes) {
+        videoLikesActive = true;
+        refreshVideoLikes();
       }
 
       let approvedRecord: Record<string, boolean> | undefined;
@@ -177,7 +599,7 @@ async function runForPage(): Promise<void> {
       // cached rate card and campaign catalogue; pushes its popup summary line
       // once computed.
       guard("butler-score", () =>
-        void renderProductScore(signals, carousel.counts, settings).then((value) => {
+        renderProductScore(signals, carousel.counts, settings).then((value) => {
           if (value !== null) {
             lastStatus.toolSummaries.push({ label: t().sumScore, value: String(value) });
           }
@@ -188,8 +610,22 @@ async function runForPage(): Promise<void> {
         guard("calculator", () => renderCalculator(signals, carousel.counts, settings));
       }
 
-      // Campaign availability from the locally-cached membership filter.
-      if (showOnsite) guard("campaigns", () => void renderCampaigns(signals));
+      // Campaign availability from the locally-cached membership filter, plus a
+      // personal "Enrolled" badge from the desktop accepted-history ledger.
+      // Appended to the bottom of the Product snapshot card above (async, but the
+      // snapshot section is already first in the panel so the block still lands
+      // at the card's bottom regardless of resolution order).
+      if (showOnsite)
+        guard(
+          "campaigns",
+          () =>
+            void renderCampaigns(
+              signals,
+              settings.tools.enrolledBadge,
+              snapshotSection,
+              settings.tools.standaloneAccept,
+            ),
+        );
 
       // The bridge to the desktop app (push to workspaces, accept campaigns)
       // plus the download/trial upsell when the app is not running.
@@ -198,7 +634,7 @@ async function runForPage(): Promise<void> {
       // My affiliate/deeplink for this product, plus an optional AI caption.
       // The flagship offsite action (share off-Amazon), so onsite-only creators
       // do not see it.
-      if (showOffsite) guard("my-link", () => void renderMyLink(signals));
+      if (showOffsite) guard("my-link", () => renderMyLink(signals));
 
       // A product-specific filming plan: the features to show plus best-practice
       // beats and the FTC disclosure. Pairs with Butler Approved (what to film)
@@ -207,8 +643,12 @@ async function runForPage(): Promise<void> {
 
       // Watch this product for a restock, an opening video slot, or a price drop.
       if (settings.tools.watchlist) {
-        guard("watchlist", () => void renderWatchButton(signals));
+        guard("watchlist", () => renderWatchButton(signals));
       }
+
+      // Add this product (or every variation) to a named list. Free, channel-
+      // neutral; the only surface that offers "Add all variations".
+      guard("product-lists", () => renderProductListsPanel(signals));
 
       emitProductScan(signals, carousel, approvedFlag, approvedRecord);
 
@@ -216,19 +656,29 @@ async function runForPage(): Promise<void> {
       // into view, and may arrive via state scripts, rail DOM, or the
       // network hook. Nudge it into view automatically so the user does not
       // have to scroll, then keep polling and rebuild as coverage improves.
+      // videosPending covers more than counts.unknown: the videoList strategy
+      // can classify everything it sees while the lower rail (and its
+      // upper/lower resolution and creator names) has not hydrated at all.
       // Only relevant when the onsite video-counts panel is showing.
-      if (showOnsite && settings.tools.videoCounts && carousel.counts.unknown > 0) {
+      if (showOnsite && settings.tools.videoCounts && videosPending) {
+        autoHydrateVideos();
+        watchForVideoHydration();
+      } else if (showOnsite && settings.tools.videoLikes) {
+        // Video Likes on with Video counts off (or nothing pending): still bring
+        // the widget into view so its cards (and any heart counts on them)
+        // hydrate, then re-run the badges once.
         autoHydrateVideos();
         watchForVideoHydration();
       }
     });
   } else if (pageType === "order-history") {
     if (!showOnsite) return; // onsite-only page (content gaps, order harvest)
+    const marketplace = marketplaceFromUrl(location.href);
     guard("order-history", () => {
-      if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold);
+      if (settings.tools.videoCounts) initOrderHistory(settings.contentGapThreshold, marketplace);
       if (settings.tools.ordersButler) {
-        initOrdersButler("amazon.com");
-        initOrderVideoCounts("amazon.com");
+        initOrdersButler(marketplace);
+        initOrderVideoCounts(marketplace);
       }
       if (settings.tools.campaignMatcher) {
         initCampaignMatcher("orders");
@@ -237,6 +687,7 @@ async function runForPage(): Promise<void> {
       lastStatus.toolSummaries.push({ label: t().sumOrderScan, value: t().ready });
     });
   } else if (pageType === "storefront") {
+    captureOwnVideoIds("storefront", settings);
     if (!showOnsite) return; // onsite-only page (storefront checkup, matcher)
     guard("storefront", () => {
       if (settings.tools.storefront) initStorefrontPanel();
@@ -244,14 +695,83 @@ async function runForPage(): Promise<void> {
         initCampaignMatcher("storefront");
         lastStatus.toolSummaries.push({ label: t().sumCampaignMatcher, value: t().ready });
       }
+      // Per-card earnings badges + breakdown popup (the desktop ledger over the
+      // bridge). Self-gates to paired users with real earnings, so it is a no-op
+      // for everyone else.
+      if (settings.tools.earningsOverlay) {
+        guard("earnings-overlay", () => {
+          void initEarningsOverlay();
+          lastStatus.toolSummaries.push({ label: t().sumEarningsOverlay, value: t().ready });
+        });
+      }
+      // Orange like-count heart badge on each content card, read from Amazon's own
+      // rendered .heart-count. The storefront is where Amazon exposes these counts,
+      // so this is the overlay's primary surface. Re-runs on the storefront's React
+      // rebuilds via the observer below.
+      if (settings.tools.videoLikes) {
+        videoLikesActive = true;
+        guard("video-likes", () => initVideoLikes());
+        watchStorefrontVideoLikes();
+      }
+      // Per-video "On YouTube / Not on YouTube" chip + Upload action on each
+      // storefront video card (desktop YouTube Butler ledger over the bridge).
+      if (settings.tools.youtubeStatus) {
+        guard("youtube-status", () => initYouTubeStatus("storefront"));
+      }
       lastStatus.toolSummaries.push({ label: t().sumStorefrontCheckup, value: t().ready });
     });
   } else if (pageType === "creator-upload") {
+    // Capture the creator's own storefront handle off their Creator Hub even for
+    // offsite-only creators (the handle drives links regardless of channel), and
+    // before the onsite guard below. Non-destructive: fills only an empty handle.
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-upload", settings);
     if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
-      initUploadHelper();
+      initUploadHelper({
+        campaignPrompt: settings.tools.uploadCampaignPrompt,
+        standaloneAccept: settings.tools.standaloneAccept,
+      });
       lastStatus.toolSummaries.push({ label: t().sumUploadHelper, value: t().ready });
     });
+  } else if (pageType === "creator-manage") {
+    log("video-money", "creator-manage reached", {
+      showOnsite,
+      videoMoney: settings.tools.videoMoney,
+      creatorMode: settings.creatorMode,
+    });
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-manage", settings);
+    if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
+    guard("video-money", () => {
+      if (settings.tools.videoMoney) {
+        void initVideoMoney(settings);
+        lastStatus.toolSummaries.push({ label: t().sumVideoMoney, value: t().ready });
+      }
+    });
+    // Per-row "On YouTube / Not on YouTube" chip + Upload action on each managed
+    // video (desktop YouTube Butler ledger over the bridge).
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("creator-manage"));
+    }
+  } else if (pageType === "creator-post") {
+    // The single-video "Edit post" page (/create/post?id=amzn1.vse.video...).
+    guard("storefront-detect", () => maybeCaptureStorefrontHandle());
+    captureOwnVideoIds("creator-post", settings);
+    if (!showOnsite) return; // onsite-only page (the creator's own video edit)
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("creator-post"));
+      lastStatus.toolSummaries.push({ label: t().sumYouTubeStatus, value: t().ready });
+    }
+  } else if (pageType === "manage-content") {
+    // The flat "My content" list (/manage-content): a YouTube-status chip per
+    // video row.
+    captureOwnVideoIds("manage-content", settings);
+    if (!showOnsite) return; // onsite-only page (the creator's own content list)
+    if (settings.tools.youtubeStatus) {
+      guard("youtube-status", () => initYouTubeStatus("manage-content"));
+      lastStatus.toolSummaries.push({ label: t().sumYouTubeStatus, value: t().ready });
+    }
   } else if (pageType === "search") {
     guard("search-overlay", () => {
       if (settings.tools.searchOverlay) {
@@ -259,15 +779,197 @@ async function runForPage(): Promise<void> {
         lastStatus.toolSummaries.push({ label: t().sumSearchOverlay, value: t().ready });
       }
     });
+  } else if (pageType === "brand-store") {
+    // Research overlay on a brand's own storefront. Channel-neutral, like the
+    // search overlay: it scores products, it does not post anywhere.
+    guard("store-overlay", () => {
+      if (settings.tools.storeOverlay) {
+        void initStoreOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumStoreOverlay, value: t().ready });
+      }
+    });
+  } else if (pageType === "discovery") {
+    // Trend Radar over the Best Sellers / New Releases / Movers & Shakers grids.
+    // Channel-neutral, like the search and brand-store overlays: it scores and
+    // ranks products, it does not post anywhere.
+    guard("trend-radar", () => {
+      if (settings.tools.trendRadar) {
+        void initTrendRadar(settings);
+        lastStatus.toolSummaries.push({ label: t().sumTrendRadar, value: t().ready });
+      }
+    });
+  } else if (pageType === "deals") {
+    // Money signals over the Today's Deals grid. Channel-neutral, like the
+    // search and discovery overlays. ASINs come from the deals-hook feed, so
+    // this is a no-op on the first run (before the feed lands) and rebuilds
+    // when the ib-ext-deals-feed listener re-runs the page.
+    guard("deals-overlay", () => {
+      if (settings.tools.dealsOverlay) {
+        void initDealsOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumDealsOverlay, value: t().ready });
+      }
+    });
+  } else if (pageType === "idea-list") {
+    // Money signals over an Idea List's products. Channel-neutral, like the
+    // search and brand-store overlays: it scores products, it does not post
+    // anywhere.
+    guard("idea-list-overlay", () => {
+      if (settings.tools.ideaListOverlay) {
+        void initIdeaListOverlay(settings);
+        lastStatus.toolSummaries.push({ label: t().sumIdeaList, value: t().ready });
+      }
+    });
   } else if (pageType === "campaign-grid") {
+    // Tell the background this tab's accept runner is armed (it only acts on a
+    // tab it opened itself). Before the onsite guard: a background accept tab
+    // must report regardless of the creator's channel setting.
+    if (settings.tools.standaloneAccept) {
+      void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-grid" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (Creator Connections radar)
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
-        void initCampaignRadar(settings);
+        void initCampaignRadar(settings, campaignFills);
+        // Amazon renders the grid asynchronously and can rewrite it after this
+        // first pass (the SPCC tab lands its cards late). Keep watching so the
+        // grid gets scored once the cards actually appear.
+        watchCampaignGrid();
         lastStatus.toolSummaries.push({ label: t().sumCampaignRadar, value: t().ready });
       }
     });
+    // Keyword chips on the floating Messages widget. Independent of the grid
+    // (the widget may be the only thing the user opens) and self-gating: a no-op
+    // unless the app is paired and has "Message Brands" outreach history.
+    guard("brand-keywords", () => {
+      if (settings.tools.brandKeywords) initBrandKeywords(settings);
+    });
+    // Save + one-click template loading on the same Messages composer. Local
+    // templates work offline; the picker also merges in the desktop app's own
+    // templates when paired. Self-gating like brand-keywords.
+    guard("message-templates", () => {
+      if (settings.tools.messageTemplates) initMessageTemplates(settings);
+    });
+  } else if (pageType === "campaign-detail") {
+    if (settings.tools.standaloneAccept) {
+      void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-detail" }).catch(
+        () => undefined,
+      );
+    }
+    if (!showOnsite) return; // onsite-only page (Creator Connections detail)
+    guard("campaign-detail", () => {
+      if (settings.tools.campaignDetail) {
+        void initCampaignDetail(settings);
+        lastStatus.toolSummaries.push({ label: t().sumCampaignDetail, value: t().ready });
+      }
+    });
+    // The same floating Messages widget the grid carries also opens on a single
+    // campaign's detail page, so decorate it here too: the outreach keyword chip
+    // and the one-click template composer are self-gating and scoped to the
+    // widget, independent of the detail panel.
+    guard("brand-keywords", () => {
+      if (settings.tools.brandKeywords) initBrandKeywords(settings);
+    });
+    guard("message-templates", () => {
+      if (settings.tools.messageTemplates) initMessageTemplates(settings);
+    });
   }
+}
+
+// The connect-hook delivers fills asynchronously (after the grid's own
+// campaign/search fetch), which can land after Campaign Radar first rendered.
+// Debounce a re-render so the fill meters appear once the map arrives, without
+// thrashing when Amazon fires several fetches in a row.
+function scheduleLastCallRefresh(): void {
+  if (lastCallRefreshTimer !== null) return;
+  lastCallRefreshTimer = window.setTimeout(() => {
+    lastCallRefreshTimer = null;
+    void (async () => {
+      const settings = await getSettings();
+      if (detectPageType(location.href) !== "campaign-grid") return;
+      if (!settings.tools.campaignRadar || !channelAllowed(settings.creatorMode, "onsite")) return;
+      guard("campaign-radar-fill", () => initCampaignRadar(settings, campaignFills));
+    })();
+  }, 400);
+}
+
+// Re-run Campaign Radar when the grid gains cards it has not decorated. Debounced
+// (a single 400ms timer) so a burst of Amazon DOM writes coalesces into one pass,
+// and guarded by hasUndecoratedCampaignCards() so a fully scored grid never
+// re-triggers: the overlay mounts its own badge hosts into the grid, which the
+// observer would otherwise treat as a fresh change and loop on.
+function scheduleCampaignGridRefresh(): void {
+  if (campaignGridRefreshTimer !== null) return;
+  campaignGridRefreshTimer = window.setTimeout(() => {
+    campaignGridRefreshTimer = null;
+    void (async () => {
+      if (detectPageType(location.href) !== "campaign-grid") return;
+      if (!hasUndecoratedCampaignCards()) return;
+      const settings = await getSettings();
+      if (!settings.tools.campaignRadar || !channelAllowed(settings.creatorMode, "onsite")) return;
+      guard("campaign-radar-grid", () => initCampaignRadar(settings, campaignFills));
+    })();
+  }, 400);
+}
+
+// Start watching the DOM for late-rendered or newly paged campaign cards while on
+// the campaign grid. Re-installed on each runForPage for the grid, and torn down
+// by stopWatchingCampaignGrid() at the top of every runForPage.
+function watchCampaignGrid(): void {
+  campaignGridObserver?.disconnect();
+  campaignGridObserver = new MutationObserver(() => scheduleCampaignGridRefresh());
+  campaignGridObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function stopWatchingCampaignGrid(): void {
+  campaignGridObserver?.disconnect();
+  campaignGridObserver = null;
+  if (campaignGridRefreshTimer !== null) {
+    window.clearTimeout(campaignGridRefreshTimer);
+    campaignGridRefreshTimer = null;
+  }
+}
+
+// The deals-hook delivers ASINs asynchronously (after the grid's own product
+// fetch), and pages more in as the user scrolls or switches filter tabs, each
+// landing after the overlay first rendered. Debounce a re-run so the badges
+// appear (and extend to newly paged tiles) without thrashing when several
+// batches fire together.
+let dealsRefreshTimer: number | null = null;
+
+function scheduleDealsRefresh(): void {
+  if (dealsRefreshTimer !== null) return;
+  dealsRefreshTimer = window.setTimeout(() => {
+    dealsRefreshTimer = null;
+    void (async () => {
+      if (detectPageType(location.href) !== "deals") return;
+      const settings = await getSettings();
+      if (!settings.tools.dealsOverlay) return;
+      guard("deals-overlay-refresh", () => initDealsOverlay(settings));
+    })();
+  }, 500);
+}
+
+// The benable-hook delivers the whole list's Amazon recs in one (occasionally
+// two) emissions, after the isolated content script has already run. Debounce a
+// re-run so the card badges appear once the feed lands, mirroring the deals
+// refresh above.
+let benableRefreshTimer: number | null = null;
+
+function scheduleBenableRefresh(): void {
+  if (benableRefreshTimer !== null) return;
+  benableRefreshTimer = window.setTimeout(() => {
+    benableRefreshTimer = null;
+    void (async () => {
+      if (!isBenableListUrl(location.href)) return;
+      const settings = await getSettings();
+      if (!settings.tools.benableBadge) return;
+      const flags = await getFlags();
+      if (flags?.disableAll || flags?.disabledTools.includes("benableBadge")) return;
+      guard("benable-badge-refresh", () => initBenableBadges());
+    })();
+  }, 400);
 }
 
 // Amazon only loads the video widget's classified data once the widget is on
@@ -303,24 +1005,44 @@ function autoHydrateVideos(): void {
 
 // Re-extract every 2.5s until classification coverage stops improving. The
 // auto-nudge (or the user scrolling the video section into view) is what
-// triggers Amazon to load the data. Gives up after 2 minutes; the network
-// hook can still trigger a rebuild any time after that.
+// triggers Amazon to load the data. Stops as soon as a rebuild reports nothing
+// pending, or after 2 minutes of wall-clock time; the network hook can still
+// trigger a rebuild any time after that. Ticks are skipped while the tab is
+// hidden (Amazon does not hydrate an off-screen widget in a background tab, so
+// re-extracting would only burn CPU), but the 2-minute ceiling still applies.
 let hydrationWatch: number | null = null;
+const HYDRATION_TICK_MS = 2500;
+const HYDRATION_CEILING_MS = 120_000;
 
 function watchForVideoHydration(): void {
   if (hydrationWatch !== null) return;
   const startedFor = currentUrl;
-  let tries = 0;
+  const startedAt = Date.now();
   hydrationWatch = window.setInterval(() => {
-    tries += 1;
-    if (location.href !== startedFor || tries > 48) {
+    const done =
+      location.href !== startedFor ||
+      !videosStillPending ||
+      Date.now() - startedAt > HYDRATION_CEILING_MS;
+    if (done) {
       if (hydrationWatch !== null) window.clearInterval(hydrationWatch);
       hydrationWatch = null;
       return;
     }
+    if (document.hidden) return;
     autoHydrateVideos();
     rebuildIfImproved();
-  }, 2500);
+  }, HYDRATION_TICK_MS);
+}
+
+// Bound the child->parent hint map so it can never grow without limit. A
+// listing carries a few dozen variants; this holds hundreds of listings' worth
+// before dropping the oldest-inserted keys (insertion order).
+const MAX_VARIANT_PARENTS = 6000;
+
+function pruneVariantParents(map: Record<string, string>): void {
+  const keys = Object.keys(map);
+  if (keys.length <= MAX_VARIANT_PARENTS) return;
+  for (const k of keys.slice(0, keys.length - MAX_VARIANT_PARENTS)) delete map[k];
 }
 
 function emitProductScan(
@@ -334,6 +1056,13 @@ function emitProductScan(
   // real breakdowns for products the user has actually viewed.
   if (carousel.strategy === "json" || carousel.strategy === "dom") {
     const asin = signals.asin;
+    const parent = signals.parentAsin;
+    // The listing's sibling variants (twister), plus the ASIN we are on, all
+    // roll up to the same parent. Recording it for each lets the search overlay
+    // reuse this exact split for a sibling variant it has not scanned yet.
+    const siblings = parent
+      ? [asin, ...signals.variationAsins].filter((a) => /^[A-Z0-9]{10}$/.test(a))
+      : [];
     void patchState((s) => {
       s.cache[`${signals.marketplace}:${asin}`] = {
         counts: carousel.counts,
@@ -341,8 +1070,34 @@ function emitProductScan(
         inStock: signals.inStock,
         ts: Date.now(),
       };
+      if (parent) {
+        for (const sib of siblings) {
+          s.variantParents[`${signals.marketplace}:${sib}`] = parent;
+        }
+        pruneVariantParents(s.variantParents);
+      }
     });
   }
+  // De-identified per-video placement observations for the opt-in video pool.
+  // Attached to every scan; api-transport only forwards them when the user has
+  // turned catalogue contribution on. Videos we cannot identify are dropped.
+  const videos = carousel.videos
+    .map((v) => {
+      const videoId = deriveVideoId(v);
+      if (!videoId) return null;
+      return {
+        videoId,
+        creatorId: deriveCreatorId(v),
+        creatorName: v.creatorName,
+        creatorType: v.creatorType,
+        carousel: v.carousel,
+        position: v.position,
+        title: v.title,
+        url: v.url,
+      };
+    })
+    .filter((v): v is NonNullable<typeof v> => v !== null);
+
   const finding: ProductScanFinding = {
     type: "product_scan",
     asin: signals.asin,
@@ -351,7 +1106,14 @@ function emitProductScan(
     priceCents: signals.priceCents,
     currency: signals.currency,
     inStock: signals.inStock,
+    // Product-research signals for the desktop price/rank history store.
+    boughtPastMonth: signals.boughtPastMonth,
+    brand: signals.brand,
+    category: signals.category,
+    bestsellerRank: signals.bestsellerRank,
+    imageUrl: signals.imageUrl,
     counts: carousel.counts,
+    videos: videos.length > 0 ? videos : undefined,
     approved,
     approvedCriteria,
     scannedAt: new Date().toISOString(),
@@ -361,26 +1123,30 @@ function emitProductScan(
   });
 }
 
-// The storefront SPA rewrites history instead of reloading. Watch pushState,
-// popstate, and a low-frequency fallback so we rebuild the panel per view.
+// The storefront SPA rewrites history instead of reloading. Watch pushState /
+// popstate / the Navigation API, plus bounded polling on the SPA page types
+// only (see content/nav.ts), so we rebuild the panel per view.
 function watchSpaNavigation(): void {
   const notice = () => {
     if (location.href === currentUrl) return;
     capturedVideoData = [];
     capturedVideoUrls = [];
     renderedClassified = -1;
+    renderedFingerprint = "";
+    // Drop the previous Benable list's recs so they cannot mis-join the next
+    // list's cards; the hook re-emits the new list's feed on its group fetch.
+    resetBenableFeed();
     removeHost();
     void runForPage();
   };
-  const wrap = (name: "pushState" | "replaceState") => {
-    const original = history[name].bind(history);
-    history[name] = (...args: Parameters<History["pushState"]>) => {
-      original(...args);
-      setTimeout(notice, 400);
-    };
-  };
-  wrap("pushState");
-  wrap("replaceState");
-  window.addEventListener("popstate", () => setTimeout(notice, 400));
-  setInterval(notice, 3000);
+  watchNavigation(notice, { pageTypeForUrl: detectPageType });
+}
+
+// Remember the creator's own video ids from a surface where the videos are
+// unambiguously theirs, so a product page can later say which carousel video is
+// theirs. Passive, no network call, and gated by the My Video Placement flag so
+// the remote kill switch stops the capture as well as the readout.
+function captureOwnVideoIds(surface: CaptureSurface, settings: Settings): void {
+  if (!settings.tools.myVideoPlacement) return;
+  guard("my-video-capture", () => captureOwnVideos(surface, settings.storefrontHandle));
 }

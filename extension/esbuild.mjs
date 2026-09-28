@@ -107,6 +107,30 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/content/connect-hook.ts")],
+    outfile: path.join(dist, "connect-hook.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/content/deals-hook.ts")],
+    outfile: path.join(dist, "deals-hook.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/content/benable-hook.ts")],
+    outfile: path.join(dist, "benable-hook.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/content/site-referral.ts")],
+    outfile: path.join(dist, "site-referral.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/popup/index.ts")],
     outfile: path.join(dist, "popup.js"),
     format: "iife",
@@ -119,8 +143,38 @@ const builds = [
   },
   {
     ...common,
+    entryPoints: [path.join(root, "src/onboarding/index.ts")],
+    outfile: path.join(dist, "onboarding.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/compose/index.ts")],
+    outfile: path.join(dist, "compose.js"),
+    format: "iife",
+  },
+  {
+    ...common,
     entryPoints: [path.join(root, "src/deals/index.ts")],
     outfile: path.join(dist, "deals.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/links/index.ts")],
+    outfile: path.join(dist, "links.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/chat/index.ts")],
+    outfile: path.join(dist, "chat.js"),
+    format: "iife",
+  },
+  {
+    ...common,
+    entryPoints: [path.join(root, "src/deal-badge/index.ts")],
+    outfile: path.join(dist, "deal-badge.js"),
     format: "iife",
   },
 ];

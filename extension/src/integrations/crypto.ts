@@ -73,7 +73,7 @@ async function getKey(): Promise<CryptoKey> {
 }
 
 // Pin the backing buffer to ArrayBuffer so WebCrypto's BufferSource params
-// accept it under the current lib types (see the same helper in sigv4.ts).
+// accept it under the current lib types.
 function toBytes(s: string): Uint8Array<ArrayBuffer> {
   return new Uint8Array(new TextEncoder().encode(s));
 }

@@ -1,6 +1,6 @@
 // Translation catalog for every user-facing string in the extension: the
 // popup and all the in-page panels. Brand and feature names (Influencer
-// Butler, Butler Approved, Orders Butler, Content Butler, Deals Influencer Butler, Creator
+// Butler, Butler Approved, Orders Butler, Content Butler, Deals Butler, Creator
 // Connections, SPCC, SiteStripe) stay in English on purpose, exactly like the
 // tutorials; only the surrounding copy is translated.
 //
@@ -13,8 +13,13 @@ export interface Dict {
   panelChevronHide: string;
   panelChevronShow: string;
   panelSettings: string;
+  // Shown in place of a section body when the background service worker did
+  // not answer (a dead worker, or a content script orphaned by a reload).
+  panelOffline: string;
   copy: string;
   copied: string;
+  // Muted note under a copied Amazon link when app-opening links are on.
+  appOpensNote: string;
 
   // Product snapshot card
   snapshotTitle: string;
@@ -22,6 +27,10 @@ export interface Dict {
   snapshotParent: string;
   snapshotCategory: (category: string) => string;
   snapshotRank: (rank: number, category: string) => string;
+  // Listing age (from "Date First Available") and the number of sellers on the
+  // buybox: freshness and competition read at a glance, next to the rank chip.
+  snapshotAge: (months: number, listed: string) => string;
+  snapshotSellers: (n: number) => string;
   snapshotCommissionLive: (pct: number) => string;
   snapshotCommissionCategory: (pct: number, category: string) => string;
   snapshotCommissionDefault: (pct: number) => string;
@@ -29,11 +38,50 @@ export interface Dict {
   earningsTitle: string;
   earningsAmount: (amount: string, count: number) => string;
   earningsNote: string;
+  // Product-page conversion readout: your realized orders-per-click on this
+  // product, headlined by your best-converting campaign.
+  earningsConversion: (pct: string, campaign: string) => string;
+  earningsConversionMore: (n: number) => string;
+  // Ownership badge: "you already own this / you already posted this", read from
+  // the desktop Orders Butler + content-coverage over the bridge.
+  ownedTitle: string;
+  ownedNote: string;
+  ownedBought: (year: number) => string;
+  ownedPaid: (price: string) => string;
+  ownedPostedChip: string;
+  ownedPostedSummary: (platforms: string) => string;
+  ownedGridOwned: string;
+  ownedGridPosted: string;
   priceHistoryTitle: string;
   priceHistoryNow: (amount: string) => string;
   priceHistoryLow: (amount: string) => string;
   priceHistoryLowest: string;
   priceHistoryNote: string;
+  priceHistoryDesktopNote: string;
+  bsrHistoryTitle: string;
+  bsrHistoryNow: (rank: string) => string;
+  bsrHistoryBest: (rank: string) => string;
+  // Rank now vs its trailing 90-day average, plus a one-word trend verdict.
+  bsrHistoryAvg90: (rank: string) => string;
+  bsrTrendSteady: string;
+  bsrTrendRising: string;
+  bsrTrendSlipping: string;
+  // A 12-month sales-volume histogram (modeled units per month) and the callout
+  // for its peak month, e.g. "Peaked ~1K in Nov".
+  salesHistogramTitle: string;
+  salesPeak: (units: string, month: string) => string;
+  salesEstTitle: string;
+  salesEstValue: (n: string) => string;
+  salesEstModeled: string;
+  salesEstCalibrated: string;
+  boughtPastMonthChip: (n: string) => string;
+  // Local BSR-derived estimates on the product panel, with exact labels matching
+  // the desktop app. Honest tooltips: these are estimates, not reported figures.
+  estUnitsLabel: string;
+  estRevenueLabel: string;
+  estUnitsTip: string;
+  estRevenueTip: string;
+  marketPoolNote: string;
   shotListTitle: string;
   shotListShowFeatures: string;
   shotListBeatHook: string;
@@ -50,9 +98,25 @@ export interface Dict {
   inlineUnavailable: string;
   inlineNotListed: string;
   inlineConnectCreatorApi: string;
+  inlineCreatorApiSyncPending: string;
 
   // Popup: static chrome
   tagFree: string;
+  // Left-hand section nav labels for cards whose headings are set in JS.
+  navUpdate: string;
+  navWhatsNew: string;
+  navAiAssistant: string;
+  navDeals: string;
+  navLinkButler: string;
+  // Short labels for the Settings sub-nav in the left rail. The full section
+  // headings (groupAmazon*) are too long for the narrow rail and wrapped; these
+  // keep each sub-item on one line.
+  navGrpWalmart: string;
+  navGrpCross: string;
+  navGrpProduct: string;
+  navGrpResearch: string;
+  navGrpCampaigns: string;
+  navGrpEarnings: string;
   thisPageHeading: string;
   checkingTab: string;
   accountHeading: string;
@@ -63,6 +127,10 @@ export interface Dict {
   startFreeTrial: string;
   connectedAs: string;
   syncToggleLabel: string;
+  syncDashboardHint: string;
+  syncStatsHint: string;
+  contributeToggleLabel: string;
+  contributeBlurb: string;
   disconnect: string;
   settingsHeading: string;
   languageLabel: string;
@@ -74,7 +142,17 @@ export interface Dict {
   storefrontHandleLabel: string;
   storefrontHandlePlaceholder: string;
   toolsHeading: string;
+  groupWalmart: string;
+  groupCrossPlatform: string;
+  groupAmazonProduct: string;
+  groupAmazonResearch: string;
+  groupAmazonCampaigns: string;
+  groupAmazonEarnings: string;
+  toolWalmart: string;
+  toolWalmartHint: string;
   toolVideoCounts: string;
+  toolVideoLandscape: string;
+  toolVideoLikes: string;
   toolApproved: string;
   toolCalculator: string;
   toolStorefront: string;
@@ -160,9 +238,29 @@ export interface Dict {
   chipCustomer: (n: number) => string;
   chipUnclassified: (n: number) => string;
   videosTotalVia: (total: number, viaPageData: boolean) => string;
+  // Upper/lower split view + the upper influencer slot indicator.
+  carouselReading: (label: string) => string;
+  upperSlotOn: string;
+  upperSlotOff: string;
+  upperSlotChecking: string;
+  upperSlotUnknown: string;
+  upperSlotInfo: string;
   influencerFallback: string;
   influencerVideosLabel: (n: number) => string;
   influencerVideosMore: (n: number) => string;
+
+  // My video placement: which carousel the creator's OWN video is in. Presence
+  // and placement are separate claims (see tools/my-video/resolve.ts), so there
+  // is a string for "we know it is here but not where".
+  myVideoHere: (carousel: string, position: number, total: number) => string;
+  myVideoHereNoPosition: (carousel: string) => string;
+  myVideoSideUnknown: string;
+  myVideoSideUnreadable: string;
+  myVideoMultiple: (n: number) => string;
+  myVideoRowChip: string;
+  myVideoCardBadge: string;
+  myVideoCardBadgeTitle: (position: number) => string;
+  myVideoInfo: string;
 
   // Video competition: full video sweep (harvest every video)
   deepScan: string;
@@ -183,6 +281,55 @@ export interface Dict {
   copySummary: string;
   shareSummaryHeading: string;
   shareTopCreators: string;
+
+  // Video landscape (aggregate competitor-parity stats)
+  videoLandscape: string;
+  lsStatKnown: string;
+  lsStatPlaced: string;
+  lsStatCreators: string;
+  lsStatRepeat: string;
+  lsContentMixLabel: string;
+  lsConcentrationLabel: string;
+  lsConcentrationShare: (pct: number) => string;
+  lsTopStrengthLabel: string;
+  lsUpper: string;
+  lsLower: string;
+  lsPulseLabel: (dated: number, total: number) => string;
+  lsNewIn30: (n: number) => string;
+  lsDatesUnavailable: string;
+  lsTypicalLengthLabel: string;
+  lsLengthBand: (median: string, low: string, high: string) => string;
+  lsLengthMedian: (median: string) => string;
+  lsDurationsUnavailable: string;
+
+  // Track 1.4: competition sentence (first line of the video section) and the
+  // seasonality chip on the sales-rank history row.
+  lsCompeteLine: (n: number, repeat: number, pct: number | null) => string;
+  lsCompeteLinePartial: (n: number, repeat: number, pct: number | null, seen: number, known: number) => string;
+  seasonPeaks: (range: string) => string;
+  seasonSteady: string;
+  seasonWindowTip: (months: number) => string;
+  // 12 three-letter month abbreviations, January first.
+  monthAbbr: string[];
+
+  // Per-video passport (longitudinal placement history)
+  passportOpen: string;
+  passportClose: string;
+  passportLoading: string;
+  passportUnidentified: string;
+  passportUnavailable: string;
+  passportNoData: string;
+  passportNoDataDay: string;
+  passportCollecting: (days: number) => string;
+  passportSinceFirstSeen: (date: string) => string;
+  passportPresence: string;
+  passportStability: string;
+  passportStrength: string;
+  passportReach: string;
+  passportActiveDays: string;
+  passportUpperLower: (upper: number, lower: number) => string;
+  passportCurrentSnapshot: string;
+  passportLastObserved: (date: string) => string;
 
   // Butler Approved panel
   butlerApproved: string;
@@ -216,6 +363,7 @@ export interface Dict {
   searchSortLabel: string;
   sortScore: string;
   sortCommission: string;
+  sortRevenue: string;
   sortPriceAsc: string;
   sortPriceDesc: string;
   sortRelevance: string;
@@ -228,9 +376,201 @@ export interface Dict {
   searchScanMore: (done: number, remaining: number) => string;
   tileCommission: (amount: string) => string;
   tileCampaign: string;
+  tileCampaignRate: (pct: number) => string;
+  // SPCC ("Earn on Clicks") chip: Amazon's own forecast, shown only when no
+  // guaranteed CC commission rate is known for the same ASIN.
+  tileCampaignEpc: (epc: string) => string;
+  tileCampaignEpcTip: string;
   tileProvenEarner: string;
+  tileEarned: (money: string) => string;
   tileInfluencer: (n: number) => string;
+  // Influencer count alongside the page's total video count, shown when a scan's
+  // influencer split is smaller than the page total ("2 infl / 17 videos").
+  tileInfluencerOfTotal: (infl: number, total: number) => string;
+  // Tooltips saying where a tile's video count came from: an exact scan of this
+  // ASIN, a sibling variant's scan rolled up, or the page total only (no split).
+  tileVideoTipSelf: string;
+  tileVideoTipVariant: string;
+  tileVideoTipEstimate: string;
+  tileApproved: string;
+  tileLikelyFit: string;
+  tileDeal: string;
+  tileCoupon: string;
+  // Deal-kind chip labels for the sale/deal signals overlay: the word shown
+  // before the "-N%" discount on a tile and in the product panel. A generic
+  // reduced deal reuses tileDeal.
+  tileDealPrimeDay: string;
+  tileDealLightning: string;
+  // Sale / deal signals section on the product panel: the section title and the
+  // "List <was>, now <now>" line under it.
+  dealSignalsTitle: string;
+  dealSignalsWasNow: (was: string, now: string) => string;
+  // Estimated monthly revenue (modeled sales x price) and best-seller rank,
+  // shown per search tile from the shared catalogue. Revenue tooltip reuses
+  // salesEstModeled / salesEstCalibrated.
+  tileRevenue: (money: string) => string;
+  tileBsr: (rank: string, category: string | null) => string;
+  // Estimated monthly units per tile (value + unit; the label lives in the chip
+  // tooltip, matching tileRevenue).
+  tileEstUnits: (n: string) => string;
+  // Per-tile action menu (the "..." button on a search card).
+  tileMenuLabel: string;
+  tileMenuAddToList: string;
+  tileMenuNewList: string;
+  tileMenuNewListPlaceholder: string;
+  tileMenuCreate: string;
+  tileMenuAddedTo: (name: string) => string;
+  tileMenuListFull: string;
+  tileMenuListsCapped: string;
+  tileMenuCopyLink: string;
+  tileMenuCopied: string;
+  tileMenuLinkFailed: string;
+  tileMenuOpenPage: string;
+  tileMenuSchedulePost: string;
+  tileMenuAppLocked: string;
+  tileMenuWorking: string;
+  // Product-page "Add to list" panel (incl. Add all variations).
+  listPanelHeading: string;
+  listPanelIntro: string;
+  listPanelNewOption: string;
+  listPanelAddProduct: string;
+  listPanelAddVariations: (n: number) => string;
+  listPanelAddedCount: (n: number, name: string) => string;
+  listPanelNothingNew: string;
+  searchEnriching: (done: number, total: number) => string;
+  searchEnrichPaused: string;
   searchOverlayActive: string;
+
+  // Trend Radar (Best Sellers / New Releases / Movers & Shakers grids)
+  toolTrendRadar: string;
+  sumTrendRadar: string;
+  trendRadarActive: string;
+  toolIdeaList: string;
+  sumIdeaList: string;
+  ideaListActive: string;
+  toolDealsOverlay: string;
+  sumDealsOverlay: string;
+  // Sale / deal signals popup toggle: label + hint.
+  toolDealSignals: string;
+  toolDealSignalsHint: string;
+  navGrpBenable: string;
+  groupBenable: string;
+  toolBenableBadge: string;
+  toolBenableBadgeHint: string;
+  sumBenableBadge: string;
+  benableChipCc: (pct: number) => string;
+  benableChipSpcc: (money: string) => string;
+  benableChipNone: string;
+  benableChipTitle: string;
+  benableDetailHeading: string;
+  benableOpenAmazon: string;
+  benableEnds: (date: string) => string;
+  benablePosted: string;
+  benableEarned: (money: string) => string;
+  benableConversion: (pct: string) => string;
+  benablePrice: (money: string) => string;
+  benableEstSales: (n: string) => string;
+  benableNoCampaign: string;
+  benableChecking: string;
+  benableNoExtra: string;
+  dealsOverlayActive: string;
+  trendCount: (n: number) => string;
+  trendSortTrending: string;
+  trendSortRank: string;
+  trendFewVideosOnly: string;
+  tileRank: (n: number) => string;
+  tileGain: (pct: number) => string;
+
+  // Global Marketplace Maximizer (product page section)
+  toolGlobalMaximizer: string;
+
+  // Brand-store overlay (/stores/ pages)
+  toolStoreOverlay: string;
+  sumStoreOverlay: string;
+  storeOverlayActive: string;
+  storeCount: (n: number) => string;
+  storeCandidates: (n: number) => string;
+  storeCandidatesOnly: string;
+  storeEnriching: (done: number, total: number) => string;
+  storeEnrichPaused: string;
+  tileVideos: (n: number) => string;
+  tileHeroSlot: string;
+  tileNoCarousel: string;
+
+  // Video Likes overlay (heart + helpful-votes badge on product-page videos)
+  videoLikesTitle: string;
+  // Earnings overlay (storefront/Curations badges + breakdown popup)
+  sumEarningsOverlay: string;
+  toolEarningsOverlay: string;
+  earnBadgeTitle: string;
+  earnDetailTitle: string;
+  earnByStore: string;
+  earnByYear: string;
+  earnByMonth: string;
+  earnCampaigns: string;
+  earnOnsite: string;
+  earnOffsite: string;
+  earnScopeThisMarket: string;
+  earnScopeAllStores: string;
+  earnUnits: (n: number) => string;
+  earnOrders: (n: number) => string;
+  earnRate: (pct: number) => string;
+  earnClicks: (n: number) => string;
+  // Per-campaign conversion in the breakdown modal, and the tag on the
+  // best-converting campaign when a product ran in several.
+  earnConversion: (pct: string) => string;
+  earnBestConverter: string;
+  earnViewBreakdown: string;
+  earnNoBreakdown: string;
+  earnClose: string;
+
+  // Video Money (Creator Hub "Manage videos" list: per-row badges + reshoot panel)
+  sumVideoMoney: string;
+  vmPanelTitle: string;
+  vmVideoCount: (n: number) => string;
+  vmEarnedTitle: string;
+  vmEpv: (money: string) => string;
+  vmProjected: (money: string) => string;
+  vmRateLive: (pct: number) => string;
+  vmRateEnding: (pct: number) => string;
+  vmBought: (n: number) => string;
+  vmCoolingChip: string;
+  vmProjectionNote: string;
+  vmTopEarners: string;
+  vmBestEpv: string;
+  vmReshoot: string;
+  vmReshootHint: string;
+  vmDrafts: string;
+  vmDraftsHint: string;
+  vmCooling: string;
+  vmCoolingHint: string;
+  vmExport: string;
+
+  // YouTube status (per-video "On YouTube / Upload" chip + on-Amazon showing chip)
+  sumYouTubeStatus: string;
+  ytOnYouTube: string;
+  ytNotOnYouTube: string;
+  ytUpload: string;
+  ytUploading: string;
+  ytFailedRetry: string;
+  ytConnectApp: string;
+  ytUploadError: string;
+  ytShowingAmazon: string;
+  ytNotShowingAmazon: string;
+
+  // Improve Reach advisory (expands from the "not on detail pages" chip): the
+  // specific reason Amazon gave and a concrete fix checklist per content kind.
+  reachImprove: string;
+  reachPanelTitle: string;
+  reachWhy: string;
+  reachReasonVideo: string;
+  reachReasonPhoto: string;
+  reachReasonGeneric: string;
+  reachFix: string;
+  reachRemedy: string;
+  reachTipsVideo: string[];
+  reachTipsPhoto: string[];
+  reachOpenItem: string;
 
   // Campaign Radar (Creator Connections campaign grid)
   sumCampaignRadar: string;
@@ -241,6 +581,9 @@ export interface Dict {
   radarMinDays: string;
   radarMinBudget: string;
   radarOnlyPassing: string;
+  // SPCC tab: keep only the strong (hot-band) picks. The commission / days /
+  // budget floors do not apply to SPCC, so its toolbar shows this filter alone.
+  radarOnlyStrong: string;
   radarSortLabel: string;
   radarSortScore: string;
   radarSortRate: string;
@@ -248,12 +591,75 @@ export interface Dict {
   radarSortRelevance: string;
   radarChipOwned: string;
   radarChipEarner: string;
-  radarChipRate: (pct: number) => string;
-  radarChipDays: (n: number) => string;
   radarChipEnded: string;
-  radarChipBudget: (amount: string) => string;
   radarChipCc: string;
   radarChipSpcc: string;
+  radarAvailChip: (code: string, status: "available" | "unavailable" | "unknown") => string;
+  radarAvailTitle: (code: string, status: "available" | "unavailable" | "unknown") => string;
+  // Creator saturation: total videos already on a campaign product.
+  radarVideoChip: (n: number) => string;
+  radarVideoTitle: string;
+  // Campaign-wide conversion (orders / clicks) captured from Amazon's stats.
+  radarConversionChip: (pct: string) => string;
+  radarConversionTitle: string;
+  // SPCC-only card signals: Amazon's Estimated EPC ceiling and its qualitative
+  // budget-availability score.
+  radarEpcChip: (epc: string) => string;
+  radarEpcTitle: string;
+  radarBudgetChip: (value: string) => string;
+  radarBudgetValue: (v: "high" | "medium" | "low") => string;
+  radarBudgetTitle: string;
+  popupAvailabilityLabel: string;
+  popupAvailabilityHint: string;
+  popupAvailabilityAuDenied: string;
+
+  // Last Call Butler: campaign fill meter + watch bell + alerts
+  lastCallWatch: string;
+  lastCallWatching: string;
+  lastCallFull: string;
+  lastCallFillUnknown: string;
+  lastCallFillLabel: (pct: number, filled: number, total: number) => string;
+  lastCallCampaignFallback: string;
+  lastCallNotifTitle: string;
+  lastCallNotifNearFull: (name: string, pct: number) => string;
+  lastCallNotifFilled: (name: string) => string;
+  // Android (Lemur): the background re-check is desktop-only.
+  lastCallMobileNote: string;
+
+  // Campaign Butler: "The Butler's Brief" per-campaign advisory panel
+  campaignBriefButton: string;
+  campaignBriefTitle: string;
+  campaignBriefLoading: string;
+  campaignBriefConfidence: (n: number) => string;
+  campaignBriefConversion: (pct: string) => string;
+  campaignBriefWhy: string;
+  campaignBriefFilm: string;
+  campaignBriefPick: string;
+  campaignBriefPickEst: (units: string, revenue: string) => string;
+  campaignBriefSaturation: (n: number) => string;
+  campaignBriefOnAmazon: string;
+  campaignBriefOffAmazon: string;
+  campaignBriefAudience: string;
+  campaignBriefAccept: string;
+  campaignBriefCopy: string;
+  campaignBriefCopied: string;
+  campaignBriefClose: string;
+  campaignBriefError: string;
+  campaignBriefConnectHint: string;
+  campaignBriefKeyErrorHint: string;
+  campaignBriefConnectBtn: string;
+  campaignBriefOpenSettingsBtn: string;
+  campaignBriefVerdictHot: string;
+  campaignBriefVerdictWarm: string;
+  campaignBriefVerdictCool: string;
+
+  // Campaign detail overlay (single-campaign /p/connect/request page)
+  sumCampaignDetail: string;
+  campaignDetailTitle: string;
+  campaignDetailProducts: string;
+  campaignDetailNoProducts: string;
+  campaignDetailNoData: string;
+  campaignDetailBought: (n: number) => string;
 
   // Calculator panel
   breakEvenMath: string;
@@ -306,6 +712,9 @@ export interface Dict {
   sfScanFailed: string;
   sfStopped: string;
   sfDone: (items: number, pages: number, capped: boolean) => string;
+  sfCoverage: (items: number, reported: number) => string;
+  sfStoppedEarly: (reason: string) => string;
+  sfDroppedCards: (n: number) => string;
   sfLabelVideos: string;
   sfLabelPhotos: string;
   sfLabelIdeaLists: string;
@@ -393,7 +802,13 @@ export interface Dict {
   noCampaign: string;
   ccAvailable: string;
   spccAvailable: string;
-  campaignAcceptNote: string;
+  ccNotAvailable: string;
+  spccNotAvailable: string;
+  enrolledCc: string;
+  enrolledSpcc: string;
+  enrolledRate: (pct: number) => string;
+  epc: (money: string) => string;
+  campaignConnectNote: string;
   dealAvailable: string;
   dealPushNote: string;
 
@@ -418,24 +833,51 @@ export interface Dict {
   // Send to app (HUD) panel
   sendToApp: string;
   pushToDailyDeals: string;
+  // Search/deals toolbar: batch-send the page's discounted tiles to the desktop
+  // Deals Butler.
+  searchSendDeals: string;
+  searchNoDeals: string;
+  searchSendingDeals: (n: number) => string;
   sendToContentButler: string;
+  sendToVoiceover: string;
+  sendingVoiceover: string;
   saveToLinkButler: string;
   savingLink: string;
   acceptCc: string;
+  checkCc: string;
   acceptSpcc: string;
   addToCollab: string;
   addingCollab: string;
   pitchThisBrand: (brand: string) => string;
   pitchingBrand: string;
+  generatePhoto: string;
+  generatingPhoto: string;
+  requestSample: string;
+  requestingSample: string;
+  addToIdeaList: string;
+  addingToIdeaList: string;
+  ideaListNewListOption: string;
+  tileMenuAddToIdeaList: string;
   pushingDeals: string;
   sendingContent: string;
   checkingCc: string;
   checkingSpcc: string;
   sentToApp: string;
   couldNotReachApp: string;
+  connectAppToPair: string;
+  // Toast title shown when a "send to your butler app" action fails. The status
+  // line under the buttons already carries the specific reason; this raises it
+  // into a toast so a failed click (e.g. app not running) can't scroll off
+  // unseen the way "nothing happened" reports described.
+  actionFailedTitle: string;
   connectedToApp: (version: string) => string;
   upsellSignedIn: string;
   upsellSignedOut: string;
+  // Shown in place of the install upsell when this install is already paired to
+  // the app but the local bridge did not answer right now (app closed, still
+  // starting, or its bridge port is blocked). A paired user has already
+  // installed and connected, so pitching them the download reads as broken.
+  upsellReconnect: string;
   ctaOpenApp: string;
   ctaStartTrial: string;
   toolsAlwaysFree: string;
@@ -445,19 +887,28 @@ export interface Dict {
   sfSendToRetag: (n: number) => string;
   sfSendToContent: (n: number) => string;
   sfSendingToContent: string;
+  sfSendToVoiceover: (n: number) => string;
+  sfSendingToVoiceover: string;
   sfSendingToRetag: string;
   sfAcceptAllCampaigns: (n: number) => string;
   sfAcceptingCampaigns: string;
   obSendToContentButler: (n: number) => string;
   obSendingToContentButler: string;
   obSentToContentButler: (n: number) => string;
+  obSendToVoiceover: (n: number) => string;
+  obSendingToVoiceover: string;
+  obSentToVoiceover: (n: number) => string;
   appBridgeHeading: string;
   appBridgeBlurb: string;
+  // Replaces the pairing flow on Android, where the desktop app cannot connect.
+  appBridgeMobile: string;
+  appNextStepHint: string;
   appConnect: string;
   appEnterCode: string;
   appCodePlaceholder: string;
   appPairSubmit: string;
   appConnected: string;
+  hudSynced: string;
   appUnpair: string;
   appRequestingCode: string;
   appCodeShown: string;
@@ -476,6 +927,7 @@ export interface Dict {
   nudgeFbTitle: string;
   nudgeFbBody: string;
   nudgeFbJoin: string;
+  nudgeFbReport: string;
   nudgeAppNotifTitle: string;
   nudgeAppNotifBody: string;
   nudgeAppTitle: string;
@@ -485,6 +937,34 @@ export interface Dict {
   nudgeAppDownloadMac: string;
   nudgeAppDownloadGeneric: string;
   nudgeAppIntelMac: string;
+  // Day-5 community notice: warm invite plus a firm "the group is not for bug
+  // reports, use Feedback Butler" message the user must acknowledge.
+  nudgeCommunityNotifTitle: string;
+  nudgeCommunityNotifBody: string;
+  nudgeCommunityTitle: string;
+  nudgeCommunityBody: string;
+  nudgeCommunityNote: string;
+  nudgeCommunityUnderstand: string;
+  nudgeCommunityReport: string;
+
+  // Extension self-update banner (on-page pill) and the popup's update card.
+  updateBannerTitle: string;
+  updateBannerBody: (version: string) => string;
+  updateNow: string;
+  updateRemindLater: string;
+  updateAppliedTitle: string;
+  updateRefreshBody: string;
+  updateRefreshBtn: string;
+  updatePopupHeading: string;
+  updatePopupBody: (current: string, available: string) => string;
+
+  // Post-update "What's New" notice (on-page corner card + popup card).
+  whatsNewTitle: string;
+  whatsNewFeaturesHeading: string;
+  whatsNewFixesHeading: string;
+  whatsNewReportedHeading: string;
+  whatsNewOtherHeading: string;
+  whatsNewDismiss: string;
 
   // ASIN watchlist (product-page button, search-tile star, popup list).
   watchlist: string;
@@ -503,24 +983,100 @@ export interface Dict {
   watchNotifPriceDrop: (name: string) => string;
   popupWatchlistHeading: string;
   popupWatchlistEmpty: string;
+  popupWatchlistMobileNote: string;
+  popupListsHeading: string;
+  popupListsEmpty: string;
+  popupListItems: (n: number) => string;
+  popupListDelete: string;
   watchCondBackInStock: string;
   watchCondSlotOpens: string;
   watchCondPriceDrop: string;
   watchRemoveShort: string;
+
+  // Storefront auto-detect toast: shown once when we read the creator's own
+  // /shop/<handle> off their Creator Hub and fill the empty storefront setting.
+  storefrontDetectedTitle: string;
+  storefrontDetectedBody: (handle: string) => string;
+
+  // First-run walkthrough (the onboarding page) + the "replay" launcher.
+  obReplayLink: string;
+  obTitle: string;
+  obProgress: (current: number, total: number) => string;
+  obBack: string;
+  obNext: string;
+  obSkip: string;
+  obFinish: string;
+  obWelcomeTitle: string;
+  obWelcomeBody: string;
+  obWelcomePin: string;
+  obAccountTitle: string;
+  obAccountBody: string;
+  obAccountConnected: (email: string) => string;
+  obAccountSkipHint: string;
+  obStorefrontTitle: string;
+  obStorefrontBody: string;
+  obStorefrontAuto: string;
+  obStorefrontDetected: (handle: string) => string;
+  obToolsTitle: string;
+  obToolsBody: string;
+  obAppTitle: string;
+  obAppBody: string;
+  obAppSkipHint: string;
+  obDoneTitle: string;
+  obDoneBody: string;
+  obDoneHelp: string;
+  obDoneDashboard: string;
+  obDoneClose: string;
+
+  // Settings sync with the paired desktop app (popup card + walkthrough +
+  // "are you sure" reconcile confirm).
+  syncTitle: string;
+  syncBlurb: string;
+  syncNow: string;
+  syncChecking: string;
+  syncInSync: string;
+  syncNotPaired: string;
+  syncAppOutdated: string;
+  syncFilled: (n: number) => string;
+  syncFailed: string;
+  syncConfirmTitle: string;
+  syncConfirmBody: (n: number) => string;
+  syncConfirmList: string;
+  syncConfirmAppWins: string;
+  syncConfirmExtWins: string;
+  syncCancel: string;
+  syncDone: string;
+
+  // Standalone campaign accept (no desktop app) + upload-page campaign prompts
+  // (tools/campaigns/accept.ts, tools/campaign-radar/accept-runner.ts,
+  // tools/upload-helper/campaign-prompt.ts).
+  acceptStandalone: string;
+  acceptWorking: string;
+  acceptNeedsSignIn: string;
+  acceptAccepted: string;
+  acceptPending: string;
+  acceptFailed: (reason: string) => string;
+  acceptCooldown: string;
+  uhCampaignAvailable: (asin: string) => string;
+  uhCampaignAcceptTitle: string;
 }
 
 const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
   panelSettings: "Settings",
+  panelOffline: "Butler could not reach the extension. Reload this page and try again.",
   copy: "Copy",
   copied: "Copied",
+  appOpensNote: "Opens in the Amazon app on phones",
 
   snapshotTitle: "Product snapshot",
   snapshotProduct: "Product",
   snapshotParent: "Parent",
   snapshotCategory: (category) => `Category: ${category}`,
   snapshotRank: (rank, category) => `#${rank} in ${category}`,
+  snapshotAge: (months, listed) => `Age: ${months} mo (listed ${listed})`,
+  snapshotSellers: (n) => `Sellers: ${n} on this listing`,
   snapshotCommissionLive: (pct) => `Commission ${pct}% (live from SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Commission about ${pct}% (${category}, rate card)`,
@@ -529,11 +1085,43 @@ const en: Dict = {
   earningsTitle: "Your earnings",
   earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
   earningsNote: "You have already earned here. Find more products like the ones already paying you.",
+  earningsConversion: (pct, campaign) => `Converts at ${pct} in "${campaign}"`,
+  earningsConversionMore: (n) => `Best of ${n} campaigns you ran here. See the full breakdown below.`,
+  ownedTitle: "You own this",
+  ownedNote: "This product is in your order history.",
+  ownedBought: (year) => `Bought in ${year}`,
+  ownedPaid: (price) => `Paid ${price}`,
+  ownedPostedChip: "Already posted",
+  ownedPostedSummary: (platforms) => `Already shared on ${platforms}`,
+  ownedGridOwned: "Owned",
+  ownedGridPosted: "Posted",
   priceHistoryTitle: "Price history",
   priceHistoryNow: (amount) => `Now ${amount}`,
   priceHistoryLow: (amount) => `Low ${amount}`,
   priceHistoryLowest: "Lowest yet",
   priceHistoryNote: "Prices seen since you started browsing with the extension.",
+  priceHistoryDesktopNote: "Full history from your Influencer Butler app.",
+  bsrHistoryTitle: "Sales rank history",
+  bsrHistoryNow: (rank) => `Now #${rank}`,
+  bsrHistoryBest: (rank) => `Best #${rank}`,
+  bsrHistoryAvg90: (rank) => `90-day avg #${rank}`,
+  bsrTrendSteady: "Rank steady",
+  bsrTrendRising: "Rank rising",
+  bsrTrendSlipping: "Rank slipping",
+  salesHistogramTitle: "Sales, last 12 months",
+  salesPeak: (units, month) => `Peaked ~${units} in ${month}`,
+  salesEstTitle: "Estimated monthly sales",
+  salesEstValue: (n) => `~${n}/mo`,
+  salesEstModeled: "Modeled from best-seller rank",
+  salesEstCalibrated: "Calibrated from real data",
+  boughtPastMonthChip: (n) => `${n}+ bought/mo`,
+  estUnitsLabel: "Est. units/mo",
+  estRevenueLabel: "Est. revenue/mo",
+  estUnitsTip:
+    "Estimated monthly units, modeled from the product's Best Sellers Rank. An estimate, not a reported figure.",
+  estRevenueTip:
+    "Estimated monthly revenue (estimated units times price). An estimate, not a reported figure.",
+  marketPoolNote: "From the shared Influencer Butler catalogue.",
   shotListTitle: "Shot list",
   shotListShowFeatures: "Show these features on camera:",
   shotListBeatHook: "Hook in the first 3 seconds: the result or the problem it solves",
@@ -549,8 +1137,20 @@ const en: Dict = {
   inlineUnavailable: "unavailable",
   inlineNotListed: "not listed",
   inlineConnectCreatorApi: "Connect the Creator API for live cross-country availability",
+  inlineCreatorApiSyncPending: "Your Creator API keys have not reached your account yet: open Settings and retry",
 
   tagFree: "Free",
+  navUpdate: "Update",
+  navWhatsNew: "What's new",
+  navAiAssistant: "AI Assistant",
+  navDeals: "Deal Harvester",
+  navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Cross-platform",
+  navGrpProduct: "Product pages",
+  navGrpResearch: "Research",
+  navGrpCampaigns: "Campaigns",
+  navGrpEarnings: "Earnings",
   thisPageHeading: "This page",
   checkingTab: "Checking the current tab...",
   accountHeading: "Account",
@@ -562,6 +1162,13 @@ const en: Dict = {
   startFreeTrial: "Start a free trial",
   connectedAs: "Connected as",
   syncToggleLabel: "Sync findings to my dashboard",
+  syncDashboardHint:
+    "Findings upload to your web dashboard on their own. No desktop app is needed for this.",
+  syncStatsHint:
+    "While sync is on, anonymized counts of automated actions (like campaigns accepted) are added to our public activity totals. See our Privacy Policy.",
+  contributeToggleLabel: "Contribute to the shared product catalogue",
+  contributeBlurb:
+    "Off by default. When on, product facts you already see (price, best-seller rank, bought-past-month, category) and which creator videos are placed on a product's carousel are pooled, never personal data, so everyone sees real demand, price history, and video competition over time.",
   disconnect: "Disconnect",
   settingsHeading: "Settings",
   languageLabel: "Language",
@@ -573,7 +1180,18 @@ const en: Dict = {
   storefrontHandleLabel: "My storefront handle",
   storefrontHandlePlaceholder: "e.g. influencerbutler",
   toolsHeading: "Tools",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon & Walmart",
+  groupAmazonProduct: "Amazon: product pages",
+  groupAmazonResearch: "Amazon: research & discovery",
+  groupAmazonCampaigns: "Amazon: campaigns & storefront",
+  groupAmazonEarnings: "Amazon: earnings & alerts",
+  toolWalmart: "Walmart support",
+  toolWalmartHint:
+    "Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.",
   toolVideoCounts: "Video counts",
+  toolVideoLandscape: "Video landscape",
+  toolVideoLikes: "Video like counts",
   toolApproved: "Butler Approved seal",
   toolCalculator: "Profit calculator",
   toolStorefront: "Storefront checks",
@@ -593,13 +1211,13 @@ const en: Dict = {
   footerHelp: "Help",
   footerDashboard: "My dashboard",
 
-  openAmazonToStart: "Open an Amazon product page, your orders, or your storefront to get started.",
+  openAmazonToStart: "Open an Amazon or Walmart product page, your orders, or your storefront to get started.",
   noToolsOnPage: "This Amazon page has no butler tools. Try a product page.",
   productToolsActive: "Product page tools are active.",
   orderScanReady: "Order history scan is ready.",
   storefrontCheckupReady: "Storefront checkup is ready.",
   uploadHelperReady: "Upload helper is ready.",
-  reloadTabToActivate: "Reload the Amazon tab to activate the tools (the page was open before install).",
+  reloadTabToActivate: "Reload this tab to activate the tools (the page was open before install).",
   connectedFallback: "connected",
   findingsWaiting: (n) => `${n} findings waiting to sync`,
   lastSynced: (time) => `Last synced ${time}`,
@@ -659,9 +1277,30 @@ const en: Dict = {
   chipUnclassified: (n) => `${n} unclassified`,
   videosTotalVia: (total, viaPageData) =>
     `${total} videos total (read via ${viaPageData ? "page data" : "carousel"})`,
+  carouselReading: (label) => `${label}: reading video data...`,
+  upperSlotOn:
+    "Upper influencer carousel: on. Influencer videos can land in the top slot by the image gallery.",
+  upperSlotOff:
+    "Upper influencer carousel: off. Influencer videos only appear in the lower rail on this listing.",
+  upperSlotChecking: "Upper influencer carousel: checking...",
+  upperSlotUnknown: "Upper influencer carousel: unknown",
+  upperSlotInfo:
+    "When a brand turns on the upper influencer carousel, a creator video can be placed right next to the image gallery - the best-earning video slot on the listing. Off means your video would only show in the lower Product Videos rail.",
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Influencer videos (${n})`,
   influencerVideosMore: (n) => `+${n} more`,
+
+  myVideoHere: (carousel, position, total) => `Your video: ${carousel}, #${position} of ${total}`,
+  myVideoHereNoPosition: (carousel) => `Your video: ${carousel}`,
+  myVideoSideUnknown: "Your video is on this listing. Reading which carousel it is in...",
+  myVideoSideUnreadable:
+    "Your video is on this listing. Amazon did not expose which carousel it is in.",
+  myVideoMultiple: (n) => `You have ${n} videos on this listing:`,
+  myVideoRowChip: "Yours",
+  myVideoCardBadge: "Yours",
+  myVideoCardBadgeTitle: (position) => `Your video, #${position} in this carousel`,
+  myVideoInfo:
+    "The upper carousel sits next to the image gallery and is the best-earning video slot; the lower rail is the Videos for this product section further down. Position is Amazon's own order in that rail when this page loaded, and it rotates.",
 
   deepScan: "Sweep every video",
   deepScanIntro:
@@ -684,6 +1323,57 @@ const en: Dict = {
   copySummary: "Copy summary",
   shareSummaryHeading: "Product video competition (via Influencer Butler)",
   shareTopCreators: "Top creators:",
+
+  videoLandscape: "Video landscape",
+  lsStatKnown: "Known videos",
+  lsStatPlaced: "Currently placed",
+  lsStatCreators: "Unique creators",
+  lsStatRepeat: "Repeat creators",
+  lsContentMixLabel: "Content mix by creator type",
+  lsConcentrationLabel: "Creator concentration",
+  lsConcentrationShare: (pct) => `Top 5 creators hold ${pct}% of the videos`,
+  lsTopStrengthLabel: "Top videos by carousel position (proxy)",
+  lsUpper: "Upper",
+  lsLower: "Lower",
+  lsPulseLabel: (dated, total) => `Publishing pulse (${dated} of ${total} dated)`,
+  lsNewIn30: (n) => `${n} new in the last 30 days`,
+  lsDatesUnavailable: "Publish dates are not exposed by this listing, so publishing cadence is unavailable.",
+  lsTypicalLengthLabel: "Typical length",
+  lsLengthBand: (median, low, high) => `Median ${median} (typical ${low} to ${high})`,
+  lsLengthMedian: (median) => `Median ${median}`,
+  lsDurationsUnavailable: "Video lengths are not exposed by this listing.",
+
+  // Track 1.4: competition sentence + seasonality chip
+  lsCompeteLine: (n, repeat, pct) =>
+    `You'd compete with ${n} creator${n === 1 ? "" : "s"} (${repeat} repeat${
+      pct === null ? "" : `, top 5 hold ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `You'd compete with at least ${n} creator${n === 1 ? "" : "s"} (${repeat} repeat${
+      pct === null ? "" : `, top 5 hold ${pct}%`
+    }) - ${seen} of ~${known} videos seen`,
+  seasonPeaks: (range) => `Peaks in ${range}`,
+  seasonSteady: "Steady all year",
+  seasonWindowTip: (months) => `Based on ${months} months of rank history`,
+  monthAbbr: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+
+  passportOpen: "Placement history",
+  passportClose: "Hide history",
+  passportLoading: "Loading placement history...",
+  passportUnidentified: "This video cannot be tracked yet.",
+  passportUnavailable: "Placement history is not available yet.",
+  passportNoData: "No placement history recorded for this video yet.",
+  passportNoDataDay: "no data",
+  passportCollecting: (days) => `Collecting daily placement evidence: ${days} of 90 days recorded`,
+  passportSinceFirstSeen: (date) => `since first seen ${date}`,
+  passportPresence: "Presence rate",
+  passportStability: "Placement stability",
+  passportStrength: "Active-day strength",
+  passportReach: "Product reach",
+  passportActiveDays: "Days observed",
+  passportUpperLower: (upper, lower) => `Upper ${upper}% / Lower ${lower}%`,
+  passportCurrentSnapshot: "Current placement",
+  passportLastObserved: (date) => `Last observed ${date}`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: worth making content for",
@@ -716,6 +1406,7 @@ const en: Dict = {
   searchSortLabel: "Sort:",
   sortScore: "Best Butler Score",
   sortCommission: "Highest commission",
+  sortRevenue: "Estimated revenue",
   sortPriceAsc: "Price: low to high",
   sortPriceDesc: "Price: high to low",
   sortRelevance: "Amazon relevance",
@@ -728,9 +1419,191 @@ const en: Dict = {
   searchScanMore: (done, remaining) => `Scanned ${done}. Click Scan again for ${remaining} more.`,
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
+  tileCampaignRate: (pct) => `Campaign ${pct}%`,
+  tileCampaignEpc: (epc) => `Campaign - up to ${epc}/click`,
+  tileCampaignEpcTip:
+    "Amazon's own Earn on Clicks forecast for this product, not a guaranteed rate - it depends on the clicks you drive and on Amazon's budget for the campaign.",
   tileProvenEarner: "Proven earner",
+  tileEarned: (money) => `Earned ${money}`,
   tileInfluencer: (n) => `${n} infl. videos`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} infl. / ${total} videos`,
+  tileVideoTipSelf: "Exact influencer split, scanned from this product's page.",
+  tileVideoTipVariant:
+    "Estimated from another variant of this listing. Open this variant or Scan for its exact split.",
+  tileVideoTipEstimate:
+    "Page video total only. The influencer split loads on the product page: open it or Scan for the exact count.",
+  tileApproved: "Butler Approved",
+  tileLikelyFit: "Likely fit",
+  tileDeal: "Deal",
+  tileCoupon: "Coupon",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Lightning",
+  dealSignalsTitle: "On sale",
+  dealSignalsWasNow: (was, now) => `List ${was}, now ${now}`,
+  tileRevenue: (money) => `~${money}/mo`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} units/mo`,
+  tileMenuLabel: "More actions",
+  tileMenuAddToList: "Add to list",
+  tileMenuNewList: "New list",
+  tileMenuNewListPlaceholder: "List name",
+  tileMenuCreate: "Create",
+  tileMenuAddedTo: (name) => `Saved to ${name}`,
+  tileMenuListFull: "That list is full.",
+  tileMenuListsCapped: "You have the maximum number of lists.",
+  tileMenuCopyLink: "Copy link",
+  tileMenuCopied: "Copied",
+  tileMenuLinkFailed: "Could not build a link",
+  tileMenuOpenPage: "Open product page",
+  tileMenuSchedulePost: "Schedule a post",
+  tileMenuAppLocked: "Open the app to send this product.",
+  tileMenuWorking: "Working...",
+  listPanelHeading: "Product lists",
+  listPanelIntro: "Save this product (or all its variations) to one of your lists.",
+  listPanelNewOption: "New list...",
+  listPanelAddProduct: "Add this product",
+  listPanelAddVariations: (n) => `Add all ${n} variations`,
+  listPanelAddedCount: (n, name) => `Added ${n} to ${name}`,
+  listPanelNothingNew: "Already in that list.",
+  searchEnriching: (done, total) => `Checking details ${done}/${total}`,
+  searchEnrichPaused: "Detail checks paused by Amazon, retrying later",
   searchOverlayActive: "Search overlay is active.",
+
+  toolTrendRadar: "Trend Radar (Best Sellers & Movers)",
+  sumTrendRadar: "Trend Radar",
+  trendRadarActive: "Trend Radar is active.",
+  toolIdeaList: "Idea List money signals",
+  sumIdeaList: "Idea List overlay",
+  ideaListActive: "Idea List signals are active.",
+  toolDealsOverlay: "Today's Deals money signals",
+  sumDealsOverlay: "Deals overlay",
+  toolDealSignals: "Sale & deal price signals",
+  toolDealSignalsHint:
+    'Shows a "-N%" chip on discounted search and deals tiles (highlighting Prime Day / Lightning deals), and an "On sale" line on product pages. Read from the page, no account needed.',
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Amazon money signals on Benable lists",
+  toolBenableBadgeHint:
+    "On benable.com, badges each Amazon item with its Creator Connections / SPCC status and commission. Click a badge for enrollment, earnings, and ownership.",
+  sumBenableBadge: "Benable money signals",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clk`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Amazon money signals. Click for detail.",
+  benableDetailHeading: "Amazon money signals",
+  benableOpenAmazon: "Open on Amazon",
+  benableEnds: (date) => `ends ${date}`,
+  benablePosted: "You already posted this",
+  benableEarned: (money) => `Earned ${money}`,
+  benableConversion: (pct) => `${pct} conversion`,
+  benablePrice: (money) => `Price ${money}`,
+  benableEstSales: (n) => `~${n}/mo sold`,
+  benableNoCampaign: "No CC or SPCC campaign",
+  benableChecking: "Checking your data...",
+  benableNoExtra: "Sign in or open the desktop app for enrollment, earnings, and ownership.",
+  dealsOverlayActive: "Deals signals are active.",
+  trendCount: (n) => `${n} products scored`,
+  trendSortTrending: "Rising fastest",
+  trendSortRank: "Best seller rank",
+  trendFewVideosOnly: "Open video slot only",
+  tileRank: (n) => `#${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Global reach (multi-marketplace)",
+
+  toolStoreOverlay: "Brand store overlay",
+  sumStoreOverlay: "Brand store overlay",
+  storeOverlayActive: "Brand store overlay is active.",
+  storeCount: (n) => `${n} products scored`,
+  storeCandidates: (n) => `${n} green-boxed`,
+  storeCandidatesOnly: "Best candidates only",
+  storeEnriching: (done, total) => `Checking product pages ${done} of ${total}...`,
+  storeEnrichPaused: "Amazon paused the checks. Reload the page later to finish.",
+  tileVideos: (n) => `${n} videos`,
+  tileHeroSlot: "Video slot",
+  tileNoCarousel: "No carousel",
+
+  videoLikesTitle: "How many likes this video has on Amazon.",
+  sumEarningsOverlay: "Earnings overlay",
+  toolEarningsOverlay: "Earnings overlay (storefront badges)",
+  earnBadgeTitle: "What you have earned on this post. Click for the full breakdown.",
+  earnDetailTitle: "Product earnings",
+  earnByStore: "Earnings by store",
+  earnByYear: "Earnings by year",
+  earnByMonth: "Earnings by month",
+  earnCampaigns: "Creator Connections campaigns",
+  earnOnsite: "onsite",
+  earnOffsite: "offsite",
+  earnScopeThisMarket: "This marketplace",
+  earnScopeAllStores: "All stores",
+  earnUnits: (n) => `${n} unit${n === 1 ? "" : "s"}`,
+  earnOrders: (n) => `${n} order${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `rate ${pct}%`,
+  earnClicks: (n) => `${n} click${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} conversion`,
+  earnBestConverter: "Best converter",
+  earnViewBreakdown: "View breakdown",
+  earnNoBreakdown: "Update the desktop app to see the store, year, month, and campaign breakdown.",
+  earnClose: "Close",
+
+  sumVideoMoney: "Video Money",
+  vmPanelTitle: "Video Money",
+  vmVideoCount: (n) => `${n} video${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Your real earnings from this video's product(s). Click for the breakdown.",
+  vmEpv: (money) => `${money}/1k views`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Pays ${pct}% now`,
+  vmRateEnding: (pct) => `${pct}% ending soon`,
+  vmBought: (n) => `${n.toLocaleString()} bought/mo`,
+  vmCoolingChip: "Demand cooling",
+  vmProjectionNote: "Connect the desktop app to see real earnings. Showing projections for now.",
+  vmTopEarners: "Top earners",
+  vmBestEpv: "Best per view",
+  vmReshoot: "Reshoot these",
+  vmReshootHint: "Hot commission, low views",
+  vmDrafts: "Finish your draft",
+  vmDraftsHint: "Unpublished videos earn nothing",
+  vmCooling: "Cooling / retire",
+  vmCoolingHint: "Falling demand or ended campaign",
+  vmExport: "Export CSV",
+
+  sumYouTubeStatus: "YouTube status",
+  ytOnYouTube: "On YouTube",
+  ytNotOnYouTube: "Not on YouTube",
+  ytUpload: "Upload to YouTube",
+  ytUploading: "Uploading...",
+  ytFailedRetry: "Upload failed, retry",
+  ytConnectApp: "Connect the app for YouTube status",
+  ytUploadError: "Could not reach the desktop app",
+  ytShowingAmazon: "Showing on Amazon",
+  ytNotShowingAmazon: "Not on detail pages",
+  reachImprove: "Improve reach",
+  reachPanelTitle: "Boost this content's reach",
+  reachWhy: "Why it's held back",
+  reachReasonVideo:
+    "It's published to your Storefront but blocked from product detail pages because it didn't pass Amazon's video quality bar.",
+  reachReasonPhoto:
+    "It's published to your Storefront but blocked from product detail pages because it didn't pass Amazon's photo quality bar.",
+  reachReasonGeneric:
+    "It's published to your Storefront but isn't being shown on product detail pages, the highest-traffic placement.",
+  reachFix: "How to fix it",
+  reachRemedy:
+    "Editing in place won't trigger a re-review. Delete this and upload an improved version - Amazon re-checks new uploads within 48 hours.",
+  reachTipsVideo: [
+    "Film in good, even lighting so the product is clearly visible.",
+    "Hold the shot steady - avoid shaky or blurry footage.",
+    "Clearly show and demonstrate the product in use.",
+    "Keep it native to Amazon - no other-app watermarks (TikTok, Reels) or heavy text overlays.",
+    "Use clear audio and a natural, informative voiceover.",
+  ],
+  reachTipsPhoto: [
+    "Use a sharp, high-resolution image - no blur or heavy compression.",
+    "Light the product evenly; avoid dark or cluttered backgrounds.",
+    "Show the actual product clearly and in context.",
+    "No watermarks, logos, or promotional text over the image.",
+    "Frame the product as the clear subject of the shot.",
+  ],
+  reachOpenItem: "Open item to edit",
 
   sumCampaignRadar: "Campaign Radar",
   toolCampaignRadar: "Campaign Radar (highlight campaigns)",
@@ -740,6 +1613,7 @@ const en: Dict = {
   radarMinDays: "Min days left",
   radarMinBudget: "Min budget ($)",
   radarOnlyPassing: "Only campaigns that pass",
+  radarOnlyStrong: "Strong picks only",
   radarSortLabel: "Sort",
   radarSortScore: "Best match",
   radarSortRate: "Commission",
@@ -747,12 +1621,81 @@ const en: Dict = {
   radarSortRelevance: "Page order",
   radarChipOwned: "You own this",
   radarChipEarner: "You've earned on this",
-  radarChipRate: (pct) => `${pct}% rate`,
-  radarChipDays: (n) => `${n} days left`,
   radarChipEnded: "Ended",
-  radarChipBudget: (amount) => `${amount} left`,
   radarChipCc: "CC eligible",
   radarChipSpcc: "SPCC eligible",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Available to buy on the ${code} Amazon store`
+      : status === "unavailable"
+        ? `Not available to buy on the ${code} Amazon store`
+        : `Could not check the ${code} Amazon store right now`,
+  radarVideoChip: (n) => (n === 0 ? "No videos yet" : `${n} ${n === 1 ? "video" : "videos"}`),
+  radarConversionChip: (pct) => `${pct} conversion`,
+  radarConversionTitle: "Shopper conversion (orders per click) from Amazon's own campaign stats",
+  radarEpcChip: (epc) => `EPC up to ${epc}`,
+  radarEpcTitle: "Amazon's Estimated EPC (earnings per click), shown as an upper bound",
+  radarBudgetChip: (value) => `Budget: ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "High" : v === "medium" ? "Medium" : "Low"),
+  radarBudgetTitle: "Amazon's budget availability score for this campaign",
+  radarVideoTitle:
+    "Creator videos already on this product. Fewer means less competition for the spot.",
+  popupAvailabilityLabel: "Show availability for",
+  popupAvailabilityHint:
+    "Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.",
+  popupAvailabilityAuDenied:
+    "Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.",
+
+  lastCallWatch: "Have the Butler watch this campaign",
+  lastCallWatching: "Butler is watching: Last Call alert is on",
+  lastCallFull: "Full",
+  lastCallFillUnknown: "Fill unknown",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% full: ${filled}/${total}`,
+  lastCallCampaignFallback: "A campaign",
+  lastCallNotifTitle: "Last Call Butler",
+  lastCallNotifNearFull: (name, pct) =>
+    `Last Call: ${name} is ${pct}% full. Accept before it closes.`,
+  lastCallNotifFilled: (name) => `${name} just filled up.`,
+  lastCallMobileNote:
+    "On Android, Last Call alerts fire when you open Creator Connections. Automatic background checks run on a Windows or Mac computer.",
+
+  campaignBriefButton: "Brief",
+  campaignBriefTitle: "The Butler's Brief",
+  campaignBriefLoading: "The Butler is reading this campaign...",
+  campaignBriefConfidence: (n) => `${n} confidence`,
+  campaignBriefConversion: (pct) => `${pct} conversion`,
+  campaignBriefWhy: "Why I'd take this",
+  campaignBriefFilm: "What to film",
+  campaignBriefPick: "Pick of the shelf",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} units/month, ${revenue}/month`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "No creator videos on this product yet: a wide-open spot."
+      : `${n} creator ${n === 1 ? "video" : "videos"} already on this product (saturation).`,
+  campaignBriefOnAmazon: "On Amazon",
+  campaignBriefOffAmazon: "Off Amazon too",
+  campaignBriefAudience: "Who it's for",
+  campaignBriefAccept: "Accept campaign",
+  campaignBriefCopy: "Copy brief",
+  campaignBriefCopied: "Copied",
+  campaignBriefClose: "Close",
+  campaignBriefError: "The Butler couldn't write a full brief right now. Here's the score breakdown.",
+  campaignBriefConnectHint: "Connect your own OpenAI API key and the Butler writes a full brief every time.",
+  campaignBriefKeyErrorHint: "Your connected OpenAI key couldn't finish this brief. Check the key in Settings.",
+  campaignBriefConnectBtn: "Connect OpenAI",
+  campaignBriefOpenSettingsBtn: "Open settings",
+  campaignBriefVerdictHot: "Worth accepting",
+  campaignBriefVerdictWarm: "Worth a look",
+  campaignBriefVerdictCool: "Probably pass",
+
+  sumCampaignDetail: "Campaign detail",
+  campaignDetailTitle: "The Butler's product read",
+  campaignDetailProducts: "Products in this campaign",
+  campaignDetailNoProducts: "No products detected on this campaign yet.",
+  campaignDetailNoData: "No demand data in the catalogue yet.",
+  campaignDetailBought: (n) => `${n}+ bought/mo`,
 
   breakEvenMath: "Break-even math",
   noPriceForMath: "No price found on this page, so no math to run.",
@@ -805,7 +1748,8 @@ const en: Dict = {
   sfRescan: "Rescan",
   sfScanningFeed: "Scanning the feed...",
   sfScanningProgress: (items, pages) => `Scanning the feed... ${items} items across ${pages} pages`,
-  sfOpeningPhotos: (done, total) => `Opening photos and lists... ${done} of ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Opening photos and lists (videos already scanned from the feed)... ${done} of ${total}`,
   sfOpeningProducts: (done, total) => `Opening products... ${done} of ${total}`,
   sfEtaMinLeft: (min) => ` (about ${min} min left)`,
   sfCheckedFirst: (cap) => `Checked the first ${cap} products (storefront has more).`,
@@ -813,6 +1757,11 @@ const en: Dict = {
   sfStopped: "Stopped.",
   sfDone: (items, pages, capped) =>
     `Done: ${items} items across ${pages} pages${capped ? " (feed capped)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `Scanned ${items} items; the storefront reports about ${reported} posts.`,
+  sfStoppedEarly: (reason) =>
+    `The feed stopped early (${reason}), so some content may be missing. Rescan to retry.`,
+  sfDroppedCards: (n) => `${n} feed cards had an unrecognized type and were skipped.`,
   sfLabelVideos: "videos",
   sfLabelPhotos: "photos",
   sfLabelIdeaLists: "idea lists",
@@ -900,9 +1849,15 @@ const en: Dict = {
   noCampaign: "No Creator Connections or SPCC campaign found for this product.",
   ccAvailable: "Creator Connections available",
   spccAvailable: "SPCC available",
-  campaignAcceptNote: "Accept it from the Send to your butler app section below (the app confirms and accepts).",
+  ccNotAvailable: "Creator Connections not available",
+  spccNotAvailable: "SPCC not available",
+  enrolledCc: "Enrolled in Creator Connections",
+  enrolledSpcc: "Enrolled in SPCC",
+  enrolledRate: (pct) => `${pct}% commission`,
+  epc: (money) => `EPC ${money}`,
+  campaignConnectNote: "Open the Influencer Butler app to accept this campaign (the app confirms and accepts).",
   dealAvailable: "Deal available",
-  dealPushNote: "Push it to Deals Influencer Butler from the Send to your butler app section below.",
+  dealPushNote: "Push it to Deals Butler from the Send to your butler app section below.",
 
   campaignMatcher: "Campaign matcher",
   campaignMatcherIntro: (source) =>
@@ -928,28 +1883,47 @@ const en: Dict = {
   sumCampaignMatcher: "Campaign matcher",
 
   sendToApp: "Send to your butler app",
-  pushToDailyDeals: "Push to Deals Influencer Butler",
+  pushToDailyDeals: "Push to Deals Butler",
+  searchSendDeals: "Send deals to app",
+  searchNoDeals: "No discounted deals on this page.",
+  searchSendingDeals: (n) => `Sending ${n} deal(s) to your app...`,
   sendToContentButler: "Send to Content Butler",
+  sendToVoiceover: "Send to Voiceover Butler",
+  sendingVoiceover: "Sending to Voiceover Butler...",
   saveToLinkButler: "Save to Link Butler",
   savingLink: "Saving link...",
   acceptCc: "Accept CC campaign",
+  checkCc: "Check for CC campaign",
   acceptSpcc: "Accept SPCC campaign",
   addToCollab: "Add to Collab Butler",
   addingCollab: "Adding to Collab Butler...",
   pitchThisBrand: (brand) => `Pitch ${brand}`,
   pitchingBrand: "Adding to Pitch Butler...",
+  generatePhoto: "Generate AI photo",
+  generatingPhoto: "Generating AI photo in your app...",
+  requestSample: "Request a sample",
+  requestingSample: "Setting up your sample request...",
+  addToIdeaList: "Add to Idea List",
+  addingToIdeaList: "Queuing for Idea List Butler...",
+  ideaListNewListOption: "New Idea List...",
+  tileMenuAddToIdeaList: "Add to Amazon Idea List",
   pushingDeals: "Pushing to your deals workspace...",
   sendingContent: "Sending to Content Butler...",
   checkingCc: "Checking Creator Connections...",
   checkingSpcc: "Checking Sponsored Products...",
   sentToApp: "Sent to your app.",
   couldNotReachApp: "Could not reach the app. Is it still running?",
+  connectAppToPair:
+    "Connect the app first: open the extension popup and pair with the 6-digit code.",
+  actionFailedTitle: "Butler action didn't go through",
   connectedToApp: (version) =>
     `Connected to your Influencer Butler app${version}. Acceptance uses your local Creator Connections catalogue.`,
   upsellSignedIn:
-    "Open the Influencer Butler desktop app to push this product into your Deals Influencer Butler, Content Butler, and to auto-accept campaigns.",
+    "Open the Influencer Butler desktop app to push this product into your Deals Butler, Content Butler, and to auto-accept campaigns.",
   upsellSignedOut:
-    "Do the rest with the app: push this product to Deals Influencer Butler with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.",
+    "Do the rest with the app: push this product to Deals Butler with your post template and social destinations, send it to Content Butler, and auto-accept Creator Connections campaigns.",
+  upsellReconnect:
+    "Your Influencer Butler app isn't responding. Make sure it's open, then reload this page.",
   ctaOpenApp: "Open or install the app",
   ctaStartTrial: "Start your free trial",
   toolsAlwaysFree: "The scanning tools above are always free. The app adds the automation.",
@@ -957,20 +1931,30 @@ const en: Dict = {
   sfSendToRetag: (n) => `Send ${n} issue(s) to Retag Butler`,
   sfSendToContent: (n) => `Send ${n} product(s) to Content Butler`,
   sfSendingToContent: "Sending to Content Butler...",
+  sfSendToVoiceover: (n) => `Send ${n} product(s) to Voiceover Butler`,
+  sfSendingToVoiceover: "Sending to Voiceover Butler...",
   sfSendingToRetag: "Sending to Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accept all available campaigns (${n})`,
   sfAcceptingCampaigns: "Accepting campaigns in the app...",
   obSendToContentButler: (n) => `Send ${n} product(s) to Content Butler`,
   obSendingToContentButler: "Sending to Content Butler...",
   obSentToContentButler: (n) => `Sent ${n} product(s) to Content Butler.`,
+  obSendToVoiceover: (n) => `Send ${n} product(s) to Voiceover Butler`,
+  obSendingToVoiceover: "Sending to Voiceover Butler...",
+  obSentToVoiceover: (n) => `Sent ${n} product(s) to Voiceover Butler.`,
   appBridgeHeading: "Desktop app",
   appBridgeBlurb:
     "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
+  appBridgeMobile:
+    "The desktop app runs on Windows or Mac, so it cannot connect to this Android browser directly. To send deals to it, link that computer from the extension popup under \"Send to another computer\".",
+  appNextStepHint:
+    "You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.",
   appConnect: "Connect the desktop app",
   appEnterCode: "Enter the 6-digit code showing in the desktop app:",
   appCodePlaceholder: "123456",
   appPairSubmit: "Pair",
   appConnected: "Connected to the desktop app.",
+  hudSynced: "Synced",
   appUnpair: "Disconnect app",
   appRequestingCode: "Asking the app for a code...",
   appCodeShown: "The app is showing a 6-digit code. Type it above.",
@@ -987,19 +1971,49 @@ const en: Dict = {
     "Swap tips with other Amazon Influencers and get the most out of Influencer Butler. Click to join the Facebook group.",
   nudgeFbTitle: "Come say hi in the community",
   nudgeFbBody:
-    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips with other Amazon Influencers and hear about new features first.",
+    "You have been using Influencer Butler for a day now. Join our Facebook group to swap tips and wins with other Amazon Influencers and hear about new features first. For bug reports or anything you need from our team, use the chat bubble in the corner of the page instead.",
   nudgeFbJoin: "Join the Facebook group",
+  nudgeFbReport: "Report a bug instead",
   nudgeAppNotifTitle: "Get the free Influencer Butler desktop app",
   nudgeAppNotifBody:
     "Automate deals, content, and campaign acceptance from your computer. Click to download it free for Windows or Mac.",
   nudgeAppTitle: "Ready for the desktop app?",
   nudgeAppBody:
-    "The desktop app does the heavy lifting: push products to Deals Influencer Butler, send them to Content Butler, and auto-accept Creator Connections campaigns.",
+    "The desktop app does the heavy lifting: push products to Deals Butler, send them to Content Butler, and auto-accept Creator Connections campaigns.",
   nudgeAppFree: "It is free to download and works alongside this extension.",
   nudgeAppDownloadWindows: "Download for Windows",
   nudgeAppDownloadMac: "Download for Mac",
   nudgeAppDownloadGeneric: "Download the desktop app",
   nudgeAppIntelMac: "Using an Intel Mac?",
+  nudgeCommunityNotifTitle: "A quick tip on getting help",
+  nudgeCommunityNotifBody:
+    "Enjoy the Facebook group for tips and wins. For bug reports or feature requests, use the chat bubble in the corner of the page so our team can help.",
+  nudgeCommunityTitle: "Getting the most from the community",
+  nudgeCommunityBody:
+    "You have been with us for a few days now. Our Facebook group is a great place for tips, tricks, and wins from other creators. Come join us.",
+  nudgeCommunityNote:
+    "One quick thing: the group is for community and tips, not bug reports, complaints, or billing. For anything you need from our team, use the chat bubble in the corner of the page. It is the fastest way to reach us and it goes straight to the people who can help.",
+  nudgeCommunityUnderstand: "I understand",
+  nudgeCommunityReport: "Report a bug",
+
+  updateBannerTitle: "Your Influencer Butler extension has an update waiting.",
+  updateBannerBody: (version) =>
+    `Version ${version} is ready to install. It only takes a second, and your settings are kept.`,
+  updateNow: "Update now",
+  updateRemindLater: "Remind me later",
+  updateAppliedTitle: "Update installed",
+  updateRefreshBody: "Refresh this page to finish switching to the new version.",
+  updateRefreshBtn: "Refresh page",
+  updatePopupHeading: "Update available",
+  updatePopupBody: (current, available) =>
+    `Version ${available} is ready to install (you have ${current}). The extension restarts in a moment; your settings are kept.`,
+
+  whatsNewTitle: "What's new",
+  whatsNewFeaturesHeading: "New features",
+  whatsNewFixesHeading: "Bug fixes",
+  whatsNewReportedHeading: "Issues you reported that we fixed",
+  whatsNewOtherHeading: "Other notable changes",
+  whatsNewDismiss: "Got it",
 
   watchlist: "Watchlist",
   watchlistIntro:
@@ -1019,24 +2033,109 @@ const en: Dict = {
   watchNotifPriceDrop: (name) => `The price dropped on ${name}.`,
   popupWatchlistHeading: "Watchlist",
   popupWatchlistEmpty: "No products watched yet. Open a product and click Watch.",
+  popupWatchlistMobileNote:
+    "On Android, Watchlist alerts are paused: the automatic background checks run on a Windows or Mac computer. Your watched products stay saved.",
+  popupListsHeading: "My lists",
+  popupListsEmpty: "No lists yet. Add a product to a list from the search overlay's action menu.",
+  popupListItems: (n) => (n === 1 ? "1 product" : `${n} products`),
+  popupListDelete: "Delete list",
   watchCondBackInStock: "Back in stock",
   watchCondSlotOpens: "Video slot opens",
   watchCondPriceDrop: "Price drop",
   watchRemoveShort: "Remove",
+
+  storefrontDetectedTitle: "Storefront detected",
+  storefrontDetectedBody: (handle) =>
+    `We found your storefront (${handle}) and saved it in Settings. You can change it there anytime.`,
+
+  obReplayLink: "Setup guide",
+  obTitle: "Set up Influencer Butler",
+  obProgress: (current, total) => `Step ${current} of ${total}`,
+  obBack: "Back",
+  obNext: "Next",
+  obSkip: "Skip for now",
+  obFinish: "Finish",
+  obWelcomeTitle: "Welcome to Influencer Butler",
+  obWelcomeBody:
+    "This quick setup gets your money signals, storefront, and links ready. It takes about a minute, and you can skip any step.",
+  obWelcomePin: "Tip: pin the extension so its button is always one click away. Click the puzzle-piece icon in Chrome's toolbar, then the pin next to Influencer Butler.",
+  obAccountTitle: "Connect your account",
+  obAccountBody:
+    "Add your license key to sync findings to your dashboard and the desktop app. Everything works without it, so you can skip this.",
+  obAccountConnected: (email) => `Connected as ${email}.`,
+  obAccountSkipHint: "No account yet? Skip this: the extension is fully usable for free.",
+  obStorefrontTitle: "Your storefront",
+  obStorefrontBody:
+    "Your Amazon storefront handle powers your links and storefront checks. It is the part after /shop/ in your storefront URL.",
+  obStorefrontAuto:
+    "You do not have to look it up: we fill this in automatically the first time you open your Amazon Creator Hub.",
+  obStorefrontDetected: (handle) => `Detected: ${handle}`,
+  obToolsTitle: "Turn on the tools you want",
+  obToolsBody:
+    "These are on by default. Turn off anything you do not need now, you can change all of these later in Settings.",
+  obAppTitle: "Connect the desktop app",
+  obAppBody:
+    "Pair the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon. Enter the 6-digit code shown in the app.",
+  obAppSkipHint: "Do not have the desktop app open? Skip this and pair later from the popup.",
+  obDoneTitle: "You are all set",
+  obDoneBody:
+    "Influencer Butler is ready. Open a product, your storefront, or a Creator Connections campaign to see it work.",
+  obDoneHelp: "Open Help",
+  obDoneDashboard: "My dashboard",
+  obDoneClose: "Done",
+
+  syncTitle: "Sync with desktop app",
+  syncBlurb:
+    "Copy your link providers, affiliate tags, and storefront ID between this extension and the desktop app.",
+  syncNow: "Sync now",
+  syncChecking: "Checking...",
+  syncInSync: "Everything is already in sync.",
+  syncNotPaired: "Connect the desktop app first to sync settings.",
+  syncAppOutdated: "Update the desktop app to sync settings.",
+  syncFilled: (n) =>
+    n === 1 ? "Filled in 1 setting from the desktop app." : `Filled in ${n} settings from the desktop app.`,
+  syncFailed: "Could not reach the desktop app. Make sure it is running.",
+  syncConfirmTitle: "These settings differ",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 setting is different between the extension and the desktop app. Choose which side to keep."
+      : `${n} settings are different between the extension and the desktop app. Choose which side to keep.`,
+  syncConfirmList: "Different settings:",
+  syncConfirmAppWins: "Use the desktop app's values",
+  syncConfirmExtWins: "Use the extension's values",
+  syncCancel: "Cancel",
+  syncDone: "Synced.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Accept campaign",
+  acceptWorking: "Accepting...",
+  acceptNeedsSignIn:
+    "Could not find that campaign. Make sure you are signed in to Amazon Associates in this browser and the campaign is still open.",
+  acceptAccepted: "Campaign accepted.",
+  acceptPending: "Request sent. The brand will confirm.",
+  acceptFailed: (reason) => `Could not accept the campaign (${reason}).`,
+  acceptCooldown:
+    "Amazon asked for a check on the last attempt. Accept is paused for a few hours; you can still accept on the Creator Connections page yourself.",
+  uhCampaignAvailable: (asin) => `${asin} has a campaign you have not joined yet`,
+  uhCampaignAcceptTitle: "Campaigns for the tagged products",
 };
 
 const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
   panelSettings: "Ajustes",
+  panelOffline: "Butler no pudo conectar con la extensión. Recarga esta página e inténtalo de nuevo.",
   copy: "Copiar",
   copied: "Copiado",
+  appOpensNote: "Se abre en la app de Amazon en el móvil",
 
   snapshotTitle: "Resumen del producto",
   snapshotProduct: "Producto",
   snapshotParent: "Padre",
   snapshotCategory: (category) => `Categoría: ${category}`,
   snapshotRank: (rank, category) => `#${rank} en ${category}`,
+  snapshotAge: (months, listed) => `Antigüedad: ${months} meses (publicado ${listed})`,
+  snapshotSellers: (n) => `Vendedores: ${n} en esta publicación`,
   snapshotCommissionLive: (pct) => `Comisión ${pct}% (en vivo de SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Comisión aprox. ${pct}% (${category}, tarifario)`,
@@ -1045,11 +2144,43 @@ const es: Dict = {
   earningsTitle: "Tus ganancias",
   earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
   earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
+  earningsConversion: (pct, campaign) => `Convierte al ${pct} en "${campaign}"`,
+  earningsConversionMore: (n) => `La mejor de ${n} campañas que hiciste aquí. Mira el desglose completo abajo.`,
+  ownedTitle: "Ya lo tienes",
+  ownedNote: "Este producto está en tu historial de pedidos.",
+  ownedBought: (year) => `Comprado en ${year}`,
+  ownedPaid: (price) => `Pagaste ${price}`,
+  ownedPostedChip: "Ya publicado",
+  ownedPostedSummary: (platforms) => `Ya compartido en ${platforms}`,
+  ownedGridOwned: "En tu pedido",
+  ownedGridPosted: "Publicado",
   priceHistoryTitle: "Historial de precios",
   priceHistoryNow: (amount) => `Ahora ${amount}`,
   priceHistoryLow: (amount) => `Mínimo ${amount}`,
   priceHistoryLowest: "El más bajo hasta ahora",
   priceHistoryNote: "Precios vistos desde que empezaste a navegar con la extensión.",
+  priceHistoryDesktopNote: "Historial completo de tu aplicación Influencer Butler.",
+  bsrHistoryTitle: "Historial de clasificación de ventas",
+  bsrHistoryNow: (rank) => `Ahora nº${rank}`,
+  bsrHistoryBest: (rank) => `Mejor nº${rank}`,
+  bsrHistoryAvg90: (rank) => `Media 90 días nº${rank}`,
+  bsrTrendSteady: "Clasificación estable",
+  bsrTrendRising: "Clasificación subiendo",
+  bsrTrendSlipping: "Clasificación bajando",
+  salesHistogramTitle: "Ventas, últimos 12 meses",
+  salesPeak: (units, month) => `Pico ~${units} en ${month}`,
+  salesEstTitle: "Ventas mensuales estimadas",
+  salesEstValue: (n) => `~${n}/mes`,
+  salesEstModeled: "Estimado a partir del ranking de ventas",
+  salesEstCalibrated: "Calibrado con datos reales",
+  boughtPastMonthChip: (n) => `${n}+ comprados/mes`,
+  estUnitsLabel: "Uds./mes est.",
+  estRevenueLabel: "Ingresos/mes est.",
+  estUnitsTip:
+    "Unidades mensuales estimadas, calculadas a partir del ranking de ventas del producto. Es una estimación, no una cifra oficial.",
+  estRevenueTip:
+    "Ingresos mensuales estimados (unidades estimadas multiplicadas por el precio). Es una estimación, no una cifra oficial.",
+  marketPoolNote: "Del catálogo compartido de Influencer Butler.",
   shotListTitle: "Guion de grabación",
   shotListShowFeatures: "Muestra estas características en cámara:",
   shotListBeatHook: "Gancho en los primeros 3 segundos: el resultado o el problema que resuelve",
@@ -1065,8 +2196,20 @@ const es: Dict = {
   inlineUnavailable: "no disponible",
   inlineNotListed: "no listado",
   inlineConnectCreatorApi: "Conecta la Creator API para disponibilidad en varios países",
+  inlineCreatorApiSyncPending: "Tus claves de la Creator API aún no han llegado a tu cuenta: abre Ajustes y reinténtalo",
 
   tagFree: "Gratis",
+  navUpdate: "Actualizar",
+  navWhatsNew: "Novedades",
+  navAiAssistant: "Asistente IA",
+  navDeals: "Recolector de ofertas",
+  navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Multiplataforma",
+  navGrpProduct: "Productos",
+  navGrpResearch: "Investigación",
+  navGrpCampaigns: "Campañas",
+  navGrpEarnings: "Ganancias",
   thisPageHeading: "Esta página",
   checkingTab: "Comprobando la pestaña actual...",
   accountHeading: "Cuenta",
@@ -1078,6 +2221,13 @@ const es: Dict = {
   startFreeTrial: "Empieza una prueba gratis",
   connectedAs: "Conectado como",
   syncToggleLabel: "Sincronizar hallazgos con mi panel",
+  syncDashboardHint:
+    "Los hallazgos se suben a tu panel web por su cuenta. No necesitas la app de escritorio para esto.",
+  syncStatsHint:
+    "Mientras la sincronización está activa, se suman recuentos anónimos de acciones automáticas (como campañas aceptadas) a nuestros totales públicos de actividad. Consulta nuestra Política de Privacidad.",
+  contributeToggleLabel: "Contribuir al catálogo de productos compartido",
+  contributeBlurb:
+    "Desactivado por defecto. Cuando está activo, los datos de producto que ya ves (precio, ranking de ventas, comprados el mes pasado, categoría) y qué videos de creadores aparecen en el carrusel de un producto se agrupan, nunca datos personales, para que todos vean la demanda real, el historial de precios y la competencia de videos a lo largo del tiempo.",
   disconnect: "Desconectar",
   settingsHeading: "Ajustes",
   languageLabel: "Idioma",
@@ -1089,7 +2239,18 @@ const es: Dict = {
   storefrontHandleLabel: "Mi usuario de storefront",
   storefrontHandlePlaceholder: "p. ej. influencerbutler",
   toolsHeading: "Herramientas",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon y Walmart",
+  groupAmazonProduct: "Amazon: paginas de producto",
+  groupAmazonResearch: "Amazon: investigacion y descubrimiento",
+  groupAmazonCampaigns: "Amazon: campanas y storefront",
+  groupAmazonEarnings: "Amazon: ganancias y alertas",
+  toolWalmart: "Soporte de Walmart",
+  toolWalmartHint:
+    "Activa las senales de dinero y los overlays en Walmart.com. El overlay de resultados de busqueda (abajo) tambien funciona en las cuadriculas de Walmart.",
   toolVideoCounts: "Recuento de videos",
+  toolVideoLandscape: "Panorama de videos",
+  toolVideoLikes: "Recuento de me gusta de videos",
   toolApproved: "Sello Butler Approved",
   toolCalculator: "Calculadora de ganancias",
   toolStorefront: "Chequeos del storefront",
@@ -1109,13 +2270,13 @@ const es: Dict = {
   footerHelp: "Ayuda",
   footerDashboard: "Mi panel",
 
-  openAmazonToStart: "Abre una página de producto de Amazon, tus pedidos o tu storefront para empezar.",
+  openAmazonToStart: "Abre una página de producto de Amazon o Walmart, tus pedidos o tu storefront para empezar.",
   noToolsOnPage: "Esta página de Amazon no tiene herramientas del butler. Prueba una página de producto.",
   productToolsActive: "Las herramientas de la página de producto están activas.",
   orderScanReady: "El escaneo del historial de pedidos está listo.",
   storefrontCheckupReady: "El chequeo del storefront está listo.",
   uploadHelperReady: "El asistente de subida está listo.",
-  reloadTabToActivate: "Recarga la pestaña de Amazon para activar las herramientas (la página estaba abierta antes de instalar).",
+  reloadTabToActivate: "Recarga esta pestaña para activar las herramientas (la página estaba abierta antes de instalar).",
   connectedFallback: "conectado",
   findingsWaiting: (n) => `${n} hallazgos esperando sincronizar`,
   lastSynced: (time) => `Última sincronización ${time}`,
@@ -1175,9 +2336,30 @@ const es: Dict = {
   chipUnclassified: (n) => `${n} sin clasificar`,
   videosTotalVia: (total, viaPageData) =>
     `${total} videos en total (leído vía ${viaPageData ? "datos de página" : "carrusel"})`,
+  carouselReading: (label) => `${label}: leyendo datos de video...`,
+  upperSlotOn:
+    "Carrusel superior de influencers: activado. Los videos de influencers pueden ocupar el espacio superior junto a la galería de imágenes.",
+  upperSlotOff:
+    "Carrusel superior de influencers: desactivado. En esta ficha los videos de influencers solo aparecen en el carrusel inferior.",
+  upperSlotChecking: "Carrusel superior de influencers: comprobando...",
+  upperSlotUnknown: "Carrusel superior de influencers: desconocido",
+  upperSlotInfo:
+    "Cuando una marca activa el carrusel superior de influencers, un video de creador puede colocarse junto a la galería de imágenes: el espacio de video que más gana en la ficha. Desactivado significa que tu video solo aparecería en el carrusel inferior de Videos del producto.",
   influencerFallback: "Influencer",
   influencerVideosLabel: (n) => `Videos de influencers (${n})`,
   influencerVideosMore: (n) => `+${n} más`,
+
+  myVideoHere: (carousel, position, total) => `Tu video: ${carousel}, n.º ${position} de ${total}`,
+  myVideoHereNoPosition: (carousel) => `Tu video: ${carousel}`,
+  myVideoSideUnknown: "Tu video está en esta ficha. Leyendo en qué carrusel aparece...",
+  myVideoSideUnreadable:
+    "Tu video está en esta ficha. Amazon no reveló en qué carrusel aparece.",
+  myVideoMultiple: (n) => `Tienes ${n} videos en esta ficha:`,
+  myVideoRowChip: "Tuyo",
+  myVideoCardBadge: "Tuyo",
+  myVideoCardBadgeTitle: (position) => `Tu video, n.º ${position} de este carrusel`,
+  myVideoInfo:
+    "El carrusel superior está junto a la galería de imágenes y es el espacio de video que más gana; el carril inferior es la sección Videos de este producto, más abajo. La posición es el orden de Amazon en ese carril al cargar la página, y rota.",
 
   deepScan: "Barrer todos los videos",
   deepScanIntro:
@@ -1200,6 +2382,57 @@ const es: Dict = {
   copySummary: "Copiar resumen",
   shareSummaryHeading: "Competencia de videos del producto (vía Influencer Butler)",
   shareTopCreators: "Creadores principales:",
+
+  videoLandscape: "Panorama de videos",
+  lsStatKnown: "Videos conocidos",
+  lsStatPlaced: "Colocados ahora",
+  lsStatCreators: "Creadores únicos",
+  lsStatRepeat: "Creadores recurrentes",
+  lsContentMixLabel: "Mezcla por tipo de creador",
+  lsConcentrationLabel: "Concentración de creadores",
+  lsConcentrationShare: (pct) => `Los 5 principales tienen el ${pct}% de los videos`,
+  lsTopStrengthLabel: "Mejores videos por posición en el carrusel (aproximado)",
+  lsUpper: "Superior",
+  lsLower: "Inferior",
+  lsPulseLabel: (dated, total) => `Ritmo de publicación (${dated} de ${total} con fecha)`,
+  lsNewIn30: (n) => `${n} nuevos en los últimos 30 días`,
+  lsDatesUnavailable: "Este listado no expone las fechas de publicación, así que el ritmo de publicación no está disponible.",
+  lsTypicalLengthLabel: "Duración típica",
+  lsLengthBand: (median, low, high) => `Mediana ${median} (típico de ${low} a ${high})`,
+  lsLengthMedian: (median) => `Mediana ${median}`,
+  lsDurationsUnavailable: "Este listado no expone la duración de los videos.",
+
+  // Track 1.4: frase de competencia + chip de estacionalidad
+  lsCompeteLine: (n, repeat, pct) =>
+    `Competirías con ${n} creador${n === 1 ? "" : "es"} (${repeat} recurrente${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, los 5 principales tienen el ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `Competirías con al menos ${n} creador${n === 1 ? "" : "es"} (${repeat} recurrente${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, los 5 principales tienen el ${pct}%`
+    }) - ${seen} de ~${known} videos vistos`,
+  seasonPeaks: (range) => `Picos en ${range}`,
+  seasonSteady: "Estable todo el año",
+  seasonWindowTip: (months) => `Basado en ${months} meses de historial de ranking`,
+  monthAbbr: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+
+  passportOpen: "Historial de colocación",
+  passportClose: "Ocultar historial",
+  passportLoading: "Cargando historial de colocación...",
+  passportUnidentified: "Este video aún no se puede rastrear.",
+  passportUnavailable: "El historial de colocación aún no está disponible.",
+  passportNoData: "Aún no hay historial de colocación para este video.",
+  passportNoDataDay: "sin datos",
+  passportCollecting: (days) => `Recopilando evidencia diaria de colocación: ${days} de 90 días registrados`,
+  passportSinceFirstSeen: (date) => `desde que se vio por primera vez el ${date}`,
+  passportPresence: "Tasa de presencia",
+  passportStability: "Estabilidad de colocación",
+  passportStrength: "Fuerza en días activos",
+  passportReach: "Alcance de productos",
+  passportActiveDays: "Días observados",
+  passportUpperLower: (upper, lower) => `Superior ${upper}% / Inferior ${lower}%`,
+  passportCurrentSnapshot: "Colocación actual",
+  passportLastObserved: (date) => `Visto por última vez el ${date}`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: vale la pena crear contenido",
@@ -1232,6 +2465,7 @@ const es: Dict = {
   searchSortLabel: "Ordenar:",
   sortScore: "Mejor Butler Score",
   sortCommission: "Mayor comisión",
+  sortRevenue: "Ingresos estimados",
   sortPriceAsc: "Precio: de menor a mayor",
   sortPriceDesc: "Precio: de mayor a menor",
   sortRelevance: "Relevancia de Amazon",
@@ -1244,9 +2478,192 @@ const es: Dict = {
   searchScanMore: (done, remaining) => `Escaneados ${done}. Pulsa Escanear de nuevo para ${remaining} más.`,
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
+  tileCampaignRate: (pct) => `Campaña ${pct}%`,
+  tileCampaignEpc: (epc) => `Campaña - hasta ${epc}/clic`,
+  tileCampaignEpcTip:
+    "Previsión de Amazon de Earn on Clicks para este producto, no es una tasa garantizada: depende de los clics que generes y del presupuesto de Amazon para la campaña.",
   tileProvenEarner: "Ya te ha pagado",
+  tileEarned: (money) => `Ganaste ${money}`,
   tileInfluencer: (n) => `${n} videos de infl.`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} de infl. / ${total} videos`,
+  tileVideoTipSelf: "Reparto exacto de influencers, leido de la pagina de este producto.",
+  tileVideoTipVariant:
+    "Estimado a partir de otra variante de este anuncio. Abre esta variante o pulsa Escanear para ver su reparto exacto.",
+  tileVideoTipEstimate:
+    "Solo el total de videos de la pagina. El reparto de influencers se carga en la pagina del producto: abrela o pulsa Escanear para el conteo exacto.",
+  tileApproved: "Aprobado por Butler",
+  tileLikelyFit: "Buen candidato",
+  tileDeal: "Oferta",
+  tileCoupon: "Cupón",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Oferta flash",
+  dealSignalsTitle: "En oferta",
+  dealSignalsWasNow: (was, now) => `Precio de lista ${was}, ahora ${now}`,
+  tileRevenue: (money) => `~${money}/mes`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} uds./mes`,
+  tileMenuLabel: "Más acciones",
+  tileMenuAddToList: "Añadir a lista",
+  tileMenuNewList: "Nueva lista",
+  tileMenuNewListPlaceholder: "Nombre de la lista",
+  tileMenuCreate: "Crear",
+  tileMenuAddedTo: (name) => `Guardado en ${name}`,
+  tileMenuListFull: "Esa lista está llena.",
+  tileMenuListsCapped: "Ya tienes el máximo de listas.",
+  tileMenuCopyLink: "Copiar enlace",
+  tileMenuCopied: "Copiado",
+  tileMenuLinkFailed: "No se pudo crear un enlace",
+  tileMenuOpenPage: "Abrir página del producto",
+  tileMenuSchedulePost: "Programar una publicación",
+  tileMenuAppLocked: "Abre la app para enviar este producto.",
+  tileMenuWorking: "Trabajando...",
+  listPanelHeading: "Listas de productos",
+  listPanelIntro: "Guarda este producto (o todas sus variaciones) en una de tus listas.",
+  listPanelNewOption: "Nueva lista...",
+  listPanelAddProduct: "Añadir este producto",
+  listPanelAddVariations: (n) => `Añadir las ${n} variaciones`,
+  listPanelAddedCount: (n, name) => `Se añadieron ${n} a ${name}`,
+  listPanelNothingNew: "Ya está en esa lista.",
+  searchEnriching: (done, total) => `Comprobando detalles ${done}/${total}`,
+  searchEnrichPaused: "Amazon pausó la comprobación de detalles, se reintentará más tarde",
   searchOverlayActive: "El overlay de búsqueda está activo.",
+
+  toolTrendRadar: "Radar de Tendencias (Más vendidos y Movers)",
+  sumTrendRadar: "Radar de Tendencias",
+  trendRadarActive: "El Radar de Tendencias está activo.",
+  toolIdeaList: "Señales de dinero en Idea Lists",
+  sumIdeaList: "Overlay de Idea List",
+  ideaListActive: "Las señales de Idea List están activas.",
+  toolDealsOverlay: "Señales de dinero en Ofertas del Día",
+  sumDealsOverlay: "Overlay de ofertas",
+  toolDealSignals: "Señales de rebajas y ofertas",
+  toolDealSignalsHint:
+    'Muestra un chip "-N%" en las fichas de búsqueda y ofertas con descuento (destacando las ofertas de Prime Day / flash) y una línea "En oferta" en las páginas de producto. Se lee de la página, sin necesidad de cuenta.',
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Señales de dinero de Amazon en listas de Benable",
+  toolBenableBadgeHint:
+    "En benable.com, marca cada producto de Amazon con su estado de Creator Connections / SPCC y su comisión. Haz clic en una insignia para ver inscripción, ganancias y propiedad.",
+  sumBenableBadge: "Señales de dinero en Benable",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clic`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Señales de dinero de Amazon. Haz clic para ver el detalle.",
+  benableDetailHeading: "Señales de dinero de Amazon",
+  benableOpenAmazon: "Abrir en Amazon",
+  benableEnds: (date) => `termina ${date}`,
+  benablePosted: "Ya lo publicaste",
+  benableEarned: (money) => `Ganado ${money}`,
+  benableConversion: (pct) => `${pct} de conversión`,
+  benablePrice: (money) => `Precio ${money}`,
+  benableEstSales: (n) => `~${n}/mes vendidos`,
+  benableNoCampaign: "Sin campaña CC ni SPCC",
+  benableChecking: "Consultando tus datos...",
+  benableNoExtra:
+    "Inicia sesión o abre la app de escritorio para ver inscripción, ganancias y propiedad.",
+  dealsOverlayActive: "Las señales de ofertas están activas.",
+  trendCount: (n) => `${n} productos puntuados`,
+  trendSortTrending: "Los que más suben",
+  trendSortRank: "Ranking de más vendidos",
+  trendFewVideosOnly: "Solo con hueco de video",
+  tileRank: (n) => `N.º ${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Alcance global (multi-tienda)",
+
+  toolStoreOverlay: "Overlay de tienda de marca",
+  sumStoreOverlay: "Overlay de tienda de marca",
+  storeOverlayActive: "El overlay de tienda de marca está activo.",
+  storeCount: (n) => `${n} productos puntuados`,
+  storeCandidates: (n) => `${n} en recuadro verde`,
+  storeCandidatesOnly: "Solo los mejores candidatos",
+  storeEnriching: (done, total) => `Revisando páginas de producto ${done} de ${total}...`,
+  storeEnrichPaused: "Amazon pausó las revisiones. Recarga la página más tarde para terminar.",
+  tileVideos: (n) => `${n} videos`,
+  tileHeroSlot: "Hueco de video",
+  tileNoCarousel: "Sin carrusel",
+
+  videoLikesTitle: "Cuántos me gusta tiene este video en Amazon.",
+  sumEarningsOverlay: "Ganancias en tienda",
+  toolEarningsOverlay: "Ganancias en tienda (insignias en el storefront)",
+  earnBadgeTitle: "Lo que has ganado con esta publicación. Haz clic para ver el desglose completo.",
+  earnDetailTitle: "Ganancias del producto",
+  earnByStore: "Ganancias por tienda",
+  earnByYear: "Ganancias por año",
+  earnByMonth: "Ganancias por mes",
+  earnCampaigns: "Campañas de Creator Connections",
+  earnOnsite: "en Amazon",
+  earnOffsite: "fuera de Amazon",
+  earnScopeThisMarket: "Este mercado",
+  earnScopeAllStores: "Todas las tiendas",
+  earnUnits: (n) => `${n} unidad${n === 1 ? "" : "es"}`,
+  earnOrders: (n) => `${n} pedido${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `tasa ${pct}%`,
+  earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} de conversión`,
+  earnBestConverter: "Mejor conversión",
+  earnViewBreakdown: "Ver desglose",
+  earnNoBreakdown: "Actualiza la app de escritorio para ver el desglose por tienda, año, mes y campaña.",
+  earnClose: "Cerrar",
+
+  sumVideoMoney: "Dinero por vídeo",
+  vmPanelTitle: "Dinero por vídeo",
+  vmVideoCount: (n) => `${n} vídeo${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Tus ganancias reales del producto de este vídeo. Haz clic para ver el desglose.",
+  vmEpv: (money) => `${money}/1k vistas`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Paga ${pct}% ahora`,
+  vmRateEnding: (pct) => `${pct}% termina pronto`,
+  vmBought: (n) => `${n.toLocaleString()} comprados/mes`,
+  vmCoolingChip: "Demanda bajando",
+  vmProjectionNote: "Conecta la app de escritorio para ver ganancias reales. Por ahora mostramos proyecciones.",
+  vmTopEarners: "Los que más ganan",
+  vmBestEpv: "Mejor por vista",
+  vmReshoot: "Vuelve a grabar estos",
+  vmReshootHint: "Comisión alta, pocas vistas",
+  vmDrafts: "Termina tu borrador",
+  vmDraftsHint: "Los vídeos sin publicar no ganan nada",
+  vmCooling: "Enfriándose / retirar",
+  vmCoolingHint: "Demanda a la baja o campaña terminada",
+  vmExport: "Exportar CSV",
+
+  sumYouTubeStatus: "Estado en YouTube",
+  ytOnYouTube: "En YouTube",
+  ytNotOnYouTube: "No está en YouTube",
+  ytUpload: "Subir a YouTube",
+  ytUploading: "Subiendo...",
+  ytFailedRetry: "Fallo al subir, reintentar",
+  ytConnectApp: "Conecta la app para ver el estado en YouTube",
+  ytUploadError: "No se pudo contactar con la app de escritorio",
+  ytShowingAmazon: "Se muestra en Amazon",
+  ytNotShowingAmazon: "No en páginas de producto",
+  reachImprove: "Mejorar alcance",
+  reachPanelTitle: "Aumenta el alcance de este contenido",
+  reachWhy: "Por qué está limitado",
+  reachReasonVideo:
+    "Está publicado en tu Storefront pero bloqueado en las páginas de producto porque no pasó el nivel de calidad de video de Amazon.",
+  reachReasonPhoto:
+    "Está publicado en tu Storefront pero bloqueado en las páginas de producto porque no pasó el nivel de calidad de foto de Amazon.",
+  reachReasonGeneric:
+    "Está publicado en tu Storefront pero no aparece en las páginas de producto, la ubicación con más tráfico.",
+  reachFix: "Cómo solucionarlo",
+  reachRemedy:
+    "Editar sobre la marcha no activa una nueva revisión. Elimina esto y sube una versión mejorada: Amazon revisa las subidas nuevas en 48 horas.",
+  reachTipsVideo: [
+    "Graba con buena luz y uniforme para que el producto se vea claramente.",
+    "Mantén la toma estable: evita imágenes movidas o borrosas.",
+    "Muestra y demuestra claramente el producto en uso.",
+    "Que sea nativo de Amazon: sin marcas de agua de otras apps (TikTok, Reels) ni texto excesivo.",
+    "Usa audio claro y una voz en off natural e informativa.",
+  ],
+  reachTipsPhoto: [
+    "Usa una imagen nítida y de alta resolución: sin desenfoque ni compresión excesiva.",
+    "Ilumina el producto de forma uniforme; evita fondos oscuros o recargados.",
+    "Muestra el producto real con claridad y en contexto.",
+    "Sin marcas de agua, logotipos ni texto promocional sobre la imagen.",
+    "Encuadra el producto como el tema claro de la foto.",
+  ],
+  reachOpenItem: "Abrir para editar",
 
   sumCampaignRadar: "Radar de campañas",
   toolCampaignRadar: "Radar de campañas (resaltar campañas)",
@@ -1256,6 +2673,7 @@ const es: Dict = {
   radarMinDays: "Días mín. restantes",
   radarMinBudget: "Presupuesto mín. ($)",
   radarOnlyPassing: "Solo campañas que cumplen",
+  radarOnlyStrong: "Solo las mejores",
   radarSortLabel: "Ordenar",
   radarSortScore: "Mejor coincidencia",
   radarSortRate: "Comisión",
@@ -1263,12 +2681,81 @@ const es: Dict = {
   radarSortRelevance: "Orden de la página",
   radarChipOwned: "Ya lo tienes",
   radarChipEarner: "Ya has ganado con esto",
-  radarChipRate: (pct) => `${pct}% de tasa`,
-  radarChipDays: (n) => `${n} días restantes`,
   radarChipEnded: "Finalizada",
-  radarChipBudget: (amount) => `${amount} restante`,
   radarChipCc: "Elegible CC",
   radarChipSpcc: "Elegible SPCC",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Disponible para comprar en la tienda de Amazon de ${code}`
+      : status === "unavailable"
+        ? `No disponible para comprar en la tienda de Amazon de ${code}`
+        : `No se pudo comprobar la tienda de Amazon de ${code} ahora mismo`,
+  radarVideoChip: (n) => (n === 0 ? "Sin vídeos aún" : `${n} ${n === 1 ? "vídeo" : "vídeos"}`),
+  radarConversionChip: (pct) => `${pct} de conversión`,
+  radarConversionTitle: "Conversión de compradores (pedidos por clic) según las estadísticas de campaña de Amazon",
+  radarEpcChip: (epc) => `EPC hasta ${epc}`,
+  radarEpcTitle: "EPC estimado de Amazon (ganancias por clic), mostrado como límite superior",
+  radarBudgetChip: (value) => `Presupuesto: ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "Alto" : v === "medium" ? "Medio" : "Bajo"),
+  radarBudgetTitle: "Puntuación de disponibilidad de presupuesto de Amazon para esta campaña",
+  radarVideoTitle:
+    "Vídeos de creadores que ya hay sobre este producto. Menos significa menos competencia.",
+  popupAvailabilityLabel: "Mostrar disponibilidad para",
+  popupAvailabilityHint:
+    "Campaign Radar comprueba cada producto de campaña en las tiendas de Amazon de estos países y muestra un distintivo por país.",
+  popupAvailabilityAuDenied:
+    "Australia necesita permiso para leer amazon.com.au. Permítelo cuando Chrome lo pida y vuelve a intentarlo.",
+
+  lastCallWatch: "Que el Butler vigile esta campaña",
+  lastCallWatching: "El Butler está vigilando: alerta de Última Llamada activada",
+  lastCallFull: "Completa",
+  lastCallFillUnknown: "Ocupación desconocida",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% ocupada: ${filled}/${total}`,
+  lastCallCampaignFallback: "Una campaña",
+  lastCallNotifTitle: "Butler de Última Llamada",
+  lastCallNotifNearFull: (name, pct) =>
+    `Última Llamada: ${name} está ${pct}% ocupada. Acepta antes de que se cierre.`,
+  lastCallNotifFilled: (name) => `${name} acaba de completarse.`,
+  lastCallMobileNote:
+    "En Android, las alertas de Última Llamada saltan cuando abres Creator Connections. Las comprobaciones automáticas en segundo plano se ejecutan en un ordenador con Windows o Mac.",
+
+  campaignBriefButton: "Informe",
+  campaignBriefTitle: "El informe del Butler",
+  campaignBriefLoading: "El Butler está analizando esta campaña...",
+  campaignBriefConfidence: (n) => `${n} de confianza`,
+  campaignBriefConversion: (pct) => `${pct} de conversión`,
+  campaignBriefWhy: "Por qué la aceptaría",
+  campaignBriefFilm: "Qué grabar",
+  campaignBriefPick: "La mejor opción del catálogo",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} unidades/mes, ${revenue}/mes`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "Aún no hay vídeos de creadores sobre este producto: un hueco libre."
+      : `${n} ${n === 1 ? "vídeo" : "vídeos"} de creadores ya sobre este producto (saturación).`,
+  campaignBriefOnAmazon: "En Amazon",
+  campaignBriefOffAmazon: "Fuera de Amazon también",
+  campaignBriefAudience: "Para quién es",
+  campaignBriefAccept: "Aceptar campaña",
+  campaignBriefCopy: "Copiar informe",
+  campaignBriefCopied: "Copiado",
+  campaignBriefClose: "Cerrar",
+  campaignBriefError: "El Butler no pudo redactar un informe completo ahora mismo. Aquí tienes el desglose de la puntuación.",
+  campaignBriefConnectHint: "Conecta tu propia clave de API de OpenAI y el Butler redactará un informe completo cada vez.",
+  campaignBriefKeyErrorHint: "Tu clave de OpenAI conectada no pudo terminar este informe. Revísala en Ajustes.",
+  campaignBriefConnectBtn: "Conectar OpenAI",
+  campaignBriefOpenSettingsBtn: "Abrir ajustes",
+  campaignBriefVerdictHot: "Vale la pena aceptar",
+  campaignBriefVerdictWarm: "Merece un vistazo",
+  campaignBriefVerdictCool: "Probablemente no",
+
+  sumCampaignDetail: "Detalle de campaña",
+  campaignDetailTitle: "Lectura de producto del Butler",
+  campaignDetailProducts: "Productos de esta campaña",
+  campaignDetailNoProducts: "Aún no se detectan productos en esta campaña.",
+  campaignDetailNoData: "Todavía no hay datos de demanda en el catálogo.",
+  campaignDetailBought: (n) => `${n}+ comprados/mes`,
 
   breakEvenMath: "Cálculo de punto de equilibrio",
   noPriceForMath: "No se encontró precio en esta página, así que no hay cálculo que hacer.",
@@ -1321,7 +2808,8 @@ const es: Dict = {
   sfRescan: "Volver a escanear",
   sfScanningFeed: "Escaneando el feed...",
   sfScanningProgress: (items, pages) => `Escaneando el feed... ${items} elementos en ${pages} páginas`,
-  sfOpeningPhotos: (done, total) => `Abriendo fotos y listas... ${done} de ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Abriendo fotos y listas (los videos ya se escanearon desde el feed)... ${done} de ${total}`,
   sfOpeningProducts: (done, total) => `Abriendo productos... ${done} de ${total}`,
   sfEtaMinLeft: (min) => ` (unos ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Revisados los primeros ${cap} productos (el storefront tiene más).`,
@@ -1329,6 +2817,11 @@ const es: Dict = {
   sfStopped: "Detenido.",
   sfDone: (items, pages, capped) =>
     `Listo: ${items} elementos en ${pages} páginas${capped ? " (feed limitado)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `Escaneados ${items} elementos; el storefront indica unas ${reported} publicaciones.`,
+  sfStoppedEarly: (reason) =>
+    `El feed se detuvo antes de tiempo (${reason}), así que puede faltar contenido. Vuelve a escanear para reintentar.`,
+  sfDroppedCards: (n) => `${n} tarjetas del feed tenían un tipo no reconocido y se omitieron.`,
   sfLabelVideos: "videos",
   sfLabelPhotos: "fotos",
   sfLabelIdeaLists: "listas de ideas",
@@ -1416,9 +2909,15 @@ const es: Dict = {
   noCampaign: "No se encontró campaña de Creator Connections ni SPCC para este producto.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
-  campaignAcceptNote: "Acéptala desde la sección Send to your butler app de abajo (la app confirma y acepta).",
+  ccNotAvailable: "Creator Connections no disponible",
+  spccNotAvailable: "SPCC no disponible",
+  enrolledCc: "Inscrito en Creator Connections",
+  enrolledSpcc: "Inscrito en SPCC",
+  enrolledRate: (pct) => `${pct}% de comisión`,
+  epc: (money) => `EPC ${money}`,
+  campaignConnectNote: "Abre la app Influencer Butler para aceptar esta campaña (la app confirma y acepta).",
   dealAvailable: "Oferta disponible",
-  dealPushNote: "Envíala a Deals Influencer Butler desde la sección Send to your butler app de abajo.",
+  dealPushNote: "Envíala a Deals Butler desde la sección Send to your butler app de abajo.",
 
   campaignMatcher: "Buscador de campañas",
   campaignMatcherIntro: (source) =>
@@ -1444,28 +2943,47 @@ const es: Dict = {
   sumCampaignMatcher: "Buscador de campañas",
 
   sendToApp: "Enviar a tu app butler",
-  pushToDailyDeals: "Enviar a Deals Influencer Butler",
+  pushToDailyDeals: "Enviar a Deals Butler",
+  searchSendDeals: "Enviar ofertas a la app",
+  searchNoDeals: "No hay ofertas con descuento en esta página.",
+  searchSendingDeals: (n) => `Enviando ${n} oferta(s) a tu app...`,
   sendToContentButler: "Enviar a Content Butler",
+  sendToVoiceover: "Enviar a Voiceover Butler",
+  sendingVoiceover: "Enviando a Voiceover Butler...",
   saveToLinkButler: "Guardar en Link Butler",
   savingLink: "Guardando enlace...",
   acceptCc: "Aceptar campaña CC",
+  checkCc: "Buscar campaña CC",
   acceptSpcc: "Aceptar campaña SPCC",
   addToCollab: "Añadir a Collab Butler",
   addingCollab: "Añadiendo a Collab Butler...",
   pitchThisBrand: (brand) => `Contactar a ${brand}`,
   pitchingBrand: "Añadiendo a Pitch Butler...",
+  generatePhoto: "Generar foto con IA",
+  generatingPhoto: "Generando foto con IA en tu app...",
+  requestSample: "Solicitar una muestra",
+  requestingSample: "Preparando tu solicitud de muestra...",
+  addToIdeaList: "Añadir a Idea List",
+  addingToIdeaList: "Poniendo en cola para Idea List Butler...",
+  ideaListNewListOption: "Nueva Idea List...",
+  tileMenuAddToIdeaList: "Añadir a una Idea List de Amazon",
   pushingDeals: "Enviando a tu workspace de ofertas...",
   sendingContent: "Enviando a Content Butler...",
   checkingCc: "Comprobando Creator Connections...",
   checkingSpcc: "Comprobando Sponsored Products...",
   sentToApp: "Enviado a tu app.",
   couldNotReachApp: "No se pudo contactar la app. ¿Sigue abierta?",
+  connectAppToPair:
+    "Conecta la app primero: abre la ventana de la extensión y vincula con el código de 6 dígitos.",
+  actionFailedTitle: "La acción del butler no se completó",
   connectedToApp: (version) =>
     `Conectado a tu app de Influencer Butler${version}. La aceptación usa tu catálogo local de Creator Connections.`,
   upsellSignedIn:
-    "Abre la app de escritorio de Influencer Butler para enviar este producto a tus Deals Influencer Butler, Content Butler y auto-aceptar campañas.",
+    "Abre la app de escritorio de Influencer Butler para enviar este producto a tus Deals Butler, Content Butler y auto-aceptar campañas.",
   upsellSignedOut:
-    "Haz el resto con la app: envía este producto a Deals Influencer Butler con tu plantilla de publicación y destinos sociales, mándalo a Content Butler y auto-acepta campañas de Creator Connections.",
+    "Haz el resto con la app: envía este producto a Deals Butler con tu plantilla de publicación y destinos sociales, mándalo a Content Butler y auto-acepta campañas de Creator Connections.",
+  upsellReconnect:
+    "Tu app de Influencer Butler no responde. Asegúrate de que esté abierta y recarga esta página.",
   ctaOpenApp: "Abrir o instalar la app",
   ctaStartTrial: "Empieza tu prueba gratis",
   toolsAlwaysFree: "Las herramientas de escaneo de arriba siempre son gratis. La app añade la automatización.",
@@ -1473,20 +2991,30 @@ const es: Dict = {
   sfSendToRetag: (n) => `Enviar ${n} problema(s) a Retag Butler`,
   sfSendToContent: (n) => `Enviar ${n} producto(s) a Content Butler`,
   sfSendingToContent: "Enviando a Content Butler...",
+  sfSendToVoiceover: (n) => `Enviar ${n} producto(s) a Voiceover Butler`,
+  sfSendingToVoiceover: "Enviando a Voiceover Butler...",
   sfSendingToRetag: "Enviando a Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Aceptar todas las campañas disponibles (${n})`,
   sfAcceptingCampaigns: "Aceptando campañas en la app...",
   obSendToContentButler: (n) => `Enviar ${n} producto(s) a Content Butler`,
   obSendingToContentButler: "Enviando a Content Butler...",
   obSentToContentButler: (n) => `Se enviaron ${n} producto(s) a Content Butler.`,
+  obSendToVoiceover: (n) => `Enviar ${n} producto(s) a Voiceover Butler`,
+  obSendingToVoiceover: "Enviando a Voiceover Butler...",
+  obSentToVoiceover: (n) => `Se enviaron ${n} producto(s) a Voiceover Butler.`,
   appBridgeHeading: "App de escritorio",
   appBridgeBlurb:
     "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
+  appBridgeMobile:
+    "La app de escritorio funciona en Windows o Mac, así que no puede conectarse directamente a este navegador de Android. Para enviarle ofertas, vincula ese ordenador desde la ventana de la extensión, en \"Send to another computer\".",
+  appNextStepHint:
+    "Ya estás sincronizado con tu panel. Para también aceptar campañas y enviar productos a tus butlers, conecta la app de escritorio abajo. Este paso es opcional.",
   appConnect: "Conectar la app de escritorio",
   appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
   appCodePlaceholder: "123456",
   appPairSubmit: "Vincular",
   appConnected: "Conectado a la app de escritorio.",
+  hudSynced: "Sincronizado",
   appUnpair: "Desconectar app",
   appRequestingCode: "Pidiendo un código a la app...",
   appCodeShown: "La app muestra un código de 6 dígitos. Escríbelo arriba.",
@@ -1503,19 +3031,49 @@ const es: Dict = {
     "Intercambia consejos con otros Amazon Influencers y saca el máximo partido a Influencer Butler. Haz clic para unirte al grupo de Facebook.",
   nudgeFbTitle: "Ven a saludar a la comunidad",
   nudgeFbBody:
-    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos con otros Amazon Influencers y enterarte de las novedades antes que nadie.",
+    "Llevas un día usando Influencer Butler. Únete a nuestro grupo de Facebook para intercambiar consejos y logros con otros Amazon Influencers y enterarte de las novedades antes que nadie. Para informar de errores o cualquier cosa que necesites de nuestro equipo, usa la burbuja de chat en la esquina de la página.",
   nudgeFbJoin: "Unirme al grupo de Facebook",
+  nudgeFbReport: "Mejor informar de un error",
   nudgeAppNotifTitle: "Descarga gratis la app de escritorio de Influencer Butler",
   nudgeAppNotifBody:
     "Automatiza ofertas, contenido y aceptación de campañas desde tu ordenador. Haz clic para descargarla gratis para Windows o Mac.",
   nudgeAppTitle: "¿List@ para la app de escritorio?",
   nudgeAppBody:
-    "La app de escritorio hace el trabajo pesado: envía productos a Deals Influencer Butler, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
+    "La app de escritorio hace el trabajo pesado: envía productos a Deals Butler, mándalos a Content Butler y auto-acepta campañas de Creator Connections.",
   nudgeAppFree: "Es gratis de descargar y funciona junto a esta extensión.",
   nudgeAppDownloadWindows: "Descargar para Windows",
   nudgeAppDownloadMac: "Descargar para Mac",
   nudgeAppDownloadGeneric: "Descargar la app de escritorio",
   nudgeAppIntelMac: "¿Usas un Mac con Intel?",
+  nudgeCommunityNotifTitle: "Un consejo rápido para recibir ayuda",
+  nudgeCommunityNotifBody:
+    "Disfruta del grupo de Facebook para consejos y logros. Para informar de errores o pedir funciones, usa la burbuja de chat en la esquina de la página para que nuestro equipo pueda ayudarte.",
+  nudgeCommunityTitle: "Aprovecha al máximo la comunidad",
+  nudgeCommunityBody:
+    "Ya llevas unos días con nosotros. Nuestro grupo de Facebook es un gran lugar para consejos, trucos y logros de otros creadores. Ven a unirte.",
+  nudgeCommunityNote:
+    "Una cosa rápida: el grupo es para la comunidad y los consejos, no para informar de errores, quejas o facturación. Para cualquier cosa que necesites de nuestro equipo, usa la burbuja de chat en la esquina de la página. Es la forma más rápida de contactarnos y llega directamente a las personas que pueden ayudarte.",
+  nudgeCommunityUnderstand: "Entendido",
+  nudgeCommunityReport: "Informar de un error",
+
+  updateBannerTitle: "Tu extensión de Influencer Butler tiene una actualización pendiente.",
+  updateBannerBody: (version) =>
+    `La versión ${version} está lista para instalarse. Solo toma un segundo y tus ajustes se conservan.`,
+  updateNow: "Actualizar ahora",
+  updateRemindLater: "Recuérdamelo luego",
+  updateAppliedTitle: "Actualización instalada",
+  updateRefreshBody: "Recarga esta página para terminar de pasar a la nueva versión.",
+  updateRefreshBtn: "Recargar la página",
+  updatePopupHeading: "Actualización disponible",
+  updatePopupBody: (current, available) =>
+    `La versión ${available} está lista para instalarse (tienes la ${current}). La extensión se reinicia en un momento; tus ajustes se conservan.`,
+
+  whatsNewTitle: "Novedades",
+  whatsNewFeaturesHeading: "Nuevas funciones",
+  whatsNewFixesHeading: "Correcciones",
+  whatsNewReportedHeading: "Problemas que reportaste y ya corregimos",
+  whatsNewOtherHeading: "Otros cambios destacados",
+  whatsNewDismiss: "Entendido",
 
   watchlist: "Lista de seguimiento",
   watchlistIntro:
@@ -1535,24 +3093,109 @@ const es: Dict = {
   watchNotifPriceDrop: (name) => `Bajó el precio de ${name}.`,
   popupWatchlistHeading: "Lista de seguimiento",
   popupWatchlistEmpty: "Aún no sigues productos. Abre un producto y pulsa Seguir.",
+  popupWatchlistMobileNote:
+    "En Android, las alertas de seguimiento están en pausa: las comprobaciones automáticas en segundo plano se ejecutan en un ordenador con Windows o Mac. Tus productos seguidos se conservan.",
+  popupListsHeading: "Mis listas",
+  popupListsEmpty: "Aún no tienes listas. Añade un producto a una lista desde el menú de acciones del overlay de búsqueda.",
+  popupListItems: (n) => (n === 1 ? "1 producto" : `${n} productos`),
+  popupListDelete: "Eliminar lista",
   watchCondBackInStock: "Vuelve a stock",
   watchCondSlotOpens: "Se abre espacio de video",
   watchCondPriceDrop: "Baja de precio",
   watchRemoveShort: "Eliminar",
+
+  storefrontDetectedTitle: "Tienda detectada",
+  storefrontDetectedBody: (handle) =>
+    `Encontramos tu tienda (${handle}) y la guardamos en Ajustes. Puedes cambiarla allí cuando quieras.`,
+
+  obReplayLink: "Guía de configuración",
+  obTitle: "Configura Influencer Butler",
+  obProgress: (current, total) => `Paso ${current} de ${total}`,
+  obBack: "Atrás",
+  obNext: "Siguiente",
+  obSkip: "Omitir por ahora",
+  obFinish: "Finalizar",
+  obWelcomeTitle: "Te damos la bienvenida a Influencer Butler",
+  obWelcomeBody:
+    "Esta configuración rápida deja listas tus señales de ingresos, tu tienda y tus enlaces. Tarda alrededor de un minuto y puedes omitir cualquier paso.",
+  obWelcomePin: "Consejo: fija la extensión para tener su botón siempre a un clic. Haz clic en el icono de pieza de puzle en la barra de Chrome y luego en la chincheta junto a Influencer Butler.",
+  obAccountTitle: "Conecta tu cuenta",
+  obAccountBody:
+    "Añade tu clave de licencia para sincronizar los hallazgos con tu panel y con la app de escritorio. Todo funciona sin ella, así que puedes omitir este paso.",
+  obAccountConnected: (email) => `Conectado como ${email}.`,
+  obAccountSkipHint: "¿Aún no tienes cuenta? Omítelo: la extensión es totalmente utilizable gratis.",
+  obStorefrontTitle: "Tu tienda",
+  obStorefrontBody:
+    "El identificador de tu tienda de Amazon impulsa tus enlaces y las comprobaciones de tienda. Es la parte que va después de /shop/ en la URL de tu tienda.",
+  obStorefrontAuto:
+    "No hace falta que lo busques: lo rellenamos automáticamente la primera vez que abras tu Creator Hub de Amazon.",
+  obStorefrontDetected: (handle) => `Detectado: ${handle}`,
+  obToolsTitle: "Activa las herramientas que quieras",
+  obToolsBody:
+    "Están activadas por defecto. Desactiva lo que no necesites ahora; puedes cambiar todo esto más tarde en Ajustes.",
+  obAppTitle: "Conecta la app de escritorio",
+  obAppBody:
+    "Vincula la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon. Introduce el código de 6 dígitos que muestra la app.",
+  obAppSkipHint: "¿No tienes la app de escritorio abierta? Omítelo y vincúlala más tarde desde la ventana emergente.",
+  obDoneTitle: "Todo listo",
+  obDoneBody:
+    "Influencer Butler está listo. Abre un producto, tu tienda o una campaña de Creator Connections para verlo en acción.",
+  obDoneHelp: "Abrir Ayuda",
+  obDoneDashboard: "Mi panel",
+  obDoneClose: "Listo",
+
+  syncTitle: "Sincronizar con la app de escritorio",
+  syncBlurb:
+    "Copia tus proveedores de enlaces, etiquetas de afiliado e ID de tienda entre esta extensión y la app de escritorio.",
+  syncNow: "Sincronizar ahora",
+  syncChecking: "Comprobando...",
+  syncInSync: "Todo ya está sincronizado.",
+  syncNotPaired: "Conecta primero la app de escritorio para sincronizar los ajustes.",
+  syncAppOutdated: "Actualiza la app de escritorio para sincronizar los ajustes.",
+  syncFilled: (n) =>
+    n === 1 ? "Se rellenó 1 ajuste desde la app de escritorio." : `Se rellenaron ${n} ajustes desde la app de escritorio.`,
+  syncFailed: "No se pudo contactar con la app de escritorio. Asegúrate de que esté abierta.",
+  syncConfirmTitle: "Estos ajustes difieren",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 ajuste es diferente entre la extensión y la app de escritorio. Elige qué lado conservar."
+      : `${n} ajustes son diferentes entre la extensión y la app de escritorio. Elige qué lado conservar.`,
+  syncConfirmList: "Ajustes diferentes:",
+  syncConfirmAppWins: "Usar los valores de la app de escritorio",
+  syncConfirmExtWins: "Usar los valores de la extensión",
+  syncCancel: "Cancelar",
+  syncDone: "Sincronizado.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Aceptar campaña",
+  acceptWorking: "Aceptando...",
+  acceptNeedsSignIn:
+    "No se encontró esa campaña. Asegúrate de haber iniciado sesión en Amazon Associates en este navegador y de que la campaña siga abierta.",
+  acceptAccepted: "Campaña aceptada.",
+  acceptPending: "Solicitud enviada. La marca la confirmará.",
+  acceptFailed: (reason) => `No se pudo aceptar la campaña (${reason}).`,
+  acceptCooldown:
+    "Amazon pidió una verificación en el último intento. Aceptar queda en pausa unas horas; puedes aceptar tú mismo en la página de Creator Connections.",
+  uhCampaignAvailable: (asin) => `${asin} tiene una campaña a la que aún no te has unido`,
+  uhCampaignAcceptTitle: "Campañas de los productos etiquetados",
 };
 
 const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
   panelSettings: "Paramètres",
+  panelOffline: "Butler n'a pas pu joindre l'extension. Rechargez cette page et réessayez.",
   copy: "Copier",
   copied: "Copié",
+  appOpensNote: "S'ouvre dans l'application Amazon sur mobile",
 
   snapshotTitle: "Aperçu du produit",
   snapshotProduct: "Produit",
   snapshotParent: "Parent",
   snapshotCategory: (category) => `Catégorie : ${category}`,
   snapshotRank: (rank, category) => `#${rank} dans ${category}`,
+  snapshotAge: (months, listed) => `Ancienneté : ${months} mois (référencé ${listed})`,
+  snapshotSellers: (n) => `Vendeurs : ${n} sur cette annonce`,
   snapshotCommissionLive: (pct) => `Commission ${pct}% (en direct de SiteStripe)`,
   snapshotCommissionCategory: (pct, category) =>
     `Commission environ ${pct}% (${category}, grille)`,
@@ -1561,11 +3204,43 @@ const fr: Dict = {
   earningsTitle: "Vos gains",
   earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
   earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",
+  earningsConversion: (pct, campaign) => `Convertit à ${pct} dans "${campaign}"`,
+  earningsConversionMore: (n) => `La meilleure de ${n} campagnes menées ici. Voir le détail complet ci-dessous.`,
+  ownedTitle: "Vous l'avez déjà",
+  ownedNote: "Ce produit est dans votre historique de commandes.",
+  ownedBought: (year) => `Acheté en ${year}`,
+  ownedPaid: (price) => `Payé ${price}`,
+  ownedPostedChip: "Déjà publié",
+  ownedPostedSummary: (platforms) => `Déjà partagé sur ${platforms}`,
+  ownedGridOwned: "Déjà acheté",
+  ownedGridPosted: "Publié",
   priceHistoryTitle: "Historique des prix",
   priceHistoryNow: (amount) => `Maintenant ${amount}`,
   priceHistoryLow: (amount) => `Plus bas ${amount}`,
   priceHistoryLowest: "Plus bas jamais vu",
   priceHistoryNote: "Prix vus depuis que vous naviguez avec l'extension.",
+  priceHistoryDesktopNote: "Historique complet depuis votre application Influencer Butler.",
+  bsrHistoryTitle: "Historique du classement des ventes",
+  bsrHistoryNow: (rank) => `Maintenant n°${rank}`,
+  bsrHistoryBest: (rank) => `Meilleur n°${rank}`,
+  bsrHistoryAvg90: (rank) => `Moyenne 90 j n°${rank}`,
+  bsrTrendSteady: "Classement stable",
+  bsrTrendRising: "Classement en hausse",
+  bsrTrendSlipping: "Classement en baisse",
+  salesHistogramTitle: "Ventes, 12 derniers mois",
+  salesPeak: (units, month) => `Pic ~${units} en ${month}`,
+  salesEstTitle: "Ventes mensuelles estimées",
+  salesEstValue: (n) => `~${n}/mois`,
+  salesEstModeled: "Estimé d'après le classement des ventes",
+  salesEstCalibrated: "Calibré sur des données réelles",
+  boughtPastMonthChip: (n) => `${n}+ achetés/mois`,
+  estUnitsLabel: "Unités/mois est.",
+  estRevenueLabel: "Revenus/mois est.",
+  estUnitsTip:
+    "Unités mensuelles estimées, modélisées d'après le classement des ventes du produit. Une estimation, pas un chiffre officiel.",
+  estRevenueTip:
+    "Revenus mensuels estimés (unités estimées multipliées par le prix). Une estimation, pas un chiffre officiel.",
+  marketPoolNote: "Issu du catalogue partagé Influencer Butler.",
   shotListTitle: "Plan de tournage",
   shotListShowFeatures: "Montrez ces caractéristiques à la caméra:",
   shotListBeatHook: "Accroche dans les 3 premières secondes: le résultat ou le problème résolu",
@@ -1581,8 +3256,20 @@ const fr: Dict = {
   inlineUnavailable: "indisponible",
   inlineNotListed: "non listé",
   inlineConnectCreatorApi: "Connectez la Creator API pour la disponibilité multi-pays",
+  inlineCreatorApiSyncPending: "Vos clés Creator API ne sont pas encore parvenues à votre compte : ouvrez les Réglages et réessayez",
 
   tagFree: "Gratuit",
+  navUpdate: "Mise à jour",
+  navWhatsNew: "Nouveautés",
+  navAiAssistant: "Assistant IA",
+  navDeals: "Collecteur d'offres",
+  navLinkButler: "Link Butler",
+  navGrpWalmart: "Walmart",
+  navGrpCross: "Multiplateforme",
+  navGrpProduct: "Pages produit",
+  navGrpResearch: "Recherche",
+  navGrpCampaigns: "Campagnes",
+  navGrpEarnings: "Gains",
   thisPageHeading: "Cette page",
   checkingTab: "Vérification de l'onglet actuel...",
   accountHeading: "Compte",
@@ -1594,6 +3281,13 @@ const fr: Dict = {
   startFreeTrial: "Démarrer un essai gratuit",
   connectedAs: "Connecté en tant que",
   syncToggleLabel: "Synchroniser les découvertes avec mon tableau de bord",
+  syncDashboardHint:
+    "Les découvertes se chargent d'elles-mêmes sur votre tableau de bord web. L'app de bureau n'est pas nécessaire pour cela.",
+  syncStatsHint:
+    "Lorsque la synchronisation est active, des décomptes anonymisés d'actions automatiques (comme les campagnes acceptées) sont ajoutés à nos totaux d'activité publics. Consultez notre Politique de confidentialité.",
+  contributeToggleLabel: "Contribuer au catalogue de produits partagé",
+  contributeBlurb:
+    "Désactivé par défaut. Une fois activé, les données produit que vous voyez déjà (prix, classement des ventes, achats le mois dernier, catégorie) et quelles vidéos de créateurs figurent dans le carrousel d'un produit sont regroupées, jamais de données personnelles, afin que chacun voie la demande réelle, l'historique des prix et la concurrence vidéo au fil du temps.",
   disconnect: "Déconnecter",
   settingsHeading: "Paramètres",
   languageLabel: "Langue",
@@ -1605,7 +3299,18 @@ const fr: Dict = {
   storefrontHandleLabel: "Mon pseudo de storefront",
   storefrontHandlePlaceholder: "p. ex. influencerbutler",
   toolsHeading: "Outils",
+  groupWalmart: "Walmart",
+  groupCrossPlatform: "Amazon et Walmart",
+  groupAmazonProduct: "Amazon : pages produit",
+  groupAmazonResearch: "Amazon : recherche et découverte",
+  groupAmazonCampaigns: "Amazon : campagnes et storefront",
+  groupAmazonEarnings: "Amazon : gains et alertes",
+  toolWalmart: "Prise en charge de Walmart",
+  toolWalmartHint:
+    "Active les signaux de revenus et les overlays sur Walmart.com. L'overlay des résultats de recherche (ci-dessous) fonctionne aussi sur les grilles Walmart.",
   toolVideoCounts: "Comptage de vidéos",
+  toolVideoLandscape: "Panorama vidéo",
+  toolVideoLikes: "Nombre de mentions J'aime des vidéos",
   toolApproved: "Sceau Butler Approved",
   toolCalculator: "Calculateur de profit",
   toolStorefront: "Vérifications du storefront",
@@ -1625,13 +3330,13 @@ const fr: Dict = {
   footerHelp: "Aide",
   footerDashboard: "Mon tableau de bord",
 
-  openAmazonToStart: "Ouvrez une page produit Amazon, vos commandes ou votre storefront pour commencer.",
+  openAmazonToStart: "Ouvrez une page produit Amazon ou Walmart, vos commandes ou votre storefront pour commencer.",
   noToolsOnPage: "Cette page Amazon n'a pas d'outils butler. Essayez une page produit.",
   productToolsActive: "Les outils de la page produit sont actifs.",
   orderScanReady: "L'analyse de l'historique de commandes est prête.",
   storefrontCheckupReady: "Le bilan du storefront est prêt.",
   uploadHelperReady: "L'assistant de mise en ligne est prêt.",
-  reloadTabToActivate: "Rechargez l'onglet Amazon pour activer les outils (la page était ouverte avant l'installation).",
+  reloadTabToActivate: "Rechargez cet onglet pour activer les outils (la page était ouverte avant l'installation).",
   connectedFallback: "connecté",
   findingsWaiting: (n) => `${n} découvertes en attente de synchronisation`,
   lastSynced: (time) => `Dernière synchro ${time}`,
@@ -1691,9 +3396,30 @@ const fr: Dict = {
   chipUnclassified: (n) => `${n} non classées`,
   videosTotalVia: (total, viaPageData) =>
     `${total} vidéos au total (lu via ${viaPageData ? "données de page" : "carrousel"})`,
+  carouselReading: (label) => `${label} : lecture des données vidéo...`,
+  upperSlotOn:
+    "Carrousel supérieur d'influenceurs : activé. Les vidéos d'influenceurs peuvent occuper l'emplacement du haut, à côté de la galerie d'images.",
+  upperSlotOff:
+    "Carrousel supérieur d'influenceurs : désactivé. Sur cette fiche, les vidéos d'influenceurs n'apparaissent que dans le carrousel inférieur.",
+  upperSlotChecking: "Carrousel supérieur d'influenceurs : vérification...",
+  upperSlotUnknown: "Carrousel supérieur d'influenceurs : inconnu",
+  upperSlotInfo:
+    "Quand une marque active le carrousel supérieur d'influenceurs, une vidéo de créateur peut être placée juste à côté de la galerie d'images : l'emplacement vidéo le plus rentable de la fiche. Désactivé signifie que votre vidéo n'apparaîtrait que dans le carrousel inférieur des vidéos du produit.",
   influencerFallback: "Influenceur",
   influencerVideosLabel: (n) => `Vidéos d'influenceurs (${n})`,
   influencerVideosMore: (n) => `+${n} de plus`,
+
+  myVideoHere: (carousel, position, total) => `Votre vidéo : ${carousel}, n° ${position} sur ${total}`,
+  myVideoHereNoPosition: (carousel) => `Votre vidéo : ${carousel}`,
+  myVideoSideUnknown: "Votre vidéo est sur cette fiche. Lecture du carrousel où elle apparaît...",
+  myVideoSideUnreadable:
+    "Votre vidéo est sur cette fiche. Amazon n'a pas indiqué dans quel carrousel elle apparaît.",
+  myVideoMultiple: (n) => `Vous avez ${n} vidéos sur cette fiche :`,
+  myVideoRowChip: "La vôtre",
+  myVideoCardBadge: "La vôtre",
+  myVideoCardBadgeTitle: (position) => `Votre vidéo, n° ${position} de ce carrousel`,
+  myVideoInfo:
+    "Le carrousel supérieur se trouve à côté de la galerie d'images : c'est l'emplacement vidéo le plus rémunérateur. Le rail inférieur est la section Vidéos de ce produit, plus bas. La position est l'ordre d'Amazon dans ce rail au chargement de la page, et il change.",
 
   deepScan: "Balayer toutes les vidéos",
   deepScanIntro:
@@ -1716,6 +3442,57 @@ const fr: Dict = {
   copySummary: "Copier le résumé",
   shareSummaryHeading: "Concurrence vidéo du produit (via Influencer Butler)",
   shareTopCreators: "Principaux créateurs:",
+
+  videoLandscape: "Panorama vidéo",
+  lsStatKnown: "Vidéos connues",
+  lsStatPlaced: "Placées actuellement",
+  lsStatCreators: "Créateurs uniques",
+  lsStatRepeat: "Créateurs récurrents",
+  lsContentMixLabel: "Répartition par type de créateur",
+  lsConcentrationLabel: "Concentration des créateurs",
+  lsConcentrationShare: (pct) => `Les 5 premiers détiennent ${pct}% des vidéos`,
+  lsTopStrengthLabel: "Meilleures vidéos par position dans le carrousel (approx.)",
+  lsUpper: "Supérieur",
+  lsLower: "Inférieur",
+  lsPulseLabel: (dated, total) => `Rythme de publication (${dated} sur ${total} datées)`,
+  lsNewIn30: (n) => `${n} nouvelles au cours des 30 derniers jours`,
+  lsDatesUnavailable: "Cette fiche n'expose pas les dates de publication, le rythme de publication est donc indisponible.",
+  lsTypicalLengthLabel: "Durée typique",
+  lsLengthBand: (median, low, high) => `Médiane ${median} (typique de ${low} à ${high})`,
+  lsLengthMedian: (median) => `Médiane ${median}`,
+  lsDurationsUnavailable: "Cette fiche n'expose pas la durée des vidéos.",
+
+  // Track 1.4: phrase de concurrence + puce de saisonnalité
+  lsCompeteLine: (n, repeat, pct) =>
+    `Vous seriez en concurrence avec ${n} créateur${n === 1 ? "" : "s"} (${repeat} récurrent${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, les 5 premiers détiennent ${pct}%`
+    })`,
+  lsCompeteLinePartial: (n, repeat, pct, seen, known) =>
+    `Vous seriez en concurrence avec au moins ${n} créateur${n === 1 ? "" : "s"} (${repeat} récurrent${repeat === 1 ? "" : "s"}${
+      pct === null ? "" : `, les 5 premiers détiennent ${pct}%`
+    }) - ${seen} vidéos vues sur ~${known}`,
+  seasonPeaks: (range) => `Pics en ${range}`,
+  seasonSteady: "Stable toute l'année",
+  seasonWindowTip: (months) => `Basé sur ${months} mois d'historique de classement`,
+  monthAbbr: ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
+
+  passportOpen: "Historique de placement",
+  passportClose: "Masquer l'historique",
+  passportLoading: "Chargement de l'historique de placement...",
+  passportUnidentified: "Cette vidéo ne peut pas encore être suivie.",
+  passportUnavailable: "L'historique de placement n'est pas encore disponible.",
+  passportNoData: "Aucun historique de placement enregistré pour cette vidéo pour l'instant.",
+  passportNoDataDay: "aucune donnée",
+  passportCollecting: (days) => `Collecte de preuves de placement quotidiennes: ${days} sur 90 jours enregistrés`,
+  passportSinceFirstSeen: (date) => `depuis la première apparition le ${date}`,
+  passportPresence: "Taux de présence",
+  passportStability: "Stabilité du placement",
+  passportStrength: "Force des jours actifs",
+  passportReach: "Portée produits",
+  passportActiveDays: "Jours observés",
+  passportUpperLower: (upper, lower) => `Supérieur ${upper}% / Inférieur ${lower}%`,
+  passportCurrentSnapshot: "Placement actuel",
+  passportLastObserved: (date) => `Vu pour la dernière fois le ${date}`,
 
   butlerApproved: "Butler Approved",
   approvedYes: "Butler Approved: ça vaut le coup de créer du contenu",
@@ -1748,6 +3525,7 @@ const fr: Dict = {
   searchSortLabel: "Trier :",
   sortScore: "Meilleur Butler Score",
   sortCommission: "Commission la plus élevée",
+  sortRevenue: "Revenu estimé",
   sortPriceAsc: "Prix : croissant",
   sortPriceDesc: "Prix : décroissant",
   sortRelevance: "Pertinence Amazon",
@@ -1760,9 +3538,192 @@ const fr: Dict = {
   searchScanMore: (done, remaining) => `${done} analysés. Cliquez de nouveau sur Analyser pour ${remaining} de plus.`,
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
+  tileCampaignRate: (pct) => `Campagne ${pct}%`,
+  tileCampaignEpc: (epc) => `Campagne - jusqu'à ${epc}/clic`,
+  tileCampaignEpcTip:
+    "Prévision Earn on Clicks d'Amazon pour ce produit, pas un taux garanti : cela dépend des clics que vous générez et du budget d'Amazon pour la campagne.",
   tileProvenEarner: "Déjà rentable",
+  tileEarned: (money) => `${money} gagnés`,
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
+  tileInfluencerOfTotal: (infl, total) => `${infl} d'infl. / ${total} vidéos`,
+  tileVideoTipSelf: "Répartition exacte des influenceurs, lue sur la page de ce produit.",
+  tileVideoTipVariant:
+    "Estimé à partir d'une autre variante de cette annonce. Ouvrez cette variante ou lancez Scanner pour sa répartition exacte.",
+  tileVideoTipEstimate:
+    "Total des vidéos de la page uniquement. La répartition des influenceurs se charge sur la page produit : ouvrez-la ou lancez Scanner pour le compte exact.",
+  tileApproved: "Approuvé par Butler",
+  tileLikelyFit: "Bon candidat",
+  tileDeal: "Promo",
+  tileCoupon: "Coupon",
+  tileDealPrimeDay: "Prime Day",
+  tileDealLightning: "Vente flash",
+  dealSignalsTitle: "En promo",
+  dealSignalsWasNow: (was, now) => `Prix de liste ${was}, maintenant ${now}`,
+  tileRevenue: (money) => `~${money}/mois`,
+  tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
+  tileEstUnits: (n) => `~${n} unités/mois`,
+  tileMenuLabel: "Plus d'actions",
+  tileMenuAddToList: "Ajouter à une liste",
+  tileMenuNewList: "Nouvelle liste",
+  tileMenuNewListPlaceholder: "Nom de la liste",
+  tileMenuCreate: "Créer",
+  tileMenuAddedTo: (name) => `Enregistré dans ${name}`,
+  tileMenuListFull: "Cette liste est pleine.",
+  tileMenuListsCapped: "Vous avez atteint le nombre maximal de listes.",
+  tileMenuCopyLink: "Copier le lien",
+  tileMenuCopied: "Copié",
+  tileMenuLinkFailed: "Impossible de créer un lien",
+  tileMenuOpenPage: "Ouvrir la page produit",
+  tileMenuSchedulePost: "Programmer une publication",
+  tileMenuAppLocked: "Ouvrez l'app pour envoyer ce produit.",
+  tileMenuWorking: "En cours...",
+  listPanelHeading: "Listes de produits",
+  listPanelIntro: "Enregistrez ce produit (ou toutes ses variantes) dans une de vos listes.",
+  listPanelNewOption: "Nouvelle liste...",
+  listPanelAddProduct: "Ajouter ce produit",
+  listPanelAddVariations: (n) => `Ajouter les ${n} variantes`,
+  listPanelAddedCount: (n, name) => `${n} ajoutés à ${name}`,
+  listPanelNothingNew: "Déjà dans cette liste.",
+  searchEnriching: (done, total) => `Vérification des détails ${done}/${total}`,
+  searchEnrichPaused: "Vérifications suspendues par Amazon, nouvel essai plus tard",
   searchOverlayActive: "L'overlay de recherche est actif.",
+
+  toolTrendRadar: "Radar de Tendances (Meilleures ventes et Movers)",
+  sumTrendRadar: "Radar de Tendances",
+  trendRadarActive: "Le Radar de Tendances est actif.",
+  toolIdeaList: "Signaux d'argent sur les Idea Lists",
+  sumIdeaList: "Overlay Idea List",
+  ideaListActive: "Les signaux Idea List sont actifs.",
+  toolDealsOverlay: "Signaux d'argent sur les Offres du jour",
+  sumDealsOverlay: "Overlay des offres",
+  toolDealSignals: "Signaux de promotions et d'offres",
+  toolDealSignalsHint:
+    'Affiche un chip "-N%" sur les fiches de recherche et d\'offres en promotion (en mettant en avant les offres Prime Day / ventes flash), et une ligne "En promo" sur les pages produit. Lu depuis la page, sans compte.',
+  navGrpBenable: "Benable",
+  groupBenable: "Benable",
+  toolBenableBadge: "Signaux d'argent Amazon sur les listes Benable",
+  toolBenableBadgeHint:
+    "Sur benable.com, marque chaque produit Amazon avec son statut Creator Connections / SPCC et sa commission. Cliquez sur un badge pour l'inscription, les gains et la possession.",
+  sumBenableBadge: "Signaux d'argent Benable",
+  benableChipCc: (pct) => `${pct}% CC`,
+  benableChipSpcc: (money) => `SPCC ${money}/clic`,
+  benableChipNone: "Amazon",
+  benableChipTitle: "Signaux d'argent Amazon. Cliquez pour le détail.",
+  benableDetailHeading: "Signaux d'argent Amazon",
+  benableOpenAmazon: "Ouvrir sur Amazon",
+  benableEnds: (date) => `se termine ${date}`,
+  benablePosted: "Vous l'avez déjà publié",
+  benableEarned: (money) => `Gagné ${money}`,
+  benableConversion: (pct) => `${pct} de conversion`,
+  benablePrice: (money) => `Prix ${money}`,
+  benableEstSales: (n) => `~${n}/mois vendus`,
+  benableNoCampaign: "Aucune campagne CC ni SPCC",
+  benableChecking: "Vérification de vos données...",
+  benableNoExtra:
+    "Connectez-vous ou ouvrez l'app de bureau pour l'inscription, les gains et la possession.",
+  dealsOverlayActive: "Les signaux des offres sont actifs.",
+  trendCount: (n) => `${n} produits notés`,
+  trendSortTrending: "Plus fortes hausses",
+  trendSortRank: "Classement des ventes",
+  trendFewVideosOnly: "Créneau vidéo libre seulement",
+  tileRank: (n) => `N° ${n}`,
+  tileGain: (pct) => `▲ ${pct}%`,
+
+  toolGlobalMaximizer: "Portée mondiale (multi-boutique)",
+
+  toolStoreOverlay: "Overlay de boutique de marque",
+  sumStoreOverlay: "Overlay de boutique de marque",
+  storeOverlayActive: "L'overlay de boutique de marque est actif.",
+  storeCount: (n) => `${n} produits notés`,
+  storeCandidates: (n) => `${n} encadrés en vert`,
+  storeCandidatesOnly: "Meilleurs candidats seulement",
+  storeEnriching: (done, total) => `Vérification des pages produit ${done} sur ${total}...`,
+  storeEnrichPaused: "Amazon a suspendu les vérifications. Rechargez la page plus tard pour terminer.",
+  tileVideos: (n) => `${n} vidéos`,
+  tileHeroSlot: "Emplacement vidéo",
+  tileNoCarousel: "Pas de carrousel",
+
+  videoLikesTitle: "Nombre de mentions J'aime de cette vidéo sur Amazon.",
+  sumEarningsOverlay: "Gains en boutique",
+  toolEarningsOverlay: "Gains en boutique (badges sur le storefront)",
+  earnBadgeTitle: "Ce que vous avez gagné sur cette publication. Cliquez pour le détail complet.",
+  earnDetailTitle: "Gains du produit",
+  earnByStore: "Gains par boutique",
+  earnByYear: "Gains par année",
+  earnByMonth: "Gains par mois",
+  earnCampaigns: "Campagnes Creator Connections",
+  earnOnsite: "sur Amazon",
+  earnOffsite: "hors Amazon",
+  earnScopeThisMarket: "Ce marché",
+  earnScopeAllStores: "Toutes les boutiques",
+  earnUnits: (n) => `${n} unité${n === 1 ? "" : "s"}`,
+  earnOrders: (n) => `${n} commande${n === 1 ? "" : "s"}`,
+  earnRate: (pct) => `taux ${pct}%`,
+  earnClicks: (n) => `${n} clic${n === 1 ? "" : "s"}`,
+  earnConversion: (pct) => `${pct} de conversion`,
+  earnBestConverter: "Meilleure conversion",
+  earnViewBreakdown: "Voir le détail",
+  earnNoBreakdown: "Mettez à jour l'application de bureau pour voir le détail par boutique, année, mois et campagne.",
+  earnClose: "Fermer",
+
+  sumVideoMoney: "Revenus par vidéo",
+  vmPanelTitle: "Revenus par vidéo",
+  vmVideoCount: (n) => `${n} vidéo${n === 1 ? "" : "s"}`,
+  vmEarnedTitle: "Vos gains réels sur le produit de cette vidéo. Cliquez pour le détail.",
+  vmEpv: (money) => `${money}/1k vues`,
+  vmProjected: (money) => `~${money} est.`,
+  vmRateLive: (pct) => `Paie ${pct}% maintenant`,
+  vmRateEnding: (pct) => `${pct}% bientôt fini`,
+  vmBought: (n) => `${n.toLocaleString()} achetés/mois`,
+  vmCoolingChip: "Demande en baisse",
+  vmProjectionNote: "Connectez l'application de bureau pour voir les gains réels. Projections affichées pour l'instant.",
+  vmTopEarners: "Meilleurs revenus",
+  vmBestEpv: "Meilleur par vue",
+  vmReshoot: "À refilmer",
+  vmReshootHint: "Commission élevée, peu de vues",
+  vmDrafts: "Terminez votre brouillon",
+  vmDraftsHint: "Les vidéos non publiées ne rapportent rien",
+  vmCooling: "En refroidissement / à retirer",
+  vmCoolingHint: "Demande en baisse ou campagne terminée",
+  vmExport: "Exporter CSV",
+
+  sumYouTubeStatus: "Statut YouTube",
+  ytOnYouTube: "Sur YouTube",
+  ytNotOnYouTube: "Pas sur YouTube",
+  ytUpload: "Publier sur YouTube",
+  ytUploading: "Publication...",
+  ytFailedRetry: "Échec de la publication, réessayer",
+  ytConnectApp: "Connectez l'app pour le statut YouTube",
+  ytUploadError: "Impossible de joindre l'app de bureau",
+  ytShowingAmazon: "Visible sur Amazon",
+  ytNotShowingAmazon: "Pas sur les fiches produit",
+  reachImprove: "Améliorer la portée",
+  reachPanelTitle: "Augmentez la portée de ce contenu",
+  reachWhy: "Pourquoi elle est limitée",
+  reachReasonVideo:
+    "C'est publié sur votre Storefront mais bloqué sur les fiches produit car cela n'a pas passé le seuil de qualité vidéo d'Amazon.",
+  reachReasonPhoto:
+    "C'est publié sur votre Storefront mais bloqué sur les fiches produit car cela n'a pas passé le seuil de qualité photo d'Amazon.",
+  reachReasonGeneric:
+    "C'est publié sur votre Storefront mais n'apparaît pas sur les fiches produit, l'emplacement le plus fréquenté.",
+  reachFix: "Comment corriger",
+  reachRemedy:
+    "Modifier sur place ne déclenche pas de nouvelle vérification. Supprimez ceci et importez une version améliorée : Amazon revérifie les nouveaux imports sous 48 heures.",
+  reachTipsVideo: [
+    "Filmez avec une lumière bonne et homogène pour que le produit soit bien visible.",
+    "Gardez le plan stable : évitez les images tremblantes ou floues.",
+    "Montrez et démontrez clairement le produit en cours d'utilisation.",
+    "Restez natif à Amazon : pas de filigranes d'autres applis (TikTok, Reels) ni de texte envahissant.",
+    "Utilisez un son clair et une voix off naturelle et informative.",
+  ],
+  reachTipsPhoto: [
+    "Utilisez une image nette et haute résolution : sans flou ni compression excessive.",
+    "Éclairez le produit de façon homogène ; évitez les arrière-plans sombres ou chargés.",
+    "Montrez le vrai produit clairement et en contexte.",
+    "Pas de filigranes, logos ni texte promotionnel sur l'image.",
+    "Cadrez le produit comme le sujet clair de la photo.",
+  ],
+  reachOpenItem: "Ouvrir pour modifier",
 
   sumCampaignRadar: "Radar de campagnes",
   toolCampaignRadar: "Radar de campagnes (mettre en évidence)",
@@ -1772,6 +3733,7 @@ const fr: Dict = {
   radarMinDays: "Jours min. restants",
   radarMinBudget: "Budget min. ($)",
   radarOnlyPassing: "Seulement les campagnes qui passent",
+  radarOnlyStrong: "Seulement les meilleures",
   radarSortLabel: "Trier",
   radarSortScore: "Meilleure correspondance",
   radarSortRate: "Commission",
@@ -1779,12 +3741,81 @@ const fr: Dict = {
   radarSortRelevance: "Ordre de la page",
   radarChipOwned: "Vous l'avez déjà",
   radarChipEarner: "Vous avez déjà gagné dessus",
-  radarChipRate: (pct) => `${pct}% de taux`,
-  radarChipDays: (n) => `${n} jours restants`,
   radarChipEnded: "Terminée",
-  radarChipBudget: (amount) => `${amount} restant`,
   radarChipCc: "Éligible CC",
   radarChipSpcc: "Éligible SPCC",
+  radarAvailChip: (code, status) =>
+    status === "available" ? `${code} ✓` : status === "unavailable" ? `${code} ✗` : `${code} ?`,
+  radarAvailTitle: (code, status) =>
+    status === "available"
+      ? `Disponible à l'achat sur la boutique Amazon ${code}`
+      : status === "unavailable"
+        ? `Indisponible à l'achat sur la boutique Amazon ${code}`
+        : `Impossible de vérifier la boutique Amazon ${code} pour le moment`,
+  radarVideoChip: (n) => (n === 0 ? "Aucune vidéo pour l'instant" : `${n} ${n === 1 ? "vidéo" : "vidéos"}`),
+  radarConversionChip: (pct) => `${pct} de conversion`,
+  radarConversionTitle: "Conversion des acheteurs (commandes par clic) selon les statistiques de campagne d'Amazon",
+  radarEpcChip: (epc) => `EPC jusqu'à ${epc}`,
+  radarEpcTitle: "EPC estimé d'Amazon (gains par clic), affiché comme limite supérieure",
+  radarBudgetChip: (value) => `Budget : ${value}`,
+  radarBudgetValue: (v) => (v === "high" ? "Élevé" : v === "medium" ? "Moyen" : "Faible"),
+  radarBudgetTitle: "Score de disponibilité du budget d'Amazon pour cette campagne",
+  radarVideoTitle:
+    "Vidéos de créateurs déjà présentes sur ce produit. Moins il y en a, moins la concurrence est forte.",
+  popupAvailabilityLabel: "Afficher la disponibilité pour",
+  popupAvailabilityHint:
+    "Campaign Radar vérifie chaque produit de campagne sur les boutiques Amazon de ces pays et affiche une pastille par pays.",
+  popupAvailabilityAuDenied:
+    "L'Australie nécessite l'autorisation de lire amazon.com.au. Autorisez-la quand Chrome le demande, puis réessayez.",
+
+  lastCallWatch: "Demander au Butler de surveiller cette campagne",
+  lastCallWatching: "Le Butler surveille : alerte Dernier Appel activée",
+  lastCallFull: "Complète",
+  lastCallFillUnknown: "Remplissage inconnu",
+  lastCallFillLabel: (pct, filled, total) => `${pct}% remplie : ${filled}/${total}`,
+  lastCallCampaignFallback: "Une campagne",
+  lastCallNotifTitle: "Butler Dernier Appel",
+  lastCallNotifNearFull: (name, pct) =>
+    `Dernier Appel : ${name} est remplie à ${pct}%. Acceptez avant la fermeture.`,
+  lastCallNotifFilled: (name) => `${name} vient de se remplir.`,
+  lastCallMobileNote:
+    "Sur Android, les alertes Dernier Appel se déclenchent quand vous ouvrez Creator Connections. Les vérifications automatiques en arrière-plan fonctionnent sur un ordinateur Windows ou Mac.",
+
+  campaignBriefButton: "Fiche",
+  campaignBriefTitle: "La fiche du Butler",
+  campaignBriefLoading: "Le Butler analyse cette campagne...",
+  campaignBriefConfidence: (n) => `${n} de confiance`,
+  campaignBriefConversion: (pct) => `${pct} de conversion`,
+  campaignBriefWhy: "Pourquoi je la prendrais",
+  campaignBriefFilm: "Quoi filmer",
+  campaignBriefPick: "Le meilleur choix du catalogue",
+  campaignBriefPickEst: (units, revenue) => `Est. ${units} unités/mois, ${revenue}/mois`,
+  campaignBriefSaturation: (n) =>
+    n === 0
+      ? "Aucune vidéo de créateur sur ce produit pour l'instant : une place à prendre."
+      : `${n} ${n === 1 ? "vidéo" : "vidéos"} de créateurs déjà sur ce produit (saturation).`,
+  campaignBriefOnAmazon: "Sur Amazon",
+  campaignBriefOffAmazon: "Hors Amazon aussi",
+  campaignBriefAudience: "Pour qui",
+  campaignBriefAccept: "Accepter la campagne",
+  campaignBriefCopy: "Copier la fiche",
+  campaignBriefCopied: "Copié",
+  campaignBriefClose: "Fermer",
+  campaignBriefError: "Le Butler n'a pas pu rédiger une fiche complète pour le moment. Voici le détail du score.",
+  campaignBriefConnectHint: "Connectez votre propre clé d'API OpenAI et le Butler rédigera une fiche complète à chaque fois.",
+  campaignBriefKeyErrorHint: "Votre clé OpenAI connectée n'a pas pu terminer cette fiche. Vérifiez-la dans les Réglages.",
+  campaignBriefConnectBtn: "Connecter OpenAI",
+  campaignBriefOpenSettingsBtn: "Ouvrir les réglages",
+  campaignBriefVerdictHot: "À accepter",
+  campaignBriefVerdictWarm: "Vaut un coup d'oeil",
+  campaignBriefVerdictCool: "Plutôt à laisser",
+
+  sumCampaignDetail: "Détail de campagne",
+  campaignDetailTitle: "Lecture produit du Butler",
+  campaignDetailProducts: "Produits de cette campagne",
+  campaignDetailNoProducts: "Aucun produit détecté sur cette campagne pour l'instant.",
+  campaignDetailNoData: "Pas encore de données de demande dans le catalogue.",
+  campaignDetailBought: (n) => `${n}+ achetés/mois`,
 
   breakEvenMath: "Calcul du seuil de rentabilité",
   noPriceForMath: "Aucun prix trouvé sur cette page, donc aucun calcul à faire.",
@@ -1837,7 +3868,8 @@ const fr: Dict = {
   sfRescan: "Réanalyser",
   sfScanningFeed: "Analyse du flux...",
   sfScanningProgress: (items, pages) => `Analyse du flux... ${items} éléments sur ${pages} pages`,
-  sfOpeningPhotos: (done, total) => `Ouverture des photos et listes... ${done} sur ${total}`,
+  sfOpeningPhotos: (done, total) =>
+    `Ouverture des photos et listes (vidéos déjà analysées via le flux)... ${done} sur ${total}`,
   sfOpeningProducts: (done, total) => `Ouverture des produits... ${done} sur ${total}`,
   sfEtaMinLeft: (min) => ` (environ ${min} min restantes)`,
   sfCheckedFirst: (cap) => `Les ${cap} premiers produits vérifiés (le storefront en a plus).`,
@@ -1845,6 +3877,11 @@ const fr: Dict = {
   sfStopped: "Arrêté.",
   sfDone: (items, pages, capped) =>
     `Terminé: ${items} éléments sur ${pages} pages${capped ? " (flux limité)" : ""}.`,
+  sfCoverage: (items, reported) =>
+    `${items} éléments analysés; le storefront indique environ ${reported} publications.`,
+  sfStoppedEarly: (reason) =>
+    `Le flux s'est arrêté prématurément (${reason}), du contenu peut donc manquer. Relancez l'analyse pour réessayer.`,
+  sfDroppedCards: (n) => `${n} cartes du flux avaient un type non reconnu et ont été ignorées.`,
   sfLabelVideos: "vidéos",
   sfLabelPhotos: "photos",
   sfLabelIdeaLists: "listes d'idées",
@@ -1932,9 +3969,15 @@ const fr: Dict = {
   noCampaign: "Aucune campagne Creator Connections ou SPCC trouvée pour ce produit.",
   ccAvailable: "Creator Connections disponible",
   spccAvailable: "SPCC disponible",
-  campaignAcceptNote: "Acceptez-la depuis la section Send to your butler app ci-dessous (l'app confirme et accepte).",
+  ccNotAvailable: "Creator Connections non disponible",
+  spccNotAvailable: "SPCC non disponible",
+  enrolledCc: "Inscrit à Creator Connections",
+  enrolledSpcc: "Inscrit à SPCC",
+  enrolledRate: (pct) => `${pct}% de commission`,
+  epc: (money) => `EPC ${money}`,
+  campaignConnectNote: "Ouvrez l'app Influencer Butler pour accepter cette campagne (l'app confirme et accepte).",
   dealAvailable: "Offre disponible",
-  dealPushNote: "Envoyez-la vers Deals Influencer Butler depuis la section Send to your butler app ci-dessous.",
+  dealPushNote: "Envoyez-la vers Deals Butler depuis la section Send to your butler app ci-dessous.",
 
   campaignMatcher: "Détecteur de campagnes",
   campaignMatcherIntro: (source) =>
@@ -1960,28 +4003,47 @@ const fr: Dict = {
   sumCampaignMatcher: "Détecteur de campagnes",
 
   sendToApp: "Envoyer à votre app butler",
-  pushToDailyDeals: "Envoyer vers Deals Influencer Butler",
+  pushToDailyDeals: "Envoyer vers Deals Butler",
+  searchSendDeals: "Envoyer les deals vers l'app",
+  searchNoDeals: "Aucune promo sur cette page.",
+  searchSendingDeals: (n) => `Envoi de ${n} deal(s) vers votre app...`,
   sendToContentButler: "Envoyer à Content Butler",
+  sendToVoiceover: "Envoyer à Voiceover Butler",
+  sendingVoiceover: "Envoi à Voiceover Butler...",
   saveToLinkButler: "Enregistrer dans Link Butler",
   savingLink: "Enregistrement du lien...",
   acceptCc: "Accepter la campagne CC",
+  checkCc: "Rechercher une campagne CC",
   acceptSpcc: "Accepter la campagne SPCC",
   addToCollab: "Ajouter à Collab Butler",
   addingCollab: "Ajout à Collab Butler...",
   pitchThisBrand: (brand) => `Contacter ${brand}`,
   pitchingBrand: "Ajout à Pitch Butler...",
+  generatePhoto: "Générer une photo IA",
+  generatingPhoto: "Génération d'une photo IA dans votre app...",
+  requestSample: "Demander un échantillon",
+  requestingSample: "Préparation de votre demande d'échantillon...",
+  addToIdeaList: "Ajouter à une Idea List",
+  addingToIdeaList: "Mise en file pour Idea List Butler...",
+  ideaListNewListOption: "Nouvelle Idea List...",
+  tileMenuAddToIdeaList: "Ajouter à une Idea List Amazon",
   pushingDeals: "Envoi vers votre espace deals...",
   sendingContent: "Envoi à Content Butler...",
   checkingCc: "Vérification de Creator Connections...",
   checkingSpcc: "Vérification de Sponsored Products...",
   sentToApp: "Envoyé à votre app.",
   couldNotReachApp: "Impossible de joindre l'app. Est-elle toujours ouverte?",
+  connectAppToPair:
+    "Connectez l'app d'abord : ouvrez la fenetre de l'extension et associez avec le code a 6 chiffres.",
+  actionFailedTitle: "L'action du butler n'a pas abouti",
   connectedToApp: (version) =>
     `Connecté à votre app Influencer Butler${version}. L'acceptation utilise votre catalogue Creator Connections local.`,
   upsellSignedIn:
-    "Ouvrez l'app de bureau Influencer Butler pour envoyer ce produit vers vos Deals Influencer Butler, Content Butler et auto-accepter les campagnes.",
+    "Ouvrez l'app de bureau Influencer Butler pour envoyer ce produit vers vos Deals Butler, Content Butler et auto-accepter les campagnes.",
   upsellSignedOut:
-    "Faites le reste avec l'app: envoyez ce produit vers Deals Influencer Butler avec votre modèle de publication et vos destinations sociales, envoyez-le à Content Butler et auto-acceptez les campagnes Creator Connections.",
+    "Faites le reste avec l'app: envoyez ce produit vers Deals Butler avec votre modèle de publication et vos destinations sociales, envoyez-le à Content Butler et auto-acceptez les campagnes Creator Connections.",
+  upsellReconnect:
+    "Votre app Influencer Butler ne répond pas. Assurez-vous qu'elle est ouverte, puis rechargez cette page.",
   ctaOpenApp: "Ouvrir ou installer l'app",
   ctaStartTrial: "Démarrer votre essai gratuit",
   toolsAlwaysFree: "Les outils d'analyse ci-dessus sont toujours gratuits. L'app ajoute l'automatisation.",
@@ -1989,20 +4051,30 @@ const fr: Dict = {
   sfSendToRetag: (n) => `Envoyer ${n} problème(s) vers Retag Butler`,
   sfSendToContent: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
   sfSendingToContent: "Envoi vers Content Butler...",
+  sfSendToVoiceover: (n) => `Envoyer ${n} produit(s) vers Voiceover Butler`,
+  sfSendingToVoiceover: "Envoi vers Voiceover Butler...",
   sfSendingToRetag: "Envoi vers Retag Butler...",
   sfAcceptAllCampaigns: (n) => `Accepter toutes les campagnes disponibles (${n})`,
   sfAcceptingCampaigns: "Acceptation des campagnes dans l'app...",
   obSendToContentButler: (n) => `Envoyer ${n} produit(s) vers Content Butler`,
   obSendingToContentButler: "Envoi vers Content Butler...",
   obSentToContentButler: (n) => `${n} produit(s) envoyé(s) vers Content Butler.`,
+  obSendToVoiceover: (n) => `Envoyer ${n} produit(s) vers Voiceover Butler`,
+  obSendingToVoiceover: "Envoi vers Voiceover Butler...",
+  obSentToVoiceover: (n) => `${n} produit(s) envoyé(s) vers Voiceover Butler.`,
   appBridgeHeading: "App de bureau",
   appBridgeBlurb:
     "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
+  appBridgeMobile:
+    "L'app de bureau fonctionne sous Windows ou Mac, elle ne peut donc pas se connecter directement à ce navigateur Android. Pour lui envoyer des offres, associez cet ordinateur depuis la fenêtre de l'extension, dans \"Send to another computer\".",
+  appNextStepHint:
+    "Vous êtes synchronisé avec votre tableau de bord. Pour aussi accepter des campagnes et envoyer des produits à vos butlers, connectez l'app de bureau ci-dessous. Cette étape est facultative.",
   appConnect: "Connecter l'app de bureau",
   appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
   appCodePlaceholder: "123456",
   appPairSubmit: "Associer",
   appConnected: "Connecté à l'app de bureau.",
+  hudSynced: "Synchronisé",
   appUnpair: "Déconnecter l'app",
   appRequestingCode: "Demande d'un code à l'app...",
   appCodeShown: "L'app affiche un code à 6 chiffres. Saisissez-le ci-dessus.",
@@ -2019,19 +4091,49 @@ const fr: Dict = {
     "Échangez des astuces avec d'autres Amazon Influencers et tirez le meilleur d'Influencer Butler. Cliquez pour rejoindre le groupe Facebook.",
   nudgeFbTitle: "Venez dire bonjour à la communauté",
   nudgeFbBody:
-    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces avec d'autres Amazon Influencers et découvrir les nouveautés en premier.",
+    "Vous utilisez Influencer Butler depuis un jour. Rejoignez notre groupe Facebook pour échanger des astuces et des réussites avec d'autres Amazon Influencers et découvrir les nouveautés en premier. Pour signaler un bug ou tout ce dont vous avez besoin de notre équipe, utilisez plutôt la bulle de chat dans le coin de la page.",
   nudgeFbJoin: "Rejoindre le groupe Facebook",
+  nudgeFbReport: "Plutôt signaler un bug",
   nudgeAppNotifTitle: "Obtenez l'app de bureau Influencer Butler gratuite",
   nudgeAppNotifBody:
     "Automatisez les deals, le contenu et l'acceptation des campagnes depuis votre ordinateur. Cliquez pour la télécharger gratuitement pour Windows ou Mac.",
   nudgeAppTitle: "Prêt pour l'app de bureau?",
   nudgeAppBody:
-    "L'app de bureau fait le gros du travail: envoyez des produits vers Deals Influencer Butler, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
+    "L'app de bureau fait le gros du travail: envoyez des produits vers Deals Butler, transmettez-les à Content Butler et auto-acceptez les campagnes Creator Connections.",
   nudgeAppFree: "Elle est gratuite à télécharger et fonctionne avec cette extension.",
   nudgeAppDownloadWindows: "Télécharger pour Windows",
   nudgeAppDownloadMac: "Télécharger pour Mac",
   nudgeAppDownloadGeneric: "Télécharger l'app de bureau",
   nudgeAppIntelMac: "Vous utilisez un Mac Intel?",
+  nudgeCommunityNotifTitle: "Une astuce rapide pour obtenir de l'aide",
+  nudgeCommunityNotifBody:
+    "Profitez du groupe Facebook pour les astuces et les réussites. Pour signaler un bug ou demander une fonctionnalité, utilisez la bulle de chat dans le coin de la page pour que notre équipe puisse vous aider.",
+  nudgeCommunityTitle: "Tirez le meilleur de la communauté",
+  nudgeCommunityBody:
+    "Vous êtes avec nous depuis quelques jours maintenant. Notre groupe Facebook est un endroit idéal pour les astuces, les conseils et les réussites d'autres créateurs. Venez nous rejoindre.",
+  nudgeCommunityNote:
+    "Une petite chose : le groupe est dédié à la communauté et aux astuces, pas aux signalements de bugs, aux réclamations ni à la facturation. Pour tout ce dont vous avez besoin de notre équipe, utilisez la bulle de chat dans le coin de la page. C'est le moyen le plus rapide de nous joindre et cela arrive directement aux personnes qui peuvent vous aider.",
+  nudgeCommunityUnderstand: "J'ai compris",
+  nudgeCommunityReport: "Signaler un bug",
+
+  updateBannerTitle: "Votre extension Influencer Butler a une mise à jour en attente.",
+  updateBannerBody: (version) =>
+    `La version ${version} est prête à être installée. Cela ne prend qu'une seconde et vos réglages sont conservés.`,
+  updateNow: "Mettre à jour",
+  updateRemindLater: "Me le rappeler plus tard",
+  updateAppliedTitle: "Mise à jour installée",
+  updateRefreshBody: "Actualisez cette page pour terminer le passage à la nouvelle version.",
+  updateRefreshBtn: "Actualiser la page",
+  updatePopupHeading: "Mise à jour disponible",
+  updatePopupBody: (current, available) =>
+    `La version ${available} est prête à être installée (vous avez la ${current}). L'extension redémarre dans un instant; vos réglages sont conservés.`,
+
+  whatsNewTitle: "Nouveautés",
+  whatsNewFeaturesHeading: "Nouvelles fonctionnalités",
+  whatsNewFixesHeading: "Corrections",
+  whatsNewReportedHeading: "Problèmes que vous avez signalés et corrigés",
+  whatsNewOtherHeading: "Autres changements notables",
+  whatsNewDismiss: "Compris",
 
   watchlist: "Liste de suivi",
   watchlistIntro:
@@ -2051,10 +4153,91 @@ const fr: Dict = {
   watchNotifPriceDrop: (name) => `Le prix a baissé sur ${name}.`,
   popupWatchlistHeading: "Liste de suivi",
   popupWatchlistEmpty: "Aucun produit suivi pour l'instant. Ouvrez un produit et cliquez sur Suivre.",
+  popupWatchlistMobileNote:
+    "Sur Android, les alertes de suivi sont en pause : les vérifications automatiques en arrière-plan fonctionnent sur un ordinateur Windows ou Mac. Vos produits suivis restent enregistrés.",
+  popupListsHeading: "Mes listes",
+  popupListsEmpty: "Aucune liste pour l'instant. Ajoutez un produit à une liste depuis le menu d'actions de l'overlay de recherche.",
+  popupListItems: (n) => (n === 1 ? "1 produit" : `${n} produits`),
+  popupListDelete: "Supprimer la liste",
   watchCondBackInStock: "De retour en stock",
   watchCondSlotOpens: "Créneau vidéo libre",
   watchCondPriceDrop: "Baisse de prix",
   watchRemoveShort: "Retirer",
+
+  storefrontDetectedTitle: "Boutique détectée",
+  storefrontDetectedBody: (handle) =>
+    `Nous avons trouvé votre boutique (${handle}) et l'avons enregistrée dans les Réglages. Vous pouvez la modifier à tout moment.`,
+
+  obReplayLink: "Guide de configuration",
+  obTitle: "Configurer Influencer Butler",
+  obProgress: (current, total) => `Étape ${current} sur ${total}`,
+  obBack: "Retour",
+  obNext: "Suivant",
+  obSkip: "Ignorer pour l'instant",
+  obFinish: "Terminer",
+  obWelcomeTitle: "Bienvenue dans Influencer Butler",
+  obWelcomeBody:
+    "Cette configuration rapide prépare vos signaux de revenus, votre boutique et vos liens. Cela prend environ une minute, et vous pouvez ignorer toute étape.",
+  obWelcomePin: "Astuce: épinglez l'extension pour garder son bouton à portée de clic. Cliquez sur l'icône de pièce de puzzle dans la barre de Chrome, puis sur l'épingle à côté d'Influencer Butler.",
+  obAccountTitle: "Connectez votre compte",
+  obAccountBody:
+    "Ajoutez votre clé de licence pour synchroniser vos trouvailles avec votre tableau de bord et l'app de bureau. Tout fonctionne sans elle, vous pouvez donc ignorer cette étape.",
+  obAccountConnected: (email) => `Connecté en tant que ${email}.`,
+  obAccountSkipHint: "Pas encore de compte? Ignorez cette étape: l'extension est entièrement utilisable gratuitement.",
+  obStorefrontTitle: "Votre boutique",
+  obStorefrontBody:
+    "L'identifiant de votre boutique Amazon alimente vos liens et les vérifications de boutique. C'est la partie qui suit /shop/ dans l'URL de votre boutique.",
+  obStorefrontAuto:
+    "Pas besoin de la chercher: nous la remplissons automatiquement la première fois que vous ouvrez votre Creator Hub Amazon.",
+  obStorefrontDetected: (handle) => `Détecté: ${handle}`,
+  obToolsTitle: "Activez les outils souhaités",
+  obToolsBody:
+    "Ils sont activés par défaut. Désactivez ce dont vous n'avez pas besoin maintenant; vous pourrez tout modifier plus tard dans les Réglages.",
+  obAppTitle: "Connectez l'app de bureau",
+  obAppBody:
+    "Appairez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon. Saisissez le code à 6 chiffres affiché dans l'app.",
+  obAppSkipHint: "L'app de bureau n'est pas ouverte? Ignorez cette étape et appairez plus tard depuis la fenêtre.",
+  obDoneTitle: "Tout est prêt",
+  obDoneBody:
+    "Influencer Butler est prêt. Ouvrez un produit, votre boutique ou une campagne Creator Connections pour le voir à l'œuvre.",
+  obDoneHelp: "Ouvrir l'aide",
+  obDoneDashboard: "Mon tableau de bord",
+  obDoneClose: "Terminé",
+
+  syncTitle: "Synchroniser avec l'app de bureau",
+  syncBlurb:
+    "Copiez vos fournisseurs de liens, vos balises d'affiliation et votre ID de boutique entre cette extension et l'app de bureau.",
+  syncNow: "Synchroniser maintenant",
+  syncChecking: "Vérification...",
+  syncInSync: "Tout est déjà synchronisé.",
+  syncNotPaired: "Connectez d'abord l'app de bureau pour synchroniser les réglages.",
+  syncAppOutdated: "Mettez à jour l'app de bureau pour synchroniser les réglages.",
+  syncFilled: (n) =>
+    n === 1 ? "1 réglage rempli depuis l'app de bureau." : `${n} réglages remplis depuis l'app de bureau.`,
+  syncFailed: "Impossible de joindre l'app de bureau. Assurez-vous qu'elle est ouverte.",
+  syncConfirmTitle: "Ces réglages diffèrent",
+  syncConfirmBody: (n) =>
+    n === 1
+      ? "1 réglage diffère entre l'extension et l'app de bureau. Choisissez le côté à conserver."
+      : `${n} réglages diffèrent entre l'extension et l'app de bureau. Choisissez le côté à conserver.`,
+  syncConfirmList: "Réglages différents:",
+  syncConfirmAppWins: "Utiliser les valeurs de l'app de bureau",
+  syncConfirmExtWins: "Utiliser les valeurs de l'extension",
+  syncCancel: "Annuler",
+  syncDone: "Synchronisé.",
+
+  // Standalone campaign accept + upload-page campaign prompts
+  acceptStandalone: "Accepter la campagne",
+  acceptWorking: "Acceptation...",
+  acceptNeedsSignIn:
+    "Campagne introuvable. Vérifiez que vous êtes connecté à Amazon Associates dans ce navigateur et que la campagne est toujours ouverte.",
+  acceptAccepted: "Campagne acceptée.",
+  acceptPending: "Demande envoyée. La marque confirmera.",
+  acceptFailed: (reason) => `Impossible d'accepter la campagne (${reason}).`,
+  acceptCooldown:
+    "Amazon a demandé une vérification lors de la dernière tentative. L'acceptation est en pause quelques heures; vous pouvez toujours accepter vous-même sur la page Creator Connections.",
+  uhCampaignAvailable: (asin) => `${asin} a une campagne que vous n'avez pas encore rejointe`,
+  uhCampaignAcceptTitle: "Campagnes des produits tagués",
 };
 
 export type Locale = "en" | "es" | "fr";

@@ -1,6 +1,10 @@
 import {
+  CAMPAIGN_WATCH_ALARM,
+  CAMPAIGN_WATCH_PERIOD_MINUTES,
   CATALOGUE_ALARM,
   CATALOGUE_PERIOD_MINUTES,
+  DEAL_AUTO_HARVEST_ALARM,
+  DEAL_AUTO_HARVEST_PERIOD_MINUTES,
   FACEBOOK_GROUP_URL,
   SYNC_ALARM,
   SYNC_PERIOD_MINUTES,
@@ -9,13 +13,54 @@ import {
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { authSnapshot, signIn, signOut } from "./auth";
-import { getHudStatus, sendHudCommand, lookupEarnings, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
-import { sendFeedback } from "./feedback";
+import { captureAffiliateReferral } from "./affiliate";
+import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
+import type { RelayClaimResult } from "./relay";
+import type { RelayStateView } from "../shared/messages";
+import {
+  sendFeedback,
+  submitFeedbackRich,
+  listLocalFeedback,
+  dismissLocalFeedback,
+  listFeedbackThreads,
+  postFeedbackReply,
+  markFeedbackThreadRead,
+} from "./feedback";
 import { refreshCatalogues } from "./catalogue";
-import { refreshRateCard } from "./rate-card";
+import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
+import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
+import { fetchVideoCount } from "./video-count";
 import { enrichProducts } from "./enrich";
-import { getDealSources, harvestDealSites } from "./deal-harvest";
+import { lookupCcRates } from "./cc-rates";
+import { lookupSpccRates } from "./spcc-rates";
+import { enrichRows } from "./row-enrich";
+import { getMarket, getMarketBatch } from "./market";
+import { getVideoIntel } from "./video-intel";
+import { fetchCampaignBrief } from "./campaign-brief";
+import {
+  cancelSocialPost,
+  generateSocialCaption,
+  listSocialPosts,
+  scheduleSocialPost,
+  uploadSocialImage,
+} from "./social-schedule";
+import { initSocialContextMenu, openComposeWindow } from "./social-compose-window";
+import {
+  assistantChat,
+  assistantVoiceSession,
+  assistantVoiceTool,
+  assistantVoiceTranscript,
+} from "./assistant";
+import { syncDealBadgeContentScripts } from "./deal-badge-register";
+import {
+  getDealAutoHarvest,
+  getDealSources,
+  harvestDealSites,
+  runAutoHarvest,
+  setDealAutoHarvest,
+} from "./deal-harvest";
 import { handleInstagramMessage } from "./instagram";
 import { getOrderAsins, noteScanFinding, scanAsinInTab } from "./order-video-scan";
 import { getPriceHistory, recordPriceFromFinding } from "./price-history";
@@ -30,66 +75,245 @@ import {
   setWatchConditions,
 } from "./watchlist";
 import {
+  addManyToProductList,
+  addToProductList,
+  createProductList,
+  deleteProductList,
+  getProductLists,
+  removeFromProductList,
+  renameProductList,
+} from "./product-lists";
+import {
+  addCampaignWatch,
+  getCampaignWatchList,
+  handleCampaignFills,
+  handleLastCallNotificationClick,
+  refreshLastCall,
+  removeCampaignWatch,
+} from "./last-call";
+import {
   ensureNudgeAlarms,
   handleNudgeAlarm,
   handleNudgeNotificationClick,
   markFirstUse,
 } from "./nudges";
 import {
+  applyUpdate,
+  checkForUpdate,
+  getUpdateStateView,
+  noteUpdateAvailable,
+  remindUpdateLater,
+} from "./update";
+import { getWhatsNewView, markWhatsNewSeen, noteInstall } from "./whats-new";
+import {
+  acceptCampaignInTab,
+  noteAccept,
+  noteAcceptResult,
+  noteAcceptTabReady,
+} from "./campaign-accept";
+import { cleanLinkForRequest } from "./clean-link";
+import {
   buildIntegrationsView,
   generateAffiliateLink,
+  clearIntegration,
   maybeTestAllOnStartup,
   openaiComplete,
+  reconcileCreatorApiVault,
+  retryCreatorApiVaultSync,
   saveIntegration,
   testAllIntegrations,
   testIntegration,
 } from "./integrations";
+import { backupAction } from "./creator-api-sync";
+import { clearEnrichCache } from "../tools/inline-card/enrich-cache";
+import {
+  bulkMintBranded,
+  getOwnerPixels,
+  listOwnerLinks,
+  ownerStats,
+  repointOwnerLink,
+  saveOwnerPixels,
+} from "./links";
+import { applySync, initSettingsSyncOnChange, previewSync } from "./settings-sync";
 import { API_BASE } from "../shared/constants";
-import { getState, patchIntegrationsGlobal } from "../storage/store";
+import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
+import { warn } from "../shared/log";
+import { isAndroid } from "../shared/platform";
+
+// Wire the debounced extension -> desktop settings push. Cheap for the common
+// case: it establishes a baseline and only pushes after a syncable field changes
+// AND the app is paired, so an unpaired install does effectively nothing.
+initSettingsSyncOnChange();
 
 // Background service worker: the only place that talks to
 // influencerbutler.com. Receives findings from content scripts, queues them,
 // and flushes on a steady alarm plus opportunistically on arrival.
 
-chrome.runtime.onInstalled.addListener(() => {
+// Chrome does not inject content scripts into tabs that were already open when
+// the extension installs or updates, so those tabs show nothing until the user
+// reloads (the popup even says "reload to activate"). On install/update, inject
+// content.js into every already-open tab that matches the content script's own
+// match patterns. The content script guards against a double boot in one frame
+// (see main() in content/index.ts), so injecting a tab that later reloads under
+// the manifest is safe. Best-effort: a tab we cannot script (e.g. it navigated
+// away) is skipped silently.
+async function injectIntoOpenTabs(): Promise<void> {
+  const matches = chrome.runtime.getManifest().content_scripts?.[0]?.matches;
+  if (!matches || matches.length === 0) return;
+  let tabs: chrome.tabs.Tab[];
+  try {
+    tabs = await chrome.tabs.query({ url: matches });
+  } catch {
+    return;
+  }
+  for (const tab of tabs) {
+    if (typeof tab.id !== "number") continue;
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
+    } catch {
+      // Discarded tab, restricted page, or a mid-navigation race: leave it for
+      // the manifest to inject on the tab's next load.
+    }
+  }
+}
+
+// Wire the "Schedule to Social Posting Butler" right-click menu (and keep it in
+// sync with the tool setting / kill flag). Registers its listeners at top level,
+// as MV3 requires. Wrapped so a browser without the contextMenus API (Android
+// extension browsers such as Lemur) cannot abort the worker before the message
+// handler below is registered.
+try {
+  initSocialContextMenu();
+} catch (error) {
+  warn("context-menu", "unavailable", error);
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+  // Record the install/update so the post-update "What's New" notice knows
+  // whether (and what) to announce. A fresh install announces nothing.
+  void noteInstall(details.reason, details.previousVersion);
+  // On a FRESH install (never on updates), open the in-extension guided
+  // walkthrough. It steps the user through account, storefront, tools, and
+  // pairing the desktop app, writing real settings as they go, and replaces the
+  // old external welcome tab as the first-run destination. Best-effort: a blocked
+  // tab create just means no walkthrough (it stays replayable from the popup).
+  if (details.reason === "install") {
+    try {
+      void chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
+    } catch {
+      // Tab creation not available in this context: skip silently.
+    }
+  }
+  void injectIntoOpenTabs();
   void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
   void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
+  void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
+    periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
+  });
+  void chrome.alarms.create(DEAL_AUTO_HARVEST_ALARM, {
+    periodInMinutes: DEAL_AUTO_HARVEST_PERIOD_MINUTES,
+  });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshWalmartRateCard();
+  void refreshFlags();
+  void syncDealBadgeContentScripts();
+  // Heal a Creator API vault push that never landed (checks the server for a
+  // divergence, not just a recorded failure).
+  void reconcileCreatorApiVault({ checkRemote: true });
+  // After an update applies, this drops the now-stale "update waiting" record.
+  void getUpdateStateView();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  // Idempotent: re-arm the watchlist alarm for installs that predate it.
+  // Idempotent: re-arm every periodic alarm, not only the ones added after
+  // launch. Mobile browsers can drop alarms when the app process is killed, and
+  // sync/catalogue were previously armed only in onInstalled.
+  void chrome.alarms.create(SYNC_ALARM, { periodInMinutes: SYNC_PERIOD_MINUTES });
+  void chrome.alarms.create(CATALOGUE_ALARM, { periodInMinutes: CATALOGUE_PERIOD_MINUTES });
   void chrome.alarms.create(WATCHLIST_ALARM, { periodInMinutes: WATCHLIST_PERIOD_MINUTES });
+  void chrome.alarms.create(CAMPAIGN_WATCH_ALARM, {
+    periodInMinutes: CAMPAIGN_WATCH_PERIOD_MINUTES,
+  });
+  void chrome.alarms.create(DEAL_AUTO_HARVEST_ALARM, {
+    periodInMinutes: DEAL_AUTO_HARVEST_PERIOD_MINUTES,
+  });
   void refreshCatalogues();
   void refreshRateCard();
+  void refreshWalmartRateCard();
+  void refreshFlags();
+  void syncDealBadgeContentScripts();
   void maybeTestAllOnStartup();
+  // Heal a Creator API vault push that never landed (see onInstalled).
+  void reconcileCreatorApiVault({ checkRemote: true });
   // Re-arm the nudge alarms: a one-shot `when` that elapsed while the browser
   // was closed fires on the next launch.
   void ensureNudgeAlarms();
+  // A browser restart applies any staged update; clear the stale record.
+  void getUpdateStateView();
 });
+
+// Chrome fires this when it has downloaded a new extension version. In MV3 it
+// still applies the update on its own once this worker idles (the listener does
+// not defer it); we record it so the banner and popup can tell the user.
+chrome.runtime.onUpdateAvailable.addListener((details) => {
+  void noteUpdateAvailable(details.version);
+});
+
+async function skipOnAndroid(job: () => Promise<void>): Promise<void> {
+  if (await isAndroid()) return;
+  await job();
+}
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === SYNC_ALARM) {
     void flush();
     // Reverse channel: pick up anything the paired app wants to show the creator.
     void pollAppNotifications();
+    // Operational flags ride the frequent sync alarm (self-throttled to one
+    // fetch per stale window) so a remote kill switch reaches the browser in
+    // minutes, not on the daily catalogue cadence.
+    void refreshFlags();
+    // Cheap path: drains a known-pending Creator API vault sync (a no-op read of
+    // a local flag unless a prior push failed), so a transient push failure
+    // heals within a sync cycle rather than waiting for the next restart.
+    void reconcileCreatorApiVault();
   }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
     void refreshRateCard();
+    void refreshWalmartRateCard();
+    // Nudge Chrome's updater on the same cadence; it staging a new version
+    // fires onUpdateAvailable above. No-op on unpacked installs.
+    void checkForUpdate();
   }
-  if (alarm.name === WATCHLIST_ALARM) void refreshWatchlist();
+  // The watchlist check, Last Call poll (which also drives auto-accept), and the
+  // automatic deal harvest each work by opening hidden background tabs. Android
+  // extension browsers (Lemur) show those as real tabs in the user's tab strip
+  // and suspend them when the app is backgrounded, so these stay desktop-only.
+  // The manual, button-triggered versions still run everywhere.
+  if (alarm.name === WATCHLIST_ALARM) void skipOnAndroid(refreshWatchlist);
+  if (alarm.name === CAMPAIGN_WATCH_ALARM) void skipOnAndroid(refreshLastCall);
+  if (alarm.name === DEAL_AUTO_HARVEST_ALARM) {
+    void skipOnAndroid(runAutoHarvest);
+    // Piggyback the badge registration resync here too: it is cheap/idempotent
+    // and this is the one alarm guaranteed to fire even for users who never
+    // open the deals page again after granting a site once.
+    void syncDealBadgeContentScripts();
+  }
   handleNudgeAlarm(alarm.name);
 });
 
 // A nudge notification was clicked: open its target and record that the user
-// acted (so the matching in-page modal is suppressed).
-chrome.notifications.onClicked.addListener((notificationId) => {
-  // Watchlist alerts open the product directly; anything else is a nudge.
+// acted (so the matching in-page modal is suppressed). Optional chaining: a
+// browser without the notifications API must not abort worker startup.
+chrome.notifications?.onClicked?.addListener((notificationId) => {
+  // Watchlist alerts open the product directly; Last Call alerts open the
+  // campaign grid; anything else is a nudge.
   if (handleWatchNotificationClick(notificationId)) return;
+  if (handleLastCallNotificationClick(notificationId)) return;
   void handleNudgeNotificationClick(notificationId, openAllowedUrl);
 });
 
@@ -112,10 +336,20 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void buildAuthStatus().then(sendResponse);
       return true;
     case "SIGN_IN":
-      void signIn(message.licenseKey).then(sendResponse);
+      void signIn(message.licenseKey).then((res) => {
+        // A sync owed while signed out (creds saved before a license key was
+        // present) can now be pushed; also catch any pre-existing divergence.
+        void reconcileCreatorApiVault({ checkRemote: true });
+        sendResponse(res);
+      });
       return true;
     case "SIGN_OUT":
       void signOut().then(() => sendResponse(undefined));
+      return true;
+    case "CAPTURE_AFFILIATE_CODE":
+      void captureAffiliateReferral(message.code, message.source).then(() =>
+        sendResponse(undefined),
+      );
       return true;
     case "FLUSH_QUEUE":
       void flush().then(() => sendResponse(undefined));
@@ -124,13 +358,83 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void getHudStatus(message.force).then(sendResponse);
       return true;
     case "SEND_HUD_COMMAND":
-      void sendHudCommand(message.command).then(sendResponse);
+      // Prefer the app on this computer; a deal push transparently falls back to
+      // a linked desktop on another computer when no local app is running. This
+      // covers every deal surface (Amazon harvester, Walmart / search overlays,
+      // HUD actions) in one place. Non-deal commands pass straight through.
+      void sendCommandPreferLocal(message.command).then(sendResponse);
       return true;
     case "LOOKUP_EARNINGS":
       void lookupEarnings(message.asins).then(sendResponse);
       return true;
+    case "AI_CHAT":
+      void assistantChat(message.messages).then(sendResponse);
+      return true;
+    case "OPEN_SOCIAL_COMPOSE":
+      void openComposeWindow({
+        imageUrl: message.context.imageUrl ?? null,
+        pageUrl: message.context.pageUrl ?? null,
+        title: message.context.title ?? null,
+      }).then(() => sendResponse({ ok: true }));
+      return true;
+    case "SCHEDULE_SOCIAL_POST":
+      void scheduleSocialPost(message.post).then(sendResponse);
+      return true;
+    case "LIST_SOCIAL_POSTS":
+      void listSocialPosts(message.status, message.limit).then(sendResponse);
+      return true;
+    case "CANCEL_SOCIAL_POST":
+      void cancelSocialPost(message.id).then(sendResponse);
+      return true;
+    case "GEN_SOCIAL_CAPTION":
+      void generateSocialCaption(message.input).then(sendResponse);
+      return true;
+    case "UPLOAD_SOCIAL_IMAGE":
+      void uploadSocialImage(message.dataUrl).then(sendResponse);
+      return true;
+    case "VOICE_SESSION":
+      void assistantVoiceSession().then(sendResponse);
+      return true;
+    case "VOICE_TOOL":
+      void assistantVoiceTool(message.name, message.args).then(sendResponse);
+      return true;
+    case "VOICE_TRANSCRIPT":
+      void assistantVoiceTranscript(message.sessionId, message.transcript, message.startedAt).then(sendResponse);
+      return true;
     case "GET_PRICE_HISTORY":
       void getPriceHistory(message.asin, message.marketplace).then(sendResponse);
+      return true;
+    case "GET_DESKTOP_HISTORY":
+      void fetchDesktopHistory(message.asin).then(sendResponse);
+      return true;
+    case "FETCH_OUTREACH_KEYWORDS":
+      void fetchOutreachKeywords().then(sendResponse);
+      return true;
+    case "FETCH_MESSAGE_TEMPLATES":
+      void fetchMessageTemplates().then(sendResponse);
+      return true;
+    case "FETCH_BRAND_ENRICHMENT":
+      void fetchBrandEnrichment(message.brands).then(sendResponse);
+      return true;
+    case "LOOKUP_OWNERSHIP":
+      void fetchOwnership(message.asins).then(sendResponse);
+      return true;
+    case "LOOKUP_CAMPAIGN_STATUS":
+      void fetchCampaignStatus(message.asins).then(sendResponse);
+      return true;
+    case "LOOKUP_YOUTUBE_STATUS":
+      void fetchYouTubeStatus(message.contentIds).then(sendResponse);
+      return true;
+    case "GET_MARKET":
+      void getMarket(message.asin, message.marketplace, message.retailer, {
+        seasonality: message.seasonality === true,
+      }).then(sendResponse);
+      return true;
+    case "GET_MARKET_BATCH":
+      void getMarketBatch(message.asins, message.marketplace, message.retailer).then(sendResponse);
+      return true;
+    case "GET_VIDEO_INTEL":
+      void getVideoIntel(message.videoId, message.marketplace).then(sendResponse);
       return true;
     case "REQUEST_PAIRING":
       void requestPairing().then(sendResponse);
@@ -141,11 +445,101 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "UNPAIR_APP":
       void unpair().then(() => sendResponse(undefined));
       return true;
+    case "SYNC_SETTINGS_PREVIEW":
+      void previewSync().then(sendResponse);
+      return true;
+    case "SYNC_SETTINGS_APPLY":
+      void applySync(message.direction).then(sendResponse);
+      return true;
+    case "RELAY_CLAIM_LINK":
+      void (async (): Promise<RelayClaimResult> => {
+        const r = await relayClaimLink(message.code, message.label);
+        // Make the first device the creator links the default relay target, so
+        // both deal fallback AND cross-device findings sync have a target with no
+        // extra "Make default" click. Never override a default already chosen.
+        if (r.ok && r.receiverInstanceId) {
+          const settings = await getSettings();
+          if (!settings.relayDefaultTarget) {
+            await patchSettings({
+              relayDefaultTarget: { instanceId: r.receiverInstanceId, label: r.receiverLabel ?? null },
+            });
+          }
+        }
+        return r;
+      })().then(sendResponse);
+      return true;
+    case "RELAY_LIST_TARGETS":
+      void relayListTargets().then(sendResponse);
+      return true;
+    case "RELAY_SEND":
+      void relaySend(message.command, message.targetInstanceId).then(sendResponse);
+      return true;
+    case "RELAY_GET_STATE":
+      void (async (): Promise<RelayStateView> => {
+        const [state, settings, targetsRes] = await Promise.all([
+          getState(),
+          getSettings(),
+          relayListTargets(),
+        ]);
+        const signedIn = Boolean(state.auth?.licenseKey);
+        // Drop a stored default that is no longer among the linked targets, so a
+        // device the user unlinked never lingers as the fallback.
+        let defaultTarget = settings.relayDefaultTarget;
+        if (defaultTarget && targetsRes.ok) {
+          const stillLinked = targetsRes.targets.some((t) => t.receiverInstanceId === defaultTarget!.instanceId);
+          if (!stillLinked) defaultTarget = null;
+        }
+        return {
+          signedIn,
+          targets: targetsRes.ok ? targetsRes.targets : [],
+          defaultTarget,
+          error: targetsRes.ok ? undefined : targetsRes.error,
+        };
+      })().then(sendResponse);
+      return true;
+    case "RELAY_SET_DEFAULT_TARGET":
+      void patchSettings({ relayDefaultTarget: message.target }).then(() => sendResponse({ ok: true }));
+      return true;
     case "SEND_FEEDBACK":
       void sendFeedback(message.feedback).then(sendResponse);
       return true;
+    case "SUBMIT_FEEDBACK_RICH":
+      void submitFeedbackRich(message.feedback).then(sendResponse);
+      return true;
+    case "CAPTURE_SCREENSHOT": {
+      // Only the background can call captureVisibleTab; capture the window the
+      // requesting content script lives in. Best-effort: report an error the
+      // bubble surfaces rather than throwing.
+      const windowId = sender.tab?.windowId;
+      const capture =
+        typeof windowId === "number"
+          ? chrome.tabs.captureVisibleTab(windowId, { format: "png" })
+          : chrome.tabs.captureVisibleTab({ format: "png" });
+      void Promise.resolve(capture)
+        .then((dataUrl) => sendResponse({ ok: true, dataUrl }))
+        .catch((err) => sendResponse({ ok: false, error: err?.message || "Could not capture the page." }));
+      return true;
+    }
+    case "LIST_MY_FEEDBACK":
+      void listLocalFeedback().then(sendResponse);
+      return true;
+    case "DISMISS_MY_FEEDBACK":
+      void dismissLocalFeedback(message.id).then(sendResponse);
+      return true;
+    case "LIST_FEEDBACK_THREADS":
+      void listFeedbackThreads().then(sendResponse);
+      return true;
+    case "POST_FEEDBACK_REPLY":
+      void postFeedbackReply(message.ticketId, message.body).then(sendResponse);
+      return true;
+    case "MARK_FEEDBACK_THREAD_READ":
+      void markFeedbackThreadRead(message.ticketId).then(sendResponse);
+      return true;
     case "FETCH_MARKET_AVAILABILITY":
       void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);
+      return true;
+    case "FETCH_VIDEO_COUNT":
+      void fetchVideoCount(message.asin, message.marketplace).then(sendResponse);
       return true;
     case "SCAN_ASIN_IN_TAB":
       void scanAsinInTab(message.asin, message.marketplace).then(sendResponse);
@@ -155,6 +549,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "ENRICH_PRODUCTS":
       void enrichProducts(message.asins, message.marketplaces).then(sendResponse);
+      return true;
+    case "LOOKUP_CC_RATES":
+      void lookupCcRates(message.asins).then(sendResponse);
+      return true;
+    case "LOOKUP_SPCC_RATES":
+      void lookupSpccRates(message.asins).then(sendResponse);
+      return true;
+    case "ENRICH_ROWS":
+      void enrichRows(message.refs).then(sendResponse);
       return true;
     case "ADD_TO_WATCHLIST":
       void addToWatchlist(message.item).then(sendResponse);
@@ -171,11 +574,74 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "IS_WATCHED":
       void isWatched(message.asin, message.marketplace).then(sendResponse);
       return true;
+    case "GET_PRODUCT_LISTS":
+      void getProductLists().then(sendResponse);
+      return true;
+    case "CREATE_PRODUCT_LIST":
+      void createProductList(message.name).then(sendResponse);
+      return true;
+    case "RENAME_PRODUCT_LIST":
+      void renameProductList(message.id, message.name).then(sendResponse);
+      return true;
+    case "DELETE_PRODUCT_LIST":
+      void deleteProductList(message.id).then(sendResponse);
+      return true;
+    case "ADD_TO_PRODUCT_LIST":
+      void addToProductList({
+        listId: message.listId,
+        newListName: message.newListName,
+        item: message.item,
+      }).then(sendResponse);
+      return true;
+    case "ADD_MANY_TO_PRODUCT_LIST":
+      void addManyToProductList({
+        listId: message.listId,
+        newListName: message.newListName,
+        items: message.items,
+      }).then(sendResponse);
+      return true;
+    case "REMOVE_FROM_PRODUCT_LIST":
+      void removeFromProductList(message.listId, message.asin, message.marketplace).then(
+        sendResponse,
+      );
+      return true;
+    case "CAMPAIGN_WATCH_ADD":
+      void addCampaignWatch(message.item).then(sendResponse);
+      return true;
+    case "CAMPAIGN_WATCH_REMOVE":
+      void removeCampaignWatch(message.campaignId).then(sendResponse);
+      return true;
+    case "CAMPAIGN_WATCH_LIST":
+      void getCampaignWatchList().then(sendResponse);
+      return true;
+    case "REPORT_CAMPAIGN_FILLS":
+      void handleCampaignFills(message.fills, sender.tab?.id).then(() => sendResponse(undefined));
+      return true;
+    case "GET_CAMPAIGN_BRIEF":
+      void fetchCampaignBrief(message.signals).then(sendResponse);
+      return true;
     case "HARVEST_DEAL_SITES":
-      void harvestDealSites(message.urls).then(sendResponse);
+      void harvestDealSites(message.urls, { render: message.render }).then(sendResponse);
       return true;
     case "GET_DEAL_SOURCES":
       void getDealSources(message.force).then(sendResponse);
+      return true;
+    case "GET_DEAL_AUTO_HARVEST":
+      void getDealAutoHarvest().then(sendResponse);
+      return true;
+    case "SET_DEAL_AUTO_HARVEST":
+      void setDealAutoHarvest(message.enabled).then(sendResponse);
+      return true;
+    case "SYNC_DEAL_BADGE_SCRIPTS":
+      void syncDealBadgeContentScripts().then(() => sendResponse(undefined));
+      return true;
+    case "OPEN_DEALS_PAGE":
+      // Same reason as OPEN_URL below: the badge lives in a content script, and
+      // a content script cannot navigate to deals.html (it is not a
+      // web_accessible_resource, and we would rather not make it one). Only the
+      // three keys the deals page reads are forwarded, so the query string can
+      // never be used to smuggle anything else into the page.
+      void openDealsPage(message.query).then(() => sendResponse(undefined));
       return true;
     case "OPEN_URL":
       // Content-script anchors with target=_blank do not reliably open from
@@ -204,20 +670,109 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "SET_INTEGRATION_GLOBAL":
       void patchIntegrationsGlobal(message.partial).then(sendResponse);
       return true;
+    case "CLEAR_INTEGRATION":
+      void clearIntegration(message.id).then(sendResponse);
+      return true;
     case "TEST_INTEGRATION":
       void testIntegration(message.id).then(sendResponse);
       return true;
     case "TEST_ALL_INTEGRATIONS":
       void testAllIntegrations().then(sendResponse);
       return true;
+    case "RECONCILE_CREATOR_VAULT":
+      // checkRemote so a manual retry also catches the case where no push is
+      // recorded as owed but the vault simply does not hold this marketplace.
+      void retryCreatorApiVaultSync().then(sendResponse);
+      return true;
+    case "CREATOR_API_BACKUP":
+      void backupAction(message.action).then((res) => {
+        // Enabling or disabling the backup lease changes whether enrichment is
+        // configured; drop the cached enrich verdicts so the inline card and
+        // global-reach panel re-check on the next product view instead of
+        // showing a stale connect prompt.
+        if (message.action !== "backup-status") void clearEnrichCache();
+        sendResponse(res);
+      });
+      return true;
     case "GENERATE_AFFILIATE_LINK":
-      void generateAffiliateLink(message.asin, message.marketplace, message.url).then(sendResponse);
+      void generateAffiliateLink(
+        message.asin,
+        message.marketplace,
+        message.url,
+        message.retailer,
+        message.category,
+        message.ratePctHint,
+      ).then(sendResponse);
       return true;
     case "REWRITE_LINK":
       void rewriteLink(message.url).then(sendResponse);
       return true;
+    case "CLEAN_LINK":
+      void cleanLinkForRequest(message.url).then(sendResponse);
+      return true;
     case "OPENAI_COMPLETE":
       void openaiComplete(message.prompt).then(sendResponse);
+      return true;
+    case "LINK_MINT_BULK":
+      void bulkMintBranded(message.targets).then(sendResponse);
+      return true;
+    case "LINK_STATS":
+      void ownerStats(message.range, { slug: message.slug, traffic: message.traffic }).then(sendResponse);
+      return true;
+    case "LINK_LIST":
+      void listOwnerLinks(message.cursor).then(sendResponse);
+      return true;
+    case "LINK_REPOINT":
+      void repointOwnerLink({
+        slug: message.slug,
+        url: message.url,
+        asin: message.asin,
+        marketplace: message.marketplace,
+      }).then(sendResponse);
+      return true;
+    case "LINK_PIXELS_GET":
+      void getOwnerPixels().then(sendResponse);
+      return true;
+    case "LINK_PIXELS_SAVE":
+      void saveOwnerPixels(message.pixels).then(sendResponse);
+      return true;
+    case "GET_UPDATE_STATE":
+      void getUpdateStateView().then(sendResponse);
+      return true;
+    case "UPDATE_REMIND_LATER":
+      void remindUpdateLater().then(() => sendResponse(undefined));
+      return true;
+    case "APPLY_UPDATE":
+      // Respond before reloading: reload() kills this worker immediately, so a
+      // response sent after it would never arrive.
+      sendResponse(undefined);
+      applyUpdate();
+      return true;
+    case "GET_WHATS_NEW":
+      void getWhatsNewView().then(sendResponse);
+      return true;
+    case "DISMISS_WHATS_NEW":
+      void markWhatsNewSeen().then(() => sendResponse(undefined));
+      return true;
+    // Standalone campaign accept (background/campaign-accept.ts).
+    case "ACCEPT_CAMPAIGN_IN_TAB":
+      void acceptCampaignInTab({
+        campaignId: message.campaignId,
+        asin: message.asin,
+        marketplace: message.marketplace,
+        source: message.source,
+      }).then(sendResponse);
+      return true;
+    case "ACCEPT_TAB_READY":
+      noteAcceptTabReady(sender.tab?.id);
+      sendResponse(undefined);
+      return false;
+    case "ACCEPT_RESULT":
+      noteAcceptResult(sender.tab?.id, message.campaignId, message.outcome);
+      sendResponse(undefined);
+      return false;
+    case "RECORD_ACCEPT":
+      void noteAccept(message.campaignId, message.source).then(() => sendResponse(undefined));
       return true;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background
@@ -232,12 +787,34 @@ async function rewriteLink(url: string): Promise<import("../shared/messages").Ge
     const state = await getState();
     if (!state.integrations.global.affiliateRoutingEnabled) return { ok: true, url };
     const parsed = new URL(url);
-    const asin = /\/(?:dp|gp\/product)\/([A-Z0-9]{10})/.exec(parsed.pathname)?.[1] ?? "";
+    const asin = /\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/.exec(parsed.pathname)?.[1] ?? "";
     const marketplace = parsed.hostname.replace(/^www\./, "");
     return await generateAffiliateLink(asin, marketplace, url);
   } catch {
     return { ok: false, error: "That is not a valid product URL." };
   }
+}
+
+// Open deals.html for the on-page badge, copying across only the keys the
+// deals page itself understands (which site to harvest, and optionally the one
+// ASIN to narrow the review to). Anything else in the query is dropped.
+const DEALS_PAGE_PARAMS = ["add", "asin", "marketplace"] as const;
+
+async function openDealsPage(query?: string): Promise<void> {
+  const params = new URLSearchParams();
+  try {
+    const incoming = new URLSearchParams(query ?? "");
+    for (const key of DEALS_PAGE_PARAMS) {
+      const value = incoming.get(key);
+      if (value) params.set(key, value);
+    }
+  } catch {
+    // malformed query: open the page bare rather than not at all
+  }
+  const suffix = params.toString();
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL(suffix ? `deals.html?${suffix}` : "deals.html"),
+  });
 }
 
 async function openAllowedUrl(url: string): Promise<void> {

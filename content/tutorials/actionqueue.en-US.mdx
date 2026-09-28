@@ -60,6 +60,7 @@ Queued items live in the preseed cache. Approved/rejected decisions are logged s
 - **Items accumulate over weeks**: Action Queue doesn't auto-clear stale items. Spend 5 minutes a week reviewing or use **Defer** liberally so the queue doesn't bloat.
 - **Source workspace ran but didn't pick up your approval**: the workspace only re-reads the queue on its next scheduled run. Trigger Run Now if you want immediate action on a decision.
 - **No items appearing even though a butler is running**: that butler doesn't route through Action Queue. Not all workspaces do; most decisions are fully autonomous.
+- **"Accepted campaigns sync" appears and you don't remember accepting anything**: nothing was accepted for you. That scheduled job is read only. It opens Amazon, reads the Creator Connections campaigns you accepted yourself, and files them so your records stay current. Accepting campaigns on your behalf is a separate butler that only runs when you start it.
 
 ## Related
 

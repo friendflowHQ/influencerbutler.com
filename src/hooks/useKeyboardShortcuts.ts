@@ -25,7 +25,9 @@ function isInputFocused(): boolean {
 
 export function useKeyboardShortcuts(shortcuts: ShortcutDef[]) {
   const shortcutsRef = useRef(shortcuts);
-  shortcutsRef.current = shortcuts;
+  useEffect(() => {
+    shortcutsRef.current = shortcuts;
+  });
 
   const pendingChordRef = useRef<PendingChord>(null);
 

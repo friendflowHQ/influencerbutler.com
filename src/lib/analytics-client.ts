@@ -38,6 +38,37 @@ export function trackEvent(name: string, params?: GtagParams): void {
   }
 }
 
+// Meta (Facebook) Pixel twin of trackEvent. Fires into the fbq instance that
+// src/components/MetaPixel.tsx loads (gated on NEXT_PUBLIC_META_PIXEL_ID); a
+// no-op when the pixel is absent or blocked. Pass eventId when a server-side
+// Conversions API call sends the same event (src/lib/meta-capi.ts), so Meta
+// dedups the pair instead of counting it twice.
+type FbqWindow = Window & { fbq?: (...args: unknown[]) => void };
+
+export function trackMetaEvent(
+  name: string,
+  params?: Record<string, string | number>,
+  eventId?: string,
+): void {
+  if (typeof window === "undefined") return;
+  const w = window as FbqWindow;
+  try {
+    if (typeof w.fbq === "function") {
+      if (eventId) {
+        w.fbq("track", name, params ?? {}, { eventID: eventId });
+      } else {
+        w.fbq("track", name, params ?? {});
+      }
+    }
+    if (process.env.NODE_ENV !== "production") {
+      // Makes local verification possible without the Meta Pixel Helper.
+      console.debug("[trackMetaEvent]", name, params ?? {}, eventId ?? "");
+    }
+  } catch {
+    // Analytics must never break the page.
+  }
+}
+
 // Conversion-funnel sink (Cloudflare Analytics Engine via the licensing worker).
 // Mirrors the desktop app's first-launch / walkthrough-complete beacons so all
 // four stages (download-click -> installer-downloaded -> first-launch ->

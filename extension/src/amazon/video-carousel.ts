@@ -19,7 +19,13 @@ import type { VideoCounts } from "../transport/types";
 //    total (strategy "header") until the breakdown hydrates.
 //
 // Strategy layers, most reliable first:
-//  1. State-script JSON aggregated across all creatorType-bearing scripts.
+//  0. State-script `videos` array, classified by aciContentId namespace
+//     (.ive.seller. -> brand, .vse.video. -> influencer, .customer. ->
+//     customer). Ships the FULL list up front, so it does not wait on carousel
+//     hydration and recovers the "Related videos" influencer rail that layers
+//     1-2 miss. Verified live 2026-07-20.
+//  1. State-script JSON aggregated across all creatorType-bearing scripts
+//     (only the mounted card's creatorType hydrates).
 //  2. DOM cards: profile links and bylines in the rendered widget.
 //  3. #videoCount header total; shortfall reported as unclassified.
 
@@ -31,6 +37,32 @@ export type CarouselVideo = {
   url: string | null;
   // Which on-page carousel the video came from (see carouselSourceFor).
   carousel: CarouselSource;
+  // Where `carousel` came from, and therefore whether it may be shown to the
+  // user as THIS video's placement.
+  //   "marker"  the side was derived from the owning state-script key, the
+  //             request URL, or the widget the card was rendered in. Real.
+  //   "assumed" the side was inferred from the content-id namespace (brand ->
+  //             upper, everything else -> lower). That is a sound heuristic for
+  //             a tally and wrong for any one video, because a creator video in
+  //             the hero slot still carries a vse content id. Never state it.
+  // Undefined on rows built before this field existed; treated as "assumed".
+  sideFrom?: "marker" | "assumed";
+  // Stable Amazon content id (the `aciContentId`, e.g. amzn1.vse.video.<id>),
+  // when the state-script `videos` array was the source. This is the durable
+  // identity used to track a video across page loads and days; null when only
+  // creatorType/DOM data was available.
+  contentId: string | null;
+  // 1-based rank within its carousel as observed, best-effort; null when the
+  // source did not preserve a trustworthy order.
+  position: number | null;
+  // Publish date (ISO) when the widget payload exposes one. Parsing is gated on
+  // live verification of the payload, so this stays undefined until that lands;
+  // the landscape aggregates omit every date-based section when it is absent,
+  // rather than fabricating a timeline.
+  publishedAt?: string | null;
+  // Video duration in seconds when the payload exposes one. Same verification
+  // gate as publishedAt; the "typical length" section is omitted when absent.
+  durationSec?: number | null;
 };
 
 export type CreatorClass = "influencer" | "brand" | "customer" | "unknown";
@@ -43,7 +75,7 @@ export type CarouselSource = "upper" | "lower" | "unknown";
 export type CarouselResult = {
   counts: VideoCounts;
   videos: CarouselVideo[];
-  strategy: "json" | "dom" | "header" | "none";
+  strategy: "videoList" | "json" | "dom" | "header" | "none";
 };
 
 export function classifyCreatorType(raw: string): CreatorClass {
@@ -53,6 +85,25 @@ export function classifyCreatorType(raw: string): CreatorClass {
     return "brand";
   }
   if (["customer", "shopper", "reviewer"].some((v) => value.includes(v))) return "customer";
+  return "unknown";
+}
+
+// Classify a video by its Amazon content-id namespace (the `aciContentId` on
+// each entry of the state-script `videos` array). This is the most reliable
+// signal because Amazon ships the FULL video list up front, whereas per-video
+// creatorType only hydrates for the one carousel card currently mounted (so the
+// "Related videos" influencer rail is systematically missed until scrolled).
+//   amzn1.ive.seller.video.*  -> brand   (the listing's own brand/seller videos)
+//   amzn1.vse.video.*         -> influencer (creator "Videos"/"Related videos")
+//   amzn1.ive.influencer.*    -> influencer
+//   *.customer.video/review.* -> customer
+//   anything else             -> unknown (honest; never guessed)
+export function classifyVideoAci(aci: string): CreatorClass {
+  const v = (aci ?? "").trim().toLowerCase();
+  if (!v) return "unknown";
+  if (v.includes(".ive.seller.")) return "brand";
+  if (v.includes(".customer.video.") || v.includes(".customer.review.")) return "customer";
+  if (v.includes(".vse.video.") || v.includes(".ive.influencer.")) return "influencer";
   return "unknown";
 }
 
@@ -73,6 +124,141 @@ export function classifiedCount(result: CarouselResult | null): number {
   return result.counts.total - result.counts.unknown;
 }
 
+// Per-carousel view of a result's observed videos. Derived on demand from the
+// video list (never stored on CarouselResult) because the #videoCount header
+// top-up later inflates counts.total without adding videos: that shortfall has
+// no known side, so it stays out of every side bucket here and the UI reports
+// it as unclassified. counts.total can therefore exceed
+// upper.total + lower.total + unknown.total.
+export type CarouselBreakdown = {
+  upper: VideoCounts;
+  lower: VideoCounts;
+  unknown: VideoCounts;
+};
+
+// Tally a set of videos into VideoCounts (creatorType "unknown" lands in
+// counts.unknown). Shared with the Deep Scan harvest's per-side rows.
+export function tallyVideos(videos: CarouselVideo[]): VideoCounts {
+  const counts = emptyCounts();
+  for (const video of videos) {
+    counts[video.creatorType] += 1;
+    counts.total += 1;
+  }
+  return counts;
+}
+
+export function carouselBreakdown(result: CarouselResult | null): CarouselBreakdown {
+  const sides: CarouselBreakdown = {
+    upper: emptyCounts(),
+    lower: emptyCounts(),
+    unknown: emptyCounts(),
+  };
+  if (!result) return sides;
+  for (const video of result.videos) {
+    const bucket = sides[video.carousel];
+    bucket[video.creatorType] += 1;
+    bucket.total += 1;
+  }
+  return sides;
+}
+
+// Whether the brand has the upper (image-block) influencer carousel turned on.
+// When it is on, a new creator video can land in the top slot next to the
+// gallery, which is the higher-earning placement; influencers appearing only in
+// the lower rail means the brand has not enabled it.
+//  - "on":      an influencer video was observed in the upper carousel. Only
+//               marker/URL-tagged sources can produce upper+influencer (the
+//               videoList side heuristic never does), so no false positives.
+//  - "off":     the upper carousel has videos but no influencers, while the
+//               lower rail does have influencer videos.
+//  - "unknown": not enough data either way (header-only, empty, or the upper
+//               rail has not been observed yet).
+export type UpperSlotState = "on" | "off" | "unknown";
+
+export function upperInfluencerSlot(result: CarouselResult | null): UpperSlotState {
+  const sides = carouselBreakdown(result);
+  if (sides.upper.influencer > 0) return "on";
+  if (sides.upper.total > 0 && sides.lower.influencer > 0) return "off";
+  return "unknown";
+}
+
+// Combine competing extraction candidates into one result that keeps BOTH
+// carousels. The sources see different rails (the videoList state script ships
+// the upper hero ids up front; the ajax payloads carry the lower rail), so
+// picking a single winner used to discard whichever rail the loser saw.
+//
+// The merge is per-side winner-take-all, NOT a video-level union: videoList
+// videos carry a contentId but no names, json/network videos names but no
+// contentId, so the same video seen by two sources can never be matched and a
+// union would double count a whole rail. Taking one source per side makes
+// within-side double counting structurally impossible. Cross-side overlap (a
+// video served in both carousels by different sources) is caught by the
+// headerTotal guard: when the merged total exceeds Amazon's own #videoCount,
+// the merge is abandoned in favor of the plain best candidate.
+export function mergeCarouselCandidates(
+  candidates: CarouselResult[],
+  headerTotal: number | null,
+): CarouselResult | null {
+  let base: CarouselResult | null = null;
+  for (const candidate of candidates) {
+    if (
+      !base ||
+      classifiedCount(candidate) > classifiedCount(base) ||
+      (classifiedCount(candidate) === classifiedCount(base) &&
+        candidate.counts.total > base.counts.total)
+    ) {
+      base = candidate;
+    }
+  }
+  if (!base || candidates.length < 2) return base;
+
+  const winnerFor = (side: "upper" | "lower"): CarouselResult | null => {
+    let winner: CarouselResult | null = null;
+    let winnerClassified = -1;
+    let winnerTotal = -1;
+    for (const candidate of candidates) {
+      let classified = 0;
+      let total = 0;
+      for (const video of candidate.videos) {
+        if (video.carousel !== side) continue;
+        total += 1;
+        if (video.creatorType !== "unknown") classified += 1;
+      }
+      if (total === 0) continue;
+      if (
+        classified > winnerClassified ||
+        (classified === winnerClassified && total > winnerTotal)
+      ) {
+        winner = candidate;
+        winnerClassified = classified;
+        winnerTotal = total;
+      }
+    }
+    return winner;
+  };
+
+  const upperFrom = winnerFor("upper");
+  const lowerFrom = winnerFor("lower");
+  // Nothing to gain: every side's best view already lives in the base result.
+  if ((upperFrom === base || upperFrom === null) && (lowerFrom === base || lowerFrom === null)) {
+    return base;
+  }
+
+  const videos: CarouselVideo[] = [];
+  if (upperFrom) videos.push(...upperFrom.videos.filter((v) => v.carousel === "upper"));
+  if (lowerFrom) videos.push(...lowerFrom.videos.filter((v) => v.carousel === "lower"));
+  // Side-unknown videos only from the base candidate; taking them from several
+  // sources would reintroduce the double-count risk the per-side rule avoids.
+  videos.push(...base.videos.filter((v) => v.carousel === "unknown"));
+
+  const counts = tallyVideos(videos);
+  if (headerTotal !== null && counts.total > headerTotal) return base;
+  // Keep the base's strategy label: consumers branch on "json"/"header"/"dom"
+  // (panel wording, scan cache), so no new enum value is introduced.
+  return { counts, videos, strategy: base.strategy };
+}
+
+
 // Amazon serves several widget variants (state scripts, hero + rail DOM)
 // and none is reliably present, so extract from every source available,
 // including any network payloads the page hook captured (extras), and keep
@@ -81,24 +267,18 @@ export function classifiedCount(result: CarouselResult | null): number {
 // unclassified.
 export function extractCarousel(doc: Document, extras: CarouselResult[] = []): CarouselResult {
   const candidates: CarouselResult[] = [...extras];
+  const fromVideoList = extractFromVideoList(doc);
+  if (fromVideoList) candidates.push(fromVideoList);
   const fromJson = extractFromScripts(doc);
   if (fromJson) candidates.push(fromJson);
   const fromDom = extractFromDom(doc);
   candidates.push(fromDom);
 
-  let best: CarouselResult | null = null;
-  for (const candidate of candidates) {
-    if (
-      !best ||
-      classifiedCount(candidate) > classifiedCount(best) ||
-      (classifiedCount(candidate) === classifiedCount(best) &&
-        candidate.counts.total > best.counts.total)
-    ) {
-      best = candidate;
-    }
-  }
-
   const headerTotal = readHeaderCount(doc);
+  // Merge per-side winners across candidates so both carousels survive (the
+  // old single-winner pick discarded the upper hero list whenever the lower
+  // rail payload classified more videos, and vice versa).
+  let best = mergeCarouselCandidates(candidates, headerTotal);
   if (best && best.counts.total > 0) {
     if (headerTotal !== null && headerTotal > best.counts.total) {
       best = {
@@ -123,6 +303,72 @@ export function extractCarousel(doc: Document, extras: CarouselResult[] = []): C
   return best ?? fromDom;
 }
 
+// One aciContentId per video in the state-script `videos` array. Scoped (below)
+// to scripts that also carry `creatorProfile`, i.e. the video-widget payload.
+const ACI_CONTENT_ID_RE = /"aciContentId"\s*:\s*"([^"]+)"/g;
+
+// Strategy 0 (most reliable): the state-script `videos` array. Amazon ships the
+// full list up front with one aciContentId per video, whose namespace is the
+// authoritative creator class (see classifyVideoAci). Unlike creatorType/DOM,
+// this does NOT depend on the lazy carousel hydrating, so it recovers the
+// influencer/creator videos in the "Related videos for this product" rail that
+// the other strategies miss. Verified live 2026-07-20 (B0FF3XWN8H: 3 brand +
+// 5 influencer = 8, matching #videoCount, where creatorType saw only 1).
+function extractFromVideoList(doc: Document): CarouselResult | null {
+  const counts = emptyCounts();
+  const videos: CarouselVideo[] = [];
+  const seenAci = new Set<string>();
+  // 1-based rank within each carousel, assigned in payload order.
+  const perCarousel: Partial<Record<CarouselSource, number>> = {};
+
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const text = script.textContent;
+    // Both markers gate this to the video-widget data script and keep stray
+    // aciContentId references (unrelated widgets) out of the count.
+    if (!text || !text.includes("aciContentId") || !text.includes("creatorProfile")) continue;
+    ACI_CONTENT_ID_RE.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = ACI_CONTENT_ID_RE.exec(text)) !== null) {
+      const aci = match[1];
+      // A video can be listed under more than one group payload (IB_G1/IB_G2);
+      // dedupe by content id so it is counted once.
+      if (!aci || seenAci.has(aci)) continue;
+      seenAci.add(aci);
+      const kind = classifyVideoAci(aci);
+      counts[kind] += 1;
+      counts.total += 1;
+      const carousel: CarouselSource =
+        kind === "brand" ? "upper" : kind === "unknown" ? "unknown" : "lower";
+      // durationSeconds sits inside the same video object; scope the search to
+      // this object (up to the next aciContentId) so it never grabs a sibling's.
+      // Verified live 2026-08-18: present on brand/hero videos; creator videos in
+      // this rail often omit it, so it stays null and the length stat degrades.
+      const nextIdx = text.indexOf('"aciContentId"', match.index + aci.length);
+      const objectText = text.slice(match.index, nextIdx === -1 ? match.index + 2500 : nextIdx);
+      videos.push({
+        title: null,
+        creatorName: null,
+        creatorType: kind,
+        url: null,
+        // Seller videos live in the image block (upper); vse creator videos in
+        // the related-videos rail (lower). A namespace guess, not a reading of
+        // where this video actually sits: see sideFrom.
+        carousel,
+        sideFrom: "assumed",
+        // The aciContentId IS the stable identity; keep it so the video can be
+        // tracked across page loads (Phase 2) and deduped by content id.
+        contentId: aci,
+        // 1-based rank within its carousel, in payload order (Amazon's own).
+        position: (perCarousel[carousel] = (perCarousel[carousel] ?? 0) + 1),
+        durationSec: readDurationSeconds(objectText),
+      });
+    }
+  }
+
+  if (counts.total === 0) return null;
+  return { counts, videos, strategy: "videoList" };
+}
+
 const CREATOR_TYPE_RE = /"creatorType"\s*:\s*"([A-Za-z_ -]+)"/g;
 const TITLE_RE = /"(?:videoTitle|title)"\s*:\s*"((?:[^"\\]|\\.){0,200}?)"/g;
 const CREATOR_NAME_RE = /"(?:creatorName|profileName|publicName)"\s*:\s*"((?:[^"\\]|\\.){0,120}?)"/g;
@@ -130,6 +376,11 @@ const CREATOR_NAME_RE = /"(?:creatorName|profileName|publicName)"\s*:\s*"((?:[^"
 // unrelated "url" field. Best-effort: used for the CSV export link.
 const VIDEO_URL_RE =
   /"(?:videoUrl|vdpUrl|videoPageUrl|shareUrl)"\s*:\s*"(https?:(?:[^"\\]|\\.){0,300}?)"/g;
+// Per-video length in seconds (Amazon's `durationSeconds`), verified live
+// 2026-08-18. Present on brand/hero videos in the state script and, when a
+// product's widget serves an ajax payload, on creator videos too. Used for the
+// "typical length" stat, which stays hidden until enough real durations exist.
+const DURATION_RE = /"durationSeconds"\s*:\s*(\d{1,5})/g;
 
 function extractFromScripts(doc: Document): CarouselResult | null {
   // Different state scripts hold DIFFERENT video sets (related videos in one,
@@ -183,6 +434,10 @@ function accumulateFromText(
   // otherwise a positional map would attach wrong links, so we drop them.
   const urls = allMatches(text, VIDEO_URL_RE);
   const alignedUrls = urls.length === types.length ? urls : [];
+  // Durations only map to videos safely when there is exactly one per video,
+  // same discipline as urls; otherwise a positional map would misattach lengths.
+  const durations = allMatches(text, DURATION_RE);
+  const alignedDurations = durations.length === types.length ? durations : [];
 
   const fingerprint = types.join("|") + "::" + titles.join("|");
   if (seenPayloads.has(fingerprint)) return;
@@ -192,12 +447,21 @@ function accumulateFromText(
     const kind = classifyCreatorType(raw);
     counts[kind] += 1;
     counts.total += 1;
+    const durationRaw = alignedDurations[index];
     videos.push({
       title: decodeJsonString(titles[index] ?? null),
       creatorName: decodeJsonString(names[index] ?? null),
       creatorType: kind,
       url: decodeJsonString(alignedUrls[index] ?? null),
       carousel: source,
+      // The side came from the owning state-script key or the request URL.
+      sideFrom: "marker",
+      // This strategy does not carry the aciContentId; identity falls back to a
+      // hash of name/title downstream (see the video_id derivation).
+      contentId: null,
+      // 1-based rank in payload order within this payload's carousel.
+      position: index + 1,
+      durationSec: durationRaw ? Number(durationRaw) : null,
     });
   }
 }
@@ -210,6 +474,7 @@ function extractFromDom(doc: Document): CarouselResult {
   const videos: CarouselVideo[] = [];
   const cards = queryAll(widget, "videoCards");
   const brandName = normalizeBrand(query(doc, "productByline")?.textContent ?? "");
+  let cardIndex = 0;
 
   for (const card of cards) {
     const creatorLink = query(card, "videoCardCreatorLink");
@@ -240,8 +505,13 @@ function extractFromDom(doc: Document): CarouselResult {
       creatorType: kind,
       url: href,
       // The related-videos widget is the lower rail; the brand hero video lives
-      // in the image block, which is not part of this widget's cards.
+      // in the image block, which is not part of this widget's cards. The card
+      // was read out of that widget, so this is a real reading, not a guess.
       carousel: "lower",
+      sideFrom: "marker",
+      // DOM cards do not expose the aciContentId; identity falls back downstream.
+      contentId: null,
+      position: (cardIndex += 1),
     });
   }
 
@@ -264,6 +534,47 @@ export function readHeaderCount(doc: ParentNode): number | null {
   const source = el?.getAttribute("data-video-count") ?? el?.textContent ?? "";
   const match = source.match(/\d+/);
   return match ? parseInt(match[0], 10) : null;
+}
+
+// First `durationSeconds` value inside a single video object's text, or null.
+function readDurationSeconds(objectText: string): number | null {
+  const match = objectText.match(/"durationSeconds"\s*:\s*(\d{1,5})/);
+  return match ? Number(match[1]) : null;
+}
+
+// A single video runtime badge ("m:ss" or "h:mm:ss") to seconds, or null. Only
+// clean, non-negative clocks pass: a leading "-" (the main player's live
+// countdown, e.g. "-0:22") is rejected, as are out-of-range minute/second
+// fields and anything longer than 8 hours (a mis-scraped price or count).
+export function parseClock(text: string): number | null {
+  const trimmed = (text ?? "").trim();
+  const match = /^(?:(\d{1,2}):)?([0-5]?\d):([0-5]\d)$/.exec(trimmed);
+  if (!match) return null;
+  const h = match[1] ? Number(match[1]) : 0;
+  const m = Number(match[2]);
+  const s = Number(match[3]);
+  const total = h * 3600 + m * 60 + s;
+  if (total <= 0 || total > 8 * 3600) return null;
+  return total;
+}
+
+// Real per-video runtimes read from the hydrated carousel DOM. Amazon exposes
+// durationSeconds up front only for the brand/hero videos, so the state-script
+// sample is short-skewed; the rendered thumbnails carry a static "m:ss" badge
+// for EVERY video, including the creator rail. Scoped under videoWidget so the
+// main player's live countdown ("-0:22", rejected by parseClock anyway) is out
+// of range. Returns a flat multiset for the aggregate length stat; order and
+// per-video identity do not matter to a median/band.
+export function scanCarouselDurations(doc: Document): number[] {
+  const widget = query(doc, "videoWidget");
+  if (!widget) return [];
+  const out: number[] = [];
+  for (const badge of queryAll(widget, "videoCardDuration")) {
+    const label = badge.getAttribute("aria-label") ?? badge.textContent ?? "";
+    const secs = parseClock(label);
+    if (secs !== null) out.push(secs);
+  }
+  return out;
 }
 
 function emptyCounts(): VideoCounts {

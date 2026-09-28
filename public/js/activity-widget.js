@@ -12,6 +12,7 @@
   "use strict";
 
   var DISMISS_KEY = "ibActivityDismissed";
+  var POS_KEY = "ibActivityPos"; // rotating start offset, persisted across page loads
   var FIRST_DELAY_MS = 2500; // let the page settle before the first card
   var CYCLE_MS = 6000; // time each event stays up
 
@@ -49,6 +50,22 @@
     } catch (_) { /* private mode - ignore */ }
   }
 
+  // Where in the event list to open this page load. Persisted and advanced by one
+  // each load so consecutive pages continue through the rotation instead of
+  // restarting on the same (often oldest, purchase-first) card every time. Without
+  // this, a visitor clicking around faster than the full cycle only ever sees the
+  // one or two leading cards and never reaches the fresher "checking out" events.
+  function nextStartIndex(len) {
+    if (len <= 1) return 0;
+    var pos = 0;
+    try {
+      var raw = parseInt(window.sessionStorage.getItem(POS_KEY), 10);
+      if (!isNaN(raw) && raw >= 0) pos = raw;
+      window.sessionStorage.setItem(POS_KEY, String((pos + 1) % len));
+    } catch (_) { /* private mode - start at 0, no persistence */ }
+    return pos % len;
+  }
+
   function timeAgo(iso) {
     var then = new Date(iso).getTime();
     if (isNaN(then)) return "";
@@ -75,11 +92,29 @@
     var where = locationText(e);
     if (e.kind === "purchase") {
       var who = e.firstName ? e.firstName : "Someone";
-      return who + (where ? " from " + where : "") + " just subscribed";
+      // Purchases get a longer lookback than trial clicks, so only claim
+      // "just" when the purchase is under a day old.
+      var then = new Date(e.createdAt).getTime();
+      var fresh = !isNaN(then) && Date.now() - then < 24 * 60 * 60 * 1000;
+      return who + (where ? " from " + where : "") + (fresh ? " just subscribed" : " recently subscribed");
+    }
+    if (e.kind === "trial_start") {
+      var trialWho = e.firstName ? e.firstName : "Someone";
+      return trialWho + (where ? " in " + where : "") + " started a 14-day free trial";
+    }
+    if (e.kind === "extension_install") {
+      return "Someone" + (where ? " in " + where : "") + " installed the free extension";
     }
     // Soft, browsing-level wording for trial-interest events (covers seeded
     // demo activity too): no claim that anything was completed or verified.
     return "Someone" + (where ? " in " + where : "") + " is checking out Influencer Butler";
+  }
+
+  function iconFor(kind) {
+    if (kind === "purchase") return "🛒";
+    if (kind === "trial_start") return "✨";
+    if (kind === "extension_install") return "🧩";
+    return "🎉";
   }
 
   function injectStyles() {
@@ -91,9 +126,9 @@
         "width:320px;max-width:calc(100vw - 32px);" +
         "font:13px/1.45 'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" +
         "transform:translateY(16px);opacity:0;pointer-events:none;" +
-        "transition:transform .35s ease,opacity .35s ease}" +
+        "transition:transform .35s ease}" +
       "#ib-activity.is-visible{transform:translateY(0);opacity:1;pointer-events:auto}" +
-      "@media (prefers-reduced-motion:reduce){#ib-activity{transition:opacity .2s ease;transform:none}}" +
+      "@media (prefers-reduced-motion:reduce){#ib-activity{transition:none;transform:none}}" +
       ".ib-activity__card{position:relative;display:flex;gap:11px;align-items:flex-start;" +
         "background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:13px 15px;" +
         "box-shadow:0 12px 30px rgba(15,23,42,.16)}" +
@@ -102,9 +137,13 @@
         "background:#fff7ed}" +
       ".ib-activity__body{min-width:0;padding-right:14px}" +
       ".ib-activity__msg{color:#111827;font-weight:600}" +
-      ".ib-activity__time{color:#9ca3af;font-size:11.5px;margin-top:3px}" +
+      ".ib-activity__time{color:#6b7280;font-size:11.5px;margin-top:3px}" +
+      ".ib-activity__cta{display:none;margin-top:6px;font-size:12px;font-weight:700;" +
+        "color:#c2410c;text-decoration:none}" +
+      ".ib-activity__cta.is-shown{display:inline-block}" +
+      ".ib-activity__cta:hover{color:#9a3412;text-decoration:underline}" +
       ".ib-activity__close{position:absolute;top:7px;right:9px;border:0;background:none;" +
-        "cursor:pointer;color:#9ca3af;font-size:17px;line-height:1;padding:2px}" +
+        "cursor:pointer;color:#6b7280;font-size:17px;line-height:1;padding:2px}" +
       ".ib-activity__close:hover{color:#4b5563}";
     document.head.appendChild(style);
   }
@@ -121,6 +160,7 @@
         '<div class="ib-activity__body">' +
           '<div class="ib-activity__msg" id="ib-activity-msg"></div>' +
           '<div class="ib-activity__time" id="ib-activity-time"></div>' +
+          '<a class="ib-activity__cta" id="ib-activity-cta" href="/extension">FREE Extension - get it here</a>' +
         "</div>" +
       "</div>";
     document.body.appendChild(root);
@@ -136,15 +176,22 @@
   function hide(root) { root.classList.remove("is-visible"); }
 
   function render(root, e) {
-    root.querySelector("#ib-activity-icon").textContent = e.kind === "purchase" ? "🛒" : "🎉";
+    root.querySelector("#ib-activity-icon").textContent = iconFor(e.kind);
     root.querySelector("#ib-activity-msg").textContent = headline(e);
     root.querySelector("#ib-activity-time").textContent = timeAgo(e.createdAt);
+    // "Get it here" CTA only on extension-install cards; hidden on every other
+    // kind so the link never implies unrelated actions.
+    var cta = root.querySelector("#ib-activity-cta");
+    if (cta) {
+      if (e.kind === "extension_install") cta.classList.add("is-shown");
+      else cta.classList.remove("is-shown");
+    }
   }
 
   function run(events) {
     injectStyles();
     var root = buildCard();
-    var i = 0;
+    var i = nextStartIndex(events.length);
     function step() {
       if (!document.body.contains(root)) return;
       render(root, events[i]);

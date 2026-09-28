@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   bandFor,
+  campaignFillPct,
+  campaignStatsConversion,
   computeCampaignScore,
+  computeSpccScore,
+  computeCampaignConfidence,
   meetsRadarThresholds,
+  visibleBreakdownParts,
   type CampaignScoreInputs,
   type RadarThresholds,
 } from "./score";
+import type { CampaignStats } from "../../amazon/creator-campaigns";
 
 const strong: CampaignScoreInputs = {
   commissionRatePct: 18,
@@ -63,6 +69,18 @@ describe("computeCampaignScore", () => {
     expect(notOwned.parts.owned).toBe(0);
   });
 
+  it("carries the resolved personal signals through, mirroring the inputs", () => {
+    expect(computeCampaignScore(strong).signals).toEqual({ owned: true, provenEarner: true });
+    expect(computeCampaignScore({ ...strong, owned: false, provenEarner: false }).signals).toEqual({
+      owned: false,
+      provenEarner: false,
+    });
+    expect(computeCampaignScore({ ...strong, owned: null, provenEarner: null }).signals).toEqual({
+      owned: null,
+      provenEarner: null,
+    });
+  });
+
   it("clamps an expired campaign's negative days to zero timing", () => {
     const expired = computeCampaignScore({ ...strong, daysRemaining: -5 });
     expect(expired.parts.timing).toBe(0);
@@ -78,6 +96,74 @@ describe("computeCampaignScore", () => {
     const result = computeCampaignScore(strong);
     const sum = Object.values(result.parts).reduce((a, b) => a + b, 0);
     expect(Math.round(sum)).toBe(result.score);
+  });
+
+  it("ranks a nearly-full but open campaign above an identical empty one (Last Call urgency)", () => {
+    const nearlyFull = computeCampaignScore({ ...strong, fillPct: 0.9, fullyClaimed: false });
+    const empty = computeCampaignScore({ ...strong, fillPct: 0, fullyClaimed: false });
+    expect(nearlyFull.score).toBeGreaterThan(empty.score);
+    expect(nearlyFull.parts.urgency).toBeGreaterThan(empty.parts.urgency);
+  });
+
+  it("collapses urgency to zero for a fully claimed campaign", () => {
+    const closed = computeCampaignScore({ ...strong, fillPct: 1, fullyClaimed: true });
+    expect(closed.parts.urgency).toBe(0);
+  });
+
+  it("treats unknown fill as neutral, never a penalty", () => {
+    const withFill = computeCampaignScore({ ...strong, fillPct: 0, fullyClaimed: false });
+    const unknownFill = computeCampaignScore({ ...strong, fillPct: null, fullyClaimed: null });
+    // Unknown (0.5) sits above empty (also 0.5 here) or equal, and always at or
+    // above the empty floor; it must not drag the score down.
+    expect(unknownFill.parts.urgency).toBeGreaterThanOrEqual(withFill.parts.urgency);
+  });
+});
+
+describe("visibleBreakdownParts", () => {
+  const keys = (inputs: CampaignScoreInputs): string[] =>
+    visibleBreakdownParts(computeCampaignScore(inputs)).map(([k]) => k);
+
+  it("shows the personal-signal chips only when the signal is genuinely true", () => {
+    expect(keys({ ...strong, owned: true, provenEarner: true })).toEqual(
+      expect.arrayContaining(["owned", "earner"]),
+    );
+  });
+
+  it("hides an unknown personal signal instead of claiming it (the 'You own it +11' bug)", () => {
+    const shown = keys({ ...strong, owned: null, provenEarner: null });
+    // The neutral half still counts toward the score, but must not be surfaced
+    // as a factual claim that the creator owns / has earned on the product.
+    expect(shown).not.toContain("owned");
+    expect(shown).not.toContain("earner");
+  });
+
+  it("hides a personal signal the creator explicitly lacks", () => {
+    const shown = keys({ ...strong, owned: false, provenEarner: false });
+    expect(shown).not.toContain("owned");
+    expect(shown).not.toContain("earner");
+  });
+
+  it("orders visible parts largest contribution first", () => {
+    const parts = visibleBreakdownParts(computeCampaignScore(strong));
+    const points = parts.map(([, v]) => v);
+    expect([...points].sort((a, b) => b - a)).toEqual(points);
+  });
+});
+
+describe("campaignFillPct", () => {
+  it("returns claimed / cap as a 0-1 fraction", () => {
+    expect(campaignFillPct(719, 800)).toBeCloseTo(0.89875, 5);
+    expect(campaignFillPct(0, 800)).toBe(0);
+  });
+
+  it("is null when a count is missing or the cap is zero", () => {
+    expect(campaignFillPct(null, 800)).toBeNull();
+    expect(campaignFillPct(14, null)).toBeNull();
+    expect(campaignFillPct(5, 0)).toBeNull();
+  });
+
+  it("clamps an over-full campaign to 1", () => {
+    expect(campaignFillPct(810, 800)).toBe(1);
   });
 });
 
@@ -118,5 +204,123 @@ describe("meetsRadarThresholds", () => {
       provenEarner: null,
     };
     expect(meetsRadarThresholds(partial, thresholds)).toBe(true);
+  });
+});
+
+describe("computeCampaignConfidence", () => {
+  const empty: CampaignScoreInputs = {
+    commissionRatePct: null,
+    daysRemaining: null,
+    remainingBudgetCents: null,
+    owned: null,
+    provenEarner: null,
+  };
+
+  it("is 0 when nothing is known", () => {
+    expect(computeCampaignConfidence(empty)).toBe(0);
+  });
+
+  it("is 100 when every signal is present", () => {
+    const full: CampaignScoreInputs = {
+      commissionRatePct: 15,
+      daysRemaining: 20,
+      remainingBudgetCents: 5_000_00,
+      owned: true,
+      provenEarner: true,
+      fillPct: 0.5,
+      fullyClaimed: false,
+    };
+    expect(computeCampaignConfidence(full, { hasDemand: true, hasCcStats: true })).toBe(100);
+  });
+
+  it("weights commission most heavily among the core signals", () => {
+    const rateOnly = computeCampaignConfidence({ ...empty, commissionRatePct: 15 });
+    const budgetOnly = computeCampaignConfidence({ ...empty, remainingBudgetCents: 5_000_00 });
+    expect(rateOnly).toBeGreaterThan(budgetOnly);
+  });
+
+  it("rises when our catalogue demand backs the read", () => {
+    const base = computeCampaignConfidence({ ...empty, commissionRatePct: 15 });
+    const withDemand = computeCampaignConfidence(
+      { ...empty, commissionRatePct: 15 },
+      { hasDemand: true },
+    );
+    expect(withDemand).toBeGreaterThan(base);
+  });
+
+  it("treats a lone fully-claimed flag as a present fill signal", () => {
+    expect(computeCampaignConfidence({ ...empty, fullyClaimed: true })).toBeGreaterThan(0);
+  });
+});
+
+describe("campaignStatsConversion", () => {
+  const stats = (partial: Partial<CampaignStats>): CampaignStats => ({
+    ordersLast30: null,
+    salesLast30Cents: null,
+    roas: null,
+    ordersTotal: null,
+    clicksLast30: null,
+    clicksTotal: null,
+    ...partial,
+  });
+
+  it("is null when there are no stats at all", () => {
+    expect(campaignStatsConversion(null)).toBeNull();
+  });
+
+  it("computes orders / clicks from the last-30-day window", () => {
+    expect(campaignStatsConversion(stats({ ordersLast30: 744, clicksLast30: 1600 }))).toBeCloseTo(
+      0.465,
+    );
+  });
+
+  it("falls back to lifetime totals when the 30-day window is absent", () => {
+    expect(campaignStatsConversion(stats({ ordersTotal: 50, clicksTotal: 200 }))).toBeCloseTo(0.25);
+  });
+
+  it("is null when clicks are missing (no honest denominator)", () => {
+    expect(campaignStatsConversion(stats({ ordersLast30: 10 }))).toBeNull();
+  });
+});
+
+// SPCC ("Sponsored Products for Creators") scoring: EPC + budget availability
+// carry the money weight, the personal signals still apply, and there is no
+// commission / timing / budget / urgency component.
+describe("computeSpccScore", () => {
+  const base: CampaignScoreInputs = {
+    commissionRatePct: null,
+    daysRemaining: null,
+    remainingBudgetCents: null,
+    owned: null,
+    provenEarner: null,
+  };
+
+  it("scores a high-EPC, high-budget, owned+earner card hot", () => {
+    const result = computeSpccScore({
+      ...base,
+      epcCents: 105,
+      budgetAvailability: "high",
+      owned: true,
+      provenEarner: true,
+    });
+    expect(result.band).toBe("hot");
+    // EPC ceiling >= $1.00 saturates; the commission/timing/budget/urgency parts
+    // are zero on SPCC.
+    expect(result.parts.epc).toBeGreaterThan(0);
+    expect(result.parts.commission).toBe(0);
+    expect(result.parts.urgency).toBe(0);
+  });
+
+  it("keeps a low-EPC card out of the hot band", () => {
+    const result = computeSpccScore({ ...base, epcCents: 6, budgetAvailability: "medium" });
+    expect(result.score).toBeLessThan(70);
+  });
+
+  it("reads a missing EPC and budget as neutral halves, not penalties", () => {
+    const known = computeSpccScore({ ...base, epcCents: 6, budgetAvailability: "low" });
+    const unknown = computeSpccScore({ ...base, epcCents: null, budgetAvailability: null });
+    // An unknown EPC (0.5) scores at least as well as a known-tiny one, and an
+    // unknown budget (0.5) beats a known "low" (0.15).
+    expect(unknown.score).toBeGreaterThan(known.score);
   });
 });

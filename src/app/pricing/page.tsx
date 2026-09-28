@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Pricing - Influencer Butler",
   description:
-    "Pick your plan. All 40+ butlers included. Cancel anytime. Special discount for first-time visitors.",
+    "Pick your plan. All 50+ butlers included. Cancel anytime. Special discount for first-time visitors.",
   robots: {
     index: false,
     follow: false,
@@ -106,6 +106,12 @@ export default async function PricingPage({
             <Link href="/about" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
               About
             </Link>
+            <Link href="/download" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              Download
+            </Link>
+            <Link href="/extension" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+              Extension
+            </Link>
             <Link
               href={signedIn ? "/dashboard" : "/login"}
               className="font-medium text-slate-700 hover:text-[#f97316]"
@@ -124,12 +130,12 @@ export default async function PricingPage({
             Pricing
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Start free, upgrade when you're ready
+            Start free, upgrade when you&apos;re ready
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
             The whole Chrome extension and six See &amp; Organize butlers are free forever. Go Pro
-            for all 40+ tools, unlimited messages, and priority support. Cancel anytime - no
-            questions asked.
+            for all 50+ tools, unlimited messages, and priority support, starting with a 14-day
+            free trial. Cancel anytime - no questions asked.
           </p>
           <div className="mt-5 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-900">
@@ -177,7 +183,7 @@ export default async function PricingPage({
             Run more than one niche?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-            Stack the Deals Influencer Butler Workspace add-on for each extra niche.
+            Stack the Deals Butler Workspace add-on for each extra niche.
             Independent filters, schedules, queues, and tallies per workspace.
           </p>
         </div>
@@ -187,10 +193,10 @@ export default async function PricingPage({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
-                  Deals Influencer Butler Workspace
+                  Deals Butler Workspace
                 </h3>
                 <p className="text-sm text-slate-600">
-                  One additional Deals Influencer Butler workspace per subscription.
+                  One additional Deals Butler workspace per subscription.
                 </p>
               </div>
               <div className="text-right">
@@ -270,6 +276,8 @@ function SiteFooter() {
               <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
               <li><Link href="/course/amazon-influencer" className="hover:text-[#f97316]">Free Amazon Influencer Course</Link></li>
               <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates - Earn 30%</Link></li>
+              <li><Link href="/download" className="hover:text-[#f97316]">Download the App</Link></li>
+              <li><Link href="/extension" className="hover:text-[#f97316]">Chrome Extension: Free</Link></li>
             </ul>
           </div>
 
@@ -289,7 +297,7 @@ function SiteFooter() {
               Support
             </h4>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li><a href="mailto:hello@influencerbutler.com" className="hover:text-[#f97316]">Contact Us</a></li>
+              <li><Link href="/contact" className="hover:text-[#f97316]">Contact Us</Link></li>
               <li><Link href="/dashboard" className="hover:text-[#f97316]">My Account</Link></li>
             </ul>
           </div>

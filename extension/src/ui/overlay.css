@@ -23,6 +23,16 @@
 
 .panel.collapsed { width: auto; max-height: none; overflow: visible; }
 .panel.collapsed .body { display: none; }
+.panel.collapsed .quickbar { display: none; }
+
+/* The header and the pinned quick-links bar share one sticky region so they
+   stay together at the top while the sections scroll beneath them. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
 
 .header {
   display: flex;
@@ -32,14 +42,45 @@
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid #f1f5f9;
-  position: sticky;
-  top: 0;
   /* Soft warm wash so the header reads as a premium brand bar, not a plain row. */
   background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
   border-radius: 16px 16px 0 0;
 }
 
 .panel.collapsed .header { border-bottom: 0; }
+
+/* Pinned quick-links bar: small Get link / Scrub link buttons plus the URL
+   readouts, so a shareable link is one click away without scrolling. */
+.quickbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 16px;
+  background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+  border-bottom: 1px solid #f1f5f9;
+}
+.quickbar .quickbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.link-readout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e7ecf3;
+  border-radius: 8px;
+  word-break: break-all;
+  user-select: text;
+}
+.link-readout .link-readout-url { flex: 1; }
+.link-readout .link-notice { margin: 0; }
 
 .header .dot {
   width: 22px;
@@ -77,6 +118,38 @@
 }
 .header .gear:hover { color: #ea580c; background: #fff2e8; transform: rotate(30deg); }
 .header .gear:focus-visible { outline: 2px solid #f59e0b; outline-offset: 1px; }
+
+/* "Synced" chip: shown only when the extension is paired to a running desktop
+   app. Reuses the established success green (see .chip.good). Hidden by an
+   explicit class toggle rather than [hidden], since the shadow root carries no
+   UA stylesheet that guarantees [hidden]{display:none}. */
+.header .sync-chip {
+  flex: none;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 3px 9px;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.header .sync-chip.show { display: inline-flex; }
+.header .sync-chip:hover { background: #dcfce7; border-color: #86efac; }
+.header .sync-chip:focus-visible { outline: 2px solid #22c55e; outline-offset: 1px; }
+.header .sync-chip .dot2 {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 999px;
+  background: #15803d;
+}
 
 .header .chev { color: #94a3b8; font-size: 12px; font-weight: 600; }
 
@@ -192,6 +265,7 @@
 .chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
 .chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .chip.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.chip.muted { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
 
 .seal {
   display: flex;
@@ -259,6 +333,19 @@
 }
 .copy-btn:hover { background: #ffedd5; }
 .copy-btn.copied { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+
+/* Campaign availability, merged into the bottom of the Product snapshot card
+   with a light divider so it reads as part of the same card. */
+.snapshot-campaigns { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+.snapshot-campaigns-head {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
 
 .criteria { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .criteria li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; color: #334155; }
@@ -335,6 +422,20 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+/* Explains a link fallback (for example "not signed in, so this is the plain
+   Amazon link"). Amber, not red: the copied link works, something is just not
+   set up the way the user asked for. */
+.link-notice {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .caption-out {
   margin-top: 8px;
   padding: 8px 10px;
@@ -345,6 +446,21 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   font-size: 12.5px;
   white-space: pre-wrap;
 }
+
+/* My link inline sign-in: license-key field plus Connect on one row, shown
+   only when a copy comes back needing a signed-in license. */
+.connect-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.connect-row input {
+  flex: 1 1 160px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+}
+.connect-row input:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: transparent; }
 
 .btn {
   border: 0;
@@ -370,6 +486,19 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   box-shadow: none;
 }
 .btn.secondary:hover { background: #e7edf5; filter: none; }
+.btn.small { padding: 7px 12px; font-size: 12.5px; box-shadow: none; }
+
+/* One-time feature tip (see storage HintsState): a soft card under the feature
+   it explains, with its own act / dismiss buttons. Deliberately quieter than the
+   nudge modal so it informs without interrupting the copy flow. */
+.hint {
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff8f1;
+}
+.hint-body { margin: 0; font-size: 12px; line-height: 1.5; color: #7c2d12; }
+.hint .row { margin-top: 8px; gap: 8px; }
 
 .note { font-size: 12.5px; line-height: 1.5; color: #64748b; margin: 0; }
 /* A checkbox label may reuse .note; keep it readable next to the box. */
@@ -435,6 +564,95 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 
 .progress { font-size: 12.5px; color: #64748b; margin: 0; }
 
+/* Video landscape: aggregate competitor-parity stats inside the video panel. */
+/* The competition sentence: the section's headline line, read before any tile. */
+.ls-compete { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.4; margin: 0; }
+.ls-tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.ls-tile {
+  flex: 1 1 calc(50% - 4px);
+  min-width: 118px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.ls-tile .ls-val { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+.ls-tile .ls-lab { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+.ls-sublabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 2px 0 0;
+}
+.ls-conc { display: grid; gap: 6px; }
+.ls-conc-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 22px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.ls-conc-name { color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-conc-track { background: #f1f5f9; border-radius: 999px; height: 8px; overflow: hidden; }
+.ls-conc-fill { height: 100%; background: linear-gradient(90deg, #fb923c, #c2410c); border-radius: 999px; }
+.ls-conc-count { color: #64748b; text-align: right; }
+.ls-mix { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: #f1f5f9; }
+.ls-mix-seg { height: 100%; }
+.ls-mix-seg.influencer { background: #fb923c; }
+.ls-mix-seg.brand { background: #60a5fa; }
+.ls-mix-seg.customer { background: #94a3b8; }
+.ls-mix-seg.unknown { background: #e2e8f0; }
+.ls-pulse { display: flex; align-items: flex-end; gap: 3px; height: 44px; }
+.ls-pulse-bar { flex: 1; background: linear-gradient(180deg, #fdba74, #c2410c); border-radius: 3px 3px 0 0; min-height: 2px; }
+.ls-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.ls-badge.upper { background: #eff6ff; color: #1d4ed8; }
+.ls-badge.lower { background: #fff7ed; color: #c2410c; }
+.ls-card-head { display: flex; align-items: center; gap: 6px; }
+
+/* Per-video passport (longitudinal placement history). */
+.pp-toggle {
+  background: none;
+  border: none;
+  color: #c2410c;
+  font-weight: 600;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+}
+.pp-toggle:hover { text-decoration: underline; }
+.pp-body { margin-top: 8px; display: grid; gap: 8px; }
+.pp-metrics { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-metric {
+  flex: 1 1 calc(50% - 3px);
+  min-width: 96px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.pp-metric .pp-val { font-size: 15px; font-weight: 800; color: #0f172a; }
+.pp-metric .pp-lab { font-size: 10.5px; color: #64748b; }
+.pp-strip { display: flex; align-items: flex-end; gap: 1px; height: 34px; }
+.pp-day { flex: 1; border-radius: 1px; min-width: 1px; }
+.pp-day.visible { background: linear-gradient(180deg, #34d399, #15803d); min-height: 3px; }
+.pp-day.nodata {
+  height: 100%;
+  background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 2px, #e2e8f0 2px, #e2e8f0 4px);
+}
+.pp-snap { display: grid; gap: 4px; }
+.pp-snap-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: #334155; }
+.pp-snap-row .pp-asin { font-family: ui-monospace, monospace; color: #0f172a; }
+
 .badge-inline {
   display: inline-flex;
   align-items: center;
@@ -486,6 +704,296 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   color: #334155;
 }
 .tile-chip.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.tile-chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.tile-chip.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+/* Muted chip: the "connect the app for YouTube status" / "not on YouTube" hint. */
+.tile-chip.muted { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+/* The "On YouTube" chip is an anchor to the video; keep it chip-shaped, not a link. */
+a.tile-chip { text-decoration: none; cursor: pointer; }
+a.tile-chip:hover { filter: brightness(0.97); }
+/* The "Upload to YouTube" action chip (a button styled like .tile-chip). */
+.tile-chip.yt-upload-btn {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+.tile-chip.yt-upload-btn:hover { filter: brightness(0.97); }
+.tile-chip.yt-upload-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Improve Reach chip + advisory: the "not on detail pages" state becomes a
+   clickable amber chip that expands a card naming Amazon's reason and a concrete
+   fix checklist. The card drops onto its own line under the chip row. */
+.tile-chip.reach-chip { cursor: pointer; }
+.tile-chip.reach-chip .reach-caret { margin-left: 4px; font-size: 9px; opacity: 0.8; }
+.tile-chip.reach-chip.open { outline: 2px solid #f97316; outline-offset: 1px; }
+.reach-advice {
+  flex-basis: 100%;
+  width: 320px;
+  max-width: 90vw;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  padding: 10px 12px;
+  text-align: left;
+  color: #334155;
+}
+.reach-advice .reach-title { font-weight: 800; font-size: 12.5px; color: #0f172a; }
+.reach-advice .reach-label {
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.reach-advice .reach-reason { margin-top: 3px; font-size: 11.5px; line-height: 1.45; }
+.reach-advice ul { margin: 4px 0 0; padding-left: 16px; }
+.reach-advice li { margin: 3px 0; font-size: 11.5px; line-height: 1.4; }
+.reach-advice .reach-remedy {
+  margin-top: 8px;
+  padding: 7px 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #9a3412;
+}
+.reach-advice .reach-open {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #c2410c;
+  text-decoration: none;
+}
+.reach-advice .reach-open:hover { text-decoration: underline; }
+/* Benable list-card badge (benable.com): the chip reuses .tile-chip, and the
+   expandable detail drops below it as a small card, kept narrow so it never
+   covers the whole Benable tile. */
+.benable-badge { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.benable-chip { cursor: pointer; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18); }
+.benable-chip.open { outline: 2px solid #f97316; outline-offset: 1px; }
+.benable-detail {
+  width: 240px;
+  max-width: 70vw;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.benable-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.benable-detail-title { font-weight: 600; font-size: 12.5px; color: #0f172a; }
+.benable-open { font-size: 12px; color: #c2410c; text-decoration: none; white-space: nowrap; }
+.benable-open:hover { text-decoration: underline; }
+.benable-rows { display: flex; flex-direction: column; gap: 6px; }
+/* The clickable "Earned $X" chip (a button styled like .tile-chip). */
+.earn-chip { font: inherit; font-size: 11.5px; cursor: pointer; }
+.earn-chip:hover { filter: brightness(0.97); }
+
+/* Brand Keywords chip: the search keyword the "Message Brands" tool used to
+   find this brand, dropped next to a Creator Connections Messages conversation.
+   Orange accent so it reads as ours (matches .tile-score.hot). The leading glyph
+   is a small magnifier; the label is the keyword text. */
+.bkw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font: 700 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  vertical-align: middle;
+  cursor: default;
+}
+.bkw-chip .bkw-glyph { flex: none; font-size: 10px; opacity: 0.9; }
+.bkw-chip .bkw-kw {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Video Likes badge: a heart + Amazon "helpful votes" count, overlaid on a
+   product-page video thumbnail. Our brand orange (matches .tile-score.hot) so it
+   reads as ours, not as Amazon's own control. A soft shadow + solid fill keep it
+   legible over any thumbnail; pointer-events are off (set on the host) so it
+   never blocks a click on the video. */
+.vlike-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 1px 7px 1px 6px;
+  font: 800 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+.vlike-badge .vlike-heart { flex: none; font-size: 11px; line-height: 1; }
+.vlike-badge .vlike-count { line-height: 1; }
+/* Inbound-brand variant: a brand that only messaged the creator (never pitched)
+   gets its Creator Connections signal (rate + cadence) in a cooler teal so it
+   reads apart from the orange keyword chip. A "risky" cadence tints amber. */
+.bkw-chip.bkw-chip-enrich {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+.bkw-chip.bkw-chip-enrich.bkw-chip-risky {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+/* "Open the desktop app" banner: a full-width block prepended at the top of the
+   Messages drawer when Brand Keywords is on but the app is not reachable, so the
+   feature no longer fails silently. Orange, to read as ours. */
+.bkw-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font: 600 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bkw-hint .bkw-hint-glyph { flex: none; font-size: 14px; line-height: 1; }
+.bkw-hint .bkw-hint-text { flex: 1 1 auto; }
+.bkw-hint .bkw-hint-x {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: #9a3412;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.bkw-hint .bkw-hint-x:hover { opacity: 1; }
+
+/* Message Templates toolbar: a Save + Templates row mounted just above the
+   Creator Connections message composer, with a pop-over that lists saved
+   templates (local + desktop) or a small save form. Its own block row so it sits
+   cleanly above the reply box; the pop-over opens upward so it never pushes the
+   composer around. */
+.mtpl-host { display: block; margin: 6px 0; }
+.mtpl-bar {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mtpl-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 2147483000;
+  width: 300px;
+  max-width: 80vw;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
+.mtpl-menu[hidden] { display: none; }
+.mtpl-group {
+  margin: 6px 4px 4px;
+  font: 700 11px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+.mtpl-group:first-child { margin-top: 2px; }
+.mtpl-row { display: flex; align-items: stretch; gap: 4px; }
+.mtpl-pick {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.mtpl-pick:hover { background: #fff7ed; }
+.mtpl-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+.mtpl-preview {
+  font-size: 11.5px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mtpl-del {
+  flex: none;
+  width: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mtpl-del:hover { background: #fef2f2; color: #dc2626; }
+.mtpl-empty, .mtpl-note {
+  margin: 6px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.mtpl-note { color: #b45309; }
+.mtpl-name {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 2px 0 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+}
+.mtpl-name:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: transparent; }
+.mtpl-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px 8px;
+  font-size: 12.5px;
+  color: #334155;
+  cursor: pointer;
+}
+.mtpl-actions { display: flex; gap: 6px; }
 .tile-watch {
   display: inline-flex;
   align-items: center;
@@ -503,6 +1011,107 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .tile-watch:hover { border-color: #fed7aa; color: #c2410c; }
 .tile-watch.on { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .tile-watch[disabled] { opacity: 0.55; cursor: default; }
+
+/* Per-tile "..." action menu trigger (styled like a round chip button). */
+.tile-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+}
+.tile-menu-btn:hover { border-color: #fed7aa; color: #c2410c; background: #fff7ed; }
+
+/* The pop-out menu itself, in its own fixed-position shadow host. */
+.tile-menu {
+  min-width: 200px;
+  max-width: 260px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  padding: 6px;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #334155;
+}
+.tile-menu-section { display: flex; flex-direction: column; }
+.tile-menu-section + .tile-menu-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+.tile-menu-heading {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  padding: 2px 8px 4px;
+}
+.tile-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+.tile-menu-item:hover { background: #f8fafc; color: #c2410c; }
+.tile-menu-item.has-sub::after { content: " \203A"; color: #94a3b8; float: right; }
+.tile-menu-item.tile-menu-cta { color: #c2410c; font-weight: 800; }
+.tile-menu-sub {
+  margin: 2px 0 2px 6px;
+  padding-left: 6px;
+  border-left: 2px solid #f1f5f9;
+}
+.tile-menu-sub-item { font-weight: 500; font-size: 12.5px; padding: 6px 8px; }
+.tile-menu-newlist { display: flex; gap: 4px; padding: 4px 4px 2px; }
+.tile-menu-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12.5px;
+}
+.tile-menu-create {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid #fed7aa;
+  border-radius: 7px;
+  background: #fff7ed;
+  color: #c2410c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tile-menu-locked { padding: 4px 8px; font-size: 12px; color: #64748b; }
+.tile-menu-status {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 
 /* Search toolbar: a full-width bar above the grid. Wraps on narrow layouts. */
 .search-toolbar {
@@ -536,6 +1145,17 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .search-control input.search-price { width: 72px; }
 .search-check { cursor: pointer; }
 .search-check input { width: 15px; height: 15px; accent-color: #f97316; cursor: pointer; }
+
+/* Campaign Radar mounts its toolbar into Amazon's narrow opportunity column,
+   where the default wrap drops every control onto its own line (vertical
+   stack). Size the bar to its own content and never wrap, so the controls
+   stay on one horizontal row that extends rightward into the empty space
+   past the narrow column, with no scrollbar. */
+.radar-toolbar { flex-wrap: nowrap; width: max-content; max-width: none; }
+.radar-toolbar .search-brand,
+.radar-toolbar .search-control { flex: 0 0 auto; }
+.radar-toolbar .search-control-label,
+.radar-toolbar .search-count { white-space: nowrap; }
 .search-scan { gap: 8px; margin-left: auto; }
 .search-scan .btn { padding: 7px 12px; font-size: 12.5px; }
 .search-status { font-size: 12px; color: #64748b; }
@@ -569,6 +1189,9 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   font: 14px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #0f172a;
 }
+
+/* Wider variant for content-heavy modals (the earnings breakdown). */
+.modal.wide { width: 460px; }
 
 .modal-head {
   display: flex;
@@ -632,6 +1255,92 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 }
 .modal-close:hover { background: #e2e8f0; color: #0f172a; }
 
+/* Earnings breakdown popup (the "Cha-Ching Sales" answer): a scoped headline
+   total, a marketplace toggle, and disclosure sections for stores, years, a
+   month bar chart, and Creator Connections campaigns. */
+.earn-detail { font: 13px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
+.earn-detail .disclosure + .disclosure { margin-top: 4px; }
+
+.earn-total { display: flex; flex-wrap: wrap; gap: 10px; margin: 2px 0 12px; }
+.earn-total-amt {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #15803d;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Segmented "This marketplace" / "All stores" toggle. */
+.earn-seg {
+  display: inline-flex;
+  margin: 0 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 2px;
+  background: #f8fafc;
+}
+.earn-seg-btn {
+  border: 0;
+  background: none;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+}
+.earn-seg-btn.on { background: #fff; color: #c2410c; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
+
+.earn-table { display: flex; flex-direction: column; gap: 8px; }
+.earn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.earn-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.earn-row-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; }
+.earn-row-figs { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+.earn-amt { font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+.earn-muted { font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+.earn-store-id { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12px; }
+.earn-camp-name { font-weight: 700; }
+
+/* Earnings-by-month bar chart: a scrolling row of value/bar/label columns. */
+.earn-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  min-height: 96px;
+  padding: 6px 2px 0;
+  overflow-x: auto;
+}
+.earn-bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 34px; }
+.earn-bar-val { font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap; }
+.earn-bar { width: 20px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #34d399, #15803d); }
+.earn-bar-label { font-size: 10.5px; font-weight: 700; color: #94a3b8; white-space: nowrap; }
+
+/* "View breakdown" link under the product-panel earnings chips. */
+.earn-link {
+  margin-top: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #c2410c;
+  cursor: pointer;
+}
+.earn-link:hover { text-decoration: underline; }
+
+/* Clickable storefront-tile earnings badge (a button styled like .tile-chip). */
+.earn-badge-btn { font: inherit; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18); }
+.earn-badge-btn:hover { filter: brightness(0.97); }
+
 /* Inline card mounted next to the Amazon buybox. Our orange->amber accent bar
    keeps it clearly ours, distinct from the floating panel and the competitor. */
 .inline-card {
@@ -673,4 +1382,353 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   cursor: pointer;
   text-decoration: underline;
   font-size: 12px;
+}
+
+/* Global Marketplace Maximizer: one compact row per marketplace, the
+   availability chip + local price on the left and the "Get link" button on the
+   right. Reuses .chip / .btn from the panel; only the row layout is new. */
+.gmm-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.gmm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gmm-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.gmm-price { font-size: 12px; color: #475569; }
+
+/* Extension-update pill: a compact floating banner near the top of the
+   viewport. Own shadow host (like the modal) so panel rebuilds never tear it
+   down; floats over the page so Amazon's layout is untouched. */
+.update-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483002;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  width: min(560px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 10px 40px 10px 14px;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e7ecf3;
+  border-radius: 14px;
+  font: 13px/1.45 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.06);
+  animation: ib-modal-fade 0.15s ease;
+}
+
+.update-banner .dot {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.update-banner-text {
+  display: flex;
+  /* Wide enough to read beside the buttons; on a narrow viewport the actions
+     row wraps underneath instead of crushing the copy. */
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.update-banner-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #ea580c, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.update-banner-body {
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.update-banner-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.update-banner-actions .btn {
+  padding: 8px 13px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.update-banner-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.update-banner-close:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Post-update "What's New" card: bottom-right corner, its own closed shadow
+   host so an SPA panel rebuild never tears it down. z-index sits just under the
+   modal (2147483001) and above the panel. */
+.whats-new-card {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2147483000;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 16px 16px 14px;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e7ecf3;
+  border-radius: 14px;
+  font: 13px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.06);
+  animation: ib-modal-fade 0.15s ease;
+}
+
+.whats-new-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 22px; /* clear the close button */
+}
+
+.whats-new-head .dot {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.whats-new-headtext {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.whats-new-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #ea580c, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.whats-new-meta {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.whats-new-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.whats-new-heading {
+  margin: 0 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.whats-new-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.whats-new-list li {
+  font-size: 12.5px;
+  color: #334155;
+}
+
+.whats-new-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.whats-new-actions .btn {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.whats-new-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.whats-new-close:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Video Money: the reshoot summary card above the Creator Hub manage list. Its
+   own inline shadow host, so it can be torn down on re-init and pagination. */
+.vmoney-panel {
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+.vmoney-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.vmoney-title { font-weight: 700; font-size: 14px; }
+.vmoney-count { color: #64748b; font-size: 12px; }
+.vmoney-export { margin-left: auto; }
+.vmoney-note {
+  margin: 0 0 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+}
+.vmoney-group { margin-top: 10px; }
+.vmoney-group-title { margin: 0; font-size: 12px; font-weight: 700; color: #334155; }
+.vmoney-group-hint { display: block; font-size: 11px; color: #94a3b8; margin: 1px 0 4px; }
+.vmoney-rows { display: flex; flex-direction: column; gap: 3px; }
+.vmoney-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+.vmoney-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vmoney-row-value { color: #15803d; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Walmart product-page panel: a chip row + the copy-link button + setup note.
+   Reuses .chip / .btn from the panel; only the row layout and the inline
+   "set up" link affordance are new. */
+.wm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.wm-link-btn { margin-top: 2px; }
+.chip.commission { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.chip.revenue { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.chip.price { background: #f8fafc; color: #0f172a; font-weight: 600; }
+.link-inline {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1d4ed8;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-inline:hover { color: #1e40af; }
+
+/* My video placement: the creator's own row in the influencer list, and the
+   badge that sits on their own card inside Amazon's carousel. The accent colors
+   match .chip.good so "yours" reads as the same signal in both places. */
+.list li.mine {
+  border-left: 3px solid #bbf7d0;
+  padding-left: 8px;
+  background: #f0fdf4;
+}
+.myvideo-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font: 600 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  white-space: nowrap;
+}
+
+/* ---- Phones (Android extension browsers such as Lemur) --------------------
+   Layout keys off viewport width: mobile sites set a device-width viewport, so
+   these only apply on a phone-sized page. The panel starts collapsed there
+   (components.ts) and expands into a bottom sheet instead of a floating card
+   that would cover Amazon's sticky buy bar. */
+@media (max-width: 600px) {
+  .panel {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-width: none;
+    max-height: 70vh;
+  }
+  /* Collapsed: a compact pill in the corner, not a full-width bar. */
+  .panel.collapsed { left: auto; }
+  /* The What's New card spans the width like the panel. */
+  .whats-new-card { left: 8px; right: 8px; bottom: 8px; width: auto; }
+  /* Campaign Radar: the desktop toolbar forces one wide row; on a phone let the
+     controls wrap inside the screen instead of scrolling sideways. */
+  .radar-toolbar { flex-wrap: wrap; width: auto; max-width: 100%; }
+}
+
+/* Touch screens: grow the small controls to finger-sized hit areas. Keyed on
+   pointer, not width, so a touch laptop gets them and a narrow desktop window
+   does not. */
+@media (pointer: coarse) {
+  .header .gear { width: 36px; height: 36px; }
+  .infotip-mark { width: 22px; height: 22px; }
+  .toggle input[type="checkbox"],
+  .search-check input { width: 22px; height: 22px; }
+  .tile-menu-btn { min-width: 32px; height: 32px; }
+  .mtpl-del { width: 36px; min-height: 36px; }
+  .update-banner-close,
+  .whats-new-close { width: 36px; height: 36px; }
+  .btn { min-height: 40px; }
 }

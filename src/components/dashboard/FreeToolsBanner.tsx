@@ -1,25 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 // Replaces the older single-tool freebie banners (Like Butler, CC Check). This
-// one announces the whole Free forever tier: the Chrome extension plus the five
-// See & Organize butlers. Dismissible per session; no sunset - the free tier is
-// a permanent part of the product now.
+// one announces the whole Free forever tier: the Chrome extension plus the six
+// See & Organize butlers (FREE_BUTLER_SLUGS). Dismissible per session; no sunset
+// - the free tier is a permanent part of the product now.
 const DISMISS_KEY = "ib_freetools_banner_dismissed_v1";
 
-export default function FreeToolsBanner() {
-  const [dismissed, setDismissed] = useState(true);
+// sessionStorage fires no events for same-tab writes, so the subscription is a
+// no-op; the in-session dismissal lives in React state instead.
+const subscribe = () => () => {};
 
-  useEffect(() => {
-    let hidden = false;
-    try {
-      hidden = sessionStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      hidden = false;
-    }
-    setDismissed(hidden);
-  }, []);
+function readDismissed(): boolean {
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export default function FreeToolsBanner() {
+  // Dismissed on the server render so the banner only appears after hydration.
+  const storedDismissed = useSyncExternalStore(subscribe, readDismissed, () => true);
+  const [dismissedNow, setDismissedNow] = useState(false);
+  const dismissed = storedDismissed || dismissedNow;
 
   if (dismissed) return null;
 
@@ -29,7 +34,7 @@ export default function FreeToolsBanner() {
     } catch {
       // sessionStorage may be unavailable - dismiss in-memory only
     }
-    setDismissed(true);
+    setDismissedNow(true);
   };
 
   return (
@@ -46,8 +51,8 @@ export default function FreeToolsBanner() {
           </p>
           <p className="mt-1 text-sm text-slate-600">
             The whole Chrome extension plus six butlers work on every account - trial, paid,
-            expired, or cancelled. No license check, no quota: Like Butler, Benable Like Butler, CC
-            Check, Orders Butler, and Storefront Butler.
+            expired, or cancelled. No login, no card, no quota: Like Butler, Benable Like Butler,
+            Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler.
           </p>
         </div>
         <div className="flex items-center gap-2">

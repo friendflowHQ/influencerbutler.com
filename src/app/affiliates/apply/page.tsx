@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { COUNTRIES } from "@/lib/countries";
+import NegotiateTermsNote from "@/components/NegotiateTermsNote";
 
 type SocialHandles = {
   instagram: string;
@@ -410,6 +411,8 @@ export default function AffiliateApplyPage() {
                 Influencer Butler pays my commissions directly via PayPal.
               </span>
             </label>
+
+            <NegotiateTermsNote />
 
             {error ? (
               <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

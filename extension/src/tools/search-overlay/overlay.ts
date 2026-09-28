@@ -2,21 +2,40 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { log } from "../../shared/log";
-import { parseSearchTiles, type SearchTile } from "../../amazon/search-results";
-import { marketplaceFromUrl } from "../../amazon/product-signals";
-import { getRateCard } from "../../rate-card/cache";
+import { queryAll } from "../../amazon/selectors";
+import { type SearchTile } from "../../amazon/search-results";
+import type { DpStaticSignals } from "../../amazon/dp-static";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
+import { retailerModule, type RetailerModule } from "../../retailers/module";
+import { getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
-import { formatCents } from "../calculator/model";
+import { formatCents, formatCompactMoney } from "../calculator/model";
+import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
+import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
+import { formatMoney, tileTotals } from "../earnings-overlay/model";
+import { renderEarningsDetail } from "../earnings-overlay/detail";
+import type { AsinEarnings, ProductRef } from "../../transport/hud-commands";
 import {
   sendToBackground,
+  type CcRate,
+  type CcRatesResult,
   type EarningsLookupResult,
+  type HudCommandResult,
+  type MarketBatchResult,
+  type MarketProduct,
   type ScanAsinResult,
+  type SpccRate,
+  type SpccRatesResult,
   type WatchlistResult,
 } from "../../shared/messages";
+import { resolveOwnership } from "../ownership/resolve";
+import { enrichSearchTiles } from "./enrich";
 import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
-import type { Settings } from "../../storage/schema";
+import { mountTileMenuButton, type HudRef } from "./tile-menu";
+import type { AuthStatus } from "../../shared/messages";
+import type { HudStatus } from "../../transport/hud-commands";
+import type { CachedScan, Settings, StorageShape } from "../../storage/schema";
 
 // Marks a tile as already decorated so an SPA rebuild does not double-badge it.
 const DONE_ATTR = "data-ib-search";
@@ -28,30 +47,83 @@ type Row = {
   tile: SearchTile;
   order: number;
   marketplace: string;
+  retailer: "amazon" | "walmart";
+  // Base rate: rate card by category once enrichment supplies one, else the
+  // page-wide default. A known CC campaign rate overrides it (see rateFor).
   ratePct: number;
+  ccRate: CcRate | null;
+  // Amazon's own SPCC ("Earn on Clicks") forecast, shown only when no
+  // guaranteed CC rate is known for the same ASIN (see the chip in
+  // renderBadge). Never feeds commissionCents: it is dollars-per-click, not a
+  // percent of price, so mixing it into that math would misrepresent it.
+  spccRate: SpccRate | null;
   commissionCents: number | null;
-  flags: { cc: boolean; spcc: boolean };
+  flags: { cc: boolean; spcc: boolean; deals: boolean };
   influencerVideos: number | null;
+  totalVideos: number | null;
+  // Where the video counts came from, so the badge can be honest about it:
+  //  - "self":     an exact scan of THIS ASIN (authoritative).
+  //  - "variant":  a sibling variant's scan, rolled up via the shared parent
+  //                (a stand-in until this variant is scanned).
+  //  - "estimate": the static page video TOTAL only, with no influencer split
+  //                (that hydrates via ajax and is not in the static HTML).
+  //  - null:       nothing known yet, or a definitive "no carousel" zero.
+  videoSource: "self" | "variant" | "estimate" | null;
+  // Static product-page signals once enrichment (or the shared cache) has them.
+  dp: DpStaticSignals | null;
+  // inStock from a previous background-tab scan, used until dp arrives.
+  cachedInStock: boolean | null;
   // True once a video scan has been attempted for this tile (success or not),
   // so repeated Scan clicks advance to the next unscanned batch instead of
   // re-scanning the same top rows and silently ignoring the rest of the page.
   scanned: boolean;
   score: ButlerScore;
+  verdict: TileVerdict;
   badgeBody: HTMLElement;
   showWatch: boolean;
   watched: boolean;
-  // True when the desktop app ledger shows the creator has already earned on
-  // this ASIN: turns Amazon search into "find more of what already paid me".
-  provenEarner: boolean;
+  // The desktop app ledger's earnings for this ASIN, when the creator has
+  // already earned on it: turns Amazon search into "find more of what already
+  // paid me", with the real dollars on the chip.
+  earnings: AsinEarnings | null;
+  // Ownership signals from the desktop Orders Butler (over the bridge; owned-only
+  // server fallback when unpaired). owned = the creator already bought it; posted
+  // = they already made content for it (Storefront / Deals / YouTube).
+  owned: boolean;
+  posted: boolean;
+  // Shared-catalogue ("internal Keepa") data for this ASIN: estimated monthly
+  // sales, BSR rank/category, real bought-past-month. Null until the batched
+  // GET_MARKET_BATCH returns (and stays null when the pool has nothing yet).
+  market: MarketProduct | null;
+  // Shared desktop-app connection state (one object for all rows). The per-tile
+  // action menu reads it live when opened, so it reflects the latest bridge
+  // status even though the button was mounted before GET_HUD_STATUS resolved.
+  hud: HudRef;
 };
 
 let stopScan = false;
 
-export async function initSearchOverlay(settings: Settings): Promise<void> {
-  // Amazon rewrites the URL when the user applies an in-page filter/sort, which
-  // re-triggers this run. Tear down the prior overlay (toolbar + tile badges)
-  // and clear the done-markers so we rebuild cleanly over the current grid
-  // instead of leaving a stale toolbar and double-badging.
+// Init epoch + abort: initSearchOverlay awaits between its teardown and its
+// mounting, and Amazon rewrites the URL on every in-page filter/sort, so two
+// SPA-triggered runs can interleave and both mount. Each run takes a ticket;
+// after any await it bails if a newer run started, and the previous run's
+// enrichment/observer dies with its AbortController.
+let initEpoch = 0;
+let controller: AbortController | null = null;
+
+export async function initSearchOverlay(
+  settings: Settings,
+  module: RetailerModule = retailerModule("amazon"),
+): Promise<void> {
+  controller?.abort();
+  const run = new AbortController();
+  controller = run;
+  const epoch = ++initEpoch;
+  const caps = module.capabilities;
+
+  // Tear down the prior overlay (toolbar + tile badges) and clear the
+  // done-markers so we rebuild cleanly over the current grid instead of
+  // leaving a stale toolbar and double-badging.
   for (const host of Array.from(
     document.querySelectorAll(".search-toolbar-host, .tile-badge-host"),
   )) {
@@ -61,45 +133,96 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     tile.removeAttribute(DONE_ATTR);
   }
 
-  const marketplace = marketplaceFromUrl(location.href);
-  const tiles = parseSearchTiles(document, location.href).filter((tile) => {
+  const marketplace = module.marketplaceFor(location.href);
+  const tiles = module.parseSearchTiles(document, location.href).filter((tile) => {
     if (tile.el.getAttribute(DONE_ATTR)) return false;
     tile.el.setAttribute(DONE_ATTR, "1");
     return true;
   });
   if (tiles.length === 0) return;
 
-  const [card, cache] = await Promise.all([getRateCard(), getCache()]);
-  const loaded = loadFilters(cache);
+  const [card, cache, state] = await Promise.all([
+    module.getRateCard(),
+    caps.catalogueBloom ? getCache() : Promise.resolve(null),
+    getState(),
+  ]);
+  if (epoch !== initEpoch) return;
+  // Campaign/deal membership only exists on Amazon; Walmart tiles carry no flags.
+  const loaded = cache ? loadFilters(cache) : null;
   const defaultRate = resolveRatePct({
     liveRatePct: null,
     category: null,
     card,
-    defaultRatePct: settings.commissionRatePct,
+    defaultRatePct: module.defaultRatePct(settings),
   });
 
+  // One shared connection object for the whole page's tile menus. Updated in
+  // place when GET_HUD_STATUS / GET_AUTH_STATUS resolve below; the menus read it
+  // live, so no repaint is needed when it flips.
+  const hud: HudRef = { connected: false, signedIn: false };
+
+  // Best (most complete) scanned video split per parent listing, so a tile whose
+  // own ASIN was never scanned can borrow a sibling variant's exact split.
+  const bestScanByParent = buildBestScanByParent(state, marketplace);
+
   const rows: Row[] = tiles.map((tile, i) => {
-    const flags = membership(loaded, tile.asin);
-    const commissionCents =
-      tile.priceCents !== null ? Math.round((tile.priceCents * defaultRate) / 100) : null;
+    const flags = loaded ? membership(loaded, tile.asin) : { cc: false, spcc: false, deals: false };
     const badgeBody = el("div", "tile-badge-body");
     const row: Row = {
       tile,
       order: i,
       marketplace,
+      retailer: module.retailer,
       ratePct: defaultRate,
-      commissionCents,
-      flags: { cc: flags.cc, spcc: flags.spcc },
+      ccRate: null,
+      spccRate: null,
+      commissionCents: null,
+      flags: { cc: flags.cc, spcc: flags.spcc, deals: flags.deals },
       influencerVideos: null,
+      totalVideos: null,
+      videoSource: null,
+      dp: null,
+      cachedInStock: null,
       scanned: false,
-      score: scoreFor(tile, defaultRate, flags, null, settings),
+      score: neutralScore(settings),
+      verdict: neutralVerdict(settings),
       badgeBody,
       showWatch: settings.tools.watchlist,
       watched: false,
-      provenEarner: false,
+      earnings: null,
+      owned: false,
+      posted: false,
+      market: null,
+      hud,
     };
+    // A previous background-tab scan (from any surface) already knows this
+    // product's exact influencer split; use it for free and let the Scan
+    // button skip the row.
+    const key = `${marketplace}:${tile.asin}`;
+    const cachedScan = state.cache[key];
+    if (cachedScan) {
+      row.influencerVideos = cachedScan.counts.influencer;
+      row.totalVideos = cachedScan.counts.total;
+      row.cachedInStock = cachedScan.inStock;
+      row.videoSource = "self";
+      row.scanned = true;
+    } else {
+      // No scan for this exact variant. If a sibling variant of the same listing
+      // was scanned, roll its split up as an estimate (Amazon usually serves one
+      // shared video set across a listing's variations). Left scannable so the
+      // Scan button can still pull this variant's own numbers. In-stock stays
+      // null because stock is genuinely per-variant.
+      const parent = state.variantParents[key];
+      const sibling = parent ? bestScanByParent.get(parent) : undefined;
+      if (sibling) {
+        row.influencerVideos = sibling.counts.influencer;
+        row.totalVideos = sibling.counts.total;
+        row.videoSource = "variant";
+      }
+    }
+    recompute(row, settings);
     mountBadge(tile, badgeBody);
-    renderBadge(row);
+    renderBadge(row, settings);
     return row;
   });
 
@@ -107,50 +230,210 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
   // repaint their badges so the Watch control reflects state.
   if (settings.tools.watchlist) {
     void sendToBackground<WatchlistResult>({ kind: "GET_WATCHLIST" }).then((res) => {
+      if (epoch !== initEpoch) return;
       const watched = new Set(res.items.map((w) => w.asin.toUpperCase()));
       for (const row of rows) {
         if (watched.has(row.tile.asin)) {
           row.watched = true;
-          renderBadge(row);
+          renderBadge(row, settings);
         }
       }
     });
   }
 
-  // "Proven earner" tint: one batched lookup against the desktop app ledger marks
-  // the tiles the creator has already earned on. Returns instantly when the app
-  // was never paired, so this is a no-op for everyone else.
-  void sendToBackground<EarningsLookupResult>({
-    kind: "LOOKUP_EARNINGS",
+  // Real earnings from the desktop app ledger, one batched lookup. Returns
+  // instantly when the app was never paired, so this is a no-op for everyone
+  // else. The full record is kept so the chip can show dollars and open the
+  // breakdown popup. Amazon only: the desktop ledger does not track Walmart.
+  if (caps.earnings) {
+    void sendToBackground<EarningsLookupResult>({
+      kind: "LOOKUP_EARNINGS",
+      asins: rows.map((r) => r.tile.asin),
+    }).then((res) => {
+      if (epoch !== initEpoch || !res.ok) return;
+      const byAsin = new Map(res.results.map((r) => [r.asin.toUpperCase(), r]));
+      for (const row of rows) {
+        const earnings = byAsin.get(row.tile.asin.toUpperCase());
+        if (earnings?.hasEarnings) {
+          row.earnings = earnings;
+          renderBadge(row, settings);
+        }
+      }
+    });
+  }
+
+  // "Already own / already posted this" from the desktop Orders Butler, one
+  // batched lookup. Returns instantly (owned-only server fallback) when the app
+  // was never paired, and only marks tiles that carry a signal, so it is quiet
+  // for everyone else. Amazon only: the desktop ledger does not track Walmart.
+  if (caps.earnings && settings.tools.ownership) {
+    void resolveOwnership(rows.map((r) => r.tile.asin)).then((records) => {
+      if (epoch !== initEpoch) return;
+      const byAsin = new Map(records.map((r) => [r.asin.toUpperCase(), r]));
+      for (const row of rows) {
+        const rec = byAsin.get(row.tile.asin.toUpperCase());
+        if (rec && (rec.owned || rec.posted.available)) {
+          row.owned = rec.owned;
+          row.posted = rec.posted.available;
+          renderBadge(row, settings);
+        }
+      }
+    });
+  }
+
+  // Desktop-app connection + sign-in state, once for the whole page, so the
+  // per-tile action menu can offer the app actions (or the upsell) without a
+  // lookup per open. Updates the shared `hud` object in place; menus read it
+  // live, so there is nothing to repaint.
+  void Promise.all([
+    sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
+    sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
+  ]).then(([hudStatus, auth]) => {
+    if (epoch !== initEpoch) return;
+    hud.connected = hudStatus.connected;
+    hud.signedIn = auth.signedIn;
+    hud.ideaLists = hudStatus.ideaLists;
+  });
+
+  // Shared-catalogue read for the whole page in one round trip: estimated
+  // monthly sales/revenue + BSR rank per tile. No-op for signed-out users and
+  // when the migration is unapplied (the worker returns nothing), so the tiles
+  // just keep their other chips. boughtPastMonth from the pool also feeds the
+  // score before the per-tile /dp/ enrichment lands.
+  void sendToBackground<MarketBatchResult>({
+    kind: "GET_MARKET_BATCH",
     asins: rows.map((r) => r.tile.asin),
+    marketplace,
+    retailer: module.retailer,
   }).then((res) => {
-    if (!res.ok) return;
-    const earners = new Set(
-      res.results.filter((r) => r.hasEarnings).map((r) => r.asin.toUpperCase()),
-    );
-    if (earners.size === 0) return;
+    if (epoch !== initEpoch || !res.ok) return;
+    const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
     for (const row of rows) {
-      if (earners.has(row.tile.asin.toUpperCase())) {
-        row.provenEarner = true;
-        renderBadge(row);
+      const product = byAsin.get(row.tile.asin.toUpperCase());
+      if (product) {
+        row.market = product;
+        recompute(row, settings);
+        renderBadge(row, settings);
       }
     }
   });
 
-  // Anchor after the last tile so reordering stays within the results block and
-  // never drags a tile past pagination or a footer.
+  // Real Creator Connections rates for the campaign-flagged tiles, so the
+  // campaign chip shows the actual percent and the commission estimate uses
+  // it. Bloom membership keeps the batch tiny.
+  const campaignAsins = caps.ccRates
+    ? rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin)
+    : [];
+  if (campaignAsins.length > 0) {
+    void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
+      (res) => {
+        if (epoch !== initEpoch || !res.ok) return;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.ccRate = rate;
+            recompute(row, settings);
+            renderBadge(row, settings);
+          }
+        }
+      },
+    );
+  }
+
+  // Amazon's own SPCC ("Earn on Clicks") forecast for the SPCC-flagged tiles,
+  // so a tile with no CC commission rate can still show a real $/click number
+  // instead of a bare "Campaign" chip. Restricted to flags.spcc (a CC row, when
+  // one exists, already wins in the chip below, so no need to ask here too).
+  const spccAsins = caps.ccRates ? rows.filter((r) => r.flags.spcc).map((r) => r.tile.asin) : [];
+  if (spccAsins.length > 0) {
+    void sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins: spccAsins }).then(
+      (res) => {
+        if (epoch !== initEpoch || !res.ok) return;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.spccRate = rate;
+            renderBadge(row, settings);
+          }
+        }
+      },
+    );
+  }
+
+  // Anchor before the first tile so applySort packs the sorted block at the
+  // top of the results, where the user is looking. Anchoring after the last
+  // tile looked like a no-op: dedup-skipped sponsored duplicates and mid-grid
+  // ad widgets stayed pinned above the fold while the real tiles reshuffled
+  // below it. Reordering still stays within the results block, above
+  // pagination and the footer.
   const first = rows[0];
   const last = rows[rows.length - 1];
   if (!first || !last) return;
   const parent = first.tile.el.parentElement;
   const anchor = document.createComment("ib-search-anchor");
-  last.tile.el.after(anchor);
+  first.tile.el.before(anchor);
+
+  const rowAsins = new Set(rows.map((r) => r.tile.asin));
+
+  // Amazon renders sponsored duplicates of tiles we already scored (and
+  // hydrates more in after load, above the sorted block). The parser skips
+  // them, so left visible they show the stale pre-sort order at the top of
+  // the page; hide them instead. Rows themselves are never touched here.
+  const hideStrayDupes = (): void => {
+    // Amazon-only: Walmart's parser already dedupes and the grid injects no
+    // late sponsored duplicates of scored tiles.
+    if (!parent || !caps.hideStrayDupes) return;
+    for (const tileEl of queryAll<HTMLElement>(parent, "searchResultTile")) {
+      if (tileEl.getAttribute(DONE_ATTR)) continue;
+      const asin = (tileEl.getAttribute("data-asin") ?? "").trim().toUpperCase();
+      if (rowAsins.has(asin)) tileEl.style.display = "none";
+    }
+  };
+
+  // Walmart's grid nests each tile in its own wrapper across several sub-grids,
+  // so tiles cannot be packed above a single anchor without reparenting them.
+  // Sort within each grid instead (rows grouped by their cell's parent),
+  // re-appending each group's cells in sorted order. No anchor, no reparenting.
+  const applyGroupedSort = (key: SortKey): void => {
+    const groups = new Map<HTMLElement, Row[]>();
+    for (const row of rows) {
+      const grid = row.tile.el.parentElement;
+      if (!grid) continue;
+      const list = groups.get(grid) ?? [];
+      list.push(row);
+      groups.set(grid, list);
+    }
+    for (const [grid, group] of groups) {
+      group.sort(comparator(key));
+      for (const row of group) grid.appendChild(row.tile.el);
+    }
+  };
 
   const applySort = (key: SortKey): void => {
+    if (caps.sortStrategy === "grouped") {
+      applyGroupedSort(key);
+      return;
+    }
     if (!parent) return;
+    hideStrayDupes();
+    // Tiles Amazon inserted above the block since init would keep the sorted
+    // rows pinned below them; repin the anchor above the current top tile.
+    const top = queryAll<HTMLElement>(parent, "searchResultTile").find(
+      (tileEl) => tileEl.style.display !== "none",
+    );
+    if (top && top !== anchor.nextSibling) top.before(anchor);
     const sorted = [...rows].sort(comparator(key));
     for (const row of sorted) parent.insertBefore(row.tile.el, anchor);
   };
+
+  // Sponsored duplicates hydrate in after init (observed live: the whole first
+  // row can be late-injected dupes); hide them as they land so the sorted
+  // block stays on top.
+  if (parent && caps.hideStrayDupes) {
+    const dupeWatch = new MutationObserver(() => hideStrayDupes());
+    dupeWatch.observe(parent, { childList: true });
+    run.signal.addEventListener("abort", () => dupeWatch.disconnect(), { once: true });
+  }
 
   const applyFilter = (state: FilterState): void => {
     for (const row of rows) {
@@ -174,7 +457,7 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
     for (const row of targets) {
-      if (stopScan) break;
+      if (stopScan || epoch !== initEpoch) break;
       setStatus(t().searchScanning(done + 1, targets.length));
       row.scanned = true;
       try {
@@ -183,10 +466,14 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
           asin: row.tile.asin,
           marketplace,
         });
+        if (epoch !== initEpoch) break;
         if (result.classified && result.counts) {
           row.influencerVideos = result.counts.influencer;
-          row.score = scoreFor(row.tile, row.ratePct, row.flags, row.influencerVideos, settings);
-          renderBadge(row);
+          row.totalVideos = result.counts.total;
+          // A live scan of this exact ASIN: authoritative, drop any estimate mark.
+          row.videoSource = "self";
+          recompute(row, settings);
+          renderBadge(row, settings);
         }
       } catch (error) {
         log("search-overlay", `scan failed for ${row.tile.asin}`, error);
@@ -201,7 +488,51 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
   };
 
-  const toolbarHost = renderToolbar({
+  // "Send deals to app": batch the page's discounted tiles (a rollback /
+  // clearance / reduced badge, or a strikethrough was-price) into the desktop
+  // Deals Butler in one click. On the rollback hub every tile
+  // qualifies; on a plain search only the marked-down ones do.
+  async function sendDealsToApp(setStatus: (text: string) => void): Promise<void> {
+    const dealRows = rows.filter(
+      (r) => r.tile.dealBadge != null || r.tile.wasPriceCents != null,
+    );
+    if (dealRows.length === 0) {
+      setStatus(t().searchNoDeals);
+      return;
+    }
+    if (!hud.connected) {
+      setStatus(t().connectAppToPair);
+      return;
+    }
+    const products: ProductRef[] = dealRows.map((r) => ({
+      asin: r.tile.asin,
+      marketplace: r.marketplace,
+      title: r.tile.title?.slice(0, 200),
+      priceCents: r.tile.priceCents,
+      currency: r.tile.currency,
+      imageUrl: r.tile.imageUrl ?? undefined,
+      commissionRatePct: null,
+      url: r.tile.href ?? undefined,
+    }));
+    setStatus(t().searchSendingDeals(products.length));
+    try {
+      const res = await sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "deal.push.batch", workspace: "default", products },
+      });
+      setStatus(
+        res.ok
+          ? res.message ?? t().sentToApp
+          : res.needsPairing
+            ? t().connectAppToPair
+            : res.message ?? t().couldNotReachApp,
+      );
+    } catch {
+      setStatus(t().couldNotReachApp);
+    }
+  }
+
+  const toolbar = renderToolbar({
     count: rows.length,
     onSort: applySort,
     onFilter: applyFilter,
@@ -209,30 +540,165 @@ export async function initSearchOverlay(settings: Settings): Promise<void> {
     onScanStop: () => {
       stopScan = true;
     },
+    showScan: caps.videoScan,
+    showCampaignFilter: caps.campaignFilter,
+    // Walmart search / rollback / deals grids can hand-picked-batch to the
+    // desktop; the deal.push.batch receiver is retailer-aware.
+    showSendDeals: module.retailer === "walmart",
+    onSendDeals: sendDealsToApp,
   });
 
-  mountToolbar(first.tile.el, toolbarHost);
+  mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities.
   applySort("score");
+
+  // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
+  // static /dp/ fetches through the serialized chain. Each arrival upgrades
+  // the tile's rate (real category), score, video count, and verdict. Rows are
+  // never auto re-sorted under the cursor; re-picking a sort in the toolbar
+  // applies the updated scores. Amazon-only: Walmart has no /dp/ static page
+  // to enrich from (its money data comes from the pooled catalogue + rate card).
+  if (!caps.dpEnrich) return;
+  void enrichSearchTiles({
+    items: rows.map((r) => ({ asin: r.tile.asin, el: r.tile.el })),
+    origin: location.origin,
+    marketplace,
+    signal: run.signal,
+    onSignals: (asin, signals) => {
+      if (epoch !== initEpoch) return;
+      const row = rows.find((r) => r.tile.asin === asin);
+      if (!row) return;
+      row.dp = signals;
+      const category = signals.category ?? signals.bestsellerRank?.category ?? null;
+      row.ratePct = resolveRatePct({
+        liveRatePct: null,
+        category,
+        card,
+        defaultRatePct: settings.commissionRatePct,
+      });
+      if (row.totalVideos === null) row.totalVideos = signals.totalVideos;
+      // A page with no video carousel at all cannot have influencer videos.
+      if (
+        row.influencerVideos === null &&
+        !signals.upperCarousel &&
+        !signals.lowerCarousel &&
+        !signals.totalVideos
+      ) {
+        row.influencerVideos = 0;
+        row.scanned = true;
+      } else if (row.videoSource === null && row.influencerVideos === null && row.totalVideos !== null) {
+        // Static HTML gives the page's video TOTAL but never the influencer
+        // split (that hydrates via ajax). Flag it so the chip reads as an
+        // estimate the product page can refine, not a precise figure.
+        row.videoSource = "estimate";
+      }
+      recompute(row, settings);
+      renderBadge(row, settings);
+    },
+    onStatus: (done, total, paused) => {
+      if (epoch !== initEpoch) return;
+      if (paused) {
+        toolbar.setEnrichStatus(t().searchEnrichPaused);
+      } else if (done < total) {
+        toolbar.setEnrichStatus(t().searchEnriching(done, total));
+      } else {
+        toolbar.setEnrichStatus("");
+      }
+    },
+  });
 }
 
-function scoreFor(
-  tile: SearchTile,
-  ratePct: number,
-  flags: { cc: boolean; spcc: boolean },
-  influencerVideos: number | null,
-  settings: Settings,
-): ButlerScore {
-  return computeButlerScore(
+// The effective rate for money math: a known CC campaign rate beats the
+// rate-card/base rate (it is what a campaign sale actually pays).
+function rateFor(row: Row): number {
+  return row.ccRate ? row.ccRate.ratePct : row.ratePct;
+}
+
+// Estimated monthly units for the tile: prefer the shared catalogue's calibrated
+// figure, fall back to the local BSR curve so it shows even off the pool. Reads
+// the per-tile /dp/ enrichment (row.dp) or the pooled snapshot for the BSR.
+function estUnitsFor(row: Row): number | null {
+  return resolveEstimate({
+    serverUnits: row.market?.estMonthlySales ?? null,
+    salesRank: row.dp?.bestsellerRank?.rank ?? row.market?.bsrRank ?? null,
+    priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
+    category: row.dp?.category ?? row.market?.bsrCategory ?? null,
+    boughtPastMonth:
+      row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? row.market?.boughtPastMonth ?? null,
+  }).units;
+}
+
+// Estimated monthly revenue in cents: estimated units x price. Prefer the live
+// search-tile price (what the shopper sees now) over the pooled snapshot price.
+// Null when there is no estimate or no price to multiply by.
+function revenueCentsFor(row: Row): number | null {
+  const units = estUnitsFor(row);
+  if (units == null) return null;
+  const priceCents = row.tile.priceCents ?? row.market?.priceCents ?? null;
+  if (priceCents == null) return null;
+  return Math.round(units * priceCents);
+}
+
+// Recompute everything derived from the row's signals: commission estimate,
+// Butler Score, and the tile verdict. Callers repaint afterwards.
+function recompute(row: Row, settings: Settings): void {
+  const rate = rateFor(row);
+  row.commissionCents =
+    row.tile.priceCents !== null ? Math.round((row.tile.priceCents * rate) / 100) : null;
+  const inStock = row.dp ? row.dp.inStock : row.cachedInStock;
+  const bought =
+    row.tile.boughtPastMonth ?? row.dp?.boughtPastMonth ?? row.market?.boughtPastMonth ?? null;
+  row.score = computeButlerScore(
     {
-      priceCents: tile.priceCents,
-      commissionRatePct: ratePct,
-      influencerVideos,
-      boughtPastMonth: tile.boughtPastMonth,
-      inStock: null,
-      membership: { cc: flags.cc, spcc: flags.spcc },
+      priceCents: row.tile.priceCents,
+      commissionRatePct: rate,
+      influencerVideos: row.influencerVideos,
+      boughtPastMonth: bought,
+      reviewCount: row.tile.reviewCount,
+      inStock,
+      membership: { cc: row.flags.cc, spcc: row.flags.spcc },
     },
     settings,
+  );
+  row.verdict = evaluateTileVerdict(
+    {
+      priceCents: row.tile.priceCents,
+      boughtPastMonth: bought,
+      inStock,
+      influencerVideos: row.influencerVideos,
+      totalVideos: row.totalVideos,
+      anyCarousel: row.dp ? row.dp.upperCarousel || row.dp.lowerCarousel : null,
+    },
+    settings.approved,
+  );
+}
+
+function neutralScore(settings: Settings): ButlerScore {
+  return computeButlerScore(
+    {
+      priceCents: null,
+      commissionRatePct: null,
+      influencerVideos: null,
+      boughtPastMonth: null,
+      reviewCount: null,
+      inStock: null,
+      membership: { cc: false, spcc: false },
+    },
+    settings,
+  );
+}
+
+function neutralVerdict(settings: Settings): TileVerdict {
+  return evaluateTileVerdict(
+    {
+      priceCents: null,
+      boughtPastMonth: null,
+      inStock: null,
+      influencerVideos: null,
+      totalVideos: null,
+      anyCarousel: null,
+    },
+    settings.approved,
   );
 }
 
@@ -242,6 +708,8 @@ function comparator(key: SortKey): (a: Row, b: Row) => number {
       return (a, b) => b.score.score - a.score.score;
     case "commission":
       return (a, b) => (b.commissionCents ?? -1) - (a.commissionCents ?? -1);
+    case "revenue":
+      return (a, b) => (revenueCentsFor(b) ?? -1) - (revenueCentsFor(a) ?? -1);
     case "price-asc":
       return (a, b) => (a.tile.priceCents ?? Infinity) - (b.tile.priceCents ?? Infinity);
     case "price-desc":
@@ -249,6 +717,53 @@ function comparator(key: SortKey): (a: Row, b: Row) => number {
     case "relevance":
       return (a, b) => a.order - b.order;
   }
+}
+
+// Index the scanned-video cache by parent listing, keeping the most complete
+// sibling (largest observed total) per parent, so a tile whose own ASIN was
+// never scanned can borrow a sibling variant's exact influencer split.
+function buildBestScanByParent(state: StorageShape, marketplace: string): Map<string, CachedScan> {
+  const best = new Map<string, CachedScan>();
+  const prefix = `${marketplace}:`;
+  for (const [key, entry] of Object.entries(state.cache)) {
+    if (!key.startsWith(prefix)) continue;
+    const parent = state.variantParents[key];
+    if (!parent) continue;
+    const current = best.get(parent);
+    if (!current || entry.counts.total > current.counts.total) best.set(parent, entry);
+  }
+  return best;
+}
+
+// The video chip for a tile. Shows the influencer split when known; when a
+// partial or sibling scan gives an influencer count but the page's total is
+// larger, shows BOTH ("2 infl / 17 videos") so an undercount never reads as the
+// whole story. A "~" marks a variant rollup or a page-total estimate, and the
+// tooltip says where the number came from.
+function videoChip(row: Row): HTMLElement | null {
+  const { influencerVideos, totalVideos, videoSource } = row;
+  let text: string | null = null;
+  if (influencerVideos !== null) {
+    text =
+      totalVideos !== null && totalVideos > influencerVideos
+        ? t().tileInfluencerOfTotal(influencerVideos, totalVideos)
+        : t().tileInfluencer(influencerVideos);
+  } else if (totalVideos !== null) {
+    text = t().tileVideos(totalVideos);
+  }
+  if (text === null) return null;
+  const approx = videoSource === "variant" || videoSource === "estimate";
+  const chip = el("span", "tile-chip", `${approx ? "~" : ""}${text}`);
+  const tip =
+    videoSource === "variant"
+      ? t().tileVideoTipVariant
+      : videoSource === "estimate"
+        ? t().tileVideoTipEstimate
+        : videoSource === "self"
+          ? t().tileVideoTipSelf
+          : null;
+  if (tip) chip.title = tip;
+  return chip;
 }
 
 function mountBadge(tile: SearchTile, body: HTMLElement): void {
@@ -259,33 +774,163 @@ function mountBadge(tile: SearchTile, body: HTMLElement): void {
   tile.el.append(host);
 }
 
-function renderBadge(row: Row): void {
+function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
   body.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
-  // Proven earner leads the chips: a product that already paid you is the
-  // strongest buy signal on the page.
-  if (row.provenEarner) {
-    body.append(el("span", "tile-chip good", t().tileProvenEarner));
+  // Verdict first: the yes/no is what the creator scans for.
+  if (row.verdict.state === "approved") {
+    const chip = el("span", "tile-chip good", t().tileApproved);
+    chip.title = verdictTooltip(row, settings);
+    body.append(chip);
+  } else if (row.verdict.state === "likely") {
+    const chip = el("span", "tile-chip", t().tileLikelyFit);
+    chip.title = verdictTooltip(row, settings);
+    body.append(chip);
   }
+  // A product that already paid you is the strongest buy signal on the page:
+  // show the real dollars when the ledger has them.
+  if (row.earnings) body.append(earnedChip(row));
+  // You already own / already posted this: stops a duplicate buy or a repeat
+  // promotion right from the grid.
+  if (row.owned) body.append(el("span", "tile-chip good", t().ownedGridOwned));
+  if (row.posted) body.append(el("span", "tile-chip warn", t().ownedGridPosted));
   if (row.commissionCents !== null) {
     body.append(
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
     );
   }
+  // Estimated monthly units + revenue: the "is this product actually big?"
+  // signal. Prefer the shared catalogue's calibrated figure, fall back to the
+  // local BSR estimate so it shows even off the pool. Honest tooltips: estimates.
+  const estUnits = estUnitsFor(row);
+  if (estUnits !== null) {
+    const chip = el("span", "tile-chip", t().tileEstUnits(estUnits.toLocaleString()));
+    chip.title = t().estUnitsTip;
+    body.append(chip);
+  }
+  const revenueCents = revenueCentsFor(row);
+  if (revenueCents !== null) {
+    const chip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revenueCents, row.tile.currency)));
+    chip.title = t().estRevenueTip;
+    body.append(chip);
+  }
+  // Best-seller rank + its category, from the pooled snapshot or the per-tile
+  // /dp/ enrichment.
+  const bsrRank = row.market?.bsrRank ?? row.dp?.bestsellerRank?.rank ?? null;
+  const bsrCategory = row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null;
+  if (bsrRank != null) {
+    body.append(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)));
+  }
   if (row.flags.cc || row.flags.spcc) {
-    body.append(el("span", "tile-chip good", t().tileCampaign));
+    // A guaranteed CC commission rate always wins over the SPCC forecast when
+    // a product happens to carry both (rare): a known percent is the safer
+    // number to lead with, same guidance as the CC Check tutorial.
+    const label = row.ccRate
+      ? t().tileCampaignRate(row.ccRate.ratePct)
+      : row.spccRate
+        ? t().tileCampaignEpc(formatMoney(row.spccRate.epc, row.tile.currency ?? "USD"))
+        : t().tileCampaign;
+    const chip = el("span", "tile-chip good", label);
+    if (row.spccRate && !row.ccRate) chip.title = t().tileCampaignEpcTip;
+    body.append(chip);
+  } else if (row.flags.deals) {
+    // Only when no campaign chip is up: two green chips in a row read as noise.
+    body.append(el("span", "tile-chip good", t().tileDeal));
   }
-  if (row.influencerVideos !== null) {
-    body.append(el("span", "tile-chip", t().tileInfluencer(row.influencerVideos)));
+  if (row.tile.hasCoupon) body.append(el("span", "tile-chip", t().tileCoupon));
+  // Reduced-price signal: a deal pill and how deep the cut is (from the
+  // strikethrough "was" price). Walmart sets its own Rollback / Clearance /
+  // Reduced markers via dealBadge; Amazon sets dealKind (Prime Day / Lightning /
+  // reduced) and wasPriceCents read off the tile. "-N%" is locale-neutral. Gated
+  // by the dealSignals tool flag so the remote kill switch can disable it.
+  if (settings.tools.dealSignals) {
+    const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
+    const discounted = wasPriceCents != null && priceCents != null && wasPriceCents > priceCents;
+    // A coupon-only dealKind is left to the coupon chip above, so it does not
+    // trigger a second (unpriced) deal chip here.
+    const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
+    if (dealBadge || amazonDeal || discounted) {
+      const label =
+        dealBadge === "clearance" ? "Clearance" :
+        dealBadge === "reduced" ? "Reduced" :
+        dealBadge === "rollback" ? "Rollback" :
+        dealKind === "primeday" ? t().tileDealPrimeDay :
+        dealKind === "lightning" ? t().tileDealLightning :
+        t().tileDeal;
+      const pct = discounted ? Math.round((1 - priceCents! / wasPriceCents!) * 100) : null;
+      body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
+    }
   }
-  if (row.showWatch) body.append(watchControl(row));
+  const video = videoChip(row);
+  if (video) body.append(video);
+  if (row.showWatch) body.append(watchControl(row, settings));
+  // The "..." action menu: Add to list / Copy link / Open page always, plus the
+  // desktop-bridge actions when the app is paired (else an upsell). Mounted last
+  // so it sits at the end of the chip row.
+  mountTileMenuButton(
+    body,
+    {
+      asin: row.tile.asin,
+      marketplace: row.marketplace,
+      title: row.tile.title,
+      imageUrl: row.tile.imageUrl,
+      href: row.tile.href,
+      retailer: row.retailer,
+    },
+    row.hud,
+  );
+}
+
+// Compact per-criterion tooltip for the verdict chip, reusing the product
+// panel's criterion labels with a pass/fail/unknown mark each.
+function verdictTooltip(row: Row, settings: Settings): string {
+  const approved = settings.approved;
+  const mark = (state: "pass" | "fail" | "unknown"): string =>
+    state === "pass" ? "[ok]" : state === "fail" ? "[x]" : "[?]";
+  return [
+    `${mark(row.verdict.activelySelling)} ${t().critBought(approved.minBoughtPerMonth)}`,
+    `${mark(row.verdict.openSlot)} ${t().critOpenSlot(approved.maxInfluencerVideos + 1)}`,
+    `${mark(row.verdict.inStock)} ${t().critInStock}`,
+    `${mark(row.verdict.priceFloor)} ${t().critPriceFloor(approved.minPrice)}`,
+  ].join("\n");
+}
+
+// The "Earned $X" chip: real ledger dollars for this ASIN, click for the full
+// by-store/year/month/campaign breakdown. Stops propagation so it never
+// activates the tile's own product link.
+function earnedChip(row: Row): HTMLElement {
+  const btn = el("button", "tile-chip good earn-chip");
+  btn.type = "button";
+  const totals = row.earnings
+    ? tileTotals(
+        new Map([[row.tile.asin.toUpperCase(), row.earnings]]),
+        [row.tile.asin],
+        "market",
+        row.marketplace,
+      )
+    : [];
+  const top = totals[0];
+  btn.textContent = top
+    ? t().tileEarned(formatMoney(top.amount, top.currency))
+    : t().tileProvenEarner;
+  btn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!row.earnings) return;
+    renderEarningsDetail({
+      title: row.tile.title,
+      earnings: [row.earnings],
+      marketplace: row.marketplace,
+    });
+  });
+  return btn;
 }
 
 // A small watch toggle on the tile: a star that flips membership without
 // leaving the search page. Stops propagation so it never activates the tile's
 // own product link.
-function watchControl(row: Row): HTMLElement {
+function watchControl(row: Row, settings: Settings): HTMLElement {
   const btn = el("button", `tile-watch${row.watched ? " on" : ""}`);
   btn.type = "button";
   btn.textContent = row.watched ? `${t().watchStar} ${t().watchOn}` : `${t().watchStar} ${t().watchAddShort}`;
@@ -298,7 +943,7 @@ function watchControl(row: Row): HTMLElement {
       btn.disabled = false;
       if (!row.watched && res.atCap) return;
       row.watched = !row.watched;
-      renderBadge(row);
+      renderBadge(row, settings);
     };
     if (row.watched) {
       void sendToBackground<WatchlistResult>({
@@ -309,7 +954,7 @@ function watchControl(row: Row): HTMLElement {
     } else {
       void sendToBackground<WatchlistResult>({
         kind: "ADD_TO_WATCHLIST",
-        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title },
+        item: { asin: row.tile.asin, marketplace: row.marketplace, title: row.tile.title, imageUrl: row.tile.imageUrl },
       }).then(done);
     }
   });
@@ -317,10 +962,11 @@ function watchControl(row: Row): HTMLElement {
 }
 
 // Place the toolbar just above the whole results slot so it spans the grid.
-function mountToolbar(tileEl: HTMLElement, host: HTMLElement): void {
+// `slot` is resolved per retailer by the module (Amazon's .s-main-slot,
+// Walmart's item-stack), so the bar lands above the right grid container.
+function mountToolbar(slot: Element | null, host: HTMLElement): void {
   host.style.display = "block";
   host.style.width = "100%";
-  const slot = tileEl.closest(".s-main-slot") ?? tileEl.parentElement;
   if (slot && slot.parentElement) {
     slot.parentElement.insertBefore(host, slot);
   } else if (slot) {

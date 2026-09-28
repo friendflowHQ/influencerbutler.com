@@ -1,5 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, after } from "next/server";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
+import { sendEmail } from "@/lib/email-send";
+import { transactionalFrom } from "@/lib/email-senders";
+import { hasAdsConsent, readMetaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
 
 export const runtime = "nodejs";
@@ -85,9 +89,37 @@ export async function GET(request: Request) {
   const details = { ...collectDetails(request), os: resolvedOs };
   const geo = readGeo(h);
   const source = requestUrl.searchParams.get("src");
-  after(() => sendNotification(details));
+  // The per-click notification email is off by default: these clicks are now
+  // rolled up into the twice-daily digest (src/app/api/cron/daily-digest).
+  // Set TRIAL_CLICK_REALTIME_EMAILS=1 to restore the old one-email-per-click
+  // behaviour. The activity log below always runs so the digest (and the
+  // public social-proof widget) still see every click.
+  if (process.env.TRIAL_CLICK_REALTIME_EMAILS === "1") {
+    after(() => sendNotification(details));
+  }
   // Record the click for the public recent-activity widget (best-effort).
   after(() => logTrialClickActivity({ geo, source }));
+  // Meta Conversions API Lead for lookalike seeding. Placed after the
+  // bot/prefetch/dedup guards above so it inherits their filtering and the
+  // 1-hour per-browser dedup. No email exists at this stage; ip + user agent
+  // + the _fbp cookie are the match keys. Gated on advertising consent so it
+  // never fires ahead of the browser pixel; no-ops until the Meta env vars
+  // are set (src/lib/meta-capi.ts).
+  if (hasAdsConsent(h.get("cookie"))) {
+    after(() =>
+      sendMetaEvent({
+        eventName: "Lead",
+        eventId: randomUUID(),
+        eventSourceUrl: h.get("referer"),
+        userData: {
+          clientIp: h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip"),
+          userAgent,
+          ...readMetaCookies(h.get("cookie")),
+        },
+        customData: { content_name: "trial_download", content_category: resolvedOs ?? "unknown" },
+      }),
+    );
+  }
 
   return redirect;
 }
@@ -205,10 +237,9 @@ function decodeHeader(value: string | null): string {
 }
 
 async function sendNotification(d: ClickDetails): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.TRIAL_CLICK_NOTIFICATION_EMAIL || FALLBACK_RECIPIENT;
 
-  if (!apiKey) {
+  if (!process.env.RESEND_API_KEY) {
     console.log("trial/start: skipped (not_configured)");
     return;
   }
@@ -217,40 +248,27 @@ async function sendNotification(d: ClickDetails): Promise<void> {
     .filter((p) => p && p !== "unknown")
     .join(", ");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Influencer Butler <hello@influencerbutler.com>",
-        to: [to],
-        subject: `Free trial click${location ? `: ${location}` : ""}`,
-        text: [
-          `Someone clicked to start their free trial.`,
-          ``,
-          `Location: ${location || "unknown"}`,
-          `Country: ${d.country}`,
-          `Region: ${d.region}`,
-          `City: ${d.city}`,
-          `Coordinates: ${d.latLong}`,
-          `Timezone: ${d.timezone}`,
-          `IP address: ${d.ip}`,
-          ``,
-          `Clicked from page: ${d.referrer}`,
-          `Button / source tag: ${d.source}`,
-          `Sent to download for: ${d.os}`,
-          `Device / browser: ${d.device}`,
-          `Language: ${d.language}`,
-        ].join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      console.error("trial/start: resend send failed", res.status);
-    }
-  } catch (error) {
-    console.error("trial/start: notification error", error);
-  }
+  await sendEmail({
+    from: transactionalFrom(),
+    to,
+    subject: `Free trial click${location ? `: ${location}` : ""}`,
+    text: [
+      `Someone clicked to start their free trial.`,
+      ``,
+      `Location: ${location || "unknown"}`,
+      `Country: ${d.country}`,
+      `Region: ${d.region}`,
+      `City: ${d.city}`,
+      `Coordinates: ${d.latLong}`,
+      `Timezone: ${d.timezone}`,
+      `IP address: ${d.ip}`,
+      ``,
+      `Clicked from page: ${d.referrer}`,
+      `Button / source tag: ${d.source}`,
+      `Sent to download for: ${d.os}`,
+      `Device / browser: ${d.device}`,
+      `Language: ${d.language}`,
+    ].join("\n"),
+    category: "trial_start",
+  });
 }

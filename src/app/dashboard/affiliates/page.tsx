@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AffiliateApplyInline from "./AffiliateApplyInline";
 import SelfHostedAffiliateDashboard from "./SelfHostedAffiliateDashboard";
+import LeaderboardOptInCard from "./LeaderboardOptInCard";
 import PlannerCallout from "./PlannerCallout";
 import { createClient } from "@/lib/supabase/client";
 
@@ -126,7 +127,12 @@ export default function AffiliatesPage() {
     );
   }
 
-  return <SelfHostedAffiliateDashboard displayName={data.displayName} />;
+  return (
+    <div className="space-y-6">
+      <SelfHostedAffiliateDashboard displayName={data.displayName} />
+      <LeaderboardOptInCard />
+    </div>
+  );
 }
 
 function PendingState({
@@ -185,12 +191,12 @@ function PendingState({
       <PlannerCallout waiting />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
-        Questions? Email{" "}
+        Questions?{" "}
         <Link
-          href="mailto:hello@influencerbutler.com"
+          href="/contact"
           className="font-medium text-[#f97316] hover:text-[#ea580c]"
         >
-          hello@influencerbutler.com
+          Contact us
         </Link>
         .
       </div>

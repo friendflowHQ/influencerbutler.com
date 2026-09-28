@@ -61,7 +61,7 @@ Si activas eliminar antes de volver a publicar, pruébalo con un par de fotos an
 
 ## Recargar fotos que se eliminaron
 
-La pestaña **Eliminadas de Amazon** lista las fotos que se quitaron de tu escaparate, cada una con su original guardado localmente. Pulsa **Recargar fotos eliminadas** para reponerlas en el marketplace del que provienen. Activa **Omitir fotos ya recargadas (por ASIN)** si ejecutas esto con regularidad y no quieres recargar la misma foto dos veces.
+La pestaña **Eliminadas de Amazon** lista las fotos que se quitaron de tu escaparate, cada una con su original guardado localmente. Pulsa **Recargar fotos eliminadas** para reponerlas en el marketplace del que provienen. Activa **Omitir fotos ya recargadas (por ASIN)** si ejecutas esto con regularidad y no quieres recargar la misma foto dos veces. Deja activado **Avísame por correo si una ejecución se detiene antes de tiempo** para recibir un correo con el motivo y la hora a la que el butler la reanudará solo.
 
 ## Encuentra una coincidencia por título cuando el ASIN no existe en el extranjero
 
@@ -74,6 +74,23 @@ Las coincidencias no se publican por suposición. Cada una aparece en el **Regis
 - **Periodo**: limita una ejecución a fotos recientes, o activa **Todo el tiempo / todas las fotos** para un barrido completo (esto anula los límites de fecha y el máximo por ejecución, así que úsalo de forma deliberada).
 - **Omitir duplicados**: coincide por título, ASIN, título y ASIN, o "ya publicada en ese marketplace" para que una ejecución nunca vuelva a publicar la misma imagen.
 - **Conservar el original si se añadió en los últimos N días**: con eliminar antes de volver a publicar activado, esto protege de la eliminación las fotos añadidas recientemente.
+
+## Aprobado por Butler: empezar de cero (republicación completa de la biblioteca)
+
+La fórmula **Aprobado por Butler: vistas en caída + biblioteca enorme (empezar de cero)** elimina cada foto de tu escaparate de EE. UU. (cada una se guarda antes en tu ordenador) y la vuelve a publicar como contenido nuevo con su título original, etiquetada al producto disponible actual. Una recarga restablece la fecha de añadido de cada foto para que Amazon vuelva a probar toda tu biblioteca como contenido nuevo. Debes escribir RELOAD para confirmar antes de activarla, y las eliminaciones se espacian entre ejecuciones por seguridad; las fotos ya recargadas se omiten automáticamente.
+
+## Recarga mis fotos ganadoras (más vendidas)
+
+Empezar de cero vuelve a publicar toda tu biblioteca de fotos. **Recarga mis fotos ganadoras** es la versión selectiva: en lugar de volver a probar todo, vuelve a publicar solo las fotos de productos que de verdad generaron comisiones, para que tus más vendidas ganen la prueba de colocación nueva de Amazon mientras el resto se queda como está. En **Fórmulas preferidas**, pulsa **Recarga mis fotos ganadoras (más vendidas, borrar primero)**.
+
+Las fotos no tienen datos de retención como los vídeos, así que esto se apoya en dos cosas: tus productos que ya generan (ganadores primero) y el reinicio de frescura. Borra primero cada original para que Amazon vuelva a probar la publicación como contenido nuevo, renueva el título para que no se lea como un duplicado idéntico, y omite los productos agotados. Como elimina de Amazon, escribes **DELETE** para confirmar cuando empieza la ejecución, así que pruébalo antes en un lote pequeño: desactiva Process All y pon un máximo bajo.
+
+## Ganadores primero + títulos renovados
+
+Dos interruptores opcionales en los filtros hacen más inteligente una recarga:
+
+- **Ganadores primero: recargar solo fotos cuyas productos generaron comisiones**. La ejecución omite cualquier foto salvo que uno de sus productos etiquetados haya generado una comisión dentro de la ventana de búsqueda (365 días por defecto), usando los datos de ganancias que ya están en tu ordenador. Combinado con el Máximo por ejecución, dedica toda la ejecución a tus ganadores probados en lugar de subidas antiguas al azar. Clasifica por ganancias conocidas: una foto que este butler nunca ha procesado puede no tener coincidencia de ganancias todavía, así que amplía la ventana o apaga el interruptor cuando quieras un barrido completo.
+- **Renovar el título al recargar**. Amazon a veces desprioriza una republicación que reconoce como idéntica, así que una recarga funciona mejor con un cambio real de metadatos. Esto reescribe cada título con un gancho nuevo antes de republicar. El estilo integrado no necesita clave de API; el estilo con IA usa tu clave de Anthropic y recurre a los ganchos integrados si la reescritura falla. Cuando no es posible reescribir, se conserva el título original.
 
 ## Adónde van los datos
 

@@ -1,0 +1,45 @@
+---
+title: "Recherche de produits : historique des prix et du classement des ventes pour chaque produit consulté"
+summary: Consultez l'historique des prix, l'historique du classement des ventes, les ventes mensuelles estimées et les signaux saisonniers des produits Amazon, construits automatiquement à partir de votre propre navigation avec l'extension.
+category: Other
+---
+
+> **La bibliothèque se remplit toute seule.** Rien à lancer. Installez l'extension de navigateur, associez-la à l'application et parcourez Amazon comme d'habitude. Chaque page produit que vous ouvrez est enregistrée.
+
+## Ce que fait Recherche de produits
+
+Choisir un produit à mettre en avant est un pari si vous ignorez s'il se vend vraiment. Recherche de produits répond à cette question avec des données qui se construisent toutes seules :
+
+- **Historique des prix** : chaque prix vu par l'extension est conservé définitivement, pour savoir si la « promo » du jour est réellement un prix bas.
+- **Historique du classement des ventes** : le classement meilleures ventes du produit dans le temps. Un classement qui baisse signifie qu'il se vend davantage.
+- **Ventes et revenus mensuels estimés** : quand Amazon affiche le vrai chiffre « achetés le mois dernier », nous l'utilisons. Sinon, un modèle basé sur le classement l'estime (les estimations portent un « ~ » pour les distinguer). Le modèle se calibre sur les chiffres réels que vous collectez, il s'affine donc à mesure que vous naviguez.
+- **Signal saisonnier** : dès que votre historique couvre la même saison d'une année précédente, la vue détaillée indique si le produit vend plus fort, plus faiblement ou pareil à cette période de l'année. C'est la question « se vendra-t-il pour l'automne ou Noël ? » résolue avec des données plutôt qu'avec de la chance.
+
+## Avant de commencer
+
+- **Installez l'extension de navigateur Influencer Butler** et associez-la à l'application de bureau (panneau Extension, code à 6 chiffres).
+- C'est tout. Les données s'accumulent dès la première page produit Amazon ouverte.
+
+## Lire le tableau
+
+Ouvrez **Recherche de produits** sous Amazon Butler. Chaque ligne est un produit que vous avez consulté :
+
+- **Prix / Classement / Achetés/mois** : les dernières valeurs observées. Achetés/mois est le chiffre d'Amazon quand il figure sur la page.
+- **Ventes est./mois et Revenu est./mois** : chiffre réel quand il existe, sinon estimation du modèle avec « ~ ».
+- **Vu la dernière fois** : quand l'extension a vu le produit pour la dernière fois.
+
+Utilisez la recherche pour filtrer par ASIN, titre ou marque.
+
+## Lire l'historique d'un produit
+
+Cliquez sur **Voir l'historique** sur n'importe quelle ligne :
+
+- Le **graphique des prix** montre chaque prix enregistré. Un point vert marque le plus bas.
+- Le **graphique du classement** est tracé de sorte que monter signifie mieux vendre. Une ligne ascendante est un produit qui prend de l'élan.
+- Le **badge saisonnier** apparaît dès qu'il y a assez d'historique des années précédentes. « Fort vendeur saisonnier » signifie que son classement s'améliore nettement à cette période de l'année.
+
+## Conseils
+
+- Plus vous consultez de produits, plus la bibliothèque devient utile. Cela ne coûte rien et fonctionne tout seul.
+- Consultez les produits que vous envisagez plusieurs fois dans les semaines précédant une saison. Chaque visite ajoute un point de données à la tendance.
+- L'extension affiche aussi ce même historique directement sur la page produit Amazon quand l'application est ouverte, pour juger un produit sans quitter Amazon.

@@ -2,14 +2,17 @@ import { QUEUE_CAP, SYNC_BATCH_MAX } from "../shared/constants";
 import { getState, patchState } from "../storage/store";
 import { apiTransport } from "./api-transport";
 import { localTransport } from "./local-transport";
+import { relayTransport } from "./relay-transport";
 import { findingKey, type Finding, type FindingTransport } from "./types";
 
 // The finding queue. Tools call enqueue(); flush() walks transports in
-// priority order (local HUD bridge first when it exists, then the website
-// API). Dedupe is by (type, subject, day) so revisiting a product ten times
-// a day syncs once.
+// priority order: the local HUD bridge when it exists, the website API always,
+// and the cross-device relay when the app is on another machine (or phone) with
+// no local app here. Dedupe is by (type, subject, day) so revisiting a product
+// ten times a day syncs once. relayTransport self-suppresses when the local app
+// is present, so on a same-machine setup only local + API run.
 
-const TRANSPORTS: FindingTransport[] = [localTransport, apiTransport];
+const TRANSPORTS: FindingTransport[] = [localTransport, apiTransport, relayTransport];
 
 export async function enqueue(finding: Finding): Promise<void> {
   await patchState((state) => {

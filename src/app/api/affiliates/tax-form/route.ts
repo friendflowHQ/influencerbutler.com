@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { encryptTin, tinLastFour, taxKeyConfigured } from "@/lib/tax-crypto";
 import { certificationTextFor, type TaxFormType } from "@/lib/tax-certification";
+import { sendTaxFormSubmittedAlert } from "@/lib/tax-review-reminder-email";
+import { logDbError } from "@/lib/log-db-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,7 +73,7 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      console.error("tax-form GET: query failed", error);
+      logDbError("tax-form GET: query failed", error);
       return NextResponse.json({ error: "Could not load tax form" }, { status: 500 });
     }
 
@@ -154,6 +156,22 @@ export async function POST(request: Request) {
         );
       }
     }
+    // A mailing address is required on both the W-9 (it goes on the 1099-NEC we
+    // file) and the W-8BEN (permanent residence address). US filers also need
+    // state + ZIP; some countries have no region/postal, so W-8 leaves those
+    // optional.
+    if (!s(body.addressLine1)) {
+      return NextResponse.json({ error: "Street address is required" }, { status: 400 });
+    }
+    if (!s(body.city)) {
+      return NextResponse.json({ error: "City is required" }, { status: 400 });
+    }
+    if (!s(body.country)) {
+      return NextResponse.json({ error: "Country is required" }, { status: 400 });
+    }
+    if (formType === "W-9" && (!s(body.region) || !s(body.postalCode))) {
+      return NextResponse.json({ error: "State and ZIP code are required" }, { status: 400 });
+    }
     const tinKind = s(body.tinKind);
     if (!tinKind || !TIN_KINDS.has(tinKind)) {
       return NextResponse.json({ error: "Select a valid taxpayer ID type" }, { status: 400 });
@@ -179,6 +197,13 @@ export async function POST(request: Request) {
       firstValue(request.headers.get("x-real-ip"));
     const userAgent = request.headers.get("user-agent");
 
+    // For the admin alert below: whether this replaces an earlier submission.
+    const { data: prevForm } = await admin
+      .from("affiliate_tax_forms")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     // Encrypt + store the TIN in the service-role-only table (upsert on user_id).
     if (rawTin) {
       const enc = encryptTin(rawTin);
@@ -193,7 +218,7 @@ export async function POST(request: Request) {
         { onConflict: "user_id" },
       );
       if (tinErr) {
-        console.error("tax-form POST: tin upsert failed", tinErr);
+        logDbError("tax-form POST: tin upsert failed", tinErr);
         return NextResponse.json({ error: "Could not save tax form" }, { status: 500 });
       }
     }
@@ -233,7 +258,7 @@ export async function POST(request: Request) {
     );
 
     if (formErr) {
-      console.error("tax-form POST: form upsert failed", formErr);
+      logDbError("tax-form POST: form upsert failed", formErr);
       return NextResponse.json({ error: "Could not save tax form" }, { status: 500 });
     }
 
@@ -255,7 +280,25 @@ export async function POST(request: Request) {
       submitted_at: nowIso,
     });
     if (eventErr) {
-      console.error("tax-form POST: audit event insert failed", eventErr);
+      logDbError("tax-form POST: audit event insert failed", eventErr);
+    }
+
+    // Alert the admin so the form gets reviewed promptly (payouts are blocked on
+    // verification). Best-effort: an email failure must not fail the submission.
+    try {
+      await sendTaxFormSubmittedAlert({
+        userId: user.id,
+        name: legalName,
+        email: user.email ?? null,
+        formType,
+        country: s(body.country),
+        tinLast4,
+        tinKind,
+        submittedAt: nowIso,
+        isResubmit: Boolean(prevForm),
+      });
+    } catch (alertErr) {
+      console.error("tax-form POST: admin alert failed", alertErr);
     }
 
     return NextResponse.json({ ok: true, status: "submitted" });

@@ -7,10 +7,14 @@ export type SelectorId =
   | "videoCards"
   | "videoCardCreatorLink"
   | "videoCardByline"
+  | "videoCardDuration"
+  | "videoHeartCount"
   | "videoHeaderCount"
   | "productTitle"
   | "productByline"
   | "price"
+  | "productListPrice"
+  | "productDealBadge"
   | "availability"
   | "addToCart"
   | "boughtPastMonth"
@@ -22,13 +26,44 @@ export type SelectorId =
   | "mainImage"
   | "breadcrumbs"
   | "bestsellerRank"
+  | "dateFirstAvailable"
+  | "sellerOffers"
   | "siteStripeCommission"
   | "searchResultTile"
   | "searchTileTitle"
   | "searchTilePrice"
   | "searchTileImage"
   | "searchTileLink"
-  | "searchTileSponsored";
+  | "searchTileSponsored"
+  | "searchTileRating"
+  | "searchTileReviewCount"
+  | "searchTileCoupon"
+  | "searchTileListPrice"
+  | "searchTileDealBadge"
+  | "storeGrid"
+  | "storeGridTile"
+  | "storeTileLink"
+  | "storeTileTitle"
+  | "storeTileImage"
+  | "storeTileInfo"
+  | "discoveryGrid"
+  | "discoveryTile"
+  | "discoveryTileLink"
+  | "discoveryTileTitle"
+  | "discoveryTilePrice"
+  | "discoveryTileImage"
+  | "discoveryRankBadge"
+  | "discoveryGainPct"
+  | "ideaListGrid"
+  | "ideaListTile"
+  | "ideaListTileLink"
+  | "ideaListTileTitle"
+  | "ideaListTileBrand"
+  | "ideaListTilePrice"
+  | "ideaListTileImage"
+  | "dealsGrid"
+  | "dealsTile"
+  | "dealsTileImage";
 
 const REGISTRY: Record<SelectorId, string[]> = {
   // "Videos for this product" widget containers, newest layout first.
@@ -60,6 +95,29 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[class*='byline']",
     ".a-size-small.a-color-secondary",
   ],
+  // Static runtime badge overlaid on each video thumbnail, e.g. "0:22" / "1:43".
+  // Scoped under videoWidget by the caller so it never catches the main player's
+  // live countdown (which reads "-0:22" and is rejected by parseClock). Hashed
+  // vse CSS-module fragments first, generic Amazon time/duration classes after.
+  videoCardDuration: [
+    "[class*='vseDuration']",
+    "[class*='vseTimeStamp']",
+    "[class*='videoDuration']",
+    "[class*='vse-duration']",
+    "[aria-label*='duration' i]",
+    ".a-video-duration",
+  ],
+  // Amazon's native per-video "like" / heart count (the number the Video Likes
+  // overlay reads). Verified live 2026-09-14 on a creator storefront (/shop/*):
+  // each content card carries a `.heart-count` (the integer, e.g. "9") inside a
+  // `hero-item-heart-container` / `heart-container` that also holds the video's
+  // `amzn1.vse.video.*` id. Server-rendered, so no network call is involved.
+  // Stable class names first, then the hashed-fragment fallback.
+  videoHeartCount: [
+    ".heart-count",
+    "[class*='heart-count']",
+    "[class*='heartCount']",
+  ],
   videoHeaderCount: [
     "#videoCount",
     "[data-video-count]",
@@ -75,9 +133,43 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#corePriceDisplay_desktop_feature_div .a-price:not(.a-text-price) .a-offscreen",
     "#corePrice_feature_div .a-price:not(.a-text-price) .a-offscreen",
     "#apex_desktop .a-price:not(.a-text-price) .a-offscreen",
+    // Mobile web (Android extension browsers). Unverified on a device yet; the
+    // generic fallback below still catches it if these ids differ.
+    "#corePriceDisplay_mobile_feature_div .a-price:not(.a-text-price) .a-offscreen",
+    "#corePrice_mobile_feature_div .a-price:not(.a-text-price) .a-offscreen",
     ".a-price:not(.a-text-price) .a-offscreen",
     "#priceblock_ourprice",
     "#priceblock_dealprice",
+  ],
+  // The struck-through list ("was") price on a product page: exactly the
+  // element the `price` list excludes with :not(.a-text-price). When it parses
+  // to a value above the current price, the gap is the deal depth. Amazon
+  // labels this the "List Price" / "Typical price" basis; best-effort, hidden
+  // when absent (many listings show no reference price).
+  productListPrice: [
+    "#corePriceDisplay_desktop_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePrice_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePriceDisplay_mobile_feature_div .a-price.a-text-price .a-offscreen",
+    "#corePrice_mobile_feature_div .a-price.a-text-price .a-offscreen",
+    ".basisPrice .a-offscreen",
+    "span[data-a-strike='true'] .a-offscreen",
+    "#priceblock_listprice",
+    "#listPrice",
+  ],
+  // The deal label near the buybox ("Prime Big Deal Days", "Lightning Deal",
+  // "Limited time deal", "Prime exclusive", "-N%"). Matched by container, then
+  // the caller filters the text to a known deal kind (queryMatchingText), so a
+  // stray badge never mislabels the chip. Correctable live via a selector
+  // override.
+  productDealBadge: [
+    "#dealBadge_feature_div",
+    "#dealBadgeSupportingText",
+    ".dealBadgeTextColor",
+    "#corePriceDisplay_desktop_feature_div .savingsPercentage",
+    "#corePriceDisplay_desktop_feature_div .a-badge-text",
+    "#apex_desktop .a-badge-text",
+    "#corePriceDisplay_mobile_feature_div .savingsPercentage",
+    "#corePriceDisplay_mobile_feature_div .a-badge-text",
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
@@ -88,6 +180,11 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#buybox",
     "#rightCol",
     "#apex_desktop",
+    // Mobile web has no right column: mount above the add-to-cart block.
+    // Unverified on a device yet; correctable live via a selector override.
+    "#mobile_buybox",
+    "#addToCart_feature_div",
+    "#addToCart",
   ],
   boughtPastMonth: [
     "#socialProofingAsinFaceout_feature_div",
@@ -129,6 +226,30 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#prodDetails",
     "#SalesRank",
   ],
+  // "Date First Available" lives in the same product-details tables as the
+  // bestseller rank (detail-bullets list or the tech-spec table), so we scan the
+  // same containers and regex the label out of their text. Amazon omits the row
+  // on many listings, so this is best-effort and the chip simply hides when
+  // absent.
+  dateFirstAvailable: [
+    "#detailBulletsWrapper_feature_div",
+    "#detailBullets_feature_div",
+    "#productDetails_detailBullets_sections1",
+    "#productDetails_techSpec_section_1",
+    "#prodDetails",
+  ],
+  // The offer/seller count near the buybox. Amazon A/B tests this control
+  // heavily, so the list is a best-effort ordered fallback (the "New (N) from"
+  // buying-choices link first, then the all-offers-display and merchant blocks);
+  // callers parse the integer out of the matched text and hide the chip when
+  // none is found. Correctable live via a remote selector override.
+  sellerOffers: [
+    "#buybox-see-all-buying-choices",
+    "#buybox-see-all-buying-choices-announce",
+    "#aod-total-offer-count",
+    "#olpLinkWidget_feature_div",
+    "#mbc",
+  ],
   // The SiteStripe "Influencers & Associates" bar shows the live commission
   // rate for logged-in creators. Amazon labels it "Commission rate" with the
   // percent in a sibling; we read the whole bar text and regex the percent.
@@ -166,7 +287,145 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[data-component-type='sp-sponsored-result']",
     "a[aria-label='View Sponsored information']",
   ],
+  // Star rating on a search tile. `.a-icon-alt` is the visually-hidden text of
+  // the star icon ("4.3 out of 5 stars"); the same class also decorates Prime
+  // and other icons, so callers filter matches by text (queryMatchingText).
+  searchTileRating: [
+    "i.a-icon-star-small .a-icon-alt",
+    "i.a-icon-star-mini .a-icon-alt",
+    "[data-cy='reviews-ratings-slot'] .a-icon-alt",
+    ".a-icon-alt",
+  ],
+  // Review count next to the stars ("(4.9K)" or "1,234"). Callers filter by
+  // text: the underline-text class also styles unrelated links on some tiles.
+  searchTileReviewCount: [
+    "a[href*='#customerReviews'] span.a-size-base",
+    "a[href*='#customerReviews'] span",
+    "span.a-size-base.s-underline-text",
+  ],
+  // A clippable coupon on the tile ("$10.00 off coupon applied" / "Save 5%").
+  searchTileCoupon: [
+    ".s-coupon-unclipped",
+    "[data-component-type='s-coupon-component']",
+    "span[class*='coupon']",
+  ],
+  // The struck-through list ("was") price on a search tile, the counterpart to
+  // searchTilePrice. `.a-text-price` is Amazon's strike class; the parser only
+  // keeps it when it is above the tile's current price. Absent on full-price
+  // tiles, so the deal chip simply does not render there.
+  searchTileListPrice: [
+    ".a-price.a-text-price .a-offscreen",
+    "span[data-a-strike='true'] .a-offscreen",
+    ".a-text-price .a-offscreen",
+  ],
+  // A deal badge on a search tile ("Prime Big Deal Days", "Lightning Deal",
+  // "Limited time deal", "-N%"). Matched by container, filtered to a known deal
+  // kind by the caller (queryMatchingText).
+  searchTileDealBadge: [
+    ".a-badge-text",
+    "[data-a-badge-type]",
+    ".s-savings-percentage",
+    "span[class*='dealBadge']",
+  ],
+  // Brand storefront (/stores/<Brand>/page/<id>): the React store builder.
+  // Class names are hashed CSS modules, so only data-testid is stable.
+  storeGrid: ['[data-testid="product-grid-container"]'],
+  storeGridTile: ['li[data-testid="product-grid-item"]'],
+  // Per-tile (queried within a tile): the overlay anchor and any quick-look
+  // anchor both point at the same /dp/ URL, so first match wins.
+  storeTileLink: ["a[href*='/dp/']"],
+  storeTileTitle: ['[data-testid="product-grid-title"]'],
+  storeTileImage: ['[data-testid="grid-item-image"] img', "img"],
+  storeTileInfo: ['[data-testid="grid-item-info"]'],
+  // Discovery pages: Best Sellers (/gp/bestsellers, .../zgbs/...), New Releases
+  // (/gp/new-releases), and Movers & Shakers (/gp/movers-and-shakers). The p13n
+  // grid is largely server-rendered; tiles carry a duplicated id="gridItemRoot"
+  // (invalid HTML but stable), with older movers layouts falling back to the
+  // faceout node. Verified live 2026-08-11 on /zgbs/beauty.
+  discoveryGrid: [".p13n-desktop-grid", "#zg-ordered-list", '[data-testid="grid-row"]'],
+  discoveryTile: [
+    '[id="gridItemRoot"]',
+    ".zg-grid-general-faceout",
+    "li.zg-item-immersion",
+    ".p13n-sc-uncoverable-faceout",
+  ],
+  // Per-tile (queried within a tile element).
+  discoveryTileLink: ["a[href*='/dp/']"],
+  discoveryTileTitle: ["[class*='p13n-sc-css-line-clamp']", "a.a-link-normal[title]"],
+  discoveryTilePrice: [".a-price .a-offscreen", "[class*='p13n-sc-price']", ".a-color-price"],
+  discoveryTileImage: ["img"],
+  // The rank badge ("#1") on Best Sellers / New Releases tiles.
+  discoveryRankBadge: [".zg-bdg-text", ".zg-badge-text"],
+  // The 24h sales-rank gain on Movers & Shakers tiles (for example "1,234%").
+  discoveryGainPct: [".zg-percent-gainer", "[class*='percentGainer']", "[class*='gainer']"],
+  // Idea List detail pages (/shop/<handle>/list/<LISTID>), served by
+  // aip-storefront-service. Verified live 2026-08-18 on a public list: the
+  // grid is #list-item-container and each product is a div.single-list-item
+  // whose data-asin holds amzn1.asin.<ASIN> (the inner single-product-item
+  // div carries the bare ASIN).
+  ideaListGrid: [
+    "#list-item-container",
+    ".list-spv-item-container",
+    "[data-csa-c-painter='influencer-idea-list-products']",
+  ],
+  ideaListTile: [
+    ".single-list-item[data-asin]",
+    "[data-csa-c-component='ASIN-Widget']",
+    ".single-product-item[data-asin]",
+  ],
+  // Per-tile (queried within a tile element).
+  ideaListTileLink: ["a.single-product-item-link", "a[href*='/dp/']"],
+  ideaListTileTitle: [".product-title-text", "a.a-link-normal[title]"],
+  ideaListTileBrand: [".product-brand-text"],
+  ideaListTilePrice: [
+    ".product-price-container .a-price .a-offscreen",
+    ".a-price .a-offscreen",
+    ".a-price",
+  ],
+  ideaListTileImage: ["img.product-image", "img"],
+  // Today's Deals grid (amazon.com/deals*). The grid container is a stable
+  // data-testid; the tile list is a best-effort set of fallbacks meant to be
+  // corrected live via a remote selector override if it drifts. Verified
+  // 2026-09-25 (US): container [data-testid='discount-asin-grid'], tiles are
+  // [data-testid='product-card'] each carrying data-asin and a /dp/ link, so the
+  // overlay reads ASINs straight off the tiles. Earlier grids used deal-card* and
+  // hid the ASIN (joined to the deals-hook feed by image); those selectors stay
+  // as fallbacks below.
+  dealsGrid: ["[data-testid='discount-asin-grid']", "[data-testid='virtualized-grid']"],
+  dealsTile: [
+    "[data-testid='product-card']",
+    "[data-asin][data-deal-id]",
+    "[data-testid^='deal-card']",
+    "[data-testid*='DealCard']",
+    "[class*='DealGridItem']",
+    "[class*='GridItem']",
+    "div[class*='dealCard']",
+  ],
+  dealsTileImage: ["img"],
 };
+
+// Remote selector overrides (from the operational flags feed). When Amazon
+// shuffles its DOM and a selector list stops matching in the wild, the site
+// can push a corrected list here as config, so the fix ships in minutes
+// instead of a Chrome Web Store review. An override fully replaces the built-in
+// list for that id; content scripts call applySelectorOverrides() once at
+// startup before running any tool. Unknown ids are ignored (a stale override
+// for a renamed id is harmless).
+let overrides: Partial<Record<SelectorId, string[]>> = {};
+
+export function applySelectorOverrides(map: Record<string, string[]>): void {
+  const next: Partial<Record<SelectorId, string[]>> = {};
+  for (const [id, sels] of Object.entries(map)) {
+    if (!(id in REGISTRY) || !Array.isArray(sels)) continue;
+    const clean = sels.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim());
+    if (clean.length) next[id as SelectorId] = clean;
+  }
+  overrides = next;
+}
+
+function selectorsFor(id: SelectorId): string[] {
+  return overrides[id] ?? REGISTRY[id];
+}
 
 type Miss = { id: string; count: number };
 const misses = new Map<string, number>();
@@ -175,7 +434,7 @@ export function query<T extends Element = HTMLElement>(
   doc: ParentNode,
   id: SelectorId,
 ): T | null {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       const found = doc.querySelector<Element>(sel);
       if (found) return found as T;
@@ -197,7 +456,7 @@ export function queryMatchingText(
   id: SelectorId,
   test: (text: string) => boolean,
 ): string | null {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       for (const el of Array.from(doc.querySelectorAll(sel))) {
         const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -215,7 +474,7 @@ export function queryAll<T extends Element = HTMLElement>(
   doc: ParentNode,
   id: SelectorId,
 ): T[] {
-  for (const sel of REGISTRY[id]) {
+  for (const sel of selectorsFor(id)) {
     try {
       const found = doc.querySelectorAll<Element>(sel);
       if (found.length > 0) return Array.from(found) as T[];
@@ -225,6 +484,24 @@ export function queryAll<T extends Element = HTMLElement>(
   }
   recordMiss(id);
   return [];
+}
+
+// The nearest ancestor-or-self of `el` matching any selector for `id`, across
+// the ordered fallback list (and any remote override). Used where a caller has
+// a leaf element (e.g. a tile's <img>) and needs the card container it lives in.
+export function closest<T extends Element = HTMLElement>(
+  el: Element,
+  id: SelectorId,
+): T | null {
+  for (const sel of selectorsFor(id)) {
+    try {
+      const found = el.closest(sel);
+      if (found) return found as T;
+    } catch {
+      // skip an invalid selector strategy
+    }
+  }
+  return null;
 }
 
 function recordMiss(id: string): void {

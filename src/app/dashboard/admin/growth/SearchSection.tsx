@@ -16,6 +16,7 @@ export type GscRow = {
 export type SearchResponse = {
   configured: boolean;
   error?: boolean;
+  errorDetail?: string | null;
   cachedAt?: string | null;
   topQueries?: GscRow[] | null;
   topPages?: GscRow[] | null;
@@ -80,20 +81,24 @@ export default function SearchSection({
       ) : (
         <>
           {data.error ? (
-            <p className="mt-2 text-xs text-amber-700">
-              Search Console did not respond just now
+            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              {data.errorDetail ?? "Search Console did not respond just now."}
               {data.topQueries && data.topQueries.length > 0
-                ? " - showing the last cached numbers."
-                : "."}
+                ? " Showing the last cached numbers."
+                : ""}
             </p>
           ) : null}
 
           {(!data.topQueries || data.topQueries.length === 0) &&
           (!data.topPages || data.topPages.length === 0) ? (
-            <p className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-              Connected, but Search Console has no query data yet. New sites take a few days to
-              a couple of weeks to collect impressions. Check back soon.
-            </p>
+            // Only the "waiting for data" reassurance when Google actually
+            // responded with an empty set; a real error shows the amber box above.
+            data.error ? null : (
+              <p className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                Connected, but Search Console has no query data yet. New sites take a few days to
+                a couple of weeks to collect impressions. Check back soon.
+              </p>
+            )
           ) : (
             <div className="mt-3 grid gap-3 lg:grid-cols-2">
               {data.topQueries && data.topQueries.length > 0 ? (

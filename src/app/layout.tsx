@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import MetaPixel from "@/components/MetaPixel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | Influencer Butler",
   },
   description:
-    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 40+ built-in tools.",
+    "Influencer Butler is the all-in-one desktop app for Amazon creators and influencers. Automate Creator Connections outreach, auto-accept campaigns, harvest commissions, and post deals with 50+ built-in tools.",
   applicationName: "Influencer Butler",
   alternates: { canonical: "/" },
   openGraph: {
@@ -48,19 +49,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
           rel="stylesheet"
         />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-S1TC1QLYNN');`}
-        </Script>
+        {/* Consent Mode v2 + cookie banner. Sets analytics/advertising signals
+            to "denied" by default, loads gtag.js itself, and (on "Accept all")
+            enables the Meta pixel via the ib-consent-change event + ib_ads_consent
+            cookie. Single consent source shared with the static public/*.html
+            pages, which load the same script. */}
+        <Script src="/js/consent.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
         {children}
+        <MetaPixel />
         <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />

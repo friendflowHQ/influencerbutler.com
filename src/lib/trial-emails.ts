@@ -5,21 +5,26 @@
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { annualSavingsPct } from "@/lib/pricing-constants";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { lifecycleFrom } from "@/lib/email-senders";
+import { getFunnelOverrides, resolveFunnelCopy } from "@/lib/funnel-copy";
+import { tagRecipientsAsContacts } from "@/lib/email-marketing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-// 14-day trial nurture drip. Early touches (day0/1/3/7) are anchored to trial
-// start; the last two (day13/day14) are the "24 hours left" and "ends tonight"
-// urgency emails, timed to land just before the 14-day trial converts. See
-// TRIAL_TIERS in /api/cron/affiliate-funnel/route.ts for the send schedule.
-export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day13" | "day14";
+// 14-day trial nurture drip. Early touches (day0/1) are onboarding; day3 and
+// day11 are personal founder notes (a check-in and a "3 days left" nudge); the
+// last two (day13/day14) are the "24 hours left" and "ends tonight" urgency
+// emails, timed to land just before the 14-day trial converts. See TRIAL_TIERS
+// in /api/cron/affiliate-funnel/route.ts for the send schedule.
+export type TrialTier = "day0" | "day1" | "day3" | "day7" | "day11" | "day13" | "day14";
 
-type TierCopy = {
+export type TierCopy = {
   // Subject can depend on the vars (day3 drops the codes mention when the
   // user has no codes).
   subject: string | ((vars: TrialVars) => string);
   build: (vars: TrialVars) => string;
 };
 
-type TrialVars = {
+export type TrialVars = {
   firstName: string;
   monthlyCode: string | null;
   annualCode: string | null;
@@ -28,7 +33,7 @@ type TrialVars = {
   subscriptionUrl: string; // link with ?code= prefill
 };
 
-const FROM_ADDRESS = "Influencer Butler <hello@influencerbutler.com>";
+const FROM_ADDRESS = lifecycleFrom();
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 function monthlyCheckoutUrl(base: string, code: string | null): string {
@@ -41,7 +46,7 @@ function annualCheckoutUrl(base: string, code: string | null): string {
   return `${base}?code=${encodeURIComponent(code)}&plan=annual`;
 }
 
-const COPY: Record<TrialTier, TierCopy> = {
+export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
   day0: {
     subject: "Welcome to Influencer Butler: your Pro trial is live",
     build: (v) => {
@@ -49,7 +54,7 @@ const COPY: Record<TrialTier, TierCopy> = {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `Welcome aboard - your 14-day Pro trial is active, with every one of the 40+ butlers unlocked.`,
+        `Welcome aboard - your 14-day Pro trial is active, with every one of the 50+ butlers unlocked.`,
         ``,
         `Three quick steps to get value today:`,
         `  1. Install the desktop app: https://www.influencerbutler.com/download`,
@@ -83,7 +88,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         ``,
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
-        `  3. Set up the Deals Influencer Butler to find deals in your niche and post them automatically.`,
+        `  3. Set up the Deals Butler to find deals in your niche and post them automatically.`,
         ``,
         `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
         ``,
@@ -96,25 +101,20 @@ const COPY: Record<TrialTier, TierCopy> = {
     },
   },
   day3: {
-    subject: "3 days in: the one butler to run if you haven't yet",
+    // A personal founder note, not a feature list. Short, human, reply-inviting:
+    // day-3 check-ins from the founder get answered and shape the roadmap.
+    subject: "quick question about your Butler trial",
     build: (v) => {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're a few days into your 14-day trial. If you do just one thing this week, make it this: run Orders Butler and let it pull your real Amazon order history.`,
+        `Liz here, founder of Influencer Butler. No pitch, I promise.`,
         ``,
-        `Once it has your real numbers, every other butler gets smarter:`,
-        `  1. Daily Commission Butler accepts the Creator Connections campaigns that match what you actually sell.`,
-        `  2. Earnings Intelligence shows which products truly pay you, returns and all.`,
-        `  3. The AI Keyword Generator targets what's converting in your niche this month.`,
+        `I just want to know one thing: what were you hoping Butler would do for you when you started your trial?`,
         ``,
-        `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
+        `Whatever you say, I read every reply myself and it shapes what we build next. And if something is already in your way, tell me and I'll personally help you get it working.`,
         ``,
-        `Stuck on anything? Reply and a real human will help you get it running.`,
-        ``,
-        COMMUNITY_LINE,
-        ``,
-        `- The Influencer Butler team`,
+        `- Liz`,
       ].join("\n");
     },
   },
@@ -127,7 +127,7 @@ const COPY: Record<TrialTier, TierCopy> = {
         `You're halfway through your 14-day trial, so here's what people tell us actually earns its place by now:`,
         ``,
         `  1. Daily Commission Butler: accepts the right Creator Connections campaigns in the background.`,
-        `  2. Deals Influencer Butler: finds deals in your niche and posts them across your platforms automatically.`,
+        `  2. Deals Butler: finds deals in your niche and posts them across your platforms automatically.`,
         `  3. Messenger Butler: keeps your DMs answered so warm followers don't go cold.`,
         ``,
         `If one of those isn't switched on yet, this is a good week to try it. You've still got a full week left to see what it does for your numbers.`,
@@ -139,6 +139,22 @@ const COPY: Record<TrialTier, TierCopy> = {
         COMMUNITY_LINE,
         ``,
         `- The Influencer Butler team`,
+      ].join("\n");
+    },
+  },
+  day11: {
+    // A personal "3 days left" nudge from the founder, a few days before the
+    // day13/day14 urgency emails. Warm, not salesy: reply-to-fix, not buy-now.
+    subject: "3 days left on your Butler trial",
+    build: (v) => {
+      return [
+        `Hi ${v.firstName},`,
+        ``,
+        `Your 14-day Pro trial wraps up in about 3 days.`,
+        ``,
+        `If Butler has been earning its keep, you don't need to do a thing, it just continues. If it hasn't clicked yet, hit reply and tell me what's missing. I'd genuinely rather fix it than lose you.`,
+        ``,
+        `- Liz`,
       ].join("\n");
     },
   },
@@ -235,7 +251,7 @@ export type TrialEmailPayload = {
 };
 
 export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolean> {
-  const copy = COPY[payload.tier];
+  const copy = TRIAL_COPY[payload.tier];
   const firstName = payload.name.split(" ")[0] || "there";
 
   const vars: TrialVars = {
@@ -249,5 +265,29 @@ export async function sendTrialEmail(payload: TrialEmailPayload): Promise<boolea
   const subject = typeof copy.subject === "function" ? copy.subject(vars) : copy.subject;
   const body = copy.build(vars);
 
-  return sendMarketingEmail({ from: FROM_ADDRESS, to: payload.to, subject, text: body });
+  const overrides = await getFunnelOverrides();
+  const resolved = resolveFunnelCopy({
+    funnel: "trial",
+    tier: payload.tier,
+    vars: vars as unknown as Record<string, unknown>,
+    defaults: { subject, body },
+    overrides,
+  });
+  const ok = await sendMarketingEmail({
+    from: FROM_ADDRESS,
+    to: payload.to,
+    subject: resolved.subject,
+    text: resolved.body,
+    category: `trial_${payload.tier}`,
+    funnel: "trial",
+    trackOpens: true,
+  });
+  if (ok && resolved.applyTag) {
+    try {
+      await tagRecipientsAsContacts(createAdminClient(), [payload.to], resolved.applyTag, "funnel:trial");
+    } catch (err) {
+      console.error("trial-emails: tag-on-send failed", err);
+    }
+  }
+  return ok;
 }

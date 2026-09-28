@@ -10,6 +10,10 @@ type BillingInvoice = {
   statusLabel: string | null;
   billingReason: string | null;
   currency: string | null;
+  subtotal: number | null;
+  subtotalFormatted: string | null;
+  discountTotal: number | null;
+  discountTotalFormatted: string | null;
   total: number | null;
   totalFormatted: string | null;
   refundedAmount: number | null;
@@ -146,6 +150,13 @@ export default function BillingPage() {
                   <td className="py-3 pr-4 text-right font-medium text-slate-900">
                     {invoice.totalFormatted ??
                       formatAmount(invoice.total, invoice.currency)}
+                    {invoice.discountTotal != null && invoice.discountTotal > 0 ? (
+                      <div className="text-xs font-normal text-emerald-700">
+                        discount applied{" "}
+                        {invoice.discountTotalFormatted ??
+                          formatAmount(invoice.discountTotal, invoice.currency)}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="py-3 pr-4 text-right">
                     {invoice.invoiceUrl ? (

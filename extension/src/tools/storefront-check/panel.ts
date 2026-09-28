@@ -173,6 +173,21 @@ function render(
     nodes.summary.append(chip("", `${result.counts[type]} ${label[type]}`));
   }
 
+  // Coverage transparency: compare against the storefront's own post count
+  // when we could read it, and call out the two silent-miss cases (pagination
+  // stopping before the feed ran out, and cards of an unrecognized type).
+  if (result.reportedPostCount !== null) {
+    nodes.summary.append(
+      el("p", "note", t().sfCoverage(result.items.length, result.reportedPostCount)),
+    );
+  }
+  if (result.stopReason !== "end-of-feed" && result.stopReason !== "page-cap") {
+    nodes.summary.append(el("p", "note", t().sfStoppedEarly(result.stopReason)));
+  }
+  if (result.droppedCards > 0) {
+    nodes.summary.append(el("p", "note", t().sfDroppedCards(result.droppedCards)));
+  }
+
   // Untagged is any content whose products are known but empty: videos always,
   // and photos/idea-lists/media-lists once the deep-content pass has opened
   // them. Counting video-only made a storefront with untagged photos read as
@@ -329,6 +344,23 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       });
     });
     exportRow.append(contentBtn);
+
+    // Same set, into Voiceover Butler: turn the niche into a batch of
+    // shoppable-video scripts. Sibling of the Content Butler push above.
+    const voiceoverBtn = el("button", "btn secondary");
+    voiceoverBtn.textContent = t().sfSendToVoiceover(products.length);
+    voiceoverBtn.addEventListener("click", () => {
+      voiceoverBtn.disabled = true;
+      status.textContent = t().sfSendingToVoiceover;
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "voiceover.push.batch", products },
+      }).then((r) => {
+        voiceoverBtn.disabled = false;
+        status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+      });
+    });
+    exportRow.append(voiceoverBtn);
   }
 
   // Accept every Creator Connections / SPCC campaign found across the products.

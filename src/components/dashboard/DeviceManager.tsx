@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 /**
  * Lists the devices (Lemon Squeezy license instances) a user's keys are
  * activated on, grouped per product when the user holds more than one key
- * (e.g. Team Pro + Daily Deals add-on), and lets them free up a seat.
+ * (e.g. Team Pro + Deals add-on), and lets them free up a seat.
  * In-house comp keys have no Lemon Squeezy instances; their groups carry
  * desktop check-in stamps (`comp`) and render an activity line instead of a
  * device list. Self-fetching so it can drop into any dashboard page; renders

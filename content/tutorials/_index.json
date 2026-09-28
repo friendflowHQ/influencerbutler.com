@@ -2,11 +2,83 @@
   "version": 1,
   "tutorials": [
     {
+      "id": "tiktok-creator-stats",
+      "title": "TikTok Creator Stats: your followers and recent video performance",
+      "category": "TikTok",
+      "summary": "See your TikTok profile, follower and like counts, and how your recent videos are performing, all in one dashboard.",
+      "order": 700,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-video-butler",
+      "title": "TikTok Video Butler: upload videos to your TikTok account",
+      "category": "TikTok",
+      "summary": "Send a video straight to your connected TikTok account, either to your drafts to finish in the app or as a direct post once TikTok approves the app.",
+      "order": 701,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-orders-butler",
+      "title": "TikTok Orders Butler: track your TikTok Shop affiliate orders and commissions",
+      "category": "TikTok",
+      "summary": "Pull your TikTok Shop affiliate orders into one dashboard and see projected vs settled commission at a glance.",
+      "order": 702,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-outreach",
+      "title": "TikTok Message Followers: DM your new TikTok followers automatically",
+      "category": "TikTok",
+      "summary": "Send personalized DMs to your new TikTok followers, or to a custom list of usernames, with rotating message templates, follow-ups, and safety-first rate limits.",
+      "order": 703,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-like-butler",
+      "title": "TikTok Like Butler: auto-like the recent videos of accounts you choose",
+      "category": "TikTok",
+      "summary": "Add TikTok usernames and Like Butler taps the heart on each account's recent videos, on demand or on a schedule, to keep your engagement steady.",
+      "order": 704,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-follow-butler",
+      "title": "TikTok Follow Butler: auto-follow the TikTok accounts you choose",
+      "category": "TikTok",
+      "summary": "Add a list of TikTok usernames and let the butler open each profile and tap Follow for you, with delays, a daily cap, and a scheduler to keep it steady.",
+      "order": 705,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-comment-butler",
+      "title": "TikTok Comment Butler: auto-comment on creators' recent videos",
+      "category": "TikTok",
+      "summary": "Pick the TikTok accounts you want to engage, write a pool of comments, and let the butler post one on each account recent videos, rotating through your lines.",
+      "order": 706,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "tiktok-goldmine",
+      "title": "TikTok Goldmine: discover brand-collab leads from TikTok creators",
+      "category": "TikTok",
+      "summary": "A research-only crawler that walks TikTok creators and their suggested-account graph to surface qualifying videos (#ad, paid partnerships, brand mentions) plus creator contact info.",
+      "order": 707,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "getting-started-influencer-butler",
       "title": "Getting started: your first 15 minutes",
       "category": "Getting Started",
       "summary": "Brand new? Start here. Sign in, connect your Amazon storefront, and run your first Butler. No experience needed.",
       "order": 0.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "ai-concierge",
+      "title": "Talk to Butler AI: instant demo and setup help",
+      "category": "Getting Started",
+      "summary": "Get a live product walkthrough or setup help right now, by voice or text, from an AI concierge that knows Influencer Butler. Available 24/7, no waiting for a call.",
+      "order": 0.7,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -144,11 +216,35 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "daily-performance",
+      "title": "Your daily Amazon performance readout",
+      "category": "Amazon",
+      "summary": "A once-a-day snapshot of your verified Amazon numbers, on your dashboard and in your inbox, with plain guidance when a month dips.",
+      "order": 21,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "cc-check",
       "title": "CC Check: check ASINs and accept Creator Connections campaigns",
       "category": "Amazon",
       "summary": "Check your ASINs against the live catalogs, accept campaigns, submit content, and extract brands from one results table.",
       "order": 30,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "filled-campaign-recovery",
+      "title": "Filled campaign recovery: pitch brands to reopen a slot",
+      "category": "Amazon",
+      "summary": "Find Creator Connections campaigns that filled up before you could join, but feature products you already made content for, then message the brand with proof and ask them to open another slot.",
+      "order": 31,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "campaign-alert-butler",
+      "title": "Campaign Alert Butler: get alerted and auto-accept new brand campaigns",
+      "category": "Amazon",
+      "summary": "Follow the Creator Connections brands you care about, get alerted the moment they post a new campaign, and optionally auto-accept those campaigns on a schedule so you get in before they fill up.",
+      "order": 32,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -171,7 +267,7 @@
       "id": "pricecrashbutler",
       "title": "Pricecrash Butler: catch Amazon pricing errors fast",
       "category": "Amazon",
-      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deals Influencer Butler as drafts or auto-scheduled posts.",
+      "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deals Butler as drafts or auto-scheduled posts.",
       "order": 45,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -184,11 +280,43 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
-      "id": "daily-deals",
-      "title": "Deals Influencer Butler: harvest Amazon deals and post them automatically",
+      "id": "share-products-manually",
+      "title": "Share products manually: compliant Stories, posts, and bios",
+      "category": "Amazon",
+      "summary": "How to share your Amazon links by hand on Instagram, Facebook, TikTok, and Pinterest. Add each platform to your Amazon site list first, then disclose on every post. Copy-paste examples included.",
+      "order": 55,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "deals",
+      "title": "Deals Butler: harvest Amazon deals and post them automatically",
       "category": "Amazon",
       "summary": "End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.",
       "order": 70,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "deals-guided-setup",
+      "title": "Set up deal posting: the 3-step Quickstart",
+      "category": "Amazon",
+      "summary": "The fastest way to start posting Amazon deals to your Facebook group: connect your group, pick a niche, press Start. Or use Advanced setup for Walmart, more destinations, and finer control.",
+      "order": 71,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "social-posting-butler",
+      "title": "Social Posting Butler: schedule your own evergreen posts",
+      "category": "Other",
+      "summary": "Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. See everything in a calendar, card, or table view.",
+      "order": 72,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "email-deals",
+      "title": "Email Deals: turn seller deal emails into scheduled posts",
+      "category": "Amazon",
+      "summary": "Connect an inbox with an app password, pick which seller senders to watch, and the promo codes and prices they email you land in a filterable table ready to send to the Deals Scheduler.",
+      "order": 72,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -208,10 +336,50 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "brand-release-butler",
+      "title": "Brand Release Butler: be first to promote a brand's new products",
+      "category": "Amazon",
+      "summary": "Follow the Amazon brands you care about, get alerted the moment they list a product you have not seen before, and hand each new release straight to Build Your Post so you can be first to promote it.",
+      "order": 33,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "earnings-intelligence",
+      "title": "Earnings Intelligence: see which ASINs actually earned",
+      "category": "Amazon",
+      "summary": "Track your Amazon commissions by source, storefront, and ASIN over time, so you can tell which products made money versus which just drove clicks.",
+      "order": 92,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "best-seller-butler",
+      "title": "Best Seller Butler: find products your audience keeps engaging with and post them on repeat",
+      "category": "Amazon",
+      "summary": "Best Seller Butler measures which Amazon products get the most engagement on your social posts, scores them over a recency window, and promotes the top performers into your always-post pool so they get reposted automatically.",
+      "order": 95,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "content-planner",
+      "title": "Content Planner: plan your socials week and see what your butlers scheduled",
+      "category": "Amazon",
+      "summary": "A visual Monday to Sunday week where you write your own colour-coded plans for each day and see every roundup, deal and automation your butlers have scheduled, all in one grid.",
+      "order": 96,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "google-sheets-export",
+      "title": "Sheetsyncer Butler: send your butlers' work to a Google Sheet",
+      "category": "Amazon",
+      "summary": "Connect a Google Sheet once per source, pick your columns, and push Facebook Group Builder posts and Deals Butler results into it, on demand or automatically.",
+      "order": 97,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "video-reload-butler",
       "title": "Video Reload Butler: re-upload Amazon storefront videos with fresh metadata",
       "category": "Amazon",
-      "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata across 13 marketplaces, translating the title and burning local-language captions for each country.",
+      "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata across 13 marketplaces, translating the title and adding translated captions or an AI dub for each country.",
       "order": 100,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -240,10 +408,18 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "link-butler",
+      "title": "Link Butler: branded, tracked links that open the shopping app",
+      "category": "Amazon",
+      "summary": "Turn any product link into a branded Calling Card that opens the Amazon app, then see where you posted it, how it is trending, and whether it is still healthy, all in one ledger.",
+      "order": 125,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
-      "summary": "Rewrite affiliate links in your already-published Deals Influencer Butler, YouTube, Pinterest, and Benable content without re-editing each post.",
+      "summary": "Rewrite affiliate links in your already-published Deals Butler, YouTube, Pinterest, and Benable content without re-editing each post.",
       "order": 130,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -257,10 +433,18 @@
     },
     {
       "id": "extension",
-      "title": "Chrome Extension: Amazon intel while you browse",
+      "title": "Chrome Extension: money intel while you browse",
       "category": "Amazon",
-      "summary": "Install the free Chrome extension: influencer vs brand video counts on any product, content gaps in your orders, Butler Approved seals, storefront checkups, and dashboard sync.",
+      "summary": "Install the free Chrome extension: Butler Scores, price and video intel, Campaign Radar and SPCC scoring on Creator Connections, Video Money on Creator Hub, deals and idea-list signals, Walmart and Benable support, deep links, Global Maximizer, and dashboard sync.",
       "order": 145,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "extension-assistant",
+      "title": "Ask Butler AI from the Chrome extension",
+      "category": "Amazon",
+      "summary": "Open the Influencer Butler AI assistant straight from the Chrome extension. Ask how any tool works, get exact click paths, or talk it through by voice, without leaving Amazon.",
+      "order": 146,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -285,6 +469,22 @@
       "category": "Partnerships",
       "summary": "Type a niche keyword, pick a marketplace, and Benable Butler researches Amazon, picks matching ASINs, writes the collection, and publishes it.",
       "order": 170,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "benable-published-products",
+      "title": "Benable Published Products: see everything you published and why",
+      "category": "Partnerships",
+      "summary": "A filterable table of every product Benable Butler published, with the reason it was picked, its Creator Connections and SPCC status, campaign end, caption, and collection.",
+      "order": 172,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "benable-list-optimize",
+      "title": "Benable List Optimize: audit a Benable list and get specific fixes",
+      "category": "Partnerships",
+      "summary": "Paste a Benable list URL and get a prioritized, ready-to-use set of improvements, computed locally with no OpenAI cost.",
+      "order": 175,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -337,9 +537,9 @@
     },
     {
       "id": "instagram-channel-link",
-      "title": "Find your Instagram channel link for Deals Influencer Butler",
+      "title": "Find your Instagram channel link for Deals Butler",
       "category": "Instagram",
-      "summary": "Get the desktop URL for your Instagram broadcast channel so Deals Influencer Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
+      "summary": "Get the desktop URL for your Instagram broadcast channel so Deals Butler can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
       "order": 225,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -376,10 +576,18 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "openai-api-setup",
+      "title": "Set up the OpenAI API (it is not ChatGPT)",
+      "category": "Other",
+      "summary": "The AI butlers need an OpenAI API key from platform.openai.com, not a ChatGPT subscription. How to create a key, add billing, and connect it.",
+      "order": 302,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "telegram-bot",
       "title": "Telegram Bot setup: post deals to a Telegram channel",
       "category": "Other",
-      "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deals Influencer Butler can post automatically.",
+      "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deals Butler can post automatically.",
       "order": 305,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
@@ -424,6 +632,30 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "product-research-butler",
+      "title": "Product Research: price and sales-rank history for every product you browse",
+      "category": "Other",
+      "summary": "See price history, sales-rank history, estimated monthly sales, and seasonal signals for Amazon products, built automatically from your own browsing with the extension.",
+      "order": 341,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "walmart-research",
+      "title": "Walmart Research: price and rank history for Walmart products",
+      "category": "Other",
+      "summary": "See price history, rank history, and estimated monthly sales for Walmart products, built automatically as the app looks products up, with a daily check that keeps every one fresh.",
+      "order": 342,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "walmart-repost",
+      "title": "Walmart Repost: copy your storefront to Walmart, hands-free",
+      "category": "Other",
+      "summary": "Repost your Amazon storefront videos and photos to your Walmart Creator storefront automatically, only when the product is the exact same item on Walmart. Use the Set it up wizard to sign in and configure it in under a minute.",
+      "order": 342.3,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
@@ -432,11 +664,75 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "facebook-group-email",
+      "title": "Facebook Group Email Collection: capture emails from your group's join requests",
+      "category": "Other",
+      "summary": "Read your Facebook group's join requests, capture the email each person submits, optionally approve them, and hand the list to Pitch Butler with a Facebook source chip.",
+      "order": 342.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "facebook-group-builder",
       "title": "Facebook Group Builder: create and grow niche groups on autopilot",
       "category": "Other",
-      "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Deals Influencer Butler so deals post automatically.",
+      "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Deals Butler so deals post automatically.",
       "order": 343,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "facebook-influencer",
+      "title": "Facebook Inviter: turn group reactions into Page followers",
+      "category": "Other",
+      "summary": "Walk the Facebook groups you belong to, open each post's reaction list, and invite those people to follow your Page, with a per-post cap, skip list, and daily schedule.",
+      "order": 343.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "facebook-message-butler",
+      "title": "Facebook Message Butler: message group members and auto-DM commenters",
+      "category": "Other",
+      "summary": "Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, set up comment-to-DM rules that reply to commenters automatically, and check for replies to collect email addresses people send back.",
+      "order": 343.7,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "delete-posts-comments",
+      "title": "Delete Posts & Comments: bulk-clean your Facebook deal posts",
+      "category": "Other",
+      "summary": "Clear out old deal drops and expired promo comments on a schedule, with a preview, per-run cap, and protect list so nothing important is ever removed.",
+      "order": 344,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "facebook-admin-butler",
+      "title": "Facebook Admin Butler: find adminless groups and take them over",
+      "category": "Other",
+      "summary": "Search Facebook for groups in your niche by keyword, filter them by size and type, join the ones you are not in yet, and automatically accept the admin role when an adminless group offers it to you.",
+      "order": 344.2,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "facebook-goldmine",
+      "title": "Facebook Goldmine: harvest viral group posts and repurpose them",
+      "category": "Other",
+      "summary": "Scan the Facebook groups you belong to, collect the posts already going viral, then approve the best ones to repost to your Page and reshare into your groups on rotation.",
+      "order": 344.4,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "group-uninvite-butler",
+      "title": "Group Uninvite Butler: cancel pending invites in your Facebook group",
+      "category": "Other",
+      "summary": "Withdraw the pending invites you sent into a Facebook group you manage, one at a time, at a natural pace. Choose whether to clear all of them, only profile and Page invites, or only email invites, with a delay between each so the activity looks human.",
+      "order": 344.6,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "expired-butler",
+      "title": "Expired Butler: clean up posts for deals that have ended",
+      "category": "Other",
+      "summary": "Find every deal post whose deal has expired and remove it, or, when a creator campaign was attached, edit it in place so it stops advertising a dead price. Card and table views, filters, an action history, and one-click Post again.",
+      "order": 344.5,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -448,11 +744,27 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "global-controls",
+      "title": "Global controls: pause everything and show or hide every browser at once",
+      "category": "Other",
+      "summary": "Use the bar under the header to pause every running butler in one click, resume just the ones you want, and flip \"Watch it run\" for all butlers at the same time.",
+      "order": 346,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "manage-subscription",
       "title": "Manage or cancel your subscription",
       "category": "Other",
       "summary": "Where your plan lives, how to change billing, and how to cancel in one click from your dashboard. You keep access until the end of your billing period, with no support ticket.",
       "order": 348,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "app-slow-freezing",
+      "title": "App feels slow, laggy, or freezes: how to fix it",
+      "category": "Other",
+      "summary": "Is Influencer Butler dragging, lagging, or freezing up? Turn on Low resource mode, stop butlers from auto-restarting, pause automations, and try Safe Mode. Step-by-step for Windows and Mac.",
+      "order": 349,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
@@ -472,10 +784,34 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "telegram-compose",
+      "title": "Telegram Butler: post to your Telegram channel",
+      "category": "Other",
+      "summary": "Connect a Telegram bot, then compose, schedule, and manage posts to your Telegram channel without leaving Influencer Butler.",
+      "order": 360,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "reddit-compose",
+      "title": "Reddit Butler: post to a subreddit",
+      "category": "Other",
+      "summary": "Connect your Reddit app and account, then submit link or text posts to a subreddit, schedule them, and edit or delete them from Influencer Butler.",
+      "order": 361,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "threads-compose",
+      "title": "Threads Butler: post to Threads",
+      "category": "Other",
+      "summary": "Post to your Threads feed using your Instagram login. Compose, schedule, and delete Threads posts from Influencer Butler.",
+      "order": 362,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "pinterest-butler",
       "title": "Pinterest Butler: Pinterest pin generation + scheduling (coming soon)",
       "category": "Other",
-      "summary": "Planned workspace that will generate pins from Amazon Idea Lists, prioritize by active CC campaigns, write SEO copy, and schedule posts.",
+      "summary": "Beta workspace: the panel is a preview and nothing posts to Pinterest yet. What the pin engine will do once it is wired up, what you can do today, and how to follow the rollout.",
       "order": 999,
       "locales": ["en-US", "es-ES", "fr-FR"]
     }

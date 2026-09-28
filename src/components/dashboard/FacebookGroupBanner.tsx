@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 
 // Evergreen community invite shown to every logged-in user (trial and paid).
@@ -9,18 +9,23 @@ import { FACEBOOK_GROUP_URL } from "@/lib/social";
 // campaign.
 const DISMISS_KEY = "ib_facebook_group_join_dismissed_v1";
 
-export default function FacebookGroupBanner() {
-  const [dismissed, setDismissed] = useState(true);
+// sessionStorage fires no events for same-tab writes, so the subscription is a
+// no-op; the in-session dismissal lives in React state instead.
+const subscribe = () => () => {};
 
-  useEffect(() => {
-    let hidden = false;
-    try {
-      hidden = sessionStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      hidden = false;
-    }
-    setDismissed(hidden);
-  }, []);
+function readDismissed(): boolean {
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export default function FacebookGroupBanner() {
+  // Dismissed on the server render so the banner only appears after hydration.
+  const storedDismissed = useSyncExternalStore(subscribe, readDismissed, () => true);
+  const [dismissedNow, setDismissedNow] = useState(false);
+  const dismissed = storedDismissed || dismissedNow;
 
   if (dismissed) return null;
 
@@ -30,7 +35,7 @@ export default function FacebookGroupBanner() {
     } catch {
       // sessionStorage may be unavailable - dismiss in-memory only
     }
-    setDismissed(true);
+    setDismissedNow(true);
   };
 
   return (

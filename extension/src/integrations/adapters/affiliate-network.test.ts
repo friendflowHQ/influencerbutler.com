@@ -89,21 +89,6 @@ describe("archer adapter", () => {
   });
 });
 
-describe("logie adapter", () => {
-  const logie = byId("logie");
-
-  it("has no generateLink (routes through the primary deeplink provider)", () => {
-    expect(logie.generateLink).toBeUndefined();
-  });
-
-  it("test() connects on 200 and fails on 401", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
-    expect((await logie.test({ apiKey: "k", apiSecret: "s" })).ok).toBe(true);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 401 })));
-    expect((await logie.test({ apiKey: "k", apiSecret: "bad" })).ok).toBe(false);
-  });
-});
-
 describe("benable adapter", () => {
   const benable = byId("benable");
 

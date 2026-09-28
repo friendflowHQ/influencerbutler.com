@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
 import CreditReferralTab, { type AffiliateOption } from "./CreditReferralTab";
+import TaxTasksBanner from "./TaxTasksBanner";
 
 type SocialHandles = Record<string, string | null | undefined>;
 
@@ -82,6 +83,8 @@ type OwedAffiliate = {
   orderCount: number;
   grossCents: number;
   owedCents: number;
+  payableCents?: number;
+  clearingCents?: number;
   orders: OwedOrder[];
 };
 
@@ -90,6 +93,27 @@ type OwedResponse = {
   commissionPercent?: number;
   verifyAgainstLs?: boolean;
   affiliates?: OwedAffiliate[];
+  error?: string;
+};
+
+// Attribution gap: referred conversions whose ORDER was never attributed, so the
+// affiliate is owed but the Owed tab cannot see it until the order is stamped.
+type GapAffiliate = {
+  userId: string;
+  email: string | null;
+  fullName: string | null;
+  affiliateCode: string | null;
+  ratePercent: number;
+  orderCount: number;
+  grossCents: number;
+  owedCents: number;
+  orders: OwedOrder[];
+};
+
+type GapResponse = {
+  admin?: { email: string };
+  verifyBeforePaying?: boolean;
+  affiliates?: GapAffiliate[];
   error?: string;
 };
 
@@ -228,6 +252,18 @@ function formatUsd(cents: number | null): string {
   }).format(cents / 100);
 }
 
+// PayPal goods-and-services fee (US commercial): ~2.99% of the amount received.
+// To have the recipient NET `cents`, the sender pads the payment to
+// cents / (1 - rate). This is ONLY for MANUAL PayPal sends: the automated
+// Payouts API (the "Disburse via PayPal" button) charges the sender a separate
+// capped fee and the recipient already gets the full amount, so never gross up
+// there.
+const PAYPAL_GS_FEE_RATE = 0.0299;
+function grossUpForPayPalGs(cents: number): number {
+  if (cents <= 0) return 0;
+  return Math.round(cents / (1 - PAYPAL_GS_FEE_RATE));
+}
+
 // The affiliate's shareable link: the branded code auto-applies at checkout and
 // attributes the referral. Mirrors brandedShareLink in the affiliate dashboard -
 // a clean homepage URL (no "/pricing"); the ?code= is captured on the homepage
@@ -269,8 +305,35 @@ function formatDateShort(iso: string | null): string {
   }
 }
 
+const TAB_KEYS: TabKey[] = [
+  "roster",
+  "applications",
+  "reconcile",
+  "credit",
+  "owed",
+  "payouts",
+  "analytics",
+];
+
 export default function AdminAffiliatesPage() {
   const [tab, setTab] = useState<TabKey>("roster");
+  // Deep-link prefill: the Users page links here as ?tab=credit&customer=&code=
+  // to jump straight to the comp make-whole tool with the customer + affiliate
+  // filled in. Read once on mount from the URL (no useSearchParams -> no Suspense
+  // boundary needed for this client page).
+  const [creditCustomer, setCreditCustomer] = useState<string | undefined>(undefined);
+  const [creditCode, setCreditCode] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("tab");
+      if (t && (TAB_KEYS as string[]).includes(t)) setTab(t as TabKey);
+      setCreditCustomer(params.get("customer") ?? undefined);
+      setCreditCode(params.get("code") ?? undefined);
+    } catch {
+      // no-op: URL parsing is best-effort prefill only.
+    }
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -299,6 +362,20 @@ export default function AdminAffiliatesPage() {
   const [owedLoading, setOwedLoading] = useState(true);
   const [owedError, setOwedError] = useState<string | null>(null);
   const [owedRow, setOwedRow] = useState<Record<string, LinkRowState>>({});
+
+  // Attribution-gap state (referred conversions whose orders were never stamped).
+  const [gap, setGap] = useState<GapAffiliate[]>([]);
+  const [gapLoading, setGapLoading] = useState(true);
+  const [gapError, setGapError] = useState<string | null>(null);
+  const [gapRow, setGapRow] = useState<Record<string, LinkRowState>>({});
+  const [gapAllState, setGapAllState] = useState<LinkRowState>({ kind: "idle" });
+
+  // Auto-pay arming toggle (stored server-side in app_config; env var can force it).
+  const [autopayArmed, setAutopayArmed] = useState(false);
+  const [autopayEnvForced, setAutopayEnvForced] = useState(false);
+  const [autopayCapCents, setAutopayCapCents] = useState(20000);
+  const [autopayLoaded, setAutopayLoaded] = useState(false);
+  const [autopaySaving, setAutopaySaving] = useState(false);
 
   // Per-row state for the roster "Generate new code" action.
   const [genRow, setGenRow] = useState<Record<string, LinkRowState>>({});
@@ -407,6 +484,79 @@ export default function AdminAffiliatesPage() {
     }
   }, []);
 
+  const loadGap = useCallback(async () => {
+    setGapLoading(true);
+    setGapError(null);
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as GapResponse;
+      if (!res.ok) {
+        setGapError(json.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setGap(json.affiliates ?? []);
+    } catch (err) {
+      console.error(err);
+      setGapError("Network error loading the attribution gap.");
+    } finally {
+      setGapLoading(false);
+    }
+  }, []);
+
+  const loadAutopayConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/affiliates/admin-autopay-config", { cache: "no-store" });
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      const json = (await res.json()) as {
+        armed?: boolean;
+        envForced?: boolean;
+        capCents?: number;
+      };
+      if (res.ok) {
+        setAutopayArmed(json.armed === true);
+        setAutopayEnvForced(json.envForced === true);
+        if (typeof json.capCents === "number") setAutopayCapCents(json.capCents);
+        setAutopayLoaded(true);
+      }
+    } catch (err) {
+      console.error("autopay config load failed", err);
+    }
+  }, []);
+
+  const onToggleAutopay = async (next: boolean) => {
+    if (autopayEnvForced) return; // locked on by env var
+    if (
+      next &&
+      !window.confirm(
+        "Arm auto-pay? On the 1st of each month the system will pay every eligible affiliate (verified tax form + PayPal, over $10) their cleared commission automatically via PayPal. Amounts over the cap still wait for your manual Disburse. You can turn this off anytime.",
+      )
+    ) {
+      return;
+    }
+    setAutopaySaving(true);
+    try {
+      const res = await fetch("/api/affiliates/admin-autopay-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ armed: next }),
+      });
+      const json = (await res.json()) as { armed?: boolean; error?: string };
+      if (res.ok) setAutopayArmed(json.armed === true);
+      else console.error("autopay toggle failed", json.error);
+    } catch (err) {
+      console.error("autopay toggle failed", err);
+    } finally {
+      setAutopaySaving(false);
+    }
+  };
+
   // Roster + applications load eagerly (applications powers the tab badge and is
   // a cheap DB read). Reconcile and owed each hit Lemon Squeezy, so they load
   // lazily the first time their tab is opened.
@@ -425,8 +575,10 @@ export default function AdminAffiliatesPage() {
     if (tab === "owed" && !owedLoaded.current) {
       owedLoaded.current = true;
       void loadOwed();
+      void loadGap();
+      void loadAutopayConfig();
     }
-  }, [tab, loadReconcile, loadOwed]);
+  }, [tab, loadReconcile, loadOwed, loadGap, loadAutopayConfig]);
 
   const setRow = (userId: string, state: RowState) =>
     setRowState((prev) => ({ ...prev, [userId]: state }));
@@ -501,6 +653,52 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Roster-level "set this exact code" (e.g. JACKIE -> AIPTOOLKIT) for
+  // affiliates who ask for a specific string instead of their name. Mints the
+  // exact code in Lemon Squeezy (no numbered fallback) and retires the old
+  // discount, so the same replacement warning applies.
+  const onSetCustomCode = async (row: RosterRow) => {
+    const label = row.name ?? row.email ?? row.userId;
+    const replaceNote = row.affiliateCode
+      ? `\n\nThis replaces ${row.affiliateCode}; any link already shared with the old code stops tracking.`
+      : "";
+    const input = window.prompt(
+      `Set a custom code for ${label}.\n\nLetters and numbers only, 2-32 characters (Lemon Squeezy rejects hyphens and spaces).${replaceNote}`,
+      row.affiliateCode ?? "",
+    );
+    if (input === null) return;
+    const code = input.trim().toUpperCase();
+    if (!/^[A-Z0-9]{2,32}$/.test(code)) {
+      setGen(row.userId, {
+        kind: "error",
+        message: "Codes must be 2-32 letters and numbers only.",
+      });
+      return;
+    }
+    if (code === row.affiliateCode) {
+      setGen(row.userId, { kind: "error", message: `${code} is already their code.` });
+      return;
+    }
+    setGen(row.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-regenerate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.userId, customCode: code }),
+      });
+      const json = (await res.json()) as { error?: string; code?: string };
+      if (!res.ok) {
+        setGen(row.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGen(row.userId, { kind: "success", message: `New code ${json.code}.` });
+      setTimeout(() => void loadRoster(), 1500);
+    } catch (err) {
+      console.error(err);
+      setGen(row.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
   const setEmail = (userId: string, state: LinkRowState) =>
     setEmailRow((prev) => ({ ...prev, [userId]: state }));
 
@@ -531,10 +729,86 @@ export default function AdminAffiliatesPage() {
     }
   };
 
+  // Record an out-of-band payment (admin already sent money via PayPal's UI, a
+  // bank transfer, etc.). Records ONLY the cleared "payable now" slice via the
+  // same money-safe reconcile as the PayPal payout, so amortized annual orders
+  // stay partially owed and are never double-counted next month.
+  const onRecordManualPayout = async (aff: OwedAffiliate) => {
+    const payable = aff.payableCents ?? 0;
+    const currency = aff.orders[0]?.currency ?? null;
+    const payableLabel = formatCents(payable, currency);
+    const name = aff.fullName ?? aff.email ?? aff.userId;
+    // The prompt doubles as the confirm (Cancel returns null). Default to the
+    // exact cleared slice; the admin bumps it to whatever they actually sent so
+    // the gross-up (PayPal fee) is booked to Finance. No money is sent.
+    const entered = window.prompt(
+      `Record a manual payout to ${name}.\n\nThe cleared commission of ${payableLabel} is booked to the affiliate (annual orders keep vesting). Enter the TOTAL you actually sent via PayPal - anything above ${payableLabel} is recorded as a PayPal fee in Finance. The default below already covers the ~2.99% goods-and-services fee. No money is sent now.`,
+      (grossUpForPayPalGs(payable) / 100).toFixed(2),
+    );
+    if (entered === null) return;
+    const totalSentCents = Math.round(parseFloat(entered.replace(/[^0-9.]/g, "")) * 100);
+    if (!Number.isFinite(totalSentCents) || totalSentCents <= 0) {
+      setOwedState(aff.userId, { kind: "error", message: "Enter a valid dollar amount." });
+      return;
+    }
+    if (totalSentCents < payable) {
+      setOwedState(aff.userId, {
+        kind: "error",
+        message: `That's less than the ${payableLabel} cleared commission. Enter at least ${payableLabel}.`,
+      });
+      return;
+    }
+    setOwedState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-record-payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId, totalSentCents }),
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        grossCents?: number;
+        feeCents?: number;
+        feeRecorded?: boolean;
+        code?: string;
+      };
+      if (!res.ok) {
+        const friendly =
+          json.code === "below_minimum"
+            ? "Nothing is cleared and past the 14-day hold yet, so there's nothing to record."
+            : json.code === "already_recorded"
+              ? "A manual payout for this affiliate is already recorded this month."
+              : json.error ?? `Failed (${res.status})`;
+        setOwedState(aff.userId, { kind: "error", message: friendly });
+        return;
+      }
+      const fee = json.feeCents ?? 0;
+      const feeNote =
+        fee > 0
+          ? json.feeRecorded
+            ? ` + ${formatCents(fee, currency)} PayPal fee booked to Finance`
+            : ` (add the ${formatCents(fee, currency)} PayPal fee in Finance manually)`
+          : "";
+      setOwedState(aff.userId, {
+        kind: "success",
+        message: `Recorded ${formatCents(json.grossCents ?? payable, currency)} paid${feeNote}.`,
+      });
+      setTimeout(() => {
+        void loadOwed();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setOwedState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  // Break-glass: force-reconcile the FULL owed across ALL orders at once. Rarely
+  // correct under amortized/clearing commissions (it hides commission that has
+  // not vested yet); kept only for legacy whole-bonus situations paid in full.
   const onMarkPaid = async (aff: OwedAffiliate) => {
     if (
       !window.confirm(
-        `Mark ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} as paid to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nDo this ONLY after you have issued the bonus in the Lemon Squeezy dashboard. Sanity-check these ${aff.orderCount} orders against LS first - an older or partial refund may not be reflected here. This stamps the orders reconciled so they drop off the report.`,
+        `Force-reconcile the FULL ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} owed to ${aff.fullName ?? aff.email ?? aff.userId} and drop all ${aff.orderCount} orders off the report?\n\nWARNING: this marks the ENTIRE owed balance paid, including commission that has not vested or cleared yet. If you only paid the "payable now" slice, use "Record manual payout" instead. Do this ONLY if you truly paid the full balance out-of-band. Sanity-check these orders against Lemon Squeezy first - an older or partial refund may not be reflected here.`,
       )
     ) {
       return;
@@ -572,9 +846,10 @@ export default function AdminAffiliatesPage() {
   // requires a verified tax form + PayPal email, and reconciles the orders only
   // once PayPal confirms the payout succeeded (webhook / poller).
   const onDisburse = async (aff: OwedAffiliate) => {
+    const payable = aff.payableCents ?? aff.owedCents;
     if (
       !window.confirm(
-        `Send ${formatCents(aff.owedCents, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId} via PayPal now?\n\nThis pays the affiliate directly. Their tax form must be verified and a PayPal email on file. The exact amount is recomputed at send. Orders are marked paid only once PayPal confirms success.`,
+        `Send ${formatCents(payable, aff.orders[0]?.currency ?? null)} to ${aff.fullName ?? aff.email ?? aff.userId} via PayPal now?\n\nThis pays only the cleared, recognized commission (annual plans are paid a month at a time; anything inside the 14-day hold waits). Their tax form must be verified and a PayPal email on file. The exact amount is recomputed at send. Orders are marked paid only once PayPal confirms success.`,
       )
     ) {
       return;
@@ -615,6 +890,95 @@ export default function AdminAffiliatesPage() {
     } catch (err) {
       console.error(err);
       setOwedState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  const setGapRowState = (userId: string, state: LinkRowState) =>
+    setGapRow((prev) => ({ ...prev, [userId]: state }));
+
+  // Attribute one affiliate's gap orders: stamps them attribution_status='pending'
+  // so they appear in the Owed report and become payable. Refreshes both the gap
+  // and the owed lists on success.
+  const onAttributeGap = async (aff: GapAffiliate) => {
+    if (
+      !window.confirm(
+        `Attribute ${aff.orderCount} order${aff.orderCount === 1 ? "" : "s"} (${formatCents(
+          aff.grossCents,
+          aff.orders[0]?.currency ?? null,
+        )} gross) to ${aff.fullName ?? aff.email ?? aff.userId}?\n\nThese are paid orders from customers this affiliate referred, whose orders were never attributed. This credits them ${formatCents(
+          aff.owedCents,
+          aff.orders[0]?.currency ?? null,
+        )} and moves the orders into the Owed report so you can pay them.`,
+      )
+    ) {
+      return;
+    }
+    setGapRowState(aff.userId, { kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: aff.userId }),
+      });
+      const json = (await res.json()) as { error?: string; stampedCount?: number };
+      if (!res.ok) {
+        setGapRowState(aff.userId, { kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGapRowState(aff.userId, {
+        kind: "success",
+        message: `Attributed ${json.stampedCount ?? 0} orders. They now show in the Owed report.`,
+      });
+      setTimeout(() => {
+        void loadGap();
+        void loadOwed();
+        void loadRoster();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setGapRowState(aff.userId, { kind: "error", message: "Network error." });
+    }
+  };
+
+  // Attribute EVERY detected gap order across all affiliates in one action.
+  const onAttributeGapAll = async () => {
+    const totalOrders = gap.reduce((s, a) => s + a.orderCount, 0);
+    const totalOwed = gap.reduce((s, a) => s + a.owedCents, 0);
+    if (
+      !window.confirm(
+        `Attribute all ${totalOrders} gap order${totalOrders === 1 ? "" : "s"} across ${
+          gap.length
+        } affiliate${gap.length === 1 ? "" : "s"}?\n\nThis credits roughly ${formatUsd(
+          totalOwed,
+        )} in total and moves every order into the Owed report. You still pay each affiliate from the Owed / Payouts tabs.`,
+      )
+    ) {
+      return;
+    }
+    setGapAllState({ kind: "working" });
+    try {
+      const res = await fetch("/api/affiliates/admin-attribution-gap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      const json = (await res.json()) as { error?: string; stampedCount?: number };
+      if (!res.ok) {
+        setGapAllState({ kind: "error", message: json.error ?? `Failed (${res.status})` });
+        return;
+      }
+      setGapAllState({
+        kind: "success",
+        message: `Attributed ${json.stampedCount ?? 0} orders. They now show in the Owed report.`,
+      });
+      setTimeout(() => {
+        void loadGap();
+        void loadOwed();
+        void loadRoster();
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setGapAllState({ kind: "error", message: "Network error." });
     }
   };
 
@@ -905,6 +1269,8 @@ export default function AdminAffiliatesPage() {
         ) : null}
       </div>
 
+      <TaxTasksBanner onChanged={loadRoster} />
+
       <nav className="flex flex-wrap gap-2 border-b border-slate-200">
         {tabs.map((t) => {
           const active = tab === t.key;
@@ -955,6 +1321,7 @@ export default function AdminAffiliatesPage() {
           onApprove={(r) => approveUser(r.userId, `${r.name ?? r.email ?? r.userId}`)}
           onReject={(r) => rejectUser(r.userId, r.name ?? r.email ?? r.userId)}
           onGenerateCode={onGenerateCode}
+          onSetCustomCode={onSetCustomCode}
           onEmailResources={onEmailResources}
         />
       ) : null}
@@ -1121,7 +1488,13 @@ export default function AdminAffiliatesPage() {
         </div>
       ) : null}
 
-      {tab === "credit" ? <CreditReferralTab affiliates={creditableAffiliates} /> : null}
+      {tab === "credit" ? (
+        <CreditReferralTab
+          affiliates={creditableAffiliates}
+          initialCustomer={creditCustomer}
+          initialCode={creditCode}
+        />
+      ) : null}
 
       {tab === "owed" ? (
         <section className="space-y-4">
@@ -1137,9 +1510,190 @@ export default function AdminAffiliatesPage() {
               order value, or the affiliate&apos;s custom rate). Click{" "}
               <strong>Disburse via PayPal</strong> to pay directly: the exact amount is recomputed at
               send, and it requires a verified tax form and a PayPal email on file. Orders are marked
-              reconciled only once PayPal confirms the payout succeeded. Use{" "}
-              <strong>Mark paid manually</strong> only if you paid the affiliate some other way.
+              reconciled only once PayPal confirms the payout succeeded. If you already paid an
+              affiliate out-of-band, use <strong>Record manual payout</strong> to log the cleared
+              &quot;payable now&quot; slice (annual orders keep vesting). <strong>Force-reconcile all
+              orders</strong> is a break-glass that marks the entire owed balance paid: rarely what
+              you want.
             </p>
+          </div>
+
+          {/* Auto-pay arming: pay eligible affiliates automatically each month. */}
+          {autopayLoaded ? (
+            <div
+              className={`rounded-2xl border p-4 sm:p-5 shadow-sm ${
+                autopayArmed ? "border-emerald-300 bg-emerald-50/60" : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Monthly auto-pay{" "}
+                    <span
+                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        autopayArmed
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {autopayArmed ? "Armed" : "Shadow (preview only)"}
+                    </span>
+                  </p>
+                  <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                    When armed, on the 1st of each month the system pays every eligible affiliate
+                    (verified tax form + PayPal, over $10) their cleared commission via PayPal, and
+                    emails you a summary. Amounts over{" "}
+                    <strong>{formatUsd(autopayCapCents)}</strong> still wait for your manual Disburse.
+                    In shadow mode it emails you a preview but sends no money.
+                    {autopayEnvForced
+                      ? " (Locked on by an environment variable.)"
+                      : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autopayArmed}
+                  disabled={autopaySaving || autopayEnvForced}
+                  onClick={() => onToggleAutopay(!autopayArmed)}
+                  className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                    autopayArmed ? "bg-emerald-500" : "bg-slate-300"
+                  }`}
+                  title={autopayEnvForced ? "Locked on by an environment variable" : "Toggle auto-pay"}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                      autopayArmed ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Attribution gap: referred conversions whose orders were never stamped. */}
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                  Attribution gap
+                </p>
+                <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                  Referred conversions not yet attributed
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  These are paid customers an affiliate referred (from their signup link) whose orders
+                  were never stamped, so they do not yet appear above. Attribute them to credit the
+                  affiliate their {""}
+                  full rate and move the orders into the Owed report. Verify before paying: an old or
+                  partial refund may not be reflected here.
+                </p>
+              </div>
+              {gap.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={onAttributeGapAll}
+                  disabled={gapAllState.kind === "working"}
+                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60"
+                >
+                  {gapAllState.kind === "working" ? "Working…" : "Attribute all"}
+                </button>
+              ) : null}
+            </div>
+
+            {gapAllState.kind === "success" ? (
+              <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                {gapAllState.message}
+              </p>
+            ) : null}
+            {gapAllState.kind === "error" ? (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {gapAllState.message}
+              </p>
+            ) : null}
+
+            {gapLoading ? (
+              <div className="mt-4 h-16 animate-pulse rounded-xl border border-amber-200 bg-white/70" />
+            ) : gapError ? (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                {gapError}
+              </div>
+            ) : gap.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-white/70 p-4 text-center text-sm text-slate-500">
+                No unattributed referred conversions. Every referred paid order is accounted for. ✨
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {gap.map((aff) => {
+                  const state = gapRow[aff.userId] ?? { kind: "idle" };
+                  const working = state.kind === "working";
+                  const currency = aff.orders[0]?.currency ?? null;
+                  return (
+                    <li
+                      key={aff.userId}
+                      className="rounded-xl border border-amber-200 bg-white/80 p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 break-words">
+                            {aff.fullName ?? "(no name)"}
+                          </p>
+                          <p className="text-xs text-slate-500 break-all">
+                            {aff.email ?? "(no email)"}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
+                            {aff.orderCount} order{aff.orderCount === 1 ? "" : "s"} ·{" "}
+                            {formatCents(aff.grossCents, currency)} gross · {aff.ratePercent}% rate
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <p className="text-base font-bold text-amber-700">
+                            {formatCents(aff.owedCents, currency)} would be owed
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => onAttributeGap(aff)}
+                            disabled={working}
+                            className="rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+                          >
+                            {working ? "Working…" : "Attribute"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
+                          {aff.orderCount} unattributed order{aff.orderCount === 1 ? "" : "s"}
+                        </summary>
+                        <ul className="mt-2 space-y-1 rounded-lg bg-amber-50/70 p-3 text-xs text-slate-600">
+                          {aff.orders.map((o) => (
+                            <li key={o.lsOrderId} className="flex flex-wrap justify-between gap-2">
+                              <span className="break-all">Order {o.lsOrderId}</span>
+                              <span>
+                                {formatCents(o.totalCents, o.currency)}
+                                {o.createdAt ? ` · ${formatDate(o.createdAt)}` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+
+                      {state.kind === "success" ? (
+                        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                          {state.message}
+                        </p>
+                      ) : null}
+                      {state.kind === "error" ? (
+                        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                          {state.message}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           {owedLoading ? (
@@ -1180,6 +1734,22 @@ export default function AdminAffiliatesPage() {
                         <p className="text-lg font-bold text-indigo-700">
                           {formatCents(aff.owedCents, currency)} owed
                         </p>
+                        {typeof aff.payableCents === "number" ? (
+                          <p className="-mt-1 text-xs text-slate-500">
+                            {formatCents(aff.payableCents, currency)} payable now
+                            {aff.clearingCents && aff.clearingCents > 0
+                              ? ` · ${formatCents(aff.clearingCents, currency)} clearing`
+                              : ""}
+                          </p>
+                        ) : null}
+                        {aff.payableCents && aff.payableCents > 0 ? (
+                          <p className="-mt-1 text-[11px] text-slate-400">
+                            Paying by hand? Send{" "}
+                            {formatCents(grossUpForPayPalGs(aff.payableCents), currency)} via PayPal
+                            goods &amp; services so they net{" "}
+                            {formatCents(aff.payableCents, currency)}.
+                          </p>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => onDisburse(aff)}
@@ -1188,13 +1758,23 @@ export default function AdminAffiliatesPage() {
                         >
                           {working ? "Working…" : "Disburse via PayPal"}
                         </button>
+                        {aff.payableCents && aff.payableCents > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => onRecordManualPayout(aff)}
+                            disabled={working}
+                            className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Record manual payout
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => onMarkPaid(aff)}
                           disabled={working}
-                          className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                          className="text-[11px] font-medium text-slate-400 underline decoration-dotted underline-offset-2 transition hover:text-red-600 disabled:opacity-60"
                         >
-                          Mark paid manually
+                          Force-reconcile all orders
                         </button>
                       </div>
                     </div>
@@ -1261,6 +1841,7 @@ function RosterTab({
   onApprove,
   onReject,
   onGenerateCode,
+  onSetCustomCode,
   onEmailResources,
 }: {
   loading: boolean;
@@ -1286,6 +1867,7 @@ function RosterTab({
   onApprove: (row: RosterRow) => void;
   onReject: (row: RosterRow) => void;
   onGenerateCode: (row: RosterRow) => void;
+  onSetCustomCode: (row: RosterRow) => void;
   onEmailResources: (row: RosterRow) => void;
 }) {
   return (
@@ -1321,8 +1903,8 @@ function RosterTab({
 
       {!lsAvailable && !loading ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Lemon Squeezy earnings are unavailable right now, so money columns show &quot;-&quot;.
-          Everything else is up to date.
+          Lemon Squeezy link status is unavailable right now, so the Linked/Unlinked badges may be
+          stale. Earnings are computed from our own orders and are unaffected.
         </div>
       ) : null}
 
@@ -1467,6 +2049,16 @@ function RosterTab({
                                   : "Generate code"}
                             </button>
                           ) : null}
+                          {r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate) ? (
+                            <button
+                              type="button"
+                              onClick={() => onSetCustomCode(r)}
+                              disabled={gen.kind === "working"}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
+                            >
+                              Set custom code
+                            </button>
+                          ) : null}
                           {gen.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{gen.message}</span>
                           ) : gen.kind === "error" ? (
@@ -1504,8 +2096,11 @@ function RosterTab({
       )}
 
       <p className="text-xs text-slate-400">
-        Paid out is derived as total earned minus unpaid balance from Lemon Squeezy. LS does not
-        expose an exact last-payout date, so amounts are shown instead of a date.
+        Earnings are computed from our own referred orders (self-hosted program), not Lemon Squeezy.
+        Total earned is the full promised rate on every referred order; Owed is what is still
+        outstanding (plus any make-whole adjustments); Paid out is total earned minus owed. See the
+        Owed and Payouts tabs to pay, and the Attribution gap section under Owed for referred
+        conversions whose orders were never attributed.
       </p>
     </div>
   );

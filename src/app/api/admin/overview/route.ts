@@ -16,6 +16,7 @@
 import { NextResponse } from "next/server";
 import { resolveActor, createAdminClient, type Actor } from "@/lib/admin";
 import type { PermissionKey } from "@/lib/permissions";
+import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,7 +88,7 @@ export async function GET(request: Request) {
           SUBSCRIPTION_STATUSES.map(async (status) => {
             const n = await safeCount(supabase, "subscriptions", (b) => {
               let q = b.eq("status", status);
-              // The Daily Deals add-on creates extra subscription rows; keep the
+              // The Deals add-on creates extra subscription rows; keep the
               // headline "active" count to real plans when the variant is known.
               if (status === "active" && addonVariant) q = q.neq("ls_variant_id", addonVariant);
               return q;
@@ -107,20 +108,24 @@ export async function GET(request: Request) {
           b.gte("created_at", startOfMonth),
         );
 
-        // Trial-to-paid conversion over trials that started 3-90 days ago
-        // (younger trials have not finished yet). Needs trial_converted_at,
-        // which arrives with the 20260704_trial_conversion_capture migration:
-        // until it is applied in prod these counts error and the tile shows n/a.
+        // Trial-to-paid conversion over trials that started between 90 days ago
+        // and one full trial-length ago, so only FINISHED trials count (a trial
+        // younger than TRIAL_LENGTH_DAYS is still running and would understate
+        // the rate). Needs trial_converted_at, which arrives with the
+        // 20260704_trial_conversion_capture migration: until it is applied in
+        // prod these counts error and the tile shows n/a.
         const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-        const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+        const trialMaturityCutoff = new Date(
+          now.getTime() - TRIAL_LENGTH_DAYS * 24 * 60 * 60 * 1000,
+        ).toISOString();
         const cohort = await safeCount(supabase, "subscriptions", (b) =>
-          b.not("trial_started_at", "is", null).gte("trial_started_at", ninetyDaysAgo).lte("trial_started_at", threeDaysAgo),
+          b.not("trial_started_at", "is", null).gte("trial_started_at", ninetyDaysAgo).lte("trial_started_at", trialMaturityCutoff),
         );
         const converted = await safeCount(supabase, "subscriptions", (b) =>
           b
             .not("trial_started_at", "is", null)
             .gte("trial_started_at", ninetyDaysAgo)
-            .lte("trial_started_at", threeDaysAgo)
+            .lte("trial_started_at", trialMaturityCutoff)
             .not("trial_converted_at", "is", null),
         );
         const conversionRate =
@@ -167,6 +172,18 @@ export async function GET(request: Request) {
           safeCount(supabase, "community_answers", (b) => b.eq("status", "pending")),
         ]);
         body.pendingCommunity = q === null && a === null ? null : (q ?? 0) + (a ?? 0);
+      })(),
+    );
+  }
+
+  if (hasPerm(actor, "support.view")) {
+    jobs.push(
+      (async () => {
+        // New (untriaged) Chrome-extension feedback. Null until the
+        // 20260708_extension_feedback migration is applied in prod.
+        body.newExtensionFeedback = await safeCount(supabase, "extension_feedback", (b) =>
+          b.eq("status", "new"),
+        );
       })(),
     );
   }

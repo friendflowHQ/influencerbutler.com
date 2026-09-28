@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
 import type { ShortcutDef } from "@/hooks/useKeyboardShortcuts";
@@ -45,11 +45,12 @@ function ShortcutGroup({ category, shortcuts }: { category: string; shortcuts: S
 
 export default function ShortcutHelpOverlay() {
   const { isHelpOpen, setHelpOpen, shortcuts } = useKeyboardShortcutsContext();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // false on the server render, true after hydration (createPortal needs the DOM).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   if (!mounted || !isHelpOpen) return null;
 
