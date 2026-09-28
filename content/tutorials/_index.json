@@ -814,6 +814,14 @@
       "summary": "Beta workspace: the panel is a preview and nothing posts to Pinterest yet. What the pin engine will do once it is wired up, what you can do today, and how to follow the rollout.",
       "order": 999,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "shopping-butler",
+      "title": "Shopping Butler: find the best product to buy or feature across Amazon and Walmart",
+      "category": "Amazon",
+      "summary": "Type what you are shopping for and Shopping Butler searches Amazon and Walmart, then ranks the results by price, product quality, the commission you would earn, and how crowded each product already is with creator videos.",
+      "order": 34,
+      "locales": ["en-US", "es-ES", "fr-FR"]
     }
   ]
 }
