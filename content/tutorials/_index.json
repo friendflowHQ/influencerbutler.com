@@ -297,9 +297,9 @@
     },
     {
       "id": "deals-guided-setup",
-      "title": "Guided Setup: let Butler configure deal posting for you",
+      "title": "Set up deal posting: the 3-step Quickstart",
       "category": "Amazon",
-      "summary": "Answer a few questions and Butler writes the Deals Butler settings for you: keywords, your post template, your destinations, and the posting schedule.",
+      "summary": "The fastest way to start posting Amazon deals to your Facebook group: connect your group, pick a niche, press Start. Or use Advanced setup for Walmart, more destinations, and finer control.",
       "order": 71,
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
