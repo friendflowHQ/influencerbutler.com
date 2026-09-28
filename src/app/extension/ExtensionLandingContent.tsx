@@ -319,6 +319,73 @@ export default function ExtensionLandingContent() {
         </div>
       </section>
 
+      {/* Panel screenshots: the on-page money panel, top to bottom */}
+      <section className="border-y border-slate-200 bg-slate-50 py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+            See it on the page
+          </p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            The whole money panel, right where you shop.
+          </h2>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
+            One floating panel on every Amazon product page, from your deep link and Product
+            Snapshot at the top, through the video competition, down to the break-even math at the
+            bottom. No tab-switching, no separate dashboard, no throttling.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                src: "/assets/extension/extension_panel_3_link_and_snapshot.png",
+                width: 295,
+                height: 670,
+                title: "Deep link and Product Snapshot",
+                alt: "The top of the extension panel: the deep-link tools (Copy my link, Draft caption and voiceover), then the Product Snapshot with category, rank, and live commission from SiteStripe, Creator Connections availability, and price history with estimated monthly units and revenue",
+                caption:
+                  "Your tagged link, live commission from SiteStripe, Creator Connections status, and price history.",
+              },
+              {
+                src: "/assets/extension/extension_panel_1_video_landscape.png",
+                width: 295,
+                height: 667,
+                title: "Video Landscape and Butler Approved",
+                alt: "The middle of the extension panel: the Video Landscape (how many creators you would compete with, known and currently placed videos, unique and repeat creators), the content mix by creator type, and the Butler Approved criteria",
+                caption:
+                  "Who you would compete with, the content mix by creator type, and the pass or fail Butler Approved criteria.",
+              },
+              {
+                src: "/assets/extension/extension_panel_2_break_even.png",
+                width: 292,
+                height: 671,
+                title: "Break-even math",
+                alt: "The bottom of the extension panel: the break-even math (purchase price and time to earn back, the sales and views needed, profit per month and per filming minute) and the Send to your Butler app buttons",
+                caption:
+                  "Sales and views to earn back your time, profit per filming minute, and one tap to send it to a butler.",
+              },
+            ].map((shot) => (
+              <figure
+                key={shot.title}
+                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                  <Image
+                    src={shot.src}
+                    alt={shot.alt}
+                    width={shot.width}
+                    height={shot.height}
+                    className="mx-auto h-auto w-full max-w-[280px]"
+                  />
+                </div>
+                <figcaption className="mt-4">
+                  <p className="text-sm font-semibold text-slate-900">{shot.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{shot.caption}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Tools, grouped */}
       <section className="mx-auto max-w-6xl px-6 py-20" id="tools">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">The toolkit</p>
