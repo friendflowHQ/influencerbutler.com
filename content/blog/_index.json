@@ -2185,6 +2185,62 @@
       "imageAlt": "Illustration of a wave of new visitors with some choosing to stay and follow",
       "imagePrompt": "a wave of new visitors arriving with a few of them choosing to stay and follow, a keep-them mood, warm and welcoming",
       "order": 217
+    },
+    {
+      "id": "reload-videos-amazon-repost-walmart",
+      "title": "Give Every Video a Second Life: Reload on Amazon, Repost to Walmart",
+      "category": "Amazon",
+      "summary": "You filmed those videos once. Two Pro butlers put them back to work: Video Reload Butler gives them a fresh run across Amazon marketplaces, and Walmart's Video Repost copies them to your Walmart storefront. No re-filming.",
+      "date": "2026-09-24",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "video reload butler, repost amazon videos, walmart video repost, reupload storefront videos, amazon marketplaces videos, reuse creator videos",
+      "image": "/assets/blog/reload-videos-amazon-repost-walmart.png",
+      "imageAlt": "Illustration of one video clip being copied into several storefront screens across different regions",
+      "imagePrompt": "a single video clip duplicating into several storefront screens spread across a simple world map, one source many destinations, a second-life feeling",
+      "order": 218
+    },
+    {
+      "id": "reload-photos-amazon-repost-walmart",
+      "title": "Your Storefront Photos Can Sell in More Places: Reload and Repost",
+      "category": "Amazon",
+      "summary": "Shoppable photos are your fastest content, and most of them live in exactly one place. Photo Reload Butler fans them out to more Amazon marketplaces, and Walmart's Photo Repost copies them to your Walmart storefront.",
+      "date": "2026-09-25",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "photo reload butler, repost amazon photos, walmart photo repost, shoppable photos, amazon storefront photos, reuse creator photos",
+      "image": "/assets/blog/reload-photos-amazon-repost-walmart.png",
+      "imageAlt": "Illustration of a single product photo fanning out into several storefront tiles across regions",
+      "imagePrompt": "a single product photo fanning out into several storefront tiles arranged across a few country flags, multiplying reach, clean and bright",
+      "order": 219
+    },
+    {
+      "id": "amazon-storefront-to-youtube-butler",
+      "title": "Turn Your Amazon Storefront Into a YouTube Channel Without Re-Editing",
+      "category": "Growth",
+      "summary": "Every shoppable video on your Amazon storefront could be earning on YouTube too. YouTube Butler uploads them for you as videos or Shorts, with affiliate links and thumbnails, on a daily schedule.",
+      "date": "2026-09-26",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "youtube butler, amazon videos to youtube, upload shoppable videos youtube, youtube shorts affiliate, repurpose amazon storefront, creator youtube automation",
+      "image": "/assets/blog/amazon-storefront-to-youtube-butler.png",
+      "imageAlt": "Illustration of an Amazon storefront of videos flowing onto a YouTube-style channel feed automatically",
+      "imagePrompt": "a storefront grid of video tiles flowing along a conveyor onto a video-channel feed, hands-off and automated, bright and friendly",
+      "order": 220
+    },
+    {
+      "id": "youtube-butler-creator-connections",
+      "title": "Let YouTube Butler Accept Your Creator Connections Deals While It Uploads",
+      "category": "Amazon",
+      "summary": "YouTube Butler does not just post your videos to YouTube. With one toggle it checks each product for an open Creator Connections or SPCC campaign, accepts it, and submits your new YouTube link as the content.",
+      "date": "2026-09-27",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "youtube butler creator connections, submit youtube link creator connections, spcc campaigns, amazon creator connections automation, youtube status chip, upload to youtube extension",
+      "image": "/assets/blog/youtube-butler-creator-connections.png",
+      "imageAlt": "Illustration of a video uploading while a campaign-accepted checkmark badge appears beside it",
+      "imagePrompt": "a video uploading with a green checkmark campaign badge appearing beside it, two wins happening at once, confident and clean",
+      "order": 221
     }
   ]
 }
