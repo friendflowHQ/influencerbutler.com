@@ -48,10 +48,17 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
   scheduleRow.append(scheduleBtn);
   section.append(scheduleRow);
 
-  void Promise.all([
-    sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }),
-    sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
-  ]).then(([hud, auth]) => {
+  // The section used to render its connect state exactly once, from the very
+  // first probe of the page load. That probe can fail while the background
+  // worker is still waking up, so a healthy, paired app got stuck on the
+  // "isn't responding, reload this page" hint forever (while the header's
+  // Synced chip, which re-polls, went green seconds later). Re-check on a
+  // timer and re-render whenever the state actually changes; polling stops
+  // once the app is connected or the panel leaves the DOM.
+  type ConnectState = "needs-pairing" | "connected" | "reconnect" | "upsell";
+  let lastState: ConnectState | "" = "";
+  const apply = (hud: HudStatus, auth: AuthStatus): ConnectState => {
+    let state: ConnectState;
     if (hud.connected && hud.paired === false) {
       // App running but this extension was never paired to it. Every command
       // would come back needsPairing, and the only place that showed was a
@@ -60,19 +67,59 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
       // Collab Butler, and Generate AI photo alike). Say it up front instead.
       // Explicit === false so an older background that omits `paired` keeps the
       // previous behavior rather than being treated as unpaired.
-      renderNeedsPairing(body, status);
+      state = "needs-pairing";
     } else if (hud.connected) {
-      renderConnected(body, status, product, hud, signals.brand, opts);
+      state = "connected";
     } else if (hud.paired) {
       // Already installed and paired, but the local bridge did not answer this
       // time (app closed, still starting, or its port is blocked). Pitching the
       // download here reads as broken, so show a reconnect hint instead.
+      state = "reconnect";
+    } else {
+      state = "upsell";
+    }
+    if (state === lastState) return state;
+    lastState = state;
+    if (state === "needs-pairing") {
+      renderNeedsPairing(body, status);
+    } else if (state === "connected") {
+      renderConnected(body, status, product, hud, signals.brand, opts);
+    } else if (state === "reconnect") {
       renderReconnect(body, status);
     } else {
       renderUpsell(body, auth);
     }
-  });
+    return state;
+  };
+
+  const check = (force: boolean): Promise<ConnectState> =>
+    Promise.all([
+      sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS", force }),
+      sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
+    ]).then(([hud, auth]) => apply(hud, auth));
+
+  void check(false)
+    .catch((): "" => "")
+    .then((state) => {
+      if (state === "connected") return;
+      const timer = setInterval(() => {
+        if (!body.isConnected) {
+          clearInterval(timer);
+          return;
+        }
+        void check(true)
+          .then((s) => {
+            if (s === "connected") clearInterval(timer);
+          })
+          .catch(() => {});
+      }, RECONNECT_POLL_MS);
+    });
 }
+
+// How often the section re-checks for the app while it is not connected. The
+// forced probe bypasses the background's status cache, so each tick is a real
+// answer; 10s keeps the recovery snappy without hammering the loopback bridge.
+const RECONNECT_POLL_MS = 10_000;
 
 // The app is reachable but unpaired: show the pairing instruction in place of
 // the action buttons, so the user learns it before clicking rather than after.

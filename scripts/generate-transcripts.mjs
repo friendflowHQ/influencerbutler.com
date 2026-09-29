@@ -1,0 +1,146 @@
+// Regenerates content/tutorials/_transcripts.json from the desktop app repo's
+// tutorial-video narration scripts, and refreshes stale videoIds in
+// content/tutorials/_videos.json from the desktop help-videos manifest.
+//
+// The walkthrough videos are AI-narrated from tutorials/scripts/<tool>.json in
+// the desktop repo, so the beat narrations ARE the spoken words: joining them
+// gives an exact transcript. Transcripts are keyed by YouTube videoId, so the
+// tutorial renderer (src/lib/tutorials.ts) can attach one to any @youtube()
+// embed regardless of which tutorial it appears in. This is an accessibility
+// requirement (WCAG 1.2 media alternatives): every walkthrough gets a
+// readable transcript on its help page.
+//
+// Run via `node scripts/generate-transcripts.mjs` after publishing new
+// walkthroughs. Set IB_APP_REPO_PATH if the desktop repo is not the sibling
+// `InfluencerButler` folder.
+import { readFile, writeFile, readdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+const contentDir = path.join(repoRoot, "content", "tutorials");
+const appRepo =
+  process.env.IB_APP_REPO_PATH || path.resolve(repoRoot, "..", "InfluencerButler");
+
+const videosPath = path.join(contentDir, "_videos.json");
+const transcriptsPath = path.join(contentDir, "_transcripts.json");
+
+async function readJson(file) {
+  return JSON.parse(await readFile(file, "utf8"));
+}
+
+async function main() {
+  if (!existsSync(appRepo)) {
+    console.error(`Desktop repo not found at ${appRepo}; set IB_APP_REPO_PATH.`);
+    process.exit(1);
+  }
+
+  const videosDoc = await readJson(videosPath);
+  const videos = videosDoc.videos || {};
+
+  // 1) Refresh stale videoIds: the desktop help-videos manifest is the source
+  //    of truth for which upload is current (videos get re-published under new
+  //    ids; the old id keeps working only if the old upload was left up).
+  const manifest = await readJson(
+    path.join(appRepo, "workspaces", "help", "help-videos.json"),
+  );
+  //    Manifest keys and website tutorial ids sometimes differ only by
+  //    dashes ("orders-butler" vs "ordersbutler"), so match on a dashless
+  //    normalization too.
+  const manifestByKey = new Map();
+  for (const [key, entry] of Object.entries(manifest.videos || {})) {
+    if (entry && entry.videoId) {
+      manifestByKey.set(key, entry.videoId);
+      manifestByKey.set(key.replace(/-/g, ""), entry.videoId);
+    }
+  }
+  let refreshed = 0;
+  for (const tid of Object.keys(videos)) {
+    const currentId = manifestByKey.get(tid) || manifestByKey.get(tid.replace(/-/g, ""));
+    if (currentId && videos[tid] !== currentId) {
+      console.log(`refresh ${tid}: ${videos[tid]} -> ${currentId}`);
+      videos[tid] = currentId;
+      refreshed += 1;
+    }
+  }
+
+  // 2) Map every published videoId -> its script name via the per-tool
+  //    <tool>.youtube-id.json files (folder/script names differ from the help
+  //    manifest keys, e.g. "ordersbutler" vs "orders-butler").
+  const outDir = path.join(appRepo, "tutorials", "out");
+  const vidToTool = new Map();
+  for (const folder of await readdir(outDir, { withFileTypes: true })) {
+    if (!folder.isDirectory()) continue;
+    const idFile = path.join(outDir, folder.name, `${folder.name}.youtube-id.json`);
+    if (!existsSync(idFile)) continue;
+    try {
+      const d = await readJson(idFile);
+      if (d.videoId && d.tool) vidToTool.set(d.videoId, d.tool);
+    } catch {
+      // Ignore malformed metadata; the video just won't get a transcript.
+    }
+  }
+
+  // 3) Build one transcript per referenced videoId from the script's beats.
+  const transcripts = {};
+  const missing = [];
+  for (const [tid, vid] of Object.entries(videos)) {
+    if (transcripts[vid]) continue;
+    const tool = vidToTool.get(vid);
+    const scriptPath = tool
+      ? path.join(appRepo, "tutorials", "scripts", `${tool}.json`)
+      : null;
+    if (!scriptPath || !existsSync(scriptPath)) {
+      missing.push(`${tid} (${vid})`);
+      continue;
+    }
+    const script = await readJson(scriptPath);
+    const paragraphs = [];
+    for (const beat of script.beats || []) {
+      const text = (beat.narration || "").trim();
+      if (!text) continue;
+      paragraphs.push({ heading: (beat.caption || "").trim(), text });
+    }
+    if (!paragraphs.length) {
+      missing.push(`${tid} (${vid}): script has no narration`);
+      continue;
+    }
+    transcripts[vid] = {
+      tool,
+      title: (script.youtube && script.youtube.title) || script.title || tool,
+      language: "en",
+      paragraphs,
+    };
+  }
+
+  await writeFile(
+    transcriptsPath,
+    JSON.stringify(
+      {
+        _note:
+          "YouTube videoId -> spoken transcript of the AI-narrated walkthrough. Generated by scripts/generate-transcripts.mjs from the desktop repo's tutorials/scripts/*.json narration beats. Do not hand-edit; regenerate when walkthroughs change.",
+        transcripts,
+      },
+      null,
+      2,
+    ) + "\n",
+    "utf8",
+  );
+  if (refreshed) {
+    await writeFile(videosPath, JSON.stringify(videosDoc, null, 2) + "\n", "utf8");
+  }
+
+  console.log(
+    `transcripts: ${Object.keys(transcripts).length} written, ${refreshed} videoId(s) refreshed`,
+  );
+  if (missing.length) {
+    console.warn(`no transcript for: ${missing.join(", ")}`);
+  }
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

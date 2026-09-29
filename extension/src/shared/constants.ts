@@ -314,6 +314,11 @@ export const UI_PREFIX = "ib-ext";
 export const BRIDGE_PORTS = [48620, 48621, 48622] as const;
 export const BRIDGE_PROBE_TIMEOUT_MS = 700;
 export const BRIDGE_STATUS_TTL_MS = 15_000;
+// A failed probe is cached much shorter than a successful one: the first probe
+// of a page load can lose its 700ms race while the service worker is still
+// waking up, and caching that miss for the full TTL made every status reader
+// on the page report "app not running" for 15s even though the app was fine.
+export const BRIDGE_STATUS_FAIL_TTL_MS = 2_500;
 
 // Where to send someone who needs the app. Trial link is tracked.
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;

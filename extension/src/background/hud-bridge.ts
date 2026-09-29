@@ -1,6 +1,7 @@
 import {
   BRIDGE_PORTS,
   BRIDGE_PROBE_TIMEOUT_MS,
+  BRIDGE_STATUS_FAIL_TTL_MS,
   BRIDGE_STATUS_TTL_MS,
 } from "../shared/constants";
 import { normalizeCreatorMode } from "../shared/creator-mode";
@@ -88,8 +89,14 @@ export async function getHudStatus(force = false): Promise<HudStatus> {
   // "connected" status is still warm, and a stale paired:false would keep
   // showing the pairing prompt after the user had already paired.
   const paired = !!(await getToken());
-  if (!force && cached && Date.now() - cached.at < BRIDGE_STATUS_TTL_MS) {
-    return { ...cached.status, paired };
+  if (!force && cached) {
+    // A "not connected" answer expires fast: it is often just the page-load
+    // probe losing its 700ms race during service-worker startup, and holding
+    // it for the full TTL kept every surface on the reconnect/upsell path.
+    const ttl = cached.status.connected ? BRIDGE_STATUS_TTL_MS : BRIDGE_STATUS_FAIL_TTL_MS;
+    if (Date.now() - cached.at < ttl) {
+      return { ...cached.status, paired };
+    }
   }
   const status = await probe();
   cached = { status, at: Date.now() };

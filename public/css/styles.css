@@ -1750,7 +1750,7 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   position: absolute;
   top: -100px;
   left: 1rem;
-  z-index: 1000;
+  z-index: 1200;
   padding: 0.6rem 1rem;
   background: var(--brand-700);
   color: #fff;

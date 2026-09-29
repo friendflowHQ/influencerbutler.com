@@ -328,6 +328,7 @@ export default function AffiliatesLandingPage() {
             <a href="/legal/privacy.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Privacy Policy</a>
             <a href="/legal/eula.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">EULA</a>
             <a href="/legal/terms.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Terms of Service</a>
+            <a href="/legal/accessibility" className="text-sm text-slate-500 transition hover:text-[#f97316]">Accessibility</a>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>

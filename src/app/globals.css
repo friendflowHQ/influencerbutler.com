@@ -323,3 +323,36 @@ body {
   border: 0;
   border-radius: 0.5rem;
 }
+
+/* Collapsed text alternative rendered under each walkthrough video. */
+.help-tutorial-body .tutorial-transcript {
+  margin: 0.75rem 0 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.help-tutorial-body .tutorial-transcript summary {
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.help-tutorial-body .tutorial-transcript summary:focus-visible {
+  outline: 2px solid #c2410c;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+.help-tutorial-body .tutorial-transcript-body {
+  padding: 0 1rem 1rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.help-tutorial-body .tutorial-transcript-body p {
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}

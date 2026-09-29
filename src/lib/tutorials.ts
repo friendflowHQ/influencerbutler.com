@@ -60,6 +60,27 @@ async function readVideoMap(): Promise<Record<string, string>> {
   }
 }
 
+export type VideoTranscript = {
+  title?: string;
+  language?: string;
+  paragraphs: { heading?: string; text: string }[];
+};
+
+// YouTube videoId -> spoken transcript of the walkthrough (accessibility:
+// WCAG 1.2 media alternative). Generated into _transcripts.json by
+// scripts/generate-transcripts.mjs from the desktop repo's narration beats.
+async function readTranscripts(): Promise<Record<string, VideoTranscript>> {
+  try {
+    const raw = await readFile(path.join(CONTENT_ROOT, "_transcripts.json"), "utf8");
+    const parsed = JSON.parse(raw) as { transcripts?: Record<string, VideoTranscript> };
+    return parsed && parsed.transcripts && typeof parsed.transcripts === "object"
+      ? parsed.transcripts
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function loadManifest(): Promise<TutorialManifest> {
   if (cachedManifest && Date.now() - cachedManifestAt < MANIFEST_CACHE_MS) {
     return cachedManifest;
@@ -160,7 +181,11 @@ function renderInline(line: string): string {
 // hydrated client-side, never baked into the HTML.
 export function renderMarkdown(
   source: string,
-  opts: { docId?: string; videoTitle?: string } = {},
+  opts: {
+    docId?: string;
+    videoTitle?: string;
+    transcripts?: Record<string, VideoTranscript>;
+  } = {},
 ): string {
   const docId = opts.docId && /^[a-z0-9][a-z0-9-]{0,80}$/i.test(opts.docId) ? opts.docId : "";
   const lines = source.split(/\r?\n/);
@@ -220,8 +245,26 @@ export function renderMarkdown(
       const baseTitle = opts.videoTitle ? `Video: ${opts.videoTitle}` : "Tutorial video";
       const frameTitle = escapeHtml(videoCounter > 1 ? `${baseTitle} (${videoCounter})` : baseTitle);
       out.push(
-        `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="${frameTitle}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
+        `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0&cc_load_policy=1" title="${frameTitle}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
       );
+      // Text alternative for the video: a collapsed transcript right under
+      // the embed. Narration is English regardless of the page locale, so
+      // the block carries its own lang.
+      const transcript = opts.transcripts && opts.transcripts[vid];
+      if (transcript && transcript.paragraphs && transcript.paragraphs.length) {
+        const paras = transcript.paragraphs
+          .map((p) => {
+            const heading = (p.heading || "").trim();
+            const text = escapeHtml((p.text || "").trim());
+            return heading
+              ? `<p><strong>${escapeHtml(heading)}.</strong> ${text}</p>`
+              : `<p>${text}</p>`;
+          })
+          .join("");
+        out.push(
+          `<details class="tutorial-transcript" lang="${escapeHtml(transcript.language || "en")}"><summary>Read the video transcript</summary><div class="tutorial-transcript-body">${paras}</div></details>`,
+        );
+      }
       continue;
     }
     // Task-list item: `- [ ] text {#step-id}` (also accepts `[x]`, which is
@@ -315,6 +358,7 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   const html = renderMarkdown(effectiveBody, {
     docId: id,
     videoTitle: typeof frontmatter.title === "string" ? frontmatter.title : undefined,
+    transcripts: await readTranscripts(),
   });
   return {
     id,
