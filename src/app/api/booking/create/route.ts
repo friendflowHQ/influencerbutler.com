@@ -73,6 +73,18 @@ export async function POST(request: Request) {
     if (m) { joinUrl = m.joinUrl; provider = "google_meet"; meetingId = m.meetingId; }
   }
   if (!joinUrl && cfg.defaultJoinUrl) { joinUrl = cfg.defaultJoinUrl; provider = "manual"; }
+  // Safety net: a confirmed booking with no link is a support ticket waiting to
+  // happen. We still confirm it (never fail a booking over a missing link), but
+  // log why the link chain came up empty and flag it hard in the owner email
+  // (sendOwnerNotification below) so a human attaches one.
+  if (!joinUrl) {
+    console.warn("[booking/create] no join link resolved", JSON.stringify({
+      type,
+      googleConfigured: isGoogleConfigured(),
+      hasRefreshToken: !!cfg.googleRefreshToken,
+      hasDefaultJoinUrl: !!cfg.defaultJoinUrl,
+    }));
+  }
 
   const { data: bookingId, error } = await admin.rpc("book_call", {
     p_user_id: user.id,

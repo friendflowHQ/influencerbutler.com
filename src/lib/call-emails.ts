@@ -130,7 +130,16 @@ export async function sendOwnerNotification(b: BookingEmailData, prepSummary: st
   if (!to) return false;
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";
+  // A booking with no join link is confirmed but the customer has nothing to
+  // join with, so flag it loudly: the subject and a banner make it impossible to
+  // miss, and the owner can attach a link under Scheduling to auto-email the
+  // customer.
+  const noLink = !b.joinUrl;
+  const banner = noLink
+    ? [`ACTION NEEDED: no video link is attached to this booking. Connect Google Calendar or set a default link so links auto-attach, and for this call attach one under Scheduling (the customer is emailed the link automatically when you do).`, ``]
+    : [];
   const body = [
+    ...banner,
     `New ${ct.label.toLowerCase()} booked.`,
     ``,
     `Who: ${b.userName || ""} <${b.userEmail}>`,
@@ -142,7 +151,58 @@ export async function sendOwnerNotification(b: BookingEmailData, prepSummary: st
     ``,
     `Full prep sheet: dashboard > Scheduling.`,
   ].join("\n");
-  return sendResend(to, `[Call booked] ${ct.label} — ${b.userEmail}`, body, "booking_owner_notify");
+  const subject = noLink
+    ? `[Call booked - NO LINK, action needed] ${ct.label}: ${b.userEmail}`
+    : `[Call booked] ${ct.label}: ${b.userEmail}`;
+  return sendResend(to, subject, body, "booking_owner_notify");
+}
+
+/**
+ * Emails the customer the join link after the owner attaches (or fixes) one
+ * post-booking, with an updated .ics (SEQUENCE 1) so the link drops onto the
+ * existing calendar entry. This keeps the confirmation email's "will be emailed
+ * to you shortly" promise, which nothing else fulfils.
+ */
+export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
+  if (!b.joinUrl) return false;
+  const ct = CALL_TYPES[b.callType];
+  const tz = b.userTimezone || "UTC";
+  const body = [
+    `Hi ${firstName(b.userName, b.userEmail)},`,
+    ``,
+    `Here is the join link for your ${ct.label.toLowerCase()}:`,
+    ``,
+    whenLine(b.startMs, b.userEndMs, tz),
+    `Join link: ${b.joinUrl}`,
+    b.topic ? `\nWhat you asked about: ${b.topic}` : "",
+    ``,
+    `An updated calendar invite is attached, so the link will drop onto your calendar entry.`,
+    `Need to change the time? You can reschedule or cancel from your dashboard under Book a Call.`,
+    ``,
+    `Warmly,`,
+    `Your Influencer Butler Team`,
+  ].filter((l) => l !== "").join("\n");
+  const ics = buildIcs({
+    uid: `call-${b.id}@influencerbutler.com`,
+    startMs: b.startMs,
+    endMs: b.userEndMs,
+    summary: `${ct.label} with Influencer Butler`,
+    description: [b.topic ? `Topic: ${b.topic}` : "", `Join: ${b.joinUrl}`].filter(Boolean).join("\n"),
+    location: b.joinUrl,
+    conferenceUrl: b.joinUrl,
+    organizerEmail: ORGANIZER_EMAIL,
+    attendeeEmail: b.userEmail,
+    attendeeName: b.userName || undefined,
+    method: "REQUEST",
+    sequence: 1,
+  });
+  const html = htmlFrom(body, [
+    { phrase: "Book a Call", href: BOOK_URL },
+    { phrase: b.joinUrl, href: b.joinUrl },
+  ]);
+  return sendResend(b.userEmail, `Join link for your ${ct.label.toLowerCase()}`, body, "call_link_attached", [
+    { filename: "invite.ics", content: icsBase64(ics) },
+  ], html);
 }
 
 export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Promise<boolean> {

@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
-import { sendCancellation, sendMissedYou, type BookingEmailData } from "@/lib/call-emails";
+import { sendCancellation, sendMissedYou, sendLinkAttached, type BookingEmailData } from "@/lib/call-emails";
 import { deleteMeetEvent } from "@/lib/google-meet";
 import { stopBot } from "@/lib/recall";
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const { data: booking, error: readErr } = await admin
     .from("call_bookings")
-    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,meeting_provider,meeting_id,recall_bot_id")
+    .select("id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,topic,status,meeting_provider,meeting_id,recall_bot_id")
     .eq("id", id).maybeSingle();
   if (readErr || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -89,6 +89,26 @@ export async function POST(request: Request) {
     if (booking.recall_bot_id) {
       try { await stopBot(booking.recall_bot_id as string); }
       catch (e) { console.error("[scheduling/update] stop bot", e); }
+    }
+  }
+
+  // Attaching a link emails the customer the join link (with an updated .ics),
+  // fulfilling the confirmation email's "will be emailed to you shortly" promise.
+  // Clearing the link (empty value) is a silent DB fix, so we skip the email then.
+  if (action === "link") {
+    const newUrl = String(patch.join_url || "");
+    if (newUrl) {
+      try {
+        const data: BookingEmailData = {
+          id: booking.id as string, callType: booking.call_type as CallTypeKey,
+          userEmail: booking.user_email as string, userName: booking.user_name as string | null,
+          startMs: Date.parse(booking.starts_at as string), userEndMs: Date.parse(booking.user_ends_at as string),
+          userTimezone: booking.user_timezone as string | null,
+          topic: (booking.topic as string | null) ?? null,
+          joinUrl: newUrl,
+        };
+        emailSent = await sendLinkAttached(data);
+      } catch (e) { console.error("[scheduling/update] link email", e); }
     }
   }
 
