@@ -71,7 +71,7 @@ export default async function DownloadingPage({
   const osLabel = OS_LABELS[os] ?? "your device";
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-white text-slate-900">
       <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
         <Link href="/" className="flex items-center gap-2">
           <Image

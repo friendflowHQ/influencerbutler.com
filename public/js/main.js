@@ -16,6 +16,15 @@
     document.head.appendChild(dlg);
   }
 
+  /* ── Screen-reader note on new-tab links ── */
+  // Same injection pattern: one shared script serves every marketing page.
+  if (!window.__ibNewTabLabels) {
+    var ntl = document.createElement("script");
+    ntl.src = "/js/new-tab-labels.js";
+    ntl.defer = true;
+    document.head.appendChild(ntl);
+  }
+
   /* ── Sticky header shadow ── */
   const header = document.getElementById("site-header");
   if (header) {
@@ -49,8 +58,12 @@
   if (tabButtons.length && featureCards.length) {
     tabButtons.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        tabButtons.forEach(function (b) { b.classList.remove("active"); });
+        tabButtons.forEach(function (b) {
+          b.classList.remove("active");
+          b.setAttribute("aria-pressed", "false");
+        });
         btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
         var tab = btn.getAttribute("data-tab");
         featureCards.forEach(function (card) {
           if (tab === "all" || card.getAttribute("data-category") === tab) {

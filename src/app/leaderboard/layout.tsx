@@ -11,7 +11,7 @@ export default function LeaderboardLayout({
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <SiteHeader />
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
       <SiteFooter />
     </div>
   );

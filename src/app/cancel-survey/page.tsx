@@ -13,7 +13,7 @@ export default async function CancelSurveyPage({
 }) {
   const { token } = await searchParams;
   return (
-    <main className="min-h-screen bg-slate-50 px-4 pb-16">
+    <main id="main-content" className="min-h-screen bg-slate-50 px-4 pb-16">
       <CancelSurveyForm token={token ?? ""} />
     </main>
   );

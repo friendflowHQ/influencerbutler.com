@@ -6,7 +6,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <SiteHeader />
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
       <SiteFooter />
     </div>
   );

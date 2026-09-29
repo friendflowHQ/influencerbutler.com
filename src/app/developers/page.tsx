@@ -94,7 +94,7 @@ function CodeBlock({ children }: { children: string }) {
 
 export default function DevelopersPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-white text-slate-900">
       <SiteHeader />
 
       {/* Hero */}

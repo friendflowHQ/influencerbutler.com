@@ -188,6 +188,7 @@
   </script>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
     <!-- ===================== NAVIGATION ===================== -->
     <header id="site-header">
@@ -410,7 +411,7 @@
         })();
     </script>
 
-    <main>
+    <main id="main-content">
         <!-- ===================== HERO ===================== -->
         <section class="hero" id="hero">
             <div class="container hero-grid">
@@ -629,11 +630,11 @@
                 <p class="section-sub">Built by an Amazon Influencer, for creators and influencers. One desktop app plus a free Chrome extension replaces your entire toolkit.</p>
 
                 <div class="feature-tabs">
-                    <button class="tab-btn active" data-tab="all">All <span class="tab-count">42</span></button>
-                    <button class="tab-btn" data-tab="amazon">Amazon Automation</button>
-                    <button class="tab-btn" data-tab="social">Social &amp; Outreach</button>
-                    <button class="tab-btn" data-tab="content">Content &amp; Deals</button>
-                    <button class="tab-btn" data-tab="platform">Platform</button>
+                    <button class="tab-btn active" aria-pressed="true" data-tab="all">All <span class="tab-count">42</span></button>
+                    <button class="tab-btn" aria-pressed="false" data-tab="amazon">Amazon Automation</button>
+                    <button class="tab-btn" aria-pressed="false" data-tab="social">Social &amp; Outreach</button>
+                    <button class="tab-btn" aria-pressed="false" data-tab="content">Content &amp; Deals</button>
+                    <button class="tab-btn" aria-pressed="false" data-tab="platform">Platform</button>
                 </div>
 
                 <!-- ===================== CAPABILITY HIGHLIGHT: CC CHECK ===================== -->

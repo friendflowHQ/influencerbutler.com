@@ -84,7 +84,7 @@ export default async function EventSharePage({
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main-content" className="mx-auto max-w-3xl px-6 py-10">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {event.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

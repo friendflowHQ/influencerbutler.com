@@ -64,7 +64,7 @@ export default async function CourseHubPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-white text-slate-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

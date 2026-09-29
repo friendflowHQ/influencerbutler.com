@@ -113,7 +113,7 @@ export default async function SwitchFluencerFruitPage({
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-white text-slate-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}

@@ -202,7 +202,7 @@ export default function AffiliateApplyPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 py-8 sm:py-12">
+    <main id="main-content" className="min-h-screen bg-slate-50 py-8 sm:py-12">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <Link
           href="/affiliates"
@@ -463,13 +463,22 @@ function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  // Wrapping the control inside the <label> gives every field an accessible
+  // name (the previous sibling <label> had no htmlFor, so screen readers read
+  // the inputs as unlabeled).
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700">
-        {label}
-        {required ? <span className="ml-1 text-[#f97316]">*</span> : null}
+      <label className="block">
+        <span className="block text-sm font-medium text-slate-700">
+          {label}
+          {required ? (
+            <span className="ml-1 text-[#c2410c]" aria-hidden="true">
+              *
+            </span>
+          ) : null}
+        </span>
+        {children}
       </label>
-      {children}
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </div>
   );

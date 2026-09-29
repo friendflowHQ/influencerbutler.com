@@ -45,7 +45,7 @@ export default function GrowTogetherPage() {
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      <main>
+      <main id="main-content">
         {/* Hero */}
         <section className="border-b border-slate-200 bg-gradient-to-b from-orange-50 to-white">
           <div className="mx-auto max-w-4xl px-6 py-16 text-center sm:py-20">

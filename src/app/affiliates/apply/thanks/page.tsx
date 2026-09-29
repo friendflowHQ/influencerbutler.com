@@ -10,7 +10,7 @@ export default async function AffiliateThanksPage({ searchParams }: ThanksPagePr
   const requiresEmailConfirmation = confirm === "1";
 
   return (
-    <main className="min-h-screen bg-slate-50 py-16">
+    <main id="main-content" className="min-h-screen bg-slate-50 py-16">
       <div className="mx-auto max-w-xl px-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f97316]/10">

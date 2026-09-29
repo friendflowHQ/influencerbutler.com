@@ -13,7 +13,7 @@ export default async function ExtensionFeedbackPage({
 }) {
   const { e, t } = await searchParams;
   return (
-    <main className="min-h-screen bg-slate-50 px-4 pb-16">
+    <main id="main-content" className="min-h-screen bg-slate-50 px-4 pb-16">
       <ExtensionFeedbackForm email={e ?? ""} token={t ?? ""} />
     </main>
   );

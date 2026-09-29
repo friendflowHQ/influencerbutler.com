@@ -27,6 +27,7 @@
     var css = [
       ".ib-zoomable{cursor:zoom-in;transition:transform .18s ease,filter .18s ease}",
       ".ib-zoomable:hover{transform:scale(1.015);filter:brightness(1.03)}",
+      ".ib-zoomable:focus-visible,.ib-lightbox-close:focus-visible{outline:3px solid #fb923c;outline-offset:2px}",
       "@media (prefers-reduced-motion:reduce){.ib-zoomable{transition:none}.ib-zoomable:hover{transform:none}}",
       ".ib-lightbox-backdrop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:2.5vmin;background:rgba(15,23,42,.88);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);cursor:zoom-out;animation:ib-fade-in .15s ease}",
       ".ib-lightbox-img{max-width:92vw;max-height:92vh;width:auto;height:auto;object-fit:contain;border-radius:.5rem;box-shadow:0 25px 50px -12px rgba(0,0,0,.6);cursor:default;animation:ib-zoom-in .15s ease}",
@@ -59,7 +60,20 @@
   // one-time load listener to re-evaluate it then (covers lazy-loaded images
   // below the fold, which start at ~0px).
   function markImage(img) {
-    img.classList.toggle("ib-zoomable", isEligible(img));
+    var eligible = isEligible(img);
+    img.classList.toggle("ib-zoomable", eligible);
+    // Keyboard access: an eligible image acts as a button (Enter/Space opens
+    // it), so it must be focusable and announce itself as one. Only remove
+    // the attributes we added ourselves.
+    if (eligible) {
+      img.setAttribute("tabindex", "0");
+      img.setAttribute("role", "button");
+      img.dataset.ibKeyable = "1";
+    } else if (img.dataset.ibKeyable === "1") {
+      img.removeAttribute("tabindex");
+      img.removeAttribute("role");
+      delete img.dataset.ibKeyable;
+    }
     if (!img.complete && img.dataset.ibWatched !== "1") {
       img.dataset.ibWatched = "1";
       img.addEventListener(
@@ -81,17 +95,34 @@
 
   var backdrop = null;
   var prevOverflow = "";
+  var activeCloseBtn = null;
+  var lastFocused = null;
 
   function closeOverlay() {
     if (!backdrop) return;
     document.removeEventListener("keydown", onKeydown);
     backdrop.remove();
     backdrop = null;
+    activeCloseBtn = null;
     document.body.style.overflow = prevOverflow;
+    // Return focus to the image that opened the overlay.
+    if (lastFocused && typeof lastFocused.focus === "function" && document.contains(lastFocused)) {
+      lastFocused.focus();
+    }
+    lastFocused = null;
   }
 
   function onKeydown(e) {
-    if (e.key === "Escape") closeOverlay();
+    if (e.key === "Escape") {
+      closeOverlay();
+      return;
+    }
+    // The close button is the overlay's only focusable control, so trap Tab
+    // on it instead of letting focus escape to the page underneath.
+    if (e.key === "Tab" && activeCloseBtn) {
+      e.preventDefault();
+      activeCloseBtn.focus();
+    }
   }
 
   function openOverlay(src, alt) {
@@ -127,6 +158,9 @@
     prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeydown);
+    lastFocused = document.activeElement;
+    activeCloseBtn = closeBtn;
+    closeBtn.focus();
   }
 
   // ---- Wiring --------------------------------------------------------------
@@ -138,6 +172,16 @@
     // Validate at click time (not only via the .ib-zoomable class) so a large
     // content image always opens, even if the hover cue was not applied yet
     // (e.g. it finished loading a moment ago).
+    if (!isEligible(target)) return;
+    e.preventDefault();
+    openOverlay(target.currentSrc || target.src, target.alt);
+  }
+
+  function onDocumentKeydown(e) {
+    if (e.defaultPrevented) return;
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var target = e.target;
+    if (!(target instanceof HTMLImageElement)) return;
     if (!isEligible(target)) return;
     e.preventDefault();
     openOverlay(target.currentSrc || target.src, target.alt);
@@ -166,6 +210,7 @@
     }
     window.addEventListener("resize", scheduleRefresh);
     document.addEventListener("click", onDocumentClick);
+    document.addEventListener("keydown", onDocumentKeydown);
   }
 
   if (document.readyState === "loading") {

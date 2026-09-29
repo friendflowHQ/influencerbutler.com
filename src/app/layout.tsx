@@ -57,12 +57,19 @@ export default function RootLayout({
         <Script src="/js/consent.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-[Inter]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-[#c2410c] focus:px-4 focus:py-2 focus:font-semibold focus:text-white"
+        >
+          Skip to main content
+        </a>
         {children}
         <MetaPixel />
         <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
         <Script src="/js/image-lightbox.js" strategy="afterInteractive" />
+        <Script src="/js/new-tab-labels.js" strategy="afterInteractive" />
       </body>
     </html>
   );

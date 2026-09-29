@@ -16,7 +16,7 @@ export default function GrowTogetherGetPage() {
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      <main>
+      <main id="main-content">
         <section className="border-b border-slate-200 bg-gradient-to-b from-orange-50 to-white">
           <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 lg:grid-cols-2 lg:items-center">
             <div>

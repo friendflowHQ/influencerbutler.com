@@ -158,7 +158,10 @@ function renderInline(line: string): string {
 // without it a per-document positional counter (s1, s2, ...) is used.
 // Checkboxes always render unchecked - completion state is user data,
 // hydrated client-side, never baked into the HTML.
-export function renderMarkdown(source: string, opts: { docId?: string } = {}): string {
+export function renderMarkdown(
+  source: string,
+  opts: { docId?: string; videoTitle?: string } = {},
+): string {
   const docId = opts.docId && /^[a-z0-9][a-z0-9-]{0,80}$/i.test(opts.docId) ? opts.docId : "";
   const lines = source.split(/\r?\n/);
   const out: string[] = [];
@@ -166,6 +169,7 @@ export function renderMarkdown(source: string, opts: { docId?: string } = {}): s
   let codeBuf: string[] = [];
   let listType: "ul" | "ol" | "task" | null = null;
   let taskCounter = 0;
+  let videoCounter = 0;
 
   function closeList() {
     if (listType) {
@@ -209,8 +213,14 @@ export function renderMarkdown(source: string, opts: { docId?: string } = {}): s
     if (video) {
       closeList();
       const vid = video[1];
+      // Give each frame a distinct accessible name: screen-reader users land
+      // on 37+ tutorial videos, and identical "Tutorial video" titles make
+      // them indistinguishable.
+      videoCounter += 1;
+      const baseTitle = opts.videoTitle ? `Video: ${opts.videoTitle}` : "Tutorial video";
+      const frameTitle = escapeHtml(videoCounter > 1 ? `${baseTitle} (${videoCounter})` : baseTitle);
       out.push(
-        `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="Tutorial video" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
+        `<div class="tutorial-video"><iframe src="https://www.youtube-nocookie.com/embed/${vid}?rel=0" title="${frameTitle}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`,
       );
       continue;
     }
@@ -302,7 +312,10 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
   if (videoId && !/^@youtube\(/m.test(body)) {
     effectiveBody = `@youtube(${videoId})\n\n${body}`;
   }
-  const html = renderMarkdown(effectiveBody, { docId: id });
+  const html = renderMarkdown(effectiveBody, {
+    docId: id,
+    videoTitle: typeof frontmatter.title === "string" ? frontmatter.title : undefined,
+  });
   return {
     id,
     locale: resolvedLocale,

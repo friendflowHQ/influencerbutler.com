@@ -51,7 +51,7 @@ export default async function TutorialPage({
     : [];
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
@@ -86,6 +86,7 @@ export default async function TutorialPage({
           {summary ? <p className="help-article-lead">{summary}</p> : null}
           <div
             className="help-tutorial-body"
+            lang={tutorial.locale.split("-")[0]}
             dangerouslySetInnerHTML={{ __html: tutorial.html }}
           />
           {seriesId ? (

@@ -45,7 +45,7 @@ export default async function SearchPage({
   const grouped = groupByType(results);
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main id="main-content" className="min-h-screen bg-white text-slate-900">
       <SiteHeader />
 
       <section className="mx-auto max-w-4xl px-6 py-12">
