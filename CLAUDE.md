@@ -38,3 +38,25 @@ Reference embeds already in place:
 
 - Creator API setup (`plZS_nXX-BE`) in `api-integrations` (Watch the walkthrough section).
 - Amazon Deals to Google Worksheet (`gCIw2WNnbWU`) in `deals` (Send deals to a Google Sheet section).
+
+## Accessibility (WCAG 2.1 AA)
+
+The site commits to WCAG 2.1 AA (see `public/legal/accessibility.html`). Keep new
+pages at that bar:
+
+- **Contrast:** brand orange `#f97316` and `orange-500`/`orange-600` fail AA as
+  text on white. Use `--brand-700` / `#c2410c` / `text-orange-700` for orange
+  text and solid orange buttons with white text. Same idea for other accents
+  (emerald buttons use `emerald-700`).
+- **Forms:** every input gets a real label (wrap it in the `<label>` or use
+  `htmlFor`), never a placeholder as the only name.
+- **Keyboard:** anything clickable is a `<button>` or `<a href>`; do not remove
+  focus outlines without an equally visible replacement. Every page keeps the
+  skip link + `id="main-content"` on its main landmark.
+- **Videos:** new walkthrough videos need a transcript. Run
+  `node scripts/generate-transcripts.mjs` after publishing walkthroughs; it
+  rebuilds `content/tutorials/_transcripts.json` from the desktop repo's
+  narration scripts and refreshes stale videoIds.
+- **Check:** with `npm run dev` running, `npm run test:a11y` runs axe-core over
+  the key public pages and fails on serious/critical violations. Run it after
+  touching shared chrome, forms, or colors.

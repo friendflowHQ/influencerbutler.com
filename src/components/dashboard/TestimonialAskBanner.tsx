@@ -66,7 +66,7 @@ export default function TestimonialAskBanner() {
         <div className="flex items-center gap-2">
           <a
             href="/dashboard/feedback"
-            className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+            className="inline-flex items-center justify-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-800"
           >
             Leave a review
           </a>

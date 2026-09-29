@@ -12,7 +12,7 @@ export default async function PricingFeatures() {
     >
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#f97316]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#c2410c]">
             {sectionLabel}
           </p>
           {heading ? (
@@ -35,7 +35,7 @@ export default async function PricingFeatures() {
                 className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#f97316]/40 hover:shadow-md"
               >
                 <span
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#fff7ed] text-[#f97316]"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#fff7ed] text-[#c2410c]"
                   dangerouslySetInnerHTML={{ __html: card.iconSvg }}
                 />
                 <h3 className="mt-4 pr-16 text-base font-semibold text-slate-900">
@@ -48,7 +48,7 @@ export default async function PricingFeatures() {
                   <span
                     className={`absolute right-4 top-4 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                       card.badge.flagship
-                        ? "bg-[#f97316] text-white"
+                        ? "bg-[#c2410c] text-white"
                         : "bg-slate-100 text-slate-700"
                     }`}
                   >

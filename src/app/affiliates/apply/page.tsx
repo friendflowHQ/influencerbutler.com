@@ -206,7 +206,7 @@ export default function AffiliateApplyPage() {
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <Link
           href="/affiliates"
-          className="text-sm font-medium text-slate-500 hover:text-[#f97316]"
+          className="text-sm font-medium text-slate-500 hover:text-[#c2410c]"
         >
           ← Back to affiliate program
         </Link>
@@ -222,7 +222,7 @@ export default function AffiliateApplyPage() {
               priority
             />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c2410c]">
                 Affiliate application
               </p>
               <p className="text-sm text-slate-500">Apply in about 2 minutes.</p>
@@ -395,7 +395,7 @@ export default function AffiliateApplyPage() {
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-1 h-4 w-4 accent-[#f97316]"
+                className="mt-1 h-4 w-4 accent-[#c2410c]"
               />
               <span>
                 I agree to the{" "}
@@ -403,7 +403,7 @@ export default function AffiliateApplyPage() {
                   href="/legal/affiliate-terms"
                   target="_blank"
                   rel="noopener"
-                  className="font-medium text-[#f97316] hover:text-[#ea580c] underline underline-offset-2"
+                  className="font-medium text-[#c2410c] hover:text-[#9a3412] underline underline-offset-2"
                 >
                   Affiliate Program Terms
                 </Link>{" "}
@@ -423,7 +423,7 @@ export default function AffiliateApplyPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-[#f97316] px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c] disabled:opacity-60"
+              className="w-full rounded-xl bg-[#c2410c] px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#9a3412] disabled:opacity-60"
             >
               {loading ? "Submitting..." : "Submit application"}
             </button>
@@ -437,7 +437,7 @@ export default function AffiliateApplyPage() {
               Already approved?{" "}
               <Link
                 href="/login?next=/dashboard/affiliates"
-                className="font-medium text-[#f97316] hover:text-[#ea580c]"
+                className="font-medium text-[#c2410c] hover:text-[#9a3412]"
               >
                 Log in
               </Link>

@@ -263,7 +263,7 @@ function FreeTierBand() {
             <h3 className="text-xl font-semibold tracking-tight text-slate-900">
               {FREE_TIER_NAME}
             </h3>
-            <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+            <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
               $0
             </span>
           </div>
@@ -298,7 +298,7 @@ function FreeTierBand() {
         <div className="flex flex-shrink-0 flex-col gap-2">
           <a
             href="/extension"
-            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
             Get the free tools
           </a>
@@ -361,12 +361,12 @@ function PlanCard(props: PlanCardProps) {
       }`}
     >
       {badge ? (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#f97316] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#c2410c] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
           {badge}
         </span>
       ) : null}
       {saveBadge ? (
-        <span className="absolute -top-3 right-4 rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+        <span className="absolute -top-3 right-4 rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
           {saveBadge}
         </span>
       ) : null}
@@ -380,7 +380,7 @@ function PlanCard(props: PlanCardProps) {
       <div className="mt-6">
         {showDiscount ? (
           <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-base font-medium text-slate-400 line-through">
+            <span className="text-base font-medium text-slate-500 line-through">
               {originalPriceLabel}
             </span>
             <span className="text-4xl font-bold tracking-tight text-slate-900">
@@ -400,7 +400,7 @@ function PlanCard(props: PlanCardProps) {
           </p>
         ) : null}
         {effectiveLabel ? (
-          <p className="mt-1 text-sm font-medium text-[#f97316]">{effectiveLabel}</p>
+          <p className="mt-1 text-sm font-medium text-[#c2410c]">{effectiveLabel}</p>
         ) : null}
         {trialLabel ? <p className="mt-1 text-xs text-slate-500">{trialLabel}</p> : null}
       </div>
@@ -414,7 +414,7 @@ function PlanCard(props: PlanCardProps) {
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"
-              className="mt-0.5 flex-shrink-0 text-[#f97316]"
+              className="mt-0.5 flex-shrink-0 text-[#c2410c]"
             >
               <path
                 d="m5 12 5 5L20 7"
@@ -435,8 +435,8 @@ function PlanCard(props: PlanCardProps) {
             href={ctaHref}
             className={`inline-flex w-full items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
               featured
-                ? "border-transparent bg-[#f97316] text-white hover:bg-[#ea580c]"
-                : "border-slate-300 bg-white text-slate-700 hover:border-[#f97316] hover:text-[#f97316]"
+                ? "border-transparent bg-[#c2410c] text-white hover:bg-[#9a3412]"
+                : "border-slate-300 bg-white text-slate-700 hover:border-[#c2410c] hover:text-[#c2410c]"
             }`}
           >
             {cta}
@@ -448,8 +448,8 @@ function PlanCard(props: PlanCardProps) {
             disabled={loading}
             className={`inline-flex w-full items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
               featured
-                ? "border-transparent bg-[#f97316] text-white hover:bg-[#ea580c]"
-                : "border-slate-300 bg-white text-slate-700 hover:border-[#f97316] hover:text-[#f97316]"
+                ? "border-transparent bg-[#c2410c] text-white hover:bg-[#9a3412]"
+                : "border-slate-300 bg-white text-slate-700 hover:border-[#c2410c] hover:text-[#c2410c]"
             }`}
           >
             {loading ? "Loading…" : cta}
@@ -513,7 +513,7 @@ function ToggleButton({
       onClick={onClick}
       className={`relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition ${
         active
-          ? "bg-[#f97316] text-white shadow-sm"
+          ? "bg-[#c2410c] text-white shadow-sm"
           : "text-slate-600 hover:text-slate-900"
       }`}
     >
@@ -521,7 +521,7 @@ function ToggleButton({
       {badge ? (
         <span
           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-            active ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+            active ? "bg-white text-[#9a3412]" : "bg-emerald-100 text-emerald-700"
           }`}
         >
           {badge}

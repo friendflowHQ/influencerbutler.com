@@ -91,30 +91,30 @@ export default async function PricingPage({
             <span className="text-sm font-semibold tracking-tight">Influencer Butler</span>
           </Link>
           <nav className="flex items-center gap-4 text-sm">
-            <Link href="#features" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="#features" className="hidden text-slate-600 hover:text-[#c2410c] sm:inline">
               Features
             </Link>
-            <Link href="/blog" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="/blog" className="hidden text-slate-600 hover:text-[#c2410c] sm:inline">
               Blog
             </Link>
             <Link
               href="/course/amazon-influencer"
-              className="hidden text-slate-600 hover:text-[#f97316] sm:inline"
+              className="hidden text-slate-600 hover:text-[#c2410c] sm:inline"
             >
               Free Course
             </Link>
-            <Link href="/about" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="/about" className="hidden text-slate-600 hover:text-[#c2410c] sm:inline">
               About
             </Link>
-            <Link href="/download" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="/download" className="hidden text-slate-600 hover:text-[#c2410c] sm:inline">
               Download
             </Link>
-            <Link href="/extension" className="hidden text-slate-600 hover:text-[#f97316] sm:inline">
+            <Link href="/extension" className="hidden text-slate-600 hover:text-[#c2410c] sm:inline">
               Extension
             </Link>
             <Link
               href={signedIn ? "/dashboard" : "/login"}
-              className="font-medium text-slate-700 hover:text-[#f97316]"
+              className="font-medium text-slate-700 hover:text-[#c2410c]"
             >
               {signedIn ? "Dashboard" : "Login"}
             </Link>
@@ -126,7 +126,7 @@ export default async function PricingPage({
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#f97316]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#c2410c]">
             Pricing
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
@@ -161,11 +161,11 @@ export default async function PricingPage({
 
         <p className="mt-6 text-center text-xs text-slate-500">
           By proceeding, you agree to our{" "}
-          <Link href="/legal/terms" className="font-medium text-slate-700 hover:text-[#f97316]">
+          <Link href="/legal/terms" className="font-medium text-slate-700 hover:text-[#c2410c]">
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="/legal/eula" className="font-medium text-slate-700 hover:text-[#f97316]">
+          <Link href="/legal/eula" className="font-medium text-slate-700 hover:text-[#c2410c]">
             EULA
           </Link>
           .
@@ -176,7 +176,7 @@ export default async function PricingPage({
 
       <section id="addons" className="scroll-mt-24 mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#f97316]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#c2410c]">
             Add-ons
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -210,13 +210,13 @@ export default async function PricingPage({
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/daily-deals-workspace"
-                className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#f97316]"
+                className="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#f97316] hover:text-[#c2410c]"
               >
                 Learn more →
               </Link>
               <Link
                 href="/daily-deals-workspace#buy"
-                className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#c2410c] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9a3412]"
               >
                 Buy - $24.99/mo
               </Link>
@@ -270,14 +270,14 @@ function SiteFooter() {
               Product
             </h4>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li><Link href="#features" className="hover:text-[#f97316]">Features</Link></li>
-              <li><Link href="/pricing" className="hover:text-[#f97316]">Pricing</Link></li>
-              <li><Link href="/#how-it-works" className="hover:text-[#f97316]">How It Works</Link></li>
-              <li><Link href="#faq" className="hover:text-[#f97316]">FAQ</Link></li>
-              <li><Link href="/course/amazon-influencer" className="hover:text-[#f97316]">Free Amazon Influencer Course</Link></li>
-              <li><Link href="/affiliates" className="hover:text-[#f97316]">Affiliates - Earn 30%</Link></li>
-              <li><Link href="/download" className="hover:text-[#f97316]">Download the App</Link></li>
-              <li><Link href="/extension" className="hover:text-[#f97316]">Chrome Extension: Free</Link></li>
+              <li><Link href="#features" className="hover:text-[#c2410c]">Features</Link></li>
+              <li><Link href="/pricing" className="hover:text-[#c2410c]">Pricing</Link></li>
+              <li><Link href="/#how-it-works" className="hover:text-[#c2410c]">How It Works</Link></li>
+              <li><Link href="#faq" className="hover:text-[#c2410c]">FAQ</Link></li>
+              <li><Link href="/course/amazon-influencer" className="hover:text-[#c2410c]">Free Amazon Influencer Course</Link></li>
+              <li><Link href="/affiliates" className="hover:text-[#c2410c]">Affiliates - Earn 30%</Link></li>
+              <li><Link href="/download" className="hover:text-[#c2410c]">Download the App</Link></li>
+              <li><Link href="/extension" className="hover:text-[#c2410c]">Chrome Extension: Free</Link></li>
             </ul>
           </div>
 
@@ -286,9 +286,9 @@ function SiteFooter() {
               Legal
             </h4>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li><Link href="/legal/privacy" className="hover:text-[#f97316]">Privacy Policy</Link></li>
-              <li><Link href="/legal/eula" className="hover:text-[#f97316]">EULA</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-[#f97316]">Terms of Service</Link></li>
+              <li><Link href="/legal/privacy" className="hover:text-[#c2410c]">Privacy Policy</Link></li>
+              <li><Link href="/legal/eula" className="hover:text-[#c2410c]">EULA</Link></li>
+              <li><Link href="/legal/terms" className="hover:text-[#c2410c]">Terms of Service</Link></li>
             </ul>
           </div>
 
@@ -297,8 +297,8 @@ function SiteFooter() {
               Support
             </h4>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li><Link href="/contact" className="hover:text-[#f97316]">Contact Us</Link></li>
-              <li><Link href="/dashboard" className="hover:text-[#f97316]">My Account</Link></li>
+              <li><Link href="/contact" className="hover:text-[#c2410c]">Contact Us</Link></li>
+              <li><Link href="/dashboard" className="hover:text-[#c2410c]">My Account</Link></li>
             </ul>
           </div>
         </div>
@@ -367,7 +367,7 @@ function Guarantee() {
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"
-          className="text-[#f97316]"
+          className="text-[#c2410c]"
         >
           <path
             d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"

@@ -75,11 +75,11 @@ export default async function TutorialPage({
         <article className={seriesId ? "course-article" : undefined}>
           <Link
             href="/help"
-            className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-600"
+            className="inline-flex items-center text-xs font-semibold uppercase tracking-widest text-slate-500 hover:text-orange-700"
           >
             ← Help
           </Link>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-600">
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-700">
             {category}
           </p>
           <h1 className="help-article-title">{title}</h1>
@@ -110,7 +110,7 @@ export default async function TutorialPage({
                   <li key={entry.id}>
                     <Link
                       href={`/help/tutorials/${entry.id}`}
-                      className="block text-slate-700 hover:text-orange-600"
+                      className="block text-slate-700 hover:text-orange-700"
                     >
                       {entry.title}
                     </Link>
@@ -128,7 +128,7 @@ export default async function TutorialPage({
             </p>
             <Link
               href={`/help/community?workspace=${encodeURIComponent(slug)}`}
-              className="mt-4 inline-block rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700"
+              className="mt-4 inline-block rounded-md bg-orange-700 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-800"
             >
               Open community Q&amp;A
             </Link>

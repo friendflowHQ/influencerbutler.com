@@ -55,8 +55,8 @@ export function SiteHeader() {
                 href={item.href}
                 className={
                   item.current
-                    ? "whitespace-nowrap text-[0.9rem] font-medium text-orange-500"
-                    : "whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-500"
+                    ? "whitespace-nowrap text-[0.9rem] font-medium text-orange-700"
+                    : "whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-700"
                 }
               >
                 {item.label}
@@ -73,7 +73,7 @@ export function SiteHeader() {
 
         <a
           href="/go/trial?src=blog-nav"
-          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-500 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-600 lg:inline-flex"
+          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-700 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-800 lg:inline-flex"
         >
           Start Free Trial
         </a>
@@ -104,8 +104,8 @@ export function SiteHeader() {
                   onClick={() => setOpen(false)}
                   className={
                     item.current
-                      ? "block py-2 font-medium text-orange-500"
-                      : "block py-2 font-medium text-slate-600 hover:text-orange-500"
+                      ? "block py-2 font-medium text-orange-700"
+                      : "block py-2 font-medium text-slate-600 hover:text-orange-700"
                   }
                 >
                   {item.label}
@@ -116,7 +116,7 @@ export function SiteHeader() {
               <a
                 href="/go/trial?src=blog-nav-mobile"
                 onClick={() => setOpen(false)}
-                className="mt-2 inline-flex rounded-[14px] bg-orange-500 px-6 py-2.5 font-semibold text-white hover:bg-orange-600"
+                className="mt-2 inline-flex rounded-[14px] bg-orange-700 px-6 py-2.5 font-semibold text-white hover:bg-orange-800"
               >
                 Start Free Trial
               </a>
@@ -170,37 +170,37 @@ export function SiteFooter() {
               Product
             </h4>
             <div className="space-y-2.5 text-sm">
-              <Link href="/#features" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/#features" className="block text-slate-500 hover:text-orange-700">
                 Features
               </Link>
-              <Link href="/#pricing" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/#pricing" className="block text-slate-500 hover:text-orange-700">
                 Pricing
               </Link>
-              <Link href="/#how-it-works" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/#how-it-works" className="block text-slate-500 hover:text-orange-700">
                 How It Works
               </Link>
-              <Link href="/#faq" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/#faq" className="block text-slate-500 hover:text-orange-700">
                 FAQ
               </Link>
-              <Link href="/blog" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/blog" className="block text-slate-500 hover:text-orange-700">
                 Blog
               </Link>
-              <Link href="/course/amazon-influencer" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/course/amazon-influencer" className="block text-slate-500 hover:text-orange-700">
                 Free Amazon Influencer Course
               </Link>
-              <Link href="/tools" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/tools" className="block text-slate-500 hover:text-orange-700">
                 Free Tools
               </Link>
-              <Link href="/affiliates" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/affiliates" className="block text-slate-500 hover:text-orange-700">
                 Affiliates: Earn 30%
               </Link>
-              <Link href="/download" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/download" className="block text-slate-500 hover:text-orange-700">
                 Download the App
               </Link>
-              <Link href="/extension" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/extension" className="block text-slate-500 hover:text-orange-700">
                 Chrome Extension: Free
               </Link>
-              <Link href="/about" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/about" className="block text-slate-500 hover:text-orange-700">
                 About Liz
               </Link>
             </div>
@@ -211,19 +211,19 @@ export function SiteFooter() {
               Legal
             </h4>
             <div className="space-y-2.5 text-sm">
-              <a href="/legal/privacy.html" className="block text-slate-500 hover:text-orange-500">
+              <a href="/legal/privacy.html" className="block text-slate-500 hover:text-orange-700">
                 Privacy Policy
               </a>
-              <a href="/legal/eula.html" className="block text-slate-500 hover:text-orange-500">
+              <a href="/legal/eula.html" className="block text-slate-500 hover:text-orange-700">
                 EULA
               </a>
-              <a href="/legal/terms.html" className="block text-slate-500 hover:text-orange-500">
+              <a href="/legal/terms.html" className="block text-slate-500 hover:text-orange-700">
                 Terms of Service
               </a>
-              <a href="/legal/refund.html" className="block text-slate-500 hover:text-orange-500">
+              <a href="/legal/refund.html" className="block text-slate-500 hover:text-orange-700">
                 Refund Policy
               </a>
-              <a href="/legal/accessibility" className="block text-slate-500 hover:text-orange-500">
+              <a href="/legal/accessibility" className="block text-slate-500 hover:text-orange-700">
                 Accessibility
               </a>
             </div>
@@ -236,11 +236,11 @@ export function SiteFooter() {
             <div className="space-y-2.5 text-sm">
               <Link
                 href="/contact"
-                className="block text-slate-500 hover:text-orange-500"
+                className="block text-slate-500 hover:text-orange-700"
               >
                 Contact Us
               </Link>
-              <Link href="/dashboard" className="block text-slate-500 hover:text-orange-500">
+              <Link href="/dashboard" className="block text-slate-500 hover:text-orange-700">
                 My Account
               </Link>
             </div>

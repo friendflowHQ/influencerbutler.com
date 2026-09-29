@@ -14,7 +14,8 @@
     "inject:image-lightbox": "node scripts/inject-image-lightbox.mjs",
     "inject:gtag": "node scripts/inject-gtag.mjs",
     "inject:meta-pixel": "node scripts/inject-meta-pixel.mjs",
-    "generate:sitemap": "node scripts/generate-sitemap.mjs"
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "test:a11y": "node scripts/check-a11y.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -31,6 +32,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "axe-core": "^4.13.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "playwright": "^1.62.1",

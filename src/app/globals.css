@@ -99,14 +99,14 @@ body {
 }
 
 .help-tutorial-body a {
-  color: #ea580c;
+  color: #c2410c;
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
 }
 
 .help-tutorial-body a:hover {
-  color: #c2410c;
+  color: #9a3412;
   text-decoration-thickness: 2px;
 }
 
