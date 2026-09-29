@@ -63,6 +63,17 @@ Benable also gives a well-formed list its **Optimized badge** and the Discover-f
 - **List size**: Butler aims for the 16 to 30 sweet spot. If a list comes back thin, Butler pulls extra products to top it up toward your **Target list size**. If it still can't clear Benable's 16-item ranking floor, Butler **holds that list back** rather than publish one that can never rank. The run summary shows which lists were held and why. Under **Advanced settings** you can set the **Target list size** and a **Maximum list size** (lists are trimmed to it before publishing), or turn the **Hold lists too short to rank** safety off to publish at any size.
 - **Retailer mix**: Amazon stays the backbone of every list, but you can let Butler add a few high-value non-Amazon items where they genuinely fit. Turn on the sources you want under **Advanced settings**: **your own links** (paste your Etsy shop, brand site, or app, one per line), **Walmart** (when your Walmart account is set up), **App Store apps**, and **Target**. Butler keeps the mix light and only adds a non-Amazon item where it belongs.
 
+## Share your lists to your socials
+
+Benable Butler can announce each list it publishes: a Pinterest pin, a Facebook Page or group post, an Instagram feed post, Telegram, Threads, or Reddit. Open **Advanced settings**, then **Share your lists**:
+
+- **Share new lists automatically** posts an announcement for every list Butler publishes and makes public. Each list is only announced once, even across repeated runs.
+- **Where to share** picks the destinations. These use the Social Destinations you set up in Amazon Deals Butler (Pinterest access token and board, Telegram bot, signed-in Facebook and Instagram), so set them up there first. A destination that is not set up is skipped with a clear reason in the log.
+- **Caption**: keep your own template, with `{{title}}` and `{{url}}` placeholders, or let AI write a fresh caption per list using your OpenAI key. The list link is added automatically where each platform wants it: on Facebook it goes in the first comment, and on Pinterest it becomes the pin's outbound link.
+- The announcement carries the list's generated cover image, so Pinterest pins and Instagram posts arrive with the branded cover.
+
+Prefer to share by hand? Leave auto-share off and click **Share** next to any list in the output card after a run.
+
 ## Where the data goes
 
 Generated collections are logged per-run in the preseed cache (JSON + HTML report). The Benable side of things - the actual published collection - lives in your Benable account.

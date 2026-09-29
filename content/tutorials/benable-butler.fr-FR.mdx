@@ -63,6 +63,17 @@ Benable accorde aussi à une liste bien construite son **badge Optimized** et la
 - **Taille de la liste**: Butler vise l'idéal de 16 à 30. Si une liste revient trop courte, Butler ajoute des produits pour la compléter vers votre **Taille cible de la liste**. Si elle n'atteint toujours pas le seuil de 16 articles dont Benable a besoin pour se classer, Butler **met la liste de côté** au lieu de publier une liste qui ne pourra jamais se classer. Le résumé du run indique quelles listes ont été mises de côté et pourquoi. Dans **Paramètres avancés**, vous pouvez fixer la **Taille cible de la liste** et une **Taille maximale de la liste** (les listes sont réduites à cette taille avant publication), ou désactiver la sécurité **Mettre de côté les listes trop courtes pour se classer** pour publier à n'importe quelle taille.
 - **Mélange de boutiques**: Amazon reste la base de chaque liste, mais vous pouvez laisser Butler ajouter quelques éléments non-Amazon à forte valeur là où c'est pertinent. Activez les sources voulues dans **Paramètres avancés** : **vos propres liens** (collez votre boutique Etsy, votre site ou votre app, un par ligne), **Walmart** (quand votre compte Walmart est configuré), **apps de l'App Store** et **Target**. Butler garde le mélange léger et n'ajoute un élément non-Amazon que là où il a sa place.
 
+## Partagez vos listes sur vos réseaux
+
+Benable Butler peut annoncer chaque liste qu'il publie : une épingle Pinterest, une publication sur votre Page ou groupe Facebook, une publication dans le fil Instagram, Telegram, Threads ou Reddit. Ouvrez **Réglages avancés**, puis **Partagez vos listes** :
+
+- **Partager les nouvelles listes automatiquement** publie une annonce pour chaque liste que Butler publie et rend publique. Chaque liste n'est annoncée qu'une seule fois, même sur des exécutions répétées.
+- **Où partager** choisit les destinations. Ce sont les Destinations sociales configurées dans Amazon Deals Butler (jeton et tableau Pinterest, bot Telegram, Facebook et Instagram connectés), configurez-les donc là d'abord. Une destination non configurée est ignorée avec une raison claire dans le journal.
+- **Texte** : gardez votre propre modèle, avec les balises `{{title}}` et `{{url}}`, ou laissez l'IA écrire un texte différent par liste avec votre clé OpenAI. Le lien de la liste est ajouté automatiquement là où chaque plateforme l'attend : sur Facebook il va dans le premier commentaire, et sur Pinterest il devient le lien de l'épingle.
+- L'annonce embarque l'image de couverture générée de la liste, donc les épingles Pinterest et les publications Instagram arrivent avec votre couverture de marque.
+
+Vous préférez partager à la main ? Laissez le partage automatique désactivé et cliquez sur **Partager** à côté d'une liste dans la carte des résultats après une exécution.
+
 ## Où vont les données
 
 Les collections générées sont journalisées par run dans le cache preseed (JSON + rapport HTML). Le côté Benable - la collection publiée - vit sur votre compte Benable.

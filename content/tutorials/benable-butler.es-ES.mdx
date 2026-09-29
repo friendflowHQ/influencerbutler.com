@@ -63,6 +63,17 @@ Benable también da a una lista bien formada su **insignia Optimized** y la visi
 - **Tamaño de la lista**: Butler apunta al punto ideal de 16 a 30. Si una lista vuelve corta, Butler añade más productos para completarla hacia tu **Tamaño objetivo de la lista**. Si aun así no alcanza el piso de 16 artículos que Benable necesita para posicionar, Butler **retiene esa lista** en lugar de publicar una que nunca podría posicionarse. El resumen de la ejecución muestra qué listas se retuvieron y por qué. En **Ajustes avanzados** puedes fijar el **Tamaño objetivo de la lista** y un **Tamaño máximo de la lista** (las listas se recortan a ese tamaño antes de publicarse), o desactivar la seguridad **Retener las listas demasiado cortas para posicionarse** para publicar en cualquier tamaño.
 - **Mezcla de tiendas**: Amazon sigue siendo la base de cada lista, pero puedes dejar que Butler añada algunos elementos valiosos que no sean de Amazon donde encajen de verdad. Activa las fuentes que quieras en **Ajustes avanzados**: **tus propios enlaces** (pega tu tienda de Etsy, tu web o tu app, uno por línea), **Walmart** (cuando tu cuenta de Walmart esté configurada), **apps de la App Store** y **Target**. Butler mantiene la mezcla ligera y solo añade un elemento no-Amazon donde corresponde.
 
+## Comparte tus listas en tus redes
+
+Benable Butler puede anunciar cada lista que publica: un pin de Pinterest, una publicación en tu página o grupo de Facebook, una publicación en el feed de Instagram, Telegram, Threads o Reddit. Abre **Ajustes avanzados** y luego **Comparte tus listas**:
+
+- **Compartir listas nuevas automáticamente** publica un anuncio por cada lista que Butler publica y hace pública. Cada lista se anuncia solo una vez, incluso entre ejecuciones repetidas.
+- **Dónde compartir** elige los destinos. Se usan los Destinos sociales que configuraste en Amazon Deals Butler (token y tablero de Pinterest, bot de Telegram, Facebook e Instagram con sesión iniciada), así que configúralos allí primero. Un destino sin configurar se omite con un motivo claro en el registro.
+- **Texto**: usa tu propia plantilla, con los marcadores `{{title}}` y `{{url}}`, o deja que la IA escriba un texto nuevo por lista con tu clave de OpenAI. El enlace de la lista se añade automáticamente donde cada plataforma lo espera: en Facebook va en el primer comentario y en Pinterest se convierte en el enlace del pin.
+- El anuncio lleva la imagen de portada generada de la lista, así que los pines de Pinterest y las publicaciones de Instagram llegan con la portada de tu marca.
+
+¿Prefieres compartir a mano? Deja el compartir automático desactivado y pulsa **Compartir** junto a cualquier lista en la tarjeta de resultados tras una ejecución.
+
 ## Dónde van los datos
 
 Las colecciones generadas se registran por ejecución en la caché preseed (JSON + informe HTML). El lado de Benable - la colección publicada - vive en tu cuenta de Benable.
