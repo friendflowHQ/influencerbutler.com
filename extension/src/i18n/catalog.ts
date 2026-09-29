@@ -899,6 +899,8 @@ export interface Dict {
   appBridgeHeading: string;
   appBridgeBlurb: string;
   appNextStepHint: string;
+  // Points a two-computer user from the local pairing code to the relay card.
+  appDifferentComputerHint: string;
   appConnect: string;
   appEnterCode: string;
   appCodePlaceholder: string;
@@ -1940,6 +1942,8 @@ const en: Dict = {
     "Connect the Influencer Butler desktop app to accept campaigns and send products to your butlers straight from Amazon.",
   appNextStepHint:
     "You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.",
+  appDifferentComputerHint:
+    "On a different computer? The code below only pairs an app on THIS computer. To use the app on another computer, use \"Send to another computer\" below.",
   appConnect: "Connect the desktop app",
   appEnterCode: "Enter the 6-digit code showing in the desktop app:",
   appCodePlaceholder: "123456",
@@ -2994,6 +2998,8 @@ const es: Dict = {
     "Conecta la app de escritorio de Influencer Butler para aceptar campañas y enviar productos a tus butlers directamente desde Amazon.",
   appNextStepHint:
     "Ya estás sincronizado con tu panel. Para también aceptar campañas y enviar productos a tus butlers, conecta la app de escritorio abajo. Este paso es opcional.",
+  appDifferentComputerHint:
+    "¿En otro ordenador? El código de abajo solo empareja una app en ESTE ordenador. Para usar la app en otro ordenador, usa \"Send to another computer\" más abajo.",
   appConnect: "Conectar la app de escritorio",
   appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
   appCodePlaceholder: "123456",
@@ -4048,6 +4054,8 @@ const fr: Dict = {
     "Connectez l'app de bureau Influencer Butler pour accepter des campagnes et envoyer des produits à vos butlers directement depuis Amazon.",
   appNextStepHint:
     "Vous êtes synchronisé avec votre tableau de bord. Pour aussi accepter des campagnes et envoyer des produits à vos butlers, connectez l'app de bureau ci-dessous. Cette étape est facultative.",
+  appDifferentComputerHint:
+    "Sur un autre ordinateur ? Le code ci-dessous n'associe qu'une app sur CET ordinateur. Pour utiliser l'app sur un autre ordinateur, utilisez \"Send to another computer\" ci-dessous.",
   appConnect: "Connecter l'app de bureau",
   appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
   appCodePlaceholder: "123456",
