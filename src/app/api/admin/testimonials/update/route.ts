@@ -4,6 +4,7 @@
  *   { action: "status",  id, status: "approved"|"rejected"|"hidden"|"pending" }
  *   { action: "respond", id, response: string | null }
  *   { action: "feature", id, featured: boolean }
+ *   { action: "reorder", orderedIds: string[] }
  *   { action: "edit",    id, authorName?, authorRole?, body? }
  *
  * Single moderation mutation endpoint for the testimonials dashboard. Gated by
@@ -16,6 +17,7 @@ import {
   setTestimonialStatus,
   setTestimonialResponse,
   setTestimonialFeatured,
+  setTestimonialsOrder,
   updateTestimonial,
   type TestimonialStatus,
 } from "@/lib/testimonials";
@@ -32,6 +34,7 @@ type Body = {
   status?: string;
   response?: string | null;
   featured?: boolean;
+  orderedIds?: unknown;
   authorName?: string;
   authorRole?: string | null;
   body?: string;
@@ -46,6 +49,29 @@ export async function POST(request: Request) {
     body = (await request.json()) as Body;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Reorder acts on a list of ids rather than a single testimonial, so it is
+  // handled before the single-id validation below.
+  if (body.action === "reorder") {
+    const orderedIds = Array.isArray(body.orderedIds)
+      ? body.orderedIds.filter(
+          (x): x is string => typeof x === "string" && UUID_RE.test(x),
+        )
+      : [];
+    if (orderedIds.length === 0) {
+      return NextResponse.json({ error: "No ids" }, { status: 400 });
+    }
+    const done = await setTestimonialsOrder(orderedIds);
+    if (!done) return NextResponse.json({ error: "Could not update" }, { status: 500 });
+    await logAdminAction({
+      actor,
+      action: "testimonial.reorder",
+      targetType: "testimonial",
+      targetId: orderedIds[0],
+      details: { action: "reorder", count: orderedIds.length },
+    });
+    return NextResponse.json({ ok: true });
   }
 
   const id = body.id?.trim();

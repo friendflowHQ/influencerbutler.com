@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import {
   listAdminTestimonials,
+  listFeaturedTestimonials,
   readTestimonialsConfig,
   type TestimonialStatus,
 } from "@/lib/testimonials";
@@ -28,10 +29,13 @@ export async function GET(request: Request) {
       ? (raw as TestimonialStatus | "all")
       : "all";
 
-  const [config, testimonials] = await Promise.all([
+  const [config, testimonials, featured] = await Promise.all([
     readTestimonialsConfig(),
     listAdminTestimonials(status),
+    // Always returned (independent of the status tab) so the reorder panel shows
+    // the live homepage order regardless of which queue the admin is viewing.
+    listFeaturedTestimonials(),
   ]);
 
-  return NextResponse.json({ admin: { email: actor.email }, config, testimonials });
+  return NextResponse.json({ admin: { email: actor.email }, config, testimonials, featured });
 }

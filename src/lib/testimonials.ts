@@ -51,6 +51,7 @@ export type AdminTestimonial = {
   source: string | null;
   createdAt: string;
   approvedAt: string | null;
+  displayOrder: number | null;
 };
 
 export type TestimonialsConfig = {
@@ -94,7 +95,7 @@ export type SubmitTestimonialResult =
 type Filter = {
   eq: (col: string, val: unknown) => Filter;
   in: (col: string, vals: unknown[]) => Filter;
-  order: (col: string, opts: { ascending: boolean }) => Filter;
+  order: (col: string, opts: { ascending: boolean; nullsFirst?: boolean }) => Filter;
   limit: (n: number) => Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }>;
   maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
 };
@@ -285,13 +286,16 @@ export async function getPublicTestimonials(): Promise<{
   try {
     const { data, error } = await db
       .from("testimonials")
-      .select("id,author_name,author_role,rating,body,photo_url,avatar_url,team_response,created_at,featured,approved_at")
+      .select("id,author_name,author_role,rating,body,photo_url,avatar_url,team_response,created_at,featured,display_order,approved_at")
       .eq("status", "approved")
       .eq("consent", true)
       // Only reviews the team explicitly featured show on the site; approving a
-      // review (incl. auto-approve) records it but does not publish it. Most
-      // recently approved first.
+      // review (incl. auto-approve) records it but does not publish it. The team
+      // sets the display order in the admin dashboard; reviews with an explicit
+      // order come first (ascending), and any not yet ordered fall back to most
+      // recently approved.
       .eq("featured", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
       .order("approved_at", { ascending: false })
       .limit(config.publicMaxCount);
     if (error || !data) return { enabled: true, testimonials: [] };
@@ -369,8 +373,15 @@ function toAdmin(row: Record<string, unknown>): AdminTestimonial {
     source: (row.source as string | null) ?? null,
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
     approvedAt: (row.approved_at as string | null) ?? null,
+    displayOrder:
+      row.display_order === null || row.display_order === undefined
+        ? null
+        : Number(row.display_order),
   };
 }
+
+const ADMIN_SELECT =
+  "id,user_id,email,author_name,author_role,plan_name,rating,body,photo_url,avatar_url,consent,status,auto_approved,featured,display_order,team_response,responded_at,responded_by,source,created_at,approved_at";
 
 /** All testimonials (optionally filtered by status) for the admin queue. */
 export async function listAdminTestimonials(
@@ -380,15 +391,35 @@ export async function listAdminTestimonials(
   const db = serviceDb();
   if (!db) return [];
   try {
-    let query = db
-      .from("testimonials")
-      .select(
-        "id,user_id,email,author_name,author_role,plan_name,rating,body,photo_url,avatar_url,consent,status,auto_approved,featured,team_response,responded_at,responded_by,source,created_at,approved_at",
-      );
+    let query = db.from("testimonials").select(ADMIN_SELECT);
     if (status !== "all") query = query.eq("status", status);
     const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(limit);
+    if (error || !data) return [];
+    return data.map(toAdmin);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Featured, approved testimonials in the exact order they appear on the homepage
+ * (display_order ascending, unordered ones last by approval recency). Powers the
+ * "Featured order" reordering panel in the admin dashboard.
+ */
+export async function listFeaturedTestimonials(): Promise<AdminTestimonial[]> {
+  const db = serviceDb();
+  if (!db) return [];
+  try {
+    const { data, error } = await db
+      .from("testimonials")
+      .select(ADMIN_SELECT)
+      .eq("status", "approved")
+      .eq("featured", true)
+      .order("display_order", { ascending: true, nullsFirst: false })
+      .order("approved_at", { ascending: false })
+      .limit(50);
     if (error || !data) return [];
     return data.map(toAdmin);
   } catch {
@@ -453,6 +484,34 @@ export async function setTestimonialFeatured(id: string, featured: boolean): Pro
     return false;
   }
   return true;
+}
+
+/**
+ * Sets the homepage display order for the given testimonials: each id's
+ * display_order becomes its index in the array (0-based), so the caller passes
+ * the full featured list in the order it should appear. Reviews not in the list
+ * keep their existing order value. Runs the updates sequentially; returns false
+ * on the first failure.
+ */
+export async function setTestimonialsOrder(orderedIds: string[]): Promise<boolean> {
+  const db = serviceDb();
+  if (!db) return false;
+  try {
+    for (let i = 0; i < orderedIds.length; i++) {
+      const { error } = await db
+        .from("testimonials")
+        .update({ display_order: i, updated_at: new Date().toISOString() })
+        .eq("id", orderedIds[i]);
+      if (error) {
+        console.error("setTestimonialsOrder: update failed", error);
+        return false;
+      }
+    }
+    return true;
+  } catch (err) {
+    console.error("setTestimonialsOrder threw", err);
+    return false;
+  }
 }
 
 /** Edits the customer-visible text fields (light copy-edit before publishing). */

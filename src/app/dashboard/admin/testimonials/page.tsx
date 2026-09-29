@@ -22,6 +22,7 @@ type Testimonial = {
   respondedBy: string | null;
   source: string | null;
   createdAt: string;
+  displayOrder: number | null;
 };
 
 type Config = {
@@ -35,6 +36,7 @@ type ListResponse = {
   admin?: { email: string };
   config?: Config;
   testimonials?: Testimonial[];
+  featured?: Testimonial[];
   error?: string;
 };
 
@@ -71,6 +73,8 @@ export default function AdminTestimonialsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [tab, setTab] = useState<Status | "all">("pending");
   const [items, setItems] = useState<Testimonial[]>([]);
+  const [featured, setFeatured] = useState<Testimonial[]>([]);
+  const [reordering, setReordering] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -104,6 +108,7 @@ export default function AdminTestimonialsPage() {
         setMaxCount(json.config.publicMaxCount);
       }
       setItems(json.testimonials ?? []);
+      setFeatured(json.featured ?? []);
     } catch (err) {
       console.error(err);
       setFetchError("Network error. Please refresh.");
@@ -130,6 +135,34 @@ export default function AdminTestimonialsPage() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  // Persist a new homepage order. `next` is the full featured list in the order
+  // it should appear; we update local state first so the arrows feel instant,
+  // then reload to resync with what the server saved.
+  const saveOrder = async (next: Testimonial[]) => {
+    setReordering(true);
+    setFeatured(next);
+    try {
+      const res = await fetch("/api/admin/testimonials/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reorder", orderedIds: next.map((t) => t.id) }),
+      });
+      if (res.ok) await load(tab);
+    } catch {
+      // leave optimistic order in place
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const moveFeatured = (index: number, dir: -1 | 1) => {
+    const target = index + dir;
+    if (target < 0 || target >= featured.length) return;
+    const next = featured.slice();
+    [next[index], next[target]] = [next[target], next[index]];
+    void saveOrder(next);
   };
 
   const saveConfig = async () => {
@@ -230,6 +263,64 @@ export default function AdminTestimonialsPage() {
           {cfgNote ? <span className="text-sm text-slate-500">{cfgNote}</span> : null}
         </div>
       </section>
+
+      {/* Featured order: the exact sequence featured reviews appear in on the
+          homepage carousel. Up/Down keep this keyboard-accessible (no drag). */}
+      {featured.length > 0 ? (
+        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+              Featured order
+            </h2>
+            {reordering ? <span className="text-xs text-slate-400">Saving order...</span> : null}
+          </div>
+          <p className="mt-1 text-sm text-slate-600">
+            These show on the homepage in this order (about 3 per carousel page). Use the arrows to
+            reorder; feature more approved reviews below to fill a second page.
+          </p>
+          <ol className="mt-4 space-y-2">
+            {featured.map((t, i) => (
+              <li
+                key={t.id}
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2"
+              >
+                <span className="w-6 flex-none text-center text-sm font-semibold text-slate-400">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <strong className="truncate text-sm text-slate-900">
+                      {t.authorName ?? "Anonymous"}
+                    </strong>
+                    <Stars n={t.rating} />
+                  </div>
+                  <p className="truncate text-xs text-slate-500">&ldquo;{t.body}&rdquo;</p>
+                </div>
+                <div className="flex flex-none items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => moveFeatured(i, -1)}
+                    disabled={reordering || i === 0}
+                    aria-label={`Move ${t.authorName ?? "this review"} up`}
+                    className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
+                  >
+                    &uarr;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveFeatured(i, 1)}
+                    disabled={reordering || i === featured.length - 1}
+                    aria-label={`Move ${t.authorName ?? "this review"} down`}
+                    className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
+                  >
+                    &darr;
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
 
       {/* Tabs */}
       <div className="mt-8 flex flex-wrap gap-2">
