@@ -903,6 +903,8 @@ export interface Dict {
   // Replaces the pairing flow on Android, where the desktop app cannot connect.
   appBridgeMobile: string;
   appNextStepHint: string;
+  // Points a two-computer user from the local pairing code to the relay card.
+  appDifferentComputerHint: string;
   appConnect: string;
   appEnterCode: string;
   appCodePlaceholder: string;
@@ -1949,6 +1951,8 @@ const en: Dict = {
     "The desktop app runs on Windows or Mac, so it cannot connect to this Android browser directly. To send deals to it, link that computer from the extension popup under \"Send to another computer\".",
   appNextStepHint:
     "You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.",
+  appDifferentComputerHint:
+    "On a different computer? The code below only pairs an app on THIS computer. To use the app on another computer, use \"Send to another computer\" below.",
   appConnect: "Connect the desktop app",
   appEnterCode: "Enter the 6-digit code showing in the desktop app:",
   appCodePlaceholder: "123456",
@@ -3009,6 +3013,8 @@ const es: Dict = {
     "La app de escritorio funciona en Windows o Mac, así que no puede conectarse directamente a este navegador de Android. Para enviarle ofertas, vincula ese ordenador desde la ventana de la extensión, en \"Send to another computer\".",
   appNextStepHint:
     "Ya estás sincronizado con tu panel. Para también aceptar campañas y enviar productos a tus butlers, conecta la app de escritorio abajo. Este paso es opcional.",
+  appDifferentComputerHint:
+    "¿En otro ordenador? El código de abajo solo empareja una app en ESTE ordenador. Para usar la app en otro ordenador, usa \"Send to another computer\" más abajo.",
   appConnect: "Conectar la app de escritorio",
   appEnterCode: "Escribe el código de 6 dígitos que aparece en la app de escritorio:",
   appCodePlaceholder: "123456",
@@ -4069,6 +4075,8 @@ const fr: Dict = {
     "L'app de bureau fonctionne sous Windows ou Mac, elle ne peut donc pas se connecter directement à ce navigateur Android. Pour lui envoyer des offres, associez cet ordinateur depuis la fenêtre de l'extension, dans \"Send to another computer\".",
   appNextStepHint:
     "Vous êtes synchronisé avec votre tableau de bord. Pour aussi accepter des campagnes et envoyer des produits à vos butlers, connectez l'app de bureau ci-dessous. Cette étape est facultative.",
+  appDifferentComputerHint:
+    "Sur un autre ordinateur ? Le code ci-dessous n'associe qu'une app sur CET ordinateur. Pour utiliser l'app sur un autre ordinateur, utilisez \"Send to another computer\" ci-dessous.",
   appConnect: "Connecter l'app de bureau",
   appEnterCode: "Saisissez le code à 6 chiffres affiché dans l'app de bureau:",
   appCodePlaceholder: "123456",
