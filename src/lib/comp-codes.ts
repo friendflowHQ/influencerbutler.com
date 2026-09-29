@@ -119,6 +119,31 @@ export function isPlaceholderCompEmail(email: string | null | undefined): boolea
   return typeof email === "string" && email.toLowerCase().endsWith(`@${COMP_PLACEHOLDER_DOMAIN}`);
 }
 
+/**
+ * Email addresses used only for internal testing of the comp flow. Any comp
+ * whose recipient is one of these is excluded from the admin Comps page, the
+ * expiry cron, and its digest email, so test-phase grants are never tracked,
+ * warned about, or auto-cancelled.
+ *
+ * Configured via COMP_TEST_EMAILS (comma / space / semicolon separated,
+ * case-insensitive). Unset means no exclusions. Kept as its own list rather
+ * than reusing ADMIN_EMAILS so a real comp to an admin is still tracked.
+ */
+export function testCompEmails(): Set<string> {
+  const set = new Set<string>();
+  for (const part of (process.env.COMP_TEST_EMAILS ?? "").split(/[\s,;]+/)) {
+    const email = part.trim().toLowerCase();
+    if (email) set.add(email);
+  }
+  return set;
+}
+
+/** True when an email is on the COMP_TEST_EMAILS internal-testing exclusion list. */
+export function isTestCompEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return testCompEmails().has(email.toLowerCase());
+}
+
 /** True when a comp code marks a never-expiring grant (carries FOREVER). */
 export function isForeverCode(code: string | null | undefined): boolean {
   return /FOREVER/i.test(code ?? "");

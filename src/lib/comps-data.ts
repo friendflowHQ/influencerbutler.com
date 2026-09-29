@@ -23,6 +23,7 @@ import {
   isForeverCode,
   isPlaceholderCompEmail,
   parseCompMonths,
+  testCompEmails,
 } from "@/lib/comp-codes";
 
 const ROW_LIMIT = 5000;
@@ -285,6 +286,15 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     );
   }
 
+  // Drop comps for internal test addresses (COMP_TEST_EMAILS): test-phase grants
+  // must never be tracked, warned about, or auto-cancelled. Filtering here keeps
+  // the admin page, the expiry cron, and its digest in agreement.
+  const testEmails = testCompEmails();
+  const visible =
+    testEmails.size === 0
+      ? rows
+      : rows.filter((r) => !(r.email != null && testEmails.has(r.email.toLowerCase())));
+
   // Needs-attention first: unknown months, then soonest-expiring. Cancelled last.
   const rank: Record<CompState, number> = {
     "unknown-months": 0,
@@ -295,14 +305,14 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
     forever: 5,
     cancelled: 6,
   };
-  rows.sort((a, b) => {
+  visible.sort((a, b) => {
     if (rank[a.state] !== rank[b.state]) return rank[a.state] - rank[b.state];
     const da = a.daysRemaining ?? Number.POSITIVE_INFINITY;
     const db = b.daysRemaining ?? Number.POSITIVE_INFINITY;
     return da - db;
   });
 
-  return { rows, migrationPending };
+  return { rows: visible, migrationPending };
 }
 
 /**

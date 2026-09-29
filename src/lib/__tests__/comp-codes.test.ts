@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { addMonthsUtc, compNameFromCode, isForeverCode, parseCompMonths } from "../comp-codes";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  addMonthsUtc,
+  compNameFromCode,
+  isForeverCode,
+  isTestCompEmail,
+  parseCompMonths,
+} from "../comp-codes";
 
 describe("parseCompMonths", () => {
   it("parses the going-forward NAMEFREE#M format", () => {
@@ -72,6 +78,32 @@ describe("compNameFromCode", () => {
   it("returns null when nothing sensible remains", () => {
     expect(compNameFromCode("3FREE")).toBeNull();
     expect(compNameFromCode("")).toBeNull();
+  });
+});
+
+describe("isTestCompEmail", () => {
+  afterEach(() => {
+    delete process.env.COMP_TEST_EMAILS;
+  });
+
+  it("is false for every email when COMP_TEST_EMAILS is unset", () => {
+    delete process.env.COMP_TEST_EMAILS;
+    expect(isTestCompEmail("elizabethdean30@gmail.com")).toBe(false);
+  });
+
+  it("matches listed addresses case-insensitively, ignoring separators/whitespace", () => {
+    process.env.COMP_TEST_EMAILS =
+      " elizabethdean30@gmail.com, careese.quon@gmail.com;tineyhomeslife@gmail.com ";
+    expect(isTestCompEmail("elizabethdean30@gmail.com")).toBe(true);
+    expect(isTestCompEmail("Careese.Quon@gmail.com")).toBe(true);
+    expect(isTestCompEmail("tineyhomeslife@gmail.com")).toBe(true);
+  });
+
+  it("does not match addresses that are not on the list", () => {
+    process.env.COMP_TEST_EMAILS = "elizabethdean30@gmail.com";
+    expect(isTestCompEmail("jackie@bigdealbabe.com")).toBe(false);
+    expect(isTestCompEmail(null)).toBe(false);
+    expect(isTestCompEmail(undefined)).toBe(false);
   });
 });
 
