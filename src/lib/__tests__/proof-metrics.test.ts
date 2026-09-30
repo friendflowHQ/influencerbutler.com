@@ -18,6 +18,7 @@ const liveCounts = (
   social_posts_published: 0,
   creator_messaged: 0,
   benable_list_optimized: 0,
+  foyer_created: 0,
   ...partial,
 });
 
@@ -33,6 +34,7 @@ describe("composeProofMetrics", () => {
         social_posts_published: 0,
         creator_messaged: 0,
         benable_list_optimized: 0,
+        foyer_created: 0,
       },
       labels: {},
     };

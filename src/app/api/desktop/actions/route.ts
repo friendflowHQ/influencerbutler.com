@@ -30,6 +30,7 @@ const ACTION_METRICS: Record<string, string> = {
   creator_messaged: "creator_messaged",
   benable_list_optimized: "benable_list_optimized",
   social_post_published: "social_post_published",
+  foyer_created: "foyer_created",
 };
 
 export async function OPTIONS() {

@@ -22,7 +22,8 @@ export type ProofMetricKey =
   | "campaigns_accepted"
   | "social_posts_published"
   | "creator_messaged"
-  | "benable_list_optimized";
+  | "benable_list_optimized"
+  | "foyer_created";
 
 // How a metric is counted. Some actions already land in their own table
 // (deals, scans) and are counted directly; others (campaign accepts) never
@@ -85,6 +86,11 @@ export const PROOF_METRICS: ProofMetricDef[] = [
     defaultLabel: "Benable Lists Optimized",
     source: { kind: "events_total", metric: "benable_list_optimized" },
   },
+  {
+    key: "foyer_created",
+    defaultLabel: "Foyers Created",
+    source: { kind: "events_total", metric: "foyer_created" },
+  },
 ];
 
 export type ProofConfig = {
@@ -106,7 +112,7 @@ export const DEFAULT_PROOF_CONFIG: ProofConfig = {
     // already in the thousands, so it carries the smallest baseline-to-live
     // ratio. Ordered as a believable funnel (scan many products, analyze fewer
     // orders, post fewer deals/posts, accept the fewest brand campaigns). The
-    // two desktop-only metrics stay 0 so the front-end (which hides any metric
+    // desktop-only metrics stay 0 so the front-end (which hides any metric
     // whose total is 0) leaves them off until their desktop reporting ships.
     deals_posted: 3400,
     product_scans: 12400,
@@ -115,6 +121,7 @@ export const DEFAULT_PROOF_CONFIG: ProofConfig = {
     social_posts_published: 2600,
     creator_messaged: 0,
     benable_list_optimized: 0,
+    foyer_created: 0,
   },
   labels: {},
 };
