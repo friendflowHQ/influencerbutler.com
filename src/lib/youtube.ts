@@ -120,7 +120,7 @@ export async function uploadVideoFromUrl(args: {
   thumbnailUrl?: string | null;
 }): Promise<YouTubeUploadResult> {
   if (!isGoogleConfigured()) return { ok: false, error: "Google OAuth not configured" };
-  if (!args.refreshToken) return { ok: false, error: "No Google refresh token; connect Google in Scheduling" };
+  if (!args.refreshToken) return { ok: false, error: "No YouTube refresh token; connect a YouTube account in the Events admin" };
   if (!args.videoUrl) return { ok: false, error: "No recording URL to upload" };
 
   const accessToken = await accessTokenFrom(args.refreshToken);
@@ -139,7 +139,7 @@ export async function uploadVideoFromUrl(args: {
       return {
         ok: false,
         channel,
-        error: `Connected to "${channel.title}" (${channel.handle ?? channel.id}), not ${args.expectedChannel}. Reconnect Google in Scheduling and pick the right channel.`,
+        error: `Connected to "${channel.title}" (${channel.handle ?? channel.id}), not ${args.expectedChannel}. Reconnect the YouTube account in the Events admin and pick the right channel.`,
       };
     }
   }

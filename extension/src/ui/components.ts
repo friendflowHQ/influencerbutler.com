@@ -11,6 +11,8 @@ let panel: HTMLElement | null = null;
 let topbar: HTMLElement | null = null;
 let body: HTMLElement | null = null;
 let quickBar: HTMLElement | null = null;
+let quickBarActions: HTMLElement | null = null;
+let quickBarDealsSlot: HTMLElement | null = null;
 let syncChip: HTMLElement | null = null;
 let syncPollStarted = false;
 
@@ -106,6 +108,39 @@ export function getQuickBar(): HTMLElement {
   quickBar = el("div", "quickbar");
   topbar?.append(quickBar);
   return quickBar;
+}
+
+// The flex row inside the quick-links bar that holds Get link / Scrub link
+// and, once the desktop app is connected, the Deals Butler push (see
+// getQuickBarDealsSlot below). quick-links/panel.ts always prepends its two
+// buttons here, so they stay first regardless of which tool renders first.
+export function getQuickBarActions(): HTMLElement {
+  const bar = getQuickBar();
+  if (quickBarActions && quickBarActions.isConnected) return quickBarActions;
+  quickBarActions = el("div", "quickbar-actions");
+  bar.append(quickBarActions);
+  return quickBarActions;
+}
+
+// A persistent slot at the end of the quick-links action row for the Deals
+// Butler workspace picker + push button (tools/hud-actions/panel.ts), so it
+// sits next to Scrub link instead of only appearing after scrolling down to
+// "Send to your butler app". Empty (and thus invisible, since the row has no
+// border of its own) until hud-actions fills it in the connected state.
+export function getQuickBarDealsSlot(): HTMLElement {
+  const actions = getQuickBarActions();
+  if (quickBarDealsSlot && quickBarDealsSlot.isConnected) return quickBarDealsSlot;
+  quickBarDealsSlot = el("div", "quickbar-deals");
+  actions.append(quickBarDealsSlot);
+  return quickBarDealsSlot;
+}
+
+// Like getQuickBarDealsSlot, but never creates the bar. A retailer with no
+// quick-links bar of its own (Walmart) would otherwise get an empty pinned bar
+// the moment hud-actions clears the slot for a disconnected state, even though
+// nothing has ever been shown there yet.
+export function peekQuickBarDealsSlot(): HTMLElement | null {
+  return quickBarDealsSlot && quickBarDealsSlot.isConnected ? quickBarDealsSlot : null;
 }
 
 // The gear in the header opens the full settings/options page (OpenAI key,

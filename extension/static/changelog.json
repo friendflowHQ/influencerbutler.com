@@ -1,12 +1,70 @@
 {
-  "lastUpdated": "2026-09-28",
+  "lastUpdated": "2026-09-30",
   "releases": [
+    {
+      "version": "0.1.24",
+      "date": "September 30, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "The Deal Sites Harvester can now import straight from a Google Sheet. Paste the sheet's share link in with your other sources (it needs to be set to \"Anyone with the link can view\"), and Butler reads one deal per row, the same way it reads a scraped deals page",
+            "Four more sites are bundled into the harvester by default: Daily Deals with Jat, Elva's Daily Deals, Simply Picks, and Noel's Daily Deals, alongside Save With Cindy"
+          ]
+        },
+        {
+          "heading": "Other notable changes",
+          "items": [
+            "The \"Send to Deals Butler\" workspace picker and push button now live in the pinned quick-links bar at the top of the panel, next to Get link and Scrub link, instead of further down the page",
+            "Adding an item to a new product list, or to a list created inline from the picker, now shows that list right away as the next target. Before, it stayed invisible in the picker until the page reloaded",
+            "Raised how long the extension waits for a busy desktop app to answer before showing \"app isn't responding.\" Real-world checks showed the app's main thread can stay blocked 3 seconds or more during a deal harvest or storefront scan, so the connection probe now allows up to 1.5 seconds (was 0.7s) and the initial \"is the app there\" check allows up to 4 seconds. A closed app is still detected right away"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.23",
+      "date": "September 29, 2026",
+      "sections": [
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Fixed findings piling up as \"waiting to sync\" and never reaching your web dashboard. When the desktop app was open but busy, its live mirror kept asking to try again, and that was holding your whole findings queue back, even though the dashboard sync is not supposed to need the app at all. Now the dashboard sync runs on its own and the app mirror is best-effort, so your scans, deals, and other findings upload on schedule again. A finding the server permanently rejects is also dropped instead of blocking everything behind it"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.22",
+      "date": "September 29, 2026",
+      "sections": [
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The extension now waits longer for a busy desktop app before deciding it is not there. When your app is mid-task (harvesting deals, scanning a storefront) it can take a couple of seconds to answer, and the old half-second cutoff read that as \"app isn't responding\" even though it was running. A closed app is still detected instantly, so this only adds patience when the app really is open",
+            "Your \"When a deal arrives\" choice (Settings > Deals) now applies everywhere you send a deal, not just the per-product button on deal sites. Deals sent from the Deal Sites Harvester, the search-results overlay, and the Send to Deals Butler button on product pages all follow your placement now, whether that is save as a draft, next in the queue, a random spot, the end, or post right now. Before, those three paths ignored the setting and used the app's own default"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.21",
+      "date": "September 29, 2026",
+      "sections": [
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Fixed the \"Your Influencer Butler app isn't responding\" notice showing even while the app was running and paired. The Send to your butler app section used to check for the app only once, at the instant the page loaded, and that first check could miss a perfectly healthy app. It now keeps checking every few seconds and swaps in your Deals Butler, Content Butler, and campaign buttons the moment the app answers, no reload needed"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.20",
       "date": "September 28, 2026",
       "sections": [
         {
-          "heading": "Improvements",
+          "heading": "Other notable changes",
           "items": [
             "Deals harvested from savewithcindy.shop now carry the full deal, not just the product. Butler reads each card's promo code, the code's own percent off, and the deal's start and end dates, and hands them to your desktop app. The code stacks on any Amazon coupon, the end date lets Expired Butler retire a deal once it is over, and the start date holds an upcoming deal until it opens"
           ]

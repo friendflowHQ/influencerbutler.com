@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.20",
+  "version": "0.1.24",
   "description": "Free tools for Amazon and Walmart Influencers: money signals, video counts, content gaps, Butler Approved seals, storefront checks.",
   "permissions": ["storage", "alarms", "notifications", "tabs", "scripting", "contextMenus"],
   "host_permissions": [
@@ -24,6 +24,10 @@
     "https://benable.com/*",
     "https://www.benable.com/*",
     "https://www.savewithcindy.shop/*",
+    "https://dailydealswithjat.com/*",
+    "https://elvasdailydeals.com/*",
+    "https://simplypicksapp.com/*",
+    "https://noelsdailydeals.com/*",
     "https://www.influencerbutler.com/*",
     "https://links.influencerbutler.com/*",
     "https://licensing.influencerbutler.com/*"

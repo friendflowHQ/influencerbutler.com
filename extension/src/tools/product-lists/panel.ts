@@ -28,19 +28,28 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
     section.append(status);
     return;
   }
-  const lists = res.lists ?? [];
+  let lists = res.lists ?? [];
   const NEW = "__new__";
   const picker = el("select") as HTMLSelectElement;
-  for (const list of lists) {
-    const opt = el("option") as HTMLOptionElement;
-    opt.value = list.id;
-    opt.textContent = `${list.name} (${list.items.length})`;
-    picker.append(opt);
-  }
-  const newOpt = el("option") as HTMLOptionElement;
-  newOpt.value = NEW;
-  newOpt.textContent = t().listPanelNewOption;
-  picker.append(newOpt);
+  // Rebuilds the options from the current `lists`, keeping the "New list..."
+  // entry last. Called on first render and again after any add that reports a
+  // fresh `lists` array, so a list created inline (via the NEW option) shows up
+  // as a real target instead of staying invisible until the page reloads.
+  const rebuildPicker = (selectId?: string): void => {
+    picker.replaceChildren();
+    for (const list of lists) {
+      const opt = el("option") as HTMLOptionElement;
+      opt.value = list.id;
+      opt.textContent = `${list.name} (${list.items.length})`;
+      picker.append(opt);
+    }
+    const newOpt = el("option") as HTMLOptionElement;
+    newOpt.value = NEW;
+    newOpt.textContent = t().listPanelNewOption;
+    picker.append(newOpt);
+    picker.value = selectId ?? (lists.length === 0 ? NEW : (lists[0]?.id ?? NEW));
+  };
+  rebuildPicker();
 
   const nameInput = el("input", "note") as HTMLInputElement;
   nameInput.type = "text";
@@ -49,7 +58,6 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
   const syncNameVisibility = () => {
     nameInput.style.display = picker.value === NEW || lists.length === 0 ? "" : "none";
   };
-  picker.value = lists.length === 0 ? NEW : (lists[0]?.id ?? NEW);
   syncNameVisibility();
   picker.addEventListener("change", syncNameVisibility);
 
@@ -74,7 +82,15 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
       listId: tgt.listId,
       newListName: tgt.newListName,
       item: { asin, marketplace, title: signals.title ?? null, imageUrl: signals.imageUrl },
-    }).then((added) => report(status, added, 1));
+    }).then((added) => {
+      report(status, added, 1);
+      if (added) {
+        lists = added.lists;
+        rebuildPicker(added.listId);
+        nameInput.value = "";
+        syncNameVisibility();
+      }
+    });
   });
 
   const row = el("div", "row");
@@ -95,7 +111,15 @@ export async function renderProductListsPanel(signals: ProductSignals): Promise<
         listId: tgt.listId,
         newListName: tgt.newListName,
         items: variations.map((v) => ({ asin: v, marketplace, title: null, imageUrl: null })),
-      }).then((added) => report(status, added, added?.added ?? 0));
+      }).then((added) => {
+        report(status, added, added?.added ?? 0);
+        if (added) {
+          lists = added.lists;
+          rebuildPicker(added.listId);
+          nameInput.value = "";
+          syncNameVisibility();
+        }
+      });
     });
     section.append(varBtn);
   }

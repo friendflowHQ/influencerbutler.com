@@ -276,7 +276,13 @@ export const DEAL_CHIP_MAX_PER_PAGE = 500;
 // from the deals page. Kept alongside the curated list rather than replacing
 // it: everything else still needs the runtime grant, and these are merged in
 // so a failed curated-list fetch cannot hide a site we already hold.
-export const BUNDLED_DEAL_SITE_URLS: readonly string[] = ["https://www.savewithcindy.shop/"];
+export const BUNDLED_DEAL_SITE_URLS: readonly string[] = [
+  "https://www.savewithcindy.shop/",
+  "https://dailydealswithjat.com/",
+  "https://elvasdailydeals.com/",
+  "https://simplypicksapp.com/promo-codes",
+  "https://noelsdailydeals.com/",
+];
 
 // Automatic background harvesting (opt-in, off by default): when enabled, the
 // DEAL_AUTO_HARVEST_ALARM runs harvestDealSites (with deep scan) against the
@@ -312,12 +318,23 @@ export const UI_PREFIX = "ib-ext";
 // see docs/extension-local-bridge.md. The app probes 48620 first, then the
 // next two ports if taken, so the extension tries all three.
 export const BRIDGE_PORTS = [48620, 48621, 48622] as const;
-export const BRIDGE_PROBE_TIMEOUT_MS = 700;
+// The desktop app's bridge shares the Electron MAIN process event loop, which is
+// intermittently blocked for 1-3s+ by real work (storefront/deal sync, harvest).
+// A closed app REFUSES the TCP connection instantly (~5ms ECONNREFUSED), so this
+// timeout only ever bites when the app is present but briefly busy: exactly the
+// case we want to wait out. Measured spikes to ~3.4s live, so keep generous.
+// 700ms here made a working app report "not responding" whenever it was mid-task.
+export const BRIDGE_PROBE_TIMEOUT_MS = 1_500;
+// The status/hello probe drives the "app connected?" decision (the Synced chip
+// and the Send-to-app panel), so it gets the most headroom of all: a false
+// "not responding" is the worst outcome, and the cost of waiting is paid only
+// when the app has accepted the socket but not yet answered (i.e. it IS running).
+export const BRIDGE_HELLO_TIMEOUT_MS = 4_000;
 export const BRIDGE_STATUS_TTL_MS = 15_000;
 // A failed probe is cached much shorter than a successful one: the first probe
-// of a page load can lose its 700ms race while the service worker is still
-// waking up, and caching that miss for the full TTL made every status reader
-// on the page report "app not running" for 15s even though the app was fine.
+// of a page load can lose its race while the service worker is still waking up,
+// and caching that miss for the full TTL made every status reader on the page
+// report "app not running" for 15s even though the app was fine.
 export const BRIDGE_STATUS_FAIL_TTL_MS = 2_500;
 
 // Where to send someone who needs the app. Trial link is tracked.

@@ -311,7 +311,7 @@ export default function SchedulingAdminPage() {
               <div className="text-xs font-medium text-slate-500">Google Meet</div>
               {settings.googleConnected ? (
                 <div className="mt-1 flex items-center gap-3 text-sm">
-                  <span className="text-emerald-700">Connected{settings.googleEmail ? ` as ${settings.googleEmail}` : ""}. A Meet link is created for each booking.</span>
+                  <span className="text-emerald-700">Connected{settings.googleEmail ? ` as ${settings.googleEmail}` : ""}. A Meet link is created for each booking. This account handles calls (Meet + Calendar) only; YouTube uploads use a separate account connected in Events.</span>
                   <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "disconnectGoogle" })} className="text-xs text-slate-400 hover:text-rose-600">Disconnect</button>
                 </div>
               ) : (

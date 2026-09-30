@@ -56,8 +56,8 @@ describe("syncDealBadgeContentScripts", () => {
   });
 
   it("registers a bundled site even when the curated list came back empty", async () => {
-    // A failed deal-sources fetch returns [], but a site we ship a static
-    // host_permission for is granted from install and must still get the badge.
+    // A failed deal-sources fetch returns [], but the sites we ship static
+    // host_permissions for are granted from install and must still get the badge.
     getDealSources.mockResolvedValue([]);
     getSettings.mockResolvedValue({ dealSources: [] });
     hasOriginPermission.mockResolvedValue(true);
@@ -76,7 +76,15 @@ describe("syncDealBadgeContentScripts", () => {
     await sync();
 
     const call = register.mock.calls[0] as unknown as [Array<Record<string, unknown>>];
-    expect(call[0][0]).toMatchObject({ matches: ["https://www.savewithcindy.shop/*"] });
+    expect(call[0][0]).toMatchObject({
+      matches: [
+        "https://www.savewithcindy.shop/*",
+        "https://dailydealswithjat.com/*",
+        "https://elvasdailydeals.com/*",
+        "https://simplypicksapp.com/*",
+        "https://noelsdailydeals.com/*",
+      ],
+    });
   });
 
   it("updates (not registers) when a script is already registered", async () => {

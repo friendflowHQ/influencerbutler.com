@@ -12,6 +12,10 @@ import { getHudStatus, isPaired, sendFindings } from "../background/hud-bridge";
 
 export const localTransport: FindingTransport = {
   id: "local",
+  // The HUD mirror is best-effort: a busy or momentarily-unreachable app must
+  // never hold findings back from the durable website dashboard (which the popup
+  // promises syncs "on their own. No desktop app is needed for this").
+  bestEffort: true,
 
   async isAvailable(): Promise<boolean> {
     const state = await getState();

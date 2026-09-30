@@ -1,4 +1,4 @@
-import { copyButton, el, getQuickBar } from "../../ui/components";
+import { copyButton, el, getQuickBar, getQuickBarActions } from "../../ui/components";
 import { resolveLocale } from "../../i18n";
 import { CATALOG as I18N } from "../../i18n/catalog";
 import { getState } from "../../storage/store";
@@ -106,7 +106,12 @@ export async function renderQuickLinks(signals: ProductSignals): Promise<void> {
   if (bar.dataset.built) return;
   bar.dataset.built = "1";
 
-  const actions = el("div", "quickbar-actions");
+  // The shared action row also hosts the Deals Butler push (hud-actions/panel.ts)
+  // once the app is connected. Our two buttons live in their own group so they
+  // always stay first, prepended regardless of whether that other tool already
+  // populated the row.
+  const actions = getQuickBarActions();
+  const linkButtons = el("div", "quickbar-link-buttons");
 
   const getBtn = el("button", "btn secondary small") as HTMLButtonElement;
   getBtn.type = "button";
@@ -118,14 +123,15 @@ export async function renderQuickLinks(signals: ProductSignals): Promise<void> {
   scrubBtn.textContent = s.scrubLink;
   scrubBtn.title = s.scrubTitle;
 
-  actions.append(getBtn, scrubBtn);
+  linkButtons.append(getBtn, scrubBtn);
+  actions.prepend(linkButtons);
 
   const getOut = el("div");
   getOut.hidden = true;
   const scrubOut = el("div");
   scrubOut.hidden = true;
 
-  bar.append(actions, getOut, scrubOut);
+  bar.append(getOut, scrubOut);
 
   // Get link: the user's attributed/branded link, via the same background call
   // "Copy my link" uses. The returned url is always a working affiliate link

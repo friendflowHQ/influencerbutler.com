@@ -29,6 +29,10 @@ export type SchedConfig = {
   defaultJoinUrl: string | null;
   googleRefreshToken: string | null;
   googleCalendarEmail: string | null;
+  // Dedicated YouTube account (events uploads). Separate from the calls/calendar
+  // account above; may be a different Google account entirely.
+  youtubeRefreshToken: string | null;
+  youtubeAccountEmail: string | null;
 };
 
 const DEFAULT_CONFIG: SchedConfig = {
@@ -39,6 +43,8 @@ const DEFAULT_CONFIG: SchedConfig = {
   defaultJoinUrl: null,
   googleRefreshToken: null,
   googleCalendarEmail: null,
+  youtubeRefreshToken: null,
+  youtubeAccountEmail: null,
 };
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -87,7 +93,7 @@ async function googleBusyCached(refreshToken: string, fromMs: number, toMs: numb
 export async function loadConfig(admin: Admin): Promise<SchedConfig> {
   const { data, error } = await admin
     .from("call_config")
-    .select("booking_horizon_days,lead_time_hours,decoy_min_per_day,decoy_max_per_day,default_join_url,google_refresh_token,google_calendar_email")
+    .select("booking_horizon_days,lead_time_hours,decoy_min_per_day,decoy_max_per_day,default_join_url,google_refresh_token,google_calendar_email,youtube_refresh_token,youtube_account_email")
     .eq("id", 1)
     .maybeSingle();
   if (error || !data) return DEFAULT_CONFIG;
@@ -99,6 +105,8 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
     defaultJoinUrl: data.default_join_url ?? null,
     googleRefreshToken: data.google_refresh_token ?? null,
     googleCalendarEmail: data.google_calendar_email ?? null,
+    youtubeRefreshToken: data.youtube_refresh_token ?? null,
+    youtubeAccountEmail: data.youtube_account_email ?? null,
   };
 }
 

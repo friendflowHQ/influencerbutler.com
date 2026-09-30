@@ -22,18 +22,29 @@ export async function GET(request: Request) {
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
   const cfg = await loadConfig(admin);
-  if (!cfg.googleRefreshToken) {
-    return NextResponse.json({ ok: false, error: "Google not connected (no refresh token)." });
+  // Prefer the dedicated YouTube account; fall back to the calls/scheduling
+  // Google token so the bound channel reflects whatever uploads will actually use.
+  const usingDedicatedAccount = !!cfg.youtubeRefreshToken;
+  const ytToken = cfg.youtubeRefreshToken ?? cfg.googleRefreshToken;
+  const accountEmail = usingDedicatedAccount ? cfg.youtubeAccountEmail : cfg.googleCalendarEmail;
+  if (!ytToken) {
+    return NextResponse.json({ ok: false, connected: false, usingDedicatedAccount, error: "YouTube not connected (no refresh token)." });
   }
-  const channel = await getBoundChannel(cfg.googleRefreshToken);
+  const channel = await getBoundChannel(ytToken);
   if (!channel) {
     return NextResponse.json({
       ok: false,
+      connected: true,
+      usingDedicatedAccount,
+      accountEmail,
       error: "Could not read the connected channel (token invalid or youtube.upload scope missing).",
     });
   }
   return NextResponse.json({
     ok: true,
+    connected: true,
+    usingDedicatedAccount,
+    accountEmail,
     channel,
     target: process.env.YOUTUBE_TARGET_CHANNEL || null,
   });

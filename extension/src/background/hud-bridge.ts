@@ -1,4 +1,5 @@
 import {
+  BRIDGE_HELLO_TIMEOUT_MS,
   BRIDGE_PORTS,
   BRIDGE_PROBE_TIMEOUT_MS,
   BRIDGE_STATUS_FAIL_TTL_MS,
@@ -145,7 +146,7 @@ function probePort(port: number): Promise<HudStatus | null> {
       }
       resolve(value);
     };
-    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS);
+    const timer = setTimeout(() => done(null), BRIDGE_HELLO_TIMEOUT_MS);
     socket.onopen = () => {
       try {
         socket.send(JSON.stringify({ type: "hello", client: "extension" }));

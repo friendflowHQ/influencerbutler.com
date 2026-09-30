@@ -39,24 +39,48 @@ export async function flush(): Promise<void> {
   // and the website API), not just the first that answers, so findings reach the
   // app AND the dashboard when both are up. Re-delivery on a retry is safe: both
   // sinks upsert by a stable key, so a finding seen twice updates in place.
-  let anyAvailable = false;
-  let anyRetryable = false;
+  //
+  // The drain decision follows the DURABLE sinks only (the website dashboard and
+  // a linked device). A best-effort sink (the local HUD mirror) is still sent to
+  // opportunistically, but its retry never holds the queue: a busy desktop app
+  // that keeps asking to retry used to wedge every finding here, so the dashboard
+  // count sat at "N waiting to sync" forever even though the dashboard sync is
+  // meant to be app-independent.
+  let anyDurableAvailable = false;
+  let anyDurableRetryable = false;
+  let anyBestEffortAvailable = false;
+  let bestEffortDelivered = false;
   let deliveredSomewhere = false;
   for (const transport of TRANSPORTS) {
     if (!(await transport.isAvailable())) continue;
-    anyAvailable = true;
     const result = await transport.send(batch);
     if (result.ok) deliveredSomewhere = true;
-    else if (result.retry) anyRetryable = true;
-    // A non-retryable failure (for example a revoked key) is unrecoverable for
-    // that sink; it does not hold the batch.
+    if (transport.bestEffort) {
+      anyBestEffortAvailable = true;
+      if (result.ok) bestEffortDelivered = true;
+      continue; // a best-effort sink never holds the queue
+    }
+    anyDurableAvailable = true;
+    if (!result.ok && result.retry) anyDurableRetryable = true;
+    // A durable non-retryable failure (for example a revoked key, or a payload
+    // the server permanently rejects) is unrecoverable; it does not hold the
+    // batch either.
   }
 
-  if (!anyAvailable) return; // no sink up right now; keep the queue for next alarm
-  if (anyRetryable) return; // a sink wants a retry; keep the batch (idempotent re-send)
+  if (anyDurableAvailable) {
+    // The website dashboard / a linked device is the system of record: keep the
+    // batch only when one of them still wants a retry.
+    if (anyDurableRetryable) return;
+  } else {
+    // No durable sink up right now. Fall back to best-effort delivery (the HUD
+    // mirror, e.g. paired-but-signed-out): drop only once it actually took the
+    // batch, otherwise keep it for the next alarm.
+    if (!(anyBestEffortAvailable && bestEffortDelivered)) return;
+  }
 
-  // Every available sink either accepted or permanently rejected the batch: drop
-  // it so the queue cannot wedge, and stamp the sync time if anything took it.
+  // The batch is delivered (or permanently rejected) everywhere that counts:
+  // drop it so the queue cannot wedge, and stamp the sync time if anything took
+  // it.
   await patchState((s) => {
     const done = new Set(batch.map(findingKey));
     s.queue = s.queue.filter((f) => !done.has(findingKey(f)));

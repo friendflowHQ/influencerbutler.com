@@ -154,6 +154,13 @@ export interface FindingTransport {
   id: "api" | "local" | "relay";
   isAvailable(): Promise<boolean>;
   send(batch: Finding[]): Promise<{ ok: boolean; retry: boolean }>;
+  // A best-effort sink is a live convenience mirror (the local HUD bridge): its
+  // delivery is nice-to-have and must NEVER hold the shared finding queue. The
+  // durable sinks (the website dashboard, a linked device) decide when a batch
+  // has been delivered and can be dropped. Without this, a busy/slow desktop app
+  // that keeps asking to retry wedged the whole queue, so findings never reached
+  // the dashboard even though the dashboard sync is meant to be app-independent.
+  bestEffort?: boolean;
 }
 
 export function findingKey(finding: Finding): string {

@@ -218,6 +218,33 @@ export function normalizeDealDate(raw: string, endOfDay = false): string | null 
 type SwcExtras = Pick<HarvestedDeal, "promoCode" | "promoPercentOff" | "startDate" | "endDate">;
 
 /**
+ * Parse one savewithcindy.shop-style deal block (an HTML <p>...</p> body, or
+ * any other newline-separated text carrying the same lines) for its Amazon
+ * link, promo code, the code's own percent, and the deal window. Returns null
+ * when the block has no Amazon link at all. Shared by parseSaveWithCindy
+ * (splits a page into <p> blocks) and the Google Sheet importer (one block
+ * per row), which both source rows in this exact line format.
+ */
+export function parseDealBlock(block: string, sourceUrl: string): HarvestedDeal | null {
+  const link = matchAmazonProductUrl(block);
+  if (!link) return null;
+  const codeM = block.match(SWC_CODE_RE);
+  const pctM = block.match(SWC_CODE_PCT_RE);
+  const endM = block.match(SWC_END_RE);
+  const startM = block.match(SWC_START_RE);
+  const pct = pctM ? Number(pctM[1]) : NaN;
+  return {
+    asin: link.asin,
+    marketplace: link.marketplace,
+    sourceUrl,
+    promoCode: codeM ? (codeM[1] as string) : null,
+    promoPercentOff: Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : null,
+    startDate: startM ? normalizeDealDate(startM[1] as string) : null,
+    endDate: endM ? normalizeDealDate(endM[1] as string, true) : null,
+  };
+}
+
+/**
  * savewithcindy.shop per-card parser (registered in SITE_PARSERS). Block-parses
  * each deal <p> for its promo code, the code's own percent, and the deal window,
  * then merges those onto the generic rows the ASIN sweep already produced (first
@@ -232,21 +259,15 @@ function parseSaveWithCindy(
   const extras = new Map<string, SwcExtras>();
   SWC_BLOCK_RE.lastIndex = 0;
   for (let m = SWC_BLOCK_RE.exec(html); m; m = SWC_BLOCK_RE.exec(html)) {
-    const block = m[1] ?? "";
-    const link = matchAmazonProductUrl(block);
-    if (!link) continue;
-    const key = `${link.marketplace}:${link.asin}`;
+    const parsed = parseDealBlock(m[1] ?? "", sourceUrl);
+    if (!parsed) continue;
+    const key = `${parsed.marketplace}:${parsed.asin}`;
     if (extras.has(key)) continue; // first card for this product wins
-    const codeM = block.match(SWC_CODE_RE);
-    const pctM = block.match(SWC_CODE_PCT_RE);
-    const endM = block.match(SWC_END_RE);
-    const startM = block.match(SWC_START_RE);
-    const pct = pctM ? Number(pctM[1]) : NaN;
     extras.set(key, {
-      promoCode: codeM ? (codeM[1] as string) : null,
-      promoPercentOff: Number.isFinite(pct) && pct > 0 && pct <= 100 ? pct : null,
-      startDate: startM ? normalizeDealDate(startM[1] as string) : null,
-      endDate: endM ? normalizeDealDate(endM[1] as string, true) : null,
+      promoCode: parsed.promoCode,
+      promoPercentOff: parsed.promoPercentOff ?? null,
+      startDate: parsed.startDate ?? null,
+      endDate: parsed.endDate ?? null,
     });
   }
   if (extras.size === 0) return generic;

@@ -198,9 +198,17 @@ export const apiTransport: FindingTransport = {
     try {
       const responses = await Promise.all(posts);
       if (responses.every((r) => r.ok)) return { ok: true, retry: false };
-      // 401 means the key was revoked: do not spin on the batch forever.
-      const authFailed = responses.some((r) => r.status === 401);
-      return { ok: false, retry: !authFailed };
+      // Only a TRANSIENT failure holds the batch for another try. A 4xx is the
+      // server permanently rejecting these exact bytes (a revoked key = 401, an
+      // oversized/empty/all-invalid group = 400): retrying the identical payload
+      // can never succeed, so treating it as retryable wedged the WHOLE queue
+      // behind one bad finding type (every flush re-sent the good groups too and
+      // nothing ever drained, which is how 100+ findings pile up "waiting to
+      // sync"). Drop the batch instead so the healthy types keep flowing; only a
+      // 5xx or 429 (or the network error caught below) is worth re-sending.
+      const anyTransient = responses.some((r) => r.status >= 500 || r.status === 429);
+      const anySucceeded = responses.some((r) => r.ok);
+      return { ok: anySucceeded, retry: anyTransient };
     } catch {
       return { ok: false, retry: true }; // network trouble, keep the batch
     }

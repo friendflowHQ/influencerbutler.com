@@ -1,6 +1,7 @@
-import { addSection, el } from "../../ui/components";
+import { addSection, el, getQuickBarDealsSlot, peekQuickBarDealsSlot } from "../../ui/components";
 import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
+import { getSettings } from "../../storage/store";
 import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
 import type { AuthStatus, HudStatus } from "../../shared/messages";
 import type { ProductRef } from "../../transport/hud-commands";
@@ -80,6 +81,10 @@ export function renderHudActions(signals: ProductSignals, opts: HudActionsOption
     }
     if (state === lastState) return state;
     lastState = state;
+    // The Deals Butler push lives in the pinned quick-links bar (next to Scrub
+    // link), not in this section's body, so every non-connected state must
+    // clear it explicitly rather than relying on the body swap below to hide it.
+    if (state !== "connected") peekQuickBarDealsSlot()?.replaceChildren();
     if (state === "needs-pairing") {
       renderNeedsPairing(body, status);
     } else if (state === "connected") {
@@ -157,25 +162,35 @@ function renderConnected(
 ): void {
   body.replaceChildren();
 
-  const run = makeCommandRunner(body, status);
-
-  // Deals Butler: workspace picker + send.
+  // Deals Butler: workspace picker + send. Rendered into the pinned quick-links
+  // bar (next to Scrub link) instead of this section's body, so it is one click
+  // away without scrolling past the rest of "Send to your butler app". Built
+  // before `run` so the button can be passed in as an extra control to disable
+  // while any command (not just this one) is in flight, mirroring how it used
+  // to sit inside `body` and get swept up by disableAll.
   const workspaces = hud.dealWorkspaces?.length ? hud.dealWorkspaces : DEAL_WORKSPACES;
-  const dealRow = el("div", "row");
-  const picker = el("select");
+  const dealRow = el("div", "quickbar-deals-row");
+  const picker = el("select", "quickbar-select");
   for (const w of workspaces) {
     const opt = el("option");
     opt.value = w.key;
     opt.textContent = w.label;
     picker.append(opt);
   }
-  const dealBtn = el("button", "btn");
+  const dealBtn = el("button", "btn small");
   dealBtn.textContent = t().pushToDailyDeals;
-  dealBtn.addEventListener("click", () =>
-    run({ type: "deal.push", workspace: picker.value, product }, t().pushingDeals),
-  );
   dealRow.append(picker, dealBtn);
-  body.append(dealRow);
+  getQuickBarDealsSlot().replaceChildren(dealRow);
+
+  const run = makeCommandRunner(body, status, [dealBtn]);
+
+  dealBtn.addEventListener("click", async () => {
+    // Honour the "When a deal arrives" placement from Settings > Deals, so this
+    // button lands the deal where the creator chose rather than the desktop's
+    // own fallback default (read at click time so a Settings change is picked up).
+    const placement = (await getSettings()).deals.placement;
+    run({ type: "deal.push", workspace: picker.value, product, placement }, t().pushingDeals);
+  });
 
   // Non-Amazon retailers only get the retailer-ready actions above for now; the
   // rest of the section is Amazon-specific (Idea Lists, video/photo, CC).

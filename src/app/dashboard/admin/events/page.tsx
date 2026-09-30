@@ -174,6 +174,16 @@ function buildInviteAudience(f: FormState): Record<string, unknown> {
   }
 }
 
+type YtChannelView = {
+  ok: boolean;
+  connected?: boolean;
+  usingDedicatedAccount?: boolean;
+  accountEmail?: string | null;
+  channel?: { id: string; title: string; handle: string | null } | null;
+  target?: string | null;
+  error?: string;
+};
+
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<AdminEvent[]>([]);
   const [forbidden, setForbidden] = useState(false);
@@ -189,6 +199,9 @@ export default function AdminEventsPage() {
   const [draftNote, setDraftNote] = useState<string | null>(null);
   const [creditStatus, setCreditStatus] = useState<RecallCreditStatusView | null>(null);
   const [checkingCredit, setCheckingCredit] = useState(false);
+  const [ytChannel, setYtChannel] = useState<YtChannelView | null>(null);
+  const [ytBusy, setYtBusy] = useState(false);
+  const [ytBanner, setYtBanner] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     try {
@@ -222,10 +235,46 @@ export default function AdminEventsPage() {
     }
   }, []);
 
+  // Which Google account YouTube uploads publish to. Prefers the dedicated
+  // YouTube account; reports whether it is the dedicated one or the fallback
+  // calls/scheduling account, plus the bound channel so the operator can confirm.
+  const fetchYtChannel = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/events/youtube-channel", { cache: "no-store" });
+      if (!res.ok) return;
+      setYtChannel((await res.json()) as YtChannelView);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
+
+  const disconnectYouTube = async () => {
+    if (!window.confirm("Disconnect the YouTube account? Uploads will fall back to the Scheduling Google account until you reconnect.")) return;
+    setYtBusy(true);
+    setYtBanner("Disconnecting YouTube account...");
+    try {
+      const res = await fetch("/api/admin/events/youtube/disconnect", { method: "POST" });
+      setYtBanner(res.ok ? "YouTube account disconnected." : "Could not disconnect the YouTube account.");
+      await fetchYtChannel();
+    } finally {
+      setYtBusy(false);
+    }
+  };
+
   useEffect(() => {
     void refetch();
     void fetchCredit();
-  }, [refetch, fetchCredit]);
+    void fetchYtChannel();
+    // Surface the OAuth redirect result (?youtube=connected|error|notconfigured).
+    try {
+      const p = new URLSearchParams(window.location.search).get("youtube");
+      if (p === "connected") setYtBanner("YouTube account connected.");
+      else if (p === "error") setYtBanner("Could not connect the YouTube account. Please try again.");
+      else if (p === "notconfigured") setYtBanner("Google OAuth is not configured (missing client id/secret).");
+    } catch {
+      /* non-fatal */
+    }
+  }, [refetch, fetchCredit, fetchYtChannel]);
 
   const startEdit = (e: AdminEvent) => {
     setForm({
@@ -637,6 +686,62 @@ export default function AdminEventsPage() {
           </div>
         </div>
       ) : null}
+
+      {/* YouTube account: the Google account event recordings publish to. This is
+          deliberately separate from the calls/scheduling Google Calendar account,
+          so the channel can live in a different Google account. Until a dedicated
+          YouTube account is connected, uploads fall back to the Scheduling account. */}
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">YouTube account (for recordings)</p>
+            {ytChannel?.connected ? (
+              <p className="mt-1 text-sm text-slate-600">
+                {ytChannel.usingDedicatedAccount ? (
+                  <>
+                    Connected{ytChannel.accountEmail ? ` as ${ytChannel.accountEmail}` : ""}
+                    {ytChannel.channel ? `, publishing to "${ytChannel.channel.title}"` : ""}
+                    {ytChannel.channel?.handle ? ` (${ytChannel.channel.handle})` : ""}.
+                  </>
+                ) : (
+                  <>
+                    Using the Scheduling Google account as a fallback
+                    {ytChannel.channel ? `, publishing to "${ytChannel.channel.title}"` : ""}. Connect a
+                    dedicated YouTube account below to keep it separate from the calls calendar.
+                  </>
+                )}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-slate-600">
+                No YouTube account connected. Connect the Google account that owns the channel event
+                recordings should publish to. This can be a different account from the calls calendar.
+              </p>
+            )}
+            {ytChannel && !ytChannel.ok && ytChannel.error ? (
+              <p className="mt-1 text-xs text-rose-600">{ytChannel.error}</p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href="/api/admin/events/youtube/connect"
+              className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]"
+            >
+              {ytChannel?.usingDedicatedAccount ? "Reconnect" : "Connect YouTube account"}
+            </a>
+            {ytChannel?.usingDedicatedAccount ? (
+              <button
+                type="button"
+                disabled={ytBusy}
+                onClick={disconnectYouTube}
+                className="text-xs text-slate-400 hover:text-rose-600 disabled:opacity-60"
+              >
+                Disconnect
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {ytBanner ? <p className="mt-2 text-xs text-slate-500">{ytBanner}</p> : null}
+      </div>
 
       {/* Create / edit form */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -72,7 +72,10 @@ export async function GET(request: Request) {
   // whether anything is queued), so a dry run can confirm the right channel is
   // bound before we ever upload.
   const cfg = await loadConfig(admin);
-  const boundChannel = cfg.googleRefreshToken ? await getBoundChannel(cfg.googleRefreshToken) : null;
+  // Prefer the dedicated YouTube account; fall back to the calls/scheduling
+  // Google token so uploads keep working until a YouTube account is connected.
+  const ytToken = cfg.youtubeRefreshToken ?? cfg.googleRefreshToken;
+  const boundChannel = ytToken ? await getBoundChannel(ytToken) : null;
 
   // Oldest waiting recording that actually has a video to push.
   const { data, error } = await admin
@@ -111,7 +114,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, processed: 0, note: "already claimed" });
   }
 
-  if (!cfg.googleRefreshToken) {
+  if (!ytToken) {
     await admin
       .from("events")
       .update({ youtube_status: "failed", youtube_error: "Google not connected (no refresh token)" })
@@ -120,7 +123,7 @@ export async function GET(request: Request) {
   }
 
   const res = await uploadVideoFromUrl({
-    refreshToken: cfg.googleRefreshToken,
+    refreshToken: ytToken,
     videoUrl: row.recording_url as string,
     title: row.title,
     description: buildDescription(row),

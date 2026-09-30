@@ -44,6 +44,10 @@ export function disableAll(root: HTMLElement, disabled: boolean): void {
 export function makeCommandRunner(
   body: HTMLElement,
   status: HTMLElement,
+  // Buttons/selects to disable alongside `body`'s own buttons, for a control
+  // that triggers a command but does not live inside `body` (the Deals Butler
+  // push now sits in the pinned quick-links bar, not this section's body).
+  extraControls: Array<HTMLButtonElement | HTMLSelectElement> = [],
 ): (command: HudCommand, pending: string) => void {
   // A failed command only wrote to the small status line under the buttons,
   // which scrolls out of view on a tall panel, so a click that didn't go
@@ -56,12 +60,17 @@ export function makeCommandRunner(
       closeLabel: t().nudgeCloseLabel,
     });
   };
+  const setExtraDisabled = (disabled: boolean): void => {
+    for (const control of extraControls) control.disabled = disabled;
+  };
   return (command, pending) => {
     status.textContent = pending;
     disableAll(body, true);
+    setExtraDisabled(true);
     void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command })
       .then((result) => {
         disableAll(body, false);
+        setExtraDisabled(false);
         if (result.ok) {
           status.textContent = result.message ?? t().sentToApp;
         } else if (result.needsPairing) {
@@ -80,6 +89,7 @@ export function makeCommandRunner(
       // terminated mid-request) must not leave the buttons stuck disabled.
       .catch(() => {
         disableAll(body, false);
+        setExtraDisabled(false);
         status.textContent = t().couldNotReachApp;
         failToast(t().couldNotReachApp);
       });

@@ -20,6 +20,7 @@ import {
   extractShortLinks,
   type HarvestedDeal,
 } from "../tools/deal-harvester/extract";
+import { fetchGoogleSheetDeals, isGoogleSheetUrl } from "../tools/deal-harvester/sheet-import";
 import { log } from "../shared/log";
 import type { DealSource, EnrichResult, HarvestResult } from "../shared/messages";
 import { enrichProducts } from "./enrich";
@@ -53,12 +54,12 @@ export async function harvestDealSites(
   const emptyUrls = new Set<string>();
   let asinCapHit = false;
 
-  // Pull deals + short links out of one page's HTML into the shared maps, and
-  // mark the source URL non-empty if it contributed anything. Reused by both
-  // the fetch pass and the render pass so they extract identically.
-  const absorb = (html: string, url: string): void => {
+  // Merge already-extracted deals into the shared map, and mark the source
+  // URL non-empty if it contributed anything. Shared by the HTML path (below)
+  // and the Google Sheet path so both feed the same cap/dedup bookkeeping.
+  const absorbDeals = (deals: HarvestedDeal[], url: string): void => {
     let got = 0;
-    for (const deal of extractDeals(html, url)) {
+    for (const deal of deals) {
       const key = `${deal.marketplace}:${deal.asin}`;
       if (!byKey.has(key)) byKey.set(key, deal);
       got += 1;
@@ -67,6 +68,15 @@ export async function harvestDealSites(
         break;
       }
     }
+    if (got > 0) emptyUrls.delete(url);
+  };
+
+  // Pull deals + short links out of one page's HTML into the shared maps.
+  // Reused by both the fetch pass and the render pass so they extract
+  // identically.
+  const absorb = (html: string, url: string): void => {
+    absorbDeals(extractDeals(html, url), url);
+    let got = 0;
     for (const link of extractShortLinks(html)) {
       if (!shortLinks.has(link)) {
         shortLinks.set(link, url);
@@ -85,8 +95,12 @@ export async function harvestDealSites(
     const url = list[i] as string;
     emptyUrls.add(url);
     try {
-      const html = await fetchText(url);
-      absorb(html, url);
+      if (isGoogleSheetUrl(url)) {
+        absorbDeals(await fetchGoogleSheetDeals(url), url);
+      } else {
+        const html = await fetchText(url);
+        absorb(html, url);
+      }
     } catch (error) {
       errors.push({ url, error: errorMessage(error) });
       log("deal-harvest", `fetch failed for ${url}`, error);

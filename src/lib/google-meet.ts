@@ -1,28 +1,44 @@
 /**
- * Google Meet integration via the Google Calendar API. The owner connects her
- * Google account once (OAuth, offline access); we store the refresh token in
- * call_config and, per booking, create a Calendar event with a Meet link.
- * Falls back to call_config.default_join_url when not connected.
+ * Google integration via the Google Calendar and YouTube Data APIs. There are
+ * two independent Google connections, each connected once (OAuth, offline
+ * access) and stored in call_config:
+ *
+ * 1. Calls/scheduling account (google_refresh_token / google_calendar_email):
+ *    calendar.events to create the per-booking Meet event and calendar.freebusy
+ *    to read the owner's busy blocks. Connected from the Scheduling admin.
+ * 2. YouTube account (youtube_refresh_token / youtube_account_email):
+ *    youtube.upload to publish finished event recordings (src/lib/youtube.ts).
+ *    Connected from the Events admin. Deliberately a different Google account.
+ *
+ * These are separate so the calls calendar and the YouTube channel can live in
+ * different Google accounts. Both flows reuse the same OAuth client
+ * (GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET); they differ only in the
+ * requested scope, the callback path, and which account the owner signs into.
  *
  * Google Cloud setup (owner, one-time): create an OAuth 2.0 Client (Web app),
- * add the callback as an authorized redirect URI, set GOOGLE_OAUTH_CLIENT_ID /
- * GOOGLE_OAUTH_CLIENT_SECRET / GOOGLE_OAUTH_REDIRECT_URI in Vercel, then click
- * "Connect Google Calendar" in the Scheduling admin.
+ * add BOTH callbacks as authorized redirect URIs (scheduling + events youtube),
+ * enable the YouTube Data API v3, and set GOOGLE_OAUTH_CLIENT_ID /
+ * GOOGLE_OAUTH_CLIENT_SECRET (and optionally GOOGLE_OAUTH_REDIRECT_URI /
+ * GOOGLE_OAUTH_YOUTUBE_REDIRECT_URI) in Vercel.
  */
 import { randomUUID } from "crypto";
 
 // calendar.events: create the per-booking Meet event. calendar.freebusy: read
 // the owner's busy blocks so booked/personal time (pickup, deep-work) hides
-// slots. youtube.upload: publish the finished event recording to the owner's
-// YouTube channel (src/lib/youtube.ts), which needs the YouTube Data API v3
-// enabled on the same Google Cloud project. Widening this requires the owner to
-// reconnect ("Connect Google Calendar") so the new scope is granted;
-// prompt:"consent" below forces it.
-const SCOPE = [
+// slots. Widening this requires the owner to reconnect ("Connect Google
+// Calendar") so the new scope is granted; prompt:"consent" below forces it.
+export const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.freebusy",
-  "https://www.googleapis.com/auth/youtube.upload",
 ].join(" ");
+
+// youtube.upload: publish the finished event recording to the dedicated YouTube
+// account's channel (src/lib/youtube.ts). Needs the YouTube Data API v3 enabled
+// on the same Google Cloud project.
+export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"].join(" ");
+
+const SCHEDULING_CALLBACK_PATH = "/api/admin/scheduling/google/callback";
+const YOUTUBE_CALLBACK_PATH = "/api/admin/events/youtube/callback";
 
 export function isGoogleConfigured(): boolean {
   return !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
@@ -32,16 +48,32 @@ export function redirectUri(originFallback?: string): string {
   const env = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim();
   if (env) return env;
   const base = (originFallback || "https://www.influencerbutler.com").replace(/\/+$/, "");
-  return `${base}/api/admin/scheduling/google/callback`;
+  return `${base}${SCHEDULING_CALLBACK_PATH}`;
 }
 
-/** Consent URL for the owner to connect her Google Calendar. */
-export function authUrl(origin: string, state: string): string {
+/** Redirect URI for the dedicated YouTube account OAuth flow (Events admin). */
+export function youtubeRedirectUri(originFallback?: string): string {
+  const env = process.env.GOOGLE_OAUTH_YOUTUBE_REDIRECT_URI?.trim();
+  if (env) return env;
+  const base = (originFallback || "https://www.influencerbutler.com").replace(/\/+$/, "");
+  return `${base}${YOUTUBE_CALLBACK_PATH}`;
+}
+
+/**
+ * Consent URL for the owner to connect a Google account. Defaults to the
+ * calls/scheduling calendar connection; pass { scope, redirect } to build the
+ * dedicated YouTube-account flow instead.
+ */
+export function authUrl(
+  origin: string,
+  state: string,
+  opts?: { scope?: string; redirect?: string },
+): string {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-    redirect_uri: redirectUri(origin),
+    redirect_uri: opts?.redirect ?? redirectUri(origin),
     response_type: "code",
-    scope: SCOPE,
+    scope: opts?.scope ?? CALENDAR_SCOPES,
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: "true",
@@ -50,8 +82,16 @@ export function authUrl(origin: string, state: string): string {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
-/** Exchange an auth code for tokens. Returns the refresh token + connected email. */
-export async function exchangeCode(code: string, origin: string): Promise<{ refreshToken: string; email: string | null } | null> {
+/**
+ * Exchange an auth code for tokens. Returns the refresh token + connected email.
+ * `redirect` must match the redirect_uri used to obtain the code; it defaults to
+ * the scheduling callback, so the YouTube flow passes youtubeRedirectUri(origin).
+ */
+export async function exchangeCode(
+  code: string,
+  origin: string,
+  redirect?: string,
+): Promise<{ refreshToken: string; email: string | null } | null> {
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -60,7 +100,7 @@ export async function exchangeCode(code: string, origin: string): Promise<{ refr
         code,
         client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
         client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
-        redirect_uri: redirectUri(origin),
+        redirect_uri: redirect ?? redirectUri(origin),
         grant_type: "authorization_code",
       }),
     });

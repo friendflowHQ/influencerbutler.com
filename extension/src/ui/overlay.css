@@ -65,6 +65,20 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.quickbar-link-buttons { display: flex; align-items: center; gap: 8px; }
+/* Deals Butler workspace picker + push, pinned next to Scrub link. Empty (and
+   invisible) until the desktop app is connected. */
+.quickbar-deals:empty { display: none; }
+.quickbar-deals-row { display: flex; align-items: center; gap: 6px; }
+.quickbar-select {
+  padding: 5px 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #d7dee8;
+  background: #fff;
+  color: #334155;
+  max-width: 140px;
+}
 .link-readout {
   display: flex;
   align-items: flex-start;

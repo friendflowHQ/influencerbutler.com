@@ -100,9 +100,12 @@ export async function POST(request: Request) {
   }
 
   const cfg = await loadConfig(admin);
-  if (!cfg.googleRefreshToken) {
+  // Prefer the dedicated YouTube account; fall back to the calls/scheduling
+  // Google token so uploads keep working until a YouTube account is connected.
+  const ytToken = cfg.youtubeRefreshToken ?? cfg.googleRefreshToken;
+  if (!ytToken) {
     return NextResponse.json(
-      { error: "Google is not connected (no refresh token). Connect Google in Scheduling first." },
+      { error: "YouTube is not connected. Connect a YouTube account in the Events admin first." },
       { status: 400 },
     );
   }
@@ -118,7 +121,7 @@ export async function POST(request: Request) {
   const description = buildDescription((body.description || "").trim() || event.description || "", id);
 
   const res = await uploadVideoFromUrl({
-    refreshToken: cfg.googleRefreshToken,
+    refreshToken: ytToken,
     videoUrl,
     title,
     description,

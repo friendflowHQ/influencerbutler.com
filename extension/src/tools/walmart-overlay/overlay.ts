@@ -178,10 +178,12 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
     renderCalculator(signals, null, settings, ratePct);
 
     // "Send to your butler app": push this Walmart product into the desktop
-    // Deals Butler over the local bridge (or upsell when the app is
-    // closed). Rendered last so it sits below the Butler Score. Limited to the
-    // Deals push for now: the other send-to-app actions have Amazon-only desktop
-    // handlers.
+    // Deals Butler over the local bridge (or upsell when the app is closed).
+    // Its workspace picker + push button render into the pinned quick-links
+    // bar at the top of the panel (see hud-actions/panel.ts), not into this
+    // section, so the call site here only controls where the connected-state
+    // note / upsell / reconnect messaging sits. Limited to the Deals push for
+    // now: the other send-to-app actions have Amazon-only desktop handlers.
     renderHudActions(signals, { onlyDeals: true });
   })();
 }

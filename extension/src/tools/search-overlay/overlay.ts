@@ -7,7 +7,7 @@ import { type SearchTile } from "../../amazon/search-results";
 import type { DpStaticSignals } from "../../amazon/dp-static";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { retailerModule, type RetailerModule } from "../../retailers/module";
-import { getState } from "../../storage/store";
+import { getSettings, getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents, formatCompactMoney } from "../calculator/model";
@@ -515,10 +515,14 @@ export async function initSearchOverlay(
       url: r.tile.href ?? undefined,
     }));
     setStatus(t().searchSendingDeals(products.length));
+    // Honour the creator's "When a deal arrives" placement (Settings > Deals),
+    // so a deal sent from the search overlay lands where they chose rather than
+    // the desktop's own fallback default.
+    const placement = (await getSettings()).deals.placement;
     try {
       const res = await sendToBackground<HudCommandResult>({
         kind: "SEND_HUD_COMMAND",
-        command: { type: "deal.push.batch", workspace: "default", products },
+        command: { type: "deal.push.batch", workspace: "default", products, placement },
       });
       setStatus(
         res.ok

@@ -17,7 +17,7 @@ import {
   type RelayStateView,
 } from "../shared/messages";
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
-import type { ProductRef } from "../transport/hud-commands";
+import type { DealPlacement, ProductRef } from "../transport/hud-commands";
 import type { DealFinding, Finding } from "../transport/types";
 
 // The Deal Sites Harvester page. Opened from the extension popup in its own tab.
@@ -639,6 +639,11 @@ async function sendSelected(
     return;
   }
   const workspace = picker.value || "default";
+  // Honour the "When a deal arrives" placement the creator set in Settings, the
+  // same choice the per-product deal-site button already sends. Without it the
+  // desktop fell back to its own scheduler default, so a creator who set
+  // "Post it right now" here still saw harvested deals land as drafts.
+  const placement = (await getSettings()).deals.placement;
   const products: ProductRef[] = selected.map(toProductRef);
 
   // Prefer the desktop app on THIS computer. When it is not running here, fall
@@ -650,7 +655,7 @@ async function sendSelected(
     const relay = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
     const target = pickRelayTarget(relay);
     if (target) {
-      await sendSelectedViaRelay(products, workspace, target, btn, status);
+      await sendSelectedViaRelay(products, workspace, placement, target, btn, status);
       return;
     }
     // Not connected locally and no remote device linked: fall through to the
@@ -672,7 +677,7 @@ async function sendSelected(
     if (!useSinglePush) {
       const result = await sendToBackground<HudCommandResult>({
         kind: "SEND_HUD_COMMAND",
-        command: { type: "deal.push.batch", workspace, products: chunk },
+        command: { type: "deal.push.batch", workspace, products: chunk, placement },
       });
       if (result.ok) {
         sent += chunk.length;
@@ -684,7 +689,7 @@ async function sendSelected(
       }
       useSinglePush = true;
     }
-    const single = await sendChunkOneByOne(chunk, workspace);
+    const single = await sendChunkOneByOne(chunk, workspace, placement);
     sent += single.sent;
     if (single.stopped) {
       lastMessage = single.lastMessage || D.appNotConnected;
@@ -701,6 +706,7 @@ async function sendSelected(
 async function sendChunkOneByOne(
   chunk: ProductRef[],
   workspace: string,
+  placement: DealPlacement,
 ): Promise<{ sent: number; stopped: boolean; lastMessage: string }> {
   let sent = 0;
   let consecutiveFailures = 0;
@@ -708,7 +714,7 @@ async function sendChunkOneByOne(
   for (const product of chunk) {
     const result = await sendToBackground<HudCommandResult>({
       kind: "SEND_HUD_COMMAND",
-      command: { type: "deal.push", workspace, product },
+      command: { type: "deal.push", workspace, product, placement },
     });
     if (result.ok) {
       sent += 1;
@@ -742,6 +748,7 @@ function pickRelayTarget(
 async function sendSelectedViaRelay(
   products: ProductRef[],
   workspace: string,
+  placement: DealPlacement,
   target: { instanceId: string; label: string | null },
   btn: HTMLButtonElement,
   status: HTMLElement,
@@ -755,7 +762,7 @@ async function sendSelectedViaRelay(
     const chunk = products.slice(i, i + DEAL_PUSH_CHUNK);
     const result = await sendToBackground<RelaySendResult>({
       kind: "RELAY_SEND",
-      command: { type: "deal.push.batch", workspace, products: chunk },
+      command: { type: "deal.push.batch", workspace, products: chunk, placement },
       targetInstanceId: target.instanceId,
     });
     if (result.ok) {

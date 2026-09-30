@@ -5,6 +5,7 @@ import {
   extractShortLinks,
   matchAmazonProductUrl,
   normalizeDealDate,
+  parseDealBlock,
   siteLinkMatcher,
 } from "./extract";
 import { findingKey } from "../../transport/types";
@@ -187,6 +188,36 @@ describe("findingKey for deals", () => {
     const later: DealFinding = { ...base, detectedAt: "2026-07-07T18:30:00.000Z" };
     expect(findingKey(base)).toBe(findingKey(later));
     expect(findingKey(base)).toBe("deal:B0AAAAAAAA:amazon.com:2026-07-07");
+  });
+});
+
+describe("parseDealBlock", () => {
+  // The Save With Cindy Google Sheet's "Deals" cell carries the exact same
+  // line format as the HTML <p> block above, just with real newlines instead
+  // of <br>. parseDealBlock is the factored-out piece both parseSaveWithCindy
+  // (HTML) and the Google Sheet importer share, so this pins its behavior
+  // directly rather than only through extractDeals.
+  it("parses a plain-text block (no HTML) the same way as an HTML <p> block", () => {
+    const block =
+      "44% off UNCLECAT Bow Tie Front Cardigan Sweater\n" +
+      "44% off Code: OA5HTSXE\n" +
+      "13.99(Reg.24.99)\n" +
+      "https://www.amazon.com/dp/B0FDKT757V\n" +
+      "End Date: 2026-10-05 23:59 PDT\n" +
+      "Start Date: 2026-9-30 00:30 PDT";
+    expect(parseDealBlock(block, "https://sheet.example/")).toEqual({
+      asin: "B0FDKT757V",
+      marketplace: "amazon.com",
+      sourceUrl: "https://sheet.example/",
+      promoCode: "OA5HTSXE",
+      promoPercentOff: 44,
+      startDate: "2026-09-30T00:30:00-07:00",
+      endDate: "2026-10-05T23:59:00-07:00",
+    });
+  });
+
+  it("returns null when the block has no Amazon link", () => {
+    expect(parseDealBlock("just some text, no product here", "https://sheet.example/")).toBeNull();
   });
 });
 
