@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
       { href: "/dashboard/affiliates/playbook", label: "Competitor Playbook" },
     ],
   },
+  { href: "/dashboard/foyer", label: "Foyer Subscribers" },
   { href: "/dashboard/events", label: "Upcoming Events" },
   { href: "/dashboard/extension", label: "Extension" },
   { href: "/dashboard/ai-concierge", label: "AI Assistant" },
