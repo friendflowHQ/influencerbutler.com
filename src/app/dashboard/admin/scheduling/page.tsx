@@ -59,6 +59,14 @@ function fmtTime(iso: string): string {
 }
 // Sunday-anchored week start (matches the WD labels below), in the admin's local zone.
 function startOfWeekSun(dt: DateTime): DateTime { return dt.startOf("day").minus({ days: dt.weekday % 7 }); }
+// The exact date span a week/month grid renders, so the calendar can fetch that
+// range directly instead of relying on the scope-filtered, 200-row-capped list
+// (which can silently omit calls once the admin navigates away from "now").
+function visibleRange(view: "week" | "month", anchor: DateTime): { from: DateTime; to: DateTime } {
+  if (view === "week") { const start = startOfWeekSun(anchor); return { from: start, to: start.plus({ days: 7 }) }; }
+  const gridStart = startOfWeekSun(anchor.startOf("month"));
+  return { from: gridStart, to: gridStart.plus({ days: 42 }) };
+}
 
 // Human-readable confirmation per action, so a successful click is never silent.
 function actLabel(action: string, emailSent: boolean, email: string): string {
@@ -95,11 +103,17 @@ export default function SchedulingAdminPage() {
   const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const loadList = useCallback(async () => {
-    const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
+    // The calendar views fetch their own exact visible window (uncapped) instead
+    // of the scope-filtered, 200-row list, so navigating the grid doesn't run
+    // into calls that were simply never fetched.
+    const qs = view === "list"
+      ? `scope=${scope}`
+      : (() => { const { from, to } = visibleRange(view, calendarAnchor); return `from=${from.toUTC().toJSDate().toISOString()}&to=${to.toUTC().toJSDate().toISOString()}`; })();
+    const res = await fetch(`/api/admin/scheduling/list?${qs}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
     if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
     else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
-  }, [scope]);
+  }, [scope, view, calendarAnchor]);
 
   const loadSettings = useCallback(async () => {
     const res = await fetch("/api/admin/scheduling/settings", { cache: "no-store" });
@@ -218,11 +232,13 @@ export default function SchedulingAdminPage() {
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex gap-1">
-                {(["upcoming", "past", "all"] as const).map((s) => (
-                  <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
-                ))}
-              </div>
+              {view === "list" && (
+                <div className="flex gap-1">
+                  {(["upcoming", "past", "all"] as const).map((s) => (
+                    <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-1">
                 {(["list", "week", "month"] as const).map((v) => (
                   <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full px-3 py-1 text-sm ${view === v ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{v === "list" ? "List" : v === "week" ? "Week" : "Month"}</button>
