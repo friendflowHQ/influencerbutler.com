@@ -7,7 +7,8 @@
  * windows, manual blocks, config). Gated server-side by scheduling.view/manage.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DateTime } from "luxon";
 import { CALL_TYPES } from "@/lib/scheduling";
 
 type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
@@ -51,6 +52,21 @@ function fmtWhenIn(iso: string, tz: string | null): string {
 }
 // The admin's own resolved timezone, used to decide whether the customer is in a different zone.
 function localTz(): string { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } }
+// Time-only, for compact calendar cells (the date is already shown by the cell itself).
+function fmtTime(iso: string): string {
+  try { return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(iso)); }
+  catch { return new Date(iso).toLocaleTimeString("en-US"); }
+}
+// Sunday-anchored week start (matches the WD labels below), in the admin's local zone.
+function startOfWeekSun(dt: DateTime): DateTime { return dt.startOf("day").minus({ days: dt.weekday % 7 }); }
+// The exact date span a week/month grid renders, so the calendar can fetch that
+// range directly instead of relying on the scope-filtered, 200-row-capped list
+// (which can silently omit calls once the admin navigates away from "now").
+function visibleRange(view: "week" | "month", anchor: DateTime): { from: DateTime; to: DateTime } {
+  if (view === "week") { const start = startOfWeekSun(anchor); return { from: start, to: start.plus({ days: 7 }) }; }
+  const gridStart = startOfWeekSun(anchor.startOf("month"));
+  return { from: gridStart, to: gridStart.plus({ days: 42 }) };
+}
 
 // Human-readable confirmation per action, so a successful click is never silent.
 function actLabel(action: string, emailSent: boolean, email: string): string {
@@ -73,6 +89,8 @@ function actLabel(action: string, emailSent: boolean, email: string): string {
 export default function SchedulingAdminPage() {
   const [forbidden, setForbidden] = useState(false);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
+  const [view, setView] = useState<"list" | "week" | "month">("list");
+  const [calendarAnchor, setCalendarAnchor] = useState<DateTime>(() => DateTime.local());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [listError, setListError] = useState<string | null>(null);
   const [prep, setPrep] = useState<Prep | null>(null);
@@ -85,11 +103,17 @@ export default function SchedulingAdminPage() {
   const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const loadList = useCallback(async () => {
-    const res = await fetch(`/api/admin/scheduling/list?scope=${scope}`, { cache: "no-store" });
+    // The calendar views fetch their own exact visible window (uncapped) instead
+    // of the scope-filtered, 200-row list, so navigating the grid doesn't run
+    // into calls that were simply never fetched.
+    const qs = view === "list"
+      ? `scope=${scope}`
+      : (() => { const { from, to } = visibleRange(view, calendarAnchor); return `from=${from.toUTC().toJSDate().toISOString()}&to=${to.toUTC().toJSDate().toISOString()}`; })();
+    const res = await fetch(`/api/admin/scheduling/list?${qs}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
     if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
     else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
-  }, [scope]);
+  }, [scope, view, calendarAnchor]);
 
   const loadSettings = useCallback(async () => {
     const res = await fetch("/api/admin/scheduling/settings", { cache: "no-store" });
@@ -108,6 +132,17 @@ export default function SchedulingAdminPage() {
       : p === "notconfigured" ? "Google OAuth is not configured yet (set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in Vercel)."
       : "Could not connect Google Calendar. Please try again.");
   }, []);
+
+  // Buckets the loaded bookings by local calendar day for the week/month views.
+  const byDay = useMemo(() => {
+    const m = new Map<string, Booking[]>();
+    for (const b of bookings) {
+      const key = DateTime.fromISO(b.starts_at).toLocal().toFormat("yyyy-MM-dd");
+      (m.get(key) ?? m.set(key, []).get(key)!).push(b);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    return m;
+  }, [bookings]);
 
   const openPrep = useCallback(async (id: string) => {
     setActMsg(null);
@@ -195,35 +230,64 @@ export default function SchedulingAdminPage() {
 
       {tab === "calls" && (
         <>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex gap-1">
-              {(["upcoming", "past", "all"] as const).map((s) => (
-                <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
-              ))}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {view === "list" && (
+                <div className="flex gap-1">
+                  {(["upcoming", "past", "all"] as const).map((s) => (
+                    <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-1">
+                {(["list", "week", "month"] as const).map((v) => (
+                  <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full px-3 py-1 text-sm ${view === v ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{v === "list" ? "List" : v === "week" ? "Week" : "Month"}</button>
+                ))}
+              </div>
+              {view !== "list" && (
+                <div className="flex items-center gap-1.5">
+                  <button type="button" onClick={() => setCalendarAnchor((a) => a.minus(view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Previous">‹</button>
+                  <button type="button" onClick={() => setCalendarAnchor(DateTime.local())} className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">Today</button>
+                  <button type="button" onClick={() => setCalendarAnchor((a) => a.plus(view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Next">›</button>
+                  <span className="text-sm text-slate-600">
+                    {view === "week"
+                      ? `${startOfWeekSun(calendarAnchor).toFormat("MMM d")} – ${startOfWeekSun(calendarAnchor).plus({ days: 6 }).toFormat("MMM d, yyyy")}`
+                      : calendarAnchor.toFormat("MMMM yyyy")}
+                  </span>
+                </div>
+              )}
             </div>
             <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">{showAdd ? "Close" : "Add call"}</button>
           </div>
           {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} />}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {listError ? <tr><td colSpan={5} className="px-3 py-8 text-center text-rose-600">{listError}</td></tr> :
-                  bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
-                  bookings.map((b) => (
-                    <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
-                      <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at)}</td>
-                      <td className="px-3 py-2">{b.call_type}</td>
-                      <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
-                      <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
-                      <td className="px-3 py-2 max-w-xs truncate text-slate-500">{b.topic || "—"}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          {view === "list" ? (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <table className="min-w-full divide-y divide-slate-100 text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {listError ? <tr><td colSpan={5} className="px-3 py-8 text-center text-rose-600">{listError}</td></tr> :
+                    bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
+                    bookings.map((b) => (
+                      <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
+                        <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at)}</td>
+                        <td className="px-3 py-2">{b.call_type}</td>
+                        <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
+                        <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
+                        <td className="px-3 py-2 max-w-xs truncate text-slate-500">{b.topic || "—"}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : listError ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-8 text-center text-rose-600">{listError}</div>
+          ) : view === "week" ? (
+            <CalendarWeekView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} />
+          ) : (
+            <CalendarMonthView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onMore={(d) => { setCalendarAnchor(d); setView("week"); }} />
+          )}
         </>
       )}
 
@@ -425,6 +489,81 @@ export default function SchedulingAdminPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Type color coding shared by the week and month grids.
+function callPillClass(t: "support" | "demo"): string {
+  return t === "support" ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700";
+}
+
+function CalendarWeekView({ anchor, byDay, onOpen }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void }) {
+  const start = startOfWeekSun(anchor);
+  const days = Array.from({ length: 7 }, (_, i) => start.plus({ days: i }));
+  const today = DateTime.local().toFormat("yyyy-MM-dd");
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
+      <div className="grid min-w-[700px] grid-cols-7 gap-2">
+        {days.map((d) => {
+          const key = d.toFormat("yyyy-MM-dd");
+          const items = byDay.get(key) ?? [];
+          const isToday = key === today;
+          return (
+            <div key={key} className={`min-h-[150px] rounded-lg border p-2 ${isToday ? "border-[#f97316] bg-orange-50/40" : "border-slate-200"}`}>
+              <div className="text-xs font-medium text-slate-500">{d.toFormat("ccc")}</div>
+              <div className={`text-sm font-semibold ${isToday ? "text-[#c2410c]" : "text-slate-700"}`}>{d.toFormat("d")}</div>
+              <div className="mt-1.5 space-y-1">
+                {items.length === 0 && <div className="text-xs text-slate-300">No calls.</div>}
+                {items.map((b) => (
+                  <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b.call_type)}`}>
+                    {fmtTime(b.starts_at)} · {b.user_email}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CalendarMonthView({ anchor, byDay, onOpen, onMore }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void; onMore: (day: DateTime) => void }) {
+  const gridStart = startOfWeekSun(anchor.startOf("month"));
+  const days = Array.from({ length: 42 }, (_, i) => gridStart.plus({ days: i }));
+  const today = DateTime.local().toFormat("yyyy-MM-dd");
+  const MAX_PER_CELL = 3;
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2">
+      <div className="min-w-[700px]">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500">
+          {WD.map((d) => <div key={d} className="py-1">{d}</div>)}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((d) => {
+            const key = d.toFormat("yyyy-MM-dd");
+            const items = byDay.get(key) ?? [];
+            const inMonth = d.month === anchor.month;
+            const isToday = key === today;
+            return (
+              <div key={key} className={`min-h-[96px] rounded-lg border p-1.5 ${isToday ? "border-[#f97316]" : "border-slate-200"} ${inMonth ? "bg-white" : "bg-slate-50"}`}>
+                <div className={`text-xs ${!inMonth ? "text-slate-300" : isToday ? "font-semibold text-[#c2410c]" : "text-slate-600"}`}>{d.toFormat("d")}</div>
+                <div className="mt-1 space-y-0.5">
+                  {items.slice(0, MAX_PER_CELL).map((b) => (
+                    <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b.call_type)}`}>
+                      {fmtTime(b.starts_at)} {b.user_email}
+                    </button>
+                  ))}
+                  {items.length > MAX_PER_CELL && (
+                    <button type="button" onClick={() => onMore(d)} className="block w-full truncate rounded px-1 py-0.5 text-left text-[11px] text-slate-500 hover:underline">+{items.length - MAX_PER_CELL} more</button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
