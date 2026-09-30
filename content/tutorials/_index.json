@@ -424,6 +424,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "foyer-butler-stan-migration",
+      "title": "Switching from Stan Store to Foyer Butler",
+      "category": "Getting Started",
+      "summary": "Rebuild your Stan Store page in Foyer Butler, then cancel your Stan Store subscription yourself. We never ask for or store your Stan Store login.",
+      "order": 126.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
