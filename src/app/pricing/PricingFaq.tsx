@@ -8,6 +8,10 @@ const FAQ = [
     a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
   },
   {
+    q: "What happens to my Foyer page if I don't upgrade to Pro?",
+    a: "Nothing about the page changes. Your Foyer link-in-bio page and subscriber list stay live and are fully yours, forever. Once your trial ends, sending new newsletters to that list needs an active Pro subscription. We'll email you a heads-up a few days before that happens, and again if it takes effect, so it's never a surprise.",
+  },
+  {
     q: "Can I cancel anytime?",
     a: "Yes. Cancel in one click from your dashboard. You keep access until the end of the current billing period - no support ticket, no questions.",
   },

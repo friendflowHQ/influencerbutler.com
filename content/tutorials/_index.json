@@ -416,6 +416,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "foyer-butler",
+      "title": "Foyer Butler: your own link-in-bio page with a newsletter list",
+      "category": "Amazon",
+      "summary": "Build a shoppable link-in-bio page from your tracked products and deals, collect subscribers, and send them a newsletter. The page and subscriber list are always free; sending newsletters needs Pro after your trial.",
+      "order": 126,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "relink-butler",
       "title": "Relink Butler: swap affiliate link providers across published content (beta)",
       "category": "Amazon",
