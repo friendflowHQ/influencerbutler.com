@@ -137,6 +137,10 @@ export default function SchedulingAdminPage() {
   const byDay = useMemo(() => {
     const m = new Map<string, Booking[]>();
     for (const b of bookings) {
+      // A cancelled call never happened and the slot is free again, so it
+      // doesn't belong on the calendar; showing it reads as a duplicate of
+      // whatever real call (if any) replaced it.
+      if (b.status === "cancelled") continue;
       const key = DateTime.fromISO(b.starts_at).toLocal().toFormat("yyyy-MM-dd");
       (m.get(key) ?? m.set(key, []).get(key)!).push(b);
     }
@@ -493,9 +497,13 @@ export default function SchedulingAdminPage() {
   );
 }
 
-// Type color coding shared by the week and month grids.
-function callPillClass(t: "support" | "demo"): string {
-  return t === "support" ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700";
+// Color coding shared by the week and month grids: status first (a resolved
+// call reads very differently from a live one), then call type. Cancelled
+// calls never reach here (byDay drops them before grouping).
+function callPillClass(b: Booking): string {
+  if (b.status === "no_show") return "bg-amber-50 text-amber-700";
+  if (b.status === "completed") return "bg-slate-100 text-slate-500";
+  return b.call_type === "support" ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700";
 }
 
 function CalendarWeekView({ anchor, byDay, onOpen }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void }) {
@@ -516,7 +524,7 @@ function CalendarWeekView({ anchor, byDay, onOpen }: { anchor: DateTime; byDay: 
               <div className="mt-1.5 space-y-1">
                 {items.length === 0 && <div className="text-xs text-slate-300">No calls.</div>}
                 {items.map((b) => (
-                  <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b.call_type)}`}>
+                  <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b)}`}>
                     {fmtTime(b.starts_at)} · {b.user_email}
                   </button>
                 ))}
@@ -551,7 +559,7 @@ function CalendarMonthView({ anchor, byDay, onOpen, onMore }: { anchor: DateTime
                 <div className={`text-xs ${!inMonth ? "text-slate-300" : isToday ? "font-semibold text-[#c2410c]" : "text-slate-600"}`}>{d.toFormat("d")}</div>
                 <div className="mt-1 space-y-0.5">
                   {items.slice(0, MAX_PER_CELL).map((b) => (
-                    <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b.call_type)}`}>
+                    <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b)}`}>
                       {fmtTime(b.starts_at)} {b.user_email}
                     </button>
                   ))}
