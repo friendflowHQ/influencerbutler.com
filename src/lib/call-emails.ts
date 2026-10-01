@@ -113,6 +113,8 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     `Need to change it? You can reschedule or cancel from your dashboard under Book a Call.`,
+    `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
+    `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
     b.recorded ? `\nPlease note: this call is recorded, transcribed, and AI-summarized so we can prepare notes to review afterward, and any product issues or feature requests raised may be logged to our support queue so we can follow up.` : "",
     ``,
     `Warmly,`,
@@ -178,6 +180,8 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
     ``,
     `An updated calendar invite is attached, so the link will drop onto your calendar entry.`,
     `Need to change the time? You can reschedule or cancel from your dashboard under Book a Call.`,
+    `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
+    `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,
@@ -216,13 +220,20 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     ``,
     whenLine(b.startMs, b.userEndMs, tz),
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed shortly.`,
+    ...(which === "1h" ? [
+      `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
+      `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
+    ] : []),
     ``,
     `See you soon.`,
     ``,
     `Warmly,`,
     `Your Influencer Butler Team`,
   ].join("\n");
-  const html = htmlFrom(body, b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []);
+  const html = htmlFrom(body, [
+    ...(which === "1h" ? [{ phrase: "Book a Call", href: BOOK_URL }] : []),
+    ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
+  ]);
   return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, "call_reminder", undefined, html);
 }
 
