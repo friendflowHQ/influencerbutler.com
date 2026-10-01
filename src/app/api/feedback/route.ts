@@ -7,10 +7,12 @@
  *   standard support triage flow. This replaces the old "email
  *   hello@influencerbutler.com" support CTAs.
  *
- * The worker is gated by an x-ib-key shared secret (FEEDBACK_SHARED_KEY) that
- * must never reach the browser, so the form posts here and this server route
- * attaches the key and forwards. Mirrors src/lib/ai-concierge/agent.ts
- * (submitFeedback).
+ * The worker can optionally be gated by an x-ib-key shared secret
+ * (FEEDBACK_SHARED_KEY) that must never reach the browser, so the form posts
+ * here and this server route attaches the key when configured and forwards
+ * either way (the worker only enforces the header if it has its own copy of
+ * the secret set). Mirrors src/lib/support-worker.ts (submitSupportTicket)
+ * and src/lib/ai-concierge/agent.ts (submitFeedback).
  *
  * Abuse control: the worker enforces a per-IP rate limit, and this route
  * additionally verifies a Cloudflare Turnstile token when TURNSTILE_SECRET_KEY
@@ -116,19 +118,14 @@ export async function POST(request: Request) {
   }
 
   const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
-  if (!sharedKey) {
-    console.error("[api/feedback] FEEDBACK_SHARED_KEY is not set");
-    return NextResponse.json(
-      { ok: false, error: "Support intake is temporarily unavailable. Please try again later." },
-      { status: 503 },
-    );
-  }
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (sharedKey) headers["x-ib-key"] = sharedKey;
 
   const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
   try {
     const res = await fetch(`${base}/submit`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-ib-key": sharedKey },
+      headers,
       body: JSON.stringify({
         type,
         title,
